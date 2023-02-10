@@ -2,7 +2,7 @@ package org.evomaster.core.output
 
 import junit.framework.Assert.assertEquals
 import junit.framework.Assert.assertFalse
-import org.evomaster.core.problem.httpws.service.auth.CookieLogin
+import org.evomaster.core.problem.httpws.auth.CookieLogin
 import org.evomaster.core.problem.rest.ContentType
 import org.evomaster.core.problem.rest.HttpVerb
 import org.junit.jupiter.api.Test

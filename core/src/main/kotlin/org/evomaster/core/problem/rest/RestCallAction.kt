@@ -1,11 +1,11 @@
 package org.evomaster.core.problem.rest
 
-import org.evomaster.core.problem.httpws.service.HttpWsAction
-import org.evomaster.core.problem.httpws.service.auth.HttpWsAuthenticationInfo
-import org.evomaster.core.problem.httpws.service.auth.NoAuth
+import org.evomaster.core.problem.httpws.HttpWsAction
+import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
+import org.evomaster.core.problem.httpws.auth.NoAuth
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.FormParam
-import org.evomaster.core.problem.api.service.param.Param
+import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.resource.ActionRToken
 import org.evomaster.core.problem.util.ParamUtil

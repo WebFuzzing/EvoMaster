@@ -16,7 +16,7 @@ import org.evomaster.core.search.impact.impactinfocollection.value.date.TimeGene
 import org.evomaster.core.search.impact.impactinfocollection.value.numeric.*
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.problem.external.service.ApiExternalServiceAction
+import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.gene.collection.*
 import org.evomaster.core.search.gene.datetime.DateGene

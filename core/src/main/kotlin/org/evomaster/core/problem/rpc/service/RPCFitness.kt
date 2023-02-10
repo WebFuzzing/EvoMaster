@@ -6,9 +6,9 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.exception.RPCExc
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.problem.api.service.ApiWsFitness
-import org.evomaster.core.problem.external.service.rpc.RPCExternalServiceAction
-import org.evomaster.core.problem.external.service.rpc.parm.RPCResponseParam
-import org.evomaster.core.problem.external.service.rpc.parm.UpdateForRPCResponseParam
+import org.evomaster.core.problem.externalservice.rpc.RPCExternalServiceAction
+import org.evomaster.core.problem.externalservice.rpc.parm.RPCResponseParam
+import org.evomaster.core.problem.externalservice.rpc.parm.UpdateForRPCResponseParam
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCCallResult
 import org.evomaster.core.problem.rpc.RPCCallResultCategory

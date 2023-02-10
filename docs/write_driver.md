@@ -133,7 +133,7 @@ e.g., `EmbeddedSutController`, and the existing examples in
 
 As _SpringBoot_ is nowadays the most common way to implement enterprise systems on the JVM, here we provide
 some discussions / walk-through on how to write a driver for it that extends `EmbeddedSutController`,
-using as reference the [driver for the *features-service* SUT in EMB](https://github.com/EMResearch/EMB/blob/master/em/embedded/rest/features-service/src/main/java/em/embedded/org/javiermf/features/EmbeddedEvoMasterController.java).
+using as reference the [driver for the *features-service* SUT in EMB](https://github.com/EMResearch/EMB/blob/master/jdk_8_maven/em/embedded/rest/features-service/src/main/java/em/embedded/org/javiermf/features/EmbeddedEvoMasterController.java).
 
 
 To programmatically start a _SpringBoot_ application (needed to implement `startSut()`), you can use `SpringApplication.run`,

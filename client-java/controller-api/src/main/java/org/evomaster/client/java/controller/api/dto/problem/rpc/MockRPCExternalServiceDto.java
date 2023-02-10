@@ -1,5 +1,7 @@
 package org.evomaster.client.java.controller.api.dto.problem.rpc;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class MockRPCExternalServiceDto {
@@ -49,4 +51,22 @@ public class MockRPCExternalServiceDto {
      * type info of the responses
      */
     public List<String> responseTypes;
+
+
+    public MockRPCExternalServiceDto copy(){
+        MockRPCExternalServiceDto copy = new MockRPCExternalServiceDto();
+        copy.appKey = appKey;
+        copy.interfaceFullName = interfaceFullName;
+        copy.functionName = functionName;
+        if (inputParameterTypes != null)
+            copy.inputParameterTypes = new ArrayList<>(inputParameterTypes);
+        if (responses != null)
+            copy.responses = new ArrayList<>(responses);
+        if (requestRules != null)
+            copy.requestRules = new ArrayList<>(requestRules);
+        if (responseTypes != null)
+            copy.responseTypes = new ArrayList<>(responseTypes);
+
+        return copy;
+    }
 }

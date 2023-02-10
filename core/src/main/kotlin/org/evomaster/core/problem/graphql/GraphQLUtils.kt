@@ -11,6 +11,7 @@ import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.collection.TupleGene
+import org.evomaster.core.search.gene.optional.NullableGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
@@ -71,16 +72,8 @@ object GraphQLUtils {
                 """.trimIndent()
                         )
 
-                    } else if (returnGene.name.endsWith(GqlConst.UNION_TAG)) {//The first is a union type
-
-                        var query = getQuery(returnGene, a)//todo remove the name for the first union
-                        Entity.json(
-                            """
-                   {"query" : " {  ${a.methodName} ($printableInputGenes)  { $query }  }   ","variables":null}
-                """.trimIndent()
-                        )
-
-                    } else {
+                    } else
+                        {
                         val query = getQuery(returnGene, a)
                         Entity.json(
                             """
@@ -99,16 +92,7 @@ object GraphQLUtils {
                 """.trimIndent()
                         )
 
-                    } else if (returnGene.name.endsWith(GqlConst.UNION_TAG)) {//The first is a union type
-
-                        var query = getQuery(returnGene, a)//todo remove the name for the first union
-                        Entity.json(
-                            """
-                   {"query" : " {  ${a.methodName} $printableInputGenes  { $query }  }   ","variables":null}
-                """.trimIndent()
-                        )
-
-                    } else {
+                    }  else {
                         val query = getQuery(returnGene, a)
                         Entity.json(
                             """
@@ -193,24 +177,45 @@ object GraphQLUtils {
 
     fun getPrintableInputGene(inputGenes: List<Gene>, targetFormat: OutputFormat? = null): MutableList<String> {
         val printableInputGene = mutableListOf<String>()
+
         for (gene in inputGenes) {
-            if (gene is EnumGene<*> ||
-                (gene is OptionalGene && gene.gene is EnumGene<*>) ||
-                (gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template is EnumGene<*>) ||
-                (gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template is OptionalGene && gene.gene.template.gene is EnumGene<*>) ||
-                (gene is ArrayGene<*> && gene.template is EnumGene<*>) ||
-                (gene is ArrayGene<*> && gene.template is OptionalGene && gene.template.gene is EnumGene<*>)
-            ) {
-                val i = gene.getValueAsRawString()
-                printableInputGene.add("${gene.name} : $i")
+            if  (gene.getWrappedGene(EnumGene::class.java)!=null) {//enum gene
+                //if it is optional it should be active
+                if ((gene.getWrappedGene(OptionalGene::class.java)?.isActive == true)||(gene.getWrappedGene(OptionalGene::class.java) == null)) {
+
+                    val i = gene.getValueAsRawString()
+                    printableInputGene.add("${gene.name} : $i")
+
+                }
+
             } else {
-                if (gene is ObjectGene || (gene is OptionalGene && gene.gene is ObjectGene)) {
-                    val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
-                    printableInputGene.add(" $i")
+                if (gene.getWrappedGene(ObjectGene::class.java) != null) {//object gene
+                    //if it is optional it should be active
+                    if ((gene.getWrappedGene(OptionalGene::class.java)?.isActive == true) || (gene.getWrappedGene(OptionalGene::class.java) == null)) {
+                        val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
+
+                        if (gene.getWrappedGene(NullableGene::class.java)?.isActive == true) {
+
+                            printableInputGene.add(" $i")
+
+                        } else {
+                            //Need the name of the object when it takes "null" as a value, since it will not access the object
+                            //where the name is printed
+                            printableInputGene.add("${gene.name} : $i")
+                        }
+
+                    }
+
                 } else {
-                    if (gene is ArrayGene<*> || (gene is OptionalGene && gene.gene is ArrayGene<*>)) {
-                        val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_ARRAY_MODE)
-                        printableInputGene.add("${gene.name} : $i")
+                    if (gene.getWrappedGene(ArrayGene::class.java)!=null) {//array gene
+                        //if it is optional it should be active
+                        if ((gene.getWrappedGene(OptionalGene::class.java)?.isActive == true)||(gene.getWrappedGene(OptionalGene::class.java) == null)) {
+
+                            val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_ARRAY_MODE)
+                            printableInputGene.add("${gene.name} : $i")
+
+                        }
+
                     } else {
                         /*
                             TODO
@@ -223,7 +228,9 @@ object GraphQLUtils {
                         val i = gene.getValueAsPrintableString(mode = mode, targetFormat = targetFormat)
                         //if it is optional it should be active
                         if ((gene.getWrappedGene(OptionalGene::class.java)?.isActive == true)||(gene.getWrappedGene(OptionalGene::class.java) == null))
+
                             printableInputGene.add("${gene.name} : $i")
+
                     }
                 }
             }
@@ -238,10 +245,10 @@ object GraphQLUtils {
             .forEach { a ->
                 a.parameters.filterIsInstance<GQReturnParam>().forEach { p ->
                     if (p.gene is ObjectGene) {
-                        p.gene.fields.forEach {
-                            if ((it is TupleGene && it.lastElementTreatedSpecially) || (it is BooleanGene) || (it is OptionalGene)) GeneUtils.repairBooleanSelection(
-                                p.gene
-                            )
+                        if(p.gene.fields.any {
+                           (it is TupleGene && it.lastElementTreatedSpecially) || (it is BooleanGene) || (it is OptionalGene)
+                        }) {
+                            GeneUtils.repairBooleanSelection(p.gene)
                         }
                     }
                 }

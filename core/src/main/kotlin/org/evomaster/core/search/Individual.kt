@@ -4,8 +4,8 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.problem.api.service.param.Param
-import org.evomaster.core.problem.external.service.ApiExternalServiceAction
+import org.evomaster.core.problem.api.param.Param
+import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.SearchGlobalState
@@ -180,16 +180,13 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
     }
 
     /**
-     * @return actions based on the specified [filter]
-     *
-     * TODO refactor [seeAllActions], [seeInitializingActions] and [seeDbActions] based on this fun
+     * @return actions based on the specified [filter].
+     * By default, only [ActionFilter.ALL] and [ActionFilter.NO_INIT] are supported.
      */
     open fun seeActions(filter: ActionFilter) : List<Action>{
-        if(filter == ActionFilter.ALL || filter == ActionFilter.NO_EXTERNAL_SERVICE || filter == ActionFilter.NO_INIT
-                || filter == ActionFilter.NO_SQL){
+        if(filter == ActionFilter.ALL || filter == ActionFilter.NO_INIT){
             return seeAllActions()
         }
-
         LoggingUtil.uniqueWarn(log,"Default implementation only support ALL filter")
         return listOf()
     }
@@ -226,20 +223,6 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
      */
     fun seeInitializingActions(): List<Action> = seeActions(ActionFilter.INIT)
 
-    /**
-     * return a list of all db actions in [this] individual
-     * that include all initializing actions plus db actions among main actions.
-     *
-     * NOTE THAT if EMConfig.probOfApplySQLActionToCreateResources is 0.0, this method
-     * would be same with [seeInitializingActions]
-     */
-    fun seeDbActions() : List<DbAction> = seeActions(ActionFilter.ONLY_SQL) as List<DbAction>
-
-    /**
-     * return a list of all external service actions in [this] individual
-     * that include all the initializing actions among the main actions
-     */
-     fun seeExternalServiceActions() : List<ApiExternalServiceAction> = seeActions(ActionFilter.ONLY_EXTERNAL_SERVICE) as List<ApiExternalServiceAction>
 
 
     /**

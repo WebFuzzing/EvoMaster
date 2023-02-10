@@ -142,20 +142,18 @@ public class URLClassReplacement implements MethodReplacementClass {
     }
 
     private static URL getReplacedURL(URL caller) throws java.io.IOException {
-        /*
-          Add the external service hostname to the ExecutionTracer
-          */
+        String protocol = caller.getProtocol();
+
+        int port = caller.getPort();
+        port = ExternalServiceInfoUtils.inferPort(port, protocol);
+
         if ((caller.getProtocol().equals("http") || caller.getProtocol().equals("https"))
                 && !skipHostnameOrIp(caller.getHost())
-                && !ExecutionTracer.skipHostname(caller.getHost()))
+                && !ExecutionTracer.skipHostnameAndPort(caller.getHost(), port))
         {
 
             if (caller.getProtocol().equalsIgnoreCase("https"))
                 PreDefinedSSLInfo.setTrustAllForHttpsURLConnection();
-
-            String protocol = caller.getProtocol();
-            int port = caller.getPort();
-            port = ExternalServiceInfoUtils.inferPort(port, protocol);
 
             ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(protocol, caller.getHost(), port);
             String[] ipAndPort = collectExternalServiceInfo(remoteHostInfo, port);

@@ -91,17 +91,27 @@ public class DistanceHelper {
     }
 
     public static int distanceToRange(char c, char minInclusive, char maxInclusive) {
+        return distanceToRange((int) c, (int) minInclusive, (int) maxInclusive);
+    }
 
-        if (minInclusive >= maxInclusive) {
-            throw new IllegalArgumentException("Invalid char range '" + minInclusive + "'-'" + maxInclusive + "'");
+    public static int distanceToRange(int c, int minInclusive, int maxInclusive) {
+
+        if (minInclusive > maxInclusive) {
+            throw new IllegalArgumentException("Invalid range '" + minInclusive + "'-'" + maxInclusive + "'");
         }
 
-        int diffAfter = minInclusive - c;
-        int diffBefore = c - maxInclusive;
+        //the diff between 2 ints might not be represented with a int
+        long diffAfter = minInclusive - c;
+        long diffBefore = c - maxInclusive;
 
-        int dist = Math.max(diffAfter, 0) + Math.max(diffBefore, 0);
+        //1 of 2 will be necessarily a 0
+        long dist = Math.max(diffAfter, 0) + Math.max(diffBefore, 0);
+        if(dist > Integer.MAX_VALUE){
+            return Integer.MAX_VALUE;
+        }
+        assert (dist >= 0);
 
-        return dist;
+        return (int) dist;
     }
 
     public static int distanceToChar(char c, char target) {

@@ -4,11 +4,8 @@ import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.SqlWriter
-import org.evomaster.core.output.service.TestWriterUtils.Companion.getWireMockVariableName
-import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
-import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceAction
-import org.evomaster.core.problem.httpws.service.HttpWsAction
-import org.evomaster.core.problem.httpws.service.HttpWsCallResult
+import org.evomaster.core.problem.httpws.HttpWsAction
+import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual

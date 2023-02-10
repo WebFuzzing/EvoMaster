@@ -8,7 +8,7 @@ import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.TestSuiteFileName
 import org.evomaster.core.output.service.TestSuiteWriter
-import org.evomaster.core.problem.api.service.param.Param
+import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.*
@@ -184,6 +184,7 @@ class SearchProcessMonitor: SearchListener {
                         Paths.get(getOverallProcessAsPath()),
                         getGsonBuilder()?.toJson(this.overall)?:throw IllegalStateException("gson builder is null"))
             }
+            else ->{}
         }
 
     }

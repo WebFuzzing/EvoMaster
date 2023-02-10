@@ -1,11 +1,9 @@
 package org.evomaster.client.java.controller.api.dto;
 
+import org.evomaster.client.java.controller.api.dto.problem.ExternalServiceDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by arcuri82 on 16-Sep-19.
@@ -18,6 +16,13 @@ public class ActionDto {
      * between 0 and 9
      */
     public Integer index = null;
+
+    /**
+     * The name of the action, used to identify its type.
+     * It is not unique.
+     * Eg, for REST, it could be something like VERB:PATH
+     */
+    public String name = null;
 
     /**
      * A list (possibly empty) of String values used in the action.
@@ -37,4 +42,18 @@ public class ActionDto {
      * instance addresses.
      */
     public Map<String, String> externalServiceMapping = new HashMap<>();
+
+    /**
+     * Mapping of external service domain name and local address used
+     * for mocking.
+     */
+    public Map<String, String> localAddressMapping = new HashMap<>();
+
+    /**
+     * List of skipped external services from handling inside core.
+     * Information will be retrieved from [ProblemInfo] provided inside the
+     * driver.
+     */
+    public List<ExternalServiceDto> skippedExternalServices = new ArrayList<>();
+
 }

@@ -1,7 +1,7 @@
 package org.evomaster.core.problem.rest.service
 
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
-import org.evomaster.core.problem.httpws.service.HttpWsCallResult
+import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.ActionResult

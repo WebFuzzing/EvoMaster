@@ -207,10 +207,10 @@ class RestActionBuilderV3Test{
         val gene = RestActionBuilderV3.createObjectGeneForDTO(name, dtoSchema, null, enableConstraintHandling)
         assertEquals(name, gene.name)
 
-        assertTrue(gene is FlexibleObjectGene<*>)
-        (gene as FlexibleObjectGene<*>).apply {
-            assertEquals(4, fields.size)
-            assertTrue(template.second is FixedMapGene<*, *>)
+        assertTrue(gene is ObjectGene)
+        (gene as ObjectGene).apply {
+            assertEquals(4, fixedFields.size)
+            assertTrue(template!!.second is FixedMapGene<*, *>)
         }
     }
 
@@ -342,9 +342,45 @@ class RestActionBuilderV3Test{
     }
 
 
+    @Test
+    fun testDtoEnum(){
+        val name = "org.evomaster.client.java.instrumentation.object.dtos.DtoEnum"
+
+        val dtoSchema = """
+            "$name":{"type":"object", "properties": {"foo":{"type":"string"},"bar":{"type":"string", "enum":["ONE","TWO","THREE"]}}}
+        """.trimIndent()
+
+
+        val gene = RestActionBuilderV3.createObjectGeneForDTO(name, dtoSchema, name) as ObjectGene
+        assertEquals(name, gene.name)
+        assertEquals(2, gene.fields.size)
+
+        gene.fields.find { ParamUtil.getValueGene(it) is StringGene }.apply {
+            assertNotNull(this)
+            assertNotNull(ParamUtil.getValueGene(this!!) is StringGene)
+            (ParamUtil.getValueGene(this) as StringGene).apply {
+                assertEquals("foo", this.name)
+            }
+        }
+
+        gene.fields.find { ParamUtil.getValueGene(it) is EnumGene<*> }.apply {
+            assertNotNull(this)
+            assertNotNull(ParamUtil.getValueGene(this!!) is EnumGene<*>)
+            (ParamUtil.getValueGene(this) as EnumGene<String>).apply {
+                assertEquals("bar", this.name)
+                // need to check with Andrea, additional EVOMASTER is added for Enum
+                assertEquals(4, values.size)
+                listOf("ONE","TWO","THREE").forEach {  s ->
+                    assertTrue(values.contains(s))
+                }
+            }
+        }
+    }
+
     @ParameterizedTest
     @ValueSource(booleans = [true, false])
     fun testParseDto(enableConstraintHandling : Boolean){
+
 
         val name = "com.FooBar"
         val foo = "foo"

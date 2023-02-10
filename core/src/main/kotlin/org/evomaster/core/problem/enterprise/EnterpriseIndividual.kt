@@ -3,8 +3,8 @@ package org.evomaster.core.problem.enterprise
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
-import org.evomaster.core.problem.api.service.ApiWsIndividual
-import org.evomaster.core.problem.external.service.ApiExternalServiceAction
+import org.evomaster.core.problem.api.ApiWsIndividual
+import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.search.*
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Randomness
@@ -51,6 +51,10 @@ abstract class EnterpriseIndividual(
     companion object{
         private val log : Logger = LoggerFactory.getLogger(ApiWsIndividual::class.java)
 
+        /**
+         * Return group definition for the given children.
+         * The first [sizeDb] are assumed to be database actions, followed by [sizeMain] main actions
+         */
         fun getEnterpriseTopGroups(
             children: List<ActionComponent>,
             sizeMain: Int,
@@ -109,6 +113,22 @@ abstract class EnterpriseIndividual(
     fun seeMainActionComponents() : List<ActionComponent>{
         return groupsView()!!.getAllInGroup(GroupsOfChildren.MAIN) as List<ActionComponent>
     }
+
+    /**
+     * return a list of all db actions in [this] individual
+     * that include all initializing actions plus db actions among main actions.
+     *
+     * NOTE THAT if EMConfig.probOfApplySQLActionToCreateResources is 0.0, this method
+     * would be same with [seeInitializingActions]
+     */
+    fun seeDbActions() : List<DbAction> = seeActions(ActionFilter.ONLY_SQL) as List<DbAction>
+
+    /**
+     * return a list of all external service actions in [this] individual
+     * that include all the initializing actions among the main actions
+     */
+    fun seeExternalServiceActions() : List<ApiExternalServiceAction> = seeActions(ActionFilter.ONLY_EXTERNAL_SERVICE) as List<ApiExternalServiceAction>
+
 
     override fun repairInitializationActions(randomness: Randomness) {
 

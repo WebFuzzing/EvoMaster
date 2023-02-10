@@ -26,9 +26,6 @@ public class WireMockManualTest extends SpringTestBase {
         WireMockController wireMockController = new WireMockController();
         SpringTestBase.initClass(wireMockController);
 
-        //TODO skip this due to https://github.com/alibaba/java-dns-cache-manipulator/issues/115
-        CIUtils.skipIfOnGA();
-
         // DNS cache manipulator sets the IP for foo.bar to a different loopback address
         DnsCacheManipulator.setDnsCache("foo.bar", "127.0.0.2");
 
@@ -61,17 +58,12 @@ public class WireMockManualTest extends SpringTestBase {
 
     @AfterAll
     public static void shutdownServer() {
-        //TODO skip this due to https://github.com/alibaba/java-dns-cache-manipulator/issues/115
-        CIUtils.skipIfOnGA();
-
         wireMockServer.stop();
         DnsCacheManipulator.clearDnsCache();
     }
 
     @Test
     public void testEqualsFoo() {
-        //TODO skip this due to https://github.com/alibaba/java-dns-cache-manipulator/issues/115
-        CIUtils.skipIfOnGA();
 
         given().accept(ContentType.JSON)
                 .get(baseUrlOfSut + "/api/wiremock/equalsFoo/bar")
@@ -89,8 +81,7 @@ public class WireMockManualTest extends SpringTestBase {
 
     @Test
     public void testExternalCall() {
-        //TODO skip this due to https://github.com/alibaba/java-dns-cache-manipulator/issues/115
-        CIUtils.skipIfOnGA();
+
         /*
          * The test will check whether the external call is a success or
          * not. If the target host replaced with the Wiremock, it'll respond

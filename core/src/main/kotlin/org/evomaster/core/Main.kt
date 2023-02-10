@@ -15,8 +15,8 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestSuiteSplitter
 import org.evomaster.core.output.clustering.SplitResult
 import org.evomaster.core.output.service.TestSuiteWriter
-import org.evomaster.core.problem.external.service.httpws.HarvestActualHttpWsResponseHandler
-import org.evomaster.core.problem.external.service.httpws.HttpWsExternalServiceHandler
+import org.evomaster.core.problem.externalservice.httpws.HarvestActualHttpWsResponseHandler
+import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.graphql.service.GraphQLBlackBoxModule
 import org.evomaster.core.problem.graphql.service.GraphQLModule
@@ -24,7 +24,7 @@ import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.service.*
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.problem.rpc.service.RPCModule
-import org.evomaster.core.problem.web.service.WebModule
+import org.evomaster.core.problem.webfrontend.service.WebModule
 import org.evomaster.core.remote.NoRemoteConnectionException
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
@@ -56,6 +56,10 @@ class Main {
 
                 printLogo()
                 printVersion()
+
+                if(!JdkIssue.checkAddOpens()){
+                    return
+                }
 
                 /*
                     Before running anything, check if the input
@@ -224,6 +228,7 @@ class Main {
                         val p = String.format("%.0f", (k.toDouble()/n) * 100 )
                         info("Successfully executed (no 'errors') $k endpoints out of $n ($p%)")
                     }
+                    else -> {}
                     //TODO others, eg RPC
                 }
 
@@ -310,7 +315,7 @@ class Main {
                     }
                 }
 
-                EMConfig.ProblemType.WEB -> WebModule()
+                EMConfig.ProblemType.WEBFRONTEND -> WebModule()
 
                 //this should never happen, unless we add new type and forget to add it here
                 else -> throw IllegalStateException("Unrecognized problem type: ${config.problemType}")

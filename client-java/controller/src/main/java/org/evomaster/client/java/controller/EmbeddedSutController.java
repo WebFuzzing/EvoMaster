@@ -11,6 +11,7 @@ import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -61,7 +62,14 @@ public abstract class EmbeddedSutController extends SutController {
 
     @Override
     public final void newActionSpecificHandler(ActionDto dto){
-        ExecutionTracer.setAction(new Action(dto.index, dto.inputVariables, dto.externalServiceMapping));
+        ExecutionTracer.setAction(new Action(
+                dto.index,
+                dto.name,
+                dto.inputVariables,
+                dto.externalServiceMapping,
+                dto.localAddressMapping,
+                dto.skippedExternalServices.stream().map(e -> new ExternalService(e.hostname, e.port)).collect(Collectors.toList())
+        ));
     }
 
     @Override

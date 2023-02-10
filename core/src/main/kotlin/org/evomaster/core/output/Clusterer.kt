@@ -5,7 +5,8 @@ import org.evomaster.core.output.clustering.DBSCANClusterer
 import org.evomaster.core.output.clustering.metrics.DistanceMetric
 import org.evomaster.core.output.clustering.metrics.DistanceMetricErrorText
 import org.evomaster.core.output.service.PartialOracles
-import org.evomaster.core.problem.httpws.service.HttpWsCallResult
+import org.evomaster.core.problem.api.ApiWsIndividual
+import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.Solution
 
@@ -24,7 +25,7 @@ import org.evomaster.core.search.Solution
  * TODO: Refactor the method to show if the action reveals a fault in other ways.
  */
 object Clusterer {
-    fun cluster(solution: Solution<RestIndividual>,
+    fun cluster(solution: Solution<ApiWsIndividual>,
                 config: EMConfig,
                 epsilon: Double = 0.6,
                 oracles: PartialOracles = PartialOracles(),

@@ -138,9 +138,10 @@ internal class EMConfigTest{
     }
 
 
-    @ParameterizedTest
-    @ValueSource(strings = ["bbSwaggerUrl", "bbTargetUrl"])
-    fun testUrl(name: String){
+    @Test
+    fun testUrl(){
+
+        val name = "bbSwaggerUrl"
 
         val parser = EMConfig.getOptionParser()
         val opt = parser.recognizedOptions()[name] ?:
@@ -148,21 +149,21 @@ internal class EMConfigTest{
         val config = EMConfig()
 
         val ok = "http://localhost:8080"
-        var options = parser.parse("--$name", ok)
+        var options = parser.parse("--$name", ok, "--blackBox","true","--outputFormat","JAVA_JUNIT_4")
         assertEquals(ok, opt.value(options))
         config.updateProperties(options) // no exception
 
         val noPort = "http://localhost"
-        options = parser.parse("--$name", noPort)
+        options = parser.parse("--$name", noPort, "--blackBox","true","--outputFormat","JAVA_JUNIT_4")
         assertEquals(noPort, opt.value(options))
         config.updateProperties(options) // no exception
 
         val wrong = "foobar"
-        options = parser.parse("--$name", wrong)
+        options = parser.parse("--$name", wrong, "--blackBox","true","--outputFormat","JAVA_JUNIT_4")
         assertThrows(Exception::class.java, {config.updateProperties(options)})
 
         val noProtocol = "localhost:8080"
-        options = parser.parse("--$name", noProtocol)
+        options = parser.parse("--$name", noProtocol, "--blackBox","true","--outputFormat","JAVA_JUNIT_4")
         assertThrows(Exception::class.java, {config.updateProperties(options)})
     }
 

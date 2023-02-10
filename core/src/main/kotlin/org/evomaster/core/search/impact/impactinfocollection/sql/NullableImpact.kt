@@ -39,10 +39,10 @@ class NullableImpact(sharedImpactInfo: SharedImpactInfo, specificImpactInfo: Spe
             throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) should be SqlNullable")
         }
 
-        if (gc.previous == null || (gc.previous as NullableGene).isPresent != gc.current.isPresent){
+        if (gc.previous == null || (gc.previous as NullableGene).isActive != gc.current.isActive){
             presentImpact.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num = gc.numOfMutatedGene)
 
-            if (gc.current.isPresent)
+            if (gc.current.isActive)
                 presentImpact.trueValue.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num = 1)
             else
                 presentImpact.falseValue.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num = 1)
@@ -54,7 +54,7 @@ class NullableImpact(sharedImpactInfo: SharedImpactInfo, specificImpactInfo: Spe
 
         if (gc.previous == null && impactTargets.isNotEmpty()) return
 
-        if (gc.current.isPresent){
+        if (gc.current.isActive){
             val mutatedGeneWithContext = MutatedGeneWithContext(
                     previous = if (gc.previous == null) null else (gc.previous as NullableGene).gene,
                     current = gc.current.gene,

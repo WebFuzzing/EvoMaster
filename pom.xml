@@ -9,7 +9,7 @@
         To change version in all modules, use:
         mvn versions:set -DnewVersion=a.b.c
      -->
-    <version>1.5.1-SNAPSHOT</version>
+    <version>1.6.1-SNAPSHOT</version>
 
     <inceptionYear>2016</inceptionYear>
     <name>EvoMaster</name>
@@ -26,6 +26,7 @@
         <module>client-java</module>
         <module>e2e-tests</module>
         <module>report</module>
+        <module>test-old-libraries</module>
     </modules>
 
     <issueManagement>
@@ -44,8 +45,20 @@
         <profile>
             <id>Configs for JDK >= 17</id>
             <activation>
-                <jdk>17</jdk>
+                <jdk>[17,)</jdk>
             </activation>
+            <!--
+                Unfortunately, recent versions of Kotlin led to crashes due JDK 17 module access shenanigans :(
+                setting up .mvn/jvm.config is not a viable option, as it messes up build in JDK 8
+                so, need to use something like
+                MAVEN_OPTS="-Xmx4g - -add-opens=java.base/java.lang=ALL-UNNAMED - -add-opens=java.base/java.io=ALL-UNNAMED"  mvn
+                when running "mvn" on command line for JDK 17 :( what a mess...
+                (btw, note that XML above does not like 2 - - together... so command cannot be directly copy&pasted)
+                for CI, this is handled directly there
+
+                Check following in case Kotlin Plugin will avoid this issues in the future:
+                https://youtrack.jetbrains.com/issue/KT-56137#focus=Comments-27-6800445.0-0
+            -->
             <properties>
                 <addOpens> --add-opens  java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.util.regex=ALL-UNNAMED --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED</addOpens>
             </properties>
@@ -103,7 +116,7 @@
         <addOpens></addOpens> <!-- overridden in profile -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>1.8</java.version>
-        <kotlin.version>1.5.30</kotlin.version>
+        <kotlin.version>1.8.0</kotlin.version>
         <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
         <junit.jupiter.version>5.7.2</junit.jupiter.version>
         <junit.platform.version>1.7.2</junit.platform.version>
@@ -120,9 +133,10 @@
         <javax.el.version>2.2.5</javax.el.version>
         <jackson.version>2.11.0</jackson.version>
         <asm.version>9.2</asm.version>
-        <testcontainers.version>1.16.0</testcontainers.version>
+        <testcontainers.version>1.17.6</testcontainers.version>
         <testcontainers.mockerserver.version>1.17.2</testcontainers.mockerserver.version>
         <mockserver.client.version>5.13.2</mockserver.client.version>
+        <selenium.version>4.7.2</selenium.version>
         <jetbrains.annotations.version>20.1.0</jetbrains.annotations.version>
         <antlr.version>4.9.2</antlr.version>
         <nlp.version>4.3.1</nlp.version>
@@ -138,7 +152,7 @@
         <apache.http.client.version>4.5.13</apache.http.client.version>
         <okhttp3.client.version>4.9.3</okhttp3.client.version>
         <okhttp.client.version>2.4.0</okhttp.client.version>
-        <dns.cache.manipulator.version>1.8.0-RC1</dns.cache.manipulator.version>
+        <dns.cache.manipulator.version>1.8.0</dns.cache.manipulator.version>
         <jakarta.annotation.version>2.0.0</jakarta.annotation.version>
         <micronaut.version>3.2.7</micronaut.version>
         <micronaut.openapi.version>3.2.0</micronaut.openapi.version>
@@ -293,7 +307,7 @@
                 -->
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>30.1.1-jre</version>
+                <version>31.1-jre</version>
             </dependency>
             <dependency>
                 <!--
@@ -650,6 +664,13 @@
                 <version>2.3.1</version>
             </dependency>
 
+            <!--    HTML   -->
+            <dependency>
+                <groupId>org.jsoup</groupId>
+                <artifactId>jsoup</artifactId>
+                <version>1.15.3</version>
+            </dependency>
+
             <!--  GraphQL             -->
             <dependency>
                 <groupId>com.graphql-java-kickstart</groupId>
@@ -727,12 +748,37 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>selenium</artifactId>
+                <version>${testcontainers.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.seleniumhq.selenium</groupId>
+                <artifactId>selenium-remote-driver</artifactId>
+                <version>${selenium.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.seleniumhq.selenium</groupId>
+                <artifactId>selenium-chrome-driver</artifactId>
+                <version>${selenium.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.seleniumhq.selenium</groupId>
+                <artifactId>selenium-support</artifactId>
+                <version>${selenium.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
                 <!-- Used in SqlHandlerInDBTest class -->
                 <groupId>org.jetbrains</groupId>
                 <artifactId>annotations</artifactId>
                 <version>${jetbrains.annotations.version}</version>
                 <scope>test</scope>
             </dependency>
+
 
             <!-- RPC-->
             <dependency>
@@ -941,6 +987,11 @@
                     <version>${kotlin.version}</version>
                     <configuration>
                         <jvmTarget>${java.version}</jvmTarget>
+                        <args>
+                        <!--  This seems wrong, as args to compiler but not the JVM itself -->
+<!--                            <arg>&#45;&#45;add-opens=java.base/java.io=ALL-UNNAMED</arg>-->
+<!--                            <arg>&#45;&#45;add-opens=java.base/java.lang=ALL-UNNAMED</arg>-->
+                        </args>
                     </configuration>
                     <executions>
                         <execution>
