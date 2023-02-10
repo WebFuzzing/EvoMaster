@@ -8,7 +8,6 @@ import org.evomaster.core.problem.rest.param.FormParam
 import org.evomaster.core.problem.rest.resource.ResourceCluster
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.Action
-import org.evomaster.core.search.gene.FlexibleObjectGene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
@@ -342,8 +341,9 @@ class RestActionBuilderV3Test{
     }
 
 
-    @Test
-    fun testDtoEnum(){
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testDtoEnum(enableConstraintHandling : Boolean){
         val name = "org.evomaster.client.java.instrumentation.object.dtos.DtoEnum"
 
         val dtoSchema = """
@@ -351,7 +351,7 @@ class RestActionBuilderV3Test{
         """.trimIndent()
 
 
-        val gene = RestActionBuilderV3.createObjectGeneForDTO(name, dtoSchema, name) as ObjectGene
+        val gene = RestActionBuilderV3.createObjectGeneForDTO(name, dtoSchema, name, enableConstraintHandling) as ObjectGene
         assertEquals(name, gene.name)
         assertEquals(2, gene.fields.size)
 
