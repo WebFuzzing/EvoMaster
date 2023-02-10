@@ -7,6 +7,8 @@ import org.evomaster.e2etests.spring.web.SpringTestBase;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 public class ALinksEMTest extends SpringTestBase {
 
     @BeforeAll
@@ -24,6 +26,8 @@ public class ALinksEMTest extends SpringTestBase {
                 (args) -> {
 
                     Solution<WebIndividual> solution = initAndRun(args);
+
+                    assertTrue(solution.getIndividuals().size() > 0);
 
                     //TODO assertions
                 }

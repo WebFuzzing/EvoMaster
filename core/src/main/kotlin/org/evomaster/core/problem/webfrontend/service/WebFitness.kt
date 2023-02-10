@@ -107,7 +107,7 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
                 a.copyValueFrom(chosen)
             }
         }
-        assert(blocking || (a.isDefined() && a.isApplicableInCurrentContext()))
+        assert(blocking || (a.isDefined() && a.isApplicableInGivenPage(pageBeforeExecutingAction)))
 
         if(!blocking) {
             val inputs = a.userInteractions.filter { it.userActionType == UserActionType.FILL_TEXT }

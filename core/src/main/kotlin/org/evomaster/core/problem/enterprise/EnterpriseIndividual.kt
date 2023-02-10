@@ -189,6 +189,8 @@ abstract class EnterpriseIndividual(
         return super.hasAnyAction() || dbInitialization.isNotEmpty()
     }
 
+    override fun size() = seeMainExecutableActions().size
+
     private fun getLastIndexOfDbActionToAdd(): Int =
         groupsView()!!.endIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_SQL)
 

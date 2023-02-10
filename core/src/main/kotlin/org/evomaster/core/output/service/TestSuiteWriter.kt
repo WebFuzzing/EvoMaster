@@ -622,7 +622,7 @@ class TestSuiteWriter {
                         addStatement("$driver = new RemoteWebDriver($browser.seleniumAddress, new ChromeOptions())", lines)
                     }
                     if(format.isKotlin()){
-                        addStatement("$driver = RemoteWebDriver($browser.seleniumAddress, new ChromeOptions())", lines)
+                        addStatement("$driver = RemoteWebDriver($browser.seleniumAddress, ChromeOptions())", lines)
                     }
                 }
             }
@@ -903,7 +903,7 @@ class TestSuiteWriter {
     }
 
 
-    private fun useRestAssured() = config.problemType != EMConfig.ProblemType.RPC
+    private fun useRestAssured() = config.problemType == EMConfig.ProblemType.REST || config.problemType == EMConfig.ProblemType.GRAPHQL
 
     /**
      * Returns a distinct List of [HttpExternalServiceAction] from the given solution
