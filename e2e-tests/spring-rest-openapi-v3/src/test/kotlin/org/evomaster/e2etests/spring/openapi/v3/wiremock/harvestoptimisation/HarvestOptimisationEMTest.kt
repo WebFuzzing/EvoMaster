@@ -2,7 +2,6 @@ package org.evomaster.e2etests.spring.openapi.v3.wiremock.harvestoptimisation
 
 import com.alibaba.dcm.DnsCacheManipulator
 import com.foo.rest.examples.spring.openapi.v3.wiremock.harvestoptimisation.HarvestOptimisationController
-import com.foo.rest.examples.spring.openapi.v3.wiremock.harvestresponse.WmHarvestResponseController
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
@@ -18,9 +17,10 @@ import org.junit.jupiter.api.Test
 
 class HarvestOptimisationEMTest: SpringTestBase() {
 
+
     companion object {
 
-        private var wireMockServer: WireMockServer? = null
+        private lateinit var wireMockServer: WireMockServer
 
         @BeforeAll
         @JvmStatic
@@ -37,8 +37,8 @@ class HarvestOptimisationEMTest: SpringTestBase() {
                 .extensions(ResponseTemplateTransformer(false))
 
             wireMockServer = WireMockServer(wmConfig)
-            wireMockServer!!.start()
-            wireMockServer!!.stubFor(
+            wireMockServer.start()
+            wireMockServer.stubFor(
                 WireMock.get(
                     WireMock.urlEqualTo("/api/mock"))
                 .atPriority(1)
@@ -51,7 +51,7 @@ class HarvestOptimisationEMTest: SpringTestBase() {
         @AfterAll
         @JvmStatic
         fun shutdown() {
-            wireMockServer!!.stop()
+            wireMockServer.stop()
             DnsCacheManipulator.clearDnsCache()
         }
     }
