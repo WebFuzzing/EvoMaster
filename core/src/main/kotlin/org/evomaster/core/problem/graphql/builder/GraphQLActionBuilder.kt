@@ -905,23 +905,56 @@ object GraphQLActionBuilder {
                 val constructedTuple =
 
                     if (isLastNotPrimitive(tupleElements.last())) {
-                        if ((tupleElements.last().getWrappedGene(ObjectGene::class.java) != null)) {
-                            val nnOptionalObject = tupleElements.last().getWrappedGene(ObjectGene::class.java) as ObjectGene
-                            tupleElements=tupleElements.dropLast(1).plus(nnOptionalObject).toMutableList()
+                        var tupleName:String?=null
+
+                        if ((tupleElements.last().getWrappedGene(ObjectGene::class.java) != null) ||
+                            (tupleElements.last()
+                                .getWrappedGene(ArrayGene::class.java)?.template?.getWrappedGene(ObjectGene::class.java) != null)
+                        ) {
+                            if (tupleElements.last().getWrappedGene(ObjectGene::class.java) != null) {
+                                val nnOptionalObject = tupleElements.last().getWrappedGene(ObjectGene::class.java) as ObjectGene
+                                tupleElements = tupleElements.dropLast(1).plus(nnOptionalObject).toMutableList()
+                            }
+                            else if (tupleElements.last().getWrappedGene(ArrayGene::class.java) != null) {
+                                val last = tupleElements.last().getWrappedGene(ArrayGene::class.java)
+                                tupleName = last?.name
+                                if (last?.template?.getWrappedGene(ObjectGene::class.java) != null) {
+                                    val nnOptionalObject = last.template.getWrappedGene(ObjectGene::class.java) as ObjectGene
+                                    tupleElements = tupleElements.dropLast(1).plus(nnOptionalObject).toMutableList()
+                                }
+                            }
                         }
 
-                        if (state.inputTypeName[tupleElements.last().name]?.isNotEmpty() == true)
-                            OptionalGene(
-                                state.inputTypeName[tupleElements.last().name].toString(), TupleGene(
-                                    state.inputTypeName[tupleElements.last().name].toString(), tupleElements,
+                        //Due to arrays in return
+                        if (tupleName == null) {
+                            if (state.inputTypeName[tupleElements.last().name]?.isNotEmpty() == true)
+                                OptionalGene(
+                                    state.inputTypeName[tupleElements.last().name].toString(), TupleGene(
+                                        state.inputTypeName[tupleElements.last().name].toString(), tupleElements,
+                                        lastElementTreatedSpecially = true
+                                    )
+                                ) else OptionalGene(
+                                tupleElements.last().name, TupleGene(
+                                    tupleElements.last().name, tupleElements,
                                     lastElementTreatedSpecially = true
                                 )
-                            ) else OptionalGene(
-                            tupleElements.last().name, TupleGene(
-                                tupleElements.last().name, tupleElements,
-                                lastElementTreatedSpecially = true
                             )
-                        )
+                        } else {
+
+                            if (state.inputTypeName[tupleName]?.isNotEmpty() == true)
+                                OptionalGene(
+                                    state.inputTypeName[tupleName].toString(), TupleGene(
+                                        state.inputTypeName[tupleName].toString(), tupleElements,
+                                        lastElementTreatedSpecially = true
+                                    )
+                                ) else OptionalGene(
+                                tupleName, TupleGene(
+                                    tupleName, tupleElements,
+                                    lastElementTreatedSpecially = true
+                                )
+                            )
+
+                        }
                     } else {
                         //Dropping the last element since it is a primitive type
                         if (state.inputTypeName[tupleElements.last().name]?.isNotEmpty() == true)

@@ -147,7 +147,7 @@ class GraphQLActionBuilderTest {
         assertTrue(algorand.parameters[1].gene is ObjectGene)
         val objAlgorand = algorand.parameters[1].gene as ObjectGene
         assertEquals(7, objAlgorand.fields.size)
-        assertTrue(objAlgorand.fields.any { it.getWrappedGene(TupleGene::class.java)?.name == "address" })
+        assertTrue(objAlgorand.fields.any { it.getWrappedGene(TupleGene::class.java)?.name == "address" })//1st
 
     }
 
@@ -1131,7 +1131,7 @@ class GraphQLActionBuilderTest {
 
         assertTrue(objPage.fields.any {
             it.getWrappedGene(TupleGene::class.java)?.name == "activities" &&
-                    it.getWrappedGene(TupleGene::class.java)?.lastElementTreatedSpecially == true })
+                    it.getWrappedGene(TupleGene::class.java)?.lastElementTreatedSpecially == true })//nbr12
 
         val optActivities = objPage.fields.first { it.getWrappedGene(TupleGene::class.java)?.name == "activities" }
 
@@ -1140,7 +1140,7 @@ class GraphQLActionBuilderTest {
             assertTrue(tupleActivities.elements.any { it.getWrappedGene(ObjectGene::class.java)?.name == "activities#UNION#" })
         }
 
-        val unionObjectActivities = (tupleActivities?.elements?.last() as OptionalGene).gene as ObjectGene
+        val unionObjectActivities = tupleActivities?.elements?.last() as ObjectGene
 
         assertEquals(3, unionObjectActivities.fields.size)
 
@@ -1457,7 +1457,7 @@ class GraphQLActionBuilderTest {
 
         val tupleDataSetMetadataList = optDataSetMetadataList.getWrappedGene(TupleGene::class.java)
         assertEquals(3, tupleDataSetMetadataList?.elements?.size)
-        assertTrue((tupleDataSetMetadataList?.elements?.last() as OptionalGene).gene !is CycleObjectGene)
+        assertTrue(tupleDataSetMetadataList?.elements?.last() !is CycleObjectGene)
     }
 
     //@Disabled("this gives lot of GC issues")
@@ -1771,6 +1771,23 @@ class GraphQLActionBuilderTest {
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
 
         assertEquals(19, actionCluster.size)
+
+        val live = actionCluster["live"] as GraphQLAction
+        assertEquals(1, live.parameters.size)
+        assertTrue(live.parameters[0] is GQReturnParam)
+        assertTrue(live.parameters[0].gene is ObjectGene)
+
+        val objLive = live.parameters[0].gene as ObjectGene
+        assertTrue(objLive.fields.any { it.getWrappedGene(TupleGene::class.java)?.name == "matches" })
+
+        val optMatches = objLive.fields.first { it.name == "matches" }
+
+        val tupleMatches = optMatches.getWrappedGene(TupleGene::class.java)
+        if (tupleMatches != null) {
+            assertEquals(2, tupleMatches.elements.size)
+            assertTrue(tupleMatches.elements.any { it is ObjectGene && it.name == "matches" })
+        }
+
     }
 
     @Test
