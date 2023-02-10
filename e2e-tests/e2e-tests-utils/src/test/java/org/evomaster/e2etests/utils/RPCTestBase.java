@@ -15,7 +15,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class RPCTestBase extends WsTestBase{
+public class RPCTestBase extends EnterpriseTestBase {
 
     protected Solution<RPCIndividual> initAndRun(List<String> args){
         return (Solution<RPCIndividual>) Main.initAndRun(args.toArray(new String[0]));

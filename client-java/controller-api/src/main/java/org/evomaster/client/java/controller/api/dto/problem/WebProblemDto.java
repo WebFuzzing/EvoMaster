@@ -1,6 +1,6 @@
 package org.evomaster.client.java.controller.api.dto.problem;
 
-public class WebProblem extends ProblemInfoDto{
+public class WebProblemDto extends ProblemInfoDto{
 
     /**
      * URL of the main starting page of the Web Application.
