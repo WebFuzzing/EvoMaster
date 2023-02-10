@@ -820,7 +820,7 @@ class RestActionBuilderV3Test{
     @ParameterizedTest
     @ValueSource(booleans = [true, false])
     fun testadyen_checkoutservice41(enableConstraintHandling : Boolean){
-        loadAndAssertActions("/swagger/apisguru-v3/adyen_checkoutservice41.yaml", 18, enableConstraintHandling = enableConstraintHandling)
+        loadAndAssertActions("/swagger/apisguru-v3/adyen_checkoutservice41.yaml", 9, enableConstraintHandling = enableConstraintHandling)
     }
 
     @ParameterizedTest
