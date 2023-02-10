@@ -60,7 +60,8 @@ Also, some of these papers provides full replication packages, which are linked 
   Applications And Library Support for Software
   Testing Research*.
   IEEE International Conference on Software Testing, Validation and Verification (ICST).
-  [to appear]
+  *(to appear)*
+  [[PDF](publications/2023_icst_emb.pdf)]
 
 ### 2022
 
