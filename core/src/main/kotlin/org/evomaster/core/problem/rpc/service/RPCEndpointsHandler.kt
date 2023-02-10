@@ -263,6 +263,9 @@ class RPCEndpointsHandler {
         }
     }
 
+    /**
+     * cover [action] to a dto for handling mock RPC external services at the driver side, eg, customized method
+     */
     fun transformMockRPCExternalServiceDto(action: ApiExternalServiceAction) : MockRPCExternalServiceDto{
         if (action !is RPCExternalServiceAction)
             throw IllegalStateException("only support RPC external service action for the moment")

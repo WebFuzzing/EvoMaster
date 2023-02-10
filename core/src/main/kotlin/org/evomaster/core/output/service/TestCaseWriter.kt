@@ -202,8 +202,11 @@ abstract class TestCaseWriter {
     /**
      * handle action call generation
      * @param action is the call to be generated
+     * @param index is the index of the action in a test
+     * @param testCaseName is the name of the test to be saved
      * @param lines are generated lines which save the generated test scripts
      * @param result is the execution result of the action
+     * @param testSuitePath is the path where to save the test suite, such info might be used to save files used in the test
      * @param baseUrlOfSut is the base url of sut
      */
     protected abstract fun addActionLines(action: Action, index: Int, testCaseName: String, lines: Lines, result: ActionResult, testSuitePath: Path?, baseUrlOfSut: String)

@@ -14,6 +14,9 @@ public class SutRunDto {
 
     /**
      * Whether to reset the mocked external services with customized method
+     *
+     * this depends on the configuration from core side,
+     * ie, whether to apply customized method to handle external services
      */
     public Boolean resetMockedExternalServicesWithCustomizedMethod;
 
