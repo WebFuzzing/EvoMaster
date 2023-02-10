@@ -272,10 +272,9 @@ internal class GeneUtilsTest {
                         "optionalTuple",
                         listOf(
                             IntegerGene("IntegerGene"),
-                            OptionalGene(
-                                "optionalObject",
-                                ObjectGene("object2", listOf(booleanGene))
-                            )
+
+                            ObjectGene("object2", listOf(booleanGene))// could never be an opt
+
                         ),
                         lastElementTreatedSpecially = true
                     )
@@ -288,6 +287,33 @@ internal class GeneUtilsTest {
         assertTrue(booleanGene.value)
     }
 
+    @Test
+    fun testRepairBooleanSectionInTupleLastElementObject() {
+
+        val objBooleanAndOptional = ObjectGene(
+            "foo", listOf(
+                BooleanGene("boolean",value = false),//to see if it is repaired
+                OptionalGene("opt",
+                    TupleGene(
+                        "tuple1",
+                        listOf(
+                            ObjectGene(
+                                "ObjInLastTuple",
+                                listOf(BooleanGene("boolean"))
+                            ),
+                        ),
+                        lastElementTreatedSpecially = true
+                    ),isActive = false)//to see if it is repaired
+            )
+        )
+
+        val tuple = TupleGene("tuple2", listOf(objBooleanAndOptional), lastElementTreatedSpecially = true)
+        val rootObj = ObjectGene("rootObj", listOf(tuple))
+        GeneUtils.repairBooleanSelection(rootObj)
+
+        val objBoolAndOptRepaired=(rootObj.fields.first { it is TupleGene } as TupleGene).elements.last() as ObjectGene
+        assertTrue(objBoolAndOptRepaired.fields.any { (it is BooleanGene && it.value) || (it is OptionalGene && it.isActive) })
+    }
 
     @Test
     fun testRepairInPetclinic() {
