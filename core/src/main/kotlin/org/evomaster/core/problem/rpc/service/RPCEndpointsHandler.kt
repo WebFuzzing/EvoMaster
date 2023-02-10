@@ -40,6 +40,7 @@ import org.evomaster.core.search.gene.collection.PairGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.numeric.*
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
+import org.evomaster.core.search.gene.optional.FlexibleCycleObjectGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.regex.RegexGene
@@ -440,7 +441,7 @@ class RPCEndpointsHandler {
 
         setAuthInfo(infoDto)
 
-        // handle seeded test dto
+        // handle seeded external service info dto
         infoDto.rpcProblem.seededTestDtos?.forEach { t->
             t.forEach { a->
                 extractRPCExternalServiceAction(infoDto, a)
@@ -675,6 +676,19 @@ class RPCEndpointsHandler {
             }
             is ObjectGene -> {
                 valueGene.fields.forEach { f->
+                    val cpdto = dto.innerContent.find { it.name == f.name }
+                    if (cpdto == null){
+                        if (valueGene.parent is FlexibleCycleObjectGene){
+                            Lazy.assert { dto.innerContent == null || dto.innerContent.isEmpty() }
+                            val found = actionSchemaCluster.values
+                                .flatMap { it.requestParams }
+                                .find { p-> p.type.fullTypeNameWithGenericType == valueGene.refType  || p.findObjectByTypeName(valueGene.refType) != null}
+                                ?:throw IllegalStateException("could not find template object (${valueGene.refType}) in actionSchemaCluster")
+                            val objTemplate = if (found.type.fullTypeNameWithGenericType == valueGene.refType) found else found.findObjectByTypeName(valueGene.refType)
+                            dto.innerContent = (objTemplate!!.copy()).innerContent
+                        }else
+                            throw IllegalStateException("could not find the field (${f.name}) in ParamDto")
+                    }
                     val pdto = dto.innerContent.find { it.name == f.name }
                         ?:throw IllegalStateException("could not find the field (${f.name}) in ParamDto")
                     transformGeneToParamDto(f, pdto)
@@ -773,8 +787,23 @@ class RPCEndpointsHandler {
                     }
                 }
                 is CycleObjectGene ->{
-                    if (dto.innerContent != null){
-                        LoggingUtil.uniqueWarn(log, "NOT support to handle cycle object with more than 2 depth")
+                    if (!isNullDto(dto) && dto.innerContent != null && dto.innerContent.isNotEmpty()){
+                        if (valueGene.refType!=null && valueGene.parent != null && valueGene.parent is FlexibleCycleObjectGene){
+                            val template = typeCache[valueGene.refType]
+                            if (template == null || template !is ObjectGene){
+                                LoggingUtil.uniqueWarn(log, "Cannot find object gene with ${valueGene.refType} in cached types")
+                            }else{
+                                val replaced = template.copy() as ObjectGene
+                                (valueGene.parent as FlexibleCycleObjectGene).replaceGeneTo(replaced)
+                                replaced.fields.forEach { f->
+                                    val pdto = dto.innerContent.find { it.name == f.name }
+                                        ?:throw IllegalStateException("could not find the field (${f.name}) in ParamDto")
+                                    setGeneBasedOnParamDto(f, pdto)
+                                }
+                            }
+                        }else{
+                            LoggingUtil.uniqueWarn(log, "NOT support to handle cycle object with more than 2 depth (refType: ${valueGene.refType}, parent: ${valueGene.parent?.javaClass?.name?:"null-parent"})")
+                        }
                     }
                 }
                 else -> throw IllegalStateException("Not support setGeneBasedOnParamDto with gene ${gene::class.java.simpleName} and dto (${dto.type.type})")
@@ -831,7 +860,7 @@ class RPCEndpointsHandler {
             RPCSupportedDataType.ARRAY, RPCSupportedDataType.SET, RPCSupportedDataType.LIST-> valueGene is ArrayGene<*>
             RPCSupportedDataType.MAP -> valueGene is FixedMapGene<*, *>
             RPCSupportedDataType.CUSTOM_OBJECT -> valueGene is ObjectGene || valueGene is FixedMapGene<*, *>
-            RPCSupportedDataType.CUSTOM_CYCLE_OBJECT -> valueGene is CycleObjectGene
+            RPCSupportedDataType.CUSTOM_CYCLE_OBJECT -> valueGene is CycleObjectGene || valueGene is FlexibleCycleObjectGene || valueGene is ObjectGene
             RPCSupportedDataType.UTIL_DATE -> valueGene is DateTimeGene
             RPCSupportedDataType.PAIR -> valueGene is PairGene<*, *>
             RPCSupportedDataType.BIGDECIMAL -> valueGene is BigDecimalGene
@@ -943,7 +972,7 @@ class RPCEndpointsHandler {
             RPCSupportedDataType.MAP -> handleMapParam(param, building)
             RPCSupportedDataType.UTIL_DATE -> handleUtilDate(param)
             RPCSupportedDataType.CUSTOM_OBJECT -> handleObjectParam(param)
-            RPCSupportedDataType.CUSTOM_CYCLE_OBJECT -> CycleObjectGene(param.name)
+            RPCSupportedDataType.CUSTOM_CYCLE_OBJECT -> FlexibleCycleObjectGene(param.name, CycleObjectGene(param.name, param.type.fullTypeNameWithGenericType))
             RPCSupportedDataType.PAIR -> throw IllegalStateException("ERROR: pair should be handled inside Map")
             RPCSupportedDataType.BIGINTEGER ->
                 BigIntegerGene(param.name, min = param.minValue?.toBigIntegerOrNull(), max = param.maxValue?.toBigIntegerOrNull(),

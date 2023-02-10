@@ -21,13 +21,13 @@ import org.slf4j.LoggerFactory
  * might not follow a fixed typed. FlexibleMap is added, might need it for
  * array gene
  */
-class FlexibleGene(name: String,
+open class FlexibleGene(name: String,
                    gene: Gene,
-                   private var replaceable: Boolean = true
+                   protected var replaceable: Boolean = true
 ) : CompositeGene(name, mutableListOf(gene)) {
 
     init {
-        geneCheck(gene)
+        validateGeneToReplace(gene)
     }
 
     companion object{
@@ -53,10 +53,10 @@ class FlexibleGene(name: String,
         replaceable = false
     }
 
-    fun replaceGeneTo(geneToUpdate: Gene){
+    open fun replaceGeneTo(geneToUpdate: Gene){
         if (!replaceable)
             throw IllegalStateException("attempt to replace the gene which is not replaceable")
-        geneCheck(geneToUpdate)
+        validateGeneToReplace(geneToUpdate)
         Lazy.assert { children.size == 1 }
 
         killAllChildren()
@@ -148,7 +148,7 @@ class FlexibleGene(name: String,
         return gene.getValueAsRawString()
     }
 
-    private fun geneCheck(geneToBeUpdated : Gene){
+    private fun validateGeneToReplace(geneToBeUpdated : Gene){
         if (geneToBeUpdated is FlexibleGene){
             throw IllegalArgumentException("For a FlexibleGene, its gene to be employed or updated cannot be FlexibleGene")
         }

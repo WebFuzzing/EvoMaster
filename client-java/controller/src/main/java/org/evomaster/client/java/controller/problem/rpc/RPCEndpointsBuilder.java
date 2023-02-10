@@ -526,6 +526,7 @@ public class RPCEndpointsBuilder {
                 // note that here we only extract class name and message
                 StringParam msgField = new StringParam("message", new AccessibleSchema(false, null, "getMessage"));
                 ObjectType exceptionType = new ObjectType(clazz.getSimpleName(), clazz.getName(), Collections.singletonList(msgField), clazz, genericTypes);
+                exceptionType.ownerSchema = schema;
                 namedValue = new ObjectParam(name, exceptionType, accessibleSchema);
             } else {
                 if (clazz.getName().startsWith("java")){
@@ -590,6 +591,7 @@ public class RPCEndpointsBuilder {
                     handleNativeRPCConstraints(clazz, fields, rpcType);
 
                     ObjectType otype = new ObjectType(clazz.getSimpleName(), clazz.getName(), fields, clazz, genericTypes);
+                    otype.ownerSchema = schema;
                     otype.setOriginalType(originalType);
                     otype.depth = getDepthLevel(clazz, depth, clazzWithGenericTypes);
                     ObjectParam oparam = new ObjectParam(name, otype, accessibleSchema);
@@ -597,6 +599,7 @@ public class RPCEndpointsBuilder {
                     namedValue = oparam;
                 }else {
                     CycleObjectType otype = new CycleObjectType(clazz.getSimpleName(), clazz.getName(), clazz, genericTypes);
+                    otype.ownerSchema = schema;
                     otype.depth = getDepthLevel(clazz, depth, clazzWithGenericTypes);
                     ObjectParam oparam = new ObjectParam(name, otype, accessibleSchema);
                     schema.registerType(otype.copy(), oparam, isTypeToIdentify);

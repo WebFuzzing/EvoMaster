@@ -1,10 +1,9 @@
 package org.evomaster.client.java.controller.problem.rpc.invocation;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thrift.example.artificial.*;
 import io.restassured.RestAssured;
-import io.restassured.common.mapper.TypeRef;
-import io.restassured.path.json.JsonPath;
-import io.restassured.response.ResponseBodyExtractionOptions;
 import org.apache.thrift.TApplicationException;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TProtocolException;
@@ -14,7 +13,6 @@ import org.evomaster.client.java.controller.api.dto.ActionResponseDto;
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.*;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.exception.RPCExceptionType;
-import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -26,7 +24,6 @@ import java.util.stream.Collectors;
 
 
 import static io.restassured.RestAssured.given;
-import static org.evomaster.client.java.controller.contentMatchers.NumberMatcher.numbersMatch;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -39,6 +36,8 @@ public class RPCSutControllerTest {
 
     private static List<RPCInterfaceSchemaDto> interfaceSchemas;
     private static List<List<RPCActionDto>> seededTestDtos;
+
+    private static ObjectMapper mapper = new ObjectMapper();
 
     @BeforeAll
     public static void initClass() {
@@ -351,6 +350,28 @@ public class RPCSutControllerTest {
                 "assertEquals(\"-10\", res1.get(0).getBiNegative().toString());\n" +
                 "assertEquals(\"-2\", res1.get(0).getBiNegativeOrZero().toString());";
         assertEquals(expectedAssertions, String.join("\n", responseDto.assertionScript));
+    }
+
+    @Test
+    public void testCycleAObj() throws JsonProcessingException {
+        List<RPCActionDto> dtos = interfaceSchemas.get(0).endpoints.stream().filter(s-> s.actionName.equals("objCycleA")).collect(Collectors.toList());
+        assertEquals(1, dtos.size());
+        RPCActionDto dto = dtos.get(0).copy();
+        assertEquals(1, dto.requestParams.size());
+        dto.doGenerateAssertions = true;
+        dto.doGenerateTestScript = true;
+        dto.controllerVariable = "rpcController";
+
+        String json = "{\"name\":\"arg0\",\"type\":{\"fullTypeName\":\"com.thrift.example.artificial.CycleAObj\",\"fullTypeNameWithGenericType\":\"com.thrift.example.artificial.CycleAObj\",\"type\":\"CUSTOM_OBJECT\",\"example\":null,\"depth\":0,\"fixedItems\":null,\"precision\":-1},\"stringValue\":\"{}\",\"innerContent\":[{\"name\":\"aID\",\"type\":{\"fullTypeName\":\"java.lang.String\",\"fullTypeNameWithGenericType\":\"java.lang.String\",\"type\":\"STRING\",\"example\":null,\"depth\":0,\"fixedItems\":null,\"precision\":-1},\"stringValue\":\"a\",\"innerContent\":null,\"isNullable\":true,\"minSize\":null,\"maxSize\":null,\"minValue\":null,\"maxValue\":null,\"precision\":null,\"scale\":null,\"minInclusive\":true,\"maxInclusive\":true,\"pattern\":null,\"candidates\":null,\"candidateReferences\":null,\"isMutable\":true,\"defaultValue\":null},{\"name\":\"obj\",\"type\":{\"fullTypeName\":\"com.thrift.example.artificial.CycleBObj\",\"fullTypeNameWithGenericType\":\"com.thrift.example.artificial.CycleBObj\",\"type\":\"CUSTOM_OBJECT\",\"example\":null,\"depth\":1,\"fixedItems\":null,\"precision\":-1},\"stringValue\":\"{}\",\"innerContent\":[{\"name\":\"bID\",\"type\":{\"fullTypeName\":\"java.lang.String\",\"fullTypeNameWithGenericType\":\"java.lang.String\",\"type\":\"STRING\",\"example\":null,\"depth\":0,\"fixedItems\":null,\"precision\":-1},\"stringValue\":\"ab\",\"innerContent\":null,\"isNullable\":true,\"minSize\":null,\"maxSize\":null,\"minValue\":null,\"maxValue\":null,\"precision\":null,\"scale\":null,\"minInclusive\":true,\"maxInclusive\":true,\"pattern\":null,\"candidates\":null,\"candidateReferences\":null,\"isMutable\":true,\"defaultValue\":null},{\"name\":\"obj\",\"type\":{\"fullTypeName\":\"com.thrift.example.artificial.CycleAObj\",\"fullTypeNameWithGenericType\":\"com.thrift.example.artificial.CycleAObj\",\"type\":\"CUSTOM_CYCLE_OBJECT\",\"example\":null,\"depth\":0,\"fixedItems\":null,\"precision\":-1},\"stringValue\":\"{}\",\"innerContent\":[{\"name\":\"aID\",\"type\":{\"fullTypeName\":\"java.lang.String\",\"fullTypeNameWithGenericType\":\"java.lang.String\",\"type\":\"STRING\",\"example\":null,\"depth\":0,\"fixedItems\":null,\"precision\":-1},\"stringValue\":\"aba\",\"innerContent\":null,\"isNullable\":true,\"minSize\":null,\"maxSize\":null,\"minValue\":null,\"maxValue\":null,\"precision\":null,\"scale\":null,\"minInclusive\":true,\"maxInclusive\":true,\"pattern\":null,\"candidates\":null,\"candidateReferences\":null,\"isMutable\":true,\"defaultValue\":null},{\"name\":\"obj\",\"type\":{\"fullTypeName\":\"com.thrift.example.artificial.CycleBObj\",\"fullTypeNameWithGenericType\":\"com.thrift.example.artificial.CycleBObj\",\"type\":\"CUSTOM_CYCLE_OBJECT\",\"example\":null,\"depth\":0,\"fixedItems\":null,\"precision\":-1},\"stringValue\":\"{}\",\"innerContent\":[{\"name\":\"bID\",\"type\":{\"fullTypeName\":\"java.lang.String\",\"fullTypeNameWithGenericType\":\"java.lang.String\",\"type\":\"STRING\",\"example\":null,\"depth\":0,\"fixedItems\":null,\"precision\":-1},\"stringValue\":\"abab\",\"innerContent\":null,\"isNullable\":true,\"minSize\":null,\"maxSize\":null,\"minValue\":null,\"maxValue\":null,\"precision\":null,\"scale\":null,\"minInclusive\":true,\"maxInclusive\":true,\"pattern\":null,\"candidates\":null,\"candidateReferences\":null,\"isMutable\":true,\"defaultValue\":null},{\"name\":\"obj\",\"type\":{\"fullTypeName\":\"com.thrift.example.artificial.CycleAObj\",\"fullTypeNameWithGenericType\":\"com.thrift.example.artificial.CycleAObj\",\"type\":\"CUSTOM_CYCLE_OBJECT\",\"example\":null,\"depth\":0,\"fixedItems\":null,\"precision\":-1},\"stringValue\":null,\"innerContent\":[],\"isNullable\":true,\"minSize\":null,\"maxSize\":null,\"minValue\":null,\"maxValue\":null,\"precision\":null,\"scale\":null,\"minInclusive\":false,\"maxInclusive\":false,\"pattern\":null,\"candidates\":null,\"candidateReferences\":null,\"isMutable\":true,\"defaultValue\":null}],\"isNullable\":true,\"minSize\":null,\"maxSize\":null,\"minValue\":null,\"maxValue\":null,\"precision\":null,\"scale\":null,\"minInclusive\":false,\"maxInclusive\":false,\"pattern\":null,\"candidates\":null,\"candidateReferences\":null,\"isMutable\":true,\"defaultValue\":null}],\"isNullable\":true,\"minSize\":null,\"maxSize\":null,\"minValue\":null,\"maxValue\":null,\"precision\":null,\"scale\":null,\"minInclusive\":false,\"maxInclusive\":false,\"pattern\":null,\"candidates\":null,\"candidateReferences\":null,\"isMutable\":true,\"defaultValue\":null}],\"isNullable\":true,\"minSize\":null,\"maxSize\":null,\"minValue\":null,\"maxValue\":null,\"precision\":null,\"scale\":null,\"minInclusive\":false,\"maxInclusive\":false,\"pattern\":null,\"candidates\":null,\"candidateReferences\":null,\"isMutable\":true,\"defaultValue\":null}],\"isNullable\":true,\"minSize\":null,\"maxSize\":null,\"minValue\":null,\"maxValue\":null,\"precision\":null,\"scale\":null,\"minInclusive\":false,\"maxInclusive\":false,\"pattern\":null,\"candidates\":null,\"candidateReferences\":null,\"isMutable\":true,\"defaultValue\":null}";
+
+        ParamDto cycleA2depth = mapper.readValue(json, ParamDto.class);
+        dto.requestParams.clear();
+        dto.requestParams.add(cycleA2depth);
+
+        ActionResponseDto responseDto = new ActionResponseDto();
+        rpcController.executeAction(dto, responseDto);
+
+        assertEquals("{\"aID\":\"a\",\"obj\":{\"bID\":\"ab\",\"obj\":{\"aID\":\"aba\",\"obj\":{\"bID\":\"abab\",\"obj\":null}}}}", responseDto.jsonResponse);
     }
 
     @Test

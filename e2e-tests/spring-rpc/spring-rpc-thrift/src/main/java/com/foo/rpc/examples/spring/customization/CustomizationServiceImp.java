@@ -37,4 +37,12 @@ public class CustomizationServiceImp implements CustomizationService.Iface{
             return 101;
         return 0;
     }
+
+    @Override
+    public CycleADto handleCycleDto(CycleADto dto) throws TException {
+        if (dto == null) return null;
+        if (dto.obj != null && dto.obj.obj != null && dto.obj.obj.obj != null && dto.obj.obj.obj.obj != null)
+            return dto;
+        return null;
+    }
 }

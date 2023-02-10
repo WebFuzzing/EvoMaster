@@ -23,7 +23,7 @@ public class StringType extends TypeSchema {
     }
 
     @Override
-    public StringType copy() {
+    public StringType copyContent() {
         return new StringType();
     }
 }

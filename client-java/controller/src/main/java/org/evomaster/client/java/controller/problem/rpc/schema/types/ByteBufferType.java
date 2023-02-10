@@ -25,7 +25,7 @@ public class ByteBufferType extends TypeSchema {
     }
 
     @Override
-    public ByteBufferType copy() {
+    public ByteBufferType copyContent() {
         return new ByteBufferType();
     }
 }

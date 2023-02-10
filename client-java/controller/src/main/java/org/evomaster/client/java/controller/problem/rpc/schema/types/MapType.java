@@ -43,7 +43,7 @@ public class MapType extends TypeSchema{
     }
 
     @Override
-    public MapType copy() {
+    public MapType copyContent() {
         return new MapType(getType(),getFullTypeName(), template, getClazz());
     }
 }

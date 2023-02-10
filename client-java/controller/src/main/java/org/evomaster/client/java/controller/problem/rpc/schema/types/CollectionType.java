@@ -37,7 +37,7 @@ public class CollectionType extends TypeSchema{
     }
 
     @Override
-    public CollectionType copy() {
+    public CollectionType copyContent() {
         return new CollectionType(getType(), getFullTypeName(), template, getClazz());
     }
 }

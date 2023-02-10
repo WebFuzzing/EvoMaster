@@ -238,7 +238,7 @@ public class DateType extends TypeSchema {
 
 
     @Override
-    public DateType copy() {
+    public DateType copyContent() {
         return new DateType();
     }
 }

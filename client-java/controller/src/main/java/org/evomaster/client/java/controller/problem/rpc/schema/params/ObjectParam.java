@@ -3,10 +3,7 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
-import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
-import org.evomaster.client.java.controller.problem.rpc.schema.types.ObjectType;
-import org.evomaster.client.java.controller.problem.rpc.schema.types.PrimitiveOrWrapperType;
-import org.evomaster.client.java.controller.problem.rpc.schema.types.TypeSchema;
+import org.evomaster.client.java.controller.problem.rpc.schema.types.*;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.lang.reflect.Field;
@@ -118,6 +115,10 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
 
         if (dto.innerContent!=null && !dto.innerContent.isEmpty()){
             List<NamedTypedValue> fields = getType().getFields();
+            List<NamedTypedValue> fs = getFieldsForCycleObjectType();
+            if (fs != null)
+                fields = fs;
+
             List<NamedTypedValue> values = new ArrayList<>();
 
             for (ParamDto p: dto.innerContent){
@@ -134,12 +135,21 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
     protected void setValueBasedOnValidInstance(Object instance) {
         List<NamedTypedValue> values = new ArrayList<>();
         List<NamedTypedValue> fields = getType().getFields();
+
+        if (instance != null && (fields == null || fields.isEmpty())){
+            List<NamedTypedValue> fs = getFieldsForCycleObjectType();
+            if (fs != null)
+                fields = fs;
+        }
+
         Class<?> clazz;
         try {
             clazz = Class.forName(getType().getFullTypeName());
         } catch (ClassNotFoundException e) {
             throw new RuntimeException("ERROR: fail to get class with the name"+getType().getFullTypeName()+" Msg:"+e.getMessage());
         }
+
+
         for (NamedTypedValue f: fields){
             NamedTypedValue copy = f.copyStructureWithProperties();
             try {
@@ -161,7 +171,6 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
 
             values.add(copy);
         }
-
         setValue(values);
     }
 
@@ -189,6 +198,10 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
          */
         if (!(instance instanceof Map))
             throw new RuntimeException("cannot parse the map param "+getName()+ " with the type" + instance.getClass().getName());
+
+        List<NamedTypedValue> fs = getFieldsForCycleObjectType();
+        if (fs != null)
+            fields = fs;
 
         for (NamedTypedValue f: fields){
             NamedTypedValue copy = f.copyStructureWithProperties();
@@ -267,6 +280,22 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
 
     @Override
     public String getValueAsJavaString() {
+        return null;
+    }
+
+    private List<NamedTypedValue> getFieldsForCycleObjectType(){
+        if (!(getType() instanceof CycleObjectType))
+            return null;
+
+        if (getType().ownerSchema == null)
+            SimpleLogger.warn("owner schema of the type is null");
+        else {
+            TypeSchema typeSchema = getType().ownerSchema.getTypeCollections().get(getType().getFullTypeNameWithGenericType());
+            if (typeSchema == null || !(typeSchema instanceof ObjectType))
+                SimpleLogger.warn("cannot find the object type with name "+getType().getFullTypeNameWithGenericType());
+            else
+                return ((ObjectType)typeSchema.copy()).getFields();
+        }
         return null;
     }
 

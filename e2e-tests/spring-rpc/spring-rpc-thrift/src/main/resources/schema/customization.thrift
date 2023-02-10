@@ -11,10 +11,22 @@ struct RequestWithSeedDto {
     2: string info
 }
 
+struct CycleADto{
+    1: required string aID,
+    2: CycleBDto obj
+}
+
+struct CycleBDto{
+    1: required string bID,
+    2: CycleADto obj
+}
+
 service CustomizationService {
 
     i32 handleDependent(1:RequestWithSeedDto dto),
 
     i32 handleCombinedSeed(1:RequestWithCombinedSeedDto dto)
+
+    CycleADto handleCycleDto(1:CycleADto dto)
 
 }

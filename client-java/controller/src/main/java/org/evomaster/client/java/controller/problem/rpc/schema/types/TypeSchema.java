@@ -1,6 +1,7 @@
 package org.evomaster.client.java.controller.problem.rpc.schema.types;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.TypeDto;
+import org.evomaster.client.java.controller.problem.rpc.schema.InterfaceSchema;
 
 /**
  * type schema
@@ -51,7 +52,16 @@ public abstract class TypeSchema {
         return fullTypeName;
     }
 
-    public abstract TypeSchema copy();
+    public InterfaceSchema ownerSchema;
+
+    public abstract TypeSchema copyContent();
+
+    public TypeSchema copy(){
+        TypeSchema content = copyContent();
+        // keep refer to schema
+        content.ownerSchema = ownerSchema;
+        return content;
+    }
 
     public TypeDto getDto(){
         TypeDto dto = new TypeDto();

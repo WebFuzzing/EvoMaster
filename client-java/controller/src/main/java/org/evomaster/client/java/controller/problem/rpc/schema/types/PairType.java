@@ -49,7 +49,7 @@ public class PairType extends TypeSchema{
     }
 
     @Override
-    public PairType copy() {
+    public PairType copyContent() {
         return new PairType(getFirstTemplate(), getSecondTemplate());
     }
 }
