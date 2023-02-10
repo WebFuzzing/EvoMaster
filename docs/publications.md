@@ -42,9 +42,16 @@ Also, some of these papers provides full replication packages, which are linked 
 
 ### 2023
 
+* A. Arcuri, M Zhang, A. Belhadi, B. Marculescu, A. Golmohammadi, J. P. Galeotti, S. Seran.
+  *Building An Open-Source System Test Generation Tool: Lessons Learned And Empirical Analyses with EvoMaster*.
+  Software Quality Journal (SQJ). 
+  *(to appear)*
+  [[PDF](publications/2023_sqj_tool.pdf)]
+
 * M. Zhang, A. Arcuri, Y. Li, Y. Liu, K. Xue.
   *White-box Fuzzing RPC-based APIs with EvoMaster: An Industrial Case Study*.
-  ACM Transactions on Software Engineering and Methodology (TOSEM).
+  ACM Transactions on Software Engineering and Methodology (TOSEM). 
+  *(to appear)*
   [[PDF](publications/2023_tosem_rpc.pdf)]
 
 
