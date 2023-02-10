@@ -3,6 +3,10 @@ package org.evomaster.e2etests.spring.openapi.v3.wiremock.harvestoptimisation
 import com.alibaba.dcm.DnsCacheManipulator
 import com.foo.rest.examples.spring.openapi.v3.wiremock.harvestoptimisation.HarvestOptimisationController
 import com.foo.rest.examples.spring.openapi.v3.wiremock.harvestresponse.WmHarvestResponseController
+import com.github.tomakehurst.wiremock.WireMockServer
+import com.github.tomakehurst.wiremock.client.WireMock
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration
+import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer
 import org.evomaster.ci.utils.CIUtils
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.HttpVerb
@@ -15,6 +19,9 @@ import org.junit.jupiter.api.Test
 class HarvestOptimisationEMTest: SpringTestBase() {
 
     companion object {
+
+        private var wireMockServer: WireMockServer? = null
+
         @BeforeAll
         @JvmStatic
         fun init() {
@@ -24,16 +31,27 @@ class HarvestOptimisationEMTest: SpringTestBase() {
 
             CIUtils.skipIfOnGA()
 
-            /**
-             * If the host name is localhost or starts with 127, host replacement will
-             * skip it from handling external service. To avoid that fake host name used.
-             */
-            DnsCacheManipulator.setDnsCache("mock.int", "127.0.0.2")
+            val wmConfig = WireMockConfiguration()
+                .bindAddress("127.0.0.1")
+                .port(9999)
+                .extensions(ResponseTemplateTransformer(false))
+
+            wireMockServer = WireMockServer(wmConfig)
+            wireMockServer!!.start()
+            wireMockServer!!.stubFor(
+                WireMock.get(
+                    WireMock.urlEqualTo("/api/mock"))
+                .atPriority(1)
+                    .willReturn(WireMock.aResponse().withStatus(200).withBody("{\"message\" : \"Working\"}"))
+            )
+
+            DnsCacheManipulator.setDnsCache("mock.int", "127.0.0.1")
         }
 
         @AfterAll
         @JvmStatic
         fun shutdown() {
+            wireMockServer!!.stop()
             DnsCacheManipulator.clearDnsCache()
         }
     }
@@ -45,8 +63,7 @@ class HarvestOptimisationEMTest: SpringTestBase() {
             "HarvestOptimisationEM",
             "org.foo.HarvestOptimisationEM",
             1000,
-//            !CIUtils.isRunningGA(),
-            false,
+            !CIUtils.isRunningGA(),
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")
