@@ -189,7 +189,7 @@ class ObjectGene(
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
 
-        if (other.isFixed == isFixed)
+        if (other.isFixed != isFixed)
             throw IllegalArgumentException("cannot copy value for ObjectGene if their isFixed is different")
 
         for (i in fixedFields.indices) {
