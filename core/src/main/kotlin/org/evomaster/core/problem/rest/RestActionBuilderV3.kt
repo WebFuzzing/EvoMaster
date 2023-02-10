@@ -764,7 +764,7 @@ object RestActionBuilderV3 {
 
     }
 
-    private fun assembleObjectGeneWithConstraints(name: String, schema: Schema<*>, fields: List<Gene>, additionalFieldTemplate: PairGene<StringGene, *>?, swagger: OpenAPI, history: Deque<String>, referenceTypeName: String?, enableConstraintHandling: Boolean) : Gene{
+    private fun assembleObjectGeneWithConstraints(name: String, schema: Schema<*>, fields: List<Gene>, additionalFieldTemplate: PairGene<StringGene, Gene>?, swagger: OpenAPI, history: Deque<String>, referenceTypeName: String?, enableConstraintHandling: Boolean) : Gene{
         if (!enableConstraintHandling)
             return assembleObjectGene(name, schema, fields, additionalFieldTemplate, referenceTypeName)
 
@@ -794,7 +794,6 @@ object RestActionBuilderV3 {
             val allFields = allOf.mapNotNull {
                 when (it) {
                     is ObjectGene -> it.fields
-                    is FlexibleObjectGene<*> -> it.fields
                     else -> null
                 }
             }.flatten()
@@ -809,7 +808,6 @@ object RestActionBuilderV3 {
             val allFields = anyOf.mapNotNull {
                 when (it) {
                     is ObjectGene -> it.fields
-                    is FlexibleObjectGene<*> -> it.fields
                     else -> null
                 }
             }.flatten()
@@ -844,7 +842,7 @@ object RestActionBuilderV3 {
         //TODO not
     }
 
-    private fun assembleObjectGene(name: String, schema: Schema<*>, fields: List<Gene>, additionalFieldTemplate: PairGene<StringGene, *>?, referenceTypeName: String?) : Gene{
+    private fun assembleObjectGene(name: String, schema: Schema<*>, fields: List<Gene>, additionalFieldTemplate: PairGene<StringGene, Gene>?, referenceTypeName: String?) : Gene{
         if (fields.isEmpty()) {
             if (additionalFieldTemplate != null)
                 return FixedMapGene(name, additionalFieldTemplate)
