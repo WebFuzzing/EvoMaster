@@ -36,7 +36,7 @@ class WebResult : ActionResult {
 
     fun getIdentifyingPageIdEnd() : String? = getResultValue(IDENTIFYING_PAGE_ID_END)
 
-    fun setPossibleActionIds(ids: List<String>) = addResultValue(POSSIBLE_ACTION_IDS, ids.joinToString { "\n" })
+    fun setPossibleActionIds(ids: List<String>) = addResultValue(POSSIBLE_ACTION_IDS, ids.joinToString("\n"))
 
     fun getPossibleActionIds() : List<String> = getResultValue(POSSIBLE_ACTION_IDS)?.split("\n")?.toList()  ?: listOf()
 

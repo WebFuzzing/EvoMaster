@@ -4,19 +4,19 @@ import java.util.List;
 
 public class WebProblem extends ProblemInfo{
 
-    private final String urlOfStartingPage;
+    private final String urlPathOfStartingPage;
 
-    public WebProblem(String urlOfStartingPage) {
-        this.urlOfStartingPage = urlOfStartingPage;
+    public WebProblem(String urlPathOfStartingPage) {
+        this.urlPathOfStartingPage = urlPathOfStartingPage;
     }
 
-    public String getUrlOfStartingPage() {
-        return urlOfStartingPage;
+    public String getUrlPathOfStartingPage() {
+        return urlPathOfStartingPage;
     }
 
     @Override
     public ProblemInfo withServicesToNotMock(List<ExternalService> servicesToNotMock) {
-        WebProblem p = new WebProblem(this.urlOfStartingPage);
+        WebProblem p = new WebProblem(this.urlPathOfStartingPage);
         p.servicesToNotMock.addAll(servicesToNotMock);
         return p;
     }

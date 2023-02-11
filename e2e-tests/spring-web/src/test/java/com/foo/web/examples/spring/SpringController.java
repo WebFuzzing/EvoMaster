@@ -68,7 +68,7 @@ public abstract class SpringController extends EmbeddedSutController {
 
     @Override
     public ProblemInfo getProblemInfo() {
-        return new WebProblem("http://localhost:" + getSutPort()+homePath);
+        return new WebProblem(homePath);
     }
 
     @Override

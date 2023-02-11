@@ -35,10 +35,10 @@ class WebSampler : EnterpriseSampler<WebIndividual>() {
         val infoDto = rc.getSutInfo()
             ?: throw SutProblemException("Failed to retrieve the info about the system under test")
 
-        val startingPage = infoDto.webProblem.urlOfStartingPage
-            ?: throw SutProblemException("Not specified urlOfStartingPage")
+        val startingPage = infoDto.webProblem.urlPathOfStartingPage
+            ?: throw SutProblemException("Not specified urlPathOfStartingPage")
 
-        browserController.initUrlOfStartingPage(startingPage,true)
+        browserController.initUrlOfStartingPage(infoDto.baseUrlOfSUT + startingPage,true)
         browserController.startChromeInDocker()
 
        // setupAuthentication(infoDto)

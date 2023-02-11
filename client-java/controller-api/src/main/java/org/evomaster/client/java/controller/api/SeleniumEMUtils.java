@@ -5,7 +5,6 @@ import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testcontainers.Testcontainers;
 
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Duration;
@@ -19,7 +18,7 @@ public class SeleniumEMUtils {
 
     public static final String TESTCONTAINERS_HOST = "host.testcontainers.internal";
 
-    public static String initUrlOfStartingPageForDocker(String url, boolean modifyLocalHost){
+    public static String validateAndGetUrlOfStartingPageForDocker(String url, boolean modifyLocalHost){
         if(url.isEmpty()){
             throw new IllegalArgumentException("Starting page is not defined");
         }
@@ -66,7 +65,14 @@ public class SeleniumEMUtils {
     }
 
     public static void clickAndWaitPageLoad(WebDriver driver, String cssSelector){
-        WebElement element = driver.findElement(By.cssSelector(cssSelector));
+        WebElement element;
+        try {
+            element = driver.findElement(By.cssSelector(cssSelector));
+        } catch (NoSuchElementException e){
+            throw new RuntimeException("Cannot locate element with '"+cssSelector+"'." +
+                    "\nCurrent URL is: " + driver.getCurrentUrl() +
+                    "\nCurrent page is: " + driver.getPageSource());
+        }
         element.click();
         //TODO can we do better here than waiting a hard-coded timeout?
         try{Thread.sleep(50);} catch (Exception e){}

@@ -7,8 +7,6 @@ import org.evomaster.client.java.controller.api.dto.database.operations.Database
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto;
 import org.evomaster.client.java.controller.api.dto.problem.*;
 import org.evomaster.client.java.controller.problem.*;
-import org.evomaster.client.java.controller.problem.rpc.schema.InterfaceSchema;
-import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCInterfaceSchemaDto;
 import org.evomaster.client.java.controller.db.QueryResult;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.evomaster.client.java.controller.problem.rpc.schema.LocalAuthSetupSchema;
@@ -225,7 +223,7 @@ public class EMController {
         } else if(info instanceof WebProblem){
             WebProblem p = (WebProblem) info;
             dto.webProblem = new WebProblemDto();
-            dto.webProblem.urlOfStartingPage = p.getUrlOfStartingPage();
+            dto.webProblem.urlPathOfStartingPage = p.getUrlPathOfStartingPage();
             dto.webProblem.servicesToNotMock = servicesToNotMock;
         } else {
             String msg = "Unrecognized problem type: " + info.getClass().getName();

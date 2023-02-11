@@ -7,11 +7,7 @@ import org.evomaster.core.problem.webfrontend.WebUserInteraction
 import org.evomaster.core.remote.SutProblemException
 import org.openqa.selenium.chrome.ChromeOptions
 import org.openqa.selenium.remote.RemoteWebDriver
-import org.testcontainers.Testcontainers
 import org.testcontainers.containers.BrowserWebDriverContainer
-import java.net.MalformedURLException
-import java.net.URI
-import java.util.*
 
 
 /**
@@ -31,7 +27,7 @@ class BrowserController {
      * Might need to modify hostname, eg when dealing with browser running inside Docker
      */
     fun initUrlOfStartingPage(url: String, modifyLocalHost: Boolean) : String{
-        urlOfStartingPage = SeleniumEMUtils.initUrlOfStartingPageForDocker(url, modifyLocalHost)
+        urlOfStartingPage = SeleniumEMUtils.validateAndGetUrlOfStartingPageForDocker(url, modifyLocalHost)
         return urlOfStartingPage
     }
 

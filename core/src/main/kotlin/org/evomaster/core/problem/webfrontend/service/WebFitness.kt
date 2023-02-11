@@ -142,7 +142,7 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
         }
 
         actionResults.add(result)
-        return blocking
+        return !blocking
     }
 
     private fun handleResponseTargets(
