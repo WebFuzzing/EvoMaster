@@ -2,6 +2,7 @@ package org.evomaster.core.search.service
 
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
+import org.evomaster.core.problem.webfrontend.service.BrowserController
 
 /**
  * Global state used in the search.
@@ -35,4 +36,7 @@ class SearchGlobalState {
 
     @Inject
     lateinit var spa: StringSpecializationArchive
+
+    @Inject(optional = true)
+    lateinit var browser: BrowserController
 }

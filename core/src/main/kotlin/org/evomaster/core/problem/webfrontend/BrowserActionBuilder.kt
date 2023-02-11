@@ -36,7 +36,7 @@ object BrowserActionBuilder {
 
         //TODO genes for inputs
 
-        return others.map { WebAction(listOf(it)) }
+        return others.map { WebAction(mutableListOf(it)) }
     }
 
 }

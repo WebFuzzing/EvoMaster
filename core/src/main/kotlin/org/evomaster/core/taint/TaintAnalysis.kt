@@ -69,7 +69,7 @@ object TaintAnalysis {
     actions in the individual, including _previous_ ones. An optimization would be to ignore the _following_
     actions.
     Ideally, it should not be a problem, as tainted values are supposed to be unique. This is not currently
-    enforce, so with low chances it could happened that 2 different genes have same tainted value.
+    enforce, so with low chances it could happen that 2 different genes have same tainted value.
     "Likely" rare, and "likely" with little to no side-effects if it happens (we ll see if it ll be indeed
     the case).
 
