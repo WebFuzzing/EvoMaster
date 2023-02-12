@@ -20,7 +20,7 @@ class HarvestOptimisationEMTest: SpringTestBase() {
 
     companion object {
 
-        private lateinit var wireMockServer: WireMockServer
+        private var wireMockServer: WireMockServer? = null
 
         @BeforeAll
         @JvmStatic
@@ -36,14 +36,16 @@ class HarvestOptimisationEMTest: SpringTestBase() {
                 .port(9999)
                 .extensions(ResponseTemplateTransformer(false))
 
-            wireMockServer = WireMockServer(wmConfig)
-            wireMockServer.start()
-            wireMockServer.stubFor(
+            val wm = WireMockServer(wmConfig)
+            wireMockServer!!.start()
+            wireMockServer!!.stubFor(
                 WireMock.get(
                     WireMock.urlEqualTo("/api/mock"))
                 .atPriority(1)
                     .willReturn(WireMock.aResponse().withStatus(200).withBody("{\"message\" : \"Working\"}"))
             )
+
+            wireMockServer = wm
 
             DnsCacheManipulator.setDnsCache("mock.int", "127.0.0.1")
         }
@@ -51,7 +53,7 @@ class HarvestOptimisationEMTest: SpringTestBase() {
         @AfterAll
         @JvmStatic
         fun shutdown() {
-            wireMockServer.stop()
+            wireMockServer!!.stop()
             DnsCacheManipulator.clearDnsCache()
         }
     }
