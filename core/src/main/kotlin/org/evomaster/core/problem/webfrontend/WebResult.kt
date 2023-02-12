@@ -2,6 +2,7 @@ package org.evomaster.core.problem.webfrontend
 
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionResult
+import java.net.URL
 
 class WebResult : ActionResult {
 
@@ -13,6 +14,8 @@ class WebResult : ActionResult {
         const val IDENTIFYING_PAGE_ID_END   = "IDENTIFYING_PAGE_ID_END"
         /** Ids of the actions that were possible on the page before the executed action*/
         const val POSSIBLE_ACTION_IDS = "POSSIBLE_ACTION_IDS"
+        const val URL_PAGE_START = "URL_PAGE_START"
+        const val URL_PAGE_END = "URL_PAGE_END"
     }
 
     constructor(stopping: Boolean = false) : super(stopping)
@@ -31,6 +34,14 @@ class WebResult : ActionResult {
     fun setIdentifyingPageIdStart(shape: String) = addResultValue(IDENTIFYING_PAGE_ID_START, shape)
 
     fun getIdentifyingPageIdStart() : String? = getResultValue(IDENTIFYING_PAGE_ID_START)
+
+    fun setUrlPageStart(url: String) = addResultValue(URL_PAGE_START, url)
+
+    fun getUrlPageStart() : String? = getResultValue(URL_PAGE_START)
+
+    fun setUrlPageEnd(url: String) = addResultValue(URL_PAGE_END, url)
+
+    fun getUrlPageEnd() : String? = getResultValue(URL_PAGE_END)
 
     fun setIdentifyingPageIdEnd(shape: String) = addResultValue(IDENTIFYING_PAGE_ID_END, shape)
 

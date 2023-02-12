@@ -86,6 +86,7 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
     private fun handleWebAction(a: WebAction, actionResults: MutableList<ActionResult>): Boolean {
 
         val pageBeforeExecutingAction = browserController.getCurrentPageSource()
+        val urlBeforeExecutingAction = browserController.getCurrentUrl()
         val possibilities = BrowserActionBuilder.createPossibleActions(pageBeforeExecutingAction)
 
         var blocking = false
@@ -137,7 +138,9 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
             val start = pageIdentifier.registerShape(HtmlUtils.computeIdentifyingShape(pageBeforeExecutingAction))
             val end   = pageIdentifier.registerShape(HtmlUtils.computeIdentifyingShape(browserController.getCurrentPageSource()))
             result.setIdentifyingPageIdStart(start)
+            result.setUrlPageStart(urlBeforeExecutingAction)
             result.setIdentifyingPageIdEnd(end)
+            result.setUrlPageEnd(browserController.getCurrentUrl())
             result.setPossibleActionIds(possibilities.map { it.getIdentifier() })
         }
 

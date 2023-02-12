@@ -29,7 +29,7 @@ public class ALinksEMTest extends SpringTestBase {
 
                     assertTrue(solution.getIndividuals().size() > 0);
 
-                    //TODO assertions
+                    assertHasVisitedUrlPath(solution, "/alinks/index.html", "/alinks/a.html", "/alinks/b.html");
                 }
         );
     }
