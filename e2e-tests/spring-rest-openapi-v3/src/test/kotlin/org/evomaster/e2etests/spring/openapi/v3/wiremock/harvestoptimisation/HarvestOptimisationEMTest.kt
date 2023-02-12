@@ -37,8 +37,8 @@ class HarvestOptimisationEMTest: SpringTestBase() {
                 .extensions(ResponseTemplateTransformer(false))
 
             val wm = WireMockServer(wmConfig)
-            wireMockServer!!.start()
-            wireMockServer!!.stubFor(
+            wm.start()
+            wm.stubFor(
                 WireMock.get(
                     WireMock.urlEqualTo("/api/mock"))
                 .atPriority(1)
