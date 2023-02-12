@@ -61,7 +61,7 @@ class TestSuiteWriter {
     @Inject(optional = true)
     private lateinit var sampler: Sampler<*>
 
-    @Inject
+    @Inject(optional = true)
     private lateinit var remoteController: RemoteController
 
     private var activePartialOracles = mutableMapOf<String, Boolean>()
