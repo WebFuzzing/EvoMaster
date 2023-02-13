@@ -764,6 +764,15 @@ object RestActionBuilderV3 {
 
     }
 
+    /**
+     *
+     * handled constraints include
+     *      - allOf
+     *      - anyOf
+     *      - oneOf
+     *      - multipleOf
+     *      - not (OpenAPI not support this yet)
+     */
     private fun assembleObjectGeneWithConstraints(name: String, schema: Schema<*>, fields: List<Gene>, additionalFieldTemplate: PairGene<StringGene, Gene>?, swagger: OpenAPI, history: Deque<String>, referenceTypeName: String?, enableConstraintHandling: Boolean) : Gene{
         if (!enableConstraintHandling)
             return assembleObjectGene(name, schema, fields, additionalFieldTemplate, referenceTypeName)
@@ -815,7 +824,10 @@ object RestActionBuilderV3 {
                 currently, we handle anyOf as oneOf plus all combined one
              */
             return ChoiceGene(name, if (anyOf.size > 1) anyOf.plus(assembleObjectGene(name, schema, allFields.plus(fields), additionalFieldTemplate, referenceTypeName)) else anyOf)
-
+//            /*
+//                handle all combinations of anyOf
+//                comment it out for the moment
+//             */
 //            return ChoiceGene(name, (1 until 2.0.pow(one.size * 1.0).toInt()).map { i->
 //                assembleObjectGene(
 //                        name,
@@ -842,6 +854,9 @@ object RestActionBuilderV3 {
         //TODO not
     }
 
+    /**
+     * assemble ObjectGene based on [fields] and [additionalFieldTemplate]
+     */
     private fun assembleObjectGene(name: String, schema: Schema<*>, fields: List<Gene>, additionalFieldTemplate: PairGene<StringGene, Gene>?, referenceTypeName: String?) : Gene{
         if (fields.isEmpty()) {
             if (additionalFieldTemplate != null)
@@ -864,7 +879,7 @@ object RestActionBuilderV3 {
         return ObjectGene(name, fields, if(schema is ObjectSchema) referenceTypeName?:schema.title else null)
     }
 
-        /**
+    /**
      * handle constraints of schema object
      *
      * see more
@@ -881,14 +896,14 @@ object RestActionBuilderV3 {
      *      - minItems
      *      - maxItems
      *      - uniqueItems
-     *      - allOf (TODO)
-     *      - anyOf (TODO)
-     *      - oneOf (TODO)
-     *      - multipleOf (TODO)
+     *      - allOf (handled by [assembleObjectGeneWithConstraints])
+     *      - anyOf (handled by [assembleObjectGeneWithConstraints])
+     *      - oneOf (handled by [assembleObjectGeneWithConstraints])
+     *      - multipleOf (handled by [assembleObjectGeneWithConstraints])
      *      - not (OpenAPI not support this yet)
      *
      *
-     * TODO might handle example/default property as default later
+     * TODO Man might handle example/default property as default later
      */
     private fun createGeneWithSchemaConstraints(schema: Schema<*>, name: String, geneClass: Class<*>, enableConstraintHandling: Boolean, collectionTemplate: Gene? = null) : Gene{
         when(geneClass){
