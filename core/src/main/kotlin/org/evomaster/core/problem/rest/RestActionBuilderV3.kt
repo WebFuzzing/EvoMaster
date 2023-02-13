@@ -5,6 +5,7 @@ import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.Operation
 import io.swagger.v3.oas.models.media.ArraySchema
+import io.swagger.v3.oas.models.media.JsonSchema
 import io.swagger.v3.oas.models.media.MediaType
 import io.swagger.v3.oas.models.media.ObjectSchema
 import io.swagger.v3.oas.models.media.Schema
@@ -531,7 +532,11 @@ object RestActionBuilderV3 {
             //Besides the defined values, add one to test robustness
             when (type) {
                 "string" ->
-                    return EnumGene(name, (schema.enum as MutableList<String>).apply { add("EVOMASTER") })
+                    return EnumGene(name, (schema.enum.map {
+                        if (it !is String)
+                            LoggingUtil.uniqueWarn(log, "an item of enum is not string (ie, ${it::class.java.simpleName}) for a property whose `type` is string and `name` is $name")
+                        it.toString()
+                    } as MutableList<String>).apply { add("EVOMASTER") })
                 /*
                     Looks like a possible bug in the parser, where numeric enums can be read as strings... got this
                     issue in GitLab schemas, eg for visibility_level
@@ -611,7 +616,7 @@ object RestActionBuilderV3 {
                 }
             }
             "array" -> {
-                if (schema is ArraySchema) {
+                if (schema is ArraySchema || schema is JsonSchema) {
 
                     val arrayType: Schema<*> = if (schema.items == null) {
                         LoggingUtil.uniqueWarn(log, "Array type '$name' is missing mandatory field 'items' to define its type." +
@@ -639,9 +644,10 @@ object RestActionBuilderV3 {
             "file" -> return createGeneWithSchemaConstraints(schema, name, StringGene::class.java, enableConstraintHandling) //StringGene(name) //TODO file is a hack. I want to find a more elegant way of dealing with it (BMR)
         }
 
-        if (name == "body" && schema.properties?.isNotEmpty() == true) {
+        if ((name == "body" || referenceClassDef != null) && schema.properties?.isNotEmpty() == true) {
             /*
-                This could happen when parsing a body-payload as formData
+                name == "body": This could happen when parsing a body-payload as formData
+                referenceClassDef != null : this could happen when parsing a reference of a constraint (eg, anyOf) of the additionalProperties
             */
             return createObjectGene(name, schema, swagger, history, referenceClassDef, enableConstraintHandling)
         }
@@ -782,11 +788,13 @@ object RestActionBuilderV3 {
             return assembleObjectGene(name, schema, fields, additionalFieldTemplate, referenceTypeName)
 
         val allOf = schema.allOf?.map { s->
-            createObjectGene(name, s, swagger, history, null, enableConstraintHandling)
+            //createObjectGene(name, s, swagger, history, null, enableConstraintHandling)
+            getGene(name, s, swagger, history, null, enableConstraintHandling)
         }
 
         val anyOf = schema.anyOf?.map { s->
-            createObjectGene(name, s, swagger, history, null, enableConstraintHandling)
+            //createObjectGene(name, s, swagger, history, null, enableConstraintHandling)
+            getGene(name, s, swagger, history, null, enableConstraintHandling)
         }
 
         if (!allOf.isNullOrEmpty() && !anyOf.isNullOrEmpty()){
@@ -795,7 +803,8 @@ object RestActionBuilderV3 {
         }
 
         val oneOf = schema.oneOf?.map { s->
-            createObjectGene(name, s, swagger, history, null, enableConstraintHandling)
+            //createObjectGene(name, s, swagger, history, null, enableConstraintHandling)
+            getGene(name, s, swagger, history, null, enableConstraintHandling)
         }
 
         if (!oneOf.isNullOrEmpty() && (!allOf.isNullOrEmpty() || !anyOf.isNullOrEmpty())){
