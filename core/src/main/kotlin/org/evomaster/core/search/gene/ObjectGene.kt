@@ -175,7 +175,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
         buffer.append("{")
         includedFields.map {
             when {
-                (it is OptionalGene && it.gene is EnumGene<*>) || it is EnumGene<*> -> "${it.name}:${it.getValueAsRawString()}"
+                (it.getWrappedGene(EnumGene::class.java)!=null) -> "${it.name}:${it.getValueAsRawString()}"
                 else -> "${it.name}:${it.getValueAsPrintableString(previousGenes, mode, targetFormat)}"
             }
         }.joinTo(buffer, ", ")
