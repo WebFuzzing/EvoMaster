@@ -3,6 +3,10 @@ package org.evomaster.core.search.gene.root
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 
+/**
+ * represent a composite gene and whether its children is fixed depends on [isFixed]
+ * note that if [isFixed] is true, it means that any addition or removal of its children is not allowed.
+ */
 abstract class CompositeConditionalFixedGene(
         name: String,
         val isFixed: Boolean,
