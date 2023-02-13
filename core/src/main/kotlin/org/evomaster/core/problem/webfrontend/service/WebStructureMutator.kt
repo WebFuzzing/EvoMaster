@@ -102,13 +102,14 @@ class WebStructureMutator: EnterpriseStructureMutator() {
     }
 
     override fun addInitializingActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?) {
-        TODO("Not yet implemented")
+       //TODO name is confusing
     }
 
     override fun addAndHarvestExternalServiceActions(
         individual: EvaluatedIndividual<*>,
         mutatedGenes: MutatedGeneSpecification?
     ): Boolean {
-        TODO("Not yet implemented")
+       //TODO name is confusing
+        return false
     }
 }

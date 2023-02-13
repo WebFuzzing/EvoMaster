@@ -45,10 +45,6 @@ class GraphQLIndividual(
         }
     }
 
-    override fun size(): Int {
-        return seeMainExecutableActions().size
-    }
-
 
     fun addGQLAction(relativePosition: Int = -1, action: GraphQLAction){
         addMainActionInEmptyEnterpriseGroup(relativePosition, action)

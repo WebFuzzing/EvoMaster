@@ -44,7 +44,7 @@ import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public abstract class WsTestBase {
+public abstract class EnterpriseTestBase {
 
     protected static InstrumentedSutStarter embeddedStarter;
     protected static String baseUrlOfSut;
@@ -439,7 +439,7 @@ public abstract class WsTestBase {
      */
     protected static void initClass(EmbeddedSutController controller, EMConfig config) throws Exception {
 
-        WsTestBase.controller = controller;
+        EnterpriseTestBase.controller = controller;
 
         embeddedStarter = new InstrumentedSutStarter(controller);
         embeddedStarter.start();

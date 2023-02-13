@@ -132,9 +132,6 @@ class RestIndividual(
     }
 
 
-    override fun size() = seeMainExecutableActions().size
-
-
     //FIXME refactor
     override fun verifyInitializationActions(): Boolean {
         return DbActionUtils.verifyActions(seeInitializingActions().filterIsInstance<DbAction>())

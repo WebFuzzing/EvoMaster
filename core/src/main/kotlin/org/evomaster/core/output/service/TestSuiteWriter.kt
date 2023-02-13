@@ -12,6 +12,7 @@ import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceActi
 import org.evomaster.core.problem.rest.BlackBoxUtils
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rpc.RPCIndividual
+import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.SearchTimeController
@@ -59,6 +60,9 @@ class TestSuiteWriter {
 
     @Inject(optional = true)
     private lateinit var sampler: Sampler<*>
+
+    @Inject(optional = true)
+    private lateinit var remoteController: RemoteController
 
     private var activePartialOracles = mutableMapOf<String, Boolean>()
 
@@ -337,11 +341,7 @@ class TestSuiteWriter {
             }
 
             if (config.isEnabledExternalServiceMocking() && solution.hasAnyActiveHttpExternalServiceAction()) {
-                if (format.isKotlin()) {
-                    addImport("com.github.tomakehurst.wiremock.client.WireMock.*", lines)
-                } else if (format.isJava()) {
-                    addImport("static com.github.tomakehurst.wiremock.client.WireMock.*", lines)
-                }
+                addImport("com.github.tomakehurst.wiremock.client.WireMock.*", lines, true)
                 addImport("com.github.tomakehurst.wiremock.WireMockServer", lines)
                 addImport("com.github.tomakehurst.wiremock.core.WireMockConfiguration", lines)
                 addImport(
@@ -364,7 +364,11 @@ class TestSuiteWriter {
 
             // TODO: BMR - this is temporarily added as WiP. Should we have a more targeted import (i.e. not import everything?)
             if (config.enableBasicAssertions) {
-                addImport("org.hamcrest.Matchers.*", lines, true)
+
+                if(useHamcrest()) {
+                    addImport("org.hamcrest.Matchers.*", lines, true)
+                }
+
                 //addImport("org.hamcrest.core.AnyOf.anyOf", lines, true)
                 if (useRestAssured()) {
                     addImport("io.restassured.config.JsonConfig", lines)
@@ -378,15 +382,12 @@ class TestSuiteWriter {
             }
 
             if (config.expectationsActive) {
-                addImport(
-                    "org.evomaster.client.java.controller.expect.ExpectationHandler.expectationHandler",
-                    lines,
-                    true
-                )
+                addImport("org.evomaster.client.java.controller.expect.ExpectationHandler.expectationHandler", lines, true)
                 addImport("org.evomaster.client.java.controller.expect.ExpectationHandler", lines)
 
-                if (useRestAssured())
+                if (useRestAssured()) {
                     addImport("io.restassured.path.json.JsonPath", lines)
+                }
                 addImport("java.util.Arrays", lines)
             }
 
@@ -394,7 +395,7 @@ class TestSuiteWriter {
                 addImport("org.testcontainers.containers.BrowserWebDriverContainer", lines)
                 addImport("org.openqa.selenium.chrome.ChromeOptions", lines)
                 addImport("org.openqa.selenium.remote.RemoteWebDriver", lines)
-                addImport("org.evomaster.client.java.controller.api.SeleniumEMUtils", lines)
+                addImport("org.evomaster.client.java.controller.api.SeleniumEMUtils.*", lines, true)
             }
         }
 
@@ -596,7 +597,9 @@ class TestSuiteWriter {
                         addStatement("$controller.setupForGeneratedTest()", lines)
                         addStatement("$baseUrlOfSut = $controller.startSut()", lines)
                         if(config.problemType == EMConfig.ProblemType.WEBFRONTEND){
-                            addStatement("$baseUrlOfSut = SeleniumEMUtils.initUrlOfStartingPageForDocker($baseUrlOfSut, true)", lines)
+                            val infoDto = remoteController.getSutInfo()!! //TODO refactor. save it in a service
+                            val url = "$baseUrlOfSut+\"${infoDto.webProblem.urlPathOfStartingPage}\""
+                            addStatement("$baseUrlOfSut = validateAndGetUrlOfStartingPageForDocker($url, true)", lines)
                         }
                         /*
                             now only support white-box
@@ -622,7 +625,7 @@ class TestSuiteWriter {
                         addStatement("$driver = new RemoteWebDriver($browser.seleniumAddress, new ChromeOptions())", lines)
                     }
                     if(format.isKotlin()){
-                        addStatement("$driver = RemoteWebDriver($browser.seleniumAddress, new ChromeOptions())", lines)
+                        addStatement("$driver = RemoteWebDriver($browser.seleniumAddress, ChromeOptions())", lines)
                     }
                 }
             }
@@ -903,7 +906,10 @@ class TestSuiteWriter {
     }
 
 
-    private fun useRestAssured() = config.problemType != EMConfig.ProblemType.RPC
+    private fun useRestAssured() = config.problemType == EMConfig.ProblemType.REST || config.problemType == EMConfig.ProblemType.GRAPHQL
+
+    //TODO better check. need to review use in RPC and GraphQL
+    private fun useHamcrest() = config.problemType != EMConfig.ProblemType.WEBFRONTEND
 
     /**
      * Returns a distinct List of [HttpExternalServiceAction] from the given solution

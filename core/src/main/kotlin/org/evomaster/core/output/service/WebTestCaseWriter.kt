@@ -40,7 +40,7 @@ class WebTestCaseWriter : TestCaseWriter() {
     }
 
     private fun addWaitPageToLoad(lines: Lines, seconds : Int = 2){
-        lines.addStatement("SeleniumEMUtils.waitForPageToLoad($driver, $seconds)", format)
+        lines.addStatement("waitForPageToLoad($driver, $seconds)", format)
         //TODO need to handle init of JS scripts, not just load of page
     }
 
@@ -51,7 +51,7 @@ class WebTestCaseWriter : TestCaseWriter() {
         val a = action as WebAction
         a.userInteractions.forEach {
             when(it.userActionType){
-                UserActionType.CLICK -> lines.addStatement("SeleniumEMUtils.clickAndWaitPageLoad($driver, \"${it.cssSelector}\")", format)
+                UserActionType.CLICK -> lines.addStatement("clickAndWaitPageLoad($driver, \"${it.cssSelector}\")", format)
                 //TODO all other cases
                 else -> throw IllegalStateException("Not handled action type: ${it.userActionType}")
             }

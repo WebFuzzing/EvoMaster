@@ -86,6 +86,7 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
     private fun handleWebAction(a: WebAction, actionResults: MutableList<ActionResult>): Boolean {
 
         val pageBeforeExecutingAction = browserController.getCurrentPageSource()
+        val urlBeforeExecutingAction = browserController.getCurrentUrl()
         val possibilities = BrowserActionBuilder.createPossibleActions(pageBeforeExecutingAction)
 
         var blocking = false
@@ -107,7 +108,7 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
                 a.copyValueFrom(chosen)
             }
         }
-        assert(blocking || (a.isDefined() && a.isApplicableInCurrentContext()))
+        assert(blocking || (a.isDefined() && a.isApplicableInGivenPage(pageBeforeExecutingAction)))
 
         if(!blocking) {
             val inputs = a.userInteractions.filter { it.userActionType == UserActionType.FILL_TEXT }
@@ -137,12 +138,14 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
             val start = pageIdentifier.registerShape(HtmlUtils.computeIdentifyingShape(pageBeforeExecutingAction))
             val end   = pageIdentifier.registerShape(HtmlUtils.computeIdentifyingShape(browserController.getCurrentPageSource()))
             result.setIdentifyingPageIdStart(start)
+            result.setUrlPageStart(urlBeforeExecutingAction)
             result.setIdentifyingPageIdEnd(end)
+            result.setUrlPageEnd(browserController.getCurrentUrl())
             result.setPossibleActionIds(possibilities.map { it.getIdentifier() })
         }
 
         actionResults.add(result)
-        return blocking
+        return !blocking
     }
 
     private fun handleResponseTargets(
