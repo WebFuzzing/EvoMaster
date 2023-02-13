@@ -183,7 +183,12 @@ object RestActionBuilderV3 {
     }
 
     /**
+     * create gene based on dto schema
      *
+     * @param name the name of gene
+     * @param dtoSchema the schema of dto
+     * @param referenceTypeName the name (eg, class name) of the reference type
+     * @param enableConstraintHandling whether to enable handling of constraints
      */
     fun createObjectGeneForDTO(name: String,
                                dtoSchema: String,
@@ -770,7 +775,6 @@ object RestActionBuilderV3 {
      *      - allOf
      *      - anyOf
      *      - oneOf
-     *      - multipleOf
      *      - not (OpenAPI not support this yet)
      */
     private fun assembleObjectGeneWithConstraints(name: String, schema: Schema<*>, fields: List<Gene>, additionalFieldTemplate: PairGene<StringGene, Gene>?, swagger: OpenAPI, history: Deque<String>, referenceTypeName: String?, enableConstraintHandling: Boolean) : Gene{
@@ -899,7 +903,7 @@ object RestActionBuilderV3 {
      *      - allOf (handled by [assembleObjectGeneWithConstraints])
      *      - anyOf (handled by [assembleObjectGeneWithConstraints])
      *      - oneOf (handled by [assembleObjectGeneWithConstraints])
-     *      - multipleOf (handled by [assembleObjectGeneWithConstraints])
+     *      - multipleOf
      *      - not (OpenAPI not support this yet)
      *
      *
