@@ -900,10 +900,10 @@ object RestActionBuilderV3 {
      *      - minItems
      *      - maxItems
      *      - uniqueItems
+     *      - multipleOf (TODO)
      *      - allOf (handled by [assembleObjectGeneWithConstraints])
      *      - anyOf (handled by [assembleObjectGeneWithConstraints])
      *      - oneOf (handled by [assembleObjectGeneWithConstraints])
-     *      - multipleOf
      *      - not (OpenAPI not support this yet)
      *
      *
