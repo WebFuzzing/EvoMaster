@@ -46,7 +46,17 @@ abstract class NumberGene<T : Number>(name: String,
                                        * its range would be from -99.99 to 99.99.
                                        * 5.2 and 0.1 are considered as `valid`
                                        */
-                                      val scale: Int?
+                                      val scale: Int?,
+                                      /**
+                                       * from OpenAPI
+                                       *    https://swagger.io/docs/specification/data-models/data-types/
+                                       *    Use the multipleOf keyword to specify that a number must be the multiple of another number
+                                       *
+                                       * from json schema
+                                       *    https://json-schema.org/understanding-json-schema/reference/numeric.html
+                                       *    Numbers can be restricted to a multiple of a given number, using the multipleOf keyword. It may be set to any positive number.
+                                       */
+                                      val multipleOf : T?
                                       ) : ComparableGene, HistoryBasedMutationGene, SimpleGene(name) {
 
 
@@ -63,6 +73,9 @@ abstract class NumberGene<T : Number>(name: String,
 
         if (scale != null && scale < 0)
             throw IllegalArgumentException("scale must be zero or positive number")
+
+        if (multipleOf != null && multipleOf.toDouble() < 0)
+            throw IllegalArgumentException("multipleOf must be a positive number")
 
         if (getMaximum().toDouble() < getMinimum().toDouble())
             throwMinMaxException()
@@ -127,6 +140,9 @@ abstract class NumberGene<T : Number>(name: String,
      * @return zero with the number format
      */
     abstract fun getZero() : T
+
+
+    abstract fun validateMultipleOf()
 
     override fun toString(): String {
         return "${this.javaClass.simpleName}: $value [$minInclusive $min, $maxInclusive $max] [s=$scale,p=$precision]"

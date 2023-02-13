@@ -28,7 +28,7 @@ class IntegerGene(
     max: Int,
     precision : Int?,
     minInclusive : Boolean,
-    maxInclusive : Boolean,
+    maxInclusive : Boolean
 ) : IntegralNumberGene<Int>(name, value, min, max, precision, minInclusive, maxInclusive) {
 
     constructor(name: String, value: Int? = null, min: Int? = null, max: Int?=null, precision: Int?=null, minInclusive: Boolean = true, maxInclusive: Boolean = true) :this(

@@ -12,4 +12,5 @@ abstract class IntegralNumberGene<T: Number> (
     precision: Int?,
     minInclusive : Boolean,
     maxInclusive : Boolean,
-) : NumberGene<T>(name, value, min, max, minInclusive, maxInclusive, precision, 0)
+    multipleOf : T?
+) : NumberGene<T>(name, value, min, max, minInclusive, maxInclusive, precision, 0, multipleOf)
