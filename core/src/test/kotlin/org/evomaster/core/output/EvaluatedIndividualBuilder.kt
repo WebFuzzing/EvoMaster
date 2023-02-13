@@ -3,9 +3,20 @@ package org.evomaster.core.output
 import org.evomaster.core.TestUtils
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionResult
+import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
+import org.evomaster.core.problem.externalservice.rpc.RPCExternalServiceAction
+import org.evomaster.core.problem.externalservice.rpc.parm.RPCResponseParam
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
+import org.evomaster.core.problem.rpc.RPCCallAction
+import org.evomaster.core.problem.rpc.RPCCallResult
+import org.evomaster.core.problem.rpc.RPCIndividual
+import org.evomaster.core.problem.rpc.param.RPCParam
 import org.evomaster.core.search.*
+import org.evomaster.core.search.gene.ObjectGene
+import org.evomaster.core.search.gene.collection.EnumGene
+import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.string.StringGene
 
 class EvaluatedIndividualBuilder {
 
@@ -60,5 +71,56 @@ class EvaluatedIndividualBuilder {
             return Triple(format, baseUrlOfSut, ei)
         }
 
+        fun buildFakeRPCAction(n:Int) : MutableList<RPCCallAction>{
+            return (0 until n).map { RPCCallAction("FakeRPCCall_$it",
+                inputParameters = mutableListOf(),
+                responseTemplate= null,
+                response = RPCParam("return", OptionalGene("return", StringGene("return")))
+            ) }.toMutableList()
+        }
+
+        fun buildFakeRPCExternalServiceAction(n : Int): List<RPCExternalServiceAction>{
+            return (0 until n).map {
+
+                RPCExternalServiceAction(
+                    interfaceName = "FakeRPC_Foo",
+                    functionName = "foo",
+                    inputParamTypes = null,
+                    requestRuleIdentifier = null,
+                    responseParam = RPCResponseParam(
+                        className = "FakeRPCReturnDto",
+                        responseType = EnumGene("responseType", listOf("JSON")),
+                        response = OptionalGene("return",
+                            ObjectGene("return", fields = listOf(StringGene("fakeMsg", "This is a fake response from a RPC-based external service"))) )
+                    ),
+                    active = true,
+                    used = true
+                )
+            }
+        }
+
+        fun buildEvaluatedRPCIndividual(
+            actions: MutableList<RPCCallAction>,
+            externalServicesActions: MutableList<List<ApiExternalServiceAction>>,
+            format: OutputFormat
+        ): EvaluatedIndividual<RPCIndividual>{
+            if (!format.isJavaOrKotlin())
+                throw IllegalArgumentException("do not support to generate faked evaluated RPC individual for testing test writer")
+            val individual = RPCIndividual(actions = actions, externalServicesActions = externalServicesActions)
+
+            individual.doInitialize()
+
+            val fitnessVal = FitnessValue(0.0)
+
+            return EvaluatedIndividual(fitnessVal, individual, (0 until actions.size).map {i->
+                RPCCallResult().also {
+                    it.setSuccess()
+                    it.setHandledResponse(true)
+                    it.setTestScript(listOf(if (format.isJava()) "int res_$i = 42;" else "val res_$i = 42"))
+                    it.setResponseVariableName("res_$i")
+                    it.setAssertionScript(listOf("assertEquals(42, res_$i)${if (format.isJava()) ";" else ""}"))
+                }
+            })
+        }
     }
 }

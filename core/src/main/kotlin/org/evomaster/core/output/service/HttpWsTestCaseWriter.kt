@@ -17,6 +17,7 @@ import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.slf4j.LoggerFactory
+import java.nio.file.Path
 import javax.ws.rs.core.MediaType
 
 abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
@@ -209,11 +210,13 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
     }
 
     protected fun handleSingleCall(
-        evaluatedAction: EvaluatedAction,
-        index: Int,
-        fv : FitnessValue,
-        lines: Lines,
-        baseUrlOfSut: String
+            evaluatedAction: EvaluatedAction,
+            index: Int,
+            fv: FitnessValue,
+            lines: Lines,
+            testCaseName: String,
+            testSuitePath: Path?,
+            baseUrlOfSut: String
     ) {
 
         val exActions = mutableListOf<HttpExternalServiceAction>()
@@ -245,9 +248,9 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         val res = evaluatedAction.result as HttpWsCallResult
 
         if (res.failedCall()) {
-            addActionInTryCatch(call, lines, res, baseUrlOfSut)
+            addActionInTryCatch(call, index, testCaseName, lines, res, testSuitePath, baseUrlOfSut)
         } else {
-            addActionLines(call, lines, res, baseUrlOfSut)
+            addActionLines(call,index, testCaseName, lines, res, testSuitePath, baseUrlOfSut)
         }
 
         // reset all used external service action

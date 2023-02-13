@@ -184,4 +184,28 @@ public interface SutHandler {
      * </p>
      */
     default void resetDatabase(List<String> tablesToClean){}
+
+    /**
+     * <p>
+     *     a method to reset mocked external services with customized method
+     * </p>
+     */
+    default boolean resetMockedExternalServicesWithCustomizedMethod(){
+        return false;
+    }
+
+    /**
+     * <p>
+     *     a method to employ customized mocking of RPC based external services
+     * </p>
+     * @param externalServiceDtos contains info about how to setup responses with json format, note that the json should
+     *                            be able to be converted to a list of MockRPCExternalServiceDto
+     * @param enabled reflect to enable (set it true) or disable (set it false) the specified external service dtos.
+     *                Note that null [externalServiceDtos] with false [enabled] means that all existing external service setup should be disabled.
+     * @return whether the mocked instance starts successfully,
+     */
+    default boolean mockRPCExternalServicesWithCustomizedHandling(String externalServiceDtos, boolean enabled){
+        return false;
+    }
+
 }

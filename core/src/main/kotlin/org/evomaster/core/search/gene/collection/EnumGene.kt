@@ -92,7 +92,15 @@ class EnumGene<T : Comparable<T>>(
     }
 
     override fun setValueWithRawString(value: String) {
-        this.index = value.toInt()
+        try {
+            this.index = value.toInt()
+        }catch (e: NumberFormatException){
+            val foundIndex = values.indexOfFirst { it.equals(value) }
+            if (foundIndex != -1)
+                this.index = foundIndex
+            else
+                throw IllegalStateException("cannot find an index in this Enum with $value")
+        }
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {

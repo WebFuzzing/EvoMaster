@@ -8,6 +8,7 @@ import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import java.lang.IllegalStateException
+import java.nio.file.Path
 
 class WebTestCaseWriter : TestCaseWriter() {
 
@@ -26,15 +27,17 @@ class WebTestCaseWriter : TestCaseWriter() {
         lines: Lines,
         baseUrlOfSut: String,
         ind: EvaluatedIndividual<*>,
-        insertionVars: MutableList<Pair<String, String>>
+        insertionVars: MutableList<Pair<String, String>>,
+        testCaseName: String,
+        testSuitePath: Path?
     ) {
         lines.addStatement("$driver.get($baseUrlOfSut)", format)
         addWaitPageToLoad(lines, 5)
         lines.addEmpty()
 
         if(ind.individual is WebIndividual){
-            ind.evaluatedMainActions().forEach {
-                addActionLines(it.action, lines, it.result,  baseUrlOfSut)
+            ind.evaluatedMainActions().forEachIndexed { index,  a ->
+                addActionLines(a.action, index, testCaseName, lines, a.result, testSuitePath, baseUrlOfSut)
             }
         }
     }
@@ -44,7 +47,7 @@ class WebTestCaseWriter : TestCaseWriter() {
         //TODO need to handle init of JS scripts, not just load of page
     }
 
-    override fun addActionLines(action: Action, lines: Lines, result: ActionResult, baseUrlOfSut: String) {
+    override fun addActionLines(action: Action, index: Int, testCaseName: String, lines: Lines, result: ActionResult, testSuitePath: Path?, baseUrlOfSut: String) {
 
         //TODO add possible wait on CSS selector. if not, stop test???
 

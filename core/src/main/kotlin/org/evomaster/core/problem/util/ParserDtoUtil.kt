@@ -143,7 +143,7 @@ object ParserDtoUtil {
     fun setGeneBasedOnString(gene: Gene, stringValue: String?){
         val valueGene = ParamUtil.getValueGene(gene)
 
-        if (stringValue != null){
+        if (stringValue != null && !stringValue.equals("null", ignoreCase = true)){
             when(valueGene){
                 is IntegerGene -> valueGene.setValueWithRawString(stringValue)
                 is DoubleGene -> valueGene.setValueWithRawString(stringValue)
@@ -259,15 +259,16 @@ object ParserDtoUtil {
                 else -> throw IllegalStateException("Not support setGeneBasedOnParamDto with gene ${gene::class.java.simpleName} and stringValue ($stringValue)")
             }
         }else{
-            if (gene is OptionalGene)
-                gene.isActive = false
-            else
-                log.warn("could not set null for ${gene.name} with type (${gene::class.java.simpleName})")
+            when (gene) {
+                is OptionalGene -> gene.isActive = false
+                is NullableGene -> gene.isActive = false
+                else -> log.warn("could not set null for ${gene.name} with type (${gene::class.java.simpleName})")
+            }
         }
     }
 
     private fun getTextForStringGene(gene: Gene, node: JsonNode) : String{
-        if (ParamUtil.getValueGene(gene) is StringGene && node.isTextual)
+        if (ParamUtil.getValueGene(gene).run { this is StringGene || this is EnumGene<*> || this is NumberGene<*>} && node.isTextual)
             return node.asText()
         return node.toPrettyString()
     }

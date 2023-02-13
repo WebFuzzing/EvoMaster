@@ -15,6 +15,7 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.slf4j.LoggerFactory
+import java.nio.file.Path
 import java.util.*
 
 class RestTestCaseWriter : HttpWsTestCaseWriter {
@@ -93,10 +94,12 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
     }
 
     override fun handleActionCalls(
-        lines: Lines,
-        baseUrlOfSut: String,
-        ind: EvaluatedIndividual<*>,
-        insertionVars: MutableList<Pair<String, String>>
+            lines: Lines,
+            baseUrlOfSut: String,
+            ind: EvaluatedIndividual<*>,
+            insertionVars: MutableList<Pair<String, String>>,
+            testCaseName: String,
+            testSuitePath: Path?
     ) {
         //SQL actions are generated in between
         if (ind.individual is RestIndividual) {
@@ -115,7 +118,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                 //actions
                 c.second.forEach { a ->
                     val exeuctionIndex = ind.individual.seeMainExecutableActions().indexOf(a.action)
-                    handleSingleCall(a, exeuctionIndex, ind.fitness, lines, baseUrlOfSut)
+                    handleSingleCall(a, exeuctionIndex, ind.fitness, lines, testCaseName, testSuitePath, baseUrlOfSut)
                 }
             }
         }
@@ -139,7 +142,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
     }
 
 
-    override fun addActionLines(action: Action, lines: Lines, result: ActionResult, baseUrlOfSut: String) {
+    override fun addActionLines(action: Action, index: Int, testCaseName: String, lines: Lines, result: ActionResult, testSuitePath: Path?, baseUrlOfSut: String) {
         addRestCallLines(action as RestCallAction, lines, result as RestCallResult, baseUrlOfSut)
     }
 
