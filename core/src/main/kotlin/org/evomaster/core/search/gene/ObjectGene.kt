@@ -116,7 +116,7 @@ class ObjectGene(
                 killChildren(additionalFields!!)
             val num = randomness.nextInt(MAX_SIZE_ADDITIONAL_FIELDS)
             repeat(num){
-                val added = addElement(randomness)
+                val added = sampleElementToAdd(randomness)
                 if (added != null){
                     addChild(added)
                 }
@@ -139,7 +139,7 @@ class ObjectGene(
         }
 
         if (additionalFields!!.isEmpty() || (additionalFields!!.size < MAX_SIZE_ADDITIONAL_FIELDS && randomness.nextBoolean(0.5))){
-            val added = addElement(randomness)
+            val added = sampleElementToAdd(randomness)
             if (added != null){
                 addChild(added)
                 return true
@@ -158,7 +158,10 @@ class ObjectGene(
         return true
     }
 
-    private fun addElement(randomness: Randomness) : PairGene<StringGene, FlexibleGene>?{
+    /**
+     * @return an element to add. if the element is null, it means that there is no element which can satisfy constraints of [this]
+     */
+    private fun sampleElementToAdd(randomness: Randomness) : PairGene<StringGene, FlexibleGene>?{
         if (isFixed)
             throw IllegalStateException("addElement should not applied when the ObjectGene is fixed")
         Lazy.assert {
