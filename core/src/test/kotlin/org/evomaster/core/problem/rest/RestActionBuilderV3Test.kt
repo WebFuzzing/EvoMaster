@@ -63,12 +63,12 @@ class RestActionBuilderV3Test{
 
     @ParameterizedTest
     @ValueSource(booleans = [true, false])
-    fun testArrayAnyOfSchema(enableConstraintHandling : Boolean){
+    fun testArrayAnyOfAndOneOfSchema(enableConstraintHandling : Boolean){
         val schema = OpenAPIParser().readLocation("swagger/apisguru-v3/adyen_checkoutservice41.yaml", null, null).openAPI
         val actions: MutableMap<String, Action> = mutableMapOf()
         RestActionBuilderV3.addActionsFromSwagger(schema, actions, enableConstraintHandling = enableConstraintHandling)
 
-        val postPaymentMethodsBalance = actions["POST:/v41/paymentMethods/balance"]
+        val postPaymentMethodsBalance = actions["POST:/v41/payments"]
         assertTrue(postPaymentMethodsBalance is RestCallAction)
         (postPaymentMethodsBalance as RestCallAction).apply {
             assertEquals(2, parameters.size)
@@ -77,6 +77,8 @@ class RestActionBuilderV3Test{
             requestBody.first().genes.first { it.name == "body" }.apply {
                 val valueGene = ParamUtil.getValueGene(this)
                 assertTrue(valueGene is ObjectGene)
+
+                // for anyOf
                 (valueGene as ObjectGene).fields.find { it.name == "additionalData" }.apply {
                     assertNotNull(this)
                     assertTrue(this is OptionalGene)
@@ -90,6 +92,23 @@ class RestActionBuilderV3Test{
                         }else{
                             assertTrue(this is FixedMapGene<*, *>)
                         }
+                    }
+                }
+
+
+                // for oneOf
+                valueGene.fields.find { it.name == "paymentMethod" }.apply {
+                    assertNotNull(this)
+                    // paymentMethod is required
+                    assertFalse(this is OptionalGene)
+                    if (enableConstraintHandling){
+                        assertTrue(this is ChoiceGene<*>)
+                        /*
+                            39 references of oneOf
+                         */
+                        assertEquals(39,  (this as ChoiceGene<*>).lengthOfChildren())
+                    }else{
+                        assertTrue(this is FixedMapGene<*, *>)
                     }
                 }
             }
