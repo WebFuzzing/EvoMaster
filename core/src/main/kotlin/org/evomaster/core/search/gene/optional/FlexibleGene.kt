@@ -23,23 +23,31 @@ import org.slf4j.LoggerFactory
  */
 class FlexibleGene(name: String,
                    gene: Gene,
+                   /**
+                    * constrain class of FlexibleGene
+                    * when [valueClasses] is not null,
+                    * the FlexibleGene can be replaced only if its class is part of [valueClasses]
+                    */
+                   val valueClasses : List<Class<*>>?,
                    private var replaceable: Boolean = true
 ) : CompositeGene(name, mutableListOf(gene)) {
 
     init {
         geneCheck(gene)
+        if (valueClasses != null && valueClasses.isEmpty())
+            throw IllegalArgumentException("cannot specify an empty valueClasses")
     }
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(FlexibleGene::class.java)
 
-        fun wrapWithFlexibleGene(gene: Gene, replaceable: Boolean = true) : FlexibleGene{
+        fun wrapWithFlexibleGene(gene: Gene, valueClasses : List<Class<*>>?, replaceable: Boolean = true) : FlexibleGene{
             if (gene is FlexibleGene) {
                 if (gene.replaceable != replaceable)
-                    return FlexibleGene(gene.name, gene.gene, replaceable)
+                    return FlexibleGene(gene.name, gene.gene, gene.valueClasses, replaceable)
                 return gene
             }
-            return FlexibleGene(gene.name, gene, replaceable)
+            return FlexibleGene(gene.name, gene,valueClasses,replaceable)
         }
     }
 
@@ -56,6 +64,9 @@ class FlexibleGene(name: String,
     fun replaceGeneTo(geneToUpdate: Gene){
         if (!replaceable)
             throw IllegalStateException("attempt to replace the gene which is not replaceable")
+        if (valueClasses != null && !valueClasses.contains(geneToUpdate::class.java))
+            throw IllegalStateException("cannot replace a gene whose type (${geneToUpdate::class.java.name}) is not part of specified valueClasses (${valueClasses.joinToString(",") { it.name }})")
+
         geneCheck(geneToUpdate)
         Lazy.assert { children.size == 1 }
 
@@ -72,7 +83,7 @@ class FlexibleGene(name: String,
     }
 
     override fun copyContent(): FlexibleGene {
-        return FlexibleGene(name, gene.copy(), replaceable)
+        return FlexibleGene(name, gene.copy(), valueClasses, replaceable)
     }
 
     override fun isLocallyValid(): Boolean {
@@ -81,6 +92,8 @@ class FlexibleGene(name: String,
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         gene.randomize(randomness, tryToForceNewValue)
+
+        //TODO if valueClasses is not null or more than 2 types, might add another
     }
 
     override fun isMutable(): Boolean {
@@ -146,6 +159,14 @@ class FlexibleGene(name: String,
 
     override fun getValueAsRawString(): String {
         return gene.getValueAsRawString()
+    }
+
+
+    override fun possiblySame(gene: Gene): Boolean {
+        return gene is FlexibleGene && (
+                (valueClasses == null && gene.valueClasses == null)
+                        || (valueClasses != null && gene.valueClasses != null && valueClasses.size == gene.valueClasses.size && valueClasses.containsAll(gene.valueClasses))
+                )
     }
 
     private fun geneCheck(geneToBeUpdated : Gene){

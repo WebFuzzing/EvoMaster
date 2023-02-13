@@ -193,8 +193,8 @@ object GraphQLUtils {
                     //if it is optional it should be active
                     if ((gene.getWrappedGene(OptionalGene::class.java)?.isActive == true) || (gene.getWrappedGene(OptionalGene::class.java) == null)) {
                         val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
-
-                        if (gene.getWrappedGene(NullableGene::class.java)?.isActive == true) {
+                        //if it is nullable it should be active
+                        if (gene.getWrappedGene(NullableGene::class.java)?.isActive == true || (gene.getWrappedGene(NullableGene::class.java) == null)) {
 
                             printableInputGene.add(" $i")
 

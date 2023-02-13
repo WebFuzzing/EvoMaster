@@ -13,6 +13,9 @@ import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.slf4j.LoggerFactory
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
 
 
 abstract class TestCaseWriter {
@@ -40,9 +43,24 @@ abstract class TestCaseWriter {
     }
 
 
+    /**
+     * save content to the same folder where [testResourcePath] is with a file name [fileName]
+     */
+    protected fun saveTextToDisk(text: String, testResourcePath: Path, fileName: String){
+        if (!Files.exists(testResourcePath))
+            Files.createDirectories(testResourcePath)
+
+        val textToFile = Paths.get(testResourcePath.toFile().path, fileName)
+        Files.deleteIfExists(textToFile)
+        Files.createFile(textToFile)
+
+        textToFile.toFile().appendText(text)
+    }
+
     fun convertToCompilableTestCode(
-        test: TestCase,
-        baseUrlOfSut: String
+            test: TestCase,
+            baseUrlOfSut: String,
+            testSuitePath: Path? = null
     ): Lines {
 
         counter = 0
@@ -83,7 +101,7 @@ abstract class TestCaseWriter {
             val ind = test.test
             val insertionVars = mutableListOf<Pair<String, String>>()
             handleFieldDeclarations(lines, baseUrlOfSut, ind, insertionVars)
-            handleActionCalls(lines, baseUrlOfSut, ind, insertionVars)
+            handleActionCalls(lines, baseUrlOfSut, ind, insertionVars, testCaseName = test.name, testSuitePath)
         }
 
         lines.add("}")
@@ -173,22 +191,27 @@ abstract class TestCaseWriter {
      * @param insertionVars contains variable names of sql insertions (Pair.first) with their results (Pair.second).
      */
     protected abstract fun handleActionCalls(
-        lines: Lines,
-        baseUrlOfSut: String,
-        ind: EvaluatedIndividual<*>,
-        insertionVars: MutableList<Pair<String, String>>
+            lines: Lines,
+            baseUrlOfSut: String,
+            ind: EvaluatedIndividual<*>,
+            insertionVars: MutableList<Pair<String, String>>,
+            testCaseName: String,
+            testSuitePath: Path?
     )
 
     /**
      * handle action call generation
      * @param action is the call to be generated
+     * @param index is the index of the action in a test
+     * @param testCaseName is the name of the test to be saved
      * @param lines are generated lines which save the generated test scripts
      * @param result is the execution result of the action
+     * @param testSuitePath is the path where to save the test suite, such info might be used to save files used in the test
      * @param baseUrlOfSut is the base url of sut
      */
-    protected abstract fun addActionLines(action: Action, lines: Lines, result: ActionResult, baseUrlOfSut: String)
+    protected abstract fun addActionLines(action: Action, index: Int, testCaseName: String, lines: Lines, result: ActionResult, testSuitePath: Path?, baseUrlOfSut: String)
 
-    protected abstract fun shouldFailIfException(result: ActionResult): Boolean
+    protected abstract fun shouldFailIfExceptionNotThrown(result: ActionResult): Boolean
 
     /**
      * add extra static variable that could be specific to a problem
@@ -202,10 +225,13 @@ abstract class TestCaseWriter {
     open fun addExtraInitStatement(lines: Lines) {}
 
     protected fun addActionInTryCatch(
-        call: Action,
-        lines: Lines,
-        res: ActionResult,
-        baseUrlOfSut: String
+            call: Action,
+            index: Int,
+            testCaseName: String,
+            lines: Lines,
+            res: ActionResult,
+            testSuitePath: Path?,
+            baseUrlOfSut: String
     ) {
         when {
             /*
@@ -217,9 +243,9 @@ abstract class TestCaseWriter {
         }
 
         lines.indented {
-            addActionLines(call, lines, res, baseUrlOfSut)
+            addActionLines(call,index, testCaseName, lines, res, testSuitePath, baseUrlOfSut)
 
-            if (shouldFailIfException(res)) {
+            if (shouldFailIfExceptionNotThrown(res)) {
                 if (!format.isJavaScript()) {
                     /*
                         TODO need a way to do it for JS, see

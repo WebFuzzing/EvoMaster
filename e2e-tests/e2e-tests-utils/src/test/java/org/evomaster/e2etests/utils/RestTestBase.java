@@ -15,7 +15,7 @@ import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public abstract class RestTestBase  extends WsTestBase{
+public abstract class RestTestBase  extends EnterpriseTestBase {
 
 
     protected Solution<RestIndividual> initAndRun(List<String> args){

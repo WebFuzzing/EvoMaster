@@ -145,7 +145,7 @@ public class StringParam extends NamedTypedValue<StringType, String> implements 
         if (json == null)  return;
 
         if (json instanceof Number){
-            SimpleLogger.recordErrorMessage("Warning: invalid date type in json for StringParam, attempt to set the value with number value for param "+getName());
+            SimpleLogger.recordErrorMessage("Warning: invalid data type in json for StringParam, attempt to set the value with number value for param "+getName());
             setValue(json.toString());
         }else {
             if (!(json instanceof String))

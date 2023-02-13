@@ -232,7 +232,7 @@ class RemoteControllerImplementation() : RemoteController{
                 getWebTarget()
                         .path(ControllerConstants.RUN_SUT_PATH)
                         .request()
-                        .put(Entity.json(SutRunDto(run, reset, computeSqlHeuristics, extractSqlExecutionInfo, config.methodReplacementCategories())))
+                        .put(Entity.json(SutRunDto(run, reset, config.enableCustomizedExternalServiceHandling, computeSqlHeuristics, extractSqlExecutionInfo, config.methodReplacementCategories())))
             }
         } catch (e: Exception) {
             log.warn("Failed to connect to SUT: ${e.message}")

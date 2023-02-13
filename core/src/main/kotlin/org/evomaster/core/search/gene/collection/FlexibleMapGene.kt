@@ -24,8 +24,8 @@ class FlexibleMapGene<T>(
 ) : MapGene<T, FlexibleGene>(name, template, maxSize, minSize, elements)
 where T : Gene {
 
-    constructor(name : String, key: T, value: Gene, maxSize: Int? = null, minSize: Int? = null): this(name,
-        PairGene("template", key, wrapWithFlexibleGene(value)), maxSize, minSize)
+    constructor(name : String, key: T, value: Gene, valueClasses : List<Class<*>>?, maxSize: Int? = null, minSize: Int? = null): this(name,
+        PairGene("template", key, wrapWithFlexibleGene(value, valueClasses)), maxSize, minSize)
 
     override fun copyContent(): Gene {
         return FlexibleMapGene(

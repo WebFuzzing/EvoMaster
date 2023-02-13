@@ -5,6 +5,7 @@ import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
+import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.search.*
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Randomness
@@ -114,6 +115,27 @@ abstract class EnterpriseIndividual(
         return groupsView()!!.getAllInGroup(GroupsOfChildren.MAIN) as List<ActionComponent>
     }
 
+
+    fun addMainActionInEmptyEnterpriseGroup(relativePosition: Int = -1, action: Action){
+        val main = GroupsOfChildren.MAIN
+        val g = EnterpriseActionGroup(mutableListOf(action), action.javaClass)
+
+        if (relativePosition < 0) {
+            addChildToGroup(g, main)
+        } else{
+            val base = groupsView()!!.startIndexForGroupInsertionInclusive(main)
+            val position = base + relativePosition
+            addChildToGroup(position, action, main)
+        }
+    }
+
+    fun removeMainActionGroupAt(relativePosition: Int){
+        val main = GroupsOfChildren.MAIN
+        val base = groupsView()!!.startIndexForGroupInsertionInclusive(main)
+        val position = base + relativePosition
+        killChildByIndex(position)
+    }
+
     /**
      * return a list of all db actions in [this] individual
      * that include all initializing actions plus db actions among main actions.
@@ -129,6 +151,9 @@ abstract class EnterpriseIndividual(
      */
     fun seeExternalServiceActions() : List<ApiExternalServiceAction> = seeActions(ActionFilter.ONLY_EXTERNAL_SERVICE) as List<ApiExternalServiceAction>
 
+    override fun verifyInitializationActions(): Boolean {
+        return DbActionUtils.verifyActions(seeInitializingActions().filterIsInstance<DbAction>())
+    }
 
     override fun repairInitializationActions(randomness: Randomness) {
 
@@ -163,6 +188,8 @@ abstract class EnterpriseIndividual(
     override fun hasAnyAction(): Boolean {
         return super.hasAnyAction() || dbInitialization.isNotEmpty()
     }
+
+    override fun size() = seeMainExecutableActions().size
 
     private fun getLastIndexOfDbActionToAdd(): Int =
         groupsView()!!.endIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_SQL)

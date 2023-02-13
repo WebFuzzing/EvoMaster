@@ -40,6 +40,7 @@ import org.evomaster.core.search.gene.collection.PairGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.numeric.*
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
+import org.evomaster.core.search.gene.optional.NullableGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.regex.RegexGene
@@ -179,11 +180,13 @@ class RPCEndpointsHandler {
                             ]!!.copy() as ApiExternalServiceAction
                             try {
                                 setGeneBasedOnString(exAction.response.responseBody, r)
+                                exAction
                             }catch (e: Exception){
-                                throw RuntimeException("Fail to handle mocked responses", e)
+                                log.warn("Fail to handle mocked responses:${e.message}")
+                                //throw RuntimeException("Fail to handle mocked responses", e)
+                                null
                             }
-                            exAction
-                        }
+                        }.filterNotNull()
                     }.flatten()
                 else mutableListOf()
 
@@ -260,7 +263,10 @@ class RPCEndpointsHandler {
         }
     }
 
-    private fun transformMockRPCExternalServiceDto(action: ApiExternalServiceAction) : MockRPCExternalServiceDto{
+    /**
+     * cover [action] to a dto for handling mock RPC external services at the driver side, eg, customized method
+     */
+    fun transformMockRPCExternalServiceDto(action: ApiExternalServiceAction) : MockRPCExternalServiceDto{
         if (action !is RPCExternalServiceAction)
             throw IllegalStateException("only support RPC external service action for the moment")
 
@@ -473,7 +479,7 @@ class RPCEndpointsHandler {
         msg?:return
         LoggingUtil.getInfoLogger().apply {
             if (msg.isNotEmpty())
-                info("Errors in extraction of RPC schema and seeded tests:")
+                info("Errors/Warnings in extraction of RPC schema and seeded tests:")
             msg.forEach {
                 info(it)
             }
@@ -587,9 +593,9 @@ class RPCEndpointsHandler {
     }
 
     /**
-     * @return a string json of a RPC param [dto]
+     * @return a string json of a [dto] object
      */
-    fun getParamDtoJson(dto: ParamDto) : String {
+    fun getJsonStringFromDto(dto: Any) : String {
         return objectMapper.writeValueAsString(dto)
     }
 
@@ -782,8 +788,16 @@ class RPCEndpointsHandler {
         }else{
             if (gene is OptionalGene && dto.isNullable)
                 gene.isActive = false
-            else
-                log.warn("could not retrieve value of ${dto.name?:"untitled"}")
+            else if (gene is NullableGene && dto.isNullable)
+                gene.isActive = false
+            else{
+                /*
+                    such case might exist in seeded tests
+                    later might support robustness testing for RPC to handle, eg, set null for non-nullable parameter
+                 */
+                LoggingUtil.uniqueWarn(log, "could not retrieve value of ${dto.name?:"untitled"} with ${gene::class.java.simpleName}")
+            }
+
         }
     }
 

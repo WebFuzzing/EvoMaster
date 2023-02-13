@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.webfrontend.service
 
+import org.evomaster.client.java.controller.api.SeleniumEMUtils
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -15,7 +16,7 @@ internal class BrowserControllerTest{
         val original = "$pre$localhost$post"
         assertEquals(original, BrowserController().initUrlOfStartingPage(original,false))
 
-        val modified = "$pre${BrowserController.TESTCONTAINERS_HOST}$post"
+        val modified = "$pre${SeleniumEMUtils.TESTCONTAINERS_HOST}$post"
         assertEquals(modified, BrowserController().initUrlOfStartingPage(original,true))
     }
 }

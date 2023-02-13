@@ -4,17 +4,18 @@ import org.evomaster.core.problem.gui.GuiAction
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.string.StringGene
+import org.jsoup.Jsoup
 
 class WebAction(
     /**
      * Different interactions could be squizzed into a single action, like filling all text inputs
      * of a form and then submit it
      */
-    val userInteractions: List<WebUserInteraction> = listOf(),
+    val userInteractions: MutableList<WebUserInteraction> = mutableListOf(),
     /**
      * Map from cssLocator (coming from [userInteractions]) for text input to StringGene representing its value
      */
-    val textData : Map<String, StringGene> = mapOf()
+    val textData : MutableMap<String, StringGene> = mutableMapOf()
 ) : GuiAction(textData.values.map { it }) {
 
     init {
@@ -29,13 +30,23 @@ class WebAction(
         }
     }
 
-
     override fun isDefined() : Boolean {
         return userInteractions.isNotEmpty()
     }
 
     override fun isApplicableInCurrentContext(): Boolean {
         TODO("Not yet implemented")
+    }
+
+    fun isApplicableInGivenPage(page: String) : Boolean{
+
+        val document = try{
+            Jsoup.parse(page)
+        }catch (e: Exception){
+            return false
+        }
+
+        return userInteractions.all { document.select(it.cssSelector).size > 0   }
     }
 
     override fun getName(): String {
@@ -56,13 +67,19 @@ class WebAction(
 
     override fun copyContent(): StructuralElement {
         return WebAction(
-            userInteractions.map { it.copy() },
-            textData.entries.associate { it.key to it.value.copy() as StringGene }
+            userInteractions.map { it.copy() }.toMutableList(),
+            textData.entries.associate { it.key to it.value.copy() as StringGene }.toMutableMap()
         )
     }
 
     fun copyValueFrom(other: WebAction){
-        userInteractions
+        userInteractions.clear()
+        userInteractions.addAll(other.userInteractions) //immutable elements
+        textData.clear()
+        textData.putAll(other.textData.entries.associate { it.key to it.value.copy() as StringGene })
     }
 
+    fun getIdentifier() : String {
+        return "A:" + userInteractions.joinToString(","){"${it.userActionType}:${it.cssSelector}"}
+    }
 }

@@ -23,6 +23,9 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
     @Inject
     private lateinit var browserController: BrowserController
 
+    @Inject
+    private lateinit var pageIdentifier: WebPageIdentifier
+
     override fun doCalculateCoverage(
         individual: WebIndividual,
         targets: Set<Int>
@@ -56,7 +59,6 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
             }
         }
 
-
         val dto = updateFitnessAfterEvaluation(targets, individual, fv)
             ?: return null
 
@@ -83,51 +85,103 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
 
     private fun handleWebAction(a: WebAction, actionResults: MutableList<ActionResult>): Boolean {
 
+        val pageBeforeExecutingAction = browserController.getCurrentPageSource()
+        val urlBeforeExecutingAction = browserController.getCurrentUrl()
+        val possibilities = BrowserActionBuilder.createPossibleActions(pageBeforeExecutingAction)
+
         var blocking = false
 
-        if(!a.isDefined()){
+        if(!a.isDefined() ||
+            !a.isApplicableInGivenPage(pageBeforeExecutingAction)){
+            //not applicable might happen if mutation in previous action led to different page
 
-            val possibilities = BrowserActionBuilder.createPossibleActions(browserController.getCurrentPageSource())
+
 
             //TODO possibly add "back" and "refresh" actions, but with a probability
 
             if(possibilities.isEmpty()){
                 blocking = true
             } else {
-
+                //TODO check archive for missing targets when choosing possibilities
                 val chosen = randomness.choose(possibilities)
                 assert(chosen.isDefined())
+                a.copyValueFrom(chosen)
             }
         }
+        assert(blocking || (a.isDefined() && a.isApplicableInGivenPage(pageBeforeExecutingAction)))
 
-        val inputs = a.userInteractions.filter { it.userActionType == UserActionType.FILL_TEXT }
-        //TODO first fill all inputs
+        if(!blocking) {
+            val inputs = a.userInteractions.filter { it.userActionType == UserActionType.FILL_TEXT }
+            //TODO first fill all inputs
 
-        val interactions = a.userInteractions.filter { it.userActionType != UserActionType.FILL_TEXT }
-        interactions.forEach {
-            when(it.userActionType){
-                UserActionType.CLICK -> {
-                    browserController.clickAndWaitPageLoad(it.cssSelector)
-                    //TODO better wait
+            val interactions = a.userInteractions.filter { it.userActionType != UserActionType.FILL_TEXT }
+            interactions.forEach {
+
+                when (it.userActionType) {
+                    UserActionType.CLICK -> {
+                        //TODO in try/catch... what to do in catch?
+                        browserController.clickAndWaitPageLoad(it.cssSelector)
+                        //TODO better wait
+                    }
+                    else -> {
+                        log.error("Not handled action type ${it.userActionType}")
+                    }
                 }
-                else -> {log.error("Not handled action type ${it.userActionType}")}
             }
         }
 
 
         val result = WebResult(blocking)
-        //TODO add info
+
+        if(!blocking) {
+            //TODO all needed info
+            val start = pageIdentifier.registerShape(HtmlUtils.computeIdentifyingShape(pageBeforeExecutingAction))
+            val end   = pageIdentifier.registerShape(HtmlUtils.computeIdentifyingShape(browserController.getCurrentPageSource()))
+            result.setIdentifyingPageIdStart(start)
+            result.setUrlPageStart(urlBeforeExecutingAction)
+            result.setIdentifyingPageIdEnd(end)
+            result.setUrlPageEnd(browserController.getCurrentUrl())
+            result.setPossibleActionIds(possibilities.map { it.getIdentifier() })
+        }
 
         actionResults.add(result)
-        return blocking
+        return !blocking
     }
 
     private fun handleResponseTargets(
         fv: FitnessValue,
         actions: List<WebAction>,
         actionResults: List<WebResult>,
-        additionalInfoList: List<AdditionalInfoDto>
+        additionalInfoList: List<AdditionalInfoDto>,
     ) {
+
+        for(i in actions.indices){
+            val a = actions[i]
+            val r = actionResults[i]
+
+            if(r.stopping){
+                return
+            }
+
+            //target for reaching page E
+            val pageId = idMapper.handleLocalTarget("PAGE:${r.getIdentifyingPageIdEnd()}")
+            fv.updateTarget(pageId, 1.0, i)
+
+            //target for transaction S->E
+            val transactionId = idMapper.handleLocalTarget("TRANSACTION:${r.getIdentifyingPageIdStart()}->${r.getIdentifyingPageIdEnd()}")
+            fv.updateTarget(transactionId, 1.0, i)
+
+            val executedActionId = a.getIdentifier()
+            r.getPossibleActionIds().forEach {
+                val actionInPageId = idMapper.handleLocalTarget("ACTION:${r.getIdentifyingPageIdStart()}@$it")
+                val h = if(it == executedActionId) 1.0 else 0.5
+                fv.updateTarget(actionInPageId, h, i)
+            }
+            Lazy.assert { r.getPossibleActionIds().contains(executedActionId) }
+
+            //TODO possibly check error logs in Chrome Tool
+            //TODO targets for HTTP calls through reverse-proxy
+        }
 
     }
 }
