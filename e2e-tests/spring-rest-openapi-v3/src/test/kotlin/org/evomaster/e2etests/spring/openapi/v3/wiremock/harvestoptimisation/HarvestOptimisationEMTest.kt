@@ -51,6 +51,12 @@ class HarvestOptimisationEMTest: SpringTestBase() {
                 .atPriority(1)
                 .willReturn(WireMock.aResponse().withStatus(200).withBody("{\"message\" : \"Working\"}"))
         )
+        wm.stubFor(
+            WireMock.get(
+                WireMock.urlEqualTo("/api/mock/second"))
+                .atPriority(1)
+                .willReturn(WireMock.aResponse().withStatus(200).withBody("{\"message\" : \"Yes! Working\"}"))
+        )
 
         DnsCacheManipulator.setDnsCache("mock.int", "127.0.0.1")
 

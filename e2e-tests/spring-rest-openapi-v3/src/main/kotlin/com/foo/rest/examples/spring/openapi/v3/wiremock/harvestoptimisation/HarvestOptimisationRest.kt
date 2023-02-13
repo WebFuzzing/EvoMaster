@@ -23,15 +23,24 @@ class HarvestOptimisationRest {
         val mapper = ObjectMapper()
 
         return try {
+            var response = "Not Working"
             val data = client.newCall(request).execute()
             val body = data.body()?.string()
-            val code = data.code()
             val dto = mapper.readValue(body, MockResponseDto::class.java)
-            if (code != 200)
-                return ResponseEntity.status(400).build()
             val message = dto.message
-            val msg = "${if (message.equals("Working")) "Working" else "Not Working"}"
-            ResponseEntity.ok(msg)
+
+            if (message.equals("Working")) {
+                val secondURL = URL("http://mock.int:9999/api/mock/second")
+                val secondRequest = Request.Builder().url(secondURL).build()
+                val secondData = client.newCall(secondRequest).execute()
+                val secondBody = secondData.body()?.string()
+                val secondDTO = mapper.readValue(secondBody, MockResponseDto::class.java)
+                val secondMessage = secondDTO.message
+                if (secondMessage.equals("Yes! Working")) {
+                    response = "Working"
+                }
+            }
+            ResponseEntity.ok(response)
         } catch (e: Exception) {
             ResponseEntity.status(500).build()
         }
