@@ -20,7 +20,7 @@ class HarvestOptimisationEMTest: SpringTestBase() {
 
     companion object {
 
-        private var wireMockServer: WireMockServer? = null
+
 
         @BeforeAll
         @JvmStatic
@@ -31,35 +31,28 @@ class HarvestOptimisationEMTest: SpringTestBase() {
 
             CIUtils.skipIfOnGA()
 
-            val wmConfig = WireMockConfiguration()
-                .bindAddress("127.0.0.1")
-                .port(9999)
-                .extensions(ResponseTemplateTransformer(false))
 
-            val wm = WireMockServer(wmConfig)
-            wm.start()
-            wm.stubFor(
-                WireMock.get(
-                    WireMock.urlEqualTo("/api/mock"))
-                .atPriority(1)
-                    .willReturn(WireMock.aResponse().withStatus(200).withBody("{\"message\" : \"Working\"}"))
-            )
-
-            wireMockServer = wm
-
-            DnsCacheManipulator.setDnsCache("mock.int", "127.0.0.1")
-        }
-
-        @AfterAll
-        @JvmStatic
-        fun shutdown() {
-            wireMockServer!!.stop()
-            DnsCacheManipulator.clearDnsCache()
         }
     }
 
     @Test
     fun testRunEM() {
+
+        val wmConfig = WireMockConfiguration()
+            .bindAddress("127.0.0.1")
+            .port(9999)
+            .extensions(ResponseTemplateTransformer(false))
+
+        val wm = WireMockServer(wmConfig)
+        wm.start()
+        wm.stubFor(
+            WireMock.get(
+                WireMock.urlEqualTo("/api/mock"))
+                .atPriority(1)
+                .willReturn(WireMock.aResponse().withStatus(200).withBody("{\"message\" : \"Working\"}"))
+        )
+
+        DnsCacheManipulator.setDnsCache("mock.int", "127.0.0.1")
 
         runTestHandlingFlakyAndCompilation(
             "HarvestOptimisationEM",
@@ -84,5 +77,8 @@ class HarvestOptimisationEMTest: SpringTestBase() {
             },
             3
         )
+
+        wm.shutdown()
+        DnsCacheManipulator.clearDnsCache()
     }
 }
