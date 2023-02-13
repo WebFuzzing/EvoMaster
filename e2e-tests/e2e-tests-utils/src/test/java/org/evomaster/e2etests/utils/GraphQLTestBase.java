@@ -15,7 +15,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public abstract class GraphQLTestBase extends WsTestBase {
+public abstract class GraphQLTestBase extends EnterpriseTestBase {
 
     protected Solution<GraphQLIndividual> initAndRun(List<String> args) {
         return (Solution<GraphQLIndividual>) Main.initAndRun(args.toArray(new String[0]));

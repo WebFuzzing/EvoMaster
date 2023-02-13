@@ -157,7 +157,7 @@ class RPCTestCaseWriter : ApiTestCaseWriter() {
 
     }
 
-    override fun shouldFailIfException(result: ActionResult): Boolean {
+    override fun shouldFailIfExceptionNotThrown(result: ActionResult): Boolean {
         //TODO Man: need a further check
         return false
     }

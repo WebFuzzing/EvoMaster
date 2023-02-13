@@ -278,7 +278,11 @@ object TestSuiteSplitter {
      * if it contains the field "errors" in its body.
      */
     fun assessFailed(result: GraphQlCallResult): Boolean{
-        val resultBody = Gson().fromJson(result.getBody(), HashMap::class.java)
+        val resultBody = try {
+            Gson().fromJson(result.getBody(), HashMap::class.java)
+        } catch (e : JsonSyntaxException){
+            return true //TODO should this be treated specially???
+        }
         val errMsg = resultBody?.get("errors")
         return (resultBody!=null && errMsg != null)
     }

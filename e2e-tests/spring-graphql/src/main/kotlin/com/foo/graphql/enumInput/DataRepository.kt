@@ -20,7 +20,7 @@ open class DataRepository {
     }
 
 
-    fun findByFlTy(type: FlowerType?): Flower? {
+    fun findByFlTy(type: FlowerType): Flower? {
         return flowers[type]
 
     }

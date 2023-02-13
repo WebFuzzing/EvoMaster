@@ -155,7 +155,7 @@ class SortingHelper {
         val min = ind.seeResults().filterIsInstance<HttpWsCallResult>().minByOrNull {
             it.getStatusCode()?.rem(500) ?: 0
         }
-        ((min as HttpWsCallResult).getStatusCode())?.rem(500) ?: 0
+        (min?.getStatusCode())?.rem(500) ?: 0
     }
 
     /** [maxActions] sorts Evaluated individuals based on the number of actions (most actions first).

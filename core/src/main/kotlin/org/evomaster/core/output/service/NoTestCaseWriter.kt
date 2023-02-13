@@ -19,7 +19,7 @@ class NoTestCaseWriter : TestCaseWriter() {
         //empty
     }
 
-    override fun shouldFailIfException(result: ActionResult): Boolean {
+    override fun shouldFailIfExceptionNotThrown(result: ActionResult): Boolean {
         return false
     }
 }

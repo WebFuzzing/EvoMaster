@@ -1,6 +1,7 @@
 package org.evomaster.core.output.service
 
 import com.google.gson.Gson
+import com.google.gson.JsonSyntaxException
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionResult
 import org.evomaster.core.output.CookieWriter
@@ -68,14 +69,22 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         when (bodyString?.trim()?.first()) {
             //TODO this should be handled recursively, and not ad-hoc here...
             '[' -> {
+                try{
                 // This would be run if the JSON contains an array of objects.
                 val list = Gson().fromJson(bodyString, List::class.java)
                 handleAssertionsOnList(list, lines, "", bodyVarName)
+                } catch (e: JsonSyntaxException) {
+                    lines.add("/* Failed to parse JSON response */")
+                }
             }
             '{' -> {
                 // JSON contains an object
-                val resContents = Gson().fromJson(bodyString, Map::class.java)
-                handleAssertionsOnObject(resContents as Map<String, *>, lines, "", bodyVarName)
+                try {
+                    val resContents = Gson().fromJson(bodyString, Map::class.java)
+                    handleAssertionsOnObject(resContents as Map<String, *>, lines, "", bodyVarName)
+                } catch (e: JsonSyntaxException) {
+                    lines.add("/* Failed to parse JSON response */")
+                }
             }
             '"' -> {
                 lines.add(bodyIsString(bodyString, GeneUtils.EscapeMode.BODY, bodyVarName))

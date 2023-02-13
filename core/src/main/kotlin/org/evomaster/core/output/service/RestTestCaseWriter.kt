@@ -16,6 +16,7 @@ import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.slf4j.LoggerFactory
 import java.nio.file.Path
+import java.util.*
 
 class RestTestCaseWriter : HttpWsTestCaseWriter {
 
@@ -172,7 +173,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
     override fun handleVerbEndpoint(baseUrlOfSut: String, _call: HttpWsAction, lines: Lines) {
 
         val call = _call as RestCallAction
-        val verb = call.verb.name.toLowerCase()
+        val verb = call.verb.name.lowercase(Locale.getDefault())
 
         if (format.isCsharp()) {
             lines.append(".${capitalizeFirstChar(verb)}Async(")

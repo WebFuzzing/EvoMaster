@@ -12,6 +12,7 @@ import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceActi
 import org.evomaster.core.problem.rest.BlackBoxUtils
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rpc.RPCIndividual
+import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.SearchTimeController
@@ -36,10 +37,12 @@ class TestSuiteWriter {
          * variable name of Sut handler
          */
         const val controller = "controller"
+        const val driver = "driver"
         private const val baseUrlOfSut = "baseUrlOfSut"
         private const val expectationsMasterSwitch = "ems"
         private const val fixtureClass = "ControllerFixture"
         private const val fixture = "_fixture"
+        private const val browser = "browser"
 
         private val log: Logger = LoggerFactory.getLogger(TestSuiteWriter::class.java)
     }
@@ -58,6 +61,9 @@ class TestSuiteWriter {
 
     @Inject(optional = true)
     private lateinit var sampler: Sampler<*>
+
+    @Inject(optional = true)
+    private lateinit var remoteController: RemoteController
 
     private var activePartialOracles = mutableMapOf<String, Boolean>()
 
@@ -341,11 +347,7 @@ class TestSuiteWriter {
             }
 
             if (config.isEnabledExternalServiceMocking() && solution.hasAnyActiveHttpExternalServiceAction()) {
-                if (format.isKotlin()) {
-                    addImport("com.github.tomakehurst.wiremock.client.WireMock.*", lines)
-                } else if (format.isJava()) {
-                    addImport("static com.github.tomakehurst.wiremock.client.WireMock.*", lines)
-                }
+                addImport("com.github.tomakehurst.wiremock.client.WireMock.*", lines, true)
                 addImport("com.github.tomakehurst.wiremock.WireMockServer", lines)
                 addImport("com.github.tomakehurst.wiremock.core.WireMockConfiguration", lines)
                 addImport(
@@ -368,7 +370,11 @@ class TestSuiteWriter {
 
             // TODO: BMR - this is temporarily added as WiP. Should we have a more targeted import (i.e. not import everything?)
             if (config.enableBasicAssertions) {
-                addImport("org.hamcrest.Matchers.*", lines, true)
+
+                if(useHamcrest()) {
+                    addImport("org.hamcrest.Matchers.*", lines, true)
+                }
+
                 //addImport("org.hamcrest.core.AnyOf.anyOf", lines, true)
                 if (useRestAssured()) {
                     addImport("io.restassured.config.JsonConfig", lines)
@@ -382,16 +388,20 @@ class TestSuiteWriter {
             }
 
             if (config.expectationsActive) {
-                addImport(
-                    "org.evomaster.client.java.controller.expect.ExpectationHandler.expectationHandler",
-                    lines,
-                    true
-                )
+                addImport("org.evomaster.client.java.controller.expect.ExpectationHandler.expectationHandler", lines, true)
                 addImport("org.evomaster.client.java.controller.expect.ExpectationHandler", lines)
 
-                if (useRestAssured())
+                if (useRestAssured()) {
                     addImport("io.restassured.path.json.JsonPath", lines)
+                }
                 addImport("java.util.Arrays", lines)
+            }
+
+            if (config.problemType == EMConfig.ProblemType.WEBFRONTEND){
+                addImport("org.testcontainers.containers.BrowserWebDriverContainer", lines)
+                addImport("org.openqa.selenium.chrome.ChromeOptions", lines)
+                addImport("org.openqa.selenium.remote.RemoteWebDriver", lines)
+                addImport("org.evomaster.client.java.controller.api.SeleniumEMUtils.*", lines, true)
             }
         }
 
@@ -493,6 +503,15 @@ class TestSuiteWriter {
                         addStatement("private static WireMockServer ${getWireMockVariableName(externalService)}", lines)
                     }
             }
+            if(config.problemType == EMConfig.ProblemType.WEBFRONTEND){
+                lines.add("private static final BrowserWebDriverContainer $browser = new BrowserWebDriverContainer()")
+                lines.indented {
+                    lines.add(".withCapabilities(ChromeOptions())")
+                    lines.add(".withAccessToHost(true)")
+                    lines.append(";")
+                }
+                lines.add("private static RemoteWebDriver $driver;")
+            }
         } else if (config.outputFormat.isKotlin()) {
             if (!config.blackBox || config.bbExperiments) {
                 lines.add("private val $controller : SutHandler = $controllerName($executable)")
@@ -508,6 +527,15 @@ class TestSuiteWriter {
                         addStatement("private lateinit var ${getWireMockVariableName(action)}: WireMockServer", lines)
                     }
             }
+            if(config.problemType == EMConfig.ProblemType.WEBFRONTEND){
+                lines.add("private val $browser : BrowserWebDriverContainer<*> =  BrowserWebDriverContainer()")
+                lines.indented {
+                    lines.add(".withCapabilities(ChromeOptions())")
+                    lines.add(".withAccessToHost(true)")
+                }
+                lines.add("private lateinit var $driver : RemoteWebDriver")
+            }
+
         } else if (config.outputFormat.isJavaScript()) {
 
             if (!config.blackBox || config.bbExperiments) {
@@ -569,11 +597,16 @@ class TestSuiteWriter {
                 when {
                     config.outputFormat.isJavaScript() -> {
                         addStatement("await $controller.setupForGeneratedTest()", lines)
-                        addStatement("baseUrlOfSut = await $controller.startSut()", lines)
+                        addStatement("$baseUrlOfSut = await $controller.startSut()", lines)
                     }
                     config.outputFormat.isJavaOrKotlin() -> {
                         addStatement("$controller.setupForGeneratedTest()", lines)
-                        addStatement("baseUrlOfSut = $controller.startSut()", lines)
+                        addStatement("$baseUrlOfSut = $controller.startSut()", lines)
+                        if(config.problemType == EMConfig.ProblemType.WEBFRONTEND){
+                            val infoDto = remoteController.getSutInfo()!! //TODO refactor. save it in a service
+                            val url = "$baseUrlOfSut+\"${infoDto.webProblem.urlPathOfStartingPage}\""
+                            addStatement("$baseUrlOfSut = validateAndGetUrlOfStartingPageForDocker($url, true)", lines)
+                        }
                         /*
                             now only support white-box
                             TODO remove this later if we do not use test generation with driver
@@ -587,6 +620,19 @@ class TestSuiteWriter {
                 when {
                     format.isJavaOrKotlin() -> addStatement("assertNotNull(baseUrlOfSut)", lines)
                     format.isJavaScript() -> addStatement("expect(baseUrlOfSut).toBeTruthy()", lines)
+                }
+            }
+
+            if(config.problemType == EMConfig.ProblemType.WEBFRONTEND){
+                if(format.isJavaOrKotlin()){
+                    addStatement("$browser.start()", lines)
+
+                    if(format.isJava()) {
+                        addStatement("$driver = new RemoteWebDriver($browser.seleniumAddress, new ChromeOptions())", lines)
+                    }
+                    if(format.isKotlin()){
+                        addStatement("$driver = RemoteWebDriver($browser.seleniumAddress, ChromeOptions())", lines)
+                    }
                 }
             }
 
@@ -692,6 +738,9 @@ class TestSuiteWriter {
                                     addStatement("${getWireMockVariableName(action)}.stop()", lines)
                                 }
                             addStatement("DnsCacheManipulator.clearDnsCache()", lines)
+                        }
+                        if(config.problemType == EMConfig.ProblemType.WEBFRONTEND){
+                            addStatement("$browser.stop()", lines)
                         }
                     }
                 }
@@ -867,15 +916,20 @@ class TestSuiteWriter {
     }
 
 
-    private fun useRestAssured() = config.problemType != EMConfig.ProblemType.RPC
+    private fun useRestAssured() = config.problemType == EMConfig.ProblemType.REST || config.problemType == EMConfig.ProblemType.GRAPHQL
+
+    //TODO better check. need to review use in RPC and GraphQL
+    private fun useHamcrest() = config.problemType != EMConfig.ProblemType.WEBFRONTEND
 
     /**
      * Returns a distinct List of [HttpExternalServiceAction] from the given solution
      */
     private fun getWireMockServerActions(solution: Solution<*>): List<HttpWsExternalService> {
-        return solution.individuals.filter { i -> i.individual is RestIndividual }
+        return solution.individuals
+            .map{ it.individual}
+            .filterIsInstance<RestIndividual>()
             .flatMap {
-                it.individual.seeExternalServiceActions()
+                it.seeExternalServiceActions()
                     .filterIsInstance<HttpExternalServiceAction>()
                     .filter { it.active }
                     .map { it.externalService }

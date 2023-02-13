@@ -211,7 +211,7 @@ abstract class TestCaseWriter {
      */
     protected abstract fun addActionLines(action: Action, index: Int, testCaseName: String, lines: Lines, result: ActionResult, testSuitePath: Path?, baseUrlOfSut: String)
 
-    protected abstract fun shouldFailIfException(result: ActionResult): Boolean
+    protected abstract fun shouldFailIfExceptionNotThrown(result: ActionResult): Boolean
 
     /**
      * add extra static variable that could be specific to a problem
@@ -245,7 +245,7 @@ abstract class TestCaseWriter {
         lines.indented {
             addActionLines(call,index, testCaseName, lines, res, testSuitePath, baseUrlOfSut)
 
-            if (shouldFailIfException(res)) {
+            if (shouldFailIfExceptionNotThrown(res)) {
                 if (!format.isJavaScript()) {
                     /*
                         TODO need a way to do it for JS, see

@@ -29,7 +29,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
     abstract fun getAcceptHeader(call: HttpWsAction, res: HttpWsCallResult): String
 
 
-    override fun shouldFailIfException(result: ActionResult): Boolean {
+    override fun shouldFailIfExceptionNotThrown(result: ActionResult): Boolean {
         /*
             Fail test if exception is not thrown, but not if it was a timeout,
             otherwise the test would become flaky
@@ -475,6 +475,12 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
         if (isInCall) {
             lines.add(".assertThat()")
+        }
+
+        if(res.getTooLargeBody()){
+            lines.add("// the response payload was too large, above the threshold of ${config.maxResponseByteSize} bytes." +
+                    " No assertion on it is therefore generated.")
+            return
         }
 
         val bodyString = res.getBody()

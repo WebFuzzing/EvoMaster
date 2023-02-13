@@ -81,5 +81,15 @@ public @interface Replacement {
      */
     String castTo() default "";
 
+    /**
+     * Method replacement will not be applied to classes in given prefix package.
+     * If it starts with a '.', then it is not treated as prefix (ie match anywhere in the package full name).
+     * This latter is useful when dealing with packages that are shaded
+     */
     String[] packagesToSkip() default {};
+
+    /**
+     * Only applicable if UsageFilter is ONLY_SUT
+     */
+    String[] extraPackagesToConsider() default {};
 }
