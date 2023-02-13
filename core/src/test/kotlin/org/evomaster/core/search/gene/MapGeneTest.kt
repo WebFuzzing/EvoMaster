@@ -109,7 +109,7 @@ internal class MapGeneTest{
     @Test
     fun testFlexibleGeneReplace(){
         val integerGene = IntegerGene("int", 1)
-        val fMap = FlexibleMapGene("intMap", StringGene("key"), integerGene)
+        val fMap = FlexibleMapGene("intMap", StringGene("key"), integerGene, null)
 
         val stringGene = StringGene("string", "bar")
         val element = fMap.template.copy() as PairGene<*, FlexibleGene>

@@ -525,7 +525,7 @@ object GeneSamplerForTests {
         val selection = geneClasses.filter { !it.isAbstract}
 
         val valueTemplate = samplePrintableTemplate(selection, rand)
-        return FlexibleGene(valueTemplate.name, valueTemplate)
+        return FlexibleGene(valueTemplate.name, valueTemplate, null)
     }
     
     fun sampleOptionalGene(rand: Randomness): OptionalGene {
@@ -552,15 +552,32 @@ object GeneSamplerForTests {
     fun sampleObjectGene(rand: Randomness): ObjectGene {
 
         val selection = geneClasses.filter { !it.isAbstract }
+        val isFixed = rand.nextBoolean()
 
-        return ObjectGene(
-                name = "rand ObjectGene ${rand.nextInt()}",
-                fields = listOf(
-                        sample(rand.choose(selection), rand),
-                        sample(rand.choose(selection), rand),
-                        sample(rand.choose(selection), rand)
-                )
-        )
+
+        return if (isFixed) {
+            ObjectGene(
+                    name = "rand ObjectGene ${rand.nextInt()}",
+                    fields = listOf(
+                            sample(rand.choose(selection), rand),
+                            sample(rand.choose(selection), rand),
+                            sample(rand.choose(selection), rand)
+                    )
+            )
+        }else{
+            ObjectGene(
+                    name = "rand ObjectGene ${rand.nextInt()}",
+                    fixedFields = listOf(
+                            sample(rand.choose(selection), rand),
+                            sample(rand.choose(selection), rand),
+                            sample(rand.choose(selection), rand)
+                    ),
+                    refType = null,
+                    isFixed = isFixed,
+                    template = PairGene("template", sampleStringGene(rand), samplePrintableTemplate(selection, rand)),
+                    additionalFields = mutableListOf()
+            )
+        }
     }
 
     fun sampleNumericStringGene(rand: Randomness): NumericStringGene {
