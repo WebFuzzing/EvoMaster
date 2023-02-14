@@ -28,13 +28,13 @@ public abstract class WebTestBase extends EnterpriseTestBase{
         return (Solution<WebIndividual>) Main.initAndRun(args.toArray(new String[0]));
     }
 
-    public static void assertHasVisitedUrlPath(Solution<WebIndividual> sol, String... paths){
+    public static Set<URL> visitedUrls(Solution<WebIndividual> sol){
 
-        Set<String> visited = sol.getIndividuals().stream()
+        return sol.getIndividuals().stream()
                 .flatMap(ind -> {
-                            List<WebAction> actions =  ind.getIndividual().seeMainExecutableActions();
-                            return ind.seeResults(actions).stream();
-                        })
+                    List<WebAction> actions =  ind.getIndividual().seeMainExecutableActions();
+                    return ind.seeResults(actions).stream();
+                })
                 .filter(r -> r instanceof WebResult)
                 .flatMap(r ->
                         !r.getStopping()
@@ -43,10 +43,19 @@ public abstract class WebTestBase extends EnterpriseTestBase{
                 )
                 .map(url -> {
                     try {
-                        return (new URL(url)).getPath();
+                        return (new URL(url));
                     } catch (MalformedURLException e) {
                         throw new RuntimeException(e);
                     }
+                })
+                .collect(Collectors.toSet());
+    }
+
+    public static void assertHasVisitedUrlPath(Solution<WebIndividual> sol, String... paths){
+
+        Set<String> visited = visitedUrls(sol).stream()
+                .map(url -> {
+                        return url.getPath();
                 })
                 .collect(Collectors.toSet());
 

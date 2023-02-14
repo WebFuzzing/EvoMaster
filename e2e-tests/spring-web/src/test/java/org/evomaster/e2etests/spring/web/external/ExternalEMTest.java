@@ -1,12 +1,18 @@
 package org.evomaster.e2etests.spring.web.external;
 
 import com.foo.web.examples.spring.external.ExternalController;
+import org.evomaster.client.java.controller.api.SeleniumEMUtils;
 import org.evomaster.core.problem.webfrontend.WebIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.web.SpringTestBase;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.net.URL;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ExternalEMTest extends SpringTestBase {
@@ -31,7 +37,11 @@ public class ExternalEMTest extends SpringTestBase {
 
                     assertHasVisitedUrlPath(solution, "/external/index.html", "/external/a.html");
 
-                    //TODO add more checks
+                    Set<URL> urls = visitedUrls(solution);
+                    Set<String> hosts = urls.stream().map(u -> u.getHost()).collect(Collectors.toSet());
+                    assertEquals(1, hosts.size());
+                    String host = hosts.stream().findFirst().get();
+                    assertEquals(SeleniumEMUtils.TESTCONTAINERS_HOST, host);
                 }
         );
     }
