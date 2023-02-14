@@ -1,6 +1,9 @@
 package org.evomaster.core.problem.webfrontend
 
 import org.jsoup.Jsoup
+import java.net.URI
+import java.net.URISyntaxException
+import java.net.URL
 
 object BrowserActionBuilder {
 
@@ -20,7 +23,19 @@ object BrowserActionBuilder {
 
         document.getElementsByTag("a")
             .forEach {
-                list.add(WebUserInteraction(it.cssSelector(), UserActionType.CLICK))
+                val href = it.attr("href")
+                val uri = try{
+                    URI(href)
+                }catch (e: URISyntaxException){
+                    //TODO keep track of it
+                    return@forEach
+                }
+                val external = !uri.host.isNullOrBlank()
+                if(!external) {
+                    list.add(WebUserInteraction(it.cssSelector(), UserActionType.CLICK))
+                } else {
+                    //TODO keep track of external links, for automated oracle
+                }
             }
 
         return list
