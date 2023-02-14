@@ -79,4 +79,9 @@ public class SeleniumEMUtils {
         waitForPageToLoad(driver, 2);
         //TODO will need to check if JS executing in background
     }
+
+    public static void goToPage(WebDriver driver, String pageURL, int timeoutSeconds){
+        driver.get(pageURL);
+        waitForPageToLoad(driver, timeoutSeconds);
+    }
 }

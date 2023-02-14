@@ -30,15 +30,17 @@ public abstract class WebTestBase extends EnterpriseTestBase{
 
     public static void assertHasVisitedUrlPath(Solution<WebIndividual> sol, String... paths){
 
-
-
         Set<String> visited = sol.getIndividuals().stream()
                 .flatMap(ind -> {
                             List<WebAction> actions =  ind.getIndividual().seeMainExecutableActions();
                             return ind.seeResults(actions).stream();
                         })
-                .filter(r -> r instanceof WebResult && !r.getStopping())
-                .flatMap(r -> Arrays.asList(((WebResult) r).getUrlPageStart(), ((WebResult) r).getUrlPageEnd()).stream() )
+                .filter(r -> r instanceof WebResult)
+                .flatMap(r ->
+                        !r.getStopping()
+                                ? Arrays.asList(((WebResult) r).getUrlPageStart(), ((WebResult) r).getUrlPageEnd()).stream()
+                                : Arrays.asList(((WebResult) r).getUrlPageStart()).stream()
+                )
                 .map(url -> {
                     try {
                         return (new URL(url)).getPath();

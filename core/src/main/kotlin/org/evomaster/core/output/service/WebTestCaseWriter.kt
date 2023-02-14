@@ -31,9 +31,7 @@ class WebTestCaseWriter : TestCaseWriter() {
         testCaseName: String,
         testSuitePath: Path?
     ) {
-        lines.addStatement("$driver.get($baseUrlOfSut)", format)
-        addWaitPageToLoad(lines, 5)
-        lines.addEmpty()
+        lines.addStatement("goToPage($driver, $baseUrlOfSut, 5)", format)
 
         if(ind.individual is WebIndividual){
             ind.evaluatedMainActions().forEachIndexed { index,  a ->

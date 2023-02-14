@@ -133,15 +133,16 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
 
         val result = WebResult(blocking)
 
+        val start = pageIdentifier.registerShape(HtmlUtils.computeIdentifyingShape(pageBeforeExecutingAction))
+        result.setIdentifyingPageIdStart(start)
+        result.setUrlPageStart(urlBeforeExecutingAction)
+        result.setPossibleActionIds(possibilities.map { it.getIdentifier() })
+
         if(!blocking) {
             //TODO all needed info
-            val start = pageIdentifier.registerShape(HtmlUtils.computeIdentifyingShape(pageBeforeExecutingAction))
             val end   = pageIdentifier.registerShape(HtmlUtils.computeIdentifyingShape(browserController.getCurrentPageSource()))
-            result.setIdentifyingPageIdStart(start)
-            result.setUrlPageStart(urlBeforeExecutingAction)
             result.setIdentifyingPageIdEnd(end)
             result.setUrlPageEnd(browserController.getCurrentUrl())
-            result.setPossibleActionIds(possibilities.map { it.getIdentifier() })
         }
 
         actionResults.add(result)
@@ -155,6 +156,8 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
         additionalInfoList: List<AdditionalInfoDto>,
     ) {
 
+        fv.updateTarget(idMapper.handleLocalTarget("HOME_PAGE"), 1.0)
+
         for(i in actions.indices){
             val a = actions[i]
             val r = actionResults[i]
@@ -164,16 +167,16 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
             }
 
             //target for reaching page E
-            val pageId = idMapper.handleLocalTarget("PAGE:${r.getIdentifyingPageIdEnd()}")
+            val pageId = idMapper.handleLocalTarget("WEB_PAGE:${r.getIdentifyingPageIdEnd()}")
             fv.updateTarget(pageId, 1.0, i)
 
             //target for transaction S->E
-            val transactionId = idMapper.handleLocalTarget("TRANSACTION:${r.getIdentifyingPageIdStart()}->${r.getIdentifyingPageIdEnd()}")
+            val transactionId = idMapper.handleLocalTarget("WEB_TRANSACTION:${r.getIdentifyingPageIdStart()}->${r.getIdentifyingPageIdEnd()}")
             fv.updateTarget(transactionId, 1.0, i)
 
             val executedActionId = a.getIdentifier()
             r.getPossibleActionIds().forEach {
-                val actionInPageId = idMapper.handleLocalTarget("ACTION:${r.getIdentifyingPageIdStart()}@$it")
+                val actionInPageId = idMapper.handleLocalTarget("WEB_ACTION:${r.getIdentifyingPageIdStart()}@$it")
                 val h = if(it == executedActionId) 1.0 else 0.5
                 fv.updateTarget(actionInPageId, h, i)
             }
