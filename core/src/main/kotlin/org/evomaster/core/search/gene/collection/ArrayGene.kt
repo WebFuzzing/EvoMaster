@@ -231,7 +231,7 @@ class ArrayGene<T>(
         return openingTag +
                 elements.map { g ->
                     if (GeneUtils.isGraphQLModes(mode)) {
-                        if (g is EnumGene<*> || (g is OptionalGene && g.gene is EnumGene<*>))
+                        if ((g.getWrappedGene(EnumGene::class.java)!=null))
                             g.getValueAsRawString() else {
                             g.getValueAsPrintableString(previousGenes, mode, targetFormat)
                         }
