@@ -5,18 +5,10 @@ import org.evomaster.client.java.controller.api.Formats;
 import org.evomaster.client.java.controller.api.dto.*;
 import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto;
-import org.evomaster.client.java.controller.api.dto.problem.ExternalServiceDto;
-import org.evomaster.client.java.controller.api.dto.problem.GraphQLProblemDto;
-import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto;
-import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto;
-import org.evomaster.client.java.controller.problem.rpc.schema.InterfaceSchema;
-import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCInterfaceSchemaDto;
+import org.evomaster.client.java.controller.api.dto.problem.*;
+import org.evomaster.client.java.controller.problem.*;
 import org.evomaster.client.java.controller.db.QueryResult;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
-import org.evomaster.client.java.controller.problem.GraphQlProblem;
-import org.evomaster.client.java.controller.problem.ProblemInfo;
-import org.evomaster.client.java.controller.problem.RPCProblem;
-import org.evomaster.client.java.controller.problem.RestProblem;
 import org.evomaster.client.java.controller.problem.rpc.schema.LocalAuthSetupSchema;
 import org.evomaster.client.java.instrumentation.*;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
@@ -228,6 +220,11 @@ public class EMController {
                 SimpleLogger.error(msg, e);
                 return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
             }
+        } else if(info instanceof WebProblem){
+            WebProblem p = (WebProblem) info;
+            dto.webProblem = new WebProblemDto();
+            dto.webProblem.urlPathOfStartingPage = p.getUrlPathOfStartingPage();
+            dto.webProblem.servicesToNotMock = servicesToNotMock;
         } else {
             String msg = "Unrecognized problem type: " + info.getClass().getName();
             SimpleLogger.error(msg);
@@ -383,6 +380,11 @@ public class EMController {
                         try {
                             // clean db with accessed tables
                             noKillSwitchForceCheck(() -> sutController.cleanAccessedTables());
+
+                            if (dto.resetMockedExternalServicesWithCustomizedMethod != null && dto.resetMockedExternalServicesWithCustomizedMethod){
+                                noKillSwitch(()-> sutController.resetMockedExternalServicesWithCustomizedMethod());
+                            }
+
                             /*
                                 This should not fail... but, as it is user code, it might fail...
                                 When it does, it is a major issue, as it can leave the system in

@@ -29,6 +29,15 @@ object GeneUtils {
 
 
     /**
+     * @return whether the gene contains inactive optional gene
+     */
+    fun isInactiveOptionalGene(gene: Gene): Boolean{
+        val optional = gene.getWrappedGene(OptionalGene::class.java)?:return false
+
+        return !optional.isActive
+    }
+
+    /**
      * The [EscapeMode] enum is here to clarify the supported types of Escape modes.
      *
      * Different purposes require different modes of escape (e.g. URI may require percent encoding). This is to

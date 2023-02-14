@@ -376,6 +376,9 @@ class EMConfig {
             throw IllegalArgumentException("Max length at sampling time $maxLengthForStringsAtSamplingTime" +
                     " cannot be greater than maximum string length $maxLengthForStrings")
         }
+
+        if (saveMockedResponseAsSeparatedFile && testResourcePathToSaveMockedResponse.isBlank())
+            throw IllegalArgumentException("testResourcePathToSaveMockedResponse cannot be empty if it is required to save mocked responses in separated files (ie, saveMockedResponseAsSeparatedFile=true)")
     }
 
     private fun checkPropertyConstraints(m: KMutableProperty<*>) {
@@ -1780,6 +1783,17 @@ class EMConfig {
     @Regex("^127\\.((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){2}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\$")
     var externalServiceIP : String = "127.0.0.2"
 
+    @Experimental
+    @Cfg("Whether to apply customized method (i.e., implement 'customizeMockingRPCExternalService') to handle external services.")
+    var enableCustomizedExternalServiceHandling = false
+
+    @Experimental
+    @Cfg("Whether to save mocked responses as separated files")
+    var saveMockedResponseAsSeparatedFile = false
+
+    @Experimental
+    @Cfg("Specify test resource path where to save mocked responses as separated files")
+    var testResourcePathToSaveMockedResponse = ""
 
     @Experimental
     @Cfg("Whether to analyze how SQL databases are accessed to infer extra constraints from the business logic." +

@@ -1,6 +1,7 @@
 package org.evomaster.client.java.controller.internal;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.jetty.server.AbstractNetworkConnector;
 import org.eclipse.jetty.server.Server;
@@ -46,9 +47,14 @@ import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
 
 import javax.ws.rs.core.Response;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
+import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
@@ -1191,5 +1197,52 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      */
     public String packagesToSkipInstrumentation(){
         return null;
+    }
+
+
+    /**
+     * <p>
+     *     a method to reset mocked external services with customized method
+     * </p>
+     */
+    @Override
+    public final boolean resetMockedExternalServicesWithCustomizedMethod(){
+        if (getProblemInfo() instanceof RPCProblem){
+            return mockRPCExternalServicesWithCustomizedHandling(null, false);
+        }
+        return false;
+    }
+
+    /**
+     * <p>
+     *     a method to employ customized mocking of RPC based external services
+     * </p>
+     * @param externalServiceDtos contains info about how to setup responses with json format, note that the json should
+     *                            be able to be converted to a list of MockRPCExternalServiceDto
+     * @param enabled reflect to enable (set it true) or disable (set it false) the specified external service dtos.
+     *                Note that null [externalServiceDtos] with false [enabled] means that all existing external service setup should be disabled.
+     * @return whether the mocked instance starts successfully,
+     */
+    @Override
+    public final boolean mockRPCExternalServicesWithCustomizedHandling(String externalServiceDtos, boolean enabled){
+        List<MockRPCExternalServiceDto> exDto = null;
+        try {
+            if (externalServiceDtos != null && !externalServiceDtos.isEmpty())
+                exDto = objectMapper.readValue(externalServiceDtos, new TypeReference<List<MockRPCExternalServiceDto>>(){});
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Fail to handle the given external service dto with the info:", e);
+        }
+
+        return customizeMockingRPCExternalService(exDto, enabled);
+    }
+
+    /**
+     *
+     * @param fileName the name of file which exist in the same directory of the class
+     * @return content of file with the specified file
+     */
+    public final String readFileAsStringFromTestResource(String fileName){
+        return (new BufferedReader(new InputStreamReader(Objects.requireNonNull(this.getClass().getClassLoader().getResourceAsStream(fileName)))))
+                .lines().collect(Collectors.joining(System.lineSeparator()));
     }
 }

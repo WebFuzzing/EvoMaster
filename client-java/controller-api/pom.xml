@@ -27,6 +27,11 @@
             <artifactId>selenium-support</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 
     <build>

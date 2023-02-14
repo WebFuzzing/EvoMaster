@@ -24,6 +24,7 @@ import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.service.*
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.problem.rpc.service.RPCModule
+import org.evomaster.core.problem.webfrontend.WebIndividual
 import org.evomaster.core.problem.webfrontend.service.WebModule
 import org.evomaster.core.remote.NoRemoteConnectionException
 import org.evomaster.core.remote.SutProblemException
@@ -279,6 +280,8 @@ class Main {
                     config.problemType = EMConfig.ProblemType.GRAPHQL
                 } else if (info.rpcProblem != null){
                     config.problemType = EMConfig.ProblemType.RPC
+                } else if (info.webProblem != null) {
+                    config.problemType = EMConfig.ProblemType.WEBFRONTEND
                 } else {
                     throw IllegalStateException("Can connect to the EM Driver, but cannot infer the 'problemType'")
                 }
@@ -315,7 +318,10 @@ class Main {
                     }
                 }
 
-                EMConfig.ProblemType.WEBFRONTEND -> WebModule()
+                EMConfig.ProblemType.WEBFRONTEND ->{
+                    //TODO black-box mode
+                    WebModule()
+                }
 
                 //this should never happen, unless we add new type and forget to add it here
                 else -> throw IllegalStateException("Unrecognized problem type: ${config.problemType}")
@@ -405,6 +411,25 @@ class Main {
             }
         }
 
+        private fun getAlgorithmKeyWeb(config: EMConfig): Key<out SearchAlgorithm<WebIndividual>> {
+
+            return when {
+                config.blackBox || config.algorithm == EMConfig.Algorithm.RANDOM ->
+                    Key.get(object : TypeLiteral<RandomAlgorithm<WebIndividual>>() {})
+
+                config.algorithm == EMConfig.Algorithm.MIO ->
+                    Key.get(object : TypeLiteral<MioAlgorithm<WebIndividual>>() {})
+
+                config.algorithm == EMConfig.Algorithm.WTS ->
+                    Key.get(object : TypeLiteral<WtsAlgorithm<WebIndividual>>() {})
+
+                config.algorithm == EMConfig.Algorithm.MOSA ->
+                    Key.get(object : TypeLiteral<MosaAlgorithm<WebIndividual>>() {})
+
+                else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
+            }
+        }
+
         private fun getAlgorithmKeyRest(config: EMConfig): Key<out SearchAlgorithm<RestIndividual>> {
 
             return when {
@@ -437,6 +462,7 @@ class Main {
                 EMConfig.ProblemType.REST -> getAlgorithmKeyRest(config)
                 EMConfig.ProblemType.GRAPHQL -> getAlgorithmKeyGraphQL(config)
                 EMConfig.ProblemType.RPC -> getAlgorithmKeyRPC(config)
+                EMConfig.ProblemType.WEBFRONTEND -> getAlgorithmKeyWeb(config)
                 else -> throw IllegalStateException("Unrecognized problem type ${config.problemType}")
             }
 

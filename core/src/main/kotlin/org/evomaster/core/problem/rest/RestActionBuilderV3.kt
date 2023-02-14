@@ -635,9 +635,57 @@ object RestActionBuilderV3 {
             )
         } ?: listOf()
 
+
         /*
-                    Can be either a boolean or a Schema
-                 */
+            additional properties could be
+
+            from OpenAPI Specification v3.1.0 https://spec.openapis.org/oas/latest.html
+            1 - A free-form query parameter, allowing undefined parameters of a specific type:
+                eg, {
+                      "in": "query",
+                      "name": "freeForm",
+                      "schema": {
+                        "type": "object",
+                        "additionalProperties": {
+                          "type": "integer"
+                        },
+                      },
+                      "style": "form"
+                    }
+
+            2 - Model with Map/Dictionary Properties
+                eg, {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      }
+                    }
+
+                    {
+                      "type": "object",
+                      "additionalProperties": {
+                        "$ref": "#/components/schemas/ComplexModel"
+                      }
+                    }
+
+             from https://json-schema.org/understanding-json-schema/reference/object.html
+             3 - The additionalProperties keyword is used to control the handling of extra stuff,
+             that is, properties whose names are not listed in the properties keyword
+             or match any of the regular expressions in the patternProperties keyword.
+             By default any additional properties are allowed.
+
+             The value of the additionalProperties keyword is a schema that will be used to validate
+             any properties in the instance that are not matched by properties or patternProperties.
+             Setting the additionalProperties schema to false means no additional properties will be allowed.
+
+             note that the latest version (ie, OpenAPI 3.1.0) does not support patternProperties yet
+             see more with https://docs.readme.com/docs/openapi-compatibility-chart
+         */
+
+        var additionalFieldTemplate : PairGene<StringGene, Gene>? = null
+        /*
+            Can be either a boolean or a Schema
+         */
         val additional = schema.additionalProperties
 
         if (additional is Boolean) {
@@ -650,6 +698,19 @@ object RestActionBuilderV3 {
         if (additional is Schema<*>) {
 
             /*
+               support additionalProperties with schema
+            */
+            if (!additional.`$ref`.isNullOrBlank()) {
+                val valueTemplate = createObjectFromReference("valueTemplate", additional.`$ref`, swagger, history)
+                additionalFieldTemplate= PairGene("template", StringGene("keyTemplate"), valueTemplate.copy())
+            }else if(!additional.type.isNullOrBlank()){
+                val valueTemplate = getGene("valueTemplate", additional, swagger, history, null)
+                additionalFieldTemplate = PairGene("template", StringGene("keyTemplate"), valueTemplate.copy())
+            }
+            // TODO additional schema is defined with allOf, anyOf, oneOf, then template requires to be specified with FlexibleGene
+
+
+            /*
                TODO could add extra fields for robustness testing,
                with and without following the given schema for their type
              */
@@ -660,14 +721,8 @@ object RestActionBuilderV3 {
              */
 
             if (fields.isEmpty()) {
-                /*
-                   support additionalProperties with ref
-                */
-                if (!additional.`$ref`.isNullOrBlank()) {
-                    val valueTemplate = createObjectFromReference("valueTemplate", additional.`$ref`, swagger, history)
-                    val pairTemplate = PairGene("template", StringGene("keyTemplate"), valueTemplate.copy())
-                    return FixedMapGene(name, pairTemplate)
-                }
+                if (additionalFieldTemplate != null)
+                    return FixedMapGene(name, additionalFieldTemplate)
 
                 // here, the first of pairgene should not be mutable
                 return FixedMapGene(name, PairGene.createStringPairGene(getGene(name + "_field", additional, swagger, history, null), isFixedFirst = true))
@@ -680,6 +735,10 @@ object RestActionBuilderV3 {
             LoggingUtil.uniqueWarn(log,"No fields for object definition: $name")
             // here, the first of pairgene should not be mutable
             return FixedMapGene(name, PairGene.createStringPairGene(StringGene(name + "_field"), isFixedFirst = true))
+        }
+
+        if (additionalFieldTemplate!=null){
+            return ObjectGene(name, fields, if(schema is ObjectSchema) referenceTypeName?:schema.title else null, false, additionalFieldTemplate, mutableListOf())
         }
 
         /*
