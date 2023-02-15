@@ -169,13 +169,14 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
 
     private fun checkHtmlGlobalOracle(html: String, urlOfHtmlPage: String) : Boolean{
 
-        val ahrefs = HtmlUtils.getUrlInALinks(html)
-        if(ahrefs == null){
+
+        if(HtmlUtils.checkErrorsInHtml(html) != null){
+            //TODO save error message, and output in generated tests
             webGlobalState.addBrokenPage(urlOfHtmlPage)
             return false
         }
 
-        ahrefs.forEach {
+        HtmlUtils.getUrlInALinks(html).forEach {
             val uri = try{
                 URI(it)
             } catch (e: URISyntaxException){

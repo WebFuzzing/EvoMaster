@@ -49,6 +49,14 @@ class WebTestCaseWriter : TestCaseWriter() {
         //TODO need to handle init of JS scripts, not just load of page
     }
 
+    private fun getCommentOnPage(url: String, validHtml: Boolean?) : String{
+        var comment = " // ${HtmlUtils.getPathAndQueries(url)}"
+        if(validHtml == false){
+            comment += "  (ERRORS in HTML)"
+        }
+        return comment
+    }
+
     override fun addActionLines(action: Action, index: Int, testCaseName: String, lines: Lines, result: ActionResult, testSuitePath: Path?, baseUrlOfSut: String) {
 
         //TODO add possible wait on CSS selector. if not, stop test???
@@ -59,7 +67,7 @@ class WebTestCaseWriter : TestCaseWriter() {
             when(it.userActionType){
                 UserActionType.CLICK -> {
                     lines.addStatement("clickAndWaitPageLoad($driver, \"${it.cssSelector}\")", format)
-                    lines.append(" // ${HtmlUtils.getPathAndQueries(r.getUrlPageStart()!!)}")
+                    lines.append(getCommentOnPage(r.getUrlPageStart()!!,r.getValidHtml()))
                 }
                 //TODO all other cases
                 else -> throw IllegalStateException("Not handled action type: ${it.userActionType}")

@@ -25,14 +25,20 @@ object BrowserActionBuilder {
         document.getElementsByTag("a")
             .forEach {
                 val href = it.attr("href")
-                val uri = try{
-                    URI(href)
-                }catch (e: URISyntaxException){
-                    //errors are handled elsewhere in fitness function
-                    return@forEach
+                val canClick = if(!href.isNullOrBlank()) {
+                    val uri = try {
+                        URI(href)
+                    } catch (e: URISyntaxException) {
+                        //errors are handled elsewhere in fitness function
+                        return@forEach
+                    }
+                    val external = !uri.host.isNullOrBlank()
+                    !external
+                } else {
+                    val onclick = it.attr("onclick")
+                    !onclick.isNullOrBlank()
                 }
-                val external = !uri.host.isNullOrBlank()
-                if(!external) {
+                if(canClick){
                     list.add(WebUserInteraction(it.cssSelector(), UserActionType.CLICK))
                 }
             }

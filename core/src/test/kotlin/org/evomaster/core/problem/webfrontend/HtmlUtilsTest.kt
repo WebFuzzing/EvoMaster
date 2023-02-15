@@ -9,6 +9,20 @@ internal class HtmlUtilsTest{
 
 
     @Test
+    fun testMalformedHtml(){
+        val html = """
+            fsdfd
+
+            << >
+            ds >>>
+            <
+            <a></b>
+        """.trimIndent()
+        val res = HtmlUtils.checkErrorsInHtml(html)
+        assertNotNull(res)
+    }
+
+    @Test
     fun testBaseShape(){
         val html = "<a></a><b><c />"
         val res = HtmlUtils.computeIdentifyingShape(html)

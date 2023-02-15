@@ -73,7 +73,12 @@ public class SeleniumEMUtils {
                     "\nCurrent URL is: " + driver.getCurrentUrl() +
                     "\nCurrent page is: " + driver.getPageSource());
         }
+
+        //TODO should make sure to scroll to it if not visible
+        // https://stackoverflow.com/questions/45183797/element-not-interactable-exception-in-selenium-web-automation
+        //if this throws an exception, could be issue with JS loading, or bug in EM about how we select elements
         element.click();
+
         //TODO can we do better here than waiting a hard-coded timeout?
         try{Thread.sleep(50);} catch (Exception e){}
         waitForPageToLoad(driver, 2);

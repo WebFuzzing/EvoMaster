@@ -2,26 +2,32 @@ package org.evomaster.core.problem.webfrontend
 
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Node
+import org.jsoup.parser.Parser
 import org.jsoup.select.NodeVisitor
 import java.net.URL
 
 object HtmlUtils {
 
 
-    fun getUrlInALinks(html: String) : List<String>? {
-        val document = try{
-            Jsoup.parse(html)
-        }catch (e: Exception){
+    fun checkErrorsInHtml(html: String) : String?{
+        val parser = Parser.htmlParser().setTrackErrors(10)
+        Jsoup.parse(html, "", parser);
+        if(parser.errors.isEmpty()){
             return null
         }
+        return "Number of HTML errors ${parser.errors.size}\n${parser.errors.joinToString("\n")}"
+    }
 
+    fun getUrlInALinks(html: String) : List<String> {
+
+        val document = Jsoup.parse(html)
         return document.getElementsByTag("a")
-            .map { it.attr("href")}
+            .mapNotNull { it.attr("href") }
     }
 
     fun getPathAndQueries(url: String) : String{
         val x = URL(url)
-        return "${x.path}${x.query ?: ""}"
+        return "${x.path ?: "/"}${x.query ?: ""}"
     }
 
     /**
