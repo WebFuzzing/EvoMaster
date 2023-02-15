@@ -1,6 +1,7 @@
 package org.evomaster.core.utils
 
 import io.swagger.parser.OpenAPIParser
+import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.param.BodyParam
@@ -21,13 +22,14 @@ class BindingBuilderTest {
 
         val actionCluster: MutableMap<String, Action> = mutableMapOf()
         val randomness = Randomness()
+        val config = EMConfig()
 
         @BeforeAll
         @JvmStatic
         fun init(){
 
             val schema = OpenAPIParser().readLocation("/swagger/artificial/resource_test.json", null, null).openAPI
-            RestActionBuilderV3.addActionsFromSwagger(schema, actionCluster)
+            RestActionBuilderV3.addActionsFromSwagger(schema, actionCluster, enableConstraintHandling = config.enableSchemaConstraintHandling)
         }
     }
 

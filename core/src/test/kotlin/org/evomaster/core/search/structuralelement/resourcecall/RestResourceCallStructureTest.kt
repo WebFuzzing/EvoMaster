@@ -19,12 +19,11 @@ object ResourceNodeCluster{
     val randomness = Randomness()
     init {
         val schema = OpenAPIParser().readLocation("/swagger/artificial/resource_test.json", null, null).openAPI
-
-        val actions: MutableMap<String, Action> = mutableMapOf()
-        RestActionBuilderV3.addActionsFromSwagger(schema, actions)
-
         val config = EMConfig()
         config.doesApplyNameMatching = true
+
+        val actions: MutableMap<String, Action> = mutableMapOf()
+        RestActionBuilderV3.addActionsFromSwagger(schema, actions, enableConstraintHandling = config.enableSchemaConstraintHandling)
         cluster.initResourceCluster(actions, config = config)
     }
 }

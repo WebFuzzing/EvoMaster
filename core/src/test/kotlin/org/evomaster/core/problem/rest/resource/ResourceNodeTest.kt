@@ -29,11 +29,11 @@ class ResourceNodeTest {
        @BeforeAll
        @JvmStatic
        fun init(){
-
-           val schema = OpenAPIParser().readLocation("/swagger/artificial/resource_test.json", null, null).openAPI
-           RestActionBuilderV3.addActionsFromSwagger(schema, actionCluster)
            val config = EMConfig()
            config.doesApplyNameMatching = true
+
+           val schema = OpenAPIParser().readLocation("/swagger/artificial/resource_test.json", null, null).openAPI
+           RestActionBuilderV3.addActionsFromSwagger(schema, actionCluster, enableConstraintHandling = config.enableSchemaConstraintHandling)
            cluster.initResourceCluster(actionCluster, config = config)
        }
    }
