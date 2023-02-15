@@ -40,6 +40,7 @@ import javax.ws.rs.client.Invocation
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 import kotlin.math.max
+import kotlin.math.min
 
 
 /**
@@ -67,7 +68,7 @@ class HarvestActualHttpWsResponseHandler {
     /**
      * TODO: Add EMConfig option to set value as config
      */
-    private var workerPool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())
+    private var workerPool = Executors.newFixedThreadPool(min(3, Runtime.getRuntime().availableProcessors()))
 
 
     companion object {
@@ -157,10 +158,10 @@ class HarvestActualHttpWsResponseHandler {
 
     fun shutdown() {
         Lazy.assert { config.doHarvestActualResponse() }
+        workerPool.shutdown()
         synchronized(lock) {
             httpWsClient.close()
         }
-        workerPool.shutdown()
     }
 
     @Synchronized
