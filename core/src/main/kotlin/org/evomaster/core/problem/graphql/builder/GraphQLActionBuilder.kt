@@ -902,95 +902,109 @@ object GraphQLActionBuilder {
                     tupleElements
                 )
 
-                val constructedTuple = if (isLastNotPrimitive(tupleElements.last())) {
-                    var tupleName: String? = null
+                val constructedTuple =
+                    if (isNotKindOfPrimitive(tupleElements.last())) {
+                        var tupleName: String? = null
 
-                    if (isKindOfOptionalArrayObject(tupleElements)) {
-                        if ((tupleElements.last().getWrappedGene(ObjectGene::class.java) != null)
-                        ) {
-                            val nnOptionalObject =
-                                tupleElements.last().getWrappedGene(ObjectGene::class.java) as ObjectGene
-                            tupleElements = tupleElements.dropLast(1).plus(nnOptionalObject).toMutableList()
-                        } else if (tupleElements.last().getWrappedGene(LimitObjectGene::class.java) != null) {
-                            val nnOptionalLimit =
-                                tupleElements.last().getWrappedGene(LimitObjectGene::class.java) as LimitObjectGene
-                            tupleElements = tupleElements.dropLast(1).plus(nnOptionalLimit).toMutableList()
-                        } else if (tupleElements.last().getWrappedGene(CycleObjectGene::class.java) != null) {
-                            val nnOptionalLimit =
-                                tupleElements.last().getWrappedGene(CycleObjectGene::class.java) as CycleObjectGene
-                            tupleElements = tupleElements.dropLast(1).plus(nnOptionalLimit).toMutableList()
-                        } else if (tupleElements.last().getWrappedGene(ArrayGene::class.java) != null) {
-                            val last = tupleElements.last().getWrappedGene(ArrayGene::class.java)
-                            tupleName = last?.name
-                            if (last?.template?.getWrappedGene(ObjectGene::class.java) != null) {
+                        when {
+                            tupleElements.last().getWrappedGene(ObjectGene::class.java) != null -> {
                                 val nnOptionalObject =
-                                    last.template.getWrappedGene(ObjectGene::class.java) as ObjectGene
+                                    tupleElements.last().getWrappedGene(ObjectGene::class.java) as ObjectGene
                                 tupleElements = tupleElements.dropLast(1).plus(nnOptionalObject).toMutableList()
-                            } else if (last?.template?.getWrappedGene(CycleObjectGene::class.java) != null) {
-                                val nnOptionalCycle =
-                                    last.template.getWrappedGene(CycleObjectGene::class.java) as CycleObjectGene
-                                tupleElements = tupleElements.dropLast(1).plus(nnOptionalCycle).toMutableList()
-                            } else if (last?.template?.getWrappedGene(LimitObjectGene::class.java) != null) {
+                            }
+
+                            tupleElements.last().getWrappedGene(LimitObjectGene::class.java) != null -> {
                                 val nnOptionalLimit =
-                                    last.template.getWrappedGene(LimitObjectGene::class.java) as LimitObjectGene
+                                    tupleElements.last().getWrappedGene(LimitObjectGene::class.java) as LimitObjectGene
                                 tupleElements = tupleElements.dropLast(1).plus(nnOptionalLimit).toMutableList()
                             }
-                        }
-                    }
 
-                    //related to arrays naming: the name will depend on the name of the object (not the array)
-                    if (tupleName == null) {
-                        //it has an entry in the table
+                            tupleElements.last().getWrappedGene(CycleObjectGene::class.java) != null -> {
+                                val nnOptionalLimit =
+                                    tupleElements.last().getWrappedGene(CycleObjectGene::class.java) as CycleObjectGene
+                                tupleElements = tupleElements.dropLast(1).plus(nnOptionalLimit).toMutableList()
+                            }
+
+                            tupleElements.last().getWrappedGene(ArrayGene::class.java) != null -> {
+                                val last = tupleElements.last().getWrappedGene(ArrayGene::class.java)
+                                tupleName = last?.name
+                                when {
+                                    last?.template?.getWrappedGene(ObjectGene::class.java) != null -> {
+                                        val nnOptionalObject =
+                                            last.template.getWrappedGene(ObjectGene::class.java) as ObjectGene
+                                        tupleElements = tupleElements.dropLast(1).plus(nnOptionalObject).toMutableList()
+                                    }
+
+                                    last?.template?.getWrappedGene(CycleObjectGene::class.java) != null -> {
+                                        val nnOptionalCycle =
+                                            last.template.getWrappedGene(CycleObjectGene::class.java) as CycleObjectGene
+                                        tupleElements = tupleElements.dropLast(1).plus(nnOptionalCycle).toMutableList()
+                                    }
+
+                                    last?.template?.getWrappedGene(LimitObjectGene::class.java) != null -> {
+                                        val nnOptionalLimit =
+                                            last.template.getWrappedGene(LimitObjectGene::class.java) as LimitObjectGene
+                                        tupleElements = tupleElements.dropLast(1).plus(nnOptionalLimit).toMutableList()
+                                    }
+
+                                }
+
+                            }
+                        }
+
+                        //related to arrays naming: the name will depend on the name of the object (not the array)
+                        if (tupleName == null) {
+                            //it has an entry in the table
+                            if (state.inputTypeName[tupleElements.last().name]?.isNotEmpty() == true)
+                                OptionalGene(
+                                    state.inputTypeName[tupleElements.last().name].toString(), TupleGene(
+                                        state.inputTypeName[tupleElements.last().name].toString(), tupleElements,
+                                        lastElementTreatedSpecially = true
+                                    )
+                                ) else
+                            //When we do not have an entry to the table
+                                OptionalGene(
+                                    tupleElements.last().name, TupleGene(
+                                        tupleElements.last().name, tupleElements,
+                                        lastElementTreatedSpecially = true
+                                    )
+                                )
+                        } else {
+                            //related to arrays naming: the name will depend on the name of the array: tupleName
+                            //We have an entry to the table
+                            if (state.inputTypeName[tupleName]?.isNotEmpty() == true)
+                                OptionalGene(
+                                    state.inputTypeName[tupleName].toString(), TupleGene(
+                                        state.inputTypeName[tupleName].toString(), tupleElements,
+                                        lastElementTreatedSpecially = true
+                                    )
+                                ) else
+                            //When we do not have an entry to the table
+                                OptionalGene(
+                                    tupleName, TupleGene(
+                                        tupleName, tupleElements,
+                                        lastElementTreatedSpecially = true
+                                    )
+                                )
+
+                        }
+                    } else {
+                        //Dropping the last element since it is a primitive type
                         if (state.inputTypeName[tupleElements.last().name]?.isNotEmpty() == true)
                             OptionalGene(
                                 state.inputTypeName[tupleElements.last().name].toString(), TupleGene(
-                                    state.inputTypeName[tupleElements.last().name].toString(), tupleElements,
-                                    lastElementTreatedSpecially = true
-                                )
-                            ) else
-                        //When we do not have an entry to the table
-                            OptionalGene(
-                                tupleElements.last().name, TupleGene(
-                                    tupleElements.last().name, tupleElements,
-                                    lastElementTreatedSpecially = true
+                                    state.inputTypeName[tupleElements.last().name].toString(),
+                                    tupleElements.dropLast(1),
+                                    lastElementTreatedSpecially = false
                                 )
                             )
-                    } else {
-                        //related to arrays naming: the name will depend on the name of the array: tupleName
-                        //We have an entry to the table
-                        if (state.inputTypeName[tupleName]?.isNotEmpty() == true)
-                            OptionalGene(
-                                state.inputTypeName[tupleName].toString(), TupleGene(
-                                    state.inputTypeName[tupleName].toString(), tupleElements,
-                                    lastElementTreatedSpecially = true
-                                )
-                            ) else
-                        //When we do not have an entry to the table
-                            OptionalGene(
-                                tupleName, TupleGene(
-                                    tupleName, tupleElements,
-                                    lastElementTreatedSpecially = true
-                                )
-                            )
-
-                    }
-                } else {
-                    //Dropping the last element since it is a primitive type
-                    if (state.inputTypeName[tupleElements.last().name]?.isNotEmpty() == true)
-                        OptionalGene(
-                            state.inputTypeName[tupleElements.last().name].toString(), TupleGene(
-                                state.inputTypeName[tupleElements.last().name].toString(),
-                                tupleElements.dropLast(1),
+                        else OptionalGene(
+                            tupleElements.last().name, TupleGene(
+                                tupleElements.last().name, tupleElements.dropLast(1),
                                 lastElementTreatedSpecially = false
                             )
                         )
-                    else OptionalGene(
-                        tupleElements.last().name, TupleGene(
-                            tupleElements.last().name, tupleElements.dropLast(1),
-                            lastElementTreatedSpecially = false
-                        )
-                    )
-                }
+                    }
 
                 fields.add(constructedTuple)
 
@@ -1016,28 +1030,14 @@ object GraphQLActionBuilder {
         else ObjectGene(element.fieldName, fields)
     }
 
-    private fun isKindOfOptionalArrayObject(tupleElements: MutableList<Gene>) =
-        (tupleElements.last().getWrappedGene(ObjectGene::class.java) != null) ||
-                (tupleElements.last().getWrappedGene(LimitObjectGene::class.java) != null) ||
-                (tupleElements.last().getWrappedGene(CycleObjectGene::class.java) != null) ||
-                (tupleElements.last()
-                    .getWrappedGene(ArrayGene::class.java)?.template?.getWrappedGene(ObjectGene::class.java) != null) ||
-                (tupleElements.last()
-                    .getWrappedGene(ArrayGene::class.java)?.template?.getWrappedGene(LimitObjectGene::class.java) != null) ||
-                (tupleElements.last()
-                    .getWrappedGene(ArrayGene::class.java)?.template?.getWrappedGene(CycleObjectGene::class.java) != null)
+    private fun isNotKindOfPrimitive(lastElements: Gene) =
+        (lastElements.getWrappedGene(ObjectGene::class.java) != null) ||
+                (lastElements.getWrappedGene(LimitObjectGene::class.java) != null) ||
+                (lastElements.getWrappedGene(CycleObjectGene::class.java) != null) ||
+                (lastElements.getWrappedGene(ArrayGene::class.java)?.template?.getWrappedGene(ObjectGene::class.java) != null) ||
+                (lastElements.getWrappedGene(ArrayGene::class.java)?.template?.getWrappedGene(LimitObjectGene::class.java) != null) ||
+                (lastElements.getWrappedGene(ArrayGene::class.java)?.template?.getWrappedGene(CycleObjectGene::class.java) != null)
 
-    private fun isLastNotPrimitive(lastElements: Gene) = ((lastElements is ObjectGene) ||
-            (lastElements is CycleObjectGene) ||
-            (lastElements is LimitObjectGene) ||
-            ((lastElements is OptionalGene) && (lastElements.gene is ObjectGene)) ||
-            ((lastElements is ArrayGene<*>) && (lastElements.template is ObjectGene)) ||
-            ((lastElements is ArrayGene<*>) && (lastElements.template is OptionalGene) && (lastElements.template.gene is ObjectGene)) ||
-            ((lastElements is OptionalGene) && (lastElements.gene is ArrayGene<*>) && (lastElements.gene.template is ObjectGene)) ||
-            ((lastElements is OptionalGene) && (lastElements.gene is ArrayGene<*>) && (lastElements.gene.template is OptionalGene) && (lastElements.gene.template.gene is ObjectGene)) ||
-            ((lastElements is OptionalGene) && ((lastElements.gene is LimitObjectGene)||(lastElements.gene is CycleObjectGene))) ||
-            ((lastElements is OptionalGene) && (lastElements.gene is ArrayGene<*>) && (lastElements.gene.template is OptionalGene) && ((lastElements.gene.template.gene is LimitObjectGene)||(lastElements.gene.template.gene is CycleObjectGene)))
-            )
     private fun constructReturn(
         state: TempState,
         tableElement: Table,
