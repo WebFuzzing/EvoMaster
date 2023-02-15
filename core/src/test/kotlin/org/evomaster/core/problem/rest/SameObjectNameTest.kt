@@ -15,7 +15,7 @@ class SameObjectNameTest {
 
         val xyz1 = OpenAPIParser().readLocation("swagger/artificial/xyz1.json", null, null).openAPI
         val xyz1Cluster: MutableMap<String, Action> = mutableMapOf()
-        RestActionBuilderV3.addActionsFromSwagger(xyz1, xyz1Cluster)
+        RestActionBuilderV3.addActionsFromSwagger(xyz1, xyz1Cluster, enableConstraintHandling = false)
 
         assertEquals(1, xyz1Cluster.size)
         val xyz1post = xyz1Cluster["POST:/v1/xyz1"]
@@ -35,7 +35,7 @@ class SameObjectNameTest {
 
         val xyz2 = OpenAPIParser().readLocation("swagger/artificial/xyz2.json", null, null).openAPI
         val xyz2Cluster: MutableMap<String, Action> = mutableMapOf()
-        RestActionBuilderV3.addActionsFromSwagger(xyz2, xyz2Cluster)
+        RestActionBuilderV3.addActionsFromSwagger(xyz2, xyz2Cluster, enableConstraintHandling = false)
 
         assertEquals(1, xyz2Cluster.size)
         val xyz2post = xyz2Cluster["POST:/v2/xyz2"]

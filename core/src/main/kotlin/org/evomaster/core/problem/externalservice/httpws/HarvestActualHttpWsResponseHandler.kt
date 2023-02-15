@@ -392,8 +392,8 @@ class HarvestActualHttpWsResponseHandler {
     private fun updateExtractedObjectDto() {
         synchronized(extractedObjectDto) {
             val infoDto = rc.getSutInfo()!!
-            val map = ParserDtoUtil.getOrParseDtoWithSutInfo(infoDto)
-            if (map.isNotEmpty()) {
+            val map = ParserDtoUtil.getOrParseDtoWithSutInfo(infoDto, config.enableSchemaConstraintHandling)
+            if (map.isNotEmpty()){
                 map.forEach { (t, u) ->
                     extractedObjectDto.putIfAbsent(t, u)
                 }

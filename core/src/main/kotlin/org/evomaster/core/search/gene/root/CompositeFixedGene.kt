@@ -38,4 +38,9 @@ abstract class CompositeFixedGene(
         }
         throw IllegalArgumentException("impact is null or not CompositeFixedGeneImpact, ${additionalGeneMutationInfo.impact}")
     }
+
+    /**
+     * @return length of children for the CompositeFixedGene
+     */
+    fun lengthOfChildren() : Int = children.size
 }

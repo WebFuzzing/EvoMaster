@@ -1,7 +1,9 @@
 package org.evomaster.core.search.gene.collection
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.interfaces.CollectionGene
 import org.evomaster.core.search.gene.optional.OptionalGene
@@ -34,6 +36,12 @@ class ArrayGene<T>(
          * the template (eg ranges for numbers)
          */
         val template: T,
+
+        /**
+         * specify whether the elements should be unique
+         */
+        val uniqueElements : Boolean = false,
+
         /**
          *  How max elements to have in this array. Usually arrays are unbound, till the maximum int size (ie, 2 billion
          *  elements on the JVM). But, for search reasons, too large arrays are impractical
@@ -44,6 +52,7 @@ class ArrayGene<T>(
         var maxSize: Int? = null,
 
         var minSize: Int? = null,
+
         /**
          * The actual elements in the array, based on the template. Ie, usually those elements will be clones
          * of the templated, and then mutated/randomized
@@ -110,6 +119,7 @@ class ArrayGene<T>(
         val copy = ArrayGene(
             name,
             template.copy() as T,
+            uniqueElements,
             maxSize,
             minSize,
             elements.map { e -> e.copy() as T }.toMutableList(),
@@ -167,13 +177,9 @@ class ArrayGene<T>(
         log.trace("Randomizing ArrayGene")
         val n = randomness.nextInt(getMinSizeOrDefault(), getMaxSizeUsedInRandomize())
         repeat(n) {
-            val gene = template.copy() as T
-            if(this.initialized){
-                gene.doInitialize(randomness)
-            } else if(gene.isMutable()) {
-                gene.randomize(randomness, false)
-            }
-            addChild(gene)
+            val gene = createRandomElement(randomness)
+            if (gene != null)
+                addElement(gene)
         }
         assert(minSize==null || (minSize!! <= elements.size))
         assert(maxSize==null || (elements.size <= maxSize!!))
@@ -215,8 +221,7 @@ class ArrayGene<T>(
     override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, selectionStrategy: SubsetGeneMutationSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
 
         if(elements.size < getMaxSizeOrDefault() && (elements.size == getMinSizeOrDefault() || elements.isEmpty() || randomness.nextBoolean())){
-            val gene = template.copy() as T
-            gene.doInitialize(randomness)
+            val gene = createRandomElement(randomness) ?: return false
             addElement(gene)
         }else{
             log.trace("Removing gene in mutation")
@@ -262,7 +267,17 @@ class ArrayGene<T>(
             killAllChildren()
             val elements = gene.elements.mapNotNull { it.copy() as? T}.toMutableList()
             elements.forEach { it.resetLocalIdRecursively() }
-            addChildren(elements)
+            if (!uniqueElements || gene.uniqueElements || !isElementApplicableToUniqueCheck(ParamUtil.getValueGene(template)))
+                addChildren(elements)
+            else{
+                val unique = elements.filterIndexed { index, t ->
+                    index == elements.indexOfLast { l-> ParamUtil.getValueGene(l).containsSameValueAs(ParamUtil.getValueGene(t)) }
+                }
+                Lazy.assert {
+                    unique.isNotEmpty()
+                }
+                addChildren(unique)
+            }
             return true
         }
         LoggingUtil.uniqueWarn(
@@ -285,11 +300,42 @@ class ArrayGene<T>(
         }
     }
 
+    private fun createRandomElement(randomness: Randomness) : T? {
+        val gene = template.copy() as T
+        if(this.initialized){
+            gene.doInitialize(randomness)
+        } else if(gene.isMutable()) {
+            gene.randomize(randomness, false)
+        }
+
+        if (uniqueElements && doesExist(gene)){
+            gene.randomize(randomness, true)
+        }
+
+        if (uniqueElements && doesExist(gene)){
+            log.warn("tried twice, but still cannot create unique element for the gene")
+            return null
+        }
+
+        return gene
+    }
+
+    /**
+     * @return if the [gene] does exist in [elements]
+     */
+    fun doesExist(gene: T): Boolean{
+        if (!isElementApplicableToUniqueCheck(ParamUtil.getValueGene(gene))) return false
+        return elements.any { ParamUtil.getValueGene(it).containsSameValueAs(ParamUtil.getValueGene(gene)) }
+    }
+
     /**
      * add an element [element] to [elements]
      */
     fun addElement(element: T){
         checkConstraintsForAdd()
+        if (uniqueElements && doesExist(element))
+            throw IllegalArgumentException("when uniqueElements is true, cannot add element which exists")
+
         addChild(element)
     }
 
@@ -303,6 +349,8 @@ class ArrayGene<T>(
     fun addElement(element: Gene) : Boolean{
         element as? T ?: return false
         checkConstraintsForAdd()
+        if (uniqueElements && doesExist(element))
+            throw IllegalArgumentException("when uniqueElements is true, cannot add element which exists")
         addChild(element)
         return true
     }
