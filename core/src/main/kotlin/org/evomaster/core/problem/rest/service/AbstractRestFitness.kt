@@ -292,7 +292,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
             }
         }
 
-        return ParserDtoUtil.getOrParseDtoWithSutInfo(infoDto)[name]!!
+        return ParserDtoUtil.getOrParseDtoWithSutInfo(infoDto, config.enableSchemaConstraintHandling)[name]!!
     }
 
     /**
@@ -765,7 +765,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
         if (config.baseTaintAnalysisProbability > 0) {
             Lazy.assert { actionResults.size == dto.additionalInfoList.size }
             //TODO add taint analysis for resource-based solution
-            TaintAnalysis.doTaintAnalysis(individual, dto.additionalInfoList, randomness)
+            TaintAnalysis.doTaintAnalysis(individual, dto.additionalInfoList, randomness, config.enableSchemaConstraintHandling)
         }
 
         return dto
