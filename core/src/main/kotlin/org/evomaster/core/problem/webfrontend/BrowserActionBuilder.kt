@@ -7,6 +7,7 @@ import java.net.URL
 
 object BrowserActionBuilder {
 
+
     fun computePossibleUserInteractions(html: String) : List<WebUserInteraction>{
 
 
@@ -27,14 +28,12 @@ object BrowserActionBuilder {
                 val uri = try{
                     URI(href)
                 }catch (e: URISyntaxException){
-                    //TODO keep track of it
+                    //errors are handled elsewhere in fitness function
                     return@forEach
                 }
                 val external = !uri.host.isNullOrBlank()
                 if(!external) {
                     list.add(WebUserInteraction(it.cssSelector(), UserActionType.CLICK))
-                } else {
-                    //TODO keep track of external links, for automated oracle
                 }
             }
 

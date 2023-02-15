@@ -49,6 +49,8 @@ class IdMapper {
 
         private const val GQL_NO_ERRORS = "GQL_NO_ERRORS"
 
+        private const val MALFORMED_HTML_ERROR = "MALFORMED_HTML_ERROR_"
+
         fun isFault(descriptiveId: String) = descriptiveId.startsWith(FAULT_DESCRIPTIVE_ID_PREFIX) || isGQLErrors(descriptiveId, true)
 
         fun isFault500(descriptiveId: String) = descriptiveId.startsWith(FAULT_DESCRIPTIVE_ID_PREFIX+ FAULT_500)
@@ -137,6 +139,10 @@ class IdMapper {
             mapping[k] = descriptiveId
             k
         })
+    }
+
+    fun getFaultDescriptiveIdForMalformedHtml(postfix: String): String{
+        return MALFORMED_HTML_ERROR + postfix
     }
 
     fun getFaultDescriptiveIdFor500(postfix: String): String {

@@ -11,6 +11,8 @@ import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.net.URI
+import java.net.URISyntaxException
 import javax.inject.Inject
 
 
@@ -25,6 +27,10 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
 
     @Inject
     private lateinit var pageIdentifier: WebPageIdentifier
+
+    @Inject
+    private lateinit var webGlobalState: WebGlobalState
+
 
     override fun doCalculateCoverage(
         individual: WebIndividual,
@@ -43,6 +49,9 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
         val actions = individual.seeMainExecutableActions()
 
         browserController.goToStartingPage()
+        checkHtmlGlobalOracle(browserController.getCurrentPageSource(), browserController.getCurrentUrl())
+        //if starting page is invalid, not much we can do at all...
+        //TODO maybe should have explicit check at the beginning of the search
 
         //run the test, one action at a time
         for (i in actions.indices) {
@@ -85,6 +94,8 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
 
     private fun handleWebAction(a: WebAction, actionResults: MutableList<ActionResult>): Boolean {
 
+        //TODO should check if current "page" is not html, eg an image
+
         val pageBeforeExecutingAction = browserController.getCurrentPageSource()
         val urlBeforeExecutingAction = browserController.getCurrentUrl()
         val possibilities = BrowserActionBuilder.createPossibleActions(pageBeforeExecutingAction)
@@ -95,9 +106,9 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
             !a.isApplicableInGivenPage(pageBeforeExecutingAction)){
             //not applicable might happen if mutation in previous action led to different page
 
-
-
             //TODO possibly add "back" and "refresh" actions, but with a probability
+
+            //TODO if page is invalid, should always return with "back"
 
             if(possibilities.isEmpty()){
                 blocking = true
@@ -140,13 +151,44 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
 
         if(!blocking) {
             //TODO all needed info
-            val end   = pageIdentifier.registerShape(HtmlUtils.computeIdentifyingShape(browserController.getCurrentPageSource()))
+            val endPageSource = browserController.getCurrentPageSource()
+            val end   = pageIdentifier.registerShape(HtmlUtils.computeIdentifyingShape(endPageSource))
             result.setIdentifyingPageIdEnd(end)
-            result.setUrlPageEnd(browserController.getCurrentUrl())
+            val endUrl = browserController.getCurrentUrl()
+            result.setUrlPageEnd(endUrl)
+
+            if(start != end){
+                val valid = checkHtmlGlobalOracle(endPageSource, endUrl)
+                result.setValidHtml(valid)
+            }
         }
 
         actionResults.add(result)
         return !blocking
+    }
+
+    private fun checkHtmlGlobalOracle(html: String, urlOfHtmlPage: String) : Boolean{
+
+        val ahrefs = HtmlUtils.getUrlInALinks(html)
+        if(ahrefs == null){
+            webGlobalState.addBrokenPage(urlOfHtmlPage)
+            return false
+        }
+
+        ahrefs.forEach {
+            val uri = try{
+                URI(it)
+            } catch (e: URISyntaxException){
+                webGlobalState.addMalformedUri(it, urlOfHtmlPage)
+                return@forEach
+            }
+            val external = !uri.host.isNullOrBlank()
+            if(external){
+                webGlobalState.addExternalLink(uri, urlOfHtmlPage)
+            }
+        }
+
+        return true
     }
 
     private fun handleResponseTargets(
@@ -181,6 +223,12 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
                 fv.updateTarget(actionInPageId, h, i)
             }
             Lazy.assert { r.getPossibleActionIds().contains(executedActionId) }
+
+            val validHtml = r.getValidHtml()!! //must be set
+            if(!validHtml){
+                val malformedHtmlId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveIdForMalformedHtml(r.getIdentifyingPageIdStart()!!))
+                fv.updateTarget(malformedHtmlId, 1.0, i)
+            }
 
             //TODO possibly check error logs in Chrome Tool
             //TODO targets for HTTP calls through reverse-proxy

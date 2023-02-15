@@ -1,9 +1,7 @@
 package org.evomaster.core.output.service
 
 import org.evomaster.core.output.Lines
-import org.evomaster.core.problem.webfrontend.UserActionType
-import org.evomaster.core.problem.webfrontend.WebAction
-import org.evomaster.core.problem.webfrontend.WebIndividual
+import org.evomaster.core.problem.webfrontend.*
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
@@ -37,6 +35,12 @@ class WebTestCaseWriter : TestCaseWriter() {
             ind.evaluatedMainActions().forEachIndexed { index,  a ->
                 addActionLines(a.action, index, testCaseName, lines, a.result, testSuitePath, baseUrlOfSut)
             }
+            val lastResult = ind.evaluatedMainActions().last().result as WebResult
+            if(!lastResult.stopping){
+                lines.add("//  ${HtmlUtils.getPathAndQueries(lastResult.getUrlPageEnd()!!)}")
+            } else {
+                lines.add("//  ${HtmlUtils.getPathAndQueries(lastResult.getUrlPageStart()!!)}")
+            }
         }
     }
 
@@ -50,9 +54,13 @@ class WebTestCaseWriter : TestCaseWriter() {
         //TODO add possible wait on CSS selector. if not, stop test???
 
         val a = action as WebAction
+        val r = result as WebResult
         a.userInteractions.forEach {
             when(it.userActionType){
-                UserActionType.CLICK -> lines.addStatement("clickAndWaitPageLoad($driver, \"${it.cssSelector}\")", format)
+                UserActionType.CLICK -> {
+                    lines.addStatement("clickAndWaitPageLoad($driver, \"${it.cssSelector}\")", format)
+                    lines.append(" // ${HtmlUtils.getPathAndQueries(r.getUrlPageStart()!!)}")
+                }
                 //TODO all other cases
                 else -> throw IllegalStateException("Not handled action type: ${it.userActionType}")
             }

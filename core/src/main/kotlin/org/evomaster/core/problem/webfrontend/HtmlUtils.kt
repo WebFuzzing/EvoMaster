@@ -3,8 +3,26 @@ package org.evomaster.core.problem.webfrontend
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Node
 import org.jsoup.select.NodeVisitor
+import java.net.URL
 
 object HtmlUtils {
+
+
+    fun getUrlInALinks(html: String) : List<String>? {
+        val document = try{
+            Jsoup.parse(html)
+        }catch (e: Exception){
+            return null
+        }
+
+        return document.getElementsByTag("a")
+            .map { it.attr("href")}
+    }
+
+    fun getPathAndQueries(url: String) : String{
+        val x = URL(url)
+        return "${x.path}${x.query ?: ""}"
+    }
 
     /**
      * Given HTML pages, we want to identify which ones are "unique".

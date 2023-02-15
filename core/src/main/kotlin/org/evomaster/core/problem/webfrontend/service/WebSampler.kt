@@ -20,6 +20,7 @@ class WebSampler : EnterpriseSampler<WebIndividual>() {
     private lateinit var browserController: BrowserController
 
 
+
     @PostConstruct
     open fun initialize() {
 
