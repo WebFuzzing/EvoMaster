@@ -38,18 +38,19 @@ import org.slf4j.LoggerFactory
 import kotlin.math.min
 
 class StringGene(
-    name: String,
-    var value: String = "foo",
-    /** Inclusive */
+        name: String,
+        var value: String = "foo",
+        /** Inclusive */
         val minLength: Int = 0,
-    /** Inclusive.
+        /**
+         * Inclusive.
          * Constraint on maximum lenght of the string. This could had been specified as
          * a constraint in the schema, or specific for the represented data type.
          * Note: further limits could be imposed to avoid too large strings that would
          * hamper the search process, which can be set via [EMConfig] options
          */
         val maxLength: Int = EMConfig.stringLengthHardLimit,
-    /**
+        /**
          * Depending on what a string is representing, there might be some chars
          * we do not want to use.
          * For example, in a URL Path variable, we do not want have "/", as otherwise
@@ -57,7 +58,7 @@ class StringGene(
          */
         val invalidChars: List<Char> = listOf(),
 
-    /**
+        /**
          * specialization based on taint analysis
          */
         specializationGenes: List<Gene> = listOf()
@@ -460,6 +461,11 @@ class StringGene(
             k.selectedSpecialization = -1
             k.value = update
         }
+        /*
+            the [update] might be invalid
+            this can be reproduced by CrossFkEMTest
+         */
+        repair()
     }
 
     fun addSpecializations(
