@@ -28,6 +28,30 @@ public abstract class WebTestBase extends EnterpriseTestBase{
         return (Solution<WebIndividual>) Main.initAndRun(args.toArray(new String[0]));
     }
 
+    public static void assertNoHtmlErrors(Solution<WebIndividual> sol){
+
+        assertTrue(
+                sol.getIndividuals().stream()
+                        .flatMap(ind -> {
+                            List<WebAction> actions =  ind.getIndividual().seeMainExecutableActions();
+                            return ind.seeResults(actions).stream();
+                        })
+                        .allMatch(r -> !Boolean.FALSE.equals(((WebResult)r).getValidHtml()))
+        );
+    }
+
+    public static void assertHasAnyHtmlErrors(Solution<WebIndividual> sol){
+
+        assertTrue(
+                sol.getIndividuals().stream()
+                        .flatMap(ind -> {
+                            List<WebAction> actions =  ind.getIndividual().seeMainExecutableActions();
+                            return ind.seeResults(actions).stream();
+                        })
+                        .anyMatch(r -> Boolean.FALSE.equals(((WebResult)r).getValidHtml()))
+        );
+    }
+
     public static Set<URL> visitedUrls(Solution<WebIndividual> sol){
 
         return sol.getIndividuals().stream()

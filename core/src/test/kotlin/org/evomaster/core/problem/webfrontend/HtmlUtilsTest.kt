@@ -2,11 +2,22 @@ package org.evomaster.core.problem.webfrontend
 
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import java.net.URI
+import java.net.URL
 
 internal class HtmlUtilsTest{
 
     private fun body(s: String) = "<#document><html><head></head><body>$s</body></html></#document>"
 
+
+    @Test
+    fun testCheckLink(){
+
+        assertTrue(HtmlUtils.checkLink(URL("http://www.google.com")))
+        assertTrue(HtmlUtils.checkLink(URL("https://github.com/EMResearch/EvoMaster")))
+
+        assertFalse(HtmlUtils.checkLink(URL("https://www.google.com/foo")))
+    }
 
     @Test
     fun testMalformedHtml(){

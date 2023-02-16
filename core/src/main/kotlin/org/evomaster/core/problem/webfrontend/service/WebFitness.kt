@@ -11,8 +11,10 @@ import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.net.MalformedURLException
 import java.net.URI
 import java.net.URISyntaxException
+import java.net.URL
 import javax.inject.Inject
 
 
@@ -49,7 +51,7 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
         val actions = individual.seeMainExecutableActions()
 
         browserController.goToStartingPage()
-        checkHtmlGlobalOracle(browserController.getCurrentPageSource(), browserController.getCurrentUrl())
+        checkHtmlGlobalOracle(browserController.getCurrentPageSource(), browserController.getCurrentUrl(), fv)
         //if starting page is invalid, not much we can do at all...
         //TODO maybe should have explicit check at the beginning of the search
 
@@ -60,7 +62,7 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
 
             registerNewAction(a, i)
 
-            val ok = handleWebAction(a, actionResults)
+            val ok = handleWebAction(a, actionResults, fv)
             actionResults.filterIsInstance<WebResult>()[i].stopping = !ok
 
             if (!ok) {
@@ -92,7 +94,7 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
         )
     }
 
-    private fun handleWebAction(a: WebAction, actionResults: MutableList<ActionResult>): Boolean {
+    private fun handleWebAction(a: WebAction, actionResults: MutableList<ActionResult>, fv: FitnessValue): Boolean {
 
         //TODO should check if current "page" is not html, eg an image
 
@@ -158,7 +160,7 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
             result.setUrlPageEnd(endUrl)
 
             if(start != end){
-                val valid = checkHtmlGlobalOracle(endPageSource, endUrl)
+                val valid = checkHtmlGlobalOracle(endPageSource, endUrl, fv)
                 result.setValidHtml(valid)
             }
         }
@@ -167,8 +169,9 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
         return !blocking
     }
 
-    private fun checkHtmlGlobalOracle(html: String, urlOfHtmlPage: String) : Boolean{
+    private fun checkHtmlGlobalOracle(html: String, urlOfHtmlPage: String, fv: FitnessValue) : Boolean{
 
+        var issues = false
 
         /*
         if(HtmlUtils.checkErrorsInHtml(html) != null){
@@ -178,25 +181,57 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
             //NOTE code is commented out because parsing HTML is not cheap
 
             webGlobalState.addBrokenPage(urlOfHtmlPage)
-            return false
+            //return false
+
+            val malformedHtmlId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveIdForMalformedHtml(r.getIdentifyingPageIdEnd()!!))
+            fv.updateTarget(malformedHtmlId, 1.0, i)
         }
          */
 
         HtmlUtils.getUrlInALinks(html).forEach {
-            val uri = try{
+            try{
                 URI(it)
             } catch (e: URISyntaxException){
                 webGlobalState.addMalformedUri(it, urlOfHtmlPage)
+                issues = true
+
+                val id = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveIdForMalformedURI(it))
+                fv.updateTarget(id, 1.0)
+
                 return@forEach
             }
-            val external = !uri.host.isNullOrBlank()
+
+            //external links should be valid URL
+            val url = try{
+                URL(it)
+            } catch (e: MalformedURLException){
+                return@forEach
+            }
+
+            val external = !url.host.isNullOrBlank()
             if(external){
-                webGlobalState.addExternalLink(uri, urlOfHtmlPage)
+                if(! webGlobalState.hasAlreadySeenExternalLink(url)){
+                    val found = HtmlUtils.checkLink(url)
+                    if(!found){
+                        issues = true
+
+                        val id = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveIdForBrokenLink(it))
+                        fv.updateTarget(id, 1.0)
+                    }
+                    webGlobalState.addExternalLink(url, found, urlOfHtmlPage)
+                }  else {
+                    webGlobalState.updateExternalLink(url, urlOfHtmlPage)
+                    if(webGlobalState.isBrokenLink(url)){
+                        issues = true
+                    }
+                }
             }
         }
 
-        return true
+        return !issues
     }
+
+
 
     private fun handleResponseTargets(
         fv: FitnessValue,
@@ -205,7 +240,7 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
         additionalInfoList: List<AdditionalInfoDto>,
     ) {
 
-        fv.updateTarget(idMapper.handleLocalTarget("HOME_PAGE"), 1.0)
+        fv.updateTarget(idMapper.handleLocalTarget("WEB_HOME_PAGE"), 1.0)
 
         for(i in actions.indices){
             val a = actions[i]
@@ -231,11 +266,7 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
             }
             Lazy.assert { r.getPossibleActionIds().contains(executedActionId) }
 
-            val validHtml = r.getValidHtml()!! //must be set
-            if(!validHtml){
-                val malformedHtmlId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveIdForMalformedHtml(r.getIdentifyingPageIdStart()!!))
-                fv.updateTarget(malformedHtmlId, 1.0, i)
-            }
+
 
             //TODO possibly check error logs in Chrome Tool
             //TODO targets for HTTP calls through reverse-proxy

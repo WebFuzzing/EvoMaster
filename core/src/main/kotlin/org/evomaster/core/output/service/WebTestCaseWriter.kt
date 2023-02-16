@@ -35,13 +35,18 @@ class WebTestCaseWriter : TestCaseWriter() {
             ind.evaluatedMainActions().forEachIndexed { index,  a ->
                 addActionLines(a.action, index, testCaseName, lines, a.result, testSuitePath, baseUrlOfSut)
             }
-            val lastResult = ind.evaluatedMainActions().last().result as WebResult
-            val url = if(!lastResult.stopping){
-                lastResult.getUrlPageEnd()!!
+            val lastEvaluated = ind.evaluatedMainActions().last()
+            val lastAction = lastEvaluated.action as WebAction
+            val lastResult = lastEvaluated.result as WebResult
+            val url =  if(!lastResult.stopping){
+                 lastResult.getUrlPageEnd()!!
             } else {
+                //if stopping, it means nothing could be done, and no info on where it went.
+                //it also implies that such entry itself was printed out in the test
+                assert(lastAction.userInteractions.isEmpty())
                 lastResult.getUrlPageStart()!!
             }
-            lines.add(getCommentOnPage(url,lastResult.getValidHtml()))
+            lines.add(getCommentOnPage("ended on page", url,null,lastResult.getValidHtml()))
         }
     }
 
@@ -50,10 +55,10 @@ class WebTestCaseWriter : TestCaseWriter() {
         //TODO need to handle init of JS scripts, not just load of page
     }
 
-    private fun getCommentOnPage(url: String, validHtml: Boolean?) : String{
-        var comment = " // ${HtmlUtils.getPathAndQueries(url)}"
+    private fun getCommentOnPage(label: String, start: String, end: String?, validHtml: Boolean?) : String{
+        var comment = " // $label ${HtmlUtils.getPathAndQueries(start)}"
         if(validHtml == false){
-            comment += "  (ERRORS in HTML)"
+            comment += "  (ERRORS in HTML in reached page ${HtmlUtils.getPathAndQueries(end!!)})"
         }
         return comment
     }
@@ -68,7 +73,7 @@ class WebTestCaseWriter : TestCaseWriter() {
             when(it.userActionType){
                 UserActionType.CLICK -> {
                     lines.addStatement("clickAndWaitPageLoad($driver, \"${it.cssSelector}\")", format)
-                    lines.append(getCommentOnPage(r.getUrlPageStart()!!,r.getValidHtml()))
+                    lines.append(getCommentOnPage("on page", r.getUrlPageStart()!!, r.getUrlPageEnd(), r.getValidHtml()))
                 }
                 //TODO all other cases
                 else -> throw IllegalStateException("Not handled action type: ${it.userActionType}")

@@ -4,6 +4,7 @@ import org.jsoup.Jsoup
 import org.jsoup.nodes.Node
 import org.jsoup.parser.Parser
 import org.jsoup.select.NodeVisitor
+import java.net.URI
 import java.net.URL
 
 object HtmlUtils {
@@ -64,6 +65,18 @@ object HtmlUtils {
         })
 
         return buffer.toString()
+    }
+
+    fun checkLink(url: URL): Boolean {
+
+        return try {
+            val connection = url.openConnection()
+            connection.connect()
+            connection.content
+            true
+        }catch (e: Exception){
+            false
+        }
     }
 
 }
