@@ -1,4 +1,4 @@
-package com.foo.rest.examples.spring.db.crossfks;
+package com.foo.rest.examples.spring.db.crossfks.entities;
 
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -7,7 +7,7 @@ import javax.persistence.*;
 import java.util.Set;
 
 @Entity
-public class NodeBTableEntity {
+public class BarTableEntity {
 
     @Id
     @GeneratedValue
@@ -24,14 +24,14 @@ public class NodeBTableEntity {
     RootTableEntity rootTableEntity;
 
     @JsonIgnore
-    @ManyToMany(mappedBy = "activedNodeBTableEntities")
-    Set<NodeCTableEntity> inNodeC;
+    @ManyToMany(mappedBy = "activedBarTableEntities")
+    Set<FooTableEntity> inNodeC;
 
-    public static NodeBTableEntity withName(RootTableEntity rootTableEntity, String nodeBName) {
-        NodeBTableEntity nodeBTableEntity = new NodeBTableEntity();
-        nodeBTableEntity.name = nodeBName;
-        nodeBTableEntity.rootTableEntity = rootTableEntity;
-        return nodeBTableEntity;
+    public static BarTableEntity withName(RootTableEntity rootTableEntity, String barName) {
+        BarTableEntity barTableEntity = new BarTableEntity();
+        barTableEntity.name = barName;
+        barTableEntity.rootTableEntity = rootTableEntity;
+        return barTableEntity;
     }
 
     public String getName() {
@@ -65,12 +65,12 @@ public class NodeBTableEntity {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof NodeBTableEntity)) return false;
+        if (!(o instanceof BarTableEntity)) return false;
 
-        NodeBTableEntity nodeBTableEntity = (NodeBTableEntity) o;
+        BarTableEntity barTableEntity = (BarTableEntity) o;
 
-        if (!name.equals(nodeBTableEntity.name)) return false;
-        return rootTableEntity.equals(nodeBTableEntity.rootTableEntity);
+        if (!name.equals(barTableEntity.name)) return false;
+        return rootTableEntity.equals(barTableEntity.rootTableEntity);
 
     }
 
