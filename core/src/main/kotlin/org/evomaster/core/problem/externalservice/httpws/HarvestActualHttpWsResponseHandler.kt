@@ -67,8 +67,12 @@ class HarvestActualHttpWsResponseHandler {
 
     /**
      * TODO: Add EMConfig option to set value as config
+     * TODO if one day we need priorities on the queue, it can be set here. See:
+     * https://stackoverflow.com/questions/3198660/java-executors-how-can-i-set-task-priority
      */
     private var workerPool = Executors.newFixedThreadPool(min(3, Runtime.getRuntime().availableProcessors()))
+
+
 
 
     companion object {
@@ -131,6 +135,11 @@ class HarvestActualHttpWsResponseHandler {
      */
     private val skipHeaders = listOf("user-agent", "host", "accept-encoding")
 
+
+    private val startedRequests : MutableSet<String> = mutableSetOf()
+
+
+
     @PostConstruct
     fun initialize() {
         if (config.doHarvestActualResponse()) {
@@ -165,16 +174,16 @@ class HarvestActualHttpWsResponseHandler {
     }
 
     @Synchronized
-    private fun sendRequestToRealExternalService() {
-        synchronized(lock) {
-            while (queue.size == 0) {
-                lock.wait()
-            }
-            val first = queue.remove()
+    private fun sendRequestToRealExternalService(request: String) {
+//        synchronized(lock) {
+//            while (queue.size == 0) {
+//                lock.wait()
+//            }
+//            val first = queue.remove()
             val info = handleActualResponse(
-                createInvocationToRealExternalService(
-                    cachedRequests[first]
-                        ?: throw IllegalStateException("Fail to get Http request with description $first")
+                createInvocationToRealExternalService( request
+                    //cachedRequests[first]
+                        //?: throw IllegalStateException("Fail to get Http request with description $first")
                 )
             )
             if (info != null) {
@@ -182,7 +191,7 @@ class HarvestActualHttpWsResponseHandler {
                 actualResponses[first] = info
             } else
                 LoggingUtil.uniqueWarn(log, "Fail to harvest actual responses from GET $first")
-        }
+ //       }
     }
 
     /**
@@ -240,30 +249,41 @@ class HarvestActualHttpWsResponseHandler {
 
         // only harvest responses with GET method
         //val filter = requests.filter { it.method.equals("GET", ignoreCase = true) }
-        synchronized(cachedRequests) {
-            requests.forEach { cachedRequests.putIfAbsent(it.getDescription(), it) }
-        }
+//        synchronized(cachedRequests) {
+//            requests.forEach { cachedRequests.putIfAbsent(it.getDescription(), it) }
+//        }
 
-        addRequests(requests.map { it.getDescription() })
+        requests.forEach {
+            addRequest(it.getDescription())
+        }
+        //addRequests(requests.map { it.getDescription() })
     }
 
-    private fun addRequests(requests: List<String>) {
-        if (requests.isEmpty()) return
+    private fun addRequest(request: String) {
 
-        val notInCollected = requests.filterNot { actualResponses.containsKey(it) }.distinct()
-        if (notInCollected.isEmpty()) return
-
-        synchronized(lock) {
-            val newRequests = notInCollected.filterNot { queue.contains(it) }
-            if (newRequests.isEmpty())
-                return
-            updateExtractedObjectDto()
-            lock.notify()
-            queue.addAll(newRequests)
-
-            val task = Runnable { sendRequestToRealExternalService() }
-            workerPool.execute(task)
+        if(startedRequests.contains(request)){
+            return
         }
+
+        startedRequests.add(request)
+
+
+        //if (requests.isEmpty()) return
+
+        //val notInCollected = requests.filterNot { actualResponses.containsKey(it) }.distinct()
+        //if (notInCollected.isEmpty()) return
+
+        //synchronized(lock) {
+          //  val newRequests = notInCollected.filterNot { queue.contains(it) }
+            //if (newRequests.isEmpty())
+              //  return
+            updateExtractedObjectDto()
+            //lock.notify()
+            //queue.addAll(newRequests)
+
+            val task = Runnable { sendRequestToRealExternalService(request) }
+            workerPool.execute(task)
+        //}
     }
 
     private fun buildInvocation(httpRequest: HttpExternalServiceRequest): Invocation {
