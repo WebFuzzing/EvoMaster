@@ -161,7 +161,8 @@ class ResourceCluster {
                         isInsertion: Boolean = true,
                         randomness: Randomness,
                         forceSynDataInDb: Boolean = false,
-                        useExtraSqlDbConstraints: Boolean = false
+                        useExtraSqlDbConstraints: Boolean = false,
+                        enableSingleInsertionForTable : Boolean
     ) : MutableList<DbAction>{
         val sorted = DbActionUtils.sortTable(tables.mapNotNull { getTableByName(it) }.run { if (doNotCreateDuplicatedAction) this.distinct() else this })
         val added = mutableListOf<DbAction>()
@@ -186,7 +187,7 @@ class ResourceCluster {
                         listOf(sqlInsertBuilder.extractExistingByCols(t.name, row, useExtraSqlDbConstraints))
                     }
                 } else{
-                    sqlInsertBuilder.createSqlInsertionAction(t.name, useExtraSqlDbConstraints = useExtraSqlDbConstraints)
+                    sqlInsertBuilder.createSqlInsertionAction(t.name, useExtraSqlDbConstraints = useExtraSqlDbConstraints, enableSingleInsertionForTable=enableSingleInsertionForTable)
                             .onEach { a -> a.doInitialize(randomness) }
                 }
                 if (actions != null){

@@ -1112,6 +1112,7 @@ class ResourceDepManageService {
         val relatedTables = getAllRelatedTables(ind).flatMap { t->  (0 until randomness.nextInt(1, maxPerResource)).map { t } }
 
         val extraConstraints = randomness.nextBoolean(apc.getExtraSqlDbConstraintsProbability())
+        val enableSingleInsertionForTable = randomness.nextBoolean(config.probOfEnablingSingleInsertionForTable)
 
         val added = rm.cluster.createSqlAction(
                 relatedTables,
@@ -1120,7 +1121,7 @@ class ResourceDepManageService {
                 false,
                 true,
                 randomness,
-                useExtraSqlDbConstraints = extraConstraints)
+                useExtraSqlDbConstraints = extraConstraints, enableSingleInsertionForTable= enableSingleInsertionForTable)
 
         DbActionUtils.repairBrokenDbActionsList(added,randomness)
 

@@ -1816,6 +1816,10 @@ class EMConfig {
     @Experimental
     var enableSchemaConstraintHandling = false
 
+    @Cfg("a probability of enabling single insertion strategy to insert rows into database.")
+    @Experimental
+    @Probability(activating = true)
+    var probOfEnablingSingleInsertionForTable = 0.0
 
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
