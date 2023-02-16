@@ -162,7 +162,7 @@ class ResourceCluster {
                         randomness: Randomness,
                         forceSynDataInDb: Boolean = false,
                         useExtraSqlDbConstraints: Boolean = false,
-                        enableSingleInsertionForTable : Boolean
+                        enableSingleInsertionForTable : Boolean = false
     ) : MutableList<DbAction>{
         val sorted = DbActionUtils.sortTable(tables.mapNotNull { getTableByName(it) }.run { if (doNotCreateDuplicatedAction) this.distinct() else this })
         val added = mutableListOf<DbAction>()
