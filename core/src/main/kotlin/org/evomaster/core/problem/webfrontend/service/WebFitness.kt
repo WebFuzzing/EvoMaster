@@ -170,11 +170,17 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
     private fun checkHtmlGlobalOracle(html: String, urlOfHtmlPage: String) : Boolean{
 
 
+        /*
         if(HtmlUtils.checkErrorsInHtml(html) != null){
             //TODO save error message, and output in generated tests
+            //   TODO actually, this does not work, as Chrome fixes the issues in HTML when displaying it.
+            //   An option could be to make direct call to SUT, to fetch original HTML
+            //NOTE code is commented out because parsing HTML is not cheap
+
             webGlobalState.addBrokenPage(urlOfHtmlPage)
             return false
         }
+         */
 
         HtmlUtils.getUrlInALinks(html).forEach {
             val uri = try{

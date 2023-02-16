@@ -36,11 +36,12 @@ class WebTestCaseWriter : TestCaseWriter() {
                 addActionLines(a.action, index, testCaseName, lines, a.result, testSuitePath, baseUrlOfSut)
             }
             val lastResult = ind.evaluatedMainActions().last().result as WebResult
-            if(!lastResult.stopping){
-                lines.add("//  ${HtmlUtils.getPathAndQueries(lastResult.getUrlPageEnd()!!)}")
+            val url = if(!lastResult.stopping){
+                lastResult.getUrlPageEnd()!!
             } else {
-                lines.add("//  ${HtmlUtils.getPathAndQueries(lastResult.getUrlPageStart()!!)}")
+                lastResult.getUrlPageStart()!!
             }
+            lines.add(getCommentOnPage(url,lastResult.getValidHtml()))
         }
     }
 

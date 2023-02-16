@@ -32,7 +32,7 @@ public class MalformedHtmlEMTest extends SpringTestBase{
 
                     assertHasVisitedUrlPath(solution, "/malformedhtml/index.html","/malformedhtml/a.html");
 
-                    //TODO check on fault
+                    //actually there is no fault found here, as Chrome is fixing the HTML
                 }
         );
     }

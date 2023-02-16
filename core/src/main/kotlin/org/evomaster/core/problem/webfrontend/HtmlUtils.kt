@@ -10,7 +10,7 @@ object HtmlUtils {
 
 
     fun checkErrorsInHtml(html: String) : String?{
-        val parser = Parser.htmlParser().setTrackErrors(10)
+        val parser = Parser.htmlParser().setTrackErrors(1000)
         Jsoup.parse(html, "", parser);
         if(parser.errors.isEmpty()){
             return null
