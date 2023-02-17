@@ -2,6 +2,7 @@ package org.evomaster.core.problem.rest.seeding.postman
 
 import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI
+import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.problem.rest.RestCallAction
@@ -620,8 +621,9 @@ class PostmanParserTest {
 
     private fun loadRestCallActions(swagger: OpenAPI): List<RestCallAction> {
         val actions: MutableMap<String, Action> = mutableMapOf()
-
-        RestActionBuilderV3.addActionsFromSwagger(swagger, actions)
+        val config = EMConfig()
+        // here, we employ default setting for enableSchemaConstraintHandling
+        RestActionBuilderV3.addActionsFromSwagger(swagger, actions, enableConstraintHandling = config.enableSchemaConstraintHandling)
 
         return actions
                 .asSequence()

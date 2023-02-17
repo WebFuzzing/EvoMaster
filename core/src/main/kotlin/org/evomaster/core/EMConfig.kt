@@ -1812,6 +1812,11 @@ class EMConfig {
     @Probability(activating = true)
     var probOfMutatingResponsesBasedOnActualResponse = 0.0
 
+    @Cfg("Whether to employ constraints specified in API schema (e.g., OpenAPI) in test generation")
+    @Experimental
+    var enableSchemaConstraintHandling = false
+
+
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
             return maxTimeInSeconds

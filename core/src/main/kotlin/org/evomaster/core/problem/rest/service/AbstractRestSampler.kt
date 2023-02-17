@@ -92,7 +92,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
         actionCluster.clear()
         val skip = getEndpointsToSkip(swagger, infoDto)
-        RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, skip)
+        RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, skip, enableConstraintHandling = config.enableSchemaConstraintHandling)
 
         if(config.extraQueryParam){
             addExtraQueryParam(actionCluster)
@@ -120,7 +120,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         /*
             TODO this would had been better handled with optional injection, but Guice seems pretty buggy :(
          */
-        partialOracles.setupForRest(swagger)
+        partialOracles.setupForRest(swagger, config)
 
         log.debug("Done initializing {}", AbstractRestSampler::class.simpleName)
     }
@@ -273,7 +273,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         }
 
         actionCluster.clear()
-        RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, listOf())
+        RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, listOf(), enableConstraintHandling = config.enableSchemaConstraintHandling)
 
         initAdHocInitialIndividuals()
 
@@ -282,7 +282,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         /*
             TODO this would had been better handled with optional injection, but Guice seems pretty buggy :(
          */
-        partialOracles.setupForRest(swagger)
+        partialOracles.setupForRest(swagger, config)
 
         log.debug("Done initializing {}", AbstractRestSampler::class.simpleName)
     }

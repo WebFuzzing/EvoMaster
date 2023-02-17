@@ -2,9 +2,34 @@ package org.evomaster.core.problem.webfrontend
 
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Node
+import org.jsoup.parser.Parser
 import org.jsoup.select.NodeVisitor
+import java.net.URI
+import java.net.URL
 
 object HtmlUtils {
+
+
+    fun checkErrorsInHtml(html: String) : String?{
+        val parser = Parser.htmlParser().setTrackErrors(1000)
+        Jsoup.parse(html, "", parser);
+        if(parser.errors.isEmpty()){
+            return null
+        }
+        return "Number of HTML errors ${parser.errors.size}\n${parser.errors.joinToString("\n")}"
+    }
+
+    fun getUrlInALinks(html: String) : List<String> {
+
+        val document = Jsoup.parse(html)
+        return document.getElementsByTag("a")
+            .mapNotNull { it.attr("href") }
+    }
+
+    fun getPathAndQueries(url: String) : String{
+        val x = URL(url)
+        return "${x.path ?: "/"}${x.query ?: ""}"
+    }
 
     /**
      * Given HTML pages, we want to identify which ones are "unique".
@@ -40,6 +65,18 @@ object HtmlUtils {
         })
 
         return buffer.toString()
+    }
+
+    fun checkLink(url: URL): Boolean {
+
+        return try {
+            val connection = url.openConnection()
+            connection.connect()
+            connection.content
+            true
+        }catch (e: Exception){
+            false
+        }
     }
 
 }
