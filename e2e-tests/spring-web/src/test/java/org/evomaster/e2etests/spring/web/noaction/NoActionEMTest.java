@@ -1,36 +1,39 @@
-package org.evomaster.e2etests.spring.web.alinks;
+package org.evomaster.e2etests.spring.web.noaction;
 
-import com.foo.web.examples.spring.alinks.ALinksController;
+import com.foo.web.examples.spring.noaction.NoActionController;
 import org.evomaster.core.problem.webfrontend.WebIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.web.SpringTestBase;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class ALinksEMTest extends SpringTestBase {
+public class NoActionEMTest extends SpringTestBase{
 
     @BeforeAll
     public static void initClass() throws Exception {
-        SpringTestBase.initClass(new ALinksController());
+        SpringTestBase.initClass(new NoActionController());
     }
+
 
     @Test
     public void testRunEM() throws Throwable {
 
         runTestHandlingFlakyAndCompilation(
-                "ALinksEM",
-                "org.ALinksEM",
-                50,
+                "NoActionEM",
+                "org.NoActionEM",
+                20,
                 (args) -> {
+
+                    //TODO disable back and refresh actions
 
                     Solution<WebIndividual> solution = initAndRun(args);
 
-                    assertTrue(solution.getIndividuals().size() > 0);
+                    assertEquals(solution.getIndividuals().size(), 1);
 
-                    assertHasVisitedUrlPath(solution, "/alinks/index.html", "/alinks/a.html", "/alinks/b.html");
-                    assertNoHtmlErrors(solution);
+                    assertHasVisitedUrlPath(solution, "/noaction/index.html");
                 }
         );
     }
