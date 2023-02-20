@@ -28,7 +28,6 @@ import org.glassfish.jersey.client.HttpUrlConnectorProvider
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.Executors
 import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
@@ -70,9 +69,7 @@ class HarvestActualHttpWsResponseHandler {
      * TODO if one day we need priorities on the queue, it can be set here. See:
      * https://stackoverflow.com/questions/3198660/java-executors-how-can-i-set-task-priority
      */
-    private var workerPool = Executors.newFixedThreadPool(min(3, Runtime.getRuntime().availableProcessors()))
-
-
+    private var workerPool = Executors.newFixedThreadPool(min(2, Runtime.getRuntime().availableProcessors()))
 
 
     companion object {
@@ -99,15 +96,6 @@ class HarvestActualHttpWsResponseHandler {
     private val actualResponses = ConcurrentHashMap<String, ActualResponseInfo>()
 
     /**
-     * cache collected requests
-     *
-     * key is description of request with [HttpExternalServiceRequest.getDescription]
-     *      ie, "method:absoluteURL[headers]{body payload}",
-     * value is an example of HttpExternalServiceRequest
-     */
-    private val cachedRequests = ConcurrentHashMap<String, HttpExternalServiceRequest>()
-
-    /**
      * track a list of actual responses which have been seeded in the search based on
      * its corresponding request using its description, ie, ie, "method:absoluteURL[headers]{body payload}",
      */
@@ -117,11 +105,6 @@ class HarvestActualHttpWsResponseHandler {
      * need it for wait and notify in kotlin
      */
     private val lock = Object()
-
-    /**
-     * an queue for handling urls for
-     */
-    private val queue = ConcurrentLinkedQueue<String>()
 
     /**
      * key is dto class name
@@ -135,10 +118,7 @@ class HarvestActualHttpWsResponseHandler {
      */
     private val skipHeaders = listOf("user-agent", "host", "accept-encoding")
 
-
-    private val startedRequests : MutableSet<String> = mutableSetOf()
-
-
+    private val startedRequests: MutableSet<String> = mutableSetOf()
 
     @PostConstruct
     fun initialize() {
@@ -174,24 +154,17 @@ class HarvestActualHttpWsResponseHandler {
     }
 
     @Synchronized
-    private fun sendRequestToRealExternalService(request: String) {
-//        synchronized(lock) {
-//            while (queue.size == 0) {
-//                lock.wait()
-//            }
-//            val first = queue.remove()
-            val info = handleActualResponse(
-                createInvocationToRealExternalService( request
-                    //cachedRequests[first]
-                        //?: throw IllegalStateException("Fail to get Http request with description $first")
-                )
+    private fun sendRequestToRealExternalService(request: HttpExternalServiceRequest) {
+        val info = handleActualResponse(
+            createInvocationToRealExternalService(
+                request
             )
-            if (info != null) {
-                info.param.responseBody.markAllAsInitialized()
-                actualResponses[first] = info
-            } else
-                LoggingUtil.uniqueWarn(log, "Fail to harvest actual responses from GET $first")
- //       }
+        )
+        if (info != null) {
+            info.param.responseBody.markAllAsInitialized()
+            actualResponses[request.getDescription()] = info
+        } else
+            LoggingUtil.uniqueWarn(log, "Fail to harvest actual responses from GET ${request.getDescription()}")
     }
 
     /**
@@ -247,43 +220,22 @@ class HarvestActualHttpWsResponseHandler {
         if (!config.doHarvestActualResponse())
             return
 
-        // only harvest responses with GET method
-        //val filter = requests.filter { it.method.equals("GET", ignoreCase = true) }
-//        synchronized(cachedRequests) {
-//            requests.forEach { cachedRequests.putIfAbsent(it.getDescription(), it) }
-//        }
-
-        requests.forEach {
-            addRequest(it.getDescription())
+        requests.filter { it.method.equals("GET", ignoreCase = true) }.forEach {
+            addRequest(it)
         }
-        //addRequests(requests.map { it.getDescription() })
     }
 
-    private fun addRequest(request: String) {
-
-        if(startedRequests.contains(request)){
+    private fun addRequest(request: HttpExternalServiceRequest) {
+        if (startedRequests.contains(request.getDescription())) {
             return
         }
 
-        startedRequests.add(request)
+        startedRequests.add(request.getDescription())
 
+        updateExtractedObjectDto()
 
-        //if (requests.isEmpty()) return
-
-        //val notInCollected = requests.filterNot { actualResponses.containsKey(it) }.distinct()
-        //if (notInCollected.isEmpty()) return
-
-        //synchronized(lock) {
-          //  val newRequests = notInCollected.filterNot { queue.contains(it) }
-            //if (newRequests.isEmpty())
-              //  return
-            updateExtractedObjectDto()
-            //lock.notify()
-            //queue.addAll(newRequests)
-
-            val task = Runnable { sendRequestToRealExternalService(request) }
-            workerPool.execute(task)
-        //}
+        val task = Runnable { sendRequestToRealExternalService(request) }
+        workerPool.execute(task)
     }
 
     private fun buildInvocation(httpRequest: HttpExternalServiceRequest): Invocation {
@@ -406,7 +358,6 @@ class HarvestActualHttpWsResponseHandler {
                 )
             }
         }
-
     }
 
 
@@ -414,7 +365,7 @@ class HarvestActualHttpWsResponseHandler {
         synchronized(extractedObjectDto) {
             val infoDto = rc.getSutInfo()!!
             val map = ParserDtoUtil.getOrParseDtoWithSutInfo(infoDto, config.enableSchemaConstraintHandling)
-            if (map.isNotEmpty()){
+            if (map.isNotEmpty()) {
                 map.forEach { (t, u) ->
                     extractedObjectDto.putIfAbsent(t, u)
                 }
