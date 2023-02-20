@@ -10,34 +10,25 @@ import org.evomaster.ci.utils.CIUtils
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
-import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
 class HarvestOptimisationEMTest: SpringTestBase() {
 
-
     companion object {
-
-
-
         @BeforeAll
         @JvmStatic
         fun init() {
             val config = EMConfig()
             config.instrumentMR_NET = true
             initClass(HarvestOptimisationController(), config)
-
             CIUtils.skipIfOnGA()
-
-
         }
     }
 
     @Test
     fun testRunEM() {
-
         val wmConfig = WireMockConfiguration()
             .bindAddress("127.0.0.1")
             .port(9999)
