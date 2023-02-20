@@ -45,7 +45,7 @@ class PartialOracles {
     private val oracles = mutableListOf<ImplementedOracle>()
     private val expectationsMasterSwitch = "ems"
 
-    fun setupForRest(schema: OpenAPI){
+    fun setupForRest(schema: OpenAPI, config: EMConfig){
 
         oracles.add(SupportedCodeOracle())
         oracles.add(SchemaOracle())
@@ -54,7 +54,7 @@ class PartialOracles {
             it.setObjectGenerator(objectGenerator)
         }
 
-        objectGenerator.setSwagger(schema)
+        objectGenerator.setSwagger(schema, config.enableSchemaConstraintHandling)
     }
 
     /**

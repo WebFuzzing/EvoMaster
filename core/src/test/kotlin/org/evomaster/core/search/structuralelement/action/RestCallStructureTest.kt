@@ -1,6 +1,7 @@
 package org.evomaster.core.search.structuralelement.action
 
 import io.swagger.parser.OpenAPIParser
+import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.param.BodyParam
@@ -12,9 +13,10 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
 
 object RestActionCluster{
+    private val config : EMConfig = EMConfig()
     private val cluster : MutableMap<String, Action> = mutableMapOf()
     init {
-        RestActionBuilderV3.addActionsFromSwagger(OpenAPIParser().readLocation("swagger/artificial/resource_test.json", null, null).openAPI, cluster)
+        RestActionBuilderV3.addActionsFromSwagger(OpenAPIParser().readLocation("swagger/artificial/resource_test.json", null, null).openAPI, cluster, enableConstraintHandling = config.enableSchemaConstraintHandling)
     }
 
     fun getRestCallAction(path: String) : RestCallAction? = cluster[path] as? RestCallAction

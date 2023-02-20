@@ -210,7 +210,7 @@ class StringGene(
             if(state.spa.hasInfoFor(name) && state.randomness.nextDouble() < state.config.useGlobalTaintInfoProbability){
                 val spec = state.spa.chooseSpecialization(name, state.randomness)!!
                 assert(specializations.size == 0)
-                addSpecializations("", listOf(spec),state.randomness, false)
+                addSpecializations("", listOf(spec),state.randomness, false, enableConstraintHandling = state.config.enableSchemaConstraintHandling)
                 assert(specializationGenes.size == 1)
                 selectedSpecialization = specializationGenes.lastIndex
             } else {
@@ -464,12 +464,13 @@ class StringGene(
 
     fun addSpecializations(
         /**
-             * TODO what whas this? does not seem to be used
-             */
-            key: String,
+         * TODO what whas this? does not seem to be used
+         */
+        key: String,
         specs: Collection<StringSpecializationInfo>,
         randomness: Randomness,
-        updateGlobalInfo: Boolean = true
+        updateGlobalInfo: Boolean = true,
+        enableConstraintHandling: Boolean
     ) {
 
         val toAddSpecs = specs
@@ -567,7 +568,7 @@ class StringGene(
                         val schema = it.value
                         val t = schema.subSequence(0, schema.indexOf(":")).trim().toString()
                         val ref = t.subSequence(1,t.length-1).toString()
-                        val obj = RestActionBuilderV3.createObjectGenesForDTOs(ref, schema)
+                        val obj = RestActionBuilderV3.createObjectGenesForDTOs(ref, schema, enableConstraintHandling = enableConstraintHandling)
                         toAddGenes.add(obj)
                     }
             log.trace("JSON_OBJECT, added specification size: {}", toAddGenes.size)

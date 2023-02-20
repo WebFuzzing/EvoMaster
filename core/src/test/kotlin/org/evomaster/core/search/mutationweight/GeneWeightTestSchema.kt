@@ -2,6 +2,7 @@ package org.evomaster.core.search.mutationweight
 
 import io.swagger.parser.OpenAPIParser
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
+import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.schema.Column
 import org.evomaster.core.database.schema.ColumnDataType
@@ -18,12 +19,14 @@ import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 
 object GeneWeightTestSchema {
 
+    private val config : EMConfig = EMConfig()
     private val actions: MutableMap<String, Action> = mutableMapOf()
 
     init {
         RestActionBuilderV3.addActionsFromSwagger(
             OpenAPIParser().readLocation("/swagger/artificial/gene_weight.json", null, null).openAPI,
-            actions
+            actions,
+            enableConstraintHandling = config.enableSchemaConstraintHandling
         )
     }
 

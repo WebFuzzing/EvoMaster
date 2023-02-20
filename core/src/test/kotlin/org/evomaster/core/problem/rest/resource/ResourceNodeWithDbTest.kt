@@ -55,10 +55,11 @@ class ResourceNodeWithDbTest {
             val dbschema = SchemaExtractor.extract(connection)
             sqlInsertBuilder = SqlInsertBuilder(dbschema, DbExecutor())
 
-            RestActionBuilderV3.addActionsFromSwagger(schema, actionCluster)
             val config = EMConfig()
             config.doesApplyNameMatching = true
             config.probOfEnablingResourceDependencyHeuristics = 1.0
+
+            RestActionBuilderV3.addActionsFromSwagger(schema, actionCluster, enableConstraintHandling = config.enableSchemaConstraintHandling)
             cluster.initResourceCluster(actionCluster, sqlInsertBuilder = sqlInsertBuilder, config = config)
             cluster.initRelatedTables()
         }
