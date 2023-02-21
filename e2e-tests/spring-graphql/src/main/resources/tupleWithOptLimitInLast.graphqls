@@ -1,0 +1,20 @@
+type Query {
+    flowers: Flower
+}
+type Flower {
+    #Store should be opt
+    price(id:Int): Store
+}
+
+type Store{
+    id: Int
+    #Address should be opt
+    name(id:Int): Address
+
+}
+
+type Address {
+    id:Int
+    streetName:String
+
+}
