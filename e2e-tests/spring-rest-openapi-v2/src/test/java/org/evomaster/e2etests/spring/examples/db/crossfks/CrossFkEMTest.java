@@ -1,12 +1,11 @@
 package org.evomaster.e2etests.spring.examples.db.crossfks;
 
-import com.foo.rest.examples.spring.db.base.DbBaseController;
 import com.foo.rest.examples.spring.db.crossfks.CrossFkController;
+import org.evomaster.ci.utils.CIUtils;
 import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
-import org.evomaster.e2etests.spring.examples.db.base.DbBaseTestBase;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -20,18 +19,31 @@ public class CrossFkEMTest extends SpringTestBase {
         SpringTestBase.initClass(new CrossFkController());
     }
     @Test
-    public void testRunEM() throws Throwable {
+    public void testEnableTaintSampleEM() throws Throwable {
+        forceSqlAllColumnInsertion(true);
 
+    }
+
+    @Test
+    public void testDisableTaintSampleEM() throws Throwable {
+        forceSqlAllColumnInsertion(false);
+
+    }
+
+
+    private void forceSqlAllColumnInsertion(boolean taintOnSampling) throws Throwable{
         runTestHandlingFlakyAndCompilation(
-                "CrossFkEM",
-                "org.bar.db.CrossFkEM",
+                "CrossFkTaintSampling_"+taintOnSampling+"_EM",
+                "org.bar.db.CrossFkTaintSampling_"+taintOnSampling+"_EM",
                 10_000,
                 (args) -> {
 
                     args.add("--probOfEnablingSingleInsertionForTable");
                     args.add("1.0");
-                    args.add("--taintOnSampling");
+                    args.add("--forceSqlAllColumnInsertion");
                     args.add("true");
+                    args.add("--taintOnSampling");
+                    args.add(""+taintOnSampling);
 
 
                     Solution<RestIndividual> solution = initAndRun(args);
