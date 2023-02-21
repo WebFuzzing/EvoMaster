@@ -6,16 +6,10 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 
 import java.sql.Timestamp;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -401,15 +395,7 @@ public class HeuristicsCalculatorTest {
                 sql);
     }
 
-    @Test
-    public void testParseTimestamp() throws ParseException {
-        String timestampValue = "2020-11-30 16:00:00.0";
-        //Instant instant = Timestamp.valueOf(timestampValue).toInstant();
 
-        new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S").parse(timestampValue).toInstant();
-//        Instant anotherinstant = LocalDateTime.parse(timestampValue, DateTimeFormatter.ofPattern("yyyy-mm-dd")).toInstant();
-
-    }
 
 
 }
