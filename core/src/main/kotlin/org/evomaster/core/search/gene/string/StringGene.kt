@@ -458,14 +458,22 @@ class StringGene(
          */
         val update = getValueAsRawString()
         for (k in others){
-            k.selectedSpecialization = -1
-            k.value = update
+            setValueWithBindingId(update)
         }
-        /*
-            the [update] might be invalid
-            this can be reproduced by CrossFkEMTest
-         */
-        repair()
+    }
+
+    private fun setValueWithBindingId(update: String){
+        val curSelected = selectedSpecialization
+        val curValue =value
+
+        selectedSpecialization = -1
+        value = update
+
+        if (!isLocallyValid()){
+            selectedSpecialization = curSelected
+            value = curValue
+        }
+
     }
 
     fun addSpecializations(
@@ -765,7 +773,13 @@ class StringGene(
         if (other !is StringGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
+        val current = this.value
         this.value = other.value
+
+        if (!isLocallyValid()){
+            this.value = current
+            return
+        }
         this.selectedSpecialization = other.selectedSpecialization
 
         this.specializations.clear()
@@ -877,6 +891,7 @@ class StringGene(
             //this actually can happen when binding to Long, and goes above lenght limit of String
             value = current
             //TODO should we rather enforce this to never happen?
+            return false
         }
 
         return true
