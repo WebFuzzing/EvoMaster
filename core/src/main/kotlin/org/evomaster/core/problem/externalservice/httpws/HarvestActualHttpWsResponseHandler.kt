@@ -102,11 +102,6 @@ class HarvestActualHttpWsResponseHandler {
     private val seededResponses = mutableSetOf<String>()
 
     /**
-     * need it for wait and notify in kotlin
-     */
-    private val lock = Object()
-
-    /**
      * key is dto class name
      * value is parsed gene based on schema
      */
@@ -148,9 +143,7 @@ class HarvestActualHttpWsResponseHandler {
     fun shutdown() {
         Lazy.assert { config.doHarvestActualResponse() }
         workerPool.shutdown()
-        synchronized(lock) {
-            httpWsClient.close()
-        }
+        httpWsClient.close()
     }
 
     @Synchronized
