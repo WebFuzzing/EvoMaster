@@ -23,11 +23,24 @@ versions of those libraries.
 If you see such problems, please report them on the issue page.
 
 
-## REST APIs
+## JVM (e.g., Java and Kotlin)    
 
-### JVM (e.g., Java and Kotlin)    
+To simplify the use of *EvoMaster*, since version *1.6.1-SNAPSHOT* we have added a new module including all the needed third-party dependencies. 
+Those can be imported with:
 
-When generating test cases for REST APIs written in Java/Kotlin,
+```
+<dependency>
+     <groupId>org.evomaster</groupId>
+     <artifactId>evomaster-client-java-dependencies</artifactId>
+     <version>LATEST</version>
+     <scope>test</scope>
+</dependency>
+```
+The placeholder `LATEST` needs to be replaced with an actual version number.
+The alternative is to import each needed library manually, in case of issues with version mismatches.
+
+
+When generating test cases for REST/GraphQL APIs written in Java/Kotlin, for example 
 *EvoMaster* relies on the [RestAssured](https://github.com/rest-assured/rest-assured)
 library.
 
