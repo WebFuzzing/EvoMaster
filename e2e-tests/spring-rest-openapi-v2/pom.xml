@@ -13,6 +13,10 @@
 
 
     <dependencies>
+        <dependency>
+            <groupId>com.auth0</groupId>
+            <artifactId>auth0</artifactId>
+        </dependency>
 
         <!--
             Issue with Jersey (coming from client-java) using old version

@@ -300,6 +300,11 @@
 
             <!-- Misc -->
             <dependency>
+                <groupId>com.auth0</groupId>
+                <artifactId>auth0</artifactId>
+                <version>1.44.2</version>
+            </dependency>
+            <dependency>
                 <!--
                     We do not (and SHOULD NOT) use it directly... but as it brought in transitively
                     by different libraries, we force a specific version here to avoid conflicts (which for
