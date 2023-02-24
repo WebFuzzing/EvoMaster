@@ -351,6 +351,34 @@ class GraphQLActionBuilderTest {
 
         assertEquals(19, actionCluster.size)
 
+        val country = actionCluster["Country"] as GraphQLAction
+        assertEquals(2, country.parameters.size)
+        assertTrue(country.parameters[1] is GQReturnParam)
+
+        assertTrue(country.parameters[1].gene is ObjectGene)
+
+        val objCountry = country.parameters[1].gene as ObjectGene
+
+        assertTrue(objCountry.fields.any { it.getWrappedGene(ObjectGene::class.java)?.name == "annotations" })
+
+        val optAnnotations = objCountry.fields.first { it.name == "annotations" }
+        val objAnnotations = optAnnotations.getWrappedGene(ObjectGene::class.java)
+
+        if(objAnnotations!=null) {
+            val interfaceObjectTargets=objAnnotations.fields[6].getWrappedGene(ObjectGene::class.java)//targets
+            if (interfaceObjectTargets != null) {
+                assertEquals(10, interfaceObjectTargets.fields.size)
+                assertTrue(interfaceObjectTargets.fields[8].getWrappedGene(ObjectGene::class.java)?.name=="Link")
+
+                val optLink = interfaceObjectTargets.fields.first { it.name == "Link" }
+                val objLink = optLink.getWrappedGene(ObjectGene::class.java)
+
+                if (objLink != null) {
+                    assertEquals(6, objLink.fields.size)
+                    assertTrue(objLink.fields.any { it is BooleanGene && it.name == "field" })
+                }
+            }
+        }
     }
 
     @Test
