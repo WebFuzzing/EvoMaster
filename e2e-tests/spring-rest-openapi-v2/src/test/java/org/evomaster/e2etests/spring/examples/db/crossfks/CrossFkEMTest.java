@@ -20,6 +20,7 @@ public class CrossFkEMTest extends SpringTestBase {
     }
     @Test
     public void testEnableTaintSampleEM() throws Throwable {
+        CIUtils.skipIfOnGA();
         forceSqlAllColumnInsertion(true);
 
     }
