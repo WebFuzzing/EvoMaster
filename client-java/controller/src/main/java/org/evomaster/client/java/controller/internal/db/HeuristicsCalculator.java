@@ -505,7 +505,7 @@ public class HeuristicsCalculator {
             DateTimeLiteralExpression dateTimeLiteralExpression = (DateTimeLiteralExpression) exp;
             String str = dateTimeLiteralExpression.getValue();
             assert (str.length() > 2 && startsAndEndsWithQuotes(str));
-            str = removeQuotes(str);
+            str = removeFirstAndLastCharacter(str);
             return str;
         } else {
             cannotHandle(exp);
@@ -520,7 +520,7 @@ public class HeuristicsCalculator {
      * @param str
      * @return
      */
-    private String removeQuotes(String str) {
+    private String removeFirstAndLastCharacter(String str) {
         if (str.length() < 2) {
             throw new IllegalArgumentException("Cannot remove quotes from " + str);
         }
