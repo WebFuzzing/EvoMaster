@@ -302,6 +302,43 @@ class GraphQLActionBuilderTest {
         assertEquals(9, objAgency.fields.size)
         assertTrue(objAgency.fields.any { it is BooleanGene && it.name == "lang" })
         assertTrue(objAgency.fields.any { it is BooleanGene && it.name == "phone" })
+        /**/
+        val stations = actionCluster["stations"] as GraphQLAction
+        assertEquals(5, stations.parameters.size)
+        assertTrue(stations.parameters[4] is GQReturnParam)
+
+        assertTrue(stations.parameters[4].gene is ObjectGene)
+       val objectStop = stations.parameters[4].gene as ObjectGene
+        assertEquals(27, objectStop.fields.size)
+
+        assertTrue(objectStop.fields.any { it.getWrappedGene(TupleGene::class.java)?.name == "stopTimesForPattern" })
+
+        val optStopTimesForPattern = objectStop.fields.first { it.name == "stopTimesForPattern" }
+        val tupleStopTimesForPattern = optStopTimesForPattern.getWrappedGene(TupleGene::class.java)
+        assertEquals(7, tupleStopTimesForPattern?.elements?.size)
+
+        if (tupleStopTimesForPattern !=null) {
+            assertTrue(tupleStopTimesForPattern.elements.any { it is ObjectGene && it.name == "stopTimesForPattern" })
+        }
+
+        val objStopTimesForPattern = tupleStopTimesForPattern?.elements?.get(6)  as ObjectGene
+        assertEquals(17, objStopTimesForPattern.fields.size)
+        assertTrue(objStopTimesForPattern.fields.any { it.getWrappedGene(ObjectGene::class.java)?.name == "trip" })
+
+
+        val optTrip = objStopTimesForPattern.fields.first { it.name == "trip" }
+        val objTrip = optTrip.getWrappedGene(ObjectGene::class.java)
+
+        if(objTrip!=null) {
+            assertEquals(22, objTrip?.fields?.size)
+            assertTrue(objTrip.fields.any { it.getWrappedGene(TupleGene::class.java)?.name == "departureStoptime" })//nbr17
+            val optDepartureStoptime = objTrip.fields.first { it.name == "departureStoptime" }
+            val tupleDepartureStoptime = optDepartureStoptime.getWrappedGene(TupleGene::class.java)
+            assertEquals(2, tupleDepartureStoptime?.elements?.size)
+            assertTrue(tupleDepartureStoptime?.elements?.last() is (CycleObjectGene))
+        }
+
+
     }
 
     @Test
