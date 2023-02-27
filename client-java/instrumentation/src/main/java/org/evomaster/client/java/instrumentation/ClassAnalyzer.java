@@ -6,6 +6,7 @@ import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Collection;
@@ -18,21 +19,21 @@ public class ClassAnalyzer {
      * Try to load the given classes, and do different kind of analysis via reflection.
      * This can be helpful when doing such analysis at bytecode level (eg when intercepting class loader
      * with instrumentator) would be bit complex
-     *
+     * <p>
      * Note: this will have side-effects on static data-structures
      *
      * @param classNames
      */
-    public static void doAnalyze(Collection<String> classNames){
+    public static void doAnalyze(Collection<String> classNames) {
 
         boolean jpa = canUseJavaxJPA();
 
-        for(String name : classNames){
+        for (String name : classNames) {
 
             Class<?> klass;
             try {
                 ClassLoader loader = UnitsInfoRecorder.getInstance().getFirstClassLoader(name);
-                if(loader == null){
+                if (loader == null) {
                     //could happen in tests
                     loader = ClassAnalyzer.class.getClassLoader();
                     SimpleLogger.warn("No class loader registered for " + name);
@@ -47,17 +48,17 @@ public class ClassAnalyzer {
                 if (jpa) {
                     analyzeJpaConstraints(klass);
                 }
-            }catch (Exception e){
+            } catch (Exception e) {
                 SimpleLogger.error("Failed to analyze " + name, e);
             }
         }
     }
 
-    private static boolean canUseJavaxJPA(){
+    private static boolean canUseJavaxJPA() {
 
         try {
             ClassLoader loader = UnitsInfoRecorder.getInstance().getSutClassLoader();
-            if(loader == null){
+            if (loader == null) {
                 //could happen in tests
                 SimpleLogger.warn("No identified ClassLoader for SUT");
                 loader = ClassAnalyzer.class.getClassLoader();
@@ -71,29 +72,29 @@ public class ClassAnalyzer {
         }
     }
 
-    private static Annotation getAnnotationByName(Class<?> klass, String name){
+    private static Annotation getAnnotationByName(Class<?> klass, String name) {
         return getAnnotationByName(klass.getAnnotations(), name);
     }
 
-    private static Annotation getAnnotationByName(Field field, String name){
+    private static Annotation getAnnotationByName(Field field, String name) {
         return getAnnotationByName(field.getAnnotations(), name);
     }
 
 
-    private static Annotation getAnnotationByName(Annotation[] annotations, String name){
+    private static Annotation getAnnotationByName(Annotation[] annotations, String name) {
         return Arrays.stream(annotations)
                 .filter(a -> a.annotationType().getName().equals(name))
                 .findFirst().orElse(null);
     }
 
 
-    private static String convertToSnakeCase(String s){
+    private static String convertToSnakeCase(String s) {
         String regex = "([a-z])([A-Z]+)";
         String replacement = "$1_$2";
         return s.replaceAll(regex, replacement).toLowerCase();
     }
 
-    private static void analyzeJpaConstraints(Class<?> klass) throws Exception{
+    private static void analyzeJpaConstraints(Class<?> klass) throws Exception {
 
         //TODO recall to handle new Jakarta namespace as well
 
@@ -104,7 +105,7 @@ public class ClassAnalyzer {
 
 //        Entity entity = klass.getAnnotation(Entity.class);
         Object entity = getAnnotationByName(klass, "javax.persistence.Entity");
-        if(entity == null){
+        if (entity == null) {
             return; //nothing to do
         }
 
@@ -119,9 +120,9 @@ public class ClassAnalyzer {
         //Table table = klass.getAnnotation(Table.class);
         Object table = getAnnotationByName(klass, "javax.persistence.Table");
 
-        if(table != null){
+        if (table != null) {
             tableName = (String) table.getClass().getMethod("name").invoke(table);
-        } else if(entityName != null && !entityName.isEmpty()){
+        } else if (entityName != null && !entityName.isEmpty()) {
             tableName = entityName;
         } else {
             tableName = klass.getSimpleName();
@@ -140,10 +141,10 @@ public class ClassAnalyzer {
         //TODO: should check if need to consider getters as well (likely yes...)
 
         //TODO: this does NOT include fields in super-classes
-        for(Field f : klass.getDeclaredFields()){
+        for (Field f : klass.getDeclaredFields()) {
 
-            if(Modifier.isStatic(f.getModifiers())
-                    || getAnnotationByName(f, "javax.persistence.Transient") != null){
+            if (Modifier.isStatic(f.getModifiers())
+                    || getAnnotationByName(f, "javax.persistence.Transient") != null) {
                 /*
                     Likely other cases to skip
                  */
@@ -163,49 +164,111 @@ public class ClassAnalyzer {
             //Column column = f.getAnnotation(Column.class);
             Object column = getAnnotationByName(f, "javax.persistence.Column");
 
-            if(column != null){
+            if (column != null) {
                 columnName = (String) column.getClass().getMethod("name").invoke(column);
             }
 
-            if(columnName == null || columnName.isEmpty()){
+            if (columnName == null || columnName.isEmpty()) {
                 columnName = f.getName();
             }
 
             columnName = convertToSnakeCase(columnName);
 
-            Boolean isNullable = null;
-            if(f.getType().isPrimitive()
-                    || getAnnotationByName(f, "javax.validation.constraints.NotNull")!=null){
-                isNullable = false;
-            }
-
-            List<String> enumValuesAsStrings = null;
-            if(f.getType().isEnum()){
-
-                //TODO probably for enum of ints could just use a min-max range
-
-                //Enumerated enumerated = f.getAnnotation(Enumerated.class);
-                Object enumerated = getAnnotationByName(f, "javax.persistence.Enumerated");
-                Object enumeratedValue = enumerated.getClass().getMethod("value").invoke(enumerated);
-                String enumTypeString = "STRING".toLowerCase(); // EnumType.STRING
-
-                if(enumerated != null && enumeratedValue.toString().toLowerCase().equals(enumTypeString)){
-                    enumValuesAsStrings = Arrays.stream(f.getType().getEnumConstants())
-                            .map(e -> e.toString())
-                            .collect(Collectors.toList());
-                }
-            }
+            final Boolean isNullable = getIsNullableAnnotation(f);
+            final List<String> enumValuesAsStrings = getEnumeratedAnnotation(f);
+            final String minValue = getMinAnnotation(f);
+            final String maxValue = getMaxAnnotation(f);
 
             //TODO
             Boolean isOptional = null;
-            String maxValue = null;
-            String minValue = null;
 
 
-            JpaConstraint jpaConstraint = new JpaConstraint(tableName,columnName,isNullable,isOptional,minValue,maxValue, enumValuesAsStrings);
-            if(jpaConstraint.isMeaningful()) {
+
+            JpaConstraint jpaConstraint = new JpaConstraint(tableName, columnName, isNullable, isOptional, minValue, maxValue, enumValuesAsStrings);
+            if (jpaConstraint.isMeaningful()) {
                 UnitsInfoRecorder.registerNewJpaConstraint(jpaConstraint);
             }
         }
+    }
+
+    /**
+     * Returns a string with the literal value of a <code>javax.validation.constraints.Max</code> annotation on field f.
+     *
+     * @param f the reflection field that is annotated.
+     *
+     * @return the string with the specific maximum value (as a literal) if the annotation is present, otherwise returns null.
+     *
+     */
+    private static String getMaxAnnotation(Field f) throws Exception {
+        final String maxValue;
+        Object maxAnnotation = getAnnotationByName(f, "javax.validation.constraints.Max");
+        if (maxAnnotation != null) {
+            Object maxValueAsObject = maxAnnotation.getClass().getMethod("value").invoke(maxAnnotation);
+            maxValue = maxValueAsObject.toString();
+        } else {
+            maxValue = null;
+        }
+        return maxValue;
+    }
+
+    /**
+     * Returns a string with the literal value of a <code>javax.validation.constraints.Min</code> annotation on field f.
+     *
+     * @param f the reflection field that is annotated with the Min annotation.
+     *
+     * @return the string with the specific minimum value (as a literal) if the annotation is present, otherwise returns null.
+     *
+     */
+    private static String getMinAnnotation(Field f) throws Exception {
+        final String minValue ;
+        {
+            Object minAnnotation = getAnnotationByName(f, "javax.validation.constraints.Min");
+            if (minAnnotation != null) {
+                Object minValueAsObject = minAnnotation.getClass().getMethod("value").invoke(minAnnotation);
+                minValue = minValueAsObject.toString();
+            } else {
+                minValue = null;
+            }
+        }
+        return minValue;
+    }
+
+    private static List<String> getEnumeratedAnnotation(Field f) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+        List<String> enumValuesAsStrings = null;
+        if (f.getType().isEnum()) {
+
+            //TODO probably for enum of ints could just use a min-max range
+
+            //Enumerated enumerated = f.getAnnotation(Enumerated.class);
+            Object enumerated = getAnnotationByName(f, "javax.persistence.Enumerated");
+            if (enumerated!=null) {
+                Object enumeratedValue = enumerated.getClass().getMethod("value").invoke(enumerated);
+                String enumTypeString = "STRING".toLowerCase(); // EnumType.STRING
+                if (enumeratedValue.toString().toLowerCase().equals(enumTypeString)) {
+                    enumValuesAsStrings = Arrays.stream(f.getType().getEnumConstants())
+                            .map(Object::toString)
+                            .collect(Collectors.toList());
+                }
+            }
+        }
+        return enumValuesAsStrings;
+    }
+
+    /**
+     * Returns a boolean if the <code>javax.validation.constraints.NotNull</code> annotation is present.
+     *
+     * @param f the target field of the entity.
+     *
+     * @return false if the field is annotated as NotNull, otherwise it returns null
+     */
+    private static Boolean getIsNullableAnnotation(Field f) {
+        final Boolean isNullable;
+        if (f.getType().isPrimitive()
+                || getAnnotationByName(f, "javax.validation.constraints.NotNull") != null) {
+            isNullable = false;
+        } else {
+            isNullable = null;
+        }
+        return isNullable;
     }
 }
