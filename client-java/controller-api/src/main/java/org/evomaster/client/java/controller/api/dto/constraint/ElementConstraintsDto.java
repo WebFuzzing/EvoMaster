@@ -6,7 +6,7 @@ import java.util.List;
 /**
  * Set of possible constraints applicable to a single element (ie, no intra-dependency constraints among
  * different elements).
- *
+ * <p>
  * Note: the type and id of the element is undefined here.
  * Some constraint might be interpreted differently based on the type of the element.
  * For example, a min value could be an integer or a double based on the element.
@@ -18,9 +18,9 @@ public class ElementConstraintsDto {
 
     public Boolean isOptional = null;
 
-    public String minValue = null;
+    public Long minValue = null;
 
-    public String maxValue = null;
+    public Long maxValue = null;
 
     public List<String> enumValuesAsStrings;
 

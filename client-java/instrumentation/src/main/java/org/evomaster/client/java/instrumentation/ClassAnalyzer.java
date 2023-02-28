@@ -176,15 +176,59 @@ public class ClassAnalyzer {
 
             final Boolean isNullable = getIsNullableAnnotation(f);
             final List<String> enumValuesAsStrings = getEnumeratedAnnotation(f);
-            final String minValue = getMinAnnotation(f);
-            final String maxValue = getMaxAnnotation(f);
+            final Long minValue = getMinValue(f);
+            final Long maxValue = getMaxValue(f);
+
+            final Boolean isNotBlank = getIsNotBlank(f);
+            final Boolean isEmail = getEmail(f);
+            final Boolean isNegative = getNegative(f);
+            final Boolean isNegativeOrZero = getNegativeOrZero(f);
+            final Boolean isPositive = getPositive(f);
+            final Boolean isPositiveOrZero = getPositiveOrZero(f);
 
             //TODO
-            Boolean isOptional = null;
+            final String decimalMinValue = null;
+            final String decimalMaxValue = null;
+            final Boolean isFuture = null;
+            final Boolean isFutureOrPresent = null;
+            final Boolean isPast = null;
+            final Boolean isPastOrPresent = null;
+            final Boolean isAlwaysNull = null;
+            final String patternRegEx = null;
+            final Integer sizeMin = null;
+            final Integer sizeMax = null;
+            final Integer digitsInteger = null;
+            final Integer digitsFraction = null;
+            final Boolean isOptional = null;
 
 
-
-            JpaConstraint jpaConstraint = new JpaConstraint(tableName, columnName, isNullable, isOptional, minValue, maxValue, enumValuesAsStrings);
+            JpaConstraint jpaConstraint = new JpaConstraint(
+                    tableName,
+                    columnName,
+                    isNullable,
+                    isOptional,
+                    minValue,
+                    maxValue,
+                    enumValuesAsStrings,
+                    decimalMinValue,
+                    decimalMaxValue,
+                    isNotBlank,
+                    isEmail,
+                    isNegative,
+                    isNegativeOrZero,
+                    isPositive,
+                    isPositiveOrZero,
+                    isFuture,
+                    isFutureOrPresent,
+                    isPast,
+                    isPastOrPresent,
+                    isAlwaysNull,
+                    patternRegEx,
+                    sizeMin,
+                    sizeMax,
+                    digitsInteger,
+                    digitsFraction
+            );
             if (jpaConstraint.isMeaningful()) {
                 UnitsInfoRecorder.registerNewJpaConstraint(jpaConstraint);
             }
@@ -195,16 +239,14 @@ public class ClassAnalyzer {
      * Returns a string with the literal value of a <code>javax.validation.constraints.Max</code> annotation on field f.
      *
      * @param f the reflection field that is annotated.
-     *
-     * @return the string with the specific maximum value (as a literal) if the annotation is present, otherwise returns null.
-     *
+     * @return the Long with the specific maximum value (as a literal) if the annotation is present, otherwise returns null.
      */
-    private static String getMaxAnnotation(Field f) throws Exception {
-        final String maxValue;
+    private static Long getMaxValue(Field f) throws Exception {
+        final Long maxValue;
         Object maxAnnotation = getAnnotationByName(f, "javax.validation.constraints.Max");
         if (maxAnnotation != null) {
             Object maxValueAsObject = maxAnnotation.getClass().getMethod("value").invoke(maxAnnotation);
-            maxValue = maxValueAsObject.toString();
+            maxValue = (Long) maxValueAsObject;
         } else {
             maxValue = null;
         }
@@ -215,17 +257,15 @@ public class ClassAnalyzer {
      * Returns a string with the literal value of a <code>javax.validation.constraints.Min</code> annotation on field f.
      *
      * @param f the reflection field that is annotated with the Min annotation.
-     *
-     * @return the string with the specific minimum value (as a literal) if the annotation is present, otherwise returns null.
-     *
+     * @return the Long with the specific minimum value (as a literal) if the annotation is present, otherwise returns null.
      */
-    private static String getMinAnnotation(Field f) throws Exception {
-        final String minValue ;
+    private static Long getMinValue(Field f) throws Exception {
+        final Long minValue;
         {
             Object minAnnotation = getAnnotationByName(f, "javax.validation.constraints.Min");
             if (minAnnotation != null) {
                 Object minValueAsObject = minAnnotation.getClass().getMethod("value").invoke(minAnnotation);
-                minValue = minValueAsObject.toString();
+                minValue = (Long) minValueAsObject;
             } else {
                 minValue = null;
             }
@@ -241,7 +281,7 @@ public class ClassAnalyzer {
 
             //Enumerated enumerated = f.getAnnotation(Enumerated.class);
             Object enumerated = getAnnotationByName(f, "javax.persistence.Enumerated");
-            if (enumerated!=null) {
+            if (enumerated != null) {
                 Object enumeratedValue = enumerated.getClass().getMethod("value").invoke(enumerated);
                 String enumTypeString = "STRING".toLowerCase(); // EnumType.STRING
                 if (enumeratedValue.toString().toLowerCase().equals(enumTypeString)) {
@@ -258,7 +298,6 @@ public class ClassAnalyzer {
      * Returns a boolean if the <code>javax.validation.constraints.NotNull</code> annotation is present.
      *
      * @param f the target field of the entity.
-     *
      * @return false if the field is annotated as NotNull, otherwise it returns null
      */
     private static Boolean getIsNullableAnnotation(Field f) {
@@ -271,4 +310,39 @@ public class ClassAnalyzer {
         }
         return isNullable;
     }
+
+    private static Boolean getIsNotBlank(Field f) {
+        return getIsAnnotationWith(f, "javax.validation.constraints.NotBlank");
+    }
+
+    private static Boolean getEmail(Field f) {
+        return getIsAnnotationWith(f, "javax.validation.constraints.Email");
+    }
+
+    private static Boolean getPositive(Field f) {
+        return getIsAnnotationWith(f, "javax.validation.constraints.Positive");
+    }
+
+    private static Boolean getPositiveOrZero(Field f) {
+        return getIsAnnotationWith(f, "javax.validation.constraints.PositiveOrZero");
+    }
+
+    private static Boolean getNegative(Field f) {
+        return getIsAnnotationWith(f, "javax.validation.constraints.Negative");
+    }
+
+    private static Boolean getNegativeOrZero(Field f) {
+        return getIsAnnotationWith(f, "javax.validation.constraints.NegativeOrZero");
+    }
+
+    private static Boolean getIsAnnotationWith(Field f, String annotationName) {
+        final Boolean isAnnotated;
+        if (getAnnotationByName(f, annotationName) != null) {
+            isAnnotated = true;
+        } else {
+            isAnnotated = null;
+        }
+        return isAnnotated;
+    }
+
 }
