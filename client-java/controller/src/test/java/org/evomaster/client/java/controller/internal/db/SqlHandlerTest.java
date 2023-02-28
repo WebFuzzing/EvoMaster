@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Map;
 import java.util.Set;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SqlHandlerTest {
@@ -37,4 +38,16 @@ public class SqlHandlerTest {
         Map<String, Set<String>> columns = new SqlHandler().extractColumnsInvolvedInWhere(stmt);
         assertTrue(columns.isEmpty());
     }
+
+    @Test
+    public void testCreateCachedLocalTemporaryTable() {
+        String createSql = "create cached local temporary table if not exists HT_feature_constraint (id bigint not null) on commit drop transactional";
+        boolean canParseSqlStatement = ParserUtils.canParseSqlStatement(createSql);
+        assertFalse(canParseSqlStatement);
+    }
+
+
+
+
+
 }

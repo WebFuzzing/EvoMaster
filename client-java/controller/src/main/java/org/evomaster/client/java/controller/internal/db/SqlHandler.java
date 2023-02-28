@@ -19,7 +19,6 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.stream.Collectors;
 
 import static org.evomaster.client.java.controller.internal.db.ParserUtils.*;
 
@@ -121,7 +120,7 @@ public class SqlHandler {
         numberOfSqlCommands++;
 
         if (!ParserUtils.canParseSqlStatement(sql)) {
-            SimpleLogger.warn("Cannot handle SQL statement: " + sql);
+            SimpleLogger.warn("Cannot parse SQL statement: " + sql);
             return;
         }
 
