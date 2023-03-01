@@ -35,6 +35,7 @@ public abstract class ExternalSutController extends SutController {
     private volatile boolean instrumentation;
     private volatile Thread processKillHook;
     private volatile Thread outputPrinter;
+    private volatile Thread sutStartChecker;
     private volatile CountDownLatch latch;
     private volatile ServerController serverController;
     private volatile boolean initialized;
@@ -125,6 +126,15 @@ public abstract class ExternalSutController extends SutController {
      * of the system under test to check if the server is up and ready.
      */
     public abstract String getLogMessageOfInitializedServer();
+
+    /**
+     * a customized interface to implement for checking if the system and under is started.
+     * by default (returning null), such check is performed based on messages in log.
+     * @return Boolean representing if the system under test is up and ready.
+     */
+    public Boolean isSUTInitialized() {
+        return null;
+    }
 
     /**
      * @return how long (in seconds) we should wait at most to check if SUT is ready
@@ -267,7 +277,8 @@ public abstract class ExternalSutController extends SutController {
         }
 
         //this is not only needed for debugging, but also to check for when SUT is ready
-        startExternalProcessPrinter();
+        //startExternalProcessPrinter();
+        checkSutInitialized();
 
         if (instrumentation && serverController != null) {
             boolean connected = serverController.waitForIncomingConnection(getWaitingSecondsForIncomingConnection());
@@ -562,7 +573,35 @@ public abstract class ExternalSutController extends SutController {
         }
     }
 
-    protected void startExternalProcessPrinter() {
+    private void checkSutInitialized(){
+        Boolean started = isSUTInitialized();
+        if (started != null){
+            startSutStartChecker(started);
+        }
+
+        startExternalProcessPrinter(started == null);
+    }
+
+    private void startSutStartChecker(boolean started){
+        if (sutStartChecker == null || !sutStartChecker.isAlive()){
+            sutStartChecker = new Thread(()->{
+                try {
+                    while (!started && !isSUTInitialized()){
+                        // perform a check every 2s
+                        Thread.sleep(2000);
+                    }
+                    initialized = true;
+                    errorBuffer = null;
+                    latch.countDown();
+                }catch (Exception e){
+                    SimpleLogger.error("Failed to check ", e);
+                }
+            });
+            sutStartChecker.start();
+        }
+    }
+
+    protected void startExternalProcessPrinter(boolean checkSutInitializedWithLog) {
 
         if (outputPrinter == null || !outputPrinter.isAlive()) {
             outputPrinter = new Thread(() -> {
@@ -589,7 +628,7 @@ public abstract class ExternalSutController extends SutController {
                             errorBuffer.append("\n");
                         }
 
-                        if (line.contains(getLogMessageOfInitializedServer())) {
+                        if (checkSutInitializedWithLog && line.contains(getLogMessageOfInitializedServer())){
                             initialized = true;
                             errorBuffer = null; //no need to keep track of it if everything is ok
                             latch.countDown();
