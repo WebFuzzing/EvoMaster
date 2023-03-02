@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.externalservice.httpws
+package org.evomaster.core.problem.externalservice.httpws.service
 
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.problem.ExternalServiceDto
@@ -6,6 +6,7 @@ import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUti
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.problem.externalservice.ExternalService
+import org.evomaster.core.problem.externalservice.httpws.*
 import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalServiceUtils.generateRandomIPAddress
 import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalServiceUtils.isAddressAvailable
 import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalServiceUtils.isReservedIP

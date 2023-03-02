@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.externalservice.httpws
+package org.evomaster.core.problem.externalservice.httpws.service
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.google.inject.Inject
@@ -7,6 +7,9 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
+import org.evomaster.core.problem.externalservice.httpws.ActualResponseInfo
+import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
+import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceRequest
 import org.evomaster.core.problem.externalservice.httpws.param.HttpWsResponseParam
 import org.evomaster.core.problem.externalservice.param.ResponseParam
 import org.evomaster.core.problem.util.ParamUtil
