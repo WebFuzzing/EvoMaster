@@ -2,6 +2,7 @@ package org.evomaster.core.problem.externalservice.httpws.service
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.google.inject.Inject
+import org.apache.commons.text.similarity.LevenshteinDistance
 import org.evomaster.client.java.instrumentation.shared.PreDefinedSSLInfo
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
@@ -203,6 +204,14 @@ class HarvestActualHttpWsResponseHandler {
         synchronized(actualResponses) {
             val found = (actualResponses[httpRequest.getDescription()]?.param?.copy() as? ResponseParam)
             if (found != null) seededResponses.add(httpRequest.getDescription())
+
+            // TODO: need a clean-up
+            if (found == null) {
+                val k = findBestMatch(httpRequest.getDescription())
+                val f = (actualResponses[k]?.param?.copy() as? ResponseParam)
+                return f
+            }
+
             return found
         }
     }
@@ -414,5 +423,20 @@ class HarvestActualHttpWsResponseHandler {
             )
             return false
         }
+    }
+
+    private fun findBestMatch(key: String) : String {
+        var result: String = ""
+        var distance: Int = 10
+
+        actualResponses.keys().iterator().forEach {
+            val d = LevenshteinDistance.getDefaultInstance().apply(it, key)
+            if (d <= distance) {
+                distance = d
+                result = it
+            }
+        }
+
+        return result
     }
 }
