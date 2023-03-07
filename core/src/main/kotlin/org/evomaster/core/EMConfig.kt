@@ -1816,6 +1816,34 @@ class EMConfig {
     @Experimental
     var externalRequestHarvesterNumberOfThreads: Int = 2
 
+
+    enum class ExternalRequestResponseSelectionStrategy {
+        /**
+         * Do nothing
+         */
+        NONE,
+
+        /**
+         * Selects the exact matching response for the request
+         */
+        EXACT,
+
+        /**
+         * Selects a random response for the request
+         */
+        RANDOM,
+
+        /**
+         * Selects the closest matching response based on the request
+         * URL.
+         */
+        CLOSEST,
+    }
+
+    @Cfg("Harvested external request response selection strategy")
+    @Experimental
+    var externalRequestResponseSelectionStrategy = ExternalRequestResponseSelectionStrategy.NONE
+
     @Cfg("Whether to employ constraints specified in API schema (e.g., OpenAPI) in test generation")
     @Experimental
     var enableSchemaConstraintHandling = false

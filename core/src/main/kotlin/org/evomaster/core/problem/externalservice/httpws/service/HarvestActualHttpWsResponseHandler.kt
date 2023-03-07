@@ -73,7 +73,12 @@ class HarvestActualHttpWsResponseHandler {
      * TODO if one day we need priorities on the queue, it can be set here. See:
      * https://stackoverflow.com/questions/3198660/java-executors-how-can-i-set-task-priority
      */
-    private var workerPool = Executors.newFixedThreadPool(min(config.externalRequestHarvesterNumberOfThreads, Runtime.getRuntime().availableProcessors()))
+    private var workerPool = Executors.newFixedThreadPool(
+        min(
+            config.externalRequestHarvesterNumberOfThreads,
+            Runtime.getRuntime().availableProcessors()
+        )
+    )
 
 
     companion object {
@@ -180,13 +185,16 @@ class HarvestActualHttpWsResponseHandler {
         if (exAction is HttpExternalServiceAction) {
             Lazy.assert { gene.parent == exAction.response }
             if (exAction.response.responseBody == gene) {
-                val p = if (!seededResponses.contains(exAction.request.getDescription()) && actualResponses.containsKey(
+                val p = if (!seededResponses.contains(exAction.request.getDescription())
+                    && (config.externalRequestResponseSelectionStrategy == EMConfig.ExternalRequestResponseSelectionStrategy.EXACT && actualResponses.containsKey(
                         exAction.request.getDescription()
-                    )
+                    ))
                 ) {
                     // if the actual response is never seeded, give a higher probably to employ it
                     max(config.probOfHarvestingResponsesFromActualExternalServices, probability)
-                } else probability
+                } else {
+                    probability
+                }
                 if (randomness.nextBoolean(p))
                     return getACopyOfActualResponse(exAction.request)
             }
@@ -206,11 +214,20 @@ class HarvestActualHttpWsResponseHandler {
             if (found != null) seededResponses.add(httpRequest.getDescription())
 
             // TODO: Man, review the order of execution
-            if (found == null) {
+            if (found == null
+                && config.externalRequestResponseSelectionStrategy == EMConfig.ExternalRequestResponseSelectionStrategy.CLOSEST
+            ) {
                 val closestRequest = findClosestRequest(httpRequest.getDescription())
                 if (closestRequest != null) {
                     return (actualResponses[closestRequest]?.param?.copy() as? ResponseParam)
                 }
+            } else if (found == null
+                && config.externalRequestResponseSelectionStrategy == EMConfig.ExternalRequestResponseSelectionStrategy.RANDOM
+            ) {
+                // TODO: Not done, need to review: seran
+                val randomIndex = randomness.nextInt(actualResponses.size)
+                return actualResponses[actualResponses.keys().toList()
+                    .get(randomIndex)]?.param?.copy() as? ResponseParam
             }
             return found
         }
@@ -430,7 +447,7 @@ class HarvestActualHttpWsResponseHandler {
      * Uses Levenshtein Distance to calculate the distance, then selects the
      * shortest. If none exists, returns null.
      */
-    private fun findClosestRequest(key: String) : String? {
+    private fun findClosestRequest(key: String): String? {
         var out: String? = null
         var diff = 100.0
 
