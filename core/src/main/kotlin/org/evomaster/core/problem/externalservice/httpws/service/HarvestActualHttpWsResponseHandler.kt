@@ -32,6 +32,7 @@ import org.glassfish.jersey.client.HttpUrlConnectorProvider
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
@@ -69,16 +70,10 @@ class HarvestActualHttpWsResponseHandler {
 
 
     /**
-     * TODO: Add EMConfig option to set value as config
      * TODO if one day we need priorities on the queue, it can be set here. See:
      * https://stackoverflow.com/questions/3198660/java-executors-how-can-i-set-task-priority
      */
-    private var workerPool = Executors.newFixedThreadPool(
-        min(
-            config.externalRequestHarvesterNumberOfThreads,
-            Runtime.getRuntime().availableProcessors()
-        )
-    )
+    private lateinit var workerPool: ExecutorService
 
 
     companion object {
@@ -139,6 +134,8 @@ class HarvestActualHttpWsResponseHandler {
                 .sslContext(PreDefinedSSLInfo.getSSLContext())  // configure ssl certificate
                 .hostnameVerifier(PreDefinedSSLInfo.allowAllHostNames()) // configure all hostnames
                 .withConfig(clientConfiguration).build()
+
+            workerPool = Executors.newFixedThreadPool(min(config.externalRequestHarvesterNumberOfThreads, Runtime.getRuntime().availableProcessors()))
         }
     }
 
