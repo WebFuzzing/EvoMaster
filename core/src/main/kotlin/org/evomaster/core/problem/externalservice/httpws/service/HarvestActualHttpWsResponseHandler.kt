@@ -205,13 +205,13 @@ class HarvestActualHttpWsResponseHandler {
             val found = (actualResponses[httpRequest.getDescription()]?.param?.copy() as? ResponseParam)
             if (found != null) seededResponses.add(httpRequest.getDescription())
 
-            // TODO: need a clean-up
+            // TODO: Man, review the order of execution
             if (found == null) {
-                val k = findBestMatch(httpRequest.getDescription())
-                val f = (actualResponses[k]?.param?.copy() as? ResponseParam)
-                return f
+                val closestRequest = findClosestRequest(httpRequest.getDescription())
+                if (closestRequest != null) {
+                    return (actualResponses[closestRequest]?.param?.copy() as? ResponseParam)
+                }
             }
-
             return found
         }
     }
@@ -425,18 +425,30 @@ class HarvestActualHttpWsResponseHandler {
         }
     }
 
-    private fun findBestMatch(key: String) : String {
-        var result: String = ""
-        var distance: Int = 10
+    /**
+     * Finds the closest harvested requested based on the given key.
+     * Uses Levenshtein Distance to calculate the distance, then selects the
+     * shortest. If none exists, returns null.
+     */
+    private fun findClosestRequest(key: String) : String? {
+        var out: String? = null
+        var diff = 100.0
 
         actualResponses.keys().iterator().forEach {
-            val d = LevenshteinDistance.getDefaultInstance().apply(it, key)
-            if (d <= distance) {
-                distance = d
-                result = it
+            val ld = LevenshteinDistance.getDefaultInstance().apply(it, key).toDouble()
+
+            if (ld == 0.0) {
+                out = it
+            } else {
+                val nDiff = (ld / key.length.toDouble()) * 100.0
+
+                if (nDiff < diff) {
+                    diff = nDiff
+                    out = it
+                }
             }
         }
 
-        return result
+        return out
     }
 }
