@@ -73,7 +73,7 @@ class HarvestActualHttpWsResponseHandler {
      * TODO if one day we need priorities on the queue, it can be set here. See:
      * https://stackoverflow.com/questions/3198660/java-executors-how-can-i-set-task-priority
      */
-    private var workerPool = Executors.newFixedThreadPool(min(2, Runtime.getRuntime().availableProcessors()))
+    private var workerPool = Executors.newFixedThreadPool(min(config.externalRequestHarvesterNumberOfThreads, Runtime.getRuntime().availableProcessors()))
 
 
     companion object {
