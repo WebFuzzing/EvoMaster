@@ -550,16 +550,6 @@ public class MongoCollectionMock<Document> implements MongoCollection<Document> 
     }
 
     @Override
-    public void drop(DropCollectionOptions dropCollectionOptions) {
-
-    }
-
-    @Override
-    public void drop(ClientSession clientSession, DropCollectionOptions dropCollectionOptions) {
-
-    }
-
-    @Override
     public String createIndex(Bson bson) {
         return null;
     }

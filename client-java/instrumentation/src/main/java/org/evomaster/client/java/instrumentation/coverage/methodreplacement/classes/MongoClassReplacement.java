@@ -26,12 +26,27 @@ public class MongoClassReplacement extends ThirdPartyMethodReplacementClass {
         ExecutionTracer.addMongoInfo(info);
     }
 
-    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "find", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.FindIterable")
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "findBson", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.FindIterable")
     public static Object find(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object bson) {
         long start = System.currentTimeMillis();
         try {
-            Method findMethod = getOriginal(new MongoClassReplacement(), "find", mongoCollection);
+            Method findMethod = getOriginal(new MongoClassReplacement(), "findBson", mongoCollection);
             Object findIterable = findMethod.invoke(mongoCollection, bson);
+            long end = System.currentTimeMillis();
+            handleMongo(mongoCollection, bson, true, end - start);
+            return findIterable;
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            //handleMongo(mongoCollection, bson, false, 0);
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "findBsonResultClass", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.FindIterable")
+    public static <TResult> Object find(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object bson, Class<TResult> resultClass) {
+        long start = System.currentTimeMillis();
+        try {
+            Method findMethod = getOriginal(new MongoClassReplacement(), "findBsonResultClass", mongoCollection);
+            Object findIterable = findMethod.invoke(mongoCollection, bson, resultClass);
             long end = System.currentTimeMillis();
             handleMongo(mongoCollection, bson, true, end - start);
             return findIterable;

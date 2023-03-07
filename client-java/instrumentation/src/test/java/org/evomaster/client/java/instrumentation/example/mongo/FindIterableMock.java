@@ -116,10 +116,6 @@ public class FindIterableMock<Result> implements FindIterable<Result> {
         return null;
     }
 
-    @Override
-    public FindIterable<Result> comment(BsonValue bsonValue) {
-        return null;
-    }
 
     @Override
     public FindIterable<Result> hint(Bson bson) {
@@ -128,11 +124,6 @@ public class FindIterableMock<Result> implements FindIterable<Result> {
 
     @Override
     public FindIterable<Result> hintString(String s) {
-        return null;
-    }
-
-    @Override
-    public FindIterable<Result> let(Bson bson) {
         return null;
     }
 

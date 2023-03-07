@@ -216,5 +216,28 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
                 fv.setDatabaseExecution(i, DatabaseExecution.fromDto(extra.databaseExecutionDto))
             }
         }
+
+        handleMongoHeuristics(dto, fv)
+    }
+
+    private fun handleMongoHeuristics(dto: TestResultsDto, fv: FitnessValue) {
+        if (configuration.heuristicsForMongo) {
+
+            for (i in 0 until dto.extraHeuristics.size) {
+
+                val extra = dto.extraHeuristics[i]
+
+                extraHeuristicsLogger.writeHeuristics(extra.heuristics, i)
+
+                val toMinimize = extra.mongoHeuristics
+                    .filter {
+                        it != null
+                                && it.objective == HeuristicEntryDto.Objective.MINIMIZE_TO_ZERO
+                    }.map { it.value }
+                    .toList()
+
+                if (toMinimize.isNotEmpty()) fv.setExtraToMinimize(i, toMinimize)
+            }
+        }
     }
 }

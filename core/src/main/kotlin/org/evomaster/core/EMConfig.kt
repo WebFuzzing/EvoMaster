@@ -1036,6 +1036,9 @@ class EMConfig {
     @Cfg("Tracking of SQL commands to improve test generation")
     var heuristicsForSQL = true
 
+    @Cfg("Tracking of Mongo commands to improve test generation")
+    var heuristicsForMongo = true
+
     @Cfg("Enable extracting SQL execution info")
     var extractSqlExecutionInfo = true
 
@@ -1160,6 +1163,11 @@ class EMConfig {
             " Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin" +
             " on the JVM.")
     var instrumentMR_EXT_0 = true
+
+    @Cfg("Execute instrumentation for method replace with category MONGO." +
+            " Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin" +
+            " on the JVM.")
+    var instrumentMR_MONGO = true
 
 
     @Cfg("Execute instrumentation for method replace with category NET." +
@@ -1958,6 +1966,7 @@ class EMConfig {
         if(instrumentMR_SQL) categories.add(ReplacementCategory.SQL.toString())
         if(instrumentMR_EXT_0) categories.add(ReplacementCategory.EXT_0.toString())
         if(instrumentMR_NET) categories.add(ReplacementCategory.NET.toString())
+        if(instrumentMR_MONGO) categories.add(ReplacementCategory.MONGO.toString())
         return categories.joinToString(",")
     }
 

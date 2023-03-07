@@ -336,10 +336,12 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             }
         }
 
+        computeMongoHeuristics(dto);
+
         return dto;
     }
 
-    public final void computeMongoHeuristics(){
+    public final void computeMongoHeuristics(ExtraHeuristicsDto dto){
         //MongoExecutionDto dto = new MongoExecutionDto();
 
         if(mongoHandler.isCalculateHeuristics()){
@@ -356,15 +358,17 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                     }
                 });
             }
+
+            mongoHandler.getDistances().stream()
+                    .map(p ->
+                            new HeuristicEntryDto(
+                                    HeuristicEntryDto.Type.MONGO,
+                                    HeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
+                                    p.bson.toString(),
+                                    p.distance
+                            ))
+                    .forEach(h -> dto.mongoHeuristics.add(h));
         }
-
-
-        /*
-        if(mongoHandler.isCalculateHeuristics()) {
-            mongoHandler.getDistances()
-        }
-
-         */
     }
 
     /**

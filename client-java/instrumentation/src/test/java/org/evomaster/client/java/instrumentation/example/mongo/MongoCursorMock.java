@@ -30,11 +30,6 @@ public class MongoCursorMock<Result> implements MongoCursor<Result> {
     }
 
     @Override
-    public int available() {
-        return 0;
-    }
-
-    @Override
     public Result tryNext() {
         return null;
     }
