@@ -1955,4 +1955,57 @@ class GraphQLActionBuilderTest {
 
     }
 
+    @Test
+    fun interfacesObjectsTest() {
+
+        val actionCluster = mutableMapOf<String, Action>()
+         val json =
+            GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/interfacesObjects.json").readText()
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
+        assertEquals(1, actionCluster.size)
+
+        val stores = actionCluster["stores"] as GraphQLAction
+        assertEquals(1, stores.parameters.size)
+        assertTrue(stores.parameters[0] is GQReturnParam)
+
+        assertTrue(stores.parameters[0].gene is ObjectGene)
+        val objectStore1 = stores.parameters[0].gene as ObjectGene
+        assertEquals(1, objectStore1.fields.size)
+
+        assertTrue(objectStore1.fields[0] is OptionalGene)
+        assertTrue((objectStore1.fields[0] as OptionalGene).gene is ObjectGene)
+        val interfaceBouquet = (objectStore1.fields[0] as OptionalGene).gene as ObjectGene
+        assertEquals(2, interfaceBouquet.fields.size)
+
+        assertTrue(interfaceBouquet.fields[0] is OptionalGene)
+        assertTrue((interfaceBouquet.fields[0] as OptionalGene).gene is ObjectGene)
+        val objPotStore = (interfaceBouquet.fields[0] as OptionalGene).gene as ObjectGene
+        assertEquals(1, objPotStore.fields.size)
+        assertTrue(objPotStore.fields.any { it.getWrappedGene(ObjectGene::class.java)!=null })//interface: address
+
+        val interfaceAddress = (objPotStore.fields.first { it.getWrappedGene(ObjectGene::class.java)?.name=="address#INTERFACE#" } as OptionalGene).gene as ObjectGene
+        assertEquals(3, interfaceAddress.fields.size)
+
+        assertTrue(interfaceAddress.fields[0] is OptionalGene)
+        assertTrue((interfaceAddress.fields[0] as OptionalGene).gene is ObjectGene)
+        val objAddressFlower = (interfaceAddress.fields[0] as OptionalGene).gene as ObjectGene
+        assertEquals(1, objAddressFlower.fields.size)
+
+        assertTrue(interfaceAddress.fields[0] is OptionalGene)
+        assertTrue((interfaceAddress.fields[0] as OptionalGene).gene is ObjectGene)
+        val objAddressStore = (interfaceAddress.fields[0] as OptionalGene).gene as ObjectGene
+        assertEquals(1, objAddressStore.fields.size)
+
+        /**/
+        assertTrue(interfaceBouquet.fields[1] is OptionalGene)
+        assertTrue((interfaceBouquet.fields[1] as OptionalGene).gene is ObjectGene)
+        val objStore = (interfaceBouquet.fields[1] as OptionalGene).gene as ObjectGene
+        assertEquals(2, objStore.fields.size)
+        assertTrue(objStore.fields.any { it is BooleanGene && it.name == "id" })
+        assertTrue(objStore.fields.any { it is BooleanGene && it.name == "name" })
+
+
+    }
 }
