@@ -116,6 +116,10 @@ class HarvestActualHttpWsResponseHandler {
      */
     private val skipHeaders = listOf("user-agent", "host", "accept-encoding")
 
+
+    /**
+     * Contains the set of references to initiated external service requests
+     */
     private val startedRequests: MutableSet<String> = mutableSetOf()
 
     @PostConstruct
