@@ -6,12 +6,12 @@ class Store(
 ) {
     fun name(id: Int?): Flower {
         when (id) {
-            null-> return Flower("null",0)
-            1 -> return Flower("Roses",10)
-            2 -> return Flower("Tulips",20)
-            3 -> return Flower("Lilies",30)
-            4 -> return Flower( " Limonium",40)
+            null-> return Flower("null")
+            1 -> return Flower("Roses")
+            2 -> return Flower("Tulips")
+            3 -> return Flower("Lilies")
+            4 -> return Flower( "Limonium")
         }
-        return Flower("At least it is a flower in a flower store !!!",100)
+        return Flower("At least it is a flower in a flower store !!!")
     }
 }

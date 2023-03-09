@@ -3,7 +3,6 @@ type Query {
 }
 type Flower {
     type(id:Int): Store
-    price(id:Int): Store
 }
 
 type Store{
