@@ -1819,11 +1819,6 @@ class EMConfig {
 
     enum class ExternalRequestResponseSelectionStrategy {
         /**
-         * Do nothing
-         */
-        NONE,
-
-        /**
          * Selects the exact matching response for the request
          */
         EXACT,
@@ -1842,7 +1837,7 @@ class EMConfig {
 
     @Cfg("Harvested external request response selection strategy")
     @Experimental
-    var externalRequestResponseSelectionStrategy = ExternalRequestResponseSelectionStrategy.NONE
+    var externalRequestResponseSelectionStrategy = ExternalRequestResponseSelectionStrategy.EXACT
 
     @Cfg("Whether to employ constraints specified in API schema (e.g., OpenAPI) in test generation")
     @Experimental
