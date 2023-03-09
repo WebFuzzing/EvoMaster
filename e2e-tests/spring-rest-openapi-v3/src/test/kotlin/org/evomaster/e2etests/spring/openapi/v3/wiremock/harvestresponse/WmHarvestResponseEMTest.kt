@@ -45,6 +45,8 @@ class WmHarvestResponseEMTest : SpringTestBase() {
                 args.add("0.9")
                 args.add("--probOfMutatingResponsesBasedOnActualResponse")
                 args.add("0.1")
+                args.add("--externalRequestResponseSelectionStrategy")
+                args.add("EXACT")
 
                 val solution = initAndRun(args)
 

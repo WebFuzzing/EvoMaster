@@ -174,7 +174,7 @@ class HarvestActualHttpWsResponseHandler {
      *
      * the given [gene] should be the response body gene of ResponseParam
      */
-    fun getACopyOfItsActualResponseIfExist(gene: Gene, probability: Double): ResponseParam? {
+    private fun getACopyOfItsActualResponseIfExist(gene: Gene, probability: Double): ResponseParam? {
         if (probability == 0.0) return null
         val exAction = gene.getFirstParent { it is ApiExternalServiceAction } ?: return null
 
@@ -221,10 +221,8 @@ class HarvestActualHttpWsResponseHandler {
             } else if (found == null
                 && config.externalRequestResponseSelectionStrategy == EMConfig.ExternalRequestResponseSelectionStrategy.RANDOM
             ) {
-                // TODO: Not done, need to review: seran
                 val randomIndex = randomness.nextInt(actualResponses.size)
-                return actualResponses[actualResponses.keys().toList()
-                    .get(randomIndex)]?.param?.copy() as? ResponseParam
+                return actualResponses[actualResponses.keys().toList()[randomIndex]]?.param?.copy() as? ResponseParam
             }
             return found
         }
