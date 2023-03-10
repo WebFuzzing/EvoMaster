@@ -1,13 +1,15 @@
-package org.evomaster.core.problem.externalservice.httpws
+package org.evomaster.core.problem.externalservice.httpws.service
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Inject
 import org.evomaster.client.java.instrumentation.shared.PreDefinedSSLInfo
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
+import org.evomaster.core.problem.externalservice.httpws.ActualResponseInfo
+import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
+import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceRequest
 import org.evomaster.core.problem.externalservice.httpws.param.HttpWsResponseParam
 import org.evomaster.core.problem.externalservice.param.ResponseParam
 import org.evomaster.core.problem.util.ParamUtil
@@ -28,7 +30,9 @@ import org.glassfish.jersey.client.ClientProperties
 import org.glassfish.jersey.client.HttpUrlConnectorProvider
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
 import javax.ws.rs.ProcessingException
@@ -39,6 +43,7 @@ import javax.ws.rs.client.Invocation
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 import kotlin.math.max
+import kotlin.math.min
 
 
 /**
@@ -60,22 +65,22 @@ class HarvestActualHttpWsResponseHandler {
     @Inject
     private lateinit var randomness: Randomness
 
-    private lateinit var httpWsClient : Client
+    private lateinit var httpWsClient: Client
 
 
     /**
-     * TODO
-     * to further improve the efficiency of collecting actual responses,
-     * might have a pool of threads to send requests
+     * TODO: Add EMConfig option to set value as config
+     * TODO if one day we need priorities on the queue, it can be set here. See:
+     * https://stackoverflow.com/questions/3198660/java-executors-how-can-i-set-task-priority
      */
-    private lateinit var threadToHandleRequest: Thread
+    private lateinit var workerPool: ExecutorService
 
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(HarvestActualHttpWsResponseHandler::class.java)
         private const val ACTUAL_RESPONSE_GENE_NAME = "ActualResponse"
 
-        init{
+        init {
             /**
              * this default setting in jersey-client is false
              * to allow collected requests which might have restricted headers, then
@@ -92,32 +97,13 @@ class HarvestActualHttpWsResponseHandler {
      *      ie, "method:absoluteURL[headers]{body payload}",
      * value is an actual response info
      */
-    private val actualResponses = mutableMapOf<String, ActualResponseInfo>()
-
-    /**
-     * cache collected requests
-     *
-     * key is description of request with [HttpExternalServiceRequest.getDescription]
-     *      ie, "method:absoluteURL[headers]{body payload}",
-     * value is an example of HttpExternalServiceRequest
-     */
-    private val cachedRequests = mutableMapOf<String, HttpExternalServiceRequest>()
+    private val actualResponses = ConcurrentHashMap<String, ActualResponseInfo>()
 
     /**
      * track a list of actual responses which have been seeded in the search based on
      * its corresponding request using its description, ie, ie, "method:absoluteURL[headers]{body payload}",
      */
     private val seededResponses = mutableSetOf<String>()
-
-    /**
-     * need it for wait and notify in kotlin
-     */
-    private val lock = Object()
-
-    /**
-     * an queue for handling urls for
-     */
-    private val queue = ConcurrentLinkedQueue<String>()
 
     /**
      * key is dto class name
@@ -129,11 +115,17 @@ class HarvestActualHttpWsResponseHandler {
         skip headers if they depend on the client
         shall we skip Connection?
      */
-    private val skipHeaders = listOf("user-agent","host","accept-encoding")
+    private val skipHeaders = listOf("user-agent", "host", "accept-encoding")
+
+
+    /**
+     * Contains the set of references to initiated external service requests
+     */
+    private val startedRequests: MutableSet<String> = mutableSetOf()
 
     @PostConstruct
     fun initialize() {
-        if (config.doHarvestActualResponse()){
+        if (config.doHarvestActualResponse()) {
             val clientConfiguration = ClientConfig()
                 .property(ClientProperties.CONNECT_TIMEOUT, 10_000)
                 .property(ClientProperties.READ_TIMEOUT, config.tcpTimeoutMs)
@@ -147,48 +139,37 @@ class HarvestActualHttpWsResponseHandler {
                 .hostnameVerifier(PreDefinedSSLInfo.allowAllHostNames()) // configure all hostnames
                 .withConfig(clientConfiguration).build()
 
-            threadToHandleRequest = object :Thread() {
-                override fun run() {
-                    while (!this.isInterrupted) {
-                        sendRequestToRealExternalService()
-                    }
-                }
-            }
-            threadToHandleRequest.start()
+            workerPool = Executors.newFixedThreadPool(min(config.externalRequestHarvesterNumberOfThreads, Runtime.getRuntime().availableProcessors()))
         }
     }
 
     @PreDestroy
     private fun preDestroy() {
-        if (config.doHarvestActualResponse()){
+        if (config.doHarvestActualResponse()) {
             shutdown()
         }
     }
 
-    fun shutdown(){
+    fun shutdown() {
         Lazy.assert { config.doHarvestActualResponse() }
-        synchronized(lock){
-            if (threadToHandleRequest.isAlive)
-                threadToHandleRequest.interrupt()
-            httpWsClient.close()
-        }
+        workerPool.shutdown()
+        httpWsClient.close()
     }
 
     @Synchronized
-    private fun sendRequestToRealExternalService() {
-        synchronized(lock){
-            while (queue.size == 0) {
-                lock.wait()
-            }
-            val first = queue.remove()
-            val info = handleActualResponse(createInvocationToRealExternalService(cachedRequests[first]?:throw IllegalStateException("Fail to get Http request with description $first")))
-            if (info != null){
-                info.param.responseBody.markAllAsInitialized()
-                actualResponses[first] = info
-            }else
-                LoggingUtil.uniqueWarn(log, "Fail to harvest actual responses from GET $first")
-        }
+    private fun sendRequestToRealExternalService(request: HttpExternalServiceRequest) {
+        val info = handleActualResponse(
+            createInvocationToRealExternalService(
+                request
+            )
+        )
+        if (info != null) {
+            info.param.responseBody.markAllAsInitialized()
+            actualResponses[request.getDescription()] = info
+        } else
+            LoggingUtil.uniqueWarn(log, "Fail to harvest actual responses from GET ${request.getDescription()}")
     }
+
     /**
      * @return a copy of gene of actual responses based on the given [gene] and probability
      *
@@ -197,15 +178,18 @@ class HarvestActualHttpWsResponseHandler {
      *
      * the given [gene] should be the response body gene of ResponseParam
      */
-    fun getACopyOfItsActualResponseIfExist(gene: Gene, probability : Double) : ResponseParam?{
+    fun getACopyOfItsActualResponseIfExist(gene: Gene, probability: Double): ResponseParam? {
         if (probability == 0.0) return null
-        val exAction = gene.getFirstParent { it is ApiExternalServiceAction }?:return null
+        val exAction = gene.getFirstParent { it is ApiExternalServiceAction } ?: return null
 
         // only support HttpExternalServiceAction, TODO for others
-        if (exAction is HttpExternalServiceAction){
-            Lazy.assert { gene.parent == exAction.response}
-            if (exAction.response.responseBody == gene){
-                val p = if (!seededResponses.contains(exAction.request.getDescription()) && actualResponses.containsKey(exAction.request.getDescription())){
+        if (exAction is HttpExternalServiceAction) {
+            Lazy.assert { gene.parent == exAction.response }
+            if (exAction.response.responseBody == gene) {
+                val p = if (!seededResponses.contains(exAction.request.getDescription()) && actualResponses.containsKey(
+                        exAction.request.getDescription()
+                    )
+                ) {
                     // if the actual response is never seeded, give a higher probably to employ it
                     max(config.probOfHarvestingResponsesFromActualExternalServices, probability)
                 } else probability
@@ -220,12 +204,12 @@ class HarvestActualHttpWsResponseHandler {
     /**
      * @return a copy of actual responses based on the given [httpRequest] and probability
      */
-    fun getACopyOfActualResponse(httpRequest: HttpExternalServiceRequest, probability: Double?=null) : ResponseParam?{
+    fun getACopyOfActualResponse(httpRequest: HttpExternalServiceRequest, probability: Double? = null): ResponseParam? {
         val harvest = probability == null || (randomness.nextBoolean(probability))
         if (!harvest) return null
-        synchronized(actualResponses){
-            val found= (actualResponses[httpRequest.getDescription()]?.param?.copy() as? ResponseParam)
-            if (found!=null) seededResponses.add(httpRequest.getDescription())
+        synchronized(actualResponses) {
+            val found = (actualResponses[httpRequest.getDescription()]?.param?.copy() as? ResponseParam)
+            if (found != null) seededResponses.add(httpRequest.getDescription())
             return found
         }
     }
@@ -233,38 +217,31 @@ class HarvestActualHttpWsResponseHandler {
     /**
      * add http request to queue for sending them to real external services
      */
-    fun addHttpRequests(requests: List<HttpExternalServiceRequest>){
-        if (requests.isEmpty())  return
+    fun addHttpRequests(requests: List<HttpExternalServiceRequest>) {
+        if (requests.isEmpty()) return
 
         if (!config.doHarvestActualResponse())
             return
 
-        // only harvest responses with GET method
-        //val filter = requests.filter { it.method.equals("GET", ignoreCase = true) }
-        synchronized(cachedRequests){
-            requests.forEach { cachedRequests.putIfAbsent(it.getDescription(), it) }
-        }
-
-        addRequests(requests.map { it.getDescription() })
-    }
-
-    private fun addRequests(requests : List<String>) {
-        if (requests.isEmpty()) return
-
-        val notInCollected = requests.filterNot { actualResponses.containsKey(it) }.distinct()
-        if (notInCollected.isEmpty()) return
-
-        synchronized(lock){
-            val newRequests = notInCollected.filterNot { queue.contains(it) }
-            if (newRequests.isEmpty())
-                return
-            updateExtractedObjectDto()
-            lock.notify()
-            queue.addAll(newRequests)
+        requests.filter { it.method.equals("GET", ignoreCase = true) }.forEach {
+            addRequest(it)
         }
     }
 
-    private fun buildInvocation(httpRequest : HttpExternalServiceRequest) : Invocation{
+    private fun addRequest(request: HttpExternalServiceRequest) {
+        if (startedRequests.contains(request.getDescription())) {
+            return
+        }
+
+        startedRequests.add(request.getDescription())
+
+        updateExtractedObjectDto()
+
+        val task = Runnable { sendRequestToRealExternalService(request) }
+        workerPool.execute(task)
+    }
+
+    private fun buildInvocation(httpRequest: HttpExternalServiceRequest): Invocation {
         val build = httpWsClient.target(httpRequest.actualAbsoluteURL).request("*/*").apply {
             val handledHeaders = httpRequest.headers.filterNot { skipHeaders.contains(it.key.lowercase()) }
             if (handledHeaders.isNotEmpty())
@@ -273,7 +250,7 @@ class HarvestActualHttpWsResponseHandler {
 
         val bodyEntity = if (httpRequest.body != null) {
             val contentType = httpRequest.getContentType()
-            if (contentType !=null )
+            if (contentType != null)
                 Entity.entity(httpRequest.body, contentType)
             else
                 Entity.entity(httpRequest.body, MediaType.APPLICATION_FORM_URLENCODED_TYPE)
@@ -281,7 +258,7 @@ class HarvestActualHttpWsResponseHandler {
             null
         }
 
-        return when{
+        return when {
             httpRequest.method.equals("GET", ignoreCase = true) -> build.buildGet()
             httpRequest.method.equals("POST", ignoreCase = true) -> build.buildPost(bodyEntity)
             httpRequest.method.equals("PUT", ignoreCase = true) -> build.buildPut(bodyEntity)
@@ -296,12 +273,15 @@ class HarvestActualHttpWsResponseHandler {
         }
     }
 
-    private fun createInvocationToRealExternalService(httpRequest : HttpExternalServiceRequest) : Response?{
+    private fun createInvocationToRealExternalService(httpRequest: HttpExternalServiceRequest): Response? {
         return try {
             buildInvocation(httpRequest).invoke()
         } catch (e: ProcessingException) {
 
-            log.debug("There has been an issue in accessing external service with url (${httpRequest.getDescription()}): {}", e)
+            log.debug(
+                "There has been an issue in accessing external service with url (${httpRequest.getDescription()}): {}",
+                e
+            )
 
             when {
                 TcpUtils.isTooManyRedirections(e) -> {
@@ -337,8 +317,8 @@ class HarvestActualHttpWsResponseHandler {
         }
     }
 
-    private fun handleActualResponse(response: Response?) : ActualResponseInfo? {
-        response?:return null
+    private fun handleActualResponse(response: Response?): ActualResponseInfo? {
+        response ?: return null
         val status = response.status
         var statusGene = HttpWsResponseParam.getDefaultStatusEnumGene()
         if (!statusGene.values.contains(status))
@@ -346,37 +326,49 @@ class HarvestActualHttpWsResponseHandler {
 
         val body = response.readEntity(String::class.java)
         val node = getJsonNodeFromText(body)
-        val responseParam = if(node != null){
+        val responseParam = if (node != null) {
             getHttpResponse(node, statusGene).apply {
                 setGeneBasedOnString(responseBody, body)
             }
-        }else{
-            HttpWsResponseParam(status = statusGene, responseBody = OptionalGene(ACTUAL_RESPONSE_GENE_NAME, StringGene(ACTUAL_RESPONSE_GENE_NAME, value = body)))
+        } else {
+            HttpWsResponseParam(
+                status = statusGene,
+                responseBody = OptionalGene(
+                    ACTUAL_RESPONSE_GENE_NAME,
+                    StringGene(ACTUAL_RESPONSE_GENE_NAME, value = body)
+                )
+            )
         }
 
         (responseParam as HttpWsResponseParam).setStatus(status)
         return ActualResponseInfo(body, responseParam)
     }
 
-    private fun getHttpResponse(node: JsonNode, statusGene: EnumGene<Int>) : ResponseParam {
-        synchronized(extractedObjectDto){
-            val found = if (extractedObjectDto.isEmpty()) null else parseJsonNodeAsGene(ACTUAL_RESPONSE_GENE_NAME, node, extractedObjectDto)
+    private fun getHttpResponse(node: JsonNode, statusGene: EnumGene<Int>): ResponseParam {
+        synchronized(extractedObjectDto) {
+            val found = if (extractedObjectDto.isEmpty()) null else parseJsonNodeAsGene(
+                ACTUAL_RESPONSE_GENE_NAME,
+                node,
+                extractedObjectDto
+            )
             return if (found != null)
-                HttpWsResponseParam(status= statusGene, responseBody = OptionalGene(ACTUAL_RESPONSE_GENE_NAME, found))
+                HttpWsResponseParam(status = statusGene, responseBody = OptionalGene(ACTUAL_RESPONSE_GENE_NAME, found))
             else {
                 val parsed = parseJsonNodeAsGene(ACTUAL_RESPONSE_GENE_NAME, node)
-                HttpWsResponseParam(status= statusGene, responseBody = wrapWithOptionalGene(parsed, true) as OptionalGene)
+                HttpWsResponseParam(
+                    status = statusGene,
+                    responseBody = wrapWithOptionalGene(parsed, true) as OptionalGene
+                )
             }
         }
-
     }
 
 
-    private fun updateExtractedObjectDto(){
-        synchronized(extractedObjectDto){
+    private fun updateExtractedObjectDto() {
+        synchronized(extractedObjectDto) {
             val infoDto = rc.getSutInfo()!!
             val map = ParserDtoUtil.getOrParseDtoWithSutInfo(infoDto, config.enableSchemaConstraintHandling)
-            if (map.isNotEmpty()){
+            if (map.isNotEmpty()) {
                 map.forEach { (t, u) ->
                     extractedObjectDto.putIfAbsent(t, u)
                 }
@@ -387,9 +379,13 @@ class HarvestActualHttpWsResponseHandler {
     /**
      * harvest the existing action [externalServiceAction] with collected actual responses only if the actual response for the action exists, and it is never seeded
      */
-    fun harvestExistingExternalActionIfNeverSeeded(externalServiceAction: HttpExternalServiceAction, probability: Double) : Boolean{
+    fun harvestExistingExternalActionIfNeverSeeded(
+        externalServiceAction: HttpExternalServiceAction,
+        probability: Double
+    ): Boolean {
         if (!seededResponses.contains(externalServiceAction.request.getDescription())
-            && actualResponses.containsKey(externalServiceAction.request.getDescription())){
+            && actualResponses.containsKey(externalServiceAction.request.getDescription())
+        ) {
             return harvestExistingGeneBasedOn(externalServiceAction.response.responseBody, probability)
         }
         return false
@@ -398,25 +394,31 @@ class HarvestActualHttpWsResponseHandler {
     /**
      * harvest the existing mocked response with collected actual responses
      */
-    fun harvestExistingGeneBasedOn(geneToMutate: Gene, probability: Double) : Boolean{
+    fun harvestExistingGeneBasedOn(geneToMutate: Gene, probability: Double): Boolean {
         try {
-            val template = getACopyOfItsActualResponseIfExist(geneToMutate, probability)?.responseBody?:return false
+            val template = getACopyOfItsActualResponseIfExist(geneToMutate, probability)?.responseBody ?: return false
 
             val v = ParamUtil.getValueGene(geneToMutate)
             val t = ParamUtil.getValueGene(template)
-            if (v::class.java == t::class.java){
+            if (v::class.java == t::class.java) {
                 v.copyValueFrom(t)
                 return true
-            }else if (v is StringGene){
+            } else if (v is StringGene) {
                 // add template as part of specialization
                 v.addChild(t)
                 v.selectedSpecialization = v.specializationGenes.indexOf(t)
                 return true
             }
-            LoggingUtil.uniqueWarn(log, "Fail to mutate gene (${geneToMutate::class.java.name}) based on a given gene (${template::class.java.name})")
+            LoggingUtil.uniqueWarn(
+                log,
+                "Fail to mutate gene (${geneToMutate::class.java.name}) based on a given gene (${template::class.java.name})"
+            )
             return false
-        }catch (e: Exception){
-            LoggingUtil.uniqueWarn(log, "Fail to mutate gene based on a given gene and an exception (${e.message}) is thrown")
+        } catch (e: Exception) {
+            LoggingUtil.uniqueWarn(
+                log,
+                "Fail to mutate gene based on a given gene and an exception (${e.message}) is thrown"
+            )
             return false
         }
     }
