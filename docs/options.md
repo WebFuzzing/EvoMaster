@@ -164,7 +164,7 @@ There are 3 types of options:
 |`exceedTargetsFile`| __String__. Specify a path to save all not covered targets when the number is more than 100. *Default value*: `exceedTargets.txt`.|
 |`exportDependencies`| __Boolean__. Specify whether to export derived dependencies among resources. *Default value*: `false`.|
 |`exportImpacts`| __Boolean__. Specify whether to export derived impacts among genes. *Default value*: `false`.|
-|`externalRequestHarvesterNumberOfThreads`| __Int__. Number of threads for external request harvester. *Default value*: `2`.|
+|`externalRequestHarvesterNumberOfThreads`| __Int__. Number of threads for external request harvester. No more threads than numbers of processors will be used. *Constraints*: `min=1.0`. *Default value*: `2`.|
 |`externalRequestResponseSelectionStrategy`| __Enum__. Harvested external request response selection strategy. *Valid values*: `EXACT, RANDOM, CLOSEST`. *Default value*: `EXACT`.|
 |`externalServiceIP`| __String__. User provided external service IP. *Constraints*: `regex ^127\.((25[0-5]\|2[0-4][0-9]\|[01]?[0-9][0-9]?)\.){2}(25[0-5]\|2[0-4][0-9]\|[01]?[0-9][0-9]?)$`. *Default value*: `127.0.0.2`.|
 |`externalServiceIPSelectionStrategy`| __Enum__. Specify a method to select the first external service spoof IP address. *Valid values*: `NONE, DEFAULT, USER, RANDOM`. *Default value*: `NONE`.|
