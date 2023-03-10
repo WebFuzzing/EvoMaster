@@ -278,6 +278,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     public final void resetExtraHeuristics() {
         sqlHandler.reset();
+        mongoHandler.reset();
     }
 
     public final List<ExtraHeuristicsDto> getExtraHeuristics() {
@@ -293,6 +294,13 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
         ExtraHeuristicsDto dto = new ExtraHeuristicsDto();
 
+        computeSQLHeuristics(dto);
+        computeMongoHeuristics(dto);
+
+        return dto;
+    }
+
+    private void computeSQLHeuristics(ExtraHeuristicsDto dto) {
         if(sqlHandler.isCalculateHeuristics() || sqlHandler.isExtractSqlExecution()){
             /*
                 TODO refactor, once we move SQL analysis into Core
@@ -335,15 +343,9 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                 accessedTables.addAll(executionDto.updatedData.keySet());
             }
         }
-
-        computeMongoHeuristics(dto);
-
-        return dto;
     }
 
     public final void computeMongoHeuristics(ExtraHeuristicsDto dto){
-        //MongoExecutionDto dto = new MongoExecutionDto();
-
         if(mongoHandler.isCalculateHeuristics()){
 
             List<AdditionalInfo> list = getAdditionalInfoList();

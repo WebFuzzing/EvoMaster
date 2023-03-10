@@ -16,10 +16,14 @@ import kotlin.math.abs
 class MongoHeuristicsCalculator {
 
     fun computeExpression(query: Bson, doc: Document): Double {
+        val operation = getOperation(query)
+        return calculateDistance(operation, doc)
+    }
+
+    private fun getOperation(query: Bson): QueryOperation {
         val bsonDocument = query.toBsonDocument(BsonDocument::class.java, MongoClientSettings.getDefaultCodecRegistry())
         val queryDocument = DocumentCodec().decode(bsonDocument.asBsonReader(), DecoderContext.builder().build())
-        val operation = QueryParser().parse(queryDocument)
-        return calculateDistance(operation, doc)
+        return QueryParser().parse(queryDocument)
     }
 
     private fun calculateDistance(operation: QueryOperation, doc: Document): Double {

@@ -13,7 +13,6 @@ public class PersonController {
 
     @PostMapping("{age}")
     public ResponseEntity<Void> post(@PathVariable Integer age) {
-        System.out.println(age);
         Person s = new Person(age);
         persons.save(s);
         return ResponseEntity.status(200).build();

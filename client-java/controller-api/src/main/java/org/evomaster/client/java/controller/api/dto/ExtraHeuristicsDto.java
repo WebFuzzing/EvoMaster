@@ -1,7 +1,6 @@
 package org.evomaster.client.java.controller.api.dto;
 
 import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto;
-import org.evomaster.client.java.controller.api.dto.database.execution.MongoExecutionDto;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,8 +19,6 @@ public class ExtraHeuristicsDto {
     public List<HeuristicEntryDto> heuristics = new ArrayList<>();
 
     public ExecutionDto databaseExecutionDto;
-
-    public MongoExecutionDto mongoExecutionDto;
 
     public List<HeuristicEntryDto> mongoHeuristics = new ArrayList<>();
 }

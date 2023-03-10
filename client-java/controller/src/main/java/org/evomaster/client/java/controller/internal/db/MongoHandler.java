@@ -48,7 +48,7 @@ public class MongoHandler {
 
     public List<MongoOperationDistance> getDistances() {
 
-        operations.forEach(mongoInfo -> {
+        operations.stream().filter(info -> info.getQuery() != null).forEach(mongoInfo -> {
             double dist;
             try {
                 dist = computeDistance(mongoInfo);
@@ -72,23 +72,15 @@ public class MongoHandler {
 
         double min = Double.MAX_VALUE;
 
-        // VER COMO SE ITERA
-        for(Document doc : documents) {
+        for (Document doc : documents) {
             double dist = calculator.computeExpression((Bson) info.getQuery(), doc);
-            if (dist == 0) {
-                return 0;
-            }
-            // BUSCO CUAL RESULTADO ESTA MAS CERCA
-            if (dist < min) {
-                min = dist;
-            }
+            if (dist == 0) return 0;
+            if (dist < min) min = dist;
         }
         return min;
     }
 
-    public boolean isCalculateHeuristics() {
-        return calculateHeuristics;
-    }
+    public boolean isCalculateHeuristics() {return calculateHeuristics;}
 
     public boolean isExtractMongoExecution() {
         return extractMongoExecution;
