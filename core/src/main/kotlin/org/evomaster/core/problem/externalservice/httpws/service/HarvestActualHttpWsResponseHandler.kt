@@ -223,6 +223,9 @@ class HarvestActualHttpWsResponseHandler {
         if (!config.doHarvestActualResponse())
             return
 
+        /*
+        Apart from GET and POST, other HTTP verbs are excluded for now to avoid side effects.
+         */
         requests
             .filter { it.method.equals("GET", ignoreCase = true) || it.method.equals("POST", ignoreCase = true) }
             .forEach {
