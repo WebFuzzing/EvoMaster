@@ -1812,6 +1812,11 @@ class EMConfig {
     @Probability(activating = true)
     var probOfMutatingResponsesBasedOnActualResponse = 0.0
 
+    @Cfg("Number of threads for external request harvester. No more threads than numbers of processors will be used.")
+    @Min(1.0)
+    @Experimental
+    var externalRequestHarvesterNumberOfThreads: Int = 2
+
     @Cfg("Whether to employ constraints specified in API schema (e.g., OpenAPI) in test generation")
     @Experimental
     var enableSchemaConstraintHandling = false

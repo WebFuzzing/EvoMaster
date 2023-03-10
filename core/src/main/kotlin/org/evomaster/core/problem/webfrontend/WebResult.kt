@@ -16,6 +16,7 @@ class WebResult : ActionResult {
         const val POSSIBLE_ACTION_IDS = "POSSIBLE_ACTION_IDS"
         const val URL_PAGE_START = "URL_PAGE_START"
         const val URL_PAGE_END = "URL_PAGE_END"
+        const val VALID_HTML = "VALID_HTML"
     }
 
     constructor(stopping: Boolean = false) : super(stopping)
@@ -26,10 +27,10 @@ class WebResult : ActionResult {
         return WebResult(this)
     }
 
-    /*
-        TODO: possible optimization. as pages are supposed to be finite, we could save them in a central map,
-        and here in results just save a pointer. potentially useful for saving memory
-     */
+
+    fun setValidHtml(isValid: Boolean) = addResultValue(VALID_HTML, isValid.toString())
+
+    fun getValidHtml() : Boolean? = getResultValue(VALID_HTML)?.toBoolean()
 
     fun setIdentifyingPageIdStart(shape: String) = addResultValue(IDENTIFYING_PAGE_ID_START, shape)
 

@@ -41,7 +41,7 @@ class HttpExternalServiceRequest(
     /**
      * get description of this an HTTP request to external service
      */
-    fun getDescription() = "$method:$absoluteURL[${headers.keys.joinToString(";") { "$it:${headers[it]}" }}]{${body?:"none"}}"
+    fun getDescription() = "$method::$absoluteURL::[${headers.keys.joinToString(";") { "$it:${headers[it]}" }}]::{${body?:"none"}}"
 
     fun getContentType() : String?{
         if (body == null) return null

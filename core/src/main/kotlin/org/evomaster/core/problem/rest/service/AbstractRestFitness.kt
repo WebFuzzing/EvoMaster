@@ -8,8 +8,8 @@ import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils.getWMDefaultSignature
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.problem.externalservice.httpws.HarvestActualHttpWsResponseHandler
-import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalServiceHandler
+import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
+import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceInfo
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
 import org.evomaster.core.problem.httpws.auth.NoAuth

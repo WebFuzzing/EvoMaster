@@ -28,23 +28,58 @@ public abstract class WebTestBase extends EnterpriseTestBase{
         return (Solution<WebIndividual>) Main.initAndRun(args.toArray(new String[0]));
     }
 
-    public static void assertHasVisitedUrlPath(Solution<WebIndividual> sol, String... paths){
+    public static void assertNoHtmlErrors(Solution<WebIndividual> sol){
 
-
-
-        Set<String> visited = sol.getIndividuals().stream()
-                .flatMap(ind -> {
+        assertTrue(
+                sol.getIndividuals().stream()
+                        .flatMap(ind -> {
                             List<WebAction> actions =  ind.getIndividual().seeMainExecutableActions();
                             return ind.seeResults(actions).stream();
                         })
-                .filter(r -> r instanceof WebResult && !r.getStopping())
-                .flatMap(r -> Arrays.asList(((WebResult) r).getUrlPageStart(), ((WebResult) r).getUrlPageEnd()).stream() )
+                        .allMatch(r -> !Boolean.FALSE.equals(((WebResult)r).getValidHtml()))
+        );
+    }
+
+    public static void assertHasAnyHtmlErrors(Solution<WebIndividual> sol){
+
+        assertTrue(
+                sol.getIndividuals().stream()
+                        .flatMap(ind -> {
+                            List<WebAction> actions =  ind.getIndividual().seeMainExecutableActions();
+                            return ind.seeResults(actions).stream();
+                        })
+                        .anyMatch(r -> Boolean.FALSE.equals(((WebResult)r).getValidHtml()))
+        );
+    }
+
+    public static Set<URL> visitedUrls(Solution<WebIndividual> sol){
+
+        return sol.getIndividuals().stream()
+                .flatMap(ind -> {
+                    List<WebAction> actions =  ind.getIndividual().seeMainExecutableActions();
+                    return ind.seeResults(actions).stream();
+                })
+                .filter(r -> r instanceof WebResult)
+                .flatMap(r ->
+                        !r.getStopping()
+                                ? Arrays.asList(((WebResult) r).getUrlPageStart(), ((WebResult) r).getUrlPageEnd()).stream()
+                                : Arrays.asList(((WebResult) r).getUrlPageStart()).stream()
+                )
                 .map(url -> {
                     try {
-                        return (new URL(url)).getPath();
+                        return (new URL(url));
                     } catch (MalformedURLException e) {
                         throw new RuntimeException(e);
                     }
+                })
+                .collect(Collectors.toSet());
+    }
+
+    public static void assertHasVisitedUrlPath(Solution<WebIndividual> sol, String... paths){
+
+        Set<String> visited = visitedUrls(sol).stream()
+                .map(url -> {
+                        return url.getPath();
                 })
                 .collect(Collectors.toSet());
 

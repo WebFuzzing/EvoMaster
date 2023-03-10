@@ -70,5 +70,8 @@ class WebModule: AbstractModule() {
 
         bind(WebPageIdentifier::class.java)
             .asEagerSingleton()
+
+        bind(WebGlobalState::class.java)
+            .asEagerSingleton()
     }
 }

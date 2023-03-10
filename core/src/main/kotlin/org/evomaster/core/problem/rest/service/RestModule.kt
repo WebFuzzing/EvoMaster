@@ -5,8 +5,8 @@ import com.google.inject.TypeLiteral
 import org.evomaster.core.output.service.RestTestCaseWriter
 import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.output.service.TestSuiteWriter
-import org.evomaster.core.problem.externalservice.httpws.HarvestActualHttpWsResponseHandler
-import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalServiceHandler
+import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
+import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.remote.service.RemoteControllerImplementation

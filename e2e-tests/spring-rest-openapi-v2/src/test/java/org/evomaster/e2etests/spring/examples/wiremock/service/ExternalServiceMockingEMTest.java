@@ -3,7 +3,7 @@ package org.evomaster.e2etests.spring.examples.wiremock.service;
 import com.foo.rest.examples.spring.wiremock.service.ServiceController;
 import com.google.inject.Injector;
 import org.evomaster.core.EMConfig;
-import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalServiceHandler;
+import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.problem.rest.service.ResourceSampler;
 import org.evomaster.core.problem.rest.service.RestResourceFitness;
