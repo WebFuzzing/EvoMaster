@@ -34,7 +34,8 @@ class WmHarvestResponseEMTest : SpringTestBase() {
             "WmHarvestResponseEM",
             "org.foo.WmHarvestResponseEM",
             1000,
-            !CIUtils.isRunningGA(),
+//            !CIUtils.isRunningGA(),
+            false,
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")

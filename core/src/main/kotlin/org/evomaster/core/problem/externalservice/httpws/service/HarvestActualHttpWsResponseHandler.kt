@@ -223,7 +223,9 @@ class HarvestActualHttpWsResponseHandler {
         if (!config.doHarvestActualResponse())
             return
 
-        requests.filter { it.method.equals("GET", ignoreCase = true) }.forEach {
+        requests
+            .filter { it.method.equals("GET", ignoreCase = true) || it.method.equals("POST", ignoreCase = true) }
+            .forEach {
             addRequest(it)
         }
     }
