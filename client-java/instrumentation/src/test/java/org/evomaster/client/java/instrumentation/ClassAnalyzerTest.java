@@ -70,7 +70,7 @@ class ClassAnalyzerTest {
     }
 
     @Test
-    void testMinValue() {
+    void testMinAnnotation() {
         UnitsInfoRecorder.reset();
 
         ClassAnalyzer.doAnalyze(Collections.singletonList(
@@ -89,7 +89,7 @@ class ClassAnalyzerTest {
     }
 
     @Test
-    void testMaxValue() {
+    void testMaxAnnotation() {
         UnitsInfoRecorder.reset();
 
         ClassAnalyzer.doAnalyze(Collections.singletonList(
@@ -109,7 +109,7 @@ class ClassAnalyzerTest {
     }
 
     @Test
-    void testNotBlank() {
+    void testNotBlankAnnotation() {
         UnitsInfoRecorder.reset();
 
         ClassAnalyzer.doAnalyze(Collections.singletonList(
@@ -129,7 +129,7 @@ class ClassAnalyzerTest {
     }
 
     @Test
-    void testEMail() {
+    void testEMailAnnotation() {
         UnitsInfoRecorder.reset();
 
         ClassAnalyzer.doAnalyze(Collections.singletonList(
@@ -150,7 +150,7 @@ class ClassAnalyzerTest {
 
 
     @Test
-    void testPositive() {
+    void testPositiveAnnotation() {
         UnitsInfoRecorder.reset();
 
         ClassAnalyzer.doAnalyze(Collections.singletonList(
@@ -170,7 +170,7 @@ class ClassAnalyzerTest {
     }
 
     @Test
-    void testPositiveOrZero() {
+    void testPositiveOrZeroAnnotation() {
         UnitsInfoRecorder.reset();
 
         ClassAnalyzer.doAnalyze(Collections.singletonList(
@@ -189,7 +189,7 @@ class ClassAnalyzerTest {
     }
 
     @Test
-    void testNegative() {
+    void testNegativeAnnotation() {
         UnitsInfoRecorder.reset();
 
         ClassAnalyzer.doAnalyze(Collections.singletonList(
@@ -208,7 +208,7 @@ class ClassAnalyzerTest {
     }
 
     @Test
-    void testNegativeOrZero() {
+    void testNegativeOrZeroAnnotation() {
         UnitsInfoRecorder.reset();
 
         ClassAnalyzer.doAnalyze(Collections.singletonList(
@@ -224,6 +224,187 @@ class ClassAnalyzerTest {
         assertEquals(1, negative_or_zero_column.size());
         JpaConstraint negative_or_zero_constraint = negative_or_zero_column.get(0);
         assertTrue(negative_or_zero_constraint.getIsNegativeOrZero());
+    }
+
+    @Test
+    void testPastAnnotation() {
+        UnitsInfoRecorder.reset();
+
+        ClassAnalyzer.doAnalyze(Collections.singletonList(
+                EntityA.class.getName()
+        ));
+
+        List<JpaConstraint> jpa = UnitsInfoRecorder.getInstance().getJpaConstraints();
+        assertTrue(jpa.size() > 0);
+
+        List<JpaConstraint> entity_a = jpa.stream().filter(j -> j.getTableName().equals("entity_a")).collect(Collectors.toList());
+        List<JpaConstraint> past_column = entity_a.stream().filter(c -> c.getColumnName().equals("past_column")).collect(Collectors.toList());
+
+        assertEquals(1, past_column.size());
+        JpaConstraint past_constraint = past_column.get(0);
+        assertTrue(past_constraint.getIsPast());
+    }
+
+    @Test
+    void testPastOrPresentAnnotation() {
+        UnitsInfoRecorder.reset();
+
+        ClassAnalyzer.doAnalyze(Collections.singletonList(
+                EntityA.class.getName()
+        ));
+
+        List<JpaConstraint> jpa = UnitsInfoRecorder.getInstance().getJpaConstraints();
+        assertTrue(jpa.size() > 0);
+
+        List<JpaConstraint> entity_a = jpa.stream().filter(j -> j.getTableName().equals("entity_a")).collect(Collectors.toList());
+        List<JpaConstraint> past_or_present_column = entity_a.stream().filter(c -> c.getColumnName().equals("past_or_present_column")).collect(Collectors.toList());
+
+        assertEquals(1, past_or_present_column.size());
+        JpaConstraint past_or_present_constraint = past_or_present_column.get(0);
+        assertTrue(past_or_present_constraint.getIsPastOrPresent());
+    }
+
+    @Test
+    void testFutureOrPresentAnnotation() {
+        UnitsInfoRecorder.reset();
+
+        ClassAnalyzer.doAnalyze(Collections.singletonList(
+                EntityA.class.getName()
+        ));
+
+        List<JpaConstraint> jpa = UnitsInfoRecorder.getInstance().getJpaConstraints();
+        assertTrue(jpa.size() > 0);
+
+        List<JpaConstraint> entity_a = jpa.stream().filter(j -> j.getTableName().equals("entity_a")).collect(Collectors.toList());
+        List<JpaConstraint> future_or_present_column = entity_a.stream().filter(c -> c.getColumnName().equals("future_or_present_column")).collect(Collectors.toList());
+
+        assertEquals(1, future_or_present_column.size());
+        JpaConstraint future_or_present_constraint = future_or_present_column.get(0);
+        assertTrue(future_or_present_constraint.getIsFutureOrPresent());
+    }
+
+    @Test
+    void testFutureAnnotation() {
+        UnitsInfoRecorder.reset();
+
+        ClassAnalyzer.doAnalyze(Collections.singletonList(
+                EntityA.class.getName()
+        ));
+
+        List<JpaConstraint> jpa = UnitsInfoRecorder.getInstance().getJpaConstraints();
+        assertTrue(jpa.size() > 0);
+
+        List<JpaConstraint> entity_a = jpa.stream().filter(j -> j.getTableName().equals("entity_a")).collect(Collectors.toList());
+        List<JpaConstraint> future_column = entity_a.stream().filter(c -> c.getColumnName().equals("future_column")).collect(Collectors.toList());
+
+        assertEquals(1, future_column.size());
+        JpaConstraint future_constraint = future_column.get(0);
+        assertTrue(future_constraint.getIsFuture());
+    }
+
+    @Test
+    void testNullAnnotation() {
+        UnitsInfoRecorder.reset();
+
+        ClassAnalyzer.doAnalyze(Collections.singletonList(
+                EntityA.class.getName()
+        ));
+
+        List<JpaConstraint> jpa = UnitsInfoRecorder.getInstance().getJpaConstraints();
+        assertTrue(jpa.size() > 0);
+
+        List<JpaConstraint> entity_a = jpa.stream().filter(j -> j.getTableName().equals("entity_a")).collect(Collectors.toList());
+        List<JpaConstraint> null_column = entity_a.stream().filter(c -> c.getColumnName().equals("null_column")).collect(Collectors.toList());
+
+        assertEquals(1, null_column.size());
+        JpaConstraint null_column_constraint = null_column.get(0);
+        assertTrue(null_column_constraint.getIsAlwaysNull());
+    }
+
+
+    @Test
+    void testDecimalMinAnnotation() {
+        UnitsInfoRecorder.reset();
+
+        ClassAnalyzer.doAnalyze(Collections.singletonList(
+                EntityA.class.getName()
+        ));
+
+        List<JpaConstraint> jpa = UnitsInfoRecorder.getInstance().getJpaConstraints();
+        assertTrue(jpa.size() > 0);
+
+        List<JpaConstraint> entity_a = jpa.stream().filter(j -> j.getTableName().equals("entity_a")).collect(Collectors.toList());
+
+        List<JpaConstraint> decimal_min_column = entity_a.stream().filter(c -> c.getColumnName().equals("decimal_min_column")).collect(Collectors.toList());
+        assertEquals(1, decimal_min_column.size());
+        JpaConstraint decimal_min_column_constraint = decimal_min_column.get(0);
+        assertEquals("-1.0", decimal_min_column_constraint.getDecimalMinValue());
+    }
+
+    @Test
+    void testDecimalMaxAnnotation() {
+        UnitsInfoRecorder.reset();
+
+        ClassAnalyzer.doAnalyze(Collections.singletonList(
+                EntityA.class.getName()
+        ));
+
+        List<JpaConstraint> jpa = UnitsInfoRecorder.getInstance().getJpaConstraints();
+        assertTrue(jpa.size() > 0);
+
+        List<JpaConstraint> entity_a = jpa.stream().filter(j -> j.getTableName().equals("entity_a")).collect(Collectors.toList());
+
+        List<JpaConstraint> decimal_max_column = entity_a.stream().filter(c -> c.getColumnName().equals("decimal_max_column")).collect(Collectors.toList());
+        assertEquals(1, decimal_max_column.size());
+        JpaConstraint decimal_max_column_constraint = decimal_max_column.get(0);
+        assertEquals("42.0", decimal_max_column_constraint.getDecimalMaxValue());
+    }
+
+    @Test
+    void testPatternAnnotation() {
+        UnitsInfoRecorder.reset();
+
+        ClassAnalyzer.doAnalyze(Collections.singletonList(
+                EntityA.class.getName()
+        ));
+
+        List<JpaConstraint> jpa = UnitsInfoRecorder.getInstance().getJpaConstraints();
+        assertTrue(jpa.size() > 0);
+
+        List<JpaConstraint> entity_a = jpa.stream().filter(j -> j.getTableName().equals("entity_a")).collect(Collectors.toList());
+
+        List<JpaConstraint> pattern_column = entity_a.stream().filter(c -> c.getColumnName().equals("pattern_column")).collect(Collectors.toList());
+        assertEquals(1, pattern_column.size());
+        JpaConstraint pattern_column_constraint = pattern_column.get(0);
+        assertEquals("[0-9]+", pattern_column_constraint.getPatternRegExp());
+    }
+
+    @Test
+    void testSizeAnnotation() {
+        UnitsInfoRecorder.reset();
+
+        ClassAnalyzer.doAnalyze(Collections.singletonList(
+                EntityA.class.getName()
+        ));
+
+        List<JpaConstraint> jpa = UnitsInfoRecorder.getInstance().getJpaConstraints();
+        assertTrue(jpa.size() > 0);
+
+        List<JpaConstraint> entity_a = jpa.stream().filter(j -> j.getTableName().equals("entity_a")).collect(Collectors.toList());
+
+        List<JpaConstraint> only_size_min_column = entity_a.stream().filter(c -> c.getColumnName().equals("only_size_min_column")).collect(Collectors.toList());
+        assertEquals(1, only_size_min_column.size());
+        JpaConstraint only_size_min_column_constraint = only_size_min_column.get(0);
+        assertEquals(3, only_size_min_column_constraint.getSizeMin());
+        assertEquals(Integer.MAX_VALUE, only_size_min_column_constraint.getSizeMax());
+
+
+        List<JpaConstraint> only_size_max_column = entity_a.stream().filter(c -> c.getColumnName().equals("only_size_max_column")).collect(Collectors.toList());
+        assertEquals(1, only_size_max_column.size());
+        JpaConstraint only_size_max_column_constraint = only_size_max_column.get(0);
+        assertEquals(0, only_size_max_column_constraint.getSizeMin());
+        assertEquals(10, only_size_max_column_constraint.getSizeMax());
+
     }
 
 }

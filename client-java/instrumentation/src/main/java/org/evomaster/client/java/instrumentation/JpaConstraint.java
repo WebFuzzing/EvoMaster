@@ -118,7 +118,7 @@ public class JpaConstraint implements Serializable {
     /**
      * Correspond to the value of the @Pattern(regex=String) annotation on a column
      */
-    private final String patternRegEx;
+    private final String patternRegExp;
 
     /**
      * Correspond to the min element of the @Size(min=int,max=int) annotation
@@ -161,7 +161,7 @@ public class JpaConstraint implements Serializable {
                          Boolean isPast,
                          Boolean isPastOrPresent,
                          Boolean isAlwaysNull,
-                         String patternRegEx,
+                         String patternRegExp,
                          Integer sizeMin,
                          Integer sizeMax,
                          Integer digitsInteger,
@@ -190,7 +190,7 @@ public class JpaConstraint implements Serializable {
         this.isPast = isPast;
         this.isPastOrPresent = isPastOrPresent;
         this.isAlwaysNull = isAlwaysNull;
-        this.patternRegEx = patternRegEx;
+        this.patternRegExp = patternRegExp;
         this.sizeMin = sizeMin;
         this.sizeMax = sizeMax;
         this.digitsInteger = digitsInteger;
@@ -218,7 +218,7 @@ public class JpaConstraint implements Serializable {
                 || isPast != null
                 || isPastOrPresent != null
                 || isAlwaysNull != null
-                || patternRegEx != null
+                || patternRegExp != null
                 || sizeMin != null
                 || sizeMax != null
                 || digitsInteger != null
@@ -277,4 +277,43 @@ public class JpaConstraint implements Serializable {
         return isNegativeOrZero;
     }
 
+    public Boolean getIsPast() {
+        return isPast;
+    }
+
+    public Boolean getIsPastOrPresent() {
+        return isPastOrPresent;
+    }
+
+    public Boolean getIsFuture() {
+        return isFuture;
+    }
+
+    public Boolean getIsFutureOrPresent() {
+        return isFutureOrPresent;
+    }
+
+    public Boolean getIsAlwaysNull() {
+        return isAlwaysNull;
+    }
+
+    public String getDecimalMinValue() {
+        return decimalMinValue;
+    }
+
+    public String getDecimalMaxValue() {
+        return decimalMaxValue;
+    }
+
+    public String getPatternRegExp() {
+        return patternRegExp;
+    }
+
+    public Integer getSizeMin() {
+        return sizeMin;
+    }
+
+    public Integer getSizeMax() {
+        return sizeMax;
+    }
 }

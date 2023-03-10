@@ -186,19 +186,22 @@ public class ClassAnalyzer {
             final Boolean isPositive = getPositive(f);
             final Boolean isPositiveOrZero = getPositiveOrZero(f);
 
+            final Boolean isPast = getPast(f);
+            final Boolean isPastOrPresent = getPastOrPresent(f);
+            final Boolean isFuture = getFuture(f);
+            final Boolean isFutureOrPresent = getFutureOrPresent(f);
+            final Boolean isAlwaysNull = getNullAnnotation(f);
+            final String decimalMinValue = getDecimalMinValue(f);
+            final String decimalMaxValue = getDecimalMaxValue(f);
+            final String patternRegExp = getPatterRegExp(f);
+
             //TODO
-            final String decimalMinValue = null;
-            final String decimalMaxValue = null;
-            final Boolean isFuture = null;
-            final Boolean isFutureOrPresent = null;
-            final Boolean isPast = null;
-            final Boolean isPastOrPresent = null;
-            final Boolean isAlwaysNull = null;
-            final String patternRegEx = null;
-            final Integer sizeMin = null;
-            final Integer sizeMax = null;
+            final Integer sizeMin = getSizeMin(f);
+            final Integer sizeMax = getSizeMax(f);
             final Integer digitsInteger = null;
             final Integer digitsFraction = null;
+
+            // ???
             final Boolean isOptional = null;
 
 
@@ -223,7 +226,7 @@ public class ClassAnalyzer {
                     isPast,
                     isPastOrPresent,
                     isAlwaysNull,
-                    patternRegEx,
+                    patternRegExp,
                     sizeMin,
                     sizeMax,
                     digitsInteger,
@@ -242,15 +245,7 @@ public class ClassAnalyzer {
      * @return the Long with the specific maximum value (as a literal) if the annotation is present, otherwise returns null.
      */
     private static Long getMaxValue(Field f) throws Exception {
-        final Long maxValue;
-        Object maxAnnotation = getAnnotationByName(f, "javax.validation.constraints.Max");
-        if (maxAnnotation != null) {
-            Object maxValueAsObject = maxAnnotation.getClass().getMethod("value").invoke(maxAnnotation);
-            maxValue = (Long) maxValueAsObject;
-        } else {
-            maxValue = null;
-        }
-        return maxValue;
+        return getLongElement(f, "javax.validation.constraints.Max", "value");
     }
 
     /**
@@ -260,20 +255,52 @@ public class ClassAnalyzer {
      * @return the Long with the specific minimum value (as a literal) if the annotation is present, otherwise returns null.
      */
     private static Long getMinValue(Field f) throws Exception {
-        final Long minValue;
-        {
-            Object minAnnotation = getAnnotationByName(f, "javax.validation.constraints.Min");
-            if (minAnnotation != null) {
-                Object minValueAsObject = minAnnotation.getClass().getMethod("value").invoke(minAnnotation);
-                minValue = (Long) minValueAsObject;
-            } else {
-                minValue = null;
-            }
-        }
-        return minValue;
+        return getLongElement(f, "javax.validation.constraints.Min", "value");
     }
 
-    private static List<String> getEnumeratedAnnotation(Field f) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+    private static String getDecimalMinValue(Field f) throws Exception {
+        return getStringElement(f, "javax.validation.constraints.DecimalMin", "value");
+    }
+
+    private static String getDecimalMaxValue(Field f) throws Exception {
+        return getStringElement(f, "javax.validation.constraints.DecimalMax", "value");
+    }
+
+    private static String getPatterRegExp(Field f) throws Exception {
+        return getStringElement(f, "javax.validation.constraints.Pattern", "regexp");
+    }
+
+    private static Long getLongElement(Field f, String annotationName, String elementName) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+        return (Long) getElement(f, annotationName, elementName);
+
+    }
+
+    private static String getStringElement(Field f, String annotationName, String elementName) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+        return (String) getElement(f, annotationName, elementName);
+    }
+
+    private static Integer getIntegerElement(Field f, String annotationName, String elementName) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+        return (Integer) getElement(f, annotationName, elementName);
+    }
+
+    private static Integer getSizeMin(Field f) throws Exception {
+        return getIntegerElement(f, "javax.validation.constraints.Size", "min");
+    }
+
+    private static Integer getSizeMax(Field f) throws Exception {
+        return getIntegerElement(f, "javax.validation.constraints.Size", "max");
+    }
+    private static Object getElement(Field f, String annotationName, String elementName) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+        Object annotation = getAnnotationByName(f, annotationName);
+        if (annotation != null) {
+            return annotation.getClass().getMethod(elementName).invoke(annotation);
+        }
+        return null;
+    }
+
+
+    private static List<String> getEnumeratedAnnotation(Field f) throws
+            IllegalAccessException, InvocationTargetException, NoSuchMethodException {
         List<String> enumValuesAsStrings = null;
         if (f.getType().isEnum()) {
 
@@ -333,6 +360,26 @@ public class ClassAnalyzer {
 
     private static Boolean getNegativeOrZero(Field f) {
         return getIsAnnotationWith(f, "javax.validation.constraints.NegativeOrZero");
+    }
+
+    private static Boolean getPast(Field f) {
+        return getIsAnnotationWith(f, "javax.validation.constraints.Past");
+    }
+
+    private static Boolean getPastOrPresent(Field f) {
+        return getIsAnnotationWith(f, "javax.validation.constraints.PastOrPresent");
+    }
+
+    private static Boolean getFuture(Field f) {
+        return getIsAnnotationWith(f, "javax.validation.constraints.Future");
+    }
+
+    private static Boolean getFutureOrPresent(Field f) {
+        return getIsAnnotationWith(f, "javax.validation.constraints.FutureOrPresent");
+    }
+
+    private static Boolean getNullAnnotation(Field f) {
+        return getIsAnnotationWith(f, "javax.validation.constraints.Null");
     }
 
     private static Boolean getIsAnnotationWith(Field f, String annotationName) {
