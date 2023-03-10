@@ -122,13 +122,17 @@ public abstract class ExternalSutController extends SutController {
 
 
     /**
+     *
      * @return a string subtext that should be present in the logs (std output)
      * of the system under test to check if the server is up and ready.
+     * If there is the need to do something more sophisticated to check if the SUT has started,
+     * then this method should be left returning null, and rather override the method isSUTInitialized()
+     *
      */
     public abstract String getLogMessageOfInitializedServer();
 
     /**
-     * a customized interface to implement for checking if the system and under is started.
+     * a customized interface to implement for checking if the system under test is started.
      * by default (returning null), such check is performed based on messages in log.
      * @return Boolean representing if the system under test is up and ready.
      */
