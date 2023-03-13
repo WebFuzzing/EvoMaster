@@ -69,7 +69,9 @@ public class EntityA {
     @Size(min=-1)
     public List<Object> negativeSizeMinColumn;
 
-    @Size(max=-1)
+    @Size(max=-2)
     public List<Object> negativeSizeMaxColumn;
 
+    @Digits(integer=3,fraction=7)
+    public float digitsColumn;
 }

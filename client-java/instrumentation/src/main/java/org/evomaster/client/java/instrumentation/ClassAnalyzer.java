@@ -198,8 +198,8 @@ public class ClassAnalyzer {
             //TODO
             final Integer sizeMin = getSizeMin(f);
             final Integer sizeMax = getSizeMax(f);
-            final Integer digitsInteger = null;
-            final Integer digitsFraction = null;
+            final Integer digitsInteger = getDigitsInteger(f);
+            final Integer digitsFraction = getDigitsFraction(f);
 
             // ???
             final Boolean isOptional = null;
@@ -290,6 +290,16 @@ public class ClassAnalyzer {
     private static Integer getSizeMax(Field f) throws Exception {
         return getIntegerElement(f, "javax.validation.constraints.Size", "max");
     }
+
+    private static Integer getDigitsInteger(Field f) throws Exception {
+        return getIntegerElement(f, "javax.validation.constraints.Digits", "integer");
+    }
+
+    private static Integer getDigitsFraction(Field f) throws Exception {
+        return getIntegerElement(f, "javax.validation.constraints.Digits", "fraction");
+    }
+
+
     private static Object getElement(Field f, String annotationName, String elementName) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
         Object annotation = getAnnotationByName(f, annotationName);
         if (annotation != null) {

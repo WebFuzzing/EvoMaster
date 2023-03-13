@@ -316,4 +316,12 @@ public class JpaConstraint implements Serializable {
     public Integer getSizeMax() {
         return sizeMax;
     }
+
+    public Integer getDigitsFraction() {
+        return digitsFraction;
+    }
+
+    public Integer getDigitsInteger() {
+        return digitsInteger;
+    }
 }

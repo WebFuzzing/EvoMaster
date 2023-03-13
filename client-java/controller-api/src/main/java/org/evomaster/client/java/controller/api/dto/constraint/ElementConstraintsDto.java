@@ -24,5 +24,29 @@ public class ElementConstraintsDto {
 
     public List<String> enumValuesAsStrings;
 
+    public String decimalMinValue;
+
+    public String decimalMaxValue;
+
+    public Boolean isNotBlank;
+
+    public Boolean isEmail;
+    public Boolean isNegative;
+    public Boolean isNegativeOrZero;
+
+    public Boolean isPositive;
+    public Boolean isPositiveOrZero;
+    public Boolean isFuture;
+    public Boolean isFutureOrPresent;
+    public Boolean isPast;
+    public Boolean isPastOrPresent;
+    public Boolean isAlwaysNull;
+    public String patternRegExp;
+    public Integer sizeMin;
+    public Integer sizeMax;
+    public Integer digitsInteger;
+    public Integer digitsFraction;
+
     //TODO much more can be added here
+
 }

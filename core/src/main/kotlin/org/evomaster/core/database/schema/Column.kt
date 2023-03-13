@@ -55,4 +55,5 @@ data class Column(
         // public boolean identity;
 
         //TODO something for other constraints
+
 )

@@ -18,6 +18,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
+import kotlin.math.min
 
 
 class SqlInsertBuilder(
@@ -264,9 +265,20 @@ class SqlInsertBuilder(
             }
         }
 
+        val lowerBound = if (column.lowerBound!=null && extra.constraints.minValue!=null) {
+            min(column.lowerBound.toLong(), extra.constraints.minValue.toLong()).toInt()
+        } else column.lowerBound ?: extra.constraints.minValue
+
+        val upperBound = if (column.upperBound!=null && extra.constraints.maxValue!=null) {
+            column.upperBound.coerceAtMost(extra.constraints.maxValue.toInt())
+        } else column.upperBound ?: extra.constraints.maxValue
+
         //TODO all other constraints
 
-        return column.copy(nullable = isNullable, enumValuesAsStrings = enumValuesAsStrings)
+        return column.copy(nullable = isNullable,
+            enumValuesAsStrings = enumValuesAsStrings,
+            lowerBound = lowerBound?.toInt(),
+            upperBound=upperBound?.toInt())
     }
 
     private fun findUpperLoweBoundOfRangeConstraints(
@@ -559,7 +571,7 @@ class SqlInsertBuilder(
 
         val insertion = DbAction(table, selectedColumns, counter++)
         if (log.isTraceEnabled) {
-            log.trace("create an insertion which is {} and the counter is ", insertion.getResolvedName(), counter)
+            log.trace("create an insertion which is {} and the counter is {}", insertion.getResolvedName(), counter)
         }
 
         val actions = mutableListOf(insertion)
@@ -581,7 +593,7 @@ class SqlInsertBuilder(
             actions.addAll(0, pre)
         }
         if (log.isTraceEnabled) {
-            log.trace("create insertions and current size is", actions.size)
+            log.trace("create insertions and current size is {}", actions.size)
         }
         return actions
     }

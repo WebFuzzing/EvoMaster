@@ -405,6 +405,44 @@ class ClassAnalyzerTest {
         assertEquals(0, only_size_max_column_constraint.getSizeMin());
         assertEquals(10, only_size_max_column_constraint.getSizeMax());
 
+        List<JpaConstraint> no_size_min_max_column = entity_a.stream().filter(c -> c.getColumnName().equals("no_size_min_max_column")).collect(Collectors.toList());
+        assertEquals(1, no_size_min_max_column.size());
+        JpaConstraint no_size_min_max_column_constraint = no_size_min_max_column.get(0);
+        assertEquals(0, no_size_min_max_column_constraint.getSizeMin());
+        assertEquals(Integer.MAX_VALUE, no_size_min_max_column_constraint.getSizeMax());
+
+        List<JpaConstraint> negative_size_min_column = entity_a.stream().filter(c -> c.getColumnName().equals("negative_size_min_column")).collect(Collectors.toList());
+        assertEquals(1, negative_size_min_column.size());
+        JpaConstraint negative_size_min_column_constraint = negative_size_min_column.get(0);
+        assertEquals(-1, negative_size_min_column_constraint.getSizeMin());
+        assertEquals(Integer.MAX_VALUE, negative_size_min_column_constraint.getSizeMax());
+
+        List<JpaConstraint> negative_size_max_column = entity_a.stream().filter(c -> c.getColumnName().equals("negative_size_max_column")).collect(Collectors.toList());
+        assertEquals(1, negative_size_max_column.size());
+        JpaConstraint negative_size_max_column_constraint = negative_size_max_column.get(0);
+        assertEquals(0, negative_size_max_column_constraint.getSizeMin());
+        assertEquals(-2, negative_size_max_column_constraint.getSizeMax());
+
     }
 
+    @Test
+    void testFractionAnnotation() {
+        UnitsInfoRecorder.reset();
+
+        ClassAnalyzer.doAnalyze(Collections.singletonList(
+                EntityA.class.getName()
+        ));
+
+        List<JpaConstraint> jpa = UnitsInfoRecorder.getInstance().getJpaConstraints();
+        assertTrue(jpa.size() > 0);
+
+        List<JpaConstraint> entity_a = jpa.stream().filter(j -> j.getTableName().equals("entity_a")).collect(Collectors.toList());
+
+        List<JpaConstraint> digits_column = entity_a.stream().filter(c -> c.getColumnName().equals("digits_column")).collect(Collectors.toList());
+        assertEquals(1, digits_column.size());
+        JpaConstraint digits_column_constraint = digits_column.get(0);
+        assertEquals(3, digits_column_constraint.getDigitsInteger());
+        assertEquals(7, digits_column_constraint.getDigitsFraction());
+
+    }
 }
