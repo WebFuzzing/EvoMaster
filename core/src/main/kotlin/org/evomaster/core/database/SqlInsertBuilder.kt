@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import kotlin.math.min
+import kotlin.math.max
 
 
 class SqlInsertBuilder(
@@ -101,9 +102,9 @@ class SqlInsertBuilder(
                     throw IllegalArgumentException("Column in different table: ${c.table}!=${t.name}")
                 }
 
-                var lowerBoundForColumn: Int? = findLowerBound(tableConstraints, c)
+                var lowerBoundForColumn: Long? = findLowerBound(tableConstraints, c)
 
-                var upperBoundForColumn: Int? = findUpperBound(tableConstraints, c)
+                var upperBoundForColumn: Long? = findUpperBound(tableConstraints, c)
 
                 val enumValuesForColumn: List<String>? = findEnumValuesForColumn(tableConstraints, c, schemaDto)
 
@@ -112,8 +113,8 @@ class SqlInsertBuilder(
 
                 // rangeConstraints can be combined with lower/upper bound constraints
                 val pair = findUpperLoweBoundOfRangeConstraints(tableConstraints, c)
-                val minRangeValue = pair.first
-                val maxRangeValue = pair.second
+                val minRangeValue: Long? = pair.first?.toLong()
+                val maxRangeValue: Long? = pair.second?.toLong()
                 if (minRangeValue != null) {
                     lowerBoundForColumn = maxOf(minRangeValue, lowerBoundForColumn!!)
                 }
@@ -237,7 +238,7 @@ class SqlInsertBuilder(
         }
     }
 
-    private fun mergeConstraints(column: Column, extra: ExtraConstraintsDto) : Column{
+    private fun mergeConstraints(column: Column, extra: ExtraConstraintsDto) : Column {
         Lazy.assert { matchJpaName(column.name,extra.columnName) }
 
         val isNullable = if(!column.nullable){
@@ -266,19 +267,19 @@ class SqlInsertBuilder(
         }
 
         val lowerBound = if (column.lowerBound!=null && extra.constraints.minValue!=null) {
-            min(column.lowerBound.toLong(), extra.constraints.minValue.toLong()).toInt()
+            min(column.lowerBound, extra.constraints.minValue)
         } else column.lowerBound ?: extra.constraints.minValue
 
         val upperBound = if (column.upperBound!=null && extra.constraints.maxValue!=null) {
-            column.upperBound.coerceAtMost(extra.constraints.maxValue.toInt())
+            max(column.upperBound,extra.constraints.maxValue)
         } else column.upperBound ?: extra.constraints.maxValue
 
         //TODO all other constraints
 
         return column.copy(nullable = isNullable,
             enumValuesAsStrings = enumValuesAsStrings,
-            lowerBound = lowerBound?.toInt(),
-            upperBound=upperBound?.toInt())
+            lowerBound = lowerBound,
+            upperBound=upperBound)
     }
 
     private fun findUpperLoweBoundOfRangeConstraints(
@@ -341,11 +342,11 @@ class SqlInsertBuilder(
         }
     }
 
-    private fun findUpperBound(tableConstraints: MutableList<TableConstraint>, c: ColumnDto): Int? {
+    private fun findUpperBound(tableConstraints: MutableList<TableConstraint>, c: ColumnDto): Long? {
         val upperBounds = filterUpperBoundConstraints(tableConstraints, c.name)
 
-        val upperBound = if (upperBounds.isNotEmpty())
-            upperBounds.map { constr -> constr.upperBound.toInt() }.minOrNull()
+        val upperBound: Long? = if (upperBounds.isNotEmpty())
+            upperBounds.map { constr -> constr.upperBound }.minOrNull()
         else
             null
 
@@ -353,11 +354,11 @@ class SqlInsertBuilder(
         return upperBound
     }
 
-    private fun findLowerBound(tableConstraints: MutableList<TableConstraint>, c: ColumnDto): Int? {
+    private fun findLowerBound(tableConstraints: MutableList<TableConstraint>, c: ColumnDto): Long? {
         val lowerBounds = findLowerBounds(tableConstraints, c.name)
 
         val lowerBound = if (lowerBounds.isNotEmpty())
-            lowerBounds.map { constr -> constr.lowerBound.toInt() }.maxOrNull()
+            lowerBounds.map { constr -> constr.lowerBound }.maxOrNull()
         else
             null
 

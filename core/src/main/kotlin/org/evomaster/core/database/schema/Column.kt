@@ -24,9 +24,9 @@ data class Column(
 
         val foreignKeyToAutoIncrement: Boolean = false,
 
-        val lowerBound: Int? = null,
+        val lowerBound: Long? = null,
 
-        val upperBound: Int? = null,
+        val upperBound: Long? = null,
 
         val enumValuesAsStrings: List<String>? = null,
 
