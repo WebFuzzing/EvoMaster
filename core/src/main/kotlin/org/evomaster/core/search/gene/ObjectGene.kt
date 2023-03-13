@@ -432,12 +432,20 @@ class ObjectGene(
                     )
                 }
                 is OptionalGene -> {
-//                    assert(it.gene is ObjectGene)
-                    it.gene.getValueAsPrintableString(
-                        previousGenes,
-                        GeneUtils.EscapeMode.BOOLEAN_SELECTION_NESTED_MODE,
-                        targetFormat
-                    )
+                    if (it.name.endsWith(GqlConst.INTERFACE_TAG)) {
+                        //for the nested interfaces need the name of the field
+                        val s1 = it.gene.getValueAsPrintableString(
+                            previousGenes,
+                            GeneUtils.EscapeMode.BOOLEAN_SELECTION_NESTED_MODE,
+                            targetFormat
+                        )
+                        it.gene.name.replace(GqlConst.INTERFACE_TAG, "") + s1
+                    } else
+                        it.gene.getValueAsPrintableString(
+                            previousGenes,
+                            GeneUtils.EscapeMode.BOOLEAN_SELECTION_NESTED_MODE,
+                            targetFormat
+                        )
                 }
                 is ObjectGene -> {//todo check
                     it.getValueAsPrintableString(
