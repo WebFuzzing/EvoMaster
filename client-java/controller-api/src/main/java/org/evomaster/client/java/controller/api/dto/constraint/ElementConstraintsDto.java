@@ -25,11 +25,9 @@ public class ElementConstraintsDto {
     public List<String> enumValuesAsStrings;
 
     public String decimalMinValue;
-
     public String decimalMaxValue;
 
     public Boolean isNotBlank;
-
     public Boolean isEmail;
     public Boolean isNegative;
     public Boolean isNegativeOrZero;
