@@ -46,6 +46,8 @@ class WmAuth0EMTest : SpringTestBase() {
                 args.add("USER")
                 args.add("--externalServiceIP")
                 args.add("127.3.0.12")
+                args.add("--instrumentMR_NET")
+                args.add("true")
 
                 val solution = initAndRun(args)
 
