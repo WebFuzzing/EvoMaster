@@ -20,7 +20,6 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 
 
-
 class SqlInsertBuilder(
     schemaDto: DbSchemaDto,
     private val dbExecutor: DatabaseExecutor? = null
@@ -54,6 +53,40 @@ class SqlInsertBuilder(
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(SqlInsertBuilder::class.java)
+
+        /**
+         * Converts a regular expression pattern to the equivalent SQL LIKE pattern.
+         *
+         * @param regexPattern the regular expression pattern to convert.
+         * @return the equivalent SQL LIKE pattern.
+         */
+        private fun convertRegexToSqlLikePattern(regexPattern: String): String {
+            var likePattern = regexPattern
+
+            // Replace ^ with %
+            likePattern = likePattern.replace("^", "%")
+
+            // Replace $ with %
+            likePattern = likePattern.replace("$", "%")
+
+            // Escape special characters with \
+            likePattern = likePattern.replace("\\", "\\\\")
+
+            // Replace . with _
+            likePattern = likePattern.replace(".", "_")
+
+            // Replace * with %
+            likePattern = likePattern.replace("*", "%")
+
+            // Replace + with %
+            likePattern = likePattern.replace("+", "%")
+
+            // Replace ? with _
+            likePattern = likePattern.replace("?", "_")
+
+            return likePattern
+        }
+
     }
 
 
@@ -273,21 +306,31 @@ class SqlInsertBuilder(
             }
         }
 
-
-
-        val lowerBound = listOfNotNull(
+        val mergedLowerBound = listOfNotNull(
             column.lowerBound,
             extra.constraints.minValue,
             extra.constraints.isPositive?.let { if (it) 1 else null },
             extra.constraints.isPositiveOrZero?.let { if (it) 0 else null }
         ).maxOrNull()
 
-        val upperBound = listOfNotNull(
+        val mergedUpperBound = listOfNotNull(
             column.upperBound,
             extra.constraints.maxValue,
             extra.constraints.isNegative?.let { if (it) -1 else null },
             extra.constraints.isNegativeOrZero?.let { if (it) 0 else null }
         ).minOrNull()
+
+        val likePatterns = (column.likePatterns ?: mutableListOf()).toMutableList()
+        extra.constraints.isEmail?.let {
+            if (it) {
+                val emailRegexp = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+                likePatterns.add(convertRegexToSqlLikePattern(emailRegexp))
+            }
+        }
+        extra.constraints.patternRegExp?.let {
+            likePatterns.add(convertRegexToSqlLikePattern(it))
+        }
+        val mergedLikePatterns: List<String>? = likePatterns.takeIf { it.isNotEmpty() }
 
 
         //TODO all other constraints
@@ -295,10 +338,12 @@ class SqlInsertBuilder(
         return column.copy(
             nullable = isNullable,
             enumValuesAsStrings = enumValuesAsStrings,
-            lowerBound = lowerBound,
-            upperBound = upperBound
+            lowerBound = mergedLowerBound,
+            upperBound = mergedUpperBound,
+            likePatterns = mergedLikePatterns
         )
     }
+
 
     private fun findUpperLoweBoundOfRangeConstraints(
         tableConstraints: MutableList<TableConstraint>,
