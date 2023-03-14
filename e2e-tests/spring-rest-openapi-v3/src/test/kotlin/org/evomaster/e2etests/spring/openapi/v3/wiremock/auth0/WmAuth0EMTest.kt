@@ -36,8 +36,8 @@ class WmAuth0EMTest : SpringTestBase() {
     fun testRunEM() {
 
         runTestHandlingFlakyAndCompilation(
-            "WmOkHttpEM",
-            "org.foo.WmOkHttpEM",
+            "WmAuth0EM",
+            "org.foo.WmAuth0EM",
             500,
             false,
             { args: MutableList<String> ->
