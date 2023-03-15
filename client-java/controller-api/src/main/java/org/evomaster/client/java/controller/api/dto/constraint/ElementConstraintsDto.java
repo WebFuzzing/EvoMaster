@@ -21,8 +21,8 @@ public class ElementConstraintsDto {
     /**
      * Represents the minimum value (@Min) allowed for a field of an entity. The following types are supported:
      * <ul>
-     * <li>BigDecimal</li><br/>
-     * <li>BigInteger</li><br/>
+     * <li>BigDecimal</li>
+     * <li>BigInteger</li>
      * <li>byte, short, int, long, and their respective wrappers</li>
      * </ul>
      * Note that double and float are not supported due to rounding errors (some providers might provide some approximative support).
