@@ -410,7 +410,12 @@ class ObjectGene(
         buffer.append("}")
     }
 
-    private fun handleUnionFieldSelection(includedFields: List<Gene>, buffer: StringBuffer, previousGenes: List<Gene>, targetFormat: OutputFormat?) {
+    private fun handleUnionFieldSelection(
+        includedFields: List<Gene>,
+        buffer: StringBuffer,
+        previousGenes: List<Gene>,
+        targetFormat: OutputFormat?
+    ) {
         /*For GraphQL we need UNION OBJECT FIELDS MODE to print out object`s fields in the union type eg:
                ... on UnionObject1 {
                 fields<----
@@ -425,20 +430,29 @@ class ObjectGene(
             val s: String = when (it) {
                 is TupleGene -> {
                     it.getValueAsPrintableString(
-                            previousGenes,
-                            GeneUtils.EscapeMode.GQL_NONE_MODE,
-                            targetFormat,
-                            extraCheck = true
-                    )
-                }
-                is OptionalGene -> {
-//                    assert(it.gene is ObjectGene)
-                    it.gene.getValueAsPrintableString(
                         previousGenes,
-                        GeneUtils.EscapeMode.BOOLEAN_SELECTION_NESTED_MODE,
-                        targetFormat
+                        GeneUtils.EscapeMode.GQL_NONE_MODE,
+                        targetFormat,
+                        extraCheck = true
                     )
                 }
+
+                is OptionalGene -> {
+                    if (it.name.endsWith(GqlConst.INTERFACE_TAG))
+                    //for the nested interfaces need the name of the field
+                        it.gene.name.replace(GqlConst.INTERFACE_TAG, "") + it.gene.getValueAsPrintableString(
+                            previousGenes,
+                            GeneUtils.EscapeMode.BOOLEAN_SELECTION_NESTED_MODE,
+                            targetFormat
+                        )
+                    else
+                        it.gene.getValueAsPrintableString(
+                            previousGenes,
+                            GeneUtils.EscapeMode.BOOLEAN_SELECTION_NESTED_MODE,
+                            targetFormat
+                        )
+                }
+
                 is ObjectGene -> {//todo check
                     it.getValueAsPrintableString(
                         previousGenes,
@@ -446,9 +460,11 @@ class ObjectGene(
                         targetFormat
                     )
                 }
+
                 is BooleanGene -> {
                     it.name
                 }
+
                 else -> {
                     throw RuntimeException("BUG in EvoMaster: unexpected type ${it.javaClass}")
                 }
