@@ -281,7 +281,7 @@ class SqlInsertBuilder(
     private fun mergeConstraints(column: Column, extra: ExtraConstraintsDto): Column {
         Lazy.assert { matchJpaName(column.name, extra.columnName) }
 
-        val isNullable = if (!column.nullable) {
+        val mergedIsNullable = if (!column.nullable) {
             false
         } else if (extra.constraints.isNullable == null) {
             column.nullable
@@ -289,7 +289,7 @@ class SqlInsertBuilder(
             extra.constraints.isNullable
         }
 
-        val enumValuesAsStrings = if (column.enumValuesAsStrings.isNullOrEmpty()) {
+        val mergedEnumValuesAsStrings = if (column.enumValuesAsStrings.isNullOrEmpty()) {
             extra.constraints.enumValuesAsStrings // take other current is empty
         } else if (extra.constraints.enumValuesAsStrings.isNullOrEmpty()) {
             column.enumValuesAsStrings // no change
@@ -336,8 +336,8 @@ class SqlInsertBuilder(
         //TODO all other constraints
 
         return column.copy(
-            nullable = isNullable,
-            enumValuesAsStrings = enumValuesAsStrings,
+            nullable = mergedIsNullable,
+            enumValuesAsStrings = mergedEnumValuesAsStrings,
             lowerBound = mergedLowerBound,
             upperBound = mergedUpperBound,
             likePatterns = mergedLikePatterns
