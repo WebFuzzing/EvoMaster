@@ -6,11 +6,3 @@ data class AddressFlower(
         val nameFlower: String? = null,
 
 ) : Address
-
-/*
-id: Int!
-nameFlower: String!
-street: String!
-
-val id: Int?
-val street: String?*/

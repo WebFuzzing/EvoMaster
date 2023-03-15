@@ -11,10 +11,10 @@ import org.springframework.context.annotation.Configuration
 @Configuration
 open class GraphQLConfig() {
     @Bean
- open   fun schemaParserDictionary(): SchemaParserDictionary {
+    open fun schemaParserDictionary(): SchemaParserDictionary {
         return SchemaParserDictionary()
-                .add(FlowerStore::class)
-                .add(PotStore::class)
+            .add(FlowerStore::class)
+            .add(PotStore::class)
             .add(AddressFlower::class)
             .add(AddressStore::class)
 
