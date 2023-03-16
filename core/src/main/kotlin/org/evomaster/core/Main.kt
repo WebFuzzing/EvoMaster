@@ -529,7 +529,7 @@ class Main {
 
             val config = injector.getInstance(EMConfig::class.java)
 
-            if (config.outputExecutedSQL != EMConfig.OutputExecutedSQL.ALL_AT_END) {
+            if (config.outputExecutedSQL != EMConfig.OutputExecutedSQL.ALL_AT_END && !config.recordExecutedMainActionInfo) {
                 return
             }
             val reporter = injector.getInstance(ExecutionInfoReporter::class.java)
