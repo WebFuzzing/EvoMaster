@@ -147,7 +147,7 @@ class QuantifierRxGene(
         val length = atoms.size
 
         if (length < min || length > limitedMax)
-            throw IllegalArgumentException("invalid length")
+            throw IllegalArgumentException("invalid length when mutating Gene ($name). Its length should range from $min to $limitedMax, but it is $length")
 
         var remove = length == limitedMax
         var add = length == min
