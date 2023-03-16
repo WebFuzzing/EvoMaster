@@ -426,7 +426,26 @@ class GraphQLActionBuilderTest {
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
 
         assertEquals(9, actionCluster.size)
+        val sequenceAnalysis = actionCluster["sequenceAnalysis"] as GraphQLAction
+        assertEquals(2, sequenceAnalysis.parameters.size)
+        assertTrue(sequenceAnalysis.parameters[1] is GQReturnParam)
+        val objSequenceAnalysis = sequenceAnalysis.parameters[1].gene as ObjectGene
 
+        assertTrue(objSequenceAnalysis.fields.any { it.getWrappedGene(TupleGene::class.java)?.name == "drugResistance" })
+        val optDrugResistance = objSequenceAnalysis.fields.first { it.name == "drugResistance" }
+        val tupleDrugResistance = optDrugResistance.getWrappedGene(TupleGene::class.java)
+        if (tupleDrugResistance != null) {
+            assertEquals(2, tupleDrugResistance.elements.size)
+            assertTrue(tupleDrugResistance.elements.any { it.getWrappedGene(ObjectGene::class.java)?.name == "drugResistance" })
+            val objDrugResistance = tupleDrugResistance?.elements?.get(1) as ObjectGene
+            assertTrue(objDrugResistance.fields.any { it.getWrappedGene(TupleGene::class.java)?.name == "drugScores" })
+            val optDrugScores = objDrugResistance.fields.first { it.name == "drugScores" }
+            val tupleDrugScores = optDrugScores.getWrappedGene(TupleGene::class.java)
+            if (tupleDrugScores != null) {
+                assertEquals(2, tupleDrugScores.elements.size)
+                assertTrue(tupleDrugScores.elements.any { it.getWrappedGene(EnumGene::class.java)?.name == "drugClass" })
+            }
+        }
     }
 
     @Test
