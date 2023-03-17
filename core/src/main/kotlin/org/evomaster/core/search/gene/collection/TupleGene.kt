@@ -168,39 +168,6 @@ class TupleGene(
 
     }
 
-    /*private fun gqlInputsPrinting(
-        it: Gene,
-        targetFormat: OutputFormat?
-    ) = if (it is EnumGene<*> ||
-        (it is OptionalGene && it.gene is EnumGene<*>) ||
-        (it is OptionalGene && it.gene is ArrayGene<*> && it.gene.template is EnumGene<*>) ||
-        (it is OptionalGene && it.gene is ArrayGene<*> && it.gene.template is OptionalGene && it.gene.template.gene is EnumGene<*>) ||
-        (it is ArrayGene<*> && it.template is EnumGene<*>) ||
-        (it is ArrayGene<*> && it.template is OptionalGene && it.template.gene is EnumGene<*>)
-    ) {
-        val i = it.getValueAsRawString()
-        "${it.name} : $i"
-    } else {
-        if (it is ObjectGene || (it.getWrappedGene(ObjectGene::class.java)!=null)) {
-
-            if ((it.getWrappedGene(NullableGene::class.java)?.isActive==false)){val i = it.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
-                " ${it.name} : $i"} else {
-            val i = it.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
-            " $i"}
-        } else {
-            if (it is ArrayGene<*> || (it is OptionalGene && it.gene is ArrayGene<*>)) {
-                val i = it.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_ARRAY_MODE)
-                "${it.name} : $i"
-            } else {
-                val mode =
-                    if (ParamUtil.getValueGene(it) is StringGene) GeneUtils.EscapeMode.GQL_STR_VALUE else GeneUtils.EscapeMode.GQL_INPUT_MODE
-                val i = it.getValueAsPrintableString(mode = mode, targetFormat = targetFormat)
-                "${it.name} : $i"
-            }
-        }
-    }*/
-
-
     private fun gqlInputsPrinting(
         it: Gene,
         targetFormat: OutputFormat?
