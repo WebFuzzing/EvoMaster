@@ -19,12 +19,12 @@ class Flower(
                 return store
             }
             FlowerType.ROSES -> {
-                store.name= StoreType.STOREA
+                store.name= arrayOf(StoreType.STOREA)
                 store.id = 11
                 return store
             }
             FlowerType.TULIPS -> {
-                store.name=StoreType.STOREB
+                store.name= arrayOf(StoreType.STOREB)
                 store.id = 22
                 return store
             }

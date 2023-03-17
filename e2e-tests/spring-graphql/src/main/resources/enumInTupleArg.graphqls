@@ -7,7 +7,7 @@ type Flower {
 
 type Store{
     id: Int
-    name(id: StoreType): String
+    name(id: [StoreType]): String
 
 }
 

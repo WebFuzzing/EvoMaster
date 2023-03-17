@@ -2,13 +2,14 @@ package com.foo.graphql.enumIntupleArg.type
 
 class Store(
     var id: Int? = null,
-    var name: StoreType? = null
+    var name: Array<StoreType?>? = null
 ) {
-    fun name(id: StoreType?): String {
+    fun name(id: Array<StoreType?>?): String {
         return when (id) {
             null-> "Null store"
-            StoreType.STOREA -> "A store"
-            StoreType.STOREB -> "B store"
+            arrayOf(StoreType.STOREA)->"A store"
+            arrayOf(StoreType.STOREB)->"B store"
+            else -> ""
         }
 
     }
