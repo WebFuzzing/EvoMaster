@@ -9,12 +9,10 @@ import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -31,6 +29,79 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
             note that Jackson is shaded in pom of controller
          */
         return "   com.fasterxml.jackson.databind.ObjectMapper".trim();
+    }
+
+    @Replacement(replacingStatic = false,
+            type = ReplacementType.TRACKER,
+            id = "Jackson_ObjectMapper_readValue_File_class",
+            usageFilter = UsageFilter.ANY,
+            category = ReplacementCategory.EXT_0)
+    public static <T> T readValue(Object caller, File src, Class<T> valueType) throws Throwable {
+        Objects.requireNonNull(caller);
+
+        ClassToSchema.registerSchemaIfNeeded(valueType);
+
+        // TODO: Need to verify
+        JsonTaint.handlePossibleJsonTaint(src.toString(),valueType);
+
+        Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_Generic_class", caller);
+
+        try {
+            return (T) original.invoke(caller, src, valueType);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        } catch (InvocationTargetException e) {
+            throw  e.getCause();
+        }
+
+    }
+
+    @Replacement(replacingStatic = false,
+            type = ReplacementType.TRACKER,
+            id = "Jackson_ObjectMapper_readValue_URL_class",
+            usageFilter = UsageFilter.ANY,
+            category = ReplacementCategory.EXT_0)
+    public static <T> T readValue(Object caller, URL src, Class<T> valueType) throws Throwable {
+        Objects.requireNonNull(caller);
+
+        ClassToSchema.registerSchemaIfNeeded(valueType);
+        JsonTaint.handlePossibleJsonTaint(src.toString(),valueType);
+
+        Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_Generic_class", caller);
+
+        try {
+            return (T) original.invoke(caller, src, valueType);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        } catch (InvocationTargetException e) {
+            throw  e.getCause();
+        }
+
+    }
+
+    @Replacement(replacingStatic = false,
+            type = ReplacementType.TRACKER,
+            id = "Jackson_ObjectMapper_readValue_Reader_class",
+            usageFilter = UsageFilter.ANY,
+            category = ReplacementCategory.EXT_0)
+    public static <T> T readValue(Object caller, Reader src, Class<T> valueType) throws Throwable {
+        Objects.requireNonNull(caller);
+
+        ClassToSchema.registerSchemaIfNeeded(valueType);
+
+        if (src instanceof StringReader) {
+            JsonTaint.handlePossibleJsonTaint(src.toString(), valueType);
+        }
+
+        Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_Generic_class", caller);
+
+        try {
+            return (T) original.invoke(caller, src, valueType);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        } catch (InvocationTargetException e) {
+            throw  e.getCause();
+        }
     }
 
     @Replacement(replacingStatic = false,
@@ -68,6 +139,75 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
             throw  e.getCause();
         }
     }
+
+    @Replacement(replacingStatic = false,
+            type = ReplacementType.TRACKER,
+            id = "Jackson_ObjectMapper_readValue_Byte_class",
+            usageFilter = UsageFilter.ANY,
+            category = ReplacementCategory.EXT_0)
+    public static <T> T readValue(Object caller, byte[] src, Class<T> valueType) throws Throwable {
+        Objects.requireNonNull(caller);
+
+        ClassToSchema.registerSchemaIfNeeded(valueType);
+        JsonTaint.handlePossibleJsonTaint(src.toString(),valueType);
+
+        Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_Generic_class", caller);
+
+        try {
+            return (T) original.invoke(caller, src, valueType);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        } catch (InvocationTargetException e) {
+            throw  e.getCause();
+        }
+
+    }
+
+    @Replacement(replacingStatic = false,
+            type = ReplacementType.TRACKER,
+            id = "Jackson_ObjectMapper_readValue_Byte_Length_class",
+            usageFilter = UsageFilter.ANY,
+            category = ReplacementCategory.EXT_0)
+    public static <T> T readValue(Object caller, byte[] src, int offset, int len, Class<T> valueType) throws Throwable {
+        Objects.requireNonNull(caller);
+
+        ClassToSchema.registerSchemaIfNeeded(valueType);
+        JsonTaint.handlePossibleJsonTaint(src.toString(),valueType);
+
+        Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_Generic_class", caller);
+
+        try {
+            return (T) original.invoke(caller, src, offset, len, valueType);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        } catch (InvocationTargetException e) {
+            throw  e.getCause();
+        }
+    }
+
+    @Replacement(replacingStatic = false,
+            type = ReplacementType.TRACKER,
+            id = "Jackson_ObjectMapper_readValue_DataInput_class",
+            usageFilter = UsageFilter.ANY,
+            category = ReplacementCategory.EXT_0)
+    public static <T> T readValue(Object caller, DataInput src, Class<T> valueType) throws Throwable {
+        Objects.requireNonNull(caller);
+
+        ClassToSchema.registerSchemaIfNeeded(valueType);
+        JsonTaint.handlePossibleJsonTaint(src.toString(),valueType);
+
+        Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_Generic_class", caller);
+
+        try {
+            return (T) original.invoke(caller, src, valueType);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        } catch (InvocationTargetException e) {
+            throw  e.getCause();
+        }
+    }
+
+
 
     @Replacement(replacingStatic = false,
             type = ReplacementType.TRACKER,
