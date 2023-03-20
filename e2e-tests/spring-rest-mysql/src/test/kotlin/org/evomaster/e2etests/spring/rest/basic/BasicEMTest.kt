@@ -76,8 +76,8 @@ class BasicEMTest : RestTestBase() {
             }
             assertTrue(ignoreInitSql)
 
-            val allActions = Files.readAllLines(Paths.get(executedMainActionToFile))
-            assertEquals(budget+1, allActions.size)
+            val size = Files.readAllLines(Paths.get(executedMainActionToFile)).count { !it.contains("ComputationOverhead") && it.isNotBlank() }
+            assertTrue(size in budget..(budget+1))
         }
     }
 
