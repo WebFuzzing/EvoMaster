@@ -3,7 +3,10 @@ package org.evomaster.core.search.service
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DatabaseExecution
+import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.search.Action
+import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.utils.ReportWriter.wrapWithQuotation
 import org.evomaster.core.utils.ReportWriter.writeByChannel
@@ -47,9 +50,23 @@ class ExecutionInfoReporter {
         }
     }
 
-    fun actionExecutionInfo(individual: Individual){
+    fun actionExecutionInfo(individual: Individual, executedTimes : Long?){
         if (!config.recordExecutedMainActionInfo) return
-        executedMainAction.addAll(individual.seeMainExecutableActions().map { it.getName() })
+        executedMainAction.addAll(individual.seeMainExecutableActions().mapIndexed {
+            /*
+                executed time for all actions in this individual show at the first index
+             */
+                index, action -> "${wrapWithQuotation(extractActionInfo(action))} , ${wrapWithQuotation("${if (index == 0) executedTimes?:"" else ""}")}"
+        }
+        )
+    }
+
+    private fun extractActionInfo(action : Action) : String{
+        return try {
+            action.toString()
+        }catch (e : Exception){
+            action.getName()
+        }
     }
 
     /**
@@ -93,7 +110,7 @@ class ExecutionInfoReporter {
     private fun outputExecutedMainActions(){
         writeByChannel(
             Paths.get(config.saveExecutedMainActionInfo),
-            executedMainAction.joinToString(System.lineSeparator()) { wrapWithQuotation(it) },
+            executedMainAction.joinToString(System.lineSeparator()) {it},
             false)
     }
 }
