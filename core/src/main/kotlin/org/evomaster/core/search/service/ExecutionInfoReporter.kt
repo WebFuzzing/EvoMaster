@@ -56,7 +56,7 @@ class ExecutionInfoReporter {
             /*
                 executed time for all actions in this individual show at the first index
              */
-                index, action -> "${wrapWithQuotation(extractActionInfo(action))} , ${wrapWithQuotation("${if (index == 0) executedTimes?:"" else ""}")}"
+                index, action -> "${wrapWithQuotation(action.getName())} ,${wrapWithQuotation(extractActionInfo(action))} , ${wrapWithQuotation("${if (index == 0) executedTimes?:"" else ""}")}"
         }
         )
     }
