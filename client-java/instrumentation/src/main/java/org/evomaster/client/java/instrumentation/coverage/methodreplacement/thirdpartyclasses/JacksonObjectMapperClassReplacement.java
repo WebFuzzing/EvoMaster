@@ -41,10 +41,10 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
 
         ClassToSchema.registerSchemaIfNeeded(valueType);
 
-        // TODO: Need to verify
+        // TODO: Need to verify the necessity of this replacement, also for side-effects
         JsonTaint.handlePossibleJsonTaint(src.toString(),valueType);
 
-        Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_Generic_class", caller);
+        Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_File_class", caller);
 
         try {
             return (T) original.invoke(caller, src, valueType);
@@ -67,7 +67,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
         ClassToSchema.registerSchemaIfNeeded(valueType);
         JsonTaint.handlePossibleJsonTaint(src.toString(),valueType);
 
-        Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_Generic_class", caller);
+        Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_URL_class", caller);
 
         try {
             return (T) original.invoke(caller, src, valueType);
@@ -93,7 +93,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
             JsonTaint.handlePossibleJsonTaint(src.toString(), valueType);
         }
 
-        Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_Generic_class", caller);
+        Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_Reader_class", caller);
 
         try {
             return (T) original.invoke(caller, src, valueType);
@@ -149,9 +149,14 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
         Objects.requireNonNull(caller);
 
         ClassToSchema.registerSchemaIfNeeded(valueType);
-        JsonTaint.handlePossibleJsonTaint(src.toString(),valueType);
 
-        Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_Generic_class", caller);
+        String content = new String(src);
+
+        JsonTaint.handlePossibleJsonTaint(content,valueType);
+
+        src = content.getBytes();
+
+        Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_Byte_class", caller);
 
         try {
             return (T) original.invoke(caller, src, valueType);
@@ -172,9 +177,14 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
         Objects.requireNonNull(caller);
 
         ClassToSchema.registerSchemaIfNeeded(valueType);
-        JsonTaint.handlePossibleJsonTaint(src.toString(),valueType);
 
-        Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_Generic_class", caller);
+        String content = new String(src);
+
+        JsonTaint.handlePossibleJsonTaint(content,valueType);
+
+        src = content.getBytes();
+
+        Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_Byte_Length_class", caller);
 
         try {
             return (T) original.invoke(caller, src, offset, len, valueType);
@@ -196,7 +206,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
         ClassToSchema.registerSchemaIfNeeded(valueType);
         JsonTaint.handlePossibleJsonTaint(src.toString(),valueType);
 
-        Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_Generic_class", caller);
+        Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_DataInput_class", caller);
 
         try {
             return (T) original.invoke(caller, src, valueType);
