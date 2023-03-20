@@ -559,6 +559,13 @@ class Archive<T> where T : Individual {
         }
     }
 
+    /**
+     * @return whether to skip targets for impact collections
+     */
+    fun skipTargetForImpactCollection(id : Int): Boolean{
+        return IdMapper.isMethodReplacementTarget(idMapper.getDescriptiveId(id))
+    }
+
 
     fun saveSnapshot(){
         if (!config.saveArchiveAfterMutation) return

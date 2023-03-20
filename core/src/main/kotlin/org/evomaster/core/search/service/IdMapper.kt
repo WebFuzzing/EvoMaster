@@ -1,5 +1,6 @@
 package org.evomaster.core.search.service
 
+import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import java.util.concurrent.atomic.AtomicInteger
 
 
@@ -120,6 +121,8 @@ class IdMapper {
         }
 
         fun isLocal(id: Int): Boolean = id < 0
+
+        fun isMethodReplacementTarget(descriptiveId: String) = descriptiveId.startsWith(ObjectiveNaming.METHOD_REPLACEMENT)
     }
 
     private val mapping: MutableMap<Int, String> = mutableMapOf()

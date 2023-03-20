@@ -196,7 +196,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
                  */
                 mutatedWithTraces.updateImpactOfGenes(previous = currentWithTraces,
                         mutated = mutatedWithTraces, mutatedGenes = mutatedGenes,
-                        targetsInfo = targetsInfo.filter { !archive.isCovered(it.key) && !IdMapper.isLocal(it.key) })
+                        targetsInfo = targetsInfo.filter { !archive.isCovered(it.key) && !IdMapper.isLocal(it.key) && !archive.skipTargetForImpactCollection(it.key)})
             }
             /*
                 update archive based on mutated individual
