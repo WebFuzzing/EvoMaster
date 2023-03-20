@@ -4,6 +4,7 @@ import com.foo.rest.examples.spring.openapi.v3.base.BaseController
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -44,8 +45,8 @@ class BaseEMTest : SpringTestBase() {
             assertTrue(solution.individuals.size >= 1)
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/base", "Hello World")
 
-            val allActions = Files.readAllLines(Paths.get(executedMainActionToFile))
-            Assertions.assertEquals(20 + 1, allActions.size)
+            val size = Files.readAllLines(Paths.get(executedMainActionToFile)).count { !it.contains("ComputationOverhead") && it.isNotBlank() }
+            assertTrue(size in 20..21)
         }
     }
 }

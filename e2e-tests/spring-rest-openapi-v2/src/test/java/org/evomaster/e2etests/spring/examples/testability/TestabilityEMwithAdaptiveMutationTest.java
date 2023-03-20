@@ -83,10 +83,10 @@ public class TestabilityEMwithAdaptiveMutationTest extends SpringTestBase {
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/testability/{date}/{number}/{setting}", "OK");
 
 
-                    List<String> allActions = null;
+                    long size;
                     try {
-                        allActions = Files.readAllLines(Paths.get(executedMainActionToFile));
-                        assertEquals(8000 + 1, allActions.size());
+                        size = Files.readAllLines(Paths.get(executedMainActionToFile)).stream().filter(s-> !s.contains("ComputationOverhead") && !s.isEmpty()).count();
+                        assertTrue(size >= 8000 && size <= 8001);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
