@@ -9,6 +9,12 @@ import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -57,17 +63,34 @@ public class TestabilityEMwithAdaptiveMutationTest extends SpringTestBase {
                     args.add("--enableWeightBasedMutationRateSelectionForGene");
                     args.add("true");
 
+                    String executedMainActionToFile = "target/executionInfo/org/bar/TestabilityEMAGM/executedMainActions.txt";
+
+                    args.add("--recordExecutedMainActionInfo");
+                    args.add("true");
+                    args.add("--saveExecutedMainActionInfo");
+                    args.add(executedMainActionToFile);
+
 
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertTrue(solution.getIndividuals().size() >= 1);
 
                     /*
-                        there seem exist some dependency among tests. After executing the first test, SUT fails to throw the exception in following two tests.
+                        there seem to exist some dependency among tests. After executing the first test, SUT fails to throw the exception in following two tests.
                      */
                     assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/testability/{date}/{number}/{setting}", null);
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/testability/{date}/{number}/{setting}", "ERROR");
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/testability/{date}/{number}/{setting}", "OK");
+
+
+                    List<String> allActions = null;
+                    try {
+                        allActions = Files.readAllLines(Paths.get(executedMainActionToFile));
+                        assertEquals(8000 + 1, allActions.size());
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+
                 },
                 10);
     }

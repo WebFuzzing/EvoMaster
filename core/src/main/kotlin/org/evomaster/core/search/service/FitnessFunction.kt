@@ -124,5 +124,6 @@ abstract class FitnessFunction<T>  where T : Individual {
     private fun handleExecutionInfo(ei: EvaluatedIndividual<T>?) {
         ei?:return
         executionInfoReporter.sqlExecutionInfo(ei.individual.seeAllActions(), ei.fitness.databaseExecutions)
+        executionInfoReporter.actionExecutionInfo(ei.individual, ei.executionTimeMs)
     }
 }

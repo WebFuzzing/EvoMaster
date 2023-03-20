@@ -3,11 +3,14 @@ package org.evomaster.core.search.service
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DatabaseExecution
+import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.search.Action
+import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.Individual
 import org.evomaster.core.utils.ReportWriter.wrapWithQuotation
 import org.evomaster.core.utils.ReportWriter.writeByChannel
 import java.nio.file.Paths
-import java.nio.file.StandardOpenOption
 
 /**
  * report executed info
@@ -18,6 +21,8 @@ class ExecutionInfoReporter {
     private lateinit var config: EMConfig
 
     private val executedAction: MutableList<String> = mutableListOf()
+
+    private val executedMainAction : MutableList<String> = mutableListOf()
 
     private val executedSqlAction: MutableList<DatabaseExecution> = mutableListOf()
 
@@ -45,14 +50,36 @@ class ExecutionInfoReporter {
         }
     }
 
+    fun actionExecutionInfo(individual: Individual, executedTimes : Long?){
+        if (!config.recordExecutedMainActionInfo) return
+        executedMainAction.addAll(individual.seeMainExecutableActions().mapIndexed {
+            /*
+                executed time for all actions in this individual show at the first index
+             */
+                index, action -> "${wrapWithQuotation(extractActionInfo(action))} , ${wrapWithQuotation("${if (index == 0) executedTimes?:"" else ""}")}"
+        }
+        )
+    }
+
+    private fun extractActionInfo(action : Action) : String{
+        return try {
+            action.toString()
+        }catch (e : Exception){
+            action.getName()
+        }
+    }
+
     /**
      * save all execution info at end of the search
      */
     fun saveAll(){
         if (config.outputExecutedSQL == EMConfig.OutputExecutedSQL.ALL_AT_END){
             executedAction.forEachIndexed { index, s ->
-                getOneRow(s, executedSqlAction.get(index), true)
+                getOneRow(s, executedSqlAction[index], true)
             }
+        }
+        if (config.recordExecutedMainActionInfo){
+            outputExecutedMainActions()
         }
     }
 
@@ -69,10 +96,21 @@ class ExecutionInfoReporter {
 
     private fun outputSqlExecution(action: String, sqlInfo: DatabaseExecution){
         sqlInfo.executionInfo.forEach {
-            writeByChannel(
-                   Paths.get(config.saveExecutedSQLToFile),
-                   getRowString(arrayOf(wrapWithQuotation(action), wrapWithQuotation(it.command), "${it.executionTime}"))+System.lineSeparator(),
-                   true)
+            save(getRowString(arrayOf(wrapWithQuotation(action), wrapWithQuotation(it.command), "${it.executionTime}"))+System.lineSeparator(), true)
         }
+    }
+
+    private fun save(content:String, append: Boolean){
+        writeByChannel(
+            Paths.get(config.saveExecutedSQLToFile),
+            content,
+            append)
+    }
+
+    private fun outputExecutedMainActions(){
+        writeByChannel(
+            Paths.get(config.saveExecutedMainActionInfo),
+            executedMainAction.joinToString(System.lineSeparator()) {it},
+            false)
     }
 }

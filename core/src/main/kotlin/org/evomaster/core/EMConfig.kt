@@ -1826,6 +1826,14 @@ class EMConfig {
     @Probability(activating = true)
     var probOfEnablingSingleInsertionForTable = 0.0
 
+    @Cfg("Whether to record info of executed actions during search")
+    @Experimental
+    var recordExecutedMainActionInfo = false
+
+    @Cfg("Specify a path to save all executed main actions to a file (default is 'executedMainActions.txt')")
+    @Experimental
+    var saveExecutedMainActionInfo = "executedMainActions.txt"
+
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
             return maxTimeInSeconds
