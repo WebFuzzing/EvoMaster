@@ -3,10 +3,7 @@ package org.evomaster.core.search.service
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DatabaseExecution
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.search.Action
-import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.utils.ReportWriter.wrapWithQuotation
 import org.evomaster.core.utils.ReportWriter.writeByChannel
@@ -21,6 +18,13 @@ class ExecutionInfoReporter {
     private lateinit var config: EMConfig
 
     private val executedAction: MutableList<String> = mutableListOf()
+
+    /**
+     * record the latest computation overhead between tests
+     * first is the number of evaluated individual referring the index of individual generated during the search
+     * second is the time cost
+     */
+    private var latestComputationOverhead : Pair<Int, Long>? = null
 
     private val executedMainAction : MutableList<String> = mutableListOf()
 
@@ -50,15 +54,34 @@ class ExecutionInfoReporter {
         }
     }
 
-    fun actionExecutionInfo(individual: Individual, executedTimes : Long?){
+    /**
+     * record main action execution info
+     * @param individual to execute and evaluate during the search
+     * @param executedTimes time cost
+     * @param index refers to an index of individuals generated during the search
+     */
+    fun actionExecutionInfo(individual: Individual, executedTimes : Long?, index : Int){
         if (!config.recordExecutedMainActionInfo) return
+        if (latestComputationOverhead != null)
+            executedAction.add("${latestComputationOverhead!!.first}, ComputationOverhead , ComputationOverhead, ${latestComputationOverhead!!.second}")
+
         executedMainAction.addAll(individual.seeMainExecutableActions().mapIndexed {
             /*
                 executed time for all actions in this individual show at the first index
              */
-                index, action -> "${wrapWithQuotation(action.getName())} ,${wrapWithQuotation(extractActionInfo(action))} , ${wrapWithQuotation("${if (index == 0) executedTimes?:"" else ""}")}"
+             aindex, action -> "$index , ${wrapWithQuotation(action.getName())} ,${wrapWithQuotation(extractActionInfo(action))} , ${wrapWithQuotation("${if (aindex == 0) executedTimes?:"" else ""}")}"
         }
         )
+    }
+
+    /**
+     * record the latest computation overhead between tests
+     * @param executionTime time cost ms
+     * @param index refers to an index of individuals generated and evaluated during the search
+     */
+    fun addLatestComputationOverhead(executionTime : Long, index : Int){
+        if (config.recordExecutedMainActionInfo)
+            latestComputationOverhead = index to executionTime
     }
 
     private fun extractActionInfo(action : Action) : String{
