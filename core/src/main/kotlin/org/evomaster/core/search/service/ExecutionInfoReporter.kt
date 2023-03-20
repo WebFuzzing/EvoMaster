@@ -63,7 +63,7 @@ class ExecutionInfoReporter {
     fun actionExecutionInfo(individual: Individual, executedTimes : Long?, index : Int){
         if (!config.recordExecutedMainActionInfo) return
         if (latestComputationOverhead != null)
-            executedAction.add("${latestComputationOverhead!!.first}, ComputationOverhead , ComputationOverhead, ${latestComputationOverhead!!.second}")
+            executedMainAction.add("${latestComputationOverhead!!.first}, ComputationOverhead , ComputationOverhead, ${latestComputationOverhead!!.second}")
 
         executedMainAction.addAll(individual.seeMainExecutableActions().mapIndexed {
             /*
