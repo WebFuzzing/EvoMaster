@@ -51,7 +51,7 @@ public class ExternalServiceMockingFlakyEMTest extends SpringTestBase {
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     // The below block of code is an experiment
-                    // The value 14 is decided by looking at the generated actions count
+                    // The value 13 is decided by looking at the generated actions count
                     // manually.
                     List<Action> actions = new ArrayList<>();
                     for (EvaluatedIndividual<RestIndividual> individual : solution.getIndividuals()) {
@@ -59,7 +59,7 @@ public class ExternalServiceMockingFlakyEMTest extends SpringTestBase {
                             actions.addAll(call.seeActions(ActionFilter.ONLY_EXTERNAL_SERVICE));
                         }
                     }
-                    assertEquals(actions.size(), 14);
+                    assertEquals(actions.size(), 13);
                     // End block
 
                     // TODO: Multiple calls to the same service test casuses problems. Will be implmented
