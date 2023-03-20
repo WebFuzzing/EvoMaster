@@ -2,12 +2,10 @@ package org.evomaster.core.search.gene.collection
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.problem.util.ParamUtil
+import org.evomaster.core.problem.graphql.GraphQLUtils
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.gene.optional.NullableGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.root.CompositeFixedGene
-import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.TupleGeneImpact
@@ -98,7 +96,7 @@ class TupleGene(
                         .filter { it.getWrappedGene(OptionalGene::class.java)?.isActive ?: true }
                         .joinToString(",") {
 
-                            gqlInputsPrinting(it, targetFormat)
+                            GraphQLUtils.inputsPrinting(it, targetFormat)
 
                         }.replace("\"", "\\\"")
                     if (s.isNotEmpty()) {
@@ -131,8 +129,8 @@ class TupleGene(
             } else {
                 //tuple contains only inputs
                 //if it is opt , it should be active
-                val nonOptOrOptActive = elements.filter { it.getWrappedGene(OptionalGene::class.java)?.isActive ?: true }
-
+                //val nonOptOrOptActive = elements.filter { it.getWrappedGene(OptionalGene::class.java)?.isActive ?: true }
+                val nonOptOrOptActive = elements.filter {(it.getWrappedGene(OptionalGene::class.java)?.isActive == true) || (it.getWrappedGene(OptionalGene::class.java) == null) }
                 if (nonOptOrOptActive.isNotEmpty()){
 
                 //need the name for inputs only
@@ -143,7 +141,7 @@ class TupleGene(
                     //.filter { it !is OptionalGene || it.isActive }
                     //.filter { it.getWrappedGene(OptionalGene::class.java)?.isActive ?: true }
                     .joinToString(",") {
-                        gqlInputsPrinting(it, targetFormat)
+                        GraphQLUtils.inputsPrinting(it, targetFormat)
                     }.replace("\"", "\\\"")
 
                 if (s.isNotEmpty()) {
@@ -166,48 +164,6 @@ class TupleGene(
         }
         return buffer.toString()
 
-    }
-
-    private fun gqlInputsPrinting(
-        it: Gene,
-        targetFormat: OutputFormat?
-    ) = if (it.getWrappedGene(EnumGene::class.java) != null) {//enum gene
-        //if it is optional it should be active
-        if ((it.getWrappedGene(OptionalGene::class.java)?.isActive == true) || (it.getWrappedGene(OptionalGene::class.java) == null)) {
-            val i = it.getValueAsRawString()
-            "${it.name} : $i"
-        } else ""
-    } else {
-        if (it.getWrappedGene(ObjectGene::class.java) != null) {//object gene
-            //if it is optional it should be active
-            if ((it.getWrappedGene(OptionalGene::class.java)?.isActive == true) || (it.getWrappedGene(OptionalGene::class.java) == null)) {
-                val i = it.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
-                //if it is nullable it should be active
-                if (it.getWrappedGene(NullableGene::class.java)?.isActive == true || (it.getWrappedGene(NullableGene::class.java) == null)) {
-                    " $i"
-                } else {
-                    //Need the name of the object when it takes "null" as a value, since it will not access the object
-                    //where the name is printed
-                    "${it.name} : $i"
-                }
-            } else ""
-        } else {
-            if (it.getWrappedGene(ArrayGene::class.java) != null) {//array gene
-                //if it is optional it should be active
-                if ((it.getWrappedGene(OptionalGene::class.java)?.isActive == true) || (it.getWrappedGene(OptionalGene::class.java) == null)) {
-                    val i = it.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_ARRAY_MODE)
-                    "${it.name} : $i"
-                } else ""
-            } else {
-                val mode =
-                    if (ParamUtil.getValueGene(it) is StringGene) GeneUtils.EscapeMode.GQL_STR_VALUE else GeneUtils.EscapeMode.GQL_INPUT_MODE
-                val i = it.getValueAsPrintableString(mode = mode, targetFormat = targetFormat)
-                //if it is optional it should be active
-                if ((it.getWrappedGene(OptionalGene::class.java)?.isActive == true) || (it.getWrappedGene(OptionalGene::class.java) == null))
-                    "${it.name} : $i"
-                else ""
-            }
-        }
     }
 
 
