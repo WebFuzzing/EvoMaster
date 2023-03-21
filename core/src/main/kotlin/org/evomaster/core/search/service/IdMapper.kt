@@ -19,9 +19,19 @@ class IdMapper {
 
         private const val FAULT_OBJECTIVE_PREFIX = "PotentialFault"
 
+        /**
+         * local objective prefix might depend on problems, eg, HTTP_SUCCESS and HTTP_FAULT for REST
+         * it can be identified with its numeric id, ie, less than 0
+         * however we need this key to specify whether to consider such objectives in impact collections
+         */
+        const val LOCAL_OBJECTIVE_KEY = "Local"
+
         private const val FAULT_DESCRIPTIVE_ID_PREFIX = "${FAULT_OBJECTIVE_PREFIX}_"
 
-        val ALL_ACCEPTED_OBJECTIVE_PREFIXES : List<String> = ObjectiveNaming.getAllObjectivePrefixes().plus("Local").plus(
+        /**
+         * all prefixes used for defining testing objectives
+         */
+        val ALL_ACCEPTED_OBJECTIVE_PREFIXES : List<String> = ObjectiveNaming.getAllObjectivePrefixes().plus(LOCAL_OBJECTIVE_KEY).plus(
             FAULT_OBJECTIVE_PREFIX)
 
         private const val FAULT_500 = "500_"
