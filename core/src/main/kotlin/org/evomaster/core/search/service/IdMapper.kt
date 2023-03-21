@@ -17,7 +17,12 @@ class IdMapper {
 
     companion object {
 
-        private const val FAULT_DESCRIPTIVE_ID_PREFIX = "PotentialFault_"
+        private const val FAULT_OBJECTIVE_PREFIX = "PotentialFault"
+
+        private const val FAULT_DESCRIPTIVE_ID_PREFIX = "${FAULT_OBJECTIVE_PREFIX}_"
+
+        val ALL_ACCEPTED_OBJECTIVE_PREFIXES : List<String> = ObjectiveNaming.getAllObjectivePrefixes().plus("Local").plus(
+            FAULT_OBJECTIVE_PREFIX)
 
         private const val FAULT_500 = "500_"
 

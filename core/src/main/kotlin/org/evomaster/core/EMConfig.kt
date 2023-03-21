@@ -9,6 +9,7 @@ import org.evomaster.client.java.instrumentation.shared.ReplacementCategory
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.impact.impactinfocollection.GeneMutationSelectionMethod
+import org.evomaster.core.search.service.IdMapper
 import org.slf4j.LoggerFactory
 import java.net.MalformedURLException
 import java.net.URL
@@ -38,6 +39,11 @@ class EMConfig {
         private val log = LoggerFactory.getLogger(EMConfig::class.java)
 
         private const val headerRegex = "(.+:.+)|(^$)"
+
+        private const val targetSeparator = ";"
+        private const val targetNone = "\\b(None|NONE|none)\\b"
+        private const val targetPrefix = "\\b(Class|CLASS|class|Line|LINE|line|Branch|BRANCH|branch|MethodReplacement|METHODREPLACEMENT|method[r|R]eplacement|Success_Call|SUCCESS_CALL|success_[c|C]all|Local|LOCAL|local|PotentialFault|POTENTIALFAULT|potential[f|F]ault)\\b"
+        private const val targetExclusionRegex = "^($targetNone|($targetPrefix($targetSeparator$targetPrefix)*))\$"
 
         private const val maxTcpPort = 65535.0
 
@@ -511,6 +517,9 @@ class EMConfig {
                 throw IllegalArgumentException("Failed to handle property '${m.name}'", e)
             }
         }
+
+        // private set
+        excludedTargetsForImpactCollection = extractExcludedTargetsForImpactCollection()
     }
 
     fun shouldGenerateSqlData() = generateSqlDataWithDSE || generateSqlDataWithSearch
@@ -1834,6 +1843,16 @@ class EMConfig {
     @Experimental
     var saveExecutedMainActionInfo = "executedMainActions.txt"
 
+
+    @Cfg("Specify prefixes of targets (e.g., MethodReplacement, Success_Call, Local) which will exclude in impact collection. " +
+            "Multiple exclusions should be separated with semicolon (i.e., ;).")
+    @Regex(targetExclusionRegex)
+    @Experimental
+    var excludeTargetsForImpactCollection = "Local;MethodReplacement"
+
+    var excludedTargetsForImpactCollection : List<String> = extractExcludedTargetsForImpactCollection()
+        private set
+
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
             return maxTimeInSeconds
@@ -1907,4 +1926,10 @@ class EMConfig {
     }
 
     fun doHarvestActualResponse() : Boolean = probOfHarvestingResponsesFromActualExternalServices > 0 || probOfMutatingResponsesBasedOnActualResponse > 0
+
+    private fun extractExcludedTargetsForImpactCollection() : List<String>{
+        if (excludeTargetsForImpactCollection.equals("None", ignoreCase = true)) return emptyList()
+        val excluded = excludeTargetsForImpactCollection.split(targetSeparator).map { it.lowercase() }.toSet()
+        return IdMapper.ALL_ACCEPTED_OBJECTIVE_PREFIXES.filter { excluded.contains(it.lowercase()) }
+    }
 }
