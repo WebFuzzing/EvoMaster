@@ -1,6 +1,7 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.thirdpartyclasses;
 
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyCast;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyMethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
 import org.evomaster.client.java.instrumentation.object.ClassToSchema;
@@ -42,7 +43,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
         ClassToSchema.registerSchemaIfNeeded(valueType);
 
         // TODO: Need to verify the necessity of this replacement, also for side-effects
-        JsonTaint.handlePossibleJsonTaint(src.toString(),valueType);
+        JsonTaint.handlePossibleJsonTaint(src.toString(), valueType);
 
         Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_File_class", caller);
 
@@ -51,7 +52,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {
-            throw  e.getCause();
+            throw e.getCause();
         }
 
     }
@@ -62,10 +63,13 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
             usageFilter = UsageFilter.ANY,
             category = ReplacementCategory.EXT_0)
     public static <T> T readValue(Object caller, URL src, Class<T> valueType) throws Throwable {
+        // Used to fetch JSON from a URL
+
         Objects.requireNonNull(caller);
 
         ClassToSchema.registerSchemaIfNeeded(valueType);
-        JsonTaint.handlePossibleJsonTaint(src.toString(),valueType);
+        // TODO: This is useless
+        JsonTaint.handlePossibleJsonTaint(src.toString(), valueType);
 
         Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_URL_class", caller);
 
@@ -74,7 +78,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {
-            throw  e.getCause();
+            throw e.getCause();
         }
 
     }
@@ -100,7 +104,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {
-            throw  e.getCause();
+            throw e.getCause();
         }
     }
 
@@ -125,7 +129,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
                 .lines()
                 .collect(Collectors.joining(System.lineSeparator()));
 
-        JsonTaint.handlePossibleJsonTaint(content,valueType);
+        JsonTaint.handlePossibleJsonTaint(content, valueType);
 
         src = new ByteArrayInputStream(content.getBytes());
 
@@ -136,7 +140,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {
-            throw  e.getCause();
+            throw e.getCause();
         }
     }
 
@@ -152,7 +156,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
 
         String content = new String(src);
 
-        JsonTaint.handlePossibleJsonTaint(content,valueType);
+        JsonTaint.handlePossibleJsonTaint(content, valueType);
 
         src = content.getBytes();
 
@@ -163,7 +167,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {
-            throw  e.getCause();
+            throw e.getCause();
         }
 
     }
@@ -180,7 +184,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
 
         String content = new String(src);
 
-        JsonTaint.handlePossibleJsonTaint(content,valueType);
+        JsonTaint.handlePossibleJsonTaint(content, valueType);
 
         src = content.getBytes();
 
@@ -191,7 +195,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {
-            throw  e.getCause();
+            throw e.getCause();
         }
     }
 
@@ -204,7 +208,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
         Objects.requireNonNull(caller);
 
         ClassToSchema.registerSchemaIfNeeded(valueType);
-        JsonTaint.handlePossibleJsonTaint(src.toString(),valueType);
+        JsonTaint.handlePossibleJsonTaint(src.toString(), valueType);
 
         Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_DataInput_class", caller);
 
@@ -213,22 +217,21 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {
-            throw  e.getCause();
+            throw e.getCause();
         }
     }
 
 
-
     @Replacement(replacingStatic = false,
             type = ReplacementType.TRACKER,
-            id = "Jackson_ObjectMapper_readValue_Generic_class",
+            id = "Jackson_ObjectMapper_readValue_String__class",
             usageFilter = UsageFilter.ANY,
             category = ReplacementCategory.EXT_0)
-    public static <T> T readValue(Object caller, String content, Class<T> valueType) throws Throwable {
+    public static <T> T readValue(Object caller, String content, @ThirdPartyCast(actualType = "com.fasterxml.jackson.core.type.TypeReference") Object valueTypeRef) throws Throwable {
         Objects.requireNonNull(caller);
 
-        ClassToSchema.registerSchemaIfNeeded(valueType);
-        JsonTaint.handlePossibleJsonTaint(content,valueType);
+        ClassToSchema.registerSchemaIfNeeded(valueTypeRef.getClass());
+        JsonTaint.handlePossibleJsonTaint(content, valueTypeRef.getClass());
 
         // JSON can be unwrapped using different approaches
         // val dto: FooDto = mapper.readValue(json)
@@ -236,14 +239,42 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
         // as shaded dependency. And that crates new problems.
         // Note: For now it's not supported
 
-        Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_Generic_class", caller);
+        Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_String_Generic_class", caller);
+
+        try {
+            return (T) original.invoke(caller, content, valueTypeRef);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        } catch (InvocationTargetException e) {
+            throw e.getCause();
+        }
+    }
+
+    @Replacement(replacingStatic = false,
+            type = ReplacementType.TRACKER,
+            id = "Jackson_ObjectMapper_readValue_String_Generic_class",
+            usageFilter = UsageFilter.ANY,
+            category = ReplacementCategory.EXT_0)
+    public static <T> T readValue(Object caller, String content, Class<T> valueType) throws Throwable {
+        Objects.requireNonNull(caller);
+
+        ClassToSchema.registerSchemaIfNeeded(valueType);
+        JsonTaint.handlePossibleJsonTaint(content, valueType);
+
+        // JSON can be unwrapped using different approaches
+        // val dto: FooDto = mapper.readValue(json)
+        // To support this way, Jackson should be used inside the instrumentation
+        // as shaded dependency. And that crates new problems.
+        // Note: For now it's not supported
+
+        Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_String_Generic_class", caller);
 
         try {
             return (T) original.invoke(caller, content, valueType);
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {
-            throw  e.getCause();
+            throw e.getCause();
         }
     }
 
@@ -258,7 +289,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
 
         ClassToSchema.registerSchemaIfNeeded(valueType);
 
-        if(fromValue instanceof String) {
+        if (fromValue instanceof String) {
             JsonTaint.handlePossibleJsonTaint((String) fromValue, valueType);
         }
 
@@ -269,7 +300,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {
-            throw  e.getCause();
+            throw e.getCause();
         }
     }
 
