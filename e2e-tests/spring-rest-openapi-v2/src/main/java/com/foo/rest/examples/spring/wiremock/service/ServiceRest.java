@@ -118,13 +118,14 @@ public class ServiceRest {
      * An endpoint to receive JSON response from external service and response
      * true or false based on the result.
      */
-//    @RequestMapping(
-//            value = "/external/json",
-//            method = RequestMethod.GET,
-//            produces = MediaType.APPLICATION_JSON
-//    )
-    public ResponseDto jsonResponse() {
+    @RequestMapping(
+            value = "/external/json",
+            method = RequestMethod.GET,
+            produces = MediaType.APPLICATION_JSON
+    )
+    public ResponseEntity<ResponseDto> jsonResponse() {
         ResponseDto responseDto = new ResponseDto();
+        responseDto.valid = false;
 
         try {
             // To bind WireMock in port 80 and 443 require root privileges
@@ -137,13 +138,16 @@ public class ServiceRest {
             ObjectMapper mapper = new ObjectMapper();
             MockApiResponse result = mapper.readValue(responseStream, MockApiResponse.class);
 
-            responseDto.valid = result.message.equals("foo");
+            if (result.message.equals("foo")) {
+                responseDto.valid = true;
+                return new ResponseEntity<>(responseDto, HttpStatus.OK);
+            }
         } catch (IOException e) {
             SimpleLogger.uniqueWarn(e.getLocalizedMessage());
+            return new ResponseEntity<>(responseDto, HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
-        return responseDto;
-
+        return new ResponseEntity<>(responseDto, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
 }
