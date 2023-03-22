@@ -33,11 +33,19 @@ class BasicEMTest : RestTestBase() {
         ) { args ->
 
             val saveExecutedSQLToFile = "target/executionInfo/org/bar/mysql/BasicEM/sql.txt"
+            val executedMainActionToFile = "target/executionInfo/org/bar/mysql/BasicEM/executedMainActions.txt"
 
             args.add("--outputExecutedSQL")
             args.add("ALL_AT_END")
             args.add("--saveExecutedSQLToFile")
             args.add(saveExecutedSQLToFile)
+
+            args.add("--recordExecutedMainActionInfo")
+            args.add("true")
+            args.add("--saveExecutedMainActionInfo")
+            args.add(executedMainActionToFile)
+
+
 
             val solution = initAndRun(args)
 
@@ -67,6 +75,9 @@ class BasicEMTest : RestTestBase() {
                 s.contains("INSERT INTO X")
             }
             assertTrue(ignoreInitSql)
+
+            val size = Files.readAllLines(Paths.get(executedMainActionToFile)).count { !it.contains("ComputationOverhead") && it.isNotBlank() }
+            assertTrue(size in budget..(budget+1))
         }
     }
 
