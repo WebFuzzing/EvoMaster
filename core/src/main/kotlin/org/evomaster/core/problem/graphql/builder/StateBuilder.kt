@@ -1085,8 +1085,8 @@ object StateBuilder {
 
 
                             else
-
-                                if(kind0 == __TypeKind.LIST){
+                          /*  //
+                                if(kind0 == __TypeKind.LIST){//list->nnnull->inputObj->teams case
 
                                     if(kind1 == __TypeKind.NON_NULL){
                                         if(kind2 == __TypeKind.INPUT_OBJECT){
@@ -1105,13 +1105,13 @@ object StateBuilder {
                                         }
                                     }
                                 }else
+*/
 
 
 
 
-
-
-                                if (kind0 == __TypeKind.INPUT_OBJECT){
+                                //
+                                if (kind0 == __TypeKind.INPUT_OBJECT){//inpuObj directly->sso case
                                     state.tempArgsTables.add(
                                         Table(
                                             typeName = elementIntypes.name,
