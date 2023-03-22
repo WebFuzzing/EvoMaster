@@ -36,13 +36,15 @@ public class JacksonEMFlakyTest extends SpringTestBase {
                     args.add("--externalServiceIPSelectionStrategy");
                     args.add("USER");
                     args.add("--externalServiceIP");
-                    args.add("127.0.0.2");
+                    args.add("127.0.0.5");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/jackson/json", "true");
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/jackson/byte/{s}", "true");
+                    // TODO: There is no method replacement to capture the value in the URL constructor to spin
+                    //  WireMock. So this will fail always.
 //                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/jackson/url", "true");
-//                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/jackson/byte", "true");
                 },
                 3);
     }

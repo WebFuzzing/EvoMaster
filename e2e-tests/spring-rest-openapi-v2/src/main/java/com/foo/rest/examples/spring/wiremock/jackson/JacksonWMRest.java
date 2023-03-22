@@ -50,7 +50,7 @@ public class JacksonWMRest {
                 return new ResponseEntity<>(responseDto, HttpStatus.OK);
             }
         } catch (IOException e) {
-            SimpleLogger.uniqueWarn(e.getLocalizedMessage());
+//            SimpleLogger.uniqueWarn(e.getLocalizedMessage());
             return new ResponseEntity<>(responseDto, HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
@@ -64,12 +64,14 @@ public class JacksonWMRest {
 //            produces = MediaType.APPLICATION_JSON
 //    )
     public ResponseEntity<ResponseDto> experimentalJSONFromURL() {
+        // There is no method replacement for URL constructor to initiate
+        // WireMock, so this implementation won't work at all.
         ResponseDto responseDto = new ResponseDto();
         responseDto.valid = false;
 
         try {
             ObjectMapper objectMapper = new ObjectMapper();
-            URL url = new URL("http://foo.bar:8080/api/echo/foo/json");
+            URL url = new URL("http://foos.bar:8080/api/echo/foo/url");
 
             DummyResponse response = objectMapper.readValue(url, DummyResponse.class);
             if (response.message != null && response.message.equals("foo")) {
@@ -84,18 +86,17 @@ public class JacksonWMRest {
 
     }
 
-//    @RequestMapping(
-//            value = "/byte/{s}",
-//            method = RequestMethod.GET,
-//            produces = MediaType.APPLICATION_JSON
-//    )
+    @RequestMapping(
+            value = "/byte/{s}",
+            method = RequestMethod.GET,
+            produces = MediaType.APPLICATION_JSON
+    )
     public ResponseEntity<ResponseDto> jsonFromByteArray(@PathVariable("s") String s) {
         ResponseDto responseDto = new ResponseDto();
         responseDto.valid = false;
-
+        String sampleJSON = String.format("{\"message\":\"%s\"}", s);
         try {
             ObjectMapper objectMapper = new ObjectMapper();
-            String sampleJSON = String.format("{\"message\":\"%s\"}", s);
 
             DummyResponse response = objectMapper.readValue(sampleJSON.getBytes(), DummyResponse.class);
 
