@@ -9,14 +9,12 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
-
 class WmHarvestResponseEMTest : SpringTestBase() {
 
     companion object {
         @BeforeAll
         @JvmStatic
         fun init() {
-
             val config = EMConfig()
             config.instrumentMR_NET = true
             initClass(WmHarvestResponseController(), config)
@@ -28,12 +26,12 @@ class WmHarvestResponseEMTest : SpringTestBase() {
 
     @Test
     fun testRunEM() {
-
+        // External service uses port 80 and 443 so the test will fail in macOS.
         runTestHandlingFlakyAndCompilation(
             "WmHarvestResponseEM",
             "org.foo.WmHarvestResponseEM",
             1000,
-            false,
+            !CIUtils.isRunningGA(),
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")
@@ -56,7 +54,6 @@ class WmHarvestResponseEMTest : SpringTestBase() {
 
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/harvestresponse/grch37Example", "Found harvested response")
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/harvestresponse/grch37Example", "Cannot find harvested response")
-
 
 //                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/harvestresponse/users", ">10")
 //                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/harvestresponse/users", "<10")

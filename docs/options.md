@@ -202,7 +202,9 @@ There are 3 types of options:
 |`processFormat`| __Enum__. Specify a format to save the process data. *Valid values*: `JSON_ALL, TEST_IND, TARGET_TEST_IND`. *Default value*: `JSON_ALL`.|
 |`processInterval`| __Double__. Specify how often to save results when a search monitor is enabled, and 0.0 presents to record all evaluated individual. *Constraints*: `min=0.0, max=50.0`. *Default value*: `0.0`.|
 |`recordExceededTargets`| __Boolean__. Whether to record targets when the number is more than 100. *Default value*: `false`.|
+|`recordExecutedMainActionInfo`| __Boolean__. Whether to record info of executed actions during search. *Default value*: `false`.|
 |`saveArchiveAfterMutation`| __Boolean__. Whether to save archive info after each of mutation, which is typically useful for debugging mutation and archive. *Default value*: `false`.|
+|`saveExecutedMainActionInfo`| __String__. Specify a path to save all executed main actions to a file (default is 'executedMainActions.txt'). *Default value*: `executedMainActions.txt`.|
 |`saveExecutedSQLToFile`| __String__. Specify a path to save all executed sql commands to a file (default is 'sql.txt'). *Default value*: `sql.txt`.|
 |`saveImpactAfterMutation`| __Boolean__. Whether to save impact info after each of mutation, which is typically useful debugging impact driven solutions and mutation. *Default value*: `false`.|
 |`saveMockedResponseAsSeparatedFile`| __Boolean__. Whether to save mocked responses as separated files. *Default value*: `false`.|
