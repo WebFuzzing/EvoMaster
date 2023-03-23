@@ -70,13 +70,14 @@ class IncrementalAverage {
     /**
      * Add number of ms since timer was started, and then reset it
      */
-    fun addElapsedTime(){
+    fun addElapsedTime() : Long{
         if(startingTime == null){
             throw IllegalStateException("Adding elapsed time before starting the timer")
         }
         val elapsed = System.currentTimeMillis() - startingTime!!
         addValue(elapsed)
         startingTime = null
+        return elapsed
     }
 
     override fun toString() : String {
