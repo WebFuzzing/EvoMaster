@@ -61,7 +61,7 @@ class WmHarvestResponseRest {
 
         val url = URL(server + ext)
 
-        try {
+//        try {
             val connection = url.openConnection() as HttpURLConnection
 
             val postBody = "{ \"hgvs_notations\" : [\"AGT:c.803T>C\", \"9:g.22125503G>C\" ] }"
@@ -89,9 +89,9 @@ class WmHarvestResponseRest {
             if (list.size >= 2 && list.any { it is Map<*, *> && it.size > 10 })
                 return ResponseEntity.ok("Found harvested response")
             return ResponseEntity.ok("Cannot find harvested response")
-        } catch (e: Exception) {
-            return ResponseEntity.status(400).build()
-        }
+//        } catch (e: Exception) {
+//            return ResponseEntity.status(400).build()
+//        }
     }
 
     /*
