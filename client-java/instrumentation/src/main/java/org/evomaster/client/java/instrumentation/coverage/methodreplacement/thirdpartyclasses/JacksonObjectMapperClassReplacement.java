@@ -58,7 +58,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
     @Replacement(replacingStatic = false,
             type = ReplacementType.TRACKER,
             id = "Jackson_ObjectMapper_readValue_File_TypeReference_class",
-            usageFilter = UsageFilter.ONLY_SUT,
+            usageFilter = UsageFilter.ANY,
             category = ReplacementCategory.EXT_0)
     public static <T> T readValue(Object caller, File src, @ThirdPartyCast(actualType = "com.fasterxml.jackson.core.type.TypeReference") Object valueTypeRef) throws Throwable {
         // Read the JSON from the given file path
@@ -104,7 +104,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
     @Replacement(replacingStatic = false,
             type = ReplacementType.TRACKER,
             id = "Jackson_ObjectMapper_readValue_URL_TypeReference_class",
-            usageFilter = UsageFilter.ONLY_SUT,
+            usageFilter = UsageFilter.ANY,
             category = ReplacementCategory.EXT_0)
     public static <T> T readValue(Object caller, URL src, @ThirdPartyCast(actualType = "com.fasterxml.jackson.core.type.TypeReference") Object valueTypeRef) throws Throwable {
         // Used to fetch JSON from a URL
@@ -207,7 +207,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
     @Replacement(replacingStatic = false,
             type = ReplacementType.TRACKER,
             id = "Jackson_ObjectMapper_readValue_InputStream_TypeReference_class",
-            usageFilter = UsageFilter.ONLY_SUT,
+            usageFilter = UsageFilter.ANY,
             category = ReplacementCategory.EXT_0)
     public static <T> T readValue(Object caller, InputStream src,  @ThirdPartyCast(actualType = "com.fasterxml.jackson.core.type.TypeReference") Object valueTypeRef) throws Throwable {
         Objects.requireNonNull(caller);
@@ -264,7 +264,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
     @Replacement(replacingStatic = false,
             type = ReplacementType.TRACKER,
             id = "Jackson_ObjectMapper_readValue_Byte_TypeReference_class",
-            usageFilter = UsageFilter.ONLY_SUT,
+            usageFilter = UsageFilter.ANY,
             category = ReplacementCategory.EXT_0)
     public static <T> T readValue(Object caller, byte[] src, @ThirdPartyCast(actualType = "com.fasterxml.jackson.core.type.TypeReference") Object valueTypeRef) throws Throwable {
         Objects.requireNonNull(caller);
@@ -318,7 +318,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
     @Replacement(replacingStatic = false,
             type = ReplacementType.TRACKER,
             id = "Jackson_ObjectMapper_readValue_Byte_Length_TypeReference_class",
-            usageFilter = UsageFilter.ONLY_SUT,
+            usageFilter = UsageFilter.ANY,
             category = ReplacementCategory.EXT_0)
     public static <T> T readValue(Object caller, byte[] src, int offset, int len, @ThirdPartyCast(actualType = "com.fasterxml.jackson.core.type.TypeReference") Object valueTypeRef) throws Throwable {
         Objects.requireNonNull(caller);
@@ -367,7 +367,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
     @Replacement(replacingStatic = false,
             type = ReplacementType.TRACKER,
             id = "Jackson_ObjectMapper_readValue_DataInput_JavaType_class",
-            usageFilter = UsageFilter.ONLY_SUT,
+            usageFilter = UsageFilter.ANY,
             category = ReplacementCategory.EXT_0)
     public static <T> T readValue(Object caller, DataInput src, @ThirdPartyCast(actualType = "com.fasterxml.jackson.databind.JavaType") Object valueType) throws Throwable {
         Objects.requireNonNull(caller);
