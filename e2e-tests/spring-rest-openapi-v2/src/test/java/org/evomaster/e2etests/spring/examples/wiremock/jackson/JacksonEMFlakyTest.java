@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.examples.wiremock.jackson;
 
 import com.foo.rest.examples.spring.wiremock.jackson.JacksonWMController;
+import org.evomaster.ci.utils.CIUtils;
 import org.evomaster.core.EMConfig;
 import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.RestIndividual;
@@ -25,7 +26,7 @@ public class JacksonEMFlakyTest extends SpringTestBase {
                 "JacksonWMGeneratedTest",
                 "org.bar.JacksonWMGeneratedTest",
                 1000,
-                true,
+                !CIUtils.isRunningGA(),
                 (args) -> {
 
                     // IP set to 127.0.0.5 to confirm the test failure
