@@ -172,6 +172,11 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
     }
 
     protected fun handleExtra(dto: TestResultsDto, fv: FitnessValue) {
+
+        if(!config.isMIO()){
+            return
+        }
+
         if (configuration.heuristicsForSQL) {
 
             for (i in 0 until dto.extraHeuristics.size) {
