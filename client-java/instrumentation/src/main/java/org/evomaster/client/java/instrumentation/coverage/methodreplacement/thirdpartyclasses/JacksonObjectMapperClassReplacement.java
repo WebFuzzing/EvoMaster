@@ -388,33 +388,33 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
 //        }
 //    }
 
-//    @Replacement(replacingStatic = false,
-//            type = ReplacementType.TRACKER,
-//            id = "Jackson_ObjectMapper_readValue_String_TypeReference_class",
-//            usageFilter = UsageFilter.ANY,
-//            category = ReplacementCategory.EXT_0)
-//    public static <T> T readValue(Object caller, String content, @ThirdPartyCast(actualType = "com.fasterxml.jackson.core.type.TypeReference") Object valueTypeRef) throws Throwable {
-//        Objects.requireNonNull(caller);
-//
-//        ClassToSchema.registerSchemaIfNeeded(valueTypeRef.getClass());
-//        JsonTaint.handlePossibleJsonTaint(content, valueTypeRef.getClass());
-//
-//        // JSON can be unwrapped using different approaches
-//        // val dto: FooDto = mapper.readValue(json)
-//        // To support this way, Jackson should be used inside the instrumentation
-//        // as shaded dependency. And that crates new problems.
-//        // Note: For now it's not supported
-//
-//        Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_String_TypeReference_class", caller);
-//
-//        try {
-//            return (T) original.invoke(caller, content, valueTypeRef);
-//        } catch (IllegalAccessException e) {
-//            throw new RuntimeException(e);
-//        } catch (InvocationTargetException e) {
-//            throw e.getCause();
-//        }
-//    }
+    @Replacement(replacingStatic = false,
+            type = ReplacementType.TRACKER,
+            id = "Jackson_ObjectMapper_readValue_String_TypeReference_class",
+            usageFilter = UsageFilter.ANY,
+            category = ReplacementCategory.EXT_0)
+    public static <T> T readValue(Object caller, String content, @ThirdPartyCast(actualType = "com.fasterxml.jackson.core.type.TypeReference") Object valueTypeRef) throws Throwable {
+        Objects.requireNonNull(caller);
+
+        ClassToSchema.registerSchemaIfNeeded(valueTypeRef.getClass());
+        JsonTaint.handlePossibleJsonTaint(content, valueTypeRef.getClass());
+
+        // JSON can be unwrapped using different approaches
+        // val dto: FooDto = mapper.readValue(json)
+        // To support this way, Jackson should be used inside the instrumentation
+        // as shaded dependency. And that crates new problems.
+        // Note: For now it's not supported
+
+        Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_String_TypeReference_class", caller);
+
+        try {
+            return (T) original.invoke(caller, content, valueTypeRef);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        } catch (InvocationTargetException e) {
+            throw e.getCause();
+        }
+    }
 
     @Replacement(replacingStatic = false,
             type = ReplacementType.TRACKER,
