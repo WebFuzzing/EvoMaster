@@ -187,6 +187,10 @@ object GraphQLUtils {
         return printableInputGene
     }
 
+    /**
+     * This function is used to get printable String.
+     * Initially used for GQL arguments (eg: GQL input parameters, tuple arguments)
+     */
     fun inputsPrinting(
         it: Gene,
         targetFormat: OutputFormat?
