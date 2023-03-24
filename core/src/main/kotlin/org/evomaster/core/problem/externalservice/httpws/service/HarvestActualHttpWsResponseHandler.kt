@@ -139,7 +139,12 @@ class HarvestActualHttpWsResponseHandler {
                 .hostnameVerifier(PreDefinedSSLInfo.allowAllHostNames()) // configure all hostnames
                 .withConfig(clientConfiguration).build()
 
-            workerPool = Executors.newFixedThreadPool(min(config.externalRequestHarvesterNumberOfThreads, Runtime.getRuntime().availableProcessors()))
+            workerPool = Executors.newFixedThreadPool(
+                min(
+                    config.externalRequestHarvesterNumberOfThreads,
+                    Runtime.getRuntime().availableProcessors()
+                )
+            )
         }
     }
 
@@ -210,26 +215,22 @@ class HarvestActualHttpWsResponseHandler {
     fun getACopyOfActualResponse(httpRequest: HttpExternalServiceRequest, probability: Double? = null): ResponseParam? {
         val harvest = probability == null || (randomness.nextBoolean(probability))
         if (!harvest) return null
+        var found: ResponseParam? = null
         synchronized(actualResponses) {
-            val found = (actualResponses[httpRequest.getDescription()]?.param?.copy() as? ResponseParam)
-            if (found != null) seededResponses.add(httpRequest.getDescription())
-
-            // TODO: Man, review the order of execution
-            if (found == null
-                && config.externalRequestResponseSelectionStrategy == EMConfig.ExternalRequestResponseSelectionStrategy.CLOSEST
-            ) {
+            if (config.externalRequestResponseSelectionStrategy == EMConfig.ExternalRequestResponseSelectionStrategy.CLOSEST) {
                 val closestRequest = findClosestRequest(httpRequest.getDescription())
                 if (closestRequest != null) {
-                    return (actualResponses[closestRequest]?.param?.copy() as? ResponseParam)
+                    found = (actualResponses[closestRequest]?.param?.copy() as? ResponseParam)
                 }
-            } else if (found == null
-                && config.externalRequestResponseSelectionStrategy == EMConfig.ExternalRequestResponseSelectionStrategy.RANDOM
-            ) {
+            } else if (config.externalRequestResponseSelectionStrategy == EMConfig.ExternalRequestResponseSelectionStrategy.RANDOM) {
                 val randomIndex = randomness.nextInt(actualResponses.size)
-                return actualResponses[actualResponses.keys().toList()[randomIndex]]?.param?.copy() as? ResponseParam
+                found = actualResponses[actualResponses.keys().toList()[randomIndex]]?.param?.copy() as? ResponseParam
+            } else if (config.externalRequestResponseSelectionStrategy == EMConfig.ExternalRequestResponseSelectionStrategy.EXACT) {
+                found = (actualResponses[httpRequest.getDescription()]?.param?.copy() as? ResponseParam)
             }
-            return found
         }
+        if (found != null) seededResponses.add(httpRequest.getDescription())
+        return found
     }
 
     /**
@@ -247,8 +248,8 @@ class HarvestActualHttpWsResponseHandler {
         requests
             .filter { it.method.equals("GET", ignoreCase = true) || it.method.equals("POST", ignoreCase = true) }
             .forEach {
-            addRequest(it)
-        }
+                addRequest(it)
+            }
     }
 
     private fun addRequest(request: HttpExternalServiceRequest) {
@@ -386,7 +387,6 @@ class HarvestActualHttpWsResponseHandler {
         }
     }
 
-
     private fun updateExtractedObjectDto() {
         synchronized(extractedObjectDto) {
             val infoDto = rc.getSutInfo()!!
@@ -455,21 +455,23 @@ class HarvestActualHttpWsResponseHandler {
         var out: String? = null
         var diff = 100.0
 
-        actualResponses.keys().iterator().forEach {
-            val ld = LevenshteinDistance.getDefaultInstance().apply(it, key).toDouble()
+        actualResponses.forEach { (k, v) ->
+            val httpWsResponseParam = v.param as HttpWsResponseParam
+            if (httpWsResponseParam.status.values[httpWsResponseParam.status.index] == 200) {
+                val ld = LevenshteinDistance.getDefaultInstance().apply(k, key).toDouble()
 
-            if (ld == 0.0) {
-                out = it
-            } else {
-                val nDiff = (ld / key.length.toDouble()) * 100.0
+                if (ld == 0.0) {
+                    out = k
+                } else {
+                    val nDiff = (ld / key.length.toDouble()) * 100.0
 
-                if (nDiff < diff) {
-                    diff = nDiff
-                    out = it
+                    if (nDiff < diff) {
+                        diff = nDiff
+                        out = k
+                    }
                 }
             }
         }
-
         return out
     }
 }

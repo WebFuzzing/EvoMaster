@@ -32,7 +32,7 @@ fi
 
 # Function to set aliases
 set_alias() {
-	for i in {2..254}
+	for i in {2..20}
 	do
 		ifconfig $INTERFACE alias "127.0.0.$i"
 		if [ $? -eq 0 ]
@@ -47,7 +47,7 @@ set_alias() {
 
 # Function to remove aliases
 remove_alias() {
-	for i in {2..254}
+	for i in {2..20}
 	do
 		ifconfig $INTERFACE -alias "127.0.0.$i"
 		if [ $? -eq 0 ]

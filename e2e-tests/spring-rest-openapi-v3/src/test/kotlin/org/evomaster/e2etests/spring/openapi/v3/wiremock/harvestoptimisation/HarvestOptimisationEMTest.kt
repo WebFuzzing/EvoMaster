@@ -10,7 +10,7 @@ import org.evomaster.ci.utils.CIUtils
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
-import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
@@ -71,7 +71,7 @@ class HarvestOptimisationEMTest: SpringTestBase() {
 
                 val solution = initAndRun(args)
 
-                Assertions.assertTrue(solution.individuals.size >= 1)
+                assertTrue(solution.individuals.size >= 1)
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/harvester/external", "Working")
             },
             3
