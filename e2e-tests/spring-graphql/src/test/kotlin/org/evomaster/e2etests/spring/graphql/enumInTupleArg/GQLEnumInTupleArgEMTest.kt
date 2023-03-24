@@ -1,20 +1,20 @@
-package org.evomaster.e2etests.spring.graphql.arrayOptionalEnumInput
+package org.evomaster.e2etests.spring.graphql.enumInTupleArg
 
 
-import com.foo.graphql.arrayOptionalEnumInput.ArrayOptionalEnumInputController
+import com.foo.graphql.enumInTupleArg.EnumInTupleArgController
 import org.evomaster.core.EMConfig
 import org.evomaster.e2etests.spring.graphql.SpringTestBase
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
-class GQLArrayOptionalEnumInputEMTest : SpringTestBase() {
+class GQLEnumInTupleArgEMTest : SpringTestBase() {
 
     companion object {
         @BeforeAll
         @JvmStatic
         fun init() {
-            initClass(ArrayOptionalEnumInputController())
+            initClass(EnumInTupleArgController())
         }
     }
 
@@ -22,8 +22,8 @@ class GQLArrayOptionalEnumInputEMTest : SpringTestBase() {
     @Test
     fun testRunEM() {
         runTestHandlingFlakyAndCompilation(
-                "GQL_ArrayOptionalEnumInputEM",
-                "org.foo.graphql.ArrayOptionalEnumInputEM",
+                "GQL_EnumInTupleArgEM",
+                "org.foo.graphql.EnumInTupleArgEM",
                 20
         ) { args: MutableList<String> ->
 
