@@ -295,10 +295,10 @@ class Main {
                 EMConfig.ProblemType.REST -> {
                     if (config.blackBox) {
                         BlackBoxRestModule(config.bbExperiments)
-                    } else if (config.resourceSampleStrategy == EMConfig.ResourceSamplingStrategy.NONE) {
-                        RestModule()
-                    } else {
+                    } else if (config.isEnabledResourceStrategy()) {
                         ResourceRestModule()
+                    } else {
+                        RestModule()
                     }
                 }
 

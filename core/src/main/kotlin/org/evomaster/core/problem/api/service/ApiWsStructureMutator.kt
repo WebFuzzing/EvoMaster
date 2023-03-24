@@ -428,6 +428,6 @@ abstract class ApiWsStructureMutator : StructureMutator() {
     abstract fun getSqlInsertBuilder(): SqlInsertBuilder?
 
     override fun canApplyInitStructureMutator(): Boolean {
-        return (config.initStructureMutationProbability > 0 && config.maxSizeOfMutatingInitAction > 0) && getSqlInsertBuilder() != null
+        return config.isEnabledInitializationStructureMutation() && getSqlInsertBuilder() != null
     }
 }
