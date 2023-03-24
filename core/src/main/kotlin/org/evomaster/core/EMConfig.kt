@@ -336,7 +336,7 @@ class EMConfig {
         if (doCollectImpact && !enableTrackEvaluatedIndividual)
             throw IllegalArgumentException("Impact collection should be applied together with tracking EvaluatedIndividual")
 
-        if (baseTaintAnalysisProbability > 0 && !useMethodReplacement) {
+        if (isEnabledTaintAnalysis() && !useMethodReplacement) {
             throw IllegalArgumentException("Base Taint Analysis requires 'useMethodReplacement' option")
         }
 
@@ -513,7 +513,7 @@ class EMConfig {
         }
     }
 
-    fun shouldGenerateSqlData() = generateSqlDataWithDSE || generateSqlDataWithSearch
+    fun shouldGenerateSqlData() = isMIO() && (generateSqlDataWithDSE || generateSqlDataWithSearch)
 
     fun experimentalFeatures(): List<String> {
 
@@ -1875,7 +1875,7 @@ class EMConfig {
     /**
      * @return whether enable resource-dependency based method
      */
-    fun isEnabledResourceDependency() = probOfSmartSampling > 0.0 && resourceSampleStrategy != ResourceSamplingStrategy.NONE
+    fun isEnabledResourceDependency() = isEnabledSmartSampling() && resourceSampleStrategy != ResourceSamplingStrategy.NONE
 
     /**
      * @return whether to generate SQL between rest actions
@@ -1902,4 +1902,16 @@ class EMConfig {
     }
 
     fun doHarvestActualResponse() : Boolean = probOfHarvestingResponsesFromActualExternalServices > 0 || probOfMutatingResponsesBasedOnActualResponse > 0
+
+    /**
+     * Check if the used algorithm is MIO.
+     * MIO is the default search algorithm in EM.
+     * Many techniques in EM are defined only for MIO, ie most improvements in EM are
+     * done as an extension of MIO.
+     */
+    fun isMIO() = algorithm == Algorithm.MIO
+
+    fun isEnabledTaintAnalysis() = isMIO() && baseTaintAnalysisProbability > 0
+
+    fun isEnabledSmartSampling() = isMIO() && probOfSmartSampling > 0
 }

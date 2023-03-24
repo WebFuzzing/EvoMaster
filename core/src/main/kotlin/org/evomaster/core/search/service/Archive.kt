@@ -165,6 +165,10 @@ class Archive<T> where T : Individual {
 
     private fun chooseTarget(toChooseFrom: Set<Int>): Int {
 
+        if(!config.isMIO()){
+            return  randomness.choose(toChooseFrom)
+        }
+
         return when (config.feedbackDirectedSampling) {
             LAST -> toChooseFrom.minByOrNull {
                 val counter = samplingCounter.getOrDefault(it, 0)
