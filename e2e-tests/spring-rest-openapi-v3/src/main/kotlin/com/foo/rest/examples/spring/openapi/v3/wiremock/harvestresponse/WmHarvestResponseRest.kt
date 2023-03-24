@@ -61,33 +61,37 @@ class WmHarvestResponseRest {
 
         val url = URL(server + ext)
 
-        val connection = url.openConnection() as HttpURLConnection
+        try {
+            val connection = url.openConnection() as HttpURLConnection
 
-        val postBody = "{ \"hgvs_notations\" : [\"AGT:c.803T>C\", \"9:g.22125503G>C\" ] }"
-        connection.requestMethod = "POST"
-        connection.setRequestProperty("Content-Type", "application/json")
-        connection.setRequestProperty("Accept", "application/json")
-        connection.setRequestProperty("Content-Length", postBody.toByteArray().size.toString())
-        connection.useCaches = false
-        connection.doInput = true
-        connection.doOutput = true
+            val postBody = "{ \"hgvs_notations\" : [\"AGT:c.803T>C\", \"9:g.22125503G>C\" ] }"
+            connection.requestMethod = "POST"
+            connection.setRequestProperty("Content-Type", "application/json")
+            connection.setRequestProperty("Accept", "application/json")
+            connection.setRequestProperty("Content-Length", postBody.toByteArray().size.toString())
+            connection.useCaches = false
+            connection.doInput = true
+            connection.doOutput = true
 
-        val wr = DataOutputStream(connection.outputStream)
-        wr.writeBytes(postBody)
-        wr.flush()
-        wr.close()
+            val wr = DataOutputStream(connection.outputStream)
+            wr.writeBytes(postBody)
+            wr.flush()
+            wr.close()
 
-        val responseCode: Int = connection.responseCode
-        val data = connection.inputStream.bufferedReader().use(BufferedReader::readText)
+            val responseCode: Int = connection.responseCode
+            val data = connection.inputStream.bufferedReader().use(BufferedReader::readText)
 
-        if (responseCode != 200) {
+            if (responseCode != 200) {
+                return ResponseEntity.status(400).build()
+            }
+
+            val list = mapper.readValue(data, List::class.java)
+            if (list.size >= 2 && list.any { it is Map<*, *> && it.size > 10 })
+                return ResponseEntity.ok("Found harvested response")
+            return ResponseEntity.ok("Cannot find harvested response")
+        } catch (e: Exception) {
             return ResponseEntity.status(400).build()
         }
-
-        val list = mapper.readValue(data, List::class.java)
-        if (list.size >= 2 && list.any { it is Map<*, *> && it.size > 10 })
-            return ResponseEntity.ok("Found harvested response")
-        return ResponseEntity.ok("Cannot find harvested response")
     }
 
     /*

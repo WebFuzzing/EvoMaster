@@ -446,6 +446,25 @@ class GraphQLActionBuilderTest {
                 assertTrue(tupleDrugScores.elements.any { it.getWrappedGene(EnumGene::class.java)?.name == "drugClass" })
             }
         }
+        /**/
+        val patternAnalysis = actionCluster["patternAnalysis"] as GraphQLAction
+        assertEquals(2, patternAnalysis.parameters.size)
+        assertTrue(patternAnalysis.parameters[1] is GQReturnParam)
+
+        assertTrue(patternAnalysis.parameters[1].gene is ObjectGene)
+
+        val obMutationsAnalysis = patternAnalysis.parameters[1].gene as ObjectGene
+
+        assertTrue(obMutationsAnalysis.fields.any { it.getWrappedGene(TupleGene::class.java)?.name == "algorithmComparison" })
+
+
+        val optAlgorithmComparison = obMutationsAnalysis.fields.first { it.name == "algorithmComparison" }
+        val tupleAlgorithmComparison = optAlgorithmComparison.getWrappedGene(TupleGene::class.java)
+        assertEquals(3, tupleAlgorithmComparison?.elements?.size)
+
+        if (tupleAlgorithmComparison !=null) {
+            assertTrue(tupleAlgorithmComparison.elements.any { it.getWrappedGene(ArrayGene::class.java)?.name == "customAlgorithms" })
+        }
     }
 
     @Test
