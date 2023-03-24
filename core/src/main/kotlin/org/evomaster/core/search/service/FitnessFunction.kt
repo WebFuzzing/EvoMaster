@@ -50,7 +50,8 @@ abstract class FitnessFunction<T>  where T : Individual {
         val a = individual.seeMainExecutableActions().count()
 
         if(time.averageOverheadMsBetweenTests.isRecordingTimer()){
-            time.averageOverheadMsBetweenTests.addElapsedTime()
+            val computation = time.averageOverheadMsBetweenTests.addElapsedTime()
+            executionInfoReporter.addLatestComputationOverhead(computation, time.evaluatedIndividuals)
         }
 
         var ei = calculateIndividualWithPostHandling(individual, targets, a)
@@ -124,5 +125,6 @@ abstract class FitnessFunction<T>  where T : Individual {
     private fun handleExecutionInfo(ei: EvaluatedIndividual<T>?) {
         ei?:return
         executionInfoReporter.sqlExecutionInfo(ei.individual.seeAllActions(), ei.fitness.databaseExecutions)
+        executionInfoReporter.actionExecutionInfo(ei.individual, ei.executionTimeMs, time.evaluatedIndividuals)
     }
 }

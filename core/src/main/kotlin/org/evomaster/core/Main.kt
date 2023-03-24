@@ -295,10 +295,10 @@ class Main {
                 EMConfig.ProblemType.REST -> {
                     if (config.blackBox) {
                         BlackBoxRestModule(config.bbExperiments)
-                    } else if (config.resourceSampleStrategy == EMConfig.ResourceSamplingStrategy.NONE) {
-                        RestModule()
-                    } else {
+                    } else if (config.isEnabledResourceStrategy()) {
                         ResourceRestModule()
+                    } else {
+                        RestModule()
                     }
                 }
 
@@ -529,7 +529,7 @@ class Main {
 
             val config = injector.getInstance(EMConfig::class.java)
 
-            if (config.outputExecutedSQL != EMConfig.OutputExecutedSQL.ALL_AT_END) {
+            if (config.outputExecutedSQL != EMConfig.OutputExecutedSQL.ALL_AT_END && !config.recordExecutedMainActionInfo) {
                 return
             }
             val reporter = injector.getInstance(ExecutionInfoReporter::class.java)

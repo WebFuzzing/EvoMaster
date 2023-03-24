@@ -65,4 +65,9 @@ open class RPCCallAction(
     open fun setNoAuth(){
         auth = RPCNoAuth()
     }
+
+    override fun toString(): String {
+        // might add values of parameters later
+        return "$id , auth=${auth.name}"
+    }
 }
