@@ -1,6 +1,6 @@
-package org.evomaster.e2etests.spring.openapi.v3.jackson
+package org.evomaster.e2etests.spring.openapi.v3.jackson.base
 
-import com.foo.rest.examples.spring.openapi.v3.jackson.JacksonController
+import com.foo.rest.examples.spring.openapi.v3.jackson.base.JacksonController
 import org.evomaster.ci.utils.CIUtils
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
@@ -39,7 +39,6 @@ class JacksonEMTest : SpringTestBase() {
 
             Assertions.assertTrue(solution.individuals.size >= 1)
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/jackson/generic", "Working")
-            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/jackson/byte/{s}", "Working")
         }
     }
 }
