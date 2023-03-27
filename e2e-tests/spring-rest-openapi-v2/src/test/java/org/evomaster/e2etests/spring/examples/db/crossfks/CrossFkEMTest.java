@@ -28,7 +28,6 @@ public class CrossFkEMTest extends SpringTestBase {
     @Test
     public void testDisableTaintSampleEM() throws Throwable {
         forceSqlAllColumnInsertion(false);
-
     }
 
 
@@ -37,6 +36,7 @@ public class CrossFkEMTest extends SpringTestBase {
                 "CrossFkTaintSampling_"+taintOnSampling+"_EM",
                 "org.bar.db.CrossFkTaintSampling_"+taintOnSampling+"_EM",
                 10_000,
+                true,
                 (args) -> {
 
                     args.add("--probOfEnablingSingleInsertionForTable");
@@ -52,6 +52,8 @@ public class CrossFkEMTest extends SpringTestBase {
                     assertTrue(solution.getIndividuals().size() >= 1);
 
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/root/{rootName}/foo/{fooName}/bar", "NOT EMPTY");
-                });
+                },
+                5
+                );
     }
 }
