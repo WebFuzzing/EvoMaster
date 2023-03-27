@@ -92,6 +92,7 @@ class NullableGene(name: String,
     }
 
     override fun getValueAsRawString(): String {
+        //todo double check
         if(!isActive)
             return nullLabel
         return gene.getValueAsRawString()

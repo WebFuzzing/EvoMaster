@@ -55,8 +55,8 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
 
         val ind = if (forceRandomSample) {
             sampleAtRandom()
-        } else if (hasSpecialInit() || randomness.nextBoolean(config.probOfSmartSampling)) {
-            // If there is still special init set, sample from that, otherwise depen on probability
+        } else if ( config.isEnabledSmartSampling() && (hasSpecialInit() ||  randomness.nextBoolean(config.probOfSmartSampling))) {
+            // If there is still special init set, sample from that, otherwise depend on probability
             smartSample()
         } else {
             sampleAtRandom()

@@ -79,7 +79,7 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
         handleResponseTargets(fv, actions, webResults, dto.additionalInfoList)
 
 
-        if (config.baseTaintAnalysisProbability > 0) {
+        if (config.isEnabledTaintAnalysis()) {
             Lazy.assert { webResults.size == dto.additionalInfoList.size }
             TaintAnalysis.doTaintAnalysis(individual, dto.additionalInfoList, randomness, config.enableSchemaConstraintHandling)
         }

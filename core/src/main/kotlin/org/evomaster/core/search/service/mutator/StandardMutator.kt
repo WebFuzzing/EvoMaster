@@ -47,31 +47,34 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
     override fun doesStructureMutation(evaluatedIndividual: EvaluatedIndividual<T>): Boolean {
 
-        val prob = when (config.structureMutationProbStrategy) {
-            EMConfig.StructureMutationProbStrategy.SPECIFIED -> config.structureMutationProbability
-            EMConfig.StructureMutationProbStrategy.SPECIFIED_FS -> if (apc.doesFocusSearch()) config.structureMutationProFS else config.structureMutationProbability
-            EMConfig.StructureMutationProbStrategy.DPC_TO_SPECIFIED_BEFORE_FS -> apc.getExploratoryValue(
-                config.structureMutationProbability,
-                config.structureMutationProFS
-            )
-            EMConfig.StructureMutationProbStrategy.DPC_TO_SPECIFIED_AFTER_FS -> apc.getDPCValue(
-                config.structureMutationProbability,
-                config.structureMutationProFS,
-                config.focusedSearchActivationTime,
-                1.0
-            )
-            EMConfig.StructureMutationProbStrategy.ADAPTIVE_WITH_IMPACT -> {
-                if (!apc.doesFocusSearch()) config.structureMutationProbability
-                else {
-                    val impact = (evaluatedIndividual.impactInfo ?: throw IllegalStateException("lack of impact info"))
-                    if (impact.impactsOfStructure.recentImprovement()
-                        || impact.impactsOfStructure.sizeImpact.recentImprovement()
-                        || (impact is ResourceImpactOfIndividual && (impact.resourceSizeImpact.any { it.value.recentImprovement() } || impact.sqlTableSizeImpact.any { it.value.recentImprovement() }))
-                    ) config.structureMutationProbability
-                    else 0.0
+        val prob = if(config.isMIO()){
+            when (config.structureMutationProbStrategy) {
+                EMConfig.StructureMutationProbStrategy.SPECIFIED -> config.structureMutationProbability
+                EMConfig.StructureMutationProbStrategy.SPECIFIED_FS -> if (apc.doesFocusSearch()) config.structureMutationProFS else config.structureMutationProbability
+                EMConfig.StructureMutationProbStrategy.DPC_TO_SPECIFIED_BEFORE_FS -> apc.getExploratoryValue(
+                    config.structureMutationProbability,
+                    config.structureMutationProFS
+                )
+                EMConfig.StructureMutationProbStrategy.DPC_TO_SPECIFIED_AFTER_FS -> apc.getDPCValue(
+                    config.structureMutationProbability,
+                    config.structureMutationProFS,
+                    config.focusedSearchActivationTime,
+                    1.0
+                )
+                EMConfig.StructureMutationProbStrategy.ADAPTIVE_WITH_IMPACT -> {
+                    if (!apc.doesFocusSearch()) config.structureMutationProbability
+                    else {
+                        val impact = (evaluatedIndividual.impactInfo ?: throw IllegalStateException("lack of impact info"))
+                        if (impact.impactsOfStructure.recentImprovement()
+                            || impact.impactsOfStructure.sizeImpact.recentImprovement()
+                            || (impact is ResourceImpactOfIndividual && (impact.resourceSizeImpact.any { it.value.recentImprovement() } || impact.sqlTableSizeImpact.any { it.value.recentImprovement() }))
+                        ) config.structureMutationProbability
+                        else 0.0
+                    }
                 }
             }
-        }
+        }else
+            config.structureMutationProbability
 
         return structureMutator.canApplyStructureMutator(evaluatedIndividual.individual) &&
 //                (config.maxTestSize > 1) && // if the maxTestSize is 1, there is no point to do structure mutation
@@ -99,7 +102,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         }
         val mutated = mutableListOf<Gene>()
 
-        if (!config.weightBasedMutationRate) {
+        if (!config.isEnabledWeightBasedMutation()) {
             val p = 1.0 / max(1, individual.seeGenes(filterN).filter { genesToMutate.contains(it) }.size)
             while (mutated.isEmpty()) {
                 genesToMutate.forEach { g ->
@@ -108,7 +111,9 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                 }
             }
         } else {
-            val enableAPC = config.weightBasedMutationRate && archiveGeneSelector.applyArchiveSelection()
+            val enableAPC = config.isEnabledWeightBasedMutation()
+                    && archiveGeneSelector.applyArchiveSelection()
+
             val noSQLGenes = individual.seeGenes(NO_SQL).filter { genesToMutate.contains(it) }
             val sqlGenes = genesToMutate.filterNot { noSQLGenes.contains(it) }
             while (mutated.isEmpty()) {
@@ -228,7 +233,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             val adaptive = randomness.nextBoolean(config.probOfArchiveMutation)
 
             // enable weight based mutation when mutating gene
-            val enableWGS = config.weightBasedMutationRate && config.enableWeightBasedMutationRateSelectionForGene
+            val enableWGS = config.isEnabledWeightBasedMutation() && config.enableWeightBasedMutationRateSelectionForGene
             // enable gene selection when mutating gene, eg, ObjectGene
             val enableAGS = enableWGS && adaptive && config.isEnabledArchiveGeneSelection()
             // enable gene mutation based on history
@@ -251,7 +256,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             )
 
             // plugin seeding response here
-            val mutated = harvestResponseHandler.harvestExistingGeneBasedOn(gene, config.probOfMutatingResponsesBasedOnActualResponse)
+            val mutated = config.isEnabledMutatingResponsesBasedOnActualResponse() && harvestResponseHandler.harvestExistingGeneBasedOn(gene, config.probOfMutatingResponsesBasedOnActualResponse)
 
             if (!mutated)
                 gene.standardMutation(
