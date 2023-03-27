@@ -26,11 +26,12 @@ class AuthZeroJacksonEMTest: SpringTestBase() {
         // Generated test has response which is accurate, but test fails because the
         // SUT throws error for the case which worked during the search.
         // When the created tests set to false, the test pass.
+        // SUT uses HTTPS so the test won't work on macOS.
         runTestHandlingFlakyAndCompilation(
             "GeneratedAuthZeroJacksonEMTest",
             "org.foo.GeneratedAuthZeroJacksonEMTest",
             1000,
-            false,
+            !CIUtils.isRunningGA(),
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")

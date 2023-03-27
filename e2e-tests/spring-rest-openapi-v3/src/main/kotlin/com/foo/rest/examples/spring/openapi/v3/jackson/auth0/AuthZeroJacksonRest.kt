@@ -13,7 +13,7 @@ class AuthZeroJacksonRest {
     @GetMapping(path = ["/auth"])
     fun get(): ResponseEntity<String> {
         return try {
-            val domain = "www.doesnotexistfoo.org:9000"
+            val domain = "www.doesnotexistfoo.org"
             val audience = String.format("https://%s/api/v2/", domain)
             val authClient = AuthAPI(domain, "foo", "123")
 
