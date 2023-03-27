@@ -30,7 +30,7 @@ class AuthZeroJacksonEMTest: SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "GeneratedAuthZeroJacksonEMTest",
             "org.foo.GeneratedAuthZeroJacksonEMTest",
-            1000,
+            500,
             !CIUtils.isRunningGA(),
             { args: MutableList<String> ->
 

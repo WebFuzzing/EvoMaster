@@ -13,14 +13,17 @@ class AuthZeroJacksonRest {
     @GetMapping(path = ["/auth"])
     fun get(): ResponseEntity<String> {
         return try {
-            val domain = "www.doesnotexistfoo.org"
+            val domain = "www.doesnotexistfoo.org:12345"
             val audience = String.format("https://%s/api/v2/", domain)
             val authClient = AuthAPI(domain, "foo", "123")
 
             val tokenHolder = authClient.requestToken(audience).execute()
-            return ResponseEntity.status(200).body("Working")
+            if (tokenHolder.expiresIn > 0) {
+                return ResponseEntity.status(200).body("Working")
+            }
+            return ResponseEntity.status(500).body("Failed")
         } catch (e: Exception) {
-            return ResponseEntity.status(400).build()
+            return ResponseEntity.status(500).build()
         }
     }
 }
