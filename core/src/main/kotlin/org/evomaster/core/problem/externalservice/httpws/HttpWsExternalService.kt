@@ -111,9 +111,19 @@ class HttpWsExternalService(
 
     /**
      * Return the running port of WireMock instance
+     * port() is the method to get WireMock port information.
+     * But if the WireMock is not running this will throw an exception.
+     *
+     * This method used under the TestSuiteWriter, at that point most likely
+     * respective WireMock won't be running.
+     *
+     * Since WireMock port heavily rely on the externalServiceInfo, assumed that
+     * there will be no side effects.
+     *
+     * portNumber() in options will give the default value.
      */
     fun getWireMockPort(): Int {
-        return wireMockServer!!.options.portNumber()
+        return externalServiceInfo.remotePort
     }
 
     fun getWireMockServer(): WireMockServer {
