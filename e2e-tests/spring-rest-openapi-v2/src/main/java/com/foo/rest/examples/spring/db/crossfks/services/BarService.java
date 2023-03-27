@@ -12,6 +12,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 @RestController
+@RequestMapping(path = "/api/root")
 public class BarService {
 
     @Autowired
@@ -20,7 +21,7 @@ public class BarService {
     @Autowired
     private RootRepository rootRepository;
 
-    @RequestMapping(value = "/root/{rootName}/bar/{barName}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON)
+    @RequestMapping(value = "/{rootName}/bar/{barName}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON)
     public String getRoot(@PathVariable("rootName") String rootName, @PathVariable("barName") String barName) {
         BarTableEntity found = barRepository.findBarTableEntityByRootTableEntityNameAndName(rootName, barName);
         if (found == null)
@@ -28,7 +29,7 @@ public class BarService {
         return found.getName();
     }
 
-    @RequestMapping(value = "/root/{rootName}/bar/{barName}", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON)
+    @RequestMapping(value = "/{rootName}/bar/{barName}", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON)
     public Response createFoo(@PathVariable("rootName") String rootName, @PathVariable("barName") String barName) {
         RootTableEntity root = rootRepository.findByName(rootName);
 

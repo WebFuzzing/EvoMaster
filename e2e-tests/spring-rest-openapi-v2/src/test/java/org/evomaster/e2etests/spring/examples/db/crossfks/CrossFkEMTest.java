@@ -51,7 +51,7 @@ public class CrossFkEMTest extends SpringTestBase {
 
                     assertTrue(solution.getIndividuals().size() >= 1);
 
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/root/{rootName}/foo/{fooName}/bar", "NOT EMPTY");
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/root/{rootName}/foo/{fooName}/bar", "NOT EMPTY");
                 },
                 5
                 );

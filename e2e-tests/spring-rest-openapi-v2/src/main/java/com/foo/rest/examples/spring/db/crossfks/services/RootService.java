@@ -13,13 +13,14 @@ import javax.ws.rs.core.Response;
 
 
 @RestController
+@RequestMapping(path = "/api/root")
 public class RootService {
 
     @Autowired
     private RootRepository rootRepository;
 
 
-    @RequestMapping(value = "/root/{rootName}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON)
+    @RequestMapping(value = "/{rootName}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON)
     public String getRoot(@PathVariable("rootName") String rootName) {
         RootTableEntity found = rootRepository.findByName(rootName);
         if (found == null)
@@ -27,7 +28,7 @@ public class RootService {
         return found.getName();
     }
 
-    @RequestMapping(value = "/root/{rootName}", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON)
+    @RequestMapping(value = "/{rootName}", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON)
     public Response createFoo(@PathVariable("rootName") String rootName) {
         RootTableEntity root = new RootTableEntity();
         root.setName(rootName);

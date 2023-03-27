@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @RestController
+@RequestMapping(path = "/api/root")
 public class FooService {
 
     @Autowired
@@ -23,7 +24,7 @@ public class FooService {
     private RootRepository rootRepository;
 
 
-    @RequestMapping(value = "/root/{rootName}/foo/{fooName}/bar", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON)
+    @RequestMapping(value = "/{rootName}/foo/{fooName}/bar", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON)
     public String getFooActivatedBars(@PathVariable("rootName") String rootName, @PathVariable("fooName") String fooName) {
         FooTableEntity nodeC = fooRepository.findNodeCTableEntitiesByRootTableEntityNameAndName(rootName, fooName);
         List<String> nodeBNames = new ArrayList<String>();
@@ -36,7 +37,7 @@ public class FooService {
 
     }
 
-    @RequestMapping(value = "/root/{rootName}/foo/{fooName}", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON)
+    @RequestMapping(value = "/{rootName}/foo/{fooName}", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON)
     public Response createFoo(@PathVariable("rootName") String rootName, @PathVariable("fooName") String fooName) {
         RootTableEntity root = rootRepository.findByName(rootName);
 
@@ -47,7 +48,7 @@ public class FooService {
         return Response.status(201).build();
     }
 
-    @RequestMapping(value = "/root/{rootName}/foo/{fooName}/bar/{barName}", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON)
+    @RequestMapping(value = "/{rootName}/foo/{fooName}/bar/{barName}", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON)
     public Response addBarFromFoo(@PathVariable("rootName") String rootName, @PathVariable("fooName") String fooName, @PathVariable("barName") String barName) {
         FooTableEntity foo = fooRepository.findNodeCTableEntitiesByRootTableEntityNameAndName(rootName, fooName);
         if (foo.hasActiveBars(barName))
