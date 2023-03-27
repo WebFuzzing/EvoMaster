@@ -24,10 +24,10 @@ public class FooService {
 
 
     @RequestMapping(value = "/root/{rootName}/foo/{fooName}/bar", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON)
-    public String getFooActivedBars(@PathVariable("rootName") String rootName, @PathVariable("fooName") String fooName) {
+    public String getFooActivatedBars(@PathVariable("rootName") String rootName, @PathVariable("fooName") String fooName) {
         FooTableEntity nodeC = fooRepository.findNodeCTableEntitiesByRootTableEntityNameAndName(rootName, fooName);
         List<String> nodeBNames = new ArrayList<String>();
-        for (BarTableEntity nodeB : nodeC.getActivedBars()) {
+        for (BarTableEntity nodeB : nodeC.getActivatedBars()) {
             nodeBNames.add(nodeB.getName());
         }
         if (nodeBNames.isEmpty())

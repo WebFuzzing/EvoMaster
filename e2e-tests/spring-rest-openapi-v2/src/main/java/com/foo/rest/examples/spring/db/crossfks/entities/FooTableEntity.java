@@ -24,10 +24,10 @@ public class FooTableEntity {
     RootTableEntity rootTableEntity;
 
     @ManyToMany(fetch = FetchType.EAGER)
-    Set<BarTableEntity> activedBarTableEntities = new HashSet<BarTableEntity>();
+    Set<BarTableEntity> activatedBarTableEntities = new HashSet<BarTableEntity>();
 
-    public Set<BarTableEntity> getActivedBars() {
-        return activedBarTableEntities;
+    public Set<BarTableEntity> getActivatedBars() {
+        return activatedBarTableEntities;
     }
 
     public Set<String> availableBars() {
@@ -59,8 +59,8 @@ public class FooTableEntity {
         this.rootTableEntity = rootTableEntity;
     }
 
-    public Set<String> activedBars() {
-        return collectBarNames(activedBarTableEntities);
+    public Set<String> activatedBars() {
+        return collectBarNames(activatedBarTableEntities);
     }
 
     public Boolean isValid() {
@@ -72,12 +72,12 @@ public class FooTableEntity {
     }
 
     public void active(BarTableEntity barTableEntity) {
-        activedBarTableEntities.add(barTableEntity);
+        activatedBarTableEntities.add(barTableEntity);
 
     }
 
-    public void deactive(BarTableEntity barTableEntity) {
-        activedBarTableEntities.remove(barTableEntity);
+    public void deactivate(BarTableEntity barTableEntity) {
+        activatedBarTableEntities.remove(barTableEntity);
     }
 
     public void active(String barName) {
@@ -85,12 +85,12 @@ public class FooTableEntity {
         active(barTableEntity);
     }
 
-    public void deactive(String barName) {
+    public void deactivate(String barName) {
         BarTableEntity barTableEntity = rootTableEntity.findRootBarByName(barName);
-        deactive(barTableEntity);
+        deactivate(barTableEntity);
     }
 
     public boolean hasActiveBars(String barName) {
-        return activedBars().contains(barName);
+        return activatedBars().contains(barName);
     }
 }

@@ -23,9 +23,6 @@ public class BarTableEntity {
     @ManyToOne
     RootTableEntity rootTableEntity;
 
-    @JsonIgnore
-    @ManyToMany(mappedBy = "activedBarTableEntities")
-    Set<FooTableEntity> inNodeC;
 
     public static BarTableEntity withName(RootTableEntity rootTableEntity, String barName) {
         BarTableEntity barTableEntity = new BarTableEntity();
