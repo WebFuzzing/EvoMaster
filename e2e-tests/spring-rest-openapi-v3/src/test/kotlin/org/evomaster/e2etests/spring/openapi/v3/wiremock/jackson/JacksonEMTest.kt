@@ -42,7 +42,7 @@ class JacksonEMTest {
                 args.add("--externalServiceIPSelectionStrategy")
                 args.add("USER")
                 args.add("--externalServiceIP")
-                args.add("127.0.0.2")
+                args.add("127.0.0.6")
                 args.add("--instrumentMR_NET")
                 args.add("true")
 
