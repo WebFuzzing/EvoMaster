@@ -39,6 +39,7 @@ class JacksonEMTest : SpringTestBase() {
 
             Assertions.assertTrue(solution.individuals.size >= 1)
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/jackson/generic", "Working")
+            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/jackson/byte/{s}", "Working")
         }
     }
 }
