@@ -394,8 +394,11 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
     public static <T> T readValue(Object caller, String content, @ThirdPartyCast(actualType = "com.fasterxml.jackson.core.type.TypeReference") Object valueTypeRef) throws Throwable {
         Objects.requireNonNull(caller);
 
-        ClassToSchema.registerSchemaIfNeeded(valueTypeRef.getClass());
-        JsonTaint.handlePossibleJsonTaint(content, valueTypeRef.getClass());
+        String className = valueTypeRef.getClass().getName();
+        if (!className.contains("AbstractOpenApiResource")) {
+            ClassToSchema.registerSchemaIfNeeded(valueTypeRef.getClass());
+            JsonTaint.handlePossibleJsonTaint(content, valueTypeRef.getClass());
+        }
 
         Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_String_TypeReference_class", caller);
 

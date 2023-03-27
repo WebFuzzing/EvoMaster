@@ -24,7 +24,7 @@ class AuthZeroJacksonEMTest: SpringTestBase() {
     @Test
     fun testRunEM() {
         // Generated test has response which is accurate, but test fails because the
-        // SUT throws error.
+        // SUT throws error for the case which worked during the search.
         // When the created tests set to false, the test pass.
         runTestHandlingFlakyAndCompilation(
             "GeneratedAuthZeroJacksonEMTest",
