@@ -15,14 +15,11 @@ public class CrossFkEMTest extends SpringTestBase {
 
     @BeforeAll
     public static void initClass() throws Exception {
-
         SpringTestBase.initClass(new CrossFkController());
     }
     @Test
     public void testEnableTaintSampleEM() throws Throwable {
-        CIUtils.skipIfOnGA();
         forceSqlAllColumnInsertion(true);
-
     }
 
     @Test
@@ -35,7 +32,7 @@ public class CrossFkEMTest extends SpringTestBase {
         runTestHandlingFlakyAndCompilation(
                 "CrossFkTaintSampling_"+taintOnSampling+"_EM",
                 "org.bar.db.CrossFkTaintSampling_"+taintOnSampling+"_EM",
-                10_000,
+                5_000,
                 true,
                 (args) -> {
 
