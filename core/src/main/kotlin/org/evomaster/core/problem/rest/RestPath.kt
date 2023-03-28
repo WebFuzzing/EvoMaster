@@ -223,7 +223,7 @@ class RestPath(path: String) {
         }
 
         return (0 until this.elements.size).all {
-            val index = other.elements.indexOfFirst { e-> e == other.elements[it] }
+            val index = other.elements.indexOfFirst { e-> e == this.elements[it] }
             index >= 0 && index >= it
         }
     }
