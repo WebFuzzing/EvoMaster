@@ -274,7 +274,7 @@ class ResourceManageService {
         if(dbActions.isNotEmpty()){
             //FIXME cannot repair before it is mounted
             var removed = false; //repairDbActionsForResource(dbActions)
-            call.initDbActions(dbActions, cluster, false, removed, bindWith = null)
+            call.initDbActions(dbActions, cluster, false, removed, randomness, bindWith = null)
             removed = !repairDbActionsForResource(dbActions) // FIXME
             if(removed){
                 call.resetDbAction(dbActions)
