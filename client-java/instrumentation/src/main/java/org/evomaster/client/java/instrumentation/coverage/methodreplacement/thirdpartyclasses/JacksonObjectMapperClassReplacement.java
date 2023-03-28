@@ -13,7 +13,6 @@ import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.Objects;
 import java.util.stream.Collectors;
