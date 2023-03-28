@@ -96,7 +96,7 @@ class SqlMultiPointGene(
         if (other !is SqlMultiPointGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        this.points.copyValueFrom(other.points)
+        return this.points.copyValueFrom(other.points)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

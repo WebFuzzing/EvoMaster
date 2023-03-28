@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene.sql
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
@@ -92,10 +93,18 @@ class SqlRangeGene<T>(
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
 
-        isLeftClosed.copyValueFrom(other.isLeftClosed)
-        left.copyValueFrom(other.left as Gene)
-        right.copyValueFrom(other.right as Gene)
-        isRightClosed.copyValueFrom(other.isRightClosed)
+        val current = copy()
+        val ok = isLeftClosed.copyValueFrom(other.isLeftClosed) &&
+            left.copyValueFrom(other.left as Gene) &&
+            right.copyValueFrom(other.right as Gene) &&
+            isRightClosed.copyValueFrom(other.isRightClosed)
+
+        if (!ok || !isLocallyValid()){
+            Lazy.assert { copyValueFrom(current) }
+            return false
+        }
+
+        return true
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

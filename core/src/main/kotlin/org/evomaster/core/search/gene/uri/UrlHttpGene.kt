@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene.uri
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.ArrayGene
@@ -84,10 +85,18 @@ class UrlHttpGene(
         if (other !is UrlHttpGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        scheme.copyValueFrom(other.scheme)
-        host.copyValueFrom(other.host)
-        port.copyValueFrom(other.port)
-        path.copyValueFrom(other.path)
+        val current = copy()
+        val ok = scheme.copyValueFrom(other.scheme) &&
+                host.copyValueFrom(other.host) &&
+                port.copyValueFrom(other.port) &&
+                path.copyValueFrom(other.path)
+
+        if (!ok || !isLocallyValid()){
+            Lazy.assert { copyValueFrom(current) }
+            return false
+        }
+
+        return true
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

@@ -80,7 +80,7 @@ class SqlJSONGene(name: String,
         if (other !is SqlJSONGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        this.objectGene.copyValueFrom(other.objectGene)
+        return this.objectGene.copyValueFrom(other.objectGene)
     }
 
     /**

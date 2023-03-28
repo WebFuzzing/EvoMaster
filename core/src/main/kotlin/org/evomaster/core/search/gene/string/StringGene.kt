@@ -778,7 +778,7 @@ class StringGene(
 
         if (!isLocallyValid()){
             this.value = current
-            return
+            return false
         }
         this.selectedSpecialization = other.selectedSpecialization
 
@@ -792,6 +792,8 @@ class StringGene(
 
         this.bindingIds.clear()
         this.bindingIds.addAll(other.bindingIds)
+
+        return true
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

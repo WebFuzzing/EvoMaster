@@ -92,7 +92,7 @@ class SqlMultiPathGene(
         if (other !is SqlMultiPathGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        this.paths.copyValueFrom(other.paths)
+        return this.paths.copyValueFrom(other.paths)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

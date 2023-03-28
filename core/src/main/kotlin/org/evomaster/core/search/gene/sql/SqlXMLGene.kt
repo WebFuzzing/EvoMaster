@@ -71,7 +71,7 @@ class SqlXMLGene(name: String,
         if (other !is SqlXMLGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        this.objectGene.copyValueFrom(other.objectGene)
+        return this.objectGene.copyValueFrom(other.objectGene)
     }
 
     /**

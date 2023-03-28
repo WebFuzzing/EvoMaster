@@ -67,7 +67,7 @@ class SqlMultiRangeGene<T>(
         if (other !is SqlMultiRangeGene<*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        this.rangeGenes.copyValueFrom(other.rangeGenes)
+        return this.rangeGenes.copyValueFrom(other.rangeGenes)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

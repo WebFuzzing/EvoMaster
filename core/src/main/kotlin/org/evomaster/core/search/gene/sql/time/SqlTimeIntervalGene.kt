@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene.sql.time
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.root.CompositeFixedGene
@@ -68,8 +69,15 @@ class SqlTimeIntervalGene(
         if (other !is SqlTimeIntervalGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        this.days.copyValueFrom(other.days)
-        this.time.copyValueFrom(other.time)
+        val current = copy()
+        val ok = this.days.copyValueFrom(other.days)
+                && this.time.copyValueFrom(other.time)
+
+        if (!ok || !isLocallyValid()){
+            Lazy.assert { copyValueFrom(current) }
+            return false
+        }
+        return true
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

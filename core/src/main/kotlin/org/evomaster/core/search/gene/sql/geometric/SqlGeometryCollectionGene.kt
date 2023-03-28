@@ -85,7 +85,7 @@ class SqlGeometryCollectionGene(
         if (other !is SqlGeometryCollectionGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        this.elements.copyValueFrom(other.elements)
+        return this.elements.copyValueFrom(other.elements)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

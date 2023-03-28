@@ -136,14 +136,10 @@ open class DateTimeGene(
         if (other !is DateTimeGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        val curDate = this.date.copy()
-        val okDate = this.date.copyValueFrom(other.date)
-        if (!okDate)
-            return false
-
-        val okTime = this.time.copyValueFrom(other.time)
-        if (!okTime){
-            Lazy.assert { this.date.copyValueFrom(curDate) }
+        val current = copy()
+        val ok = this.date.copyValueFrom(other.date) && this.time.copyValueFrom(other.time)
+        if (!ok || !isLocallyValid()){
+            Lazy.assert { copyValueFrom(current) }
             return false
         }
 

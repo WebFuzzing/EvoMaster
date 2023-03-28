@@ -100,9 +100,14 @@ class TaintedArrayGene(
         if(other !is TaintedArrayGene){
             throw IllegalArgumentException("Other is not a TaintedArray: ${other::class.java}")
         }
+
+        val ok = this.arrayGene?.copyValueFrom(other.arrayGene!!)?:true
+        if (!ok) return false
+
         this.taintedValue = other.taintedValue
         this.isActive = other.isActive
-        this.arrayGene?.copyValueFrom(other.arrayGene!!)
+
+        return true
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

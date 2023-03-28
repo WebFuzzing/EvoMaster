@@ -72,7 +72,7 @@ class SqlPrimaryKeyGene(name: String,
         if (other !is SqlPrimaryKeyGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        this.gene.copyValueFrom(other.gene)
+        return this.gene.copyValueFrom(other.gene)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

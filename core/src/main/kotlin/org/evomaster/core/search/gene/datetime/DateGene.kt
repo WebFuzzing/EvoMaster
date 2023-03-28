@@ -141,22 +141,11 @@ class DateGene(
                 )
             )
         }
-        val curYear = this.year.copy()
-        val okYear = this.year.copyValueFrom(other.year)
-        if (!okYear)
-            return false
 
-        val curMonth = this.month.copy()
-        val okMonth = this.month.copyValueFrom(other.month)
-        if (!okMonth){
-            Lazy.assert { this.year.copyValueFrom(curYear) }
-            return false
-        }
-
-        val okDay = this.day.copyValueFrom(other.day)
-        if (!okDay){
-            Lazy.assert { this.year.copyValueFrom(curYear) }
-            Lazy.assert { this.month.copyValueFrom(curMonth) }
+        val current = copy()
+        val ok = this.year.copyValueFrom(other.year) && this.month.copyValueFrom(other.month) && this.day.copyValueFrom(other.day)
+        if (!ok || !isLocallyValid()){
+            Lazy.assert { copyValueFrom(current)}
             return false
         }
 

@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene.sql
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
@@ -75,9 +76,16 @@ class SqlLogSeqNumberGene(
         if (other !is SqlLogSeqNumberGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
+        val current = copy()
+        val ok = leftPart.copyValueFrom(other.leftPart)
+                && rightPart.copyValueFrom(other.rightPart)
 
-        leftPart.copyValueFrom(other.leftPart)
-        rightPart.copyValueFrom(other.rightPart)
+
+        if (!ok || !isLocallyValid()){
+            Lazy.assert { copyValueFrom(current) }
+            return false
+        }
+        return true
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

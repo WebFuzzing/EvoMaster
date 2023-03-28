@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.numeric.LongGene
@@ -83,8 +84,15 @@ class UUIDGene(
         if (other !is UUIDGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        this.mostSigBits.copyValueFrom(other.mostSigBits)
-        this.leastSigBits.copyValueFrom(other.leastSigBits)
+        val current = copy()
+        val ok = this.mostSigBits.copyValueFrom(other.mostSigBits) && this.leastSigBits.copyValueFrom(other.leastSigBits)
+
+        if (!ok || !isLocallyValid()){
+            Lazy.assert { copyValueFrom(current) }
+            return false
+        }
+
+        return true
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

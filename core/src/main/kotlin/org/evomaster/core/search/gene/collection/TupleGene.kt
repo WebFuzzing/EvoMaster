@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene.collection
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.graphql.GraphQLUtils
@@ -178,9 +179,18 @@ class TupleGene(
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         assert(elements.size == other.elements.size)
+
+        val current = copy()
+        var ok = true
         (elements.indices).forEach {
-            elements[it].copyValueFrom(other.elements[it])
+            ok = ok && elements[it].copyValueFrom(other.elements[it])
         }
+
+        if (!ok){
+            Lazy.assert { copyValueFrom(current) }
+            return false
+        }
+        return true
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

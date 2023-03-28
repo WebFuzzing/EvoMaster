@@ -1,6 +1,7 @@
 package org.evomaster.core.search.gene.sql
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
+import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
@@ -341,8 +342,19 @@ class SqlMultidimensionalArrayGene<T>(
         if (numberOfDimensions != other.numberOfDimensions) {
             throw IllegalArgumentException("Cannot copy value to array of  $numberOfDimensions dimensions from array of ${other.numberOfDimensions} dimensions")
         }
-        getViewOfChildren()[0].copyValueFrom(other.getViewOfChildren()[0])
+        val ok = getViewOfChildren()[0].copyValueFrom(other.getViewOfChildren()[0])
+
+        if (!ok) return false
+
+        val current = copy()
         this.dimensionSizes = other.dimensionSizes
+
+        if (!isLocallyValid()){
+            Lazy.assert { copyValueFrom(current) }
+            return false
+        }
+
+        return true
     }
 
 

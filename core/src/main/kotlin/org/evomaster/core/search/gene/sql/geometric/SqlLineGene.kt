@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene.sql.geometric
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.search.gene.numeric.FloatGene
@@ -42,8 +43,15 @@ class SqlLineGene(
         if (other !is SqlLineGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        this.p.copyValueFrom(other.p)
-        this.q.copyValueFrom(other.q)
+        val current = copy()
+        val ok = this.p.copyValueFrom(other.p)
+                && this.q.copyValueFrom(other.q)
+
+        if (!ok || !isLocallyValid()){
+            Lazy.assert { copyValueFrom(current) }
+            return false
+        }
+        return true
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

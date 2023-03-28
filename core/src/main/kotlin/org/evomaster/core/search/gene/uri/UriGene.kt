@@ -72,7 +72,7 @@ class UriGene(name: String,
         if (other !is UriGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        gene.copyValueFrom(other.gene)
+        return gene.copyValueFrom(other.gene)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

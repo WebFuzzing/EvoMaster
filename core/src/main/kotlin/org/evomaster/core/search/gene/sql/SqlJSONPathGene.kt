@@ -96,7 +96,7 @@ class SqlJSONPathGene(
         if (other !is SqlJSONPathGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        this.pathExpression.copyValueFrom(other.pathExpression)
+        return this.pathExpression.copyValueFrom(other.pathExpression)
     }
 
     /**
