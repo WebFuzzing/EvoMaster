@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene.datetime
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
@@ -129,7 +130,7 @@ class DateGene(
         }
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is DateGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
@@ -140,9 +141,26 @@ class DateGene(
                 )
             )
         }
-        this.year.copyValueFrom(other.year)
-        this.month.copyValueFrom(other.month)
-        this.day.copyValueFrom(other.day)
+        val curYear = this.year.copy()
+        val okYear = this.year.copyValueFrom(other.year)
+        if (!okYear)
+            return false
+
+        val curMonth = this.month.copy()
+        val okMonth = this.month.copyValueFrom(other.month)
+        if (!okMonth){
+            Lazy.assert { this.year.copyValueFrom(curYear) }
+            return false
+        }
+
+        val okDay = this.day.copyValueFrom(other.day)
+        if (!okDay){
+            Lazy.assert { this.year.copyValueFrom(curYear) }
+            Lazy.assert { this.month.copyValueFrom(curMonth) }
+            return false
+        }
+
+        return true
     }
 
     /**

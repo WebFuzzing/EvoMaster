@@ -71,7 +71,7 @@ class SqlLogSeqNumberGene(
         )
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is SqlLogSeqNumberGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }

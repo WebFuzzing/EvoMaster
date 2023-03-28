@@ -80,7 +80,7 @@ class UrlHttpGene(
         return "$s://$h$p/$e"
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is UrlHttpGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }

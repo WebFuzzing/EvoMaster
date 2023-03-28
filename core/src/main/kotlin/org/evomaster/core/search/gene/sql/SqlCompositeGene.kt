@@ -64,7 +64,7 @@ class SqlCompositeGene(
         })"
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is SqlCompositeGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }

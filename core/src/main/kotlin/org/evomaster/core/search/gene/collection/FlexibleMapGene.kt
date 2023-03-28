@@ -37,7 +37,7 @@ where T : Gene {
         )
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         //TODO
     }
 

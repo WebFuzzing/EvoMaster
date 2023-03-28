@@ -61,7 +61,7 @@ class UriDataGene(
         return "data:$t$b64,$d"
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is UriDataGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }

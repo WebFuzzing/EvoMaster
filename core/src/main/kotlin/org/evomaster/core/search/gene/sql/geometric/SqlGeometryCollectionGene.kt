@@ -81,7 +81,7 @@ class SqlGeometryCollectionGene(
         }
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is SqlGeometryCollectionGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }

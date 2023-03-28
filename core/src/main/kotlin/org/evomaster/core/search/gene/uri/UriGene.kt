@@ -68,7 +68,7 @@ class UriGene(name: String,
         return gene.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is UriGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }

@@ -39,7 +39,7 @@ class FixedMapGene<K, V>(
         )
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is FixedMapGene<*, *>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }

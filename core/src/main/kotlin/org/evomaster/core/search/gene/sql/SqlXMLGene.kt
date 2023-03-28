@@ -67,7 +67,7 @@ class SqlXMLGene(name: String,
 
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is SqlXMLGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }

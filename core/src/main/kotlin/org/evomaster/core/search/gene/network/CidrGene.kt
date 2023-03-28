@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene.network
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.root.CompositeFixedGene
@@ -77,7 +78,7 @@ class CidrGene(
         }
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is CidrGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
@@ -86,9 +87,15 @@ class CidrGene(
                     "cannot bind MacAddrGene${octets.size} with MacAddrGene${other.octets.size}"
             )
         }
+        val current = copy()
+        var ok = true
         repeat(octets.size) {
-            octets[it].copyValueFrom(other.octets[it])
+            ok = ok && octets[it].copyValueFrom(other.octets[it])
         }
+        if (ok)
+            return true
+        Lazy.assert { copyValueFrom(current) }
+        return false
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

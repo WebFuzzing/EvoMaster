@@ -6,7 +6,6 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.interfaces.CollectionGene
-import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.placeholder.LimitObjectGene
 import org.evomaster.core.search.gene.root.CompositeGene
@@ -133,14 +132,15 @@ class ArrayGene<T>(
         return copy
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is ArrayGene<*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
 
         killAllChildren()
         // check maxSize
-        val elements = (if(maxSize!= null && other.elements.size > maxSize!!) other.elements.subList(0, maxSize!!) else other.elements).map { e -> e.copy() as T }.toMutableList()
+        val elements = (if(maxSize!= null && other.elements.size > maxSize!!)
+            other.elements.subList(0, maxSize!!) else other.elements).map { e -> e.copy() as T }.toMutableList()
         // build parents for [element]
         addChildren(elements)
     }

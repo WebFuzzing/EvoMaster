@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene.regex
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.root.CompositeFixedGene
@@ -136,15 +137,25 @@ class DisjunctionRxGene(
                 postfix
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is DisjunctionRxGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
+        val current = this.copy()
+        var ok = true
         for (i in 0 until terms.size) {
-            this.terms[i].copyValueFrom(other.terms[i])
+            ok = ok && this.terms[i].copyValueFrom(other.terms[i])
         }
+
+        if (!ok){
+            Lazy.assert { copyValueFrom(current) }
+            return false
+        }
+
         this.extraPrefix = other.extraPrefix
         this.extraPostfix = other.extraPostfix
+
+        return true
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

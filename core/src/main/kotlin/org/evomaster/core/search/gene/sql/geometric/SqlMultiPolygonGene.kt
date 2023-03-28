@@ -93,7 +93,7 @@ class SqlMultiPolygonGene(
         }
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is SqlMultiPolygonGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }

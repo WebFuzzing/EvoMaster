@@ -696,7 +696,14 @@ abstract class Gene(
     Note: above, null target format means that no characters are escaped.
      */
 
-    abstract fun copyValueFrom(other: Gene)
+    /**
+     * copy value based on [other]
+     * in some case, the [other] might not satisfy constraints of [this gene],
+     * then copying will not be performed successfully
+     *
+     * @return whether the value is copied based on [other] successfully
+     */
+    abstract fun copyValueFrom(other: Gene): Boolean
 
     /**
      * If this gene represents a variable, then return its name.

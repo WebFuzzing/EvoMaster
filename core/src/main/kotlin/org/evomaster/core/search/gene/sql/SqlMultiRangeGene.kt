@@ -63,7 +63,7 @@ class SqlMultiRangeGene<T>(
         } } "
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is SqlMultiRangeGene<*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }

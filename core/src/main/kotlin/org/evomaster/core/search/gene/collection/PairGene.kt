@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene.collection
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.string.StringGene
@@ -60,12 +61,23 @@ class PairGene<F,S>(
 
 
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is PairGene<*, *>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        first.copyValueFrom(other.first)
-        second.copyValueFrom(other.second)
+        val firstCurrent = first.copy()
+        val ok1 = first.copyValueFrom(other.first)
+
+        if (!ok1){
+            return false
+        }
+        val ok2 = second.copyValueFrom(other.second)
+        if (!ok2){
+            Lazy.assert {first.copyValueFrom(firstCurrent) }
+            return false
+        }
+
+        return true
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

@@ -37,11 +37,11 @@ class Base64StringGene(
         return Base64.getEncoder().encodeToString(data.value.toByteArray())
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is Base64StringGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        this.data.copyValueFrom(other.data)
+        return this.data.copyValueFrom(other.data)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

@@ -769,7 +769,7 @@ class StringGene(
         return value
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is StringGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }

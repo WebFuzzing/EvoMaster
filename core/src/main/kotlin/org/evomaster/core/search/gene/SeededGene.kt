@@ -95,7 +95,7 @@ class SeededGene<T>(
             gene.getValueAsPrintableString(mode = mode, targetFormat = targetFormat)
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is SeededGene<*>)
             throw IllegalArgumentException("Invalid gene ${other::class.java}")
         this.employSeeded = other.employSeeded

@@ -79,7 +79,7 @@ class UUIDGene(
 
     fun getValueAsUUID(): UUID = UUID(mostSigBits.value, leastSigBits.value)
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is UUIDGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }

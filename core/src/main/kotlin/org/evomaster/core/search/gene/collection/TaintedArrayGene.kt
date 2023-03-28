@@ -96,7 +96,7 @@ class TaintedArrayGene(
         return arrayGene!!.getValueAsPrintableString(previousGenes,mode,targetFormat,extraCheck)
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if(other !is TaintedArrayGene){
             throw IllegalArgumentException("Other is not a TaintedArray: ${other::class.java}")
         }

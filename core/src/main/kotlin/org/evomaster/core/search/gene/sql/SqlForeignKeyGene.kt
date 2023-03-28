@@ -182,7 +182,7 @@ class SqlForeignKeyGene(
 
     fun isBound() = uniqueIdOfPrimaryKey >= 0
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is SqlForeignKeyGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }

@@ -67,7 +67,7 @@ class SqlPointGene(
         }
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is SqlPointGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }

@@ -68,7 +68,7 @@ class SqlPrimaryKeyGene(name: String,
     }
 
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is SqlPrimaryKeyGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }

@@ -187,7 +187,7 @@ class ObjectGene(
         return additionalFields!!.any { it.first.value == fieldToAdd.first.value}
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is ObjectGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
@@ -195,17 +195,28 @@ class ObjectGene(
         if (other.isFixed != isFixed)
             throw IllegalArgumentException("cannot copy value for ObjectGene if their isFixed is different")
 
+        val current = copy()
+
+        var ok = true
+
         for (i in fixedFields.indices) {
-            this.fixedFields[i].copyValueFrom(other.fixedFields[i])
+            ok = ok && this.fixedFields[i].copyValueFrom(other.fixedFields[i])
         }
 
-        if (isFixed) return
+        if (!ok){
+            Lazy.assert { copyValueFrom(current) }
+            return false
+        }
+
+        if (isFixed) return true
 
         if (!template!!.possiblySame(other.template!!))
             throw IllegalArgumentException("different template ${other.template.javaClass}")
 
 
         //TODO for additional fields
+
+        return true
     }
 
 

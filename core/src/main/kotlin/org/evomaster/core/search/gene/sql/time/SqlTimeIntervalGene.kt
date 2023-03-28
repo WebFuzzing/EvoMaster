@@ -64,7 +64,7 @@ class SqlTimeIntervalGene(
         return "${days.value} days ${time.getValueAsRawString()}"
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is SqlTimeIntervalGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
