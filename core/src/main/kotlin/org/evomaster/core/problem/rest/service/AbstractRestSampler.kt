@@ -291,7 +291,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
     }
 
     override fun hasSpecialInit(): Boolean {
-        return !adHocInitialIndividuals.isEmpty() && config.probOfSmartSampling > 0
+        return adHocInitialIndividuals.isNotEmpty() && config.isEnabledSmartSampling()
     }
 
     /**

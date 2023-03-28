@@ -71,7 +71,7 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
         val rpcActionResults = actionResults.filterIsInstance<RPCCallResult>()
         handleResponseTargets(fv, individual.seeAllActions().filterIsInstance<RPCCallAction>(), rpcActionResults, dto.additionalInfoList)
 
-        if (config.baseTaintAnalysisProbability > 0) {
+        if (config.isEnabledTaintAnalysis()) {
             Lazy.assert { rpcActionResults.size == dto.additionalInfoList.size }
             TaintAnalysis.doTaintAnalysis(individual, dto.additionalInfoList, randomness, config.enableSchemaConstraintHandling)
         }

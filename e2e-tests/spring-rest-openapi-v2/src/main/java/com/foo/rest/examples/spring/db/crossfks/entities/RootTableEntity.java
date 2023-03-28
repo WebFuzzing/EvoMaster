@@ -20,7 +20,7 @@ public class RootTableEntity {
     @OneToMany(mappedBy = "rootTableEntity", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     Set<BarTableEntity> rootBarTableEntities = new HashSet<BarTableEntity>();
 
-    @JsonProperty("nodeBTableDto")
+    @JsonProperty("barTableDto")
     public Set<BarTableEntity> getBarTableDtos() {
         return rootBarTableEntities;
     }

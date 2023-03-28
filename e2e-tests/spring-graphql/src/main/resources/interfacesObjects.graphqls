@@ -1,0 +1,46 @@
+
+type Query {
+    stores: Store
+}
+
+type Store {
+    bouquets : [Bouquet!]!
+}
+
+interface  Bouquet{
+     id: Int!
+    name: String!
+
+}
+
+type FlowerStore implements Bouquet{
+    id: Int!
+    name: String!
+
+}
+
+type PotStore implements Bouquet{
+    id: Int!
+    name: String!
+    address: Address!
+}
+
+interface Address {
+    id: Int!
+    street: String!
+}
+
+type AddressFlower implements Address{
+    id: Int!
+    street: String!
+    nameFlower: String!
+
+
+}
+
+type AddressStore implements Address{
+    id: Int!
+    street: String!
+    nameStore: String!
+
+}

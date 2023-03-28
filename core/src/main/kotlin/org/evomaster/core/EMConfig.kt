@@ -342,7 +342,7 @@ class EMConfig {
         if (doCollectImpact && !enableTrackEvaluatedIndividual)
             throw IllegalArgumentException("Impact collection should be applied together with tracking EvaluatedIndividual")
 
-        if (baseTaintAnalysisProbability > 0 && !useMethodReplacement) {
+        if (isEnabledTaintAnalysis() && !useMethodReplacement) {
             throw IllegalArgumentException("Base Taint Analysis requires 'useMethodReplacement' option")
         }
 
@@ -1877,29 +1877,35 @@ class EMConfig {
         return (hours * 60 * 60) + (minutes * 60) + seconds
     }
 
-    fun trackingEnabled() = enableTrackEvaluatedIndividual || enableTrackIndividual
+    fun trackingEnabled() =  isMIO() && (enableTrackEvaluatedIndividual || enableTrackIndividual)
 
     /**
      * impact info can be collected when archive-based solution is enabled or doCollectImpact
      */
-    fun isEnabledImpactCollection() = algorithm == Algorithm.MIO && doCollectImpact || isEnabledArchiveGeneSelection()
+    fun isEnabledImpactCollection() = isMIO() && doCollectImpact || isEnabledArchiveGeneSelection()
 
     /**
      * @return whether archive-based gene selection is enabled
      */
-    fun isEnabledArchiveGeneSelection() = algorithm == Algorithm.MIO && probOfArchiveMutation > 0.0 && adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE
+    fun isEnabledArchiveGeneSelection() = isMIO() && probOfArchiveMutation > 0.0 && adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE
 
     /**
      * @return whether archive-based gene mutation is enabled based on the configuration, ie, EMConfig
      */
-    fun isEnabledArchiveGeneMutation() = algorithm == Algorithm.MIO && archiveGeneMutation != ArchiveGeneMutation.NONE && probOfArchiveMutation > 0.0
+    fun isEnabledArchiveGeneMutation() = isMIO() && archiveGeneMutation != ArchiveGeneMutation.NONE && probOfArchiveMutation > 0.0
 
     fun isEnabledArchiveSolution() = isEnabledArchiveGeneMutation() || isEnabledArchiveGeneSelection()
+
+
+    /**
+     * @return whether enable resource-based method
+     */
+    fun isEnabledResourceStrategy() = isMIO() && resourceSampleStrategy != ResourceSamplingStrategy.NONE
 
     /**
      * @return whether enable resource-dependency based method
      */
-    fun isEnabledResourceDependency() = probOfSmartSampling > 0.0 && resourceSampleStrategy != ResourceSamplingStrategy.NONE
+    fun isEnabledResourceDependency() = isEnabledSmartSampling() && isEnabledResourceStrategy()
 
     /**
      * @return whether to generate SQL between rest actions
@@ -1925,11 +1931,32 @@ class EMConfig {
         return externalServiceIPSelectionStrategy != ExternalServiceIPSelectionStrategy.NONE
     }
 
-    fun doHarvestActualResponse() : Boolean = probOfHarvestingResponsesFromActualExternalServices > 0 || probOfMutatingResponsesBasedOnActualResponse > 0
 
     private fun extractExcludedTargetsForImpactCollection() : List<String>{
         if (excludeTargetsForImpactCollection.equals("None", ignoreCase = true)) return emptyList()
         val excluded = excludeTargetsForImpactCollection.split(targetSeparator).map { it.lowercase() }.toSet()
         return IdMapper.ALL_ACCEPTED_OBJECTIVE_PREFIXES.filter { excluded.contains(it.lowercase()) }
     }
+
+    fun isEnabledMutatingResponsesBasedOnActualResponse() = isMIO() && (probOfMutatingResponsesBasedOnActualResponse > 0)
+
+    fun doHarvestActualResponse() : Boolean = isMIO() && (probOfHarvestingResponsesFromActualExternalServices > 0 || probOfMutatingResponsesBasedOnActualResponse > 0)
+
+    /**
+     * Check if the used algorithm is MIO.
+     * MIO is the default search algorithm in EM.
+     * Many techniques in EM are defined only for MIO, ie most improvements in EM are
+     * done as an extension of MIO.
+     */
+    fun isMIO() = algorithm == Algorithm.MIO
+
+    fun isEnabledTaintAnalysis() = isMIO() && baseTaintAnalysisProbability > 0
+
+    fun isEnabledSmartSampling() = isMIO() && probOfSmartSampling > 0
+
+    fun isEnabledWeightBasedMutation() = isMIO() && weightBasedMutationRate
+
+    fun isEnabledInitializationStructureMutation() = isMIO() && initStructureMutationProbability > 0 && maxSizeOfMutatingInitAction > 0
+
+    fun isEnabledResourceSizeHandling() = isMIO() && probOfHandlingLength> 0 && maxSizeOfHandlingResource > 0
 }

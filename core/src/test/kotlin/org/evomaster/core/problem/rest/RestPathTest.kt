@@ -438,4 +438,31 @@ internal class RestPathTest{
         assertEquals("/x?a=1+2", uri)
     }
 
+
+    @Test
+    fun testisPossibleAncestorOf(){
+        val rootFooBarPath = RestPath("/root/{rootName}/foo/{fooName}/bar/{barName}")
+        val rootBarPath = RestPath("/root/{rootName}/bar/{barName}")
+        val rootFooPath = RestPath("/root/{rootName}/foo/{fooName}")
+        val rootPath = RestPath("/root/{rootName}")
+
+        assertTrue(rootPath.isPossibleAncestorOf(rootBarPath))
+        assertTrue(rootPath.isPossibleAncestorOf(rootFooPath))
+        assertTrue(rootPath.isPossibleAncestorOf(rootFooBarPath))
+
+        assertTrue(rootBarPath.isPossibleAncestorOf(rootFooBarPath))
+        assertTrue(rootFooPath.isPossibleAncestorOf(rootFooBarPath))
+
+        assertFalse(rootFooPath.isPossibleAncestorOf(rootBarPath))
+        assertFalse(rootBarPath.isPossibleAncestorOf(rootFooPath))
+    }
+
+    @Test
+    fun testIsSibling(){
+        val rootFooBarPath = RestPath("/root/{rootName}/foo/{fooName}/bar/{barName}")
+        val rootFooBar = RestPath("/root/{rootName}/foo/{fooName}/bar")
+        assertTrue(rootFooBarPath.isSibling(rootFooBar))
+        assertTrue(rootFooBar.isSibling(rootFooBarPath))
+    }
+
 }

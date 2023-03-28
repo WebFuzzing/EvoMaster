@@ -1,4 +1,4 @@
-package org.evomaster.e2etests.spring.graphql.functionInReturnedObjectWithPrimitivesAndObjectsAsInput2
+package org.evomaster.e2etests.spring.graphql.functionInReturnedObjectWithPrimitivesAndObjectsAsInputt
 
 import com.foo.graphql.functionInReturnedObjectWithPrimitivesAndObjectsAsInput2.FunctionInReturnedObjectWithPrimitivesAndObjectsAsInputController2
 import org.evomaster.e2etests.spring.graphql.SpringTestBase

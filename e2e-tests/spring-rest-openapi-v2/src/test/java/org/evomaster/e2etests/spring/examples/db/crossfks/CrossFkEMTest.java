@@ -15,20 +15,16 @@ public class CrossFkEMTest extends SpringTestBase {
 
     @BeforeAll
     public static void initClass() throws Exception {
-
         SpringTestBase.initClass(new CrossFkController());
     }
     @Test
     public void testEnableTaintSampleEM() throws Throwable {
-        CIUtils.skipIfOnGA();
         forceSqlAllColumnInsertion(true);
-
     }
 
     @Test
     public void testDisableTaintSampleEM() throws Throwable {
         forceSqlAllColumnInsertion(false);
-
     }
 
 
@@ -36,7 +32,8 @@ public class CrossFkEMTest extends SpringTestBase {
         runTestHandlingFlakyAndCompilation(
                 "CrossFkTaintSampling_"+taintOnSampling+"_EM",
                 "org.bar.db.CrossFkTaintSampling_"+taintOnSampling+"_EM",
-                10_000,
+                5_000,
+                true,
                 (args) -> {
 
                     args.add("--probOfEnablingSingleInsertionForTable");
@@ -51,7 +48,9 @@ public class CrossFkEMTest extends SpringTestBase {
 
                     assertTrue(solution.getIndividuals().size() >= 1);
 
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/root/{rootName}/foo/{fooName}/bar", "NOT EMPTY");
-                });
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/root/{rootName}/foo/{fooName}/bar", "NOT EMPTY");
+                },
+                5
+                );
     }
 }
