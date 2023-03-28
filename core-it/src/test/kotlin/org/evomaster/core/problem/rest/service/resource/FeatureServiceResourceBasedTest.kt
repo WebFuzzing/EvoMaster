@@ -10,7 +10,7 @@ class FeatureServiceResourceBasedTest : ResourceTestBase() {
     }
 
     override fun testInitializedTemplatesForResources() {
-        testSpecificResourceNode("/products", 1, listOf("GET"), true)
+        testSpecificResourceNode("/products", 1, listOf("GET"), false)
 
         /*
          In "/products/{productName}/features", there only exists one GET action.
