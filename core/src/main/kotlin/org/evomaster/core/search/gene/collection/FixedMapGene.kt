@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene.collection
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.optional.FlexibleGene
@@ -43,6 +44,9 @@ class FixedMapGene<K, V>(
         if (other !is FixedMapGene<*, *>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
+
+        val current = copy()
+
         killAllChildren()
         // maxSize
         val copy = (if (maxSize!=null && other.elements.size > maxSize!!)
@@ -51,6 +55,13 @@ class FixedMapGene<K, V>(
                 .map { e -> e.copy() as PairGene<K, V> }
                 .toMutableList()
         addChildren(copy)
+
+        if (!isLocallyValid()){
+            Lazy.assert { copyValueFrom(current) }
+            return false
+        }
+
+        return true
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

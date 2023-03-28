@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene.sql.geometric
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
@@ -57,8 +58,16 @@ class SqlCircleGene(
         if (other !is SqlCircleGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        this.c.copyValueFrom(other.c)
-        this.r.copyValueFrom(other.r)
+
+        val currentC = this.c.copy()
+        val okc = this.c.copyValueFrom(other.c)
+        if (!okc) return false
+        val okr = this.r.copyValueFrom(other.r)
+        if (!okr){
+            Lazy.assert { c.copyValueFrom(currentC) }
+            return false
+        }
+        return true
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

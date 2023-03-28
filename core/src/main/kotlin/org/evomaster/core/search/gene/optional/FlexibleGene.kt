@@ -128,13 +128,26 @@ class FlexibleGene(name: String,
         if (other !is FlexibleGene)
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         if (replaceable){
+
+            if (!other.isLocallyValid())
+                return false
+
+            try {
+                geneCheck(other)
+            }catch (e: Exception){
+                return false
+            }
+
             val replaced = other.gene.copy()
             replaced.resetLocalIdRecursively()
             replaceGeneTo(replaced)
+
         }else{
             // TODO need to refactor
             log.warn("TOCHECK, attempt to copyValueFrom when it is not replaceable")
         }
+
+        return false
 
     }
 

@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene.regex
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.root.CompositeGene
@@ -188,11 +189,21 @@ class QuantifierRxGene(
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
 
+        val current = copy()
+
         if (this.atoms.size == other.atoms.size) {
             //same size, so just copy over the values
+            var ok = true
             for (i in 0 until other.atoms.size) {
-                this.atoms[i].copyValueFrom(other.atoms[i])
+                ok = ok && this.atoms[i].copyValueFrom(other.atoms[i])
             }
+
+            if (!ok){
+                Lazy.assert { copyValueFrom(current) }
+                return false
+            }
+
+            return true
         } else {
             //different size, so clear and create new copies
             this.killAllChildren()
@@ -200,6 +211,13 @@ class QuantifierRxGene(
                 val a = it.copy()
                 this.addChild(a)
             }
+
+            if (!isLocallyValid()){
+                Lazy.assert { copyValueFrom(current) }
+                return false
+            }
+
+            return true
         }
     }
 

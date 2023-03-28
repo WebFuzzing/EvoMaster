@@ -137,12 +137,21 @@ class ArrayGene<T>(
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
 
+        val current = copy()
+
         killAllChildren()
         // check maxSize
         val elements = (if(maxSize!= null && other.elements.size > maxSize!!)
             other.elements.subList(0, maxSize!!) else other.elements).map { e -> e.copy() as T }.toMutableList()
         // build parents for [element]
         addChildren(elements)
+
+        if (!isLocallyValid()){
+            Lazy.assert { copyValueFrom(current) }
+            return false
+        }
+
+        return true
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

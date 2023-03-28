@@ -81,7 +81,7 @@ class RegexGene(
         if(other !is RegexGene){
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        this.disjunctions.copyValueFrom(other.disjunctions)
+        return this.disjunctions.copyValueFrom(other.disjunctions)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

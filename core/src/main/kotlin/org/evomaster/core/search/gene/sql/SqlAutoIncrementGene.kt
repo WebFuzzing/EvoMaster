@@ -40,6 +40,7 @@ class SqlAutoIncrementGene(name: String) : SimpleGene(name) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         //do nothing
+        return true
     }
 
     /**

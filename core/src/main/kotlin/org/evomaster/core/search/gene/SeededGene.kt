@@ -98,12 +98,18 @@ class SeededGene<T>(
     override fun copyValueFrom(other: Gene): Boolean {
         if (other !is SeededGene<*>)
             throw IllegalArgumentException("Invalid gene ${other::class.java}")
-        this.employSeeded = other.employSeeded
-        this.isEmploySeededMutable = other.isEmploySeededMutable
-        if (employSeeded)
+
+        val ok = if (employSeeded)
             this.seeded.copyValueFrom(other.seeded)
         else
             this.gene.copyValueFrom(other.gene as Gene)
+
+        if (!ok) return false
+
+        this.employSeeded = other.employSeeded
+        this.isEmploySeededMutable = other.isEmploySeededMutable
+
+        return true
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

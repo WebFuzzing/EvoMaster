@@ -72,7 +72,7 @@ class SqlBinaryStringGene(
         if (other !is SqlBinaryStringGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        binaryArrayGene.copyValueFrom(other.binaryArrayGene)
+        return binaryArrayGene.copyValueFrom(other.binaryArrayGene)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

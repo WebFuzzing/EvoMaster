@@ -186,7 +186,15 @@ class SqlForeignKeyGene(
         if (other !is SqlForeignKeyGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
+        val current = this.uniqueIdOfPrimaryKey
         this.uniqueIdOfPrimaryKey = other.uniqueIdOfPrimaryKey
+
+        if (!isLocallyValid()){
+            this.uniqueIdOfPrimaryKey = current
+            return false
+        }
+
+        return true
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
