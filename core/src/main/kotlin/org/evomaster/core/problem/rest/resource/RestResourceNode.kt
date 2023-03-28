@@ -125,6 +125,7 @@ open class RestResourceNode(
     fun init(){
         initVerbs()
         initCreationPoints()
+        initTemplates()
         when(initMode){
             InitMode.WITH_TOKEN, InitMode.WITH_DERIVED_DEPENDENCY, InitMode.WITH_DEPENDENCY -> initParamInfo()
             else -> { }
@@ -205,15 +206,16 @@ open class RestResourceNode(
             }
         }
         verbs[verbs.size - 1] = verbs[RestResourceTemplateHandler.getIndexOfHttpVerb(HttpVerb.POST)]
+    }
+
+    private fun initTemplates(){
         if (!verbs[verbs.size - 1]){
-            if(ancestors.isNotEmpty())
-                verbs[verbs.size - 1] = ancestors.any { a -> a.actions.any { ia->  ia.verb == HttpVerb.POST } }
+            verbs[verbs.size - 1] = hasPostCreation()
         }
 
         RestResourceTemplateHandler.initSampleSpaceOnlyPOST(verbs, templates)
 
         assert(templates.isNotEmpty())
-
     }
 
     //if only get
