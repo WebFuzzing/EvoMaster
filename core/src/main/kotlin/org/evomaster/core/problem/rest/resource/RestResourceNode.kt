@@ -963,7 +963,14 @@ data class ParamInfo(
     val involvedAction : MutableSet<HttpVerb> = mutableSetOf(),
     var fromAdditionInfo : Boolean = false
 ){
+
+    /**
+     * @return whether the param is required to refer to other params
+     */
     fun requiredReferToOthers() = probOfReferringToOther == 1.0
 
+    /**
+     * @return whether the param is possibly needed to refer to other params
+     */
     fun possiblyReferToOthers() = probOfReferringToOther > 0.0
 }
