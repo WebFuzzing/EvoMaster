@@ -95,7 +95,7 @@ class SamplerVerifierTest {
 
     private fun skipSchema(path: String) : Boolean{
         return skipDueToMissingPath(path) || skipDueToHashTag(path) || skipDueToQuestionMarkInPath(path) || skipDueToMissingReference(path) || skipDueToUnhandledFormat(path)
-                || skipDueToTimeout(path) || skipDueToException(path)
+                || skipDueToTimeout(path) || skipDueToException(path) || skipDueToUnhandledTypeFormat(path)
     }
 
     // skip MarketPayNotificationService since there does not exist paths, need to check if we update the schema
@@ -135,6 +135,10 @@ class SamplerVerifierTest {
 
     private fun skipDueToUnhandledFormat(path: String): Boolean{
         return path.contains("bungie.net") //uint8
+    }
+
+    private fun skipDueToUnhandledTypeFormat(path: String) : Boolean{
+        return (path.contains("ote-godaddy.com") && path.contains("1.0.0")) // Cannot handle combination null/host-name
     }
 
     /*
