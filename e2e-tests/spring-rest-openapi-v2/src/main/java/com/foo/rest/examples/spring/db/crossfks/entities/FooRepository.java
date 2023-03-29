@@ -6,7 +6,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface FooRepository extends CrudRepository<FooTableEntity, Long> {
 
-    FooTableEntity findNodeCTableEntitiesByRootTableEntityNameAndName(String rootTableEntity_name, String name);
+    FooTableEntity findFooTableEntitiesByRootTableEntityNameAndName(String rootTableEntity_name, String name);
 
 }
 

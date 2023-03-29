@@ -43,6 +43,17 @@ class PostCreationChain(val actions: MutableList<RestCallAction>, private var fa
             a
         }
     }
+
+    fun addActions(index : Int, actionsToAdd: List<RestCallAction>){
+        val added = actionsToAdd.filter { actions.none { e-> e.path.toString() == it.path.toString() } }
+        actions.addAll(index, added)
+    }
+
+    fun hasAction(action : RestCallAction) : Boolean = actions.any { it.path.toString() == action.path.toString() }
+
+    fun prioritizePostChain(){
+        actions.sortBy { it.path.levels() }
+    }
 }
 
 class DBCreationChain(val actions: MutableList<DbAction>) : CreationChain()
