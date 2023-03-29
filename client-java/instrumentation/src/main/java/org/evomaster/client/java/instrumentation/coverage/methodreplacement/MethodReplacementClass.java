@@ -18,9 +18,11 @@ public interface MethodReplacementClass {
     public static final String CONSUME_INSTANCE_METHOD_NAME = "consumeInstance";
 
     /**
-     * The target class in the JDK this class provides replacements for
+     * The target class this class provides replacements for.
+     * This could from the JDK, or a third-party library.
+     * Nota that, based on classloaded, different versions of the same class could be loaded.
      */
-    Class<?> getTargetClass();
+    Class<?> getTargetClass(ClassLoader classLoader);
 
 
     default String getTargetClassName(){

@@ -56,12 +56,6 @@ public abstract class ThirdPartyMethodReplacementClass implements MethodReplacem
     private final Map<String, Constructor> constructors = new HashMap<>();
 
     protected ThirdPartyMethodReplacementClass(){
-
-//        if(! isAvailable()){
-//            //nothing to initialize
-//            return;
-//        }
-        //initMethods();
     }
 
     private  void initMethods() {
@@ -69,7 +63,7 @@ public abstract class ThirdPartyMethodReplacementClass implements MethodReplacem
         Use reflection to load all methods that were replaced.
         This is essential to simplify the writing of the replacement, as those
         must still call the original, but only via reflection (as original third-party
-        library must not included in EvoMaster)
+        library must not be included in EvoMaster)
      */
         Class<? extends ThirdPartyMethodReplacementClass> subclass = this.getClass();
 
