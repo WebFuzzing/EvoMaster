@@ -20,13 +20,21 @@ public interface MethodReplacementClass {
     /**
      * The target class this class provides replacements for.
      * This could from the JDK, or a third-party library.
-     * Nota that, based on classloaded, different versions of the same class could be loaded.
+     * Nota that, based on classloader, different versions of the same class could be loaded.
      */
-    Class<?> getTargetClass(ClassLoader classLoader);
+    default Class<?> getTargetClass(ClassLoader classLoader){
+        return getTargetClass();
+    }
 
+    Class<?> getTargetClass();
 
     default String getTargetClassName(){
-        return getTargetClass().getName();
+        /*
+            default implementation will use classloader that loaded EM instrumentation.
+            this is fine for JDK libraries, but will fail for third-party libraries.
+            however, there, this method is overridden.
+         */
+        return getTargetClass(this.getClass().getClassLoader()).getName();
     }
 
     /**
@@ -34,6 +42,6 @@ public interface MethodReplacementClass {
      * on the classpath
      */
     default boolean isAvailable(){
-        return getTargetClass() != null;
+        return getTargetClass(this.getClass().getClassLoader()) != null;
     }
 }
