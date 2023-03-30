@@ -174,10 +174,4 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
         }
     }
 
-//    private static Class <?> constructType(Object valueTypeRef) {
-//
-//
-//        return Class.forName("java.lang.reflect.Type");
-//    }
-
 }
