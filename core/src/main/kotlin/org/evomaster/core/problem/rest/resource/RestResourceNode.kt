@@ -137,7 +137,7 @@ open class RestResourceNode(
      */
     fun initAncestors(resources : List<RestResourceNode>){
         resources.forEach {r ->
-            if(!r.path.isEquivalent(this.path) && r.path.isPossibleAncestorOf(this.path))
+            if(!r.path.isEquivalent(this.path) && r.path.isDirectOrPossibleAncestorOf(this.path))
                 ancestors.add(r)
             else{
                 if (r.getActionByHttpVerb(HttpVerb.POST) != null)
@@ -290,7 +290,7 @@ open class RestResourceNode(
     }
 
     private fun getSiblingPostAction() : RestCallAction?{
-        return otherPostResourceNode.find { it.path.isSibling(this.path) }?.getActionByHttpVerb(HttpVerb.POST)
+        return otherPostResourceNode.find { it.path.isSiblingForPreparingResource(this.path) }?.getActionByHttpVerb(HttpVerb.POST)
     }
 
     private fun nextCreationPoints(path:RestPath, postCreationChain: PostCreationChain){

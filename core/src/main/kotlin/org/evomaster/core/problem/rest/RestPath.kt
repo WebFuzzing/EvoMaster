@@ -156,13 +156,14 @@ class RestPath(path: String) {
      * /root/{rootName}/foo/{fooName}/bar/{barName}
      * /root/{rootName}/foo/{fooName}/bar are sibling
      *
-     * note that in some cases,
-     *
+     * for instance, two examples might be valid for preparing resources for each other.
+     * POST /root/{rootName}/foo/{fooName}/bar/{barName}
      * GET /root/{rootName}/foo/{fooName}/bar
-     * might need its sibling (eg, /root/{rootName}/foo/{fooName}/bar/{barName})
-     * to prepare resources
+     *
+     * POST /root/{rootName}/foo/{fooName}/bar
+     * GET /root/{rootName}/foo/{fooName}/bar/{barName}
      */
-    fun isSibling(other: RestPath): Boolean {
+    fun isSiblingForPreparingResource(other: RestPath): Boolean {
         val sizeDif = abs(this.elements.size - other.elements.size)
         if (sizeDif != 1) {
             return false
@@ -210,14 +211,14 @@ class RestPath(path: String) {
 
 
     /**
-     * @return whether this is possible ancestor of [other]
+     * @return whether this is direct or possible ancestor of [other]
      *
      * this is to handle the case eg.
-     * /root/{rootName}/bar/{barName} might be considered as
-     * the ancestor of /root/{rootName}/foo/{fooName}/bar/{barName}
+     * /root/{rootName}/bar/{barName} might be the potential
+     * ancestor of /root/{rootName}/foo/{fooName}/bar/{barName}
      *
      */
-    fun isPossibleAncestorOf(other: RestPath): Boolean {
+    fun isDirectOrPossibleAncestorOf(other: RestPath): Boolean {
         if (this.elements.size > other.elements.size) {
             return false
         }
