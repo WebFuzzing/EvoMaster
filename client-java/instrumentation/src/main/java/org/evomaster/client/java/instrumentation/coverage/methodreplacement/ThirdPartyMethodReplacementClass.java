@@ -3,7 +3,6 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
-import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
@@ -197,7 +196,6 @@ public abstract class ThirdPartyMethodReplacementClass implements MethodReplacem
                     This is tricky. We did a method replacement, but the class is not accessible at runtime
                     from the class loader of the instrumentation... so we try it from the caller
              */
-            SimpleLogger.info(obj.getClass().getClassLoader().toString());
             singleton.retryLoadingClass(obj.getClass().getClassLoader());
         }
 

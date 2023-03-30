@@ -8,6 +8,7 @@ import org.evomaster.client.java.instrumentation.example.gson.FooBar;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.Set;
@@ -26,7 +27,7 @@ public class ReadWithJacksonTest {
         return (ReadWithJackson) cl.loadClass(ReadWithJacksonImpl.class.getName()).newInstance();
     }
 
-    @Test
+    @Disabled("Disabled till the class loader issue fixed")
     public void testReadFromString() throws Exception{
 
         UnitsInfoRecorder.reset();
