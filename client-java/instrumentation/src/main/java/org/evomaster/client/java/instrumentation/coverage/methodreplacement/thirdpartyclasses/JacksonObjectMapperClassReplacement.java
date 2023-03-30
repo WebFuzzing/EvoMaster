@@ -67,7 +67,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
             usageFilter = UsageFilter.ANY,
             category = ReplacementCategory.EXT_0)
     public static <T> T readValue(Object caller, InputStream src,
-                                  @ThirdPartyCast(actualType = "com.fasterxml.jackson.databind.JavaType") Object valueType)
+                                  @ThirdPartyCast(actualType = "  com.fasterxml.jackson.databind.JavaType") Object valueType)
             throws Throwable {
         Objects.requireNonNull(caller);
 
@@ -100,7 +100,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
             usageFilter = UsageFilter.ANY,
             category = ReplacementCategory.EXT_0)
     public static <T> T readValue(Object caller, String content,
-                                  @ThirdPartyCast(actualType = "com.fasterxml.jackson.databind.JavaType") Object valueType)
+                                  @ThirdPartyCast(actualType = "  com.fasterxml.jackson.databind.JavaType") Object valueType)
             throws Throwable {
         Objects.requireNonNull(caller);
 
