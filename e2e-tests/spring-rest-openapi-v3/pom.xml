@@ -139,6 +139,12 @@
             <artifactId>wiremock-jre8-standalone</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>com.auth0</groupId>
+            <artifactId>auth0</artifactId>
+        </dependency>
+
     </dependencies>
 
     <build>
