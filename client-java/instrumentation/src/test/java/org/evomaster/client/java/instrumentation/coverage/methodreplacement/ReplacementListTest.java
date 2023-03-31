@@ -48,7 +48,7 @@ class ReplacementListTest {
                 }
 
                 Class[] inputs = m.getParameterTypes();
-                Class<?> targetClass = mrc.getTargetClass();
+                Class<?> targetClass = mrc.getTargetClass(this.getClass().getClassLoader());
                 assertNotNull(targetClass);
 
                 if (r.type() != ReplacementType.TRACKER) {
