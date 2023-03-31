@@ -146,8 +146,11 @@ class QuantifierRxGene(
     override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, selectionStrategy: SubsetGeneMutationSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
         val length = atoms.size
 
-        if (length < min || length > limitedMax)
-            throw IllegalArgumentException("invalid length when mutating Gene ($name). Its length should range from $min to $limitedMax, but it is $length")
+        if (length < min || length > limitedMax){
+            val regexGene = getFirstParent { p -> p is RegexGene } as? RegexGene
+            throw IllegalArgumentException("invalid length when mutating Gene ($name, based on regular expression[${regexGene?.name ?: "none of its parent is RegexGene"}]). Its length should range from $min to $limitedMax, but it is $length")
+        }
+
 
         var remove = length == limitedMax
         var add = length == min
