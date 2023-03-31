@@ -238,7 +238,7 @@ class RestResourceCalls(
     ) {
         // handling [this.dbActions]
         if (this.dbActions.isNotEmpty() && doRemoveDuplicatedTable) {
-            removeDuplicatedDbActions(relatedResourceCalls, cluster, doRemoveDuplicatedTable)
+            removeDuplicatedDbActions(relatedResourceCalls, cluster, doRemoveDuplicatedTable, randomness)
         }
 
         // bind with rest actions
@@ -318,7 +318,8 @@ class RestResourceCalls(
     private fun removeDuplicatedDbActions(
         calls: List<RestResourceCalls>,
         cluster: ResourceCluster,
-        doRemoveDuplicatedTable: Boolean
+        doRemoveDuplicatedTable: Boolean,
+        randomness: Randomness?
     ) {
 
         val dbRelatedToTables =
@@ -344,7 +345,7 @@ class RestResourceCalls(
                                 setDependentCall(frontCall)
                                 // handling rest action binding with the fixed db which is in a different call
                                 if (dbactionInOtherCalls.contains(ddb)) {
-                                    bindRestActionBasedOnDbActions(listOf(ddb), cluster, false, false)
+                                    bindRestActionBasedOnDbActions(listOf(ddb), cluster, false, false, randomness)
                                 }
                             }else{
                                 Lazy.assert { dbActions.contains(ddb) }
@@ -377,6 +378,7 @@ class RestResourceCalls(
         cluster: ResourceCluster,
         forceBindParamBasedOnDB: Boolean,
         dbRemovedDueToRepair: Boolean,
+        randomness: Randomness? = null,
         bindWith: List<RestResourceCalls>? = null
     ) {
         bindWith?.forEach { p ->
@@ -390,7 +392,7 @@ class RestResourceCalls(
         // db action should add in the front of rest actions
         addChildren(0, dbActions)
 
-        bindRestActionBasedOnDbActions(dbActions, cluster, forceBindParamBasedOnDB, dbRemovedDueToRepair)
+        bindRestActionBasedOnDbActions(dbActions, cluster, forceBindParamBasedOnDB, dbRemovedDueToRepair, randomness)
 
     }
 
@@ -398,10 +400,11 @@ class RestResourceCalls(
         dbActions: List<DbAction>,
         cluster: ResourceCluster,
         forceBindParamBasedOnDB: Boolean,
-        dbRemovedDueToRepair: Boolean
+        dbRemovedDueToRepair: Boolean,
+        randomness: Randomness?
     ) {
 
-        val paramInfo = getResourceNode().getPossiblyBoundParams(template!!.template, is2POST)
+        val paramInfo = getResourceNode().getPossiblyBoundParams(template!!.template, is2POST, randomness)
         val paramToTables = SimpleDeriveResourceBinding.generateRelatedTables(paramInfo, this, dbActions)
 
         if (paramToTables.isEmpty()) return

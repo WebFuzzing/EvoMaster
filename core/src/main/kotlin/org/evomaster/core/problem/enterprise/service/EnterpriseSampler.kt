@@ -54,6 +54,7 @@ abstract class EnterpriseSampler<T> : Sampler<T>() where T : Individual {
     fun sampleSqlInsertion(tableName: String, columns: Set<String>): List<DbAction> {
 
         val extraConstraints = randomness.nextBoolean(apc.getExtraSqlDbConstraintsProbability())
+        val enableSingleInsertionForTable = randomness.nextBoolean(config.probOfEnablingSingleInsertionForTable)
 
         val chosenColumns = if(config.forceSqlAllColumnInsertion){
             setOf("*")
@@ -61,7 +62,7 @@ abstract class EnterpriseSampler<T> : Sampler<T>() where T : Individual {
             columns
         }
 
-        val actions = sqlInsertBuilder?.createSqlInsertionAction(tableName, chosenColumns, mutableListOf(),false, extraConstraints)
+        val actions = sqlInsertBuilder?.createSqlInsertionAction(tableName, chosenColumns, mutableListOf(),false, extraConstraints, enableSingleInsertionForTable=enableSingleInsertionForTable)
             ?: throw IllegalStateException("No DB schema is available")
         actions.flatMap{it.seeTopGenes()}.forEach{it.doInitialize(randomness)}
 
