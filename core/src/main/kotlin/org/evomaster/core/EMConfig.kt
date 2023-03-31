@@ -1852,6 +1852,11 @@ class EMConfig {
     @Experimental
     var saveExecutedMainActionInfo = "executedMainActions.txt"
 
+    @Cfg("a probability of enabling single insertion strategy to insert rows into database.")
+    @Experimental
+    @Probability(activating = true)
+    var probOfEnablingSingleInsertionForTable = 0.0
+
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
             return maxTimeInSeconds

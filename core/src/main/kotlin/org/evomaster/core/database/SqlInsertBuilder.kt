@@ -522,7 +522,23 @@ class SqlInsertBuilder(
             /**
              *  whether to use extra constraints identified in the business logic
              */
-            useExtraSqlDbConstraints : Boolean = false
+            useExtraSqlDbConstraints : Boolean = false,
+            /**
+             * whether to enable single insertion for table
+             *
+             * in order to insert one row to the table,
+             * it might need to create its fk tables,
+             * and its fk table might have further fk tables as well.
+             * eg,
+             * D -> B -> A
+             * D -> C -> A
+             * to insert a row to D,
+             * if we do enable single insertion for table,
+             * the insertions will ABCD (C and B refer to the same A)
+             * otherwise, they will be ABACD
+             *
+             */
+            enableSingleInsertionForTable : Boolean = false
     ): List<DbAction> {
 
         history.add(tableName)
@@ -574,15 +590,24 @@ class SqlInsertBuilder(
             }
 
             val pre = if (forceAll) {
-                createSqlInsertionAction(target, setOf("*"), history, true, useExtraSqlDbConstraints)
+                createSqlInsertionAction(target, setOf("*"), history, true, useExtraSqlDbConstraints, enableSingleInsertionForTable)
             } else {
-                createSqlInsertionAction(target, setOf(), history, false, useExtraSqlDbConstraints)
+                createSqlInsertionAction(target, setOf(), history, false, useExtraSqlDbConstraints, enableSingleInsertionForTable)
             }
             actions.addAll(0, pre)
         }
         if (log.isTraceEnabled) {
             log.trace("create insertions and current size is", actions.size)
         }
+
+        if (enableSingleInsertionForTable && actions.size > 1){
+            val removed = actions.filterIndexed { index, dbAction ->
+                (index > 0 && (index < actions.size-1 || actions.size == 2)) && actions.subList(0, index-1).any { a-> a.table.name.equals(dbAction.table.name,ignoreCase = true ) }
+            }
+            if (removed.isNotEmpty())
+                actions.removeAll(removed)
+        }
+
         return actions
     }
 
