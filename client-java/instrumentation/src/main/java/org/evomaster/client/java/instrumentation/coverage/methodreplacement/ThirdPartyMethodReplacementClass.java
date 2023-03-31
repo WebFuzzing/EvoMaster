@@ -102,6 +102,14 @@ public abstract class ThirdPartyMethodReplacementClass implements MethodReplacem
                         reducedInputs[i - start] = klazz;
                 }
             }
+            for(int i=0; i<reducedInputs.length; i++){
+                try {
+                    reducedInputs[i] = loader.loadClass(reducedInputs[i].getName());
+                } catch (ClassNotFoundException e) {
+                    //shouldn't really happen...
+                }
+            }
+
 
             Class<?> targetClass = getTargetClass(loader);
             Method targetMethod;

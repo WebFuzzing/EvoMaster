@@ -27,7 +27,7 @@ public class ReadWithJacksonTest {
         return (ReadWithJackson) cl.loadClass(ReadWithJacksonImpl.class.getName()).newInstance();
     }
 
-    @Disabled("Disabled for now")
+    @Test
     public void testReadFromString() throws Exception{
 
         UnitsInfoRecorder.reset();
