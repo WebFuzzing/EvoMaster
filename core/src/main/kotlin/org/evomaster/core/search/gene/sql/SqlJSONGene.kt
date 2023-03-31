@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene.sql
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.root.CompositeFixedGene
@@ -80,7 +81,15 @@ class SqlJSONGene(name: String,
         if (other !is SqlJSONGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        return this.objectGene.copyValueFrom(other.objectGene)
+        val current = copy()
+        val ok = this.objectGene.copyValueFrom(other.objectGene)
+
+        if (!ok) return false
+        if (!isLocallyValid()){
+            Lazy.assert { copyValueFrom(current) }
+            return false
+        }
+        return true
     }
 
     /**

@@ -203,7 +203,7 @@ class ObjectGene(
             ok = ok && this.fixedFields[i].copyValueFrom(other.fixedFields[i])
         }
 
-        if (!ok){
+        if (!ok || !isLocallyValid()){
             Lazy.assert { copyValueFrom(current) }
             return false
         }

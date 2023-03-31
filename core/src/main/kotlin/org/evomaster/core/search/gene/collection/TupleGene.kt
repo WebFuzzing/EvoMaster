@@ -186,7 +186,7 @@ class TupleGene(
             ok = ok && elements[it].copyValueFrom(other.elements[it])
         }
 
-        if (!ok){
+        if (!ok || !isLocallyValid()){
             Lazy.assert { copyValueFrom(current) }
             return false
         }

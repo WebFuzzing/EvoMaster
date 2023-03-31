@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene.sql
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
@@ -63,7 +64,15 @@ class SqlBitStringGene(
         if (other !is SqlBitStringGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        return booleanArrayGene.copyValueFrom(other.booleanArrayGene)
+        val current = copy()
+        val ok = booleanArrayGene.copyValueFrom(other.booleanArrayGene)
+
+        if (!ok) return false
+        if (!isLocallyValid()){
+            Lazy.assert { copyValueFrom(current) }
+            return false
+        }
+        return true
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

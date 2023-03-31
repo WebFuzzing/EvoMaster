@@ -76,7 +76,7 @@ class SqlCompositeGene(
             ok = ok && this.fields[i].copyValueFrom(other.fields[i])
         }
 
-        if (!ok){
+        if (!ok || !isLocallyValid()){
             Lazy.assert { copyValueFrom(current) }
             return false
         }

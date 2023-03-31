@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene.sql
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
@@ -96,7 +97,15 @@ class SqlJSONPathGene(
         if (other !is SqlJSONPathGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        return this.pathExpression.copyValueFrom(other.pathExpression)
+        val current = copy()
+        val ok = this.pathExpression.copyValueFrom(other.pathExpression)
+
+        if (!ok) return false
+        if (!isLocallyValid()){
+            Lazy.assert { copyValueFrom(current) }
+            return false
+        }
+        return true
     }
 
     /**

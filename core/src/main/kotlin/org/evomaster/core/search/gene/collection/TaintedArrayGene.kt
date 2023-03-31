@@ -1,6 +1,7 @@
 package org.evomaster.core.search.gene.collection
 
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
+import org.evomaster.core.Lazy
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.interfaces.TaintableGene
@@ -101,8 +102,13 @@ class TaintedArrayGene(
             throw IllegalArgumentException("Other is not a TaintedArray: ${other::class.java}")
         }
 
+        val current = copy()
         val ok = this.arrayGene?.copyValueFrom(other.arrayGene!!)?:true
         if (!ok) return false
+        if (!isLocallyValid()) {
+            Lazy.assert { copyValueFrom(current) }
+            return false
+        }
 
         this.taintedValue = other.taintedValue
         this.isActive = other.isActive

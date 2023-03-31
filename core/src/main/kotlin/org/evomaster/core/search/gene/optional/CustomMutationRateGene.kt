@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene.optional
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.gene.Gene
@@ -127,9 +128,15 @@ class CustomMutationRateGene<out T>(
         if (other !is CustomMutationRateGene<*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
+        val current = copy()
         val ok = this.gene.copyValueFrom(other.gene)
         if (!ok)
             return false
+
+        if (!isLocallyValid()){
+            Lazy.assert { copyValueFrom(current) }
+            return false
+        }
 
         this.probability = other.probability
         this.searchPercentageActive = other.searchPercentageActive

@@ -92,10 +92,13 @@ class CidrGene(
         repeat(octets.size) {
             ok = ok && octets[it].copyValueFrom(other.octets[it])
         }
-        if (ok)
-            return true
-        Lazy.assert { copyValueFrom(current) }
-        return false
+        if (!ok || !isLocallyValid()){
+            Lazy.assert { copyValueFrom(current) }
+            return false
+        }
+
+        return true
+
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

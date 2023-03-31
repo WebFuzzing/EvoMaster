@@ -147,7 +147,7 @@ class DisjunctionRxGene(
             ok = ok && this.terms[i].copyValueFrom(other.terms[i])
         }
 
-        if (!ok){
+        if (!ok || !isLocallyValid()){
             Lazy.assert { copyValueFrom(current) }
             return false
         }

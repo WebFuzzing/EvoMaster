@@ -79,7 +79,7 @@ class InetGene(
             ok = ok && octets[it].copyValueFrom(other.octets[it])
         }
 
-        if (!ok){
+        if (!ok || !isLocallyValid()){
             Lazy.assert { copyValueFrom(current) }
             return false
         }

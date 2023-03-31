@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene.string
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
@@ -41,7 +42,15 @@ class Base64StringGene(
         if (other !is Base64StringGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        return this.data.copyValueFrom(other.data)
+        val current = copy()
+        val ok = this.data.copyValueFrom(other.data)
+
+        if (!ok) return false
+        if (!isLocallyValid()){
+            Lazy.assert { copyValueFrom(current) }
+            return false
+        }
+        return true
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

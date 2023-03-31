@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene.uri
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.optional.ChoiceGene
@@ -72,7 +73,15 @@ class UriGene(name: String,
         if (other !is UriGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        return gene.copyValueFrom(other.gene)
+        val current = copy()
+        val ok =  gene.copyValueFrom(other.gene)
+
+        if (!ok) return false
+        if (!isLocallyValid()){
+            Lazy.assert { copyValueFrom(current) }
+            return false
+        }
+        return true
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

@@ -342,11 +342,10 @@ class SqlMultidimensionalArrayGene<T>(
         if (numberOfDimensions != other.numberOfDimensions) {
             throw IllegalArgumentException("Cannot copy value to array of  $numberOfDimensions dimensions from array of ${other.numberOfDimensions} dimensions")
         }
+        val current = copy()
         val ok = getViewOfChildren()[0].copyValueFrom(other.getViewOfChildren()[0])
 
         if (!ok) return false
-
-        val current = copy()
         this.dimensionSizes = other.dimensionSizes
 
         if (!isLocallyValid()){

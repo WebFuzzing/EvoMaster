@@ -198,7 +198,7 @@ class QuantifierRxGene(
                 ok = ok && this.atoms[i].copyValueFrom(other.atoms[i])
             }
 
-            if (!ok){
+            if (!ok || !isLocallyValid()){
                 Lazy.assert { copyValueFrom(current) }
                 return false
             }

@@ -59,12 +59,10 @@ class SqlCircleGene(
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
 
-        val currentC = this.c.copy()
-        val okc = this.c.copyValueFrom(other.c)
-        if (!okc) return false
-        val okr = this.r.copyValueFrom(other.r)
-        if (!okr){
-            Lazy.assert { c.copyValueFrom(currentC) }
+        val current = copy()
+        val ok = this.c.copyValueFrom(other.c) && this.r.copyValueFrom(other.r)
+        if (!ok || !isLocallyValid()){
+            Lazy.assert { copyValueFrom(current) }
             return false
         }
         return true

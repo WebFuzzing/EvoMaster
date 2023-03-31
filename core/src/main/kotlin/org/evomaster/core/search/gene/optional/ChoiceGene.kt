@@ -162,11 +162,12 @@ class ChoiceGene<T>(
                 ok =  ok && this.geneChoices[i].copyValueFrom(other.geneChoices[i])
             }
 
-            if (ok)
-                return true
+            if (!ok || !isLocallyValid()){
+                Lazy.assert { copyValueFrom(current) }
+                return false
+            }
 
-            Lazy.assert { copyValueFrom(current) }
-            return false
+            return true
         }
     }
 
