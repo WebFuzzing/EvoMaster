@@ -16,7 +16,7 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
 
         val disjList = DisjunctionListRxGene(res.genes.map { it as DisjunctionRxGene })
 
-        val gene = RegexGene("regex$text", disjList)
+        val gene = RegexGene("regex $text", disjList)
 
         return VisitResult(gene)
     }

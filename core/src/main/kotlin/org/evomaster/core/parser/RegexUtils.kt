@@ -38,7 +38,7 @@ object RegexUtils {
 
     fun getRegexExpByParserRuleContext(ctx : ParserRuleContext) : String{
         return try {
-            ctx.text.run { ":$this" }
+            ctx.text
         }catch (e : Exception){ // avoid any problem due to retrieval of additional info
             ""
         }

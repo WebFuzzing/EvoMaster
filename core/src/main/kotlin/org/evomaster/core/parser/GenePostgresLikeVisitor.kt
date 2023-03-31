@@ -29,7 +29,7 @@ class GenePostgresLikeVisitor : PostgresLikeBaseVisitor<VisitResult>() {
 
         val text = RegexUtils.getRegexExpByParserRuleContext(ctx)
 
-        val gene = RegexGene("LIKE$text", DisjunctionListRxGene(listOf(disjunction)))
+        val gene = RegexGene("LIKE $text", DisjunctionListRxGene(listOf(disjunction)))
 
         return VisitResult(gene)
     }
