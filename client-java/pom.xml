@@ -37,19 +37,6 @@
         </dependencies>
     </dependencyManagement>
 
-    <dependencies>
-        <dependency>
-            <groupId>org.mongodb</groupId>
-            <artifactId>mongodb-driver-sync</artifactId>
-            <version>4.2.3</version>
-        </dependency>
-        <dependency>
-            <groupId>org.mongodb</groupId>
-            <artifactId>bson</artifactId>
-            <version>4.2.3</version>
-        </dependency>
-    </dependencies>
-
     <build>
         <!--
             When we make a release, the client-java must be published on Maven Central.

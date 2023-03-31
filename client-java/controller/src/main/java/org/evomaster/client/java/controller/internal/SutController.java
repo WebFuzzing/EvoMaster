@@ -369,7 +369,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                                     p.bson.toString(),
                                     p.distance
                             ))
-                    .forEach(h -> dto.mongoHeuristics.add(h));
+                    .forEach(h -> dto.heuristics.add(h));
         }
     }
 

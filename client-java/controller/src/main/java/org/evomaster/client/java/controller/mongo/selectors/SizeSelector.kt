@@ -2,6 +2,9 @@ package org.evomaster.client.java.controller.mongo.selectors
 
 import org.evomaster.client.java.controller.mongo.operations.*
 
+/**
+ * { field: { $size: value } }
+ */
 class SizeSelector : SingleConditionQuerySelector() {
     override fun operator(): String = "\$size"
 

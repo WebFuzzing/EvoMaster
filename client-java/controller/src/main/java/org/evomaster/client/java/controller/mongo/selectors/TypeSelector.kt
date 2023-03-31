@@ -3,6 +3,9 @@ package org.evomaster.client.java.controller.mongo.selectors
 import org.bson.BsonType
 import org.evomaster.client.java.controller.mongo.operations.*
 
+/**
+ * { field: { $type: <BSON type> } }
+ */
 class TypeSelector : SingleConditionQuerySelector() {
     override fun operator(): String = "\$type"
 

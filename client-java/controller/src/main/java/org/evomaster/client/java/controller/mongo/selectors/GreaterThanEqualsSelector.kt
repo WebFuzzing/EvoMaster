@@ -3,6 +3,9 @@ package org.evomaster.client.java.controller.mongo.selectors
 import org.evomaster.client.java.controller.mongo.operations.GreaterThanEqualsOperation
 import org.evomaster.client.java.controller.mongo.operations.QueryOperation
 
+/**
+ * { field: { $gte: value } }
+ */
 class GreaterThanEqualsSelector : SingleConditionQuerySelector() {
     override fun operator(): String {
         return "\$gte"

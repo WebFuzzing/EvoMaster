@@ -3,6 +3,9 @@ package org.evomaster.client.java.controller.mongo.selectors
 import org.bson.Document
 import org.evomaster.client.java.controller.mongo.operations.*
 
+/**
+ * Selectors for operations whose value consist of a single condition
+ */
 abstract class SingleConditionQuerySelector : QuerySelector() {
     override fun getOperation(query: Document): QueryOperation? {
         val fieldName = extractFieldName(query)

@@ -32,6 +32,9 @@ public enum ReplacementCategory {
      */
     NET,
 
+    /**
+     * Replacements to handle MONGO command interceptions
+     */
     MONGO
 
 }

@@ -30,6 +30,10 @@ MongoEMFitnessTest extends RestTestBase {
                 (args) -> {
                     args.add("--enableWeightBasedMutationRateSelectionForGene");
                     args.add("false");
+                    args.add("--heuristicsForMongo");
+                    args.add("true");
+                    args.add("--instrumentMR_MONGO");
+                    args.add("true");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 

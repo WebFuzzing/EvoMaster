@@ -2,6 +2,9 @@ package org.evomaster.client.java.controller.mongo.selectors
 
 import org.evomaster.client.java.controller.mongo.operations.*
 
+/**
+ * { field: { $all: [ <value1> , <value2> ... ] } }
+ */
 class AllSelector : SingleConditionQuerySelector() {
     override fun operator(): String = "\$all"
 

@@ -2,8 +2,11 @@ package org.evomaster.client.java.controller.mongo.selectors
 
 import org.bson.Document
 import org.evomaster.client.java.controller.mongo.operations.*
-import org.evomaster.core.mongo.QueryParser
+import org.evomaster.client.java.controller.mongo.QueryParser
 
+/**
+ * { field: { $not: { <operator-expression> } } }
+ */
 class NotSelector : SingleConditionQuerySelector() {
     override fun operator(): String = "\$not"
 
@@ -13,8 +16,8 @@ class NotSelector : SingleConditionQuerySelector() {
                 // This is necessary for query parser to work correctly as the syntax for not is different
                 // The field is at the beginning instead
                 val docWithRemovedNot = Document().append(fieldName, value)
-                val filter = QueryParser().parse(docWithRemovedNot)
-                return NotOperation(fieldName, filter)
+                val condition = QueryParser().parse(docWithRemovedNot)
+                return NotOperation(fieldName, condition)
             }
             else -> null
         }

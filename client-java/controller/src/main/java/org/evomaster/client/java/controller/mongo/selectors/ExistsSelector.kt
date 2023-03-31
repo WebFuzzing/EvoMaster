@@ -2,6 +2,9 @@ package org.evomaster.client.java.controller.mongo.selectors
 
 import org.evomaster.client.java.controller.mongo.operations.*
 
+/**
+ * { field: { $exists: <boolean> } }
+ */
 class ExistsSelector : SingleConditionQuerySelector() {
     override fun operator(): String = "\$exists"
 

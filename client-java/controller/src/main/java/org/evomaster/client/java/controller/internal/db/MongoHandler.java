@@ -15,24 +15,33 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * Class used to act upon Mongo commands executed by the SUT
  */
 public class MongoHandler {
+
+    /**
+     * Info about Find operations executed
+     */
     private final List<MongoInfo> operations;
+
+    /**
+     * Whether to use execution's info or not
+     */
     private volatile boolean extractMongoExecution;
 
     /**
      * The heuristics based on the Mongo execution
      */
-
     private final List<MongoOperationDistance> distances;
 
+    /**
+     * Whether to calculate heuristics based on execution or not
+     */
     private volatile boolean calculateHeuristics;
 
     public MongoHandler() {
         distances = new ArrayList<>();
-        operations = new CopyOnWriteArrayList<>();
+        operations = new ArrayList<>();
         extractMongoExecution = true;
         calculateHeuristics = true;
     }
-
     public void reset() {
         operations.clear();
         distances.clear();
@@ -58,7 +67,6 @@ public class MongoHandler {
             distances.add(new MongoOperationDistance((Bson) mongoInfo.getQuery(), dist));
         });
 
-        //side effects on buffer is not important, as it is just a cache
         operations.clear();
 
         return distances;

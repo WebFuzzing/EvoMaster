@@ -10,11 +10,17 @@ import org.bson.conversions.Bson
 import org.evomaster.client.java.controller.mongo.operations.*
 import org.evomaster.client.java.controller.mongo.operations.synthetic.*
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper
-import org.evomaster.core.mongo.QueryParser
 import kotlin.math.abs
 
 class MongoHeuristicsCalculator {
 
+    /**
+     * Compute a "branch" distance heuristics.
+     *
+     * @param query the QUERY clause which we want to resolve as true
+     * @param doc a document in the database for which we want to calculate the distance
+     * @return a branch distance, where 0 means that the document would make the QUERY resolve to true
+     */
     fun computeExpression(query: Bson, doc: Document): Double {
         val operation = getOperation(query)
         return calculateDistance(operation, doc)
@@ -102,11 +108,11 @@ class MongoHeuristicsCalculator {
     }
 
     private fun calculateDistanceForOr(operation: OrOperation, doc: Document): Double {
-        return operation.filters.minOf { filter -> calculateDistance(filter, doc) }
+        return operation.conditions.minOf { condition -> calculateDistance(condition, doc) }
     }
 
     private fun calculateDistanceForAnd(operation: AndOperation, doc: Document): Double {
-        return operation.filters.sumOf { filter -> calculateDistance(filter, doc) }
+        return operation.conditions.sumOf { condition -> calculateDistance(condition, doc) }
     }
 
     private fun <V> calculateDistanceForIn(operation: InOperation<V>, doc: Document): Double {
@@ -171,7 +177,7 @@ class MongoHeuristicsCalculator {
     private fun calculateDistanceForElemMatch(operation: ElemMatchOperation, doc: Document): Double {
         return when (val actualValue = doc[operation.fieldName]) {
             is ArrayList<*> -> actualValue.minOf { elem ->
-                calculateDistance(operation.filter, Document().append(operation.fieldName, elem))
+                calculateDistance(operation.condition, Document().append(operation.fieldName, elem))
             }
             else -> Double.MAX_VALUE
         }
@@ -224,14 +230,14 @@ class MongoHeuristicsCalculator {
         val fieldName = operation.fieldName
         if (doc[fieldName] == null) return 0.0
 
-        val filter = operation.filter
-        val invertedOperation = invertOperation(filter)
+        val condition = operation.condition
+        val invertedOperation = invertOperation(condition)
 
         return calculateDistance(invertedOperation, doc)
     }
 
     private fun calculateDistanceForNor(operation: NorOperation, doc: Document): Double {
-        return operation.filters.sumOf { filter -> calculateDistance(invertOperation(filter), doc) }
+        return operation.conditions.sumOf { condition -> calculateDistance(invertOperation(condition), doc) }
     }
 
     private fun calculateDistanceForType(operation: TypeOperation, doc: Document): Double {
@@ -264,17 +270,17 @@ class MongoHeuristicsCalculator {
             is GreaterThanEqualsOperation<*> -> LessThanOperation(operation.fieldName, operation.value)
             is LessThanOperation<*> -> GreaterThanEqualsOperation(operation.fieldName, operation.value)
             is LessThanEqualsOperation<*> -> GreaterThanOperation(operation.fieldName, operation.value)
-            is NotOperation -> operation.filter
+            is NotOperation -> operation.condition
             is AllOperation<*> -> InvertedAllOperation(operation.fieldName, operation.values)
             is InvertedAllOperation<*> -> AllOperation(operation.fieldName, operation.values)
-            is AndOperation -> OrOperation(operation.filters.map { filter -> invertOperation(filter) })
-            is OrOperation -> NorOperation(operation.filters)
+            is AndOperation -> OrOperation(operation.conditions.map { condition -> invertOperation(condition) })
+            is OrOperation -> NorOperation(operation.conditions)
             is ExistsOperation -> ExistsOperation(operation.fieldName, !operation.boolean)
             is InOperation<*> -> NotInOperation(operation.fieldName, operation.values)
             is NotInOperation<*> -> InOperation(operation.fieldName, operation.values)
             is ModOperation -> InvertedModOperation(operation.fieldName, operation.divisor, operation.remainder)
             is InvertedModOperation -> ModOperation(operation.fieldName, operation.divisor, operation.remainder)
-            is NorOperation -> OrOperation(operation.filters)
+            is NorOperation -> OrOperation(operation.conditions)
             is SizeOperation -> InvertedSizeOperation(operation.fieldName, operation.value)
             is InvertedSizeOperation -> SizeOperation(operation.fieldName, operation.value)
             is TypeOperation -> InvertedTypeOperation(operation.fieldName, operation.type)

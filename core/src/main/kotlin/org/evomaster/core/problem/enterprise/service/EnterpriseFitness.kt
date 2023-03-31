@@ -192,6 +192,7 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
                     .filter {
                         it != null
                                 && it.objective == HeuristicEntryDto.Objective.MINIMIZE_TO_ZERO
+                                && it.type == HeuristicEntryDto.Type.SQL
                     }.map { it.value }
                     .toList()
 
@@ -229,10 +230,11 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
 
                 extraHeuristicsLogger.writeHeuristics(extra.heuristics, i)
 
-                val toMinimize = extra.mongoHeuristics
+                val toMinimize = extra.heuristics
                     .filter {
                         it != null
                                 && it.objective == HeuristicEntryDto.Objective.MINIMIZE_TO_ZERO
+                                && it.type == HeuristicEntryDto.Type.MONGO
                     }.map { it.value }
                     .toList()
 

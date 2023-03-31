@@ -19,6 +19,4 @@ public class ExtraHeuristicsDto {
     public List<HeuristicEntryDto> heuristics = new ArrayList<>();
 
     public ExecutionDto databaseExecutionDto;
-
-    public List<HeuristicEntryDto> mongoHeuristics = new ArrayList<>();
 }

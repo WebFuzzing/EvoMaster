@@ -157,6 +157,7 @@
         <micronaut.version>3.2.7</micronaut.version>
         <micronaut.openapi.version>3.2.0</micronaut.openapi.version>
         <micronaut.test.version>3.0.5</micronaut.test.version>
+        <org.mongodb.version>4.2.3</org.mongodb.version>
     </properties>
 
 
@@ -544,6 +545,11 @@
                 <scope>test</scope>
                 <version>${springboot.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-data-mongodb</artifactId>
+                <version>${springboot.version}</version>
+            </dependency>
 
 
             <!--  SpringFox: Swagger documentation for SpringBoot-->
@@ -661,6 +667,18 @@
                 <groupId>org.mybatis.spring.boot</groupId>
                 <artifactId>mybatis-spring-boot-starter</artifactId>
                 <version>${org.mybatis.spring.boot.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.mongodb</groupId>
+                <artifactId>bson</artifactId>
+                <version>${org.mongodb.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.mongodb</groupId>
+                <artifactId>mongodb-driver-sync</artifactId>
+                <version>${org.mongodb.version}</version>
             </dependency>
 
             <!--   XML  -->

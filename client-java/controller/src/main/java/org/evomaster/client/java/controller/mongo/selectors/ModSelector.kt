@@ -2,6 +2,9 @@ package org.evomaster.client.java.controller.mongo.selectors
 
 import org.evomaster.client.java.controller.mongo.operations.*
 
+/**
+ * { field: { $mod: [ divisor, remainder ] } }
+ */
 class ModSelector : SingleConditionQuerySelector() {
     override fun operator(): String = "\$mod"
 
