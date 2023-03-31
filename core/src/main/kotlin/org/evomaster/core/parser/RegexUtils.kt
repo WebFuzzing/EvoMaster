@@ -36,6 +36,9 @@ object RegexUtils {
                 .replace("\\E\\Q", "")
     }
 
+    /**
+     * @return regex expression in string format based on [ctx]
+     */
     fun getRegexExpByParserRuleContext(ctx : ParserRuleContext) : String{
         return try {
             ctx.text
