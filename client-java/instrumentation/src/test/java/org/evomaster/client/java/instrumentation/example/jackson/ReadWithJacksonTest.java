@@ -38,7 +38,7 @@ public class ReadWithJacksonTest {
         assertNotNull(obj);
         FooBaz fooBar = (FooBaz) obj;
         assertEquals("hello", fooBar.foo);
-        assertEquals(42, fooBar.bar);
+        assertEquals(87878, fooBar.baz);
 
         AdditionalInfo info = ExecutionTracer.exposeAdditionalInfoList().get(0);
         Set<String> names = info.getParsedDtoNamesView();
@@ -49,7 +49,7 @@ public class ReadWithJacksonTest {
         String schema = UnitsInfoRecorder.getInstance().getParsedDtos().get(name);
         assertNotNull(schema);
         assertTrue(schema.contains("foo"));
-        assertTrue(schema.contains("bar"));
+        assertTrue(schema.contains("baz"));
         assertFalse(schema.contains("hello")); //value of instance, not schema
         assertFalse(schema.contains("87878"));
     }
