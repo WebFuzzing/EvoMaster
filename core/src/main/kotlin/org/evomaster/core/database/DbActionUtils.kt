@@ -453,7 +453,7 @@ object DbActionUtils {
         dbAction.seeTopGenes().flatMap { it.flatView() }.filterIsInstance<SqlForeignKeyGene>().filter { fk-> pks.none { p-> p.uniqueId == fk.uniqueIdOfPrimaryKey } }.forEach { fk->
             var found = pks.find { pk -> pk.tableName == fk.targetTable && pk.uniqueId != fk.uniqueIdOfPrimaryKey }
             if (found == null){
-                val created = sqlInsertBuilder?.createSqlInsertionAction(fk.targetTable, mutableSetOf())?.toMutableList()
+                val created = sqlInsertBuilder?.createSqlInsertionAction(fk.targetTable, mutableSetOf(), enableSingleInsertionForTable= randomness.nextBoolean())?.toMutableList()
                 created?:throw IllegalStateException("fail to create insert db action for table (${fk.targetTable})")
                 if (log.isTraceEnabled){
                     log.trace("insertion which is created at repairFK is {}",

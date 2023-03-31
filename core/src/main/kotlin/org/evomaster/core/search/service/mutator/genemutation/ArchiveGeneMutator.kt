@@ -73,6 +73,8 @@ class ArchiveGeneMutator{
         when (gene) {
             is StringGene -> {
                 val applied = deriveMutatorForStringValue(history, gene, allGenes)
+                // repair invalid char for string gene
+                gene.repair()
                 if (!applied) gene.standardValueMutation(randomness, allGenes, apc)
             }
             is IntegerGene -> gene.value = sampleValue(

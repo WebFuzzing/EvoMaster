@@ -178,7 +178,7 @@ class TestSuiteWriter {
 
         if (all.isEmpty()) return "null"
 
-        val input = all.joinToString(",") { "\"$it\"" }
+        val input = all.groupBy { it.lowercase() }.map { it.value.first() }.joinToString(",") { "\"$it\"" }
         return when {
             config.outputFormat.isJava() -> "Arrays.asList($input)"
             config.outputFormat.isKotlin() -> "listOf($input)"
