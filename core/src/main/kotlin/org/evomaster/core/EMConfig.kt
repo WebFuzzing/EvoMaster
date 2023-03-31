@@ -522,7 +522,7 @@ class EMConfig {
         excludedTargetsForImpactCollection = extractExcludedTargetsForImpactCollection()
     }
 
-    fun shouldGenerateSqlData() = generateSqlDataWithDSE || generateSqlDataWithSearch
+    fun shouldGenerateSqlData() = isMIO() && (generateSqlDataWithDSE || generateSqlDataWithSearch)
 
     fun experimentalFeatures(): List<String> {
 

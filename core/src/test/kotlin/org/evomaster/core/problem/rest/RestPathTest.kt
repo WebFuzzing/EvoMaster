@@ -446,23 +446,23 @@ internal class RestPathTest{
         val rootFooPath = RestPath("/root/{rootName}/foo/{fooName}")
         val rootPath = RestPath("/root/{rootName}")
 
-        assertTrue(rootPath.isPossibleAncestorOf(rootBarPath))
-        assertTrue(rootPath.isPossibleAncestorOf(rootFooPath))
-        assertTrue(rootPath.isPossibleAncestorOf(rootFooBarPath))
+        assertTrue(rootPath.isDirectOrPossibleAncestorOf(rootBarPath))
+        assertTrue(rootPath.isDirectOrPossibleAncestorOf(rootFooPath))
+        assertTrue(rootPath.isDirectOrPossibleAncestorOf(rootFooBarPath))
 
-        assertTrue(rootBarPath.isPossibleAncestorOf(rootFooBarPath))
-        assertTrue(rootFooPath.isPossibleAncestorOf(rootFooBarPath))
+        assertTrue(rootBarPath.isDirectOrPossibleAncestorOf(rootFooBarPath))
+        assertTrue(rootFooPath.isDirectOrPossibleAncestorOf(rootFooBarPath))
 
-        assertFalse(rootFooPath.isPossibleAncestorOf(rootBarPath))
-        assertFalse(rootBarPath.isPossibleAncestorOf(rootFooPath))
+        assertFalse(rootFooPath.isDirectOrPossibleAncestorOf(rootBarPath))
+        assertFalse(rootBarPath.isDirectOrPossibleAncestorOf(rootFooPath))
     }
 
     @Test
     fun testIsSibling(){
         val rootFooBarPath = RestPath("/root/{rootName}/foo/{fooName}/bar/{barName}")
         val rootFooBar = RestPath("/root/{rootName}/foo/{fooName}/bar")
-        assertTrue(rootFooBarPath.isSibling(rootFooBar))
-        assertTrue(rootFooBar.isSibling(rootFooBarPath))
+        assertTrue(rootFooBarPath.isSiblingForPreparingResource(rootFooBar))
+        assertTrue(rootFooBar.isSiblingForPreparingResource(rootFooBarPath))
     }
 
 }
