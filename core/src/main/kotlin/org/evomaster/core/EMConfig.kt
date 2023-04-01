@@ -5,6 +5,7 @@ import joptsimple.OptionDescriptor
 import joptsimple.OptionParser
 import joptsimple.OptionSet
 import org.evomaster.client.java.controller.api.ControllerConstants
+import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
@@ -1848,7 +1849,7 @@ class EMConfig {
             "Multiple exclusions should be separated with semicolon (i.e., ;).")
     @Regex(targetExclusionRegex)
     @Experimental
-    var excludeTargetsForImpactCollection = "Local;MethodReplacement"
+    var excludeTargetsForImpactCollection = "${IdMapper.LOCAL_OBJECTIVE_KEY};${ObjectiveNaming.METHOD_REPLACEMENT}"
 
     var excludedTargetsForImpactCollection : List<String> = extractExcludedTargetsForImpactCollection()
         private set
