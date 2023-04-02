@@ -987,8 +987,8 @@ object StateBuilder {
                             if (kind0 == __TypeKind.NON_NULL) {////non optional list or scalar or enum
                                 if (kind1 == __TypeKind.LIST) {//nn optional list in the top
                                     if (kind2 == __TypeKind.NON_NULL) {//nn optional scalar or enum or inpu->todo
-                                        when (kind3) {
-                                            __TypeKind.ENUM -> {
+
+                                            if (kind3==__TypeKind.ENUM){
                                                 val enumElement: MutableList<String> =
                                                     collectEnumElementsInTable(
                                                         schemaObj,
@@ -1008,8 +1008,10 @@ object StateBuilder {
                                                 )
 
 
-                                            }
-                                            __TypeKind.SCALAR -> {state.tempArgsTables.add(
+                                            }else
+
+                                                if (kind3==__TypeKind.SCALAR)
+                                            {state.tempArgsTables.add(
                                                 Table(
                                                     KindOfFieldName=__TypeKind.LIST.toString(),
                                                     isKindOfFieldNameOptional=false,
@@ -1020,23 +1022,32 @@ object StateBuilder {
                                                     fieldType = elementInInputFields.type.ofType.ofType.ofType.name,
                                                     fieldName = elementInInputFields.name
                                                 )
-                                            )}
+                                            )}else
 
-//                                            __TypeKind.INPUT_OBJECT ->{
-//                                                state.tempArgsTables.add(
-//                                                    Table(
-//                                                        KindOfFieldName=__TypeKind.LIST.toString(),
-//                                                        isKindOfFieldNameOptional=false,
-//
-//                                                        typeName = elementIntypes.name,
-//                                                        kindOfFieldType = kind3.toString(),
-//                                                        isKindOfFieldTypeOptional = false,
-//                                                        fieldType = elementInInputFields.type.ofType.ofType.ofType.name,
-//                                                        fieldName = elementInInputFields.name
-//                                                    )
-//                                                )
-//                                            }
-                                        }
+
+                                                if (kind3==__TypeKind.INPUT_OBJECT){
+                                                state.tempArgsTables.add(
+                                                    Table(
+                                                        KindOfFieldName=__TypeKind.LIST.toString(),
+                                                        isKindOfFieldNameOptional=false,
+
+                                                        typeName = elementIntypes.name,
+                                                        kindOfFieldType = kind3.toString(),
+                                                        isKindOfFieldTypeOptional = false,
+                                                        fieldType = elementInInputFields.type.ofType.ofType.ofType.name,
+                                                        fieldName = elementInInputFields.name
+                                                    )
+                                                )
+                                            }
+
+
+
+
+
+
+
+
+
 
 
                                     }
