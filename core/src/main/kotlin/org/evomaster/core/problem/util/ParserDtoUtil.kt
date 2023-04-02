@@ -40,14 +40,15 @@ object ParserDtoUtil {
      * get or parse schema of dto classes from [infoDto] as gene
      * @return a map of dto class name to corresponding gene
      */
-    fun getOrParseDtoWithSutInfo(infoDto: SutInfoDto) : Map<String, Gene>{
+    fun getOrParseDtoWithSutInfo(infoDto: SutInfoDto,
+                                 enableConstraintHandling: Boolean) : Map<String, Gene>{
         /*
             need to get all for handling `ref`
          */
         val names = infoDto.unitsInfoDto?.parsedDtos?.keys?.toList()?:return emptyMap()
         val schemas = names.map { infoDto.unitsInfoDto.parsedDtos[it]!! }
         //TODO need to check: referType is same with the name?
-        val genes = RestActionBuilderV3.createObjectGeneForDTOs(names, schemas, names)
+        val genes = RestActionBuilderV3.createObjectGeneForDTOs(names, schemas, names, enableConstraintHandling)
         Lazy.assert { names.size == genes.size }
         return names.mapIndexed { index, s -> s to genes[index] }.toMap()
     }
@@ -117,7 +118,7 @@ object ParserDtoUtil {
 //            val v = ParamUtil.getValueGene(g)
 //            if (v is ObjectGene) v.refType?:(v.fields.joinToString("-") { f->f.name }) else v::class.java.name
 //        }
-        return FlexibleMapGene(name, StringGene("key"), values.first()!!.copy())
+        return FlexibleMapGene(name, StringGene("key"), values.first()!!.copy(), null)
     }
 
     private fun findAndCopyExtractedObjectDto(node: JsonNode, objectGeneMap: Map<String, Gene>) : ObjectGene? {
@@ -143,7 +144,7 @@ object ParserDtoUtil {
     fun setGeneBasedOnString(gene: Gene, stringValue: String?){
         val valueGene = ParamUtil.getValueGene(gene)
 
-        if (stringValue != null){
+        if (stringValue != null && !stringValue.equals("null", ignoreCase = true)){
             when(valueGene){
                 is IntegerGene -> valueGene.setValueWithRawString(stringValue)
                 is DoubleGene -> valueGene.setValueWithRawString(stringValue)
@@ -259,15 +260,16 @@ object ParserDtoUtil {
                 else -> throw IllegalStateException("Not support setGeneBasedOnParamDto with gene ${gene::class.java.simpleName} and stringValue ($stringValue)")
             }
         }else{
-            if (gene is OptionalGene)
-                gene.isActive = false
-            else
-                log.warn("could not set null for ${gene.name} with type (${gene::class.java.simpleName})")
+            when (gene) {
+                is OptionalGene -> gene.isActive = false
+                is NullableGene -> gene.isActive = false
+                else -> log.warn("could not set null for ${gene.name} with type (${gene::class.java.simpleName})")
+            }
         }
     }
 
     private fun getTextForStringGene(gene: Gene, node: JsonNode) : String{
-        if (ParamUtil.getValueGene(gene) is StringGene && node.isTextual)
+        if (ParamUtil.getValueGene(gene).run { this is StringGene || this is EnumGene<*> || this is NumberGene<*>} && node.isTextual)
             return node.asText()
         return node.toPrettyString()
     }

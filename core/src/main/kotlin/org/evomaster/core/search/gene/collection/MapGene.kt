@@ -12,6 +12,7 @@ import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.root.CompositeGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.gene.utils.GeneUtils.isInactiveOptionalGene
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
@@ -63,7 +64,7 @@ abstract class MapGene<K, V>(
         log.trace("Randomizing MapGene")
         val n = randomness.nextInt(getMinSizeOrDefault(), getMaxSizeUsedInRandomize())
         (0 until n).forEach {
-            val gene = addRandomElement(randomness, false)
+            val gene = createRandomElement(randomness, false)
             // if the key of gene exists, the value would be replaced with the latest one
             addElement(gene)
         }
@@ -109,7 +110,7 @@ abstract class MapGene<K, V>(
     override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, selectionStrategy: SubsetGeneMutationSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
 
         if(elements.size < getMaxSizeOrDefault() && (elements.size == getMinSizeOrDefault() || elements.isEmpty() || randomness.nextBoolean())){
-            val gene = addRandomElement(randomness, false)
+            val gene = createRandomElement(randomness, false)
             addElement(gene)
         } else {
             log.trace("Removing gene in mutation")
@@ -150,12 +151,6 @@ abstract class MapGene<K, V>(
                     """
                 } +
                 "}"
-    }
-
-    private fun isInactiveOptionalGene(gene: Gene): Boolean{
-        val optional = gene.getWrappedGene(OptionalGene::class.java)?:return false
-
-        return !optional.isActive
     }
 
     private fun getKeyValueAsPrintableString(key: Gene, targetFormat: OutputFormat?): String {
@@ -245,13 +240,13 @@ abstract class MapGene<K, V>(
             currently we only support Integer, String, LongGene, Enum
             TODO support other types if needed
          */
-        if (geneValue is IntegerGene || geneValue is StringGene || geneValue is LongGene || geneValue is EnumGene<*>){
-            return elements.filter { ParamUtil.getValueGene(it.first).containsSameValueAs(geneValue) }
+        if (isElementApplicableToUniqueCheck(geneValue)){
+            return elements.filter { ParamUtil.getValueGene(it.first).containsSameValueAs(ParamUtil.getValueGene(geneValue)) }
         }
         return listOf()
     }
 
-    private fun addRandomElement(randomness: Randomness, forceNewValue: Boolean) : PairGene<K, V> {
+    private fun createRandomElement(randomness: Randomness, forceNewValue: Boolean) : PairGene<K, V> {
         val keyName = "key_${keyCounter++}"
 
         val gene = template.copy() as PairGene<K, V>

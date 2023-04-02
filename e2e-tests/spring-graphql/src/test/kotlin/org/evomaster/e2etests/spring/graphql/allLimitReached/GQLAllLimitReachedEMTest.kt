@@ -23,7 +23,7 @@ class GQLAllLimitReachedEMTest : SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
                 "GQL_allLimitReachedEM",
                 "org.foo.graphql.AllLimitReachedEM",
-                100
+                20
         ) { args: MutableList<String> ->
 
             args.add("--problemType")

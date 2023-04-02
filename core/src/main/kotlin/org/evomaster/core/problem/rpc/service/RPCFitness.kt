@@ -71,9 +71,9 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
         val rpcActionResults = actionResults.filterIsInstance<RPCCallResult>()
         handleResponseTargets(fv, individual.seeAllActions().filterIsInstance<RPCCallAction>(), rpcActionResults, dto.additionalInfoList)
 
-        if (config.baseTaintAnalysisProbability > 0) {
+        if (config.isEnabledTaintAnalysis()) {
             Lazy.assert { rpcActionResults.size == dto.additionalInfoList.size }
-            TaintAnalysis.doTaintAnalysis(individual, dto.additionalInfoList, randomness)
+            TaintAnalysis.doTaintAnalysis(individual, dto.additionalInfoList, randomness, config.enableSchemaConstraintHandling)
         }
 
         return EvaluatedIndividual(fv, individual.copy() as RPCIndividual, actionResults, trackOperator = individual.trackOperator, index = time.evaluatedIndividuals, config = config)
@@ -136,7 +136,7 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
                     actionResult.setRPCException(response.exceptionInfoDto)
                     if (response.exceptionInfoDto.type == RPCExceptionType.CUSTOMIZED_EXCEPTION){
                         if (response.exceptionInfoDto.exceptionDto!=null){
-                            actionResult.setCustomizedExceptionBody(rpcHandler.getParamDtoJson(response.exceptionInfoDto.exceptionDto))
+                            actionResult.setCustomizedExceptionBody(rpcHandler.getJsonStringFromDto(response.exceptionInfoDto.exceptionDto))
                         } else
                             log.warn("ERROR: missing customized exception dto")
                     }

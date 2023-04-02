@@ -9,7 +9,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.problem.externalservice.ExternalService
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceInfo
-import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalServiceHandler
+import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.httpws.service.HttpWsSampler
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.RestActionBuilderV3.buildActionBasedOnUrl
@@ -18,7 +18,6 @@ import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.seeding.Parser
 import org.evomaster.core.problem.rest.seeding.postman.PostmanParser
 import org.evomaster.core.remote.SutProblemException
-import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.optional.OptionalGene
@@ -92,7 +91,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
         actionCluster.clear()
         val skip = getEndpointsToSkip(swagger, infoDto)
-        RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, skip)
+        RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, skip, enableConstraintHandling = config.enableSchemaConstraintHandling)
 
         if(config.extraQueryParam){
             addExtraQueryParam(actionCluster)
@@ -120,7 +119,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         /*
             TODO this would had been better handled with optional injection, but Guice seems pretty buggy :(
          */
-        partialOracles.setupForRest(swagger)
+        partialOracles.setupForRest(swagger, config)
 
         log.debug("Done initializing {}", AbstractRestSampler::class.simpleName)
     }
@@ -273,7 +272,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         }
 
         actionCluster.clear()
-        RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, listOf())
+        RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, listOf(), enableConstraintHandling = config.enableSchemaConstraintHandling)
 
         initAdHocInitialIndividuals()
 
@@ -282,7 +281,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         /*
             TODO this would had been better handled with optional injection, but Guice seems pretty buggy :(
          */
-        partialOracles.setupForRest(swagger)
+        partialOracles.setupForRest(swagger, config)
 
         log.debug("Done initializing {}", AbstractRestSampler::class.simpleName)
     }
@@ -292,7 +291,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
     }
 
     override fun hasSpecialInit(): Boolean {
-        return !adHocInitialIndividuals.isEmpty() && config.probOfSmartSampling > 0
+        return adHocInitialIndividuals.isNotEmpty() && config.isEnabledSmartSampling()
     }
 
     /**

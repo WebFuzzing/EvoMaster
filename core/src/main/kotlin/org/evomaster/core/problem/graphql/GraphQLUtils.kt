@@ -72,8 +72,7 @@ object GraphQLUtils {
                 """.trimIndent()
                         )
 
-                    } else
-                        {
+                    } else {
                         val query = getQuery(returnGene, a)
                         Entity.json(
                             """
@@ -92,7 +91,7 @@ object GraphQLUtils {
                 """.trimIndent()
                         )
 
-                    }  else {
+                    } else {
                         val query = getQuery(returnGene, a)
                         Entity.json(
                             """
@@ -175,69 +174,56 @@ object GraphQLUtils {
 
     }
 
-    fun getPrintableInputGene(inputGenes: List<Gene>, targetFormat: OutputFormat? = null): MutableList<String> {
+    private fun getPrintableInputGene(inputGenes: List<Gene>, targetFormat: OutputFormat? = null): MutableList<String> {
         val printableInputGene = mutableListOf<String>()
 
         for (gene in inputGenes) {
-            if  (gene.getWrappedGene(EnumGene::class.java)!=null) {//enum gene
-                //if it is optional it should be active
-                if ((gene.getWrappedGene(OptionalGene::class.java)?.isActive == true)||(gene.getWrappedGene(OptionalGene::class.java) == null)) {
+            //if it is opt , it should be active
+            //if(gene.getWrappedGene(OptionalGene::class.java)?.isActive != false)
+            if ((gene.getWrappedGene(OptionalGene::class.java)?.isActive == true) || (gene.getWrappedGene(OptionalGene::class.java) == null))
+                printableInputGene.add(inputsPrinting(gene, targetFormat))
 
-                    val i = gene.getValueAsRawString()
-                    printableInputGene.add("${gene.name} : $i")
-
-                }
-
-            } else {
-                if (gene.getWrappedGene(ObjectGene::class.java) != null) {//object gene
-                    //if it is optional it should be active
-                    if ((gene.getWrappedGene(OptionalGene::class.java)?.isActive == true) || (gene.getWrappedGene(OptionalGene::class.java) == null)) {
-                        val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
-
-                        if (gene.getWrappedGene(NullableGene::class.java)?.isActive == true) {
-
-                            printableInputGene.add(" $i")
-
-                        } else {
-                            //Need the name of the object when it takes "null" as a value, since it will not access the object
-                            //where the name is printed
-                            printableInputGene.add("${gene.name} : $i")
-                        }
-
-                    }
-
-                } else {
-                    if (gene.getWrappedGene(ArrayGene::class.java)!=null) {//array gene
-                        //if it is optional it should be active
-                        if ((gene.getWrappedGene(OptionalGene::class.java)?.isActive == true)||(gene.getWrappedGene(OptionalGene::class.java) == null)) {
-
-                            val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_ARRAY_MODE)
-                            printableInputGene.add("${gene.name} : $i")
-
-                        }
-
-                    } else {
-                        /*
-                            TODO
-                            Man: this is a temporal solution
-                            there might also need a further handling, e.g., field of object is String, Array<String>
-                         */
-                        val mode =
-                            if (ParamUtil.getValueGene(gene) is StringGene) GeneUtils.EscapeMode.GQL_STR_VALUE else GeneUtils.EscapeMode.GQL_INPUT_MODE
-
-                        val i = gene.getValueAsPrintableString(mode = mode, targetFormat = targetFormat)
-                        //if it is optional it should be active
-                        if ((gene.getWrappedGene(OptionalGene::class.java)?.isActive == true)||(gene.getWrappedGene(OptionalGene::class.java) == null))
-
-                            printableInputGene.add("${gene.name} : $i")
-
-                    }
-                }
-            }
         }
         return printableInputGene
     }
 
+    /**
+     * This function is used to get printable String.
+     * Initially used for GQL arguments (eg: GQL input parameters, tuple arguments)
+     */
+    fun inputsPrinting(
+        it: Gene,
+        targetFormat: OutputFormat?
+    ) = if (it.getWrappedGene(EnumGene::class.java) != null) {//enum gene
+        val i = it.getValueAsRawString()
+        "${it.name} : $i"
+    } else {
+        if (it.getWrappedGene(ObjectGene::class.java) != null) {//object gene
+            val i = it.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
+            //if it is nullable it should be active
+            if (it.getWrappedGene(NullableGene::class.java)?.isActive == true || (it.getWrappedGene(NullableGene::class.java) == null))
+                " $i"
+            else
+            //Need the name of the object when it takes "null" as a value, since it will not access the object
+            //where the name is printed
+                "${it.name} : $i"
+        } else {
+            if (it.getWrappedGene(ArrayGene::class.java) != null) {//array gene
+                val i = it.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_ARRAY_MODE)
+                "${it.name} : $i"
+            } else {
+                /*
+                     TODO
+                     Man: this is a temporal solution
+                     there might also need a further handling, e.g., field of object is String, Array<String>
+                         */
+                val mode =
+                    if (ParamUtil.getValueGene(it) is StringGene) GeneUtils.EscapeMode.GQL_STR_VALUE else GeneUtils.EscapeMode.GQL_INPUT_MODE
+                val i = it.getValueAsPrintableString(mode = mode, targetFormat = targetFormat)
+                "${it.name} : $i"
+            }
+        }
+    }
 
     fun repairIndividual(ind: GraphQLIndividual) {
         ind.seeAllActions()
@@ -245,9 +231,9 @@ object GraphQLUtils {
             .forEach { a ->
                 a.parameters.filterIsInstance<GQReturnParam>().forEach { p ->
                     if (p.gene is ObjectGene) {
-                        if(p.gene.fields.any {
-                           (it is TupleGene && it.lastElementTreatedSpecially) || (it is BooleanGene) || (it is OptionalGene)
-                        }) {
+                        if (p.gene.fields.any {
+                                (it is TupleGene && it.lastElementTreatedSpecially) || (it is BooleanGene) || (it is OptionalGene)
+                            }) {
                             GeneUtils.repairBooleanSelection(p.gene)
                         }
                     }

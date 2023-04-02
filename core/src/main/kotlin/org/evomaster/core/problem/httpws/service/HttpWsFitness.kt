@@ -251,9 +251,7 @@ abstract class HttpWsFitness<T>: ApiWsFitness<T>() where T : Individual {
     }
 
 
-    protected fun registerNewAction(action: Action, index: Int){
-        rc.registerNewAction(getActionDto(action, index))
-    }
+
 
 
     @Deprecated("replaced by doDbCalls()")

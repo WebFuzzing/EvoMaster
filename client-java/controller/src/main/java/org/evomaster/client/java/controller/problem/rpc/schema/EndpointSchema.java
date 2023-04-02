@@ -155,7 +155,7 @@ public class EndpointSchema {
         return dto.functionName.equals(name)
                 // only check input parameters
                 // && (getResponse() == null || getResponse().sameParam(dto.responseParam))
-                && ((getRequestParams() == null && dto.inputParams == null) || getRequestParams().size() == dto.inputParams.size())
+                && ((getRequestParams() == null && dto.inputParamTypes == null) || getRequestParams().size() == dto.inputParamTypes.size())
                 && IntStream.range(0, getRequestParams().size()).allMatch(i-> getRequestParams().get(i).getType().getFullTypeName().equals(dto.inputParamTypes.get(i)));
     }
 

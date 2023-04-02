@@ -8,8 +8,8 @@ import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
-import org.evomaster.core.problem.externalservice.httpws.HarvestActualHttpWsResponseHandler
-import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalServiceHandler
+import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
+import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.param.HttpWsResponseParam
 import org.evomaster.core.search.Action
@@ -400,6 +400,8 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 
         val extraConstraints = randomness.nextBoolean(apc.getExtraSqlDbConstraintsProbability())
 
+        val enableSingleInsertionForTable = randomness.nextBoolean(config.probOfEnablingSingleInsertionForTable)
+
         val chosenColumns = if(config.forceSqlAllColumnInsertion){
             setOf("*")
         } else {
@@ -407,7 +409,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         }
 
         val list = (0 until num)
-                .map { getSqlInsertBuilder()!!.createSqlInsertionAction(name,chosenColumns, mutableListOf(),true, extraConstraints) }
+                .map { getSqlInsertBuilder()!!.createSqlInsertionAction(name,chosenColumns, mutableListOf(),true, extraConstraints, enableSingleInsertionForTable=enableSingleInsertionForTable) }
                 .toMutableList()
 
         if (log.isTraceEnabled) {
@@ -428,6 +430,6 @@ abstract class ApiWsStructureMutator : StructureMutator() {
     abstract fun getSqlInsertBuilder(): SqlInsertBuilder?
 
     override fun canApplyInitStructureMutator(): Boolean {
-        return (config.initStructureMutationProbability > 0 && config.maxSizeOfMutatingInitAction > 0) && getSqlInsertBuilder() != null
+        return config.isEnabledInitializationStructureMutation() && getSqlInsertBuilder() != null
     }
 }

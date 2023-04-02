@@ -115,8 +115,8 @@ case studies in [EMB](https://github.com/EMResearch/EMB).
 Depending on the year, we might have funding for _postdoc_ and _PhD student_ positions to work on this project (in Oslo, Norway).
 
 Current positions:
-* 2023: likely new PhD and postdoc positions will be available, but they are not announced yet.
- 
+* 2023: PhD student positions. New calls not announced yet.
+* 2023: Postdoc positions. New calls not announced yet.
 
 For questions on these positions, please contact Prof. Andrea Arcuri. 
 

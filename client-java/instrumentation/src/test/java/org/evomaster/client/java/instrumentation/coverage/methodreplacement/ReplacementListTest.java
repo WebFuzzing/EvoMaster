@@ -48,7 +48,7 @@ class ReplacementListTest {
                 }
 
                 Class[] inputs = m.getParameterTypes();
-                Class<?> targetClass = mrc.getTargetClass();
+                Class<?> targetClass = mrc.getTargetClass(this.getClass().getClassLoader());
                 assertNotNull(targetClass);
 
                 if (r.type() != ReplacementType.TRACKER) {
@@ -128,6 +128,10 @@ class ReplacementListTest {
                     }
                     assertEquals(0, rconsume.getParameterCount());
                     checkReturnType(r, targetClass, rconsume);
+                }
+
+                if(r.extraPackagesToConsider().length > 0 && r.usageFilter() != UsageFilter.ONLY_SUT){
+                    fail("Can apply 'extraPackagesToConsider' only to 'ONLY_SUT' filter");
                 }
             }
 

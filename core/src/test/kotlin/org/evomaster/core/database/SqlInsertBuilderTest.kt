@@ -1019,5 +1019,55 @@ class SqlInsertBuilderTest {
 
     }
 
+    @Test
+    fun testSingleInsertionForTable() {
+        SqlScriptRunner.execCommand(connection, """
+            CREATE TABLE ROOTA(
+                id INT not null,
+                name TEXT not null,
+                primary key (id)
+            );
+            CREATE TABLE NODEB(
+                id INT not null,
+                name TEXT not null,
+                rootAId INT not null,
+                primary key (id)
+            );
+            CREATE TABLE NODEC(
+                id INT not null,
+                name TEXT not null,
+                rootAId INT not null,
+                primary key (id)
+            );
+            CREATE TABLE LEAFD(
+                id INT not null,
+                name TEXT not null,
+                nodeBId INT not null,
+                nodeCId INT not null,
+                primary key (id)
+            );
+            ALTER TABLE NODEB add constraint bToA foreign key (rootAId) references ROOTA;
+            ALTER TABLE NODEC add constraint cToA foreign key (rootAId) references ROOTA;
+            ALTER TABLE LEAFD add constraint dToB foreign key (nodeBId) references NODEB;
+            ALTER TABLE LEAFD add constraint dToC foreign key (nodeCId) references NODEC;
+        """)
+
+        val dto = SchemaExtractor.extract(connection)
+
+        val builder = SqlInsertBuilder(dto)
+
+        val disabled = builder.createSqlInsertionAction("LEAFD", setOf(), enableSingleInsertionForTable = false)
+        // ABACD
+        assertEquals(5, disabled.size)
+
+        val enabled = builder.createSqlInsertionAction("LEAFD", setOf(), enableSingleInsertionForTable = true)
+
+        // ABCD or ACBD
+        assertEquals(4, enabled.size)
+        assertEquals("ROOTA", enabled[0].table.name)
+        assertEquals("LEAFD", enabled[3].table.name)
+        assertTrue(enabled.subList(1,3).map { it.table.name }.containsAll(listOf("NODEB", "NODEC")))
+    }
+
 
 }

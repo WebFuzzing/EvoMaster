@@ -108,7 +108,7 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
         }
 
 
-        sampler.initialize(getSwaggerLocation(), skip, sqlBuilder)
+        sampler.initialize(getSwaggerLocation(), config, skip, sqlBuilder)
 
     }
 

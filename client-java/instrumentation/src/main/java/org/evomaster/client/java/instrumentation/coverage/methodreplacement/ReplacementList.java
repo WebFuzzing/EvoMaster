@@ -158,7 +158,7 @@ public class ReplacementList {
                                     //throw new RuntimeException(e);
                                     return false;
                                 }
-                                return t.getTargetClass().isAssignableFrom(klass);
+                                return t.getTargetClass(ReplacementList.class.getClassLoader()).isAssignableFrom(klass);
                             }
 
                             return t.getTargetClassName().equals(targetClassName);

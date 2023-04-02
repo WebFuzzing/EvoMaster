@@ -260,6 +260,13 @@ class EMConfig {
             They can be check only once all fields have been updated
          */
 
+        if(!blackBox && bbSwaggerUrl.isNotBlank()){
+            throw IllegalArgumentException("'bbSwaggerUrl' should be set only in black-box mode")
+        }
+        if(!blackBox && bbTargetUrl.isNotBlank()){
+            throw IllegalArgumentException("'bbTargetUrl' should be set only in black-box mode")
+        }
+
         if (blackBox && !bbExperiments) {
 
             if(problemType == ProblemType.DEFAULT){
@@ -329,7 +336,7 @@ class EMConfig {
         if (doCollectImpact && !enableTrackEvaluatedIndividual)
             throw IllegalArgumentException("Impact collection should be applied together with tracking EvaluatedIndividual")
 
-        if (baseTaintAnalysisProbability > 0 && !useMethodReplacement) {
+        if (isEnabledTaintAnalysis() && !useMethodReplacement) {
             throw IllegalArgumentException("Base Taint Analysis requires 'useMethodReplacement' option")
         }
 
@@ -369,6 +376,9 @@ class EMConfig {
             throw IllegalArgumentException("Max length at sampling time $maxLengthForStringsAtSamplingTime" +
                     " cannot be greater than maximum string length $maxLengthForStrings")
         }
+
+        if (saveMockedResponseAsSeparatedFile && testResourcePathToSaveMockedResponse.isBlank())
+            throw IllegalArgumentException("testResourcePathToSaveMockedResponse cannot be empty if it is required to save mocked responses in separated files (ie, saveMockedResponseAsSeparatedFile=true)")
     }
 
     private fun checkPropertyConstraints(m: KMutableProperty<*>) {
@@ -503,7 +513,7 @@ class EMConfig {
         }
     }
 
-    fun shouldGenerateSqlData() = generateSqlDataWithDSE || generateSqlDataWithSearch
+    fun shouldGenerateSqlData() = isMIO() && (generateSqlDataWithDSE || generateSqlDataWithSearch)
 
     fun experimentalFeatures(): List<String> {
 
@@ -771,9 +781,9 @@ class EMConfig {
     enum class ProblemType(private val experimental: Boolean) : WithExperimentalOptions {
         DEFAULT(experimental = false),
         REST(experimental = false),
-        GRAPHQL(experimental = true),
+        GRAPHQL(experimental = false),
         RPC(experimental = true),
-        WEB(experimental = true);
+        WEBFRONTEND(experimental = true);
         override fun isExperimental() = experimental
     }
 
@@ -1773,6 +1783,17 @@ class EMConfig {
     @Regex("^127\\.((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){2}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\$")
     var externalServiceIP : String = "127.0.0.2"
 
+    @Experimental
+    @Cfg("Whether to apply customized method (i.e., implement 'customizeMockingRPCExternalService') to handle external services.")
+    var enableCustomizedExternalServiceHandling = false
+
+    @Experimental
+    @Cfg("Whether to save mocked responses as separated files")
+    var saveMockedResponseAsSeparatedFile = false
+
+    @Experimental
+    @Cfg("Specify test resource path where to save mocked responses as separated files")
+    var testResourcePathToSaveMockedResponse = ""
 
     @Experimental
     @Cfg("Whether to analyze how SQL databases are accessed to infer extra constraints from the business logic." +
@@ -1790,6 +1811,28 @@ class EMConfig {
     @Experimental
     @Probability(activating = true)
     var probOfMutatingResponsesBasedOnActualResponse = 0.0
+
+    @Cfg("Number of threads for external request harvester. No more threads than numbers of processors will be used.")
+    @Min(1.0)
+    @Experimental
+    var externalRequestHarvesterNumberOfThreads: Int = 2
+
+    @Cfg("Whether to employ constraints specified in API schema (e.g., OpenAPI) in test generation")
+    @Experimental
+    var enableSchemaConstraintHandling = false
+
+    @Cfg("Whether to record info of executed actions during search")
+    @Experimental
+    var recordExecutedMainActionInfo = false
+
+    @Cfg("Specify a path to save all executed main actions to a file (default is 'executedMainActions.txt')")
+    @Experimental
+    var saveExecutedMainActionInfo = "executedMainActions.txt"
+
+    @Cfg("a probability of enabling single insertion strategy to insert rows into database.")
+    @Experimental
+    @Probability(activating = true)
+    var probOfEnablingSingleInsertionForTable = 0.0
 
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
@@ -1815,29 +1858,35 @@ class EMConfig {
         return (hours * 60 * 60) + (minutes * 60) + seconds
     }
 
-    fun trackingEnabled() = enableTrackEvaluatedIndividual || enableTrackIndividual
+    fun trackingEnabled() =  isMIO() && (enableTrackEvaluatedIndividual || enableTrackIndividual)
 
     /**
      * impact info can be collected when archive-based solution is enabled or doCollectImpact
      */
-    fun isEnabledImpactCollection() = algorithm == Algorithm.MIO && doCollectImpact || isEnabledArchiveGeneSelection()
+    fun isEnabledImpactCollection() = isMIO() && doCollectImpact || isEnabledArchiveGeneSelection()
 
     /**
      * @return whether archive-based gene selection is enabled
      */
-    fun isEnabledArchiveGeneSelection() = algorithm == Algorithm.MIO && probOfArchiveMutation > 0.0 && adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE
+    fun isEnabledArchiveGeneSelection() = isMIO() && probOfArchiveMutation > 0.0 && adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE
 
     /**
      * @return whether archive-based gene mutation is enabled based on the configuration, ie, EMConfig
      */
-    fun isEnabledArchiveGeneMutation() = algorithm == Algorithm.MIO && archiveGeneMutation != ArchiveGeneMutation.NONE && probOfArchiveMutation > 0.0
+    fun isEnabledArchiveGeneMutation() = isMIO() && archiveGeneMutation != ArchiveGeneMutation.NONE && probOfArchiveMutation > 0.0
 
     fun isEnabledArchiveSolution() = isEnabledArchiveGeneMutation() || isEnabledArchiveGeneSelection()
+
+
+    /**
+     * @return whether enable resource-based method
+     */
+    fun isEnabledResourceStrategy() = isMIO() && resourceSampleStrategy != ResourceSamplingStrategy.NONE
 
     /**
      * @return whether enable resource-dependency based method
      */
-    fun isEnabledResourceDependency() = probOfSmartSampling > 0.0 && resourceSampleStrategy != ResourceSamplingStrategy.NONE
+    fun isEnabledResourceDependency() = isEnabledSmartSampling() && isEnabledResourceStrategy()
 
     /**
      * @return whether to generate SQL between rest actions
@@ -1863,5 +1912,25 @@ class EMConfig {
         return externalServiceIPSelectionStrategy != ExternalServiceIPSelectionStrategy.NONE
     }
 
-    fun doHarvestActualResponse() : Boolean = probOfHarvestingResponsesFromActualExternalServices > 0 || probOfMutatingResponsesBasedOnActualResponse > 0
+    fun isEnabledMutatingResponsesBasedOnActualResponse() = isMIO() && (probOfMutatingResponsesBasedOnActualResponse > 0)
+
+    fun doHarvestActualResponse() : Boolean = isMIO() && (probOfHarvestingResponsesFromActualExternalServices > 0 || probOfMutatingResponsesBasedOnActualResponse > 0)
+
+    /**
+     * Check if the used algorithm is MIO.
+     * MIO is the default search algorithm in EM.
+     * Many techniques in EM are defined only for MIO, ie most improvements in EM are
+     * done as an extension of MIO.
+     */
+    fun isMIO() = algorithm == Algorithm.MIO
+
+    fun isEnabledTaintAnalysis() = isMIO() && baseTaintAnalysisProbability > 0
+
+    fun isEnabledSmartSampling() = isMIO() && probOfSmartSampling > 0
+
+    fun isEnabledWeightBasedMutation() = isMIO() && weightBasedMutationRate
+
+    fun isEnabledInitializationStructureMutation() = isMIO() && initStructureMutationProbability > 0 && maxSizeOfMutatingInitAction > 0
+
+    fun isEnabledResourceSizeHandling() = isMIO() && probOfHandlingLength> 0 && maxSizeOfHandlingResource > 0
 }

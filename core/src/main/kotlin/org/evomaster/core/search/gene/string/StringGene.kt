@@ -38,18 +38,19 @@ import org.slf4j.LoggerFactory
 import kotlin.math.min
 
 class StringGene(
-    name: String,
-    var value: String = "foo",
-    /** Inclusive */
+        name: String,
+        var value: String = "foo",
+        /** Inclusive */
         val minLength: Int = 0,
-    /** Inclusive.
+        /**
+         * Inclusive.
          * Constraint on maximum lenght of the string. This could had been specified as
          * a constraint in the schema, or specific for the represented data type.
          * Note: further limits could be imposed to avoid too large strings that would
          * hamper the search process, which can be set via [EMConfig] options
          */
         val maxLength: Int = EMConfig.stringLengthHardLimit,
-    /**
+        /**
          * Depending on what a string is representing, there might be some chars
          * we do not want to use.
          * For example, in a URL Path variable, we do not want have "/", as otherwise
@@ -57,7 +58,7 @@ class StringGene(
          */
         val invalidChars: List<Char> = listOf(),
 
-    /**
+        /**
          * specialization based on taint analysis
          */
         specializationGenes: List<Gene> = listOf()
@@ -210,7 +211,7 @@ class StringGene(
             if(state.spa.hasInfoFor(name) && state.randomness.nextDouble() < state.config.useGlobalTaintInfoProbability){
                 val spec = state.spa.chooseSpecialization(name, state.randomness)!!
                 assert(specializations.size == 0)
-                addSpecializations("", listOf(spec),state.randomness, false)
+                addSpecializations("", listOf(spec),state.randomness, false, enableConstraintHandling = state.config.enableSchemaConstraintHandling)
                 assert(specializationGenes.size == 1)
                 selectedSpecialization = specializationGenes.lastIndex
             } else {
@@ -457,19 +458,33 @@ class StringGene(
          */
         val update = getValueAsRawString()
         for (k in others){
-            k.selectedSpecialization = -1
-            k.value = update
+            setValueWithBindingId(update)
         }
+    }
+
+    private fun setValueWithBindingId(update: String){
+        val curSelected = selectedSpecialization
+        val curValue =value
+
+        selectedSpecialization = -1
+        value = update
+
+        if (!isLocallyValid()){
+            selectedSpecialization = curSelected
+            value = curValue
+        }
+
     }
 
     fun addSpecializations(
         /**
-             * TODO what whas this? does not seem to be used
-             */
-            key: String,
+         * TODO what whas this? does not seem to be used
+         */
+        key: String,
         specs: Collection<StringSpecializationInfo>,
         randomness: Randomness,
-        updateGlobalInfo: Boolean = true
+        updateGlobalInfo: Boolean = true,
+        enableConstraintHandling: Boolean
     ) {
 
         val toAddSpecs = specs
@@ -567,7 +582,7 @@ class StringGene(
                         val schema = it.value
                         val t = schema.subSequence(0, schema.indexOf(":")).trim().toString()
                         val ref = t.subSequence(1,t.length-1).toString()
-                        val obj = RestActionBuilderV3.createObjectGenesForDTOs(ref, schema)
+                        val obj = RestActionBuilderV3.createObjectGenesForDTOs(ref, schema, enableConstraintHandling = enableConstraintHandling)
                         toAddGenes.add(obj)
                     }
             log.trace("JSON_OBJECT, added specification size: {}", toAddGenes.size)
@@ -758,7 +773,13 @@ class StringGene(
         if (other !is StringGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
+        val current = this.value
         this.value = other.value
+
+        if (!isLocallyValid()){
+            this.value = current
+            return
+        }
         this.selectedSpecialization = other.selectedSpecialization
 
         this.specializations.clear()
@@ -870,6 +891,7 @@ class StringGene(
             //this actually can happen when binding to Long, and goes above lenght limit of String
             value = current
             //TODO should we rather enforce this to never happen?
+            return false
         }
 
         return true
