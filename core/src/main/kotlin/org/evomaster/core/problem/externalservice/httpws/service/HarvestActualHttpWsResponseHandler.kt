@@ -7,6 +7,7 @@ import org.evomaster.client.java.instrumentation.shared.PreDefinedSSLInfo
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.ActualResponseInfo
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
@@ -88,6 +89,16 @@ class HarvestActualHttpWsResponseHandler {
              */
             System.setProperty("sun.net.http.allowRestrictedHeaders", "true")
         }
+    }
+
+    constructor() {
+
+    }
+
+    constructor(config: EMConfig, remoteController: RemoteController, randomness: Randomness) {
+        this.config = config
+        this.randomness = randomness
+        this.rc = remoteController
     }
 
     /**
@@ -457,21 +468,52 @@ class HarvestActualHttpWsResponseHandler {
 
         actualResponses.forEach { (k, v) ->
             val httpWsResponseParam = v.param as HttpWsResponseParam
-            if (httpWsResponseParam.status.values[httpWsResponseParam.status.index] == 200) {
-                val ld = LevenshteinDistance.getDefaultInstance().apply(k, key).toDouble()
 
-                if (ld == 0.0) {
-                    out = k
-                } else {
-                    val nDiff = (ld / key.length.toDouble()) * 100.0
+            if (matchRequest(key, k)) {
+                if (httpWsResponseParam.status.values[httpWsResponseParam.status.index] == 200) {
+                    val ld = LevenshteinDistance.getDefaultInstance().apply(k, key).toDouble()
 
-                    if (nDiff < diff) {
-                        diff = nDiff
+                    if (ld == 0.0) {
                         out = k
+                    } else {
+                        val nDiff = (ld / key.length.toDouble()) * 100.0
+
+                        if (nDiff < diff) {
+                            diff = nDiff
+                            out = k
+                        }
                     }
                 }
             }
         }
         return out
+    }
+
+    private fun getURL(url: String): List<String> {
+        return url.split("::")
+    }
+
+    private fun getMethod(url: String): String {
+        return url.split("::")[0].lowercase()
+    }
+
+    private fun getProtocol(url: String): String {
+        return getURL(url)[1].split("/")[0].replace(":", "").lowercase()
+    }
+
+    private fun getDomain(url: String): String {
+        return getURL(url)[1].split("/")[2].lowercase()
+    }
+
+    private fun matchRequest(left: String, right: String): Boolean {
+        val leftMethod = getMethod(left)
+        val leftProtocol = getProtocol(left)
+        val leftDomain = getDomain(left)
+
+        val rightMethod = getMethod(right)
+        val rightProtocol = getProtocol(right)
+        val rightDomain = getDomain(right)
+
+        return leftMethod.equals(rightMethod) && leftProtocol.equals(rightProtocol) && leftDomain.equals(rightDomain)
     }
 }

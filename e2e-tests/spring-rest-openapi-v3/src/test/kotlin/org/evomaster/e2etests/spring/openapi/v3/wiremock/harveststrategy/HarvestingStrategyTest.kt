@@ -12,7 +12,6 @@ import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 class HarvestingStrategyTest: SpringTestBase() {
@@ -76,7 +75,7 @@ class HarvestingStrategyTest: SpringTestBase() {
         DnsCacheManipulator.clearDnsCache()
     }
 
-    @Disabled("Incorrect approach to test the concept. Disabled for now till find the correct way.")
+    @Test
     fun testClosestResponse() {
         // For /api/harvest/strategy/closest/second WireMock will response with 500
         // so the core will select the nearest with the response status code 200.
