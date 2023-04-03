@@ -72,15 +72,7 @@ class NumericStringGene(
     override fun copyValueFrom(other: Gene): Boolean {
         if (other !is NumericStringGene)
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        val current = copy()
-        val ok =  this.number.copyValueFrom(other.number)
-
-        if (!ok) return false
-        if (!isLocallyValid()){
-            assert( copyValueFrom(current) )
-            return false
-        }
-        return true
+       return updateValueOnlyIfValid({this.number.copyValueFrom(other.number)}, false)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

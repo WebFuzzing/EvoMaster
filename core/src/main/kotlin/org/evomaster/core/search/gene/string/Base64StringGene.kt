@@ -42,15 +42,7 @@ class Base64StringGene(
         if (other !is Base64StringGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        val current = copy()
-        val ok = this.data.copyValueFrom(other.data)
-
-        if (!ok) return false
-        if (!isLocallyValid()){
-            assert( copyValueFrom(current) )
-            return false
-        }
-        return true
+        return updateValueOnlyIfValid({this.data.copyValueFrom(other.data)}, false)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
