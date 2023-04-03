@@ -2,6 +2,7 @@ package org.evomaster.core.parser
 
 import org.antlr.v4.runtime.misc.ParseCancellationException
 import org.evomaster.client.java.instrumentation.shared.RegexSharedUtils
+import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
@@ -30,8 +31,9 @@ internal class RegexHandlerTest{
     fun testInd1Issue(){
         val s = "^1[3-9]\\d{9}"
         val regex = RegexHandler.createGeneForJVM(s)
-        assertEquals("regex $s", regex.name)
+        assertEquals("${RegexGene.JAVA_REGEX_PREFIX}$s", regex.sourceRegex)
         assertThrows<ParseCancellationException>{RegexHandler.createGeneForJVM(RegexSharedUtils.handlePartialMatch(s))}
+        RegexHandler.createGeneForJVM(RegexSharedUtils.forceFullMatch(s))
 
         val rand = Randomness()
         regex.randomize(rand, false)
