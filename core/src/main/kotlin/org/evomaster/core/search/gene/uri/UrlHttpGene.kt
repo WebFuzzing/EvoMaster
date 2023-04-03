@@ -85,18 +85,10 @@ class UrlHttpGene(
         if (other !is UrlHttpGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        val current = copy()
-        val ok = scheme.copyValueFrom(other.scheme) &&
+        return updateValueOnlyIfValid({scheme.copyValueFrom(other.scheme) &&
                 host.copyValueFrom(other.host) &&
                 port.copyValueFrom(other.port) &&
-                path.copyValueFrom(other.path)
-
-        if (!ok || !isLocallyValid()){
-            assert( copyValueFrom(current) )
-            return false
-        }
-
-        return true
+                path.copyValueFrom(other.path)}, true)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

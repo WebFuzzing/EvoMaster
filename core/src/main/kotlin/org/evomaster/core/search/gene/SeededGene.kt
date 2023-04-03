@@ -1,6 +1,7 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.problem.graphql.schema.ofType
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.interfaces.ComparableGene
@@ -99,17 +100,20 @@ class SeededGene<T>(
         if (other !is SeededGene<*>)
             throw IllegalArgumentException("Invalid gene ${other::class.java}")
 
-        val ok = if (employSeeded)
-            this.seeded.copyValueFrom(other.seeded)
-        else
-            this.gene.copyValueFrom(other.gene as Gene)
+        return updateValueOnlyIfValid(
+            {
+                val ok = if (employSeeded)
+                    this.seeded.copyValueFrom(other.seeded)
+                else
+                    this.gene.copyValueFrom(other.gene as Gene)
 
-        if (!ok) return false
-
-        this.employSeeded = other.employSeeded
-        this.isEmploySeededMutable = other.isEmploySeededMutable
-
-        return true
+                if (ok){
+                    this.employSeeded = other.employSeeded
+                    this.isEmploySeededMutable = other.isEmploySeededMutable
+                }
+                ok
+            }, false
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

@@ -68,13 +68,9 @@ class UriDataGene(
         }
         val current = copy()
 
-        val ok = type.copyValueFrom(other.type) && base64.copyValueFrom(other.base64) && data.copyValueFrom(other.data)
-        
-        if (!ok || !isLocallyValid()){
-            assert( copyValueFrom(current) )
-            return false
-        }
-        return true
+        return updateValueOnlyIfValid(
+            {type.copyValueFrom(other.type) && base64.copyValueFrom(other.base64) && data.copyValueFrom(other.data)}, true
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

@@ -195,18 +195,18 @@ class ObjectGene(
         if (other.isFixed != isFixed)
             throw IllegalArgumentException("cannot copy value for ObjectGene if their isFixed is different")
 
-        val current = copy()
+        val updateOk = updateValueOnlyIfValid(
+            {
+                var ok = true
 
-        var ok = true
+                for (i in fixedFields.indices) {
+                    ok = ok && this.fixedFields[i].copyValueFrom(other.fixedFields[i])
+                }
+                ok
+            }, true
+        )
 
-        for (i in fixedFields.indices) {
-            ok = ok && this.fixedFields[i].copyValueFrom(other.fixedFields[i])
-        }
-
-        if (!ok || !isLocallyValid()){
-            assert( copyValueFrom(current) )
-            return false
-        }
+        if (!updateOk) return updateOk
 
         if (isFixed) return true
 

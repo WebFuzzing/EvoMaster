@@ -84,15 +84,9 @@ class UUIDGene(
         if (other !is UUIDGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        val current = copy()
-        val ok = this.mostSigBits.copyValueFrom(other.mostSigBits) && this.leastSigBits.copyValueFrom(other.leastSigBits)
-
-        if (!ok || !isLocallyValid()){
-            assert( copyValueFrom(current) )
-            return false
-        }
-
-        return true
+        return updateValueOnlyIfValid(
+            {this.mostSigBits.copyValueFrom(other.mostSigBits) && this.leastSigBits.copyValueFrom(other.leastSigBits)}, true
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
