@@ -33,6 +33,7 @@ class ExternalHarvesterStrategyTest {
         config = injector.getInstance(EMConfig::class.java)
         externalHarvestActualHttpWsResponseHandler = injector.getInstance(HarvestActualHttpWsResponseHandler::class.java)
 
+
     }
 
 

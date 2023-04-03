@@ -91,16 +91,6 @@ class HarvestActualHttpWsResponseHandler {
         }
     }
 
-    constructor() {
-
-    }
-
-    constructor(config: EMConfig, remoteController: RemoteController, randomness: Randomness) {
-        this.config = config
-        this.randomness = randomness
-        this.rc = remoteController
-    }
-
     /**
      * save the harvested actual responses
      *

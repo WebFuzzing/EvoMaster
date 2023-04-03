@@ -22,7 +22,7 @@ class WmHarvestResponseRest {
     private val server = "https://grch37.rest.ensembl.org"
     private val ext = "/vep/human/hgvs"
 
-    private val token = System.getenv("GOREST_AUTH_KEY")?: "ACCESS-TOKEN"
+    private val token = System.getenv("GOREST_AUTH_KEY") ?: "ACCESS-TOKEN"
 
     private val mapper = ObjectMapper()
 
@@ -30,7 +30,7 @@ class WmHarvestResponseRest {
 
 
     @GetMapping(path = ["/images"])
-    fun getNumCountry() : ResponseEntity<String> {
+    fun getNumCountry(): ResponseEntity<String> {
 
         val url = URL(urlToGetABCMetaData)
 
@@ -43,16 +43,16 @@ class WmHarvestResponseRest {
             val dto = mapper.readValue(body, ListlyMetaSearchResponseDto::class.java)
             if (code != 200)
                 return ResponseEntity.status(400).build()
-            val num = dto?.metadata?.images?.size?:0
+            val num = dto?.metadata?.images?.size ?: 0
             val msg = "$code:${if (num in 1..9) "ANY FROM ONE TO NINE" else if (num >= 10) "MORE THAN 10" else "NONE"}"
             return ResponseEntity.ok(msg)
-        }catch (e: Exception){
+        } catch (e: Exception) {
             return ResponseEntity.status(500).build()
         }
     }
 
     @GetMapping(path = ["/grch37Example"])
-    fun getGrch37Example() : ResponseEntity<String> {
+    fun getGrch37Example(): ResponseEntity<String> {
         /*
             example from https://grch37.rest.ensembl.org/documentation/info/vep_hgvs_post
 
@@ -61,37 +61,33 @@ class WmHarvestResponseRest {
 
         val url = URL(server + ext)
 
-//        try {
-            val connection = url.openConnection() as HttpURLConnection
+        val connection = url.openConnection() as HttpURLConnection
 
-            val postBody = "{ \"hgvs_notations\" : [\"AGT:c.803T>C\", \"9:g.22125503G>C\" ] }"
-            connection.requestMethod = "POST"
-            connection.setRequestProperty("Content-Type", "application/json")
-            connection.setRequestProperty("Accept", "application/json")
-            connection.setRequestProperty("Content-Length", postBody.toByteArray().size.toString())
-            connection.useCaches = false
-            connection.doInput = true
-            connection.doOutput = true
+        val postBody = "{ \"hgvs_notations\" : [\"AGT:c.803T>C\", \"9:g.22125503G>C\" ] }"
+        connection.requestMethod = "POST"
+        connection.setRequestProperty("Content-Type", "application/json")
+        connection.setRequestProperty("Accept", "application/json")
+        connection.setRequestProperty("Content-Length", postBody.toByteArray().size.toString())
+        connection.useCaches = false
+        connection.doInput = true
+        connection.doOutput = true
 
-            val wr = DataOutputStream(connection.outputStream)
-            wr.writeBytes(postBody)
-            wr.flush()
-            wr.close()
+        val wr = DataOutputStream(connection.outputStream)
+        wr.writeBytes(postBody)
+        wr.flush()
+        wr.close()
 
-            val responseCode: Int = connection.responseCode
-            val data = connection.inputStream.bufferedReader().use(BufferedReader::readText)
+        val responseCode: Int = connection.responseCode
+        val data = connection.inputStream.bufferedReader().use(BufferedReader::readText)
 
-            if (responseCode != 200) {
-                return ResponseEntity.status(400).build()
-            }
+        if (responseCode != 200) {
+            return ResponseEntity.status(400).build()
+        }
 
-            val list = mapper.readValue(data, List::class.java)
-            if (list.size >= 2 && list.any { it is Map<*, *> && it.size > 10 })
-                return ResponseEntity.ok("Found harvested response")
-            return ResponseEntity.ok("Cannot find harvested response")
-//        } catch (e: Exception) {
-//            return ResponseEntity.status(400).build()
-//        }
+        val list = mapper.readValue(data, List::class.java)
+        if (list.size >= 2 && list.any { it is Map<*, *> && it.size > 10 })
+            return ResponseEntity.ok("Found harvested response")
+        return ResponseEntity.ok("Cannot find harvested response")
     }
 
     /*
