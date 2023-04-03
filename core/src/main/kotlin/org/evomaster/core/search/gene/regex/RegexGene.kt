@@ -15,15 +15,21 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutation
  */
 class RegexGene(
         name: String,
-        val disjunctions: DisjunctionListRxGene
+        val disjunctions: DisjunctionListRxGene,
+        val sourceRegex : String
 ) : CompositeFixedGene(name, disjunctions) {
+
+    companion object{
+        const val JAVA_REGEX_PREFIX = "Java:"
+        const val DATABASE_REGEX_PREFIX = "Database:"
+    }
 
     override fun isLocallyValid() : Boolean{
         return getViewOfChildren().all { it.isLocallyValid() }
     }
 
     override fun copyContent(): Gene {
-        return RegexGene(name, disjunctions.copy() as DisjunctionListRxGene)
+        return RegexGene(name, disjunctions.copy() as DisjunctionListRxGene, sourceRegex = sourceRegex)
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {

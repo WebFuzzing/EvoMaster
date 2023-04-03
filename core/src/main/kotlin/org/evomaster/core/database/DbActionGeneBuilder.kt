@@ -700,7 +700,7 @@ class DbActionGeneBuilder {
                 .map { it.disjunctions }
                 .map { it.disjunctions }
                 .flatten()
-        return RegexGene(geneName, disjunctions = DisjunctionListRxGene(disjunctions = disjunctionRxGenes))
+        return RegexGene(geneName, disjunctions = DisjunctionListRxGene(disjunctions = disjunctionRxGenes), "${RegexGene.DATABASE_REGEX_PREFIX}${likePatterns.joinToString("|")}")
     }
 
 
@@ -731,7 +731,7 @@ class DbActionGeneBuilder {
                 .map { it.disjunctions }
                 .map { it.disjunctions }
                 .flatten()
-        return RegexGene(geneName, disjunctions = DisjunctionListRxGene(disjunctions = disjunctionRxGenes))
+        return RegexGene(geneName, disjunctions = DisjunctionListRxGene(disjunctions = disjunctionRxGenes), "${RegexGene.DATABASE_REGEX_PREFIX}${similarToPatterns.joinToString("|")}")
     }
 
     private fun buildSqlTimeWithTimeZoneGene(column: Column): TimeGene {

@@ -148,7 +148,7 @@ class QuantifierRxGene(
 
         if (length < min || length > limitedMax){
             val regexGene = getFirstParent { p -> p is RegexGene } as? RegexGene
-            throw IllegalArgumentException("invalid length when mutating Gene ($name, based on regular expression[${regexGene?.name ?: "none of its parent is RegexGene"}]). Its length should range from $min to $limitedMax, but it is $length")
+            throw IllegalArgumentException("invalid length when mutating Gene ($name, based on regular expression[${regexGene?.name ?: "none of its parent is RegexGene"}, ${regexGene?.sourceRegex?:"expression is null"}]). Its length should range from $min to $limitedMax, but it is $length")
         }
 
 
