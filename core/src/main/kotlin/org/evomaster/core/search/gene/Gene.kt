@@ -946,6 +946,25 @@ abstract class Gene(
     abstract fun bindValueBasedOn(gene: Gene) : Boolean
 
 
+    /**
+     * here `valid` means that 1) [updateValue] performs correctly, ie, returns true AND 2) isLocallyValid is true
+     *
+     * @param updateValue lambda performs update of value of the gene
+     * @param undoIfUpdateFails represents whether it needs to undo the value update if [undoIfUpdateFails] returns false
+     *
+     * @return if the value is updated with [updateValue]
+     */
+    fun updateValueOnlyIfValid(updateValue: () -> Boolean, undoIfUpdateFails: Boolean) : Boolean{
+        val current = copy()
+        val ok = updateValue()
+        if (!ok && !undoIfUpdateFails) return false
 
+        if (!ok || !isLocallyValid()){
+            assert(copyValueFrom(current))
+            return false
+        }
+        return true
+
+    }
 }
 
