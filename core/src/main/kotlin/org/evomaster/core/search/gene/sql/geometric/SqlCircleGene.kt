@@ -59,13 +59,9 @@ class SqlCircleGene(
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
 
-        val current = copy()
-        val ok = this.c.copyValueFrom(other.c) && this.r.copyValueFrom(other.r)
-        if (!ok || !isLocallyValid()){
-            assert( copyValueFrom(current) )
-            return false
-        }
-        return true
+        return updateValueOnlyIfValid(
+            {this.c.copyValueFrom(other.c) && this.r.copyValueFrom(other.r)}, true
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

@@ -86,15 +86,9 @@ class SqlGeometryCollectionGene(
         if (other !is SqlGeometryCollectionGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        val current = copy()
-        val ok= this.elements.copyValueFrom(other.elements)
-        if (!ok) return false
-        if (!isLocallyValid()){
-            assert( copyValueFrom(current) )
-            return false
-        }
-
-        return true
+        return updateValueOnlyIfValid(
+            {this.elements.copyValueFrom(other.elements)}, false
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

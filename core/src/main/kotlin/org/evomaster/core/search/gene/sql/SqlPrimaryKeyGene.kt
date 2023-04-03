@@ -73,15 +73,9 @@ class SqlPrimaryKeyGene(name: String,
         if (other !is SqlPrimaryKeyGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        val current = copy()
-        val ok = this.gene.copyValueFrom(other.gene)
-
-        if (!ok) return false
-        if (!isLocallyValid()){
-            assert( copyValueFrom(current) )
-            return false
-        }
-        return true
+        return updateValueOnlyIfValid(
+            {this.gene.copyValueFrom(other.gene)}, false
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

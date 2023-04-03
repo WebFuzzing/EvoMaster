@@ -93,14 +93,9 @@ class SqlMultiPathGene(
         if (other !is SqlMultiPathGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        val current = copy()
-        val ok= this.paths.copyValueFrom(other.paths)
-        if (!ok) return false
-        if (!isLocallyValid()){
-            assert( copyValueFrom(current) )
-            return false
-        }
-        return true
+        return updateValueOnlyIfValid(
+            {this.paths.copyValueFrom(other.paths)}, false
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

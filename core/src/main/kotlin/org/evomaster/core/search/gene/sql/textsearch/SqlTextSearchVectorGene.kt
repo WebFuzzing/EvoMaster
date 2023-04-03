@@ -69,15 +69,9 @@ class SqlTextSearchVectorGene(
         if (other !is SqlTextSearchVectorGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        val current = copy()
-        val ok = this.textLexeme.copyValueFrom(other.textLexeme)
-
-        if (!ok) return false
-        if (!isLocallyValid()){
-            assert( copyValueFrom(current) )
-            return false
-        }
-        return true
+        return updateValueOnlyIfValid(
+            {this.textLexeme.copyValueFrom(other.textLexeme)}, false
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

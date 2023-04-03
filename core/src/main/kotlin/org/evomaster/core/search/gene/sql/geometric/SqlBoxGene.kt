@@ -34,14 +34,10 @@ class SqlBoxGene(
         if (other !is SqlBoxGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        val current = copy()
-        val ok = this.p.copyValueFrom(other.p) && this.q.copyValueFrom(other.q)
 
-        if (!ok || !isLocallyValid()){
-            assert( copyValueFrom(current) )
-            return false
-        }
-        return true
+        return updateValueOnlyIfValid(
+            {this.p.copyValueFrom(other.p) && this.q.copyValueFrom(other.q)}, true
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

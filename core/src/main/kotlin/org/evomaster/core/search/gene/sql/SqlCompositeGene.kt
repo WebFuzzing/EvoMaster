@@ -69,18 +69,16 @@ class SqlCompositeGene(
         if (other !is SqlCompositeGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        val current = copy()
 
-        var ok = true
-        for (i in fields.indices) {
-            ok = ok && this.fields[i].copyValueFrom(other.fields[i])
-        }
-
-        if (!ok || !isLocallyValid()){
-            assert( copyValueFrom(current) )
-            return false
-        }
-        return true
+        return updateValueOnlyIfValid(
+            {
+                var ok = true
+                for (i in fields.indices) {
+                    ok = ok && this.fields[i].copyValueFrom(other.fields[i])
+                }
+                ok
+            }, true
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

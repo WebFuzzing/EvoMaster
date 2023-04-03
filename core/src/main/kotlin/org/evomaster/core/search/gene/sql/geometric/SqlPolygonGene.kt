@@ -180,15 +180,7 @@ class SqlPolygonGene(
         if (other !is SqlPolygonGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        val current = copy()
-        val ok = this.points.copyValueFrom(other.points)
-
-        if (!ok) return false
-        if (!isLocallyValid()){
-            assert( copyValueFrom(current) )
-            return false
-        }
-        return true
+        return updateValueOnlyIfValid({this.points.copyValueFrom(other.points)}, false)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

@@ -76,16 +76,10 @@ class SqlLogSeqNumberGene(
         if (other !is SqlLogSeqNumberGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        val current = copy()
-        val ok = leftPart.copyValueFrom(other.leftPart)
-                && rightPart.copyValueFrom(other.rightPart)
-
-
-        if (!ok || !isLocallyValid()){
-            assert( copyValueFrom(current) )
-            return false
-        }
-        return true
+        return updateValueOnlyIfValid(
+            {leftPart.copyValueFrom(other.leftPart)
+                    && rightPart.copyValueFrom(other.rightPart)}, true
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

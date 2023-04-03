@@ -73,14 +73,9 @@ class SqlBinaryStringGene(
         if (other !is SqlBinaryStringGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        val current = copy()
-        val ok= binaryArrayGene.copyValueFrom(other.binaryArrayGene)
-        if (!ok) return false
-        if (!isLocallyValid()){
-            assert( copyValueFrom(current) )
-            return false
-        }
-        return true
+        return updateValueOnlyIfValid(
+            {binaryArrayGene.copyValueFrom(other.binaryArrayGene)}, false
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

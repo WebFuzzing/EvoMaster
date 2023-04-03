@@ -97,15 +97,9 @@ class SqlJSONPathGene(
         if (other !is SqlJSONPathGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        val current = copy()
-        val ok = this.pathExpression.copyValueFrom(other.pathExpression)
-
-        if (!ok) return false
-        if (!isLocallyValid()){
-            assert( copyValueFrom(current) )
-            return false
-        }
-        return true
+        return updateValueOnlyIfValid(
+            {this.pathExpression.copyValueFrom(other.pathExpression)}, false
+        )
     }
 
     /**

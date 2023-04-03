@@ -93,18 +93,12 @@ class SqlRangeGene<T>(
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
 
-        val current = copy()
-        val ok = isLeftClosed.copyValueFrom(other.isLeftClosed) &&
-            left.copyValueFrom(other.left as Gene) &&
-            right.copyValueFrom(other.right as Gene) &&
-            isRightClosed.copyValueFrom(other.isRightClosed)
-
-        if (!ok || !isLocallyValid()){
-            assert( copyValueFrom(current) )
-            return false
-        }
-
-        return true
+        return updateValueOnlyIfValid(
+            {isLeftClosed.copyValueFrom(other.isLeftClosed) &&
+                    left.copyValueFrom(other.left as Gene) &&
+                    right.copyValueFrom(other.right as Gene) &&
+                    isRightClosed.copyValueFrom(other.isRightClosed)}, true
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

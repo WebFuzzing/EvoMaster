@@ -72,15 +72,9 @@ class SqlXMLGene(name: String,
         if (other !is SqlXMLGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        val current =  copy()
-        val ok = this.objectGene.copyValueFrom(other.objectGene)
-
-        if (!ok) return false
-        if (!isLocallyValid()){
-            assert( copyValueFrom(current) )
-            return false
-        }
-        return true
+        return  updateValueOnlyIfValid(
+            {this.objectGene.copyValueFrom(other.objectGene)}, false
+        )
     }
 
     /**

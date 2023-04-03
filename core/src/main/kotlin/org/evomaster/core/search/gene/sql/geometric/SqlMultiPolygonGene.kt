@@ -98,15 +98,9 @@ class SqlMultiPolygonGene(
         if (other !is SqlMultiPolygonGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        val current = copy()
-        val ok = this.polygons.copyValueFrom(other.polygons)
-
-        if (!ok) return false
-        if (!isLocallyValid()){
-            assert( copyValueFrom(current) )
-            return false
-        }
-        return true
+        return updateValueOnlyIfValid(
+            {this.polygons.copyValueFrom(other.polygons)}, false
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

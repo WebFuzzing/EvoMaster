@@ -68,15 +68,9 @@ class SqlMultiRangeGene<T>(
         if (other !is SqlMultiRangeGene<*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        val current = copy()
-        val ok = this.rangeGenes.copyValueFrom(other.rangeGenes)
-
-        if (!ok) return false
-        if (!isLocallyValid()){
-            assert( copyValueFrom(current) )
-            return false
-        }
-        return true
+        return updateValueOnlyIfValid(
+            {this.rangeGenes.copyValueFrom(other.rangeGenes)}, false
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

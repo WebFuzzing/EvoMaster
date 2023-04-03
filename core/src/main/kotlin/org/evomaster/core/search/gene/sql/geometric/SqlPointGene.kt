@@ -72,15 +72,10 @@ class SqlPointGene(
         if (other !is SqlPointGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        val current = copy()
-        val ok = this.x.copyValueFrom(other.x)
-                && this.y.copyValueFrom(other.y)
-
-        if (!ok || !isLocallyValid()){
-            assert( copyValueFrom(current) )
-            return false
-        }
-        return true
+        return updateValueOnlyIfValid(
+            {this.x.copyValueFrom(other.x)
+                    && this.y.copyValueFrom(other.y)}, true
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

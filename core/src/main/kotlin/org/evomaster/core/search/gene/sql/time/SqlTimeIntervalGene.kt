@@ -69,15 +69,11 @@ class SqlTimeIntervalGene(
         if (other !is SqlTimeIntervalGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        val current = copy()
-        val ok = this.days.copyValueFrom(other.days)
-                && this.time.copyValueFrom(other.time)
 
-        if (!ok || !isLocallyValid()){
-            assert( copyValueFrom(current) )
-            return false
-        }
-        return true
+        return updateValueOnlyIfValid(
+            {this.days.copyValueFrom(other.days)
+                    && this.time.copyValueFrom(other.time)}, true
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
