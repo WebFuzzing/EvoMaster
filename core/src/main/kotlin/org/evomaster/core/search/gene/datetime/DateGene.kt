@@ -142,14 +142,9 @@ class DateGene(
             )
         }
 
-        val current = copy()
-        val ok = this.year.copyValueFrom(other.year) && this.month.copyValueFrom(other.month) && this.day.copyValueFrom(other.day)
-        if (!ok || !isLocallyValid()){
-            assert ( copyValueFrom(current) )
-            return false
-        }
-
-        return true
+        return updateValueOnlyIfValid(
+            {this.year.copyValueFrom(other.year) && this.month.copyValueFrom(other.month) && this.day.copyValueFrom(other.day)}, true
+        )
     }
 
     /**

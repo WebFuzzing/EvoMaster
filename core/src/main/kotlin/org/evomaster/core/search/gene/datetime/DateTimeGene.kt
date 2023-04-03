@@ -136,14 +136,9 @@ open class DateTimeGene(
         if (other !is DateTimeGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        val current = copy()
-        val ok = this.date.copyValueFrom(other.date) && this.time.copyValueFrom(other.time)
-        if (!ok || !isLocallyValid()){
-            assert( copyValueFrom(current) )
-            return false
-        }
-
-        return true
+        return updateValueOnlyIfValid(
+            {this.date.copyValueFrom(other.date) && this.time.copyValueFrom(other.time)}, true
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

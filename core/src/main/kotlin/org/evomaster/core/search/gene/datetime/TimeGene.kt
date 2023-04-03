@@ -145,18 +145,11 @@ class TimeGene(
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
 
-        val current = copy()
-
-        val ok = this.hour.copyValueFrom(other.hour)
-                && this.minute.copyValueFrom(other.minute)
-                && this.second.copyValueFrom(other.second)
-
-        if (!ok || !isLocallyValid()){
-            assert( copyValueFrom(current) )
-            return false
-        }
-
-        return true
+        return updateValueOnlyIfValid(
+            {this.hour.copyValueFrom(other.hour)
+                    && this.minute.copyValueFrom(other.minute)
+                    && this.second.copyValueFrom(other.second)}, true
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
