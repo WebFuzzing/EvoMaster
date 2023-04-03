@@ -1,8 +1,10 @@
 package org.evomaster.core.parser
 
+import org.antlr.v4.runtime.misc.ParseCancellationException
 import org.evomaster.client.java.instrumentation.shared.RegexSharedUtils
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 internal class RegexHandlerTest{
 
@@ -19,6 +21,14 @@ internal class RegexHandlerTest{
         RegexHandler.createGeneForJVM(RegexSharedUtils.forceFullMatch(x))
 
         RegexHandler.createGeneForJVM(RegexSharedUtils.handlePartialMatch(s)+"|"+RegexSharedUtils.forceFullMatch(x))
+    }
+
+    @Test
+    fun testInd1Issue(){
+        val s = "^1[3-9]\\d{9}"
+        val regex = RegexHandler.createGeneForJVM(s)
+        assertEquals("regex $s", regex.name)
+        assertThrows<ParseCancellationException>{RegexHandler.createGeneForJVM(RegexSharedUtils.handlePartialMatch(s))}
     }
 
 
