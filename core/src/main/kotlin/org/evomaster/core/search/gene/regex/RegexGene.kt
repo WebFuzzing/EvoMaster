@@ -22,7 +22,7 @@ class RegexGene(
     companion object{
         const val JAVA_REGEX_PREFIX = "Java:"
         const val DATABASE_REGEX_PREFIX = "Database:"
-        const val DATABASE_REGEX_SEPARATOR = "|"
+        const val DATABASE_REGEX_SEPARATOR = "||"
     }
 
     override fun isLocallyValid() : Boolean{
