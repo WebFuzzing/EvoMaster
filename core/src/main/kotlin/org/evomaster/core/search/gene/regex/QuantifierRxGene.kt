@@ -189,36 +189,26 @@ class QuantifierRxGene(
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
 
-        val current = copy()
-
-        if (this.atoms.size == other.atoms.size) {
-            //same size, so just copy over the values
-            var ok = true
-            for (i in 0 until other.atoms.size) {
-                ok = ok && this.atoms[i].copyValueFrom(other.atoms[i])
-            }
-
-            if (!ok || !isLocallyValid()){
-                assert( copyValueFrom(current) )
-                return false
-            }
-
-            return true
-        } else {
-            //different size, so clear and create new copies
-            this.killAllChildren()
-            other.atoms.forEach{
-                val a = it.copy()
-                this.addChild(a)
-            }
-
-            if (!isLocallyValid()){
-                assert( copyValueFrom(current) )
-                return false
-            }
-
-            return true
-        }
+        return updateValueOnlyIfValid(
+            {
+                if (this.atoms.size == other.atoms.size) {
+                    //same size, so just copy over the values
+                    var ok = true
+                    for (i in 0 until other.atoms.size) {
+                        ok = ok && this.atoms[i].copyValueFrom(other.atoms[i])
+                    }
+                    ok
+                } else {
+                    //different size, so clear and create new copies
+                    this.killAllChildren()
+                    other.atoms.forEach{
+                        val a = it.copy()
+                        this.addChild(a)
+                    }
+                    true
+                }
+            }, true
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

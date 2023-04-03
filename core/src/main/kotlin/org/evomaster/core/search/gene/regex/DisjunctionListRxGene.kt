@@ -143,19 +143,17 @@ class DisjunctionListRxGene(
 
         //TODO: Man, shall we check the size of [disjunctions]
 
-        val current = copy()
-        var ok = true
-        for (i in 0 until disjunctions.size) {
-            ok = ok && this.disjunctions[i].copyValueFrom(other.disjunctions[i])
-        }
+        return updateValueOnlyIfValid({
+            var ok = true
+            for (i in 0 until disjunctions.size) {
+                ok = ok && this.disjunctions[i].copyValueFrom(other.disjunctions[i])
+            }
+            if (ok){
+                this.activeDisjunction = other.activeDisjunction
+            }
+            ok
+        }, true)
 
-        if (!ok || !isLocallyValid()){
-            assert( copyValueFrom(current) )
-            return false
-        }
-
-        this.activeDisjunction = other.activeDisjunction
-        return true
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

@@ -142,20 +142,20 @@ class DisjunctionRxGene(
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         val current = this.copy()
-        var ok = true
-        for (i in 0 until terms.size) {
-            ok = ok && this.terms[i].copyValueFrom(other.terms[i])
-        }
+        return updateValueOnlyIfValid(
+            {
+                var ok = true
+                for (i in 0 until terms.size) {
+                    ok = ok && this.terms[i].copyValueFrom(other.terms[i])
+                }
+                if (ok){
+                    this.extraPrefix = other.extraPrefix
+                    this.extraPostfix = other.extraPostfix
+                }
+                ok
 
-        if (!ok || !isLocallyValid()){
-            assert( copyValueFrom(current) )
-            return false
-        }
-
-        this.extraPrefix = other.extraPrefix
-        this.extraPostfix = other.extraPostfix
-
-        return true
+            }, true
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
