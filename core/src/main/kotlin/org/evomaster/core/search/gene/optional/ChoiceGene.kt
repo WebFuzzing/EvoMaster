@@ -153,21 +153,17 @@ class ChoiceGene<T>(
         } else if (geneChoices.size != other.geneChoices.size) {
             throw IllegalArgumentException("Cannot copy value from another choice gene with  ${other.geneChoices.size} choices (current gene has ${geneChoices.size} choices)")
         } else {
-            val current = copy()
-
-            this.activeGeneIndex = other.activeGeneIndex
-            var ok = true
-            for (i in geneChoices.indices) {
-                // short circuit if ok is false
-                ok =  ok && this.geneChoices[i].copyValueFrom(other.geneChoices[i])
-            }
-
-            if (!ok || !isLocallyValid()){
-                assert( copyValueFrom(current) )
-                return false
-            }
-
-            return true
+            return updateValueOnlyIfValid(
+                {
+                    this.activeGeneIndex = other.activeGeneIndex
+                    var ok = true
+                    for (i in geneChoices.indices) {
+                        // short circuit if ok is false
+                        ok =  ok && this.geneChoices[i].copyValueFrom(other.geneChoices[i])
+                    }
+                    ok
+                }, true
+            )
         }
     }
 

@@ -68,20 +68,18 @@ class OptionalGene(name: String,
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
 
-        val current = copy()
-        val ok = this.gene.copyValueFrom(other.gene)
-        if (!ok) return false
-        if (!isLocallyValid()){
-            assert( copyValueFrom(current) )
-            return false
-        }
-
-        this.isActive = other.isActive
-        this.selectable = other.selectable
-        this.requestSelection = other.requestSelection
-        this.searchPercentageActive = other.searchPercentageActive
-
-        return true
+        return updateValueOnlyIfValid(
+            {
+                val ok = gene.copyValueFrom(other.gene)
+                if (ok){
+                    this.isActive = other.isActive
+                    this.selectable = other.selectable
+                    this.requestSelection = other.requestSelection
+                    this.searchPercentageActive = other.searchPercentageActive
+                }
+                ok
+            }, false
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

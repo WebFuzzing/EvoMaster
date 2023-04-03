@@ -101,20 +101,17 @@ class NullableGene(name: String,
         if (other !is NullableGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        val current = copy()
-        val ok = this.gene.copyValueFrom(other.gene)
-        if (!ok) return false
-
-        if (!isLocallyValid()){
-            assert( copyValueFrom(current) )
-            return false
-        }
-
-        this.isActive = other.isActive
-        this.selectable = other.selectable
-        this.nullLabel = other.nullLabel
-
-        return true
+        return updateValueOnlyIfValid(
+            {
+                val ok = this.gene.copyValueFrom(other.gene)
+                if (ok){
+                    this.isActive = other.isActive
+                    this.selectable = other.selectable
+                    this.nullLabel = other.nullLabel
+                }
+                ok
+            }, false
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

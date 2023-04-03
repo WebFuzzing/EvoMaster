@@ -128,20 +128,17 @@ class CustomMutationRateGene<out T>(
         if (other !is CustomMutationRateGene<*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        val current = copy()
-        val ok = this.gene.copyValueFrom(other.gene)
-        if (!ok)
-            return false
 
-        if (!isLocallyValid()){
-            assert( copyValueFrom(current) )
-            return false
-        }
-
-        this.probability = other.probability
-        this.searchPercentageActive = other.searchPercentageActive
-
-        return true
+        return updateValueOnlyIfValid(
+            {
+                val ok = this.gene.copyValueFrom(other.gene)
+                if (ok){
+                    this.probability = other.probability
+                    this.searchPercentageActive = other.searchPercentageActive
+                }
+                ok
+            }, false
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
