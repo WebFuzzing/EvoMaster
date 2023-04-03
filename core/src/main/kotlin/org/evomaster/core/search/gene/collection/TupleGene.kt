@@ -180,17 +180,17 @@ class TupleGene(
         }
         assert(elements.size == other.elements.size)
 
-        val current = copy()
-        var ok = true
-        (elements.indices).forEach {
-            ok = ok && elements[it].copyValueFrom(other.elements[it])
-        }
 
-        if (!ok || !isLocallyValid()){
-            assert( copyValueFrom(current) )
-            return false
-        }
-        return true
+        return updateValueOnlyIfValid(
+            {
+                var ok = true
+                (elements.indices).forEach {
+                    ok = ok && elements[it].copyValueFrom(other.elements[it])
+                }
+                ok
+            },
+            true
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

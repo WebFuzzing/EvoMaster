@@ -65,19 +65,11 @@ class PairGene<F,S>(
         if (other !is PairGene<*, *>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        val firstCurrent = first.copy()
-        val ok1 = first.copyValueFrom(other.first)
-
-        if (!ok1){
-            return false
-        }
-        val ok2 = second.copyValueFrom(other.second)
-        if (!ok2){
-            assert( first.copyValueFrom(firstCurrent) )
-            return false
-        }
-
-        return true
+        return updateValueOnlyIfValid(
+            {
+                first.copyValueFrom(other.first) && second.copyValueFrom(other.second)
+            }, true
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

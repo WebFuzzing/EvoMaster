@@ -45,23 +45,17 @@ class FixedMapGene<K, V>(
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
 
-        val current = copy()
-
-        killAllChildren()
-        // maxSize
-        val copy = (if (maxSize!=null && other.elements.size > maxSize!!)
-            other.elements.subList(0, maxSize!!)
-        else other.elements)
+        return updateValueOnlyIfValid({
+            killAllChildren()
+            // maxSize
+            val copy = (if (maxSize!=null && other.elements.size > maxSize!!)
+                other.elements.subList(0, maxSize!!)
+            else other.elements)
                 .map { e -> e.copy() as PairGene<K, V> }
                 .toMutableList()
-        addChildren(copy)
-
-        if (!isLocallyValid()){
-            assert( copyValueFrom(current) )
-            return false
-        }
-
-        return true
+            addChildren(copy)
+            true
+        },false)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
