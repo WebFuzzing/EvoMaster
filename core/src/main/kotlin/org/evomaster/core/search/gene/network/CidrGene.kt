@@ -87,17 +87,15 @@ class CidrGene(
                     "cannot bind MacAddrGene${octets.size} with MacAddrGene${other.octets.size}"
             )
         }
-        val current = copy()
-        var ok = true
-        repeat(octets.size) {
-            ok = ok && octets[it].copyValueFrom(other.octets[it])
-        }
-        if (!ok || !isLocallyValid()){
-            assert( copyValueFrom(current) )
-            return false
-        }
-
-        return true
+        return updateValueOnlyIfValid(
+            {
+                var ok = true
+                repeat(octets.size) {
+                    ok = ok && octets[it].copyValueFrom(other.octets[it])
+                }
+                ok
+            }, true
+        )
 
     }
 
