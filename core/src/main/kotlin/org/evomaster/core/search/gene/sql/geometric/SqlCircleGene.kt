@@ -62,7 +62,7 @@ class SqlCircleGene(
         val current = copy()
         val ok = this.c.copyValueFrom(other.c) && this.r.copyValueFrom(other.r)
         if (!ok || !isLocallyValid()){
-            Lazy.assert { copyValueFrom(current) }
+            assert( copyValueFrom(current) )
             return false
         }
         return true

@@ -97,7 +97,7 @@ class SqlMultiPathGene(
         val ok= this.paths.copyValueFrom(other.paths)
         if (!ok) return false
         if (!isLocallyValid()){
-            Lazy.assert { copyValueFrom(current) }
+            assert( copyValueFrom(current) )
             return false
         }
         return true

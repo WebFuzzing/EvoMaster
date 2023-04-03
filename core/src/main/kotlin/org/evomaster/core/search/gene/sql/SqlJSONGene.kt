@@ -86,7 +86,7 @@ class SqlJSONGene(name: String,
 
         if (!ok) return false
         if (!isLocallyValid()){
-            Lazy.assert { copyValueFrom(current) }
+            assert( copyValueFrom(current) )
             return false
         }
         return true

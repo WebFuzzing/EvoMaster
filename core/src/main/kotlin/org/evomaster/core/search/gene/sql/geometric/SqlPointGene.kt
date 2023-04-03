@@ -77,7 +77,7 @@ class SqlPointGene(
                 && this.y.copyValueFrom(other.y)
 
         if (!ok || !isLocallyValid()){
-            Lazy.assert { copyValueFrom(current) }
+            assert( copyValueFrom(current) )
             return false
         }
         return true

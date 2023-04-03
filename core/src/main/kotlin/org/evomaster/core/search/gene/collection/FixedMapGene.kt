@@ -57,7 +57,7 @@ class FixedMapGene<K, V>(
         addChildren(copy)
 
         if (!isLocallyValid()){
-            Lazy.assert { copyValueFrom(current) }
+            assert( copyValueFrom(current) )
             return false
         }
 

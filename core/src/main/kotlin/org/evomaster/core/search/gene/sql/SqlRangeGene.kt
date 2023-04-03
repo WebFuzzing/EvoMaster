@@ -100,7 +100,7 @@ class SqlRangeGene<T>(
             isRightClosed.copyValueFrom(other.isRightClosed)
 
         if (!ok || !isLocallyValid()){
-            Lazy.assert { copyValueFrom(current) }
+            assert( copyValueFrom(current) )
             return false
         }
 

@@ -93,7 +93,7 @@ class CidrGene(
             ok = ok && octets[it].copyValueFrom(other.octets[it])
         }
         if (!ok || !isLocallyValid()){
-            Lazy.assert { copyValueFrom(current) }
+            assert( copyValueFrom(current) )
             return false
         }
 

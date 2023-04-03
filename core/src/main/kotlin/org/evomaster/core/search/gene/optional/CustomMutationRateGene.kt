@@ -134,7 +134,7 @@ class CustomMutationRateGene<out T>(
             return false
 
         if (!isLocallyValid()){
-            Lazy.assert { copyValueFrom(current) }
+            assert( copyValueFrom(current) )
             return false
         }
 

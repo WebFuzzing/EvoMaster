@@ -349,7 +349,7 @@ class SqlMultidimensionalArrayGene<T>(
         this.dimensionSizes = other.dimensionSizes
 
         if (!isLocallyValid()){
-            Lazy.assert { copyValueFrom(current) }
+            assert( copyValueFrom(current) )
             return false
         }
 

@@ -38,7 +38,7 @@ class SqlBoxGene(
         val ok = this.p.copyValueFrom(other.p) && this.q.copyValueFrom(other.q)
 
         if (!ok || !isLocallyValid()){
-            Lazy.assert { copyValueFrom(current) }
+            assert( copyValueFrom(current) )
             return false
         }
         return true

@@ -145,7 +145,7 @@ class DateGene(
         val current = copy()
         val ok = this.year.copyValueFrom(other.year) && this.month.copyValueFrom(other.month) && this.day.copyValueFrom(other.day)
         if (!ok || !isLocallyValid()){
-            Lazy.assert { copyValueFrom(current)}
+            assert ( copyValueFrom(current) )
             return false
         }
 

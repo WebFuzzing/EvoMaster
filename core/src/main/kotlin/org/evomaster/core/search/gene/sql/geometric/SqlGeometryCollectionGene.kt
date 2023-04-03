@@ -90,7 +90,7 @@ class SqlGeometryCollectionGene(
         val ok= this.elements.copyValueFrom(other.elements)
         if (!ok) return false
         if (!isLocallyValid()){
-            Lazy.assert { copyValueFrom(current) }
+            assert( copyValueFrom(current) )
             return false
         }
 

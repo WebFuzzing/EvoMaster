@@ -199,7 +199,7 @@ class QuantifierRxGene(
             }
 
             if (!ok || !isLocallyValid()){
-                Lazy.assert { copyValueFrom(current) }
+                assert( copyValueFrom(current) )
                 return false
             }
 
@@ -213,7 +213,7 @@ class QuantifierRxGene(
             }
 
             if (!isLocallyValid()){
-                Lazy.assert { copyValueFrom(current) }
+                assert( copyValueFrom(current) )
                 return false
             }
 

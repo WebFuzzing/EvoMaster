@@ -74,7 +74,7 @@ class SqlTimeIntervalGene(
                 && this.time.copyValueFrom(other.time)
 
         if (!ok || !isLocallyValid()){
-            Lazy.assert { copyValueFrom(current) }
+            assert( copyValueFrom(current) )
             return false
         }
         return true

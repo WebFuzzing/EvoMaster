@@ -152,7 +152,7 @@ class TimeGene(
                 && this.second.copyValueFrom(other.second)
 
         if (!ok || !isLocallyValid()){
-            Lazy.assert { copyValueFrom(current) }
+            assert( copyValueFrom(current) )
             return false
         }
 

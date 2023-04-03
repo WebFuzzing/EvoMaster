@@ -92,7 +92,7 @@ class UrlHttpGene(
                 path.copyValueFrom(other.path)
 
         if (!ok || !isLocallyValid()){
-            Lazy.assert { copyValueFrom(current) }
+            assert( copyValueFrom(current) )
             return false
         }
 

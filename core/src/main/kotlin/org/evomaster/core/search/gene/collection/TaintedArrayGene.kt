@@ -106,7 +106,7 @@ class TaintedArrayGene(
         val ok = this.arrayGene?.copyValueFrom(other.arrayGene!!)?:true
         if (!ok) return false
         if (!isLocallyValid()) {
-            Lazy.assert { copyValueFrom(current) }
+            assert( copyValueFrom(current) )
             return false
         }
 

@@ -77,7 +77,7 @@ class SqlCompositeGene(
         }
 
         if (!ok || !isLocallyValid()){
-            Lazy.assert { copyValueFrom(current) }
+            assert( copyValueFrom(current) )
             return false
         }
         return true

@@ -72,7 +72,7 @@ class OptionalGene(name: String,
         val ok = this.gene.copyValueFrom(other.gene)
         if (!ok) return false
         if (!isLocallyValid()){
-            Lazy.assert { copyValueFrom(current) }
+            assert( copyValueFrom(current) )
             return false
         }
 
