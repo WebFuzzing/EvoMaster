@@ -2,6 +2,9 @@ package org.evomaster.core.parser
 
 import org.antlr.v4.runtime.misc.ParseCancellationException
 import org.evomaster.client.java.instrumentation.shared.RegexSharedUtils
+import org.evomaster.core.search.service.AdaptiveParameterControl
+import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -29,6 +32,23 @@ internal class RegexHandlerTest{
         val regex = RegexHandler.createGeneForJVM(s)
         assertEquals("regex $s", regex.name)
         assertThrows<ParseCancellationException>{RegexHandler.createGeneForJVM(RegexSharedUtils.handlePartialMatch(s))}
+
+        val rand = Randomness()
+        regex.randomize(rand, false)
+        assertTrue(regex.isLocallyValid())
+        val copy = regex.copy()
+        assertTrue(copy.isLocallyValid())
+        assertEquals(regex.getValueAsRawString(), copy.getValueAsRawString())
+
+        val apc = AdaptiveParameterControl()
+        val mwc = MutationWeightControl()
+
+        regex.doInitialize(rand)
+
+        repeat(1000){
+            regex.standardMutation(rand, apc, mwc)
+            regex.copy().standardMutation(rand, apc, mwc)
+        }
     }
 
 
