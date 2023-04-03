@@ -73,7 +73,7 @@ class PairGene<F,S>(
         }
         val ok2 = second.copyValueFrom(other.second)
         if (!ok2){
-            Lazy.assert {first.copyValueFrom(firstCurrent) }
+            assert( first.copyValueFrom(firstCurrent) )
             return false
         }
 
