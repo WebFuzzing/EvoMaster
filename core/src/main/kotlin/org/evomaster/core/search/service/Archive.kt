@@ -591,4 +591,15 @@ class Archive<T> where T : Individual {
 //
 //    fun chooseImproveTargetsAfter(index : Int) : Set<Int> = latestImprovement.filterValues { it >= index }.keys
 
+    /**
+     * this is only used for debugging purpose
+     *
+     * @return whether all genes in current populations are all locally valid
+     */
+    fun areAllPopulationGeneLocallyValid() : Boolean{
+        return populations.values.flatten().all {
+            it.individual.seeGenes().all { g-> g.isLocallyValid() }
+        }
+    }
+
 }
