@@ -225,7 +225,7 @@ class HarvestActualHttpWsResponseHandler {
                 }
             } else if (config.externalRequestResponseSelectionStrategy == EMConfig.ExternalRequestResponseSelectionStrategy.RANDOM) {
                 val randomIndex = randomness.nextInt(actualResponses.size)
-                found = actualResponses.filter { matchRequest(it.key, httpRequest.getDescription()) }[actualResponses.keys().toList()[randomIndex]]?.param?.copy() as? ResponseParam
+                found = actualResponses[actualResponses.keys().toList()[randomIndex]]?.param?.copy() as? ResponseParam
             } else if (config.externalRequestResponseSelectionStrategy == EMConfig.ExternalRequestResponseSelectionStrategy.EXACT) {
                 found = (actualResponses[httpRequest.getDescription()]?.param?.copy() as? ResponseParam)
             }

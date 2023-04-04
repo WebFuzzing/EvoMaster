@@ -1820,20 +1820,21 @@ class EMConfig {
 
     enum class ExternalRequestResponseSelectionStrategy {
         /**
-         * Selects the exact matching response for the request
+         * Selects the exact matching response for the request.
          */
         EXACT,
 
         /**
-         * Selects a random response for the request
+         * Selects a random response for the request from the captured responses
+         * regardless of the domain.
          */
         RANDOM,
 
         /**
-         * Selects the closest matching response based on the request
-         * URL.
+         * Selects the closest matching response from the same domain based on the
+         * request path.
          */
-        CLOSEST,
+        CLOSEST
     }
 
     @Cfg("Harvested external request response selection strategy")
