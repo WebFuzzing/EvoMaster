@@ -1,6 +1,7 @@
 package org.evomaster.core.search.gene.sql.geometric
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
+import org.evomaster.core.Lazy
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
@@ -89,11 +90,13 @@ class SqlPathGene(
         }
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is SqlPathGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        this.points.copyValueFrom(other.points)
+        return updateValueOnlyIfValid(
+            {this.points.copyValueFrom(other.points)}, false
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

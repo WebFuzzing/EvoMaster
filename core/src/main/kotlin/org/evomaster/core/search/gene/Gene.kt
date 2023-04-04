@@ -696,7 +696,14 @@ abstract class Gene(
     Note: above, null target format means that no characters are escaped.
      */
 
-    abstract fun copyValueFrom(other: Gene)
+    /**
+     * copy value based on [other]
+     * in some case, the [other] might not satisfy constraints of [this gene],
+     * then copying will not be performed successfully
+     *
+     * @return whether the value is copied based on [other] successfully
+     */
+    abstract fun copyValueFrom(other: Gene): Boolean
 
     /**
      * If this gene represents a variable, then return its name.
@@ -939,6 +946,26 @@ abstract class Gene(
     abstract fun bindValueBasedOn(gene: Gene) : Boolean
 
 
+    /**
+     * here `valid` means that 1) [updateValue] performs correctly, ie, returns true AND 2) isLocallyValid is true
+     *
+     * @param updateValue lambda performs update of value of the gene
+     * @param undoIfUpdateFails represents whether it needs to undo the value update if [undoIfUpdateFails] returns false
+     *
+     * @return if the value is updated with [updateValue]
+     */
+    fun updateValueOnlyIfValid(updateValue: () -> Boolean, undoIfUpdateFails: Boolean) : Boolean{
+        val current = copy()
+        val ok = updateValue()
+        if (!ok && !undoIfUpdateFails) return false
 
+        if (!ok || !isLocallyValid()){
+            val success = copyValueFrom(current)
+            assert(success)
+            return false
+        }
+        return true
+
+    }
 }
 

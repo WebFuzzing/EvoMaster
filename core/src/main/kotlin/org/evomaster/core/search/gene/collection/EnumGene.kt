@@ -173,11 +173,18 @@ class EnumGene<T : Comparable<T>>(
         return values[index].toString()
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is EnumGene<*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
+        val current = this.index
         this.index = other.index
+        if (!isLocallyValid()){
+            this.index = current
+            return false
+        }
+
+        return true
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
