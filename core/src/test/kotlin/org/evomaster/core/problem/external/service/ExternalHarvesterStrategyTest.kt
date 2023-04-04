@@ -126,7 +126,7 @@ class ExternalHarvesterStrategyTest {
         externalHarvestActualHttpWsResponseHandler.initialize()
 
         val resultRequest = HttpExternalServiceRequest(UUID.randomUUID(),"GET","http://exists.local:12354/api/mock","http://exists.local:12354/api/mock",true,UUID.randomUUID().toString(),"http://exists.local:12354/api/mock", mapOf(),null)
-        val secondRequest = HttpExternalServiceRequest(UUID.randomUUID(),"GET","http://exists.local:12354/api/mock","http://exists.local:12354/api/mock",true,UUID.randomUUID().toString(),"http://exists.local:12354/api/mock", mapOf(),null)
+        val secondRequest = HttpExternalServiceRequest(UUID.randomUUID(),"GET","http://exists.local:12354/api","http://exists.local:12354/api",true,UUID.randomUUID().toString(),"http://exists.local:12354/api", mapOf(),null)
 
         val requests = mutableListOf<HttpExternalServiceRequest>()
         requests.add(resultRequest)
@@ -139,16 +139,17 @@ class ExternalHarvesterStrategyTest {
         Thread.sleep(3000)
 
         val successResult: HttpWsResponseParam = externalHarvestActualHttpWsResponseHandler.getACopyOfActualResponse(resultRequest, 1.0) as HttpWsResponseParam
-        val possibleForResultExistence: HttpWsResponseParam = externalHarvestActualHttpWsResponseHandler.getACopyOfActualResponse(secondRequest, 1.0) as HttpWsResponseParam
+        val secondRequestResult: HttpWsResponseParam = externalHarvestActualHttpWsResponseHandler.getACopyOfActualResponse(secondRequest, 1.0) as HttpWsResponseParam
         val noResponseResult = externalHarvestActualHttpWsResponseHandler.getACopyOfActualResponse(noResponseRequest, 1.0)
 
         val successStatus = successResult!!.status.values[successResult!!.status.index]
+        val secondRequestStatus = secondRequestResult!!.status.values[secondRequestResult!!.status.index]
 
         wm.shutdown()
         DnsCacheManipulator.clearDnsCache()
 
         assertEquals(successStatus, 200)
-        assertEquals(possibleForResultExistence, 200)
+        assertEquals(secondRequestStatus, 200)
         assertEquals(noResponseResult, null)
     }
 
