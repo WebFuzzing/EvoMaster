@@ -1,5 +1,6 @@
 package org.evomaster.core.parser
 
+import org.antlr.v4.runtime.ParserRuleContext
 import java.util.stream.Collectors
 
 
@@ -33,6 +34,17 @@ object RegexUtils {
                 .collect(Collectors.joining())
                 // a chain of quotes can be merged into a single one
                 .replace("\\E\\Q", "")
+    }
+
+    /**
+     * @return regex expression in string format based on [ctx]
+     */
+    fun getRegexExpByParserRuleContext(ctx : ParserRuleContext) : String{
+        return try {
+            ctx.text
+        }catch (e : Exception){ // avoid any problem due to retrieval of additional info
+            ""
+        }
     }
 
 }

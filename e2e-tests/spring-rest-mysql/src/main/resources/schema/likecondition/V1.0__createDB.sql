@@ -1,0 +1,6 @@
+CREATE TABLE FooTable (
+    id SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    name VARCHAR(20) NOT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT name_constraint CHECK ( name LIKE 'foo%')
+);
