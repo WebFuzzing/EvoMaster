@@ -22,6 +22,7 @@ import org.evomaster.core.search.gene.optional.ChoiceGene
 import org.evomaster.core.search.gene.optional.NullableGene
 import org.evomaster.core.search.gene.regex.DisjunctionListRxGene
 import org.evomaster.core.search.gene.regex.RegexGene
+import org.evomaster.core.search.gene.regex.RegexGene.Companion.DATABASE_REGEX_SEPARATOR
 import org.evomaster.core.search.gene.sql.*
 import org.evomaster.core.search.gene.sql.textsearch.SqlTextSearchQueryGene
 import org.evomaster.core.search.gene.sql.textsearch.SqlTextSearchVectorGene
@@ -700,7 +701,7 @@ class DbActionGeneBuilder {
                 .map { it.disjunctions }
                 .map { it.disjunctions }
                 .flatten()
-        return RegexGene(geneName, disjunctions = DisjunctionListRxGene(disjunctions = disjunctionRxGenes))
+        return RegexGene(geneName, disjunctions = DisjunctionListRxGene(disjunctions = disjunctionRxGenes), "${RegexGene.DATABASE_REGEX_PREFIX}${likePatterns.joinToString(DATABASE_REGEX_SEPARATOR)}")
     }
 
 
@@ -731,7 +732,7 @@ class DbActionGeneBuilder {
                 .map { it.disjunctions }
                 .map { it.disjunctions }
                 .flatten()
-        return RegexGene(geneName, disjunctions = DisjunctionListRxGene(disjunctions = disjunctionRxGenes))
+        return RegexGene(geneName, disjunctions = DisjunctionListRxGene(disjunctions = disjunctionRxGenes), "${RegexGene.DATABASE_REGEX_PREFIX}${similarToPatterns.joinToString(DATABASE_REGEX_SEPARATOR)}")
     }
 
     private fun buildSqlTimeWithTimeZoneGene(column: Column): TimeGene {

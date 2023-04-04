@@ -17,10 +17,11 @@ class GenePostgresSimilarToVisitor : PostgresSimilarToBaseVisitor<VisitResult>()
     override fun visitPattern(ctx: PostgresSimilarToParser.PatternContext): VisitResult {
 
         val res = ctx.disjunction().accept(this)
+        val text = RegexUtils.getRegexExpByParserRuleContext(ctx)
 
         val disjList = DisjunctionListRxGene(res.genes.map { it as DisjunctionRxGene })
 
-        val gene = RegexGene("regex", disjList)
+        val gene = RegexGene("regex", disjList,"${RegexGene.JAVA_REGEX_PREFIX}$text")
 
         return VisitResult(gene)
     }
