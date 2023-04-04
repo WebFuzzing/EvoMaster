@@ -960,7 +960,8 @@ abstract class Gene(
         if (!ok && !undoIfUpdateFails) return false
 
         if (!ok || !isLocallyValid()){
-            assert(copyValueFrom(current))
+            val success = copyValueFrom(current)
+            assert(success)
             return false
         }
         return true
