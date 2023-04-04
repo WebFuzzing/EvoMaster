@@ -5,6 +5,7 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCInterfaceSche
 import org.evomaster.client.java.controller.api.dto.problem.rpc.SeededRPCTestDto;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * a dto to collect info of RPC problem to be tested
@@ -32,6 +33,6 @@ public class RPCProblemDto extends ProblemInfoDto{
     /**
      * a list of seeded RPC tests
      */
-    public List<List<RPCActionDto>> seededTestDtos;
+    public Map<String, List<RPCActionDto>> seededTestDtos;
 
 }

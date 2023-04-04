@@ -447,14 +447,18 @@ class RPCEndpointsHandler {
         setAuthInfo(infoDto)
 
         // handle seeded test dto
-        infoDto.rpcProblem.seededTestDtos?.forEach { t->
+        infoDto.rpcProblem.seededTestDtos?.forEachIndexed { index,  t->
             t.forEach { a->
                 extractRPCExternalServiceAction(infoDto, a)
             }
         }
 
         // report statistic of endpoints
-        reportEndpointsStatistics(problem.schemas.size, problem.schemas.sumOf { it.skippedEndpoints?.size ?: 0 }, infoDto.rpcProblem?.seededTestDtos?.size?:0)
+        reportEndpointsStatistics(
+                problem.schemas.size,
+                problem.schemas.sumOf { it.skippedEndpoints?.size ?: 0 },
+                infoDto.rpcProblem?.seededTestDtos?.size?:0
+        )
 
         reportMsgLog(infoDto.errorMsg)
     }
