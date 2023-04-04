@@ -1825,16 +1825,16 @@ class EMConfig {
         EXACT,
 
         /**
-         * Selects a random response for the request from the captured responses
-         * regardless of the domain.
-         */
-        RANDOM,
-
-        /**
          * Selects the closest matching response from the same domain based on the
          * request path.
          */
-        CLOSEST
+        CLOSEST,
+
+        /**
+         * Selects a random response for the request from the captured responses
+         * regardless of the domain.
+         */
+        RANDOM
     }
 
     @Cfg("Harvested external request response selection strategy")
