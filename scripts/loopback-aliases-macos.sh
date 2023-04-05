@@ -8,8 +8,10 @@
 # Most cases lo0 will be the default. If there is a need to select
 # custom network interface, can be done via passing the name of the interface
 # after the action argument.
-# set - assgins aliases from 2 to 254
-# remove - removes the aliases from 2 to 254
+# set - assgins aliases from 2 to 20
+# remove - removes the aliases from 2 to 20
+# Setting aliases to the full range breaks the internet connectivity for some
+# unknown reasons. Due to that it is set to 20.
 
 
 # Validates whether executing user has root privileges
@@ -47,7 +49,7 @@ set_alias() {
 
 # Function to remove aliases
 remove_alias() {
-	for i in {2..254}
+	for i in {2..20}
 	do
 		ifconfig $INTERFACE -alias "127.0.0.$i"
 		if [ $? -eq 0 ]
@@ -62,14 +64,14 @@ remove_alias() {
 
 if [ -z "$1" ]
 then
-	echo "Select the operation to perform: set/remove"
+	echo "Select the operation to perform: s (set) or r (remove)"
 	exit
 fi
 
-if [[ $1 == "set" ]]
+if [[ $1 == "s" ]]
 then
 	set_alias
-elif [[ $1 == "remove" ]]
+elif [[ $1 == "r" ]]
 then
 	remove_alias
 else
