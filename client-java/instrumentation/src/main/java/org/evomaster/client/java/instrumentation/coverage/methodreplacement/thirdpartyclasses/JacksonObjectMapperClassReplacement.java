@@ -31,6 +31,21 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
         return "   com.fasterxml.jackson.databind.ObjectMapper".trim();
     }
 
+
+    private static void analyzeClass(Class<?> valueType, String content){
+        ClassToSchema.registerSchemaIfNeeded(valueType);
+        JsonTaint.handlePossibleJsonTaint(content, valueType);
+    }
+
+    private static String readStream(InputStream src){
+        String content = new BufferedReader(
+                new InputStreamReader(src, Charset.defaultCharset()))
+                .lines()
+                .collect(Collectors.joining(System.lineSeparator()));
+
+        return content;
+    }
+
     @Replacement(replacingStatic = false,
             type = ReplacementType.TRACKER,
             id = "Jackson_ObjectMapper_readValue_InputStream_Generic_class",
@@ -39,15 +54,8 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
     public static <T> T readValue(Object caller, InputStream src, Class<T> valueType) throws Throwable {
         Objects.requireNonNull(caller);
 
-        ClassToSchema.registerSchemaIfNeeded(valueType);
-
-        String content = new BufferedReader(
-                new InputStreamReader(src, Charset.defaultCharset()))
-                .lines()
-                .collect(Collectors.joining(System.lineSeparator()));
-
-        JsonTaint.handlePossibleJsonTaint(content, valueType);
-
+        String content = readStream(src);
+        analyzeClass(valueType, content);
         src = new ByteArrayInputStream(content.getBytes());
 
         Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_InputStream_Generic_class", caller);
@@ -72,15 +80,8 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
         Objects.requireNonNull(caller);
 
         Class<?> typeClass = (Class) valueType.getClass().getMethod("getRawClass").invoke(valueType);
-
-        String content = new BufferedReader(
-                new InputStreamReader(src, Charset.defaultCharset()))
-                .lines()
-                .collect(Collectors.joining(System.lineSeparator()));
-
-        ClassToSchema.registerSchemaIfNeeded(typeClass);
-        JsonTaint.handlePossibleJsonTaint(content, typeClass);
-
+        String content = readStream(src);
+        analyzeClass(typeClass, content);
         src = new ByteArrayInputStream(content.getBytes());
 
         Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_InputStream_TypeReference_class", caller);
@@ -105,9 +106,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
         Objects.requireNonNull(caller);
 
         Class<?> typeClass = (Class) valueType.getClass().getMethod("getRawClass").invoke(valueType);
-
-        ClassToSchema.registerSchemaIfNeeded(typeClass);
-        JsonTaint.handlePossibleJsonTaint(content, typeClass);
+        analyzeClass(typeClass, content);
 
         Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_String_TypeReference_class", caller);
 
@@ -128,8 +127,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
     public static <T> T readValue(Object caller, String content, Class<T> valueType) throws Throwable {
         Objects.requireNonNull(caller);
 
-        ClassToSchema.registerSchemaIfNeeded(valueType);
-        JsonTaint.handlePossibleJsonTaint(content, valueType);
+        analyzeClass(valueType, content);
 
         // JSON can be unwrapped using different approaches
         // val dto: FooDto = mapper.readValue(json)
