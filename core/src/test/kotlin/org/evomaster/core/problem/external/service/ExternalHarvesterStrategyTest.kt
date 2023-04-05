@@ -16,9 +16,8 @@ import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceRequ
 import org.evomaster.core.problem.externalservice.httpws.param.HttpWsResponseParam
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.remote.service.RemoteController
-import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.util.*
@@ -112,9 +111,16 @@ class ExternalHarvesterStrategyTest {
         wm.start()
         wm.stubFor(
             WireMock.get(
-                WireMock.urlEqualTo("/api/mock"))
+                WireMock.urlEqualTo("/api/foo"))
                 .atPriority(1)
-                .willReturn(WireMock.aResponse().withStatus(200).withBody("{\"message\" : \"Working\"}"))
+                .willReturn(WireMock.aResponse().withStatus(200).withBody("{\"message\" : \"foo\"}"))
+        )
+
+        wm.stubFor(
+            WireMock.get(
+                WireMock.urlEqualTo("/api/bar"))
+                .atPriority(1)
+                .willReturn(WireMock.aResponse().withStatus(200).withBody("{\"message\" : \"bar\"}"))
         )
 
         DnsCacheManipulator.setDnsCache("exists.local", "127.0.0.3")
@@ -125,31 +131,38 @@ class ExternalHarvesterStrategyTest {
 
         externalHarvestActualHttpWsResponseHandler.initialize()
 
-        val resultRequest = HttpExternalServiceRequest(UUID.randomUUID(),"GET","http://exists.local:12354/api/mock","http://exists.local:12354/api/mock",true,UUID.randomUUID().toString(),"http://exists.local:12354/api/mock", mapOf(),null)
-        val secondRequest = HttpExternalServiceRequest(UUID.randomUUID(),"GET","http://exists.local:12354/api","http://exists.local:12354/api",true,UUID.randomUUID().toString(),"http://exists.local:12354/api", mapOf(),null)
+        val resultRequest = HttpExternalServiceRequest(UUID.randomUUID(),"GET","http://exists.local:12354/api/foo","http://exists.local:12354/api/foo",true,UUID.randomUUID().toString(),"http://exists.local:12354/api/foo", mapOf(),null)
+        val secondRequest = HttpExternalServiceRequest(UUID.randomUUID(),"GET","http://exists.local:12354/api/bar","http://exists.local:12354/api/bar",true,UUID.randomUUID().toString(),"http://exists.local:12354/api/bar", mapOf(),null)
 
         val requests = mutableListOf<HttpExternalServiceRequest>()
         requests.add(resultRequest)
+        requests.add(secondRequest)
 
         externalHarvestActualHttpWsResponseHandler.addHttpRequests(requests)
 
+        val fooClosestRequest = HttpExternalServiceRequest(UUID.randomUUID(),"GET","http://exists.local:12354/api/fzz","http://exists.local:12354/api/fzz",true,UUID.randomUUID().toString(),"http://exists.local:12354/api/fzz", mapOf(),null)
+        val barClosestRequest = HttpExternalServiceRequest(UUID.randomUUID(),"GET","http://exists.local:12354/api/bab","http://exists.local:12354/api/bab",true,UUID.randomUUID().toString(),"http://exists.local:12354/api/bab", mapOf(),null)
 
         val noResponseRequest = HttpExternalServiceRequest(UUID.randomUUID(),"GET","http://neverthere.local/api","http://neverthere.local/api",true,UUID.randomUUID().toString(),"http://neverthere.local/api", mapOf(),null)
 
         Thread.sleep(3000)
 
-        val successResult: HttpWsResponseParam = externalHarvestActualHttpWsResponseHandler.getACopyOfActualResponse(resultRequest, 1.0) as HttpWsResponseParam
-        val secondRequestResult: HttpWsResponseParam = externalHarvestActualHttpWsResponseHandler.getACopyOfActualResponse(secondRequest, 1.0) as HttpWsResponseParam
+        val fooClosetResult = externalHarvestActualHttpWsResponseHandler.getACopyOfActualResponse(fooClosestRequest, 1.0) as HttpWsResponseParam
+        val barClosetResult = externalHarvestActualHttpWsResponseHandler.getACopyOfActualResponse(barClosestRequest, 1.0) as HttpWsResponseParam
         val noResponseResult = externalHarvestActualHttpWsResponseHandler.getACopyOfActualResponse(noResponseRequest, 1.0)
 
-        val successStatus = successResult!!.status.values[successResult!!.status.index]
-        val secondRequestStatus = secondRequestResult!!.status.values[secondRequestResult!!.status.index]
+        val fooClosetStatus = fooClosetResult.status.values[fooClosetResult.status.index]
+        val barClosetStatus = barClosetResult.status.values[barClosetResult.status.index]
 
         wm.shutdown()
         DnsCacheManipulator.clearDnsCache()
 
-        assertEquals(successStatus, 200)
-        assertEquals(secondRequestStatus, 200)
+        assertEquals(fooClosetStatus, 200)
+        assertTrue(fooClosetResult.responseBody.getValueAsRawString().contains("foo"))
+
+        assertEquals(barClosetStatus, 200)
+        assertTrue(barClosetResult.responseBody.getValueAsRawString().contains("bar"))
+
         assertEquals(noResponseResult, null)
     }
 
