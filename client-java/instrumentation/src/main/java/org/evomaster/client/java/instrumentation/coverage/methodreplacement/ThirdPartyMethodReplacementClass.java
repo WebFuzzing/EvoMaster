@@ -113,13 +113,14 @@ public abstract class ThirdPartyMethodReplacementClass implements MethodReplacem
 
             Class<?> targetClass = getTargetClass(loader);
             Method targetMethod;
+            String replacementMethodName = ReplacementUtils.getPossiblyModifiedName(m);
             try {
                 //this will not return private methods
-                targetMethod = targetClass.getMethod(m.getName(), reducedInputs);
+                targetMethod = targetClass.getMethod(replacementMethodName, reducedInputs);
             } catch (NoSuchMethodException e) {
                 try {
                     //this would return private methods, but not public in superclasses
-                    targetMethod = targetClass.getDeclaredMethod(m.getName(), reducedInputs);
+                    targetMethod = targetClass.getDeclaredMethod(replacementMethodName, reducedInputs);
                 } catch (NoSuchMethodException noSuchMethodException) {
                     throw new RuntimeException("BUG in EvoMaster: " + e);
                 }
