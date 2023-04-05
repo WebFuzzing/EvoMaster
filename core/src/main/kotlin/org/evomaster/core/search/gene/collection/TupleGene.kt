@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene.collection
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.graphql.GraphQLUtils
@@ -173,14 +174,23 @@ class TupleGene(
         }
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is TupleGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         assert(elements.size == other.elements.size)
-        (elements.indices).forEach {
-            elements[it].copyValueFrom(other.elements[it])
-        }
+
+
+        return updateValueOnlyIfValid(
+            {
+                var ok = true
+                (elements.indices).forEach {
+                    ok = ok && elements[it].copyValueFrom(other.elements[it])
+                }
+                ok
+            },
+            true
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
