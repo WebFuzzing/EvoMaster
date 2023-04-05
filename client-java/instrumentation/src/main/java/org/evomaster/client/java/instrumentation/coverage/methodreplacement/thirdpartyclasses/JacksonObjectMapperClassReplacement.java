@@ -46,6 +46,16 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
         return content;
     }
 
+    /*
+        TODO:
+        ideally, should provide method replacements for every single "readValue(...)" implementation.
+        These can call each other (after modifying and preparing the inputs), and, as Jackson itself is instrumented,
+        it should not be a problem.
+        But we have seen issues in internal changes of Jackson, eg 2.11.0 vs 2.9.6, in which this would not work.
+     */
+
+
+
     @Replacement(replacingStatic = false,
             type = ReplacementType.TRACKER,
             id = "Jackson_ObjectMapper_readValue_InputStream_Generic_class",
@@ -71,7 +81,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
 
     @Replacement(replacingStatic = false,
             type = ReplacementType.TRACKER,
-            id = "Jackson_ObjectMapper_readValue_InputStream_TypeReference_class",
+            id = "Jackson_ObjectMapper_readValue_InputStream_JavaType_class",
             usageFilter = UsageFilter.ANY,
             category = ReplacementCategory.EXT_0)
     public static <T> T readValue(Object caller, InputStream src,
@@ -84,7 +94,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
         analyzeClass(typeClass, content);
         src = new ByteArrayInputStream(content.getBytes());
 
-        Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_InputStream_TypeReference_class", caller);
+        Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_InputStream_JavaType_class", caller);
 
         try {
             return (T) original.invoke(caller, src, valueType);
@@ -97,7 +107,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
 
     @Replacement(replacingStatic = false,
             type = ReplacementType.TRACKER,
-            id = "Jackson_ObjectMapper_readValue_String_TypeReference_class",
+            id = "Jackson_ObjectMapper_readValue_String_JavaType_class",
             usageFilter = UsageFilter.ANY,
             category = ReplacementCategory.EXT_0)
     public static <T> T readValue(Object caller, String content,
@@ -108,7 +118,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
         Class<?> typeClass = (Class) valueType.getClass().getMethod("getRawClass").invoke(valueType);
         analyzeClass(typeClass, content);
 
-        Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_String_TypeReference_class", caller);
+        Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_String_JavaType_class", caller);
 
         try {
             return (T) original.invoke(caller, content, valueType);
