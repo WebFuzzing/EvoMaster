@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene.regex
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.root.CompositeGene
@@ -186,24 +187,31 @@ class QuantifierRxGene(
                 .joinToString("")
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is QuantifierRxGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
 
-        if (this.atoms.size == other.atoms.size) {
-            //same size, so just copy over the values
-            for (i in 0 until other.atoms.size) {
-                this.atoms[i].copyValueFrom(other.atoms[i])
-            }
-        } else {
-            //different size, so clear and create new copies
-            this.killAllChildren()
-            other.atoms.forEach{
-                val a = it.copy()
-                this.addChild(a)
-            }
-        }
+        return updateValueOnlyIfValid(
+            {
+                if (this.atoms.size == other.atoms.size) {
+                    //same size, so just copy over the values
+                    var ok = true
+                    for (i in 0 until other.atoms.size) {
+                        ok = ok && this.atoms[i].copyValueFrom(other.atoms[i])
+                    }
+                    ok
+                } else {
+                    //different size, so clear and create new copies
+                    this.killAllChildren()
+                    other.atoms.forEach{
+                        val a = it.copy()
+                        this.addChild(a)
+                    }
+                    true
+                }
+            }, true
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
