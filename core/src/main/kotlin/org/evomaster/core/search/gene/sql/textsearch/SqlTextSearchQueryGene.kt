@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene.sql.textsearch
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
@@ -108,11 +109,13 @@ class SqlTextSearchQueryGene(
 
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is SqlTextSearchQueryGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        this.queryLexemes.copyValueFrom(other.queryLexemes)
+        return updateValueOnlyIfValid(
+            {this.queryLexemes.copyValueFrom(other.queryLexemes)}, false
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

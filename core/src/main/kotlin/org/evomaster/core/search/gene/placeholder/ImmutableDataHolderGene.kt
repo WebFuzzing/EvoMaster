@@ -53,7 +53,7 @@ class ImmutableDataHolderGene(
         return value
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         throw IllegalStateException("Not supposed to modify an immutable gene")
     }
 

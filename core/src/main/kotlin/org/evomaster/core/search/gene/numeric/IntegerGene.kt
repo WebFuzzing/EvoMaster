@@ -73,11 +73,18 @@ class IntegerGene(
 
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is IntegerGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
+        val current = this.value
         this.value = other.value
+        if (!isLocallyValid()){
+            this.value = current
+            return false
+        }
+
+        return true
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

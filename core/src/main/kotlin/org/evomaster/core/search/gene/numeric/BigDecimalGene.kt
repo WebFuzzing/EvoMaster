@@ -236,11 +236,18 @@ class BigDecimalGene(
         return value.toString()
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is BigDecimalGene)
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         // since bigdecimal is immutable, just refer to the value of other gene
+        val current = this.value
         this.value = other.value
+        if (!isLocallyValid()){
+            this.value = current
+            return false
+        }
+
+        return true
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

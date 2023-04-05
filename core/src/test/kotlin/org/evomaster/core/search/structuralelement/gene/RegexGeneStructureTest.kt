@@ -3,8 +3,7 @@ package org.evomaster.core.search.structuralelement.gene
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.regex.*
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 
@@ -23,16 +22,30 @@ class AnyCharacterRxGeneStructureTest : GeneStructuralElementBaseTest() {
 
 
 class CharacterClassEscapeRxGeneStructureTest : GeneStructuralElementBaseTest() {
-    override fun getCopyFromTemplate(): Gene = CharacterClassEscapeRxGene("s").apply { value="bar" }
+    override fun getCopyFromTemplate(): Gene = CharacterClassEscapeRxGene("s").apply { value="b" }
 
     override fun assertCopyFrom(base: Gene) {
         assertTrue(base is CharacterClassEscapeRxGene)
         // TODO shall we check the type in copyFrom
         assertEquals("d", (base as CharacterClassEscapeRxGene).type)
-        assertEquals("bar", base.value)
+
+        /*
+            base and copyTemplate follows different regex, then such copy should fail, then base should keep
+            the value as it is
+         */
+        assertEquals("9", base.value)
     }
 
-    override fun getStructuralElement(): CharacterClassEscapeRxGene = CharacterClassEscapeRxGene("d").apply { value="foo" }
+    @Test
+    fun testCopyValueFromFailure(){
+        val base = getStructuralElement().copy()
+        val copy = getCopyFromTemplate().copy()
+
+        assertFalse(base.copyValueFrom(copy))
+    }
+
+
+    override fun getStructuralElement(): CharacterClassEscapeRxGene = CharacterClassEscapeRxGene("d").apply { value="9" }
 
     override fun getExpectedChildrenSize(): Int  = 0
 }
@@ -46,7 +59,7 @@ class CharacterRangeRxGeneStructureTest : GeneStructuralElementBaseTest() {
         assertEquals('2', (base as CharacterRangeRxGene).value)
     }
 
-    override fun getStructuralElement(): CharacterRangeRxGene = CharacterRangeRxGene(false, listOf(Pair('a','z'))).apply { value= 'w' }
+    override fun getStructuralElement(): CharacterRangeRxGene = CharacterRangeRxGene(false, listOf(Pair('0','z'))).apply { value= 'w' }
 
     override fun getExpectedChildrenSize(): Int  = 0
 }

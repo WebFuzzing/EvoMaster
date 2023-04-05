@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene.optional
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
@@ -146,16 +147,23 @@ class ChoiceGene<T>(
      * of gene choices. The value of each gene choice
      * is also copied.
      */
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is ChoiceGene<*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         } else if (geneChoices.size != other.geneChoices.size) {
             throw IllegalArgumentException("Cannot copy value from another choice gene with  ${other.geneChoices.size} choices (current gene has ${geneChoices.size} choices)")
         } else {
-            this.activeGeneIndex = other.activeGeneIndex
-            for (i in geneChoices.indices) {
-                this.geneChoices[i].copyValueFrom(other.geneChoices[i])
-            }
+            return updateValueOnlyIfValid(
+                {
+                    this.activeGeneIndex = other.activeGeneIndex
+                    var ok = true
+                    for (i in geneChoices.indices) {
+                        // short circuit if ok is false
+                        ok =  ok && this.geneChoices[i].copyValueFrom(other.geneChoices[i])
+                    }
+                    ok
+                }, true
+            )
         }
     }
 

@@ -1,8 +1,12 @@
 package org.evomaster.core.database
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
+import org.evomaster.core.search.gene.regex.RegexGene.Companion.DATABASE_REGEX_PREFIX
+import org.evomaster.core.search.gene.regex.RegexGene.Companion.DATABASE_REGEX_SEPARATOR
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.util.regex.Pattern
 
@@ -39,6 +43,8 @@ class DbActionGeneBuilderTest {
         val javaRegexPatterns = listOf("hi", ".*foo.*", ".*foo.*x.*", ".*bar.*", ".*bar.*y.*", ".*hello.*")
         val gene = DbActionGeneBuilder().buildLikeRegexGene("f_id", likePatterns, databaseType = DatabaseType.POSTGRES)
 
+        assertEquals("${DATABASE_REGEX_PREFIX}${likePatterns.joinToString(DATABASE_REGEX_SEPARATOR)}", gene.sourceRegex)
+
         for (seed in 1..10000L) {
             randomness.updateSeed(seed)
 
@@ -46,7 +52,7 @@ class DbActionGeneBuilderTest {
 
             val instance = gene.getValueAsRawString()
 
-            Assertions.assertTrue(
+            assertTrue(
                     javaRegexPatterns.stream().anyMatch {
                         Pattern.compile(it).matcher(instance).find()
                     },

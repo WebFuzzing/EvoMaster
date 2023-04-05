@@ -15,15 +15,22 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutation
  */
 class RegexGene(
         name: String,
-        val disjunctions: DisjunctionListRxGene
+        val disjunctions: DisjunctionListRxGene,
+        val sourceRegex : String
 ) : CompositeFixedGene(name, disjunctions) {
+
+    companion object{
+        const val JAVA_REGEX_PREFIX = "Java:"
+        const val DATABASE_REGEX_PREFIX = "Database:"
+        const val DATABASE_REGEX_SEPARATOR = "||"
+    }
 
     override fun isLocallyValid() : Boolean{
         return getViewOfChildren().all { it.isLocallyValid() }
     }
 
     override fun copyContent(): Gene {
-        return RegexGene(name, disjunctions.copy() as DisjunctionListRxGene)
+        return RegexGene(name, disjunctions.copy() as DisjunctionListRxGene, sourceRegex = sourceRegex)
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
@@ -77,11 +84,13 @@ class RegexGene(
     }
 
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if(other !is RegexGene){
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        this.disjunctions.copyValueFrom(other.disjunctions)
+        return updateValueOnlyIfValid(
+            {this.disjunctions.copyValueFrom(other.disjunctions)}, false
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
