@@ -1,4 +1,4 @@
-package com.foo.rest.examples.spring.openapi.v3.jackson
+package com.foo.rest.examples.spring.openapi.v3.jackson.base
 
 import com.foo.rest.examples.spring.openapi.v3.SpringController
 

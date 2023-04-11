@@ -38,18 +38,19 @@ import org.slf4j.LoggerFactory
 import kotlin.math.min
 
 class StringGene(
-    name: String,
-    var value: String = "foo",
-    /** Inclusive */
+        name: String,
+        var value: String = "foo",
+        /** Inclusive */
         val minLength: Int = 0,
-    /** Inclusive.
+        /**
+         * Inclusive.
          * Constraint on maximum lenght of the string. This could had been specified as
          * a constraint in the schema, or specific for the represented data type.
          * Note: further limits could be imposed to avoid too large strings that would
          * hamper the search process, which can be set via [EMConfig] options
          */
         val maxLength: Int = EMConfig.stringLengthHardLimit,
-    /**
+        /**
          * Depending on what a string is representing, there might be some chars
          * we do not want to use.
          * For example, in a URL Path variable, we do not want have "/", as otherwise
@@ -57,7 +58,7 @@ class StringGene(
          */
         val invalidChars: List<Char> = listOf(),
 
-    /**
+        /**
          * specialization based on taint analysis
          */
         specializationGenes: List<Gene> = listOf()
@@ -457,9 +458,22 @@ class StringGene(
          */
         val update = getValueAsRawString()
         for (k in others){
-            k.selectedSpecialization = -1
-            k.value = update
+            setValueWithBindingId(update)
         }
+    }
+
+    private fun setValueWithBindingId(update: String){
+        val curSelected = selectedSpecialization
+        val curValue =value
+
+        selectedSpecialization = -1
+        value = update
+
+        if (!isLocallyValid()){
+            selectedSpecialization = curSelected
+            value = curValue
+        }
+
     }
 
     fun addSpecializations(
@@ -755,11 +769,17 @@ class StringGene(
         return value
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is StringGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
+        val current = this.value
         this.value = other.value
+
+        if (!isLocallyValid()){
+            this.value = current
+            return false
+        }
         this.selectedSpecialization = other.selectedSpecialization
 
         this.specializations.clear()
@@ -772,6 +792,8 @@ class StringGene(
 
         this.bindingIds.clear()
         this.bindingIds.addAll(other.bindingIds)
+
+        return true
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -871,6 +893,7 @@ class StringGene(
             //this actually can happen when binding to Long, and goes above lenght limit of String
             value = current
             //TODO should we rather enforce this to never happen?
+            return false
         }
 
         return true

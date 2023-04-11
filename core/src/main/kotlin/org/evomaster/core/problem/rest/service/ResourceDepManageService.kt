@@ -1112,6 +1112,7 @@ class ResourceDepManageService {
         val relatedTables = getAllRelatedTables(ind).flatMap { t->  (0 until randomness.nextInt(1, maxPerResource)).map { t } }
 
         val extraConstraints = randomness.nextBoolean(apc.getExtraSqlDbConstraintsProbability())
+        val enableSingleInsertionForTable = randomness.nextBoolean(config.probOfEnablingSingleInsertionForTable)
 
         val added = rm.cluster.createSqlAction(
                 relatedTables,
@@ -1120,7 +1121,7 @@ class ResourceDepManageService {
                 false,
                 true,
                 randomness,
-                useExtraSqlDbConstraints = extraConstraints)
+                useExtraSqlDbConstraints = extraConstraints, enableSingleInsertionForTable= enableSingleInsertionForTable)
 
         DbActionUtils.repairBrokenDbActionsList(added,randomness)
 
@@ -1155,7 +1156,7 @@ class ResourceDepManageService {
      * if [dbActions] is empty, return all derived related table
      */
     fun extractRelatedTablesForCall(call: RestResourceCalls, dbActions: MutableList<DbAction> = mutableListOf(), withSql : Boolean): MutableMap<RestCallAction, MutableList<ParamGeneBindMap>> {
-        val paramsInfo = call.getResourceNode().getPossiblyBoundParams(call.getRestTemplate(), withSql)
+        val paramsInfo = call.getResourceNode().getPossiblyBoundParams(call.getRestTemplate(), withSql, randomness)
         return SimpleDeriveResourceBinding.generateRelatedTables(paramsInfo, call, dbActions)
     }
 

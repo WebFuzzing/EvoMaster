@@ -262,17 +262,19 @@ class ResourceManageService {
         val employSQLSelect = (!forceInsert) && (forceSelect || employSelect(relatedTables))
 
         val extraConstraints = randomness.nextBoolean(apc.getExtraSqlDbConstraintsProbability())
+        val enableSingleInsertionForTable = randomness.nextBoolean(config.probOfEnablingSingleInsertionForTable)
 
         val dbActions = cluster.createSqlAction(
             relatedTables, getSqlBuilder()!!, previousDbActions,
             doNotCreateDuplicatedAction = true, isInsertion = !employSQLSelect,
             randomness = randomness,
-        useExtraSqlDbConstraints = extraConstraints)
+            useExtraSqlDbConstraints = extraConstraints,
+            enableSingleInsertionForTable = enableSingleInsertionForTable)
 
         if(dbActions.isNotEmpty()){
             //FIXME cannot repair before it is mounted
             var removed = false; //repairDbActionsForResource(dbActions)
-            call.initDbActions(dbActions, cluster, false, removed, bindWith = null)
+            call.initDbActions(dbActions, cluster, false, removed, randomness, bindWith = null)
             removed = !repairDbActionsForResource(dbActions) // FIXME
             if(removed){
                 call.resetDbAction(dbActions)

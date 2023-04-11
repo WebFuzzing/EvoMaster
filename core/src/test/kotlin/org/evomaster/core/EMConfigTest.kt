@@ -2,6 +2,7 @@ package org.evomaster.core
 
 import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.service.IdMapper
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
@@ -308,5 +309,77 @@ internal class EMConfigTest{
         val options = parser.parse("--outputFolder", value)
 
         assertThrows(Exception::class.java) {config.updateProperties(options)}
+    }
+
+    @Test
+    fun testValidTargetExclusions(){
+        val parser = EMConfig.getOptionParser()
+
+        parser.recognizedOptions()["excludeTargetsForImpactCollection"] ?: throw Exception("Cannot find option")
+
+        val config = EMConfig()
+
+        var options = parser.parse("--excludeTargetsForImpactCollection", "none")
+        config.updateProperties(options)
+        assertTrue(config.excludedTargetsForImpactCollection.isEmpty())
+
+        (1..2).forEach { n->
+            IdMapper.ALL_ACCEPTED_OBJECTIVE_PREFIXES.indices.forEach { index ->
+                if (index+n <= IdMapper.ALL_ACCEPTED_OBJECTIVE_PREFIXES.size){
+                    val candidates = IdMapper.ALL_ACCEPTED_OBJECTIVE_PREFIXES.subList(index, index+n)
+                    options = parser.parse("--excludeTargetsForImpactCollection", candidates.joinToString(";"))
+                    config.updateProperties(options)
+                    assertEquals(n, config.excludedTargetsForImpactCollection.size)
+                    assertTrue(config.excludedTargetsForImpactCollection.containsAll(candidates))
+
+                    options = parser.parse("--excludeTargetsForImpactCollection",
+                        candidates.joinToString(";") { it.lowercase() })
+                    config.updateProperties(options)
+                    assertEquals(n, config.excludedTargetsForImpactCollection.size)
+                    assertTrue(config.excludedTargetsForImpactCollection.containsAll(candidates))
+
+                    options = parser.parse("--excludeTargetsForImpactCollection", candidates.joinToString(";"){it.uppercase()})
+                    config.updateProperties(options)
+                    assertEquals(n, config.excludedTargetsForImpactCollection.size)
+                    assertTrue(config.excludedTargetsForImpactCollection.containsAll(candidates))
+                }
+            }
+        }
+    }
+
+
+    @Test
+    fun testInvalidTargetExclusions(){
+        val parser = EMConfig.getOptionParser()
+
+        val config = EMConfig()
+
+        var options = parser.parse("--excludeTargetsForImpactCollection", ",,;,,")
+        assertThrows(Exception::class.java) {config.updateProperties(options)}
+
+        (1..2).forEach { n->
+            IdMapper.ALL_ACCEPTED_OBJECTIVE_PREFIXES.indices.forEach { index ->
+
+                if (index+n <= IdMapper.ALL_ACCEPTED_OBJECTIVE_PREFIXES.size){
+
+                    val candidates = IdMapper.ALL_ACCEPTED_OBJECTIVE_PREFIXES.subList(index, index+n)
+
+                    // none is not allowed to combine with others
+                    options = parser.parse("--excludeTargetsForImpactCollection", listOf("None").plus(candidates).joinToString(";"))
+                    assertThrows(Exception::class.java) {config.updateProperties(options)}
+
+                    if (n > 1){
+                        // invalid separator
+                        options = parser.parse("--excludeTargetsForImpactCollection", candidates.joinToString(","))
+                        assertThrows(Exception::class.java) {config.updateProperties(options)}
+                    }
+
+                    // target prefix does not exist
+                    options = parser.parse("--excludeTargetsForImpactCollection", candidates.joinToString(";"){"${it}foo"})
+                    assertThrows(Exception::class.java) {config.updateProperties(options)}
+
+                }
+            }
+        }
     }
 }

@@ -400,6 +400,8 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 
         val extraConstraints = randomness.nextBoolean(apc.getExtraSqlDbConstraintsProbability())
 
+        val enableSingleInsertionForTable = randomness.nextBoolean(config.probOfEnablingSingleInsertionForTable)
+
         val chosenColumns = if(config.forceSqlAllColumnInsertion){
             setOf("*")
         } else {
@@ -407,7 +409,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         }
 
         val list = (0 until num)
-                .map { getSqlInsertBuilder()!!.createSqlInsertionAction(name,chosenColumns, mutableListOf(),true, extraConstraints) }
+                .map { getSqlInsertBuilder()!!.createSqlInsertionAction(name,chosenColumns, mutableListOf(),true, extraConstraints, enableSingleInsertionForTable=enableSingleInsertionForTable) }
                 .toMutableList()
 
         if (log.isTraceEnabled) {

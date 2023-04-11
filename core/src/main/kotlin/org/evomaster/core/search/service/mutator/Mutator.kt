@@ -82,8 +82,8 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
      * @return whether you do a structure mutation on initialization if it exists
      */
     open fun doesInitStructureMutation(evaluatedIndividual: EvaluatedIndividual<T>): Boolean {
-        return (!structureMutator.canApplyActionStructureMutator(evaluatedIndividual.individual))
-                || (structureMutator.canApplyInitStructureMutator() && randomness.nextBoolean(config.initStructureMutationProbability))
+        return config.initStructureMutationProbability > 0 && ((!structureMutator.canApplyActionStructureMutator(evaluatedIndividual.individual))
+                || (structureMutator.canApplyInitStructureMutator() && randomness.nextBoolean(config.initStructureMutationProbability)))
     }
 
     open fun postActionAfterMutation(individual: T, mutated: MutatedGeneSpecification?){}
@@ -196,7 +196,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
                  */
                 mutatedWithTraces.updateImpactOfGenes(previous = currentWithTraces,
                         mutated = mutatedWithTraces, mutatedGenes = mutatedGenes,
-                        targetsInfo = targetsInfo.filter { !archive.isCovered(it.key) && !IdMapper.isLocal(it.key) })
+                        targetsInfo = targetsInfo.filter { !archive.isCovered(it.key) && !archive.skipTargetForImpactCollection(it.key)})
             }
             /*
                 update archive based on mutated individual

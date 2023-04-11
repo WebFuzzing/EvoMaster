@@ -5,10 +5,12 @@ import joptsimple.OptionDescriptor
 import joptsimple.OptionParser
 import joptsimple.OptionSet
 import org.evomaster.client.java.controller.api.ControllerConstants
+import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.impact.impactinfocollection.GeneMutationSelectionMethod
+import org.evomaster.core.search.service.IdMapper
 import org.slf4j.LoggerFactory
 import java.net.MalformedURLException
 import java.net.URL
@@ -38,6 +40,11 @@ class EMConfig {
         private val log = LoggerFactory.getLogger(EMConfig::class.java)
 
         private const val headerRegex = "(.+:.+)|(^$)"
+
+        private const val targetSeparator = ";"
+        private const val targetNone = "\\b(None|NONE|none)\\b"
+        private const val targetPrefix = "\\b(Class|CLASS|class|Line|LINE|line|Branch|BRANCH|branch|MethodReplacement|METHODREPLACEMENT|method[r|R]eplacement|Success_Call|SUCCESS_CALL|success_[c|C]all|Local|LOCAL|local|PotentialFault|POTENTIALFAULT|potential[f|F]ault)\\b"
+        private const val targetExclusionRegex = "^($targetNone|($targetPrefix($targetSeparator$targetPrefix)*))\$"
 
         private const val maxTcpPort = 65535.0
 
@@ -511,6 +518,9 @@ class EMConfig {
                 throw IllegalArgumentException("Failed to handle property '${m.name}'", e)
             }
         }
+
+        // private set
+        excludedTargetsForImpactCollection = extractExcludedTargetsForImpactCollection()
     }
 
     fun shouldGenerateSqlData() = isMIO() && (generateSqlDataWithDSE || generateSqlDataWithSearch)
@@ -1821,6 +1831,11 @@ class EMConfig {
     @Experimental
     var enableSchemaConstraintHandling = false
 
+    @Cfg("a probability of enabling single insertion strategy to insert rows into database.")
+    @Experimental
+    @Probability(activating = true)
+    var probOfEnablingSingleInsertionForTable = 0.0
+
     @Cfg("Whether to record info of executed actions during search")
     @Experimental
     var recordExecutedMainActionInfo = false
@@ -1828,6 +1843,16 @@ class EMConfig {
     @Cfg("Specify a path to save all executed main actions to a file (default is 'executedMainActions.txt')")
     @Experimental
     var saveExecutedMainActionInfo = "executedMainActions.txt"
+
+
+    @Cfg("Specify prefixes of targets (e.g., MethodReplacement, Success_Call, Local) which will exclude in impact collection. " +
+            "Multiple exclusions should be separated with semicolon (i.e., ;).")
+    @Regex(targetExclusionRegex)
+    @Experimental
+    var excludeTargetsForImpactCollection = "${IdMapper.LOCAL_OBJECTIVE_KEY};${ObjectiveNaming.METHOD_REPLACEMENT}"
+
+    var excludedTargetsForImpactCollection : List<String> = extractExcludedTargetsForImpactCollection()
+        private set
 
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
@@ -1905,6 +1930,13 @@ class EMConfig {
      */
     fun isEnabledExternalServiceMocking(): Boolean {
         return externalServiceIPSelectionStrategy != ExternalServiceIPSelectionStrategy.NONE
+    }
+
+
+    private fun extractExcludedTargetsForImpactCollection() : List<String>{
+        if (excludeTargetsForImpactCollection.equals("None", ignoreCase = true)) return emptyList()
+        val excluded = excludeTargetsForImpactCollection.split(targetSeparator).map { it.lowercase() }.toSet()
+        return IdMapper.ALL_ACCEPTED_OBJECTIVE_PREFIXES.filter { excluded.contains(it.lowercase()) }
     }
 
     fun isEnabledMutatingResponsesBasedOnActualResponse() = isMIO() && (probOfMutatingResponsesBasedOnActualResponse > 0)
