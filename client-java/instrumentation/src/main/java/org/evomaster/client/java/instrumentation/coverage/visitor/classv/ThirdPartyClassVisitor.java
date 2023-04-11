@@ -1,5 +1,6 @@
-package org.evomaster.client.java.instrumentation.coverage;
+package org.evomaster.client.java.instrumentation.coverage.visitor.classv;
 
+import org.evomaster.client.java.instrumentation.coverage.visitor.methodv.MethodReplacementMethodVisitor;
 import org.objectweb.asm.commons.JSRInlinerAdapter;
 import org.evomaster.client.java.instrumentation.Constants;
 import org.evomaster.client.java.instrumentation.shared.ClassName;

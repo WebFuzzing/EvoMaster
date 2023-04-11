@@ -1,5 +1,6 @@
-package org.evomaster.client.java.instrumentation.coverage;
+package org.evomaster.client.java.instrumentation.coverage.visitor.classv;
 
+import org.evomaster.client.java.instrumentation.coverage.visitor.methodv.*;
 import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
 import org.evomaster.client.java.instrumentation.shared.ClassName;
 import org.evomaster.client.java.instrumentation.Constants;
