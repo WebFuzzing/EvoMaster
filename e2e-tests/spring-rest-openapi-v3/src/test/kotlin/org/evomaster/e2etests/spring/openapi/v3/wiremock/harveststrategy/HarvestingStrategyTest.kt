@@ -80,8 +80,8 @@ class HarvestingStrategyTest: SpringTestBase() {
         // For /api/harvest/strategy/closest/second WireMock will response with 500
         // so the core will select the nearest with the response status code 200.
         val wmConfig = WireMockConfiguration()
-            .bindAddress("127.0.0.1")
-            .port(13579)
+            .bindAddress("127.0.0.3")
+            .port(13578)
             .extensions(ResponseTemplateTransformer(false))
 
         val wm = WireMockServer(wmConfig)
@@ -96,7 +96,7 @@ class HarvestingStrategyTest: SpringTestBase() {
             .atPriority(2)
             .willReturn(WireMock.aResponse().withStatus(500).withBody("Internal Server Error")))
 
-        DnsCacheManipulator.setDnsCache("mock.int", "127.0.0.1")
+        DnsCacheManipulator.setDnsCache("mock.int", "127.0.0.3")
 
         runTestHandlingFlakyAndCompilation(
             "HarvestStrategyClosestEMTest",

@@ -32,6 +32,7 @@ import org.glassfish.jersey.client.ClientProperties
 import org.glassfish.jersey.client.HttpUrlConnectorProvider
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.net.URL
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -479,30 +480,36 @@ class HarvestActualHttpWsResponseHandler {
         return out
     }
 
-    private fun getURL(url: String): List<String> {
-        return url.split("::")
+    /**
+     * A request description contains information about the method, url, headers, and body.
+     * This extract the URL information as [URL] for ease of use.
+     *
+     * e.g.: GET::http://exists.local:12354/api/fzz::[]::{none}
+     */
+    private fun getURLFromRequestDescription(url: String): URL {
+        val components = url.split("::")
+        return URL(components[1])
     }
 
-    private fun getMethod(url: String): String {
+
+    /**
+     * A request description contains information about the method, url, headers, and body.
+     * This extract the request method as [String].
+     *
+     * e.g.: GET::http://exists.local:12354/api/fzz::[]::{none}
+     */
+    private fun getMethodFromRequestDescription(url: String): String {
         return url.split("::")[0].lowercase()
     }
 
-    private fun getProtocol(url: String): String {
-        return getURL(url)[1].split("/")[0].replace(":", "").lowercase()
-    }
-
-    private fun getDomain(url: String): String {
-        return getURL(url)[1].split("/")[2].lowercase()
-    }
-
     private fun matchRequest(left: String, right: String): Boolean {
-        val leftMethod = getMethod(left)
-        val leftProtocol = getProtocol(left)
-        val leftDomain = getDomain(left)
+        val leftMethod = getMethodFromRequestDescription(left)
+        val leftProtocol = getURLFromRequestDescription(left).protocol
+        val leftDomain = getURLFromRequestDescription(left).host
 
-        val rightMethod = getMethod(right)
-        val rightProtocol = getProtocol(right)
-        val rightDomain = getDomain(right)
+        val rightMethod = getMethodFromRequestDescription(right)
+        val rightProtocol = getURLFromRequestDescription(right).protocol
+        val rightDomain = getURLFromRequestDescription(right).host
 
         return leftMethod.equals(rightMethod) && leftProtocol.equals(rightProtocol) && leftDomain.equals(rightDomain)
     }
