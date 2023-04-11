@@ -676,7 +676,11 @@ class TestSuiteWriter {
 
                             lines.indented {
                                 lines.add(".bindAddress(\"$address\")")
-                                lines.add(".port(${externalService.getWireMockPort()})")
+                                if (externalService.isHttps()) {
+                                    lines.add(".httpsPort(${externalService.getWireMockPort()})")
+                                } else {
+                                    lines.add(".port(${externalService.getWireMockPort()})")
+                                }
                                 if (format.isJava()) {
                                     addStatement(".extensions(new ResponseTemplateTransformer(false)))", lines)
                                 }

@@ -53,10 +53,8 @@ class HttpWsExternalService(
 
             if (!externalServiceInfo.isHttp() && !externalServiceInfo.isHttps())
                 LoggingUtil.uniqueWarn(log, "do not get explicit protocol for address ($ip)")
-            val applyHttps =
-                externalServiceInfo.isHttps() || (!externalServiceInfo.isHttp() && externalServiceInfo.isDerivedHttps())
 
-            if (applyHttps) {
+            if (isHttps()) {
                 config.httpsPort(port)
             } else {
                 config.port(port)
@@ -84,6 +82,8 @@ class HttpWsExternalService(
     fun getWMDefaultMessage() = WIREMOCK_DEFAULT_RESPONSE_MESSAGE
     fun getWMDefaultConnectionHeader() = "close"
 
+    fun isHttps() = externalServiceInfo.isHttps() || (!externalServiceInfo.isHttp() && externalServiceInfo.isDerivedHttps())
+
     /**
      * @return the default response setup for WM instance
      */
@@ -110,10 +110,15 @@ class HttpWsExternalService(
     }
 
     /**
-     * Return the running port of WireMock instance
+     * Return the running port of WireMock instance depending
+     * on the protocols HTTP/HTTPS
      */
     fun getWireMockPort(): Int {
-        return wireMockServer!!.options.portNumber()
+        return if (isHttps()) {
+            wireMockServer!!.options.httpsSettings().port()
+        } else {
+            wireMockServer!!.options.portNumber()
+        }
     }
 
     fun getWireMockServer(): WireMockServer {

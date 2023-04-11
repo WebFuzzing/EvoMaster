@@ -1,6 +1,6 @@
-package org.evomaster.e2etests.spring.openapi.v3.jackson
+package org.evomaster.e2etests.spring.openapi.v3.jackson.base
 
-import com.foo.rest.examples.spring.openapi.v3.jackson.JacksonController
+import com.foo.rest.examples.spring.openapi.v3.jackson.base.JacksonController
 import org.evomaster.ci.utils.CIUtils
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
@@ -25,7 +25,7 @@ class JacksonEMTest : SpringTestBase() {
     }
 
     @Test
-    fun testGenericReadValue() {
+    fun basicEMTest() {
 
         CIUtils.skipIfOnGA()
 
