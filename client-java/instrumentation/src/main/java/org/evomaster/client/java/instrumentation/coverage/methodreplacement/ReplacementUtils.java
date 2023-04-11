@@ -98,6 +98,26 @@ public class ReplacementUtils {
         }
     }
 
+    /**
+     * Given a method of a replacement class, return actually matching name for the target.
+     * At times, there is no 1-to-1 mapping, and might have to use suffixes such as _EM_x.
+     *
+     * @see ThirdPartyCast
+     */
+    public static String getPossiblyModifiedName(Method m){
+
+        String replacementName= m.getName();
+        if(ThirdPartyCast.NAME_REGEX.matcher(replacementName).matches()){
+
+            if(!ThirdPartyMethodReplacementClass.class.isAssignableFrom(m.getDeclaringClass())){
+                throw  new IllegalArgumentException("Modified names are only used for ThirdPartyMethodReplacementClass subclasses");
+            }
+
+            replacementName = replacementName.split(ThirdPartyCast.SEPARATOR)[0];
+        }
+        return replacementName;
+    }
+
     public static Optional<Method> chooseMethodFromCandidateReplacement(
             /**
              * Whether the replacement is applied on SUT code (eg instead of third-party libraries)
@@ -109,7 +129,7 @@ public class ReplacementUtils {
             String name,
             /**
              * The bytecode descriptor of the inputs/output.
-             * Recall the can be several methods in class with the same name.
+             * Recall there can be several methods in class with the same name.
              */
             String desc,
             /**
@@ -188,7 +208,10 @@ public class ReplacementUtils {
 
                     } else {
 
-                        if(! m.getName().equals(name)){
+                        //TODO might need something similar for constructors
+                        String replacementName = getPossiblyModifiedName(m);
+
+                        if(! replacementName.equals(name)){
                             return false;
                         }
 

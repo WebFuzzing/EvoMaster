@@ -11,9 +11,11 @@ import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 
 
 import java.io.*;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -46,6 +48,16 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
         return content;
     }
 
+    /*
+        TODO:
+        ideally, should provide method replacements for every single "readValue(...)" implementation.
+        These can call each other (after modifying and preparing the inputs), and, as Jackson itself is instrumented,
+        it should not be a problem.
+        But we have seen issues in internal changes of Jackson, eg 2.11.0 vs 2.9.6, in which this would not work.
+     */
+
+
+
     @Replacement(replacingStatic = false,
             type = ReplacementType.TRACKER,
             id = "Jackson_ObjectMapper_readValue_InputStream_Generic_class",
@@ -71,7 +83,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
 
     @Replacement(replacingStatic = false,
             type = ReplacementType.TRACKER,
-            id = "Jackson_ObjectMapper_readValue_InputStream_TypeReference_class",
+            id = "Jackson_ObjectMapper_readValue_InputStream_JavaType_class",
             usageFilter = UsageFilter.ANY,
             category = ReplacementCategory.EXT_0)
     public static <T> T readValue(Object caller, InputStream src,
@@ -84,7 +96,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
         analyzeClass(typeClass, content);
         src = new ByteArrayInputStream(content.getBytes());
 
-        Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_InputStream_TypeReference_class", caller);
+        Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_InputStream_JavaType_class", caller);
 
         try {
             return (T) original.invoke(caller, src, valueType);
@@ -97,10 +109,10 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
 
     @Replacement(replacingStatic = false,
             type = ReplacementType.TRACKER,
-            id = "Jackson_ObjectMapper_readValue_String_TypeReference_class",
+            id = "Jackson_ObjectMapper_readValue_String_JavaType_class",
             usageFilter = UsageFilter.ANY,
             category = ReplacementCategory.EXT_0)
-    public static <T> T readValue(Object caller, String content,
+    public static <T> T readValue_EM_0(Object caller, String content,
                                   @ThirdPartyCast(actualType = "  com.fasterxml.jackson.databind.JavaType") Object valueType)
             throws Throwable {
         Objects.requireNonNull(caller);
@@ -108,7 +120,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
         Class<?> typeClass = (Class) valueType.getClass().getMethod("getRawClass").invoke(valueType);
         analyzeClass(typeClass, content);
 
-        Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_String_TypeReference_class", caller);
+        Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_String_JavaType_class", caller);
 
         try {
             return (T) original.invoke(caller, content, valueType);
@@ -118,6 +130,32 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
             throw e.getCause();
         }
     }
+
+
+    @Replacement(replacingStatic = false,
+            type = ReplacementType.TRACKER,
+            id = "Jackson_ObjectMapper_readValue_String_TypeReference_class",
+            usageFilter = UsageFilter.ANY,
+            category = ReplacementCategory.EXT_0)
+    public static <T> T readValue_EM_1(Object caller, String content,
+                                  @ThirdPartyCast(actualType = "  com.fasterxml.jackson.core.type.TypeReference") Object valueTypeRef)
+            throws Throwable {
+
+        Objects.requireNonNull(caller);
+        //_typeFactory.constructType(valueTypeRef)
+        Field _typeFactoryField = caller.getClass().getDeclaredField("_typeFactory");
+        _typeFactoryField.setAccessible(true);
+        Object _typeFactory = _typeFactoryField.get(caller);
+        Method constructType = Arrays.stream(_typeFactory.getClass().getDeclaredMethods())
+                .filter(m -> m.getName().equals("constructType"))
+                .filter(m -> m.getParameterTypes().length == 1)
+                .filter(m-> m.getParameterTypes()[0].getName().endsWith("TypeReference"))
+                .findFirst().orElse(null);
+        Object javaType = constructType.invoke(_typeFactory, valueTypeRef);
+        return readValue_EM_0(caller, content, javaType);
+    }
+
+
 
     @Replacement(replacingStatic = false,
             type = ReplacementType.TRACKER,
