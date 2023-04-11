@@ -74,14 +74,14 @@ class ResourceNodeTest {
         // rfoo
         val rfoo = cluster.getResourceNode("/v3/api/rfoo", nullCheck = true)
         assertEquals(2, rfoo!!.paramsInfo.size)
-        assertEquals(0, rfoo.paramsInfo.count { it.value.doesReferToOther })
+        assertEquals(0, rfoo.paramsInfo.count { it.value.requiredReferToOthers() })
 
         // rfooid
         val rfooId = cluster.getResourceNode("/v3/api/rfoo/{rfooId}", true)
         // pathparam, queryparam from get, bodyparam from put and patch
         assertEquals(4, rfooId!!.paramsInfo.size)
-        assertEquals(1, rfooId.paramsInfo.count { it.value.doesReferToOther })
-        assertEquals("rfooId", rfooId.paramsInfo.values.find { it.doesReferToOther }!!.name)
+        assertEquals(1, rfooId.paramsInfo.count { it.value.requiredReferToOthers() })
+        assertEquals("rfooId", rfooId.paramsInfo.values.find { it.requiredReferToOthers() }!!.name)
         assertEquals(3, rfooId.getPossiblyBoundParams("GET", false).size)
         // rfooId is required to be bound with POST if it exists
         rfooId.getPossiblyBoundParams("POST-GET", false).apply {
@@ -92,20 +92,20 @@ class ResourceNodeTest {
         // rbar
         val rbar = cluster.getResourceNode("/v3/api/rfoo/{rfooId}/rbar", true)
         assertEquals(2, rbar!!.paramsInfo.size)
-        assertEquals(1, rbar.paramsInfo.count { it.value.doesReferToOther })
+        assertEquals(1, rbar.paramsInfo.count { it.value.requiredReferToOthers() })
 
         // rbarid
         val rbarId = cluster.getResourceNode("/v3/api/rfoo/{rfooId}/rbar/{rbarId}", true)
         assertEquals(3, rbarId!!.paramsInfo.size)
-        assertEquals(2, rbarId.paramsInfo.count { it.value.doesReferToOther })
-        assertEquals("rbarId", rbarId.paramsInfo.values.find { it.doesReferToOther }!!.name)
+        assertEquals(2, rbarId.paramsInfo.count { it.value.requiredReferToOthers() })
+        assertEquals("rbarId", rbarId.paramsInfo.values.find { it.requiredReferToOthers() }!!.name)
 
         // rxyz
         val rxyz = cluster.getResourceNode("/v3/api/rfoo/{rfooId}/rbar/{rbarId}/rxyz", true)
         assertEquals(3, rxyz!!.paramsInfo.size)
-        assertEquals(2, rxyz.paramsInfo.count { it.value.doesReferToOther })
+        assertEquals(2, rxyz.paramsInfo.count { it.value.requiredReferToOthers() })
         // rfooId and rbardId are required to be bound with POST if they exist
-        assertEquals(setOf("rfooId", "rbarId"), rxyz.paramsInfo.filter { it.value.doesReferToOther }.map { it.value.name }.toSet())
+        assertEquals(setOf("rfooId", "rbarId"), rxyz.paramsInfo.filter { it.value.requiredReferToOthers() }.map { it.value.name }.toSet())
 
     }
 

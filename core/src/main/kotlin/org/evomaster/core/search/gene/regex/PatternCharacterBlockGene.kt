@@ -46,7 +46,7 @@ class PatternCharacterBlockGene(
         return stringBlock
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is PatternCharacterBlockGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
@@ -55,6 +55,8 @@ class PatternCharacterBlockGene(
             //this should not happen
             throw IllegalStateException("Not supposed to copy value for " + this.javaClass.simpleName)
         }
+
+        return true
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

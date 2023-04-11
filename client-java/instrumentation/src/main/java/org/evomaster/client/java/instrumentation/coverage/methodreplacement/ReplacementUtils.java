@@ -80,7 +80,8 @@ public class ReplacementUtils {
         ThirdPartyCast thirdPartyCast = (ThirdPartyCast) Arrays.stream(annotations).filter(a -> a instanceof ThirdPartyCast)
                 .findFirst().orElse(null);
         if(thirdPartyCast != null){
-            return loadClass(thirdPartyCast.actualType());
+            //we trim to avoid possible issues with Shader plugin
+            return loadClass(thirdPartyCast.actualType().trim());
         }
         return null;
     }

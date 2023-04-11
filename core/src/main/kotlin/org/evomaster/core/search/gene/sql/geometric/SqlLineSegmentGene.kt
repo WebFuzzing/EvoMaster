@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene.sql.geometric
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.search.service.Randomness
@@ -28,12 +29,14 @@ class SqlLineSegmentGene(
         q.copy() as SqlPointGene
     )
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is SqlLineSegmentGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        this.p.copyValueFrom(other.p)
-        this.q.copyValueFrom(other.q)
+        return updateValueOnlyIfValid(
+            {this.p.copyValueFrom(other.p)
+                    && this.q.copyValueFrom(other.q)}, true
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

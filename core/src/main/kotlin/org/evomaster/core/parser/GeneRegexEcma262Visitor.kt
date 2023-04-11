@@ -12,9 +12,11 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
 
         val res = ctx.disjunction().accept(this)
 
+        val text = RegexUtils.getRegexExpByParserRuleContext(ctx)
+
         val disjList = DisjunctionListRxGene(res.genes.map { it as DisjunctionRxGene })
 
-        val gene = RegexGene("regex", disjList)
+        val gene = RegexGene("regex", disjList,"${RegexGene.JAVA_REGEX_PREFIX}$text")
 
         return VisitResult(gene)
     }

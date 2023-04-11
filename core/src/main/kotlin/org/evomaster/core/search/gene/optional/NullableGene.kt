@@ -1,12 +1,11 @@
 package org.evomaster.core.search.gene.optional
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.root.CompositeGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.sql.NullableImpact
-import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
@@ -92,19 +91,27 @@ class NullableGene(name: String,
     }
 
     override fun getValueAsRawString(): String {
+        //todo double check
         if(!isActive)
             return nullLabel
         return gene.getValueAsRawString()
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is NullableGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        this.isActive = other.isActive
-        this.selectable = other.selectable
-        this.nullLabel = other.nullLabel
-        this.gene.copyValueFrom(other.gene)
+        return updateValueOnlyIfValid(
+            {
+                val ok = this.gene.copyValueFrom(other.gene)
+                if (ok){
+                    this.isActive = other.isActive
+                    this.selectable = other.selectable
+                    this.nullLabel = other.nullLabel
+                }
+                ok
+            }, false
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

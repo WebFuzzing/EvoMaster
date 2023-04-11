@@ -25,7 +25,7 @@ class GQLFieldWithDifferentArgumentEMTest : SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
                 "GQL_FieldWithDifferentArgumentEM",
                 "org.foo.graphql.FieldWithDifferentArgumentEM",
-                100
+                20
         ) { args: MutableList<String> ->
 
             args.add("--problemType")

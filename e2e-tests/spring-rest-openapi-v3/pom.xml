@@ -144,6 +144,7 @@
             <groupId>com.auth0</groupId>
             <artifactId>auth0</artifactId>
         </dependency>
+
     </dependencies>
 
     <build>

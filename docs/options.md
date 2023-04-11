@@ -162,6 +162,7 @@ There are 3 types of options:
 |`enableWriteSnapshotTests`| __Boolean__. Enable to print snapshots of the generated tests during the search in an interval defined in snapshotsInterval. *Default value*: `false`.|
 |`errorTextEpsilon`| __Double__. The Distance Metric Error Text may use several values for epsilon.During experimentation, it may be useful to adjust these values. Epsilon describes the size of the neighbourhood used for clustering, so may result in different clustering results.Epsilon should be between 0.0 and 1.0. If the value is outside of that range, epsilon will use the default of 0.8. *Constraints*: `min=0.0, max=1.0`. *Default value*: `0.8`.|
 |`exceedTargetsFile`| __String__. Specify a path to save all not covered targets when the number is more than 100. *Default value*: `exceedTargets.txt`.|
+|`excludeTargetsForImpactCollection`| __String__. Specify prefixes of targets (e.g., MethodReplacement, Success_Call, Local) which will exclude in impact collection. Multiple exclusions should be separated with semicolon (i.e., ;). *Constraints*: `regex ^(\b(None\|NONE\|none)\b\|(\b(Class\|CLASS\|class\|Line\|LINE\|line\|Branch\|BRANCH\|branch\|MethodReplacement\|METHODREPLACEMENT\|method[r\|R]eplacement\|Success_Call\|SUCCESS_CALL\|success_[c\|C]all\|Local\|LOCAL\|local\|PotentialFault\|POTENTIALFAULT\|potential[f\|F]ault)\b(;\b(Class\|CLASS\|class\|Line\|LINE\|line\|Branch\|BRANCH\|branch\|MethodReplacement\|METHODREPLACEMENT\|method[r\|R]eplacement\|Success_Call\|SUCCESS_CALL\|success_[c\|C]all\|Local\|LOCAL\|local\|PotentialFault\|POTENTIALFAULT\|potential[f\|F]ault)\b)*))$`. *Default value*: `Local;MethodReplacement`.|
 |`exportDependencies`| __Boolean__. Specify whether to export derived dependencies among resources. *Default value*: `false`.|
 |`exportImpacts`| __Boolean__. Specify whether to export derived impacts among genes. *Default value*: `false`.|
 |`externalRequestHarvesterNumberOfThreads`| __Int__. Number of threads for external request harvester. No more threads than numbers of processors will be used. *Constraints*: `min=1.0`. *Default value*: `2`.|
@@ -192,6 +193,7 @@ There are 3 types of options:
 |`mutatedGeneFile`| __String__. Specify a path to save mutation details which is useful for debugging mutation. *Default value*: `mutatedGeneInfo.csv`.|
 |`mutationTargetsSelectionStrategy`| __Enum__. Specify a strategy to select targets for evaluating mutation. *Valid values*: `FIRST_NOT_COVERED_TARGET, EXPANDED_UPDATED_NOT_COVERED_TARGET, UPDATED_NOT_COVERED_TARGET`. *Default value*: `FIRST_NOT_COVERED_TARGET`.|
 |`outputExecutedSQL`| __Enum__. Whether to output executed sql info. *Valid values*: `NONE, ALL_AT_END, ONCE_EXECUTED`. *Default value*: `NONE`.|
+|`probOfEnablingSingleInsertionForTable`| __Double__. a probability of enabling single insertion strategy to insert rows into database. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`probOfHandlingLength`| __Double__. Specify a probability of applying length handling. *Default value*: `0.0`.|
 |`probOfHarvestingResponsesFromActualExternalServices`| __Double__. a probability of harvesting actual responses from external services as seeds. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`probOfMutatingResponsesBasedOnActualResponse`| __Double__. a probability of mutating mocked responses based on actual responses. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
@@ -201,7 +203,9 @@ There are 3 types of options:
 |`processFormat`| __Enum__. Specify a format to save the process data. *Valid values*: `JSON_ALL, TEST_IND, TARGET_TEST_IND`. *Default value*: `JSON_ALL`.|
 |`processInterval`| __Double__. Specify how often to save results when a search monitor is enabled, and 0.0 presents to record all evaluated individual. *Constraints*: `min=0.0, max=50.0`. *Default value*: `0.0`.|
 |`recordExceededTargets`| __Boolean__. Whether to record targets when the number is more than 100. *Default value*: `false`.|
+|`recordExecutedMainActionInfo`| __Boolean__. Whether to record info of executed actions during search. *Default value*: `false`.|
 |`saveArchiveAfterMutation`| __Boolean__. Whether to save archive info after each of mutation, which is typically useful for debugging mutation and archive. *Default value*: `false`.|
+|`saveExecutedMainActionInfo`| __String__. Specify a path to save all executed main actions to a file (default is 'executedMainActions.txt'). *Default value*: `executedMainActions.txt`.|
 |`saveExecutedSQLToFile`| __String__. Specify a path to save all executed sql commands to a file (default is 'sql.txt'). *Default value*: `sql.txt`.|
 |`saveImpactAfterMutation`| __Boolean__. Whether to save impact info after each of mutation, which is typically useful debugging impact driven solutions and mutation. *Default value*: `false`.|
 |`saveMockedResponseAsSeparatedFile`| __Boolean__. Whether to save mocked responses as separated files. *Default value*: `false`.|

@@ -65,9 +65,6 @@ public class ResourceDependencyDBEMTest extends ResourceTestBase {
                     args.add("--dependencyFile");
                     args.add(dependencies);
 
-                    args.add("--resourceSampleStrategy");
-                    args.add("EqualProbability");
-
                     args.add("--probOfSmartSampling");
                     args.add("1.0");
                     args.add("--doesApplyNameMatching");

@@ -26,7 +26,10 @@ class GenePostgresLikeVisitor : PostgresLikeBaseVisitor<VisitResult>() {
         }
 
         val disjunction = DisjunctionRxGene("disj", terms, true, true)
-        val gene = RegexGene("LIKE", DisjunctionListRxGene(listOf(disjunction)))
+
+        val text = RegexUtils.getRegexExpByParserRuleContext(ctx)
+
+        val gene = RegexGene("LIKE", DisjunctionListRxGene(listOf(disjunction)), "${RegexGene.JAVA_REGEX_PREFIX}$text")
 
         return VisitResult(gene)
     }

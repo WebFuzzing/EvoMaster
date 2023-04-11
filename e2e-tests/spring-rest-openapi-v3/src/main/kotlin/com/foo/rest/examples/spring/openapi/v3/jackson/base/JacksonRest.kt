@@ -1,7 +1,6 @@
-package com.foo.rest.examples.spring.openapi.v3.jackson
+package com.foo.rest.examples.spring.openapi.v3.jackson.base
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
 import org.apache.commons.io.IOUtils
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
@@ -15,7 +14,10 @@ import javax.servlet.http.HttpServletRequest
 @RequestMapping(path = ["/api/jackson"])
 class JacksonRest {
 
-    @PostMapping(path = ["/generic"], consumes = [MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_FORM_URLENCODED_VALUE])
+    @PostMapping(
+        path = ["/generic"],
+        consumes = [MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_FORM_URLENCODED_VALUE]
+    )
     fun generic(request: HttpServletRequest): ResponseEntity<String> {
 
         val json = IOUtils.toString(request.inputStream, StandardCharsets.UTF_8)
@@ -32,6 +34,3 @@ class JacksonRest {
         else ResponseEntity.badRequest().body("Failed")
     }
 }
-
-
-class FooDto(var x: Int)
