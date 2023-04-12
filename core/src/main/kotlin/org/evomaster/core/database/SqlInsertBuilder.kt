@@ -615,27 +615,6 @@ class SqlInsertBuilder(
              *
              */
             enableSingleInsertionForTable : Boolean = false
-        tableName: String,
-        /**
-         * Which columns to create data for. Default is all, ie *.
-         * Notice that more columns might be added, eg, to satisfy non-null
-         * and PK constraints
-         */
-        columnNames: Set<String> = setOf("*"),
-        /**
-         * used to avoid infinite recursion
-         */
-        history: MutableList<String> = mutableListOf(),
-        /**
-         *   When adding new insertions due to FK constraints, specify if
-         *   should get all columns for those new insertions, or just the minimal
-         *   needed to satisfy all the constraints
-         */
-        forceAll: Boolean = false,
-        /**
-         *  whether to use extra constraints identified in the business logic
-         */
-        useExtraSqlDbConstraints: Boolean = false
     ): List<DbAction> {
 
         history.add(tableName)
