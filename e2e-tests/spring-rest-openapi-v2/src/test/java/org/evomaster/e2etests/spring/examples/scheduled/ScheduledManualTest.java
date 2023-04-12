@@ -3,6 +3,7 @@ package org.evomaster.e2etests.spring.examples.scheduled;
 
 import com.foo.rest.examples.spring.scheduled.ScheduledApplication;
 import com.foo.rest.examples.spring.scheduled.ScheduledRest;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -16,6 +17,7 @@ public class ScheduledManualTest {
     @Autowired
     private ScheduledRest bean;
 
+    @Disabled("Instrumentation in ScheduledEMTest would make this fail")
     @Test
     public void testScheduled() throws InterruptedException {
 
