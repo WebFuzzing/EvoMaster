@@ -486,8 +486,8 @@ class HarvestActualHttpWsResponseHandler {
      *
      * e.g.: GET::http://exists.local:12354/api/fzz::[]::{none}
      */
-    private fun getURLFromRequestDescription(url: String): URL {
-        val components = url.split("::")
+    private fun getURLFromRequestDescription(requestDescription: String): URL {
+        val components = requestDescription.split("::")
         return URL(components[1])
     }
 
@@ -498,19 +498,19 @@ class HarvestActualHttpWsResponseHandler {
      *
      * e.g.: GET::http://exists.local:12354/api/fzz::[]::{none}
      */
-    private fun getMethodFromRequestDescription(url: String): String {
-        return url.split("::")[0].lowercase()
+    private fun getMethodFromRequestDescription(requestDescription: String): String {
+        return requestDescription.split("::")[0].lowercase()
     }
 
     private fun matchRequest(left: String, right: String): Boolean {
         val leftMethod = getMethodFromRequestDescription(left)
         val leftProtocol = getURLFromRequestDescription(left).protocol
-        val leftDomain = getURLFromRequestDescription(left).host
+        val leftHostname = getURLFromRequestDescription(left).host
 
         val rightMethod = getMethodFromRequestDescription(right)
         val rightProtocol = getURLFromRequestDescription(right).protocol
-        val rightDomain = getURLFromRequestDescription(right).host
+        val rightHostname = getURLFromRequestDescription(right).host
 
-        return leftMethod.equals(rightMethod) && leftProtocol.equals(rightProtocol) && leftDomain.equals(rightDomain)
+        return leftMethod.equals(rightMethod) && leftProtocol.equals(rightProtocol) && leftHostname.equals(rightHostname)
     }
 }
