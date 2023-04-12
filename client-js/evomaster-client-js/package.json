@@ -1,6 +1,6 @@
 {
   "name": "evomaster-client-js",
-  "version": "1.6.1-SNAPSHOT",
+  "version": "1.6.2-SNAPSHOT",
   "description": "JavaScript Client library for EvoMaster",
   "keywords": [
     "fuzzer",
