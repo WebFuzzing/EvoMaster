@@ -14,6 +14,10 @@ public class ScheduledRest {
     private static boolean x = false;
 
 
+    public static void reset(){
+        x = false;
+    }
+
     public static boolean getValue(){
         return x ;
     }

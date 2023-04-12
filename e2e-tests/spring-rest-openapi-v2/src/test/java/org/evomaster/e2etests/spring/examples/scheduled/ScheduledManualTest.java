@@ -19,7 +19,9 @@ public class ScheduledManualTest {
     @Test
     public void testScheduled() throws InterruptedException {
 
-        Thread.sleep(10);
+        ScheduledRest.reset();
+
+        Thread.sleep(1_000);
 
         boolean res = ScheduledRest.getValue();
 
