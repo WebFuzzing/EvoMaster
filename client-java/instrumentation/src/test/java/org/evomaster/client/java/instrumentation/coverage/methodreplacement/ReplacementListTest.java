@@ -149,7 +149,7 @@ class ReplacementListTest {
             Class<?> p = parameters[i];
             checkBaseJdkType(m,p);
 
-            Class<?> casted = ReplacementUtils.getCastedToThirdParty(annotations[i]);
+            Class<?> casted = ReplacementUtils.getCastedToThirdParty(ReplacementListTest.class.getClassLoader(),annotations[i]);
             if(casted != null) {
                 assertEquals(Object.class, p); //all casts must use Object in signature
             }
