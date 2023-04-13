@@ -68,8 +68,6 @@ class HarvestActualHttpWsResponseHandler {
     @Inject
     private lateinit var randomness: Randomness
 
-    private lateinit var httpWsClient: Client
-
 
     /**
      * TODO if one day we need priorities on the queue, it can be set here. See:
@@ -128,19 +126,6 @@ class HarvestActualHttpWsResponseHandler {
     @PostConstruct
     fun initialize() {
         if (config.doHarvestActualResponse()) {
-            val clientConfiguration = ClientConfig()
-                .property(ClientProperties.CONNECT_TIMEOUT, 10_000)
-                .property(ClientProperties.READ_TIMEOUT, config.tcpTimeoutMs)
-                //workaround bug in Jersey client
-                .property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true)
-                .property(ClientProperties.FOLLOW_REDIRECTS, false)
-
-
-            httpWsClient = ClientBuilder.newBuilder()
-                .sslContext(PreDefinedSSLInfo.getSSLContext())  // configure ssl certificate
-                .hostnameVerifier(PreDefinedSSLInfo.allowAllHostNames()) // configure all hostnames
-                .withConfig(clientConfiguration).build()
-
             workerPool = Executors.newFixedThreadPool(
                 min(
                     config.externalRequestHarvesterNumberOfThreads,
@@ -160,16 +145,11 @@ class HarvestActualHttpWsResponseHandler {
     fun shutdown() {
         Lazy.assert { config.doHarvestActualResponse() }
         workerPool.shutdown()
-        httpWsClient.close()
     }
 
     @Synchronized
     private fun sendRequestToRealExternalService(request: HttpExternalServiceRequest) {
-        val info = handleActualResponse(
-            createInvocationToRealExternalService(
-                request
-            )
-        )
+        val info = fetchActualResponse(request)
         if (info != null) {
             info.param.responseBody.markAllAsInitialized()
             actualResponses[request.getDescription()] = info
@@ -238,6 +218,7 @@ class HarvestActualHttpWsResponseHandler {
     /**
      * add http request to queue for sending them to real external services
      */
+    @Synchronized
     fun addHttpRequests(requests: List<HttpExternalServiceRequest>) {
         if (requests.isEmpty()) return
 
@@ -254,6 +235,7 @@ class HarvestActualHttpWsResponseHandler {
             }
     }
 
+    @Synchronized
     private fun addRequest(request: HttpExternalServiceRequest) {
         if (startedRequests.contains(request.getDescription())) {
             return
@@ -267,7 +249,14 @@ class HarvestActualHttpWsResponseHandler {
         workerPool.execute(task)
     }
 
-    private fun buildInvocation(httpRequest: HttpExternalServiceRequest): Invocation {
+    private fun fetchActualResponse(httpRequest: HttpExternalServiceRequest): ActualResponseInfo? {
+        val clientConfiguration = getClientConfiguration()
+
+        val httpWsClient = ClientBuilder.newBuilder()
+            .sslContext(PreDefinedSSLInfo.getSSLContext())  // configure ssl certificate
+            .hostnameVerifier(PreDefinedSSLInfo.allowAllHostNames()) // configure all hostnames
+            .withConfig(clientConfiguration).build()
+
         val build = httpWsClient.target(httpRequest.actualAbsoluteURL).request("*/*").apply {
             val handledHeaders = httpRequest.headers.filterNot { skipHeaders.contains(it.key.lowercase()) }
             if (handledHeaders.isNotEmpty())
@@ -284,7 +273,7 @@ class HarvestActualHttpWsResponseHandler {
             null
         }
 
-        return when {
+        val prepared =  when {
             httpRequest.method.equals("GET", ignoreCase = true) -> build.buildGet()
             httpRequest.method.equals("POST", ignoreCase = true) -> build.buildPost(bodyEntity)
             httpRequest.method.equals("PUT", ignoreCase = true) -> build.buildPut(bodyEntity)
@@ -297,77 +286,52 @@ class HarvestActualHttpWsResponseHandler {
                 throw IllegalStateException("NOT SUPPORT to create invocation for method ${httpRequest.method}")
             }
         }
-    }
 
-    private fun createInvocationToRealExternalService(httpRequest: HttpExternalServiceRequest): Response? {
         return try {
-            buildInvocation(httpRequest).invoke()
-        } catch (e: ProcessingException) {
+            val response = prepared.invoke()
 
-            log.debug(
-                "There has been an issue in accessing external service with url (${httpRequest.getDescription()}): {}",
-                e
-            )
+            response ?: return null
+            val status = response.status
+            var statusGene = HttpWsResponseParam.getDefaultStatusEnumGene()
+            if (!statusGene.values.contains(status))
+                statusGene = EnumGene(name = statusGene.name, statusGene.values.plus(status))
 
-            when {
-                TcpUtils.isTooManyRedirections(e) -> {
-                    return null
+            val body = response.readEntity(String::class.java)
+            val node = getJsonNodeFromText(body)
+            val responseParam = if (node != null) {
+                getHttpResponse(node, statusGene).apply {
+                    setGeneBasedOnString(responseBody, body)
                 }
-
-                TcpUtils.isTimeout(e) -> {
-                    return null
-                }
-
-                TcpUtils.isOutOfEphemeralPorts(e) -> {
-                    httpWsClient.close() //make sure to release any resource
-                    httpWsClient = ClientBuilder.newClient()
-
-                    TcpUtils.handleEphemeralPortIssue()
-
-                    createInvocationToRealExternalService(httpRequest)
-                }
-
-                TcpUtils.isStreamClosed(e) || TcpUtils.isEndOfFile(e) -> {
-                    log.warn("TCP connection to Real External Service: ${e.cause!!.message}")
-                    return null
-                }
-
-                TcpUtils.isRefusedConnection(e) -> {
-
-                    log.warn("Failed to connect Real External Service with TCP with url ($httpRequest).")
-                    return null
-                }
-
-                else -> throw e
+            } else {
+                HttpWsResponseParam(
+                    status = statusGene,
+                    responseBody = OptionalGene(
+                        ACTUAL_RESPONSE_GENE_NAME,
+                        StringGene(ACTUAL_RESPONSE_GENE_NAME, value = body)
+                    )
+                )
             }
+
+            (responseParam as HttpWsResponseParam).setStatus(status)
+            return ActualResponseInfo(body, responseParam)
+        } catch (e: Exception) {
+            LoggingUtil.uniqueWarn(
+                log,
+                "${e.message} for ${httpRequest.actualAbsoluteURL}"
+            )
+            null
+        } finally {
+            httpWsClient.close()
         }
     }
 
-    private fun handleActualResponse(response: Response?): ActualResponseInfo? {
-        response ?: return null
-        val status = response.status
-        var statusGene = HttpWsResponseParam.getDefaultStatusEnumGene()
-        if (!statusGene.values.contains(status))
-            statusGene = EnumGene(name = statusGene.name, statusGene.values.plus(status))
-
-        val body = response.readEntity(String::class.java)
-        val node = getJsonNodeFromText(body)
-        val responseParam = if (node != null) {
-            getHttpResponse(node, statusGene).apply {
-                setGeneBasedOnString(responseBody, body)
-            }
-        } else {
-            HttpWsResponseParam(
-                status = statusGene,
-                responseBody = OptionalGene(
-                    ACTUAL_RESPONSE_GENE_NAME,
-                    StringGene(ACTUAL_RESPONSE_GENE_NAME, value = body)
-                )
-            )
-        }
-
-        (responseParam as HttpWsResponseParam).setStatus(status)
-        return ActualResponseInfo(body, responseParam)
+    private fun getClientConfiguration(): ClientConfig? {
+        return ClientConfig()
+            .property(ClientProperties.CONNECT_TIMEOUT, 10_000)
+            .property(ClientProperties.READ_TIMEOUT, config.tcpTimeoutMs)
+            //workaround bug in Jersey client
+            .property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true)
+            .property(ClientProperties.FOLLOW_REDIRECTS, false)
     }
 
     private fun getHttpResponse(node: JsonNode, statusGene: EnumGene<Int>): ResponseParam {
