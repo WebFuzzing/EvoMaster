@@ -8,6 +8,7 @@
 ![CI](https://github.com/EMResearch/EvoMaster/workflows/CI/badge.svg)
 [![codecov](https://codecov.io/gh/EMResearch/EvoMaster/branch/master/graph/badge.svg)](https://codecov.io/gh/EMResearch/EvoMaster)
 [![DOI](https://zenodo.org/badge/92385933.svg)](https://zenodo.org/badge/latestdoi/92385933)
+[![License: LGPL v3](https://img.shields.io/badge/License-LGPL_v3-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0)
 [![Github All Releases](https://img.shields.io/github/downloads/emresearch/evomaster/total.svg)]()
 
 
