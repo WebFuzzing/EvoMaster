@@ -2,10 +2,12 @@ package org.evomaster.core.problem.externalservice.httpws.service
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.google.inject.Inject
+import org.apache.commons.text.similarity.LevenshteinDistance
 import org.evomaster.client.java.instrumentation.shared.PreDefinedSSLInfo
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.ActualResponseInfo
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
@@ -30,6 +32,7 @@ import org.glassfish.jersey.client.ClientProperties
 import org.glassfish.jersey.client.HttpUrlConnectorProvider
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.net.URL
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -69,7 +72,6 @@ class HarvestActualHttpWsResponseHandler {
 
 
     /**
-     * TODO: Add EMConfig option to set value as config
      * TODO if one day we need priorities on the queue, it can be set here. See:
      * https://stackoverflow.com/questions/3198660/java-executors-how-can-i-set-task-priority
      */
@@ -139,7 +141,12 @@ class HarvestActualHttpWsResponseHandler {
                 .hostnameVerifier(PreDefinedSSLInfo.allowAllHostNames()) // configure all hostnames
                 .withConfig(clientConfiguration).build()
 
-            workerPool = Executors.newFixedThreadPool(min(config.externalRequestHarvesterNumberOfThreads, Runtime.getRuntime().availableProcessors()))
+            workerPool = Executors.newFixedThreadPool(
+                min(
+                    config.externalRequestHarvesterNumberOfThreads,
+                    Runtime.getRuntime().availableProcessors()
+                )
+            )
         }
     }
 
@@ -178,7 +185,7 @@ class HarvestActualHttpWsResponseHandler {
      *
      * the given [gene] should be the response body gene of ResponseParam
      */
-    fun getACopyOfItsActualResponseIfExist(gene: Gene, probability: Double): ResponseParam? {
+    private fun getACopyOfItsActualResponseIfExist(gene: Gene, probability: Double): ResponseParam? {
         if (probability == 0.0) return null
         val exAction = gene.getFirstParent { it is ApiExternalServiceAction } ?: return null
 
@@ -186,13 +193,16 @@ class HarvestActualHttpWsResponseHandler {
         if (exAction is HttpExternalServiceAction) {
             Lazy.assert { gene.parent == exAction.response }
             if (exAction.response.responseBody == gene) {
-                val p = if (!seededResponses.contains(exAction.request.getDescription()) && actualResponses.containsKey(
+                val p = if (!seededResponses.contains(exAction.request.getDescription())
+                    && (config.externalRequestResponseSelectionStrategy == EMConfig.ExternalRequestResponseSelectionStrategy.EXACT && actualResponses.containsKey(
                         exAction.request.getDescription()
-                    )
+                    ))
                 ) {
                     // if the actual response is never seeded, give a higher probably to employ it
                     max(config.probOfHarvestingResponsesFromActualExternalServices, probability)
-                } else probability
+                } else {
+                    probability
+                }
                 if (randomness.nextBoolean(p))
                     return getACopyOfActualResponse(exAction.request)
             }
@@ -207,11 +217,22 @@ class HarvestActualHttpWsResponseHandler {
     fun getACopyOfActualResponse(httpRequest: HttpExternalServiceRequest, probability: Double? = null): ResponseParam? {
         val harvest = probability == null || (randomness.nextBoolean(probability))
         if (!harvest) return null
+        var found: ResponseParam? = null
         synchronized(actualResponses) {
-            val found = (actualResponses[httpRequest.getDescription()]?.param?.copy() as? ResponseParam)
-            if (found != null) seededResponses.add(httpRequest.getDescription())
-            return found
+            if (config.externalRequestResponseSelectionStrategy == EMConfig.ExternalRequestResponseSelectionStrategy.CLOSEST) {
+                val closestRequest = findClosestRequest(httpRequest.getDescription())
+                if (closestRequest != null) {
+                    found = (actualResponses[closestRequest]?.param?.copy() as? ResponseParam)
+                }
+            } else if (config.externalRequestResponseSelectionStrategy == EMConfig.ExternalRequestResponseSelectionStrategy.RANDOM) {
+                val randomIndex = randomness.nextInt(actualResponses.size)
+                found = actualResponses[actualResponses.keys().toList()[randomIndex]]?.param?.copy() as? ResponseParam
+            } else if (config.externalRequestResponseSelectionStrategy == EMConfig.ExternalRequestResponseSelectionStrategy.EXACT) {
+                found = (actualResponses[httpRequest.getDescription()]?.param?.copy() as? ResponseParam)
+            }
         }
+        if (found != null) seededResponses.add(httpRequest.getDescription())
+        return found
     }
 
     /**
@@ -229,8 +250,8 @@ class HarvestActualHttpWsResponseHandler {
         requests
             .filter { it.method.equals("GET", ignoreCase = true) || it.method.equals("POST", ignoreCase = true) }
             .forEach {
-            addRequest(it)
-        }
+                addRequest(it)
+            }
     }
 
     private fun addRequest(request: HttpExternalServiceRequest) {
@@ -368,7 +389,6 @@ class HarvestActualHttpWsResponseHandler {
         }
     }
 
-
     private fun updateExtractedObjectDto() {
         synchronized(extractedObjectDto) {
             val infoDto = rc.getSutInfo()!!
@@ -426,5 +446,71 @@ class HarvestActualHttpWsResponseHandler {
             )
             return false
         }
+    }
+
+    /**
+     * Finds the closest harvested requested based on the given key.
+     * Uses Levenshtein Distance to calculate the distance, then selects the
+     * shortest. If none exists, returns null.
+     */
+    private fun findClosestRequest(key: String): String? {
+        var out: String? = null
+        var diff = 100.0
+
+        actualResponses.forEach { (k, v) ->
+            val httpWsResponseParam = v.param as HttpWsResponseParam
+
+            if (matchRequest(key, k)) {
+                if (httpWsResponseParam.status.values[httpWsResponseParam.status.index] == 200) {
+                    val ld = LevenshteinDistance.getDefaultInstance().apply(k, key).toDouble()
+
+                    if (ld == 0.0) {
+                        out = k
+                    } else {
+                        val nDiff = (ld / key.length.toDouble()) * 100.0
+
+                        if (nDiff < diff) {
+                            diff = nDiff
+                            out = k
+                        }
+                    }
+                }
+            }
+        }
+        return out
+    }
+
+    /**
+     * A request description contains information about the method, url, headers, and body.
+     * This extract the URL information as [URL] for ease of use.
+     *
+     * e.g.: GET::http://exists.local:12354/api/fzz::[]::{none}
+     */
+    private fun getURLFromRequestDescription(requestDescription: String): URL {
+        val components = requestDescription.split("::")
+        return URL(components[1])
+    }
+
+
+    /**
+     * A request description contains information about the method, url, headers, and body.
+     * This extract the request method as [String].
+     *
+     * e.g.: GET::http://exists.local:12354/api/fzz::[]::{none}
+     */
+    private fun getMethodFromRequestDescription(requestDescription: String): String {
+        return requestDescription.split("::")[0].lowercase()
+    }
+
+    private fun matchRequest(left: String, right: String): Boolean {
+        val leftMethod = getMethodFromRequestDescription(left)
+        val leftProtocol = getURLFromRequestDescription(left).protocol
+        val leftHostname = getURLFromRequestDescription(left).host
+
+        val rightMethod = getMethodFromRequestDescription(right)
+        val rightProtocol = getURLFromRequestDescription(right).protocol
+        val rightHostname = getURLFromRequestDescription(right).host
+
+        return leftMethod.equals(rightMethod) && leftProtocol.equals(rightProtocol) && leftHostname.equals(rightHostname)
     }
 }
