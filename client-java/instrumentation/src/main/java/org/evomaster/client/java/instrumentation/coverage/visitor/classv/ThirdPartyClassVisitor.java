@@ -1,5 +1,7 @@
-package org.evomaster.client.java.instrumentation.coverage;
+package org.evomaster.client.java.instrumentation.coverage.visitor.classv;
 
+import org.evomaster.client.java.instrumentation.coverage.visitor.methodv.MethodReplacementMethodVisitor;
+import org.evomaster.client.java.instrumentation.coverage.visitor.methodv.ScheduledMethodVisitor;
 import org.objectweb.asm.commons.JSRInlinerAdapter;
 import org.evomaster.client.java.instrumentation.Constants;
 import org.evomaster.client.java.instrumentation.shared.ClassName;
@@ -42,6 +44,7 @@ public class ThirdPartyClassVisitor extends ClassVisitor {
             return mv;
         }
 
+        mv = new ScheduledMethodVisitor(mv);
         mv = new MethodReplacementMethodVisitor(false, false, mv, bytecodeClassName, name, descriptor);
 
         return mv;
