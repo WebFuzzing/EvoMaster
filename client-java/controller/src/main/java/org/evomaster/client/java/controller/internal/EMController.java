@@ -538,13 +538,13 @@ public class EMController {
 
             return Response.status(200).entity(WrappedResponseDto.withData(dto)).build();
 
-        } catch (RuntimeException e) {
+        } catch (Exception e) { // catch all exception here
+
             /*
                 FIXME: ideally, would not need to do a try/catch on each single endpoint,
                 as could configure Jetty/Jackson to log all errors.
                 But even after spending hours googling it, haven't managed to configure it
              */
-
             String msg = "Thrown exception: " + e.getMessage();
             SimpleLogger.error(msg, e);
             return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
