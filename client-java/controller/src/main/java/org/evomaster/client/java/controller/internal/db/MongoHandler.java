@@ -1,15 +1,10 @@
 package org.evomaster.client.java.controller.internal.db;
 
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoCollection;
-import org.bson.Document;
-import org.bson.conversions.Bson;
 import org.evomaster.client.java.controller.mongo.MongoHeuristicsCalculator;
 import org.evomaster.client.java.instrumentation.MongoInfo;
-
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Class used to act upon Mongo commands executed by the SUT
@@ -64,7 +59,7 @@ public class MongoHandler {
             } catch (Exception e) {
                 dist = Double.MAX_VALUE;
             }
-            distances.add(new MongoOperationDistance((Bson) mongoInfo.getQuery(), dist));
+            distances.add(new MongoOperationDistance(mongoInfo.getQuery(), dist));
         });
 
         operations.clear();
@@ -73,19 +68,28 @@ public class MongoHandler {
     }
 
     private double computeDistance(MongoInfo info) {
-        MongoCollection<Document> collection = (MongoCollection<Document>) info.getCollection();
-        FindIterable<Document> documents = collection.find();
+        Object collection = info.getCollection();
+        Iterable<?> documents = getDocuments(collection);
 
         MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
 
         double min = Double.MAX_VALUE;
 
-        for (Document doc : documents) {
-            double dist = calculator.computeExpression((Bson) info.getQuery(), doc);
+        for (Object doc : documents) {
+            double dist = calculator.computeExpression(info.getQuery(), doc);
             if (dist == 0) return 0;
             if (dist < min) min = dist;
         }
         return min;
+    }
+
+    private static Iterable<?> getDocuments(Object collection) {
+        try {
+            Class<?> collectionClass = Class.forName("com.mongodb.client.MongoCollection");
+            return (Iterable<?>) collectionClass.getMethod("find").invoke(collection);
+        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException | ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public boolean isCalculateHeuristics() {return calculateHeuristics;}
