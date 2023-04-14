@@ -410,7 +410,7 @@ public class EMController {
                      */
                 }
             }
-        } catch (RuntimeException e) {
+        } catch (Exception e) {
             /*
                 FIXME: ideally, would not need to do a try/catch on each single endpoint,
                 as could configure Jetty/Jackson to log all errors.
