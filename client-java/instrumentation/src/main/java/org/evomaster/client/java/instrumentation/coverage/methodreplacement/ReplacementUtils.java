@@ -27,25 +27,51 @@ public class ReplacementUtils {
         if(applyThirdPartyCast){
             Replacement r = m.getAnnotation(Replacement.class);
             if(!r.castTo().isEmpty() && !r.replacingConstructor()){
-                Class<?> casted = loadClass(r.castTo());
-                if(casted != null){
-                    returnType = Type.getDescriptor(casted);
-                }
+                //Issue with classloaders here, so we compute manually
+//                Class<?> casted = loadClass(r.castTo());
+//                if(casted != null){
+//                    returnType = Type.getDescriptor(casted);
+//                }
+                returnType = getDescriptorForClassName(r.castTo());
             }
         }
 
         return getDescriptor(m,skipFirsts,skipLast,returnType,applyThirdPartyCast);
     }
 
+    private static String getDescriptorForClassName(String className){
+        return "L"+className.replace(".","/")+";";
+    }
+
 
     private static String getDescriptor(Method m, int skipFirsts, int skipLast, String returnType, boolean applyThirdPartyCast) {
-        List<Class<?>> types = getParameterTypes(m,skipFirsts,skipLast,applyThirdPartyCast);
+        //List<Class<?>> types = getParameterTypes(m,skipFirsts,skipLast,applyThirdPartyCast);
         StringBuilder buf = new StringBuilder();
 
         buf.append('(');
-        types.stream().forEach( t ->
-                buf.append(Type.getDescriptor(t))
-        );
+
+//        types.stream().forEach( t ->
+//                buf.append(Type.getDescriptor(t))
+//        );
+
+        Class<?>[] parameters = m.getParameterTypes();
+        Annotation[][] annotations = m.getParameterAnnotations();
+
+        //skipping first parameter(s)
+        int start = skipFirsts;
+        int end = parameters.length - skipLast;
+
+
+        for (int i = start; i < end; i++) {
+            Class<?> t = parameters[i];
+            ThirdPartyCast tpc = getThirdPartyCast(annotations[i]);
+            if(applyThirdPartyCast && tpc != null){
+                buf.append(getDescriptorForClassName(tpc.actualType().trim()));
+            } else {
+                buf.append(Type.getDescriptor(t));
+            }
+        }
+
         buf.append(')');
         buf.append(returnType);
 
@@ -65,9 +91,13 @@ public class ReplacementUtils {
         for (int i = start; i < end; i++) {
             Class<?> t = parameters[i];
             if(applyThirdPartyCast){
-                Class<?> casted = getCastedToThirdParty(annotations[i]);
+                ThirdPartyCast tpc = getThirdPartyCast(annotations[i]);
+                //WARN this only work for tests
+                Class<?> casted = getCastedToThirdParty(ReplacementUtils.class.getClassLoader(), annotations[i]);
                 if(casted != null){
                     t = casted;
+                } else if(tpc != null){
+                    throw new IllegalStateException("BUG: this code should not be called outside tests, as would not work");
                 }
             }
             types.add(t);
@@ -76,22 +106,24 @@ public class ReplacementUtils {
         return types;
     }
 
-    public static Class<?> getCastedToThirdParty(Annotation[] annotations) {
-        ThirdPartyCast thirdPartyCast = (ThirdPartyCast) Arrays.stream(annotations).filter(a -> a instanceof ThirdPartyCast)
+
+    public static ThirdPartyCast getThirdPartyCast(Annotation[] annotations){
+        return (ThirdPartyCast) Arrays.stream(annotations).filter(a -> a instanceof ThirdPartyCast)
                 .findFirst().orElse(null);
+    }
+
+    public static Class<?> getCastedToThirdParty(ClassLoader loader, Annotation[] annotations) {
+        ThirdPartyCast thirdPartyCast = getThirdPartyCast(annotations);
         if(thirdPartyCast != null){
             //we trim to avoid possible issues with Shader plugin
-            return loadClass(thirdPartyCast.actualType().trim());
+            return loadClass(loader, thirdPartyCast.actualType().trim());
         }
         return null;
     }
 
-    private static Class<?> loadClass(String className){
+    private static Class<?> loadClass(ClassLoader loader, String className){
         try {
-            /*
-                TODO use correct classloader
-             */
-            return ReplacementUtils.class.getClassLoader().loadClass(className);
+            return loader.loadClass(className);
         } catch (ClassNotFoundException e) {
             SimpleLogger.error("Cannot load third-party cast class: " + className,e);
             return null;
