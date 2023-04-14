@@ -338,7 +338,14 @@ public abstract class ExternalSutController extends SutController {
             return null;
         }
 
-        postStart();
+        try{
+            postStart();
+        }catch (Exception e){
+            SimpleLogger.error("Fail to process postStart in the ExternalSutController");
+            stopSut();
+            return null;
+        }
+
 
         return getBaseURL();
     }
