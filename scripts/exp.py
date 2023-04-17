@@ -187,6 +187,7 @@ class Sut:
 SUTS = [
     # IND
     #Sut("ind0", 1, JDK_8),
+    #Sut("ind1", 1, JDK_11),
     # REST JVM
     Sut("features-service", 1, JDK_8),
     Sut("scout-api", 2, JDK_8),
@@ -243,7 +244,7 @@ if SUTFILTER is not None and SUTFILTER.lower() != "all":
 
 # Specify if using any industrial case study.
 # If so, environment variables will be checked for them
-USING_IND = any(sut.name == 'ind0' for sut in SUTS)
+USING_IND = any( (sut.name == 'ind0' or sut.name == 'ind1') for sut in SUTS)
 
 
 ### We need different settings based on whether we are running the
@@ -278,6 +279,10 @@ else:
         ind0_package = os.environ.get("SUT_PACKAGE_IND0", "")
         if ind0_package == "":
             raise Exception("You cannot run experiments on IND0 without specify target package to cover with SUT_PACKAGE_IND0 env variable")
+        ind1_package = os.environ.get("SUT_PACKAGE_IND1", "")
+        if ind1_package == "":
+            raise Exception("You cannot run experiments on IND1 without specify target package to cover with SUT_PACKAGE_IND1 env variable")
+
 
     LOGS_DIR = BASE_DIR
 
