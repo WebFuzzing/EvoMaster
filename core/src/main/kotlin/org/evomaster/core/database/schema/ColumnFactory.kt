@@ -47,8 +47,8 @@ object ColumnFactory {
 
     fun createColumnFromDto(
             columnDto: ColumnDto,
-            lowerBoundForColumn: Int? = null,
-            upperBoundForColumn: Int? = null,
+            lowerBoundForColumn: Long? = null,
+            upperBoundForColumn: Long? = null,
             enumValuesForColumn: List<String>? = null,
             similarToPatternsForColumn: List<String>? = null,
             likePatternsForColumn: List<String>? = null,
