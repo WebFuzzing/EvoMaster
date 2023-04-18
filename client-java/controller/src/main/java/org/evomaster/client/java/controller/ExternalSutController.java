@@ -382,6 +382,10 @@ public abstract class ExternalSutController extends SutController {
         if (isInstrumentationActivated()) {
             serverController.resetForNewTest();
         }
+
+        //This is needed for hack in getAdditionalInfoList()
+        //TODO possibly refactor
+        InstrumentationController.resetForNewTest();
     }
 
     @Override
@@ -393,7 +397,19 @@ public abstract class ExternalSutController extends SutController {
     @Override
     public final List<AdditionalInfo> getAdditionalInfoList(){
         checkInstrumentation();
-        return serverController.getAdditionalInfoList();
+
+        List<AdditionalInfo> info = serverController.getAdditionalInfoList();
+        //taint on SQL would be done here in the controller, and not in the instrumented SUT
+        List<AdditionalInfo> local = ExecutionTracer.exposeAdditionalInfoList();
+        //so we need to merge results
+
+        AdditionalInfo first = info.get(0);
+
+        //TODO refactor currently action index is ignored in taint. see all issues in TaintAnalysis
+        local.stream().flatMap(x -> x.getStringSpecializationsView().entrySet().stream())
+                .forEach(p -> p.getValue().stream().forEach(s -> first.addSpecialization(p.getKey(), s)));
+
+        return info;
     }
 
     @Override
