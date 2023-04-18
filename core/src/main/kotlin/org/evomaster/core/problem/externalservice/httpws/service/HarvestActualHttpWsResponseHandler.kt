@@ -34,6 +34,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.URL
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CopyOnWriteArraySet
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import javax.annotation.PostConstruct
@@ -77,6 +78,11 @@ class HarvestActualHttpWsResponseHandler {
      */
     private lateinit var workerPool: ExecutorService
 
+    /**
+     * If an hostname is unknown and cannot be resolved, no point in trying yet again to connect to it
+     */
+    private val unknownHosts : MutableSet<String> = CopyOnWriteArraySet()
+
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(HarvestActualHttpWsResponseHandler::class.java)
@@ -115,9 +121,8 @@ class HarvestActualHttpWsResponseHandler {
 
     /*
         skip headers if they depend on the client
-        shall we skip Connection?
      */
-    private val skipHeaders = listOf("user-agent", "host", "accept-encoding")
+    private val skipHeaders = listOf("user-agent", "host", "accept-encoding", "connection")
 
 
     /**
@@ -129,11 +134,11 @@ class HarvestActualHttpWsResponseHandler {
     fun initialize() {
         if (config.doHarvestActualResponse()) {
             val clientConfiguration = ClientConfig()
-                .property(ClientProperties.CONNECT_TIMEOUT, 10_000)
-                .property(ClientProperties.READ_TIMEOUT, config.tcpTimeoutMs)
+                .property(ClientProperties.CONNECT_TIMEOUT, 2_000)
+                .property(ClientProperties.READ_TIMEOUT, 2_000)
                 //workaround bug in Jersey client
                 .property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true)
-                .property(ClientProperties.FOLLOW_REDIRECTS, false)
+                .property(ClientProperties.FOLLOW_REDIRECTS, true)
 
 
             httpWsClient = ClientBuilder.newBuilder()
@@ -259,6 +264,10 @@ class HarvestActualHttpWsResponseHandler {
             return
         }
 
+        if(unknownHosts.contains(request.getHostName())){
+            return
+        }
+
         startedRequests.add(request.getDescription())
 
         updateExtractedObjectDto()
@@ -272,6 +281,8 @@ class HarvestActualHttpWsResponseHandler {
             val handledHeaders = httpRequest.headers.filterNot { skipHeaders.contains(it.key.lowercase()) }
             if (handledHeaders.isNotEmpty())
                 handledHeaders.forEach { (t, u) -> this.header(t, u) }
+            //if we do not do this, we can run out of ephemeral ports
+            this.header("Connection", "keep-alive")
         }
 
         val bodyEntity = if (httpRequest.body != null) {
@@ -333,8 +344,12 @@ class HarvestActualHttpWsResponseHandler {
                 }
 
                 TcpUtils.isRefusedConnection(e) -> {
-
                     log.warn("Failed to connect Real External Service with TCP with url ($httpRequest).")
+                    return null
+                }
+
+                e.cause is java.net.UnknownHostException -> {
+                    unknownHosts.add(httpRequest.getHostName())
                     return null
                 }
 

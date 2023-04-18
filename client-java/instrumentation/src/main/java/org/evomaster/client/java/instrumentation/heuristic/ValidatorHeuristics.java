@@ -223,7 +223,7 @@ TODO
                 if (ExecutionTracer.isTaintInput(value)) {
                     ExecutionTracer.addStringSpecialization(value,
                             new StringSpecializationInfo(StringSpecialization.REGEX_WHOLE,
-                                    attributes.get("value").toString()));
+                                    attributes.get("regexp").toString()));
                 }
 
                 return defaultFailed;
