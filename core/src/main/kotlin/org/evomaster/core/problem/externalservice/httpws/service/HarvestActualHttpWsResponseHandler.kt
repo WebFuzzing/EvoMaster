@@ -134,11 +134,11 @@ class HarvestActualHttpWsResponseHandler {
     fun initialize() {
         if (config.doHarvestActualResponse()) {
             val clientConfiguration = ClientConfig()
-                .property(ClientProperties.CONNECT_TIMEOUT, 10_000)
-                .property(ClientProperties.READ_TIMEOUT, config.tcpTimeoutMs)
+                .property(ClientProperties.CONNECT_TIMEOUT, 2_000)
+                .property(ClientProperties.READ_TIMEOUT, 2_000)
                 //workaround bug in Jersey client
                 .property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true)
-                .property(ClientProperties.FOLLOW_REDIRECTS, false)
+                .property(ClientProperties.FOLLOW_REDIRECTS, true)
 
 
             httpWsClient = ClientBuilder.newBuilder()
