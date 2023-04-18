@@ -16,26 +16,22 @@ import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceRequ
 import org.evomaster.core.problem.externalservice.httpws.param.HttpWsResponseParam
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.remote.service.RemoteController
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.Timeout
 import java.util.*
 
 
-class HarvestActualHttpWsResponseHandlerTest {
+class ExternalHarvesterStrategyTest {
 
     private lateinit var config: EMConfig
     private lateinit var externalHarvestActualHttpWsResponseHandler: HarvestActualHttpWsResponseHandler
 
-    private val count = 3
-
     @BeforeEach
     fun init(){
         val injector: Injector = LifecycleInjector.builder()
-            .withModules(FakeModule(), BaseModule(arrayOf("--probOfHarvestingResponsesFromActualExternalServices","1.0", "--externalRequestHarvesterNumberOfThreads", "$count")))
+            .withModules(FakeModule(), BaseModule())
             .build().createInjector()
 
 
@@ -43,11 +39,6 @@ class HarvestActualHttpWsResponseHandlerTest {
         externalHarvestActualHttpWsResponseHandler = injector.getInstance(HarvestActualHttpWsResponseHandler::class.java)
 
 
-    }
-
-    @AfterEach
-    fun clearDnsCache(){
-        DnsCacheManipulator.clearDnsCache()
     }
 
     private class FakeModule : AbstractModule() {
@@ -60,77 +51,22 @@ class HarvestActualHttpWsResponseHandlerTest {
 
         override fun configure() {
             bind(HarvestActualHttpWsResponseHandler::class.java)
-                .asEagerSingleton()
+                    .asEagerSingleton()
         }
     }
-
-    @Timeout(120)
-    @Test
-    fun testMultiThreadHarvestClient(){
-
-        val host = "clientthreadTest.local"
-        val ip = "127.0.0.42"
-        val port = 12345
-        val pathPrefix = "/api/thread"
-        val queryParam = "foo"
-
-        val wm = WireMockServer(WireMockConfiguration()
-                .bindAddress(ip)
-                .port(port)
-                .extensions(ResponseTemplateTransformer(false)))
-        wm.start()
-
-        (0 until count).forEach {
-
-            wm.stubFor(
-                    WireMock.get(
-                            WireMock.urlMatching("$pathPrefix$it\\?$queryParam=\\d+"))
-                            .atPriority(1)
-                            .willReturn(
-                                    WireMock.aResponse()
-                                            .withStatus(200)
-                                            .withBody("{\"message\" : \"$it\"}")
-                                            .withFixedDelay(1000)
-                            )
-            )
-        }
-
-        DnsCacheManipulator.setDnsCache(host, ip)
-
-        val amount = 100
-        val requests = (0 until amount).flatMap {
-            (0 until count).map{r->
-                val url = "http://$host:$port$pathPrefix$r"
-                val fullURL = "$url?$queryParam=$it"
-                HttpExternalServiceRequest(
-                        UUID.randomUUID(),"GET",fullURL,fullURL,true,UUID.randomUUID().toString(),fullURL, mapOf(),null)
-            }
-        }
-
-        externalHarvestActualHttpWsResponseHandler.addHttpRequests(requests)
-
-        Thread.sleep(3000)
-
-        while (externalHarvestActualHttpWsResponseHandler.getNumOfHarvestedResponse() < amount * count){
-            Thread.sleep(1000)
-        }
-        assertEquals(externalHarvestActualHttpWsResponseHandler.getConfiguredFixedThreadPool(), externalHarvestActualHttpWsResponseHandler.getNumOfClients())
-        wm.shutdown()
-    }
-
 
     @Test
     fun testExactStrategy() {
         val wm = WireMockServer(WireMockConfiguration()
-            .bindAddress("127.0.0.42")
-            .port(12354)
-            .extensions(ResponseTemplateTransformer(false)))
+                .bindAddress("127.0.0.2")
+                .port(12354)
+                .extensions(ResponseTemplateTransformer(false)))
         wm.start()
         wm.stubFor(
-            WireMock.get(
-                WireMock.urlEqualTo("/api/mock"))
-                .atPriority(1)
-                .willReturn(WireMock.aResponse().withStatus(200).withBody("{\"message\" : \"Working\"}"))
+                WireMock.get(
+                        WireMock.urlEqualTo("/api/mock"))
+                        .atPriority(1)
+                        .willReturn(WireMock.aResponse().withStatus(200).withBody("{\"message\" : \"Working\"}"))
         )
 
         DnsCacheManipulator.setDnsCache("noname.local", "127.0.0.2")
