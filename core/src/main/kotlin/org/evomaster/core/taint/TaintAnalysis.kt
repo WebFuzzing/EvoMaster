@@ -74,9 +74,12 @@ object TaintAnalysis {
     "Likely" rare, and "likely" with little to no side-effects if it happens (we ll see if it ll be indeed
     the case).
 
-    Note, even if we force the invariant that 2 genes cannot share the same taint in a individual, we cannot guarantee
+    Note, even if we force the invariant that 2 genes cannot share the same taint in an individual, we cannot guarantee
     of the taint values detected in the SUT. The string there might be manipulated (although it is _extremely_ unlike
-    that a manipulated taint would still pass the taint regex check...)
+    that a manipulated taint would still pass the taint regex check...).
+
+    TODO: if we want to fix this, also need to keep in mind how taint is handled in SQL.
+    Currently, embedded and external behaves differently. See HeuristicsCalculator
          */
 
         val allTaintableGenes: List<TaintableGene> =
