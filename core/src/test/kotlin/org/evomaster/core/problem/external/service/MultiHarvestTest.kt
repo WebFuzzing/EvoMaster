@@ -16,6 +16,8 @@ import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceRequ
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.remote.service.RemoteController
 import org.junit.jupiter.api.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import java.time.Duration
 import java.util.*
 
 class MultiHarvestTest {
@@ -36,7 +38,6 @@ class MultiHarvestTest {
         }
     }
 
-    @Timeout(120)
     @Test
     fun testMultiThreadHarvestClient(){
         val count = 3
@@ -49,9 +50,9 @@ class MultiHarvestTest {
         config = injector.getInstance(EMConfig::class.java)
         externalHarvestActualHttpWsResponseHandler = injector.getInstance(HarvestActualHttpWsResponseHandler::class.java)
 
-        val num = 3
+
         val host = "clientthreadTest.local"
-        val ip = "127.0.0.42"
+        val ip = "127.0.0.6"
         val port = 12345
         val pathPrefix = "/api/thread"
         val queryParam = "foo"
@@ -62,8 +63,10 @@ class MultiHarvestTest {
                 .extensions(ResponseTemplateTransformer(false)))
         wm.start()
 
-        (0 until num).forEach {
+        val num = 3
+        val delay = 500 // millisecond
 
+        (0 until num).forEach {
             wm.stubFor(
                     WireMock.get(
                             WireMock.urlMatching("$pathPrefix$it\\?$queryParam=\\d+"))
@@ -72,12 +75,13 @@ class MultiHarvestTest {
                                     WireMock.aResponse()
                                             .withStatus(200)
                                             .withBody("{\"message\" : \"$it\"}")
-                                            .withFixedDelay(500)
+                                            .withFixedDelay(delay)
                             )
             )
         }
 
         DnsCacheManipulator.setDnsCache(host, ip)
+
 
         val amount = 100
         val requests = (0 until amount).flatMap {
@@ -89,13 +93,28 @@ class MultiHarvestTest {
             }
         }
 
-        externalHarvestActualHttpWsResponseHandler.addHttpRequests(requests)
+        /*
+            in total 3 * 100 = 300 requests
+            0.5s per request
 
-        while (externalHarvestActualHttpWsResponseHandler.getNumOfHarvestedResponse() < amount * count){
-            Thread.sleep(100)
+            if we send x requests in parallel, it will take roughly 150/x seconds.
+            then it should finish within 150/x + 2 seconds as Timeout
+         */
+
+        val total = amount * num * delay / 1000
+        val timeout = (total / externalHarvestActualHttpWsResponseHandler.getConfiguredFixedThreadPool()) + 2L
+
+        assertTimeoutPreemptively(Duration.ofSeconds(timeout)){
+            externalHarvestActualHttpWsResponseHandler.addHttpRequests(requests)
+
+            while (externalHarvestActualHttpWsResponseHandler.getNumOfHarvestedResponse() < amount * num){
+                Thread.sleep(100)
+            }
+            assertEquals(count, externalHarvestActualHttpWsResponseHandler.getConfiguredFixedThreadPool())
+            assertEquals(externalHarvestActualHttpWsResponseHandler.getConfiguredFixedThreadPool(), externalHarvestActualHttpWsResponseHandler.getNumOfClients())
         }
-        Assertions.assertEquals(count, externalHarvestActualHttpWsResponseHandler.getConfiguredFixedThreadPool())
-        Assertions.assertEquals(externalHarvestActualHttpWsResponseHandler.getConfiguredFixedThreadPool(), externalHarvestActualHttpWsResponseHandler.getNumOfClients())
+
         wm.shutdown()
+        DnsCacheManipulator.clearDnsCache()
     }
 }

@@ -165,13 +165,30 @@ class HarvestActualHttpWsResponseHandler {
 
     /**
      * @return the number of created clients for harvesting
+     *
+     * this is mainly for debugging
      */
     fun getNumOfClients() = clients.size
 
+    /**
+     * @return the number of harvested responses
+     *
+     * this is mainly for debugging
+     */
     fun getNumOfHarvestedResponse() = actualResponses.size
 
+    /**
+     * @return the number of thread configured in ExecutionService
+     *
+     * this is mainly for debugging
+     */
     fun getConfiguredFixedThreadPool() = actualFixedThreadPool
 
+    /**
+     * @return the number of started requests for harvesting responses
+     *
+     * this is mainly for debugging
+     */
     fun getNumOfStartedRequests() = startedRequests.size
 
     private fun sendRequestToRealExternalService(clientId: Long, httpWsClient: Client, request: HttpExternalServiceRequest) {
