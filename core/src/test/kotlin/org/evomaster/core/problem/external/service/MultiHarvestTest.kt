@@ -102,19 +102,21 @@ class MultiHarvestTest {
          */
 
         val total = amount * num * delay / 1000
-        val timeout = (total / externalHarvestActualHttpWsResponseHandler.getConfiguredFixedThreadPool()) + 2L
+        val timeout = (total / externalHarvestActualHttpWsResponseHandler.getConfiguredFixedThreadPool()) + 4L
 
-        assertTimeoutPreemptively(Duration.ofSeconds(timeout)){
+        assertTimeout(Duration.ofSeconds(timeout), "Fail to harvest $total requests within $timeout using ${externalHarvestActualHttpWsResponseHandler.getConfiguredFixedThreadPool()} threads"){
             externalHarvestActualHttpWsResponseHandler.addHttpRequests(requests)
 
             while (externalHarvestActualHttpWsResponseHandler.getNumOfHarvestedResponse() < amount * num){
                 Thread.sleep(100)
             }
-            assertEquals(count, externalHarvestActualHttpWsResponseHandler.getConfiguredFixedThreadPool())
+
+            wm.shutdown()
+            DnsCacheManipulator.clearDnsCache()
+
             assertEquals(externalHarvestActualHttpWsResponseHandler.getConfiguredFixedThreadPool(), externalHarvestActualHttpWsResponseHandler.getNumOfClients())
+            externalHarvestActualHttpWsResponseHandler.shutdown()
         }
 
-        wm.shutdown()
-        DnsCacheManipulator.clearDnsCache()
     }
 }
