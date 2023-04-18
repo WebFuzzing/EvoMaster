@@ -34,7 +34,16 @@ public class InstrumentedSutStarter {
     public static void loadAgent(){
         if(! alreadyLoaded){
             alreadyLoaded = true;
-            AgentLoader.loadAgentClass(InstrumentingAgent.class.getName(), "foobar_packagenameshouldnotexist.");
+            try {
+                AgentLoader.loadAgentClass(InstrumentingAgent.class.getName(), "foobar_packagenameshouldnotexist.");
+            } catch (Exception e){
+                throw new RuntimeException(
+                        "\nFailed to apply bytecode instrumentation with JavaAgent." +
+                        "\nIf you are using JDK 11 or above, are you sure you added the JVM option" +
+                        "\n -Djdk.attach.allowAttachSelf=true " +
+                        "\n?" +
+                        "\nSee documentation at https://github.com/EMResearch/EvoMaster/blob/master/docs/jdks.md", e);
+            }
         }
     }
 

@@ -30,7 +30,7 @@ class HttpWsExternalService(
         private const val WIREMOCK_DEFAULT_RESPONSE_CODE = 404
         private const val WIREMOCK_DEFAULT_RESPONSE_MESSAGE = "Not Found"
 
-        private val log: Logger = LoggerFactory.getLogger(HttpWsExternalServiceHandler::class.java)
+        private val log: Logger = LoggerFactory.getLogger(HttpWsExternalService::class.java)
     }
 
     /**
