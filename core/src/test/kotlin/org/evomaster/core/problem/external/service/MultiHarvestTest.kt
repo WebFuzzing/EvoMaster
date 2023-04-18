@@ -98,7 +98,9 @@ class MultiHarvestTest {
             0.5s per request
 
             if we send x requests in parallel, it will take roughly 150/x seconds.
-            then it should finish within 150/x + 2 seconds as Timeout
+            then it should finish within 150/x + 4 seconds as Timeout
+
+            note that GA might only have 2 cores, then count specified as 3 might not happen in GA
          */
 
         val total = amount * num * delay / 1000
