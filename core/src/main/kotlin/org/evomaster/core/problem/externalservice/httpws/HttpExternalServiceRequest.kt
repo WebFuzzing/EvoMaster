@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.externalservice.httpws
 
 import org.evomaster.core.problem.util.ParserDtoUtil.getJsonNodeFromText
+import java.net.URL
 import java.util.UUID
 
 /**
@@ -58,5 +59,9 @@ class HttpExternalServiceRequest(
         // TODO might add other derived types
 
         return null
+    }
+
+    fun getHostName() : String{
+        return URL(absoluteURL).host
     }
 }

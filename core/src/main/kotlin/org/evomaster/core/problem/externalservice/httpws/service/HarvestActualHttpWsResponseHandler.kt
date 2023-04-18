@@ -34,6 +34,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.URL
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CopyOnWriteArraySet
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import javax.annotation.PostConstruct
@@ -76,6 +77,11 @@ class HarvestActualHttpWsResponseHandler {
      * https://stackoverflow.com/questions/3198660/java-executors-how-can-i-set-task-priority
      */
     private lateinit var workerPool: ExecutorService
+
+    /**
+     * If an hostname is unknown and cannot be resolved, no point in trying yet again to connect to it
+     */
+    private val unknownHosts : MutableSet<String> = CopyOnWriteArraySet()
 
 
     companion object {
@@ -259,6 +265,10 @@ class HarvestActualHttpWsResponseHandler {
             return
         }
 
+        if(unknownHosts.contains(request.getHostName())){
+            return
+        }
+
         startedRequests.add(request.getDescription())
 
         updateExtractedObjectDto()
@@ -333,8 +343,12 @@ class HarvestActualHttpWsResponseHandler {
                 }
 
                 TcpUtils.isRefusedConnection(e) -> {
-
                     log.warn("Failed to connect Real External Service with TCP with url ($httpRequest).")
+                    return null
+                }
+
+                e is java.net.UnknownHostException -> {
+                    unknownHosts.add(httpRequest.getHostName())
                     return null
                 }
 
