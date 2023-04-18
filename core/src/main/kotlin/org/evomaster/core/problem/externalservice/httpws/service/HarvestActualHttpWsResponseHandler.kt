@@ -121,9 +121,8 @@ class HarvestActualHttpWsResponseHandler {
 
     /*
         skip headers if they depend on the client
-        shall we skip Connection?
      */
-    private val skipHeaders = listOf("user-agent", "host", "accept-encoding")
+    private val skipHeaders = listOf("user-agent", "host", "accept-encoding", "connection")
 
 
     /**
@@ -282,6 +281,8 @@ class HarvestActualHttpWsResponseHandler {
             val handledHeaders = httpRequest.headers.filterNot { skipHeaders.contains(it.key.lowercase()) }
             if (handledHeaders.isNotEmpty())
                 handledHeaders.forEach { (t, u) -> this.header(t, u) }
+            //if we do not do this, we can run out of ephemeral ports
+            this.header("Connection", "keep-alive")
         }
 
         val bodyEntity = if (httpRequest.body != null) {
