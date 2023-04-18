@@ -133,15 +133,19 @@ class HarvestActualHttpWsResponseHandler {
      */
     private val startedRequests: MutableSet<String> = mutableSetOf()
 
+
+    private var actualFixedThreadPool = 0
+
     @PostConstruct
     fun initialize() {
         if (config.doHarvestActualResponse()) {
 
-            workerPool = Executors.newFixedThreadPool(
-                min(
+            actualFixedThreadPool = min(
                     config.externalRequestHarvesterNumberOfThreads,
                     Runtime.getRuntime().availableProcessors()
-                )
+            )
+            workerPool = Executors.newFixedThreadPool(
+                actualFixedThreadPool
             )
         }
     }
@@ -158,6 +162,17 @@ class HarvestActualHttpWsResponseHandler {
         workerPool.shutdown()
         clients.values.forEach{it.close()}
     }
+
+    /**
+     * @return the number of created clients for harvesting
+     */
+    fun getNumOfClients() = clients.size
+
+    fun getNumOfHarvestedResponse() = actualResponses.size
+
+    fun getConfiguredFixedThreadPool() = actualFixedThreadPool
+
+    fun getNumOfStartedRequests() = startedRequests.size
 
     private fun sendRequestToRealExternalService(clientId: Long, httpWsClient: Client, request: HttpExternalServiceRequest) {
         val info = handleActualResponse(
