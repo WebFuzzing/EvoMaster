@@ -7,7 +7,6 @@ import org.evomaster.client.java.instrumentation.shared.PreDefinedSSLInfo
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.ActualResponseInfo
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
@@ -69,8 +68,12 @@ class HarvestActualHttpWsResponseHandler {
     @Inject
     private lateinit var randomness: Randomness
 
-    private lateinit var httpWsClient: Client
-
+    /**
+     * clients used to harvest requests for multiple threads
+     * key is the id of thread
+     * value is instantiated client
+     */
+    private val clients = ConcurrentHashMap<Long, Client>()
 
     /**
      * TODO if one day we need priorities on the queue, it can be set here. See:
@@ -130,27 +133,19 @@ class HarvestActualHttpWsResponseHandler {
      */
     private val startedRequests: MutableSet<String> = mutableSetOf()
 
+
+    private var actualFixedThreadPool = 0
+
     @PostConstruct
     fun initialize() {
         if (config.doHarvestActualResponse()) {
-            val clientConfiguration = ClientConfig()
-                .property(ClientProperties.CONNECT_TIMEOUT, 2_000)
-                .property(ClientProperties.READ_TIMEOUT, 2_000)
-                //workaround bug in Jersey client
-                .property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true)
-                .property(ClientProperties.FOLLOW_REDIRECTS, true)
 
-
-            httpWsClient = ClientBuilder.newBuilder()
-                .sslContext(PreDefinedSSLInfo.getSSLContext())  // configure ssl certificate
-                .hostnameVerifier(PreDefinedSSLInfo.allowAllHostNames()) // configure all hostnames
-                .withConfig(clientConfiguration).build()
-
-            workerPool = Executors.newFixedThreadPool(
-                min(
+            actualFixedThreadPool = min(
                     config.externalRequestHarvesterNumberOfThreads,
                     Runtime.getRuntime().availableProcessors()
-                )
+            )
+            workerPool = Executors.newFixedThreadPool(
+                actualFixedThreadPool
             )
         }
     }
@@ -165,15 +160,40 @@ class HarvestActualHttpWsResponseHandler {
     fun shutdown() {
         Lazy.assert { config.doHarvestActualResponse() }
         workerPool.shutdown()
-        httpWsClient.close()
+        clients.values.forEach{it.close()}
     }
 
-    @Synchronized
-    private fun sendRequestToRealExternalService(request: HttpExternalServiceRequest) {
+    /**
+     * @return the number of created clients for harvesting
+     *
+     * this is mainly for debugging
+     */
+    fun getNumOfClients() = clients.size
+
+    /**
+     * @return the number of harvested responses
+     *
+     * this is mainly for debugging
+     */
+    fun getNumOfHarvestedResponse() = actualResponses.size
+
+    /**
+     * @return the number of thread configured in ExecutionService
+     *
+     * this is mainly for debugging
+     */
+    fun getConfiguredFixedThreadPool() = actualFixedThreadPool
+
+    /**
+     * @return the number of started requests for harvesting responses
+     *
+     * this is mainly for debugging
+     */
+    fun getNumOfStartedRequests() = startedRequests.size
+
+    private fun sendRequestToRealExternalService(clientId: Long, httpWsClient: Client, request: HttpExternalServiceRequest) {
         val info = handleActualResponse(
-            createInvocationToRealExternalService(
-                request
-            )
+            createInvocationToRealExternalService(clientId, httpWsClient, request)
         )
         if (info != null) {
             info.param.responseBody.markAllAsInitialized()
@@ -272,11 +292,38 @@ class HarvestActualHttpWsResponseHandler {
 
         updateExtractedObjectDto()
 
-        val task = Runnable { sendRequestToRealExternalService(request) }
+        val task = Runnable {
+            val clientId = Thread.currentThread().id
+            val httpWsClient = clients.getOrPut(clientId){initClient()}
+            sendRequestToRealExternalService(clientId, httpWsClient, request)
+        }
+
         workerPool.execute(task)
     }
 
-    private fun buildInvocation(httpRequest: HttpExternalServiceRequest): Invocation {
+    private fun initClient() : Client{
+
+//        val clientConfiguration = ClientConfig()
+//                .property(ClientProperties.CONNECT_TIMEOUT, 10_000)
+//                .property(ClientProperties.READ_TIMEOUT, config.tcpTimeoutMs)
+//                //workaround bug in Jersey client
+//                .property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true)
+//                .property(ClientProperties.FOLLOW_REDIRECTS, false)
+
+        val clientConfiguration = ClientConfig()
+                .property(ClientProperties.CONNECT_TIMEOUT, 2_000)
+                .property(ClientProperties.READ_TIMEOUT, 2_000)
+                //workaround bug in Jersey client
+                .property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true)
+                .property(ClientProperties.FOLLOW_REDIRECTS, true)
+
+        return ClientBuilder.newBuilder()
+                .sslContext(PreDefinedSSLInfo.getSSLContext())  // configure ssl certificate
+                .hostnameVerifier(PreDefinedSSLInfo.allowAllHostNames()) // configure all hostnames
+                .withConfig(clientConfiguration).build()
+    }
+
+    private fun buildInvocation(httpWsClient: Client, httpRequest: HttpExternalServiceRequest): Invocation {
         val build = httpWsClient.target(httpRequest.actualAbsoluteURL).request("*/*").apply {
             val handledHeaders = httpRequest.headers.filterNot { skipHeaders.contains(it.key.lowercase()) }
             if (handledHeaders.isNotEmpty())
@@ -310,9 +357,9 @@ class HarvestActualHttpWsResponseHandler {
         }
     }
 
-    private fun createInvocationToRealExternalService(httpRequest: HttpExternalServiceRequest): Response? {
+    private fun createInvocationToRealExternalService(clientId: Long, httpWsClient: Client, httpRequest: HttpExternalServiceRequest): Response? {
         return try {
-            buildInvocation(httpRequest).invoke()
+            buildInvocation(httpWsClient, httpRequest).invoke()
         } catch (e: ProcessingException) {
 
             log.debug(
@@ -331,11 +378,11 @@ class HarvestActualHttpWsResponseHandler {
 
                 TcpUtils.isOutOfEphemeralPorts(e) -> {
                     httpWsClient.close() //make sure to release any resource
-                    httpWsClient = ClientBuilder.newClient()
+                    clients.replace(clientId, ClientBuilder.newClient())
 
                     TcpUtils.handleEphemeralPortIssue()
 
-                    createInvocationToRealExternalService(httpRequest)
+                    createInvocationToRealExternalService(clientId, clients[clientId]!!, httpRequest)
                 }
 
                 TcpUtils.isStreamClosed(e) || TcpUtils.isEndOfFile(e) -> {

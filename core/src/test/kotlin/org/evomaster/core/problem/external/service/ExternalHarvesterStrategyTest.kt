@@ -51,22 +51,22 @@ class ExternalHarvesterStrategyTest {
 
         override fun configure() {
             bind(HarvestActualHttpWsResponseHandler::class.java)
-                .asEagerSingleton()
+                    .asEagerSingleton()
         }
     }
 
     @Test
     fun testExactStrategy() {
         val wm = WireMockServer(WireMockConfiguration()
-            .bindAddress("127.0.0.2")
-            .port(12354)
-            .extensions(ResponseTemplateTransformer(false)))
+                .bindAddress("127.0.0.2")
+                .port(12354)
+                .extensions(ResponseTemplateTransformer(false)))
         wm.start()
         wm.stubFor(
-            WireMock.get(
-                WireMock.urlEqualTo("/api/mock"))
-                .atPriority(1)
-                .willReturn(WireMock.aResponse().withStatus(200).withBody("{\"message\" : \"Working\"}"))
+                WireMock.get(
+                        WireMock.urlEqualTo("/api/mock"))
+                        .atPriority(1)
+                        .willReturn(WireMock.aResponse().withStatus(200).withBody("{\"message\" : \"Working\"}"))
         )
 
         DnsCacheManipulator.setDnsCache("noname.local", "127.0.0.2")
