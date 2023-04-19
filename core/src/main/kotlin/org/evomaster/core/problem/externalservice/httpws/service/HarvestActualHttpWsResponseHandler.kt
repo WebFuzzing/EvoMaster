@@ -395,7 +395,7 @@ class HarvestActualHttpWsResponseHandler {
                     return null
                 }
 
-                e.cause is java.net.UnknownHostException -> {
+                TcpUtils.isUnknownHost(e) -> {
                     unknownHosts.add(httpRequest.getHostName())
                     return null
                 }
