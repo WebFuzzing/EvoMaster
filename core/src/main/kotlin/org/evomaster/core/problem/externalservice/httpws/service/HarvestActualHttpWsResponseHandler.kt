@@ -199,7 +199,7 @@ class HarvestActualHttpWsResponseHandler {
             info.param.responseBody.markAllAsInitialized()
             actualResponses[request.getDescription()] = info
         } else
-            LoggingUtil.uniqueWarn(log, "Fail to harvest actual responses from GET ${request.getDescription()}")
+            LoggingUtil.uniqueWarn(log, "Fail to harvest actual responses for GET ${request.getDescription()} from actual URL (${request.actualAbsoluteURL})")
     }
 
     /**
