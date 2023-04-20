@@ -1835,13 +1835,13 @@ class EMConfig {
         EXACT,
 
         /**
-         * Selects the closest matching response from the same domain based on the
+         * If there is no exact match, selects the closest matching response from the same domain based on the
          * request path.
          */
         CLOSEST,
 
         /**
-         * Selects a random response for the request from the captured responses
+         * If there is no exact match, selects a random response for the request from the captured responses
          * regardless of the domain.
          */
         RANDOM
@@ -1965,7 +1965,7 @@ class EMConfig {
 
     fun isEnabledMutatingResponsesBasedOnActualResponse() = isMIO() && (probOfMutatingResponsesBasedOnActualResponse > 0)
 
-    fun doHarvestActualResponse() : Boolean = isMIO() && (probOfHarvestingResponsesFromActualExternalServices > 0 || probOfMutatingResponsesBasedOnActualResponse > 0)
+    fun isEnabledHarvestingActualResponse() : Boolean = isMIO() && (probOfHarvestingResponsesFromActualExternalServices > 0 || probOfMutatingResponsesBasedOnActualResponse > 0)
 
     /**
      * Check if the used algorithm is MIO.

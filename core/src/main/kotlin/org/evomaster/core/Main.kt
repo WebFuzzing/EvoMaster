@@ -39,6 +39,7 @@ import org.evomaster.core.search.service.*
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
 import org.evomaster.core.search.service.mutator.genemutation.ArchiveImpactSelector
 import java.lang.reflect.InvocationTargetException
+import kotlin.system.exitProcess
 
 
 /**
@@ -110,6 +111,15 @@ class Main {
                                         " Please copy&paste the following stacktrace, and create a new issue on" +
                                         " " + inBlue("https://github.com/EMResearch/EvoMaster/issues")), e)
                 }
+
+                /*
+                    Need to signal error status.
+                    But this code can become problematic if reached by any test.
+                    Also in case of exceptions, must shutdown explicitely, otherwise running threads in
+                    the background might keep the JVM alive.
+                    See for example HarvestActualHttpWsResponseHandler
+                 */
+                exitProcess(1);
             }
         }
 
@@ -474,7 +484,7 @@ class Main {
                                 snapshotTimestamp: String ->
                 writeTestsAsSnapshots(injector, solution, controllerInfo, snapshotTimestamp)
             }.also {
-                if (config.doHarvestActualResponse()){
+                if (config.isEnabledHarvestingActualResponse()){
                     val hp = injector.getInstance(HarvestActualHttpWsResponseHandler::class.java)
                     hp.shutdown()
                 }

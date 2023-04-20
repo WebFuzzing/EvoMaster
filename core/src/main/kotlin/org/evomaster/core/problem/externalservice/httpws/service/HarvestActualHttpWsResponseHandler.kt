@@ -138,7 +138,7 @@ class HarvestActualHttpWsResponseHandler {
 
     @PostConstruct
     fun initialize() {
-        if (config.doHarvestActualResponse()) {
+        if (config.isEnabledHarvestingActualResponse()) {
 
             actualFixedThreadPool = min(
                     config.externalRequestHarvesterNumberOfThreads,
@@ -152,13 +152,13 @@ class HarvestActualHttpWsResponseHandler {
 
     @PreDestroy
     private fun preDestroy() {
-        if (config.doHarvestActualResponse()) {
+        if (config.isEnabledHarvestingActualResponse()) {
             shutdown()
         }
     }
 
     fun shutdown() {
-        Lazy.assert { config.doHarvestActualResponse() }
+        Lazy.assert { config.isEnabledHarvestingActualResponse() }
         workerPool.shutdown()
         clients.values.forEach{it.close()}
     }
@@ -246,16 +246,24 @@ class HarvestActualHttpWsResponseHandler {
         }
         var found: ResponseParam? = null
         synchronized(actualResponses) {
-            if (config.externalRequestResponseSelectionStrategy == EMConfig.ExternalRequestResponseSelectionStrategy.CLOSEST) {
-                val closestRequest = findClosestRequest(httpRequest.getDescription())
-                if (closestRequest != null) {
-                    found = (actualResponses[closestRequest]?.param?.copy() as? ResponseParam)
+
+            //first check for an exact match
+            found = (actualResponses[httpRequest.getDescription()]?.param?.copy() as? ResponseParam)
+
+            if(found == null){
+                when(config.externalRequestResponseSelectionStrategy) {
+                    EMConfig.ExternalRequestResponseSelectionStrategy.CLOSEST -> {
+                        val closestRequest = findClosestRequest(httpRequest.getDescription())
+                        if (closestRequest != null) {
+                            found = (actualResponses[closestRequest]?.param?.copy() as? ResponseParam)
+                        }
+                    }
+                    EMConfig.ExternalRequestResponseSelectionStrategy.RANDOM -> {
+                        val randomIndex = randomness.nextInt(actualResponses.size)
+                        found = actualResponses[actualResponses.keys().toList()[randomIndex]]?.param?.copy() as? ResponseParam
+                    }
+                    else -> {}
                 }
-            } else if (config.externalRequestResponseSelectionStrategy == EMConfig.ExternalRequestResponseSelectionStrategy.RANDOM) {
-                val randomIndex = randomness.nextInt(actualResponses.size)
-                found = actualResponses[actualResponses.keys().toList()[randomIndex]]?.param?.copy() as? ResponseParam
-            } else if (config.externalRequestResponseSelectionStrategy == EMConfig.ExternalRequestResponseSelectionStrategy.EXACT) {
-                found = (actualResponses[httpRequest.getDescription()]?.param?.copy() as? ResponseParam)
             }
         }
         if (found != null) seededResponses.add(httpRequest.getDescription())
@@ -268,7 +276,7 @@ class HarvestActualHttpWsResponseHandler {
     fun addHttpRequests(requests: List<HttpExternalServiceRequest>) {
         if (requests.isEmpty()) return
 
-        if (!config.doHarvestActualResponse())
+        if (!config.isEnabledHarvestingActualResponse())
             return
 
         /*
