@@ -138,7 +138,7 @@ class HarvestActualHttpWsResponseHandler {
 
     @PostConstruct
     fun initialize() {
-        if (config.doHarvestActualResponse()) {
+        if (config.isEnabledHarvestingActualResponse()) {
 
             actualFixedThreadPool = min(
                     config.externalRequestHarvesterNumberOfThreads,
@@ -147,18 +147,21 @@ class HarvestActualHttpWsResponseHandler {
             workerPool = Executors.newFixedThreadPool(
                 actualFixedThreadPool
             )
+
+            //running threads can prevent JVM
+            Runtime.getRuntime().addShutdownHook(Thread{shutdown()})
         }
     }
 
     @PreDestroy
     private fun preDestroy() {
-        if (config.doHarvestActualResponse()) {
+        if (config.isEnabledHarvestingActualResponse()) {
             shutdown()
         }
     }
 
     fun shutdown() {
-        Lazy.assert { config.doHarvestActualResponse() }
+        Lazy.assert { config.isEnabledHarvestingActualResponse() }
         workerPool.shutdown()
         clients.values.forEach{it.close()}
     }
@@ -276,7 +279,7 @@ class HarvestActualHttpWsResponseHandler {
     fun addHttpRequests(requests: List<HttpExternalServiceRequest>) {
         if (requests.isEmpty()) return
 
-        if (!config.doHarvestActualResponse())
+        if (!config.isEnabledHarvestingActualResponse())
             return
 
         /*
