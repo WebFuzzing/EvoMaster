@@ -1835,13 +1835,13 @@ class EMConfig {
         EXACT,
 
         /**
-         * Selects the closest matching response from the same domain based on the
+         * If there is no exact match, selects the closest matching response from the same domain based on the
          * request path.
          */
         CLOSEST,
 
         /**
-         * Selects a random response for the request from the captured responses
+         * If there is no exact match, selects a random response for the request from the captured responses
          * regardless of the domain.
          */
         RANDOM
