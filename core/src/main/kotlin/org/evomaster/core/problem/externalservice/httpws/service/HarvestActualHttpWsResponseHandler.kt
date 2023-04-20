@@ -241,7 +241,9 @@ class HarvestActualHttpWsResponseHandler {
      */
     fun getACopyOfActualResponse(httpRequest: HttpExternalServiceRequest, probability: Double? = null): ResponseParam? {
         val harvest = probability == null || (randomness.nextBoolean(probability))
-        if (!harvest) return null
+        if (!harvest || actualResponses.isEmpty()){
+            return null
+        }
         var found: ResponseParam? = null
         synchronized(actualResponses) {
             if (config.externalRequestResponseSelectionStrategy == EMConfig.ExternalRequestResponseSelectionStrategy.CLOSEST) {
