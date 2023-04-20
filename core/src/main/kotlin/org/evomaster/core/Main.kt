@@ -114,7 +114,10 @@ class Main {
 
                 /*
                     Need to signal error status.
-                    But this code can become problematic if reached by any test
+                    But this code can become problematic if reached by any test.
+                    Also in case of exceptions, must shutdown explicitely, otherwise running threads in
+                    the background might keep the JVM alive.
+                    See for example HarvestActualHttpWsResponseHandler
                  */
                 exitProcess(1);
             }

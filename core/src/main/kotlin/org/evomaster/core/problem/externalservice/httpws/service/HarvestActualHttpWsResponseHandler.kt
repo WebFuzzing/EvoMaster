@@ -147,9 +147,6 @@ class HarvestActualHttpWsResponseHandler {
             workerPool = Executors.newFixedThreadPool(
                 actualFixedThreadPool
             )
-
-            //running threads can prevent JVM
-            Runtime.getRuntime().addShutdownHook(Thread{shutdown()})
         }
     }
 
