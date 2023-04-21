@@ -685,7 +685,7 @@ class DbActionGeneBuilder {
      */
     fun buildLikeRegexGene(geneName: String, likePatterns: List<String>, databaseType: DatabaseType): RegexGene {
         return when (databaseType) {
-            DatabaseType.POSTGRES, DatabaseType.MYSQL -> buildPostgresMySQLLikeRegexGene(geneName, likePatterns)
+            DatabaseType.POSTGRES, DatabaseType.MYSQL, DatabaseType.H2 -> buildPostgresMySQLLikeRegexGene(geneName, likePatterns)
             //TODO: support other database SIMILAR_TO check expressions
             else -> throw UnsupportedOperationException(
                     "Must implement LIKE expressions for database %s".format(
