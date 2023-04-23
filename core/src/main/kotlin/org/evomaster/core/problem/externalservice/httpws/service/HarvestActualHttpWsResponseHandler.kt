@@ -199,7 +199,7 @@ class HarvestActualHttpWsResponseHandler {
             info.param.responseBody.markAllAsInitialized()
             actualResponses[request.getDescription()] = info
         } else
-            LoggingUtil.uniqueWarn(log, "Fail to harvest actual responses for GET ${request.getDescription()} from actual URL (${request.actualAbsoluteURL})")
+            LoggingUtil.uniqueWarn(log, "Fail to harvest actual responses for ${request.getDescription()} from actual URL (${request.actualAbsoluteURL})")
     }
 
     /**
@@ -267,6 +267,10 @@ class HarvestActualHttpWsResponseHandler {
             }
         }
         if (found != null) seededResponses.add(httpRequest.getDescription())
+        if (found!= null && (found as HttpWsResponseParam).isStatusCodeInSuccessFamily()){
+            println("found")
+        }
+
         return found
     }
 

@@ -49,4 +49,14 @@ class HttpWsResponseParam (
         status.index = index
         return true
     }
+
+    /**
+     * @return HTTP status code
+     */
+    fun getHttpStatusCode() : Int = status.values[status.index]
+
+    fun isStatusCodeInSuccessFamily() : Boolean = getHttpStatusCode() in 200..299
+
+
+    fun isStatusCodeInClientErrorFamily() : Boolean = getHttpStatusCode() in 400..499
 }
