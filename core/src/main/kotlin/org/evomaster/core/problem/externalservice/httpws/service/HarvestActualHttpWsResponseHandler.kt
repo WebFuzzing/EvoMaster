@@ -257,9 +257,9 @@ class HarvestActualHttpWsResponseHandler {
             found = (actualResponses[httpRequest.getDescription()]?.param?.copy() as? ResponseParam)
 
             if(found == null){
+                val onlySuccess = randomness.nextBoolean(config.probOfPrioritizingSuccessfulHarvestedActualResponses)
                 when(config.externalRequestResponseSelectionStrategy) {
                     EMConfig.ExternalRequestResponseSelectionStrategy.CLOSEST_SAME_PATH ->{
-                        val onlySuccess = randomness.nextBoolean(config.probOfPrioritizingSuccessfulHarvestedActualResponses)
                         val requestsFromSameURL = findRequestsFromSameURLPath(
                             httpRequest.getDescription())
                         if (requestsFromSameURL.isNotEmpty()){
@@ -272,14 +272,20 @@ class HarvestActualHttpWsResponseHandler {
                         }
                     }
                     EMConfig.ExternalRequestResponseSelectionStrategy.CLOSEST_SAME_DOMAIN -> {
-                        val closestRequest = findClosestRequestFromSameDomain(httpRequest.getDescription())
+                        val closestRequest = findClosestRequestFromSameDomain(httpRequest.getDescription(), onlySuccess)
                         if (closestRequest != null) {
                             found = (actualResponses[closestRequest]?.param?.copy() as? ResponseParam)
+                        }else if (onlySuccess){
+                            val anyClosestRequest = findClosestRequestFromSameDomain(httpRequest.getDescription(), false)
+                            if (anyClosestRequest != null)
+                                found = actualResponses[anyClosestRequest]?.param?.copy() as? ResponseParam
                         }
                     }
                     EMConfig.ExternalRequestResponseSelectionStrategy.RANDOM -> {
-                        val randomIndex = randomness.nextInt(actualResponses.size)
-                        found = actualResponses[actualResponses.keys().toList()[randomIndex]]?.param?.copy() as? ResponseParam
+                        val success = if (onlySuccess) actualResponses.filter { (it.value.param as? HttpWsResponseParam)?.isStatusCodeInSuccessFamily() == true } else null
+                        val candidates = if (success?.isNotEmpty() == true) success else actualResponses
+                        val randomIndex = randomness.nextInt(candidates.size)
+                        found = candidates[candidates.keys.toList()[randomIndex]]?.param?.copy() as? ResponseParam
                     }
                     else -> {}
                 }
@@ -559,7 +565,7 @@ class HarvestActualHttpWsResponseHandler {
      * Uses Levenshtein Distance to calculate the distance, then selects the
      * shortest. If none exists, returns null.
      */
-    private fun findClosestRequestFromSameDomain(key: String): String? {
+    private fun findClosestRequestFromSameDomain(key: String, onlySuccess: Boolean): String? {
         var out: String? = null
         var diff = 100.0
 
@@ -567,7 +573,7 @@ class HarvestActualHttpWsResponseHandler {
             val httpWsResponseParam = v.param as HttpWsResponseParam
 
             if (matchRequestFromSameDomain(key, k)) {
-                if (httpWsResponseParam.isStatusCodeInSuccessFamily()) {
+                if (!onlySuccess || httpWsResponseParam.isStatusCodeInSuccessFamily()) {
                     val ld = LevenshteinDistance.getDefaultInstance().apply(k, key).toDouble()
 
                     if (ld == 0.0) {
