@@ -1817,6 +1817,12 @@ class EMConfig {
     @Probability(activating = true)
     var probOfHarvestingResponsesFromActualExternalServices = 0.0
 
+
+    @Cfg("a probability of prioritizing to employ successful harvested actual responses from external services as seeds (e.g., 2xx from HTTP external service).")
+    @Experimental
+    @Probability(activating = true)
+    var probOfPrioritizingSuccessfulHarvestedActualResponses = 0.0
+
     @Cfg("a probability of mutating mocked responses based on actual responses")
     @Experimental
     @Probability(activating = true)
@@ -1838,7 +1844,13 @@ class EMConfig {
          * If there is no exact match, selects the closest matching response from the same domain based on the
          * request path.
          */
-        CLOSEST,
+        CLOSEST_SAME_DOMAIN,
+
+        /**
+         * If there is no exact match, selects the closest matching response from the same path based on the
+         * request path.
+         */
+        CLOSEST_SAME_PATH,
 
         /**
          * If there is no exact match, selects a random response for the request from the captured responses
