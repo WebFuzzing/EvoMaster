@@ -1,6 +1,8 @@
 package org.evomaster.e2etests.spring.openapi.v3.wiremock.harvestresponse
 
 import com.foo.rest.examples.spring.openapi.v3.wiremock.harvestresponse.WmHarvestResponseController
+import com.foo.rest.examples.spring.openapi.v3.wiremock.harvestresponse.WmHarvestResponseRest.Companion.HARVEST_FOUND
+import com.foo.rest.examples.spring.openapi.v3.wiremock.harvestresponse.WmHarvestResponseRest.Companion.HARVEST_NOT_FOUND
 import org.evomaster.ci.utils.CIUtils
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.HttpVerb
@@ -31,7 +33,8 @@ class WmHarvestResponseEMTest : SpringTestBase() {
             "WmHarvestResponseEM",
             "org.foo.WmHarvestResponseEM",
             1000,
-            !CIUtils.isRunningGA(),
+            //!CIUtils.isRunningGA(), // disable test generation as it uses https
+            false,
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")
@@ -50,8 +53,12 @@ class WmHarvestResponseEMTest : SpringTestBase() {
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/harvestresponse/images", "MORE THAN 10")
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/harvestresponse/images", "NONE")
 
-                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/harvestresponse/grch37Example", "Found harvested response")
-                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/harvestresponse/grch37Example", "Cannot find harvested response")
+                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/harvestresponse/grch37Example", HARVEST_FOUND)
+                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/harvestresponse/grch37Example", HARVEST_NOT_FOUND)
+
+                assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/wm/harvestresponse/grch37Annotation", HARVEST_FOUND)
+                assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/wm/harvestresponse/grch37Annotation", HARVEST_FOUND)
+
 
 //                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/harvestresponse/users", ">10")
 //                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/harvestresponse/users", "<10")
