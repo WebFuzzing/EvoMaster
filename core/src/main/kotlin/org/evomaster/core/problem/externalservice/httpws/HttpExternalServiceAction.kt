@@ -165,9 +165,12 @@ class HttpExternalServiceAction(
      * TestCaseWriter.
      *
      * TODO: Moved it to a ResponseBuilder, later
+     *
+     * the URL might contain some query parameters in URL,
+     * then use urlPathEqualTo instead of urlEqualTo
      */
     private fun getUrlPattern(url: String) : UrlPattern {
-        return urlEqualTo(url)
+        return urlPathEqualTo(url)//urlEqualTo(url)
     }
 
     /**
