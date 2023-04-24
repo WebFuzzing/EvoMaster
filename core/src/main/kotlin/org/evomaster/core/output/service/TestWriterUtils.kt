@@ -46,6 +46,7 @@ class TestWriterUtils {
                 wm.getWMDefaultMethod(),
                 wm.getWMDefaultUrlSetting(),
                 wm.getWMDefaultConnectionHeader(),
+                wm.getWMDefaultContentTypeHeader(),
                 wm.getWMDefaultCode(),
                 formatJsonWithEscapes(wm.getWMDefaultMessage(), outputFormat, extraSpace = ""),
                 wm.getWMDefaultPriority()
@@ -55,10 +56,10 @@ class TestWriterUtils {
         fun handleStubForAsJavaOrKotlin(lines: Lines, wm : HttpWsExternalService, response: HttpWsResponseParam, method: String, urlSetting: String, priority: Int, outputFormat: OutputFormat){
             val name = getWireMockVariableName(wm)
             val bodyLines = formatJsonWithEscapes(response.responseBody.getValueAsRawString(), outputFormat, extraSpace = "")
-            handleStubForAsJavaOrKotlin(lines, name, method, urlSetting, response.connectionHeader, response.status.getValueAsRawString().toInt(), bodyLines, priority)
+            handleStubForAsJavaOrKotlin(lines, name, method, urlSetting, response.connectionHeader, response.getResponseContentType(), response.status.getValueAsRawString().toInt(), bodyLines, priority)
         }
 
-        private fun handleStubForAsJavaOrKotlin(lines: Lines, name: String, method: String, urlSetting: String, connectionHeader: String?, status: Int, bodyLines: List<String>, priority : Int){
+        private fun handleStubForAsJavaOrKotlin(lines: Lines, name: String, method: String, urlSetting: String, connectionHeader: String?, contentTypeHeader: String?, status: Int, bodyLines: List<String>, priority : Int){
 
             lines.add("${name}.stubFor(")
             lines.indented {
@@ -74,6 +75,8 @@ class TestWriterUtils {
                     lines.indented {
                         if (connectionHeader != null)
                             lines.add(".withHeader(\"Connection\",\"${connectionHeader}\")")
+                        if (contentTypeHeader != null)
+                            lines.add(".withHeader(\"Content-Type\",\"${contentTypeHeader}\")")
                         lines.add(".withStatus(${status})")
                         if (bodyLines.size == 1){
                             lines.add(".withBody(${bodyLines.first()})")
