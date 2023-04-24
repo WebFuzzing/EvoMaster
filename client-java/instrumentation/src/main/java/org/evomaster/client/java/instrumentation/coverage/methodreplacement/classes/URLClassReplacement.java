@@ -161,6 +161,9 @@ public class URLClassReplacement implements MethodReplacementClass {
             // Usage of ports below 1024 require root privileges to run
             String url = caller.getProtocol()+"://" + ipAndPort[0]+":"+ipAndPort[1] + caller.getPath();
 
+            if (caller.getQuery() != null)
+                url = url + "?" + caller.getQuery();
+
             return new URL(url);
         }
         return null;
