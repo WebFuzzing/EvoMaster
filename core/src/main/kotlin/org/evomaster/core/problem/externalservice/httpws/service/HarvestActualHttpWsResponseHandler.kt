@@ -11,6 +11,8 @@ import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.ActualResponseInfo
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceRequest
+import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceRequest.Companion.getTextualMethodURLFromRequestDescription
+import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceRequest.Companion.getTextualURLFromRequestDescription
 import org.evomaster.core.problem.externalservice.httpws.param.HttpWsResponseParam
 import org.evomaster.core.problem.externalservice.param.ResponseParam
 import org.evomaster.core.problem.util.ParamUtil
@@ -224,12 +226,7 @@ class HarvestActualHttpWsResponseHandler {
         if (exAction is HttpExternalServiceAction) {
             Lazy.assert { gene.parent == exAction.response }
             if (exAction.response.responseBody == gene) {
-                val p = if (!seededResponses.contains(exAction.request.getDescription())
-                    && (config.externalRequestResponseSelectionStrategy == EMConfig.ExternalRequestResponseSelectionStrategy.EXACT && actualResponses.containsKey(
-                        exAction.request.getDescription()
-                    ))
-                ) {
-                    // if the actual response is never seeded, give a higher probably to employ it
+                val p = if (doPrioritizeHarvesting(exAction.request.getDescription())) {
                     max(config.probOfHarvestingResponsesFromActualExternalServices, probability)
                 } else {
                     probability
@@ -240,6 +237,13 @@ class HarvestActualHttpWsResponseHandler {
 
         }
         return null
+    }
+
+    private fun doPrioritizeHarvesting(key: String) : Boolean{
+        // if the actual response is never seeded, might prefer harvesting
+        val never = !seededResponses.contains(key)
+        if (never) return true
+        return !seededSuccessfulResponses.contains(key) && randomness.nextBoolean(config.probOfPrioritizingSuccessfulHarvestedActualResponses)
     }
 
     /**
@@ -257,13 +261,13 @@ class HarvestActualHttpWsResponseHandler {
             found = (actualResponses[httpRequest.getDescription()]?.param?.copy() as? ResponseParam)
 
             if(found == null){
-                val onlySuccess = randomness.nextBoolean(config.probOfPrioritizingSuccessfulHarvestedActualResponses)
+                val perferSuccess = randomness.nextBoolean(config.probOfPrioritizingSuccessfulHarvestedActualResponses)
                 when(config.externalRequestResponseSelectionStrategy) {
                     EMConfig.ExternalRequestResponseSelectionStrategy.CLOSEST_SAME_PATH ->{
                         val requestsFromSameURL = findRequestsFromSameURLPath(
                             httpRequest.getDescription())
                         if (requestsFromSameURL.isNotEmpty()){
-                            val success = if (onlySuccess){
+                            val success = if (perferSuccess){
                                  requestsFromSameURL.filter { (it.value.param as? HttpWsResponseParam)?.isStatusCodeInSuccessFamily() == true }
                             }else null
                             val candidates = if (success?.isNotEmpty() == true) success else requestsFromSameURL
@@ -272,17 +276,17 @@ class HarvestActualHttpWsResponseHandler {
                         }
                     }
                     EMConfig.ExternalRequestResponseSelectionStrategy.CLOSEST_SAME_DOMAIN -> {
-                        val closestRequest = findClosestRequestFromSameDomain(httpRequest.getDescription(), onlySuccess)
+                        val closestRequest = findClosestRequestFromSameDomain(httpRequest.getDescription(), perferSuccess)
                         if (closestRequest != null) {
                             found = (actualResponses[closestRequest]?.param?.copy() as? ResponseParam)
-                        }else if (onlySuccess){
+                        }else if (perferSuccess){
                             val anyClosestRequest = findClosestRequestFromSameDomain(httpRequest.getDescription(), false)
                             if (anyClosestRequest != null)
                                 found = actualResponses[anyClosestRequest]?.param?.copy() as? ResponseParam
                         }
                     }
                     EMConfig.ExternalRequestResponseSelectionStrategy.RANDOM -> {
-                        val success = if (onlySuccess) actualResponses.filter { (it.value.param as? HttpWsResponseParam)?.isStatusCodeInSuccessFamily() == true } else null
+                        val success = if (perferSuccess) actualResponses.filter { (it.value.param as? HttpWsResponseParam)?.isStatusCodeInSuccessFamily() == true } else null
                         val candidates = if (success?.isNotEmpty() == true) success else actualResponses
                         val randomIndex = randomness.nextInt(candidates.size)
                         found = candidates[candidates.keys.toList()[randomIndex]]?.param?.copy() as? ResponseParam
@@ -557,7 +561,7 @@ class HarvestActualHttpWsResponseHandler {
      * @return all harvested responses whose request has same url path as [key]
      */
     private fun findRequestsFromSameURLPath(key: String) : Map<String, ActualResponseInfo>{
-        return actualResponses.filter { matchRequestFromSameURL(it.key, key)}
+        return actualResponses.filter { matchRequestFromSameMethodAndURL(it.key, key)}
     }
 
     /**
@@ -599,8 +603,7 @@ class HarvestActualHttpWsResponseHandler {
      * e.g.: GET::http://exists.local:12354/api/fzz::[]::{none}
      */
     private fun getURLFromRequestDescription(requestDescription: String): URL {
-        val components = requestDescription.split("::")
-        return URL(components[1])
+        return URL(getTextualURLFromRequestDescription(requestDescription))
     }
 
 
@@ -626,9 +629,9 @@ class HarvestActualHttpWsResponseHandler {
         return leftMethod.equals(rightMethod) && leftProtocol.equals(rightProtocol) && leftHostname.equals(rightHostname)
     }
 
-    private fun matchRequestFromSameURL(aURL: String, bURL: String): Boolean{
-        val aLast = getLastIndexOfURLPath(aURL)
-        val bLast = getLastIndexOfURLPath(bURL)
+    private fun matchRequestFromSameMethodAndURL(aURL: String, bURL: String): Boolean{
+        val aLast = getLastIndexOfURLPath(getTextualMethodURLFromRequestDescription(aURL))
+        val bLast = getLastIndexOfURLPath(getTextualMethodURLFromRequestDescription(aURL))
         if (aLast == -1 || bLast == -1) return false
         if (aLast != bLast) return false
 
