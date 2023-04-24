@@ -67,6 +67,9 @@ class HttpWsResponseParam (
      */
     fun isStatusCodeInClientErrorFamily() : Boolean = getHttpStatusCode() in 400..499
 
+    /**
+     * @return content type of the mocked response
+     */
     fun getResponseContentType() : String{
         return getContentType(responseType.getValueAsRawString())
     }

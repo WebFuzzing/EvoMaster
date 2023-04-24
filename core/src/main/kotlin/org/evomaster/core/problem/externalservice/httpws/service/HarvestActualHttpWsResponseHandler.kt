@@ -259,15 +259,15 @@ class HarvestActualHttpWsResponseHandler {
 
             //first check for an exact match
             found = (actualResponses[httpRequest.getDescription()]?.param?.copy() as? ResponseParam)
+            val preferSuccess = randomness.nextBoolean(config.probOfPrioritizingSuccessfulHarvestedActualResponses)
 
-            if(found == null){
-                val perferSuccess = randomness.nextBoolean(config.probOfPrioritizingSuccessfulHarvestedActualResponses)
+            if(found == null || (config.externalRequestResponseSelectionStrategy!= EMConfig.ExternalRequestResponseSelectionStrategy.EXACT && preferSuccess && !(found as HttpWsResponseParam).isStatusCodeInSuccessFamily())){
                 when(config.externalRequestResponseSelectionStrategy) {
                     EMConfig.ExternalRequestResponseSelectionStrategy.CLOSEST_SAME_PATH ->{
                         val requestsFromSameURL = findRequestsFromSameURLPath(
                             httpRequest.getDescription())
                         if (requestsFromSameURL.isNotEmpty()){
-                            val success = if (perferSuccess){
+                            val success = if (preferSuccess){
                                  requestsFromSameURL.filter { (it.value.param as? HttpWsResponseParam)?.isStatusCodeInSuccessFamily() == true }
                             }else null
                             val candidates = if (success?.isNotEmpty() == true) success else requestsFromSameURL
@@ -276,17 +276,17 @@ class HarvestActualHttpWsResponseHandler {
                         }
                     }
                     EMConfig.ExternalRequestResponseSelectionStrategy.CLOSEST_SAME_DOMAIN -> {
-                        val closestRequest = findClosestRequestFromSameDomain(httpRequest.getDescription(), perferSuccess)
+                        val closestRequest = findClosestRequestFromSameDomain(httpRequest.getDescription(), preferSuccess)
                         if (closestRequest != null) {
                             found = (actualResponses[closestRequest]?.param?.copy() as? ResponseParam)
-                        }else if (perferSuccess){
+                        }else if (preferSuccess){
                             val anyClosestRequest = findClosestRequestFromSameDomain(httpRequest.getDescription(), false)
                             if (anyClosestRequest != null)
                                 found = actualResponses[anyClosestRequest]?.param?.copy() as? ResponseParam
                         }
                     }
                     EMConfig.ExternalRequestResponseSelectionStrategy.RANDOM -> {
-                        val success = if (perferSuccess) actualResponses.filter { (it.value.param as? HttpWsResponseParam)?.isStatusCodeInSuccessFamily() == true } else null
+                        val success = if (preferSuccess) actualResponses.filter { (it.value.param as? HttpWsResponseParam)?.isStatusCodeInSuccessFamily() == true } else null
                         val candidates = if (success?.isNotEmpty() == true) success else actualResponses
                         val randomIndex = randomness.nextInt(candidates.size)
                         found = candidates[candidates.keys.toList()[randomIndex]]?.param?.copy() as? ResponseParam
@@ -457,6 +457,8 @@ class HarvestActualHttpWsResponseHandler {
 
         val body = response.readEntity(String::class.java)
         val node = getJsonNodeFromText(body)
+
+        // TODO handle content type
         val responseParam = if (node != null) {
             getHttpResponse(node, statusGene).apply {
                 setGeneBasedOnString(responseBody, body)

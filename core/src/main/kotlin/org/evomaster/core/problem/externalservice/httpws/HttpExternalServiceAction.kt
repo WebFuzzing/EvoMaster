@@ -176,13 +176,9 @@ class HttpExternalServiceAction(
      *
      * TODO: Moved it to a ResponseBuilder, later
      *
-     * the URL might contain some query parameters in URL,
-     * then use urlPathEqualTo instead of urlEqualTo
-     *
-     * https://wiremock.org/docs/request-matching/
      */
     private fun getUrlPattern(url: String) : UrlPattern {
-        return urlPathEqualTo(url)//urlEqualTo(url)
+        return urlEqualTo(url)
     }
 
     /**
