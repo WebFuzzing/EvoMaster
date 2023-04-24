@@ -5,7 +5,7 @@ import org.evomaster.client.java.controller.mongo.QueryParser;
 
 import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.isDocument;
 /**
- * { field: { $elemMatch: { <query1>, <query2>, ... } } }
+ * { field: { $elemMatch: { query1, query2, ... } } }
  */
 public class ElemMatchSelector extends SingleConditionQuerySelector {
     @Override

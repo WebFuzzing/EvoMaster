@@ -2,7 +2,7 @@ package org.evomaster.client.java.controller.mongo.selectors;
 
 import org.evomaster.client.java.controller.mongo.operations.*;
 
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.getValue;
@@ -16,7 +16,7 @@ abstract public class MultiConditionQuerySelector extends QuerySelector {
     public QueryOperation getOperation(Object query) {
         if (!isUniqueEntry((Map<?, ?>) query) || !hasTheExpectedOperator(query)) return null;
         Object value = getValue(query, operator());
-        return (value instanceof ArrayList<?>)? parseConditions((ArrayList<?>) value) : null;
+        return (value instanceof List<?>)? parseConditions((List<?>) value) : null;
     }
 
     @Override
@@ -24,5 +24,5 @@ abstract public class MultiConditionQuerySelector extends QuerySelector {
         return documentKeys(query).stream().findFirst().orElse(null);
     }
 
-    protected abstract QueryOperation parseConditions(ArrayList<?> value);
+    protected abstract QueryOperation parseConditions(List<?> value);
 }

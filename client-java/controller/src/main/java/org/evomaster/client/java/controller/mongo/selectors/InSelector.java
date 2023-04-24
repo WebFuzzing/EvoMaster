@@ -2,15 +2,15 @@ package org.evomaster.client.java.controller.mongo.selectors;
 
 import org.evomaster.client.java.controller.mongo.operations.*;
 
-import java.util.ArrayList;
+import java.util.List;
 
 /**
- * { field: { $in: [<value1>, <value2>, ... <valueN> ] } }
+ * { field: { $in: [value1, value2, ... valueN ] } }
  */
 public class InSelector extends SingleConditionQuerySelector {
     @Override
     protected QueryOperation parseValue(String fieldName, Object value) {
-        if (value instanceof ArrayList<?>) return new InOperation<>(fieldName, (ArrayList<?>) value);
+        if (value instanceof List<?>) return new InOperation<>(fieldName, (List<?>) value);
         return null;
     }
 

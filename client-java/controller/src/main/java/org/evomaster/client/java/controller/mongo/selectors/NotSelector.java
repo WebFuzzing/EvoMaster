@@ -6,7 +6,7 @@ import org.evomaster.client.java.controller.mongo.QueryParser;
 import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.*;
 
 /**
- * { field: { $not: { <operator-expression> } } }
+ * { field: { $not: { operator-expression } } }
  */
 public class NotSelector extends SingleConditionQuerySelector {
     @Override

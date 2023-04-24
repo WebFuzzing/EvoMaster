@@ -2,6 +2,7 @@ package org.evomaster.client.java.controller.internal.db;
 
 import org.evomaster.client.java.controller.mongo.MongoHeuristicsCalculator;
 import org.evomaster.client.java.instrumentation.MongoInfo;
+
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +38,7 @@ public class MongoHandler {
         extractMongoExecution = true;
         calculateHeuristics = true;
     }
+
     public void reset() {
         operations.clear();
         distances.clear();
@@ -85,14 +87,17 @@ public class MongoHandler {
 
     private static Iterable<?> getDocuments(Object collection) {
         try {
-            Class<?> collectionClass = Class.forName("com.mongodb.client.MongoCollection");
+            Class<?> collectionClass = collection.getClass().getClassLoader().loadClass("com.mongodb.client.MongoCollection");
             return (Iterable<?>) collectionClass.getMethod("find").invoke(collection);
-        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException | ClassNotFoundException e) {
-            throw new RuntimeException(e);
+        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException |
+                 ClassNotFoundException e) {
+            throw new RuntimeException("Failed to retrieve all documents from a mongo collection", e);
         }
     }
 
-    public boolean isCalculateHeuristics() {return calculateHeuristics;}
+    public boolean isCalculateHeuristics() {
+        return calculateHeuristics;
+    }
 
     public boolean isExtractMongoExecution() {
         return extractMongoExecution;

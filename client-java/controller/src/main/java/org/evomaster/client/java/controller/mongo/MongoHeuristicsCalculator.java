@@ -13,6 +13,8 @@ import java.util.stream.Collectors;
 
 public class MongoHeuristicsCalculator {
 
+    public static final double MIN_DISTANCE_TO_TRUE_VALUE = 1.0;
+
     /**
      * Compute a "branch" distance heuristics.
      *
@@ -20,7 +22,7 @@ public class MongoHeuristicsCalculator {
      * @param doc   a document in the database for which we want to calculate the distance
      * @return a branch distance, where 0 means that the document would make the QUERY resolve as true
      */
-    public Double computeExpression(Object query, Object doc) {
+    public double computeExpression(Object query, Object doc) {
         QueryOperation operation = getOperation(query);
         return calculateDistance(operation, doc);
     }
@@ -30,7 +32,7 @@ public class MongoHeuristicsCalculator {
         return new QueryParser().parse(queryDocument);
     }
 
-    private Double calculateDistance(QueryOperation operation, Object doc) {
+    private double calculateDistance(QueryOperation operation, Object doc) {
         if (operation instanceof EqualsOperation<?>)
             return calculateDistanceForEquals((EqualsOperation<?>) operation, doc);
         if (operation instanceof NotEqualsOperation<?>)
@@ -68,62 +70,62 @@ public class MongoHeuristicsCalculator {
         return Double.MAX_VALUE;
     }
 
-    private Double calculateDistanceForEquals(EqualsOperation<?> operation, Object doc) {
+    private double calculateDistanceForEquals(EqualsOperation<?> operation, Object doc) {
         return calculateDistanceForComparisonOperation(operation, doc, (Math::abs));
     }
 
-    private Double calculateDistanceForNotEquals(NotEqualsOperation<?> operation, Object doc) {
-        return calculateDistanceForComparisonOperation(operation, doc, ((dif) -> dif != 0.0 ? 0.0 : 1.0));
+    private double calculateDistanceForNotEquals(NotEqualsOperation<?> operation, Object doc) {
+        return calculateDistanceForComparisonOperation(operation, doc, ((dif) -> dif != 0.0 ? 0.0 : MIN_DISTANCE_TO_TRUE_VALUE));
     }
 
-    private Double calculateDistanceForGreaterThan(GreaterThanOperation<?> operation, Object doc) {
+    private double calculateDistanceForGreaterThan(GreaterThanOperation<?> operation, Object doc) {
         return calculateDistanceForComparisonOperation(operation, doc, ((dif) -> dif > 0 ? 0.0 : 1.0 - dif));
     }
 
-    private Double calculateDistanceForGreaterEqualsThan(GreaterThanEqualsOperation<?> operation, Object doc) {
+    private double calculateDistanceForGreaterEqualsThan(GreaterThanEqualsOperation<?> operation, Object doc) {
         return calculateDistanceForComparisonOperation(operation, doc, ((dif) -> dif >= 0 ? 0.0 : -dif));
     }
 
-    private Double calculateDistanceForLessThan(LessThanOperation<?> operation, Object doc) {
+    private double calculateDistanceForLessThan(LessThanOperation<?> operation, Object doc) {
         return calculateDistanceForComparisonOperation(operation, doc, ((dif) -> dif < 0 ? 0.0 : 1.0 + dif));
     }
 
-    private Double calculateDistanceForLessEqualsThan(LessThanEqualsOperation<?> operation, Object doc) {
+    private double calculateDistanceForLessEqualsThan(LessThanEqualsOperation<?> operation, Object doc) {
         return calculateDistanceForComparisonOperation(operation, doc, ((dif) -> dif <= 0 ? 0.0 : dif));
     }
 
-    private Double calculateDistanceForComparisonOperation(ComparisonOperation<?> operation, Object doc, DoubleUnaryOperator calculateDistance) {
+    private double calculateDistanceForComparisonOperation(ComparisonOperation<?> operation, Object doc, DoubleUnaryOperator calculateDistance) {
         Object expectedValue = operation.getValue();
         String field = operation.getFieldName();
 
         if (!documentContainsField(doc, field)) {
-            return operation instanceof NotEqualsOperation ? 0.0 : 1.0;
+            return operation instanceof NotEqualsOperation ? 0.0 : Double.MAX_VALUE;
         }
 
         Object actualValue = getValue(doc, field);
-        Double dif = compareValues(actualValue, expectedValue);
+        double dif = compareValues(actualValue, expectedValue);
 
-        return dif == null ? Double.MAX_VALUE : calculateDistance.applyAsDouble(dif);
+        return calculateDistance.applyAsDouble(dif);
     }
 
-    private Double calculateDistanceForOr(OrOperation operation, Object doc) {
+    private double calculateDistanceForOr(OrOperation operation, Object doc) {
         return operation.getConditions().stream()
                 .mapToDouble(condition -> calculateDistance(condition, doc))
                 .min()
                 .getAsDouble();
     }
 
-    private Double calculateDistanceForAnd(AndOperation operation, Object doc) {
+    private double calculateDistanceForAnd(AndOperation operation, Object doc) {
         return operation.getConditions().stream().mapToDouble(condition -> calculateDistance(condition, doc)).sum();
     }
 
-    private Double calculateDistanceForIn(InOperation<?> operation, Object doc) {
-        ArrayList<?> expectedValues = operation.getValues();
+    private double calculateDistanceForIn(InOperation<?> operation, Object doc) {
+        List<?> expectedValues = operation.getValues();
         Object actualValue = getValue(doc, operation.getFieldName());
 
-        if (actualValue instanceof ArrayList<?>) {
+        if (actualValue instanceof List<?>) {
             return expectedValues.stream()
-                    .mapToDouble(value -> distanceToClosestElem((ArrayList<?>) actualValue, value))
+                    .mapToDouble(value -> distanceToClosestElem((List<?>) actualValue, value))
                     .min()
                     .getAsDouble();
         } else {
@@ -131,8 +133,8 @@ public class MongoHeuristicsCalculator {
         }
     }
 
-    private Double calculateDistanceForNotIn(NotInOperation<?> operation, Object doc) {
-        ArrayList<?> unexpectedValues = operation.getValues();
+    private double calculateDistanceForNotIn(NotInOperation<?> operation, Object doc) {
+        List<?> unexpectedValues = operation.getValues();
 
         if (!documentContainsField(doc, operation.getFieldName())) return 0.0;
 
@@ -140,61 +142,61 @@ public class MongoHeuristicsCalculator {
         boolean hasUnexpectedElement =
                 unexpectedValues.stream().anyMatch(value -> compareValues(actualValue, value) == 0.0);
 
-        return hasUnexpectedElement ? 1.0 : 0.0;
+        return hasUnexpectedElement ? MIN_DISTANCE_TO_TRUE_VALUE : 0.0;
     }
 
-    private Double calculateDistanceForAll(AllOperation<?> operation, Object doc) {
-        ArrayList<?> expectedValues = operation.getValues();
+    private double calculateDistanceForAll(AllOperation<?> operation, Object doc) {
+        List<?> expectedValues = operation.getValues();
         Object actualValues = getValue(doc, operation.getFieldName());
 
         if (actualValues instanceof Iterable<?>) {
-            return expectedValues.stream().mapToDouble(value -> distanceToClosestElem((ArrayList<?>) actualValues, value)).sum();
+            return expectedValues.stream().mapToDouble(value -> distanceToClosestElem((List<?>) actualValues, value)).sum();
         } else {
             return Double.MAX_VALUE;
         }
     }
 
-    private Double calculateDistanceForInvertedAll(InvertedAllOperation<?> operation, Object doc) {
-        ArrayList<?> expectedValues = operation.getValues();
+    private double calculateDistanceForInvertedAll(InvertedAllOperation<?> operation, Object doc) {
+        List<?> expectedValues = operation.getValues();
         Object actualValues = getValue(doc, operation.getFieldName());
 
-        if (actualValues instanceof ArrayList<?>) {
-            boolean containsAll = ((ArrayList<?>) actualValues).containsAll(expectedValues);
-            return containsAll ? 1.0 : 0.0;
+        if (actualValues instanceof List<?>) {
+            boolean containsAll = ((List<?>) actualValues).containsAll(expectedValues);
+            return containsAll ? MIN_DISTANCE_TO_TRUE_VALUE : 0.0;
         } else {
             return 0.0;
         }
     }
 
-    private Double calculateDistanceForSize(SizeOperation operation, Object doc) {
+    private double calculateDistanceForSize(SizeOperation operation, Object doc) {
         Integer expectedSize = operation.getValue();
         Object actualValue = getValue(doc, operation.getFieldName());
 
-        if (actualValue instanceof ArrayList<?>) {
-            Integer actualSize = ((ArrayList<?>) actualValue).size();
-            return (double) abs(actualSize - expectedSize);
+        if (actualValue instanceof List<?>) {
+            Integer actualSize = ((List<?>) actualValue).size();
+            return abs(actualSize - expectedSize);
         } else {
             return Double.MAX_VALUE;
         }
     }
 
-    private Double calculateDistanceForInvertedSize(InvertedSizeOperation operation, Object doc) {
+    private double calculateDistanceForInvertedSize(InvertedSizeOperation operation, Object doc) {
         Integer expectedSize = operation.getValue();
         Object actualValue = getValue(doc, operation.getFieldName());
 
-        if (actualValue instanceof ArrayList<?>) {
-            Integer actualSize = ((ArrayList<?>) actualValue).size();
-            return actualSize.equals(expectedSize) ? 1.0 : 0.0;
+        if (actualValue instanceof List<?>) {
+            Integer actualSize = ((List<?>) actualValue).size();
+            return actualSize.equals(expectedSize) ? MIN_DISTANCE_TO_TRUE_VALUE : 0.0;
         } else {
             return 0.0;
         }
     }
 
-    private Double calculateDistanceForElemMatch(ElemMatchOperation operation, Object doc) {
+    private double calculateDistanceForElemMatch(ElemMatchOperation operation, Object doc) {
         Object actualValue = getValue(doc, operation.getFieldName());
 
-        if (actualValue instanceof ArrayList<?>) {
-            ArrayList<?> val = (ArrayList<?>) actualValue;
+        if (actualValue instanceof List<?>) {
+            List<?> val = (List<?>) actualValue;
             return val.stream()
                     .mapToDouble(elem -> {
                         Object newDoc = newDocument();
@@ -208,7 +210,7 @@ public class MongoHeuristicsCalculator {
         }
     }
 
-    private Double calculateDistanceForExists(ExistsOperation operation, Object doc) {
+    private double calculateDistanceForExists(ExistsOperation operation, Object doc) {
         String expectedField = operation.getFieldName();
         Set<String> actualFields = documentKeys(doc);
 
@@ -218,12 +220,11 @@ public class MongoHeuristicsCalculator {
                     .min()
                     .getAsDouble();
         } else {
-            // 1.0 or MAX_VALUE?
-            return !documentContainsField(doc, expectedField) ? 0.0 : 1.0;
+            return !documentContainsField(doc, expectedField) ? 0.0 : MIN_DISTANCE_TO_TRUE_VALUE;
         }
     }
 
-    private Double calculateDistanceForMod(ModOperation operation, Object doc) {
+    private double calculateDistanceForMod(ModOperation operation, Object doc) {
         Long expectedRemainder = operation.getRemainder();
         Object actualValue = getValue(doc, operation.getFieldName());
 
@@ -236,20 +237,20 @@ public class MongoHeuristicsCalculator {
         }
     }
 
-    private Double calculateDistanceForInvertedMod(InvertedModOperation operation, Object doc) {
+    private double calculateDistanceForInvertedMod(InvertedModOperation operation, Object doc) {
         Long expectedRemainder = operation.getRemainder();
         Object actualValue = getValue(doc, operation.getFieldName());
 
         // Change to number?
         if (actualValue instanceof Integer) {
             long actualRemainder = ((Integer) actualValue) % operation.getDivisor();
-            return actualRemainder == expectedRemainder ? 1.0 : 0.0;
+            return actualRemainder == expectedRemainder ? MIN_DISTANCE_TO_TRUE_VALUE : 0.0;
         } else {
             return 0.0;
         }
     }
 
-    private Double calculateDistanceForNot(NotOperation operation, Object doc) {
+    private double calculateDistanceForNot(NotOperation operation, Object doc) {
         String fieldName = operation.getFieldName();
         if (getValue(doc, fieldName) == null) return 0.0;
 
@@ -259,11 +260,11 @@ public class MongoHeuristicsCalculator {
         return calculateDistance(invertedOperation, doc);
     }
 
-    private Double calculateDistanceForNor(NorOperation operation, Object doc) {
+    private double calculateDistanceForNor(NorOperation operation, Object doc) {
         return operation.getConditions().stream().mapToDouble(condition -> calculateDistance(invertOperation(condition), doc)).sum();
     }
 
-    private Double calculateDistanceForType(TypeOperation operation, Object doc) {
+    private double calculateDistanceForType(TypeOperation operation, Object doc) {
         String field = operation.getFieldName();
         String expectedType = getType(operation.getType());
         Object value = getValue(doc, field);
@@ -272,13 +273,13 @@ public class MongoHeuristicsCalculator {
         return (double) DistanceHelper.getLeftAlignmentDistance(actualType, expectedType);
     }
 
-    private Double calculateDistanceForInvertedType(InvertedTypeOperation operation, Object doc) {
+    private double calculateDistanceForInvertedType(InvertedTypeOperation operation, Object doc) {
         String field = operation.getFieldName();
         String expectedType = getType(operation.getType());
         Object value = getValue(doc, field);
         String actualType = value == null ? null : value.getClass().getTypeName();
 
-        return !Objects.equals(actualType, expectedType) ? 0.0 : 1.0;
+        return !Objects.equals(actualType, expectedType) ? 0.0 : MIN_DISTANCE_TO_TRUE_VALUE;
     }
 
     private QueryOperation invertOperation(QueryOperation operation) {
@@ -370,41 +371,33 @@ public class MongoHeuristicsCalculator {
         return operation;
     }
 
-    private <T1, T2> Double compareValues(T1 val1, T2 val2) {
+    private double compareValues(Object val1, Object val2) {
 
-        if (val1 instanceof Double && val2 instanceof Double) {
-            return (Double) val1 - (Double) val2;
-        }
-
-        if (val1 instanceof Long && val2 instanceof Long) {
-            return (double) ((Long) val1 - (Long) val2);
-        }
-
-        if (val1 instanceof Integer && val2 instanceof Integer) {
-            return (double) ((Integer) val1 - (Integer) val2);
+        if (val1 instanceof Number && val2 instanceof Number) {
+            double x = ((Number) val1).doubleValue();
+            double y = ((Number) val2).doubleValue();
+            return x - y;
         }
 
         if (val1 instanceof String && val2 instanceof String) {
             return (double) DistanceHelper.getLeftAlignmentDistance((String) val1, (String) val2);
         }
 
-        if (val1 instanceof ArrayList<?> && val2 instanceof ArrayList<?>) {
+        if (val1 instanceof List<?> && val2 instanceof List<?>) {
             // Modify
-            return 1.0;
+            return Double.MAX_VALUE;
         }
 
-        return null;
+        return Double.MAX_VALUE;
     }
 
-    private Double distanceToClosestElem(ArrayList<?> list, Object value) {
+    private double distanceToClosestElem(List<?> list, Object value) {
         double minDist = Double.MAX_VALUE;
 
         for (Object o : list) {
-            Double dif = compareValues(o, value);
-            if (dif != null) {
-                double absDif = abs(dif);
-                if (absDif < minDist) minDist = absDif;
-            }
+            double dif = compareValues(o, value);
+            double absDif = abs(dif);
+            if (absDif < minDist) minDist = absDif;
         }
         return minDist;
     }

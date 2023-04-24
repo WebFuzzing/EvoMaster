@@ -2,16 +2,16 @@ package org.evomaster.client.java.controller.mongo.selectors;
 
 import org.evomaster.client.java.controller.mongo.operations.*;
 
-import java.util.ArrayList;
+import java.util.List;
 
 /**
- * { field: { $all: [ <value1> , <value2> ... ] } }
+ * { field: { $all: [ value1 , value2 ... ] } }
  */
 public class AllSelector extends SingleConditionQuerySelector {
     @Override
     protected QueryOperation parseValue(String fieldName, Object value) {
-        if (value instanceof ArrayList<?>) {
-            return new AllOperation<>(fieldName, (ArrayList<?>) value);
+        if (value instanceof List<?>) {
+            return new AllOperation<>(fieldName, (List<?>) value);
         }
         return null;
     }

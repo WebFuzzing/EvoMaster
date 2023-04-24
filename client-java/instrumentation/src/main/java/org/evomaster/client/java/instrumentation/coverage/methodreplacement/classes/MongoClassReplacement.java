@@ -17,6 +17,8 @@ import java.util.List;
 
 
 public class MongoClassReplacement extends ThirdPartyMethodReplacementClass {
+    private static final MongoClassReplacement singleton = new MongoClassReplacement();
+
     @Override
     protected String getNameOfThirdPartyTargetClass() {
         return "com.mongodb.client.MongoCollection";
@@ -60,13 +62,15 @@ public class MongoClassReplacement extends ThirdPartyMethodReplacementClass {
             long end = System.currentTimeMillis();
             handleMongo(mongoCollection, query, true, end - start);
             return result;
-        } catch (IllegalAccessException | InvocationTargetException e) {
+        } catch (IllegalAccessException e){
             throw new RuntimeException(e);
+        } catch (InvocationTargetException e){
+            throw (RuntimeException) e.getCause();
         }
     }
 
     private static Method retrieveFindMethod(String id, Object mongoCollection) {
-        return getOriginal(new MongoClassReplacement(), id, mongoCollection);
+        return getOriginal(singleton, id, mongoCollection);
     }
 
     private static void handleMongo(Object mongoCollection, Object bson, boolean successfullyExecuted, long executionTime) {

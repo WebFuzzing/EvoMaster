@@ -1,6 +1,6 @@
 package org.evomaster.client.java.controller.mongo.operations;
 
-import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Pattern;
 
 /**
@@ -9,9 +9,9 @@ import java.util.regex.Pattern;
  */
 public class RegexOperation extends QueryOperation{
     private final Pattern pattern;
-    private final ArrayList<Character> options;
+    private final List<Character> options;
 
-    public RegexOperation(Pattern pattern, ArrayList<Character> options) {
+    public RegexOperation(Pattern pattern, List<Character> options) {
         this.pattern = pattern;
         this.options = options;
     }
@@ -20,7 +20,7 @@ public class RegexOperation extends QueryOperation{
         return pattern;
     }
 
-    public ArrayList<Character> getOptions() {
+    public List<Character> getOptions() {
         return options;
     }
 }

@@ -1,7 +1,7 @@
 package org.evomaster.client.java.controller.mongo.operations.synthetic;
 
 import org.evomaster.client.java.controller.mongo.operations.QueryOperation;
-import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Represent the operation that results from applying a $not to an $all operation.
@@ -10,9 +10,9 @@ import java.util.ArrayList;
  */
 public class InvertedAllOperation<V> extends QueryOperation{
     private final String fieldName;
-    private final ArrayList<V> values;
+    private final List<V> values;
 
-    public InvertedAllOperation(String fieldName, ArrayList<V> values) {
+    public InvertedAllOperation(String fieldName, List<V> values) {
         this.fieldName = fieldName;
         this.values = values;
     }
@@ -21,7 +21,7 @@ public class InvertedAllOperation<V> extends QueryOperation{
         return fieldName;
     }
 
-    public ArrayList<V> getValues() {
+    public List<V> getValues() {
         return values;
     }
 }

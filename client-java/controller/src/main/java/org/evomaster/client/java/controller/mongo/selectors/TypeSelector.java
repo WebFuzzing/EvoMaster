@@ -6,7 +6,7 @@ import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.getTyp
 import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.getTypeFromNumber;
 
 /**
- * { field: { $type: <BSON type> } }
+ * { field: { $type: BSON type } }
  */
 public class TypeSelector extends SingleConditionQuerySelector {
     @Override

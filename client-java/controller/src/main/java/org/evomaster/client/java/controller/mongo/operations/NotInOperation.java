@@ -1,6 +1,6 @@
 package org.evomaster.client.java.controller.mongo.operations;
 
-import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Represent $nin operation.
@@ -10,9 +10,9 @@ import java.util.ArrayList;
  */
 public class NotInOperation<V> extends QueryOperation{
     private final String fieldName;
-    private final ArrayList<V> values;
+    private final List<V> values;
 
-    public NotInOperation(String fieldName, ArrayList<V> values) {
+    public NotInOperation(String fieldName, List<V> values) {
         this.fieldName = fieldName;
         this.values = values;
     }
@@ -21,7 +21,7 @@ public class NotInOperation<V> extends QueryOperation{
         return fieldName;
     }
 
-    public ArrayList<V> getValues() {
+    public List<V> getValues() {
         return values;
     }
 }

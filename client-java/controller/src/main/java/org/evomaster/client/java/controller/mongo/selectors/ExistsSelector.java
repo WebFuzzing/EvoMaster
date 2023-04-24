@@ -3,7 +3,7 @@ package org.evomaster.client.java.controller.mongo.selectors;
 import org.evomaster.client.java.controller.mongo.operations.*;
 
 /**
- * { field: { $exists: <boolean> } }
+ * { field: { $exists: boolean } }
  */
 public class ExistsSelector extends SingleConditionQuerySelector {
     @Override
