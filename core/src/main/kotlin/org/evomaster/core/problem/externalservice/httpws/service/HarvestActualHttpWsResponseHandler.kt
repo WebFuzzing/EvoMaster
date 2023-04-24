@@ -629,13 +629,15 @@ class HarvestActualHttpWsResponseHandler {
         return leftMethod.equals(rightMethod) && leftProtocol.equals(rightProtocol) && leftHostname.equals(rightHostname)
     }
 
-    private fun matchRequestFromSameMethodAndURL(aURL: String, bURL: String): Boolean{
-        val aLast = getLastIndexOfURLPath(getTextualMethodURLFromRequestDescription(aURL))
-        val bLast = getLastIndexOfURLPath(getTextualMethodURLFromRequestDescription(aURL))
+    private fun matchRequestFromSameMethodAndURL(aRequestDescription: String, bRequestDescription: String): Boolean{
+        val aMethodAndPath = getTextualMethodURLFromRequestDescription(aRequestDescription)
+        val bMethodAndPath = getTextualMethodURLFromRequestDescription(bRequestDescription)
+        val aLast = getLastIndexOfURLPath(aMethodAndPath)
+        val bLast = getLastIndexOfURLPath(bMethodAndPath)
         if (aLast == -1 || bLast == -1) return false
         if (aLast != bLast) return false
 
-        return aURL.substring(aLast)  == bURL.substring(bLast)
+        return aMethodAndPath.substring(aLast)  == bMethodAndPath.substring(bLast)
     }
 
     private fun getLastIndexOfURLPath(url: String) : Int{
