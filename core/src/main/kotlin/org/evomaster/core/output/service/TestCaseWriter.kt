@@ -160,7 +160,7 @@ abstract class TestCaseWriter {
                     action.externalService,
                     response,
                     action.request.method.lowercase(),
-                    "urlEqualTo(\"${action.request.url}\")",
+                    "urlPathEqualTo(\"${action.request.url}\")", //urlEqualTo
                     index+1,
                     format
                 )
