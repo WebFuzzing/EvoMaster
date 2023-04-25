@@ -32,9 +32,8 @@ class WmHarvestResponseEMTest : SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "WmHarvestResponseEM",
             "org.foo.WmHarvestResponseEM",
-            1000,
-            //!CIUtils.isRunningGA(), // disable test generation as it uses https
-            false,
+            1500,
+            !CIUtils.isRunningGA(),
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")
@@ -45,6 +44,10 @@ class WmHarvestResponseEMTest : SpringTestBase() {
                 args.add("0.9")
                 args.add("--probOfMutatingResponsesBasedOnActualResponse")
                 args.add("0.1")
+                args.add("--probOfPrioritizingSuccessfulHarvestedActualResponses")
+                args.add("0.9")
+                args.add("--externalRequestResponseSelectionStrategy")
+                args.add("RANDOM")
 
                 val solution = initAndRun(args)
 
@@ -59,12 +62,14 @@ class WmHarvestResponseEMTest : SpringTestBase() {
                 assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/wm/harvestresponse/grch37Annotation", HARVEST_FOUND)
                 assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/wm/harvestresponse/grch37Annotation", HARVEST_FOUND)
 
+                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/harvestresponse/grch37Id", HARVEST_FOUND)
+                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/harvestresponse/grch37Id", HARVEST_NOT_FOUND)
 
 //                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/harvestresponse/users", ">10")
 //                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/harvestresponse/users", "<10")
 //                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/harvestresponse/users", "which has foo user")
             },
-            3
+            5
         )
     }
 

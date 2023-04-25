@@ -1,6 +1,5 @@
 package com.foo.rest.examples.spring.openapi.v3.wiremock.harvestresponse
 
-import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.foo.rest.examples.spring.openapi.v3.wiremock.harvestresponse.GLocationDto.Companion.genomicToHgvs
 import com.squareup.okhttp.OkHttpClient
@@ -10,7 +9,6 @@ import org.springframework.web.bind.annotation.*
 import java.io.*
 import java.net.HttpURLConnection
 import java.net.URL
-import java.net.URLConnection
 
 @RestController
 @RequestMapping(path = ["/api/wm/harvestresponse"])
@@ -24,10 +22,12 @@ class WmHarvestResponseRest {
     private val urlToGetABCMetaData = "https://list.ly/api/v4/meta?url=http%3A%2F%2Fabc.com"
     private val urlToGETGoRESTUsers = "https://gorest.co.in/public/v2/users"
 
-    private val server = "https://grch37.rest.ensembl.org"
-    private val ext = "/vep/human/hgvs"
+    private val server = "http://grch37.rest.ensembl.org"
+    private val extHgvs = "/vep/human/hgvs"
+    private val extId = "/vep/human/id"
 
-    private val ext_variant = "/VARIANT?content-type=application/json&xref_refseq=1&ccds=1&canonical=1&domains=1&hgvs=1&numbers=1&protein=1"
+    private val extHgvs_variant = "/VARIANT?content-type=application/json&xref_refseq=1&ccds=1&canonical=1&domains=1&hgvs=1&numbers=1&protein=1"
+    private val extId_params = "?content-type=application/json&xref_refseq=1&ccds=1&canonical=1&domains=1&hgvs=1&numbers=1&protein=1"
 
     private val token = System.getenv("GOREST_AUTH_KEY") ?: "ACCESS-TOKEN"
 
@@ -68,7 +68,7 @@ class WmHarvestResponseRest {
 
         val postBody = "{ \"hgvs_notations\" : [\"AGT:c.803T>C\", \"9:g.22125503G>C\" ] }"
 
-        val result = makeCall(server+ext, "POST", postBody)
+        val result = makeCall(server+extHgvs, "POST", postBody)
         if (result.first != 200) {
             return ResponseEntity.status(400).build()
         }
@@ -85,7 +85,7 @@ class WmHarvestResponseRest {
         val postBody = "{ \"hgvs_notations\" : [${dtos.joinToString(",") { "\"${genomicToHgvs(it)}\"" }}] }"
 
 
-        val result = makeCall(server+ext+ext_variant, "POST", postBody)
+        val result = makeCall(server+extHgvs+extHgvs_variant, "POST", postBody)
         if (result.first != 200) {
             return ResponseEntity.status(400).build()
         }
@@ -97,7 +97,23 @@ class WmHarvestResponseRest {
     }
 
 
-    private fun makeCall(urlString: String, method: String, params: String) : Pair<Int, String>{
+    @GetMapping(path = ["/grch37Id"])
+    fun getGrch37Id(): ResponseEntity<String> {
+
+        val result = makeCall("$server$extId/7$extId_params", "GET", null)
+
+        if (result.first != 200) {
+            return ResponseEntity.status(400).build()
+        }
+
+        val list = mapper.readValue(result.second, List::class.java)
+        if (list.isNotEmpty() && result.second.contains("refseq_transcript_ids"))
+            return ResponseEntity.ok(HARVEST_FOUND)
+        return ResponseEntity.ok(HARVEST_NOT_FOUND)
+    }
+
+
+    private fun makeCall(urlString: String, method: String, params: String?) : Pair<Int, String>{
         val connection = URL(urlString).openConnection() as HttpURLConnection
 
         connection.requestMethod = method
@@ -108,10 +124,13 @@ class WmHarvestResponseRest {
         connection.doInput = true
         connection.doOutput = true
 
-        val wr = DataOutputStream(connection.outputStream)
-        wr.writeBytes(params)
-        wr.flush()
-        wr.close()
+        if (params != null){
+            val wr = DataOutputStream(connection.outputStream)
+            wr.writeBytes(params)
+            wr.flush()
+            wr.close()
+        }
+
 
         val responseCode: Int = connection.responseCode
         val data = connection.inputStream.bufferedReader().use(BufferedReader::readText)
