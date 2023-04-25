@@ -1696,10 +1696,10 @@ class GraphQLActionBuilderTest {
     }
 
     @Test
-    fun buildkite2Test() {
-
+    fun buildkiteFragmentTest() {
+        //This fragment is used for the issues with inputs
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/buildkite.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/buildkite(fragment).json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
