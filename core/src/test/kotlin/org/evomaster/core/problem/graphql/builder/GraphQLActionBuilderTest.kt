@@ -379,7 +379,33 @@ class GraphQLActionBuilderTest {
                 }
             }
         }
+        /**/
+        val documentaryUnits = actionCluster["documentaryUnits"] as GraphQLAction
+        assertEquals(5, documentaryUnits.parameters.size)
+        assertTrue(documentaryUnits.parameters[4] is GQReturnParam)
 
+        assertTrue(documentaryUnits.parameters[4].gene is ObjectGene)
+        val objectDocumentaryUnits = documentaryUnits.parameters[4].gene as ObjectGene
+        assertEquals(3, objectDocumentaryUnits.fields.size)
+        assertTrue(objectDocumentaryUnits.fields.any { it.getWrappedGene(ObjectGene::class.java)?.name == "edges" })
+
+        val optDocumentaryUnitEdge = objectDocumentaryUnits.fields.first { it.name == "edges" }
+        val objDocumentaryUnitEdge = optDocumentaryUnitEdge.getWrappedGene(ObjectGene::class.java)
+        if(objDocumentaryUnitEdge!=null) {
+            assertEquals(2, objDocumentaryUnitEdge.fields.size)
+            assertTrue(objDocumentaryUnitEdge.fields.any { it.getWrappedGene(ObjectGene::class.java)?.name == "node" })
+            val optNode = objDocumentaryUnitEdge.fields.first { it.name == "node" }
+            val objNode = optNode.getWrappedGene(ObjectGene::class.java)
+            if (objNode != null) {
+                assertEquals(14, objNode.fields.size)
+                assertTrue(objNode.fields.any { it.getWrappedGene(TupleGene::class.java)?.name == "children" })//nbr07
+                val optChildren = objNode.fields.first { it.name == "children" }
+                val tupleChildren = optChildren.getWrappedGene(TupleGene::class.java)
+                assertEquals(5, tupleChildren?.elements?.size)
+                assertTrue(tupleChildren?.elements?.last() is (CycleObjectGene))
+
+            }
+        }
     }
 
     @Test
