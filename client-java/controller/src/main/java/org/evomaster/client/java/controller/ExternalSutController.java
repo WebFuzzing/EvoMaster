@@ -35,6 +35,7 @@ public abstract class ExternalSutController extends SutController {
     private volatile boolean instrumentation;
     private volatile Thread processKillHook;
     private volatile Thread outputPrinter;
+    private volatile Thread sutStartChecker;
     private volatile CountDownLatch latch;
     private volatile ServerController serverController;
     private volatile boolean initialized;
@@ -121,10 +122,23 @@ public abstract class ExternalSutController extends SutController {
 
 
     /**
+     *
      * @return a string subtext that should be present in the logs (std output)
      * of the system under test to check if the server is up and ready.
+     * If there is the need to do something more sophisticated to check if the SUT has started,
+     * then this method should be left returning null, and rather override the method isSUTInitialized()
+     *
      */
     public abstract String getLogMessageOfInitializedServer();
+
+    /**
+     * a customized interface to implement for checking if the system under test is started.
+     * by default (returning null), such check is performed based on messages in log.
+     * @return Boolean representing if the system under test is up and ready.
+     */
+    public Boolean isSUTInitialized() {
+        return null;
+    }
 
     /**
      * @return how long (in seconds) we should wait at most to check if SUT is ready
@@ -267,7 +281,8 @@ public abstract class ExternalSutController extends SutController {
         }
 
         //this is not only needed for debugging, but also to check for when SUT is ready
-        startExternalProcessPrinter();
+        //startExternalProcessPrinter();
+        checkSutInitialized();
 
         if (instrumentation && serverController != null) {
             boolean connected = serverController.waitForIncomingConnection(getWaitingSecondsForIncomingConnection());
@@ -367,6 +382,10 @@ public abstract class ExternalSutController extends SutController {
         if (isInstrumentationActivated()) {
             serverController.resetForNewTest();
         }
+
+        //This is needed for hack in getAdditionalInfoList()
+        //TODO possibly refactor
+        InstrumentationController.resetForNewTest();
     }
 
     @Override
@@ -378,7 +397,19 @@ public abstract class ExternalSutController extends SutController {
     @Override
     public final List<AdditionalInfo> getAdditionalInfoList(){
         checkInstrumentation();
-        return serverController.getAdditionalInfoList();
+
+        List<AdditionalInfo> info = serverController.getAdditionalInfoList();
+        //taint on SQL would be done here in the controller, and not in the instrumented SUT
+        List<AdditionalInfo> local = ExecutionTracer.exposeAdditionalInfoList();
+        //so we need to merge results
+
+        AdditionalInfo first = info.get(0);
+
+        //TODO refactor currently action index is ignored in taint. see all issues in TaintAnalysis
+        local.stream().flatMap(x -> x.getStringSpecializationsView().entrySet().stream())
+                .forEach(p -> p.getValue().stream().forEach(s -> first.addSpecialization(p.getKey(), s)));
+
+        return info;
     }
 
     @Override
@@ -562,7 +593,35 @@ public abstract class ExternalSutController extends SutController {
         }
     }
 
-    protected void startExternalProcessPrinter() {
+    private void checkSutInitialized(){
+        Boolean started = isSUTInitialized();
+        if (started != null){
+            startSutStartChecker(started);
+        }
+
+        startExternalProcessPrinter(started == null);
+    }
+
+    private void startSutStartChecker(boolean started){
+        if (sutStartChecker == null || !sutStartChecker.isAlive()){
+            sutStartChecker = new Thread(()->{
+                try {
+                    while (!started && !isSUTInitialized()){
+                        // perform a check every 2s
+                        Thread.sleep(2000);
+                    }
+                    initialized = true;
+                    errorBuffer = null;
+                    latch.countDown();
+                }catch (Exception e){
+                    SimpleLogger.error("Failed to check ", e);
+                }
+            });
+            sutStartChecker.start();
+        }
+    }
+
+    protected void startExternalProcessPrinter(boolean checkSutInitializedWithLog) {
 
         if (outputPrinter == null || !outputPrinter.isAlive()) {
             outputPrinter = new Thread(() -> {
@@ -589,7 +648,7 @@ public abstract class ExternalSutController extends SutController {
                             errorBuffer.append("\n");
                         }
 
-                        if (line.contains(getLogMessageOfInitializedServer())) {
+                        if (checkSutInitializedWithLog && line.contains(getLogMessageOfInitializedServer())){
                             initialized = true;
                             errorBuffer = null; //no need to keep track of it if everything is ok
                             latch.countDown();

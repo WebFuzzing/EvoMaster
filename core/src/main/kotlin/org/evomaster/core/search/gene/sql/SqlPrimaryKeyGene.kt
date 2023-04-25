@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene.sql
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.root.CompositeGene
 import org.evomaster.core.search.gene.Gene
@@ -68,11 +69,13 @@ class SqlPrimaryKeyGene(name: String,
     }
 
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is SqlPrimaryKeyGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        this.gene.copyValueFrom(other.gene)
+        return updateValueOnlyIfValid(
+            {this.gene.copyValueFrom(other.gene)}, false
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

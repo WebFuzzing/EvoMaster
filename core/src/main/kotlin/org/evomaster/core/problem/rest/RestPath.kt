@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory
 import java.net.URI
 import java.net.URLEncoder
 import java.util.regex.Pattern
+import kotlin.math.abs
 
 /**
  * Represent a path template for a REST endpoint.
@@ -148,6 +149,31 @@ class RestPath(path: String) {
         return (0 until elements.size).none { this.elements[it] != other.elements[it] }
     }
 
+    /**
+     * @return whether this is sibling of the [other]
+     *
+     * eg, we consider
+     * /root/{rootName}/foo/{fooName}/bar/{barName}
+     * /root/{rootName}/foo/{fooName}/bar are sibling
+     *
+     * for instance, two examples might be valid for preparing resources for each other.
+     * POST /root/{rootName}/foo/{fooName}/bar/{barName}
+     * GET /root/{rootName}/foo/{fooName}/bar
+     *
+     * POST /root/{rootName}/foo/{fooName}/bar
+     * GET /root/{rootName}/foo/{fooName}/bar/{barName}
+     */
+    fun isSiblingForPreparingResource(other: RestPath): Boolean {
+        val sizeDif = abs(this.elements.size - other.elements.size)
+        if (sizeDif != 1) {
+            return false
+        }
+
+        val moreSize = if (this.elements.size > other.elements.size) this else other
+
+        return (0 until (moreSize.elements.size - 1)).none { this.elements[it] != other.elements[it] } && moreSize.isLastElementAParameter()
+    }
+
 
     fun lastElement(): String {
         if (elements.isEmpty()) {
@@ -181,6 +207,26 @@ class RestPath(path: String) {
         }
 
         return (0 until this.elements.size).none { other.elements[it] != this.elements[it] }
+    }
+
+
+    /**
+     * @return whether this is direct or possible ancestor of [other]
+     *
+     * this is to handle the case eg.
+     * /root/{rootName}/bar/{barName} might be the potential
+     * ancestor of /root/{rootName}/foo/{fooName}/bar/{barName}
+     *
+     */
+    fun isDirectOrPossibleAncestorOf(other: RestPath): Boolean {
+        if (this.elements.size > other.elements.size) {
+            return false
+        }
+
+        return (0 until this.elements.size).all {
+            val index = other.elements.indexOfFirst { e-> e == this.elements[it] }
+            index >= 0 && index >= it
+        }
     }
 
     /**

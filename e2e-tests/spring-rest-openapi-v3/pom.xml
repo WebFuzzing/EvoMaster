@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster-e2e-tests</artifactId>
-        <version>1.6.1-SNAPSHOT</version>
+        <version>1.6.2-SNAPSHOT</version>
     </parent>
 
     <artifactId>evomaster-e2e-tests-spring-rest-openapi-v3</artifactId>
@@ -139,6 +139,12 @@
             <artifactId>wiremock-jre8-standalone</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>com.auth0</groupId>
+            <artifactId>auth0</artifactId>
+        </dependency>
+
     </dependencies>
 
     <build>

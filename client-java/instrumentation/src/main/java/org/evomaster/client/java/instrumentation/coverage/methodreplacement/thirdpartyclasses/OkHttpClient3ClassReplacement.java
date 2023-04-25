@@ -93,6 +93,9 @@ public class OkHttpClient3ClassReplacement extends ThirdPartyMethodReplacementCl
         Object url = request.getClass().getMethod("url").invoke(request);
         String urlScheme = (String) url.getClass().getMethod("scheme").invoke(url);
         String urlHost = (String) url.getClass().getMethod("host").invoke(url);
+        String method = (String) request.getClass().getMethod("method").invoke(request);
+        Object body = request.getClass().getMethod("body").invoke(request);
+        Object headers = request.getClass().getMethod("headers").invoke(request);
         int urlPort = (int) url.getClass().getMethod("port").invoke(url);
         String urlEncodedPath = (String) url.getClass().getMethod("encodedPath").invoke(url);
 
@@ -110,6 +113,10 @@ public class OkHttpClient3ClassReplacement extends ThirdPartyMethodReplacementCl
             ClassLoader loader = ExecutionTracer.getLastCallerClassLoader();
             Object builder = loader.loadClass("okhttp3.Request$Builder").newInstance();
             builder = builder.getClass().getMethod("url", String.class).invoke(builder, replacedUrl);
+            builder = builder.getClass().getMethod("method", String.class, loader.loadClass("okhttp3.RequestBody"))
+                    .invoke(builder, method, body);
+            builder = builder.getClass().getMethod("headers", loader.loadClass("okhttp3.Headers"))
+                    .invoke(builder, headers);
             replaced = builder.getClass().getMethod("build").invoke(builder);
         }
 

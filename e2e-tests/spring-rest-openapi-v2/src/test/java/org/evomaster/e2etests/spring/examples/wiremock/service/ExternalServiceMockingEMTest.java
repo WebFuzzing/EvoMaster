@@ -3,7 +3,7 @@ package org.evomaster.e2etests.spring.examples.wiremock.service;
 import com.foo.rest.examples.spring.wiremock.service.ServiceController;
 import com.google.inject.Injector;
 import org.evomaster.core.EMConfig;
-import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalServiceHandler;
+import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.problem.rest.service.ResourceSampler;
 import org.evomaster.core.problem.rest.service.RestResourceFitness;
@@ -59,12 +59,12 @@ public class ExternalServiceMockingEMTest extends SpringTestBase {
         RestIndividual restIndividual = resourceSampler.sample(false);
 
         // asserts whether the call made during the start-up is captured
-        assertEquals(1, externalServiceHandler.getExternalServices().size(), externalServiceHandler.getExternalServiceMappings().size());
-        assertTrue( externalServiceHandler.getExternalServices().containsKey("foobarbazz.com"));
+        assertEquals(3, externalServiceHandler.getExternalServices().size(), externalServiceHandler.getExternalServiceMappings().size());
+        assertTrue( externalServiceHandler.getExternalServices().containsKey("https__foobarbazz.com__8443"));
         restResourceFitness.calculateCoverage(restIndividual, Collections.emptySet());
 
         // assertion after the execution
-        assertEquals(2, externalServiceHandler.getExternalServices().size());
+        assertEquals(4, externalServiceHandler.getExternalServices().size());
 
     }
 }

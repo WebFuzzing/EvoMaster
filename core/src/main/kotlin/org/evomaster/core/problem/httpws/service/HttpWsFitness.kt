@@ -304,7 +304,7 @@ abstract class HttpWsFitness<T>: ApiWsFitness<T>() where T : Individual {
                 .filter { !(a.auth.jsonTokenPostLogin != null && it.name.equals("Authorization", true)) }
                 .filter{ it.isInUse()}
                 .forEach {
-                    builder.header(it.name, it.gene.getValueAsRawString())
+                    builder.header(it.name, it.getRawValue())
                 }
 
         if (a.auth.cookieLogin != null) {

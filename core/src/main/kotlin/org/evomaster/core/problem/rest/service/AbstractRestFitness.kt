@@ -8,8 +8,8 @@ import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils.getWMDefaultSignature
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.problem.externalservice.httpws.HarvestActualHttpWsResponseHandler
-import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalServiceHandler
+import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
+import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceInfo
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
 import org.evomaster.core.problem.httpws.auth.NoAuth
@@ -33,6 +33,7 @@ import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.net.URL
 import javax.ws.rs.ProcessingException
 import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.client.Entity
@@ -487,6 +488,15 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                     )
                 }
 
+                TcpUtils.isUnknownHost(e) -> {
+                    throw SutProblemException("Unknown host: ${URL(getBaseUrl()).host}\n" +
+                            " Are you sure you did not misspell it?")
+                }
+
+                TcpUtils.isInternalError(e) ->{
+                    throw RuntimeException("Internal bug with EvoMaster when making a HTTP call toward ${a.resolvedPath()}", e)
+                }
+
                 else -> throw e
             }
         }
@@ -762,7 +772,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
             expandIndividual(individual, dto.additionalInfoList, actionResults)
         }
 
-        if (config.baseTaintAnalysisProbability > 0) {
+        if (config.isEnabledTaintAnalysis()) {
             Lazy.assert { actionResults.size == dto.additionalInfoList.size }
             //TODO add taint analysis for resource-based solution
             TaintAnalysis.doTaintAnalysis(individual, dto.additionalInfoList, randomness, config.enableSchemaConstraintHandling)

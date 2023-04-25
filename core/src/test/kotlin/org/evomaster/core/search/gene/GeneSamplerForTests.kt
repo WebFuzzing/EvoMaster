@@ -380,7 +380,7 @@ object GeneSamplerForTests {
     }
 
     fun sampleRegexGene(rand: Randomness): RegexGene {
-        return RegexGene(name = "rand RegexGene", disjunctions = sampleDisjunctionListRxGene(rand))
+        return RegexGene(name = "rand RegexGene", disjunctions = sampleDisjunctionListRxGene(rand), "None")
     }
 
     fun sampleQuantifierRxGene(rand: Randomness): QuantifierRxGene {

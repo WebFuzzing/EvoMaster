@@ -350,32 +350,33 @@ class GraphQLActionBuilderTest {
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
 
         assertEquals(19, actionCluster.size)
+        /**/
+        val country = actionCluster["Country"] as GraphQLAction
+        assertEquals(2, country.parameters.size)
+        assertTrue(country.parameters[1] is GQReturnParam)
 
-        val documentaryUnits = actionCluster["documentaryUnits"] as GraphQLAction
-        assertEquals(5, documentaryUnits.parameters.size)
-        assertTrue(documentaryUnits.parameters[4] is GQReturnParam)
+        assertTrue(country.parameters[1].gene is ObjectGene)
 
-        assertTrue(documentaryUnits.parameters[4].gene is ObjectGene)
-        val objectDocumentaryUnits = documentaryUnits.parameters[4].gene as ObjectGene
-        assertEquals(3, objectDocumentaryUnits.fields.size)
+        val objCountry = country.parameters[1].gene as ObjectGene
 
-        assertTrue(objectDocumentaryUnits.fields.any { it.getWrappedGene(ObjectGene::class.java)?.name == "edges" })
+        assertTrue(objCountry.fields.any { it.getWrappedGene(ObjectGene::class.java)?.name == "annotations" })
 
-        val optDocumentaryUnitEdge = objectDocumentaryUnits.fields.first { it.name == "edges" }
-        val objDocumentaryUnitEdge = optDocumentaryUnitEdge.getWrappedGene(ObjectGene::class.java)
+        val optAnnotations = objCountry.fields.first { it.name == "annotations" }
+        val objAnnotations = optAnnotations.getWrappedGene(ObjectGene::class.java)
 
-        if(objDocumentaryUnitEdge!=null) {
-            assertEquals(2, objDocumentaryUnitEdge.fields.size)
-            assertTrue(objDocumentaryUnitEdge.fields.any { it.getWrappedGene(ObjectGene::class.java)?.name == "node" })
-            val optNode = objDocumentaryUnitEdge.fields.first { it.name == "node" }
-            val objNode = optNode.getWrappedGene(ObjectGene::class.java)
-            if(objNode!=null) {
-                assertEquals(14, objNode.fields.size)
-                assertTrue(objNode.fields.any { it.getWrappedGene(TupleGene::class.java)?.name == "children"  })//nbr07
-                val optChildren = objNode.fields.first { it.name == "children" }
-                val tupleChildren = optChildren.getWrappedGene(TupleGene::class.java)
-                assertEquals(5, tupleChildren?.elements?.size)
-                assertTrue(tupleChildren?.elements?.last() is (CycleObjectGene))
+        if (objAnnotations != null) {
+            val interfaceObjectTargets = objAnnotations.fields[6].getWrappedGene(ObjectGene::class.java)//targets
+            if (interfaceObjectTargets != null) {
+                assertEquals(10, interfaceObjectTargets.fields.size)
+                assertTrue(interfaceObjectTargets.fields[8].getWrappedGene(ObjectGene::class.java)?.name == "Link")
+
+                val optLink = interfaceObjectTargets.fields.first { it.name == "Link" }
+                val objLink = optLink.getWrappedGene(ObjectGene::class.java)
+
+                if (objLink != null) {
+                    assertEquals(6, objLink.fields.size)
+                    assertTrue(objLink.fields.any { it is BooleanGene && it.name == "field" })
+                }
             }
         }
 
@@ -426,7 +427,45 @@ class GraphQLActionBuilderTest {
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
 
         assertEquals(9, actionCluster.size)
+        val sequenceAnalysis = actionCluster["sequenceAnalysis"] as GraphQLAction
+        assertEquals(2, sequenceAnalysis.parameters.size)
+        assertTrue(sequenceAnalysis.parameters[1] is GQReturnParam)
+        val objSequenceAnalysis = sequenceAnalysis.parameters[1].gene as ObjectGene
 
+        assertTrue(objSequenceAnalysis.fields.any { it.getWrappedGene(TupleGene::class.java)?.name == "drugResistance" })
+        val optDrugResistance = objSequenceAnalysis.fields.first { it.name == "drugResistance" }
+        val tupleDrugResistance = optDrugResistance.getWrappedGene(TupleGene::class.java)
+        if (tupleDrugResistance != null) {
+            assertEquals(2, tupleDrugResistance.elements.size)
+            assertTrue(tupleDrugResistance.elements.any { it.getWrappedGene(ObjectGene::class.java)?.name == "drugResistance" })
+            val objDrugResistance = tupleDrugResistance?.elements?.get(1) as ObjectGene
+            assertTrue(objDrugResistance.fields.any { it.getWrappedGene(TupleGene::class.java)?.name == "drugScores" })
+            val optDrugScores = objDrugResistance.fields.first { it.name == "drugScores" }
+            val tupleDrugScores = optDrugScores.getWrappedGene(TupleGene::class.java)
+            if (tupleDrugScores != null) {
+                assertEquals(2, tupleDrugScores.elements.size)
+                assertTrue(tupleDrugScores.elements.any { it.getWrappedGene(EnumGene::class.java)?.name == "drugClass" })
+            }
+        }
+        /**/
+        val patternAnalysis = actionCluster["patternAnalysis"] as GraphQLAction
+        assertEquals(2, patternAnalysis.parameters.size)
+        assertTrue(patternAnalysis.parameters[1] is GQReturnParam)
+
+        assertTrue(patternAnalysis.parameters[1].gene is ObjectGene)
+
+        val obMutationsAnalysis = patternAnalysis.parameters[1].gene as ObjectGene
+
+        assertTrue(obMutationsAnalysis.fields.any { it.getWrappedGene(TupleGene::class.java)?.name == "algorithmComparison" })
+
+
+        val optAlgorithmComparison = obMutationsAnalysis.fields.first { it.name == "algorithmComparison" }
+        val tupleAlgorithmComparison = optAlgorithmComparison.getWrappedGene(TupleGene::class.java)
+        assertEquals(3, tupleAlgorithmComparison?.elements?.size)
+
+        if (tupleAlgorithmComparison !=null) {
+            assertTrue(tupleAlgorithmComparison.elements.any { it.getWrappedGene(ArrayGene::class.java)?.name == "customAlgorithms" })
+        }
     }
 
     @Test
@@ -1955,4 +1994,56 @@ class GraphQLActionBuilderTest {
 
     }
 
+    @Test
+    fun interfacesObjectsTest() {
+
+        val actionCluster = mutableMapOf<String, Action>()
+        val json =
+            GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/interfacesObjects.json").readText()
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
+        assertEquals(1, actionCluster.size)
+
+        val stores = actionCluster["stores"] as GraphQLAction
+        assertEquals(1, stores.parameters.size)
+        assertTrue(stores.parameters[0] is GQReturnParam)
+
+        assertTrue(stores.parameters[0].gene is ObjectGene)
+        val objectStore1 = stores.parameters[0].gene as ObjectGene
+        assertEquals(1, objectStore1.fields.size)
+
+        assertTrue(objectStore1.fields[0] is OptionalGene)
+        assertTrue((objectStore1.fields[0] as OptionalGene).gene is ObjectGene)
+        val interfaceBouquet = (objectStore1.fields[0] as OptionalGene).gene as ObjectGene
+        assertEquals(2, interfaceBouquet.fields.size)
+
+        assertTrue(interfaceBouquet.fields[0] is OptionalGene)
+        assertTrue((interfaceBouquet.fields[0] as OptionalGene).gene is ObjectGene)
+        val objPotStore = (interfaceBouquet.fields[0] as OptionalGene).gene as ObjectGene
+        assertEquals(1, objPotStore.fields.size)
+        assertTrue(objPotStore.fields.any { it.getWrappedGene(ObjectGene::class.java) != null })//interface: address
+
+        val interfaceAddress =
+            (objPotStore.fields.first { it.getWrappedGene(ObjectGene::class.java)?.name == "address#INTERFACE#" } as OptionalGene).gene as ObjectGene
+        assertEquals(3, interfaceAddress.fields.size)
+
+        assertTrue(interfaceAddress.fields[0] is OptionalGene)
+        assertTrue((interfaceAddress.fields[0] as OptionalGene).gene is ObjectGene)
+        val objAddressFlower = (interfaceAddress.fields[0] as OptionalGene).gene as ObjectGene
+        assertEquals(1, objAddressFlower.fields.size)
+
+        assertTrue(interfaceAddress.fields[0] is OptionalGene)
+        assertTrue((interfaceAddress.fields[0] as OptionalGene).gene is ObjectGene)
+        val objAddressStore = (interfaceAddress.fields[0] as OptionalGene).gene as ObjectGene
+        assertEquals(1, objAddressStore.fields.size)
+        /**/
+        assertTrue(interfaceBouquet.fields[1] is OptionalGene)
+        assertTrue((interfaceBouquet.fields[1] as OptionalGene).gene is ObjectGene)
+        val objStore = (interfaceBouquet.fields[1] as OptionalGene).gene as ObjectGene
+        assertEquals(2, objStore.fields.size)
+        assertTrue(objStore.fields.any { it is BooleanGene && it.name == "id" })
+        assertTrue(objStore.fields.any { it is BooleanGene && it.name == "name" })
+
+    }
 }

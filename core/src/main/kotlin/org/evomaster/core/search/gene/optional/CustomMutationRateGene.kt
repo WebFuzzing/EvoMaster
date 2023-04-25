@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene.optional
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.gene.Gene
@@ -123,13 +124,21 @@ class CustomMutationRateGene<out T>(
 
     override fun isPrintable() = gene.isPrintable()
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is CustomMutationRateGene<*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        this.gene.copyValueFrom(other.gene)
-        this.probability = other.probability
-        this.searchPercentageActive = other.searchPercentageActive
+
+        return updateValueOnlyIfValid(
+            {
+                val ok = this.gene.copyValueFrom(other.gene)
+                if (ok){
+                    this.probability = other.probability
+                    this.searchPercentageActive = other.searchPercentageActive
+                }
+                ok
+            }, false
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

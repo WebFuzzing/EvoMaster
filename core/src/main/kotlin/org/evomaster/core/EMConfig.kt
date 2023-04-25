@@ -5,10 +5,12 @@ import joptsimple.OptionDescriptor
 import joptsimple.OptionParser
 import joptsimple.OptionSet
 import org.evomaster.client.java.controller.api.ControllerConstants
+import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.impact.impactinfocollection.GeneMutationSelectionMethod
+import org.evomaster.core.search.service.IdMapper
 import org.slf4j.LoggerFactory
 import java.net.MalformedURLException
 import java.net.URL
@@ -38,6 +40,11 @@ class EMConfig {
         private val log = LoggerFactory.getLogger(EMConfig::class.java)
 
         private const val headerRegex = "(.+:.+)|(^$)"
+
+        private const val targetSeparator = ";"
+        private const val targetNone = "\\b(None|NONE|none)\\b"
+        private const val targetPrefix = "\\b(Class|CLASS|class|Line|LINE|line|Branch|BRANCH|branch|MethodReplacement|METHODREPLACEMENT|method[r|R]eplacement|Success_Call|SUCCESS_CALL|success_[c|C]all|Local|LOCAL|local|PotentialFault|POTENTIALFAULT|potential[f|F]ault)\\b"
+        private const val targetExclusionRegex = "^($targetNone|($targetPrefix($targetSeparator$targetPrefix)*))\$"
 
         private const val maxTcpPort = 65535.0
 
@@ -336,7 +343,7 @@ class EMConfig {
         if (doCollectImpact && !enableTrackEvaluatedIndividual)
             throw IllegalArgumentException("Impact collection should be applied together with tracking EvaluatedIndividual")
 
-        if (baseTaintAnalysisProbability > 0 && !useMethodReplacement) {
+        if (isEnabledTaintAnalysis() && !useMethodReplacement) {
             throw IllegalArgumentException("Base Taint Analysis requires 'useMethodReplacement' option")
         }
 
@@ -511,9 +518,12 @@ class EMConfig {
                 throw IllegalArgumentException("Failed to handle property '${m.name}'", e)
             }
         }
+
+        // private set
+        excludedTargetsForImpactCollection = extractExcludedTargetsForImpactCollection()
     }
 
-    fun shouldGenerateSqlData() = generateSqlDataWithDSE || generateSqlDataWithSearch
+    fun shouldGenerateSqlData() = isMIO() && (generateSqlDataWithDSE || generateSqlDataWithSearch)
 
     fun experimentalFeatures(): List<String> {
 
@@ -1812,10 +1822,61 @@ class EMConfig {
     @Probability(activating = true)
     var probOfMutatingResponsesBasedOnActualResponse = 0.0
 
+    @Cfg("Number of threads for external request harvester. No more threads than numbers of processors will be used.")
+    @Min(1.0)
+    @Experimental
+    var externalRequestHarvesterNumberOfThreads: Int = 2
+
+
+    enum class ExternalRequestResponseSelectionStrategy {
+        /**
+         * Selects the exact matching response for the request.
+         */
+        EXACT,
+
+        /**
+         * If there is no exact match, selects the closest matching response from the same domain based on the
+         * request path.
+         */
+        CLOSEST,
+
+        /**
+         * If there is no exact match, selects a random response for the request from the captured responses
+         * regardless of the domain.
+         */
+        RANDOM
+    }
+
+    @Cfg("Harvested external request response selection strategy")
+    @Experimental
+    var externalRequestResponseSelectionStrategy = ExternalRequestResponseSelectionStrategy.EXACT
+
     @Cfg("Whether to employ constraints specified in API schema (e.g., OpenAPI) in test generation")
     @Experimental
     var enableSchemaConstraintHandling = false
 
+    @Cfg("a probability of enabling single insertion strategy to insert rows into database.")
+    @Experimental
+    @Probability(activating = true)
+    var probOfEnablingSingleInsertionForTable = 0.0
+
+    @Cfg("Whether to record info of executed actions during search")
+    @Experimental
+    var recordExecutedMainActionInfo = false
+
+    @Cfg("Specify a path to save all executed main actions to a file (default is 'executedMainActions.txt')")
+    @Experimental
+    var saveExecutedMainActionInfo = "executedMainActions.txt"
+
+
+    @Cfg("Specify prefixes of targets (e.g., MethodReplacement, Success_Call, Local) which will exclude in impact collection. " +
+            "Multiple exclusions should be separated with semicolon (i.e., ;).")
+    @Regex(targetExclusionRegex)
+    @Experimental
+    var excludeTargetsForImpactCollection = "${IdMapper.LOCAL_OBJECTIVE_KEY};${ObjectiveNaming.METHOD_REPLACEMENT}"
+
+    var excludedTargetsForImpactCollection : List<String> = extractExcludedTargetsForImpactCollection()
+        private set
 
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
@@ -1841,29 +1902,35 @@ class EMConfig {
         return (hours * 60 * 60) + (minutes * 60) + seconds
     }
 
-    fun trackingEnabled() = enableTrackEvaluatedIndividual || enableTrackIndividual
+    fun trackingEnabled() =  isMIO() && (enableTrackEvaluatedIndividual || enableTrackIndividual)
 
     /**
      * impact info can be collected when archive-based solution is enabled or doCollectImpact
      */
-    fun isEnabledImpactCollection() = algorithm == Algorithm.MIO && doCollectImpact || isEnabledArchiveGeneSelection()
+    fun isEnabledImpactCollection() = isMIO() && doCollectImpact || isEnabledArchiveGeneSelection()
 
     /**
      * @return whether archive-based gene selection is enabled
      */
-    fun isEnabledArchiveGeneSelection() = algorithm == Algorithm.MIO && probOfArchiveMutation > 0.0 && adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE
+    fun isEnabledArchiveGeneSelection() = isMIO() && probOfArchiveMutation > 0.0 && adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE
 
     /**
      * @return whether archive-based gene mutation is enabled based on the configuration, ie, EMConfig
      */
-    fun isEnabledArchiveGeneMutation() = algorithm == Algorithm.MIO && archiveGeneMutation != ArchiveGeneMutation.NONE && probOfArchiveMutation > 0.0
+    fun isEnabledArchiveGeneMutation() = isMIO() && archiveGeneMutation != ArchiveGeneMutation.NONE && probOfArchiveMutation > 0.0
 
     fun isEnabledArchiveSolution() = isEnabledArchiveGeneMutation() || isEnabledArchiveGeneSelection()
+
+
+    /**
+     * @return whether enable resource-based method
+     */
+    fun isEnabledResourceStrategy() = isMIO() && resourceSampleStrategy != ResourceSamplingStrategy.NONE
 
     /**
      * @return whether enable resource-dependency based method
      */
-    fun isEnabledResourceDependency() = probOfSmartSampling > 0.0 && resourceSampleStrategy != ResourceSamplingStrategy.NONE
+    fun isEnabledResourceDependency() = isEnabledSmartSampling() && isEnabledResourceStrategy()
 
     /**
      * @return whether to generate SQL between rest actions
@@ -1889,5 +1956,32 @@ class EMConfig {
         return externalServiceIPSelectionStrategy != ExternalServiceIPSelectionStrategy.NONE
     }
 
-    fun doHarvestActualResponse() : Boolean = probOfHarvestingResponsesFromActualExternalServices > 0 || probOfMutatingResponsesBasedOnActualResponse > 0
+
+    private fun extractExcludedTargetsForImpactCollection() : List<String>{
+        if (excludeTargetsForImpactCollection.equals("None", ignoreCase = true)) return emptyList()
+        val excluded = excludeTargetsForImpactCollection.split(targetSeparator).map { it.lowercase() }.toSet()
+        return IdMapper.ALL_ACCEPTED_OBJECTIVE_PREFIXES.filter { excluded.contains(it.lowercase()) }
+    }
+
+    fun isEnabledMutatingResponsesBasedOnActualResponse() = isMIO() && (probOfMutatingResponsesBasedOnActualResponse > 0)
+
+    fun isEnabledHarvestingActualResponse() : Boolean = isMIO() && (probOfHarvestingResponsesFromActualExternalServices > 0 || probOfMutatingResponsesBasedOnActualResponse > 0)
+
+    /**
+     * Check if the used algorithm is MIO.
+     * MIO is the default search algorithm in EM.
+     * Many techniques in EM are defined only for MIO, ie most improvements in EM are
+     * done as an extension of MIO.
+     */
+    fun isMIO() = algorithm == Algorithm.MIO
+
+    fun isEnabledTaintAnalysis() = isMIO() && baseTaintAnalysisProbability > 0
+
+    fun isEnabledSmartSampling() = isMIO() && probOfSmartSampling > 0
+
+    fun isEnabledWeightBasedMutation() = isMIO() && weightBasedMutationRate
+
+    fun isEnabledInitializationStructureMutation() = isMIO() && initStructureMutationProbability > 0 && maxSizeOfMutatingInitAction > 0
+
+    fun isEnabledResourceSizeHandling() = isMIO() && probOfHandlingLength> 0 && maxSizeOfHandlingResource > 0
 }

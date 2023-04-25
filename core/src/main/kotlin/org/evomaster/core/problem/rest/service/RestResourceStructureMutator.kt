@@ -51,7 +51,7 @@ class RestResourceStructureMutator : ApiWsStructureMutator() {
         individual as RestIndividual
         evaluatedIndividual as EvaluatedIndividual<RestIndividual>
 
-        val dohandleSize =  doEnableResourceSizeHandling() && (getAvailableMutator(individual).isEmpty() || randomness.nextBoolean(config.probOfHandlingLength))
+        val dohandleSize =  config.isEnabledResourceSizeHandling() && (getAvailableMutator(individual).isEmpty() || randomness.nextBoolean(config.probOfHandlingLength))
 
         val mutationType = if (dohandleSize)
             decideMutationType(evaluatedIndividual)
@@ -145,6 +145,9 @@ class RestResourceStructureMutator : ApiWsStructureMutator() {
     }
 
     override fun mutateInitStructure(individual: Individual, evaluatedIndividual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?, targets: Set<Int>) {
+        if (!config.isMIO())
+            throw IllegalStateException("resource-based solution currently is only enabled for MIO algorithm, but the algorithm is ${config.algorithm}")
+
         if (!randomness.nextBoolean(config.probOfSmartInitStructureMutator)){
             super.mutateInitStructure(individual, evaluatedIndividual, mutatedGenes, targets)
             return
@@ -613,11 +616,10 @@ class RestResourceStructureMutator : ApiWsStructureMutator() {
     override fun canApplyActionStructureMutator(individual: Individual): Boolean {
         individual as RestIndividual
         return super.canApplyActionStructureMutator(individual)  &&
-                (getAvailableMutator(individual, doEnableResourceSizeHandling()).isNotEmpty() &&
+                (getAvailableMutator(individual, config.isEnabledResourceSizeHandling()).isNotEmpty() &&
                         ((!dm.onlyIndependentResource())  &&  // if all resources are asserted independent, there is no point to do structure mutation
                                 dm.canMutateResource(individual))
                         )
     }
 
-    private fun doEnableResourceSizeHandling() = config.probOfHandlingLength> 0 && config.maxSizeOfHandlingResource > 0
 }

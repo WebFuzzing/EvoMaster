@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.externalservice.httpws
 
 import org.evomaster.core.problem.util.ParserDtoUtil.getJsonNodeFromText
+import java.net.URL
 import java.util.UUID
 
 /**
@@ -41,7 +42,7 @@ class HttpExternalServiceRequest(
     /**
      * get description of this an HTTP request to external service
      */
-    fun getDescription() = "$method:$absoluteURL[${headers.keys.joinToString(";") { "$it:${headers[it]}" }}]{${body?:"none"}}"
+    fun getDescription() = "$method::$absoluteURL::[${headers.keys.joinToString(";") { "$it:${headers[it]}" }}]::{${body?:"none"}}"
 
     fun getContentType() : String?{
         if (body == null) return null
@@ -58,5 +59,9 @@ class HttpExternalServiceRequest(
         // TODO might add other derived types
 
         return null
+    }
+
+    fun getHostName() : String{
+        return URL(absoluteURL).host
     }
 }

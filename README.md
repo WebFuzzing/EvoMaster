@@ -8,7 +8,8 @@
 ![CI](https://github.com/EMResearch/EvoMaster/workflows/CI/badge.svg)
 [![codecov](https://codecov.io/gh/EMResearch/EvoMaster/branch/master/graph/badge.svg)](https://codecov.io/gh/EMResearch/EvoMaster)
 [![DOI](https://zenodo.org/badge/92385933.svg)](https://zenodo.org/badge/latestdoi/92385933)
-
+[![License: LGPL v3](https://img.shields.io/badge/License-LGPL_v3-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0)
+[![Github All Releases](https://img.shields.io/github/downloads/emresearch/evomaster/total.svg)](https://github.com/EMResearch/EvoMaster/releases)
 
 
 ### Summary 
@@ -115,8 +116,8 @@ case studies in [EMB](https://github.com/EMResearch/EMB).
 Depending on the year, we might have funding for _postdoc_ and _PhD student_ positions to work on this project (in Oslo, Norway).
 
 Current positions:
-* 2023: PhD student positions. [Apply here.](https://www.kristiania.no/en/about-kristiania/vacant-positions/?rmpage=job&rmjob=592&rmlang=UK)
-* 2023: Postdoc position. [Apply here.](https://www.kristiania.no/om-kristiania/ledige-stillinger/?rmpage=job&rmjob=595&rmlang=NO) 
+* 2023: PhD student positions. [New calls](https://www.kristiania.no/om-kristiania/ledige-stillinger/?rmpage=job&rmjob=619&rmlang=NO).
+* 2023: Postdoc positions. New calls not announced yet.
 
 For questions on these positions, please contact Prof. Andrea Arcuri. 
 

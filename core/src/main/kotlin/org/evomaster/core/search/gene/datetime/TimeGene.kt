@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene.datetime
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
@@ -139,13 +140,16 @@ class TimeGene(
         }
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is TimeGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        this.hour.copyValueFrom(other.hour)
-        this.minute.copyValueFrom(other.minute)
-        this.second.copyValueFrom(other.second)
+
+        return updateValueOnlyIfValid(
+            {this.hour.copyValueFrom(other.hour)
+                    && this.minute.copyValueFrom(other.minute)
+                    && this.second.copyValueFrom(other.second)}, true
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

@@ -1094,7 +1094,7 @@ class RestActionBuilderV3Test{
         )
         checkNumOfRootGene(map, skipInEM, 74, 82,22, 60, 14)
 
-        checkNumResource(map, skipInEM, 56, 26)
+        checkNumResource(map, skipInEM, 56, 25)
 
     }
 
@@ -1132,7 +1132,7 @@ class RestActionBuilderV3Test{
     fun testFeaturesServices(enableConstraintHandling : Boolean){
         val map = loadAndAssertActions("/swagger/sut/features_service.json", 18, enableConstraintHandling = enableConstraintHandling)
         checkNumOfRootGene(map, listOf(),18, 37, 4, 33, 4)
-        checkNumResource(map, listOf(), 11, 1)
+        checkNumResource(map, listOf(), 11, 0)
     }
 
     @ParameterizedTest
