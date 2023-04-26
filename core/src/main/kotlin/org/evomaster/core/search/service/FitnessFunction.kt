@@ -54,7 +54,7 @@ abstract class FitnessFunction<T>  where T : Individual {
             executionInfoReporter.addLatestComputationOverhead(computation, time.evaluatedIndividuals)
         }
 
-        var ei = calculateIndividualWithPostHandling(individual, targets, a)
+        var ei = calculateIndividualCoverageWithStats(individual, targets, a)
 
         if(ei == null){
             /*
@@ -67,7 +67,7 @@ abstract class FitnessFunction<T>  where T : Individual {
             //let's wait a little, just in case...
             Thread.sleep(5_000)
 
-            ei = calculateIndividualWithPostHandling(individual, targets, a)
+            ei = calculateIndividualCoverageWithStats(individual, targets, a)
 
 
             if(ei == null){
@@ -95,7 +95,7 @@ abstract class FitnessFunction<T>  where T : Individual {
      */
     protected abstract fun doCalculateCoverage(individual: T, targets: Set<Int>) : EvaluatedIndividual<T>?
 
-    private fun calculateIndividualWithPostHandling(individual: T, targets: Set<Int>, actionsSize: Int) : EvaluatedIndividual<T>?{
+    private fun calculateIndividualCoverageWithStats(individual: T, targets: Set<Int>, actionsSize: Int) : EvaluatedIndividual<T>?{
 
         val ei = SearchTimeController.measureTimeMillis(
                 { t, ind ->
