@@ -81,6 +81,9 @@ class BaseModule(val args: Array<String>, val noTests: Boolean = false) : Abstra
         bind(ExecutionInfoReporter::class.java)
                 .asEagerSingleton()
 
+        bind(Minimizer::class.java)
+                .asEagerSingleton()
+
         //no longer needed if TestSuiteWriter is moved out?
 //        if(noTests){
 //            bind(TestCaseWriter::class.java)

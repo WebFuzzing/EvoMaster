@@ -1724,6 +1724,12 @@ class EMConfig {
     var addPreDefinedTests : Boolean = true
 
 
+    @Cfg("Apply a minimization phase to make the generated tests more readable." +
+            " Achieved coverage would stay the same." +
+            " Generating shorter test cases might come at the cost of having more test cases.")
+    var minimize : Boolean = true
+
+
     @Experimental
     @FilePath(true)
     @Regex("(.*jacoco.*\\.jar)|(^$)")

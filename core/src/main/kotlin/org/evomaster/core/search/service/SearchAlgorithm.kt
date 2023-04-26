@@ -34,6 +34,10 @@ abstract class SearchAlgorithm<T> where T : Individual {
     @Inject(optional = true)
     private lateinit var mutator: Mutator<T>
 
+    @Inject
+    private lateinit var minimizer: Minimizer
+
+
     private var lastSnapshot = 0
 
     protected fun getMutatator() : Mutator<T> {
@@ -78,6 +82,11 @@ abstract class SearchAlgorithm<T> where T : Individual {
     }
 
     private fun handleAfterSearch() {
+
+        if(config.minimize){
+            minimizer.minimizeActionsPerCoveredTargetInArchive()
+        }
+
         if(config.addPreDefinedTests) {
             for (ind in sampler.getPreDefinedIndividuals()) {
                 ff.calculateCoverage(ind)?.run {
@@ -88,8 +97,8 @@ abstract class SearchAlgorithm<T> where T : Individual {
     }
 
     private fun needsToSnapshot(): Boolean {
-        var isSnapshotEnabled = config.enableWriteSnapshotTests
-        var snapshotPeriod = config.writeSnapshotTestsIntervalInSeconds
+        val isSnapshotEnabled = config.enableWriteSnapshotTests
+        val snapshotPeriod = config.writeSnapshotTestsIntervalInSeconds
 
         return isSnapshotEnabled && time.getElapsedSeconds() - lastSnapshot > snapshotPeriod
     }
