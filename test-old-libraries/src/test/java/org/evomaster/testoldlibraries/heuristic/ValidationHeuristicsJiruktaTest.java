@@ -17,8 +17,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class ValidationHeuristicsJiruktaTest {
 
-    //TODO
-    //@EachPattern
 
     private static final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
 
