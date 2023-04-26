@@ -1,5 +1,7 @@
 package org.evomaster.client.java.instrumentation;
 
+import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
+
 import java.io.Serializable;
 
 /**
@@ -43,6 +45,18 @@ public class TargetInfo implements Serializable{
         }
         return new TargetInfo(theID, descriptiveId, value, actionIndex);
     }
+
+    public TargetInfo enforceMappedId(){
+        if(descriptiveId == null){
+            throw new IllegalStateException("Cannot enforce mapped id from records in which the descriptive id was removed");
+        }
+        if(mappedId != null){
+            return this;
+        }
+        int theID = ObjectiveRecorder.getMappedId(descriptiveId);
+        return new TargetInfo(theID, descriptiveId, value, actionIndex);
+    }
+
 
     public TargetInfo withNoDescriptiveId(){
         return new TargetInfo(mappedId, null, value, actionIndex);
