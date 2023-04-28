@@ -144,6 +144,8 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
     protected fun updateFitnessAfterEvaluation(targets: Set<Int>, individual: T, fv: FitnessValue) : TestResultsDto?{
         val ids = targetsToEvaluate(targets, individual)
 
+        FIXME
+
         val dto = rc.getTestResults(ids)
         if (dto == null) {
             log.warn("Cannot retrieve coverage")

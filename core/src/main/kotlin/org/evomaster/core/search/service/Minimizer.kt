@@ -7,14 +7,18 @@ import org.evomaster.core.search.Individual
 /**
  * Reduce/simplify the final test outputs
  */
-class Minimizer {
+class Minimizer<T: Individual> {
 
     @Inject
-    private lateinit var archive: Archive<*>
+    private lateinit var archive: Archive<T>
 
     /**
      * Based on the tests in the archive, update the archive by having, for each target T,
-     * the minimum number of actions needed to cover it
+     * the minimum number of actions needed to cover it.
+     *
+     * Using the same/similar kind of algorithm as explained in:
+     *
+     * "EvoSuite: On The Challenges of Test Case Generation in the Real World"
      */
     fun minimizeActionsPerCoveredTargetInArchive(){
 
@@ -24,7 +28,7 @@ class Minimizer {
 
         val beforeCovered = archive.numberOfCoveredTargets()
 
-        
+
 
 
         //TODO

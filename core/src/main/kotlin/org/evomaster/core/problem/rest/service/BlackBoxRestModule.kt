@@ -10,6 +10,7 @@ import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.remote.service.RemoteControllerImplementation
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FitnessFunction
+import org.evomaster.core.search.service.Minimizer
 import org.evomaster.core.search.service.Sampler
 
 class BlackBoxRestModule(
@@ -37,6 +38,13 @@ class BlackBoxRestModule(
 
         bind(object : TypeLiteral<Archive<*>>() {})
                 .to(object : TypeLiteral<Archive<RestIndividual>>() {})
+
+        bind(object : TypeLiteral<Minimizer<RestIndividual>>(){})
+                .asEagerSingleton()
+
+        bind(object : TypeLiteral<Minimizer<*>>(){})
+                .asEagerSingleton()
+
 
         if(usingRemoteController) {
             bind(RemoteController::class.java)

@@ -50,7 +50,11 @@ class RestModule(private val bindRemote : Boolean = true) : AbstractModule(){
         bind(object : TypeLiteral<Archive<*>>() {})
                 .to(object : TypeLiteral<Archive<RestIndividual>>() {})
 
+        bind(object : TypeLiteral<Minimizer<RestIndividual>>(){})
+                .asEagerSingleton()
 
+        bind(object : TypeLiteral<Minimizer<*>>(){})
+                .asEagerSingleton()
 
         bind(object : TypeLiteral<Mutator<RestIndividual>>() {})
                 .to(object : TypeLiteral<StandardMutator<RestIndividual>>(){})

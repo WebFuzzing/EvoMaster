@@ -95,6 +95,19 @@ abstract class FitnessFunction<T>  where T : Individual {
      */
     protected abstract fun doCalculateCoverage(individual: T, targets: Set<Int>) : EvaluatedIndividual<T>?
 
+    /**
+     * Compute the fitness function, but only for the covered targets (ie partial heuristics are ignored),
+     * and without collecting any general stats.
+     *
+     * This is an expensive operations, used for post-processing phases, eg test case minimization.
+     * Note that during the search we use heuristics to minimize the number of data to retrieve,
+     * so there the fitness value is just partial
+     */
+    fun computeWholeAchievedCoverageForPostProcessing(individual: T) : EvaluatedIndividual<T>?{
+
+        TODO
+    }
+
     private fun calculateIndividualCoverageWithStats(individual: T, targets: Set<Int>, actionsSize: Int) : EvaluatedIndividual<T>?{
 
         val ei = SearchTimeController.measureTimeMillis(

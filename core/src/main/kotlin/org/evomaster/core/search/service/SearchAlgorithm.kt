@@ -35,7 +35,7 @@ abstract class SearchAlgorithm<T> where T : Individual {
     private lateinit var mutator: Mutator<T>
 
     @Inject
-    private lateinit var minimizer: Minimizer
+    private lateinit var minimizer: Minimizer<T>
 
 
     private var lastSnapshot = 0
