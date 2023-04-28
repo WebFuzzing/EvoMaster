@@ -41,6 +41,13 @@ public class ValidatorClassReplacement extends ThirdPartyMethodReplacementClass 
 
         Object result = null;
 
+        /*
+            Note: it is essential that is called BEFORE the object is validated.
+            The validation of objects could call methods on them, like getters, making
+            this value invalid.
+         */
+        String lastLine = ExecutionTracer.getLastExecutedStatement(); //can be null
+
         try {
             result = original.invoke(caller, object, groups);
         } catch (IllegalAccessException e){
@@ -60,7 +67,6 @@ public class ValidatorClassReplacement extends ThirdPartyMethodReplacementClass 
             if(isConstrained){
                 //compute branch distance on the object to validate
                 String actionName = ExecutionTracer.getActionName(); //SHOULD NOT BE NULL
-                String lastLine = ExecutionTracer.getLastExecutedStatement(); //can be null
                 String idTemplate = ObjectiveNaming.METHOD_REPLACEMENT
                         + "__" + objectClass.getName()+"__" + actionName + "__" + lastLine;
 
