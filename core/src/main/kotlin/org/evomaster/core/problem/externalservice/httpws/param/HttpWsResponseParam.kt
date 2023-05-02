@@ -2,6 +2,7 @@ package org.evomaster.core.problem.externalservice.httpws.param
 
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.externalservice.param.ResponseParam
+import org.evomaster.core.problem.util.HttpWsUtil.getContentType
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
@@ -48,5 +49,28 @@ class HttpWsResponseParam (
         if (index == -1) return false
         status.index = index
         return true
+    }
+
+    /**
+     * @return HTTP status code
+     */
+    fun getHttpStatusCode() : Int = status.values[status.index]
+
+    /**
+     * @return whether the HTTP status code is part of success family
+     */
+    fun isStatusCodeInSuccessFamily() : Boolean = getHttpStatusCode() in 200..299
+
+
+    /**
+     * @return whether the HTTP status code is part of client error family
+     */
+    fun isStatusCodeInClientErrorFamily() : Boolean = getHttpStatusCode() in 400..499
+
+    /**
+     * @return content type of the mocked response
+     */
+    fun getResponseContentType() : String{
+        return getContentType(responseType.getValueAsRawString())
     }
 }
