@@ -83,6 +83,16 @@ class Archive<T> where T : Individual {
     private var lastChosen: Int? = null
 
 
+    /**
+     * Kill all populations.
+     * This is meanly needed for minimization phase, in which archive needs to be cleared and
+     * tests re-added to it
+     */
+    fun clearPopulations(){
+        populations.clear()
+    }
+
+
     fun extractSolution(): Solution<T> {
         val uniques = getUniquePopulation()
 

@@ -45,7 +45,7 @@ abstract class FitnessFunction<T>  where T : Individual {
     /**
      * @return null if there were problems in calculating the coverage
      */
-    fun calculateCoverage(individual: T, targets: Set<Int> = setOf(), allCovered: Boolean = false) : EvaluatedIndividual<T>?{
+    fun calculateCoverage(individual: T, targets: Set<Int> = setOf()) : EvaluatedIndividual<T>?{
 
         val a = individual.seeMainExecutableActions().count()
 
