@@ -45,6 +45,8 @@ public class ValidatorClassReplacement extends ThirdPartyMethodReplacementClass 
             Note: it is essential that is called BEFORE the object is validated.
             The validation of objects could call methods on them, like getters, making
             this value invalid.
+
+            FIXME this still does not work
          */
         String lastLine = ExecutionTracer.getLastExecutedStatement(); //can be null
 
