@@ -42,13 +42,15 @@ public class ValidatorClassReplacement extends ThirdPartyMethodReplacementClass 
         Object result = null;
 
         /*
-            Note: it is essential that is called BEFORE the object is validated.
-            The validation of objects could call methods on them, like getters, making
-            this value invalid.
-
-            FIXME this still does not work
+            Looking at last line is too problematic.
+            If this is done on @Valid check of REST controller, then no code SUT is executed yet, apart
+            from the init and setters of the DTOs.
+            This messes up everything.
+            Looking at Thread.currentThread().getStackTrace() does not help much either, as still would be
+            difficult to distinguish when @Valid is on method calls inside the SUTs...
+            so, might be best to simply ignore this
          */
-        String lastLine = ExecutionTracer.getLastExecutedStatement(); //can be null
+        String lastLine = "";//ExecutionTracer.getLastExecutedStatement(); //can be null
 
         try {
             result = original.invoke(caller, object, groups);
@@ -70,6 +72,7 @@ public class ValidatorClassReplacement extends ThirdPartyMethodReplacementClass 
                 //compute branch distance on the object to validate
                 String actionName = ExecutionTracer.getActionName(); //SHOULD NOT BE NULL
                 String idTemplate = ObjectiveNaming.METHOD_REPLACEMENT
+                        + "__" + "VALIDATE"
                         + "__" + objectClass.getName()+"__" + actionName + "__" + lastLine;
 
                 /*
