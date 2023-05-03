@@ -738,7 +738,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
     }
 
     protected fun restActionResultHandling(
-        individual: RestIndividual, targets: Set<Int>, actionResults: List<ActionResult>, fv: FitnessValue
+        individual: RestIndividual, targets: Set<Int>, allCovered: Boolean, actionResults: List<ActionResult>, fv: FitnessValue
     ): TestResultsDto? {
 
         if (actionResults.any { it is RestCallResult && it.getTcpProblem() }) {
@@ -754,7 +754,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
             return null
         }
 
-        val dto = updateFitnessAfterEvaluation(targets, individual as T, fv)
+        val dto = updateFitnessAfterEvaluation(targets, allCovered, individual as T, fv)
             ?: return null
 
         handleExtra(dto, fv)

@@ -43,9 +43,9 @@ abstract class FitnessFunction<T>  where T : Individual {
     }
 
     /**
-     * @return [null] if there were problems in calculating the coverage
+     * @return null if there were problems in calculating the coverage
      */
-    fun calculateCoverage(individual: T, targets: Set<Int> = setOf()) : EvaluatedIndividual<T>?{
+    fun calculateCoverage(individual: T, targets: Set<Int> = setOf(), allCovered: Boolean = false) : EvaluatedIndividual<T>?{
 
         val a = individual.seeMainExecutableActions().count()
 
@@ -89,11 +89,14 @@ abstract class FitnessFunction<T>  where T : Individual {
 
 
     /**
-     * calculated coverage with specified targets
+     * calculated coverage with specified targets.
      *
-     * @return [null] if there were problems in calculating the coverage
+     * if [allCovered] is true, then ids are ignored, and info on all fully-covered targets
+     * are returned. Also, in such case, we do not compute any extra info needed for the search
+     *
+     * @return null if there were problems in calculating the coverage
      */
-    protected abstract fun doCalculateCoverage(individual: T, targets: Set<Int>) : EvaluatedIndividual<T>?
+    protected abstract fun doCalculateCoverage(individual: T, targets: Set<Int>, allCovered: Boolean) : EvaluatedIndividual<T>?
 
     /**
      * Compute the fitness function, but only for the covered targets (ie partial heuristics are ignored),
@@ -104,8 +107,7 @@ abstract class FitnessFunction<T>  where T : Individual {
      * so there the fitness value is just partial
      */
     fun computeWholeAchievedCoverageForPostProcessing(individual: T) : EvaluatedIndividual<T>?{
-
-        TODO
+        return doCalculateCoverage(individual, setOf(), true)
     }
 
     private fun calculateIndividualCoverageWithStats(individual: T, targets: Set<Int>, actionsSize: Int) : EvaluatedIndividual<T>?{
@@ -115,7 +117,7 @@ abstract class FitnessFunction<T>  where T : Individual {
                     time.reportExecutedIndividualTime(t, actionsSize)
                     ind?.executionTimeMs = t
                 },
-                {doCalculateCoverage(individual, targets)}
+                {doCalculateCoverage(individual, targets, false)}
         )
         // plugin execution info reporter here, to avoid the time spent by execution reporter
         handleExecutionInfo(ei)

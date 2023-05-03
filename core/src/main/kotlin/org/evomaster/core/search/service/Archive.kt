@@ -102,7 +102,7 @@ class Archive<T> where T : Individual {
             This is not an issue, as each individual is copied
             when sampled.
             Here, as an individual can go to many populations,
-            we want to avoiding it counting it several times.
+            we want to avoid counting it several times.
          */
         val uniques = mutableSetOf<EvaluatedIndividual<T>>()
 

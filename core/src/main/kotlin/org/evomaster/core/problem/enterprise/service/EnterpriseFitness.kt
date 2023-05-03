@@ -141,12 +141,15 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
         }
     }
 
-    protected fun updateFitnessAfterEvaluation(targets: Set<Int>, individual: T, fv: FitnessValue) : TestResultsDto?{
-        val ids = targetsToEvaluate(targets, individual)
+    protected fun updateFitnessAfterEvaluation(targets: Set<Int>, allCovered: Boolean, individual: T, fv: FitnessValue) : TestResultsDto?{
 
-        FIXME
+        val dto = if(allCovered){
+                rc.getTestResults(allCovered = true)
+        } else {
+            val ids = targetsToEvaluate(targets, individual)
+            rc.getTestResults(ids)
+        }
 
-        val dto = rc.getTestResults(ids)
         if (dto == null) {
             log.warn("Cannot retrieve coverage")
             return null
