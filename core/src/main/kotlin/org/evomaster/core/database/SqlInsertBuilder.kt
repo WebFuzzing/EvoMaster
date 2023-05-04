@@ -340,7 +340,8 @@ class SqlInsertBuilder(
             enumValuesAsStrings = mergedEnumValuesAsStrings,
             lowerBound = mergedLowerBound,
             upperBound = mergedUpperBound,
-            likePatterns = mergedLikePatterns
+            likePatterns = mergedLikePatterns,
+            isNotBlank = extra.constraints.isNotBlank
         )
     }
 
