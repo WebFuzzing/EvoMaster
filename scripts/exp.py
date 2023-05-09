@@ -136,7 +136,7 @@ BASE_SEED = 12000
 # Warning: if this value is under-estimated, it will happen the cluster will kill jobs
 # that are not finished withing the specified time.
 # At the moment this is used only on cluster
-TIMEOUT_MINUTES = 1
+TIMEOUT_MINUTES = -1
 
 # How many scripts M we want the N jobs to be divided into.
 # Note: on cluster we can at most submit 400 scripts.
@@ -255,19 +255,19 @@ SUTS = [
     Sut("timbuctoo", 1, JDK_11),
     Sut("graphql-ncs", 1, JDK_8),
     Sut("graphql-scs", 1, JDK_8),
-    # REST NodeJS
-    Sut("js-rest-ncs", 1, JS),
-    Sut("js-rest-scs", 1, JS),
-    Sut("cyclotron", 1, JS),
-    Sut("disease-sh-api", 1, JS),
-    Sut("realworld-app", 1, JS),
-    Sut("spacex-api", 1, JS),
-    # GRAPHQL NodeJS
-    Sut("react-finland", 1, JS),
-    Sut("ecommerce-server", 1, JS),
     # RPC
     Sut("rpc-thrift-ncs", 1, JDK_8),
     Sut("rpc-thrift-scs", 1, JDK_8),
+    # REST NodeJS
+    #Sut("js-rest-ncs", 1, JS),
+    #Sut("js-rest-scs", 1, JS),
+    #Sut("cyclotron", 1, JS),
+    #Sut("disease-sh-api", 1, JS),
+    #Sut("realworld-app", 1, JS),
+    #Sut("spacex-api", 1, JS),
+    # GRAPHQL NodeJS
+    #Sut("react-finland", 1, JS),
+    #Sut("ecommerce-server", 1, JS),
     # .NET
     # Sut("cs-rest-ncs",1,DOTNET_3),
     # Sut("cs-rest-scs",1,DOTNET_3),
