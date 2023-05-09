@@ -87,72 +87,118 @@ EXP_ID = "evomaster"
 
 
 
-if len(sys.argv) < 9 or len(sys.argv) > 11:
+if len(sys.argv) < 5:
     print(
-        "Usage:\n<nameOfScript>.py <cluster> <baseSeed> <dir> <minSeed> <maxSeed> <budget> <timeoutMinutes> <nJobs> <configFilter?> <sutFilter?>")
+        # old "Usage:\n<nameOfScript>.py <cluster> <baseSeed> <dir> <minSeed> <maxSeed> <budget> <timeoutMinutes> <nJobs> <configFilter?> <sutFilter?>")
+        "Usage:\n<nameOfScript>.py <dir> <minSeed> <maxSeed> <budget> named_param=? ... named_param=?")
     exit(1)
 
 
-### input parameters
+### MAIN input parameters ###
+
+
+# When creating a new set of experiments, all needed files will be saved in a folder
+BASE_DIR = os.path.abspath(sys.argv[1])
+
+# Experiments are repeated a certain number of times, with different seed for the
+# random generator. This specifies the starting seed.
+MIN_SEED = int(sys.argv[2])
+
+# Max seed, included. For example, if running min=10 and max=39, each experiment is
+# going to be repeated 30 times, starting from seed 10 to seed 39 (both included).
+MAX_SEED = int(sys.argv[3])
+
+# For how long to run the search. If it is a number, then it will use number of actions as stopping criterion.
+# However, if it contains either "s", "m", or "h", then time will be used as stopping criterion (see --maxTime)
+BUDGET = str(sys.argv[4])
+
+
+### main input parameter validation
+if MIN_SEED > MAX_SEED:
+    print("ERROR: min seed is greater than max seed")
+    exit(1)
+
+
+
+### Named parameters ###
 
 # Whether .sh are meant to run on cluster or locally
-CLUSTER = sys.argv[1].lower() in ("yes", "true", "t")
+CLUSTER = False
 
 # base seeds used for EM runs. TCP port bindings will be based on such seed.
 # If running new experiments while some previous are still running, to avoid TCP port
 # conflict, can use an higher base seed. Each EM run reserves 10 ports. So, if you run
 # 500 jobs with starting seed 10000, you will end up using ports up to 15000
-BASE_SEED = int(sys.argv[2])
+BASE_SEED = 12000
 
-# When creating a new set of experiments, all needed files will be saved in a folder
-BASE_DIR = os.path.abspath(sys.argv[3])
-
-# Experiments are repeated a certain number of times, with different seed for the
-# random generator. This specify the starting seed.
-MIN_SEED = int(sys.argv[4])
-
-# Max seed, included. For example, if running min=10 and max=39, each experiment is
-# going to be repeated 30 times, starting from seed 10 to seed 39 (both included).
-MAX_SEED = int(sys.argv[5])
-
-# For how long to run the search. If it is a number, then it will use number of actions as stopping criterion.
-# However, if it contains either "s", "m", or "h", then time will be used as stopping criterion (see --maxTime)
-BUDGET = str(sys.argv[6])
 
 # How many minutes we expect each EM run to last AT MOST.
 # Warning: if this value is under-estimated, it will happen the cluster will kill jobs
 # that are not finished withing the specified time.
 # At the moment this is used only on cluster
-TIMEOUT_MINUTES = int(sys.argv[7])
+TIMEOUT_MINUTES = 1
 
 # How many scripts M we want the N jobs to be divided into.
 # Note: on cluster we can at most submit 400 scripts.
 # Also note that in the same .sh script there can be experiments only for a single SUT.
-NJOBS = int(sys.argv[8])
+NJOBS = 100
 
-# An optional string to filter CONFIGS to be included.
+# String to filter CONFIGS to be included.
 # A string could refer to multiple CONFIGS separated by a `,` like a,b
-# None or `all` represents all CONFIGS should be included.
+# None represents all CONFIGS should be included.
 # Default is None.
 CONFIGFILTER = None
-if len(sys.argv) > 9:
-    CONFIGFILTER = str(sys.argv[9])
 
 #
 # An optional string to filter SUTs to be included based on their names
 # A string could refer to multiple SUTs separated by a `,` like a,b
 # Note that
-# None or `all` represents all SUTs should be included
+# None represents all SUTs should be included
 # and only consider unique ones, eg, create one experiment setting for a,a
 # Default is None
 SUTFILTER = None
-if len(sys.argv) > 10:
-    SUTFILTER = str(sys.argv[10])
 
-# input parameter validation
-if MIN_SEED > MAX_SEED:
-    print("ERROR: min seed is greater than max seed")
-    exit(1)
+
+### Derived named variables ###
+
+if len(sys.argv) > 5:
+    # There might be better ways to build such map in Python...
+    options = sys.argv[5:len(sys.argv)]
+    keys   = [x.lower() for x in list(map(lambda z: z.split("=")[0], options))]
+    values = list(map(lambda z: z.split("=")[1], options))
+    kv = dict(zip(keys,values))
+
+    if "cluster" in kv:
+        CLUSTER = kv["cluster"].lower() in ("yes", "true", "t")
+
+    if "seed" in kv:
+        BASE_SEED = int(kv["seed"])
+
+    if "timeout" in kv:
+        TIMEOUT_MINUTES = int(kv["timeout"])
+
+    if "njobs" in kv:
+        NJOBS = int(kv["njobs"])
+
+    if "configfilter" in kv:
+        CONFIGFILTER = kv["configfilter"]
+
+    if "sutfilter" in kv:
+        SUTFILTER = kv["sutfilter"]
+
+
+#### Printing Summary of Options ####
+print("*Configurations*")
+print("BASE_DIR: " + str(BASE_DIR))
+print("MIN_SEED: " + str(MIN_SEED))
+print("MAX_SEED: " + str(MAX_SEED))
+print("BUDGET: " + str(BUDGET))
+print("seed: " + str(BASE_SEED))
+print("timeout: " + str(TIMEOUT_MINUTES))
+print("njobs: " + str(NJOBS))
+print("configfilter: " + str(CONFIGFILTER))
+print("sutfilter: " + str(SUTFILTER))
+
 
 if not os.path.isdir(BASE_DIR):
     print("creating folder: " + BASE_DIR)
@@ -229,7 +275,7 @@ SUTS = [
     # Sut("menu-api",1,DOTNET_3)
 ]
 
-if SUTFILTER is not None and SUTFILTER.lower() != "all":
+if SUTFILTER is not None:
     filteredsut = []
 
     for s in list(set(SUTFILTER.split(","))):
@@ -554,8 +600,8 @@ def writeWithHeadAndFooter(code, port, sut, timeout):
 
 
 
-def createOneJob(state, sut, seed, setting):
-    code = addJobBody(state.port, sut, seed, setting)
+def createOneJob(state, sut, seed, setting, configName):
+    code = addJobBody(state.port, sut, seed, setting, configName)
     state.updateBudget(sut.timeWeight)
     state.jobsLeft -= 1
     state.opened = True
@@ -573,7 +619,43 @@ def getJavaCommand(sut):
     return JAVA
 
 
-def addJobBody(port, sut, seed, setting):
+last_generated_ip = "127.0.0.2"
+def generate_ip():
+    global last_generated_ip
+    tokens = last_generated_ip.split(".")
+
+    if len(tokens) != 4:
+        pass
+
+    if int(tokens[0]) != 127:
+        pass
+
+    for n in range(len(tokens)-1, 0, -1):
+        part = int(tokens[n])
+        if n == 3:
+            part += 20
+            if part < 255:
+                tokens[n] = str(part)
+                for m in range(n + 1, len(tokens) -1):
+                    tokens[m] = "0"
+                break
+            elif part >= 255:
+                tokens[n] = "1"
+        elif n < 3:
+            part += 1
+            if part < 255:
+                tokens[n] = str(part)
+                for m in range(n+1, len(tokens) - 1):
+                    tokens[m] = "0"
+                break
+            elif part >= 255:
+                tokens[n] = "1"
+
+    ip = "{}.{}.{}.{}".format(tokens[0], tokens[1], tokens[2], tokens[3])
+    last_generated_ip = ip
+    return ip
+
+def addJobBody(port, sut, seed, setting, configName):
     script = io.StringIO()
 
     em_log = LOG_DIR + "/log_em_" + sut.name + "_" + str(port) + ".txt"
@@ -596,6 +678,7 @@ def addJobBody(port, sut, seed, setting):
 
     params += " --testSuiteFileName=EM_" + label + "_" + str(seed) + "_Test"
     params += " --labelForExperiments=" + label
+    params += " --labelForExperimentConfigs=" + configName
 
     identifier = "_" + sut.name  + "_" + label + "_" + str(seed)
 
@@ -620,6 +703,8 @@ def addJobBody(port, sut, seed, setting):
     params += " --testSuiteSplitType=NONE"
     params += " --exportCoveredTarget=true"
     params += " --coveredTargetFile="+REPORT_DIR+"/covered_target_file" + identifier + ".txt"
+    params += " --externalServiceIP=" + generate_ip()
+    params += " --probOfHarvestingResponsesFromActualExternalServices=0"  # this adds way too much noise to results
 
 
     JAVA = getJavaCommand(sut)
@@ -645,10 +730,10 @@ def createJobs():
     CONFIGS = getConfigs()
 
     ## filter configs if specified
-    if CONFIGFILTER is not None and CONFIGFILTER.lower() != "all":
+    if CONFIGFILTER is not None:
         filteredconfigs = []
         for c in list(set(CONFIGFILTER.split(","))):
-            found = list(filter(lambda x: x.filterKey.lower() == c.lower(), CONFIGS))
+            found = list(filter(lambda x: x.name.lower() == c.lower(), CONFIGS))
             if len(found) == 0:
                 print("ERROR: cannot find the specified config: "+c)
                 exit(1)
@@ -687,7 +772,7 @@ def createJobs():
 
                     # first run in current script: we need to create all the initializing preambles
                     if state.counter == 0:
-                        code = createOneJob(state, sut, seed, setting)
+                        code = createOneJob(state, sut, seed, setting, config.name)
 
                     # can we add this new run to the current opened script?
                     elif(
@@ -703,13 +788,13 @@ def createJobs():
                             # we could just add those few runs to the current script.
                             (NRUNS_PER_SUT - completedForSut < 0.3 * state.perJob / sut.timeWeight)
                     ):
-                        code += addJobBody(state.port, sut, seed, setting)
+                        code += addJobBody(state.port, sut, seed, setting, config.name)
                         state.updateBudget(sut.timeWeight)
 
                     else:
                         writeWithHeadAndFooter(code, state.port, sut, state.getTimeoutMinutes())
                         state.resetTmpForNewRun()
-                        code = createOneJob(state, sut, seed, setting)
+                        code = createOneJob(state, sut, seed, setting, config.name)
 
                     # keep track that a new run has been handled
                     completedForSut += 1
@@ -742,8 +827,11 @@ class ParameterSetting:
 # Each Config object has a list of ParameterSetting objects
 class Config:
     # settings is an array of ParameterSetting objects
-    def __init__(self, settings, filterKey=None):
-        self.filterKey = filterKey
+    def __init__(self, settings, name="exp"):
+        if " " in name:
+            print("Config name must have no space. Wrong value: " + name)
+            exit(1)
+        self.name = name
         self.settings = settings
         self.numOfSettings = 1
         for s in self.settings:
@@ -784,6 +872,8 @@ def is_float(input):
     except ValueError:
         return False
     return True
+
+
 
 
 ############################################################################
