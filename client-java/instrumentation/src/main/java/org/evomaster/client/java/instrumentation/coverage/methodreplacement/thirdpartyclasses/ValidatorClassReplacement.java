@@ -41,6 +41,17 @@ public class ValidatorClassReplacement extends ThirdPartyMethodReplacementClass 
 
         Object result = null;
 
+        /*
+            Looking at last line is too problematic.
+            If this is done on @Valid check of REST controller, then no code SUT is executed yet, apart
+            from the init and setters of the DTOs.
+            This messes up everything.
+            Looking at Thread.currentThread().getStackTrace() does not help much either, as still would be
+            difficult to distinguish when @Valid is on method calls inside the SUTs...
+            so, might be best to simply ignore this
+         */
+        String lastLine = "";//ExecutionTracer.getLastExecutedStatement(); //can be null
+
         try {
             result = original.invoke(caller, object, groups);
         } catch (IllegalAccessException e){
@@ -60,8 +71,8 @@ public class ValidatorClassReplacement extends ThirdPartyMethodReplacementClass 
             if(isConstrained){
                 //compute branch distance on the object to validate
                 String actionName = ExecutionTracer.getActionName(); //SHOULD NOT BE NULL
-                String lastLine = ExecutionTracer.getLastExecutedStatement(); //can be null
                 String idTemplate = ObjectiveNaming.METHOD_REPLACEMENT
+                        + "__" + "VALIDATE"
                         + "__" + objectClass.getName()+"__" + actionName + "__" + lastLine;
 
                 /*
