@@ -97,21 +97,31 @@ public abstract class ThirdPartyMethodReplacementClass implements MethodReplacem
 
             for (int i = start; i < end; i++) {
                 if (annotations[i].length > 0) {
-                    Class<?> klazz = ReplacementUtils.getCastedToThirdParty(annotations[i]);
+                    Class<?> klazz = ReplacementUtils.getCastedToThirdParty(loader,annotations[i]);
                     if (klazz != null)
                         reducedInputs[i - start] = klazz;
                 }
             }
+            for(int i=0; i<reducedInputs.length; i++){
+                try {
+                    //TODO might no longer be needed after change to getCastedToThirdParty
+                    reducedInputs[i] = loader.loadClass(reducedInputs[i].getName());
+                } catch (ClassNotFoundException e) {
+                    //shouldn't really happen...
+                }
+            }
+
 
             Class<?> targetClass = getTargetClass(loader);
             Method targetMethod;
+            String replacementMethodName = ReplacementUtils.getPossiblyModifiedName(m);
             try {
                 //this will not return private methods
-                targetMethod = targetClass.getMethod(m.getName(), reducedInputs);
+                targetMethod = targetClass.getMethod(replacementMethodName, reducedInputs);
             } catch (NoSuchMethodException e) {
                 try {
                     //this would return private methods, but not public in superclasses
-                    targetMethod = targetClass.getDeclaredMethod(m.getName(), reducedInputs);
+                    targetMethod = targetClass.getDeclaredMethod(replacementMethodName, reducedInputs);
                 } catch (NoSuchMethodException noSuchMethodException) {
                     throw new RuntimeException("BUG in EvoMaster: " + e);
                 }

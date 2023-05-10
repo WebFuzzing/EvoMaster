@@ -37,8 +37,10 @@ where T : Gene {
         )
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         //TODO
+
+        return true
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

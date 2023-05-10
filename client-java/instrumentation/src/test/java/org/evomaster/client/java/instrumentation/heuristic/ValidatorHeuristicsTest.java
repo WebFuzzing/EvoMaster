@@ -1,6 +1,7 @@
 package org.evomaster.client.java.instrumentation.heuristic;
 
 import org.evomaster.client.java.instrumentation.heuristic.validator.javax.*;
+import org.evomaster.client.java.instrumentation.shared.TaintInputName;
 import org.junit.jupiter.api.Test;
 
 import javax.validation.ConstraintViolation;
@@ -382,4 +383,24 @@ class ValidatorHeuristicsTest {
         assertTrue(t2.isTrue());
     }
 
+
+    @Test
+    public void testPattern(){
+
+        PatternBean bean = new PatternBean();
+
+        Truthness t0 = ValidatorHeuristics.computeTruthness(validator, bean);
+        assertTrue(t0.isTrue()); //null is truthy
+
+        bean.foo = "bar";
+        Truthness t1 = ValidatorHeuristics.computeTruthness(validator, bean);
+        assertTrue(t1.isFalse());
+
+        bean.foo = "foo";
+        Truthness t2 = ValidatorHeuristics.computeTruthness(validator, bean);
+        assertTrue(t2.isTrue());
+
+        bean.foo = TaintInputName.getTaintName(0);
+        ValidatorHeuristics.computeTruthness(validator, bean); //should not crash
+    }
 }

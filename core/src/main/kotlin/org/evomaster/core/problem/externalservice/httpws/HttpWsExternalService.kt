@@ -8,6 +8,7 @@ import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemp
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
+import org.evomaster.core.problem.util.HttpWsUtil
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.*
@@ -30,7 +31,7 @@ class HttpWsExternalService(
         private const val WIREMOCK_DEFAULT_RESPONSE_CODE = 404
         private const val WIREMOCK_DEFAULT_RESPONSE_MESSAGE = "Not Found"
 
-        private val log: Logger = LoggerFactory.getLogger(HttpWsExternalServiceHandler::class.java)
+        private val log: Logger = LoggerFactory.getLogger(HttpWsExternalService::class.java)
     }
 
     /**
@@ -53,10 +54,8 @@ class HttpWsExternalService(
 
             if (!externalServiceInfo.isHttp() && !externalServiceInfo.isHttps())
                 LoggingUtil.uniqueWarn(log, "do not get explicit protocol for address ($ip)")
-            val applyHttps =
-                externalServiceInfo.isHttps() || (!externalServiceInfo.isHttp() && externalServiceInfo.isDerivedHttps())
 
-            if (applyHttps) {
+            if (isHttps()) {
                 config.httpsPort(port)
             } else {
                 config.port(port)
@@ -84,6 +83,10 @@ class HttpWsExternalService(
     fun getWMDefaultMessage() = WIREMOCK_DEFAULT_RESPONSE_MESSAGE
     fun getWMDefaultConnectionHeader() = "close"
 
+    fun getWMDefaultContentTypeHeader() = HttpWsUtil.getTextPlainContentType()
+
+    fun isHttps() = externalServiceInfo.isHttps() || (!externalServiceInfo.isHttp() && externalServiceInfo.isDerivedHttps())
+
     /**
      * @return the default response setup for WM instance
      */
@@ -110,10 +113,15 @@ class HttpWsExternalService(
     }
 
     /**
-     * Return the running port of WireMock instance
+     * Return the running port of WireMock instance depending
+     * on the protocols HTTP/HTTPS
      */
     fun getWireMockPort(): Int {
-        return wireMockServer!!.options.portNumber()
+        return if (isHttps()) {
+            wireMockServer!!.options.httpsSettings().port()
+        } else {
+            wireMockServer!!.options.portNumber()
+        }
     }
 
     fun getWireMockServer(): WireMockServer {

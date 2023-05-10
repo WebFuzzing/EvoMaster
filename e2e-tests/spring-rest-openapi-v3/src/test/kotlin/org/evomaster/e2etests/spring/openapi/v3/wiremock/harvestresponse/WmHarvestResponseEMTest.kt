@@ -1,6 +1,8 @@
 package org.evomaster.e2etests.spring.openapi.v3.wiremock.harvestresponse
 
 import com.foo.rest.examples.spring.openapi.v3.wiremock.harvestresponse.WmHarvestResponseController
+import com.foo.rest.examples.spring.openapi.v3.wiremock.harvestresponse.WmHarvestResponseRest.Companion.HARVEST_FOUND
+import com.foo.rest.examples.spring.openapi.v3.wiremock.harvestresponse.WmHarvestResponseRest.Companion.HARVEST_NOT_FOUND
 import org.evomaster.ci.utils.CIUtils
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.HttpVerb
@@ -30,18 +32,22 @@ class WmHarvestResponseEMTest : SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "WmHarvestResponseEM",
             "org.foo.WmHarvestResponseEM",
-            1000,
+            1500,
             !CIUtils.isRunningGA(),
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")
                 args.add("USER")
                 args.add("--externalServiceIP")
-                args.add("127.0.0.22")
+                args.add("127.0.0.3")
                 args.add("--probOfHarvestingResponsesFromActualExternalServices")
                 args.add("0.9")
                 args.add("--probOfMutatingResponsesBasedOnActualResponse")
                 args.add("0.1")
+                args.add("--probOfPrioritizingSuccessfulHarvestedActualResponses")
+                args.add("0.9")
+                args.add("--externalRequestResponseSelectionStrategy")
+                args.add("RANDOM")
 
                 val solution = initAndRun(args)
 
@@ -50,14 +56,20 @@ class WmHarvestResponseEMTest : SpringTestBase() {
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/harvestresponse/images", "MORE THAN 10")
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/harvestresponse/images", "NONE")
 
-                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/harvestresponse/grch37Example", "Found harvested response")
-                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/harvestresponse/grch37Example", "Cannot find harvested response")
+                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/harvestresponse/grch37Example", HARVEST_FOUND)
+                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/harvestresponse/grch37Example", HARVEST_NOT_FOUND)
+
+                assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/wm/harvestresponse/grch37Annotation", HARVEST_FOUND)
+                assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/wm/harvestresponse/grch37Annotation", HARVEST_FOUND)
+
+                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/harvestresponse/grch37Id", HARVEST_FOUND)
+                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/harvestresponse/grch37Id", HARVEST_NOT_FOUND)
 
 //                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/harvestresponse/users", ">10")
 //                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/harvestresponse/users", "<10")
 //                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/harvestresponse/users", "which has foo user")
             },
-            3
+            5
         )
     }
 

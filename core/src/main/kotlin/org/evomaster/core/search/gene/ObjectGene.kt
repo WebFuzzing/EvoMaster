@@ -187,7 +187,7 @@ class ObjectGene(
         return additionalFields!!.any { it.first.value == fieldToAdd.first.value}
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is ObjectGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
@@ -195,17 +195,28 @@ class ObjectGene(
         if (other.isFixed != isFixed)
             throw IllegalArgumentException("cannot copy value for ObjectGene if their isFixed is different")
 
-        for (i in fixedFields.indices) {
-            this.fixedFields[i].copyValueFrom(other.fixedFields[i])
-        }
+        val updateOk = updateValueOnlyIfValid(
+            {
+                var ok = true
 
-        if (isFixed) return
+                for (i in fixedFields.indices) {
+                    ok = ok && this.fixedFields[i].copyValueFrom(other.fixedFields[i])
+                }
+                ok
+            }, true
+        )
+
+        if (!updateOk) return updateOk
+
+        if (isFixed) return true
 
         if (!template!!.possiblySame(other.template!!))
             throw IllegalArgumentException("different template ${other.template.javaClass}")
 
 
         //TODO for additional fields
+
+        return true
     }
 
 
@@ -304,10 +315,15 @@ class ObjectGene(
     override fun mutationWeight(): Double = fields.map { it.mutationWeight() }.sum()
 
 
+    private fun shouldPrintAsJSON(mode: GeneUtils.EscapeMode?) : Boolean{
+        //by default, return in JSON format. same wise if we have an undefined TEXT mode
+        return mode == null || mode == GeneUtils.EscapeMode.JSON || mode == GeneUtils.EscapeMode.TEXT
+    }
+
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
 
-        if (mode != null && mode != GeneUtils.EscapeMode.JSON && !isFixed)
+        if (mode != null && !shouldPrintAsJSON(mode) && !isFixed)
             throw IllegalStateException("do not support getValueAsPrintableString with mode ($mode) for non-fixed ObjectGene")
         val buffer = StringBuffer()
 
@@ -315,8 +331,8 @@ class ObjectGene(
             it !is CycleObjectGene && (it !is OptionalGene || (it.isActive && it.gene !is CycleObjectGene))
         } .filter { it.isPrintable() }
 
-        //by default, return in JSON format
-        if (mode == null || mode == GeneUtils.EscapeMode.JSON) {
+
+        if (shouldPrintAsJSON(mode)) {
             buffer.append("{")
 
             includedFields.map {

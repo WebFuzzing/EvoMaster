@@ -29,11 +29,6 @@ Also, some of these papers provides full replication packages, which are linked 
   *Fuzzing Microservices In Industry: Experience of Applying EvoMaster at Meituan*.
   [[arXiv](https://arxiv.org/abs/2208.03988)]
 
-* M. Zhang, A. Arcuri.
-  *Open Problems in Fuzzing RESTful APIs: A Comparison of Tools*.
-  [[arXiv](https://arxiv.org/abs/2205.05325)]
-  [[Script 0](exp/arxiv_open_problems_bb.py)]
-  [[Script 1](exp/arxiv_open_problems_wb.py)]
 
 
 
@@ -42,9 +37,20 @@ Also, some of these papers provides full replication packages, which are linked 
 
 ### 2023
 
+
+* M. Zhang, A. Arcuri.
+  *Open Problems in Fuzzing RESTful APIs: A Comparison of Tools*.
+  ACM Transactions on Software Engineering and Methodology (TOSEM).
+  [[PDF](publications/2023_tosem_comparisons.pdf)]
+  [[Script 0](exp/arxiv_open_problems_bb.py)]
+  [[Script 1](exp/arxiv_open_problems_wb.py)]
+  *(to appear)*
+
+
 * M. Zhang, A. Belhadi, A. Arcuri.
   *JavaScript SBST Heuristics To Enable Effective Fuzzing of NodeJS Web APIs*.
   ACM Transactions on Software Engineering and Methodology (TOSEM).
+  [[PDF](publications/2023_tosem_js.pdf)]
   *(to appear)*
 
 * A. Arcuri, M Zhang, A. Belhadi, B. Marculescu, A. Golmohammadi, J. P. Galeotti, S. Seran.

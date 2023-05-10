@@ -5,10 +5,12 @@ import joptsimple.OptionDescriptor
 import joptsimple.OptionParser
 import joptsimple.OptionSet
 import org.evomaster.client.java.controller.api.ControllerConstants
+import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.impact.impactinfocollection.GeneMutationSelectionMethod
+import org.evomaster.core.search.service.IdMapper
 import org.slf4j.LoggerFactory
 import java.net.MalformedURLException
 import java.net.URL
@@ -38,6 +40,11 @@ class EMConfig {
         private val log = LoggerFactory.getLogger(EMConfig::class.java)
 
         private const val headerRegex = "(.+:.+)|(^$)"
+
+        private const val targetSeparator = ";"
+        private const val targetNone = "\\b(None|NONE|none)\\b"
+        private const val targetPrefix = "\\b(Class|CLASS|class|Line|LINE|line|Branch|BRANCH|branch|MethodReplacement|METHODREPLACEMENT|method[r|R]eplacement|Success_Call|SUCCESS_CALL|success_[c|C]all|Local|LOCAL|local|PotentialFault|POTENTIALFAULT|potential[f|F]ault)\\b"
+        private const val targetExclusionRegex = "^($targetNone|($targetPrefix($targetSeparator$targetPrefix)*))\$"
 
         private const val maxTcpPort = 65535.0
 
@@ -511,6 +518,9 @@ class EMConfig {
                 throw IllegalArgumentException("Failed to handle property '${m.name}'", e)
             }
         }
+
+        // private set
+        excludedTargetsForImpactCollection = extractExcludedTargetsForImpactCollection()
     }
 
     fun shouldGenerateSqlData() = isMIO() && (generateSqlDataWithDSE || generateSqlDataWithSearch)
@@ -920,6 +930,9 @@ class EMConfig {
     @Cfg("When running experiments and statistic files are generated, all configs are saved." +
             " So, this one can be used as extra label for classifying the experiment")
     var labelForExperiments = "-"
+
+    @Cfg("Further label to represent the names of CONFIGS sets in experiment scripts, e.g., exp.py")
+    var labelForExperimentConfigs = "-"
 
     @Cfg("Whether we should collect data on the extra heuristics. Only needed for experiments.")
     var writeExtraHeuristicsFile = false
@@ -1807,6 +1820,12 @@ class EMConfig {
     @Probability(activating = true)
     var probOfHarvestingResponsesFromActualExternalServices = 0.0
 
+
+    @Cfg("a probability of prioritizing to employ successful harvested actual responses from external services as seeds (e.g., 2xx from HTTP external service).")
+    @Experimental
+    @Probability(activating = true)
+    var probOfPrioritizingSuccessfulHarvestedActualResponses = 0.0
+
     @Cfg("a probability of mutating mocked responses based on actual responses")
     @Experimental
     @Probability(activating = true)
@@ -1817,9 +1836,44 @@ class EMConfig {
     @Experimental
     var externalRequestHarvesterNumberOfThreads: Int = 2
 
+
+    enum class ExternalRequestResponseSelectionStrategy {
+        /**
+         * Selects the exact matching response for the request.
+         */
+        EXACT,
+
+        /**
+         * If there is no exact match, selects the closest matching response from the same domain based on the
+         * request path.
+         */
+        CLOSEST_SAME_DOMAIN,
+
+        /**
+         * If there is no exact match, selects the closest matching response from the same path based on the
+         * request path.
+         */
+        CLOSEST_SAME_PATH,
+
+        /**
+         * If there is no exact match, selects a random response for the request from the captured responses
+         * regardless of the domain.
+         */
+        RANDOM
+    }
+
+    @Cfg("Harvested external request response selection strategy")
+    @Experimental
+    var externalRequestResponseSelectionStrategy = ExternalRequestResponseSelectionStrategy.EXACT
+
     @Cfg("Whether to employ constraints specified in API schema (e.g., OpenAPI) in test generation")
     @Experimental
     var enableSchemaConstraintHandling = false
+
+    @Cfg("a probability of enabling single insertion strategy to insert rows into database.")
+    @Experimental
+    @Probability(activating = true)
+    var probOfEnablingSingleInsertionForTable = 0.0
 
     @Cfg("Whether to record info of executed actions during search")
     @Experimental
@@ -1829,10 +1883,15 @@ class EMConfig {
     @Experimental
     var saveExecutedMainActionInfo = "executedMainActions.txt"
 
-    @Cfg("a probability of enabling single insertion strategy to insert rows into database.")
+
+    @Cfg("Specify prefixes of targets (e.g., MethodReplacement, Success_Call, Local) which will exclude in impact collection. " +
+            "Multiple exclusions should be separated with semicolon (i.e., ;).")
+    @Regex(targetExclusionRegex)
     @Experimental
-    @Probability(activating = true)
-    var probOfEnablingSingleInsertionForTable = 0.0
+    var excludeTargetsForImpactCollection = "${IdMapper.LOCAL_OBJECTIVE_KEY};${ObjectiveNaming.METHOD_REPLACEMENT}"
+
+    var excludedTargetsForImpactCollection : List<String> = extractExcludedTargetsForImpactCollection()
+        private set
 
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
@@ -1912,9 +1971,16 @@ class EMConfig {
         return externalServiceIPSelectionStrategy != ExternalServiceIPSelectionStrategy.NONE
     }
 
+
+    private fun extractExcludedTargetsForImpactCollection() : List<String>{
+        if (excludeTargetsForImpactCollection.equals("None", ignoreCase = true)) return emptyList()
+        val excluded = excludeTargetsForImpactCollection.split(targetSeparator).map { it.lowercase() }.toSet()
+        return IdMapper.ALL_ACCEPTED_OBJECTIVE_PREFIXES.filter { excluded.contains(it.lowercase()) }
+    }
+
     fun isEnabledMutatingResponsesBasedOnActualResponse() = isMIO() && (probOfMutatingResponsesBasedOnActualResponse > 0)
 
-    fun doHarvestActualResponse() : Boolean = isMIO() && (probOfHarvestingResponsesFromActualExternalServices > 0 || probOfMutatingResponsesBasedOnActualResponse > 0)
+    fun isEnabledHarvestingActualResponse() : Boolean = isMIO() && (probOfHarvestingResponsesFromActualExternalServices > 0 || probOfMutatingResponsesBasedOnActualResponse > 0)
 
     /**
      * Check if the used algorithm is MIO.

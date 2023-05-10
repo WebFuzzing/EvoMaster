@@ -115,9 +115,6 @@ class HttpWsExternalServiceHandler {
             return
         }
 
-        val existing =
-            externalServices.filterValues { it.getIP() == externalServiceInfo.remoteHostname && !it.isActive() }
-
         val ip: String = localAddressMapping[externalServiceInfo.remoteHostname]
             ?: run {
                 val x = getNewIP()

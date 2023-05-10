@@ -442,6 +442,10 @@ public class HeuristicsCalculator {
 
         if (exp instanceof EqualsTo) {
 
+            /*
+                FIXME: this is very tricky and not clean... works fine for embedded, but need
+                custom hack for external to make it work. See ExternalSutContoller.getAdditionalInfoList()
+             */
             ExecutionTracer.handleTaintForStringEquals(a, b, false);
             return DistanceHelper.getLeftAlignmentDistance(a, b);
 

@@ -531,8 +531,8 @@ class DbActionGeneBuilder {
 
                 IntegerGene(
                         column.name,
-                        min = column.lowerBound ?: min,
-                        max = column.upperBound ?: max
+                        min = column.lowerBound?.toInt() ?: min,
+                        max = column.upperBound?.toInt() ?: max
                 )
             }
         }
@@ -629,8 +629,8 @@ class DbActionGeneBuilder {
         } else {
             IntegerGene(
                     column.name,
-                    min = column.lowerBound ?: Short.MIN_VALUE.toInt(),
-                    max = column.upperBound ?: Short.MAX_VALUE.toInt()
+                    min = column.lowerBound?.toInt() ?: Short.MIN_VALUE.toInt(),
+                    max = column.upperBound?.toInt() ?: Short.MAX_VALUE.toInt()
             )
         }
     }
@@ -646,8 +646,8 @@ class DbActionGeneBuilder {
         } else {
             IntegerGene(
                     column.name,
-                    min = column.lowerBound ?: Byte.MIN_VALUE.toInt(),
-                    max = column.upperBound ?: Byte.MAX_VALUE.toInt()
+                    min = column.lowerBound?.toInt() ?: Byte.MIN_VALUE.toInt(),
+                    max = column.upperBound?.toInt() ?: Byte.MAX_VALUE.toInt()
             )
         }
     }

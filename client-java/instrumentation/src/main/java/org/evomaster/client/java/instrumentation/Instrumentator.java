@@ -2,8 +2,8 @@ package org.evomaster.client.java.instrumentation;
 
 
 
-import org.evomaster.client.java.instrumentation.coverage.CoverageClassVisitor;
-import org.evomaster.client.java.instrumentation.coverage.ThirdPartyClassVisitor;
+import org.evomaster.client.java.instrumentation.coverage.visitor.classv.CoverageClassVisitor;
+import org.evomaster.client.java.instrumentation.coverage.visitor.classv.ThirdPartyClassVisitor;
 import org.evomaster.client.java.instrumentation.shared.ClassName;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.evomaster.client.java.utils.SimpleLogger;

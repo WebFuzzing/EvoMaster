@@ -1,5 +1,6 @@
 package org.evomaster.core.search.service
 
+import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import java.util.concurrent.atomic.AtomicInteger
 
 
@@ -16,7 +17,22 @@ class IdMapper {
 
     companion object {
 
-        private const val FAULT_DESCRIPTIVE_ID_PREFIX = "PotentialFault_"
+        private const val FAULT_OBJECTIVE_PREFIX = "PotentialFault"
+
+        /**
+         * local objective prefix might depend on problems, eg, HTTP_SUCCESS and HTTP_FAULT for REST
+         * it can be identified with its numeric id, ie, less than 0
+         * however we need this key to specify whether to consider such objectives in impact collections
+         */
+        const val LOCAL_OBJECTIVE_KEY = "Local"
+
+        private const val FAULT_DESCRIPTIVE_ID_PREFIX = "${FAULT_OBJECTIVE_PREFIX}_"
+
+        /**
+         * all prefixes used for defining testing objectives
+         */
+        val ALL_ACCEPTED_OBJECTIVE_PREFIXES : List<String> = ObjectiveNaming.getAllObjectivePrefixes().plus(LOCAL_OBJECTIVE_KEY).plus(
+            FAULT_OBJECTIVE_PREFIX)
 
         private const val FAULT_500 = "500_"
 
@@ -120,6 +136,8 @@ class IdMapper {
         }
 
         fun isLocal(id: Int): Boolean = id < 0
+
+        fun isMethodReplacementTarget(descriptiveId: String) = descriptiveId.startsWith(ObjectiveNaming.METHOD_REPLACEMENT)
     }
 
     private val mapping: MutableMap<Int, String> = mutableMapOf()

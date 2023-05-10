@@ -142,7 +142,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             .filter { !(call.auth.jsonTokenPostLogin != null && it.name.equals("Authorization", true)) }
             .filter { it.isInUse() }
             .forEach {
-                val x = it.gene.getValueAsRawString()
+                val x = it.getRawValue()
                 lines.add(".$set(\"${it.name}\", \"${GeneUtils.applyEscapes(x, GeneUtils.EscapeMode.BODY, format)}\")")
             }
 

@@ -95,13 +95,14 @@ class ReplacementListTest {
                 if (!r.replacingConstructor()) {
 
                     Method targetMethod = null;
+                    String replacementMethodName = ReplacementUtils.getPossiblyModifiedName(m);
                     try {
-                        targetMethod = targetClass.getMethod(m.getName(), reducedInputs);
+                        targetMethod = targetClass.getMethod(replacementMethodName, reducedInputs);
                     } catch (NoSuchMethodException e) {
                         try {
-                            targetMethod = targetClass.getDeclaredMethod(m.getName(), reducedInputs);
+                            targetMethod = targetClass.getDeclaredMethod(replacementMethodName, reducedInputs);
                         } catch (NoSuchMethodException noSuchMethodException) {
-                            fail("No target method " + m.getName() + " in class " + targetClass.getName() + " with the right input parameters");
+                            fail("No target method " + replacementMethodName + " in class " + targetClass.getName() + " with the right input parameters");
                         }
                     }
                     assertEquals(r.replacingStatic(), Modifier.isStatic(targetMethod.getModifiers()));
@@ -148,7 +149,7 @@ class ReplacementListTest {
             Class<?> p = parameters[i];
             checkBaseJdkType(m,p);
 
-            Class<?> casted = ReplacementUtils.getCastedToThirdParty(annotations[i]);
+            Class<?> casted = ReplacementUtils.getCastedToThirdParty(ReplacementListTest.class.getClassLoader(),annotations[i]);
             if(casted != null) {
                 assertEquals(Object.class, p); //all casts must use Object in signature
             }
