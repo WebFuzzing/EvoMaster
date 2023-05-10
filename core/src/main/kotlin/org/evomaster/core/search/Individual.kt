@@ -525,4 +525,12 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
                 throw IllegalStateException("cannot find the action (name: ${it.getName()}) in this individual")
         }
     }
+
+
+    /**
+     * @return whether all top genes of [this] individual are locally valid
+     */
+    fun areAllTopGenesLocallyValid() : Boolean{
+        return seeGenes().all { it.isLocallyValid() }
+    }
 }

@@ -5,6 +5,7 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCInterfaceSche
 import org.evomaster.client.java.controller.api.dto.problem.rpc.SeededRPCTestDto;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * a dto to collect info of RPC problem to be tested
@@ -30,8 +31,9 @@ public class RPCProblemDto extends ProblemInfoDto{
     public List<Integer> localAuthEndpointReferences;
 
     /**
-     * a list of seeded RPC tests
+     * key is test case name
+     * value is a list of RPC actions representing a seeded test
      */
-    public List<List<RPCActionDto>> seededTestDtos;
+    public Map<String, List<RPCActionDto>> seededTestDtos;
 
 }

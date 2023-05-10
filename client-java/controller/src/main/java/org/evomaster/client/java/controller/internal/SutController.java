@@ -588,9 +588,11 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     /**
      * parse seeded tests for RPC
-     * @return a list of tests, and each test is a list of RCPActionDto
+     * @return seeded tests with a map,
+     *      key is a name of the seeded test case,
+     *      value is a list of RCPActionDto for the test case
      */
-    public List<List<RPCActionDto>> handleSeededTests(boolean isSUTRunning){
+    public Map<String, List<RPCActionDto>> handleSeededTests(boolean isSUTRunning){
         List<SeededRPCTestDto> seedRPCTests;
 
         try {
@@ -610,7 +612,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             throw new IllegalStateException("EM driver RPC: the specified problem is not RPC");
         RPCType rpcType = ((RPCProblem) rpcp).getType();
 
-        List<List<RPCActionDto>> results = RPCEndpointsBuilder.buildSeededTest(rpcInterfaceSchema, seedRPCTests, rpcType);
+        Map<String, List<RPCActionDto>> results = RPCEndpointsBuilder.buildSeededTest(rpcInterfaceSchema, seedRPCTests, rpcType);
 
         try{
             if (isSUTRunning){
