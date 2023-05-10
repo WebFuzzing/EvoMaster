@@ -31,7 +31,8 @@ public class RPCProblemDto extends ProblemInfoDto{
     public List<Integer> localAuthEndpointReferences;
 
     /**
-     * a list of seeded RPC tests
+     * key is test case name
+     * value is a list of RPC actions representing a seeded test
      */
     public Map<String, List<RPCActionDto>> seededTestDtos;
 

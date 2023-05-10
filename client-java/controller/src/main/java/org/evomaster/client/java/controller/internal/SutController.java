@@ -588,7 +588,9 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     /**
      * parse seeded tests for RPC
-     * @return a list of tests, and each test is a list of RCPActionDto
+     * @return seeded tests with a map,
+     *      key is a name of the seeded test case,
+     *      value is a list of RCPActionDto for the test case
      */
     public Map<String, List<RPCActionDto>> handleSeededTests(boolean isSUTRunning){
         List<SeededRPCTestDto> seedRPCTests;
