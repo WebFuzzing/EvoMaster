@@ -327,6 +327,15 @@ class Archive<T> where T : Individual {
         return populations.keys.filter { !isCovered(it) }.toSet()
     }
 
+    /**
+     * Get all known targets that are fully covered
+     *
+     * @return a list of ids
+     */
+    fun coveredTargets(): Set<Int> {
+        return populations.keys.filter { isCovered(it) }.toSet()
+    }
+
 
     fun wouldReachNewTarget(ei: EvaluatedIndividual<T>): Boolean {
 

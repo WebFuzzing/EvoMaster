@@ -53,9 +53,19 @@ class Minimizer<T: Individual> {
 
         population.forEach{archive.addIfNeeded(it)}
 
+        val afterCovered = archive.numberOfCoveredTargets()
+
+        if(afterCovered < beforeCovered){
+            //could happen if background threads, for example
+            LoggingUtil.getInfoLogger().warn("Recomputing coverage did lose some targets: from $beforeCovered to $afterCovered" +
+                    ", i.e., lost ${beforeCovered-afterCovered}")
+            assert(false)//shouldn't really happen in the E2E...
+        }
+
+        val covered = archive.coveredTargets()
+        LoggingUtil.getInfoLogger().info("Analyzing ${covered.size} targets")
+
         TODO
-
-
 
     }
 }
