@@ -141,6 +141,12 @@ TIMEOUT_MINUTES = -1
 # How many scripts M we want the N jobs to be divided into.
 # Note: on cluster we can at most submit 400 scripts.
 # Also note that in the same .sh script there can be experiments only for a single SUT.
+# To run experiments, ideally a high number would be good, especially when running things with schedule.py
+# However, creating too many jobs can end up with too many bash scripts created in the file system.
+# As we usually run 15 jobs in parallel, a default like 100 is a good compromise.
+# WARNING: if experiments rely on applying different kinds of instrumentations,
+# then the value of nJobs MUST be greater than the number of experiment runs, to GUARANTEE that no more than
+# one experiment is run per bash script job (once a SUT is instrumented, we cannot change its instrumentation again).
 NJOBS = 100
 
 # String to filter CONFIGS to be included.
@@ -193,9 +199,9 @@ print("BASE_DIR: " + str(BASE_DIR))
 print("MIN_SEED: " + str(MIN_SEED))
 print("MAX_SEED: " + str(MAX_SEED))
 print("BUDGET: " + str(BUDGET))
+print("njobs: " + str(NJOBS))
 print("seed: " + str(BASE_SEED))
 print("timeout: " + str(TIMEOUT_MINUTES))
-print("njobs: " + str(NJOBS))
 print("configfilter: " + str(CONFIGFILTER))
 print("sutfilter: " + str(SUTFILTER))
 
