@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.externalservice.httpws
 
 import com.github.tomakehurst.wiremock.client.MappingBuilder
+import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.common.Metadata.metadata
 import com.github.tomakehurst.wiremock.matching.UrlPattern
@@ -125,9 +126,7 @@ class HttpExternalServiceAction(
             getRequestMethod(request)
                 .atPriority(1)
                 .willReturn(
-                    aResponse()
-                        .withStatus(viewStatus())
-                        .withBody(viewResponse())
+                    buildWireMockResponse()
                 )
                 .withMetadata(
                     metadata()
@@ -135,6 +134,17 @@ class HttpExternalServiceAction(
                 )
         )
 
+    }
+
+    private fun buildWireMockResponse(): ResponseDefinitionBuilder {
+        val response = aResponse()
+            .withStatus(viewStatus())
+            .withBody(viewResponse())
+        if (request.getContentType() != null){
+            response.withHeader("Content-Type", request.getContentType())
+        }
+
+        return response
     }
 
     /**
@@ -165,6 +175,7 @@ class HttpExternalServiceAction(
      * TestCaseWriter.
      *
      * TODO: Moved it to a ResponseBuilder, later
+     *
      */
     private fun getUrlPattern(url: String) : UrlPattern {
         return urlEqualTo(url)

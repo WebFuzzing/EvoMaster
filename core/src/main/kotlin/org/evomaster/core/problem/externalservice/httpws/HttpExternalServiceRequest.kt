@@ -35,6 +35,26 @@ class HttpExternalServiceRequest(
     val body : String?
 ) {
 
+    companion object{
+        const val REQUEST_DESCRIPTION_SEPARATOR = "::"
+
+
+        fun getTextualURLFromRequestDescription(requestDescription: String): String {
+            val components = requestDescription.split(REQUEST_DESCRIPTION_SEPARATOR)
+            return components[1]
+        }
+
+        fun getTextualMethodURLFromRequestDescription(requestDescription: String): String {
+            val components = requestDescription.split(REQUEST_DESCRIPTION_SEPARATOR)
+            return "${components[0]}$REQUEST_DESCRIPTION_SEPARATOR${components[1]}"
+        }
+
+        private fun generateHttpRequestDescription(httpExternalServiceRequest: HttpExternalServiceRequest): String{
+            return httpExternalServiceRequest.run {
+                "$method$REQUEST_DESCRIPTION_SEPARATOR$absoluteURL$REQUEST_DESCRIPTION_SEPARATOR[${headers.keys.joinToString(";") { "$it:${headers[it]}" }}]$REQUEST_DESCRIPTION_SEPARATOR{${body?:"none"}}"
+            }
+        }
+    }
     fun getId() : String {
         return id.toString()
     }
@@ -42,7 +62,7 @@ class HttpExternalServiceRequest(
     /**
      * get description of this an HTTP request to external service
      */
-    fun getDescription() = "$method::$absoluteURL::[${headers.keys.joinToString(";") { "$it:${headers[it]}" }}]::{${body?:"none"}}"
+    fun getDescription() = generateHttpRequestDescription(this)
 
     fun getContentType() : String?{
         if (body == null) return null

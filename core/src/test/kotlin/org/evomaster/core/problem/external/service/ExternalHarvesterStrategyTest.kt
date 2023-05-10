@@ -125,7 +125,7 @@ class ExternalHarvesterStrategyTest {
 
         DnsCacheManipulator.setDnsCache("exists.local", "127.0.0.3")
 
-        config.externalRequestResponseSelectionStrategy = EMConfig.ExternalRequestResponseSelectionStrategy.CLOSEST
+        config.externalRequestResponseSelectionStrategy = EMConfig.ExternalRequestResponseSelectionStrategy.CLOSEST_SAME_DOMAIN
         config.probOfHarvestingResponsesFromActualExternalServices = 1.0
         config.probOfMutatingResponsesBasedOnActualResponse = 2.0
 

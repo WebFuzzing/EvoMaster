@@ -2,6 +2,12 @@ package org.evomaster.core.problem.rest.param
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.api.param.Param
+import org.evomaster.core.problem.util.HttpWsUtil
+import org.evomaster.core.problem.util.HttpWsUtil.isContentTypeForm
+import org.evomaster.core.problem.util.HttpWsUtil.isContentTypeJson
+import org.evomaster.core.problem.util.HttpWsUtil.isContentTypeMultipartForm
+import org.evomaster.core.problem.util.HttpWsUtil.isContentTypeTextPlain
+import org.evomaster.core.problem.util.HttpWsUtil.isContentTypeXml
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.Gene
 import org.slf4j.Logger
@@ -29,7 +35,7 @@ class BodyParam(gene: Gene,
         val options = typeGene.values.filter { isSupportedType(it) }.toMutableList()
         if(options.isEmpty()){
 
-            if(typeGene.values.any { isMultipartForm(it) }){
+            if(typeGene.values.any { isContentTypeMultipartForm(it) }){
                 /*
                     This is tricky... we have seen cases in V2 in which formData without an explicit
                     application/x-www-form-urlencoded  turns by V3 parser into a multipart/form-data.
@@ -66,7 +72,7 @@ class BodyParam(gene: Gene,
 
     fun contentType() = contenTypeGene.getValueAsRawString().trim()
 
-    private fun isSupportedType(s: String) = isJson(s) || isXml(s) || isTextPlain(s) || isForm(s)
+    private fun isSupportedType(s: String) = isContentTypeJson(s) || isContentTypeXml(s) || isContentTypeTextPlain(s) || isContentTypeForm(s)
 
     /*
         FIXME these check could be more precise.
@@ -74,23 +80,13 @@ class BodyParam(gene: Gene,
         type with a "+"
      */
 
-    private fun isJson(s: String) = s.contains("json", ignoreCase = true)
+    fun isJson() = isContentTypeJson(contentType())
 
-    fun isJson() = isJson(contentType())
+    fun isXml() = isContentTypeXml(contentType())
 
-    private fun isXml(s: String) = s.contains("xml", ignoreCase = true)
+    fun isTextPlain() = isContentTypeTextPlain(contentType())
 
-    fun isXml() = isXml(contentType())
+    fun isForm() = isContentTypeForm(contentType())
 
-    private fun isTextPlain(s: String) = s.contains("text/plain", ignoreCase = true)
-
-    fun isTextPlain() = isTextPlain(contentType())
-
-    private fun isForm(s: String) = s.contains("application/x-www-form-urlencoded", ignoreCase = true)
-
-    fun isForm() = isForm(contentType())
-
-    private fun isMultipartForm(s: String ) = s.contains("multipart/form-data", ignoreCase = true)
-
-    fun isMultipartForm() = isMultipartForm(contentType())
+    fun isMultipartForm() = isContentTypeMultipartForm(contentType())
 }

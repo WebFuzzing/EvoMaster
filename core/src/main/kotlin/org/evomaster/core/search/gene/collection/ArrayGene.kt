@@ -137,6 +137,8 @@ class ArrayGene<T>(
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
 
+        if (this.template::class.simpleName != other.template::class.simpleName) return false
+
         return updateValueOnlyIfValid(
             {
                 killAllChildren()
@@ -155,6 +157,8 @@ class ArrayGene<T>(
         if (other !is ArrayGene<*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
+        if (this.template::class.simpleName != other.template::class.simpleName) return false
+
         return this.elements.zip(other.elements) { thisElem, otherElem ->
             thisElem.containsSameValueAs(otherElem)
         }.all { it }
