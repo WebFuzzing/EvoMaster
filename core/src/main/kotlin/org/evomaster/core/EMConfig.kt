@@ -931,6 +931,9 @@ class EMConfig {
             " So, this one can be used as extra label for classifying the experiment")
     var labelForExperiments = "-"
 
+    @Cfg("Further label to represent the names of CONFIGS sets in experiment scripts, e.g., exp.py")
+    var labelForExperimentConfigs = "-"
+
     @Cfg("Whether we should collect data on the extra heuristics. Only needed for experiments.")
     var writeExtraHeuristicsFile = false
 

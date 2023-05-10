@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 
@@ -38,7 +39,7 @@ public class RPCSutControllerTest {
     public final static FakeSutController rpcController = new FakeSutController();
 
     private static List<RPCInterfaceSchemaDto> interfaceSchemas;
-    private static List<List<RPCActionDto>> seededTestDtos;
+    private static Map<String, List<RPCActionDto>> seededTestDtos;
 
     @BeforeAll
     public static void initClass() {
@@ -110,9 +111,11 @@ public class RPCSutControllerTest {
     public void testSeedcheck(){
 
         assertEquals(2, seededTestDtos.size());
-        assertEquals(1, seededTestDtos.get(0).size());
+        List<List<RPCActionDto>> list = new ArrayList<>(seededTestDtos.values());
 
-        RPCActionDto test_1 = seededTestDtos.get(0).get(0);
+        assertEquals(1, list.get(0).size());
+
+        RPCActionDto test_1 = list.get(0).get(0);
         RPCActionDto dto = test_1.copy();
 
         assertNotNull(dto.mockRPCExternalServiceDtos);
@@ -139,7 +142,7 @@ public class RPCSutControllerTest {
         assertEquals(expectedResponse, responseDto.rpcResponse.stringValue);
 
 
-        RPCActionDto test_2 = seededTestDtos.get(1).get(0);
+        RPCActionDto test_2 = list.get(1).get(0);
         RPCActionDto dto2 = test_2.copy();
 
         dto2.doGenerateAssertions = true;

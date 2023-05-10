@@ -999,8 +999,8 @@ public class RPCEndpointsBuilder {
         return flattendepth.subList(start, flattendepth.size()).stream().filter(s-> !s.startsWith(tag) && s.startsWith(OBJECT_FLAG)).collect(Collectors.toSet()).size();
     }
 
-    public static List<List<RPCActionDto>> buildSeededTest(Map<String, InterfaceSchema> rpcInterfaceSchema, List<SeededRPCTestDto> seedRPCTests, RPCType rpcType){
-        List<List<RPCActionDto>> results = new ArrayList<>();
+    public static Map<String, List<RPCActionDto>> buildSeededTest(Map<String, InterfaceSchema> rpcInterfaceSchema, List<SeededRPCTestDto> seedRPCTests, RPCType rpcType){
+        Map<String, List<RPCActionDto>> results = new HashMap<>();
 
 
         for (SeededRPCTestDto dto: seedRPCTests){
@@ -1040,7 +1040,7 @@ public class RPCEndpointsBuilder {
                             SimpleLogger.recordErrorMessage("Seeded Test Error: cannot find the interface "+ actionDto.interfaceName);
                         }
                     }
-                    results.add(test);
+                    results.put( String.format("%s_INDEX_%d", (dto.testName != null)?dto.testName:"untitled", seedRPCTests.indexOf(dto)), test);
                 }catch (RuntimeException e){
                     SimpleLogger.recordErrorMessage("Fail to handle specified seeded test: "+ ((dto.testName != null)? dto.testName:"index_"+seedRPCTests.indexOf(dto)));
                     StringBuilder msg = new StringBuilder("Fail to handle specified seeded test " + e.getMessage());
