@@ -18,23 +18,28 @@ import javax.ws.rs.core.MediaType
  */
 
 class DistanceMetricErrorText(
-        epsilon: Double = 0.6
+        epsilon: Double = -1.0
 ) : DistanceMetric<HttpWsCallResult>() {
     private val name = "ErrorText"
-    private val recommendedEpsilon = if (epsilon in 0.0..1.0) epsilon
-                                    else throw IllegalArgumentException("The value of recommendedEpsilon is $epsilon. It should be between 0.0 and 1.0.")
+    private val recommendedEpsilon = 0.99
+    private val usedEpsilon = if (epsilon in 0.0..1.0) epsilon
+                                    else recommendedEpsilon
+                                        //throw IllegalArgumentException("The value of usedEpsilon is $epsilon. It should be between 0.0 and 1.0.")
     override fun calculateDistance(first: HttpWsCallResult, second: HttpWsCallResult): Double {
         val message1 = if (includeInClustering(first)){
-            first.getErrorMsg() ?: ""
+            first.getErrorMsg() ?: first.getBody().toString()
         } else {
-            "" //first.getBody()
+            //"" //first.getBody()
+            first.getBody().toString()
         }
         val message2 = if(includeInClustering(second)){
-            second.getErrorMsg() ?: ""
+            second.getErrorMsg() ?: first.getBody().toString()
         } else {
-            "" //second.getBody()
+            //"" //second.getBody()
+            second.getBody().toString()
         }
-        return LevenshteinDistance.distance(message1, message2)
+        val l1 = LevenshteinDistance.distance(message1, message2)*10
+        return l1
     }
 
     override fun getRecommendedEpsilon(): Double {

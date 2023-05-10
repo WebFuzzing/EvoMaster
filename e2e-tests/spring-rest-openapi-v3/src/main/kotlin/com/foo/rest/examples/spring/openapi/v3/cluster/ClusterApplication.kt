@@ -25,12 +25,14 @@ open class ClusterApplication {
     @GetMapping(path = ["/path1/{success}"])
     open fun get(@PathVariable("success") success: Boolean) : ResponseEntity<String> {
         if (success) return ResponseEntity.ok("Hello World!!!")
-        else throw IllegalArgumentException("Failed Call")
+        else throw IllegalArgumentException("aaaaa aaaaa aaaaa aaaaa aaaaa aaaaa aaaaa aaaaa aaaaa aaaaa")
+        //else return ResponseEntity.status(500).body("Path 1 error message - presumably due to illegal argument");
     }
 
     @GetMapping(path = ["/path2/{success}"])
     open fun timeout(@PathVariable("success") success: Boolean) : ResponseEntity<String> {
         if (success) return ResponseEntity.ok("Hullo Again!")
-        else throw IllegalArgumentException("Failed Call")
+        else throw IllegalArgumentException("zzzzz zzzzz zzzzz zzzzz zzzzz zzzzz zzzzz zzzzz zzzzz zzzzz")
+        //else return ResponseEntity.status(500).body("Path 2 is a completely different thing.");
     }
 }

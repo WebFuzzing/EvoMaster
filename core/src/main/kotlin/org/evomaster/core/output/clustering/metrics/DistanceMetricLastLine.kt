@@ -14,26 +14,29 @@ import org.evomaster.core.problem.httpws.HttpWsCallResult
  */
 
 class DistanceMetricLastLine(
-        epsilon: Double = 0.8
+        epsilon: Double = -1.0
 ) : DistanceMetric<HttpWsCallResult>() {
     private val name = "LastLine"
-    private var recommendedEpsilon = if(epsilon in 0.0..1.0)  epsilon
-                                        else throw IllegalArgumentException("The value of recommendedEpsilon is $epsilon. It should be between 0.0 and 1.0.")
+    private var recommendedEpsilon = 0.1
+    private var usedEpsilon = if(epsilon in 0.0..1.0)  epsilon
+                                        else recommendedEpsilon
+                                            //throw IllegalArgumentException("The value of usedEpsilon is $epsilon. It should be between 0.0 and 1.0.")
     override fun calculateDistance(first: HttpWsCallResult, second: HttpWsCallResult): Double {
         val lastLine1 = first.getLastStatementWhen500() ?: ""
         val lastLine2 = second.getLastStatementWhen500() ?: ""
-        return LevenshteinDistance.distance(lastLine1, lastLine2)
+        val l1 = LevenshteinDistance.distance(lastLine1, lastLine2)
+        return l1
     }
 
     override fun getRecommendedEpsilon(): Double{
-        return recommendedEpsilon
+        return usedEpsilon
     }
 
     override fun getName(): String {
         return name
     }
-    fun setRecommendedEpsilon(epsilon: Double){
-        if(epsilon in 0.0..1.0) recommendedEpsilon = epsilon
-        else throw IllegalArgumentException("The value of recommendedEpsilon is $epsilon. It should be between 0.0 and 1.0.")
+    fun setusedEpsilon(epsilon: Double){
+        if(epsilon in 0.0..1.0) usedEpsilon = epsilon
+        else throw IllegalArgumentException("The value of usedEpsilon is $epsilon. It should be between 0.0 and 1.0.")
     }
 }

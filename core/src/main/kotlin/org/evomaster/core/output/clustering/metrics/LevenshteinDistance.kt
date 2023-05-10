@@ -28,6 +28,8 @@ object LevenshteinDistance {
             newCost = swap
         }
 
+        //return cost[lhsLength].toDouble()
+
         return cost[lhsLength].toDouble()/ max(lhsLength, rhsLength)
 
         /*

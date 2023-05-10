@@ -58,7 +58,9 @@ object TestSuiteSplitter {
         } else {
             solution as Solution<RestIndividual>
         }
-        val metrics = mutableListOf(DistanceMetricErrorText(config.errorTextEpsilon), DistanceMetricLastLine(config.lastLineEpsilon))
+        //val metrics = mutableListOf(DistanceMetricErrorText(config.errorTextEpsilon), DistanceMetricLastLine(config.lastLineEpsilon))
+        val metrics = mutableListOf(DistanceMetricErrorText(), DistanceMetricLastLine())
+
         val errs = sol.individuals.filter {ind ->
             if (ind.individual is RestIndividual || ind.individual is GraphQLIndividual) {
                 ind.evaluatedMainActions().any { ac ->
