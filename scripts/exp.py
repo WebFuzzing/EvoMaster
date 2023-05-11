@@ -174,24 +174,37 @@ if len(sys.argv) > 5:
     values = list(map(lambda z: z.split("=")[1], options))
     kv = dict(zip(keys,values))
 
-    if "cluster" in kv:
-        CLUSTER = kv["cluster"].lower() in ("yes", "true", "t")
+    LABEL_cluster = "cluster"
+    LABEL_seed = "seed"
+    LABEL_timeout = "timeout"
+    LABEL_njobs = "njobs"
+    LABEL_configfilter = "configfilter"
+    LABEL_sutfilter = "sutfilter"
+    LABELS = [LABEL_cluster,LABEL_seed,LABEL_timeout,LABEL_njobs,LABEL_configfilter,LABEL_sutfilter]
 
-    if "seed" in kv:
-        BASE_SEED = int(kv["seed"])
+    if LABEL_cluster in kv:
+        CLUSTER = kv[LABEL_cluster].lower() in ("yes", "true", "t")
 
-    if "timeout" in kv:
-        TIMEOUT_MINUTES = int(kv["timeout"])
+    if LABEL_seed in kv:
+        BASE_SEED = int(kv[LABEL_seed])
 
-    if "njobs" in kv:
-        NJOBS = int(kv["njobs"])
+    if LABEL_timeout in kv:
+        TIMEOUT_MINUTES = int(kv[LABEL_timeout])
 
-    if "configfilter" in kv:
-        CONFIGFILTER = kv["configfilter"]
+    if LABEL_njobs in kv:
+        NJOBS = int(kv[LABEL_njobs])
 
-    if "sutfilter" in kv:
-        SUTFILTER = kv["sutfilter"]
+    if LABEL_configfilter in kv:
+        CONFIGFILTER = kv[LABEL_configfilter]
 
+    if LABEL_sutfilter in kv:
+        SUTFILTER = kv[LABEL_sutfilter]
+
+    for key in kv:
+        if key not in LABELS:
+            print("Undefined option: '" + key +"'. Available options: ")
+            print(*LABELS)
+            exit(1)
 
 #### Printing Summary of Options ####
 print("*Configurations*")
@@ -755,6 +768,7 @@ def createJobs():
     # However, some SUTs might have weights greater than 1 (ie, they run slower, so
     # need more budget)
     TOTAL_BUDGET = NRUNS_PER_SUT * SUT_WEIGHTS
+    TOTAL_NRUNS = NRUNS_PER_SUT * len(SUTS)
 
     state = State(TOTAL_BUDGET)
 
@@ -808,12 +822,16 @@ def createJobs():
         if state.opened:
             writeWithHeadAndFooter(code, state.port, sut, state.getTimeoutMinutes())
 
+    print("Number of used SUTs: " + str(len(SUTS)))
+    print("Total number of experiments: " + str(TOTAL_NRUNS))
     print("Generated scripts: " + str(state.generated))
-    print("Max wait for a job: " + str(max(state.waits)) + " minutes")
-    print("Median wait for a job: " + str(statistics.median(state.waits)) + " minutes")
-    print("Budget left: " + str(state.budget))
-    print("Total time: " + str(sum(state.waits) / 60) + " hours")
-    print("Total budget: " + str(CPUS * sum(state.waits) / 60) + " hours")
+
+    if TIMEOUT_MINUTES > 0:
+        print("Max wait for a job: " + str(max(state.waits)) + " minutes")
+        print("Median wait for a job: " + str(statistics.median(state.waits)) + " minutes")
+        print("Total wait time: " + str(sum(state.waits) / 60) + " hours")
+        print("Total budget: " + str(CPUS * sum(state.waits) / 60) + " hours")
+        print("Budget left: " + str(state.budget))
 
 
 class ParameterSetting:
