@@ -1871,9 +1871,8 @@ class EMConfig {
     var enableSchemaConstraintHandling = false
 
     @Cfg("a probability of enabling single insertion strategy to insert rows into database.")
-    @Experimental
     @Probability(activating = true)
-    var probOfEnablingSingleInsertionForTable = 0.0
+    var probOfEnablingSingleInsertionForTable = 0.5
 
     @Cfg("Whether to record info of executed actions during search")
     @Experimental
