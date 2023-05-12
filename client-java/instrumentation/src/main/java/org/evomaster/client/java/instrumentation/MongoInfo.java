@@ -4,8 +4,6 @@ import java.io.Serializable;
 
 /**
  * Info related to MONGO command execution.
- *
- * This class is IMMUTABLE
  */
 public class MongoInfo implements Serializable {
     private final Object collection;
