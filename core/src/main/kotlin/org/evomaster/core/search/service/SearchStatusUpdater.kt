@@ -21,6 +21,21 @@ class SearchStatusUpdater : SearchListener{
     private lateinit var archive: Archive<*>
 
 
+    companion object{
+        fun eraseLine(){
+            print("\u001b[2K") // erase line
+        }
+
+        fun moveUp(){
+            print("\u001b[1A") // move up by 1 line
+        }
+
+        fun upLineAndErase(){
+            moveUp()
+            eraseLine()
+        }
+    }
+
     private var passed = "-1"
 
     private var lastUpdateMS = 0L
@@ -118,16 +133,5 @@ class SearchStatusUpdater : SearchListener{
                print("\u001b[s")
      */
 
-    private fun eraseLine(){
-        print("\u001b[2K") // erase line
-    }
 
-    private fun moveUp(){
-        print("\u001b[1A") // move up by 1 line
-    }
-
-    private fun upLineAndErase(){
-        moveUp()
-        eraseLine()
-    }
 }

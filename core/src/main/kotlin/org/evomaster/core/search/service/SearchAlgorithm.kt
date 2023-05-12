@@ -84,7 +84,9 @@ abstract class SearchAlgorithm<T> where T : Individual {
     private fun handleAfterSearch() {
 
         if(config.minimize){
-            minimizer.minimizeActionsPerCoveredTargetInArchive()
+            minimizer.minimizeMainActionsPerCoveredTargetInArchive()
+            minimizer.pruneNonNeededDatabaseActions()
+            minimizer.simplifyActions()
         }
 
         if(config.addPreDefinedTests) {
