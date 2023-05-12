@@ -768,14 +768,21 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
 
         handleExternalServiceInfo(fv, dto.additionalInfoList)
 
-        if (config.expandRestIndividuals) {
-            expandIndividual(individual, dto.additionalInfoList, actionResults)
-        }
+        if(! allCovered) {
+            if (config.expandRestIndividuals) {
+                expandIndividual(individual, dto.additionalInfoList, actionResults)
+            }
 
-        if (config.isEnabledTaintAnalysis()) {
-            Lazy.assert { actionResults.size == dto.additionalInfoList.size }
-            //TODO add taint analysis for resource-based solution
-            TaintAnalysis.doTaintAnalysis(individual, dto.additionalInfoList, randomness, config.enableSchemaConstraintHandling)
+            if (config.isEnabledTaintAnalysis()) {
+                Lazy.assert { actionResults.size == dto.additionalInfoList.size }
+                //TODO add taint analysis for resource-based solution
+                TaintAnalysis.doTaintAnalysis(
+                    individual,
+                    dto.additionalInfoList,
+                    randomness,
+                    config.enableSchemaConstraintHandling
+                )
+            }
         }
 
         return dto
