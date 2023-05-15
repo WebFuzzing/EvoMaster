@@ -555,6 +555,16 @@ public class EMController {
                     SimpleLogger.error(msg);
                     return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
                 }
+            } else {
+                // there is still some data that we need during minimization
+                List<AdditionalInfo> additionalInfos = noKillSwitch(() -> sutController.getAdditionalInfoList());
+                if (additionalInfos != null) {
+                    additionalInfos.forEach(a -> {
+                        AdditionalInfoDto info = new AdditionalInfoDto();
+                        info.lastExecutedStatement = a.getLastExecutedStatement();
+                        dto.additionalInfoList.add(info);
+                    });
+                }
             }
 
             if (killSwitch) {
