@@ -58,7 +58,7 @@ class Minimizer<T: Individual> {
         }
         val current = System.currentTimeMillis()
         val passed = (current - startTimer) / (1000 * 60.0)
-        return passed >- config.minimizeTimeout
+        return passed > config.minimizeTimeout
     }
 
     fun pruneNonNeededDatabaseActions(){
