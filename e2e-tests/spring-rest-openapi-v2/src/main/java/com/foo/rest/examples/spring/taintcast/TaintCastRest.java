@@ -24,7 +24,7 @@ public class TaintCastRest {
         RestTemplate restTemplate = new RestTemplate();
         ObjectMapper mapper = new ObjectMapper();
 
-        FooList list = restTemplate.postForObject("http://mock.local/api/fetch", ids, FooList.class);
+        FooList list = restTemplate.postForObject("http://mock.local:13579/api/fetch", ids, FooList.class);
 
         List<FooDto> fooDtoList = new ArrayList<>();
 
