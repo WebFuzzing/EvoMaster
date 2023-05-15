@@ -9,7 +9,7 @@ public class HeuristicEntryDto {
      * The type of extra heuristic.
      * Note: for the moment, we only have heuristics on SQL commands
      */
-    public enum Type {SQL}
+    public enum Type {SQL, MONGO}
 
     /**
      * Should we try to minimize or maximize the heuristic?

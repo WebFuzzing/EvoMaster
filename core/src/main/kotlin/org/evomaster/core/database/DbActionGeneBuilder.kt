@@ -686,10 +686,16 @@ class DbActionGeneBuilder {
     /**
      * Builds a RegexGene using a name and a list of LIKE patterns.
      * The resulting gene is a disjunction of the given patterns
+     *
+     * TODO need to handle NOT and ILIKE
      */
     fun buildLikeRegexGene(geneName: String, likePatterns: List<String>, databaseType: DatabaseType): RegexGene {
         return when (databaseType) {
-            DatabaseType.POSTGRES, DatabaseType.MYSQL, DatabaseType.H2 -> buildPostgresMySQLLikeRegexGene(geneName, likePatterns)
+            DatabaseType.POSTGRES, //https://www.postgresqltutorial.com/postgresql-tutorial/postgresql-like/
+            DatabaseType.H2, // http://www.h2database.com/html/grammar.html#like_predicate_right_hand_side
+            DatabaseType.MYSQL -> {
+                buildPostgresMySQLLikeRegexGene(geneName, likePatterns)
+            }
             //TODO: support other database SIMILAR_TO check expressions
             else -> throw UnsupportedOperationException(
                     "Must implement LIKE expressions for database %s".format(
