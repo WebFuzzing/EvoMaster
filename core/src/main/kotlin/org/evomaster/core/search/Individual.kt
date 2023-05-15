@@ -221,7 +221,9 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
     open fun removeMainExecutableAction(relativeIndex: Int){
         if(seeInitializingActions().isNotEmpty()){
             throw IllegalStateException("For cases in which there are initializing actions, this method must be overridden")
+            //also MUST be overwritten if direct children might have subtrees with more than one main action, like in case of RestResource
         }
+        //if there is no init action, then the relativeIndex is an actual index
         killChildByIndex(relativeIndex)
     }
 

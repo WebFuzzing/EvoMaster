@@ -3,6 +3,9 @@ package org.evomaster.core.search.service
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.gui.GuiIndividual
+import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.mutator.StructureMutator
 import org.slf4j.Logger
@@ -55,7 +58,10 @@ class Minimizer<T: Individual> {
         recomputeArchiveWithFullCoverageInfo()
 
         val current = archive.getCopyOfUniqueCoveringIndividuals()
-            .filter { it.size() > 1 } //can't minimize below 1
+            .filter {
+                //it.size() > 1 // FIXME, see issue described below
+                it.groupsView()!!.sizeOfGroup(GroupsOfChildren.MAIN) > 1
+            } //can't minimize below 1
 
         LoggingUtil.getInfoLogger().info("Analyzing ${current.size} tests with size greater than 1")
 
@@ -72,9 +78,11 @@ class Minimizer<T: Individual> {
 
             k++
 
-            val singles = splitIntoSingleCalls(it)
-            singles.forEach {s ->
-                fitness.computeWholeAchievedCoverageForPostProcessing(s)?.run { archive.addIfNeeded(this) }
+            if(it !is GuiIndividual) { //doesn't make sense for GUI sequences, as strongly dependent
+                val singles = splitIntoSingleCalls(it)
+                singles.forEach { s ->
+                    fitness.computeWholeAchievedCoverageForPostProcessing(s)?.run { archive.addIfNeeded(this) }
+                }
             }
 
             /*
@@ -92,13 +100,28 @@ class Minimizer<T: Individual> {
     }
 
     private fun splitIntoSingleCalls(ind: T) : List<T>{
-        if(ind.size() <= 1){
+
+        val n = ind.groupsView()!!.sizeOfGroup(GroupsOfChildren.MAIN)
+        //val n = ind.size()
+        /*
+            FIXME: we currently have a rather major limitation, has in REST we have group of calls
+            related to same resources, and cannot currently delete single calls with messing up lot of things...
+            We need to do some major refactoring.
+
+            Man comments:
+            there might be two options:
+            1) re-construct  RestResourceCalls , e.g., three actions, A-B-C, remove B, then construct the resources with A and C,
+            2) remove the resource only if all actions are reductant
+            there might be a problematic regarding value binding, then you can remove all binding before the minimization phase, since it is last one
+            see replaceResourceCall  in RestIndividual , it can use for option 1.  removeResourceCall  can be used to remove resource, eg, option 2
+            replaceResourceCall  and removeResourceCall  have handled the binding, should be fine.
+        */
+        if(n <= 1){
             throw IllegalArgumentException("Need at least 2 actions to apply split")
         }
 
         val copy =  ind.copy()
 
-        val n = copy.size()
         return (0 until n)
             .map {index ->  (copy.copy() as T)
                                 .apply { removeAllMainActionsButIndex(this,index) }
