@@ -1733,6 +1733,11 @@ class EMConfig {
     var minimize : Boolean = true
 
 
+    @Cfg("Maximum number of minutes that will be dedicated to the minimization phase." +
+            " A negative number mean no timeout is considered." +
+            " A value of 0 means minimization will be skipped, even if minimize=true.")
+    var minimizeTimeout = 5
+
     @Experimental
     @FilePath(true)
     @Regex("(.*jacoco.*\\.jar)|(^$)")

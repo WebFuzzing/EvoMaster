@@ -46,7 +46,7 @@ public class DbBaseTTIssueManualTest extends DbBaseTestBase {
                 .statusCode(404);
 
         //make sure that the SQL Extra Heuristics is computed
-        TestResultsDto result = remoteController.getTestResults(new HashSet<>(), true);
+        TestResultsDto result = remoteController.getTestResults(new HashSet<>(), true, false);
         assertNotNull(result);
         assertFalse(result.extraHeuristics.isEmpty());
         assertFalse(result.extraHeuristics.get(second.index).heuristics.isEmpty());
@@ -80,7 +80,7 @@ public class DbBaseTTIssueManualTest extends DbBaseTestBase {
                 .statusCode(404);
 
         //make sure that the SQL Extra Heuristics is computed
-        TestResultsDto result = remoteController.getTestResults(new HashSet<>(), true);
+        TestResultsDto result = remoteController.getTestResults(new HashSet<>(), true, false);
         assertNotNull(result);
         assertFalse(result.extraHeuristics.isEmpty());
         assertFalse(result.extraHeuristics.get(second.index).heuristics.isEmpty());

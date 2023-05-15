@@ -4,7 +4,6 @@ import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.gui.GuiIndividual
-import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.mutator.StructureMutator
@@ -32,6 +31,36 @@ class Minimizer<T: Individual> {
     @Inject
     private lateinit var mutator: StructureMutator
 
+
+    private var startTimer : Long = -1
+
+
+    fun doStartTheTimer(){
+        startTimer = System.currentTimeMillis()
+    }
+
+    fun passedTimeInSecond() : Int {
+        if(startTimer < 0){
+            throw IllegalStateException("Timer was not started")
+        }
+        return ((System.currentTimeMillis() - startTimer) / 1000).toInt()
+    }
+
+    fun checkHasTimedout() : Boolean{
+        if(startTimer < 0){
+            throw IllegalStateException("Timer was not started")
+        }
+        if(config.minimizeTimeout < 0){
+            return false
+        }
+        if(config.minimizeTimeout == 0){
+            return true
+        }
+        val current = System.currentTimeMillis()
+        val passed = (current - startTimer) / (1000 * 60.0)
+        return passed >- config.minimizeTimeout
+    }
+
     fun pruneNonNeededDatabaseActions(){
         //TODO
     }
@@ -52,6 +81,11 @@ class Minimizer<T: Individual> {
      * "EvoSuite: On The Challenges of Test Case Generation in the Real World"
      */
     fun minimizeMainActionsPerCoveredTargetInArchive() {
+
+        if(checkHasTimedout()){
+           LoggingUtil.getInfoLogger().warn("Minimization phase has timed-out. You can use --minimizeTimeout to increase it.")
+           return
+        }
 
         LoggingUtil.getInfoLogger().info("Starting to apply minimization phase")
 
@@ -74,7 +108,11 @@ class Minimizer<T: Individual> {
         }
 
         current.forEach{
-            //TODO could have a maximum timeout for the minimization phase, and stop minimization when timeout is exceed
+
+            if(checkHasTimedout()){
+                LoggingUtil.getInfoLogger().warn("Minimization phase has timed-out. You can use --minimizeTimeout to increase it.")
+                return
+            }
 
             k++
 
