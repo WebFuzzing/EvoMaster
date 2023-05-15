@@ -32,6 +32,9 @@ data class Column(
 
         val similarToPatterns: List<String>? = null,
 
+        /**
+         * FIXME: could have NOT (ie negation) as well as ignore case (ILIKE)
+         */
         val likePatterns: List<String>? = null,
 
         val databaseType: DatabaseType,
