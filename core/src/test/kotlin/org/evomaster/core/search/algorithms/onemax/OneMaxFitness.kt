@@ -14,7 +14,7 @@ class OneMaxFitness : FitnessFunction<OneMaxIndividual>() {
 
         val fv = FitnessValue(individual.size().toDouble())
 
-        targetsToEvaluate(targets, individual)
+        (if(allCovered) (0 until individual.n).toSet() else targetsToEvaluate(targets, individual))
                 .forEach { fv.updateTarget(it, individual.getValue(it)) }
 
         return EvaluatedIndividual(

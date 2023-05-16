@@ -1,6 +1,5 @@
 package org.evomaster.core.search.algorithms.onemax
 
-import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.Gene
@@ -12,13 +11,13 @@ class OneMaxIndividual(
         val n : Int,
         trackOperator: TrackOperator? = null,
         index : Int = -1,
-        action: OneMaxAction = createAction(n)
+        action: OneMaxAction = createGenes(n)
 
 ): Individual (trackOperator, index, mutableListOf(action),{ k -> OneMaxAction::class.java.isAssignableFrom(k)}) {
 
 
     companion object {
-        fun createAction(n: Int): OneMaxAction {
+        fun createGenes(n: Int): OneMaxAction {
             val list = mutableListOf<EnumGene<Double>>()
             (0 until n).forEach {
                 val gene = EnumGene<Double>("$it", listOf(0.0, 0.25, 0.5, 0.75, 1.0), 0)
@@ -68,7 +67,7 @@ class OneMaxIndividual(
     }
 
     override fun size() : Int {
-        return n
+        return 1
     }
 
 
