@@ -27,6 +27,7 @@
         <module>spring-rest-mysql-column-types</module>
         <module>spring-rest-h2-column-types</module>
         <module>spring-web</module>
+        <module>spring-rest-mongo</module>
 
     </modules>
 

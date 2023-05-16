@@ -177,9 +177,11 @@ There are 3 types of options:
 |`extraQueryParam`| __Boolean__. Add an extra query param, to analyze how it is used/read by the SUT. Needed to discover new query params that were not specified in the schema. *Default value*: `false`.|
 |`forceSqlAllColumnInsertion`| __Boolean__. Force filling data of all columns when inserting new row, instead of only minimal required set. *Default value*: `false`.|
 |`generateSqlDataWithDSE`| __Boolean__. Enable EvoMaster to generate SQL data with direct accesses to the database. Use Dynamic Symbolic Execution. *Default value*: `false`.|
+|`heuristicsForMongo`| __Boolean__. Tracking of Mongo commands to improve test generation. *Default value*: `false`.|
 |`impactAfterMutationFile`| __String__. Specify a path to save collected impact info after each mutation during search, only useful for debugging. *Default value*: `impactSnapshot.csv`.|
 |`impactFile`| __String__. Specify a path to save derived genes. *Default value*: `impact.csv`.|
 |`initStructureMutationProbability`| __Double__. Probability of applying a mutation that can change the structure of test's initialization if it has. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
+|`instrumentMR_MONGO`| __Boolean__. Execute instrumentation for method replace with category MONGO. Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin on the JVM. *Default value*: `false`.|
 |`instrumentMR_NET`| __Boolean__. Execute instrumentation for method replace with category NET. Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin on the JVM. *Default value*: `false`.|
 |`jaCoCoAgentLocation`| __String__. Path on filesystem of where JaCoCo Agent jar file is located. Option meaningful only for External Drivers for JVM. If left empty, it is not used. Note that this only impact the generated output test cases. *Constraints*: `regex (.*jacoco.*\.jar)\|(^$)`. *Default value*: `""`.|
 |`jaCoCoCliLocation`| __String__. Path on filesystem of where JaCoCo CLI jar file is located. Option meaningful only for External Drivers for JVM. If left empty, it is not used. Note that this only impact the generated output test cases. *Constraints*: `regex (.*jacoco.*\.jar)\|(^$)`. *Default value*: `""`.|
