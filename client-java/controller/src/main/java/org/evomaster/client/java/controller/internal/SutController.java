@@ -24,6 +24,7 @@ import org.evomaster.client.java.controller.db.DbCleaner;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.evomaster.client.java.controller.db.SqlScriptRunnerCached;
 import org.evomaster.client.java.controller.internal.db.DbSpecification;
+import org.evomaster.client.java.controller.internal.db.MongoHandler;
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor;
 import org.evomaster.client.java.controller.internal.db.SqlHandler;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
@@ -69,6 +70,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     private String controllerHost = ControllerConstants.DEFAULT_CONTROLLER_HOST;
 
     private final SqlHandler sqlHandler = new SqlHandler();
+
+    private final MongoHandler mongoHandler = new MongoHandler();
 
     private Server controllerServer;
 
@@ -275,6 +278,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     public final void resetExtraHeuristics() {
         sqlHandler.reset();
+        mongoHandler.reset();
     }
 
     public final List<ExtraHeuristicsDto> getExtraHeuristics() {
@@ -290,6 +294,13 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
         ExtraHeuristicsDto dto = new ExtraHeuristicsDto();
 
+        computeSQLHeuristics(dto);
+        computeMongoHeuristics(dto);
+
+        return dto;
+    }
+
+    private void computeSQLHeuristics(ExtraHeuristicsDto dto) {
         if(sqlHandler.isCalculateHeuristics() || sqlHandler.isExtractSqlExecution()){
             /*
                 TODO refactor, once we move SQL analysis into Core
@@ -332,8 +343,34 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                 accessedTables.addAll(executionDto.updatedData.keySet());
             }
         }
+    }
 
-        return dto;
+    public final void computeMongoHeuristics(ExtraHeuristicsDto dto){
+        if(mongoHandler.isCalculateHeuristics()){
+
+            List<AdditionalInfo> list = getAdditionalInfoList();
+            if(!list.isEmpty()) {
+                AdditionalInfo last = list.get(list.size() - 1);
+                last.getMongoInfoData().forEach(it -> {
+                    try {
+                        mongoHandler.handle(it);
+                    } catch (Exception e){
+                        SimpleLogger.error("FAILED TO HANDLE MONGO COMMAND");
+                        assert false;
+                    }
+                });
+            }
+
+            mongoHandler.getDistances().stream()
+                    .map(p ->
+                            new HeuristicEntryDto(
+                                    HeuristicEntryDto.Type.MONGO,
+                                    HeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
+                                    p.bson.toString(),
+                                    p.distance
+                            ))
+                    .forEach(h -> dto.heuristics.add(h));
+        }
     }
 
     /**
@@ -588,9 +625,11 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     /**
      * parse seeded tests for RPC
-     * @return a list of tests, and each test is a list of RCPActionDto
+     * @return seeded tests with a map,
+     *      key is a name of the seeded test case,
+     *      value is a list of RCPActionDto for the test case
      */
-    public List<List<RPCActionDto>> handleSeededTests(boolean isSUTRunning){
+    public Map<String, List<RPCActionDto>> handleSeededTests(boolean isSUTRunning){
         List<SeededRPCTestDto> seedRPCTests;
 
         try {
@@ -610,7 +649,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             throw new IllegalStateException("EM driver RPC: the specified problem is not RPC");
         RPCType rpcType = ((RPCProblem) rpcp).getType();
 
-        List<List<RPCActionDto>> results = RPCEndpointsBuilder.buildSeededTest(rpcInterfaceSchema, seedRPCTests, rpcType);
+        Map<String, List<RPCActionDto>> results = RPCEndpointsBuilder.buildSeededTest(rpcInterfaceSchema, seedRPCTests, rpcType);
 
         try{
             if (isSUTRunning){

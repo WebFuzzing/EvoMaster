@@ -167,8 +167,9 @@ class RPCEndpointsHandler {
     /**
      * create RPC individual based on seeded tests
      */
-    fun handledSeededTests(tests: List<List<RPCActionDto>>): List<RPCIndividual>{
-        return tests.map {td->
+    fun handledSeededTests(tests: Map<String, List<RPCActionDto>>): List<RPCIndividual>{
+        return tests.map {e->
+            val td = e.value
             val exActions = mutableListOf<List<ApiExternalServiceAction>>()
             val rpcActions = td.map { d->
                 val name = actionName(d.interfaceId, d.actionName)
@@ -194,8 +195,13 @@ class RPCEndpointsHandler {
                 processEndpoint(name, d, true)
             }.toMutableList()
 
-            RPCIndividual(actions = rpcActions, externalServicesActions = exActions)
-        }
+            if (rpcActions.any { it.seeTopGenes().any { g-> !g.isLocallyValid() } }){
+                log.warn("The given test (${e.key}) is invalid (e.g., violate constraints) that will not be involved in the test generation")
+                null
+            }else
+                RPCIndividual(actions = rpcActions, externalServicesActions = exActions)
+
+        }.filterNotNull()
     }
 
 
@@ -447,14 +453,18 @@ class RPCEndpointsHandler {
         setAuthInfo(infoDto)
 
         // handle seeded test dto
-        infoDto.rpcProblem.seededTestDtos?.forEach { t->
+        infoDto.rpcProblem.seededTestDtos?.values?.forEach { t->
             t.forEach { a->
                 extractRPCExternalServiceAction(infoDto, a)
             }
         }
 
         // report statistic of endpoints
-        reportEndpointsStatistics(problem.schemas.size, problem.schemas.sumOf { it.skippedEndpoints?.size ?: 0 }, infoDto.rpcProblem?.seededTestDtos?.size?:0)
+        reportEndpointsStatistics(
+                problem.schemas.size,
+                problem.schemas.sumOf { it.skippedEndpoints?.size ?: 0 },
+                infoDto.rpcProblem?.seededTestDtos?.size?:0
+        )
 
         reportMsgLog(infoDto.errorMsg)
     }

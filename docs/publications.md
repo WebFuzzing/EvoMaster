@@ -44,14 +44,14 @@ Also, some of these papers provides full replication packages, which are linked 
   [[PDF](publications/2023_tosem_comparisons.pdf)]
   [[Script 0](exp/arxiv_open_problems_bb.py)]
   [[Script 1](exp/arxiv_open_problems_wb.py)]
-  *(to appear)*
+  
 
 
 * M. Zhang, A. Belhadi, A. Arcuri.
   *JavaScript SBST Heuristics To Enable Effective Fuzzing of NodeJS Web APIs*.
   ACM Transactions on Software Engineering and Methodology (TOSEM).
   [[PDF](publications/2023_tosem_js.pdf)]
-  *(to appear)*
+  
 
 * A. Arcuri, M Zhang, A. Belhadi, B. Marculescu, A. Golmohammadi, J. P. Galeotti, S. Seran.
   *Building An Open-Source System Test Generation Tool: Lessons Learned And Empirical Analyses with EvoMaster*.
@@ -69,7 +69,6 @@ Also, some of these papers provides full replication packages, which are linked 
   Applications And Library Support for Software
   Testing Research*.
   IEEE International Conference on Software Testing, Validation and Verification (ICST).
-  *(to appear)*
   [[PDF](publications/2023_icst_emb.pdf)]
 
 ### 2022

@@ -114,10 +114,13 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
         createSingleCallIndividualOnEachAction()
 
         if (config.seedTestCases && infoDto.rpcProblem?.seededTestDtos?.isNotEmpty() == true){
-            adHocInitialIndividuals.addAll(rpcHandler.handledSeededTests(infoDto.rpcProblem.seededTestDtos).map{
-                it.seeAllActions().forEach { a -> a.doInitialize() }
-                it
-            })
+            adHocInitialIndividuals.addAll(
+                    rpcHandler.handledSeededTests(infoDto.rpcProblem.seededTestDtos)
+                            .map{
+                                it.seeAllActions().forEach { a -> a.doInitialize() }
+                                it
+                            }
+            )
         }
 
         adHocInitialIndividuals.forEach {

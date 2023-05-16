@@ -1039,6 +1039,10 @@ class EMConfig {
     @Cfg("Tracking of SQL commands to improve test generation")
     var heuristicsForSQL = true
 
+    @Experimental
+    @Cfg("Tracking of Mongo commands to improve test generation")
+    var heuristicsForMongo = false
+
     @Cfg("Enable extracting SQL execution info")
     var extractSqlExecutionInfo = true
 
@@ -1163,6 +1167,12 @@ class EMConfig {
             " Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin" +
             " on the JVM.")
     var instrumentMR_EXT_0 = true
+
+    @Experimental
+    @Cfg("Execute instrumentation for method replace with category MONGO." +
+            " Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin" +
+            " on the JVM.")
+    var instrumentMR_MONGO = false
 
 
     @Cfg("Execute instrumentation for method replace with category NET." +
@@ -1871,9 +1881,8 @@ class EMConfig {
     var enableSchemaConstraintHandling = false
 
     @Cfg("a probability of enabling single insertion strategy to insert rows into database.")
-    @Experimental
     @Probability(activating = true)
-    var probOfEnablingSingleInsertionForTable = 0.0
+    var probOfEnablingSingleInsertionForTable = 0.5
 
     @Cfg("Whether to record info of executed actions during search")
     @Experimental
@@ -1961,6 +1970,7 @@ class EMConfig {
         if(instrumentMR_SQL) categories.add(ReplacementCategory.SQL.toString())
         if(instrumentMR_EXT_0) categories.add(ReplacementCategory.EXT_0.toString())
         if(instrumentMR_NET) categories.add(ReplacementCategory.NET.toString())
+        if(instrumentMR_MONGO) categories.add(ReplacementCategory.MONGO.toString())
         return categories.joinToString(",")
     }
 
