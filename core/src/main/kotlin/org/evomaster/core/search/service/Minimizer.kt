@@ -96,6 +96,11 @@ class Minimizer<T: Individual> {
                 getSize(it) > 1
             } //can't minimize below 1
 
+        if(current.isEmpty()){
+            LoggingUtil.getInfoLogger().info("No test to minimize")
+            return
+        }
+
         LoggingUtil.getInfoLogger().info("Analyzing ${current.size} tests with size greater than 1")
 
         val n = current.size
@@ -192,7 +197,7 @@ class Minimizer<T: Individual> {
         //TODO check if need a time-delta for updates, as in SearchStatusUpdater
 
         SearchStatusUpdater.upLineAndErase()
-        println("Minimization progress: $k/$n")
+        println("* Minimization progress: $k/$n")
     }
 
     private fun recomputeArchiveWithFullCoverageInfo(){

@@ -67,6 +67,13 @@ class OneMaxIndividual(
     }
 
     override fun size() : Int {
+        /*
+            there is only 1 single action in the individual.
+            in the past, we used N as size, but that screw up a lot of assumptions in the current
+            behavior of the search.
+            As OneMax is only used in the tests, we fix it, although many unit tests might still refer
+            to the old behaviour
+         */
         return 1
     }
 

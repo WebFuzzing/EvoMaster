@@ -37,6 +37,7 @@ class MioAlgorithmOnTrackOneMaxTest {
                 object : TypeLiteral<MioAlgorithm<OneMaxIndividual>>() {}))
 
         config = injector.getInstance(EMConfig::class.java)
+        config.minimize = false
 
         tracker = injector.getInstance(ArchiveMutationTrackService::class.java)
 

@@ -44,6 +44,10 @@ class RestModule(private val bindRemote : Boolean = true) : AbstractModule(){
                 .to(RestFitness::class.java)
                 .asEagerSingleton()
 
+        bind(object : TypeLiteral<FitnessFunction<*>>() {})
+                .to(RestFitness::class.java)
+                .asEagerSingleton()
+
         bind(object : TypeLiteral<Archive<RestIndividual>>() {})
                 .asEagerSingleton()
 
