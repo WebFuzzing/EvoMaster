@@ -20,6 +20,7 @@ class SearchStatusUpdater : SearchListener{
     @Inject
     private lateinit var archive: Archive<*>
 
+    var enabled = true
 
     companion object{
         fun eraseLine(){
@@ -69,6 +70,10 @@ class SearchStatusUpdater : SearchListener{
     }
 
     override fun newActionEvaluated() {
+
+        if(!enabled){
+            return
+        }
 
         val percentageInt = (time.percentageUsedBudget() * 100).toInt()
         val current = String.format("%.3f", time.percentageUsedBudget() * 100)

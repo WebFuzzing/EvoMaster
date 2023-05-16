@@ -1036,6 +1036,9 @@ class EMConfig {
     @Min(1.0)
     var maxTestSize = 10
 
+    @Cfg("Based on some heuristics, there are cases in which 'maxTestSize' can be overridden at runtime")
+    var enableOptimizedTestSize = true
+
     @Cfg("Tracking of SQL commands to improve test generation")
     var heuristicsForSQL = true
 

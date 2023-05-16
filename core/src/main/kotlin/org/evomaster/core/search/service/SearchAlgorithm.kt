@@ -38,6 +38,8 @@ abstract class SearchAlgorithm<T> where T : Individual {
     @Inject
     private lateinit var minimizer: Minimizer<T>
 
+    @Inject
+    private lateinit var ssu: SearchStatusUpdater
 
     private var lastSnapshot = 0
 
@@ -83,6 +85,8 @@ abstract class SearchAlgorithm<T> where T : Individual {
     }
 
     private fun handleAfterSearch() {
+
+        ssu.enabled = false
 
         if(config.minimize){
             minimizer.doStartTheTimer()
