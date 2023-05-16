@@ -179,7 +179,7 @@ class Minimizer<T: Individual> {
 
     private fun removeAllMainActionsButIndex(ind: T, index: Int){
 
-        val n = ind.size()
+        val n = getSize(ind)
 
         for(i in n-1 downTo index+1){
             ind.removeMainExecutableAction(i)
