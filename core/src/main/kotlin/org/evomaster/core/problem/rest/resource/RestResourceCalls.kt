@@ -3,6 +3,7 @@ package org.evomaster.core.problem.rest.resource
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
+import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.api.param.Param
@@ -37,7 +38,7 @@ class RestResourceCalls(
     randomness: Randomness? = null
 ) : ActionTree(
     children,
-    { k -> DbAction::class.java.isAssignableFrom(k) || EnterpriseActionGroup::class.java.isAssignableFrom(k) }
+    { k -> DbAction::class.java.isAssignableFrom(k) || MongoDbAction::class.java.isAssignableFrom(k)  || EnterpriseActionGroup::class.java.isAssignableFrom(k) }
 ) {
 
     constructor(
@@ -76,6 +77,10 @@ class RestResourceCalls(
     private val dbActions: List<DbAction>
         get() {
             return children.flatMap { it.flatten() }.filterIsInstance<DbAction>()
+        }
+    private val mongoDbActions: List<MongoDbAction>
+        get() {
+            return children.flatMap { it.flatten() }.filterIsInstance<MongoDbAction>()
         }
 
     private val externalServiceActions: List<ApiExternalServiceAction>
@@ -170,11 +175,13 @@ class RestResourceCalls(
     fun seeActions(filter: ActionFilter): List<out Action> {
         return when (filter) {
             ActionFilter.ALL -> dbActions.plus(externalServiceActions).plus(mainActions)
-            ActionFilter.INIT, ActionFilter.ONLY_SQL -> dbActions
+            ActionFilter.INIT -> dbActions.plus(mongoDbActions)
+            ActionFilter.ONLY_SQL -> dbActions
             ActionFilter.NO_INIT, ActionFilter.NO_SQL -> externalServiceActions.plus(mainActions)
             ActionFilter.MAIN_EXECUTABLE -> mainActions
             ActionFilter.ONLY_EXTERNAL_SERVICE -> externalServiceActions
             ActionFilter.NO_EXTERNAL_SERVICE -> dbActions.plus(mainActions)
+            ActionFilter.ONLY_MONGO -> mongoDbActions
         }
     }
 

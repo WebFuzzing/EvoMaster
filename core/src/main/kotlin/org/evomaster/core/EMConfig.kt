@@ -525,6 +525,8 @@ class EMConfig {
 
     fun shouldGenerateSqlData() = isMIO() && (generateSqlDataWithDSE || generateSqlDataWithSearch)
 
+    fun shouldGenerateMongoData() = generateMongoData
+
     fun experimentalFeatures(): List<String> {
 
         val properties = getConfigurationProperties()
@@ -1046,12 +1048,18 @@ class EMConfig {
     @Cfg("Enable extracting SQL execution info")
     var extractSqlExecutionInfo = true
 
+    @Cfg("Enable extracting Mongo execution info")
+    var extractMongoExecutionInfo = true
+
     @Experimental
     @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use Dynamic Symbolic Execution")
     var generateSqlDataWithDSE = false
 
     @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use a search algorithm")
     var generateSqlDataWithSearch = true
+
+    @Cfg("Enable EvoMaster to generate Mongo data with direct accesses to the database")
+    var generateMongoData = true
 
     @Cfg("When generating SQL data, how many new rows (max) to generate for each specific SQL Select")
     @Min(1.0)

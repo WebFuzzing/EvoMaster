@@ -11,6 +11,8 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionResult
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.mongo.MongoDbAction
+import org.evomaster.core.mongo.MongoDbActionResult
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
@@ -712,7 +714,8 @@ class EvaluatedIndividual<T>(
         /*
             if there exist other types of action (ie, not DbAction), this might need to be extended
          */
-        action = individual.seeInitializingActions().filterIsInstance<DbAction>().find { it.seeTopGenes().contains(gene) }
+        //CHANGE: This is momentary for testing. Needs refactor to handle multiple databases
+        action = individual.seeInitializingActions().filterIsInstance<MongoDbAction>().find { it.seeTopGenes().contains(gene) }
 
         if (action != null) {
             return impactInfo.getGene(
@@ -764,7 +767,7 @@ class EvaluatedIndividual<T>(
 
         val allExistingData = individual.seeInitializingActions().filter { it is DbAction && it.representExistingData }
         val diff = individual.seeInitializingActions()
-            .filter { !old.contains(it) && it is DbAction && !it.representExistingData }
+            .filter { !old.contains(it) && ((it is DbAction && !it.representExistingData) || it is MongoDbAction) }
 
         if (allExistingData.isNotEmpty())
             impactInfo.updateExistingSQLData(allExistingData.size)
@@ -802,7 +805,7 @@ class EvaluatedIndividual<T>(
 
         Lazy.assert {
             individual.seeInitializingActions()
-                .filter { it is DbAction && !it.representExistingData }.size == impactInfo.getSizeOfActionImpacts(true)
+                .filter { (it is DbAction && !it.representExistingData) || it is MongoDbAction }.size == impactInfo.getSizeOfActionImpacts(true)
         }
     }
 

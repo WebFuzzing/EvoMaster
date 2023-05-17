@@ -2,6 +2,7 @@ package org.evomaster.core.problem.rest
 
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
+import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
@@ -33,7 +34,7 @@ class RestIndividual(
 ): ApiWsIndividual(trackOperator, index, allActions,
     childTypeVerifier = {
         RestResourceCalls::class.java.isAssignableFrom(it)
-                || DbAction::class.java.isAssignableFrom(it)
+                || DbAction::class.java.isAssignableFrom(it) || MongoDbAction::class.java.isAssignableFrom(it)
     }, groups) {
 
     companion object{
@@ -76,7 +77,8 @@ class RestIndividual(
                 index,
                 children.map { it.copy() }.toMutableList() as MutableList<out ActionComponent>,
                 mainSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.MAIN),
-                dbSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_SQL)
+                //CHANGE: This is momentary for testing. Needs refactor to handle multiple databases
+                dbSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_MONGO)
         )
     }
 
@@ -104,6 +106,7 @@ class RestIndividual(
             GeneFilter.ALL -> seeAllActions().flatMap(Action::seeTopGenes)
             GeneFilter.NO_SQL -> seeActions(ActionFilter.NO_SQL).flatMap(Action::seeTopGenes)
             GeneFilter.ONLY_SQL -> seeDbActions().flatMap(DbAction::seeTopGenes)
+            GeneFilter.ONLY_MONGO -> seeMongoDbActions().flatMap(MongoDbAction::seeTopGenes)
             GeneFilter.ONLY_EXTERNAL_SERVICE -> seeExternalServiceActions().flatMap(ApiExternalServiceAction::seeTopGenes)
         }
     }

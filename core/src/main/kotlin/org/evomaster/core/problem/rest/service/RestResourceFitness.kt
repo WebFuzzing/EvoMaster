@@ -3,6 +3,7 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.core.database.DbAction
+import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceRequest
@@ -60,6 +61,8 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
             executedDbActions,
             actionResults
         )
+
+        doMongoDbCalls(individual.seeInitializingActions().filterIsInstance<MongoDbAction>(), actionResults)
 
         val cookies = getCookies(individual)
         val tokens = getTokens(individual)

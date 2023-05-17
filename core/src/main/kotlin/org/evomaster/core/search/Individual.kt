@@ -159,7 +159,7 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
         throw IllegalStateException("${this::class.java.simpleName}: copyContent() IS NOT IMPLEMENTED")
     }
 
-    enum class GeneFilter { ALL, NO_SQL, ONLY_SQL, ONLY_EXTERNAL_SERVICE }
+    enum class GeneFilter { ALL, NO_SQL, ONLY_SQL, ONLY_MONGO, ONLY_EXTERNAL_SERVICE }
 
     /**
      * Return a view of all the Genes in this chromosome/individual

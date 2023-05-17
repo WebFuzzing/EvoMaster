@@ -2,6 +2,7 @@ package org.evomaster.core.output.service
 
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto
+import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.*
 import org.evomaster.core.output.service.TestWriterUtils.Companion.getWireMockVariableName
@@ -365,6 +366,12 @@ class TestSuiteWriter {
                 addImport("org.evomaster.client.java.controller.db.dsl.SqlDsl.sql", lines, true)
                 addImport("org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto", lines)
                 addImport(InsertionDto::class.qualifiedName!!, lines)
+            }
+
+            if(solution.hasAnyMongoAction()) {
+                addImport("org.evomaster.client.java.controller.mongo.dsl.MongoDsl.mongo", lines, true)
+                addImport("org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionResultsDto", lines)
+                addImport(MongoInsertionDto::class.qualifiedName!!, lines)
             }
 
 

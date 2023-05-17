@@ -189,6 +189,10 @@ public class ExecutionTracer {
         ExecutionTracer.executingInitSql = executingInitSql;
     }
 
+    public static void setExecutingInitMongo(boolean executingInitMongo) {
+        ExecutionTracer.executingInitMongo = executingInitMongo;
+    }
+
     public static boolean isExecutingAction() {
         return executingAction;
     }

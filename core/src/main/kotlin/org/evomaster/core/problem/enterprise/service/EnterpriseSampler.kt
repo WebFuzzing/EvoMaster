@@ -4,6 +4,8 @@ import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.SqlInsertBuilder
+import org.evomaster.core.mongo.MongoDbAction
+import org.evomaster.core.mongo.MongoInsertBuilder
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
@@ -72,6 +74,28 @@ abstract class EnterpriseSampler<T> : Sampler<T>() where T : Individual {
                     if (it is DbAction) it.getResolvedName() else it.getName()
                 })
         }
+
+        return actions
+    }
+
+    fun sampleMongoInsertion(collection: String, documentsType: Class<*>, accessedFields: Map<String, Any>): List<MongoDbAction> {
+
+        // Should I use something like this?
+        //val extraConstraints = randomness.nextBoolean(apc.getExtraSqlDbConstraintsProbability())
+
+        val actions = MongoInsertBuilder().createMongoInsertionAction(collection, documentsType, accessedFields)
+            ?: throw IllegalStateException("No MongoDB schema is available")
+        actions.flatMap{it.seeTopGenes()}.forEach{it.doInitialize(randomness)}
+
+        /*
+        if (log.isTraceEnabled){
+            log.trace("at sampleMongoInsertion, {} insertions are added, and they are {}", actions.size,
+                actions.joinToString(",") {
+                    if (it is MongoDbAction) it.getResolvedName() else it.getName()
+                })
+        }
+
+         */
 
         return actions
     }

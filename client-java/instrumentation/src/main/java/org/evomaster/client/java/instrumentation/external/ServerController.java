@@ -204,6 +204,10 @@ public class ServerController {
         return sendWithDataAndExpectACK(Command.EXECUTING_INIT_SQL, executingInitSql);
     }
 
+    public boolean setExecutingInitMongo(boolean executingInitMongo) {
+        return sendWithDataAndExpectACK(Command.EXECUTING_INIT_MONGO, executingInitMongo);
+    }
+
     public boolean setExecutingAction(boolean executingAction){
         return sendWithDataAndExpectACK(Command.EXECUTING_ACTION, executingAction);
     }

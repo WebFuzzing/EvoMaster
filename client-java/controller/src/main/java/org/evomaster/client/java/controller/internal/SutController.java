@@ -16,6 +16,8 @@ import org.evomaster.client.java.controller.api.dto.constraint.ElementConstraint
 import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionResultsDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.ExtraConstraintsDto;
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto;
@@ -27,6 +29,7 @@ import org.evomaster.client.java.controller.internal.db.DbSpecification;
 import org.evomaster.client.java.controller.internal.db.MongoHandler;
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor;
 import org.evomaster.client.java.controller.internal.db.SqlHandler;
+import org.evomaster.client.java.controller.mongo.MongoScriptRunner;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RPCProblem;
 import org.evomaster.client.java.controller.problem.rpc.CustomizedNotNullAnnotationForRPCDto;
@@ -225,6 +228,21 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         }
     }
 
+    @Override
+    public MongoInsertionResultsDto execInsertionsIntoMongoDatabase(List<MongoInsertionDto> insertions) {
+
+        Object connection = getMongoConnection();
+        if (connection == null) {
+            throw new IllegalStateException("No connection to mongo database");
+        }
+
+        try {
+            return MongoScriptRunner.execInsert(connection, insertions);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public int getActionIndex(){
         return actionIndex;
     }
@@ -371,6 +389,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                             ))
                     .forEach(h -> dto.heuristics.add(h));
         }
+
+        if(mongoHandler.isExtractMongoExecution()){dto.mongoExecutionDto = mongoHandler.getExecutionDto();}
     }
 
     /**
@@ -1088,6 +1108,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     public abstract void setKillSwitch(boolean b);
 
     public abstract void setExecutingInitSql(boolean executingInitSql);
+
+    public abstract void setExecutingInitMongo(boolean executingInitMongo);
 
     public abstract void setExecutingAction(boolean executingAction);
 

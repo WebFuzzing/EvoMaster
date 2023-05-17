@@ -1,6 +1,7 @@
 package org.evomaster.core.search
 
 import org.evomaster.core.database.DbAction
+import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.output.Termination
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 
@@ -50,5 +51,9 @@ where T : Individual {
 
     fun hasAnySqlAction() : Boolean{
         return individuals.any { ind -> ind.individual.seeAllActions().any { a ->  a is DbAction}}
+    }
+
+    fun hasAnyMongoAction() : Boolean{
+        return individuals.any { ind -> ind.individual.seeAllActions().any { a ->  a is MongoDbAction}}
     }
 }

@@ -3,6 +3,7 @@ package org.evomaster.core.problem.enterprise
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
+import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.problem.graphql.GraphQLAction
@@ -12,6 +13,7 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.tracer.TrackOperator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.util.*
 
 
 /**
@@ -74,7 +76,8 @@ abstract class EnterpriseIndividual(
             }
 
             //TODO in future ll need to refactor to handle multiple databases and NoSQL ones
-            val db = ChildGroup<StructuralElement>(GroupsOfChildren.INITIALIZATION_SQL,{e -> e is ActionComponent && e.flatten().all { a -> a is DbAction }},
+            //CHANGE: This is momentary for testing. Needs refactor to handle multiple databases
+            val db = ChildGroup<StructuralElement>(GroupsOfChildren.INITIALIZATION_MONGO,{e -> e is ActionComponent && e.flatten().all { a -> a is MongoDbAction }},
                 if(sizeDb==0) -1 else 0 , if(sizeDb==0) -1 else sizeDb-1
             )
 
@@ -101,10 +104,12 @@ abstract class EnterpriseIndividual(
             ActionFilter.MAIN_EXECUTABLE -> groupsView()!!.getAllInGroup(GroupsOfChildren.MAIN)
                 .flatMap { (it as ActionComponent).flatten() }
                 .filter { it !is DbAction && it !is ApiExternalServiceAction }
-            ActionFilter.INIT -> groupsView()!!.getAllInGroup(GroupsOfChildren.INITIALIZATION_SQL).flatMap { (it as ActionComponent).flatten() }
+            //CHANGE: This is momentary for testing. Needs refactor to handle multiple databases
+            ActionFilter.INIT -> groupsView()!!.getAllInGroup(GroupsOfChildren.INITIALIZATION_MONGO).flatMap { (it as ActionComponent).flatten() }
             // WARNING: this can still return DbAction and External ones...
             ActionFilter.NO_INIT -> groupsView()!!.getAllInGroup(GroupsOfChildren.MAIN).flatMap { (it as ActionComponent).flatten() }
             ActionFilter.ONLY_SQL -> seeAllActions().filterIsInstance<DbAction>()
+            ActionFilter.ONLY_MONGO -> seeAllActions().filterIsInstance<MongoDbAction>()
             ActionFilter.NO_SQL -> seeAllActions().filter { it !is DbAction }
             ActionFilter.ONLY_EXTERNAL_SERVICE -> seeAllActions().filterIsInstance<ApiExternalServiceAction>()
             ActionFilter.NO_EXTERNAL_SERVICE -> seeAllActions().filter { it !is ApiExternalServiceAction }
@@ -144,6 +149,8 @@ abstract class EnterpriseIndividual(
      * would be same with [seeInitializingActions]
      */
     fun seeDbActions() : List<DbAction> = seeActions(ActionFilter.ONLY_SQL) as List<DbAction>
+
+    fun seeMongoDbActions() : List<MongoDbAction> = seeActions(ActionFilter.ONLY_MONGO) as List<MongoDbAction>
 
     /**
      * return a list of all external service actions in [this] individual
@@ -194,8 +201,14 @@ abstract class EnterpriseIndividual(
     private fun getLastIndexOfDbActionToAdd(): Int =
         groupsView()!!.endIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_SQL)
 
+    private fun getLastIndexOfMongoDbActionToAdd(): Int =
+        groupsView()!!.endIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_MONGO)
+
     private fun getFirstIndexOfDbActionToAdd(): Int =
         groupsView()!!.startIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_SQL)
+
+    private fun getFirstIndexOfMongoDbActionToAdd(): Int =
+        groupsView()!!.startIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_MONGO)
 
     /**
      * add [actions] at [relativePosition]
@@ -206,6 +219,14 @@ abstract class EnterpriseIndividual(
             addChildrenToGroup(getLastIndexOfDbActionToAdd(), actions, GroupsOfChildren.INITIALIZATION_SQL)
         } else{
             addChildrenToGroup(getFirstIndexOfDbActionToAdd()+relativePosition, actions, GroupsOfChildren.INITIALIZATION_SQL)
+        }
+    }
+
+    fun addInitializingMongoDbActions(relativePosition: Int=-1, actions: List<Action>){
+        if (relativePosition < 0)  {
+            addChildrenToGroup(getLastIndexOfMongoDbActionToAdd(), actions, GroupsOfChildren.INITIALIZATION_MONGO)
+        } else{
+            addChildrenToGroup(getFirstIndexOfMongoDbActionToAdd()+relativePosition, actions, GroupsOfChildren.INITIALIZATION_MONGO)
         }
     }
 

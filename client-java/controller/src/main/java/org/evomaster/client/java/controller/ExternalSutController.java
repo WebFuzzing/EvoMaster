@@ -461,6 +461,14 @@ public abstract class ExternalSutController extends SutController {
     }
 
     @Override
+    public final void setExecutingInitMongo(boolean executingInitMongo) {
+        checkInstrumentation();
+        serverController.setExecutingInitMongo(executingInitMongo);
+        // sync executingInitMongo on the local ExecutionTracer
+        ExecutionTracer.setExecutingInitMongo(executingInitMongo);
+    }
+
+    @Override
     public final void setExecutingAction(boolean executingAction){
         checkInstrumentation();
         serverController.setExecutingAction(executingAction);

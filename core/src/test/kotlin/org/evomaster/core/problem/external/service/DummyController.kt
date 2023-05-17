@@ -1,9 +1,7 @@
 package org.evomaster.core.problem.external.service
 
 import org.evomaster.client.java.controller.api.dto.*
-import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto
-import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto
-import org.evomaster.client.java.controller.api.dto.database.operations.QueryResultDto
+import org.evomaster.client.java.controller.api.dto.database.operations.*
 import org.evomaster.core.remote.service.RemoteController
 
 class DummyController: RemoteController {
@@ -68,6 +66,10 @@ class DummyController: RemoteController {
     }
 
     override fun executeDatabaseInsertionsAndGetIdMapping(dto: DatabaseCommandDto): InsertionResultsDto? {
+        TODO("Not yet implemented")
+    }
+
+    override fun executeMongoDatabaseInsertions(dto: MongoDatabaseCommandDto): MongoInsertionResultsDto? {
         TODO("Not yet implemented")
     }
 

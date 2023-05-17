@@ -1,11 +1,13 @@
 package org.evomaster.core.problem.api.service
 
 import com.google.inject.Inject
+import org.evomaster.client.java.controller.api.dto.database.execution.FailedQuery
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
+import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
@@ -143,6 +145,39 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         sampler: ApiWsSampler<T>
     ) {
         addInitializingDbActions(individual, mutatedGenes, sampler)
+        addInitializingMongoDbActions(individual, mutatedGenes, sampler)
+    }
+
+    private fun <T: ApiWsIndividual> addInitializingMongoDbActions(
+        individual: EvaluatedIndividual<*>,
+        mutatedGenes: MutatedGeneSpecification?,
+        sampler: ApiWsSampler<T>
+    ) {
+        if (!config.shouldGenerateMongoData()) {
+            return
+        }
+
+        val ind = individual.individual as? T
+            ?: throw IllegalArgumentException("Invalid individual type")
+
+        val fw = individual.fitness.getViewOfAggregatedFailedFind()
+
+        if (fw.isEmpty()) {
+            return
+        }
+
+        val old = mutableListOf<Action>().plus(ind.seeInitializingActions().filterIsInstance<MongoDbAction>())
+
+        val addedInsertions = handleFailedFind(ind, fw, mutatedGenes, sampler)
+
+        // update impact based on added genes
+        if (mutatedGenes != null && config.isEnabledArchiveGeneSelection()) {
+            individual.updateImpactGeneDueToAddedInitializationGenes(
+                mutatedGenes,
+                old,
+                addedInsertions
+            )
+        }
     }
 
     private fun <T : ApiWsIndividual> addInitializingDbActions(
@@ -274,6 +309,23 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 
         if (config.generateSqlDataWithDSE) {
             //TODO DSE could be plugged in here
+        }
+
+        return addedInsertions
+    }
+
+    private fun <T : ApiWsIndividual> handleFailedFind(
+        ind: T,
+        ff: List<FailedQuery>,
+        mutatedGenes: MutatedGeneSpecification?, sampler: ApiWsSampler<T>
+    ): MutableList<List<Action>>? {
+
+        val addedInsertions = if (mutatedGenes != null) mutableListOf<List<Action>>() else null
+
+        ff.forEach {
+            val insertions = sampler.sampleMongoInsertion(it.collection, it.documentsType, it.accessedFields)
+            ind.addInitializingMongoDbActions(actions = insertions)
+            addedInsertions?.add(insertions)
         }
 
         return addedInsertions

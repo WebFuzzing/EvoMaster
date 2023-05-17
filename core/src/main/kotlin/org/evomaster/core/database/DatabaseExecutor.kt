@@ -1,8 +1,6 @@
 package org.evomaster.core.database
 
-import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto
-import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto
-import org.evomaster.client.java.controller.api.dto.database.operations.QueryResultDto
+import org.evomaster.client.java.controller.api.dto.database.operations.*
 
 
 interface DatabaseExecutor {
@@ -24,4 +22,10 @@ interface DatabaseExecutor {
      * Return the result of whether it success (first) and new pks in such insertions (second), if any
      */
     fun executeDatabaseInsertionsAndGetIdMapping(dto: DatabaseCommandDto): InsertionResultsDto?
+
+    /**
+     * Execute a the given INSERT MONGO command (in DTO format).
+     * Return the result of whether it success
+     */
+    fun executeMongoDatabaseInsertions(dto: MongoDatabaseCommandDto): MongoInsertionResultsDto?
 }

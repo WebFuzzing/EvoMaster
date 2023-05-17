@@ -51,6 +51,9 @@ public abstract class MongoController extends EmbeddedSutController {
                 "spring.data.mongodb.database=" + databaseName
         );
 
+        // CHANGE: Is necessary to crete the collection first?
+        mongoClient.getDatabase("persons").createCollection("person");
+
         ctx = app.run();
 
         return "http://localhost:" + getSutPort();
@@ -101,5 +104,10 @@ public abstract class MongoController extends EmbeddedSutController {
         return (Integer) ((Map) ctx.getEnvironment()
                 .getPropertySources().get("server.ports").getSource())
                 .get("local.server.port");
+    }
+
+    @Override
+    public MongoClient getMongoConnection() {
+        return mongoClient;
     }
 }
