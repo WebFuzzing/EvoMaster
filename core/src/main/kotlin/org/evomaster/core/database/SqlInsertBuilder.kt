@@ -51,43 +51,12 @@ class SqlInsertBuilder(
 
     private val name: String
 
+
     companion object {
         private val log: Logger = LoggerFactory.getLogger(SqlInsertBuilder::class.java)
 
-        /**
-         * Converts a regular expression pattern to the equivalent SQL LIKE pattern.
-         *
-         * @param regexPattern the regular expression pattern to convert.
-         * @return the equivalent SQL LIKE pattern.
-         */
-        private fun convertRegexToSqlLikePattern(regexPattern: String): String {
-            var likePattern = regexPattern
-
-            // Replace ^ with %
-            likePattern = likePattern.replace("^", "%")
-
-            // Replace $ with %
-            likePattern = likePattern.replace("$", "%")
-
-            // Escape special characters with \
-            likePattern = likePattern.replace("\\", "\\\\")
-
-            // Replace . with _
-            likePattern = likePattern.replace(".", "_")
-
-            // Replace * with %
-            likePattern = likePattern.replace("*", "%")
-
-            // Replace + with %
-            likePattern = likePattern.replace("+", "%")
-
-            // Replace ? with _
-            likePattern = likePattern.replace("?", "_")
-
-            return likePattern
-        }
-
-    }
+        private const val EMAIL_SIMILAR_TO_PATTERN = "[A-Za-z]{2,}@[A-Za-z]+.[A-Za-z]{2,}"
+   }
 
 
     init {
@@ -320,17 +289,13 @@ class SqlInsertBuilder(
             extra.constraints.isNegativeOrZero?.let { if (it) 0 else null }
         ).minOrNull()
 
-        val likePatterns = (column.likePatterns ?: mutableListOf()).toMutableList()
+        val similarToPatterns = (column.similarToPatterns ?: mutableListOf()).toMutableList()
         extra.constraints.isEmail?.let {
             if (it) {
-                val emailRegexp = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
-                likePatterns.add(convertRegexToSqlLikePattern(emailRegexp))
+                similarToPatterns.add(EMAIL_SIMILAR_TO_PATTERN)
             }
         }
-        extra.constraints.patternRegExp?.let {
-            likePatterns.add(convertRegexToSqlLikePattern(it))
-        }
-        val mergedLikePatterns: List<String>? = likePatterns.takeIf { it.isNotEmpty() }
+        val mergedSimilarToPatterns: List<String>? = similarToPatterns.takeIf { it.isNotEmpty() }
 
 
         //TODO all other constraints
@@ -340,7 +305,7 @@ class SqlInsertBuilder(
             enumValuesAsStrings = mergedEnumValuesAsStrings,
             lowerBound = mergedLowerBound,
             upperBound = mergedUpperBound,
-            likePatterns = mergedLikePatterns,
+            similarToPatterns = mergedSimilarToPatterns,
             isNotBlank = extra.constraints.isNotBlank
         )
     }

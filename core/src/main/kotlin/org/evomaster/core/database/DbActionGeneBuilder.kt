@@ -725,8 +725,9 @@ class DbActionGeneBuilder {
             similarToPatterns: List<String>,
             databaseType: DatabaseType
     ): RegexGene {
-        return when {
-            databaseType == DatabaseType.POSTGRES -> buildPostgresSimilarToRegexGene(geneName, similarToPatterns)
+        return when(databaseType) {
+             DatabaseType.POSTGRES,
+             DatabaseType.H2 -> buildPostgresSimilarToRegexGene(geneName, similarToPatterns)
             //TODO: support other database SIMILAR_TO check expressions
             else -> throw UnsupportedOperationException(
                     "Must implement similarTo expressions for database %s".format(

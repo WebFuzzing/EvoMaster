@@ -46,7 +46,7 @@ public class EntityJPAData {
         this.notblank = notBlank;
     }
 
-    //@Email
+    @Email
     @NotNull
     private String email;
 
