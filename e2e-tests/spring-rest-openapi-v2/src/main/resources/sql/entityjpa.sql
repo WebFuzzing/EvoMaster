@@ -2,5 +2,9 @@ create table IF NOT EXISTS existing_table  (
   id integer primary key,
   x1 integer,
   notBlank varchar,
-  email varchar not null
+  email varchar not null,
+  negative integer not null,
+  negative_or_zero integer not null,
+  positive integer not null,
+  positive_or_zero integer not null
 );

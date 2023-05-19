@@ -57,4 +57,36 @@ public class EntityJPAData {
     public void setEmail(String email) {
         this.email = email;
     }
+
+    @Negative
+    private int negative;
+
+    public int getNegative() { return negative; }
+
+    public void setNegative(int negative) { this.negative = negative; }
+
+    @NegativeOrZero
+    @Column(name="negative_or_zero")
+    private int negativeOrZero;
+
+    public int getNegativeOrZero() { return negativeOrZero; }
+
+    public void setNegativeOrZero(int negativeOrZero) { this.negativeOrZero = negativeOrZero; }
+
+    @Positive
+    private int positive;
+
+    public int getPositive() { return positive; }
+
+    public void setPositive(int positive) { this.positive = positive; }
+
+    @PositiveOrZero
+    @Column(name="positive_or_zero")
+    private int positiveOrZero;
+
+    public int getPositiveOrZero() { return positiveOrZero; }
+
+    public void setPositiveOrZero(int positiveOrZero) { this.positiveOrZero = positiveOrZero; }
+
+
 }
