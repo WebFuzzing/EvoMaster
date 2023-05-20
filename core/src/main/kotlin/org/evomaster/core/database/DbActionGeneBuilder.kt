@@ -672,13 +672,20 @@ class DbActionGeneBuilder {
                 val columnMinLength = if (isFixedLength) {
                     column.size
                 } else {
-                    if (column.isNotBlank==true) {
+                    if (column.minSize !=null && column.minSize>0) {
+                        column.minSize
+                    } else if (column.isNotBlank==true) {
                         1
                     }  else {
                         0
                     }
                 }
-                StringGene(name = column.name, minLength = columnMinLength, maxLength = column.size)
+                val columnMaxLength = if (column.maxSize!=null) {
+                    minOf(column.maxSize, column.size)
+                } else {
+                    column.size
+                }
+                StringGene(name = column.name, minLength = columnMinLength, maxLength = columnMaxLength)
             }
         }
     }

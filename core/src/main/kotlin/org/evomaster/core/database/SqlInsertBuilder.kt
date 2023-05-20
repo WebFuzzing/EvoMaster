@@ -289,6 +289,12 @@ class SqlInsertBuilder(
             extra.constraints.isNegativeOrZero?.let { if (it) 0 else null }
         ).minOrNull()
 
+        val minSize = extra.constraints.sizeMin
+
+        val maxSize = extra.constraints.sizeMax
+
+        val isNotBlank = extra.constraints.isNotBlank
+
         val similarToPatterns = (column.similarToPatterns ?: mutableListOf()).toMutableList()
         extra.constraints.isEmail?.let {
             if (it) {
@@ -296,6 +302,7 @@ class SqlInsertBuilder(
             }
         }
         val mergedSimilarToPatterns: List<String>? = similarToPatterns.takeIf { it.isNotEmpty() }
+
 
 
         //TODO all other constraints
@@ -306,7 +313,9 @@ class SqlInsertBuilder(
             lowerBound = mergedLowerBound,
             upperBound = mergedUpperBound,
             similarToPatterns = mergedSimilarToPatterns,
-            isNotBlank = extra.constraints.isNotBlank
+            isNotBlank = isNotBlank,
+            minSize = minSize,
+            maxSize = maxSize
         )
     }
 

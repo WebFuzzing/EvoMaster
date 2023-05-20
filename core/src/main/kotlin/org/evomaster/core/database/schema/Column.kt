@@ -57,8 +57,11 @@ data class Column(
 
         // public boolean identity;
 
-        val isNotBlank: Boolean? = null
+        val isNotBlank: Boolean? = null,
 
+        val minSize: Int? = null,
+
+        val maxSize: Int? = null
         //TODO something for other constraints
 
 )
