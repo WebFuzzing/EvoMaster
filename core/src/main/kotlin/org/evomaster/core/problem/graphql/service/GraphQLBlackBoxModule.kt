@@ -33,6 +33,10 @@ class GraphQLBlackBoxModule(
                 .to(GraphQLBlackBoxFitness::class.java)
                 .asEagerSingleton()
 
+        bind(object : TypeLiteral<FitnessFunction<*>>() {})
+            .to(GraphQLBlackBoxFitness::class.java)
+            .asEagerSingleton()
+
         bind(object : TypeLiteral<Archive<GraphQLIndividual>>() {})
                 .asEagerSingleton()
 

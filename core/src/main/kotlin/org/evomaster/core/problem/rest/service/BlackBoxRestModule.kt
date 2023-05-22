@@ -30,8 +30,12 @@ class BlackBoxRestModule(
                 .asEagerSingleton()
 
         bind(object : TypeLiteral<FitnessFunction<RestIndividual>>() {})
-                .to(BlackBoxRestFitness::class.java)
-                .asEagerSingleton()
+            .to(BlackBoxRestFitness::class.java)
+            .asEagerSingleton()
+
+        bind(object : TypeLiteral<FitnessFunction<*>>() {})
+            .to(BlackBoxRestFitness::class.java)
+            .asEagerSingleton()
 
         bind(object : TypeLiteral<Archive<RestIndividual>>() {})
                 .asEagerSingleton()

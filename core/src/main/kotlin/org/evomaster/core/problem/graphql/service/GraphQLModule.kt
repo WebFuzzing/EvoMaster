@@ -37,6 +37,10 @@ class GraphQLModule : AbstractModule() {
                 .to(GraphQLFitness::class.java)
                 .asEagerSingleton()
 
+        bind(object : TypeLiteral<FitnessFunction<*>>() {})
+            .to(GraphQLFitness::class.java)
+            .asEagerSingleton()
+
         bind(object : TypeLiteral<Archive<GraphQLIndividual>>() {})
                 .asEagerSingleton()
 

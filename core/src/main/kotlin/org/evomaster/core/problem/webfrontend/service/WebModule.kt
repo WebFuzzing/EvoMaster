@@ -5,6 +5,7 @@ import com.google.inject.TypeLiteral
 import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.output.service.WebTestCaseWriter
+import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.webfrontend.WebIndividual
 import org.evomaster.core.remote.service.RemoteController
@@ -38,7 +39,17 @@ class WebModule: AbstractModule() {
             .asEagerSingleton()
 
 
+        bind(object : TypeLiteral<Minimizer<WebIndividual>>(){})
+            .asEagerSingleton()
+
+        bind(object : TypeLiteral<Minimizer<*>>(){})
+            .asEagerSingleton()
+
         bind(object : TypeLiteral<FitnessFunction<WebIndividual>>() {})
+            .to(WebFitness::class.java)
+            .asEagerSingleton()
+
+        bind(object : TypeLiteral<FitnessFunction<*>>() {})
             .to(WebFitness::class.java)
             .asEagerSingleton()
 

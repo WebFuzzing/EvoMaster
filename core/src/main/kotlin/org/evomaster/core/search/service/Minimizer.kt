@@ -28,9 +28,6 @@ class Minimizer<T: Individual> {
     @Inject
     private lateinit var config: EMConfig
 
-    @Inject
-    private lateinit var mutator: StructureMutator
-
 
     private var startTimer : Long = -1
 
