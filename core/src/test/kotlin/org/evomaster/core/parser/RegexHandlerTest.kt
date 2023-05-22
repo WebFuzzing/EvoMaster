@@ -9,6 +9,7 @@ import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.util.regex.Pattern
 
 internal class RegexHandlerTest{
 
@@ -18,7 +19,7 @@ internal class RegexHandlerTest{
         //should not throw exception
         val s = "^[23456789ABCDEFGHJKMNPQRSTUVWXYZ]{10}$"
         RegexHandler.createGeneForJVM(s)
-        RegexHandler.createGeneForJVM(RegexSharedUtils.handlePartialMatch(s));
+        RegexHandler.createGeneForJVM(RegexSharedUtils.handlePartialMatch(s))
 
         val x = "^[XxA-Fa-f0-9]([A-Fa-f0-9]{63})$"
         RegexHandler.createGeneForJVM(x)
@@ -51,6 +52,20 @@ internal class RegexHandlerTest{
             regex.standardMutation(rand, apc, mwc)
             regex.copy().standardMutation(rand, apc, mwc)
         }
+    }
+
+    @Test
+    fun testPostgresSimilarToEmailRegex() {
+        val regex = "[A-Za-z0-9-.+]+@[A-Za-z0-9-.]+.[A-Za-z]{2,}"
+        val pattern = Pattern.compile(regex)
+        val regexGene = RegexHandler.createGeneForPostgresSimilarTo(regex)
+        val rand = Randomness()
+
+        repeat(1000){
+            regexGene.randomize(rand,true)
+            assertTrue(pattern.matcher(regexGene.getValueAsRawString()).find())
+        }
+
     }
 
 
