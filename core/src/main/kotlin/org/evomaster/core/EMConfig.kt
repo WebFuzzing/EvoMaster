@@ -1751,6 +1751,11 @@ class EMConfig {
             " A value of 0 means minimization will be skipped, even if minimize=true.")
     var minimizeTimeout = 5
 
+
+    @Cfg("When applying minimization phase, and some targets get lost when re-computing coverage," +
+            " then printout a detailed description.")
+    var minimizeShowLostTargets = true
+
     @Experimental
     @FilePath(true)
     @Regex("(.*jacoco.*\\.jar)|(^$)")

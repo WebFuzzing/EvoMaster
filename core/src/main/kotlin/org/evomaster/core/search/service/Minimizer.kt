@@ -28,6 +28,8 @@ class Minimizer<T: Individual> {
     @Inject
     private lateinit var config: EMConfig
 
+    @Inject
+    private lateinit var idMapper: IdMapper
 
     private var startTimer : Long = -1
 
@@ -202,7 +204,7 @@ class Minimizer<T: Individual> {
 
         LoggingUtil.getInfoLogger().info("Recomputing full coverage for ${current.size} tests")
 
-        val beforeCovered = archive.numberOfCoveredTargets()
+        val beforeCovered = archive.coveredTargets()
 
         /*
             Previously evaluated individual only had partial info, due to performance issues.
@@ -220,12 +222,22 @@ class Minimizer<T: Individual> {
 
         population.forEach{archive.addIfNeeded(it)}
 
-        val afterCovered = archive.numberOfCoveredTargets()
+        val afterCovered = archive.coveredTargets()
 
-        if(afterCovered < beforeCovered){
+        if(afterCovered.size < beforeCovered.size){
             //could happen if background threads, for example
             LoggingUtil.getInfoLogger().warn("Recomputing coverage did lose some targets: from $beforeCovered to $afterCovered" +
                     ", i.e., lost ${beforeCovered-afterCovered}")
+
+            if(config.minimizeShowLostTargets){
+                LoggingUtil.getInfoLogger().warn("Missing targets:");
+                for(target in beforeCovered){
+                    if(! afterCovered.contains(target)){
+                        LoggingUtil.getInfoLogger().warn(idMapper.getDescriptiveId(target));
+                    }
+                }
+            }
+
             assert(false)//shouldn't really happen in the E2E...
         }
     }
