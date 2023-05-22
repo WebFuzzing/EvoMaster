@@ -181,7 +181,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             controllerServer.stop();
             return true;
         } catch (Exception e) {
-            SimpleLogger.error("Failed to stop the controller server: " + e.toString());
+            SimpleLogger.error("Failed to stop the controller server: " + e);
             return false;
         }
     }
@@ -892,7 +892,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      * @param client is the client to execute the endpoint
      * @param endpoint is the endpoint to be executed
      */
-    private final Object executeRPCEndpoint(Object client, EndpointSchema endpoint) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, ClassNotFoundException {
+    private Object executeRPCEndpoint(Object client, EndpointSchema endpoint) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, ClassNotFoundException {
         if (endpoint.getRequestParams().isEmpty()){
             Method method = client.getClass().getDeclaredMethod(endpoint.getName());
             return method.invoke(client);
@@ -1150,7 +1150,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                     ec.decimalMaxValue = c.getDecimalMaxValue();
                     ec.isNegative = c.getIsNegative();
                     ec.isNegativeOrZero = c.getIsNegativeOrZero();
-                    ec.isPositive = c.getIsPositiveOrZero();
+                    ec.isPositive = c.getIsPositive();
                     ec.isPositiveOrZero = c.getIsPositiveOrZero();
                     ec.isFuture = c.getIsFuture();
                     ec.isFutureOrPresent = c.getIsFutureOrPresent();
@@ -1243,7 +1243,6 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      *  This is mainly used as workaround for cases in which EM's instrumentation crashes due
      *  to some bugs in it.
      *  (This is also the reason why it is not abstract)
-     *
      *  Note: we currently cannot test this in a E2E, as agent is loaded _before_ te controller is defined
      */
     public String packagesToSkipInstrumentation(){

@@ -17,7 +17,7 @@ import java.util.regex.Matcher;
  */
 public class MatcherClassReplacement implements MethodReplacementClass {
 
-    private static Field textField = null;
+    private static final Field textField;
 
     static {
         try {
@@ -43,14 +43,13 @@ public class MatcherClassReplacement implements MethodReplacementClass {
      */
     @Replacement(type = ReplacementType.BOOLEAN, category = ReplacementCategory.BASE)
     public static boolean matches(Matcher caller, String idTemplate) {
+        Objects.requireNonNull(caller);
 
-        if (caller == null) {
-            caller.matches();
-        }
         String text = getText(caller);
         String pattern = caller.pattern().toString();
+        int flags = caller.pattern().flags();
 
-        boolean patternMatchesResult = PatternMatchingHelper.matches(pattern, text, idTemplate);
+        boolean patternMatchesResult = PatternMatchingHelper.matches(pattern, flags, text, idTemplate);
 
         TaintType taintType = ExecutionTracer.getTaintType(text);
 
