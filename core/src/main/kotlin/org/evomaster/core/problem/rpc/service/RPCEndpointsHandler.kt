@@ -15,7 +15,7 @@ import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.problem.externalservice.rpc.RPCExternalServiceAction
-import org.evomaster.core.problem.externalservice.rpc.parm.RPCResponseParam
+import org.evomaster.core.problem.externalservice.rpc.parm.ClassResponseParam
 import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCCallResult
@@ -257,7 +257,7 @@ class RPCEndpointsHandler {
                                 }
                             }.run { wrapWithOptionalGene(this, true) }) as OptionalGene
 
-                    val response = RPCResponseParam(className = s, responseType = EnumGene("responseType", listOf("JSON")), response = responseGene)
+                    val response = ClassResponseParam(className = s, responseType = EnumGene("responseType", listOf("JSON")), response = responseGene)
                     if (fromClass) response.responseParsedWithClass()
 
                     val externalAction = RPCExternalServiceAction(
@@ -292,7 +292,7 @@ class RPCEndpointsHandler {
             inputParameterTypes = action.inputParamTypes
             requestRules = if (action.requestRuleIdentifier.isNullOrEmpty()) null else listOf(action.requestRuleIdentifier)
             responses = listOf(action.response.responseBody.getValueAsPrintableString(mode = mode))
-            responseTypes = if ((action.response as? RPCResponseParam)?.className?.isNotBlank() == true) listOf((action.response as RPCResponseParam).className) else null
+            responseTypes = if ((action.response as? ClassResponseParam)?.className?.isNotBlank() == true) listOf((action.response as ClassResponseParam).className) else null
         }
     }
 
@@ -549,7 +549,6 @@ class RPCEndpointsHandler {
                 LoggingUtil.uniqueWarn(log, "cannot extract schema for dtos (ie, ${this.joinToString(",")}) in the SUT driver and instrumentation agent")
             }
         }
-
 
         val allDtoNames = infoDto.unitsInfoDto.parsedDtos.keys.toList()
         val allDtoSchemas = allDtoNames.map { infoDto.unitsInfoDto.parsedDtos[it]!! }

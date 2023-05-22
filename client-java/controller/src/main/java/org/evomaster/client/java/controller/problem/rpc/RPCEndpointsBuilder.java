@@ -1032,10 +1032,13 @@ public class RPCEndpointsBuilder {
                                     buildExternalServiceResponse(schema,
                                             actionDto.mockRPCExternalServiceDtos.stream().flatMap(s-> s.responseTypes.stream()).distinct().collect(Collectors.toList()),
                                             rpcType);
-                                /*
-                                    for db mock objects, we currently just keep them as they are
-                                 */
+
                                 rpcActionDto.mockDatabaseDtos = actionDto.mockDatabaseDtos;
+                                if (actionDto.mockDatabaseDtos != null && !actionDto.mockDatabaseDtos.isEmpty()){
+                                    buildExternalServiceResponse(schema,
+                                            actionDto.mockDatabaseDtos.stream().map(s-> s.responseFullType).distinct().collect(Collectors.toList()),
+                                            rpcType);
+                                }
                                 test.add(rpcActionDto);
                             }else {
                                 SimpleLogger.recordErrorMessage("Seeded Test Error: cannot find the action "+actionDto.functionName);

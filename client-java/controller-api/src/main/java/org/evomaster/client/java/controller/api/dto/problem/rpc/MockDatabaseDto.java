@@ -46,6 +46,6 @@ public class MockDatabaseDto {
     /**
      * it represents the datatype of response
      */
-    public String responseType;
+    public String responseFullType;
 
 }

@@ -5,7 +5,7 @@ import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionResult
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.problem.externalservice.rpc.RPCExternalServiceAction
-import org.evomaster.core.problem.externalservice.rpc.parm.RPCResponseParam
+import org.evomaster.core.problem.externalservice.rpc.parm.ClassResponseParam
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rpc.RPCCallAction
@@ -87,7 +87,7 @@ class EvaluatedIndividualBuilder {
                     functionName = "foo",
                     inputParamTypes = null,
                     requestRuleIdentifier = null,
-                    responseParam = RPCResponseParam(
+                    responseParam = ClassResponseParam(
                         className = "FakeRPCReturnDto",
                         responseType = EnumGene("responseType", listOf("JSON")),
                         response = OptionalGene("return",

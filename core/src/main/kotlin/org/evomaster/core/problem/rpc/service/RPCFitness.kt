@@ -7,7 +7,7 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.problem.api.service.ApiWsFitness
 import org.evomaster.core.problem.externalservice.rpc.RPCExternalServiceAction
-import org.evomaster.core.problem.externalservice.rpc.parm.RPCResponseParam
+import org.evomaster.core.problem.externalservice.rpc.parm.ClassResponseParam
 import org.evomaster.core.problem.externalservice.rpc.parm.UpdateForRPCResponseParam
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCCallResult
@@ -86,17 +86,17 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
         val exMissingDto = individual.seeExternalServiceActions()
             .filterIsInstance<RPCExternalServiceAction>()
             .filterNot {
-                ((it.response as? RPCResponseParam)?:throw IllegalStateException("response of RPCExternalServiceAction should be RPCResponseParam, but it is ${it.response::class.java.simpleName}")).fromClass
+                ((it.response as? ClassResponseParam)?:throw IllegalStateException("response of RPCExternalServiceAction should be RPCResponseParam, but it is ${it.response::class.java.simpleName}")).fromClass
             }
 
         if (exMissingDto.isEmpty()) {
             return
         }
-        val missingDtoClass = exMissingDto.map { (it.response as RPCResponseParam).className }
+        val missingDtoClass = exMissingDto.map { (it.response as ClassResponseParam).className }
         rpcHandler.getJVMSchemaForDto(missingDtoClass.toSet()).forEach { expandResponse->
-            exMissingDto.filter { (it.response as RPCResponseParam).run { !this.fromClass && expandResponse.key == this.className} }.forEach { a->
+            exMissingDto.filter { (it.response as ClassResponseParam).run { !this.fromClass && expandResponse.key == this.className} }.forEach { a->
                 val gene = wrapWithOptionalGene(expandResponse.value, true) as OptionalGene
-                val updatedParam = (a.response as RPCResponseParam).copyWithSpecifiedResponseBody(gene)
+                val updatedParam = (a.response as ClassResponseParam).copyWithSpecifiedResponseBody(gene)
                 updatedParam.responseParsedWithClass()
                 val update = UpdateForRPCResponseParam(updatedParam)
                 a.addUpdateForParam(update)
