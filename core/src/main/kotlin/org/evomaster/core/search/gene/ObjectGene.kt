@@ -153,7 +153,6 @@ class ObjectGene(
         }
 
         val remove = randomness.choose(additionalFields!!)
-        remove.removeThisFromItsBindingGenes()
         killChild(remove)
         return true
     }
