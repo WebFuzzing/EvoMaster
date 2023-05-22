@@ -1756,6 +1756,11 @@ class EMConfig {
             " then printout a detailed description.")
     var minimizeShowLostTargets = true
 
+    @PercentageAsProbability
+    @Cfg("Losing targets when recomputing coverage is expected (e.g., constructors of singletons)," +
+            " but problematic if too much")
+    var minimizeThresholdForLoss = 0.2
+
     @Experimental
     @FilePath(true)
     @Regex("(.*jacoco.*\\.jar)|(^$)")

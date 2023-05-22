@@ -223,11 +223,14 @@ class Minimizer<T: Individual> {
         population.forEach{archive.addIfNeeded(it)}
 
         val afterCovered = archive.coveredTargets()
+        val diff = beforeCovered.size-afterCovered.size
 
-        if(afterCovered.size < beforeCovered.size){
-            //could happen if background threads, for example
-            LoggingUtil.getInfoLogger().warn("Recomputing coverage did lose some targets: from $beforeCovered to $afterCovered" +
-                    ", i.e., lost ${beforeCovered-afterCovered}")
+        if(diff > config.minimizeThresholdForLoss *  beforeCovered.size){
+            //could happen if background threads, for example, as well as constructors of singletons
+            LoggingUtil.getInfoLogger().warn("Recomputing coverage did lose many targets," +
+                    " more than the threshold ${config.minimizeThresholdForLoss*100}%:" +
+                    " from ${beforeCovered.size} to ${afterCovered.size}" +
+                    ", i.e., lost $diff")
 
             if(config.minimizeShowLostTargets){
                 LoggingUtil.getInfoLogger().warn("Missing targets:");

@@ -101,6 +101,7 @@ There are 3 types of options:
 |`maxlengthOfHistoryForAGM`| __Int__. Specify a maximum length of history when applying archive-based gene mutation. *Default value*: `10`.|
 |`minimize`| __Boolean__. Apply a minimization phase to make the generated tests more readable. Achieved coverage would stay the same. Generating shorter test cases might come at the cost of having more test cases. *Default value*: `true`.|
 |`minimizeShowLostTargets`| __Boolean__. When applying minimization phase, and some targets get lost when re-computing coverage, then printout a detailed description. *Default value*: `true`.|
+|`minimizeThresholdForLoss`| __Double__. Losing targets when recomputing coverage is expected (e.g., constructors of singletons), but problematic if too much. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.2`.|
 |`minimizeTimeout`| __Int__. Maximum number of minutes that will be dedicated to the minimization phase. A negative number mean no timeout is considered. A value of 0 means minimization will be skipped, even if minimize=true. *Default value*: `5`.|
 |`minimumSizeControl`| __Int__. Specify minimum size when bloatControlForSecondaryObjective. *Constraints*: `min=0.0`. *Default value*: `2`.|
 |`populationSize`| __Int__. Define the population size in the search algorithms that use populations (e.g., Genetic Algorithms, but not MIO). *Constraints*: `min=1.0`. *Default value*: `30`.|
