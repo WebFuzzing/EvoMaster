@@ -56,6 +56,7 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -794,20 +795,23 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         Object response;
         try {
             if (dto.mockRPCExternalServiceDtos != null && !dto.mockRPCExternalServiceDtos.isEmpty()){
-                try {
-                    boolean ok = customizeMockingRPCExternalService(dto.mockRPCExternalServiceDtos, true);
-                    if (!ok)
-                        SimpleLogger.warn("Warning: Fail to start mocked instances of RPC-based external services");
-                }catch (Exception e){
-                    SimpleLogger.error("ERROR: Fail to process mocking of RPC-based external services:", e);
-                }
+                Boolean ok = handleCustomizedMethod(()->customizeMockingRPCExternalService(dto.mockRPCExternalServiceDtos, true));
+                if (ok == null || !ok)
+                    SimpleLogger.warn("Warning: Fail to start mocked instances of RPC-based external services with the customized method");
+            }
+            if (dto.mockDatabaseDtos != null && !dto.mockDatabaseDtos.isEmpty()){
+                Boolean ok = handleCustomizedMethod(()-> customizeMockingDatabase(dto.mockDatabaseDtos, true));
+                if (ok == null || !ok)
+                    SimpleLogger.warn("Warning: Fail to start mocked instances of databases with the customized method");
             }
             response = executeRPCEndpoint(dto, false);
         } catch (Exception e) {
             throw new RuntimeException("ERROR: target exception should be caught, but "+ e.getMessage());
         } finally {
             if (dto.mockRPCExternalServiceDtos != null && !dto.mockRPCExternalServiceDtos.isEmpty())
-                customizeMockingRPCExternalService(dto.mockRPCExternalServiceDtos, false); // disable mocked responses
+                handleCustomizedMethod(()-> customizeMockingRPCExternalService(dto.mockRPCExternalServiceDtos, false)); // disable mocked responses
+            if (dto.mockDatabaseDtos != null && !dto.mockDatabaseDtos.isEmpty())
+                handleCustomizedMethod(()-> customizeMockingDatabase(dto.mockDatabaseDtos, false)); // disable mock objects for database
         }
 
         //handle exception
@@ -848,6 +852,19 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                     responseDto.assertionScript = resSchema.newAssertionWithJava(dto.responseVariable, dto.maxAssertionForDataInCollection);
             }
         }
+    }
+
+
+    /**
+     * avoid any exception introduced by customized method
+     */
+    private<T> T handleCustomizedMethod(Supplier<T> call){
+        try{
+            return call.get();
+        }catch (Throwable e){
+            SimpleLogger.error("ERROR: Fail to process mocking with customized method:", e);
+        }
+        return null;
     }
 
     private Object executeRPCEndpoint(RPCActionDto dto, boolean throwTargetException) throws Exception {

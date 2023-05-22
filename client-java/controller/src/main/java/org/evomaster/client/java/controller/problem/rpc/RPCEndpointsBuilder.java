@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 public class RPCEndpointsBuilder {
 
     private final static ObjectMapper objectMapper = new ObjectMapper();
-    
+
     private final static String OBJECT_FLAG = "OBJECT";
     private final static String OBJECT_FLAG_SEPARATOR = ":";
 
@@ -1032,6 +1032,10 @@ public class RPCEndpointsBuilder {
                                     buildExternalServiceResponse(schema,
                                             actionDto.mockRPCExternalServiceDtos.stream().flatMap(s-> s.responseTypes.stream()).distinct().collect(Collectors.toList()),
                                             rpcType);
+                                /*
+                                    for db mock objects, we currently just keep them as they are
+                                 */
+                                rpcActionDto.mockDatabaseDtos = actionDto.mockDatabaseDtos;
                                 test.add(rpcActionDto);
                             }else {
                                 SimpleLogger.recordErrorMessage("Seeded Test Error: cannot find the action "+actionDto.functionName);
