@@ -55,6 +55,11 @@ public class RPCActionDto {
     public List<MockRPCExternalServiceDto> mockRPCExternalServiceDtos;
 
     /**
+     * a list of mock objects for database sql commands
+     */
+    public List<MockDatabaseDto> mockDatabaseDtos;
+
+    /**
      * request params
      */
     public List<ParamDto> requestParams;

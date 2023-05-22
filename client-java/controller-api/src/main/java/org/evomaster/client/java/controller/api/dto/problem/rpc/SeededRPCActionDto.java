@@ -24,6 +24,11 @@ public class SeededRPCActionDto {
     public List<MockRPCExternalServiceDto> mockRPCExternalServiceDtos;
 
     /**
+     * a list of info to set up mock objects for databases
+     */
+    public List<MockDatabaseDto> mockDatabaseDtos;
+
+    /**
      * input parameters with json format
      * note the length of [inputParamTypes] must be same as [inputParams]
      */
