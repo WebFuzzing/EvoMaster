@@ -35,7 +35,7 @@ class OneMaxIndividual(
 //    }
 
     fun resetAllToZero(){
-        (0 until size()).forEach {
+        (0 until getAction().list.size).forEach {
             setValue(it, 0.0)
         }
     }

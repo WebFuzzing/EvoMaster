@@ -151,6 +151,9 @@ class ProcessMonitorTest{
 
     @Test
     fun testSerializedTwoStepsAndOverall(){
+
+        assertTrue(archive.isEmpty())
+
         config.processFiles = "target/process_data_2s"
 
         config.enableProcessMonitor = true
