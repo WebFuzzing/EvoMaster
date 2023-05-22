@@ -1811,6 +1811,10 @@ class EMConfig {
     var enableCustomizedExternalServiceHandling = false
 
     @Experimental
+    @Cfg("Whether to apply customized method (i.e., implement 'customizeMockingDatabase') to handle database.")
+    var enableCustomizedDatabaseHandling = false
+
+    @Experimental
     @Cfg("Whether to save mocked responses as separated files")
     var saveMockedResponseAsSeparatedFile = false
 
