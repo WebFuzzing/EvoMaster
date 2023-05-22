@@ -494,8 +494,11 @@ public class EMController {
                 dto.targets.add(info);
             });
 
-            //if we want just info on covered targets, don't add extra info
-            if(!allCovered) {
+            //if we want just info on covered targets, don't add extra info...
+            //however, it was problematic, as such info was used in different ways around the codebase...
+            //so put back only if major performance issue, an track down each usage of each piece of info
+//            if(!allCovered) {
+
             /*
                 Note: it is important that extra is computed before AdditionalInfo,
                 as heuristics on SQL might add new entries to String specializations
@@ -555,17 +558,18 @@ public class EMController {
                     SimpleLogger.error(msg);
                     return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
                 }
-            } else {
-                // there is still some data that we need during minimization
-                List<AdditionalInfo> additionalInfos = noKillSwitch(() -> sutController.getAdditionalInfoList());
-                if (additionalInfos != null) {
-                    additionalInfos.forEach(a -> {
-                        AdditionalInfoDto info = new AdditionalInfoDto();
-                        info.lastExecutedStatement = a.getLastExecutedStatement();
-                        dto.additionalInfoList.add(info);
-                    });
-                }
-            }
+//            }
+//        else {
+//                // there is still some data that we need during minimization
+//                List<AdditionalInfo> additionalInfos = noKillSwitch(() -> sutController.getAdditionalInfoList());
+//                if (additionalInfos != null) {
+//                    additionalInfos.forEach(a -> {
+//                        AdditionalInfoDto info = new AdditionalInfoDto();
+//                        info.lastExecutedStatement = a.getLastExecutedStatement();
+//                        dto.additionalInfoList.add(info);
+//                    });
+//                }
+//            }
 
             if (killSwitch) {
                 sutController.setKillSwitch(true);
