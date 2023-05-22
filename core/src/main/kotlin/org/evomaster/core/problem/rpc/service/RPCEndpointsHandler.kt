@@ -112,16 +112,23 @@ class RPCEndpointsHandler {
     /**
      * a map of RPC action to external services for RPC-based SUT
      * - key is the id of action (which is consistent with key of [actionSchemaCluster])
-     * - value is a list of seeded api external services for the RPC action which can be found with [externalServiceCluster]
+     * - value is a list of seeded api external services for the RPC action which can be found with [seededExternalServiceCluster]
      */
     private val actionToExternalServiceMap = mutableMapOf<String, MutableSet<String>>()
 
     /**
-     * a map of external service actions cluster
+     * a map of external service actions cluster based on seeded test cases
      * - key is action id
      * - value is the example of ApiExternalServiceAction that might be expanded
      */
-    private val externalServiceCluster = mutableMapOf<String, ApiExternalServiceAction>()
+    private val seededExternalServiceCluster = mutableMapOf<String, ApiExternalServiceAction>()
+
+    /**
+     * a map of mock objects for sql based on seeded test cases
+     * - key is action id
+     * - value is a list of mock object setup for database
+     */
+    private val seededDbMockObjects = mutableMapOf<String, List<MockDatabaseDto>>()
 
     /**
      * key is type in the schema
@@ -176,7 +183,7 @@ class RPCEndpointsHandler {
                 val ex = if (d.mockRPCExternalServiceDtos != null && d.mockRPCExternalServiceDtos.isNotEmpty())
                     d.mockRPCExternalServiceDtos.map { e->
                         e.responses.mapIndexed { index, r->
-                            val exAction = externalServiceCluster[
+                            val exAction = seededExternalServiceCluster[
                                     RPCExternalServiceAction.getRPCExternalServiceActionName(e.interfaceFullName, e.functionName, e.requestRules[index], e.responseTypes[index])
                             ]!!.copy() as ApiExternalServiceAction
                             try {
@@ -231,7 +238,7 @@ class RPCEndpointsHandler {
                 val exkey = RPCExternalServiceAction.getRPCExternalServiceActionName(
                     dto.interfaceFullName, dto.functionName, dto.requestRules[index], s
                 )
-                if (!externalServiceCluster.containsKey(exkey)){
+                if (!seededExternalServiceCluster.containsKey(exkey)){
                     val responseTypeClass = interfaceDto.identifiedResponseTypes?.find { it.type.fullTypeName == s }
                     var fromClass = false
                     val responseGene = (
@@ -261,7 +268,7 @@ class RPCEndpointsHandler {
                         requestRuleIdentifier = dto.requestRules[index],
                         responseParam = response)
                     Lazy.assert { exkey == externalAction.getName() }
-                    externalServiceCluster[exkey] = externalAction
+                    seededExternalServiceCluster[exkey] = externalAction
                 }
 
                 actionToExternalServiceMap.getOrPut(actionKey){ mutableSetOf() }.add(exkey)
