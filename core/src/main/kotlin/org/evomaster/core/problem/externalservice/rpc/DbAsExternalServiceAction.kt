@@ -29,11 +29,15 @@ class DbAsExternalServiceAction (
 
     companion object{
 
-        fun getDbAsExternalServiceAction(exAction: DbAsExternalServiceAction) = "DbAsExternalServiceAction${EXACTION_NAME_SEPARATOR}${exAction.commandName}${EXACTION_NAME_SEPARATOR}${exAction.requestRuleIdentifier?:"ANY"}$EXACTION_NAME_SEPARATOR${(exAction.response as ClassResponseParam).className}"
+        fun getDbAsExternalServiceAction(
+            commandName: String,
+            requestRuleIdentifier: String?,
+            responseClassName: String
+        ) = "DbAsExternalServiceAction${EXACTION_NAME_SEPARATOR}${commandName}${EXACTION_NAME_SEPARATOR}${requestRuleIdentifier?:"ANY"}$EXACTION_NAME_SEPARATOR${responseClassName}"
     }
 
     override fun getName(): String {
-        return getDbAsExternalServiceAction(this)
+        return getDbAsExternalServiceAction(commandName, requestRuleIdentifier, (response as ClassResponseParam).className)
     }
 
     override fun seeTopGenes(): List<out Gene> {

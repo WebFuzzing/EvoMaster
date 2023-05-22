@@ -14,6 +14,7 @@ import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
+import org.evomaster.core.problem.externalservice.rpc.DbAsExternalServiceAction
 import org.evomaster.core.problem.externalservice.rpc.RPCExternalServiceAction
 import org.evomaster.core.problem.externalservice.rpc.parm.ClassResponseParam
 import org.evomaster.core.problem.rest.RestActionBuilderV3
@@ -125,10 +126,10 @@ class RPCEndpointsHandler {
 
     /**
      * a map of mock objects for sql based on seeded test cases
-     * - key is action id
-     * - value is a list of mock object setup for database
+     * - key is the id of sql action to mock
+     * - value is the example of MockDatabaseDto
      */
-    private val seededDbMockObjects = mutableMapOf<String, List<MockDatabaseDto>>()
+    private val seededDbMockObjects = mutableMapOf<String, DbAsExternalServiceAction>()
 
     /**
      * key is type in the schema
@@ -273,6 +274,44 @@ class RPCEndpointsHandler {
 
                 actionToExternalServiceMap.getOrPut(actionKey){ mutableSetOf() }.add(exkey)
             }
+        }
+
+
+        rpcActionDto.mockDatabaseDtos?.forEach{ dbDto->
+            if (dbDto.commandName != null && dbDto.appKey!=null && dbDto.responseFullType != null){
+                val exKey = DbAsExternalServiceAction.getDbAsExternalServiceAction(dbDto.commandName, dbDto.requests, dbDto.responseFullType)
+
+                if (!seededDbMockObjects.containsKey(exKey)){
+                    /*
+                        currently we only handle the response with json
+                     */
+                    val responseGene = (if (dbDto.response != null){
+                        val node = readJson(dbDto.response)
+                        if (node != null){
+                            parseJsonNodeAsGene("return", node)
+                        }else{
+                            StringGene("return")
+                        }
+                    }else{
+                        StringGene("return")
+                    }.run { wrapWithOptionalGene(this, true) }) as OptionalGene
+
+
+                    val response = ClassResponseParam(className = dbDto.responseFullType, responseType = EnumGene("responseType", listOf("JSON")), response = responseGene)
+                    val dbExAction = DbAsExternalServiceAction(
+                        dbDto.commandName,
+                        dbDto.appKey,
+                        dbDto.requests,
+                        response
+                    )
+                    seededDbMockObjects[exKey] = dbExAction
+                }
+                actionToExternalServiceMap.getOrPut(actionKey){ mutableSetOf() }.add(exKey)
+
+            }else{
+                LoggingUtil.uniqueWarn(log, "incorrect mockDatabaseDto with ${dbDto.commandName?:"null"} commandName, ${dbDto.appKey?:"null"} appKey, and ${dbDto.responseFullType?:"null"} responseFullType")
+            }
+
         }
     }
 
