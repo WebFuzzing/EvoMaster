@@ -1216,6 +1216,11 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     @Override
+    public boolean customizeMockingDatabase(List<MockDatabaseDto> databaseDtos, boolean enabled) {
+        return false;
+    }
+
+    @Override
     public void resetDatabase(List<String> tablesToClean) {
 
         if (getDbSpecifications()!= null && !getDbSpecifications().isEmpty()){
