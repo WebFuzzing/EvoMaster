@@ -21,7 +21,7 @@ class DistanceMetricErrorText(
         epsilon: Double = -1.0
 ) : DistanceMetric<HttpWsCallResult>() {
     private val name = "ErrorText"
-    private val recommendedEpsilon = 0.99
+    private val recommendedEpsilon = 0.001
     private val usedEpsilon = if (epsilon in 0.0..1.0) epsilon
                                     else recommendedEpsilon
                                         //throw IllegalArgumentException("The value of usedEpsilon is $epsilon. It should be between 0.0 and 1.0.")
@@ -38,12 +38,12 @@ class DistanceMetricErrorText(
             //"" //second.getBody()
             second.getBody().toString()
         }
-        val l1 = LevenshteinDistance.distance(message1, message2)*10
+        val l1 = LevenshteinDistance.distance(message1, message2)
         return l1
     }
 
     override fun getRecommendedEpsilon(): Double {
-        return recommendedEpsilon
+        return usedEpsilon
     }
 
     override fun getName(): String {

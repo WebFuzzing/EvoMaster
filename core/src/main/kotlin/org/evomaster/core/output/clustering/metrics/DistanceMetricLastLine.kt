@@ -17,14 +17,15 @@ class DistanceMetricLastLine(
         epsilon: Double = -1.0
 ) : DistanceMetric<HttpWsCallResult>() {
     private val name = "LastLine"
-    private var recommendedEpsilon = 0.1
+    private var recommendedEpsilon = 0.0001
     private var usedEpsilon = if(epsilon in 0.0..1.0)  epsilon
                                         else recommendedEpsilon
                                             //throw IllegalArgumentException("The value of usedEpsilon is $epsilon. It should be between 0.0 and 1.0.")
     override fun calculateDistance(first: HttpWsCallResult, second: HttpWsCallResult): Double {
         val lastLine1 = first.getLastStatementWhen500() ?: ""
         val lastLine2 = second.getLastStatementWhen500() ?: ""
-        val l1 = LevenshteinDistance.distance(lastLine1, lastLine2)
+        //val l1 = LevenshteinDistance.distance(lastLine1, lastLine2)
+        val l1 = FaultOriginDistance.distance(lastLine1, lastLine2)
         return l1
     }
 

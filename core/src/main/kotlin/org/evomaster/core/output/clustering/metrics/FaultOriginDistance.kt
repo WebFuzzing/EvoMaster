@@ -12,9 +12,9 @@ object FaultOriginDistance {
         val p0tokens = pathProcessing(p0)
         val p1tokens = pathProcessing(p1)
 
-        var lastCommonNode = minOf(p0tokens.size, p1tokens.size)
+        var lastCommonNode = minOf(p0tokens.size, p1tokens.size) - 1
 
-        for (i in 0..minOf(p0tokens.size, p1tokens.size)){
+        for (i in 0 until minOf(p0tokens.size, p1tokens.size)){
             if(!p0tokens.get(i).contentEquals(p1tokens.get(i))){
                 lastCommonNode = i
                 break
@@ -23,7 +23,10 @@ object FaultOriginDistance {
 
         }
 
-        return ((p0tokens.size - lastCommonNode) + (p1tokens.size - lastCommonNode)).toDouble()
+        //val dist = 1.0 / (1.0 + ((p0tokens.size - lastCommonNode) + (p1tokens.size - lastCommonNode)).toDouble())
+        val dist = ((p0tokens.size - lastCommonNode) + (p1tokens.size - lastCommonNode)).toDouble()
+
+        return 1.0 / (1.0 - dist)
     }
 
     /**
