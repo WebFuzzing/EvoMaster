@@ -24,7 +24,7 @@ object FaultOriginDistance {
         }
 
         //val dist = 1.0 / (1.0 + ((p0tokens.size - lastCommonNode) + (p1tokens.size - lastCommonNode)).toDouble())
-        val dist = ((p0tokens.size - lastCommonNode) + (p1tokens.size - lastCommonNode)).toDouble()
+        val dist = ((p0tokens.size - (lastCommonNode + 1)) + (p1tokens.size - (lastCommonNode + 1))).toDouble()
 
         return 1.0 / (1.0 - dist)
     }
