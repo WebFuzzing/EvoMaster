@@ -672,9 +672,20 @@ class DbActionGeneBuilder {
                 val columnMinLength = if (isFixedLength) {
                     column.size
                 } else {
-                    0
+                    if (column.minSize !=null && column.minSize>0) {
+                        column.minSize
+                    } else if (column.isNotBlank==true) {
+                        1
+                    }  else {
+                        0
+                    }
                 }
-                StringGene(name = column.name, minLength = columnMinLength, maxLength = column.size)
+                val columnMaxLength = if (column.maxSize!=null) {
+                    minOf(column.maxSize, column.size)
+                } else {
+                    column.size
+                }
+                StringGene(name = column.name, minLength = columnMinLength, maxLength = columnMaxLength)
             }
         }
     }
@@ -721,8 +732,9 @@ class DbActionGeneBuilder {
             similarToPatterns: List<String>,
             databaseType: DatabaseType
     ): RegexGene {
-        return when {
-            databaseType == DatabaseType.POSTGRES -> buildPostgresSimilarToRegexGene(geneName, similarToPatterns)
+        return when(databaseType) {
+             DatabaseType.POSTGRES,
+             DatabaseType.H2 -> buildPostgresSimilarToRegexGene(geneName, similarToPatterns)
             //TODO: support other database SIMILAR_TO check expressions
             else -> throw UnsupportedOperationException(
                     "Must implement similarTo expressions for database %s".format(
