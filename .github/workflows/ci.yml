@@ -60,6 +60,8 @@ jobs:
       - name: Publish Test Report
         if: success() || failure()
         uses: mikepenz/action-junit-report@v3
+        with:
+          report_paths: '**/target/surefire-reports/TEST-*.xml'
       # Upload coverage results
       - name: Upload coverage to CodeCov
         run: curl -s https://codecov.io/bash | bash
