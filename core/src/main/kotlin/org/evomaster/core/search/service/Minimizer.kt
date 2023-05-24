@@ -11,7 +11,9 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 /**
- * Reduce/simplify the final test outputs
+ * Reduce/simplify the final test outputs.
+ *
+ * WARN: currently minimization loses all history info from EvaluatedIndividual, eg impact of genes
  */
 class Minimizer<T: Individual> {
 

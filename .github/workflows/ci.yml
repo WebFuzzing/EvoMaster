@@ -53,10 +53,6 @@ jobs:
           retention-days: ${{env.retention-days}}
           if-no-files-found: error
       # Make test report accessible from GitHub Actions (as Maven logs are long)
-      # TODO: does not seem to work, see https://github.com/ScaCap/action-surefire-report/issues/161
-#      - name: Publish Test Report
-#        if: success() || failure()
-#        uses: scacap/action-surefire-report@v1
       - name: Publish Test Report
         if: success() || failure()
         uses: mikepenz/action-junit-report@v3
