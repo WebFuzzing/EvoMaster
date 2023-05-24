@@ -129,6 +129,7 @@ public class EntityJPAData {
     }
 
     @Size(min = 1, max = 8)
+    @Column(name = "size")
     private String size;
 
     public String getSize() {
@@ -137,6 +138,18 @@ public class EntityJPAData {
 
     public void setSize(String size) {
         this.size = size;
+    }
+
+    @Pattern(regexp="\\Qfoo.com\\E")
+    @Column(name = "reg_exp")
+    private String regexp;
+
+    public String getRegexp() {
+        return regexp;
+    }
+
+    public void setRegexp(String regexp) {
+        this.regexp = regexp;
     }
 
 }

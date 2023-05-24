@@ -303,7 +303,7 @@ class SqlInsertBuilder(
         }
         val mergedSimilarToPatterns: List<String>? = similarToPatterns.takeIf { it.isNotEmpty() }
 
-
+        val javaRegExPattern = extra.constraints.patternRegExp
 
         //TODO all other constraints
 
@@ -315,7 +315,8 @@ class SqlInsertBuilder(
             similarToPatterns = mergedSimilarToPatterns,
             isNotBlank = isNotBlank,
             minSize = minSize,
-            maxSize = maxSize
+            maxSize = maxSize,
+            javaRegExPattern = javaRegExPattern
         )
     }
 
