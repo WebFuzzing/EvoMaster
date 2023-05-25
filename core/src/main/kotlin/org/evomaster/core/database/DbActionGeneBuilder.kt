@@ -709,7 +709,6 @@ class DbActionGeneBuilder {
     private fun buildJavaRegexGene(name: String, javaRegExPattern: String): RegexGene {
         val disjunctionRxGenes = RegexHandler.createGeneForJVM(javaRegExPattern).disjunctions
         return RegexGene(name, disjunctions = disjunctionRxGenes, "${RegexGene.JAVA_REGEX_PREFIX}${javaRegExPattern}")
-
     }
 
     /**

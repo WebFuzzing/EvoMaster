@@ -3,7 +3,6 @@ package com.foo.rest.examples.spring.db.jpa;
 
 import javax.persistence.*;
 import javax.validation.constraints.*;
-import java.math.BigDecimal;
 
 @Entity
 @Table(name = "ExistingTable")
@@ -104,7 +103,7 @@ public class EntityJPAData {
         this.positiveOrZero = positiveOrZero;
     }
 
-    //    @DecimalMin(value = "3.1416")
+    @DecimalMin(value = "3.1416")
     @Column(name = "decimal_min")
     private int decimalMin;
 
@@ -116,7 +115,7 @@ public class EntityJPAData {
         this.decimalMin = decimalMin;
     }
 
-    //    @DecimalMax(value = "0.000001")
+    @DecimalMax(value = "0.000001")
     @Column(name = "decimal_max")
     private int decimalMax;
 
