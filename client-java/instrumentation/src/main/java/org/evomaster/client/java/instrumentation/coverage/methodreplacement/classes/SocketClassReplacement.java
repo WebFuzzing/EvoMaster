@@ -32,6 +32,8 @@ public class SocketClassReplacement implements MethodReplacementClass {
         if (endpoint instanceof InetSocketAddress) {
             InetSocketAddress socketAddress = (InetSocketAddress) endpoint;
 
+            FIXME cannot call getHostName()
+
             if (ExternalServiceInfoUtils.skipHostnameOrIp(socketAddress.getHostName())
                     || ExecutionTracer.skipHostnameAndPort(socketAddress.getHostName(), socketAddress.getPort())
             ) {
