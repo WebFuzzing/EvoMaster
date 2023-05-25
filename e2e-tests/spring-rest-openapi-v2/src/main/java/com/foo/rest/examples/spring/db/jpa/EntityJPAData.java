@@ -3,6 +3,7 @@ package com.foo.rest.examples.spring.db.jpa;
 
 import javax.persistence.*;
 import javax.validation.constraints.*;
+import java.math.BigDecimal;
 
 @Entity
 @Table(name = "ExistingTable")
@@ -151,4 +152,8 @@ public class EntityJPAData {
         this.regexp = regexp;
     }
 
+
+    @Digits(integer = 2, fraction = 3)
+    @Column(name = "big_decimal")
+    private BigDecimal bigDecimal;
 }

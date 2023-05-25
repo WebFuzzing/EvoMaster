@@ -10,5 +10,6 @@ create table IF NOT EXISTS existing_table  (
   decimal_min integer not null,
   decimal_max integer not null,
   size varchar not null,
-  reg_exp varchar not null
+  reg_exp varchar not null,
+  big_decimal decimal not null
 );

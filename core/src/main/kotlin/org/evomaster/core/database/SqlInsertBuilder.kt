@@ -326,9 +326,14 @@ class SqlInsertBuilder(
 
         val javaRegExPattern = extra.constraints.patternRegExp
 
+
+        val size = column.size.coerceAtMost(extra.constraints.digitsInteger?.plus(extra.constraints.digitsFraction ?: 0) ?: column.size)
+        val scale = extra.constraints.digitsFraction
+
         //TODO all other constraints
 
         return column.copy(
+            size = size,
             nullable = mergedIsNullable,
             enumValuesAsStrings = mergedEnumValuesAsStrings,
             lowerBound = mergedLowerBound,
@@ -337,7 +342,8 @@ class SqlInsertBuilder(
             isNotBlank = isNotBlank,
             minSize = minSize,
             maxSize = maxSize,
-            javaRegExPattern = javaRegExPattern
+            javaRegExPattern = javaRegExPattern,
+            scale = scale
         )
     }
 
