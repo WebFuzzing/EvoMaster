@@ -29,17 +29,17 @@ class InetReplacementRest {
         return try {
             val socket = Socket()
 
-            log("Before address")
+           // log("Before address")
             val a = InetSocketAddress(address, 10000)
-            log("Before connect")
+           // log("Before connect")
             socket.connect(a, 1000)
-            log("After connect")
+          //  log("After connect")
             socket.close()
-            log("After close")
+          //  log("After close")
 
             ResponseEntity.ok("OK")
         } catch (e: Exception) {
-            log("Exception: ${e.message}")
+           // log("Exception: ${e.message}")
             ResponseEntity.status(500).build()
         }
     }
