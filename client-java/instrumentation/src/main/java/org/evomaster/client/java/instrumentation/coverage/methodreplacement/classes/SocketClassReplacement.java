@@ -32,11 +32,20 @@ public class SocketClassReplacement implements MethodReplacementClass {
         if (endpoint instanceof InetSocketAddress) {
             InetSocketAddress socketAddress = (InetSocketAddress) endpoint;
 
-            if (ExternalServiceInfoUtils.skipHostnameOrIp(socketAddress.getHostName())
-                    || ExecutionTracer.skipHostnameAndPort(socketAddress.getHostName(), socketAddress.getPort())
+            /*
+                We MUST NOT call getHostName() anywhere in EM.
+                On Windows, it can take more than 4 seconds when dealing with a fake hostname.
+                This latter is common case when dealing with microservices where connections are done on localhost,
+                and we still want to mock them, so we give them a fake hostname.
+                A concrete example in EMB is CWA.
+             */
+
+            if (ExternalServiceInfoUtils.skipHostnameOrIp(socketAddress.getHostString())
+                    || ExecutionTracer.skipHostnameAndPort(socketAddress.getHostString(), socketAddress.getPort())
             ) {
                 caller.connect(endpoint, timeout);
                 return;
+
             }
 
             if (socketAddress.getAddress() instanceof Inet4Address) {
@@ -49,8 +58,8 @@ public class SocketClassReplacement implements MethodReplacementClass {
                     and if there is a mapping available then Socket will use that value to connect. Otherwise,
                     nothing will happen.
                  */
-                if (ExecutionTracer.hasLocalAddressReplacement(socketAddress.getHostName())) {
-                    String newHostname = ExecutionTracer.getRemoteHostname(socketAddress.getHostName());
+                if (ExecutionTracer.hasLocalAddressReplacement(socketAddress.getHostString())) {
+                    String newHostname = ExecutionTracer.getRemoteHostname(socketAddress.getHostString());
                     ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(
                             ExternalServiceSharedUtils.DEFAULT_SOCKET_CONNECT_PROTOCOL,
                             newHostname,
