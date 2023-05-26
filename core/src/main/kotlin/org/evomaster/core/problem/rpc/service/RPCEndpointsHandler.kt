@@ -177,15 +177,15 @@ class RPCEndpointsHandler {
      */
     fun handledSeededTests(tests: Map<String, List<RPCActionDto>>): List<RPCIndividual>{
         return tests.map {e->
-            val td = e.value
+            val rpcActionDtos = e.value
             val exActions = mutableListOf<List<ApiExternalServiceAction>>()
-            val rpcActions = td.map { d->
-                val name = actionName(d.interfaceId, d.actionName)
-                val ex = if (d.mockRPCExternalServiceDtos != null && d.mockRPCExternalServiceDtos.isNotEmpty())
-                    d.mockRPCExternalServiceDtos.map { e->
+            val rpcActions = rpcActionDtos.map { rpcActionDto->
+                val name = actionName(rpcActionDto.interfaceId, rpcActionDto.actionName)
+                if (rpcActionDto.mockRPCExternalServiceDtos != null && rpcActionDto.mockRPCExternalServiceDtos.isNotEmpty()){
+                    val ex = rpcActionDto.mockRPCExternalServiceDtos.map { e->
                         e.responses.mapIndexed { index, r->
                             val exAction = seededExternalServiceCluster[
-                                    RPCExternalServiceAction.getRPCExternalServiceActionName(e.interfaceFullName, e.functionName, e.requestRules[index], e.responseTypes[index])
+                                RPCExternalServiceAction.getRPCExternalServiceActionName(e.interfaceFullName, e.functionName, e.requestRules[index], e.responseTypes[index])
                             ]!!.copy() as ApiExternalServiceAction
                             try {
                                 setGeneBasedOnString(exAction.response.responseBody, r)
@@ -197,10 +197,30 @@ class RPCEndpointsHandler {
                             }
                         }.filterNotNull()
                     }.flatten()
-                else mutableListOf()
+                    exActions.add(ex)
+                }
 
-                exActions.add(ex)
-                processEndpoint(name, d, true)
+                if (rpcActionDto.mockDatabaseDtos != null && rpcActionDto.mockDatabaseDtos.isNotEmpty()){
+                    val dbEx = rpcActionDto.mockDatabaseDtos.map { dbDto->
+                        val dbExAction = seededDbMockObjects[
+                                DbAsExternalServiceAction.getDbAsExternalServiceAction(dbDto.commandName, dbDto.requests, dbDto.responseFullType)
+                        ]!!.copy() as DbAsExternalServiceAction
+                        try {
+                            if (dbDto.response != null)
+                                setGeneBasedOnString(dbExAction.response.responseBody, dbDto.response)
+                            else{
+                                dbExAction.response.responseBody.isActive = false
+                            }
+                            dbExAction
+                        }catch (e: Exception){
+                            log.warn("Fail to handle mocked Database responses:${e.message}")
+                            null
+                        }
+                    }.filterNotNull()
+                    exActions.add(dbEx)
+                }
+
+                processEndpoint(name, rpcActionDto, true)
             }.toMutableList()
 
             if (rpcActions.any { it.seeTopGenes().any { g-> !g.isLocallyValid() } }){
