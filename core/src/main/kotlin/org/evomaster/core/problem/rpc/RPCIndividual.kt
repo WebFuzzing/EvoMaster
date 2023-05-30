@@ -103,8 +103,7 @@ class RPCIndividual(
      * remove an action from [actions] at [position]
      */
     fun removeAction(position: Int) {
-        val removed = (killChildByIndex(getFirstIndexOfEnterpriseActionGroup() + position) as EnterpriseActionGroup).getMainAction()
-        removed.removeThisFromItsBindingGenes()
+        killChildByIndex(getFirstIndexOfEnterpriseActionGroup() + position) as EnterpriseActionGroup
     }
 
     private fun getFirstIndexOfEnterpriseActionGroup() = max(0, max(children.indexOfLast { it is DbAction }+1, children.indexOfFirst { it is EnterpriseActionGroup }))

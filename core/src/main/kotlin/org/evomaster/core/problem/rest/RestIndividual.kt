@@ -190,14 +190,12 @@ class RestIndividual(
         if(!getIndexedResourceCalls().keys.contains(position))
             throw IllegalArgumentException("position is out of range of list")
         val removed = killChildByIndex(getFirstIndexOfRestResourceCalls() + position) as RestResourceCalls
-        removed.removeThisFromItsBindingGenes()
     }
 
     fun removeResourceCall(remove: List<RestResourceCalls>) {
         if(!getResourceCalls().containsAll(remove))
             throw IllegalArgumentException("specified rest calls are not part of this individual")
         killChildren(remove)
-        remove.forEach { it.removeThisFromItsBindingGenes() }
     }
 
     /**

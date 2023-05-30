@@ -351,6 +351,12 @@ abstract class Gene(
         return checkForGloballyValid() && getViewOfChildren().all { it.isGloballyValid() }
     }
 
+    override fun callWinstonWolfe() {
+        super.callWinstonWolfe()
+
+        removeThisFromItsBindingGenes()
+        //TODO in future will deal with FK as well here
+    }
 
     protected open fun checkForGloballyValid() = true
 

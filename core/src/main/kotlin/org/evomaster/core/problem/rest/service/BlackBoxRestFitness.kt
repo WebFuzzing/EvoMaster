@@ -18,7 +18,7 @@ class BlackBoxRestFitness : RestFitness() {
         private val log: Logger = LoggerFactory.getLogger(BlackBoxRestFitness::class.java)
     }
 
-    override fun doCalculateCoverage(individual: RestIndividual, targets: Set<Int>): EvaluatedIndividual<RestIndividual>? {
+    override fun doCalculateCoverage(individual: RestIndividual, targets: Set<Int>, allCovered: Boolean): EvaluatedIndividual<RestIndividual>? {
 
         val cookies = mutableMapOf<String, List<NewCookie>>()
         val tokens = mutableMapOf<String, String>()

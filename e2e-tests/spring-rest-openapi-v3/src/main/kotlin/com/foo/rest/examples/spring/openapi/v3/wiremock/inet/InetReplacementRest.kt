@@ -24,6 +24,7 @@ class InetReplacementRest {
     @GetMapping(path = ["/exp"])
     fun exp(): ResponseEntity<String> {
 
+        //throw 500 by default on exception
         val address = InetAddress.getByName("imaginary-host.local")
 
         return try {
@@ -40,7 +41,7 @@ class InetReplacementRest {
             ResponseEntity.ok("OK")
         } catch (e: Exception) {
            // log("Exception: ${e.message}")
-            ResponseEntity.status(500).build()
+            ResponseEntity.status(400).build()
         }
     }
 }

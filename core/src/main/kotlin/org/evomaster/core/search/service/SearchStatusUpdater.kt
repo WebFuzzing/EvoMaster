@@ -20,6 +20,22 @@ class SearchStatusUpdater : SearchListener{
     @Inject
     private lateinit var archive: Archive<*>
 
+    var enabled = true
+
+    companion object{
+        fun eraseLine(){
+            print("\u001b[2K") // erase line
+        }
+
+        fun moveUp(){
+            print("\u001b[1A") // move up by 1 line
+        }
+
+        fun upLineAndErase(){
+            moveUp()
+            eraseLine()
+        }
+    }
 
     private var passed = "-1"
 
@@ -54,6 +70,10 @@ class SearchStatusUpdater : SearchListener{
     }
 
     override fun newActionEvaluated() {
+
+        if(!enabled){
+            return
+        }
 
         val percentageInt = (time.percentageUsedBudget() * 100).toInt()
         val current = String.format("%.3f", time.percentageUsedBudget() * 100)
@@ -118,16 +138,5 @@ class SearchStatusUpdater : SearchListener{
                print("\u001b[s")
      */
 
-    private fun eraseLine(){
-        print("\u001b[2K") // erase line
-    }
 
-    private fun moveUp(){
-        print("\u001b[1A") // move up by 1 line
-    }
-
-    private fun upLineAndErase(){
-        moveUp()
-        eraseLine()
-    }
 }
