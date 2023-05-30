@@ -5,10 +5,12 @@ import com.google.inject.TypeLiteral
 import org.evomaster.core.output.service.GraphQLTestCaseWriter
 import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.problem.graphql.GraphQLIndividual
+import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.remote.service.RemoteControllerImplementation
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FitnessFunction
+import org.evomaster.core.search.service.Minimizer
 import org.evomaster.core.search.service.Sampler
 
 class GraphQLBlackBoxModule(
@@ -31,11 +33,22 @@ class GraphQLBlackBoxModule(
                 .to(GraphQLBlackBoxFitness::class.java)
                 .asEagerSingleton()
 
+        bind(object : TypeLiteral<FitnessFunction<*>>() {})
+            .to(GraphQLBlackBoxFitness::class.java)
+            .asEagerSingleton()
+
         bind(object : TypeLiteral<Archive<GraphQLIndividual>>() {})
                 .asEagerSingleton()
 
         bind(object : TypeLiteral<Archive<*>>() {})
                 .to(object : TypeLiteral<Archive<GraphQLIndividual>>() {})
+
+        bind(object : TypeLiteral<Minimizer<GraphQLIndividual>>(){})
+                .asEagerSingleton()
+
+        bind(object : TypeLiteral<Minimizer<*>>(){})
+                .asEagerSingleton()
+
 
         if(usingRemoteController) {
             bind(RemoteController::class.java)

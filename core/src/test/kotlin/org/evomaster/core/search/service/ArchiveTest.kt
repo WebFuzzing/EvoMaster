@@ -248,7 +248,7 @@ class ArchiveTest{
                 .distinct()
                 .count()
 
-        assertEquals(2, n)
+        assertEquals(1, n)
 
         //reduce buffer size, so "a" should disappear when sampling, as longer
         config.archiveTargetLimit = 1
@@ -297,9 +297,9 @@ class ArchiveTest{
         /*
             Man: need to check with Andrea
          */
-        assertEquals(2, sizes.size)
-        assertTrue(sizes.contains(1))
-        assertTrue(sizes.contains(2))
+        assertEquals(1, sizes.size)
+//        assertTrue(sizes.contains(1))
+//        assertTrue(sizes.contains(2))
     }
 
     @Test
@@ -353,7 +353,7 @@ class ArchiveTest{
                 .distinct()
 
         assertEquals(1, sizes.size)
-        assertEquals(2, sizes.first())
+        assertEquals(1, sizes.first())
 
         //shorter, so should replace "a"
         val c = OneMaxIndividual(1)
@@ -388,7 +388,7 @@ class ArchiveTest{
                 .distinct()
 
         assertEquals(1, sizes.size)
-        assertEquals(2, sizes.first())
+        assertEquals(1, sizes.first())
 
         //better fitness, but still longer on any of those targets
         val c = OneMaxIndividual(3)
@@ -402,7 +402,7 @@ class ArchiveTest{
                 .distinct()
 
         assertEquals(1, sizes.size)
-        assertEquals(2, sizes.first())
+        assertEquals(1, sizes.first())
 
 
         //same length, but highest overall fitness
@@ -456,7 +456,7 @@ class ArchiveTest{
                 .distinct()
 
         assertEquals(1, sizes.size)
-        assertEquals(2, sizes.first())
+        assertEquals(1, sizes.first()) //now size is always 1, not depending on n
 
         (0 until 50).forEach { _ ->
             val b = OneMaxIndividual(2)

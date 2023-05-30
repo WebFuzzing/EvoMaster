@@ -1036,6 +1036,9 @@ class EMConfig {
     @Min(1.0)
     var maxTestSize = 10
 
+    @Cfg("Based on some heuristics, there are cases in which 'maxTestSize' can be overridden at runtime")
+    var enableOptimizedTestSize = true
+
     @Cfg("Tracking of SQL commands to improve test generation")
     var heuristicsForSQL = true
 
@@ -1727,6 +1730,27 @@ class EMConfig {
     @Cfg("Add predefined tests at the end of the search. An example is a test to fetch the schema of RESTful APIs.")
     var addPreDefinedTests : Boolean = true
 
+
+    @Cfg("Apply a minimization phase to make the generated tests more readable." +
+            " Achieved coverage would stay the same." +
+            " Generating shorter test cases might come at the cost of having more test cases.")
+    var minimize : Boolean = true
+
+
+    @Cfg("Maximum number of minutes that will be dedicated to the minimization phase." +
+            " A negative number mean no timeout is considered." +
+            " A value of 0 means minimization will be skipped, even if minimize=true.")
+    var minimizeTimeout = 5
+
+
+    @Cfg("When applying minimization phase, and some targets get lost when re-computing coverage," +
+            " then printout a detailed description.")
+    var minimizeShowLostTargets = true
+
+    @PercentageAsProbability
+    @Cfg("Losing targets when recomputing coverage is expected (e.g., constructors of singletons)," +
+            " but problematic if too much")
+    var minimizeThresholdForLoss = 0.2
 
     @Experimental
     @FilePath(true)

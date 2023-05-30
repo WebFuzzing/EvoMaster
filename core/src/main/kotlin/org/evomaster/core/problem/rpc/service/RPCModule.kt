@@ -5,11 +5,14 @@ import com.google.inject.TypeLiteral
 import org.evomaster.core.output.service.RPCTestCaseWriter
 import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.output.service.TestSuiteWriter
+import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rpc.RPCIndividual
+import org.evomaster.core.problem.webfrontend.WebIndividual
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.remote.service.RemoteControllerImplementation
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FitnessFunction
+import org.evomaster.core.search.service.Minimizer
 import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.mutator.Mutator
 import org.evomaster.core.search.service.mutator.StandardMutator
@@ -35,15 +38,31 @@ class RPCModule : AbstractModule(){
         bind(RPCEndpointsHandler::class.java)
             .asEagerSingleton()
 
+        bind(object : TypeLiteral<Minimizer<RPCIndividual>>(){})
+            .asEagerSingleton()
+
+        bind(object : TypeLiteral<Minimizer<*>>(){})
+            .asEagerSingleton()
+
         bind(object : TypeLiteral<FitnessFunction<RPCIndividual>>() {})
                 .to(RPCFitness::class.java)
                 .asEagerSingleton()
+
+        bind(object : TypeLiteral<FitnessFunction<*>>() {})
+            .to(RPCFitness::class.java)
+            .asEagerSingleton()
 
         bind(object : TypeLiteral<Archive<RPCIndividual>>() {})
                 .asEagerSingleton()
 
         bind(object : TypeLiteral<Archive<*>>() {})
                 .to(object : TypeLiteral<Archive<RPCIndividual>>() {})
+
+        bind(object : TypeLiteral<Minimizer<RPCIndividual>>(){})
+                .asEagerSingleton()
+
+        bind(object : TypeLiteral<Minimizer<*>>(){})
+                .asEagerSingleton()
 
         bind(RemoteController::class.java)
                 .to(RemoteControllerImplementation::class.java)
