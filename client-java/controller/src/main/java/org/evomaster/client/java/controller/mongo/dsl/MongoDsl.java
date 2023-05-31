@@ -36,23 +36,27 @@ public class MongoDsl implements  MongoSequenceDsl, MongoStatementDsl{
 
     /**
      * @param previous a DSL object which is executed in the front of this
-     * @return a DSL object to create SQL operations
+     * @return a DSL object to create MONGO operations
      */
     public static MongoSequenceDsl mongo(List<MongoInsertionDto>... previous) {
-
         return new MongoDsl(previous);
     }
 
     @Override
-    public MongoStatementDsl insertInto(String collectionName) {
+    public MongoStatementDsl insertInto(String databaseName, String collectionName) {
 
         checkDsl();
+
+        if (databaseName == null || databaseName.isEmpty()) {
+            throw new IllegalArgumentException("Unspecified database");
+        }
 
         if (collectionName == null || collectionName.isEmpty()) {
             throw new IllegalArgumentException("Unspecified collection");
         }
 
         MongoInsertionDto dto = new MongoInsertionDto();
+        dto.databaseName = databaseName;
         dto.collectionName = collectionName;
         list.add(dto);
 

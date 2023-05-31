@@ -1,0 +1,46 @@
+package org.evomaster.e2etests.spring.rest.mongo.foo;
+
+import com.foo.spring.rest.mongo.MongoPersonsAppController;
+import com.foo.spring.rest.mongo.MongoPersonsWithoutPostAppController;
+import org.evomaster.core.problem.rest.HttpVerb;
+import org.evomaster.core.problem.rest.RestIndividual;
+import org.evomaster.core.search.Solution;
+import org.evomaster.e2etests.utils.RestTestBase;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+public class
+
+
+MongoEMGenerationTest extends RestTestBase {
+
+    @BeforeAll
+    public static void initClass() throws Exception {
+        RestTestBase.initClass(new MongoPersonsWithoutPostAppController());
+    }
+
+    @Test
+    public void testRunEM() throws Throwable {
+
+        runTestHandlingFlakyAndCompilation(
+                "MongoEMGeneration",
+                "org.foo.spring.rest.mongo.MongoEMGeneration",
+                10000,
+                (args) -> {
+                    args.add("--enableWeightBasedMutationRateSelectionForGene");
+                    args.add("false");
+                    args.add("--heuristicsForMongo");
+                    args.add("true");
+                    args.add("--instrumentMR_MONGO");
+                    args.add("true");
+
+                    Solution<RestIndividual> solution = initAndRun(args);
+
+                    assertTrue(solution.getIndividuals().size() >= 1);
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/persons/list18", null);
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/persons/list18", null);
+                });
+    }
+}

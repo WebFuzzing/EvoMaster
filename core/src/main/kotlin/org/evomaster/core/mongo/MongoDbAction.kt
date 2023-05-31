@@ -5,7 +5,7 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
 import java.util.*
 
-class MongoDbAction(val collection: String, val documentsType: Class<*>, val accessedFields: Map<String, Any>, computedGenes: List<Gene>? = null) : Action(listOf()) {
+class MongoDbAction(val database: String, val collection: String, val documentsType: Class<*>, val accessedFields: Map<String, Any>, computedGenes: List<Gene>? = null) : Action(listOf()) {
 
     val genes: List<Gene> = (computedGenes ?: computeGenes()) .also { addChildren(it) }
 
@@ -47,6 +47,6 @@ class MongoDbAction(val collection: String, val documentsType: Class<*>, val acc
     }
 
     override fun copyContent(): Action {
-        return MongoDbAction(collection, documentsType, accessedFields, genes.map(Gene::copy))
+        return MongoDbAction(database, collection, documentsType, accessedFields, genes.map(Gene::copy))
     }
 }

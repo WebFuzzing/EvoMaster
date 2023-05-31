@@ -8,5 +8,5 @@ public interface MongoSequenceDsl {
      * @param collectionName the target table in the DB
      * @return a statement in which it can be specified the values to add
      */
-    MongoStatementDsl insertInto(String collectionName);
+    MongoStatementDsl insertInto(String databaseName, String collectionName);
 }

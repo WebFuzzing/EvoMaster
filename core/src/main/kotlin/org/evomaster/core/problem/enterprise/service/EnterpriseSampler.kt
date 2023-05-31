@@ -78,12 +78,12 @@ abstract class EnterpriseSampler<T> : Sampler<T>() where T : Individual {
         return actions
     }
 
-    fun sampleMongoInsertion(collection: String, documentsType: Class<*>, accessedFields: Map<String, Any>): List<MongoDbAction> {
+    fun sampleMongoInsertion(database: String, collection: String, documentsType: Class<*>, accessedFields: Map<String, Any>): List<MongoDbAction> {
 
         // Should I use something like this?
         //val extraConstraints = randomness.nextBoolean(apc.getExtraSqlDbConstraintsProbability())
 
-        val actions = MongoInsertBuilder().createMongoInsertionAction(collection, documentsType, accessedFields)
+        val actions = MongoInsertBuilder().createMongoInsertionAction(database, collection, documentsType, accessedFields)
             ?: throw IllegalStateException("No MongoDB schema is available")
         actions.flatMap{it.seeTopGenes()}.forEach{it.doInitialize(randomness)}
 

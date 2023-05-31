@@ -8,22 +8,24 @@ object MongoDbActionTransformer {
 
         val list = mutableListOf<MongoInsertionDto>()
 
-        for (i in 0 until insertions.size) {
+        for (element in insertions) {
 
-            val action = insertions[i]
+            val insertion = MongoInsertionDto().apply {
+                databaseName = element.database
+                collectionName = element.collection }
 
-            val insertion = MongoInsertionDto().apply { collectionName = action.collection }
-
-            val g = action.seeTopGenes().first()
+            val g = element.seeTopGenes().first()
             val entry = MongoInsertionEntryDto()
 
             // If is printed as JSON there might a problem
             // A Document(from Mongo) can be created from a JSON but some info might be lost
-            // Preferably is created from a EJSON (Extended JSON) as JSON can only directly represent a
+            // Preferably is created from an EJSON (Extended JSON) as JSON can only directly represent a
             // subset of the types supported by BSON.
             // Maybe we can create a new OutputFormat
 
             entry.value = g.getValueAsPrintableString()
+
+            // This is ignored for now
             entry.fieldName = g.getVariableName()
 
             insertion.data.add(entry)

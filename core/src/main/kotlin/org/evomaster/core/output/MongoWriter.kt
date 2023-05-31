@@ -43,7 +43,7 @@ object MongoWriter {
                         index == 0 && format.isJava() -> "List<MongoInsertionDto> $insertionVar = mongo($previousVar)"
                         index == 0 && format.isKotlin() -> "val $insertionVar = mongo($previousVar)"
                         else -> ".and()"
-                    } + ".insertInto(\"${evaluatedMongoDbAction.action.collection}\")")
+                    } + ".insertInto(\"${evaluatedMongoDbAction.action.database}\"" + ", " + "\"${evaluatedMongoDbAction.action.collection}\")")
 
                     if (index == 0) {
                         lines.indent()

@@ -5,6 +5,8 @@ import java.util.List;
 
 public class MongoInsertionDto {
 
+    public String databaseName;
+
     public String collectionName;
 
     public List<MongoInsertionEntryDto> data = new ArrayList<>();

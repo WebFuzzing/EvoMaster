@@ -124,7 +124,19 @@ public class MongoHandler {
         Map<String, Object> accessedFields = extractFieldsInQuery(query);
         Class<?> documentsType = extractDocumentsType(collection);
 
-        return new FailedQuery("operation.getCollection()", documentsType, accessedFields);
+        String collectionName;
+        String databaseName;
+
+        try {
+            Class<?> collectionClass = collection.getClass().getClassLoader().loadClass("com.mongodb.client.MongoCollection");
+            Object namespace = collectionClass.getMethod("getNamespace").invoke(collection);
+            collectionName = (String) namespace.getClass().getMethod("getCollectionName").invoke(namespace);
+            databaseName = (String) namespace.getClass().getMethod("getDatabaseName").invoke(namespace);
+        } catch (ClassNotFoundException |IllegalAccessException | InvocationTargetException | NoSuchMethodException e){
+            throw new RuntimeException(e);
+        }
+
+        return new FailedQuery(databaseName, collectionName, documentsType, accessedFields);
     }
 
     private static Class<?> extractDocumentsType(Object collection) {
