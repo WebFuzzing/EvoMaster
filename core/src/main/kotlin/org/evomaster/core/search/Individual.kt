@@ -216,6 +216,18 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
     }
 
     /**
+     * Remove a main action, using relative index between 0 and this.size()
+     */
+    open fun removeMainExecutableAction(relativeIndex: Int){
+        if(seeInitializingActions().isNotEmpty()){
+            throw IllegalStateException("For cases in which there are initializing actions, this method must be overridden")
+            //also MUST be overwritten if direct children might have subtrees with more than one main action, like in case of RestResource
+        }
+        //if there is no init action, then the relativeIndex is an actual index
+        killChildByIndex(relativeIndex)
+    }
+
+    /**
      * Return a view of all initializing actions done before the main
      * ones. Example: these could set up database before doing HTTP
      * calls toward the SUT.

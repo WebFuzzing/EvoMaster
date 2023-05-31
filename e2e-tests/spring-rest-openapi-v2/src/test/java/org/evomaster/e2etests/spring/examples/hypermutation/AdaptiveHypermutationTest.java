@@ -45,6 +45,10 @@ public class AdaptiveHypermutationTest extends HypermutationTestBase {
 
                     args.add("--probOfRandomSampling");
                     args.add("0.0");
+                    //minimization loses impact info
+                    args.add("--minimize");
+                    args.add("false");
+
 
                     Solution<RestIndividual> solution = initAndRun(args);
 

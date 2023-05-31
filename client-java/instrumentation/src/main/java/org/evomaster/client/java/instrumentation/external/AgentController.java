@@ -72,6 +72,9 @@ public class AgentController {
                     case TARGETS_INFO:
                         handleTargetInfos();
                         break;
+                    case ALL_COVERED_TARGETS_INFO:
+                        handleAllCoveredTargetsInfo();
+                        break;
                     case ACTION_INDEX:
                         handleActionIndex();
                         sendCommand(Command.ACK);
@@ -196,6 +199,14 @@ public class AgentController {
             InstrumentationController.extractSpecifiedDto(dtoNames);
         } catch (Exception e){
             SimpleLogger.error("Failure in handling extracting specified dto: "+e.getMessage());
+        }
+    }
+
+    private static void handleAllCoveredTargetsInfo(){
+        try {
+            sendObject(InstrumentationController.getAllCoveredTargetInfos());
+        }catch (Exception e) {
+            SimpleLogger.error("Failure in handling all covered info extraction: "+e.getMessage());
         }
     }
 

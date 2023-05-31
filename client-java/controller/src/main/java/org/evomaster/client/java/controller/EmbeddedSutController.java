@@ -56,6 +56,11 @@ public abstract class EmbeddedSutController extends SutController {
     }
 
     @Override
+    public final List<TargetInfo> getAllCoveredTargetInfos(){
+        return InstrumentationController.getAllCoveredTargetInfos();
+    }
+
+    @Override
     public final List<AdditionalInfo> getAdditionalInfoList(){
         return InstrumentationController.getAdditionalInfoList();
     }

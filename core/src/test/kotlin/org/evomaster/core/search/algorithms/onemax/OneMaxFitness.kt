@@ -9,12 +9,12 @@ import org.evomaster.core.search.tracer.Traceable
 class OneMaxFitness : FitnessFunction<OneMaxIndividual>() {
 
 
-    override fun doCalculateCoverage(individual: OneMaxIndividual, targets: Set<Int>)
+    override fun doCalculateCoverage(individual: OneMaxIndividual, targets: Set<Int>, allCovered: Boolean)
             : EvaluatedIndividual<OneMaxIndividual>? {
 
         val fv = FitnessValue(individual.size().toDouble())
 
-        targetsToEvaluate(targets, individual)
+        (if(allCovered) (0 until individual.n).toSet() else targetsToEvaluate(targets, individual))
                 .forEach { fv.updateTarget(it, individual.getValue(it)) }
 
         return EvaluatedIndividual(

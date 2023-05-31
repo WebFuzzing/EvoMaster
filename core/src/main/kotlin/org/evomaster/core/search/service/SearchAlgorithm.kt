@@ -2,6 +2,7 @@ package org.evomaster.core.search.service
 
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.mutator.Mutator
@@ -33,6 +34,12 @@ abstract class SearchAlgorithm<T> where T : Individual {
 
     @Inject(optional = true)
     private lateinit var mutator: Mutator<T>
+
+    @Inject
+    private lateinit var minimizer: Minimizer<T>
+
+    @Inject
+    private lateinit var ssu: SearchStatusUpdater
 
     private var lastSnapshot = 0
 
@@ -78,6 +85,18 @@ abstract class SearchAlgorithm<T> where T : Individual {
     }
 
     private fun handleAfterSearch() {
+
+        ssu.enabled = false
+
+        if(config.minimize){
+            minimizer.doStartTheTimer()
+            minimizer.minimizeMainActionsPerCoveredTargetInArchive()
+            minimizer.pruneNonNeededDatabaseActions()
+            minimizer.simplifyActions()
+            val seconds = minimizer.passedTimeInSecond()
+            LoggingUtil.getInfoLogger().info("Minimization phase took $seconds seconds")
+        }
+
         if(config.addPreDefinedTests) {
             for (ind in sampler.getPreDefinedIndividuals()) {
                 ff.calculateCoverage(ind)?.run {
@@ -88,8 +107,8 @@ abstract class SearchAlgorithm<T> where T : Individual {
     }
 
     private fun needsToSnapshot(): Boolean {
-        var isSnapshotEnabled = config.enableWriteSnapshotTests
-        var snapshotPeriod = config.writeSnapshotTestsIntervalInSeconds
+        val isSnapshotEnabled = config.enableWriteSnapshotTests
+        val snapshotPeriod = config.writeSnapshotTestsIntervalInSeconds
 
         return isSnapshotEnabled && time.getElapsedSeconds() - lastSnapshot > snapshotPeriod
     }
