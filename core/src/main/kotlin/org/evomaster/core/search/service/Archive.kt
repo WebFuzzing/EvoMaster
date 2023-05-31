@@ -83,12 +83,26 @@ class Archive<T> where T : Individual {
     private var lastChosen: Int? = null
 
 
+    /**
+     * Kill all populations.
+     * This is meanly needed for minimization phase, in which archive needs to be cleared and
+     * tests re-added to it
+     */
+    fun clearPopulations(){
+        populations.clear()
+    }
+
+
     fun extractSolution(): Solution<T> {
         val uniques = getUniquePopulation()
 
         return Solution(uniques.toMutableList(), config.outputFilePrefix, config.outputFileSuffix, Termination.NONE)
     }
 
+
+    fun getCopyOfUniqueCoveringIndividuals() : List<T>{
+        return getUniquePopulation().map { it.individual }
+    }
 
     private fun getUniquePopulation(): MutableSet<EvaluatedIndividual<T>> {
 
@@ -98,7 +112,7 @@ class Archive<T> where T : Individual {
             This is not an issue, as each individual is copied
             when sampled.
             Here, as an individual can go to many populations,
-            we want to avoiding it counting it several times.
+            we want to avoid counting it several times.
          */
         val uniques = mutableSetOf<EvaluatedIndividual<T>>()
 
@@ -311,6 +325,15 @@ class Archive<T> where T : Individual {
          */
 
         return populations.keys.filter { !isCovered(it) }.toSet()
+    }
+
+    /**
+     * Get all known targets that are fully covered
+     *
+     * @return a list of ids
+     */
+    fun coveredTargets(): Set<Int> {
+        return populations.keys.filter { isCovered(it) }.toSet()
     }
 
 

@@ -40,7 +40,8 @@ class SleepEMTest : SpringTestBase() {
 
             assertTrue(solution.individuals.size >= 1)
 
-            assertEquals(iterations, SleepCounter.counter.get())
+            //minimization re-execute the test
+            assertEquals(iterations+1, SleepCounter.counter.get())
         }
     }
 

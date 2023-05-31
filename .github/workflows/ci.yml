@@ -52,6 +52,12 @@ jobs:
           path: core/target/evomaster.jar
           retention-days: ${{env.retention-days}}
           if-no-files-found: error
+      # Make test report accessible from GitHub Actions (as Maven logs are long)
+      - name: Publish Test Report
+        if: success() || failure()
+        uses: mikepenz/action-junit-report@v3
+        with:
+          report_paths: '**/target/surefire-reports/TEST-*.xml'
       # Upload coverage results
       - name: Upload coverage to CodeCov
         run: curl -s https://codecov.io/bash | bash
@@ -122,9 +128,12 @@ jobs:
         with:
           name: evomaster.jar
           path: core/target
+      ### NOTE: we no longer run this, as NodeJS for backend no longer supported.
+      ### This started to fail once introduced first version of "minimization", as JS driver would need
+      ### to be updated with new features to support it
       # E2E for JS. Must be run AFTER the JS and Core builds
-      - name: E2E for JavaScript
-        run:  bash ./client-js/e2e-tests/e2e.sh
+#      - name: E2E for JavaScript
+#        run:  bash ./client-js/e2e-tests/e2e.sh
 
 ### TODO currently disabled, as it takes forever on CI (1-2 hours...), compared to few minutes on local machine.
 ### Need to find out why

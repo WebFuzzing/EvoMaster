@@ -115,7 +115,6 @@ abstract class MapGene<K, V>(
         } else {
             log.trace("Removing gene in mutation")
             val removed = killChildByIndex(randomness.nextInt(elements.size)) as Gene
-            removed.removeThisFromItsBindingGenes()
         }
         return true
     }
@@ -184,7 +183,6 @@ abstract class MapGene<K, V>(
         //this is a reference heap check, not based on `equalsTo`
         if (elements.contains(element)){
             killChild(element)
-            element.removeThisFromItsBindingGenes()
         }else{
             log.warn("the specified element (${if (element.isPrintable()) element.getValueAsPrintableString() else "not printable"})) does not exist in this map")
         }

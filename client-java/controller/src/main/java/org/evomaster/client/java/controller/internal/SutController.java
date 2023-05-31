@@ -1050,6 +1050,9 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     public abstract List<TargetInfo> getTargetInfos(Collection<Integer> ids);
 
+    public abstract List<TargetInfo> getAllCoveredTargetInfos();
+
+
     /**
      * @return additional info for each action in the test.
      * The list is ordered based on the action index.

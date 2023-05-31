@@ -136,6 +136,10 @@ abstract class EnterpriseIndividual(
         killChildByIndex(position)
     }
 
+    override fun removeMainExecutableAction(relativeIndex: Int){
+        removeMainActionGroupAt(relativeIndex)
+    }
+
     /**
      * return a list of all db actions in [this] individual
      * that include all initializing actions plus db actions among main actions.
