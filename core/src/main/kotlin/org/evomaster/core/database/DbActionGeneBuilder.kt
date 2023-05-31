@@ -1,6 +1,7 @@
 package org.evomaster.core.database
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
+import org.evomaster.client.java.instrumentation.shared.RegexSharedUtils
 import org.evomaster.core.database.schema.Column
 import org.evomaster.core.database.schema.ColumnDataType
 import org.evomaster.core.database.schema.ForeignKey
@@ -707,8 +708,9 @@ class DbActionGeneBuilder {
     }
 
     private fun buildJavaRegexGene(name: String, javaRegExPattern: String): RegexGene {
-        val disjunctionRxGenes = RegexHandler.createGeneForJVM(javaRegExPattern).disjunctions
-        return RegexGene(name, disjunctions = disjunctionRxGenes, "${RegexGene.JAVA_REGEX_PREFIX}${javaRegExPattern}")
+        val fullMatchRegex = RegexSharedUtils.forceFullMatch(javaRegExPattern)
+        val disjunctionRxGenes = RegexHandler.createGeneForJVM(fullMatchRegex).disjunctions
+        return RegexGene(name, disjunctions = disjunctionRxGenes, "${RegexGene.JAVA_REGEX_PREFIX}${fullMatchRegex}")
     }
 
     /**
