@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rest.individual
 
 import com.google.inject.*
+import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.schema.Table
 import org.evomaster.core.problem.rest.RestIndividual
@@ -11,6 +12,7 @@ import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.RestResourceNode
 import org.evomaster.core.problem.rest.service.*
 import org.evomaster.core.problem.util.BindingBuilder
+import org.evomaster.core.problem.util.BindingBuilder.isExtraTaintParam
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.EvaluatedIndividual
@@ -216,7 +218,9 @@ class RestResourceIndividualDisabledHMTest : RestIndividualTestBase(){
                 }
             }
 
-            val nosql = call.seeGenes(Individual.GeneFilter.NO_SQL).filter { it.isMutable() }
+            val nosql = call.seeGenes(Individual.GeneFilter.NO_SQL).filter {
+                !isExtraTaintParam(it.name) && it.isMutable()
+            }
 
 
             when(call.template!!.template){
@@ -304,7 +308,7 @@ class RestResourceIndividualDisabledHMTest : RestIndividualTestBase(){
             // collect all mutable&bindingable leaf gene for all actions
             val allGene = call.seeActions(ActionFilter.ALL)
                 .flatMap { it.seeTopGenes() }
-                .filter { it.isMutable() && it !is SqlPrimaryKeyGene && it !is SqlForeignKeyGene }
+                .filter { !isExtraTaintParam(it.name) && it.isMutable() && it !is SqlPrimaryKeyGene && it !is SqlForeignKeyGene }
                 .flatMap { it.flatView{g: Gene -> g is DateGene || g is DateTimeGene || g is TimeGene} }.filter { it.getViewOfChildren().isEmpty() }
 
             allGene.groupBy { it.name }.forEach { (t, u) ->
@@ -317,5 +321,4 @@ class RestResourceIndividualDisabledHMTest : RestIndividualTestBase(){
             }
         }
     }
-
 }

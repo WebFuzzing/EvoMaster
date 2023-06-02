@@ -204,6 +204,12 @@ class StringGene(
          */
         //assert(!tainted)
 
+        /*
+            it binds with any value, skip to apply the global taint
+         */
+        if (isBoundGene())
+            return
+
         //check if starting directly with a tainted value
         val state = getSearchGlobalState()!! //cannot be null when this method is called
         if(state.config.taintOnSampling){
