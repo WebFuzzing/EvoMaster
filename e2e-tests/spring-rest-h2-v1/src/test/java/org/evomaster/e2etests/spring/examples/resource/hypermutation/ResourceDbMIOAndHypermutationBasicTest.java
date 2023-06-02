@@ -9,6 +9,7 @@ import org.evomaster.core.problem.rest.service.ResourceManageService;
 import org.evomaster.core.problem.rest.service.ResourceRestMutator;
 import org.evomaster.core.problem.rest.service.RestResourceFitness;
 import org.evomaster.core.problem.rest.service.RestResourceStructureMutator;
+import org.evomaster.core.problem.util.BindingBuilder;
 import org.evomaster.core.search.ActionFilter;
 import org.evomaster.core.search.EvaluatedIndividual;
 import org.evomaster.core.search.Individual.GeneFilter;
@@ -56,7 +57,7 @@ public class ResourceDbMIOAndHypermutationBasicTest extends ResourceMIOHWTestBas
         RestIndividual twoCalls = new RestIndividual(calls, SampleType.SMART_RESOURCE, null, Collections.emptyList(), null, 1);
         twoCalls.doInitializeLocalId();
         EvaluatedIndividual<RestIndividual> twoCallsEval = ff.calculateCoverage(twoCalls, Collections.emptySet());
-        assertEquals(4, mutator.genesToMutation(twoCalls, twoCallsEval, Collections.emptySet()).size());
+        assertEquals(4, mutator.genesToMutation(twoCalls, twoCallsEval, Collections.emptySet()).stream().filter(s-> !BindingBuilder.INSTANCE.isExtraTaintParam(s.getName())).count());
 
         MutatedGeneSpecification spec = new MutatedGeneSpecification();
         RestIndividual mutatedTwoCalls = mutator.mutate(twoCallsEval, Collections.emptySet(), spec);
@@ -123,7 +124,7 @@ public class ResourceDbMIOAndHypermutationBasicTest extends ResourceMIOHWTestBas
 
         // all SQL genes can be bound with POST, so the mutable SQL genes should be empty.
         assertEquals(0, rAcall.seeGenes(GeneFilter.ONLY_SQL).size());
-        assertEquals(1, rAcall.seeGenes(GeneFilter.ALL).stream().filter(Gene::isMutable).count());
+        assertEquals(1, rAcall.seeGenes(GeneFilter.ALL).stream().filter(s-> !BindingBuilder.INSTANCE.isExtraTaintParam(s.getName()) && s.isMutable()).count());
 
         String raIdKey = "/api/rA/{rAId}";
         String raIdPostTemplate = "GET";
@@ -140,8 +141,8 @@ public class ResourceDbMIOAndHypermutationBasicTest extends ResourceMIOHWTestBas
         checkingBinding(rAIdcall, "GET", raIdKey,true);
 
         //exclude 'id' gene as it can be bound with GET
-        assertEquals(2, rAIdcall.seeGenes(GeneFilter.ONLY_SQL).size());
-        assertEquals(1, rAIdcall.seeGenes(GeneFilter.NO_SQL).size());
+        assertEquals(2, rAIdcall.seeGenes(GeneFilter.ONLY_SQL).stream().filter(s-> !BindingBuilder.INSTANCE.isExtraTaintParam(s.getName())).count());
+        assertEquals(1, rAIdcall.seeGenes(GeneFilter.NO_SQL).stream().filter(s-> !BindingBuilder.INSTANCE.isExtraTaintParam(s.getName())).count());
 
         //test binding after value mutator
         RestIndividual raIdInd = new RestIndividual(calls, SampleType.SMART_RESOURCE, null, Collections.emptyList(), null, 1);
