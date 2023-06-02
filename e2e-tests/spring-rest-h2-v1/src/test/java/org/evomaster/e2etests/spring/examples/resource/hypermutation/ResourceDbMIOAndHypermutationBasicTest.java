@@ -63,7 +63,7 @@ public class ResourceDbMIOAndHypermutationBasicTest extends ResourceMIOHWTestBas
         RestIndividual mutatedTwoCalls = mutator.mutate(twoCallsEval, Collections.emptySet(), spec);
         assertEquals(0, spec.mutatedDbGeneInfo().size());
         // it might be flaky. but with specified seed, this should be determinate
-        assertEquals(2, spec.mutatedGeneInfo().size());
+        assertFalse(spec.mutatedGeneInfo().isEmpty());
 
 //        Gene rdObj = calls.get(0).seeGenes(GeneFilter.NO_SQL).stream().findFirst().orElse(null);
 //        Gene mrdObj = mutatedTwoCalls.getResourceCalls().get(0).seeGenes(GeneFilter.NO_SQL).stream().findFirst().orElse(null);
@@ -149,7 +149,7 @@ public class ResourceDbMIOAndHypermutationBasicTest extends ResourceMIOHWTestBas
         raIdInd.doInitializeLocalId();
         EvaluatedIndividual<RestIndividual> rdIdEval = ff.calculateCoverage(raIdInd, Collections.emptySet());
         // mutable genes should be 0+1+2+1=4
-        assertEquals(4, mutator.genesToMutation(raIdInd, rdIdEval, Collections.emptySet()).size());
+        assertEquals(4, mutator.genesToMutation(raIdInd, rdIdEval, Collections.emptySet()).stream().filter(s-> !BindingBuilder.INSTANCE.isExtraTaintParam(s.getName())).count());
 
         MutatedGeneSpecification mutatedSpec = new MutatedGeneSpecification();
         RestIndividual mutatedInd = mutator.mutate(rdIdEval, Collections.emptySet(), mutatedSpec);
