@@ -104,7 +104,7 @@ public class EntityJPAData {
         this.positiveOrZero = positiveOrZero;
     }
 
-    //    @DecimalMin(value = "3.1416")
+    @DecimalMin(value = "3.1416")
     @Column(name = "decimal_min")
     private int decimalMin;
 
@@ -116,7 +116,7 @@ public class EntityJPAData {
         this.decimalMin = decimalMin;
     }
 
-    //    @DecimalMax(value = "0.000001")
+    @DecimalMax(value = "0.000001")
     @Column(name = "decimal_max")
     private int decimalMax;
 
@@ -129,6 +129,7 @@ public class EntityJPAData {
     }
 
     @Size(min = 1, max = 8)
+    @Column(name = "size")
     private String size;
 
     public String getSize() {
@@ -139,4 +140,20 @@ public class EntityJPAData {
         this.size = size;
     }
 
+    @Pattern(regexp="\\Qfoo.com\\E")
+    @Column(name = "reg_exp")
+    private String regexp;
+
+    public String getRegexp() {
+        return regexp;
+    }
+
+    public void setRegexp(String regexp) {
+        this.regexp = regexp;
+    }
+
+
+    @Digits(integer = 2, fraction = 3)
+    @Column(name = "big_decimal")
+    private BigDecimal bigDecimal;
 }
