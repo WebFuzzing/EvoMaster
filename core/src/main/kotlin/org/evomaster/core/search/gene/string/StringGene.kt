@@ -205,6 +205,12 @@ class StringGene(
         //assert(!tainted)
 
         /*
+            the gene might be initialized without global constraint
+         */
+        if (!checkForGloballyValid())
+            repair()
+
+        /*
             it binds with any value, skip to apply the global taint
          */
         if (isBoundGene())
