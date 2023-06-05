@@ -5,6 +5,7 @@ import org.evomaster.core.database.DbAction;
 import org.evomaster.core.problem.rest.resource.RestResourceCalls;
 import org.evomaster.core.problem.rest.resource.RestResourceNode;
 import org.evomaster.core.problem.rest.service.ResourceManageService;
+import org.evomaster.core.problem.util.BindingBuilder;
 import org.evomaster.core.search.ActionFilter;
 import org.evomaster.core.search.Individual.GeneFilter;
 import org.evomaster.e2etests.spring.examples.resource.ResourceMIOHWTestBase;
@@ -44,7 +45,7 @@ public class ResourceDbMIOBasicTest extends ResourceMIOHWTestBase {
         List<RestResourceCalls> calls = new ArrayList<>();
         rmanger.sampleCall(raKey, true, calls, 10, false, Collections.emptyList(), raPostTemplate);
         assertEquals(2, calls.get(0).seeActions(ActionFilter.ALL).size());
-        assertEquals(2, calls.get(0).seeGenes(GeneFilter.ALL).stream().filter(s-> s.isMutable()).count());
+        assertEquals(2, calls.get(0).seeGenes(GeneFilter.ALL).stream().filter(s-> !BindingBuilder.INSTANCE.isExtraTaintParam(s.getName()) && s.isMutable()).count());
         checkingBinding(calls.get(0), "POST-POST", raKey, false);
 
         String raIdKey = "/api/rA/{rAId}";
@@ -52,7 +53,7 @@ public class ResourceDbMIOBasicTest extends ResourceMIOHWTestBase {
         calls.clear();
         rmanger.sampleCall(raIdKey, true, calls, 10, false, Collections.emptyList(), raIdPostTemplate);
         assertEquals(2, calls.get(0).seeActions(ActionFilter.ALL).size());
-        assertEquals(2, calls.get(0).seeGenes(GeneFilter.ALL).stream().filter(s-> s.isMutable()).count());
+        assertEquals(2, calls.get(0).seeGenes(GeneFilter.ALL).stream().filter(s->  !BindingBuilder.INSTANCE.isExtraTaintParam(s.getName()) && s.isMutable()).count());
         checkingBinding(calls.get(0), raIdPostTemplate, raIdKey, false);
 
         // SQL-GET

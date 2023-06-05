@@ -3,6 +3,7 @@ package org.evomaster.core.problem.rest
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.api.ApiWsIndividual
+import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.SamplerSpecification
@@ -22,15 +23,15 @@ import kotlin.math.max
  * @property index indicates when the individual is created, ie, using num of evaluated individual.
  */
 class RestIndividual(
-        val sampleType: SampleType,
-        val sampleSpec: SamplerSpecification? = null,
-        trackOperator: TrackOperator? = null,
-        index : Int = -1,
-        allActions : MutableList<out ActionComponent>,
-        mainSize : Int = allActions.size,
-        dbSize: Int = 0,
-        groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(allActions,mainSize,dbSize)
-): ApiWsIndividual(trackOperator, index, allActions,
+    sampleType: SampleType,
+    val sampleSpec: SamplerSpecification? = null,
+    trackOperator: TrackOperator? = null,
+    index : Int = -1,
+    allActions : MutableList<out ActionComponent>,
+    mainSize : Int = allActions.size,
+    dbSize: Int = 0,
+    groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(allActions,mainSize,dbSize)
+): ApiWsIndividual(sampleType, trackOperator, index, allActions,
     childTypeVerifier = {
         RestResourceCalls::class.java.isAssignableFrom(it)
                 || DbAction::class.java.isAssignableFrom(it)
@@ -41,22 +42,22 @@ class RestIndividual(
     }
 
     constructor(
-            resourceCalls: MutableList<RestResourceCalls>,
-            sampleType: SampleType,
-            sampleSpec: SamplerSpecification? = null,
-            dbInitialization: MutableList<DbAction> = mutableListOf(),
-            trackOperator: TrackOperator? = null,
-            index : Int = -1
+        resourceCalls: MutableList<RestResourceCalls>,
+        sampleType: SampleType,
+        sampleSpec: SamplerSpecification? = null,
+        dbInitialization: MutableList<DbAction> = mutableListOf(),
+        trackOperator: TrackOperator? = null,
+        index : Int = -1
     ) : this(sampleType, sampleSpec, trackOperator, index, mutableListOf<ActionComponent>().apply {
         addAll(dbInitialization); addAll(resourceCalls)
     }, resourceCalls.size, dbInitialization.size)
 
     constructor(
-            actions: MutableList<out Action>,
-            sampleType: SampleType,
-            dbInitialization: MutableList<DbAction> = mutableListOf(),
-            trackOperator: TrackOperator? = null,
-            index : Int = Traceable.DEFAULT_INDEX
+        actions: MutableList<out Action>,
+        sampleType: SampleType,
+        dbInitialization: MutableList<DbAction> = mutableListOf(),
+        trackOperator: TrackOperator? = null,
+        index : Int = Traceable.DEFAULT_INDEX
     ) : this(
                     actions.map {RestResourceCalls(actions= listOf(it as RestCallAction), dbActions = listOf())}.toMutableList(),
                     sampleType,
@@ -83,7 +84,7 @@ class RestIndividual(
 
     override fun canMutateStructure(): Boolean {
         return sampleType == SampleType.RANDOM ||
-                sampleType == SampleType.SMART_GET_COLLECTION ||
+                sampleType == SampleType.REST_SMART_GET_COLLECTION ||
                 sampleType == SampleType.SMART_RESOURCE
     }
 
