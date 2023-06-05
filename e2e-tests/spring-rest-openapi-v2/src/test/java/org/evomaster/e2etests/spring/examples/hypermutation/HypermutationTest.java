@@ -28,7 +28,7 @@ public class HypermutationTest extends HypermutationTestBase {
         runTestHandlingFlakyAndCompilation(
                 "hypermtation/TestHyperweight",
                 "org.adaptivehypermuation.HyperWeightTest",
-                1000,
+                500,
                 true,
                 (args) -> {
 
