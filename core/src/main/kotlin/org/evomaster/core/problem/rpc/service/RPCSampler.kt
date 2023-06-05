@@ -6,6 +6,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.api.service.ApiWsSampler
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
+import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCIndividual
@@ -98,7 +99,7 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
             val a = sampleRandomAction(0.05)
             EnterpriseActionGroup(mutableListOf(a), RPCCallAction::class.java)
         }
-        val ind = createRPCIndividual(actions.toMutableList())
+        val ind = createRPCIndividual(sampleType = SampleType.RANDOM, actions.toMutableList())
         ind.doGlobalInitialize(searchGlobalState)
         return ind
     }
@@ -138,16 +139,17 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
                         rpcHandler.actionWithAllCandidates(actionWithAuth)
                             .forEach { actionWithSeeded->
                                 val a = EnterpriseActionGroup(mutableListOf(actionWithSeeded), RPCCallAction::class.java)
-                                val ind = createRPCIndividual(mutableListOf(a))
+                                val ind = createRPCIndividual(SampleType.RANDOM, mutableListOf(a))
                                 adHocInitialIndividuals.add(ind)
                         }
                     }
                 }
     }
 
-    private fun createRPCIndividual(actions : MutableList<EnterpriseActionGroup>) : RPCIndividual{
+    private fun createRPCIndividual(sampleType: SampleType, actions : MutableList<EnterpriseActionGroup>) : RPCIndividual{
         // enable tracking in rpc
         return RPCIndividual(
+            sampleType = sampleType,
             trackOperator = if(config.trackingEnabled()) this else null,
             index = if (config.trackingEnabled()) time.evaluatedIndividuals else -1,
             allActions=actions as MutableList<ActionComponent>

@@ -107,7 +107,7 @@ class EvaluatedIndividualBuilder {
         ): EvaluatedIndividual<RPCIndividual>{
             if (!format.isJavaOrKotlin())
                 throw IllegalArgumentException("do not support to generate faked evaluated RPC individual for testing test writer")
-            val individual = RPCIndividual(actions = actions, externalServicesActions = externalServicesActions)
+            val individual = RPCIndividual(SampleType.RANDOM, actions = actions, externalServicesActions = externalServicesActions)
 
             individual.doInitialize()
 

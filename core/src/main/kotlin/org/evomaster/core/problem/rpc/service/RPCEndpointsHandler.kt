@@ -13,6 +13,7 @@ import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
+import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.problem.externalservice.rpc.RPCExternalServiceAction
 import org.evomaster.core.problem.externalservice.rpc.parm.RPCResponseParam
@@ -199,7 +200,7 @@ class RPCEndpointsHandler {
                 log.warn("The given test (${e.key}) is invalid (e.g., violate constraints) that will not be involved in the test generation")
                 null
             }else
-                RPCIndividual(actions = rpcActions, externalServicesActions = exActions)
+                RPCIndividual(sampleType = SampleType.SEEDED, actions = rpcActions, externalServicesActions = exActions)
 
         }.filterNotNull()
     }

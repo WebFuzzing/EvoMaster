@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.webfrontend.service
 
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
+import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.enterprise.service.EnterpriseSampler
 import org.evomaster.core.problem.webfrontend.WebAction
 import org.evomaster.core.problem.webfrontend.WebIndividual
@@ -63,7 +64,7 @@ class WebSampler : EnterpriseSampler<WebIndividual>() {
             val a = sampleUndefinedAction()
             actions.add(EnterpriseActionGroup(mutableListOf(a), WebAction::class.java))
         }
-        val ind =  WebIndividual(actions)
+        val ind =  WebIndividual(SampleType.RANDOM, actions)
         ind.doGlobalInitialize(searchGlobalState)
 
         return ind
