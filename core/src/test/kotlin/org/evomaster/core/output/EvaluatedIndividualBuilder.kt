@@ -3,6 +3,7 @@ package org.evomaster.core.output
 import org.evomaster.core.TestUtils
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionResult
+import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.problem.externalservice.rpc.RPCExternalServiceAction
 import org.evomaster.core.problem.externalservice.rpc.parm.RPCResponseParam

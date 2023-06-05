@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory
  * per action, and not here in the initialization phase.
  */
 abstract class EnterpriseIndividual(
+    val sampleType: SampleType,
     /**
      * a tracked operator to manipulate the individual (nullable)
      */

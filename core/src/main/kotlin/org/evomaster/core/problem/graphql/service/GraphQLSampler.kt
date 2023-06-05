@@ -1,16 +1,11 @@
 package org.evomaster.core.problem.graphql.service
 
-import com.google.inject.Inject
-import org.evomaster.client.java.controller.api.dto.SutInfoDto
-import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.graphql.*
 import org.evomaster.core.problem.graphql.builder.GraphQLActionBuilder
 import org.evomaster.core.problem.httpws.service.HttpWsSampler
-import org.evomaster.core.problem.rest.SampleType
-import org.evomaster.core.problem.rest.service.AbstractRestSampler
+import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.remote.SutProblemException
-import org.evomaster.core.remote.service.RemoteController
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.annotation.PostConstruct

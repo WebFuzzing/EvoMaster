@@ -2,7 +2,7 @@ package org.evomaster.e2etests.spring.examples.resource.hypermutation;
 
 import com.google.inject.Injector;
 import org.evomaster.core.problem.rest.RestIndividual;
-import org.evomaster.core.problem.rest.SampleType;
+import org.evomaster.core.problem.enterprise.SampleType;
 import org.evomaster.core.problem.rest.resource.RestResourceCalls;
 import org.evomaster.core.problem.rest.resource.RestResourceNode;
 import org.evomaster.core.problem.rest.service.ResourceManageService;

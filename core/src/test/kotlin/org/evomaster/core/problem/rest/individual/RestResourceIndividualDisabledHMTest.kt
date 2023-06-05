@@ -1,11 +1,10 @@
 package org.evomaster.core.problem.rest.individual
 
 import com.google.inject.*
-import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.schema.Table
 import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.SampleType
+import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.resource.ResourceCluster
 import org.evomaster.core.problem.rest.resource.ResourceStatus
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
