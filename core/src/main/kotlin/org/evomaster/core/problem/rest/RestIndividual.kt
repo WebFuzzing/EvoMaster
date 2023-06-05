@@ -84,7 +84,7 @@ class RestIndividual(
 
     override fun canMutateStructure(): Boolean {
         return sampleType == SampleType.RANDOM ||
-                sampleType == SampleType.SMART_GET_COLLECTION ||
+                sampleType == SampleType.REST_SMART_GET_COLLECTION ||
                 sampleType == SampleType.SMART_RESOURCE
     }
 

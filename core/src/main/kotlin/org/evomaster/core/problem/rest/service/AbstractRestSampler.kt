@@ -176,7 +176,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
             val seededTestCases = parser.parseTestCases(config.seedTestCasesPath)
             adHocInitialIndividuals.addAll(seededTestCases.map {
                 it.forEach { a -> a.doInitialize() }
-                createIndividual(it)
+                createIndividual(SampleType.SEEDED, it)
             })
         }
 
@@ -186,7 +186,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
     override fun getPreDefinedIndividuals() : List<RestIndividual>{
         val addCallAction = addCallToSwagger() ?: return listOf()
         addCallAction.doInitialize()
-        return listOf(createIndividual(mutableListOf(addCallAction)))
+        return listOf(createIndividual(SampleType.PREDEFINED,mutableListOf(addCallAction)))
     }
 
     open fun getExcludedActions() : List<RestCallAction>{
@@ -311,11 +311,11 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
      * @return a created individual with specified actions, i.e., [restCalls].
      * All actions must have been already initialized
      */
-    open fun createIndividual(restCalls: MutableList<RestCallAction>): RestIndividual {
+    open fun createIndividual(sampleType: SampleType, restCalls: MutableList<RestCallAction>): RestIndividual {
         if(restCalls.any { !it.isInitialized() }){
             throw IllegalArgumentException("Action is not initialized")
         }
-        val ind =  RestIndividual(restCalls, SampleType.SMART, mutableListOf()//, usedObjects.copy()
+        val ind =  RestIndividual(restCalls, sampleType, mutableListOf()//, usedObjects.copy()
                 ,trackOperator = if (config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else Traceable.DEFAULT_INDEX)
         ind.doInitializeLocalId()
         org.evomaster.core.Lazy.assert { ind.isInitialized() }
