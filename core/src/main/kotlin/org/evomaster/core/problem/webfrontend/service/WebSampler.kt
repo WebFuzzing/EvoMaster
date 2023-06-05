@@ -1,5 +1,7 @@
 package org.evomaster.core.problem.webfrontend.service
 
+import org.evomaster.client.java.controller.api.SeleniumEMUtils
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.enterprise.service.EnterpriseSampler
 import org.evomaster.core.problem.webfrontend.WebAction
@@ -39,8 +41,20 @@ class WebSampler : EnterpriseSampler<WebIndividual>() {
         val startingPage = infoDto.webProblem.urlPathOfStartingPage
             ?: throw SutProblemException("Not specified urlPathOfStartingPage")
 
-        browserController.initUrlOfStartingPage(infoDto.baseUrlOfSUT + startingPage,true)
+        if(startingPage.startsWith("http")){
+            LoggingUtil.uniqueUserWarn("The urlPathOfStartingPage you provided starts with 'http'." +
+                    " You sure you provided a path instead of a whole URL?")
+        }
+
+        val url = SeleniumEMUtils.combineBaseUrlAndUrlPath(infoDto.baseUrlOfSUT, startingPage)
+        try {
+            browserController.initUrlOfStartingPage(url, true)
+        } catch (e: IllegalArgumentException){
+            throw SutProblemException("Issue with inferred URL for home page: $url\n${e.message}")
+        }
         browserController.startChromeInDocker()
+
+        LoggingUtil.getInfoLogger().info("Home page of tested application -> $url")
 
        // setupAuthentication(infoDto)
 

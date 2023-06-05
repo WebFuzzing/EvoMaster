@@ -10,6 +10,7 @@ import java.net.URISyntaxException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.Locale;
+import java.util.Objects;
 
 /**
  * Utility functions used in the generated tests to handle browser operations with Selenium
@@ -18,18 +19,59 @@ public class SeleniumEMUtils {
 
     public static final String TESTCONTAINERS_HOST = "host.testcontainers.internal";
 
+    public static String combineBaseUrlAndUrlPath(String base, String path){
+
+        Objects.requireNonNull(base);
+        Objects.requireNonNull(path);
+
+        if(base.endsWith("/") && path.startsWith("/")){
+            return base + path.substring(1,path.length());
+        } else if(!base.endsWith("/") && !path.startsWith("/")){
+            return base + "/" + path;
+        } else {
+            return base + path;
+        }
+    }
+
+    public static String validateAndGetUrlOfStartingPageForDocker(String base, String path, boolean modifyLocalHost){
+        return validateAndGetUrlOfStartingPageForDocker(combineBaseUrlAndUrlPath(base,path),modifyLocalHost);
+    }
+
     public static String validateAndGetUrlOfStartingPageForDocker(String url, boolean modifyLocalHost){
         if(url.isEmpty()){
             throw new IllegalArgumentException("Starting page is not defined");
         }
+        /*
+            hmmm... why did I use a URI instead of URL here???
+            was it to avoid hostname resolving?
+         */
         URI uri = null;
         try {
             uri = new URI(url);
         } catch (URISyntaxException e){
             throw new IllegalArgumentException("Provided Home Page link is not a valid URL: " + e.getMessage());
         }
+
+        int port = uri.getPort();
+        if(port < 0){
+            //infer from protocol
+            String protocol = uri.getScheme();
+            if("http".equals(protocol)){
+                port = 80;
+            } else if("https".equals(protocol)){
+                port = 443;
+            } else {
+                throw new IllegalArgumentException("Cannot infer port number from url: " + url);
+            }
+        }
+
         //see https://www.testcontainers.org/modules/webdriver_containers/
-        Testcontainers.exposeHostPorts(uri.getPort());
+        Testcontainers.exposeHostPorts(port);
+
+        String host = uri.getHost();
+        if(host == null){
+            throw new IllegalArgumentException("Cannot infer host from url: " + url);
+        }
 
         if(modifyLocalHost && uri.getHost().equalsIgnoreCase( "localhost")) {
             try {
