@@ -48,7 +48,7 @@ public class ReplacementList {
                     new MapClassReplacement(),
                     new MatcherClassReplacement(),
                     new MethodClassReplacement(),
-                    new MongoClassReplacement(),
+                    new MongoCollectionClassReplacement(),
                     new OkHttpClient3BuilderClassReplacement(),
                     new OkHttpClient3ClassReplacement(),
                     new OkHttpClientClassReplacement(),
