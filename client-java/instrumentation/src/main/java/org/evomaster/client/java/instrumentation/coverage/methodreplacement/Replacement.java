@@ -45,7 +45,8 @@ public @interface Replacement {
     /**
      *  Specify if the target to replace is a constructor call, ie, using "new".
      *  Note that constructors are handled very specially.
-     *  Replacement must return void, and rather save the newly create instance.
+     *  Replacement must return void, and rather save the newly create instance locally.
+     *  To avoid concurrency issue, should save it in a ThreadLocal.
      *  Such instance must then be returned in a static method with name same
      *  as what currently stored in MethodReplacementClass.CONSUME_INSTANCE_METHOD_NAME
      *  See further documentation there.
