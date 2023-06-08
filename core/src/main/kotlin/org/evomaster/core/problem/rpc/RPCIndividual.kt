@@ -5,6 +5,7 @@ import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
+import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 
 import org.evomaster.core.search.*
@@ -16,6 +17,7 @@ import kotlin.math.max
  * individual for RPC service
  */
 class RPCIndividual(
+    sampleType: SampleType,
     trackOperator: TrackOperator? = null,
     index: Int = -1,
     allActions: MutableList<ActionComponent>,
@@ -23,6 +25,7 @@ class RPCIndividual(
     dbSize: Int = 0,
     groups: GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(allActions, mainSize, dbSize)
 ) : ApiWsIndividual(
+    sampleType,
     trackOperator, index, allActions,
     childTypeVerifier = {
         EnterpriseActionGroup::class.java.isAssignableFrom(it)
@@ -32,6 +35,7 @@ class RPCIndividual(
 ) {
 
     constructor(
+        sampleType: SampleType,
         actions: MutableList<RPCCallAction>,
         externalServicesActions: MutableList<List<ApiExternalServiceAction>> = mutableListOf(),
         /*
@@ -41,6 +45,7 @@ class RPCIndividual(
         trackOperator: TrackOperator? = null,
         index: Int = -1
     ) : this(
+        sampleType = sampleType,
         trackOperator = trackOperator,
         index = index,
         allActions = mutableListOf<ActionComponent>().apply {
@@ -110,6 +115,7 @@ class RPCIndividual(
 
     override fun copyContent(): Individual {
         return RPCIndividual(
+            sampleType,
             trackOperator,
             index,
             children.map { it.copy() }.toMutableList() as MutableList<ActionComponent>,

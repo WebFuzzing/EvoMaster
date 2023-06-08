@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.gui
 
 import org.evomaster.core.problem.enterprise.EnterpriseIndividual
+import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.search.ActionComponent
 import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.StructuralElement
@@ -16,6 +17,7 @@ import org.evomaster.core.search.tracer.TrackOperator
  * a link in a previous action
  */
 abstract class GuiIndividual (
+    sampleType: SampleType,
 
     /**
      * a tracked operator to manipulate the individual (nullable)
@@ -32,4 +34,4 @@ abstract class GuiIndividual (
     children: MutableList<out ActionComponent>,
     childTypeVerifier: (Class<*>) -> Boolean,
     groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(children, children.size, 0)
-): EnterpriseIndividual(trackOperator, index, children, childTypeVerifier, groups)
+): EnterpriseIndividual(sampleType, trackOperator, index, children, childTypeVerifier, groups)

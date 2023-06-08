@@ -56,6 +56,25 @@ class SqlInsertBuilder(
         private val log: Logger = LoggerFactory.getLogger(SqlInsertBuilder::class.java)
 
         private const val EMAIL_SIMILAR_TO_PATTERN = "[A-Za-z]{2,}@[A-Za-z]+.[A-Za-z]{2,}"
+
+        /**
+         * input = "12345" returns 12345
+         * input = "3.14" returns 3
+         * input = "42.0" returns 42
+         * input = null returns null
+         */
+        fun getLowerLongBound(input: String?): Long? = input?.toDoubleOrNull()?.toLong() ?: input?.toLongOrNull()
+
+        /**
+         * input = "123" returns 123
+         * input = "3.14" returns 4
+         * input = "42.0" returns 42
+         * input = null returns null
+         */
+        fun getUpperLongBound(input: String?): Long? {
+            val decimalValue = input?.toDoubleOrNull()
+            return decimalValue?.toLong()?.let { if (decimalValue % 1 != 0.0) it + 1 else it } ?: input?.toLongOrNull()
+        }
    }
 
 
@@ -279,14 +298,16 @@ class SqlInsertBuilder(
             column.lowerBound,
             extra.constraints.minValue,
             extra.constraints.isPositive?.let { if (it) 1 else null },
-            extra.constraints.isPositiveOrZero?.let { if (it) 0 else null }
+            extra.constraints.isPositiveOrZero?.let { if (it) 0 else null },
+            getLowerLongBound(extra.constraints.decimalMinValue)
         ).maxOrNull()
 
         val mergedUpperBound = listOfNotNull(
             column.upperBound,
             extra.constraints.maxValue,
             extra.constraints.isNegative?.let { if (it) -1 else null },
-            extra.constraints.isNegativeOrZero?.let { if (it) 0 else null }
+            extra.constraints.isNegativeOrZero?.let { if (it) 0 else null },
+            getUpperLongBound(extra.constraints.decimalMaxValue)
         ).minOrNull()
 
         val minSize = extra.constraints.sizeMin
@@ -303,11 +324,16 @@ class SqlInsertBuilder(
         }
         val mergedSimilarToPatterns: List<String>? = similarToPatterns.takeIf { it.isNotEmpty() }
 
+        val javaRegExPattern = extra.constraints.patternRegExp
 
+
+        val size = column.size.coerceAtMost(extra.constraints.digitsInteger?.plus(extra.constraints.digitsFraction ?: 0) ?: column.size)
+        val scale = extra.constraints.digitsFraction
 
         //TODO all other constraints
 
         return column.copy(
+            size = size,
             nullable = mergedIsNullable,
             enumValuesAsStrings = mergedEnumValuesAsStrings,
             lowerBound = mergedLowerBound,
@@ -315,7 +341,9 @@ class SqlInsertBuilder(
             similarToPatterns = mergedSimilarToPatterns,
             isNotBlank = isNotBlank,
             minSize = minSize,
-            maxSize = maxSize
+            maxSize = maxSize,
+            javaRegExPattern = javaRegExPattern,
+            scale = scale
         )
     }
 

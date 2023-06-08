@@ -1061,14 +1061,8 @@ class EMConfig {
     var maxSqlInitActionsPerMissingData = 5
 
 
-    /*
-        Likely this should always be on by default... it would increase search space, but that would be handled by
-        adaptive hypermutation
-        TODO need experiments
-     */
-    @Experimental
     @Cfg("Force filling data of all columns when inserting new row, instead of only minimal required set.")
-    var forceSqlAllColumnInsertion = false
+    var forceSqlAllColumnInsertion = true
 
 
     @Cfg("Maximum size (in bytes) that EM handles response payloads in the HTTP responses. " +
@@ -1189,16 +1183,14 @@ class EMConfig {
     var expandRestIndividuals = true
 
 
-    @Experimental
     @Cfg("Add an extra query param, to analyze how it is used/read by the SUT. Needed to discover new query params" +
             " that were not specified in the schema.")
-    var extraQueryParam = false
+    var extraQueryParam = true
 
 
-    @Experimental
     @Cfg("Add an extra HTTP header, to analyze how it is used/read by the SUT. Needed to discover new headers" +
             " that were not specified in the schema.")
-    var extraHeader = false
+    var extraHeader = true
 
 
     @Experimental
@@ -1577,9 +1569,8 @@ class EMConfig {
     @Probability
     var baseTaintAnalysisProbability = 0.9
 
-    @Experimental
     @Cfg("Whether input tracking is used on sampling time, besides mutation time")
-    var taintOnSampling = false
+    var taintOnSampling = true
 
     @Probability
     @Experimental
@@ -1842,11 +1833,10 @@ class EMConfig {
     @Cfg("Specify test resource path where to save mocked responses as separated files")
     var testResourcePathToSaveMockedResponse = ""
 
-    @Experimental
     @Cfg("Whether to analyze how SQL databases are accessed to infer extra constraints from the business logic." +
             " An example is javax/jakarta annotation constraints defined on JPA entities.")
     @Probability(true)
-    var useExtraSqlDbConstraintsProbability = 0.0
+    var useExtraSqlDbConstraintsProbability = 0.9
 
 
     @Cfg("a probability of harvesting actual responses from external services as seeds.")

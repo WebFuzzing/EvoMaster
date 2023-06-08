@@ -4,7 +4,7 @@ import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 import org.evomaster.core.problem.rest.RestIndividual;
-import org.evomaster.core.problem.rest.SampleType;
+import org.evomaster.core.problem.enterprise.SampleType;
 import org.evomaster.core.problem.rest.resource.RestResourceCalls;
 import org.evomaster.core.problem.rest.service.ResourceManageService;
 import org.evomaster.core.problem.rest.service.ResourceRestMutator;

@@ -3,6 +3,7 @@ package org.evomaster.core.problem.rest.service
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.database.SqlInsertBuilder
+import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.httpws.auth.NoAuth
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
@@ -221,7 +222,7 @@ open class ResourceSampler : AbstractRestSampler() {
         }
     }
 
-    override fun createIndividual(restCalls: MutableList<RestCallAction>): RestIndividual {
+    override fun createIndividual(sampleType: SampleType, restCalls: MutableList<RestCallAction>): RestIndividual {
 
         val resourceCalls = restCalls.map {
             val node = rm.getResourceNodeFromCluster(it.path.toString())
@@ -234,7 +235,7 @@ open class ResourceSampler : AbstractRestSampler() {
         }.toMutableList()
         val ind =  RestIndividual(
                 resourceCalls=resourceCalls,
-                sampleType = SampleType.SMART_RESOURCE,
+                sampleType = sampleType,
                 trackOperator = if (config.trackingEnabled()) this else null,
                 index = if (config.trackingEnabled()) time.evaluatedIndividuals else Traceable.DEFAULT_INDEX)
         ind.doGlobalInitialize(searchGlobalState)

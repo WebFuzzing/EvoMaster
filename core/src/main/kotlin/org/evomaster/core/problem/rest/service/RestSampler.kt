@@ -1,8 +1,7 @@
 package org.evomaster.core.problem.rest.service
 
-import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.Lazy
-import org.evomaster.core.database.SqlInsertBuilder
+import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.httpws.auth.NoAuth
@@ -253,7 +252,7 @@ class RestSampler : AbstractRestSampler(){
                     test.add(test.size - 1, create)
                 }
 
-                return SampleType.SMART_GET_COLLECTION
+                return SampleType.REST_SMART_GET_COLLECTION
             }
         }
 
@@ -406,7 +405,7 @@ class RestSampler : AbstractRestSampler(){
                     val copy = a.value.copy() as RestCallAction
                     copy.auth = auth
                     copy.doInitialize(randomness)
-                    val ind = createIndividual(mutableListOf(copy))
+                    val ind = createIndividual(SampleType.SMART, mutableListOf(copy))
                     ind.doGlobalInitialize(searchGlobalState)
                     adHocInitialIndividuals.add(ind)
                 }

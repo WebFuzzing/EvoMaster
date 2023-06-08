@@ -125,3 +125,4 @@ Migrations/
 /e2e-tests/spring-rest-h2-column-types/target/
 /test-old-libraries/target/
 /e2e-tests/spring-web/target/
+/e2e-tests/spring-rest-mongo/target/

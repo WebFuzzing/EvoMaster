@@ -158,6 +158,8 @@
         <micronaut.openapi.version>3.2.0</micronaut.openapi.version>
         <micronaut.test.version>3.0.5</micronaut.test.version>
         <org.mongodb.version>4.2.3</org.mongodb.version>
+        <org.locationtech.jts.version>1.19.0</org.locationtech.jts.version>
+
     </properties>
 
 

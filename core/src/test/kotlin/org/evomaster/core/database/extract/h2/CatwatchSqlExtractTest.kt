@@ -7,7 +7,7 @@ import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.SampleType
+import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
@@ -54,7 +54,7 @@ class CatwatchSqlExtractTest : ExtractTestBaseH2(){
 
         val insertions = builder.createSqlInsertionAction("lANGUAGE_LIST", setOf("PROJECT_ID"))
 
-        val ind = RestIndividual(mutableListOf(),SampleType.RANDOM,null,insertions.toMutableList(),null,-1)
+        val ind = RestIndividual(mutableListOf(), SampleType.RANDOM,null,insertions.toMutableList(),null,-1)
 
         DbActionUtils.randomizeDbActionGenes(insertions.toMutableList(), Randomness())
 
