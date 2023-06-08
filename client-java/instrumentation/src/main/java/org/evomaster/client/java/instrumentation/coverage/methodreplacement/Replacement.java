@@ -50,9 +50,9 @@ public @interface Replacement {
      *  Such instance must then be returned in a static method with name same
      *  as what currently stored in MethodReplacementClass.CONSUME_INSTANCE_METHOD_NAME
      *  See further documentation there.
-     *  Also, recall that all these constraints are checked in ReplacementListTest
+     *  Also, recall that most of these constraints are checked in ReplacementListTest
      *
-     *  For an explanation of why we do this, look at MethodReplacementMethodVisitor comments there
+     *  For an explanation of why we do this, look at the comments in MethodReplacementMethodVisitor
      */
     boolean replacingConstructor() default false;
 
