@@ -51,6 +51,8 @@ public @interface Replacement {
      *  as what currently stored in MethodReplacementClass.CONSUME_INSTANCE_METHOD_NAME
      *  See further documentation there.
      *  Also, recall that all these constraints are checked in ReplacementListTest
+     *
+     *  For an explanation of why we do this, look at MethodReplacementMethodVisitor comments there
      */
     boolean replacingConstructor() default false;
 
