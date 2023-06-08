@@ -43,7 +43,13 @@ public @interface Replacement {
     boolean replacingStatic() default false;
 
     /**
-     *  Specify if the target to replace is a constructor call, ie, using "new"
+     *  Specify if the target to replace is a constructor call, ie, using "new".
+     *  Note that constructors are handled very specially.
+     *  Replacement must return void, and rather save the newly create instance.
+     *  Such instance must then be returned in a static method with name same
+     *  as what currently stored in MethodReplacementClass.CONSUME_INSTANCE_METHOD_NAME
+     *  See further documentation there.
+     *  Also, recall that all these constraints are checked in ReplacementListTest
      */
     boolean replacingConstructor() default false;
 
