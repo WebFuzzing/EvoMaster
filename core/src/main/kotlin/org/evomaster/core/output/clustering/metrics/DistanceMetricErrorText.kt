@@ -30,13 +30,15 @@ class DistanceMetricErrorText(
             first.getErrorMsg() ?: first.getBody().toString()
         } else {
             //"" //first.getBody()
-            first.getBody().toString()
+            //first.getBody().toString()
+            parseHtmlResponse(first.getBody().toString())
         }
         val message2 = if(includeInClustering(second)){
-            second.getErrorMsg() ?: first.getBody().toString()
+            second.getErrorMsg() ?: second.getBody().toString()
         } else {
             //"" //second.getBody()
-            second.getBody().toString()
+            // second.getBody().toString()
+            parseHtmlResponse(second.getBody().toString())
         }
         val l1 = LevenshteinDistance.distance(message1, message2)
         return l1
@@ -56,6 +58,12 @@ class DistanceMetricErrorText(
                 && callResult.getStatusCode() == 500
                 && (callResult.getBodyType() as MediaType).isCompatible(MediaType.APPLICATION_JSON_TYPE)
                 && (callResult.getBody()?.trim()?.first()?.equals('[') == true || callResult.getBody()?.trim()?.first()?.equals('{') == true)
+    }
+
+    fun parseHtmlResponse(resp: String): String {
+        val part = resp.split("Message", "message")
+        val comp = part.get(1).split(">").get(1).split("<")
+        return comp.get(0)
     }
 
 }
