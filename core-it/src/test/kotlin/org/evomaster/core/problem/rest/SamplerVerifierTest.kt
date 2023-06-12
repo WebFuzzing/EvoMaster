@@ -399,7 +399,7 @@ class SamplerVerifierTest {
             return true
         }
 
-        override fun getTestResults(ids: Set<Int>, ignoreKillSwitch: Boolean): TestResultsDto? {
+        override fun getTestResults(ids: Set<Int>, ignoreKillSwitch: Boolean, allCovered: Boolean): TestResultsDto? {
             return null
         }
 

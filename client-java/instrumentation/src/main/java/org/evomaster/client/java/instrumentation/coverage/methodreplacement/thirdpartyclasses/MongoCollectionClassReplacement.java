@@ -1,4 +1,4 @@
-package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
+package org.evomaster.client.java.instrumentation.coverage.methodreplacement.thirdpartyclasses;
 
 import org.evomaster.client.java.instrumentation.MongoInfo;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
@@ -16,8 +16,8 @@ import java.util.Collections;
 import java.util.List;
 
 
-public class MongoClassReplacement extends ThirdPartyMethodReplacementClass {
-    private static final MongoClassReplacement singleton = new MongoClassReplacement();
+public class MongoCollectionClassReplacement extends ThirdPartyMethodReplacementClass {
+    private static final MongoCollectionClassReplacement singleton = new MongoCollectionClassReplacement();
 
     @Override
     protected String getNameOfThirdPartyTargetClass() {

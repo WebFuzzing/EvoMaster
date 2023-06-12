@@ -1,10 +1,12 @@
 package org.evomaster.core.database
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
+import org.evomaster.client.java.instrumentation.shared.RegexSharedUtils
 import org.evomaster.core.database.schema.Column
 import org.evomaster.core.database.schema.ColumnDataType
 import org.evomaster.core.database.schema.ForeignKey
 import org.evomaster.core.database.schema.Table
+import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.parser.RegexHandler.createGeneForPostgresLike
 import org.evomaster.core.parser.RegexHandler.createGeneForPostgresSimilarTo
 import org.evomaster.core.search.gene.*
@@ -20,9 +22,7 @@ import org.evomaster.core.search.gene.network.MacAddrGene
 import org.evomaster.core.search.gene.numeric.*
 import org.evomaster.core.search.gene.optional.ChoiceGene
 import org.evomaster.core.search.gene.optional.NullableGene
-import org.evomaster.core.search.gene.regex.DisjunctionListRxGene
 import org.evomaster.core.search.gene.regex.RegexGene
-import org.evomaster.core.search.gene.regex.RegexGene.Companion.DATABASE_REGEX_SEPARATOR
 import org.evomaster.core.search.gene.sql.*
 import org.evomaster.core.search.gene.sql.textsearch.SqlTextSearchQueryGene
 import org.evomaster.core.search.gene.sql.textsearch.SqlTextSearchVectorGene
@@ -660,23 +660,57 @@ class DbActionGeneBuilder {
                 EnumGene(name = column.name, data = column.enumValuesAsStrings)
             }
         } else {
-            if (column.similarToPatterns != null && column.similarToPatterns.isNotEmpty()) {
+
+            val numberOfRegexPatterns = (column.similarToPatterns?.size ?: 0) +  (column.likePatterns?.size ?:0) + if (column.javaRegExPattern == null ) 0 else 1
+
+            if (!column.similarToPatterns.isNullOrEmpty()) {
                 val columnName = column.name
-                val similarToPatterns: List<String> = column.similarToPatterns
-                buildSimilarToRegexGene(columnName, similarToPatterns, databaseType = column.databaseType)
-            } else if (column.likePatterns != null && column.likePatterns.isNotEmpty()) {
+                val similarToPattern: String = column.similarToPatterns[0]
+                if (numberOfRegexPatterns>1) {
+                    /**
+                     * TODO Handle a conjunction of Regex patterns
+                     */
+                    log.warn("Handling only a regex pattern for (${column.name}). Using similar to pattern: ${similarToPattern}}")
+                }
+                buildSimilarToRegexGene(columnName, similarToPattern, databaseType = column.databaseType)
+            } else if (!column.likePatterns.isNullOrEmpty()) {
                 val columnName = column.name
-                val likePatterns = column.likePatterns
-                buildLikeRegexGene(columnName, likePatterns, databaseType = column.databaseType)
+                val likePattern = column.likePatterns[0]
+                if (numberOfRegexPatterns>1) {
+                    /**
+                     * TODO Handle a conjunction of Regex patterns
+                     */
+                    log.warn("Handling only a regex pattern for (${column.name}). Using like pattern: ${likePattern}}")
+                }
+                buildLikeRegexGene(columnName, likePattern, databaseType = column.databaseType)
+            } else if (column.javaRegExPattern != null) {
+               buildJavaRegexGene(column.name, column.javaRegExPattern)
             } else {
                 val columnMinLength = if (isFixedLength) {
                     column.size
                 } else {
-                    0
+                    if (column.minSize !=null && column.minSize>0) {
+                        column.minSize
+                    } else if (column.isNotBlank==true) {
+                        1
+                    }  else {
+                        0
+                    }
                 }
-                StringGene(name = column.name, minLength = columnMinLength, maxLength = column.size)
+                val columnMaxLength = if (column.maxSize!=null) {
+                    minOf(column.maxSize, column.size)
+                } else {
+                    column.size
+                }
+                StringGene(name = column.name, minLength = columnMinLength, maxLength = columnMaxLength)
             }
         }
+    }
+
+    private fun buildJavaRegexGene(name: String, javaRegExPattern: String): RegexGene {
+        val fullMatchRegex = RegexSharedUtils.forceFullMatch(javaRegExPattern)
+        val disjunctionRxGenes = RegexHandler.createGeneForJVM(fullMatchRegex).disjunctions
+        return RegexGene(name, disjunctions = disjunctionRxGenes, "${RegexGene.JAVA_REGEX_PREFIX}${fullMatchRegex}")
     }
 
     /**
@@ -685,12 +719,12 @@ class DbActionGeneBuilder {
      *
      * TODO need to handle NOT and ILIKE
      */
-    fun buildLikeRegexGene(geneName: String, likePatterns: List<String>, databaseType: DatabaseType): RegexGene {
+    fun buildLikeRegexGene(geneName: String, likePattern: String, databaseType: DatabaseType): RegexGene {
         return when (databaseType) {
             DatabaseType.POSTGRES, //https://www.postgresqltutorial.com/postgresql-tutorial/postgresql-like/
             DatabaseType.H2, // http://www.h2database.com/html/grammar.html#like_predicate_right_hand_side
             DatabaseType.MYSQL -> {
-                buildPostgresMySQLLikeRegexGene(geneName, likePatterns)
+                buildPostgresMySQLLikeRegexGene(geneName, likePattern)
             }
             //TODO: support other database SIMILAR_TO check expressions
             else -> throw UnsupportedOperationException(
@@ -701,28 +735,23 @@ class DbActionGeneBuilder {
         }
     }
 
-    private fun buildPostgresMySQLLikeRegexGene(geneName: String, likePatterns: List<String>): RegexGene {
-        val disjunctionRxGenes = likePatterns
-                .map { createGeneForPostgresLike(it) }
-                .map { it.disjunctions }
-                .map { it.disjunctions }
-                .flatten()
-        return RegexGene(geneName, disjunctions = DisjunctionListRxGene(disjunctions = disjunctionRxGenes), "${RegexGene.DATABASE_REGEX_PREFIX}${likePatterns.joinToString(DATABASE_REGEX_SEPARATOR)}")
+    private fun buildPostgresMySQLLikeRegexGene(geneName: String, likePattern: String): RegexGene {
+        val disjunctionRxGenes = createGeneForPostgresLike(likePattern).disjunctions
+        return RegexGene(geneName, disjunctions = disjunctionRxGenes, "${RegexGene.DATABASE_REGEX_PREFIX}${likePattern}")
     }
 
 
     /**
-     * Builds a RegexGene using a name and a list of SIMILAR_TO patterns.
-     * The resulting gene is a disjunction of the given patterns
-     * according to the database we are using
+     * Builds a RegexGene using a name and a SIMILAR_TO pattern.
      */
     fun buildSimilarToRegexGene(
             geneName: String,
-            similarToPatterns: List<String>,
+            similarToPattern: String,
             databaseType: DatabaseType
     ): RegexGene {
-        return when {
-            databaseType == DatabaseType.POSTGRES -> buildPostgresSimilarToRegexGene(geneName, similarToPatterns)
+        return when(databaseType) {
+             DatabaseType.POSTGRES,
+             DatabaseType.H2 -> buildPostgresSimilarToRegexGene(geneName, similarToPattern)
             //TODO: support other database SIMILAR_TO check expressions
             else -> throw UnsupportedOperationException(
                     "Must implement similarTo expressions for database %s".format(
@@ -732,13 +761,9 @@ class DbActionGeneBuilder {
         }
     }
 
-    private fun buildPostgresSimilarToRegexGene(geneName: String, similarToPatterns: List<String>): RegexGene {
-        val disjunctionRxGenes = similarToPatterns
-                .map { createGeneForPostgresSimilarTo(it) }
-                .map { it.disjunctions }
-                .map { it.disjunctions }
-                .flatten()
-        return RegexGene(geneName, disjunctions = DisjunctionListRxGene(disjunctions = disjunctionRxGenes), "${RegexGene.DATABASE_REGEX_PREFIX}${similarToPatterns.joinToString(DATABASE_REGEX_SEPARATOR)}")
+    private fun buildPostgresSimilarToRegexGene(geneName: String, similarToPattern: String): RegexGene {
+        val regexGene = createGeneForPostgresSimilarTo(similarToPattern)
+        return RegexGene(geneName, disjunctions = regexGene.disjunctions, "${RegexGene.DATABASE_REGEX_PREFIX}${similarToPattern}")
     }
 
     private fun buildSqlTimeWithTimeZoneGene(column: Column): TimeGene {

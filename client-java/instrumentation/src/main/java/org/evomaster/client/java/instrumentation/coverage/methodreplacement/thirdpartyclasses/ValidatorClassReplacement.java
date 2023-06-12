@@ -31,7 +31,7 @@ public class ValidatorClassReplacement extends ThirdPartyMethodReplacementClass 
             castTo = "java.util.Set"
     )
     //<T> Set<ConstraintViolation<T>> validate(T object, Class<?>... groups);
-    public static  Object validate(Object caller, Object object, Class<?>... groups ) throws Exception {
+    public static  Object validate(Object caller, Object object, Class<?>... groups ) throws Throwable {
 
         if(caller == null){
             throw new NullPointerException();
@@ -39,7 +39,6 @@ public class ValidatorClassReplacement extends ThirdPartyMethodReplacementClass 
 
         Method original = getOriginal(singleton, "validate", caller);
 
-        Object result = null;
 
         /*
             Looking at last line is too problematic.
@@ -52,12 +51,13 @@ public class ValidatorClassReplacement extends ThirdPartyMethodReplacementClass 
          */
         String lastLine = "";//ExecutionTracer.getLastExecutedStatement(); //can be null
 
+        Object result;
         try {
             result = original.invoke(caller, object, groups);
         } catch (IllegalAccessException e){
             throw new RuntimeException(e);// ah, the beauty of Java...
         } catch (InvocationTargetException e){
-            throw (Exception) e.getCause();
+            throw e.getCause(); // this could be a java.lang.AssertionError
         }
 
         if(object != null){

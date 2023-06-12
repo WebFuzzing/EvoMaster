@@ -51,43 +51,31 @@ class SqlInsertBuilder(
 
     private val name: String
 
+
     companion object {
         private val log: Logger = LoggerFactory.getLogger(SqlInsertBuilder::class.java)
 
+        private const val EMAIL_SIMILAR_TO_PATTERN = "[A-Za-z]{2,}@[A-Za-z]+.[A-Za-z]{2,}"
+
         /**
-         * Converts a regular expression pattern to the equivalent SQL LIKE pattern.
-         *
-         * @param regexPattern the regular expression pattern to convert.
-         * @return the equivalent SQL LIKE pattern.
+         * input = "12345" returns 12345
+         * input = "3.14" returns 3
+         * input = "42.0" returns 42
+         * input = null returns null
          */
-        private fun convertRegexToSqlLikePattern(regexPattern: String): String {
-            var likePattern = regexPattern
+        fun getLowerLongBound(input: String?): Long? = input?.toDoubleOrNull()?.toLong() ?: input?.toLongOrNull()
 
-            // Replace ^ with %
-            likePattern = likePattern.replace("^", "%")
-
-            // Replace $ with %
-            likePattern = likePattern.replace("$", "%")
-
-            // Escape special characters with \
-            likePattern = likePattern.replace("\\", "\\\\")
-
-            // Replace . with _
-            likePattern = likePattern.replace(".", "_")
-
-            // Replace * with %
-            likePattern = likePattern.replace("*", "%")
-
-            // Replace + with %
-            likePattern = likePattern.replace("+", "%")
-
-            // Replace ? with _
-            likePattern = likePattern.replace("?", "_")
-
-            return likePattern
+        /**
+         * input = "123" returns 123
+         * input = "3.14" returns 4
+         * input = "42.0" returns 42
+         * input = null returns null
+         */
+        fun getUpperLongBound(input: String?): Long? {
+            val decimalValue = input?.toDoubleOrNull()
+            return decimalValue?.toLong()?.let { if (decimalValue % 1 != 0.0) it + 1 else it } ?: input?.toLongOrNull()
         }
-
-    }
+   }
 
 
     init {
@@ -281,7 +269,7 @@ class SqlInsertBuilder(
     private fun mergeConstraints(column: Column, extra: ExtraConstraintsDto): Column {
         Lazy.assert { matchJpaName(column.name, extra.columnName) }
 
-        val mergedIsNullable = if (!column.nullable) {
+        val mergedIsNullable = if (!column.nullable || extra.constraints.isNotBlank ?: false) {
             false
         } else if (extra.constraints.isNullable == null) {
             column.nullable
@@ -310,37 +298,52 @@ class SqlInsertBuilder(
             column.lowerBound,
             extra.constraints.minValue,
             extra.constraints.isPositive?.let { if (it) 1 else null },
-            extra.constraints.isPositiveOrZero?.let { if (it) 0 else null }
+            extra.constraints.isPositiveOrZero?.let { if (it) 0 else null },
+            getLowerLongBound(extra.constraints.decimalMinValue)
         ).maxOrNull()
 
         val mergedUpperBound = listOfNotNull(
             column.upperBound,
             extra.constraints.maxValue,
             extra.constraints.isNegative?.let { if (it) -1 else null },
-            extra.constraints.isNegativeOrZero?.let { if (it) 0 else null }
+            extra.constraints.isNegativeOrZero?.let { if (it) 0 else null },
+            getUpperLongBound(extra.constraints.decimalMaxValue)
         ).minOrNull()
 
-        val likePatterns = (column.likePatterns ?: mutableListOf()).toMutableList()
+        val minSize = extra.constraints.sizeMin
+
+        val maxSize = extra.constraints.sizeMax
+
+        val isNotBlank = extra.constraints.isNotBlank
+
+        val similarToPatterns = (column.similarToPatterns ?: mutableListOf()).toMutableList()
         extra.constraints.isEmail?.let {
             if (it) {
-                val emailRegexp = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
-                likePatterns.add(convertRegexToSqlLikePattern(emailRegexp))
+                similarToPatterns.add(EMAIL_SIMILAR_TO_PATTERN)
             }
         }
-        extra.constraints.patternRegExp?.let {
-            likePatterns.add(convertRegexToSqlLikePattern(it))
-        }
-        val mergedLikePatterns: List<String>? = likePatterns.takeIf { it.isNotEmpty() }
+        val mergedSimilarToPatterns: List<String>? = similarToPatterns.takeIf { it.isNotEmpty() }
 
+        val javaRegExPattern = extra.constraints.patternRegExp
+
+
+        val size = column.size.coerceAtMost(extra.constraints.digitsInteger?.plus(extra.constraints.digitsFraction ?: 0) ?: column.size)
+        val scale = extra.constraints.digitsFraction
 
         //TODO all other constraints
 
         return column.copy(
+            size = size,
             nullable = mergedIsNullable,
             enumValuesAsStrings = mergedEnumValuesAsStrings,
             lowerBound = mergedLowerBound,
             upperBound = mergedUpperBound,
-            likePatterns = mergedLikePatterns
+            similarToPatterns = mergedSimilarToPatterns,
+            isNotBlank = isNotBlank,
+            minSize = minSize,
+            maxSize = maxSize,
+            javaRegExPattern = javaRegExPattern,
+            scale = scale
         )
     }
 
@@ -578,43 +581,43 @@ class SqlInsertBuilder(
      * test cases manually for EM
      */
     fun createSqlInsertionAction(
-            tableName: String,
-            /**
-             * Which columns to create data for. Default is all, ie *.
-             * Notice that more columns might be added, eg, to satisfy non-null
-             * and PK constraints
-             */
-            columnNames: Set<String> = setOf("*"),
-            /**
-             * used to avoid infinite recursion
-             */
-            history: MutableList<String> = mutableListOf(),
-            /**
-             *   When adding new insertions due to FK constraints, specify if
-             *   should get all columns for those new insertions, or just the minimal
-             *   needed to satisfy all the constraints
-             */
-            forceAll: Boolean = false,
-            /**
-             *  whether to use extra constraints identified in the business logic
-             */
-            useExtraSqlDbConstraints : Boolean = false,
-            /**
-             * whether to enable single insertion for table
-             *
-             * in order to insert one row to the table,
-             * it might need to create its fk tables,
-             * and its fk table might have further fk tables as well.
-             * eg,
-             * D -> B -> A
-             * D -> C -> A
-             * to insert a row to D,
-             * if we do enable single insertion for table,
-             * the insertions will ABCD (C and B refer to the same A)
-             * otherwise, they will be ABACD
-             *
-             */
-            enableSingleInsertionForTable : Boolean = false
+        tableName: String,
+        /**
+         * Which columns to create data for. Default is all, ie *.
+         * Notice that more columns might be added, eg, to satisfy non-null
+         * and PK constraints
+         */
+        columnNames: Set<String> = setOf("*"),
+        /**
+         * used to avoid infinite recursion
+         */
+        history: MutableList<String> = mutableListOf(),
+        /**
+         *   When adding new insertions due to FK constraints, specify if
+         *   should get all columns for those new insertions, or just the minimal
+         *   needed to satisfy all the constraints
+         */
+        forceAll: Boolean = false,
+        /**
+         *  whether to use extra constraints identified in the business logic
+         */
+        useExtraSqlDbConstraints: Boolean = false,
+        /**
+         * whether to enable single insertion for table
+         *
+         * in order to insert one row to the table,
+         * it might need to create its fk tables,
+         * and its fk table might have further fk tables as well.
+         * eg,
+         * D -> B -> A
+         * D -> C -> A
+         * to insert a row to D,
+         * if we do enable single insertion for table,
+         * the insertions will ABCD (C and B refer to the same A)
+         * otherwise, they will be ABACD
+         *
+         */
+        enableSingleInsertionForTable: Boolean = false
     ): List<DbAction> {
 
         history.add(tableName)
@@ -666,9 +669,23 @@ class SqlInsertBuilder(
             }
 
             val pre = if (forceAll) {
-                createSqlInsertionAction(target, setOf("*"), history, true, useExtraSqlDbConstraints, enableSingleInsertionForTable)
+                createSqlInsertionAction(
+                    target,
+                    setOf("*"),
+                    history,
+                    true,
+                    useExtraSqlDbConstraints,
+                    enableSingleInsertionForTable
+                )
             } else {
-                createSqlInsertionAction(target, setOf(), history, false, useExtraSqlDbConstraints, enableSingleInsertionForTable)
+                createSqlInsertionAction(
+                    target,
+                    setOf(),
+                    history,
+                    false,
+                    useExtraSqlDbConstraints,
+                    enableSingleInsertionForTable
+                )
             }
             actions.addAll(0, pre)
         }
@@ -676,9 +693,10 @@ class SqlInsertBuilder(
             log.trace("create insertions and current size is {}", actions.size)
         }
 
-        if (enableSingleInsertionForTable && actions.size > 1){
+        if (enableSingleInsertionForTable && actions.size > 1) {
             val removed = actions.filterIndexed { index, dbAction ->
-                (index > 0 && (index < actions.size-1 || actions.size == 2)) && actions.subList(0, index-1).any { a-> a.table.name.equals(dbAction.table.name,ignoreCase = true ) }
+                (index > 0 && (index < actions.size - 1 || actions.size == 2)) && actions.subList(0, index - 1)
+                    .any { a -> a.table.name.equals(dbAction.table.name, ignoreCase = true) }
             }
             if (removed.isNotEmpty())
                 actions.removeAll(removed)

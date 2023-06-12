@@ -34,7 +34,8 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
     override fun doCalculateCoverage(
         individual: GraphQLIndividual,
-        targets: Set<Int>
+        targets: Set<Int>,
+        allCovered: Boolean
     ): EvaluatedIndividual<GraphQLIndividual>? {
         rc.resetSUT()
 
@@ -78,7 +79,7 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 //            return null
 //        }
 
-        val dto = updateFitnessAfterEvaluation(targets, individual, fv)
+        val dto = updateFitnessAfterEvaluation(targets, allCovered, individual, fv)
             ?: return null
 
         handleExtra(dto, fv)
@@ -86,10 +87,11 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
         val graphQLActionResults = actionResults.filterIsInstance<GraphQlCallResult>()
         handleResponseTargets(fv, actions, graphQLActionResults, dto.additionalInfoList)
 
-
-        if (config.isEnabledTaintAnalysis()) {
-            Lazy.assert { graphQLActionResults.size == dto.additionalInfoList.size }
-            TaintAnalysis.doTaintAnalysis(individual, dto.additionalInfoList, randomness, config.enableSchemaConstraintHandling)
+        if(!allCovered) {
+            if (config.isEnabledTaintAnalysis()) {
+                Lazy.assert { graphQLActionResults.size == dto.additionalInfoList.size }
+                TaintAnalysis.doTaintAnalysis(individual, dto.additionalInfoList, randomness, config.enableSchemaConstraintHandling)
+            }
         }
 
         return EvaluatedIndividual(

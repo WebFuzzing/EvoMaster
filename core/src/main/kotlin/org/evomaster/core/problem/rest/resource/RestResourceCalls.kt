@@ -451,14 +451,7 @@ class RestResourceCalls(
         }
     }
 
-    /**
-     * removing all binding which refers to [this] RestResourceCalls
-     */
-    fun removeThisFromItsBindingGenes() {
-        (dbActions.plus(mainActions)).forEach { a ->
-            a.removeThisFromItsBindingGenes()
-        }
-    }
+
 
     /**
      * employing the longest action to represent a group of calls on a resource

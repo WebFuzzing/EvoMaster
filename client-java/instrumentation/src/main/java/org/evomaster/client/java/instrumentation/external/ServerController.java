@@ -212,6 +212,26 @@ public class ServerController {
         return sendWithDataAndExpectACK(Command.EXECUTING_ACTION, executingAction);
     }
 
+    public synchronized List<TargetInfo> getAllCoveredTargetsInfo() {
+        boolean sent = sendCommand(Command.ALL_COVERED_TARGETS_INFO);
+        if (!sent) {
+            SimpleLogger.error("Failed to send message");
+            return null;
+        }
+
+        Object response = waitAndGetResponse();
+        if (response == null) {
+            SimpleLogger.error("Failed to read response about all covered targets");
+            return null;
+        }
+
+        if (!(response instanceof List<?>)) {
+            throw new IllegalStateException(errorMsgExpectingResponse(response, "a List"));
+        }
+
+        return (List<TargetInfo>) response;
+    }
+
     public synchronized List<TargetInfo> getTargetsInfo(Collection<Integer> ids) {
         boolean sent = sendCommand(Command.TARGETS_INFO);
         if (!sent) {

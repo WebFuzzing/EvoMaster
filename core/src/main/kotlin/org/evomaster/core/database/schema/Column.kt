@@ -53,9 +53,17 @@ data class Column(
 
         val compositeType: List<Column>? = null,
 
-        val compositeTypeName: String? = null
+        val compositeTypeName: String? = null,
 
         // public boolean identity;
+
+        val isNotBlank: Boolean? = null,
+
+        val minSize: Int? = null,
+
+        val maxSize: Int? = null,
+
+        val javaRegExPattern: String? = null
 
         //TODO something for other constraints
 

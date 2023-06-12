@@ -36,7 +36,8 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
 
     override fun doCalculateCoverage(
         individual: WebIndividual,
-        targets: Set<Int>
+        targets: Set<Int>,
+        allCovered: Boolean
     ): EvaluatedIndividual<WebIndividual>? {
 
         rc.resetSUT()
@@ -70,7 +71,7 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
             }
         }
 
-        val dto = updateFitnessAfterEvaluation(targets, individual, fv)
+        val dto = updateFitnessAfterEvaluation(targets, allCovered, individual, fv)
             ?: return null
 
         handleExtra(dto, fv)

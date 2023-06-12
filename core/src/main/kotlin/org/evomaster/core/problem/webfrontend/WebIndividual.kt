@@ -2,6 +2,7 @@ package org.evomaster.core.problem.webfrontend
 
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
+import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.gui.GuiIndividual
 import org.evomaster.core.problem.rest.RestCallAction
@@ -12,11 +13,13 @@ import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 
 class WebIndividual(
+    sampleType: SampleType,
     children: MutableList<out ActionComponent>,
     mainSize : Int = children.size,
     dbSize: Int = 0,
     groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(children,mainSize,dbSize)
 ) : GuiIndividual(
+    sampleType = sampleType,
     children = children,
     childTypeVerifier = {
         EnterpriseActionGroup::class.java.isAssignableFrom(it)
@@ -27,6 +30,7 @@ class WebIndividual(
 
     override fun copyContent(): Individual {
         return WebIndividual(
+            sampleType,
             children.map { it.copy() }.toMutableList() as MutableList<ActionComponent>,
             mainSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.MAIN),
             dbSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_SQL)

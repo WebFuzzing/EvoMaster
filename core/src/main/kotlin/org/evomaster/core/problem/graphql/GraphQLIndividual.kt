@@ -6,17 +6,18 @@ import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
-import org.evomaster.core.problem.rest.SampleType
+import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.search.*
 import org.evomaster.core.search.gene.Gene
 
 class GraphQLIndividual(
-        val sampleType: SampleType,
-        allActions : MutableList<out ActionComponent>,
-        mainSize : Int = allActions.size,
-        dbSize: Int = 0,
-        groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(allActions,mainSize,dbSize)
+    sampleType: SampleType,
+    allActions : MutableList<out ActionComponent>,
+    mainSize : Int = allActions.size,
+    dbSize: Int = 0,
+    groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(allActions,mainSize,dbSize)
 ) : ApiWsIndividual(
+    sampleType = sampleType,
     children = allActions,
     childTypeVerifier = {
         EnterpriseActionGroup::class.java.isAssignableFrom(it)

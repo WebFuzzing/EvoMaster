@@ -588,7 +588,7 @@ abstract class RestIndividualTestBase {
             return true
         }
 
-        override fun getTestResults(ids: Set<Int>, ignoreKillSwitch: Boolean): TestResultsDto? {
+        override fun getTestResults(ids: Set<Int>, ignoreKillSwitch: Boolean, allCovered: Boolean): TestResultsDto? {
             assertNotNull(sqlInsertBuilder)
             newEvaluation()
             val result = TestResultsDto().apply {

@@ -37,7 +37,7 @@ public class BranchesManualTest extends SpringTestBase {
     @Test
     public void test(){
 
-        TestResultsDto dto = remoteController.getTestResults(Collections.emptySet(), true);
+        TestResultsDto dto = remoteController.getTestResults(Collections.emptySet(), true, false);
         assertEquals(0, dto.targets.size());
 
         given().contentType(ContentType.JSON)
@@ -48,7 +48,7 @@ public class BranchesManualTest extends SpringTestBase {
                 .statusCode(200)
                 .body("value", is(0));
 
-        dto = remoteController.getTestResults(Collections.emptySet(), true);
+        dto = remoteController.getTestResults(Collections.emptySet(), true, false);
         assertTrue(dto.targets.size() > 0);
 
         List<String> targetDescriptions = dto.targets.stream()

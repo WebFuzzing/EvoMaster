@@ -283,7 +283,11 @@ class RemoteControllerImplementation() : RemoteController{
         return readAndCheckResponse(response, "Failed to inform SUT of new search")
     }
 
-    override fun getTestResults(ids: Set<Int>, ignoreKillSwitch: Boolean): TestResultsDto? {
+    override fun getTestResults(ids: Set<Int>, ignoreKillSwitch: Boolean, allCovered: Boolean): TestResultsDto? {
+
+        if(allCovered && ids.isNotEmpty()){
+            throw IllegalArgumentException("Cannot specify allCovered and specific ids at same time")
+        }
 
         val queryParam = ids.joinToString(",")
 
@@ -292,6 +296,7 @@ class RemoteControllerImplementation() : RemoteController{
                     .path(ControllerConstants.TEST_RESULTS)
                     .queryParam("ids", queryParam)
                     .queryParam("killSwitch", !ignoreKillSwitch && config.killSwitch)
+                    .queryParam("allCovered", allCovered)
                     .request(MediaType.APPLICATION_JSON_TYPE)
                     .get()
         }

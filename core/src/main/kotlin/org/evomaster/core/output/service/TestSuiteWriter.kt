@@ -611,8 +611,7 @@ class TestSuiteWriter {
                         addStatement("$baseUrlOfSut = $controller.startSut()", lines)
                         if(config.problemType == EMConfig.ProblemType.WEBFRONTEND){
                             val infoDto = remoteController.getSutInfo()!! //TODO refactor. save it in a service
-                            val url = "$baseUrlOfSut+\"${infoDto.webProblem.urlPathOfStartingPage}\""
-                            addStatement("$baseUrlOfSut = validateAndGetUrlOfStartingPageForDocker($url, true)", lines)
+                            addStatement("$baseUrlOfSut = validateAndGetUrlOfStartingPageForDocker($baseUrlOfSut,\"${infoDto.webProblem.urlPathOfStartingPage}\", true)", lines)
                         }
                         /*
                             now only support white-box

@@ -6,6 +6,7 @@ import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
+import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 
 import org.evomaster.core.search.*
@@ -17,6 +18,7 @@ import kotlin.math.max
  * individual for RPC service
  */
 class RPCIndividual(
+    sampleType: SampleType,
     trackOperator: TrackOperator? = null,
     index: Int = -1,
     allActions: MutableList<ActionComponent>,
@@ -24,6 +26,7 @@ class RPCIndividual(
     dbSize: Int = 0,
     groups: GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(allActions, mainSize, dbSize)
 ) : ApiWsIndividual(
+    sampleType,
     trackOperator, index, allActions,
     childTypeVerifier = {
         EnterpriseActionGroup::class.java.isAssignableFrom(it)
@@ -33,6 +36,7 @@ class RPCIndividual(
 ) {
 
     constructor(
+        sampleType: SampleType,
         actions: MutableList<RPCCallAction>,
         externalServicesActions: MutableList<List<ApiExternalServiceAction>> = mutableListOf(),
         /*
@@ -42,6 +46,7 @@ class RPCIndividual(
         trackOperator: TrackOperator? = null,
         index: Int = -1
     ) : this(
+        sampleType = sampleType,
         trackOperator = trackOperator,
         index = index,
         allActions = mutableListOf<ActionComponent>().apply {
@@ -105,14 +110,14 @@ class RPCIndividual(
      * remove an action from [actions] at [position]
      */
     fun removeAction(position: Int) {
-        val removed = (killChildByIndex(getFirstIndexOfEnterpriseActionGroup() + position) as EnterpriseActionGroup).getMainAction()
-        removed.removeThisFromItsBindingGenes()
+        killChildByIndex(getFirstIndexOfEnterpriseActionGroup() + position) as EnterpriseActionGroup
     }
 
     private fun getFirstIndexOfEnterpriseActionGroup() = max(0, max(children.indexOfLast { it is DbAction }+1, children.indexOfFirst { it is EnterpriseActionGroup }))
 
     override fun copyContent(): Individual {
         return RPCIndividual(
+            sampleType,
             trackOperator,
             index,
             children.map { it.copy() }.toMutableList() as MutableList<ActionComponent>,

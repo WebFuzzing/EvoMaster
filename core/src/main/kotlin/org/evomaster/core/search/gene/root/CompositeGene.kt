@@ -14,11 +14,4 @@ abstract class CompositeGene(
 
     constructor(name: String, child: Gene) : this(name, mutableListOf(child))
 
-
-    override fun killChild(child: StructuralElement){
-        (child as Gene).removeThisFromItsBindingGenes()
-        super.killChild(child)
-    }
-
-
 }

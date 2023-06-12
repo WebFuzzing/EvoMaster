@@ -29,6 +29,7 @@ import java.util.*
  * per action, and not here in the initialization phase.
  */
 abstract class EnterpriseIndividual(
+    val sampleType: SampleType,
     /**
      * a tracked operator to manipulate the individual (nullable)
      */
@@ -139,6 +140,10 @@ abstract class EnterpriseIndividual(
         val base = groupsView()!!.startIndexForGroupInsertionInclusive(main)
         val position = base + relativePosition
         killChildByIndex(position)
+    }
+
+    override fun removeMainExecutableAction(relativeIndex: Int){
+        removeMainActionGroupAt(relativeIndex)
     }
 
     /**

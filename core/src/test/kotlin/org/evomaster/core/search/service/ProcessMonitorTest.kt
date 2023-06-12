@@ -50,7 +50,7 @@ class ProcessMonitorTest{
         config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
         config.processFormat = EMConfig.ProcessDataFormat.JSON_ALL
         config.useTimeInFeedbackSampling = false
-
+        config.minimize = false
     }
 
 
@@ -151,6 +151,9 @@ class ProcessMonitorTest{
 
     @Test
     fun testSerializedTwoStepsAndOverall(){
+
+        assertTrue(archive.isEmpty())
+
         config.processFiles = "target/process_data_2s"
 
         config.enableProcessMonitor = true
@@ -172,7 +175,6 @@ class ProcessMonitorTest{
 
         val addedA = archive.addIfNeeded(evalA)
         assert(addedA)
-
 
         assertEquals(1, archive.getSnapshotOfBestIndividuals().size)
         val b = OneMaxIndividual(2)
