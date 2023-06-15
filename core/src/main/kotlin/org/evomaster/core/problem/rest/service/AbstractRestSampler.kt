@@ -112,7 +112,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         }
 
         initAdHocInitialIndividuals()
-
+        initSeededTests()
         postInits()
 
         updateConfigBasedOnSutInfoDto(infoDto)
@@ -169,17 +169,18 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
      */
     fun initAdHocInitialIndividuals(){
         customizeAdHocInitialIndividuals()
+    }
 
+    override fun initSeededTests(infoDto: SutInfoDto?) {
         // if test case seeding is enabled, add those test cases too
         if (config.seedTestCases) {
             val parser = getParser()
             val seededTestCases = parser.parseTestCases(config.seedTestCasesPath)
-            adHocInitialIndividuals.addAll(seededTestCases.map {
+            seededIndividuals.addAll(seededTestCases.map {
                 it.forEach { a -> a.doInitialize() }
                 createIndividual(SampleType.SEEDED, it)
             })
         }
-
     }
 
 
@@ -276,6 +277,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, listOf(), enableConstraintHandling = config.enableSchemaConstraintHandling)
 
         initAdHocInitialIndividuals()
+        initSeededTests()
 
         addAuthFromConfig()
 
@@ -291,8 +293,8 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         return swagger
     }
 
-    override fun hasSpecialInit(): Boolean {
-        return adHocInitialIndividuals.isNotEmpty() && config.isEnabledSmartSampling()
+    override fun hasSpecialInitForSmartSampler(): Boolean {
+        return (adHocInitialIndividuals.isNotEmpty() && config.isEnabledSmartSampling())
     }
 
     /**

@@ -83,6 +83,10 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
     private fun expandIndividual(
         individual: RPCIndividual
     ){
+
+        /*
+            might later need to handle missing class when mocking database
+         */
         val exMissingDto = individual.seeExternalServiceActions()
             .filterIsInstance<RPCExternalServiceAction>()
             .filterNot {

@@ -22,6 +22,8 @@ class SimpleResourceSampler : ResourceSampler() {
         }
 
         initAdHocInitialIndividuals()
+        initSeededTests()
+
         postInits()
     }
 

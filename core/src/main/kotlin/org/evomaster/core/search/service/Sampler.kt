@@ -1,6 +1,7 @@
 package org.evomaster.core.search.service
 
 import com.google.inject.Inject
+import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.EvaluatedIndividual
@@ -41,7 +42,10 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
      */
     protected val actionCluster: MutableMap<String, Action> = mutableMapOf()
 
-
+    /**
+     * keep a list of seeded individual
+     */
+    protected val seededIndividuals : MutableList<T> = mutableListOf()
 
     /**
      * Create a new individual. Usually each call to this method
@@ -53,9 +57,13 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
             log.trace("sampler will be applied")
         }
 
+        if (config.seedTestCases && seededIndividuals.isNotEmpty()){
+            return seededIndividuals.removeLast()
+        }
+
         val ind = if (forceRandomSample) {
             sampleAtRandom()
-        } else if ( config.isEnabledSmartSampling() && (hasSpecialInit() ||  randomness.nextBoolean(config.probOfSmartSampling))) {
+        } else if ( config.isEnabledSmartSampling() && (hasSpecialInitForSmartSampler() ||  randomness.nextBoolean(config.probOfSmartSampling))) {
             // If there is still special init set, sample from that, otherwise depend on probability
             smartSample()
         } else {
@@ -74,6 +82,8 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
      * Note: must guarantee to setup the [searchGlobalState] in this new individual
      */
     protected abstract fun sampleAtRandom(): T
+
+    protected abstract fun initSeededTests(infoDto: SutInfoDto? = null)
 
     open fun samplePostProcessing(ind: T){
 
@@ -103,14 +113,31 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
     fun numberOfDistinctActions() = actionCluster.size
 
     /**
+     * @return number of seeded individual which are not executed
+     */
+    fun numberOfNotExecutedSeededIndividuals() = seededIndividuals.size
+
+    /**
+     * @return number of seeded individual which are not executed
+     */
+    fun getNotExecutedSeededIndividuals() = seededIndividuals.toList()
+
+    /**
      * When the search starts, there might be some predefined individuals
      * that we can sample. But we just need to sample each of them just once.
      * The [smartSample] must first pick from this set.
      *
+     * @return false if there is not left predefined individual to sample with smart sampler
+     */
+    open fun hasSpecialInitForSmartSampler() = false
+
+    /**
+     * When the search starts, there might be some predefined individuals
+     * that we can sample.
+     *
      * @return false if there is not left predefined individual to sample
      */
-    open fun hasSpecialInit() = false
-
+    fun hasSpecialInit() : Boolean = seededIndividuals.isNotEmpty() || hasSpecialInitForSmartSampler()
 
     open fun resetSpecialInit() {}
 

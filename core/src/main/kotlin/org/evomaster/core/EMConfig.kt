@@ -1627,10 +1627,6 @@ class EMConfig {
     @Cfg("Whether to seed EvoMaster with some initial test cases. These test cases will be used and evolved throughout the search process")
     var seedTestCases = false
 
-    @Experimental
-    @Cfg("Whether to execute seeded test cases first and collect statistics covered by such tests.")
-    var executedSeedTestCasesFirst = false
-
     enum class SeedTestCasesFormat {
         POSTMAN
     }
