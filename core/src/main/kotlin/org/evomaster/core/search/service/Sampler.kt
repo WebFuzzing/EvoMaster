@@ -47,6 +47,17 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
      */
     protected val seededIndividuals : MutableList<T> = mutableListOf()
 
+    private var pickingUpLastSeed = false
+
+    /**
+     * @return if the last seeded was picked up
+     */
+    fun isLastSeededIndividual() = pickingUpLastSeed
+
+    private fun resetPickingUpLastSeededIndividual() {
+        pickingUpLastSeed = false
+    }
+
     /**
      * Create a new individual. Usually each call to this method
      * will create a new, different individual, but there is no
@@ -57,7 +68,10 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
             log.trace("sampler will be applied")
         }
 
+        resetPickingUpLastSeededIndividual()
+
         if (config.seedTestCases && seededIndividuals.isNotEmpty()){
+            pickingUpLastSeed = seededIndividuals.size == 1
             return seededIndividuals.removeLast()
         }
 

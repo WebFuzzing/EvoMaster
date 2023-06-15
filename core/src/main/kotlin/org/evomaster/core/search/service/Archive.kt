@@ -82,6 +82,9 @@ class Archive<T> where T : Individual {
      */
     private var lastChosen: Int? = null
 
+    data class CoveredStatisticsBySeededTests(val coveredTargets: List<Int>)
+
+    private var coveredStatisticsBySeededTests : CoveredStatisticsBySeededTests? = null
 
     /**
      * Kill all populations.
@@ -97,6 +100,19 @@ class Archive<T> where T : Individual {
         val uniques = getUniquePopulation()
 
         return Solution(uniques.toMutableList(), config.outputFilePrefix, config.outputFileSuffix, Termination.NONE)
+    }
+
+
+
+    fun archiveCoveredStatisticsBySeededTests(){
+        if (coveredStatisticsBySeededTests != null){
+            throw IllegalStateException("`archiveCoveredStatisticsBySeededTests` can only be performed once")
+        }
+
+        val current = extractSolution()
+        coveredStatisticsBySeededTests = CoveredStatisticsBySeededTests(
+            coveredTargets = current.overall.getViewOfData().filter { it.value.distance == FitnessValue.MAX_VALUE }.keys.toList()
+        )
     }
 
 
