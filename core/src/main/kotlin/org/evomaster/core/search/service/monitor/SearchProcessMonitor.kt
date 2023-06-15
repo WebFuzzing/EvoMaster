@@ -204,7 +204,7 @@ class SearchProcessMonitor: SearchListener {
     private fun <T:Individual> saveStepAsTest(index: Int, evalInd: EvaluatedIndividual<T>, doesIncludeTarget : Boolean){
         val name = getStepName(index, false)
         val testFile = TestSuiteFileName(name)
-        val solution = Solution(individuals = mutableListOf(evalInd), testSuiteNamePrefix = name, testSuiteNameSuffix = "")
+        val solution = Solution(individuals = mutableListOf(evalInd), testSuiteNamePrefix = name, testSuiteNameSuffix = "", targetsDuringSeeding = listOf())
         val content = writer.convertToCompilableTestCode(
                 solution = solution,
                 testSuiteFileName = testFile, controllerName = controllerName, controllerInput = null)

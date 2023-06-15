@@ -98,6 +98,11 @@ class FitnessValue(
     */
     var executionTimeMs : Long = Long.MAX_VALUE
 
+    /**
+     * a list of targets covered with seeded tests
+     */
+    private val coveredTargetsDuringSeeding : MutableSet<Int> = mutableSetOf()
+
 
     fun copy(): FitnessValue {
         val copy = FitnessValue(size)
@@ -172,6 +177,18 @@ class FitnessValue(
                 .count()
     }
 
+    fun setTargetsCoveredBySeeding(coveredTargets: List<Int>){
+        coveredTargetsDuringSeeding.addAll(coveredTargets)
+    }
+
+    fun coveredTargetsDuringSeeding() : Int{
+        return coveredTargetsDuringSeeding.size
+    }
+    fun coveredTargetsDuringSeeding(prefix: String, idMapper: IdMapper) : Int{
+        return coveredTargetsDuringSeeding
+            .count { idMapper.getDescriptiveId(it).startsWith(prefix) }
+    }
+
     /**
      * this method is to report the union results with targets at boot-time
      * @param prefix specifies the target with specific prefix  to return (eg Line), null means return all types of targets
@@ -183,18 +200,31 @@ class FitnessValue(
      */
     fun unionWithBootTimeCoveredTargets(prefix: String?, idMapper: IdMapper, bootTimeInfoDto: BootTimeInfoDto?): TargetStatistic{
         if (bootTimeInfoDto?.targets == null){
-            return (if (prefix == null) coveredTargets() else coveredTargets(prefix, idMapper)).run { TargetStatistic(
-                BOOT_TIME_INFO_UNAVAILABLE,this, max(BOOT_TIME_INFO_UNAVAILABLE,0)+this) }
+            return (if (prefix == null) coveredTargets() else coveredTargets(prefix, idMapper)).run {
+                TargetStatistic(
+                    bootTime = BOOT_TIME_INFO_UNAVAILABLE,
+                    searchTime = this - coveredTargetsDuringSeeding(),
+                    seedingTime = coveredTargetsDuringSeeding(),
+                    max(BOOT_TIME_INFO_UNAVAILABLE,0)+this)
+            }
         }
         val bootTime = bootTimeInfoDto.targets.filter { it.value == MAX_VALUE && (prefix == null || it.descriptiveId.startsWith(prefix)) }
         // counter for duplicated targets
         var duplicatedcounter = 0
+
+        val seedingTime = coveredTargetsDuringSeeding.count { s ->
+            ((prefix == null || idMapper.getDescriptiveId(s).startsWith(prefix))).apply {
+                if (this && bootTime.any { it.descriptiveId == idMapper.getDescriptiveId(s) })
+                    duplicatedcounter++
+            }
+        }
+
         val searchTime = targets.entries.count { e ->
             (e.value.distance == MAX_VALUE && (prefix == null || idMapper.getDescriptiveId(e.key).startsWith(prefix))).apply {
                 if (this && bootTime.any { it.descriptiveId == idMapper.getDescriptiveId(e.key) })
                     duplicatedcounter++
             }
-        }
+        } - seedingTime
         /*
         related to task https://trello.com/c/EoWcV6KX/810-issue-with-assertion-checks-in-e2e
 
@@ -213,7 +243,7 @@ class FitnessValue(
         }
 
         */
-        return TargetStatistic(bootTime.size, searchTime, bootTime.size + searchTime - duplicatedcounter)
+        return TargetStatistic(bootTime = bootTime.size, searchTime = searchTime, seedingTime = seedingTime,bootTime.size + searchTime + seedingTime - duplicatedcounter)
     }
 
     fun coverTarget(id: Int) {

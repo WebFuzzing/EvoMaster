@@ -32,7 +32,7 @@ object TestSuiteSplitter {
                 Solution(individuals = g.value.toMutableList(),
                     testSuiteNamePrefix = solution.testSuiteNamePrefix,
                     testSuiteNameSuffix = solution.testSuiteNameSuffix,
-                    termination = if (g.key) Termination.EXCEPTION else Termination.OTHER)
+                    termination = if (g.key) Termination.EXCEPTION else Termination.OTHER, listOf())
             }
         }
     }
@@ -115,10 +115,10 @@ object TestSuiteSplitter {
 
         when (clusterableActions.size) {
             0 -> splitResult.splitOutcome = mutableListOf()
-            1 -> splitResult.splitOutcome = mutableListOf(Solution(errs, solution.testSuiteNamePrefix, solution.testSuiteNameSuffix, Termination.SUMMARY))
+            1 -> splitResult.splitOutcome = mutableListOf(Solution(errs, solution.testSuiteNamePrefix, solution.testSuiteNameSuffix, Termination.SUMMARY, listOf()))
         }
         val clusters = mutableMapOf<String, MutableList<MutableList<HttpWsCallResult>>>()
-        val clusteringSol = Solution(errs, solution.testSuiteNamePrefix, solution.testSuiteNameSuffix, Termination.SUMMARY)
+        val clusteringSol = Solution(errs, solution.testSuiteNamePrefix, solution.testSuiteNameSuffix, Termination.SUMMARY, listOf())
 
         /**
         In order for clustering to make sense, we need a set of clusterable actions with at least 2 elements.
@@ -174,7 +174,7 @@ object TestSuiteSplitter {
         }
 
         val execSolList = execSol.toMutableList()
-        return Solution(execSolList, solution.testSuiteNamePrefix, solution.testSuiteNameSuffix, Termination.SUMMARY)
+        return Solution(execSolList, solution.testSuiteNamePrefix, solution.testSuiteNameSuffix, Termination.SUMMARY, listOf())
     }
 
     private fun splitByCluster(clusters: MutableMap<String, MutableList<MutableList<HttpWsCallResult>>>,
@@ -198,13 +198,13 @@ object TestSuiteSplitter {
                     }
         }.toMutableList()
 
-        val solSuccesses = Solution(successses, solution.testSuiteNamePrefix, solution.testSuiteNameSuffix, Termination.SUCCESSES)
+        val solSuccesses = Solution(successses, solution.testSuiteNamePrefix, solution.testSuiteNameSuffix, Termination.SUCCESSES, listOf())
         val remainder = solution.individuals.filter {
             !errs.contains(it) &&
                     !successses.contains(it)
         }.toMutableList()
 
-        val solRemainder = Solution(remainder, solution.testSuiteNamePrefix, solution.testSuiteNameSuffix, Termination.OTHER)
+        val solRemainder = Solution(remainder, solution.testSuiteNamePrefix, solution.testSuiteNameSuffix, Termination.OTHER, listOf())
 
         // Failures by cluster
         val sumSol = mutableSetOf<EvaluatedIndividual<ApiWsIndividual>>()
@@ -224,7 +224,7 @@ object TestSuiteSplitter {
         skipped.forEach {
             sumSol.add(it)
         }
-        val solErrors = Solution(sumSol.toMutableList(), solution.testSuiteNamePrefix, solution.testSuiteNameSuffix, Termination.FAULTS)
+        val solErrors = Solution(sumSol.toMutableList(), solution.testSuiteNamePrefix, solution.testSuiteNameSuffix, Termination.FAULTS, listOf())
         splitResult.splitOutcome = mutableListOf(solErrors,
                 solSuccesses,
                 solRemainder)
@@ -267,9 +267,9 @@ object TestSuiteSplitter {
                     !successses.contains(it)
         }.toMutableList()
 
-        return listOf(Solution(s500, solution.testSuiteNamePrefix, solution.testSuiteNameSuffix, Termination.FAULTS),
-                Solution(successses, solution.testSuiteNamePrefix, solution.testSuiteNameSuffix, Termination.SUCCESSES),
-                Solution(remainder, solution.testSuiteNamePrefix, solution.testSuiteNameSuffix, Termination.OTHER)
+        return listOf(Solution(s500, solution.testSuiteNamePrefix, solution.testSuiteNameSuffix, Termination.FAULTS, listOf()),
+                Solution(successses, solution.testSuiteNamePrefix, solution.testSuiteNameSuffix, Termination.SUCCESSES, listOf()),
+                Solution(remainder, solution.testSuiteNamePrefix, solution.testSuiteNameSuffix, Termination.OTHER, listOf())
         )
     }
 
@@ -369,9 +369,9 @@ object TestSuiteSplitter {
                     !successses.contains(it)
         }.toMutableList()
 
-        return listOf(Solution(s500, solution.testSuiteNamePrefix, solution.testSuiteNameSuffix, Termination.FAULTS),
-                Solution(successses, solution.testSuiteNamePrefix, solution.testSuiteNameSuffix, Termination.SUCCESSES),
-                Solution(remainder, solution.testSuiteNamePrefix, solution.testSuiteNameSuffix, Termination.OTHER)
+        return listOf(Solution(s500, solution.testSuiteNamePrefix, solution.testSuiteNameSuffix, Termination.FAULTS, listOf()),
+                Solution(successses, solution.testSuiteNamePrefix, solution.testSuiteNameSuffix, Termination.SUCCESSES, listOf()),
+                Solution(remainder, solution.testSuiteNamePrefix, solution.testSuiteNameSuffix, Termination.OTHER, listOf())
         )
     }
 

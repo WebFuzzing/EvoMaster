@@ -67,7 +67,8 @@ class TestSuiteWriterRPCTest{
                 ),
                 config.outputFilePrefix,
                 config.outputFileSuffix,
-                Termination.NONE
+                Termination.NONE,
+                listOf()
         )
 
 
