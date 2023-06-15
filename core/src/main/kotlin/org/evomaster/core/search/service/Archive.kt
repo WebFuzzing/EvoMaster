@@ -115,6 +115,8 @@ class Archive<T> where T : Individual {
         )
     }
 
+    fun anyTargetsCoveredSeededTests () = coveredStatisticsBySeededTests != null && coveredStatisticsBySeededTests!!.coveredTargets.isNotEmpty()
+
 
     fun getCopyOfUniqueCoveringIndividuals() : List<T>{
         return getUniquePopulation().map { it.individual }
@@ -579,11 +581,15 @@ class Archive<T> where T : Individual {
     /**
      * @return a list of pairs which is composed of target id (first) and corresponding tests (second)
      */
-    fun exportCoveredTargetsAsPair(solution: Solution<*>) : List<Pair<String, List<Int>>>{
+    fun exportCoveredTargetsAsPair(solution: Solution<*>, includeTargetsCoveredBySeededTests: Boolean? = null) : List<Pair<String, List<Int>>>{
 
         return populations.keys
                 .asSequence()
-                .filter { isCovered(it) }
+                .filter {
+                    isCovered(it) && (includeTargetsCoveredBySeededTests == null
+                            || (coveredStatisticsBySeededTests==null)
+                            || (if (includeTargetsCoveredBySeededTests) coveredStatisticsBySeededTests!!.coveredTargets.contains(it) else !coveredStatisticsBySeededTests!!.coveredTargets.contains(it)))
+                }
                 .map { t->
                     Pair(idMapper.getDescriptiveId(t), solution.individuals.mapIndexed { index, f-> if (f.fitness.doesCover(t)) index else -1 }.filter { it != -1 })
                 }.toList()

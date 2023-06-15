@@ -352,9 +352,32 @@ class Statistics : SearchListener {
         if (path.parent != null) Files.createDirectories(path.parent)
         if (Files.exists(path))
             log.info("The existing file on ${config.coveredTargetFile} is going to be replaced")
-        val info = archive.exportCoveredTargetsAsPair(solution)
         val separator = "," // for csv format
+        val content = mutableListOf<String>()
 
+        if (archive.anyTargetsCoveredSeededTests()){
+            content.addAll(getPrintContentForCoveredTargets(archive.exportCoveredTargetsAsPair(solution, true), separator, format))
+            content.add(System.lineSeparator())
+            content.add(System.lineSeparator())
+            content.addAll(getPrintContentForCoveredTargets(archive.exportCoveredTargetsAsPair(solution, false), separator, format))
+        }else{
+            content.addAll(getPrintContentForCoveredTargets(archive.exportCoveredTargetsAsPair(solution), separator, format))
+        }
+
+
+        // append boot-time targets
+        if(!config.blackBox || config.bbExperiments) {
+            remoteController?.getSutInfo()?.bootTimeInfoDto?.targets?.map { it.descriptiveId }?.sorted()?.apply {
+                if (isNotEmpty()){
+                    content.add(System.lineSeparator())
+                    content.addAll(this)
+                }
+            }
+        }
+        Files.write(path, content)
+    }
+
+    private fun getPrintContentForCoveredTargets(info: List<kotlin.Pair<String, List<Int>>>, separator: String, format : EMConfig.SortCoveredTargetBy) : MutableList<String>{
         val content = mutableListOf<String>()
         when(format){
             EMConfig.SortCoveredTargetBy.NAME ->{
@@ -372,17 +395,6 @@ class Statistics : SearchListener {
                 }
             }
         }
-
-        // append boot-time targets
-        if(!config.blackBox || config.bbExperiments) {
-            remoteController?.getSutInfo()?.bootTimeInfoDto?.targets?.map { it.descriptiveId }?.sorted()?.apply {
-                if (isNotEmpty()){
-                    content.add(System.lineSeparator())
-                    content.addAll(this)
-                }
-            }
-        }
-        Files.write(path, content)
+        return content
     }
-
 }
