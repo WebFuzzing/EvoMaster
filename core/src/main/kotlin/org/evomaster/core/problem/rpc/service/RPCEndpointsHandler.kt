@@ -181,6 +181,7 @@ class RPCEndpointsHandler {
             val rpcActionDtos = e.value
             val exActions = mutableListOf<List<ApiExternalServiceAction>>()
             val rpcActions = rpcActionDtos.map { rpcActionDto->
+                val external = mutableListOf<ApiExternalServiceAction>()
                 val name = actionName(rpcActionDto.interfaceId, rpcActionDto.actionName)
                 if (rpcActionDto.mockRPCExternalServiceDtos != null && rpcActionDto.mockRPCExternalServiceDtos.isNotEmpty()){
                     val ex = rpcActionDto.mockRPCExternalServiceDtos.map { e->
@@ -198,11 +199,12 @@ class RPCEndpointsHandler {
                             }
                         }.filterNotNull()
                     }.flatten()
-                    exActions.add(ex)
+                    external.addAll(ex)
                 }
 
-                if (rpcActionDto.mockDatabaseDtos != null && rpcActionDto.mockDatabaseDtos.isNotEmpty()){
-                    val dbEx = rpcActionDto.mockDatabaseDtos.map { dbDto->
+
+               if (rpcActionDto.mockDatabaseDtos != null && rpcActionDto.mockDatabaseDtos.isNotEmpty()){
+                   val dbEx = rpcActionDto.mockDatabaseDtos.map { dbDto->
                         val dbExAction = seededDbMockObjects[
                                 DbAsExternalServiceAction.getDbAsExternalServiceAction(dbDto.commandName, dbDto.requests, dbDto.responseFullType)
                         ]!!.copy() as DbAsExternalServiceAction
@@ -218,9 +220,10 @@ class RPCEndpointsHandler {
                             null
                         }
                     }.filterNotNull()
-                    exActions.add(dbEx)
+                   external.addAll(dbEx)
                 }
 
+                exActions.add(external)
                 processEndpoint(name, rpcActionDto, true)
             }.toMutableList()
 
