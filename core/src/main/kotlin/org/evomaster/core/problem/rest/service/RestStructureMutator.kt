@@ -4,6 +4,7 @@ import com.google.inject.Inject
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.api.service.ApiWsStructureMutator
+import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.search.ActionFilter
@@ -51,7 +52,7 @@ class RestStructureMutator : ApiWsStructureMutator() {
         when (individual.sampleType) {
             SampleType.RANDOM -> mutateForRandomType(individual, mutatedGenes)
 
-            SampleType.SMART_GET_COLLECTION -> mutateForSmartGetCollection(individual, mutatedGenes)
+            SampleType.REST_SMART_GET_COLLECTION -> mutateForSmartGetCollection(individual, mutatedGenes)
 
             SampleType.SMART -> throw IllegalStateException(
                     "SMART sampled individuals shouldn't be marked for structure mutations")

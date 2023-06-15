@@ -26,6 +26,17 @@ public class MapClassReplacement implements MethodReplacementClass {
         }
     }
 
+    /*
+        Note, if for any reason in a method X we need to call another method Y (eg for isEmpty() we call size()) to
+        compute any heuristics, then we MUST do so in a try/catch...
+        There are abominations like
+
+        org.thymeleaf.spring6.expression.SPELContextMapWrapper
+
+        where implements some methods, and throw exception on all others...
+     */
+
+
     private static boolean hasLinearCost(Class<? extends Map> klass){
         Boolean isLinear = cacheIsLinearCost.get(klass);
         if(isLinear == null){
@@ -60,7 +71,12 @@ public class MapClassReplacement implements MethodReplacementClass {
             return result;
         }
 
-        int len = caller.size();
+        int len;
+        try {
+            len = caller.size();
+        } catch (Exception e){
+            return result;
+        }
         Truthness t = TruthnessUtils.getTruthnessToEmpty(len);
 
         ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
@@ -93,7 +109,12 @@ public class MapClassReplacement implements MethodReplacementClass {
             anymore, due to how we handle subclasses. See comments in that class.
          */
         //Collection keyCollection = new HashSet(c.keySet());
-        Collection keyCollection = c.keySet();
+        Collection keyCollection;
+        try {
+            keyCollection = c.keySet();
+        } catch (Exception e){
+            return c.containsKey(o);
+        }
 
         CollectionsDistanceUtils.evaluateTaint(keyCollection, o);
 
@@ -112,7 +133,12 @@ public class MapClassReplacement implements MethodReplacementClass {
             return c.containsKey(o);
         }
 
-        boolean result = keyCollection.contains(o);
+        boolean result;
+        try {
+            result = keyCollection.contains(o);
+        } catch (Exception e){
+            return c.containsKey(o);
+        }
 
         if (idTemplate == null) {
             return result;
@@ -164,11 +190,21 @@ public class MapClassReplacement implements MethodReplacementClass {
             return c.containsValue(o);
         }
 
-        Collection data = c.values();
+        Collection data;
+        try {
+            data = c.values();
+        }catch (Exception e){
+            return c.containsValue(o);
+        }
 
         CollectionsDistanceUtils.evaluateTaint(data, o);
 
-        boolean result = data.contains(o);
+        boolean result;
+        try {
+            result = data.contains(o);
+        } catch (Exception e){
+            return c.containsValue(o);
+        }
 
         if (idTemplate == null) {
             return result;
@@ -201,8 +237,19 @@ public class MapClassReplacement implements MethodReplacementClass {
         return true;
          */
 
+        try{
+            map.keySet();
+        }catch (Exception e){
+            return map.remove(key, value);
+        }
+
         CollectionsDistanceUtils.evaluateTaint(map.keySet(), key);
-        Object curValue = map.get(key);
+        Object curValue;
+        try {
+                curValue =map.get(key);
+        } catch (Exception e){
+            return map.remove(key, value);
+        }
         if(curValue != null) {
             CollectionsDistanceUtils.evaluateTaint(Arrays.asList(curValue), value);
         }
@@ -243,11 +290,15 @@ public class MapClassReplacement implements MethodReplacementClass {
         return true;
          */
 
-        boolean removed = remove(map, key, oldValue,idTemplate);
-        if(removed){
-            map.put(key, newValue);
+        try {
+            boolean removed = remove(map, key, oldValue, idTemplate);
+            if (removed) {
+                map.put(key, newValue);
+            }
+            return removed;
+        } catch (Exception e){
+            return map.replace(key,oldValue, newValue);
         }
-        return removed;
     }
 
 }

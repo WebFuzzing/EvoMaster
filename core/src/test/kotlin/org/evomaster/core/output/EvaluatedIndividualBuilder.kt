@@ -3,6 +3,7 @@ package org.evomaster.core.output
 import org.evomaster.core.TestUtils
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionResult
+import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.problem.externalservice.rpc.RPCExternalServiceAction
 import org.evomaster.core.problem.externalservice.rpc.parm.ClassResponseParam
@@ -106,7 +107,7 @@ class EvaluatedIndividualBuilder {
         ): EvaluatedIndividual<RPCIndividual>{
             if (!format.isJavaOrKotlin())
                 throw IllegalArgumentException("do not support to generate faked evaluated RPC individual for testing test writer")
-            val individual = RPCIndividual(actions = actions, externalServicesActions = externalServicesActions)
+            val individual = RPCIndividual(SampleType.RANDOM, actions = actions, externalServicesActions = externalServicesActions)
 
             individual.doInitialize()
 

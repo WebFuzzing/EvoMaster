@@ -18,7 +18,7 @@ import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.database.extract.h2.ExtractTestBaseH2
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.SampleType
+import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.service.*
 import org.evomaster.core.problem.rest.service.resource.model.ResourceBasedTestInterface

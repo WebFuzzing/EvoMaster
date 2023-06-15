@@ -60,6 +60,7 @@ public class CoverageClassVisitor extends ClassVisitor {
         }
 
         if(bytecodeClassName.contains("$InterceptedDefinition") ||
+                bytecodeClassName.contains("$Definition") ||
                 bytecodeClassName.contains("$Introspection")){
             /*
                 In general, we should avoid dealing with classes generated on the fly by frameworks like

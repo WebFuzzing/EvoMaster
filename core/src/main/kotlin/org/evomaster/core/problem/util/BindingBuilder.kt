@@ -172,6 +172,13 @@ object BindingBuilder {
         }
     }
 
+    /**
+     * @return whether the param name represents an extra param handled by taint analysis
+     */
+    fun isExtraTaintParam(name : String) : Boolean{
+        return name == TaintInputName.EXTRA_HEADER_TAINT || name == TaintInputName.EXTRA_PARAM_TAINT
+    }
+
     private fun buildBindHeaderParam(p : HeaderParam, params: List<Param>): Pair<Gene, Gene>?{
         return params.find { it is HeaderParam && p.name == it.name}?.run {
             Pair(ParamUtil.getValueGene(p.gene), ParamUtil.getValueGene(this.gene))
@@ -202,14 +209,16 @@ object BindingBuilder {
     }
 
     private fun buildBindBodyParam(bp : BodyParam, targetPath: RestPath, sourcePath: RestPath, params: List<Param>, inner : Boolean, randomness: Randomness?) : List<Pair<Gene, Gene>>{
-        if(ParamUtil.numOfBodyParam(params) != params.size ){
-            return params.filter { p -> p !is BodyParam }
+        val excludeExtraParams = params.filterNot { isExtraTaintParam(it.name) }
+
+        if(ParamUtil.numOfBodyParam(excludeExtraParams) != excludeExtraParams.size ){
+            return excludeExtraParams.filter { p -> p !is BodyParam }
                 .flatMap {ip->
                     buildBindBodyAndOther(bp, targetPath, ip, sourcePath, true, inner)
                 }
-        }else if(params.isNotEmpty()){
+        }else if(excludeExtraParams.isNotEmpty()){
             val valueGene = ParamUtil.getValueGene(bp.gene)
-            val pValueGene = ParamUtil.getValueGene(params[0].gene)
+            val pValueGene = ParamUtil.getValueGene(excludeExtraParams[0].gene)
             if(valueGene !is ObjectGene){
                 return listOf()
             }

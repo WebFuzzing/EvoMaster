@@ -12,6 +12,8 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutation
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.evomaster.core.Lazy
+import org.evomaster.core.problem.enterprise.EnterpriseIndividual
+import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.search.RootElement
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.SearchGlobalState
@@ -213,7 +215,9 @@ abstract class Gene(
         if(ind.searchGlobalState == null){
             throw IllegalStateException("Search Global State was not setup for the individual")
         }
-        applyGlobalUpdates()
+
+        if (ind !is EnterpriseIndividual || ind.sampleType != SampleType.SEEDED)
+            applyGlobalUpdates()
 
         children.forEach { it.doGlobalInitialize() }
     }
@@ -351,6 +355,12 @@ abstract class Gene(
         return checkForGloballyValid() && getViewOfChildren().all { it.isGloballyValid() }
     }
 
+    override fun callWinstonWolfe() {
+        super.callWinstonWolfe()
+
+        removeThisFromItsBindingGenes()
+        //TODO in future will deal with FK as well here
+    }
 
     protected open fun checkForGloballyValid() = true
 

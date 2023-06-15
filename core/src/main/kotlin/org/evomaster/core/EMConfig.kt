@@ -1036,6 +1036,9 @@ class EMConfig {
     @Min(1.0)
     var maxTestSize = 10
 
+    @Cfg("Based on some heuristics, there are cases in which 'maxTestSize' can be overridden at runtime")
+    var enableOptimizedTestSize = true
+
     @Cfg("Tracking of SQL commands to improve test generation")
     var heuristicsForSQL = true
 
@@ -1058,14 +1061,8 @@ class EMConfig {
     var maxSqlInitActionsPerMissingData = 5
 
 
-    /*
-        Likely this should always be on by default... it would increase search space, but that would be handled by
-        adaptive hypermutation
-        TODO need experiments
-     */
-    @Experimental
     @Cfg("Force filling data of all columns when inserting new row, instead of only minimal required set.")
-    var forceSqlAllColumnInsertion = false
+    var forceSqlAllColumnInsertion = true
 
 
     @Cfg("Maximum size (in bytes) that EM handles response payloads in the HTTP responses. " +
@@ -1186,16 +1183,14 @@ class EMConfig {
     var expandRestIndividuals = true
 
 
-    @Experimental
     @Cfg("Add an extra query param, to analyze how it is used/read by the SUT. Needed to discover new query params" +
             " that were not specified in the schema.")
-    var extraQueryParam = false
+    var extraQueryParam = true
 
 
-    @Experimental
     @Cfg("Add an extra HTTP header, to analyze how it is used/read by the SUT. Needed to discover new headers" +
             " that were not specified in the schema.")
-    var extraHeader = false
+    var extraHeader = true
 
 
     @Experimental
@@ -1574,9 +1569,8 @@ class EMConfig {
     @Probability
     var baseTaintAnalysisProbability = 0.9
 
-    @Experimental
     @Cfg("Whether input tracking is used on sampling time, besides mutation time")
-    var taintOnSampling = false
+    var taintOnSampling = true
 
     @Probability
     @Experimental
@@ -1737,6 +1731,27 @@ class EMConfig {
     var addPreDefinedTests : Boolean = true
 
 
+    @Cfg("Apply a minimization phase to make the generated tests more readable." +
+            " Achieved coverage would stay the same." +
+            " Generating shorter test cases might come at the cost of having more test cases.")
+    var minimize : Boolean = true
+
+
+    @Cfg("Maximum number of minutes that will be dedicated to the minimization phase." +
+            " A negative number mean no timeout is considered." +
+            " A value of 0 means minimization will be skipped, even if minimize=true.")
+    var minimizeTimeout = 5
+
+
+    @Cfg("When applying minimization phase, and some targets get lost when re-computing coverage," +
+            " then printout a detailed description.")
+    var minimizeShowLostTargets = true
+
+    @PercentageAsProbability
+    @Cfg("Losing targets when recomputing coverage is expected (e.g., constructors of singletons)," +
+            " but problematic if too much")
+    var minimizeThresholdForLoss = 0.2
+
     @Experimental
     @FilePath(true)
     @Regex("(.*jacoco.*\\.jar)|(^$)")
@@ -1822,11 +1837,10 @@ class EMConfig {
     @Cfg("Specify test resource path where to save mocked responses as separated files")
     var testResourcePathToSaveMockedResponse = ""
 
-    @Experimental
     @Cfg("Whether to analyze how SQL databases are accessed to infer extra constraints from the business logic." +
             " An example is javax/jakarta annotation constraints defined on JPA entities.")
     @Probability(true)
-    var useExtraSqlDbConstraintsProbability = 0.0
+    var useExtraSqlDbConstraintsProbability = 0.9
 
 
     @Cfg("a probability of harvesting actual responses from external services as seeds.")
