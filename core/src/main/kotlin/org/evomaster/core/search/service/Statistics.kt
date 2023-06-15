@@ -247,6 +247,13 @@ class Statistics : SearchListener {
             add(Pair("searchTimeCoveredLines", "${linesInfo.searchTime}"))
             add(Pair("searchTimeCoveredBranches", "${branchesInfo.searchTime}"))
 
+            // statistic info with seeded tests
+            add(Pair("notExecutedSeededTests", "${sampler?.numberOfNotExecutedSeededIndividuals()?:0}"))
+            add(Pair("seedingTimeCoveredTargets", "${targetsInfo.seedingTime}"))
+            add(Pair("seedingTimeCoveredLines", "${linesInfo.seedingTime}"))
+            add(Pair("seedingTimeCoveredBranches", "${branchesInfo.seedingTime}"))
+
+
             // statistic info for extractedSpecifiedDtos
             add(Pair("numOfExtractedSpecifiedDtos", "${unitsInfo?.extractedSpecifiedDtos?.size?:0}"))
 
