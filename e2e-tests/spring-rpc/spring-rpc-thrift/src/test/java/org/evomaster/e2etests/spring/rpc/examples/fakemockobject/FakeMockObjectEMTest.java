@@ -37,7 +37,7 @@ public class FakeMockObjectEMTest extends SpringRPCTestBase {
                     args.add("--seedTestCases");
                     args.add("true");
 
-                    args.add("--enableCustomizedExternalServiceHandling");
+                    args.add("--enableCustomizedMethodForMockObjectHandling");
                     args.add("true");
 
                     args.add("--enableBasicAssertions");
