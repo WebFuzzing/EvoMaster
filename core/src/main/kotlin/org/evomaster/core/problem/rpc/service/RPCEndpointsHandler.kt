@@ -605,9 +605,21 @@ class RPCEndpointsHandler {
             val exActions = (action.parent as EnterpriseActionGroup)
                 .groupsView()!!.getAllInGroup(GroupsOfChildren.EXTERNAL_SERVICES)
                 .flatMap { (it as ActionComponent).flatten() }
-                .map { e-> transformMockRPCExternalServiceDto((e as ApiExternalServiceAction)) }
+                .filterIsInstance<RPCExternalServiceAction>()
+                .map { e->
+                    transformMockRPCExternalServiceDto(e)
+                }
+            val mockDbActions = (action.parent as EnterpriseActionGroup)
+                .groupsView()!!.getAllInGroup(GroupsOfChildren.EXTERNAL_SERVICES)
+                .flatMap { (it as ActionComponent).flatten() }
+                .filterIsInstance<DbAsExternalServiceAction>()
+                .map { e->
+                    transformMockDatabaseDto(e)
+                }
             if (exActions.isNotEmpty())
                 rpcAction.mockRPCExternalServiceDtos = exActions
+            if (mockDbActions.isNotEmpty())
+                rpcAction.mockDatabaseDtos = mockDbActions
         }
 
         return rpcAction
