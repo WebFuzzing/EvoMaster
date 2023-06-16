@@ -51,16 +51,18 @@ class StatisticsEMTest : SpringTestBase() {
 
             listOf("coveredTargets", "coveredLines", "coveredBranches").forEach { key->
                 data.filter { p-> p.header.endsWith(key, ignoreCase = true) }.apply {
-                    assertEquals(3, size)
+                    assertEquals(4, size)
                     val bootTime = find { t-> t.header.startsWith("bootTime") }?.element?.toInt()
                     val searchTime = find { t-> t.header.startsWith("searchTime") }?.element?.toInt()
+                    val seedingTime = find { t-> t.header.startsWith("seedingTime") }?.element?.toInt()
                     val total = find { t-> t.header.startsWith("covered") }?.element?.toInt()
                     assertNotNull(bootTime)
                     assertNotNull(searchTime)
                     assertNotNull(total)
+                    assertNotNull(seedingTime)
                     assertTrue(bootTime!! > 0)
                     assertTrue(searchTime!! > 0)
-                    assertEquals(total!!, bootTime+searchTime)
+                    assertEquals(total!!, bootTime+searchTime+seedingTime!!)
                 }
             }
         }
