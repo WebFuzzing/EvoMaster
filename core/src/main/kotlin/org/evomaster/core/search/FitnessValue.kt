@@ -181,12 +181,22 @@ class FitnessValue(
         coveredTargetsDuringSeeding.addAll(coveredTargets)
     }
 
-    fun coveredTargetsDuringSeeding() : Int{
-        return coveredTargetsDuringSeeding.size
+    private fun coveredTargetsDuringSeeding() : Int{
+        return coveredTargetsDuringSeeding.filter {
+            /*
+                Due to minimize phase, then need to ensure that coveredTargetsDuringSeeding is part of targets
+             */
+            targets.containsKey(it) && targets[it]!!.distance == MAX_VALUE
+        }.size
     }
     fun coveredTargetsDuringSeeding(prefix: String, idMapper: IdMapper) : Int{
         return coveredTargetsDuringSeeding
-            .count { idMapper.getDescriptiveId(it).startsWith(prefix) }
+            .count {
+                /*
+                    Due to minimize phase, then need to ensure that coveredTargetsDuringSeeding is part of targets
+                */
+                targets.containsKey(it) && targets[it]!!.distance == MAX_VALUE
+                        && idMapper.getDescriptiveId(it).startsWith(prefix) }
     }
 
     /**
@@ -212,19 +222,20 @@ class FitnessValue(
         // counter for duplicated targets
         var duplicatedcounter = 0
 
-        val seedingTime = coveredTargetsDuringSeeding.count { s ->
-            ((prefix == null || idMapper.getDescriptiveId(s).startsWith(prefix))).apply {
-                if (this && bootTime.any { it.descriptiveId == idMapper.getDescriptiveId(s) })
+        var seedingTime = 0
+        var searchTime = 0
+
+        targets.entries.forEach { e ->
+            (e.value.distance == MAX_VALUE && (prefix == null || idMapper.getDescriptiveId(e.key).startsWith(prefix))).apply {
+                if (coveredTargetsDuringSeeding.contains(e.key))
+                    seedingTime++
+                else
+                    searchTime++
+                if (this && bootTime.any { it.descriptiveId == idMapper.getDescriptiveId(e.key) })
                     duplicatedcounter++
             }
         }
 
-        val searchTime = targets.entries.count { e ->
-            (e.value.distance == MAX_VALUE && (prefix == null || idMapper.getDescriptiveId(e.key).startsWith(prefix))).apply {
-                if (this && bootTime.any { it.descriptiveId == idMapper.getDescriptiveId(e.key) })
-                    duplicatedcounter++
-            }
-        } - seedingTime
         /*
         related to task https://trello.com/c/EoWcV6KX/810-issue-with-assertion-checks-in-e2e
 

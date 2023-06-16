@@ -355,6 +355,15 @@ class Statistics : SearchListener {
         val separator = "," // for csv format
         val content = mutableListOf<String>()
 
+        when(format){
+            EMConfig.SortCoveredTargetBy.NAME ->{
+                content.add(DESCRIPTION_TARGET)
+            }
+            EMConfig.SortCoveredTargetBy.TEST ->{
+                content.add(listOf(TEST_INDEX, DESCRIPTION_TARGET).joinToString(separator))
+            }
+        }
+
         if (archive.anyTargetsCoveredSeededTests()){
             content.addAll(getPrintContentForCoveredTargets(archive.exportCoveredTargetsAsPair(solution, true), separator, format))
             content.add(System.lineSeparator())
@@ -381,11 +390,9 @@ class Statistics : SearchListener {
         val content = mutableListOf<String>()
         when(format){
             EMConfig.SortCoveredTargetBy.NAME ->{
-                content.add(DESCRIPTION_TARGET)
                 content.addAll(info.map { it.first }.sorted())
             }
             EMConfig.SortCoveredTargetBy.TEST ->{
-                content.add(listOf(TEST_INDEX, DESCRIPTION_TARGET).joinToString(separator))
                 info.flatMap { it.second }.sorted().forEach {test->
                     /*
                         currently, only index of tests are outputted.
