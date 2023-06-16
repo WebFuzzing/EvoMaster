@@ -177,7 +177,11 @@ class FitnessValue(
                 .count()
     }
 
+    /**
+     * set info of targets covered by seeded tests
+     */
     fun setTargetsCoveredBySeeding(coveredTargets: List<Int>){
+        coveredTargetsDuringSeeding.clear()
         coveredTargetsDuringSeeding.addAll(coveredTargets)
     }
 
@@ -189,6 +193,10 @@ class FitnessValue(
             targets.containsKey(it) && targets[it]!!.distance == MAX_VALUE
         }.size
     }
+
+    /**
+     * @return an amount of targets covered by seeded tests and starting with [prefix]
+     */
     fun coveredTargetsDuringSeeding(prefix: String, idMapper: IdMapper) : Int{
         return coveredTargetsDuringSeeding
             .count {

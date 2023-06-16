@@ -17,7 +17,6 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.math.max
@@ -287,7 +286,7 @@ class RPCTestCaseWriter : ApiTestCaseWriter() {
      * @param lines are generated lines which save the generated test scripts
      */
     private fun handleCustomizedExternalServiceHandling(action: Action, index: Int, testCaseName: String, enable: Boolean, lines: Lines, testSuitePath: Path?){
-        if(config.enableCustomizedExternalServiceHandling && action.parent is EnterpriseActionGroup){
+        if(config.enableCustomizedMethodForMockObjectHandling && action.parent is EnterpriseActionGroup){
             val group = action.parent as EnterpriseActionGroup
 
             /*
@@ -319,7 +318,7 @@ class RPCTestCaseWriter : ApiTestCaseWriter() {
      * @param lines are generated lines which save the generated test scripts
      */
     private fun handleCustomizedMockDatabaseHandling(action: Action, index: Int, testCaseName: String, enable: Boolean, lines: Lines, testSuitePath: Path?){
-        if(config.enableCustomizedExternalServiceHandling && action.parent is EnterpriseActionGroup){
+        if(config.enableCustomizedMethodForMockObjectHandling && action.parent is EnterpriseActionGroup){
             val group = action.parent as EnterpriseActionGroup
 
             val mockDbActions = group.getExternalServiceActions()

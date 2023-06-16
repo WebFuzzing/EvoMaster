@@ -46,7 +46,7 @@ class TestSuiteWriterRPCTest{
 
         // rpc test generation configuration
         config.enablePureRPCTestGeneration = true
-        config.enableCustomizedExternalServiceHandling=true
+        config.enableCustomizedMethodForMockObjectHandling=true
         config.enableRPCAssertionWithInstance = true
         config.enableBasicAssertions = true
         config.saveMockedResponseAsSeparatedFile = true

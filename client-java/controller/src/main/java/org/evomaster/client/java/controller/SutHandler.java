@@ -205,7 +205,16 @@ public interface SutHandler {
     }
 
 
-
+    /**
+     * <p>
+     *     a method to employ customized mocking for database
+     * </p>
+     * @param mockDatabaseObjectDtos contains info about how to set up mock object for databases with json format, note that the json should
+     *                            be able to be converted to a list of MockDatabaseDto
+     * @param enabled reflect to enable (set it true) or disable (set it false) the specified mock object
+     *                Note that null [mockDatabaseObjectDtos] with false [enabled] means that all existing mock objects for databases should be disabled.
+     * @return whether the mocked instance starts successfully,
+     */
     default boolean mockDatabasesWithCustomizedHandling(String mockDatabaseObjectDtos, boolean enabled){
         return false;
     }

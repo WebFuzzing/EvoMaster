@@ -1,5 +1,8 @@
 package org.evomaster.client.java.controller.api.dto.problem.rpc;
 
+/**
+ * mock object for database
+ */
 public class MockDatabaseDto {
 
     /**

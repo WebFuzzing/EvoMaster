@@ -5,6 +5,9 @@ import org.evomaster.core.problem.externalservice.rpc.parm.ClassResponseParam
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 
+/**
+ * this is to handle database actions when it is handled with mock object
+ */
 class DbAsExternalServiceAction (
     /**
      * command name which will result in sql execution
