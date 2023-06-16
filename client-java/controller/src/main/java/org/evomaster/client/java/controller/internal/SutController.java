@@ -1281,9 +1281,11 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      * </p>
      */
     @Override
-    public final boolean resetMockedExternalServicesWithCustomizedMethod(){
+    public final boolean resetCustomizedMethodForMockObject(){
         if (getProblemInfo() instanceof RPCProblem){
-            return mockRPCExternalServicesWithCustomizedHandling(null, false);
+            boolean ok = mockRPCExternalServicesWithCustomizedHandling(null, false);
+            ok = ok && mockDatabasesWithCustomizedHandling(null, false);
+            return ok;
         }
         return false;
     }
@@ -1309,6 +1311,19 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         }
 
         return customizeMockingRPCExternalService(exDto, enabled);
+    }
+
+    @Override
+    public boolean mockDatabasesWithCustomizedHandling(String mockDatabaseObjectDtos, boolean enabled) {
+        List<MockDatabaseDto> mockDbObject = null;
+        try {
+            if (mockDatabaseObjectDtos != null && !mockDatabaseObjectDtos.isEmpty()) {
+                mockDbObject = objectMapper.readValue(mockDatabaseObjectDtos, new TypeReference<List<MockDatabaseDto>>(){});
+            }
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Fail to handle the given mock object for database with the info:", e);
+        }
+        return customizeMockingDatabase(mockDbObject, enabled);
     }
 
     /**
