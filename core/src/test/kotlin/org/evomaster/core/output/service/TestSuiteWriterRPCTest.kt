@@ -60,8 +60,9 @@ class TestSuiteWriterRPCTest{
                     EvaluatedIndividualBuilder.buildEvaluatedRPCIndividual(
                         actions = EvaluatedIndividualBuilder.buildFakeRPCAction(expectedJson),
                         externalServicesActions = (0 until expectedJson).map {
-                            EvaluatedIndividualBuilder.buildFakeRPCExternalServiceAction(1)
+                            EvaluatedIndividualBuilder.buildFakeDbExternalServiceAction(1).plus(EvaluatedIndividualBuilder.buildFakeRPCExternalServiceAction(1))
                         }.toMutableList(),
+
                         format = OutputFormat.KOTLIN_JUNIT_5
                     )
                 ),
@@ -86,9 +87,10 @@ class TestSuiteWriterRPCTest{
         val generatedResource = Paths.get(config.testResourcePathToSaveMockedResponse)
         assertTrue(Files.isDirectory(generatedResource))
         assertTrue(Files.exists(generatedResource))
-        assertEquals(expectedJson, Files.list(generatedResource).count().toInt())
+        assertEquals(expectedJson * 2, Files.list(generatedResource).count().toInt())
 
         val expectedExReset = "controller.mockRPCExternalServicesWithCustomizedHandling(null,false)"
+        val expectedMockDbReset = "controller.mockDatabasesWithCustomizedHandling(null,false)"
 
         /*
             here, we only check the generated in text
@@ -97,8 +99,14 @@ class TestSuiteWriterRPCTest{
          */
         val testContent = String(Files.readAllBytes(generatedTest))
         assertTrue(testContent.contains(expectedExReset))
+        assertTrue(testContent.contains(expectedMockDbReset))
+
         (0 until 5).forEach {
-            assertTrue(testContent.contains("controller.mockRPCExternalServicesWithCustomizedHandling(controller.readFileAsStringFromTestResource(\"test_0_MockedResponseInfo_${it}.json\"),true)"))
+            assertTrue(testContent.contains("controller.mockRPCExternalServicesWithCustomizedHandling(controller.readFileAsStringFromTestResource(\"test_0_MockExternalServiceObjectInfo_${it}.json\"),true)"))
+            assertTrue(testContent.contains("controller.mockRPCExternalServicesWithCustomizedHandling(controller.readFileAsStringFromTestResource(\"test_0_MockExternalServiceObjectInfo_${it}.json\"),false)"))
+
+            assertTrue(testContent.contains("controller.mockDatabasesWithCustomizedHandling(controller.readFileAsStringFromTestResource(\"test_0_MockDatabaseObjectInfo_${it}.json\"),true)"))
+            assertTrue(testContent.contains("controller.mockDatabasesWithCustomizedHandling(controller.readFileAsStringFromTestResource(\"test_0_MockDatabaseObjectInfo_${it}.json\"),false)"))
         }
     }
 }

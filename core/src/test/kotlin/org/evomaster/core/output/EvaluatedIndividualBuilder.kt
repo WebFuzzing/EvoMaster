@@ -5,6 +5,7 @@ import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionResult
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
+import org.evomaster.core.problem.externalservice.rpc.DbAsExternalServiceAction
 import org.evomaster.core.problem.externalservice.rpc.RPCExternalServiceAction
 import org.evomaster.core.problem.externalservice.rpc.parm.ClassResponseParam
 import org.evomaster.core.problem.rest.*
@@ -90,6 +91,25 @@ class EvaluatedIndividualBuilder {
                     requestRuleIdentifier = null,
                     responseParam = ClassResponseParam(
                         className = "FakeRPCReturnDto",
+                        responseType = EnumGene("responseType", listOf("JSON")),
+                        response = OptionalGene("return",
+                            ObjectGene("return", fields = listOf(StringGene("fakeMsg", "This is a fake response from a RPC-based external service"))) )
+                    ),
+                    active = true,
+                    used = true
+                )
+            }
+        }
+
+        fun buildFakeDbExternalServiceAction(n : Int): List<DbAsExternalServiceAction>{
+            return (0 until n).map {
+
+                DbAsExternalServiceAction(
+                    descriptiveInfo = "FakeDB_bar",
+                    commandName = "bar",
+                    requestRuleIdentifier = null,
+                    responseParam = ClassResponseParam(
+                        className = "FakeDbReturnDto",
                         responseType = EnumGene("responseType", listOf("JSON")),
                         response = OptionalGene("return",
                             ObjectGene("return", fields = listOf(StringGene("fakeMsg", "This is a fake response from a RPC-based external service"))) )

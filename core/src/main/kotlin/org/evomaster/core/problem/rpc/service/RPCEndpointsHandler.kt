@@ -359,6 +359,17 @@ class RPCEndpointsHandler {
         }
     }
 
+    fun transformMockDatabaseDto(action: DbAsExternalServiceAction) : MockDatabaseDto{
+        val mode = if (action.response.isJson()) GeneUtils.EscapeMode.JSON else throw IllegalStateException("only support response with json type for the monument")
+        return MockDatabaseDto().apply {
+            appKey = action.descriptiveInfo
+            commandName = action.commandName
+            requests = action.requestRuleIdentifier
+            response = action.response.responseBody.getValueAsPrintableString(mode = mode)
+            responseFullType  = if ((action.response as? ClassResponseParam)?.className?.isNotBlank() == true) (action.response as ClassResponseParam).className else null
+        }
+    }
+
     private fun setAuthInfo(infoDto: SutInfoDto){
         infoDto.infoForAuthentication?:return
 
