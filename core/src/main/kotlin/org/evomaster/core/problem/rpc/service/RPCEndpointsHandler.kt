@@ -187,7 +187,7 @@ class RPCEndpointsHandler {
                     val ex = rpcActionDto.mockRPCExternalServiceDtos.map { e->
                         e.responses.mapIndexed { index, r->
                             val exAction = seededExternalServiceCluster[
-                                RPCExternalServiceAction.getRPCExternalServiceActionName(e.interfaceFullName, e.functionName, e.requestRules[index], e.responseTypes[index])
+                                RPCExternalServiceAction.getRPCExternalServiceActionName(e.interfaceFullName, e.functionName, e.requestRules?.get(index), e.responseTypes[index])
                             ]!!.copy() as ApiExternalServiceAction
                             try {
                                 setGeneBasedOnString(exAction.response.responseBody, r)
@@ -256,12 +256,13 @@ class RPCEndpointsHandler {
 
         rpcActionDto.mockRPCExternalServiceDtos?.forEach { dto->
 
-            if (dto.requestRules.isNotEmpty() && dto.requestRules.size != dto.responses.size && dto.responses.size != dto.responseTypes.size)
+            if (dto.requestRules!=null && dto.requestRules.isNotEmpty() && dto.requestRules.size != dto.responses.size && dto.responses.size != dto.responseTypes.size)
                 throw IllegalArgumentException("the size of request identifications and responses should same but ${dto.requestRules.size} vs. ${dto.responses.size} vs. ${dto.responseTypes.size}")
 
             dto.responseTypes.forEachIndexed { index, s ->
+
                 val exkey = RPCExternalServiceAction.getRPCExternalServiceActionName(
-                    dto.interfaceFullName, dto.functionName, dto.requestRules[index], s
+                    dto.interfaceFullName, dto.functionName, dto.requestRules?.get(index), s
                 )
                 if (!seededExternalServiceCluster.containsKey(exkey)){
                     val responseTypeClass = interfaceDto.identifiedResponseTypes?.find { it.type.fullTypeName == s }
@@ -290,7 +291,7 @@ class RPCEndpointsHandler {
                         functionName = dto.functionName,
                         descriptiveInfo = dto.appKey,
                         inputParamTypes = dto.inputParameterTypes,
-                        requestRuleIdentifier = dto.requestRules[index],
+                        requestRuleIdentifier = dto.requestRules?.get(index),
                         responseParam = response)
                     Lazy.assert { exkey == externalAction.getName() }
                     seededExternalServiceCluster[exkey] = externalAction
