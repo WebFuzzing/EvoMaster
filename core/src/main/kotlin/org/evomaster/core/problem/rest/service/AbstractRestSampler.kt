@@ -281,7 +281,8 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, listOf(), enableConstraintHandling = config.enableSchemaConstraintHandling)
 
         initAdHocInitialIndividuals()
-        initSeededTests()
+        if (config.seedTestCases)
+            initSeededTests()
 
         addAuthFromConfig()
 
