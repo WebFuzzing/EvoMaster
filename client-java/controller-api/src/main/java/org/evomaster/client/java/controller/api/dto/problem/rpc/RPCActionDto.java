@@ -1,5 +1,7 @@
 package org.evomaster.client.java.controller.api.dto.problem.rpc;
 
+import org.evomaster.client.java.controller.api.dto.MockDatabaseDto;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;

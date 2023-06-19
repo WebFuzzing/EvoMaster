@@ -59,7 +59,9 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
         initSqlInfo(infoDto)
 
         initAdHocInitialIndividuals(infoDto)
-        initSeededTests(infoDto)
+
+        if (config.seedTestCases)
+            initSeededTests(infoDto)
 
         updateConfigBasedOnSutInfoDto(infoDto)
         log.debug("Done initializing {}", RPCSampler::class.simpleName)
@@ -118,8 +120,12 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
     }
 
     override fun initSeededTests(infoDto: SutInfoDto?) {
+        if (!config.seedTestCases) {
+            throw IllegalStateException("'seedTestCases' should be true when initializing seeded tests")
+        }
 
-        if (config.seedTestCases && infoDto?.rpcProblem?.seededTestDtos?.isNotEmpty() == true){
+
+        if (infoDto?.rpcProblem?.seededTestDtos?.isNotEmpty() == true){
             seededIndividuals.addAll(
                 rpcHandler.handledSeededTests(infoDto.rpcProblem.seededTestDtos)
                     .map{

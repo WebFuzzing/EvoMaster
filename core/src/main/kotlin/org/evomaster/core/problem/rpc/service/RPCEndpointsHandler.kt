@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.*
+import org.evomaster.client.java.controller.api.dto.MockDatabaseDto
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.*
 import org.evomaster.core.EMConfig
@@ -360,7 +361,7 @@ class RPCEndpointsHandler {
         }
     }
 
-    fun transformMockDatabaseDto(action: DbAsExternalServiceAction) : MockDatabaseDto{
+    fun transformMockDatabaseDto(action: DbAsExternalServiceAction) : MockDatabaseDto {
         val mode = if (action.response.isJson()) GeneUtils.EscapeMode.JSON else throw IllegalStateException("only support response with json type for the monument")
         return MockDatabaseDto().apply {
             appKey = action.descriptiveInfo

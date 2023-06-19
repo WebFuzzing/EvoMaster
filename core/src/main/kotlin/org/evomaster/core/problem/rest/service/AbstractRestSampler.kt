@@ -112,7 +112,10 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         }
 
         initAdHocInitialIndividuals()
-        initSeededTests()
+
+        if (config.seedTestCases)
+            initSeededTests()
+
         postInits()
 
         updateConfigBasedOnSutInfoDto(infoDto)
@@ -173,14 +176,15 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
     override fun initSeededTests(infoDto: SutInfoDto?) {
         // if test case seeding is enabled, add those test cases too
-        if (config.seedTestCases) {
-            val parser = getParser()
-            val seededTestCases = parser.parseTestCases(config.seedTestCasesPath)
-            seededIndividuals.addAll(seededTestCases.map {
-                it.forEach { a -> a.doInitialize() }
-                createIndividual(SampleType.SEEDED, it)
-            })
+        if (!config.seedTestCases) {
+            throw IllegalStateException("'seedTestCases' should be true when initializing seeded tests")
         }
+        val parser = getParser()
+        val seededTestCases = parser.parseTestCases(config.seedTestCasesPath)
+        seededIndividuals.addAll(seededTestCases.map {
+            it.forEach { a -> a.doInitialize() }
+            createIndividual(SampleType.SEEDED, it)
+        })
     }
 
 

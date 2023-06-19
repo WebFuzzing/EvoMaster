@@ -1,4 +1,4 @@
-package org.evomaster.client.java.controller.api.dto.problem.rpc;
+package org.evomaster.client.java.controller.api.dto;
 
 /**
  * mock object for database
@@ -11,10 +11,12 @@ public class MockDatabaseDto {
     public String appKey;
 
     /**
-     * it refers to a type of database, eg, mybatis
+     * it refers to a type of database or related framework, eg, mybatis
      * nullable
+     *
+     * such info might be used by mocking technique for handling mock object
      */
-    public String databaseType;
+    public String databaseOrFrameworkType;
 
     /**
      * it refers to a type of SQL, eg, select

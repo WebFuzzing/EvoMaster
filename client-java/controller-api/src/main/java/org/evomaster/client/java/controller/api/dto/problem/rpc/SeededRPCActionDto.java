@@ -1,7 +1,8 @@
 package org.evomaster.client.java.controller.api.dto.problem.rpc;
 
+import org.evomaster.client.java.controller.api.dto.MockDatabaseDto;
+
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * seeded RPC action
