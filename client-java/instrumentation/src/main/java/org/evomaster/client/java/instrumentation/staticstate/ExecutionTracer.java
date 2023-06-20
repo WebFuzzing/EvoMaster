@@ -421,6 +421,11 @@ public class ExecutionTracer {
             getCurrentAdditionalInfo().addMongoInfo(info);
     }
 
+    public static void addMongoCollectionInfo(MongoCollectionInfo info){
+        if (!executingInitMongo)
+            getCurrentAdditionalInfo().addMongoCollectionInfo(info);
+    }
+
     public static void markLastExecutedStatement(String lastLine, String lastMethod) {
         getCurrentAdditionalInfo().pushLastExecutedStatement(lastLine, lastMethod);
     }

@@ -49,7 +49,7 @@ public class ReplacementList {
                     new MatcherClassReplacement(),
                     new MethodClassReplacement(),
                     new MongoCollectionClassReplacement(),
-                    new MongoRepositoryClassReplacement(),
+                    new MappingMongoEntityInformationClassReplacement(),
                     new OkHttpClient3BuilderClassReplacement(),
                     new OkHttpClient3ClassReplacement(),
                     new OkHttpClientClassReplacement(),

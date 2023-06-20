@@ -78,7 +78,7 @@ abstract class EnterpriseSampler<T> : Sampler<T>() where T : Individual {
         return actions
     }
 
-    fun sampleMongoInsertion(database: String, collection: String, documentsType: Class<*>, accessedFields: Map<String, Any>): List<MongoDbAction> {
+    fun sampleMongoInsertion(database: String, collection: String, documentsType: Class<*>, accessedFields: Map<String, Class<*>>): List<MongoDbAction> {
 
         // Should I use something like this?
         //val extraConstraints = randomness.nextBoolean(apc.getExtraSqlDbConstraintsProbability())

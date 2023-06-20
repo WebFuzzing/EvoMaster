@@ -6,6 +6,7 @@ import org.evomaster.client.java.controller.mongo.MongoHeuristicsCalculator;
 import org.evomaster.client.java.controller.mongo.MongoOperation;
 import org.evomaster.client.java.controller.mongo.QueryParser;
 import org.evomaster.client.java.controller.mongo.operations.*;
+import org.evomaster.client.java.instrumentation.MongoCollectionInfo;
 import org.evomaster.client.java.instrumentation.MongoInfo;
 
 import java.lang.reflect.InvocationTargetException;
@@ -42,10 +43,13 @@ public class MongoHandler {
 
     private final List<MongoOperation> failedQueries;
 
+    private final HashMap<String, Class<?>> collectionInfo;
+
     public MongoHandler() {
         distances = new ArrayList<>();
         operations = new ArrayList<>();
         failedQueries = new ArrayList<>();
+        collectionInfo = new HashMap<>();
         extractMongoExecution = true;
         calculateHeuristics = true;
     }
@@ -54,6 +58,7 @@ public class MongoHandler {
         operations.clear();
         distances.clear();
         failedQueries.clear();
+        // collectionInfo is not cleared to avoid losing the info as it's retrieved when SUT is started
     }
 
     public void handle(MongoInfo info) {
@@ -62,6 +67,14 @@ public class MongoHandler {
         }
 
         operations.add(info);
+    }
+
+    public void handle(MongoCollectionInfo info) {
+        if (!extractMongoExecution) {
+            return;
+        }
+
+        collectionInfo.put(info.getCollectionName(), info.getDocumentsType());
     }
 
     public List<MongoOperationDistance> getDistances() {
@@ -121,8 +134,8 @@ public class MongoHandler {
         QueryOperation query = new QueryParser().parse(operation.getQuery());
         Object collection = operation.getCollection();
 
-        Map<String, Object> accessedFields = extractFieldsInQuery(query);
-        Class<?> documentsType = extractDocumentsType(collection);
+        Map<String, Class<?>> accessedFields = extractFieldsInQuery(query);
+        Class<?> documentsType;
 
         String collectionName;
         String databaseName;
@@ -134,6 +147,24 @@ public class MongoHandler {
             databaseName = (String) namespace.getClass().getMethod("getDatabaseName").invoke(namespace);
         } catch (ClassNotFoundException |IllegalAccessException | InvocationTargetException | NoSuchMethodException e){
             throw new RuntimeException(e);
+        }
+
+        // I should be as specific as I can with the type the collection's documents should have.
+        // There are a few ways to get that info:
+
+        // 1) Using collection.getDocumentsClass().
+        //    Spring for example "ignore" this and store type info inside repository.
+
+        // 2) When using Spring, retrieving the type of the repository associated with the collection.
+        //    The MongoEntityInformation replacement makes this possible.
+
+        // 3) Extract from the query the fields used and type of each of them. This probably won't
+        //    work as expected as usually a subset of fields is used in a query.
+
+        if(collectionInfo.containsKey(collectionName)){
+            documentsType = collectionInfo.get(collectionName);
+        }else{
+            documentsType = extractDocumentsType(collection);
         }
 
         return new FailedQuery(databaseName, collectionName, documentsType, accessedFields);
@@ -149,12 +180,12 @@ public class MongoHandler {
         }
     }
 
-    private static Map<String, Object> extractFieldsInQuery(QueryOperation operation) {
-        Map<String, Object> accessedFields = new HashMap<>();
+    private static Map<String, Class<?>> extractFieldsInQuery(QueryOperation operation) {
+        Map<String, Class<?>> accessedFields = new HashMap<>();
 
         if(operation instanceof ComparisonOperation<?>) {
             ComparisonOperation<?> op  = (ComparisonOperation<?>) operation;
-            accessedFields.put(op.getFieldName(), op.getValue());
+            accessedFields.put(op.getFieldName(), op.getValue().getClass());
         }
 
         if(operation instanceof AndOperation) {
@@ -174,22 +205,22 @@ public class MongoHandler {
 
         if(operation instanceof InOperation<?>) {
             InOperation<?> op  = (InOperation<?>) operation;
-            accessedFields.put(op.getFieldName(), op.getValues().get(0));
+            accessedFields.put(op.getFieldName(), op.getValues().get(0).getClass());
         }
 
         if(operation instanceof NotInOperation<?>) {
             NotInOperation<?> op  = (NotInOperation<?>) operation;
-            accessedFields.put(op.getFieldName(), op.getValues().get(0));
+            accessedFields.put(op.getFieldName(), op.getValues().get(0).getClass());
         }
 
         if(operation instanceof AllOperation<?>) {
             AllOperation<?> op  = (AllOperation<?>) operation;
-            accessedFields.put(op.getFieldName(), op.getValues());
+            accessedFields.put(op.getFieldName(), op.getValues().getClass());
         }
 
         if(operation instanceof SizeOperation) {
             SizeOperation op  = (SizeOperation) operation;
-            accessedFields.put(op.getFieldName(), op.getValue());
+            accessedFields.put(op.getFieldName(), op.getValue().getClass());
         }
 
         if(operation instanceof ExistsOperation) {
@@ -199,12 +230,12 @@ public class MongoHandler {
 
         if(operation instanceof ModOperation) {
             ModOperation op  = (ModOperation) operation;
-            accessedFields.put(op.getFieldName(),  op.getDivisor());
+            accessedFields.put(op.getFieldName(),  op.getDivisor().getClass());
         }
 
         if(operation instanceof TypeOperation) {
             TypeOperation op  = (TypeOperation) operation;
-            accessedFields.put(op.getFieldName(), op.getType());
+            accessedFields.put(op.getFieldName(), op.getType().getClass());
         }
 
         /*

@@ -163,6 +163,15 @@ public abstract class ThirdPartyMethodReplacementClass implements MethodReplacem
             }
 
             Class[] reducedInputs = Arrays.copyOfRange(inputs, start, end);
+            Annotation[][] annotations = m.getParameterAnnotations();
+
+            for (int i = start; i < end; i++) {
+                if (annotations[i].length > 0) {
+                    Class<?> klazz = ReplacementUtils.getCastedToThirdParty(loader,annotations[i]);
+                    if (klazz != null)
+                        reducedInputs[i - start] = klazz;
+                }
+            }
 
             Constructor targetConstructor = null;
             try {

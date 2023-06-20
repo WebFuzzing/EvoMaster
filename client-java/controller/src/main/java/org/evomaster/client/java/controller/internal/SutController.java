@@ -275,6 +275,16 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         sqlHandler.setSchema(getSqlDatabaseSchema());
     }
 
+    public final void initMongoHandler() {
+        // This is needed because the replacement use to get this info occurs during the start of the SUT.
+
+        List<AdditionalInfo> list = getAdditionalInfoList();
+        if(!list.isEmpty()) {
+            AdditionalInfo last = list.get(list.size() - 1);
+            last.getMongoCollectionInfoData().forEach(mongoHandler::handle);
+        }
+    }
+
 
     /**
      * TODO further handle multiple connections
@@ -364,9 +374,9 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     public final void computeMongoHeuristics(ExtraHeuristicsDto dto){
-        if(mongoHandler.isCalculateHeuristics()){
+        List<AdditionalInfo> list = getAdditionalInfoList();
 
-            List<AdditionalInfo> list = getAdditionalInfoList();
+        if(mongoHandler.isCalculateHeuristics()){
             if(!list.isEmpty()) {
                 AdditionalInfo last = list.get(list.size() - 1);
                 last.getMongoInfoData().forEach(it -> {
@@ -390,7 +400,13 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                     .forEach(h -> dto.heuristics.add(h));
         }
 
-        if(mongoHandler.isExtractMongoExecution()){dto.mongoExecutionDto = mongoHandler.getExecutionDto();}
+        if(mongoHandler.isExtractMongoExecution()){
+            if(!list.isEmpty()) {
+                AdditionalInfo last = list.get(list.size() - 1);
+                last.getMongoCollectionInfoData().forEach(mongoHandler::handle);
+            }
+            dto.mongoExecutionDto = mongoHandler.getExecutionDto();
+        }
     }
 
     /**
