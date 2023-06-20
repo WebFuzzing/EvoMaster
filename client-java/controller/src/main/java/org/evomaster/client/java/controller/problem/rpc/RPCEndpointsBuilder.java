@@ -191,7 +191,7 @@ public class RPCEndpointsBuilder {
             InterfaceSchema schema = new InterfaceSchema(interfaceName, endpoints, getClientClass(client) , rpcType, skippedEndpoints, authEndpoints, endpointsForAuth);
 
             for (Method m : interfaze.getDeclaredMethods()) {
-                if (filterMethod(m, skipEndpointsByName, skipEndpointsByAnnotation, involveEndpointsByName, involveEndpointsByAnnotation)){
+                if (filterRPCFunctionMethod(m, skipEndpointsByName, skipEndpointsByAnnotation, involveEndpointsByName, involveEndpointsByAnnotation)){
                     try{
                         EndpointSchema endpointSchema = build(schema, m, rpcType, authenticationDtoList, customizedRequestValueDtos, notNullAnnotations);
                         endpoints.add(endpointSchema);
@@ -322,9 +322,9 @@ public class RPCEndpointsBuilder {
                 && a.jsonAuthEndpoint.interfaceName.equals(interfaceName)).collect(Collectors.toList());
     }
 
-    private static boolean filterMethod(Method endpoint,
-                                        List<String> skipEndpointsByName, List<String> skipEndpointsByAnnotation,
-                                        List<String> involveEndpointsByName, List<String> involveEndpointsByAnnotation){
+    private static boolean filterRPCFunctionMethod(Method endpoint,
+                                                   List<String> skipEndpointsByName, List<String> skipEndpointsByAnnotation,
+                                                   List<String> involveEndpointsByName, List<String> involveEndpointsByAnnotation){
         if (skipEndpointsByName != null && involveEndpointsByName != null)
             throw new IllegalArgumentException("Driver Config Error: skipEndpointsByName and involveEndpointsByName should not be specified at same time.");
         if (skipEndpointsByAnnotation != null && involveEndpointsByAnnotation != null)
@@ -336,7 +336,8 @@ public class RPCEndpointsBuilder {
         if (involveEndpointsByName != null || involveEndpointsByAnnotation != null)
             return anyMatchByNameAndAnnotation(endpoint, involveEndpointsByName, involveEndpointsByAnnotation);
 
-        return true;
+        // only handle public method
+        return Modifier.isPublic(endpoint.getModifiers());
     }
 
     private static boolean anyMatchByNameAndAnnotation(Method endpoint, List<String> names, List<String> annotations){
