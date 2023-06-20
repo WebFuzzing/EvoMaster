@@ -1,7 +1,8 @@
 package org.evomaster.client.java.controller.api.dto.problem.rpc;
 
+import org.evomaster.client.java.controller.api.dto.MockDatabaseDto;
+
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * seeded RPC action
@@ -22,6 +23,11 @@ public class SeededRPCActionDto {
      * a list of info to set up responses of external services with mocking if exists
      */
     public List<MockRPCExternalServiceDto> mockRPCExternalServiceDtos;
+
+    /**
+     * a list of info to set up mock objects for databases
+     */
+    public List<MockDatabaseDto> mockDatabaseDtos;
 
     /**
      * input parameters with json format

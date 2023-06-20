@@ -3,12 +3,8 @@ package org.evomaster.client.java.controller;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto;
 import org.evomaster.client.java.controller.db.DbCleaner;
-import org.evomaster.client.java.controller.db.SqlScriptRunner;
-import org.evomaster.client.java.controller.db.SqlScriptRunnerCached;
 import org.evomaster.client.java.controller.internal.db.DbSpecification;
 
-import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -190,7 +186,7 @@ public interface SutHandler {
      *     a method to reset mocked external services with customized method
      * </p>
      */
-    default boolean resetMockedExternalServicesWithCustomizedMethod(){
+    default boolean resetCustomizedMethodForMockObject(){
         return false;
     }
 
@@ -205,6 +201,21 @@ public interface SutHandler {
      * @return whether the mocked instance starts successfully,
      */
     default boolean mockRPCExternalServicesWithCustomizedHandling(String externalServiceDtos, boolean enabled){
+        return false;
+    }
+
+
+    /**
+     * <p>
+     *     a method to employ customized mocking for database
+     * </p>
+     * @param mockDatabaseObjectDtos contains info about how to set up mock object for databases with json format, note that the json should
+     *                            be able to be converted to a list of MockDatabaseDto
+     * @param enabled reflect to enable (set it true) or disable (set it false) the specified mock object
+     *                Note that null [mockDatabaseObjectDtos] with false [enabled] means that all existing mock objects for databases should be disabled.
+     * @return whether the mocked instance starts successfully,
+     */
+    default boolean mockDatabasesWithCustomizedHandling(String mockDatabaseObjectDtos, boolean enabled){
         return false;
     }
 

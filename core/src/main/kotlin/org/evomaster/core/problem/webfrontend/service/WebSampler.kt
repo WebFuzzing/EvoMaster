@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.webfrontend.service
 
 import org.evomaster.client.java.controller.api.SeleniumEMUtils
+import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.enterprise.SampleType
@@ -66,6 +67,9 @@ class WebSampler : EnterpriseSampler<WebIndividual>() {
 
         updateConfigBasedOnSutInfoDto(infoDto)
 
+        if (config.seedTestCases)
+            initSeededTests()
+
         log.debug("Done initializing {}", WebSampler::class.simpleName)
     }
 
@@ -89,5 +93,9 @@ class WebSampler : EnterpriseSampler<WebIndividual>() {
      */
     fun sampleUndefinedAction() : WebAction{
         return WebAction()
+    }
+
+    override fun initSeededTests(infoDto: SutInfoDto?) {
+        // not supported yet
     }
 }

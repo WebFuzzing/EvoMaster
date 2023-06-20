@@ -1822,8 +1822,8 @@ class EMConfig {
     var externalServiceIP : String = "127.0.0.2"
 
     @Experimental
-    @Cfg("Whether to apply customized method (i.e., implement 'customizeMockingRPCExternalService') to handle external services.")
-    var enableCustomizedExternalServiceHandling = false
+    @Cfg("Whether to apply customized method (i.e., implement 'customizeMockingRPCExternalService' for external services or 'customizeMockingDatabase' for database) to handle mock object.")
+    var enableCustomizedMethodForMockObjectHandling = false
 
     @Experimental
     @Cfg("Whether to save mocked responses as separated files")

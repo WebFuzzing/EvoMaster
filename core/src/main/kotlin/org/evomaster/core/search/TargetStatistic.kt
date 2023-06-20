@@ -16,6 +16,11 @@ data class TargetStatistic(
     val searchTime: Int,
 
     /**
+     * achieved by seeded tests
+     */
+    val seedingTime: Int,
+
+    /**
      * total unique targets covered at the end
      * this includes targets covered during boot-time, search-time and authentication
      * since there might exist duplicated targets in different phases, then set unique amount

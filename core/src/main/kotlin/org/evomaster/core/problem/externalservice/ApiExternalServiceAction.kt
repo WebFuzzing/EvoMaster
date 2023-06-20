@@ -1,6 +1,5 @@
 package org.evomaster.core.problem.externalservice
 
-import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.externalservice.param.ResponseParam
 import org.evomaster.core.search.Action
 
@@ -19,6 +18,12 @@ abstract class ApiExternalServiceAction(
     used : Boolean = false
 ) : Action(listOf(response)){
 
+    companion object{
+        /**
+         * separator for generating names of external actions
+         */
+        const val EXACTION_NAME_SEPARATOR =":::"
+    }
 
     val responses : List<ResponseParam>
         get() { return children.filterIsInstance<ResponseParam>()}

@@ -82,6 +82,9 @@ class Archive<T> where T : Individual {
      */
     private var lastChosen: Int? = null
 
+    data class CoveredStatisticsBySeededTests(val coveredTargets: List<Int>)
+
+    private var coveredStatisticsBySeededTests : CoveredStatisticsBySeededTests? = null
 
     /**
      * Kill all populations.
@@ -96,8 +99,23 @@ class Archive<T> where T : Individual {
     fun extractSolution(): Solution<T> {
         val uniques = getUniquePopulation()
 
-        return Solution(uniques.toMutableList(), config.outputFilePrefix, config.outputFileSuffix, Termination.NONE)
+        return Solution(uniques.toMutableList(), config.outputFilePrefix, config.outputFileSuffix, Termination.NONE, coveredStatisticsBySeededTests?.coveredTargets?: listOf())
     }
+
+
+
+    fun archiveCoveredStatisticsBySeededTests(){
+        if (coveredStatisticsBySeededTests != null){
+            throw IllegalStateException("`archiveCoveredStatisticsBySeededTests` can only be performed once")
+        }
+
+        val current = extractSolution()
+        coveredStatisticsBySeededTests = CoveredStatisticsBySeededTests(
+            coveredTargets = current.overall.getViewOfData().filter { it.value.distance == FitnessValue.MAX_VALUE }.keys.toList()
+        )
+    }
+
+    fun anyTargetsCoveredSeededTests () = coveredStatisticsBySeededTests != null && coveredStatisticsBySeededTests!!.coveredTargets.isNotEmpty()
 
 
     fun getCopyOfUniqueCoveringIndividuals() : List<T>{
@@ -563,11 +581,15 @@ class Archive<T> where T : Individual {
     /**
      * @return a list of pairs which is composed of target id (first) and corresponding tests (second)
      */
-    fun exportCoveredTargetsAsPair(solution: Solution<*>) : List<Pair<String, List<Int>>>{
+    fun exportCoveredTargetsAsPair(solution: Solution<*>, includeTargetsCoveredBySeededTests: Boolean? = null) : List<Pair<String, List<Int>>>{
 
         return populations.keys
                 .asSequence()
-                .filter { isCovered(it) }
+                .filter {
+                    isCovered(it) && (includeTargetsCoveredBySeededTests == null
+                            || (coveredStatisticsBySeededTests==null)
+                            || (if (includeTargetsCoveredBySeededTests) coveredStatisticsBySeededTests!!.coveredTargets.contains(it) else !coveredStatisticsBySeededTests!!.coveredTargets.contains(it)))
+                }
                 .map { t->
                     Pair(idMapper.getDescriptiveId(t), solution.individuals.mapIndexed { index, f-> if (f.fitness.doesCover(t)) index else -1 }.filter { it != -1 })
                 }.toList()
