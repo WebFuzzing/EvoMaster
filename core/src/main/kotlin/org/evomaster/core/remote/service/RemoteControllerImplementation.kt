@@ -456,7 +456,7 @@ class RemoteControllerImplementation() : RemoteController{
 
         val dto = getDtoFromResponse(response, type)
 
-        if (!checkResponse(response, dto, "Failed to execute database command")) {
+        if (!checkResponse(response, dto, "Failed to execute MongoDB insertion")) {
             return null
         }
 

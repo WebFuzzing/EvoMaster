@@ -26,7 +26,7 @@ public interface MongoStatementDsl {
     /**
      * Build the DTOs (Data Transfer Object) from this DSL,
      * closing it (ie, not usable any longer).
-     * @return a list of DTOs representing all the insertion SQL commands defined in this DSL.
+     * @return a list of DTOs representing all the insertion MONGO commands defined in this DSL.
      */
     List<MongoInsertionDto> dtos();
 

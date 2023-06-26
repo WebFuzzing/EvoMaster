@@ -1,4 +1,4 @@
-package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
+package org.evomaster.client.java.instrumentation.coverage.methodreplacement.thirdpartyclasses;
 
 import org.evomaster.client.java.instrumentation.MongoCollectionInfo;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
@@ -14,7 +14,13 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-
+/**
+ * When a MongoRepository is created in Spring, a MongoCollection is used under the hood.
+ * But information about the type of the repository's documents is not transferred to the collection.
+ * That info is retained on Spring side.
+ * So the intention of this replacement is to retrieve that type info.
+ * This will allow us to create and insert documents of the correct type in the collection (and the repository).
+ */
 public class MappingMongoEntityInformationClassReplacement extends ThirdPartyMethodReplacementClass {
     private static final MappingMongoEntityInformationClassReplacement singleton = new MappingMongoEntityInformationClassReplacement();
     private static ThreadLocal<Object> instance = new ThreadLocal<>();
@@ -44,8 +50,9 @@ public class MappingMongoEntityInformationClassReplacement extends ThirdPartyMet
     @Replacement(
             replacingConstructor = true,
             type = ReplacementType.TRACKER,
-            category = ReplacementCategory.SQL,
-            id = "constructorEntity"
+            category = ReplacementCategory.MONGO,
+            id = "constructorEntity",
+            castTo = "org.springframework.data.mongodb.repository.support.MappingMongoEntityInformation"
     )
     public static void MappingMongoEntityInformation(@ThirdPartyCast(actualType = "org.springframework.data.mongodb.core.mapping.MongoPersistentEntity") Object entity) {
         handleMappingMongoEntityInformationConstructor("constructorEntity", Collections.singletonList(entity));
@@ -54,8 +61,9 @@ public class MappingMongoEntityInformationClassReplacement extends ThirdPartyMet
     @Replacement(
             replacingConstructor = true,
             type = ReplacementType.TRACKER,
-            category = ReplacementCategory.SQL,
-            id = "constructorEntityCustomCollectionName"
+            category = ReplacementCategory.MONGO,
+            id = "constructorEntityCustomCollectionName",
+            castTo = "org.springframework.data.mongodb.repository.support.MappingMongoEntityInformation"
     )
     public static void MappingMongoEntityInformation(@ThirdPartyCast(actualType = "org.springframework.data.mongodb.core.mapping.MongoPersistentEntity") Object entity, String customCollectionName) {
         handleMappingMongoEntityInformationConstructor("constructorEntityCustomCollectionName", Arrays.asList(entity, customCollectionName));
@@ -64,8 +72,9 @@ public class MappingMongoEntityInformationClassReplacement extends ThirdPartyMet
     @Replacement(
             replacingConstructor = true,
             type = ReplacementType.TRACKER,
-            category = ReplacementCategory.SQL,
-            id = "constructorEntityFallbackIdType"
+            category = ReplacementCategory.MONGO,
+            id = "constructorEntityFallbackIdType",
+            castTo = "org.springframework.data.mongodb.repository.support.MappingMongoEntityInformation"
     )
     public static void MappingMongoEntityInformation(@ThirdPartyCast(actualType = "org.springframework.data.mongodb.core.mapping.MongoPersistentEntity") Object entity, Class<?> fallbackIdType) {
         handleMappingMongoEntityInformationConstructor("constructorEntityFallbackIdType", Arrays.asList(entity, fallbackIdType));

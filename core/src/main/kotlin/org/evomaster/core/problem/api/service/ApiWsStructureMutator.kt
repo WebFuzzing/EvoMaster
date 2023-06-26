@@ -323,9 +323,9 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         val addedInsertions = if (mutatedGenes != null) mutableListOf<List<Action>>() else null
 
         ff.forEach {
-            val insertions = sampler.sampleMongoInsertion(it.database, it.collection, it.documentsType, it.accessedFields)
-            ind.addInitializingMongoDbActions(actions = insertions)
-            addedInsertions?.add(insertions)
+            val insertion = listOf(sampler.sampleMongoInsertion(it.database, it.collection, it.documentsType))
+            ind.addInitializingMongoDbActions(actions = insertion)
+            addedInsertions?.add(insertion)
         }
 
         return addedInsertions

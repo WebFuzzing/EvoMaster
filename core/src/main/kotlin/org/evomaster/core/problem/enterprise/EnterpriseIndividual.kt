@@ -105,9 +105,8 @@ abstract class EnterpriseIndividual(
             ActionFilter.MAIN_EXECUTABLE -> groupsView()!!.getAllInGroup(GroupsOfChildren.MAIN)
                 .flatMap { (it as ActionComponent).flatten() }
                 .filter { it !is DbAction && it !is ApiExternalServiceAction }
-            //CHANGE: This is momentary for testing. Needs refactor to handle multiple databases
-            ActionFilter.INIT -> groupsView()!!.getAllInGroup(GroupsOfChildren.INITIALIZATION_MONGO).flatMap { (it as ActionComponent).flatten() }
-            // WARNING: this can still return DbAction and External ones...
+            ActionFilter.INIT -> seeAllActions().filter { it is DbAction || it is MongoDbAction}
+            // WARNING: this can still return DbAction, MongoDbAction and External ones...
             ActionFilter.NO_INIT -> groupsView()!!.getAllInGroup(GroupsOfChildren.MAIN).flatMap { (it as ActionComponent).flatten() }
             ActionFilter.ONLY_SQL -> seeAllActions().filterIsInstance<DbAction>()
             ActionFilter.ONLY_MONGO -> seeAllActions().filterIsInstance<MongoDbAction>()

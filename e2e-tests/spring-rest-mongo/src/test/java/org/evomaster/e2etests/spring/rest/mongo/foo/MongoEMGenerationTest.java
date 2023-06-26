@@ -1,7 +1,7 @@
 package org.evomaster.e2etests.spring.rest.mongo.foo;
 
-import com.foo.spring.rest.mongo.MongoPersonsAppController;
 import com.foo.spring.rest.mongo.MongoPersonsWithoutPostAppController;
+import org.evomaster.core.EMConfig;
 import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
@@ -18,7 +18,9 @@ MongoEMGenerationTest extends RestTestBase {
 
     @BeforeAll
     public static void initClass() throws Exception {
-        RestTestBase.initClass(new MongoPersonsWithoutPostAppController());
+        EMConfig config = new EMConfig();
+        config.setInstrumentMR_MONGO(true);
+        RestTestBase.initClass(new MongoPersonsWithoutPostAppController(), config);
     }
 
     @Test
@@ -34,6 +36,8 @@ MongoEMGenerationTest extends RestTestBase {
                     args.add("--heuristicsForMongo");
                     args.add("true");
                     args.add("--instrumentMR_MONGO");
+                    args.add("true");
+                    args.add("--generateMongoData");
                     args.add("true");
 
                     Solution<RestIndividual> solution = initAndRun(args);

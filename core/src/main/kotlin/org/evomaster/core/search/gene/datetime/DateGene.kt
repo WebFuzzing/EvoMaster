@@ -114,7 +114,7 @@ class DateGene(
         targetFormat: OutputFormat?,
         extraCheck: Boolean
     ): String {
-        return "\"${getValueAsRawString()}\""
+        return if(mode == GeneUtils.EscapeMode.EJSON) "{\"\$date\":\"${getValueAsRawString()}\"}" else "\"${getValueAsRawString()}\""
     }
 
     override fun getValueAsRawString(): String {

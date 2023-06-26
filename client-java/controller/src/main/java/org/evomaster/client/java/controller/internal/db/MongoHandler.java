@@ -4,8 +4,6 @@ import org.evomaster.client.java.controller.api.dto.database.execution.FailedQue
 import org.evomaster.client.java.controller.api.dto.database.execution.MongoExecutionDto;
 import org.evomaster.client.java.controller.mongo.MongoHeuristicsCalculator;
 import org.evomaster.client.java.controller.mongo.MongoOperation;
-import org.evomaster.client.java.controller.mongo.QueryParser;
-import org.evomaster.client.java.controller.mongo.operations.*;
 import org.evomaster.client.java.instrumentation.MongoCollectionInfo;
 import org.evomaster.client.java.instrumentation.MongoInfo;
 
@@ -41,9 +39,15 @@ public class MongoHandler {
      */
     private volatile boolean calculateHeuristics;
 
+    /**
+     * Unsuccessful executed queries
+     */
     private final List<MongoOperation> failedQueries;
 
-    private final HashMap<String, Class<?>> collectionInfo;
+    /**
+     * Info about types of the documents of collections
+     */
+    private final Map<String, Class<?>> collectionInfo;
 
     public MongoHandler() {
         distances = new ArrayList<>();
@@ -58,23 +62,31 @@ public class MongoHandler {
         operations.clear();
         distances.clear();
         failedQueries.clear();
-        // collectionInfo is not cleared to avoid losing the info as it's retrieved when SUT is started
+        // collectionInfo is not cleared to avoid losing the info as it's retrieved while SUT is starting
+    }
+
+    public boolean isCalculateHeuristics() {
+        return calculateHeuristics;
+    }
+
+    public boolean isExtractMongoExecution() {
+        return extractMongoExecution;
+    }
+
+    public void setCalculateHeuristics(boolean calculateHeuristics) {
+        this.calculateHeuristics = calculateHeuristics;
+    }
+
+    public void setExtractMongoExecution(boolean extractMongoExecution) {
+        this.extractMongoExecution = extractMongoExecution;
     }
 
     public void handle(MongoInfo info) {
-        if (!extractMongoExecution) {
-            return;
-        }
-
-        operations.add(info);
+        if (extractMongoExecution) operations.add(info);
     }
 
     public void handle(MongoCollectionInfo info) {
-        if (!extractMongoExecution) {
-            return;
-        }
-
-        collectionInfo.put(info.getCollectionName(), info.getDocumentsType());
+        if (extractMongoExecution) collectionInfo.put(info.getCollectionName(), info.getDocumentsType());
     }
 
     public List<MongoOperationDistance> getDistances() {
@@ -88,7 +100,7 @@ public class MongoHandler {
             }
             distances.add(new MongoOperationDistance(mongoInfo.getQuery(), dist));
 
-            if (dist > 0 ) {
+            if (dist > 0) {
                 Object collection = mongoInfo.getCollection();
                 failedQueries.add(new MongoOperation(collection, mongoInfo.getQuery()));
             }
@@ -96,6 +108,12 @@ public class MongoHandler {
         operations.clear();
 
         return distances;
+    }
+
+    public MongoExecutionDto getExecutionDto() {
+        MongoExecutionDto dto = new MongoExecutionDto();
+        dto.failedQueries = failedQueries.stream().map(this::extractRelevantInfo).collect(Collectors.toList());
+        return dto;
     }
 
     private double computeDistance(MongoInfo info) {
@@ -124,144 +142,43 @@ public class MongoHandler {
         }
     }
 
-    public MongoExecutionDto getExecutionDto(){
-        MongoExecutionDto dto = new MongoExecutionDto();
-        dto.failedQueries = failedQueries.stream().map(this::extractRelevantInfo).collect(Collectors.toList());
-        return dto;
-    }
-
     private FailedQuery extractRelevantInfo(MongoOperation operation) {
-        QueryOperation query = new QueryParser().parse(operation.getQuery());
         Object collection = operation.getCollection();
 
-        Map<String, Class<?>> accessedFields = extractFieldsInQuery(query);
-        Class<?> documentsType;
-
-        String collectionName;
         String databaseName;
+        String collectionName;
+        Class<?> documentsType;
 
         try {
             Class<?> collectionClass = collection.getClass().getClassLoader().loadClass("com.mongodb.client.MongoCollection");
             Object namespace = collectionClass.getMethod("getNamespace").invoke(collection);
-            collectionName = (String) namespace.getClass().getMethod("getCollectionName").invoke(namespace);
             databaseName = (String) namespace.getClass().getMethod("getDatabaseName").invoke(namespace);
-        } catch (ClassNotFoundException |IllegalAccessException | InvocationTargetException | NoSuchMethodException e){
-            throw new RuntimeException(e);
+            collectionName = (String) namespace.getClass().getMethod("getCollectionName").invoke(namespace);
+        } catch (ClassNotFoundException | IllegalAccessException | InvocationTargetException |
+                 NoSuchMethodException e) {
+            throw new RuntimeException("Failed to retrieve collection name or database name", e);
         }
 
-        // I should be as specific as I can with the type the collection's documents should have.
-        // There are a few ways to get that info:
-
-        // 1) Using collection.getDocumentsClass().
-        //    Spring for example "ignore" this and store type info inside repository.
-
-        // 2) When using Spring, retrieving the type of the repository associated with the collection.
-        //    The MongoEntityInformation replacement makes this possible.
-
-        // 3) Extract from the query the fields used and type of each of them. This probably won't
-        //    work as expected as usually a subset of fields is used in a query.
-
-        if(collectionInfo.containsKey(collectionName)){
+        if (collectionTypeIsRegistered(collectionName)) {
             documentsType = collectionInfo.get(collectionName);
-        }else{
+        } else {
             documentsType = extractDocumentsType(collection);
         }
 
-        return new FailedQuery(databaseName, collectionName, documentsType, accessedFields);
+        return new FailedQuery(databaseName, collectionName, documentsType);
+    }
+
+    private boolean collectionTypeIsRegistered(String collectionName) {
+        return collectionInfo.containsKey(collectionName);
     }
 
     private static Class<?> extractDocumentsType(Object collection) {
         try {
             Class<?> collectionClass = collection.getClass().getClassLoader().loadClass("com.mongodb.client.MongoCollection");
             return (Class<?>) collectionClass.getMethod("getDocumentClass").invoke(collection);
-
-        } catch (NoSuchMethodException | ClassNotFoundException | InvocationTargetException | IllegalAccessException e) {
-            throw new RuntimeException(e);
+        } catch (NoSuchMethodException | ClassNotFoundException | InvocationTargetException |
+                 IllegalAccessException e) {
+            throw new RuntimeException("Failed to retrieve document's type from collection", e);
         }
-    }
-
-    private static Map<String, Class<?>> extractFieldsInQuery(QueryOperation operation) {
-        Map<String, Class<?>> accessedFields = new HashMap<>();
-
-        if(operation instanceof ComparisonOperation<?>) {
-            ComparisonOperation<?> op  = (ComparisonOperation<?>) operation;
-            accessedFields.put(op.getFieldName(), op.getValue().getClass());
-        }
-
-        if(operation instanceof AndOperation) {
-            AndOperation op  = (AndOperation) operation;
-            op.getConditions().forEach(cond -> accessedFields.putAll(extractFieldsInQuery(cond)));
-        }
-
-        if(operation instanceof OrOperation) {
-            OrOperation op  = (OrOperation) operation;
-            op.getConditions().forEach(cond -> accessedFields.putAll(extractFieldsInQuery(cond)));
-        }
-
-        if(operation instanceof NorOperation) {
-            NorOperation op  = (NorOperation) operation;
-            op.getConditions().forEach(cond -> accessedFields.putAll(extractFieldsInQuery(cond)));
-        }
-
-        if(operation instanceof InOperation<?>) {
-            InOperation<?> op  = (InOperation<?>) operation;
-            accessedFields.put(op.getFieldName(), op.getValues().get(0).getClass());
-        }
-
-        if(operation instanceof NotInOperation<?>) {
-            NotInOperation<?> op  = (NotInOperation<?>) operation;
-            accessedFields.put(op.getFieldName(), op.getValues().get(0).getClass());
-        }
-
-        if(operation instanceof AllOperation<?>) {
-            AllOperation<?> op  = (AllOperation<?>) operation;
-            accessedFields.put(op.getFieldName(), op.getValues().getClass());
-        }
-
-        if(operation instanceof SizeOperation) {
-            SizeOperation op  = (SizeOperation) operation;
-            accessedFields.put(op.getFieldName(), op.getValue().getClass());
-        }
-
-        if(operation instanceof ExistsOperation) {
-            ExistsOperation op  = (ExistsOperation) operation;
-            accessedFields.put(op.getFieldName(), null);
-        }
-
-        if(operation instanceof ModOperation) {
-            ModOperation op  = (ModOperation) operation;
-            accessedFields.put(op.getFieldName(),  op.getDivisor().getClass());
-        }
-
-        if(operation instanceof TypeOperation) {
-            TypeOperation op  = (TypeOperation) operation;
-            accessedFields.put(op.getFieldName(), op.getType().getClass());
-        }
-
-        /*
-        if(operation instanceof ElemMatchOperation) {
-            ElemMatchOperation op  = (ElemMatchOperation) operation;
-            accessedFields.put(op.getFieldName(), op.getValue());
-        }
-
-         */
-
-        return accessedFields;
-    }
-
-    public boolean isCalculateHeuristics() {
-        return calculateHeuristics;
-    }
-
-    public boolean isExtractMongoExecution() {
-        return extractMongoExecution;
-    }
-
-    public void setCalculateHeuristics(boolean calculateHeuristics) {
-        this.calculateHeuristics = calculateHeuristics;
-    }
-
-    public void setExtractMongoExecution(boolean extractMongoExecution) {
-        this.extractMongoExecution = extractMongoExecution;
     }
 }

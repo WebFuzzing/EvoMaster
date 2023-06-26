@@ -1,7 +1,6 @@
 package org.evomaster.client.java.controller.mongo.dsl;
 
 import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionDto;
-import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionEntryDto;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -11,7 +10,7 @@ import java.util.List;
  * DSL (Domain Specific Language) for operations on
  * the Mongo Database
  */
-public class MongoDsl implements  MongoSequenceDsl, MongoStatementDsl{
+public class MongoDsl implements MongoSequenceDsl, MongoStatementDsl{
 
     private List<MongoInsertionDto> list = new ArrayList<>();
 
@@ -27,10 +26,9 @@ public class MongoDsl implements  MongoSequenceDsl, MongoStatementDsl{
     }
 
     /**
-     * @return a DSL object to create SQL operations
+     * @return a DSL object to create MONGO operations
      */
     public static MongoSequenceDsl mongo() {
-
         return new MongoDsl();
     }
 
@@ -65,14 +63,8 @@ public class MongoDsl implements  MongoSequenceDsl, MongoStatementDsl{
 
     @Override
     public MongoStatementDsl d(String printableValue) {
-
         checkDsl();
-
-        MongoInsertionEntryDto entry = new MongoInsertionEntryDto();
-        entry.value = printableValue;
-
-        current().data.add(entry);
-
+        current().data = printableValue;
         return this;
     }
 

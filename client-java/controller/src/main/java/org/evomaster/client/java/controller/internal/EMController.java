@@ -790,8 +790,8 @@ public class EMController {
                 return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
             }
 
-            if (dto.insertions.stream().anyMatch(i -> i.collectionName == null || i.collectionName.isEmpty())) {
-                String msg = "Insertion with no target collection";
+            if (dto.insertions.stream().anyMatch(i -> i.collectionName.isEmpty() || i.databaseName.isEmpty())) {
+                String msg = "Insertion with no target collection or database";
                 SimpleLogger.warn(msg);
                 return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
             }
@@ -800,7 +800,7 @@ public class EMController {
 
 
             try {
-                mongoInsertionResultsDto = MongoScriptRunner.execInsert(connection, dto.insertions);
+                mongoInsertionResultsDto = MongoScriptRunner.executeInsert(connection, dto.insertions);
             } catch (Exception e) {
                 String msg = "Failed to execute database command: " + e.getMessage();
                 SimpleLogger.warn(msg);

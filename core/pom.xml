@@ -222,6 +222,12 @@
             <artifactId>mockserver-client-java-no-dependencies</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>bson</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
 

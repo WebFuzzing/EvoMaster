@@ -1,4 +1,5 @@
 package org.evomaster.core.mongo
+
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionResult
 
@@ -8,9 +9,9 @@ import org.evomaster.core.search.ActionResult
 class MongoDbActionResult : ActionResult {
 
     constructor(stopping: Boolean = false) : super(stopping)
-    constructor(other: MongoDbActionResult): super(other)
+    constructor(other: MongoDbActionResult) : super(other)
 
-    companion object{
+    companion object {
         const val INSERT_MONGO_EXECUTE_SUCCESSFULLY = "INSERT_MONGO_EXECUTE_SUCCESSFULLY"
     }
 
@@ -19,16 +20,15 @@ class MongoDbActionResult : ActionResult {
     }
 
     /**
-     * @param success specifies whether the INSERT SQL executed successfully
-     *
-     * NOTE THAT here for SELECT, the execution result is false by default.
+     * @param success specifies whether the INSERT MONGO executed successfully
      */
-    fun setInsertExecutionResult(success: Boolean) = addResultValue(INSERT_MONGO_EXECUTE_SUCCESSFULLY, success.toString())
+    fun setInsertExecutionResult(success: Boolean) =
+        addResultValue(INSERT_MONGO_EXECUTE_SUCCESSFULLY, success.toString())
 
     /**
-     * @return whether the db action executed successfully
+     * @return whether the MongoDB action executed successfully
      */
-    fun getInsertExecutionResult() = getResultValue(INSERT_MONGO_EXECUTE_SUCCESSFULLY)?.toBoolean()?:false
+    fun getInsertExecutionResult() = getResultValue(INSERT_MONGO_EXECUTE_SUCCESSFULLY)?.toBoolean() ?: false
 
     override fun matchedType(action: Action): Boolean {
         return action is MongoDbAction

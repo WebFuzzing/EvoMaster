@@ -83,7 +83,7 @@ class DoubleGene(name: String,
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
         val stringValue = getFormattedValue().toString()
-        return if(mode==GeneUtils.EscapeMode.EJSON) "{ \"\$numberInt\": \"$stringValue\" }" else stringValue
+        return if(mode==GeneUtils.EscapeMode.EJSON) "{\"\$numberDouble\":\"$stringValue\"}" else stringValue
     }
 
     override fun copyValueFrom(other: Gene): Boolean {

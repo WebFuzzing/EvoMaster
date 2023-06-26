@@ -144,7 +144,7 @@ class IntegerGene(
         extraCheck: Boolean
     ): String {
         val stringValue = value.toString()
-        return if(mode==GeneUtils.EscapeMode.EJSON) "{ \"\$numberInt\": \"$stringValue\" }" else stringValue
+        return if(mode==GeneUtils.EscapeMode.EJSON) "{\"\$numberInt\":\"$stringValue\"}" else stringValue
     }
 
 

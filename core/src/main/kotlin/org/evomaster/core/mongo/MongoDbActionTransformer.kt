@@ -1,38 +1,26 @@
 package org.evomaster.core.mongo
 
 import org.evomaster.client.java.controller.api.dto.database.operations.*
+import org.evomaster.core.search.gene.utils.GeneUtils
 
 object MongoDbActionTransformer {
 
-    fun transform(insertions: List<MongoDbAction>) : MongoDatabaseCommandDto {
+    fun transform(actions: List<MongoDbAction>) : MongoDatabaseCommandDto {
 
-        val list = mutableListOf<MongoInsertionDto>()
+        val insertionDtos = mutableListOf<MongoInsertionDto>()
 
-        for (element in insertions) {
+        for (action in actions) {
+            val genes = action.seeTopGenes().first()
 
-            val insertion = MongoInsertionDto().apply {
-                databaseName = element.database
-                collectionName = element.collection }
+            val insertionDto = MongoInsertionDto().apply {
+                databaseName = action.database
+                collectionName = action.collection
+                data = genes.getValueAsPrintableString(mode = GeneUtils.EscapeMode.EJSON)
+            }
 
-            val g = element.seeTopGenes().first()
-            val entry = MongoInsertionEntryDto()
-
-            // If is printed as JSON there might a problem
-            // A Document(from Mongo) can be created from a JSON but some info might be lost
-            // Preferably is created from an EJSON (Extended JSON) as JSON can only directly represent a
-            // subset of the types supported by BSON.
-            // Maybe we can create a new OutputFormat
-
-            entry.value = g.getValueAsPrintableString()
-
-            // This is ignored for now
-            entry.fieldName = g.getVariableName()
-
-            insertion.data.add(entry)
-
-            list.add(insertion)
+            insertionDtos.add(insertionDto)
         }
 
-        return MongoDatabaseCommandDto().apply { this.insertions = list }
+        return MongoDatabaseCommandDto().apply { this.insertions = insertionDtos }
     }
 }

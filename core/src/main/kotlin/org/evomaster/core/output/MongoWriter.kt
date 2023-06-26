@@ -23,13 +23,11 @@ object MongoWriter {
         format: OutputFormat,
         mongoDbInitialization: List<EvaluatedMongoDbAction>,
         lines: Lines,
-        groupIndex: String ="",
+        groupIndex: String = "",
         insertionVars: MutableList<Pair<String, String>>,
         skipFailure: Boolean) {
 
-        //if (dbInitialization.isEmpty() || dbInitialization.none { !it.action.representExistingData && (!skipFailure || it.result.getInsertExecutionResult())}) {
-            //return
-        //}
+        if (mongoDbInitialization.isEmpty()) return
 
         val insertionVar = "insertions${groupIndex}"
         val insertionVarResult = "${insertionVar}result"

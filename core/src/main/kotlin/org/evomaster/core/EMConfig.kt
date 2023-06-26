@@ -1061,8 +1061,9 @@ class EMConfig {
     @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use a search algorithm")
     var generateSqlDataWithSearch = true
 
+    @Experimental
     @Cfg("Enable EvoMaster to generate Mongo data with direct accesses to the database")
-    var generateMongoData = true
+    var generateMongoData = false
 
     @Cfg("When generating SQL data, how many new rows (max) to generate for each specific SQL Select")
     @Min(1.0)

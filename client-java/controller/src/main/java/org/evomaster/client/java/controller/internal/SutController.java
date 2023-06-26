@@ -237,7 +237,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         }
 
         try {
-            return MongoScriptRunner.execInsert(connection, insertions);
+            return MongoScriptRunner.executeInsert(connection, insertions);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

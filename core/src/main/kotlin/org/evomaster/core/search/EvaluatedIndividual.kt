@@ -12,7 +12,6 @@ import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionResult
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.mongo.MongoDbAction
-import org.evomaster.core.mongo.MongoDbActionResult
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
@@ -24,6 +23,8 @@ import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.tracer.TrackingHistory
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import javax.security.sasl.AuthorizeCallback
+import kotlin.reflect.KClass
 
 /**
  * EvaluatedIndividual allows to tracking its evolution.
@@ -711,21 +712,21 @@ class EvaluatedIndividual<T>(
             )
         }
 
-        /*
-            if there exist other types of action (ie, not DbAction), this might need to be extended
-         */
-        //CHANGE: This is momentary for testing. Needs refactor to handle multiple databases
-        action = individual.seeInitializingActions().filterIsInstance<MongoDbAction>().find { it.seeTopGenes().contains(gene) }
+        initializingActionClasses().forEach { initializingActionClass ->
+            action = individual.seeInitializingActions().filter { initializingActionClass.isInstance(it)}
+                .find { it.seeTopGenes().contains(gene) }
 
-        if (action != null) {
-            return impactInfo.getGene(
-                localId = null,
-                fixedIndexedAction = true,
-                actionName = action.getName(),
-                actionIndex = individual.seeInitializingActions().indexOf(action),
-                geneId = id,
-                fromInitialization = true
-            )
+            if (action != null) {
+                action as Action
+                return impactInfo.getGene(
+                    localId = null,
+                    fixedIndexedAction = true,
+                    actionName = action!!.getName(),
+                    actionIndex = individual.seeInitializingActions().indexOf(action),
+                    geneId = id,
+                    fromInitialization = true
+                )
+            }
         }
 
         return impactInfo.getGene(
@@ -889,5 +890,8 @@ class EvaluatedIndividual<T>(
             !results[it].matchedType(all[it])
         }
         return !invalid
+    }
+    private fun initializingActionClasses(): List<KClass<*>> {
+        return listOf(MongoDbAction::class, DbAction::class)
     }
 }
