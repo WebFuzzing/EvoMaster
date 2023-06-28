@@ -79,7 +79,7 @@ class RestIndividual(
                 children.map { it.copy() }.toMutableList() as MutableList<out ActionComponent>,
                 mainSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.MAIN),
                 //CHANGE: This is momentary for testing. Needs refactor to handle multiple databases
-                dbSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_MONGO)
+                dbSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_MONGO ) + groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_SQL )
         )
     }
 

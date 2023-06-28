@@ -77,15 +77,25 @@ abstract class EnterpriseIndividual(
             }
 
             //TODO in future ll need to refactor to handle multiple databases and NoSQL ones
-            //CHANGE: This is momentary for testing. Needs refactor to handle multiple databases
-            val db = ChildGroup<StructuralElement>(GroupsOfChildren.INITIALIZATION_MONGO,{e -> e is ActionComponent && e.flatten().all { a -> a is MongoDbAction }},
-                if(sizeDb==0) -1 else 0 , if(sizeDb==0) -1 else sizeDb-1
+            //CHANGE: This is momentary. Needs refactor to handle multiple databases
+
+            val startIndexSQL = children.indexOfFirst { a -> a is DbAction }
+            val endIndexSQL = children.indexOfLast { a -> a is DbAction }
+            val startIndexMongo = children.indexOfFirst { a -> a is MongoDbAction }
+            val endIndexMongo = children.indexOfLast { a -> a is MongoDbAction }
+
+            val db = ChildGroup<StructuralElement>(GroupsOfChildren.INITIALIZATION_SQL,{e -> e is ActionComponent && e.flatten().all { a -> a is DbAction }},
+                if(sizeDb==0) -1 else startIndexSQL , if(sizeDb==0) -1 else endIndexSQL
+            )
+
+            val mongodb = ChildGroup<StructuralElement>(GroupsOfChildren.INITIALIZATION_MONGO,{e -> e is ActionComponent && e.flatten().all { a -> a is MongoDbAction }},
+                if(sizeDb==0) -1 else startIndexMongo , if(sizeDb==0) -1 else endIndexMongo
             )
 
             val main = ChildGroup<StructuralElement>(GroupsOfChildren.MAIN, {e -> e !is DbAction && e !is ApiExternalServiceAction },
                 if(sizeMain == 0) -1 else sizeDb, if(sizeMain == 0) -1 else sizeDb + sizeMain - 1)
 
-            return GroupsOfChildren(children, listOf(db, main))
+            return GroupsOfChildren(children, listOf(db, mongodb, main))
         }
     }
 

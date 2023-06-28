@@ -144,7 +144,7 @@ class FitnessValue(
     }
     fun aggregateMongoDatabaseData(){
         aggregatedFailedFind.clear()
-        mongoExecutions.values.map { aggregatedFailedFind.addAll(it.failedQueries) }
+        mongoExecutions.values.map { it.failedQueries?.let { it1 -> aggregatedFailedFind.addAll(it1) } }
     }
 
     fun setExtraToMinimize(actionIndex: Int, list: List<Double>) {

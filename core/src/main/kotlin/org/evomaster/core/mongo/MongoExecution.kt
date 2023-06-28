@@ -2,12 +2,12 @@ package org.evomaster.core.mongo
 
 import org.evomaster.client.java.controller.api.dto.database.execution.FailedQuery
 import org.evomaster.client.java.controller.api.dto.database.execution.MongoExecutionDto
-class MongoExecution(val failedQueries: List<FailedQuery>) {
+class MongoExecution(val failedQueries: MutableList<FailedQuery>?) {
 
     companion object {
 
         fun fromDto(dto: MongoExecutionDto?): MongoExecution {
-            return MongoExecution(dto!!.failedQueries)
+            return MongoExecution(dto?.failedQueries)
         }
     }
 }

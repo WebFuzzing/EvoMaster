@@ -2,6 +2,7 @@ package org.evomaster.client.java.controller.mongo;
 
 import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionResultsDto;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -23,7 +24,6 @@ public class MongoScriptRunner {
      *
      * @param connection a connection to the database (MongoClient)
      * @param insertions the Mongo insertions to execute
-     *
      * @return a MongoInsertionResultsDto
      */
     public static MongoInsertionResultsDto executeInsert(Object connection, List<MongoInsertionDto> insertions) {
@@ -42,6 +42,7 @@ public class MongoScriptRunner {
                 Object document = parseEJSON(insertionDto.data);
                 insertDocument(connection, insertionDto.databaseName, insertionDto.collectionName, document);
                 mongoResults.set(i, true);
+                SimpleLogger.debug(insertionDto.data + " inserted into database: " + insertionDto.databaseName + " and collection: " + insertionDto.collectionName);
             } catch (Exception e) {
                 String msg = "Failed to execute insertion with index " + i + " with Mongo. Error: " + e.getMessage();
                 throw new RuntimeException(msg, e);
