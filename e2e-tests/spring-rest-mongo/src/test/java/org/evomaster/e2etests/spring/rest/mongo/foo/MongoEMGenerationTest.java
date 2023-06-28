@@ -39,6 +39,8 @@ MongoEMGenerationTest extends RestTestBase {
                     args.add("true");
                     args.add("--generateMongoData");
                     args.add("true");
+                    args.add("--extractMongoExecutionInfo");
+                    args.add("true");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 

@@ -1051,8 +1051,9 @@ class EMConfig {
     @Cfg("Enable extracting SQL execution info")
     var extractSqlExecutionInfo = true
 
+    @Experimental
     @Cfg("Enable extracting Mongo execution info")
-    var extractMongoExecutionInfo = true
+    var extractMongoExecutionInfo = false
 
     @Experimental
     @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use Dynamic Symbolic Execution")
