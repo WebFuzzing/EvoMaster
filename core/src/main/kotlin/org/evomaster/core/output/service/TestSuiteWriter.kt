@@ -806,8 +806,11 @@ class TestSuiteWriter {
                         }
                 }
 
-                if (config.enableCustomizedExternalServiceHandling && testCaseWriter is RPCTestCaseWriter)
+                if (config.enableCustomizedMethodForMockObjectHandling && testCaseWriter is RPCTestCaseWriter){
                     lines.add((testCaseWriter as RPCTestCaseWriter).resetExternalServicesWithCustomizedMethod())
+                    lines.add((testCaseWriter as RPCTestCaseWriter).resetMockDatabaseObjectWithCustomizedMethod())
+                }
+
 
             } else if (format.isCsharp()) {
                 addStatement("$fixture = fixture", lines)

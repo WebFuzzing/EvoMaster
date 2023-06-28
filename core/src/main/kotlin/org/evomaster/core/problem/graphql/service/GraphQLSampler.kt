@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.graphql.service
 
+import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.graphql.*
 import org.evomaster.core.problem.graphql.builder.GraphQLActionBuilder
@@ -72,6 +73,9 @@ class GraphQLSampler : HttpWsSampler<GraphQLIndividual>() {
 
         updateConfigBasedOnSutInfoDto(infoDto)
 
+        if (config.seedTestCases)
+            initSeededTests()
+
         log.debug("Done initializing {}", GraphQLSampler::class.simpleName)
     }
 
@@ -118,5 +122,8 @@ class GraphQLSampler : HttpWsSampler<GraphQLIndividual>() {
         number of Mutation before
      */
 
+    override fun initSeededTests(infoDto: SutInfoDto?) {
+        // not supported yet
+    }
 
 }

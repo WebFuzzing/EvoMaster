@@ -3,15 +3,12 @@ package org.evomaster.core.problem.rpc.service
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.EMConfig
-import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.api.service.ApiWsSampler
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.enterprise.SampleType
-import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.remote.SutProblemException
-import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.ActionComponent
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -62,6 +59,9 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
         initSqlInfo(infoDto)
 
         initAdHocInitialIndividuals(infoDto)
+
+        if (config.seedTestCases)
+            initSeededTests(infoDto)
 
         updateConfigBasedOnSutInfoDto(infoDto)
         log.debug("Done initializing {}", RPCSampler::class.simpleName)
@@ -114,17 +114,28 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
         adHocInitialIndividuals.clear()
         createSingleCallIndividualOnEachAction()
 
-        if (config.seedTestCases && infoDto.rpcProblem?.seededTestDtos?.isNotEmpty() == true){
-            adHocInitialIndividuals.addAll(
-                    rpcHandler.handledSeededTests(infoDto.rpcProblem.seededTestDtos)
-                            .map{
-                                it.seeAllActions().forEach { a -> a.doInitialize() }
-                                it
-                            }
+        adHocInitialIndividuals.forEach {
+            it.doGlobalInitialize(searchGlobalState)
+        }
+    }
+
+    override fun initSeededTests(infoDto: SutInfoDto?) {
+        if (!config.seedTestCases) {
+            throw IllegalStateException("'seedTestCases' should be true when initializing seeded tests")
+        }
+
+
+        if (infoDto?.rpcProblem?.seededTestDtos?.isNotEmpty() == true){
+            seededIndividuals.addAll(
+                rpcHandler.handledSeededTests(infoDto.rpcProblem.seededTestDtos)
+                    .map{
+                        it.seeAllActions().forEach { a -> a.doInitialize() }
+                        it
+                    }
             )
         }
 
-        adHocInitialIndividuals.forEach {
+        seededIndividuals.forEach{
             it.doGlobalInitialize(searchGlobalState)
         }
     }

@@ -10,7 +10,8 @@ class Solution<T>(
         val individuals: MutableList<EvaluatedIndividual<T>>,
         val testSuiteNamePrefix: String,
         val testSuiteNameSuffix: String,
-        val termination: Termination = Termination.NONE
+        val termination: Termination = Termination.NONE,
+        val targetsDuringSeeding : List<Int>
 )
 where T : Individual {
 
@@ -23,6 +24,7 @@ where T : Individual {
             overall.merge(it.fitness)
             overall.size += it.individual.size()
         }
+        overall.setTargetsCoveredBySeeding(targetsDuringSeeding)
     }
 
     fun getFileName() : String{
