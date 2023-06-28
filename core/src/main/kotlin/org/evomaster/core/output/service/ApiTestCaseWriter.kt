@@ -49,7 +49,7 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
             SqlWriter.handleDbInitialization(
                     format,
                 initializingSqlActions.indices.map {
-                        EvaluatedDbAction(initializingSqlActions[it], initializingSqlActions[it] as DbActionResult)
+                        EvaluatedDbAction(initializingSqlActions[it], initializingSqlActionResults[it] as DbActionResult)
                     },
                     lines, insertionVars = insertionVars, skipFailure = config.skipFailureSQLInTestFile)
         }
