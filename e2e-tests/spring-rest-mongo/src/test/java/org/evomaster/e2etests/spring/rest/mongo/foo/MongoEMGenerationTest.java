@@ -29,7 +29,7 @@ MongoEMGenerationTest extends RestTestBase {
         runTestHandlingFlakyAndCompilation(
                 "MongoEMGeneration",
                 "org.foo.spring.rest.mongo.MongoEMGeneration",
-                10000,
+                1000,
                 (args) -> {
                     args.add("--enableWeightBasedMutationRateSelectionForGene");
                     args.add("false");
