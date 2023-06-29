@@ -11,10 +11,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class
-
-
-MongoEMGenerationTest extends RestTestBase {
+public class MongoEMGenerationTest extends RestTestBase {
 
     @BeforeAll
     public static void initClass() throws Exception {

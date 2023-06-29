@@ -99,11 +99,6 @@ public class MongoHandler {
                 dist = Double.MAX_VALUE;
             }
             distances.add(new MongoOperationDistance(mongoInfo.getQuery(), dist));
-
-            if (dist > 0) {
-                Object collection = mongoInfo.getCollection();
-                failedQueries.add(new MongoOperation(collection, mongoInfo.getQuery()));
-            }
         });
         operations.clear();
 
@@ -119,6 +114,9 @@ public class MongoHandler {
     private double computeDistance(MongoInfo info) {
         Object collection = info.getCollection();
         Iterable<?> documents = getDocuments(collection);
+        boolean collectionIsEmpty = !documents.iterator().hasNext();
+
+        if (collectionIsEmpty) failedQueries.add(new MongoOperation(collection, info.getQuery()));
 
         MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
 
