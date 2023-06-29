@@ -32,6 +32,10 @@ public class RPCEndpointsBuilder {
     private final static String OBJECT_FLAG = "OBJECT";
     private final static String OBJECT_FLAG_SEPARATOR = ":";
 
+    private final static String PROTOBUF_PACKAGE = "com.google.protobuf";
+
+    private final static String PROTOBUF_BUILDER = "Builder";
+
     private static String getObjectTypeNameWithFlag(Class<?> clazz, String name, int level) {
         if (isNotCustomizedObject(clazz)) return name;
         if (level < 0)
@@ -557,53 +561,70 @@ public class RPCEndpointsBuilder {
                     Map<Integer, CustomizedRequestValueDto> objRelatedCustomizationDtos = getCustomizationBasedOnSpecifiedType(customizationDtos, clazz.getName());
 
                     int flevel = level + 1;
-                    // field list
-                    List<Field> fieldList = new ArrayList<>();
-                    getAllFields(clazz, fieldList, rpcType);
 
-                    for(Field f: fieldList){
-                        // skip final field
-                        if (Modifier.isFinal(f.getModifiers()))
-                            continue;
+                    if (rpcType == RPCType.gRPC || isProtobuf(clazz)){
+                        List<Protobuf3Field> pfList = getProtobuf3FieldsAndType(clazz);
+                        for (Protobuf3Field pf : pfList){
+                            AccessibleSchema faccessSchema = new AccessibleSchema(false, pf.setterName, pf.getterName);
 
-                        if (doSkipReflection(f.getName()))
-                            continue;
+                            // TODO genericType
 
-                        // always try to find the setter and getter
-                        AccessibleSchema faccessSchema = new AccessibleSchema(Modifier.isPublic(f.getModifiers()), findGetterOrSetter(clazz, f, false), findGetterOrSetter(clazz, f, true));
-                        //check accessible
-                        if (!Modifier.isPublic(f.getModifiers())){
-                            if (faccessSchema.getterMethodName == null || faccessSchema.setterMethodName == null){
-                                SimpleLogger.recordErrorMessage("Error: skip the field "+f.getName()+" since its setter/getter is not found");
+                            NamedTypedValue field = build(schema, pf.fieldType, null, pf.fieldName, rpcType, flattenDepth, flevel, objRelatedCustomizationDtos, relatedCustomization, faccessSchema, notNullAnnotations, null, genericTypeMap, isTypeToIdentify);
+
+                            fields.add(field);
+                        }
+
+                    }else{
+                        // field list
+                        List<Field> fieldList = new ArrayList<>();
+                        getAllFields(clazz, fieldList, rpcType);
+
+                        for(Field f: fieldList){
+                            // skip final field
+                            if (Modifier.isFinal(f.getModifiers()))
                                 continue;
+
+                            if (doSkipReflection(f.getName()))
+                                continue;
+
+                            // always try to find the setter and getter
+                            AccessibleSchema faccessSchema = new AccessibleSchema(Modifier.isPublic(f.getModifiers()), findGetterOrSetter(clazz, f, false), findGetterOrSetter(clazz, f, true));
+                            //check accessible
+                            if (!Modifier.isPublic(f.getModifiers())){
+                                if (faccessSchema.getterMethodName == null || faccessSchema.setterMethodName == null){
+                                    SimpleLogger.recordErrorMessage("Error: skip the field "+f.getName()+" since its setter/getter is not found");
+                                    continue;
+                                }
                             }
-                        }
 
-                        Class<?> fType = f.getType();
-                        Class<?> foriginalType = null;
-                        Type fGType = f.getGenericType();
+                            Class<?> fType = f.getType();
+                            Class<?> foriginalType = null;
+                            Type fGType = f.getGenericType();
 
-                        if (f.getGenericType() instanceof TypeVariable){
-                            foriginalType = f.getType();
-                            Type actualType = getActualType(genericTypeMap, (TypeVariable) f.getGenericType());
-                            if (actualType instanceof Class){
-                                fType = (Class<?>) actualType;
-                                fGType = fType;
-                            }else if (actualType instanceof ParameterizedType){
-                                fGType = actualType;
-                                if (((ParameterizedType) actualType).getRawType() instanceof Class<?>)
-                                    fType = (Class<?>) ((ParameterizedType) actualType).getRawType();
-                                else
-                                    throw new RuntimeException("Error: Fail to handle actual type of a generic type");
+                            if (f.getGenericType() instanceof TypeVariable){
+                                foriginalType = f.getType();
+                                Type actualType = getActualType(genericTypeMap, (TypeVariable) f.getGenericType());
+                                if (actualType instanceof Class){
+                                    fType = (Class<?>) actualType;
+                                    fGType = fType;
+                                }else if (actualType instanceof ParameterizedType){
+                                    fGType = actualType;
+                                    if (((ParameterizedType) actualType).getRawType() instanceof Class<?>)
+                                        fType = (Class<?>) ((ParameterizedType) actualType).getRawType();
+                                    else
+                                        throw new RuntimeException("Error: Fail to handle actual type of a generic type");
+                                }
                             }
-                        }
 
-                        NamedTypedValue field = build(schema, fType, fGType,f.getName(), rpcType, flattenDepth, flevel, objRelatedCustomizationDtos, relatedCustomization, faccessSchema, notNullAnnotations, foriginalType, genericTypeMap, isTypeToIdentify);
-                        for (Annotation annotation : f.getAnnotations()){
-                            handleConstraint(field, annotation, notNullAnnotations);
+                            NamedTypedValue field = build(schema, fType, fGType,f.getName(), rpcType, flattenDepth, flevel, objRelatedCustomizationDtos, relatedCustomization, faccessSchema, notNullAnnotations, foriginalType, genericTypeMap, isTypeToIdentify);
+                            for (Annotation annotation : f.getAnnotations()){
+                                handleConstraint(field, annotation, notNullAnnotations);
+                            }
+                            fields.add(field);
                         }
-                        fields.add(field);
                     }
+
+
 
                     handleNativeRPCConstraints(clazz, fields, rpcType);
 
@@ -644,6 +665,34 @@ public class RPCEndpointsBuilder {
             }
         }
         return cycle;
+    }
+
+    private static boolean isProtobuf(Class<?> clazz){
+        if (clazz == null) return false;
+        boolean isProtobuf= clazz.getName().startsWith(PROTOBUF_PACKAGE);
+        if (isProtobuf) return isProtobuf;
+
+        Class pclazz = clazz.getSuperclass();
+        if (pclazz != null){
+            return isProtobuf(pclazz);
+        }
+
+        return false;
+    }
+
+    private static List<Protobuf3Field> getProtobuf3FieldsAndType(Class<?> clazz){
+        Optional<Class<?>> op = Arrays.stream(clazz.getDeclaredClasses()).filter(s-> s.getSimpleName().equals(PROTOBUF_BUILDER)).findFirst();
+        if (!op.isPresent()) return null;
+
+        List<Protobuf3Field> list = new ArrayList<>();
+
+        for (Field f : op.get().getDeclaredFields()){
+            String fieldName = formatProtobuf3FieldName(f.getName());
+            Protobuf3Field pf = findProtobuf3FieldType(op.get(), fieldName);
+            if (pf != null)
+                list.add(pf);
+        }
+        return list;
     }
 
     private static String getNameEnumConstant(Object object) {
@@ -770,6 +819,32 @@ public class RPCEndpointsBuilder {
                 || (isBoolean && (methodName.equalsIgnoreCase(fieldName)
                 || methodName.equalsIgnoreCase("is"+fieldName)))
                 || (isBoolean && fieldName.startsWith("is") && methodName.equalsIgnoreCase(fieldName.replaceFirst("is", "get")));
+    }
+
+    private static String formatProtobuf3FieldName(String fieldName){
+        if (fieldName.endsWith("_"))
+            return fieldName.substring(0, fieldName.length()-1);
+        return fieldName;
+    }
+
+    private static Protobuf3Field findProtobuf3FieldType(Class<?> clazz, String fieldName){
+        Method setter = null;
+        Method getter = null;
+        for (Method m : clazz.getDeclaredMethods()){
+            if (m.getName().equalsIgnoreCase("set"+fieldName))
+                setter = m;
+            else if (m.getName().equalsIgnoreCase("get"+fieldName))
+                getter = m;
+        }
+        if (getter!=null && setter != null) {
+            Protobuf3Field pf = new Protobuf3Field();
+            pf.fieldName = fieldName;
+            pf.fieldType = getter.getReturnType();
+            pf.getterName = getter.getName();
+            pf.setterName = setter.getName();
+            return pf;
+        }
+        return null;
     }
 
     private static void handleNamedValueWithCustomizedDto(NamedTypedValue namedTypedValue, Map<Integer, CustomizedRequestValueDto> customizationDtos, Set<String> relatedCustomization){
