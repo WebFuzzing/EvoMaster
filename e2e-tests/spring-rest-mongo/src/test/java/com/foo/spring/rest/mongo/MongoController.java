@@ -41,7 +41,6 @@ public abstract class MongoController extends EmbeddedSutController {
 
         mongoClient = MongoClients.create("mongodb://localhost:" + port + "/" + databaseName);
 
-
         SpringApplicationBuilder app = new SpringApplicationBuilder(mongoAppClass);
 
         app.properties(
@@ -51,13 +50,9 @@ public abstract class MongoController extends EmbeddedSutController {
                 "spring.data.mongodb.database=" + databaseName
         );
 
-        // CHANGE: Is necessary to crete the collection first?
-        mongoClient.getDatabase("persons").createCollection("person");
-
         ctx = app.run();
 
         return "http://localhost:" + getSutPort();
-
     }
 
     @Override

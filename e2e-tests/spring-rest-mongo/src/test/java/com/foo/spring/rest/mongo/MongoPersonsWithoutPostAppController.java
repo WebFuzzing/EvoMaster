@@ -9,6 +9,6 @@ public class MongoPersonsWithoutPostAppController extends MongoController{
 
     @Override
     public String getPackagePrefixesToCover() {
-        return "com.mongo.persons";
+        return "com.mongo.personswithoutpost";
     }
 }
