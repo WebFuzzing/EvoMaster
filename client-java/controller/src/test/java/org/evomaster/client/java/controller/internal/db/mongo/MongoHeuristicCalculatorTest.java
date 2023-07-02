@@ -1,6 +1,7 @@
 package org.evomaster.client.java.controller.internal.db.mongo;
 
 import com.mongodb.client.model.Filters;
+import org.bson.BsonDocument;
 import org.bson.BsonType;
 import org.bson.Document;
 import org.bson.conversions.Bson;
@@ -104,6 +105,16 @@ class MongoHeuristicCalculatorTest {
         Double distanceNotMatch = new MongoHeuristicsCalculator().computeExpression(bsonFalse, doc);
         assertEquals(0.0, distanceMatch);
         assertEquals(4.0, distanceNotMatch);
+    }
+    @Test
+    public void testImplicitAnd() {
+        Document doc = new Document().append("age", 10).append("kg", 50);
+        Bson bsonTrue = BsonDocument.parse("{age: 10, kg: {$gt: 40}}");
+        Bson bsonFalse = BsonDocument.parse("{age: 9, kg: {$gt: 40}}");
+        Double distanceMatch = new MongoHeuristicsCalculator().computeExpression(bsonTrue, doc);
+        Double distanceNotMatch = new MongoHeuristicsCalculator().computeExpression(bsonFalse, doc);
+        assertEquals(0.0, distanceMatch);
+        assertEquals(1.0, distanceNotMatch);
     }
 
     @Test
