@@ -340,8 +340,34 @@ public class RPCEndpointsBuilder {
         if (involveEndpointsByName != null || involveEndpointsByAnnotation != null)
             return anyMatchByNameAndAnnotation(endpoint, involveEndpointsByName, involveEndpointsByAnnotation);
 
+        /*
+            filter streaming API
+
+            Note that gRPC might exist streamAPI
+            see https://grpc.io/docs/what-is-grpc/core-concepts/
+            currently, we do not support such a stream yet in the communication
+
+            examples of streaming APIs in gRPC
+            https://github.com/grpc/grpc-java/blob/master/examples/src/main/java/io/grpc/examples/routeguide
+            https://github.com/grpc/grpc-java/tree/master/examples/src/main/proto
+
+         */
+        if (isPotentialStreamingAPI(endpoint))
+            return false;
+
         // only handle public method
         return Modifier.isPublic(endpoint.getModifiers());
+    }
+
+    private static boolean isPotentialStreamingAPI(Method method){
+        Class<?> returnType = method.getReturnType();
+        if (returnType.equals(Iterator.class))
+            return true;
+        for (Parameter parameter : method.getParameters()){
+           if (parameter.getType().equals(Iterator.class))
+               return true;
+        }
+        return false;
     }
 
     private static boolean anyMatchByNameAndAnnotation(Method endpoint, List<String> names, List<String> annotations){
@@ -521,7 +547,7 @@ public class RPCEndpointsBuilder {
                 ctype.depth = getDepthLevel(clazz, flattenDepth, level, clazzWithGenericTypes);
                 if (List.class.isAssignableFrom(clazz))
                     namedValue = new ListParam(name, ctype, accessibleSchema);
-                else
+                else if(Set.class.isAssignableFrom(clazz))
                     namedValue = new SetParam(name, ctype, accessibleSchema);
             } else if (Map.class.isAssignableFrom(clazz)){
                 if (genericType == null)
