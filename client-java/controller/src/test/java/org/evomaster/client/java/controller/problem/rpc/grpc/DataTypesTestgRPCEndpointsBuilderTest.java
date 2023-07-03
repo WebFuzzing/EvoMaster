@@ -47,7 +47,7 @@ public class DataTypesTestgRPCEndpointsBuilderTest extends RPCEndpointsBuilderTe
     }
 
     @Test
-    public void testGetSimpleObj() throws ClassNotFoundException {
+    public void testGetInfo() throws ClassNotFoundException {
         EndpointSchema endpoint = getOneEndpoint("getSimpleObj");
         assertEquals(1, endpoint.getRequestParams().size());
         NamedTypedValue param1 = endpoint.getRequestParams().get(0);
@@ -91,5 +91,11 @@ public class DataTypesTestgRPCEndpointsBuilderTest extends RPCEndpointsBuilderTe
         for (int i = 0; i < param1InstanceJava.size(); i++)
             assertEquals(expectedContents.get(i), param1InstanceJava.get(i));
     }
+
+    @Test
+    public void testSimpleObj(){
+
+    }
+
 
 }

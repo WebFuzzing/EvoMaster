@@ -835,8 +835,14 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                     responseDto.rpcResponse = resSchema.getDto();
                     if (dto.doGenerateAssertions && dto.responseVariable != null)
                         responseDto.assertionScript = resSchema.newAssertionWithJava(dto.responseVariable, dto.maxAssertionForDataInCollection);
-                    else
-                        responseDto.jsonResponse = objectMapper.writeValueAsString(response);
+                    else{
+                        try {
+                            responseDto.jsonResponse = objectMapper.writeValueAsString(response);
+                        }catch (JsonProcessingException e){
+                            // cannot convert to json
+                        }
+                    }
+
                 } catch (Exception e){
                     SimpleLogger.error("ERROR: fail to set successful response instance value to dto "+ e.getMessage());
                     //throw new RuntimeException("ERROR: fail to set successful response instance value to dto "+ e.getMessage());
