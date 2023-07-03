@@ -507,22 +507,27 @@ public class RPCEndpointsBuilder {
         flattenDepth.add(getObjectTypeNameWithFlag(clazz, clazzWithGenericTypes, level));
         NamedTypedValue namedValue = null;
 
+        JavaDtoSpec spec = JavaDtoSpec.PURE;
+        if (rpcType == RPCType.gRPC || isProtobuf(clazz))
+            spec = JavaDtoSpec.PROTO3;
+
+
         try{
 
             if (PrimitiveOrWrapperType.isPrimitiveOrTypes(clazz)) {
-                namedValue = PrimitiveOrWrapperParam.build(name, clazz, accessibleSchema);
+                namedValue = PrimitiveOrWrapperParam.build(name, clazz, accessibleSchema, spec);
             } else if (clazz == String.class) {
-                StringType stringType = new StringType();
+                StringType stringType = new StringType(spec);
                 namedValue = new StringParam(name, stringType, accessibleSchema);
             } else if (clazz == BigDecimal.class){
-                BigDecimalType bigDecimalType = new BigDecimalType();
+                BigDecimalType bigDecimalType = new BigDecimalType(spec);
                 namedValue = new BigDecimalParam(name, bigDecimalType, accessibleSchema);
             } else if (clazz == BigInteger.class){
-                BigIntegerType bigIntegerType = new BigIntegerType();
+                BigIntegerType bigIntegerType = new BigIntegerType(spec);
                 namedValue = new BigIntegerParam(name, bigIntegerType, accessibleSchema);
             } else if (clazz.isEnum()) {
                 String [] items = Arrays.stream(clazz.getEnumConstants()).map(e-> getNameEnumConstant(e)).toArray(String[]::new);
-                EnumType enumType = new EnumType(clazz.getSimpleName(), clazz.getName(), items, clazz);
+                EnumType enumType = new EnumType(clazz.getSimpleName(), clazz.getName(), items, clazz, spec);
                 EnumParam param = new EnumParam(name, enumType, accessibleSchema);
                 //register this type in the schema
                 schema.registerType(enumType.copy(), param.copyStructureWithProperties(), isTypeToIdentify);
@@ -540,13 +545,13 @@ public class RPCEndpointsBuilder {
 
                 NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, flattenDepth, level, customizationDtos, relatedCustomization, null, notNullAnnotations, null, genericTypeMap, isTypeToIdentify);
                 template.setNullable(false);
-                CollectionType ctype = new CollectionType(clazz.getSimpleName(),clazz.getName(), template, clazz);
+                CollectionType ctype = new CollectionType(clazz.getSimpleName(),clazz.getName(), template, clazz, spec);
                 ctype.depth = getDepthLevel(clazz, flattenDepth, level, clazzWithGenericTypes);
                 namedValue = new ArrayParam(name, ctype, accessibleSchema);
 
             } else if (clazz == ByteBuffer.class){
                 // handle binary of thrift
-                namedValue = new ByteBufferParam(name, accessibleSchema);
+                namedValue = new ByteBufferParam(name, accessibleSchema, spec);
             } else if (List.class.isAssignableFrom(clazz) || Set.class.isAssignableFrom(clazz)){
                 if (genericType == null)
                     throw new RuntimeException("genericType should not be null for List and Set class");
@@ -554,7 +559,7 @@ public class RPCEndpointsBuilder {
                 Class<?> templateClazz = getTemplateClass(type, genericTypeMap);
                 NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, flattenDepth, level, customizationDtos, relatedCustomization, null, notNullAnnotations, null, genericTypeMap, isTypeToIdentify);
                 template.setNullable(false);
-                CollectionType ctype = new CollectionType(clazz.getSimpleName(),clazz.getName(), template, clazz);
+                CollectionType ctype = new CollectionType(clazz.getSimpleName(),clazz.getName(), template, clazz, spec);
                 ctype.depth = getDepthLevel(clazz, flattenDepth, level, clazzWithGenericTypes);
                 if (List.class.isAssignableFrom(clazz))
                     namedValue = new ListParam(name, ctype, accessibleSchema);
@@ -572,18 +577,18 @@ public class RPCEndpointsBuilder {
 
                 Class<?> valueTemplateClazz = getTemplateClass(valueType, genericTypeMap);
                 NamedTypedValue valueTemplate = build(schema, valueTemplateClazz, valueType,"valueTemplate", rpcType, flattenDepth, level,customizationDtos, relatedCustomization, null, notNullAnnotations, null, genericTypeMap, isTypeToIdentify);
-                MapType mtype = new MapType(clazz.getSimpleName(), clazz.getName(), new PairParam(new PairType(keyTemplate, valueTemplate), null), clazz);
+                MapType mtype = new MapType(clazz.getSimpleName(), clazz.getName(), new PairParam(new PairType(keyTemplate, valueTemplate,spec), null), clazz,spec);
                 mtype.depth = getDepthLevel(clazz, flattenDepth, level, clazzWithGenericTypes);
                 namedValue = new MapParam(name, mtype, accessibleSchema);
             } else if (Date.class.isAssignableFrom(clazz)){
                 if (clazz == Date.class)
-                    namedValue = new DateParam(name, accessibleSchema);
+                    namedValue = new DateParam(name, accessibleSchema, spec);
                 else
                     throw new RuntimeException("NOT support "+clazz.getName()+" date type in java yet");
             } else if (Exception.class.isAssignableFrom(clazz) && clazz.getName().startsWith("java")){
                 // note that here we only extract class name and message
-                StringParam msgField = new StringParam("message", new AccessibleSchema(false, null, "getMessage"));
-                ObjectType exceptionType = new ObjectType(clazz.getSimpleName(), clazz.getName(), Collections.singletonList(msgField), clazz, genericTypes);
+                StringParam msgField = new StringParam("message", new AccessibleSchema(false, null, "getMessage"), spec);
+                ObjectType exceptionType = new ObjectType(clazz.getSimpleName(), clazz.getName(), Collections.singletonList(msgField), clazz, genericTypes,spec );
                 namedValue = new ObjectParam(name, exceptionType, accessibleSchema);
             } else {
                 if (clazz.getName().startsWith("java")){
@@ -665,14 +670,14 @@ public class RPCEndpointsBuilder {
 
                     handleNativeRPCConstraints(clazz, fields, rpcType);
 
-                    ObjectType otype = new ObjectType(clazz.getSimpleName(), clazz.getName(), fields, clazz, genericTypes);
+                    ObjectType otype = new ObjectType(clazz.getSimpleName(), clazz.getName(), fields, clazz, genericTypes, spec);
                     otype.setOriginalType(originalType);
                     otype.depth = getDepthLevel(clazz, flattenDepth, level, clazzWithGenericTypes);
                     ObjectParam oparam = new ObjectParam(name, otype, accessibleSchema);
                     schema.registerType(otype.copy(), oparam, isTypeToIdentify);
                     namedValue = oparam;
                 }else {
-                    CycleObjectType otype = new CycleObjectType(clazz.getSimpleName(), clazz.getName(), clazz, genericTypes);
+                    CycleObjectType otype = new CycleObjectType(clazz.getSimpleName(), clazz.getName(), clazz, genericTypes, spec);
                     otype.depth = getDepthLevel(clazz, flattenDepth, level,clazzWithGenericTypes);
                     ObjectParam oparam = new ObjectParam(name, otype, accessibleSchema);
                     schema.registerType(otype.copy(), oparam, isTypeToIdentify);

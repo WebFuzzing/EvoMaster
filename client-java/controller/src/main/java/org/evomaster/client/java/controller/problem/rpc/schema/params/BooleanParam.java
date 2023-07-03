@@ -3,14 +3,15 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
+import org.evomaster.client.java.controller.problem.rpc.schema.types.JavaDtoSpec;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.PrimitiveOrWrapperType;
 
 /**
  * boolean param
  */
 public class BooleanParam extends PrimitiveOrWrapperParam<Boolean> {
-    public BooleanParam(String name, String type, String fullTypeName, Class<?> clazz, AccessibleSchema accessibleSchema) {
-        super(name, type, fullTypeName, clazz, accessibleSchema);
+    public BooleanParam(String name, String type, String fullTypeName, Class<?> clazz, AccessibleSchema accessibleSchema, JavaDtoSpec spec) {
+        super(name, type, fullTypeName, clazz, accessibleSchema, spec);
     }
 
     public BooleanParam(String name, PrimitiveOrWrapperType type, AccessibleSchema accessibleSchema) {

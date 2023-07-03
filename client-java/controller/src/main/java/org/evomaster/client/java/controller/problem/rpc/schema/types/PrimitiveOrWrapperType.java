@@ -17,15 +17,15 @@ public class PrimitiveOrWrapperType extends TypeSchema {
     private final static List<Class<?>> INTEGRAL_NUMBER = Arrays.asList(Byte.class, byte.class, Short.class, short.class, Integer.class, int.class, Long.class, long.class);
     private final static List<Class<?>> FLOATINGPOINT_NUMBER = Arrays.asList(Float.class, float.class, Double.class, double.class);
 
-    public PrimitiveOrWrapperType(String type, String fullTypeName, boolean isWrapper, Class<?> clazz) {
-        super(type, fullTypeName, clazz);
+    public PrimitiveOrWrapperType(String type, String fullTypeName, boolean isWrapper, Class<?> clazz, JavaDtoSpec spec) {
+        super(type, fullTypeName, clazz, spec);
         if (!isPrimitiveOrTypes(type))
             throw new IllegalStateException("the type is not Primitive Or Wrapper class: "+ type);
         this.isWrapper = isWrapper;
     }
 
-    public PrimitiveOrWrapperType(String type, String fullTypeName, Class<?> clazz){
-        this(type, fullTypeName, types.indexOf(type) >=8, clazz);
+    public PrimitiveOrWrapperType(String type, String fullTypeName, Class<?> clazz, JavaDtoSpec spec){
+        this(type, fullTypeName, types.indexOf(type) >=8, clazz, spec);
     }
 
     private final static List<String> types = Arrays.asList("int","byte","short","long","float","double","boolean","char","Integer","Byte","Short","Long","Float","Double","Boolean","Character");
@@ -43,7 +43,7 @@ public class PrimitiveOrWrapperType extends TypeSchema {
 
     @Override
     public PrimitiveOrWrapperType copy() {
-        return new PrimitiveOrWrapperType(getType(), getFullTypeName(), isWrapper, getClazz());
+        return new PrimitiveOrWrapperType(getType(), getFullTypeName(), isWrapper, getClazz(), spec);
     }
 
     public boolean isNumber(){

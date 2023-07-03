@@ -24,35 +24,35 @@ public class DateType extends TypeSchema {
     /**
      * year field
      */
-    public final IntParam year = new IntParam("year");
+    public final IntParam year = new IntParam("year", spec);
     /**
      * month field
      */
-    public final IntParam month = new IntParam("month");
+    public final IntParam month = new IntParam("month", spec);
     /**
      * day field
      */
-    public final IntParam day = new IntParam("day");
+    public final IntParam day = new IntParam("day", spec);
     /**
      * hour field
      */
-    public final IntParam hour = new IntParam("hour");
+    public final IntParam hour = new IntParam("hour", spec);
     /**
      * minute field
      */
-    public final IntParam minute = new IntParam("minute");
+    public final IntParam minute = new IntParam("minute", spec);
     /**
      * second field
      */
-    public final IntParam second = new IntParam("second");
+    public final IntParam second = new IntParam("second", spec);
     /**
      * millisecond field
      */
-    public final IntParam millisecond = new IntParam("millisecond");
+    public final IntParam millisecond = new IntParam("millisecond", spec);
     /**
      * time zone field
      */
-    public final IntParam timezone = new IntParam("timezone");
+    public final IntParam timezone = new IntParam("timezone", spec);
     /**
      * a sequence of fields representing the date
      */
@@ -73,14 +73,14 @@ public class DateType extends TypeSchema {
     public final static SimpleDateFormat DATE_FORMATTER =new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS ZZZZ");
 
     /**
-     *
-     * @param type is the type name
+     * @param type         is the type name
      * @param fullTypeName is the full type name
-     * @param clazz is the class representing the type
+     * @param clazz        is the class representing the type
      * @param simpleFormat specifies if use simple format as SIMPLE_DATE_FORMATTER
+     * @param spec
      */
-    public DateType(String type, String fullTypeName, Class<?> clazz, boolean simpleFormat) {
-        super(type, fullTypeName, clazz);
+    public DateType(String type, String fullTypeName, Class<?> clazz, boolean simpleFormat, JavaDtoSpec spec) {
+        super(type, fullTypeName, clazz, spec);
         EMPLOY_SIMPLE_Format = simpleFormat;
         if (EMPLOY_SIMPLE_Format)
             dateFields = Arrays.asList(year, month, day, hour, minute, second);
@@ -90,20 +90,21 @@ public class DateType extends TypeSchema {
     }
     /**
      * DateType with simpleFormat
-     * @param type is the type name
-     * @param fullTypeName is the full type name
-     * @param clazz is the class representing the type
      *
+     * @param type         is the type name
+     * @param fullTypeName is the full type name
+     * @param clazz        is the class representing the type
+     * @param spec         is dto specification
      */
-    public DateType(String type, String fullTypeName, Class<?> clazz) {
-        this(type, fullTypeName, clazz, true);
+    public DateType(String type, String fullTypeName, Class<?> clazz, JavaDtoSpec spec) {
+        this(type, fullTypeName, clazz, true, spec);
     }
 
     /**
      * a java.util.Date with simple format
      */
-    public DateType(){
-        this(Date.class.getSimpleName(), Date.class.getName(), Date.class);
+    public DateType(JavaDtoSpec spec){
+        this(Date.class.getSimpleName(), Date.class.getName(), Date.class, spec);
     }
 
     /**
@@ -239,6 +240,6 @@ public class DateType extends TypeSchema {
 
     @Override
     public DateType copy() {
-        return new DateType();
+        return new DateType(spec);
     }
 }

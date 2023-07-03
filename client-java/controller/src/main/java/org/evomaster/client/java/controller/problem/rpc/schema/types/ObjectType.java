@@ -23,8 +23,8 @@ public class ObjectType extends TypeSchema {
     private final List<String> genericTypes;
 
 
-    public ObjectType(String type, String fullTypeName, List<NamedTypedValue> fields, Class<?> clazz, List<String> genericTypes) {
-        super(type, fullTypeName, clazz);
+    public ObjectType(String type, String fullTypeName, List<NamedTypedValue> fields, Class<?> clazz, List<String> genericTypes, JavaDtoSpec spec) {
+        super(type, fullTypeName, clazz, spec);
         this.fields = fields;
         this.genericTypes = genericTypes;
     }
@@ -49,7 +49,7 @@ public class ObjectType extends TypeSchema {
             }
         }
         List<String> genericTypes = this.genericTypes != null? new ArrayList<>(this.genericTypes): null;
-        ObjectType objectType = new ObjectType(getType(), getFullTypeName(), cfields ,getClazz(), genericTypes);
+        ObjectType objectType = new ObjectType(getType(), getFullTypeName(), cfields ,getClazz(), genericTypes, spec);
         objectType.depth = depth;
         return objectType;
     }

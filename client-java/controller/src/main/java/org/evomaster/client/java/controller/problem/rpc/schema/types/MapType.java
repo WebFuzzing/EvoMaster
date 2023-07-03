@@ -17,8 +17,8 @@ public class MapType extends TypeSchema{
     private final PairParam template;
 
 
-    public MapType(String type, String fullTypeName, PairParam template, Class<?> clazz) {
-        super(type, fullTypeName, clazz);
+    public MapType(String type, String fullTypeName, PairParam template, Class<?> clazz, JavaDtoSpec spec) {
+        super(type, fullTypeName, clazz, spec);
         this.template = template;
     }
 
@@ -44,6 +44,6 @@ public class MapType extends TypeSchema{
 
     @Override
     public MapType copy() {
-        return new MapType(getType(),getFullTypeName(), template, getClazz());
+        return new MapType(getType(),getFullTypeName(), template, getClazz(), spec);
     }
 }
