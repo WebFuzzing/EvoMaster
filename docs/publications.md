@@ -18,13 +18,7 @@ Also, some of these papers provides full replication packages, which are linked 
   *Testing RESTful APIs: A Survey*.
   [[arxiv](https://arxiv.org/abs/2212.14604)]
 
-* A. Belhadi, M. Zhang, A. Arcuri.
-  *White-Box and Black-Box Fuzzing for GraphQL APIs*.
-  [[arXiv](https://arxiv.org/abs/2209.05833)]
-  [[Script 0](exp/arxiv_gql_bb.py)]
-  [[Script 1](exp/arxiv_gql_wb.py)]
-
-
+  
 * M. Zhang, A. Arcuri, Y. Li, K Xue, Z Wang, J. Huo, W Huang.
   *Fuzzing Microservices In Industry: Experience of Applying EvoMaster at Meituan*.
   [[arXiv](https://arxiv.org/abs/2208.03988)]
@@ -36,6 +30,13 @@ Also, some of these papers provides full replication packages, which are linked 
 
 
 ### 2023
+
+* A. Belhadi, M. Zhang, A. Arcuri.
+  *Random Testing and Evolutionary Testing for Fuzzing GraphQL APIs*.
+  ACM Transactions on the Web (TWEB). (to appear)
+  [[arXiv](https://arxiv.org/abs/2209.05833)]
+  [[Script 0](exp/arxiv_gql_bb.py)]
+  [[Script 1](exp/arxiv_gql_wb.py)]
 
 
 * M. Zhang, A. Arcuri.
