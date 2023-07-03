@@ -11,8 +11,10 @@ import org.evomaster.client.java.controller.problem.rpc.schema.params.ObjectPara
 import org.evomaster.client.java.controller.problem.rpc.schema.types.ObjectType;
 import org.junit.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class DataTypesTestgRPCEndpointsBuilderTest extends RPCEndpointsBuilderTestBase {
     @Override
@@ -23,6 +25,25 @@ public class DataTypesTestgRPCEndpointsBuilderTest extends RPCEndpointsBuilderTe
     @Override
     public int expectedNumberOfEndpoints() {
         return 7;
+    }
+
+    @Test
+    public void testAllFunctions(){
+        List<String> expectedFunctions = Arrays.asList(
+            "getSimpleObj",
+            "getNestedObj",
+            "setNestedObj",
+            "getMapObj",
+            "addMapObj",
+            "getListObj",
+            "addListObj"
+        );
+
+        for (String fun : expectedFunctions){
+            EndpointSchema endpoint = getOneEndpoint(fun);
+            assertNotNull(endpoint);
+        }
+
     }
 
     @Test
@@ -41,17 +62,34 @@ public class DataTypesTestgRPCEndpointsBuilderTest extends RPCEndpointsBuilderTe
         assertEquals(1, param1Dto.innerContent.size());
         assertEquals(String.class.getName(), param1Dto.innerContent.get(0).type.fullTypeNameWithGenericType);
         param1Dto.setNotNullValue();
-        String name = "foo";
-
-        param1Dto.innerContent.get(0).stringValue = name;
-
+        param1Dto.innerContent.get(0).stringValue = "foo";
         param1.setValueBasedOnDto(param1Dto);
 
         Object param1Instance = param1.newInstance();
-
         assertTrue(param1Instance instanceof GetInfo);
-        assertEquals(name, ((GetInfo) param1Instance).getName());
+        assertEquals("foo", ((GetInfo) param1Instance).getName());
+
+        GetInfo param1Bar = GetInfo.newBuilder().setName("bar").build();
+        param1.setValueBasedOnInstance(param1Bar);
+
+        param1Instance = param1.newInstance();
+        assertTrue(param1Instance instanceof GetInfo);
+        assertEquals("bar", ((GetInfo) param1Instance).getName());
+
+        List<String> param1InstanceJava = param1.newInstanceWithJava(0);
+        List<String> expectedContents = Arrays.asList(
+            "io.grpc.examples.evotests.datatypes.GetInfo arg0 = null;",
+            "{",
+            " io.grpc.examples.evotests.datatypes.GetInfo.Builder arg0builder = io.grpc.examples.evotests.datatypes.GetInfo.newBuilder();",
+            " arg0builder.setName(\"bar\");",
+            " arg0 = arg0builder.build();",
+            "}"
+        );
+        assertEquals(expectedContents.size(), param1InstanceJava.size());
 
 
+        for (int i = 0; i < param1InstanceJava.size(); i++)
+            assertEquals(expectedContents.get(i), param1InstanceJava.get(i));
     }
+
 }
