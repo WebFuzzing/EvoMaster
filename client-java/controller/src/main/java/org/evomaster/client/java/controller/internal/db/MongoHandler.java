@@ -1,6 +1,6 @@
 package org.evomaster.client.java.controller.internal.db;
 
-import org.evomaster.client.java.controller.api.dto.database.execution.FailedQuery;
+import org.evomaster.client.java.controller.api.dto.database.execution.MongoFailedQuery;
 import org.evomaster.client.java.controller.api.dto.database.execution.MongoExecutionDto;
 import org.evomaster.client.java.controller.mongo.MongoHeuristicsCalculator;
 import org.evomaster.client.java.controller.mongo.MongoOperation;
@@ -140,7 +140,7 @@ public class MongoHandler {
         }
     }
 
-    private FailedQuery extractRelevantInfo(MongoOperation operation) {
+    private MongoFailedQuery extractRelevantInfo(MongoOperation operation) {
         Object collection = operation.getCollection();
 
         String databaseName;
@@ -163,7 +163,7 @@ public class MongoHandler {
             documentsType = extractDocumentsType(collection);
         }
 
-        return new FailedQuery(databaseName, collectionName, documentsType);
+        return new MongoFailedQuery(databaseName, collectionName, documentsType);
     }
 
     private boolean collectionTypeIsRegistered(String collectionName) {

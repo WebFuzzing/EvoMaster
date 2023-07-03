@@ -27,6 +27,18 @@ class MongoDbAction(
     private fun computeGenes(): List<Gene> {
         val genes =
             if (documentsType.name == "org.bson.Document") {
+                /* There are two different scenarios here:
+                    1) The collection has no type restriction.
+                    2) For some reason, it was not possible to determine the document's type.
+
+                   In case 1) any insertion to the collection would be valid.
+                   In case 2) we don't have enough information.
+
+                   In both cases, we don't have fields from which to build genes.
+                   One possibility would be to extract the fields used in the query,
+                   but there is no guarantee that it would work in case 2)
+                   (the fields used in the query may be different or a subset of the actual type of the collection).
+                */
                 listOf()
             } else {
                 getFieldsFromType().mapNotNull { MongoActionGeneBuilder().buildGene(it.name, it.type) }

@@ -1,8 +1,7 @@
 package org.evomaster.core.search
 
 import org.evomaster.client.java.controller.api.dto.BootTimeInfoDto
-import org.evomaster.client.java.controller.api.dto.database.execution.FailedQuery
-import org.evomaster.client.java.controller.api.dto.database.execution.MongoExecutionDto
+import org.evomaster.client.java.controller.api.dto.database.execution.MongoFailedQuery
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DatabaseExecution
 import org.evomaster.core.EMConfig.SecondaryObjectiveStrategy.*
@@ -88,7 +87,7 @@ class FitnessValue(
      * When SUT does MONGO commands using FIND, keep track of when those "fails" (ie evaluate
      * to false), in particular the collection and fields in them involved
      */
-    private val aggregatedFailedFind: MutableList<FailedQuery> = mutableListOf()
+    private val aggregatedFailedFind: MutableList<MongoFailedQuery> = mutableListOf()
 
     /**
      * To keep track of accessed external services prevent from adding them again

@@ -1,7 +1,7 @@
 package org.evomaster.core.problem.api.service
 
 import com.google.inject.Inject
-import org.evomaster.client.java.controller.api.dto.database.execution.FailedQuery
+import org.evomaster.client.java.controller.api.dto.database.execution.MongoFailedQuery
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
@@ -316,7 +316,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 
     private fun <T : ApiWsIndividual> handleFailedFind(
         ind: T,
-        ff: List<FailedQuery>,
+        ff: List<MongoFailedQuery>,
         mutatedGenes: MutatedGeneSpecification?, sampler: ApiWsSampler<T>
     ): MutableList<List<Action>>? {
 

@@ -5,5 +5,5 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MongoExecutionDto {
-    public List<FailedQuery> failedQueries = new ArrayList<>();
+    public List<MongoFailedQuery> failedQueries = new ArrayList<>();
 }
