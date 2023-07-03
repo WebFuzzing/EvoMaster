@@ -36,6 +36,17 @@ public class RPCEndpointsBuilder {
 
     private final static String PROTOBUF_BUILDER = "Builder";
 
+    private final static String PROTOBUF_MAP_FIELD_SUFFIX = "Map";
+
+    private final static String PROTOBUF_MAP_SETTER_PREFIX = "putAll";
+
+    private final static String PROTOBUF_LIST_FIELD_SUFFIX  = "List";
+
+    private final static String PROTOBUF_LIST_SETTER_PREFIX  = "addAll";
+
+    private final static String PROTOBUF_INTERFACE_BUILDER_SUFFIX  = "OrBuilder";
+
+
     private static String getObjectTypeNameWithFlag(Class<?> clazz, String name, int level) {
         if (isNotCustomizedObject(clazz)) return name;
         if (level < 0)
@@ -595,7 +606,7 @@ public class RPCEndpointsBuilder {
 
                             // TODO genericType
 
-                            NamedTypedValue field = build(schema, pf.fieldType, null, pf.fieldName, rpcType, flattenDepth, flevel, objRelatedCustomizationDtos, relatedCustomization, faccessSchema, notNullAnnotations, null, genericTypeMap, isTypeToIdentify);
+                            NamedTypedValue field = build(schema, pf.fieldType, pf.genericType, pf.fieldName, rpcType, flattenDepth, flevel, objRelatedCustomizationDtos, relatedCustomization, faccessSchema, notNullAnnotations, null, genericTypeMap, isTypeToIdentify);
 
                             fields.add(field);
                         }
@@ -713,10 +724,12 @@ public class RPCEndpointsBuilder {
         List<Protobuf3Field> list = new ArrayList<>();
 
         for (Field f : op.get().getDeclaredFields()){
-            String fieldName = formatProtobuf3FieldName(f.getName());
-            Protobuf3Field pf = findProtobuf3FieldType(op.get(), fieldName);
-            if (pf != null)
-                list.add(pf);
+            if (filterProtobuf3Field(f)){
+                String fieldName = formatProtobuf3FieldName(f.getName());
+                Protobuf3Field pf = findProtobuf3FieldType(op.get(), fieldName);
+                if (pf != null)
+                    list.add(pf);
+            }
         }
         return list;
     }
@@ -856,21 +869,71 @@ public class RPCEndpointsBuilder {
     private static Protobuf3Field findProtobuf3FieldType(Class<?> clazz, String fieldName){
         Method setter = null;
         Method getter = null;
-        for (Method m : clazz.getDeclaredMethods()){
-            if (m.getName().equalsIgnoreCase("set"+fieldName))
-                setter = m;
-            else if (m.getName().equalsIgnoreCase("get"+fieldName))
-                getter = m;
+
+        Class<?> getterClazz = clazz;
+        /*
+            parse field getter from interface
+         */
+        if (clazz.getInterfaces().length == 1 && clazz.getInterfaces()[0].getName().endsWith(PROTOBUF_INTERFACE_BUILDER_SUFFIX)){
+            getterClazz = clazz.getInterfaces()[0];
         }
+
+
+        List<Method> getters = Arrays.stream(getterClazz.getDeclaredMethods())
+            .filter(
+                m-> m.getParameters().length == 0
+                    && (m.getAnnotation(java.lang.Deprecated.class) == null)
+                    && (m.getName().equalsIgnoreCase("get" + fieldName)
+                        || m.getName().equalsIgnoreCase("get" + fieldName + PROTOBUF_LIST_FIELD_SUFFIX)
+                        || m.getName().equalsIgnoreCase("get" + fieldName + PROTOBUF_MAP_FIELD_SUFFIX)
+                    )
+            ).collect(Collectors.toList());
+//        if (getters.size() == 2 && getters.stream().anyMatch(s-> List.class.isAssignableFrom(s.getReturnType())))
+//            getters = getters.stream().filter(m -> (!m.getReturnType().getName().startsWith(PROTOBUF_PACKAGE))).collect(Collectors.toList());
+
+        if (getters.size() != 1) return null;
+
+        getter = getters.get(0);
+
+        if (getter != null && filterProtobuf3Type(getter.getReturnType())){
+            String setterName = "set"+fieldName;
+            if (Map.class.isAssignableFrom(getter.getReturnType())){
+                setterName = "putAll"+fieldName;
+            }else if (List.class.isAssignableFrom(getter.getReturnType())){
+                setterName = "addAll" + fieldName;
+            }
+            for (Method m : clazz.getDeclaredMethods()){
+                if (m.getName().equalsIgnoreCase(setterName)
+                    && m.getParameterTypes().length == 1
+                    && m.getParameterTypes()[0].isAssignableFrom(getter.getReturnType())){
+                    setter = m;
+                    break;
+                }
+            }
+        }
+
         if (getter!=null && setter != null) {
             Protobuf3Field pf = new Protobuf3Field();
             pf.fieldName = fieldName;
             pf.fieldType = getter.getReturnType();
+            pf.genericType = getter.getGenericReturnType();
             pf.getterName = getter.getName();
             pf.setterName = setter.getName();
             return pf;
         }
         return null;
+    }
+
+    private static boolean filterProtobuf3Field(Field field){
+        return (!field.getName().equals("bitField0_"));
+    }
+
+    /**
+     * TODO need to support com.google.protobuf.ByteString
+     *
+     */
+    private static boolean filterProtobuf3Type(Class<?> clazz){
+        return !clazz.getName().equals("com.google.protobuf.ByteString");
     }
 
     private static void handleNamedValueWithCustomizedDto(NamedTypedValue namedTypedValue, Map<Integer, CustomizedRequestValueDto> customizationDtos, Set<String> relatedCustomization){
