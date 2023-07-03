@@ -235,11 +235,21 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
         if (isNull) return codes;
 
         CodeJavaGenerator.addCode(codes, "{", indent);
-        // new obj
-        CodeJavaGenerator.addCode(codes, CodeJavaGenerator.setInstanceObject(typeName, varName), indent+1);
+
+        String ownVarName = null;
+        if (getType().spec == JavaDtoSpec.PURE){
+            // new obj
+            CodeJavaGenerator.addCode(codes, CodeJavaGenerator.setInstanceObject(typeName, varName), indent + 1 );
+            ownVarName = varName;
+        }else{
+            String varBuilderName = varName+"builder";
+            CodeJavaGenerator.addCode(codes, CodeJavaGenerator.newBuilderProto3(typeName, varBuilderName), indent + 1);
+            ownVarName = varBuilderName;
+        }
+
         for (NamedTypedValue f : getValue()){
             if (f.accessibleSchema != null && f.accessibleSchema.setterMethodName != null){
-                String fName = varName;
+                String fName = ownVarName;
                 boolean fdeclar = false;
                 if (f instanceof ObjectParam || f instanceof MapParam || f instanceof CollectionParam || f instanceof DateParam || f instanceof  BigDecimalParam || f instanceof BigIntegerParam){
                      fName = varName+"_"+f.getName();
@@ -248,7 +258,12 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
                 codes.addAll(f.newInstanceWithJava(fdeclar, true, fName, indent+1));
 
                 if (f instanceof ObjectParam || f instanceof MapParam || f instanceof CollectionParam || f instanceof DateParam || f instanceof  BigDecimalParam || f instanceof BigIntegerParam){
-                    CodeJavaGenerator.addCode(codes, CodeJavaGenerator.methodInvocation(varName, f.accessibleSchema.setterMethodName, fName)+CodeJavaGenerator.appendLast(),indent+1);
+                    CodeJavaGenerator.addCode(codes, CodeJavaGenerator.methodInvocation(ownVarName, f.accessibleSchema.setterMethodName, fName)+CodeJavaGenerator.appendLast(),indent+1);
+                }
+
+                if (getType().spec == JavaDtoSpec.PROTO3){
+
+                    CodeJavaGenerator.addCode(codes, CodeJavaGenerator.setInstance(true, varName, CodeJavaGenerator.methodInvocation(ownVarName, PROTO3_OBJECT_BUILD_METHOD, "")),indent+1);
                 }
             }else {
                 String fName = varName+"."+f.getName();

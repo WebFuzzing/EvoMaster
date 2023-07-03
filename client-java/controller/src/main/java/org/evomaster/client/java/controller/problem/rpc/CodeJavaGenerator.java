@@ -131,6 +131,11 @@ public class CodeJavaGenerator {
         return String.format("%s = %s;", varName, newObject(fullName));
     }
 
+
+    public static String newBuilderProto3(String fullName, String varBuilderName){
+        return String.format("%s.Builder %s = %s.newBuilder();", fullName, varBuilderName, fullName);
+    }
+
     /**
      * process [varName] = [instance]
      * @param varName specifies the variable name
