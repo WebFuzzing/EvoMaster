@@ -607,9 +607,7 @@ public class RPCEndpointsBuilder {
                     if (rpcType == RPCType.gRPC || isProtobuf(clazz)){
                         List<Protobuf3Field> pfList = getProtobuf3FieldsAndType(clazz);
                         for (Protobuf3Field pf : pfList){
-                            AccessibleSchema faccessSchema = new AccessibleSchema(false, pf.setterName, pf.getterName);
-
-                            // TODO genericType
+                            AccessibleSchema faccessSchema = new AccessibleSchema(false, pf.setterName, pf.getterName, pf.setterInputParams);
 
                             NamedTypedValue field = build(schema, pf.fieldType, pf.genericType, pf.fieldName, rpcType, flattenDepth, flevel, objRelatedCustomizationDtos, relatedCustomization, faccessSchema, notNullAnnotations, null, genericTypeMap, isTypeToIdentify);
 
@@ -903,9 +901,9 @@ public class RPCEndpointsBuilder {
         if (getter != null && filterProtobuf3Type(getter.getReturnType())){
             String setterName = "set"+fieldName;
             if (Map.class.isAssignableFrom(getter.getReturnType())){
-                setterName = "putAll"+fieldName;
+                setterName = PROTOBUF_MAP_SETTER_PREFIX + fieldName;
             }else if (List.class.isAssignableFrom(getter.getReturnType())){
-                setterName = "addAll" + fieldName;
+                setterName = PROTOBUF_LIST_SETTER_PREFIX + fieldName;
             }
             for (Method m : clazz.getDeclaredMethods()){
                 if (m.getName().equalsIgnoreCase(setterName)
@@ -924,6 +922,7 @@ public class RPCEndpointsBuilder {
             pf.genericType = getter.getGenericReturnType();
             pf.getterName = getter.getName();
             pf.setterName = setter.getName();
+            pf.setterInputParams = setter.getParameterTypes();
             return pf;
         }
         return null;

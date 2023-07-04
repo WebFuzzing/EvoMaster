@@ -43,7 +43,12 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
                 instanceBuilder = builderMethod.invoke(null);
                 Class<?>  builderClazz = instanceBuilder.getClass();
                 for (NamedTypedValue v: getValue()){
-                    Method builderSetter = builderClazz.getMethod(v.accessibleSchema.setterMethodName,v.getType().getClazz());
+                    Class<?> setterInputClazz = v.getType().getClazz();
+                    if (v.accessibleSchema.setterInputParams != null && v.accessibleSchema.setterInputParams.length > 0){
+                        setterInputClazz = v.accessibleSchema.setterInputParams[0];
+                    }
+
+                    Method builderSetter = builderClazz.getMethod(v.accessibleSchema.setterMethodName,setterInputClazz);
                     builderSetter.invoke(instanceBuilder, v.newInstance());
                 }
                 Method buildMethod = builderClazz.getMethod(PROTO3_OBJECT_BUILD_METHOD);
@@ -97,7 +102,7 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
     private Method getSetter(Class<?> clazz, String setterName, TypeSchema type, Class<?> typeClass, int attemptTimes) throws NoSuchMethodException {
 
         try {
-            Method m = clazz.getMethod(setterName, type.getClazz());
+            Method m = clazz.getMethod(setterName, typeClass);
             return m;
         } catch (NoSuchMethodException e) {
             if (type instanceof PrimitiveOrWrapperType && attemptTimes == 0){
@@ -260,17 +265,16 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
                 if (f instanceof ObjectParam || f instanceof MapParam || f instanceof CollectionParam || f instanceof DateParam || f instanceof  BigDecimalParam || f instanceof BigIntegerParam){
                     CodeJavaGenerator.addCode(codes, CodeJavaGenerator.methodInvocation(ownVarName, f.accessibleSchema.setterMethodName, fName)+CodeJavaGenerator.appendLast(),indent+1);
                 }
-
-                if (getType().spec == JavaDtoSpec.PROTO3){
-
-                    CodeJavaGenerator.addCode(codes, CodeJavaGenerator.setInstance(true, varName, CodeJavaGenerator.methodInvocation(ownVarName, PROTO3_OBJECT_BUILD_METHOD, "")),indent+1);
-                }
             }else {
                 String fName = varName+"."+f.getName();
                 codes.addAll(f.newInstanceWithJava(false, true, fName, indent+1));
             }
         }
 
+        if (getType().spec == JavaDtoSpec.PROTO3){
+
+            CodeJavaGenerator.addCode(codes, CodeJavaGenerator.setInstance(true, varName, CodeJavaGenerator.methodInvocation(ownVarName, PROTO3_OBJECT_BUILD_METHOD, "")),indent+1);
+        }
         CodeJavaGenerator.addCode(codes, "}", indent);
         return codes;
     }

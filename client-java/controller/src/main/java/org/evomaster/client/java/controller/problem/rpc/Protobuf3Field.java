@@ -11,6 +11,9 @@ public class Protobuf3Field {
     public Type genericType;
 
     public String setterName;
+
+    public Class<?>[] setterInputParams;
+
     public String getterName;
 
     public Protobuf3Field(){}
