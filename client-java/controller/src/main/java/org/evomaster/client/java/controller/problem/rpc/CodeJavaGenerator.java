@@ -132,6 +132,12 @@ public class CodeJavaGenerator {
     }
 
 
+    /**
+     *
+     * @param fullName is the full name of the dto
+     * @param varBuilderName is the variable name for the builder
+     * @return code to instantiate builder for proto3 dto
+     */
     public static String newBuilderProto3(String fullName, String varBuilderName){
         return String.format("%s.Builder %s = %s.newBuilder();", fullName, varBuilderName, fullName);
     }
