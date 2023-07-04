@@ -507,7 +507,7 @@ public class RPCEndpointsBuilder {
         flattenDepth.add(getObjectTypeNameWithFlag(clazz, clazzWithGenericTypes, level));
         NamedTypedValue namedValue = null;
 
-        JavaDtoSpec spec = JavaDtoSpec.PURE;
+        JavaDtoSpec spec = JavaDtoSpec.DEFAULT;
         if (rpcType == RPCType.gRPC || isProtobuf(clazz))
             spec = JavaDtoSpec.PROTO3;
 

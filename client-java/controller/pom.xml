@@ -219,6 +219,7 @@
 
         <extensions>
             <extension>
+                <!--     use to generate various useful platform-dependent project properties that is needed for grpc -->
                 <groupId>kr.motd.maven</groupId>
                 <artifactId>os-maven-plugin</artifactId>
                 <version>${kr.motd.maven.version}</version>

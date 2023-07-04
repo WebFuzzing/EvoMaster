@@ -835,13 +835,18 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                     responseDto.rpcResponse = resSchema.getDto();
                     if (dto.doGenerateAssertions && dto.responseVariable != null)
                         responseDto.assertionScript = resSchema.newAssertionWithJava(dto.responseVariable, dto.maxAssertionForDataInCollection);
-                    else{
-                        try {
-                            responseDto.jsonResponse = objectMapper.writeValueAsString(response);
-                        }catch (JsonProcessingException e){
-                            // cannot convert to json
-                        }
-                    }
+                    /*
+                        ActionResponseDto.jsonResponse could be used to generate assertions in core side
+                        however, as we do not support the test generate in core side yet and not all DTO can be converted into json,
+                        we comment out this code
+                     */
+//                    else{
+//                        try {
+//                            responseDto.jsonResponse = objectMapper.writeValueAsString(response);
+//                        }catch (JsonProcessingException e){
+//                            // cannot convert to json
+//                        }
+//                    }
 
                 } catch (Exception e){
                     SimpleLogger.error("ERROR: fail to set successful response instance value to dto "+ e.getMessage());

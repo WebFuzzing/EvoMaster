@@ -54,7 +54,7 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
                 Method buildMethod = builderClazz.getMethod(PROTO3_OBJECT_BUILD_METHOD);
                 instance = buildMethod.invoke(instanceBuilder);
 
-            } else if (getType().spec == JavaDtoSpec.PURE){
+            } else if (getType().spec == JavaDtoSpec.DEFAULT){
                 instance = clazz.newInstance();
 
                 for (NamedTypedValue v: getValue()){
@@ -242,7 +242,7 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
         CodeJavaGenerator.addCode(codes, "{", indent);
 
         String ownVarName = null;
-        if (getType().spec == JavaDtoSpec.PURE){
+        if (getType().spec == JavaDtoSpec.DEFAULT){
             // new obj
             CodeJavaGenerator.addCode(codes, CodeJavaGenerator.setInstanceObject(typeName, varName), indent + 1 );
             ownVarName = varName;

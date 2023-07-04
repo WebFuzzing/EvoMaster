@@ -21,7 +21,7 @@ public class LocalAuthSetupSchema extends EndpointSchema{
 
     public LocalAuthSetupSchema() {
         super(HANDLE_LOCAL_AUTHENTICATION_SETUP_METHOD_NAME,
-                EM_LOCAL_METHOD, null, Arrays.asList(new StringParam("arg0", new StringType(JavaDtoSpec.PURE), new AccessibleSchema())), null, null, false, null, null);
+                EM_LOCAL_METHOD, null, Arrays.asList(new StringParam("arg0", new StringType(JavaDtoSpec.DEFAULT), new AccessibleSchema())), null, null, false, null, null);
     }
 
     /**
