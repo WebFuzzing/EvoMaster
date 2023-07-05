@@ -4,6 +4,7 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
 import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
+import org.evomaster.client.java.controller.problem.rpc.schema.types.JavaDtoSpec;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.PrimitiveOrWrapperType;
 
 import java.util.ArrayList;
@@ -13,8 +14,8 @@ import java.util.List;
  * float param
  */
 public class FloatParam extends PrimitiveOrWrapperParam<Float> {
-    public FloatParam(String name, String type, String fullTypeName, Class<?> clazz, AccessibleSchema accessibleSchema) {
-        super(name, type, fullTypeName, clazz, accessibleSchema);
+    public FloatParam(String name, String type, String fullTypeName, Class<?> clazz, AccessibleSchema accessibleSchema, JavaDtoSpec spec) {
+        super(name, type, fullTypeName, clazz, accessibleSchema, spec);
     }
 
     public FloatParam(String name, PrimitiveOrWrapperType type, AccessibleSchema accessibleSchema) {

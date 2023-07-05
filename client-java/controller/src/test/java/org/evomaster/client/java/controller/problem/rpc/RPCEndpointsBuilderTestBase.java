@@ -8,6 +8,7 @@ import org.evomaster.client.java.controller.problem.rpc.schema.EndpointSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.InterfaceSchema;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCType;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.List;
@@ -64,5 +65,10 @@ public abstract class RPCEndpointsBuilderTestBase {
 
     public boolean containType(List<NamedTypedValue> params, String fullTypeName){
         return params.stream().anyMatch(s-> s.getType().getFullTypeNameWithGenericType().equals(fullTypeName));
+    }
+
+    @Test
+    public void testEndpointsLoad(){
+        assertEquals(expectedNumberOfEndpoints(), schema.getEndpoints().size());
     }
 }

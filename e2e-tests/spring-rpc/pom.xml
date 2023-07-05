@@ -14,6 +14,7 @@
 
     <modules>
         <module>spring-rpc-thrift</module>
+        <module>spring-rpc-grpc</module>
     </modules>
 
 </project>
