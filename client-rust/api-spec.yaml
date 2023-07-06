@@ -1,0 +1,235 @@
+openapi: 3.0.3
+info:
+  title: EvoMaster - OpenAPI 3.0
+  description: |-
+    Evomaster Client
+    The first open-source AI-driven tool for automatically generating system-level test cases (also known as fuzzing) for web/enterprise applications. Currently targeting whitebox and blackbox testing of Web APIs, like REST and GraphQL.
+  license:
+    name: LGPL (v3) license
+    url: https://fsfe.org/activities/gplv3/gplv3.en.html
+  version: 1.6.1
+externalDocs:
+  description: Find out more about Evomaster
+  url: https://github.com/EMResearch/EvoMaster
+tags:
+  - name: base
+    description: Basic Features
+  - name: extra
+    description: Additional Features
+paths:
+  /infoSUT:
+    get:
+      tags:
+        - base
+      summary: get information about the system under test
+      description: Info about URL, authentication, output and spec
+      operationId: infoSUT
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SUTstatus'   
+  /runSUT:
+    put:
+      tags:
+        - base
+      summary: start running the system under test
+      description: JSON with running info must be provided
+      operationId: runSUT
+      requestBody:
+        description: Update an existent pet in the store
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SUToptions'
+        required: true
+      responses:
+        '204':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/empty'   
+        '400':
+          description: Client Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error'   
+  /controllerInfo:
+    get:
+      tags:
+        - base
+      summary: get information about the controller
+      description: Info about controller
+      operationId: controllerInfo
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ControllerInfo'
+  /testResults:
+    get:
+      tags:
+        - base
+      summary: get results from tests
+      description: Info about Test Executions
+      operationId: testResults
+      parameters:
+        - name: ids
+          in: query
+          description: Ids of the tests to be executed
+          required: true
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/testResults'   
+  /newSearch:
+    post:
+      tags:
+        - base
+      summary: New Search
+      description: start a new search
+      operationId: newSearch
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/empty'   
+  /newAction:
+    put:
+      tags:
+        - base
+      summary: New Search
+      description: start a new search
+      operationId: newAction
+      requestBody:
+        description: Input for the new action
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/newActionBody'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/empty'   
+        '400':
+          description: Client Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/empty'   
+  /databaseCommand:
+    post:
+      tags: 
+        - extra
+      summary: Database
+      description: Database Configuration
+      operationId: databaseCommand
+      responses:
+        '500':
+          description: Not Implemented
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/empty'   
+        
+      
+   
+
+components:
+  schemas:
+    empty:
+      type: object
+    error: 
+      type: object
+      properties:
+        error: 
+          type: string
+          example: 'No provided JSON payload'
+    SUTstatus:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            isSutRunning: 
+              type: boolean
+              example: True
+            baseUrlOfSUT: 
+              type: string
+              format: URL
+              example: http://swagger.io
+            infoForAuthentication: 
+              type: string
+            defaultOutputFormat: 
+              type: string
+            restProblem: 
+              type: string
+              format: URL
+              example: http://swagger.io
+            unitsInfoDto: 
+              type: string
+    SUToptions:
+      type: object
+      properties:
+        run: 
+          type: boolean
+          example: True
+        resetState: 
+          type: boolean
+          example: False
+    ControllerInfo:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            fullName:
+              type: string
+            isInstrumentationOn:
+              type: boolean
+    testResults:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            targets:
+              type: array
+              items:
+                type: string
+            additionalInfoList:
+              type: array
+              items:
+                type: string
+            extraHeuristics:
+              type: array
+              items:
+                type: string
+    newActionBody:
+      type: object
+      properties:
+        index:
+          type: number
+        inputVariables:
+          type: array
+          items:
+            type: string
