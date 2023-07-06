@@ -30,7 +30,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SUTstatus'   
+                $ref: '#/components/schemas/InfoSUTResponse'   
   /runSUT:
     put:
       tags:
@@ -43,7 +43,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SUToptions'
+              $ref: '#/components/schemas/RunSUTBody'
         required: true
       responses:
         '204':
@@ -51,13 +51,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/empty'   
+                $ref: '#/components/schemas/Empty'   
         '400':
           description: Client Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/error'   
+                $ref: '#/components/schemas/Error'   
   /controllerInfo:
     get:
       tags:
@@ -78,7 +78,7 @@ paths:
         - base
       summary: get results from tests
       description: Info about Test Executions
-      operationId: testResults
+      operationId: TestResults
       parameters:
         - name: ids
           in: query
@@ -94,7 +94,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/testResults'   
+                $ref: '#/components/schemas/TestResults'   
   /newSearch:
     post:
       tags:
@@ -108,7 +108,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/empty'   
+                $ref: '#/components/schemas/Empty'   
   /newAction:
     put:
       tags:
@@ -121,7 +121,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/newActionBody'
+              $ref: '#/components/schemas/NewActionBody'
         required: true
       responses:
         '200':
@@ -129,13 +129,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/empty'   
+                $ref: '#/components/schemas/Empty'   
         '400':
           description: Client Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/empty'   
+                $ref: '#/components/schemas/Empty'   
   /databaseCommand:
     post:
       tags: 
@@ -149,22 +149,33 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/empty'   
-        
-      
-   
+                $ref: '#/components/schemas/Empty'   
+  /extraHeuristics:
+    post:
+      tags: 
+        - extra
+      summary: Extra Heuristics
+      description: Extra Heuristics Configuration
+      operationId: extraHeuristics
+      responses:
+        '500':
+          description: Not Implemented
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Empty'
 
 components:
   schemas:
-    empty:
+    Empty:
       type: object
-    error: 
+    Error: 
       type: object
       properties:
         error: 
           type: string
           example: 'No provided JSON payload'
-    SUTstatus:
+    InfoSUTResponse:
       type: object
       properties:
         data:
@@ -187,7 +198,7 @@ components:
               example: http://swagger.io
             unitsInfoDto: 
               type: string
-    SUToptions:
+    RunSUTBody:
       type: object
       properties:
         run: 
@@ -206,7 +217,7 @@ components:
               type: string
             isInstrumentationOn:
               type: boolean
-    testResults:
+    TestResults:
       type: object
       properties:
         data:
@@ -224,7 +235,7 @@ components:
               type: array
               items:
                 type: string
-    newActionBody:
+    NewActionBody:
       type: object
       properties:
         index:
