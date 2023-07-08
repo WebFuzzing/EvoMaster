@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
+import org.evomaster.client.java.controller.problem.rpc.schema.types.JavaDtoSpec;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.StringType;
 import org.evomaster.client.java.utils.SimpleLogger;
 
@@ -66,8 +67,8 @@ public class StringParam extends NamedTypedValue<StringType, String> implements 
         super(name, type, accessibleSchema);
     }
 
-    public StringParam(String name, AccessibleSchema accessibleSchema) {
-        super(name, new StringType(), accessibleSchema);
+    public StringParam(String name, AccessibleSchema accessibleSchema, JavaDtoSpec spec) {
+        super(name, new StringType(spec), accessibleSchema);
     }
 
 

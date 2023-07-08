@@ -21,6 +21,8 @@ public abstract class TypeSchema {
      */
     private final Class<?> clazz;
 
+    public final JavaDtoSpec spec;
+
     private Class<?> originalType;
 
     /**
@@ -29,10 +31,11 @@ public abstract class TypeSchema {
      */
     public int depth;
 
-    public TypeSchema(String type, String fullTypeName, Class<?> clazz){
+    public TypeSchema(String type, String fullTypeName, Class<?> clazz, JavaDtoSpec spec){
         this.type = type;
         this.fullTypeName = fullTypeName;
         this.clazz = clazz;
+        this.spec = spec;
     }
 
     public void setOriginalType(Class<?> originalType) {

@@ -5,6 +5,7 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.BigDecimalType;
+import org.evomaster.client.java.controller.problem.rpc.schema.types.JavaDtoSpec;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
@@ -39,8 +40,8 @@ public class BigDecimalParam extends NamedTypedValue<BigDecimalType, BigDecimal>
         super(name, type, accessibleSchema);
     }
 
-    public BigDecimalParam(String name, AccessibleSchema accessibleSchema){
-        this(name, new BigDecimalType(), accessibleSchema);
+    public BigDecimalParam(String name, AccessibleSchema accessibleSchema, JavaDtoSpec spec){
+        this(name, new BigDecimalType(spec), accessibleSchema);
     }
 
     @Override

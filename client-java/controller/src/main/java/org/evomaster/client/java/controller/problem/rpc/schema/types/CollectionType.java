@@ -12,8 +12,8 @@ public class CollectionType extends TypeSchema{
      */
     private final NamedTypedValue template;
 
-    public CollectionType(String type, String fullTypeName, NamedTypedValue template, Class<?> clazz) {
-        super(type, fullTypeName, clazz);
+    public CollectionType(String type, String fullTypeName, NamedTypedValue template, Class<?> clazz, JavaDtoSpec spec) {
+        super(type, fullTypeName, clazz, spec);
         this.template = template;
     }
 
@@ -38,6 +38,6 @@ public class CollectionType extends TypeSchema{
 
     @Override
     public CollectionType copy() {
-        return new CollectionType(getType(), getFullTypeName(), template, getClazz());
+        return new CollectionType(getType(), getFullTypeName(), template, getClazz(), spec);
     }
 }
