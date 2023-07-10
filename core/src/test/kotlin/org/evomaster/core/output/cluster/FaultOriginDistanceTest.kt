@@ -12,7 +12,7 @@ class FaultOriginDistanceTest {
 
         val d = FaultOriginDistance.distance(p0, p0)
 
-        assertTrue(d == 1.0)
+        assertTrue(d == 0.0)
     }
 
     @Test
