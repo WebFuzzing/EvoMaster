@@ -24,8 +24,8 @@ public class PairType extends TypeSchema{
      */
     private final NamedTypedValue secondTemplate;
 
-    public PairType(NamedTypedValue keyTemplate, NamedTypedValue valueTemplate) {
-        super(PAIR_TYPE_NAME, FULL_PAIR_TYPE_NAME, AbstractMap.SimpleEntry.class);
+    public PairType(NamedTypedValue keyTemplate, NamedTypedValue valueTemplate, JavaDtoSpec spec) {
+        super(PAIR_TYPE_NAME, FULL_PAIR_TYPE_NAME, AbstractMap.SimpleEntry.class, spec);
         this.firstTemplate = keyTemplate;
         this.secondTemplate = valueTemplate;
     }
@@ -50,6 +50,6 @@ public class PairType extends TypeSchema{
 
     @Override
     public PairType copy() {
-        return new PairType(getFirstTemplate(), getSecondTemplate());
+        return new PairType(getFirstTemplate(), getSecondTemplate(), spec);
     }
 }

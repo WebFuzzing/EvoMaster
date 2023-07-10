@@ -148,6 +148,10 @@
         <mssql.jdbc.version>9.2.1.jre8</mssql.jdbc.version>
         <org.mybatis.spring.boot.version>2.2.0</org.mybatis.spring.boot.version>
         <thrift.libthrift.version>0.15.0</thrift.libthrift.version>
+        <io.grpc.version>1.41.0</io.grpc.version>
+        <org.xolsticeprotobuf.version>0.6.1</org.xolsticeprotobuf.version>
+        <com.google.protobuf.protoc.version>3.17.3</com.google.protobuf.protoc.version>
+        <kr.motd.maven.version>1.6.2</kr.motd.maven.version>
         <wiremock.version>2.32.0</wiremock.version>
         <apache.http.client.version>4.5.13</apache.http.client.version>
         <okhttp3.client.version>4.9.3</okhttp3.client.version>
@@ -812,10 +816,29 @@
 
 
             <!-- RPC-->
+            <!--            Thrift-->
             <dependency>
                 <groupId>org.apache.thrift</groupId>
                 <artifactId>libthrift</artifactId>
                 <version>${thrift.libthrift.version}</version>
+            </dependency>
+
+
+            <!--            gRPC-->
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-netty-shaded</artifactId>
+                <version>${io.grpc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-protobuf</artifactId>
+                <version>${io.grpc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-stub</artifactId>
+                <version>${io.grpc.version}</version>
             </dependency>
 
             <!-- Wiremock -->
@@ -1239,6 +1262,13 @@
                         </execution>
                     </executions>
                 </plugin>
+
+                <plugin>
+                    <groupId>org.xolstice.maven.plugins</groupId>
+                    <artifactId>protobuf-maven-plugin</artifactId>
+                    <version>${org.xolsticeprotobuf.version}</version>
+                </plugin>
+
 
             </plugins>
         </pluginManagement>

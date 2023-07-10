@@ -1,5 +1,6 @@
 package org.evomaster.core.search.algorithms.onemax
 
+import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.search.service.Sampler
 
 
@@ -16,5 +17,7 @@ class OneMaxSampler : Sampler<OneMaxIndividual>(){
         return sampled
     }
 
+    override fun initSeededTests(infoDto: SutInfoDto?) {
 
+    }
 }

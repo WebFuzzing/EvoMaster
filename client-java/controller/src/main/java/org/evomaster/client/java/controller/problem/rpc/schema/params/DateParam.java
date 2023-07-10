@@ -4,6 +4,7 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.DateType;
+import org.evomaster.client.java.controller.problem.rpc.schema.types.JavaDtoSpec;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -20,8 +21,8 @@ public class DateParam extends NamedTypedValue<DateType, List<IntParam>>{
         super(name, type, accessibleSchema);
     }
 
-    public DateParam(String name, AccessibleSchema accessibleSchema){
-        this(name, new DateType(), accessibleSchema);
+    public DateParam(String name, AccessibleSchema accessibleSchema, JavaDtoSpec spec){
+        this(name, new DateType(spec), accessibleSchema);
     }
 
     @Override

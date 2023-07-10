@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.*
+import org.evomaster.client.java.controller.api.dto.MockDatabaseDto
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.*
 import org.evomaster.core.EMConfig
@@ -15,8 +16,9 @@ import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
+import org.evomaster.core.problem.externalservice.rpc.DbAsExternalServiceAction
 import org.evomaster.core.problem.externalservice.rpc.RPCExternalServiceAction
-import org.evomaster.core.problem.externalservice.rpc.parm.RPCResponseParam
+import org.evomaster.core.problem.externalservice.rpc.parm.ClassResponseParam
 import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCCallResult
@@ -113,16 +115,23 @@ class RPCEndpointsHandler {
     /**
      * a map of RPC action to external services for RPC-based SUT
      * - key is the id of action (which is consistent with key of [actionSchemaCluster])
-     * - value is a list of seeded api external services for the RPC action which can be found with [externalServiceCluster]
+     * - value is a list of seeded api external services for the RPC action which can be found with [seededExternalServiceCluster]
      */
     private val actionToExternalServiceMap = mutableMapOf<String, MutableSet<String>>()
 
     /**
-     * a map of external service actions cluster
+     * a map of external service actions cluster based on seeded test cases
      * - key is action id
      * - value is the example of ApiExternalServiceAction that might be expanded
      */
-    private val externalServiceCluster = mutableMapOf<String, ApiExternalServiceAction>()
+    private val seededExternalServiceCluster = mutableMapOf<String, ApiExternalServiceAction>()
+
+    /**
+     * a map of mock objects for sql based on seeded test cases
+     * - key is the id of sql action to mock
+     * - value is the example of MockDatabaseDto
+     */
+    private val seededDbMockObjects = mutableMapOf<String, DbAsExternalServiceAction>()
 
     /**
      * key is type in the schema
@@ -170,15 +179,16 @@ class RPCEndpointsHandler {
      */
     fun handledSeededTests(tests: Map<String, List<RPCActionDto>>): List<RPCIndividual>{
         return tests.map {e->
-            val td = e.value
+            val rpcActionDtos = e.value
             val exActions = mutableListOf<List<ApiExternalServiceAction>>()
-            val rpcActions = td.map { d->
-                val name = actionName(d.interfaceId, d.actionName)
-                val ex = if (d.mockRPCExternalServiceDtos != null && d.mockRPCExternalServiceDtos.isNotEmpty())
-                    d.mockRPCExternalServiceDtos.map { e->
+            val rpcActions = rpcActionDtos.map { rpcActionDto->
+                val external = mutableListOf<ApiExternalServiceAction>()
+                val name = actionName(rpcActionDto.interfaceId, rpcActionDto.actionName)
+                if (rpcActionDto.mockRPCExternalServiceDtos != null && rpcActionDto.mockRPCExternalServiceDtos.isNotEmpty()){
+                    val ex = rpcActionDto.mockRPCExternalServiceDtos.map { e->
                         e.responses.mapIndexed { index, r->
-                            val exAction = externalServiceCluster[
-                                    RPCExternalServiceAction.getRPCExternalServiceActionName(e.interfaceFullName, e.functionName, e.requestRules[index], e.responseTypes[index])
+                            val exAction = seededExternalServiceCluster[
+                                RPCExternalServiceAction.getRPCExternalServiceActionName(e.interfaceFullName, e.functionName, e.requestRules?.get(index), e.responseTypes[index])
                             ]!!.copy() as ApiExternalServiceAction
                             try {
                                 setGeneBasedOnString(exAction.response.responseBody, r)
@@ -190,10 +200,32 @@ class RPCEndpointsHandler {
                             }
                         }.filterNotNull()
                     }.flatten()
-                else mutableListOf()
+                    external.addAll(ex)
+                }
 
-                exActions.add(ex)
-                processEndpoint(name, d, true)
+
+               if (rpcActionDto.mockDatabaseDtos != null && rpcActionDto.mockDatabaseDtos.isNotEmpty()){
+                   val dbEx = rpcActionDto.mockDatabaseDtos.map { dbDto->
+                        val dbExAction = seededDbMockObjects[
+                                DbAsExternalServiceAction.getDbAsExternalServiceAction(dbDto.commandName, dbDto.requests, dbDto.responseFullType)
+                        ]!!.copy() as DbAsExternalServiceAction
+                        try {
+                            if (dbDto.response != null)
+                                setGeneBasedOnString(dbExAction.response.responseBody, dbDto.response)
+                            else{
+                                dbExAction.response.responseBody.isActive = false
+                            }
+                            dbExAction
+                        }catch (e: Exception){
+                            log.warn("Fail to handle mocked Database responses:${e.message}")
+                            null
+                        }
+                    }.filterNotNull()
+                   external.addAll(dbEx)
+                }
+
+                exActions.add(external)
+                processEndpoint(name, rpcActionDto, true)
             }.toMutableList()
 
             if (rpcActions.any { it.seeTopGenes().any { g-> !g.isLocallyValid() } }){
@@ -225,14 +257,15 @@ class RPCEndpointsHandler {
 
         rpcActionDto.mockRPCExternalServiceDtos?.forEach { dto->
 
-            if (dto.requestRules.isNotEmpty() && dto.requestRules.size != dto.responses.size && dto.responses.size != dto.responseTypes.size)
+            if (dto.requestRules!=null && dto.requestRules.isNotEmpty() && dto.requestRules.size != dto.responses.size && dto.responses.size != dto.responseTypes.size)
                 throw IllegalArgumentException("the size of request identifications and responses should same but ${dto.requestRules.size} vs. ${dto.responses.size} vs. ${dto.responseTypes.size}")
 
             dto.responseTypes.forEachIndexed { index, s ->
+
                 val exkey = RPCExternalServiceAction.getRPCExternalServiceActionName(
-                    dto.interfaceFullName, dto.functionName, dto.requestRules[index], s
+                    dto.interfaceFullName, dto.functionName, dto.requestRules?.get(index), s
                 )
-                if (!externalServiceCluster.containsKey(exkey)){
+                if (!seededExternalServiceCluster.containsKey(exkey)){
                     val responseTypeClass = interfaceDto.identifiedResponseTypes?.find { it.type.fullTypeName == s }
                     var fromClass = false
                     val responseGene = (
@@ -251,7 +284,7 @@ class RPCEndpointsHandler {
                                 }
                             }.run { wrapWithOptionalGene(this, true) }) as OptionalGene
 
-                    val response = RPCResponseParam(className = s, responseType = EnumGene("responseType", listOf("JSON")), response = responseGene)
+                    val response = ClassResponseParam(className = s, responseType = EnumGene("responseType", listOf("JSON")), response = responseGene)
                     if (fromClass) response.responseParsedWithClass()
 
                     val externalAction = RPCExternalServiceAction(
@@ -259,14 +292,52 @@ class RPCEndpointsHandler {
                         functionName = dto.functionName,
                         descriptiveInfo = dto.appKey,
                         inputParamTypes = dto.inputParameterTypes,
-                        requestRuleIdentifier = dto.requestRules[index],
+                        requestRuleIdentifier = dto.requestRules?.get(index),
                         responseParam = response)
                     Lazy.assert { exkey == externalAction.getName() }
-                    externalServiceCluster[exkey] = externalAction
+                    seededExternalServiceCluster[exkey] = externalAction
                 }
 
                 actionToExternalServiceMap.getOrPut(actionKey){ mutableSetOf() }.add(exkey)
             }
+        }
+
+
+        rpcActionDto.mockDatabaseDtos?.forEach{ dbDto->
+            if (dbDto.commandName != null && dbDto.appKey!=null && dbDto.responseFullType != null){
+                val exKey = DbAsExternalServiceAction.getDbAsExternalServiceAction(dbDto.commandName, dbDto.requests, dbDto.responseFullType)
+
+                if (!seededDbMockObjects.containsKey(exKey)){
+                    /*
+                        currently we only handle the response with json
+                     */
+                    val responseGene = (if (dbDto.response != null){
+                        val node = readJson(dbDto.response)
+                        if (node != null){
+                            parseJsonNodeAsGene("return", node)
+                        }else{
+                            StringGene("return")
+                        }
+                    }else{
+                        StringGene("return")
+                    }.run { wrapWithOptionalGene(this, true) }) as OptionalGene
+
+
+                    val response = ClassResponseParam(className = dbDto.responseFullType, responseType = EnumGene("responseType", listOf("JSON")), response = responseGene)
+                    val dbExAction = DbAsExternalServiceAction(
+                        dbDto.commandName,
+                        dbDto.appKey,
+                        dbDto.requests,
+                        response
+                    )
+                    seededDbMockObjects[exKey] = dbExAction
+                }
+                actionToExternalServiceMap.getOrPut(actionKey){ mutableSetOf() }.add(exKey)
+
+            }else{
+                LoggingUtil.uniqueWarn(log, "incorrect mockDatabaseDto with ${dbDto.commandName?:"null"} commandName, ${dbDto.appKey?:"null"} appKey, and ${dbDto.responseFullType?:"null"} responseFullType")
+            }
+
         }
     }
 
@@ -286,7 +357,18 @@ class RPCEndpointsHandler {
             inputParameterTypes = action.inputParamTypes
             requestRules = if (action.requestRuleIdentifier.isNullOrEmpty()) null else listOf(action.requestRuleIdentifier)
             responses = listOf(action.response.responseBody.getValueAsPrintableString(mode = mode))
-            responseTypes = if ((action.response as? RPCResponseParam)?.className?.isNotBlank() == true) listOf((action.response as RPCResponseParam).className) else null
+            responseTypes = if ((action.response as? ClassResponseParam)?.className?.isNotBlank() == true) listOf((action.response as ClassResponseParam).className) else null
+        }
+    }
+
+    fun transformMockDatabaseDto(action: DbAsExternalServiceAction) : MockDatabaseDto {
+        val mode = if (action.response.isJson()) GeneUtils.EscapeMode.JSON else throw IllegalStateException("only support response with json type for the monument")
+        return MockDatabaseDto().apply {
+            appKey = action.descriptiveInfo
+            commandName = action.commandName
+            requests = action.requestRuleIdentifier
+            response = action.response.responseBody.getValueAsPrintableString(mode = mode)
+            responseFullType  = if ((action.response as? ClassResponseParam)?.className?.isNotBlank() == true) (action.response as ClassResponseParam).className else null
         }
     }
 
@@ -525,9 +607,21 @@ class RPCEndpointsHandler {
             val exActions = (action.parent as EnterpriseActionGroup)
                 .groupsView()!!.getAllInGroup(GroupsOfChildren.EXTERNAL_SERVICES)
                 .flatMap { (it as ActionComponent).flatten() }
-                .map { e-> transformMockRPCExternalServiceDto((e as ApiExternalServiceAction)) }
+                .filterIsInstance<RPCExternalServiceAction>()
+                .map { e->
+                    transformMockRPCExternalServiceDto(e)
+                }
+            val mockDbActions = (action.parent as EnterpriseActionGroup)
+                .groupsView()!!.getAllInGroup(GroupsOfChildren.EXTERNAL_SERVICES)
+                .flatMap { (it as ActionComponent).flatten() }
+                .filterIsInstance<DbAsExternalServiceAction>()
+                .map { e->
+                    transformMockDatabaseDto(e)
+                }
             if (exActions.isNotEmpty())
                 rpcAction.mockRPCExternalServiceDtos = exActions
+            if (mockDbActions.isNotEmpty())
+                rpcAction.mockDatabaseDtos = mockDbActions
         }
 
         return rpcAction
@@ -543,7 +637,6 @@ class RPCEndpointsHandler {
                 LoggingUtil.uniqueWarn(log, "cannot extract schema for dtos (ie, ${this.joinToString(",")}) in the SUT driver and instrumentation agent")
             }
         }
-
 
         val allDtoNames = infoDto.unitsInfoDto.parsedDtos.keys.toList()
         val allDtoSchemas = allDtoNames.map { infoDto.unitsInfoDto.parsedDtos[it]!! }

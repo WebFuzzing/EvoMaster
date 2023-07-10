@@ -13,12 +13,12 @@ public class SutRunDto {
     public Boolean resetState;
 
     /**
-     * Whether to reset the mocked external services with customized method
+     * Whether to reset the mock object with customized method
      *
      * this depends on the configuration from core side,
      * ie, whether to apply customized method to handle external services
      */
-    public Boolean resetMockedExternalServicesWithCustomizedMethod;
+    public Boolean resetCustomizedMethodForMockObject;
 
     /**
      *  Whether SQL heuristics should be computed.
@@ -44,18 +44,18 @@ public class SutRunDto {
     public SutRunDto() {
     }
 
-    public SutRunDto(Boolean run, Boolean resetState, Boolean resetMockedExternalServicesWithCustomizedMethod, Boolean calculateSqlHeuristics, Boolean extractSqlExecutionInfo, String methodReplacementCategories) {
+    public SutRunDto(Boolean run, Boolean resetState, Boolean resetCustomizedMethodForMockObject, Boolean calculateSqlHeuristics, Boolean extractSqlExecutionInfo, String methodReplacementCategories) {
         if (calculateSqlHeuristics != null && calculateSqlHeuristics && extractSqlExecutionInfo != null && !extractSqlExecutionInfo)
             throw new IllegalArgumentException("extractSqlExecutionInfo should be enabled when calculateSqlHeuristics is enabled");
         this.run = run;
         this.resetState = resetState;
-        this.resetMockedExternalServicesWithCustomizedMethod = resetMockedExternalServicesWithCustomizedMethod;
+        this.resetCustomizedMethodForMockObject = resetCustomizedMethodForMockObject;
         this.calculateSqlHeuristics = calculateSqlHeuristics;
         this.extractSqlExecutionInfo = extractSqlExecutionInfo;
         this.methodReplacementCategories = methodReplacementCategories;
     }
 
-    public SutRunDto(Boolean run, Boolean resetState, Boolean resetMockedExternalServicesWithCustomizedMethod, Boolean calculateSqlHeuristics, String methodReplacementCategories){
-        this(run, resetState, resetMockedExternalServicesWithCustomizedMethod, calculateSqlHeuristics, calculateSqlHeuristics!=null && calculateSqlHeuristics, methodReplacementCategories);
+    public SutRunDto(Boolean run, Boolean resetState, Boolean resetCustomizedMethodForMockObject, Boolean calculateSqlHeuristics, String methodReplacementCategories){
+        this(run, resetState, resetCustomizedMethodForMockObject, calculateSqlHeuristics, calculateSqlHeuristics!=null && calculateSqlHeuristics, methodReplacementCategories);
     }
 }

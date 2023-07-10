@@ -6,6 +6,7 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.BigIntegerType;
+import org.evomaster.client.java.controller.problem.rpc.schema.types.JavaDtoSpec;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -41,8 +42,8 @@ public class BigIntegerParam extends NamedTypedValue<BigIntegerType, BigInteger>
         super(name, type, accessibleSchema);
     }
 
-    public BigIntegerParam(String name, AccessibleSchema accessibleSchema){
-        this(name, new BigIntegerType(), accessibleSchema);
+    public BigIntegerParam(String name, AccessibleSchema accessibleSchema, JavaDtoSpec spec){
+        this(name, new BigIntegerType(spec), accessibleSchema);
     }
 
     @Override

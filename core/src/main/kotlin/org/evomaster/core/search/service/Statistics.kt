@@ -247,6 +247,13 @@ class Statistics : SearchListener {
             add(Pair("searchTimeCoveredLines", "${linesInfo.searchTime}"))
             add(Pair("searchTimeCoveredBranches", "${branchesInfo.searchTime}"))
 
+            // statistic info with seeded tests
+            add(Pair("notExecutedSeededTests", "${sampler?.numberOfNotExecutedSeededIndividuals()?:0}"))
+            add(Pair("seedingTimeCoveredTargets", "${targetsInfo.seedingTime}"))
+            add(Pair("seedingTimeCoveredLines", "${linesInfo.seedingTime}"))
+            add(Pair("seedingTimeCoveredBranches", "${branchesInfo.seedingTime}"))
+
+
             // statistic info for extractedSpecifiedDtos
             add(Pair("numOfExtractedSpecifiedDtos", "${unitsInfo?.extractedSpecifiedDtos?.size?:0}"))
 
@@ -345,26 +352,27 @@ class Statistics : SearchListener {
         if (path.parent != null) Files.createDirectories(path.parent)
         if (Files.exists(path))
             log.info("The existing file on ${config.coveredTargetFile} is going to be replaced")
-        val info = archive.exportCoveredTargetsAsPair(solution)
         val separator = "," // for csv format
-
         val content = mutableListOf<String>()
+
         when(format){
             EMConfig.SortCoveredTargetBy.NAME ->{
                 content.add(DESCRIPTION_TARGET)
-                content.addAll(info.map { it.first }.sorted())
             }
             EMConfig.SortCoveredTargetBy.TEST ->{
                 content.add(listOf(TEST_INDEX, DESCRIPTION_TARGET).joinToString(separator))
-                info.flatMap { it.second }.sorted().forEach {test->
-                    /*
-                        currently, only index of tests are outputted.
-                        if there exists names of tests, we might refer to them.
-                     */
-                    content.addAll(info.filter { it.second.contains(test) }.map { c-> c.first }.sorted().map { listOf(test, it).joinToString(separator) })
-                }
             }
         }
+
+        if (archive.anyTargetsCoveredSeededTests()){
+            content.addAll(getPrintContentForCoveredTargets(archive.exportCoveredTargetsAsPair(solution, true), separator, format))
+            content.add(System.lineSeparator())
+            content.add(System.lineSeparator())
+            content.addAll(getPrintContentForCoveredTargets(archive.exportCoveredTargetsAsPair(solution, false), separator, format))
+        }else{
+            content.addAll(getPrintContentForCoveredTargets(archive.exportCoveredTargetsAsPair(solution), separator, format))
+        }
+
 
         // append boot-time targets
         if(!config.blackBox || config.bbExperiments) {
@@ -378,4 +386,22 @@ class Statistics : SearchListener {
         Files.write(path, content)
     }
 
+    private fun getPrintContentForCoveredTargets(info: List<kotlin.Pair<String, List<Int>>>, separator: String, format : EMConfig.SortCoveredTargetBy) : MutableList<String>{
+        val content = mutableListOf<String>()
+        when(format){
+            EMConfig.SortCoveredTargetBy.NAME ->{
+                content.addAll(info.map { it.first }.sorted())
+            }
+            EMConfig.SortCoveredTargetBy.TEST ->{
+                info.flatMap { it.second }.sorted().forEach {test->
+                    /*
+                        currently, only index of tests are outputted.
+                        if there exists names of tests, we might refer to them.
+                     */
+                    content.addAll(info.filter { it.second.contains(test) }.map { c-> c.first }.sorted().map { listOf(test, it).joinToString(separator) })
+                }
+            }
+        }
+        return content
+    }
 }
