@@ -3,6 +3,7 @@ package org.evomaster.client.java.controller.problem.rpc;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sun.xml.internal.bind.v2.TODO;
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto;
 import org.evomaster.client.java.controller.api.dto.CustomizedRequestValueDto;
 import org.evomaster.client.java.controller.api.dto.JsonAuthRPCEndpointDto;
@@ -552,6 +553,9 @@ public class RPCEndpointsBuilder {
             } else if (clazz == ByteBuffer.class){
                 // handle binary of thrift
                 namedValue = new ByteBufferParam(name, accessibleSchema, spec);
+            } else if (clazz.getName().equals(Protobuf3ByteStringType.PROTOBUF3_BYTE_STRING_TYPE_NAME)){
+                Protobuf3ByteStringType type = Protobuf3ByteStringType.getInstance(spec, clazz);
+                namedValue = new Protobuf3ByteStringParam(name, type, accessibleSchema);
             } else if (List.class.isAssignableFrom(clazz) || Set.class.isAssignableFrom(clazz)){
                 if (genericType == null)
                     throw new RuntimeException("genericType should not be null for List and Set class");
@@ -932,12 +936,13 @@ public class RPCEndpointsBuilder {
         return (!field.getName().equals("bitField0_"));
     }
 
-    /**
-     * TODO need to support com.google.protobuf.ByteString
-     *
-     */
+
     private static boolean filterProtobuf3Type(Class<?> clazz){
-        return !clazz.getName().equals("com.google.protobuf.ByteString");
+        /*
+            support all types for proto 3
+            might add if we found any type is not supported yet
+         */
+        return true;
     }
 
     private static void handleNamedValueWithCustomizedDto(NamedTypedValue namedTypedValue, Map<Integer, CustomizedRequestValueDto> customizationDtos, Set<String> relatedCustomization){
