@@ -206,18 +206,20 @@ public class RPCEndpointsBuilder {
             InterfaceSchema schema = new InterfaceSchema(interfaceName, endpoints, getClientClass(client) , rpcType, skippedEndpoints, authEndpoints, endpointsForAuth);
 
             for (Method m : interfaze.getDeclaredMethods()) {
-                if (filterRPCFunctionMethod(m, skipEndpointsByName, skipEndpointsByAnnotation, involveEndpointsByName, involveEndpointsByAnnotation)){
-                    try{
-                        EndpointSchema endpointSchema = build(schema, m, rpcType, authenticationDtoList, customizedRequestValueDtos, notNullAnnotations);
-                        endpoints.add(endpointSchema);
-                    }catch (RuntimeException exception){
+                if (filterRPCFunctionMethod(m)){
+                    if (filterRPCFunctionMethodBasedOnSpecified(m, skipEndpointsByName, skipEndpointsByAnnotation, involveEndpointsByName, involveEndpointsByAnnotation)){
+                        try{
+                            EndpointSchema endpointSchema = build(schema, m, rpcType, authenticationDtoList, customizedRequestValueDtos, notNullAnnotations);
+                            endpoints.add(endpointSchema);
+                        }catch (RuntimeException exception){
                         /*
                             TODO might send such log to core in order to better identify problems which is not handled yet
                          */
-                        SimpleLogger.recordErrorMessage("EM Driver Error: fail to handle the endpoint schema "+m.getName()+" with the error msg:"+exception.getMessage());
+                            SimpleLogger.recordErrorMessage("EM Driver Error: fail to handle the endpoint schema "+m.getName()+" with the error msg:"+exception.getMessage());
+                        }
+                    }else {
+                        skippedEndpoints.add(m.getName());
                     }
-                } else {
-                    skippedEndpoints.add(m.getName());
                 }
 
                 List<AuthenticationDto> auths = getAuthEndpointInInterface(authenticationDtoList, interfaceName, m);
@@ -337,19 +339,8 @@ public class RPCEndpointsBuilder {
                 && a.jsonAuthEndpoint.interfaceName.equals(interfaceName)).collect(Collectors.toList());
     }
 
-    private static boolean filterRPCFunctionMethod(Method endpoint,
-                                                   List<String> skipEndpointsByName, List<String> skipEndpointsByAnnotation,
-                                                   List<String> involveEndpointsByName, List<String> involveEndpointsByAnnotation){
-        if (skipEndpointsByName != null && involveEndpointsByName != null)
-            throw new IllegalArgumentException("Driver Config Error: skipEndpointsByName and involveEndpointsByName should not be specified at same time.");
-        if (skipEndpointsByAnnotation != null && involveEndpointsByAnnotation != null)
-            throw new IllegalArgumentException("Driver Config Error: skipEndpointsByAnnotation and involveEndpointsByAnnotation should not be specified at same time.");
+    private static boolean filterRPCFunctionMethod(Method endpoint){
 
-        if (skipEndpointsByName != null || skipEndpointsByAnnotation != null)
-            return !anyMatchByNameAndAnnotation(endpoint, skipEndpointsByName, skipEndpointsByAnnotation);
-
-        if (involveEndpointsByName != null || involveEndpointsByAnnotation != null)
-            return anyMatchByNameAndAnnotation(endpoint, involveEndpointsByName, involveEndpointsByAnnotation);
 
         /*
             filter streaming API
@@ -368,6 +359,23 @@ public class RPCEndpointsBuilder {
 
         // only handle public method
         return Modifier.isPublic(endpoint.getModifiers());
+    }
+
+    private static boolean filterRPCFunctionMethodBasedOnSpecified(Method endpoint,
+                                                                   List<String> skipEndpointsByName, List<String> skipEndpointsByAnnotation,
+                                                                   List<String> involveEndpointsByName, List<String> involveEndpointsByAnnotation){
+        if (skipEndpointsByName != null && involveEndpointsByName != null)
+            throw new IllegalArgumentException("Driver Config Error: skipEndpointsByName and involveEndpointsByName should not be specified at same time.");
+        if (skipEndpointsByAnnotation != null && involveEndpointsByAnnotation != null)
+            throw new IllegalArgumentException("Driver Config Error: skipEndpointsByAnnotation and involveEndpointsByAnnotation should not be specified at same time.");
+
+        if (skipEndpointsByName != null || skipEndpointsByAnnotation != null)
+            return !anyMatchByNameAndAnnotation(endpoint, skipEndpointsByName, skipEndpointsByAnnotation);
+
+        if (involveEndpointsByName != null || involveEndpointsByAnnotation != null)
+            return anyMatchByNameAndAnnotation(endpoint, involveEndpointsByName, involveEndpointsByAnnotation);
+
+        return true;
     }
 
     private static boolean isPotentialStreamingAPI(Method method){
