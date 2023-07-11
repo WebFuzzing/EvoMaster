@@ -6,10 +6,6 @@ import org.junit.jupiter.api.Test
 
 class MongoDbActionTransformerTest {
 
-    class CustomType(field: Int) {
-        val aField = field
-    }
-
     @Test
     fun testEmpty() {
         val actions = listOf<MongoDbAction>()
@@ -21,7 +17,8 @@ class MongoDbActionTransformerTest {
     fun testNotEmpty() {
         val database = "aDatabase"
         val collection = "aCollection"
-        val action = MongoDbAction(database, collection, CustomType::class.java)
+        val documentsType = "\"CustomType\":{\"CustomType\":{\"type\":\"object\", \"properties\": {\"aField\":{\"type\":\"string\"}}}}"
+        val action = MongoDbAction(database, collection, documentsType)
         val actions = listOf(action)
         val dto = MongoDbActionTransformer.transform(actions)
         assertFalse(dto.insertions.isEmpty())

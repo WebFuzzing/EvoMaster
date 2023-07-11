@@ -5,9 +5,9 @@ import java.lang.reflect.Method;
 import java.util.Set;
 
 public class BsonHelper {
-    public static Object newDocument() {
+    public static Object newDocument(Object document) {
         try {
-            return documentClass.getConstructor().newInstance();
+            return document.getClass().getConstructor().newInstance();
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
                  NoSuchMethodException e) {
             throw new RuntimeException(e);
@@ -56,26 +56,7 @@ public class BsonHelper {
     }
 
     public static Boolean isDocument(Object value) {
-        return documentClass.isInstance(value);
-    }
-
-    public static Object convertToQueryDocument(Object query) {
-        try {
-            Method toBsonDocument = query.getClass().getMethod("toBsonDocument");
-            Object bsonDocument = toBsonDocument.invoke(query);
-
-            Object documentCodec = documentCodecClass.getDeclaredConstructor().newInstance();
-            Method asBsonReader = bsonDocumentClass.getMethod("asBsonReader");
-            Method builder = decoderContextClass.getMethod("builder");
-            Object builderInstance = builder.invoke(null);
-            Method build = builderInstance.getClass().getMethod("build");
-
-            Method decode = documentCodecClass.getMethod("decode", bsonReaderClass, decoderContextClass);
-            return decode.invoke(documentCodec, asBsonReader.invoke(bsonDocument), build.invoke(builderInstance));
-        } catch (NoSuchMethodException | InstantiationException | IllegalAccessException |
-                 InvocationTargetException e) {
-            throw new RuntimeException(e);
-        }
+        return value.getClass().getName().equals("org.bson.Document");
     }
 
     public static String getType(Object bsonType) {
@@ -113,24 +94,6 @@ public class BsonHelper {
             return valueOf.invoke(null, alias);
         } catch (ClassNotFoundException | IllegalAccessException | InvocationTargetException |
                  NoSuchMethodException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static final Class<?> documentClass = getClass("org.bson.Document");
-
-    private static final Class<?> bsonDocumentClass = getClass("org.bson.BsonDocument");
-
-    private static final Class<?> documentCodecClass =  getClass("org.bson.codecs.DocumentCodec");
-
-    private static final Class<?> decoderContextClass = getClass("org.bson.codecs.DecoderContext");
-
-    private static final Class<?> bsonReaderClass = getClass("org.bson.BsonReader");
-
-    private static Class<?> getClass(String className) {
-        try {
-            return Class.forName(className);
-        } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
     }

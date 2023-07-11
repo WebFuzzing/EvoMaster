@@ -31,7 +31,7 @@ public class ImplicitSelector extends QuerySelector {
         Set<String> fields = keySet(query);
         ArrayList<QueryOperation> conditions = new ArrayList<>();
         fields.forEach(fieldName -> {
-            Object newQuery = newDocument();
+            Object newQuery = newDocument(query);
             appendToDocument(newQuery, fieldName, getValue(query, fieldName));
             conditions.add(new QueryParser().parse(newQuery));
         });

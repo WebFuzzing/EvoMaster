@@ -28,8 +28,7 @@ public class MongoHeuristicsCalculator {
     }
 
     private QueryOperation getOperation(Object query) {
-        Object queryDocument = convertToQueryDocument(query);
-        return new QueryParser().parse(queryDocument);
+        return new QueryParser().parse(query);
     }
 
     private double calculateDistance(QueryOperation operation, Object doc) {
@@ -199,7 +198,7 @@ public class MongoHeuristicsCalculator {
             List<?> val = (List<?>) actualValue;
             return val.stream()
                     .mapToDouble(elem -> {
-                        Object newDoc = newDocument();
+                        Object newDoc = newDocument(doc);
                         appendToDocument(newDoc, operation.getFieldName(), elem);
                         return calculateDistance(operation.getCondition(), newDoc);
                     })
@@ -381,6 +380,10 @@ public class MongoHeuristicsCalculator {
 
         if (val1 instanceof String && val2 instanceof String) {
             return (double) DistanceHelper.getLeftAlignmentDistance((String) val1, (String) val2);
+        }
+
+        if (val1 instanceof Boolean && val2 instanceof Boolean) {
+            return val1 == val2 ? 0d : 1d;
         }
 
         if (val1 instanceof List<?> && val2 instanceof List<?>) {

@@ -78,7 +78,7 @@ abstract class EnterpriseSampler<T> : Sampler<T>() where T : Individual {
         return actions
     }
 
-    fun sampleMongoInsertion(database: String, collection: String, documentsType: Class<*>): MongoDbAction {
+    fun sampleMongoInsertion(database: String, collection: String, documentsType: String): MongoDbAction {
         val action = MongoInsertBuilder().createMongoInsertionAction(database, collection, documentsType)
         action.seeTopGenes().forEach{it.doInitialize(randomness)}
         return action

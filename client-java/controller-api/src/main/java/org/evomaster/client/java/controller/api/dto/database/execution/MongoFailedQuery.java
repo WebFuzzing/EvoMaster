@@ -13,9 +13,9 @@ public class MongoFailedQuery {
     /**
      * The type of the new document. Should map the type of the documents of the collection.
      */
-    private Class<?> documentsType;
+    private String documentsType;
 
-    public MongoFailedQuery(String database, String collection, Class<?> documentsType) {
+    public MongoFailedQuery(String database, String collection, String documentsType) {
         this.database = database;
         this.collection = collection;
         this.documentsType = documentsType;
@@ -24,11 +24,12 @@ public class MongoFailedQuery {
     public MongoFailedQuery(){
         this.database = "";
         this.collection = "";
+        this.documentsType = "";
     }
 
     public String getDatabase() {return database;}
     public String getCollection() {return collection;}
-    public Class<?> getDocumentsType() {
+    public String getDocumentsType() {
         return documentsType;
     }
 }

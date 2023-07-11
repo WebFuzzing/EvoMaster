@@ -7,14 +7,14 @@ import java.io.Serializable;
  */
 public class MongoCollectionInfo implements Serializable {
     private final String collectionName;
-    private final Class<?> documentsType;
+    private final String documentsType;
 
-    public MongoCollectionInfo(String collectionName, Class<?> collectionType) {
+    public MongoCollectionInfo(String collectionName, String documentsType) {
         this.collectionName = collectionName;
-        this.documentsType = collectionType;
+        this.documentsType = documentsType;
     }
 
     public String getCollectionName() {return collectionName;}
 
-    public Class<?> getDocumentsType() {return documentsType;}
+    public String getDocumentsType() {return documentsType;}
 }

@@ -1,9 +1,8 @@
 package org.evomaster.core.mongo
 
+import org.evomaster.core.problem.rest.RestActionBuilderV3.createObjectGenesForDTOs
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.ObjectGene
-import java.lang.reflect.Modifier
 import java.util.*
 
 class MongoDbAction(
@@ -18,38 +17,23 @@ class MongoDbAction(
     /**
      * The type of the new document. Should map the type of the documents of the collection
      */
-    val documentsType: Class<*>,
+    val documentsType: String,
     computedGenes: List<Gene>? = null
 ) : Action(listOf()) {
 
     private val genes: List<Gene> = (computedGenes ?: computeGenes()).also { addChildren(it) }
 
     private fun computeGenes(): List<Gene> {
-        val genes =
-            if (documentsType.name == "org.bson.Document") {
-                /* There are two different scenarios here:
-                    1) The collection has no type restriction.
-                    2) For some reason, it was not possible to determine the document's type.
-
-                   In case 1) any insertion to the collection would be valid.
-                   In case 2) we don't have enough information.
-
-                   In both cases, we don't have fields from which to build genes.
-                   One possibility would be to extract the fields used in the query,
-                   but there is no guarantee that it would work in case 2)
-                   (the fields used in the query may be different or a subset of the actual type of the collection).
-                */
-                listOf()
-            } else {
-                getFieldsFromType().mapNotNull { MongoActionGeneBuilder().buildGene(it.name, it.type) }
-            }
-        return Collections.singletonList(ObjectGene("BSON", genes))
+        val documentsTypeName = documentsType.substringBefore(":").drop(1).dropLast(1)
+        return Collections.singletonList(
+            createObjectGenesForDTOs(
+                documentsTypeName, documentsType, false
+            )
+        )
     }
 
     override fun getName(): String {
-        return "MONGO_Insert_${database}_${collection}_${
-            getFieldsFromType().map { it.name }.sorted().joinToString("_")
-        }"
+        return "MONGO_Insert_${database}_${collection}_${documentsType}"
     }
 
     override fun seeTopGenes(): List<out Gene> {
@@ -63,6 +47,4 @@ class MongoDbAction(
     override fun copyContent(): Action {
         return MongoDbAction(database, collection, documentsType, genes.map(Gene::copy))
     }
-
-    private fun getFieldsFromType() = documentsType.declaredFields.filter { Modifier.isPublic(it.modifiers) }
 }

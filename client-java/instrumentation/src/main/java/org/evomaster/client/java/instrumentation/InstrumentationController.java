@@ -47,6 +47,10 @@ public class InstrumentationController {
         ExecutionTracer.setExecutingInitSql(executingInitSql);
     }
 
+    public static void setExecutingInitMongo(boolean executingInitMongo){
+        ExecutionTracer.setExecutingInitMongo(executingInitMongo);
+    }
+
     public static void setExecutingAction(boolean executingAction){
         ExecutionTracer.setExecutingAction(executingAction);
     }

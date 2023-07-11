@@ -4,6 +4,7 @@ import org.evomaster.client.java.instrumentation.MongoCollectionInfo;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyCast;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyMethodReplacementClass;
+import org.evomaster.client.java.instrumentation.object.ClassToSchema;
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
@@ -88,7 +89,8 @@ public class MappingMongoEntityInformationClassReplacement extends ThirdPartyMet
             addInstance(mappingMongoEntityInformation);
             String collectionName = (String) mappingMongoEntityInformation.getClass().getMethod("getCollectionName").invoke(mappingMongoEntityInformation);
             Class<?> repositoryType = (Class<?>) mappingMongoEntityInformation.getClass().getMethod("getJavaType").invoke(mappingMongoEntityInformation);
-            ExecutionTracer.addMongoCollectionInfo(new MongoCollectionInfo(collectionName, repositoryType));
+            String schema = ClassToSchema.getOrDeriveSchemaWithItsRef(repositoryType);
+            ExecutionTracer.addMongoCollectionInfo(new MongoCollectionInfo(collectionName, schema));
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             throw new RuntimeException(e);
         }

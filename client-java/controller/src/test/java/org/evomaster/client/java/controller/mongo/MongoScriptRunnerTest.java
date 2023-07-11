@@ -12,7 +12,6 @@ import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-// Is this test possible? Docker should be running I think
 public class MongoScriptRunnerTest {
 
     private static MongoClient connection;

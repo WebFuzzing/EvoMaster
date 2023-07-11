@@ -7,7 +7,6 @@ import org.evomaster.client.java.controller.mongo.MongoOperation;
 import org.evomaster.client.java.instrumentation.MongoCollectionInfo;
 import org.evomaster.client.java.instrumentation.MongoInfo;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -45,9 +44,10 @@ public class MongoHandler {
     private final List<MongoOperation> failedQueries;
 
     /**
-     * Info about types of the documents of collections
+     * Info about types of the documents of the repository extracted from Spring framework.
+     * Documents of the collection will be mapped to the Repository type
      */
-    private final Map<String, Class<?>> collectionInfo;
+    private final Map<String, String> collectionInfo;
 
     public MongoHandler() {
         distances = new ArrayList<>();
@@ -112,11 +112,11 @@ public class MongoHandler {
     }
 
     private double computeDistance(MongoInfo info) {
-        Object collection = info.getCollection();
-        Iterable<?> documents = getDocuments(collection);
+        Iterable<?> documents = info.getDocuments();
         boolean collectionIsEmpty = !documents.iterator().hasNext();
 
-        if (collectionIsEmpty) failedQueries.add(new MongoOperation(collection, info.getQuery()));
+        if (collectionIsEmpty)
+            failedQueries.add(new MongoOperation(info.getCollectionName(), info.getQuery(), info.getDatabaseName(), info.getDocumentsType()));
 
         MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
 
@@ -130,53 +130,19 @@ public class MongoHandler {
         return min;
     }
 
-    private static Iterable<?> getDocuments(Object collection) {
-        try {
-            Class<?> collectionClass = collection.getClass().getClassLoader().loadClass("com.mongodb.client.MongoCollection");
-            return (Iterable<?>) collectionClass.getMethod("find").invoke(collection);
-        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException |
-                 ClassNotFoundException e) {
-            throw new RuntimeException("Failed to retrieve all documents from a mongo collection", e);
-        }
-    }
-
     private MongoFailedQuery extractRelevantInfo(MongoOperation operation) {
-        Object collection = operation.getCollection();
-
-        String databaseName;
-        String collectionName;
-        Class<?> documentsType;
-
-        try {
-            Class<?> collectionClass = collection.getClass().getClassLoader().loadClass("com.mongodb.client.MongoCollection");
-            Object namespace = collectionClass.getMethod("getNamespace").invoke(collection);
-            databaseName = (String) namespace.getClass().getMethod("getDatabaseName").invoke(namespace);
-            collectionName = (String) namespace.getClass().getMethod("getCollectionName").invoke(namespace);
-        } catch (ClassNotFoundException | IllegalAccessException | InvocationTargetException |
-                 NoSuchMethodException e) {
-            throw new RuntimeException("Failed to retrieve collection name or database name", e);
-        }
-
-        if (collectionTypeIsRegistered(collectionName)) {
-            documentsType = collectionInfo.get(collectionName);
+        String documentsType;
+        if (collectionTypeIsRegistered(operation.getCollectionName())) {
+            // We have to which class the documents of the collection will be mapped to
+            documentsType = collectionInfo.get(operation.getCollectionName());
         } else {
-            documentsType = extractDocumentsType(collection);
+            // Just using the documents type provided by the MongoCollection method
+            documentsType = operation.getDocumentsType();
         }
-
-        return new MongoFailedQuery(databaseName, collectionName, documentsType);
+        return new MongoFailedQuery(operation.getDatabaseName(), operation.getCollectionName(), documentsType);
     }
 
     private boolean collectionTypeIsRegistered(String collectionName) {
         return collectionInfo.containsKey(collectionName);
-    }
-
-    private static Class<?> extractDocumentsType(Object collection) {
-        try {
-            Class<?> collectionClass = collection.getClass().getClassLoader().loadClass("com.mongodb.client.MongoCollection");
-            return (Class<?>) collectionClass.getMethod("getDocumentClass").invoke(collection);
-        } catch (NoSuchMethodException | ClassNotFoundException | InvocationTargetException |
-                 IllegalAccessException e) {
-            throw new RuntimeException("Failed to retrieve document's type from collection", e);
-        }
     }
 }
