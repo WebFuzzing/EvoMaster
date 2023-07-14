@@ -371,7 +371,8 @@ public class ClassToSchema {
         for (Annotation a : field.getAnnotations()) {
             String name = a.annotationType().getName();
             if (name.equals("com.fasterxml.jackson.annotation.JsonProperty")
-                    || name.equals("com.google.gson.annotations.SerializedName")) {
+                    || name.equals("com.google.gson.annotations.SerializedName")
+                    || name.equals("org.springframework.data.mongodb.core.mapping.Field")) {
                 try {
                     Method m = a.annotationType().getMethod("value");
                     String value = (String) m.invoke(a);
