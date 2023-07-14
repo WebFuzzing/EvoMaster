@@ -67,6 +67,8 @@ public class ClassToSchema {
 
     private static final String fieldRefPostfix = "\"}";
 
+    private static boolean objectFieldsRequired = false;
+
     public static void registerSchemaIfNeeded(Class<?> valueType) {
 
         if (valueType == null) {
@@ -305,6 +307,7 @@ public class ClassToSchema {
 
 
         List<String> properties = new ArrayList<>();
+        List<String> propertiesNames = new ArrayList<>();
 
         //general object, let's look at its fields
         Class<?> target = klass;
@@ -320,11 +323,12 @@ public class ClassToSchema {
                 }else
                     fieldSchema = getOrDeriveSchema(fieldName, f.getGenericType(), true, nested);
                 properties.add(fieldSchema);
+                propertiesNames.add("\"" + fieldName + "\"");
             }
             target = target.getSuperclass();
         }
 
-        return fieldObjectSchema(properties);
+        return fieldObjectSchema(properties, propertiesNames);
     }
 
     private static boolean shouldAddToSchema(Field field) {
@@ -420,9 +424,12 @@ public class ClassToSchema {
         return "{\"type\":\"object\", \"additionalProperties\":" + value + "}";
     }
 
-    private static String fieldObjectSchema(List<String> properties) {
+    private static String fieldObjectSchema(List<String> properties, List<String> propertiesNames) {
         String p = properties.stream().collect(Collectors.joining(","));
-
+        String r = propertiesNames.stream().collect(Collectors.joining(","));
+        if(objectFieldsRequired){
+            return "{\"type\":\"object\", \"properties\": {" + p + "}, \"required\": [" + r + "]}";
+        }
         return "{\"type\":\"object\", \"properties\": {" + p + "}}";
     }
 
@@ -454,5 +461,9 @@ public class ClassToSchema {
             SimpleLogger.warn("Driver Error: fail to extract name for enum constant", e);
             return object.toString();
         }
+    }
+
+    public static void setObjectFieldsRequired(boolean objectFieldsRequired){
+        ClassToSchema.objectFieldsRequired = objectFieldsRequired;
     }
 }

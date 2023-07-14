@@ -89,7 +89,9 @@ public class MappingMongoEntityInformationClassReplacement extends ThirdPartyMet
             addInstance(mappingMongoEntityInformation);
             String collectionName = (String) mappingMongoEntityInformation.getClass().getMethod("getCollectionName").invoke(mappingMongoEntityInformation);
             Class<?> repositoryType = (Class<?>) mappingMongoEntityInformation.getClass().getMethod("getJavaType").invoke(mappingMongoEntityInformation);
+            ClassToSchema.setObjectFieldsRequired(true);
             String schema = ClassToSchema.getOrDeriveSchemaWithItsRef(repositoryType);
+            ClassToSchema.setObjectFieldsRequired(false);
             ExecutionTracer.addMongoCollectionInfo(new MongoCollectionInfo(collectionName, schema));
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             throw new RuntimeException(e);
