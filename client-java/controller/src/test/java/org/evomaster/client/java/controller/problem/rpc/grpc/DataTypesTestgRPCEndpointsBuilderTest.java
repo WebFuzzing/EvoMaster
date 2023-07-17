@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.problem.rpc.grpc;
 
+import com.google.protobuf.ByteString;
 import io.grpc.examples.evotests.datatypes.*;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.problem.rpc.RPCEndpointsBuilderTestBase;
@@ -7,6 +8,7 @@ import org.evomaster.client.java.controller.problem.rpc.schema.EndpointSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.ObjectParam;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.ObjectType;
+import org.evomaster.client.java.controller.problem.rpc.schema.types.Protobuf3ByteStringType;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -98,7 +100,7 @@ public class DataTypesTestgRPCEndpointsBuilderTest extends RPCEndpointsBuilderTe
         NamedTypedValue param1 = endpoint.getRequestParams().get(0);
         assertTrue(param1 instanceof ObjectParam);
         ObjectType param1Type = (ObjectType)param1.getType();
-        assertEquals(7, param1Type.getFields().size());
+        assertEquals(8, param1Type.getFields().size());
         assertEquals("name", param1Type.getFields().get(0).getName());
         assertEquals(String.class.getName(), param1Type.getFields().get(0).getType().getFullTypeName());
         assertEquals("doublevalue", param1Type.getFields().get(1).getName());
@@ -111,9 +113,10 @@ public class DataTypesTestgRPCEndpointsBuilderTest extends RPCEndpointsBuilderTe
         assertEquals(float.class.getName(), param1Type.getFields().get(4).getType().getFullTypeName());
         assertEquals("boolvalue", param1Type.getFields().get(5).getName());
         assertEquals(boolean.class.getName(), param1Type.getFields().get(5).getType().getFullTypeName());
-        // bytes not support yet
-        assertEquals("enumvalue", param1Type.getFields().get(6).getName());
-        assertEquals(SimpleEnum.class.getName(), param1Type.getFields().get(6).getType().getFullTypeName());
+        assertEquals("bytesvalue", param1Type.getFields().get(6).getName());
+        assertEquals(Protobuf3ByteStringType.PROTOBUF3_BYTE_STRING_TYPE_NAME, param1Type.getFields().get(6).getType().getFullTypeName());
+        assertEquals("enumvalue", param1Type.getFields().get(7).getName());
+        assertEquals(SimpleEnum.class.getName(), param1Type.getFields().get(7).getType().getFullTypeName());
 
 
         SimpleObj objInstance = SimpleObj
@@ -124,6 +127,7 @@ public class DataTypesTestgRPCEndpointsBuilderTest extends RPCEndpointsBuilderTe
             .setInt64Value(42L)
             .setFloatvalue(0.42f)
             .setBoolvalue(false)
+            .setBytesvalue(ByteString.copyFromUtf8("helloworld"))
             .setEnumvalue(SimpleEnum.ONE)
             .build();
 
@@ -144,6 +148,11 @@ public class DataTypesTestgRPCEndpointsBuilderTest extends RPCEndpointsBuilderTe
             " arg0builder.setInt64Value(42L);\n" +
             " arg0builder.setFloatvalue(0.42f);\n" +
             " arg0builder.setBoolvalue(false);\n" +
+            " com.google.protobuf.ByteString arg0_bytesvalue = null;\n" +
+            " {\n" +
+            "  arg0_bytesvalue = com.google.protobuf.ByteString.copyFromUtf8(\"helloworld\");\n" +
+            " }\n" +
+            " arg0builder.setBytesvalue(arg0_bytesvalue);\n" +
             " arg0builder.setEnumvalue(((io.grpc.examples.evotests.datatypes.SimpleEnum)(io.grpc.examples.evotests.datatypes.SimpleEnum.ONE)));\n" +
             " arg0 = arg0builder.build();\n" +
             "}").split("\n");
@@ -176,6 +185,7 @@ public class DataTypesTestgRPCEndpointsBuilderTest extends RPCEndpointsBuilderTe
             .setInt64Value(42L)
             .setFloatvalue(0.42f)
             .setBoolvalue(false)
+            .setBytesvalue(ByteString.copyFromUtf8("helloworld"))
             .setEnumvalue(SimpleEnum.ONE)
             .build();
 
@@ -206,6 +216,11 @@ public class DataTypesTestgRPCEndpointsBuilderTest extends RPCEndpointsBuilderTe
             "  res_objvaluebuilder.setInt64Value(42L);\n" +
             "  res_objvaluebuilder.setFloatvalue(0.42f);\n" +
             "  res_objvaluebuilder.setBoolvalue(false);\n" +
+            "  com.google.protobuf.ByteString res_objvalue_bytesvalue = null;\n" +
+            "  {\n" +
+            "   res_objvalue_bytesvalue = com.google.protobuf.ByteString.copyFromUtf8(\"helloworld\");\n" +
+            "  }\n" +
+            "  res_objvaluebuilder.setBytesvalue(res_objvalue_bytesvalue);\n" +
             "  res_objvaluebuilder.setEnumvalue(((io.grpc.examples.evotests.datatypes.SimpleEnum)(io.grpc.examples.evotests.datatypes.SimpleEnum.ONE)));\n" +
             "  res_objvalue = res_objvaluebuilder.build();\n" +
             " }\n" +
@@ -217,6 +232,31 @@ public class DataTypesTestgRPCEndpointsBuilderTest extends RPCEndpointsBuilderTe
 
         for (int i = 0; i < param1InstanceJava.size(); i++)
             assertEquals(expectedContents[i], param1InstanceJava.get(i));
+
+        io.grpc.examples.evotests.datatypes.NestedObj res = null;
+        {
+            io.grpc.examples.evotests.datatypes.NestedObj.Builder resbuilder = io.grpc.examples.evotests.datatypes.NestedObj.newBuilder();
+            resbuilder.setName("bar");
+            io.grpc.examples.evotests.datatypes.SimpleObj res_objvalue = null;
+            {
+                io.grpc.examples.evotests.datatypes.SimpleObj.Builder res_objvaluebuilder = io.grpc.examples.evotests.datatypes.SimpleObj.newBuilder();
+                res_objvaluebuilder.setName("foo");
+                res_objvaluebuilder.setDoublevalue(0.42);
+                res_objvaluebuilder.setInt32Value(42);
+                res_objvaluebuilder.setInt64Value(42L);
+                res_objvaluebuilder.setFloatvalue(0.42f);
+                res_objvaluebuilder.setBoolvalue(false);
+                com.google.protobuf.ByteString res_objvalue_bytesvalue = null;
+                {
+                    res_objvalue_bytesvalue = com.google.protobuf.ByteString.copyFromUtf8("helloworld");
+                }
+                res_objvaluebuilder.setBytesvalue(res_objvalue_bytesvalue);
+                res_objvaluebuilder.setEnumvalue(((io.grpc.examples.evotests.datatypes.SimpleEnum)(io.grpc.examples.evotests.datatypes.SimpleEnum.ONE)));
+                res_objvalue = res_objvaluebuilder.build();
+            }
+            resbuilder.setObjvalue(res_objvalue);
+            res = resbuilder.build();
+        }
     }
 
 
@@ -243,6 +283,7 @@ public class DataTypesTestgRPCEndpointsBuilderTest extends RPCEndpointsBuilderTe
             .setInt64Value(42L)
             .setFloatvalue(0.42f)
             .setBoolvalue(false)
+            .setBytesvalue(ByteString.copyFromUtf8("helloworld"))
             .setEnumvalue(SimpleEnum.ONE)
             .build();
 
@@ -254,6 +295,7 @@ public class DataTypesTestgRPCEndpointsBuilderTest extends RPCEndpointsBuilderTe
             .setInt64Value(42L)
             .setFloatvalue(0.42f)
             .setBoolvalue(false)
+            .setBytesvalue(ByteString.copyFromUtf8("helloworld"))
             .setEnumvalue(SimpleEnum.TWO)
             .build();
 
@@ -291,6 +333,11 @@ public class DataTypesTestgRPCEndpointsBuilderTest extends RPCEndpointsBuilderTe
             "   res_intkeymapvalue_value_0builder.setInt64Value(42L);\n" +
             "   res_intkeymapvalue_value_0builder.setFloatvalue(0.42f);\n" +
             "   res_intkeymapvalue_value_0builder.setBoolvalue(false);\n" +
+            "   com.google.protobuf.ByteString res_intkeymapvalue_value_0_bytesvalue = null;\n" +
+            "   {\n" +
+            "    res_intkeymapvalue_value_0_bytesvalue = com.google.protobuf.ByteString.copyFromUtf8(\"helloworld\");\n" +
+            "   }\n" +
+            "   res_intkeymapvalue_value_0builder.setBytesvalue(res_intkeymapvalue_value_0_bytesvalue);\n" +
             "   res_intkeymapvalue_value_0builder.setEnumvalue(((io.grpc.examples.evotests.datatypes.SimpleEnum)(io.grpc.examples.evotests.datatypes.SimpleEnum.ONE)));\n" +
             "   res_intkeymapvalue_value_0 = res_intkeymapvalue_value_0builder.build();\n" +
             "  }\n" +
@@ -310,6 +357,11 @@ public class DataTypesTestgRPCEndpointsBuilderTest extends RPCEndpointsBuilderTe
             "   res_stringkeymapvalue_value_0builder.setInt64Value(42L);\n" +
             "   res_stringkeymapvalue_value_0builder.setFloatvalue(0.42f);\n" +
             "   res_stringkeymapvalue_value_0builder.setBoolvalue(false);\n" +
+            "   com.google.protobuf.ByteString res_stringkeymapvalue_value_0_bytesvalue = null;\n" +
+            "   {\n" +
+            "    res_stringkeymapvalue_value_0_bytesvalue = com.google.protobuf.ByteString.copyFromUtf8(\"helloworld\");\n" +
+            "   }\n" +
+            "   res_stringkeymapvalue_value_0builder.setBytesvalue(res_stringkeymapvalue_value_0_bytesvalue);\n" +
             "   res_stringkeymapvalue_value_0builder.setEnumvalue(((io.grpc.examples.evotests.datatypes.SimpleEnum)(io.grpc.examples.evotests.datatypes.SimpleEnum.TWO)));\n" +
             "   res_stringkeymapvalue_value_0 = res_stringkeymapvalue_value_0builder.build();\n" +
             "  }\n" +
@@ -324,6 +376,60 @@ public class DataTypesTestgRPCEndpointsBuilderTest extends RPCEndpointsBuilderTe
         for (int i = 0; i < param1InstanceJava.size(); i++)
             assertEquals(expectedContents[i], param1InstanceJava.get(i));
 
+        io.grpc.examples.evotests.datatypes.MapObj res = null;
+        {
+            io.grpc.examples.evotests.datatypes.MapObj.Builder resbuilder = io.grpc.examples.evotests.datatypes.MapObj.newBuilder();
+            resbuilder.setName("bar");
+            java.util.Map<java.lang.Integer,io.grpc.examples.evotests.datatypes.SimpleObj> res_intkeymapvalue = null;
+            {
+                res_intkeymapvalue = new java.util.HashMap<>();
+                java.lang.Integer res_intkeymapvalue_key_0 = 1;
+                io.grpc.examples.evotests.datatypes.SimpleObj res_intkeymapvalue_value_0 = null;
+                {
+                    io.grpc.examples.evotests.datatypes.SimpleObj.Builder res_intkeymapvalue_value_0builder = io.grpc.examples.evotests.datatypes.SimpleObj.newBuilder();
+                    res_intkeymapvalue_value_0builder.setName("int1Foo");
+                    res_intkeymapvalue_value_0builder.setDoublevalue(0.42);
+                    res_intkeymapvalue_value_0builder.setInt32Value(42);
+                    res_intkeymapvalue_value_0builder.setInt64Value(42L);
+                    res_intkeymapvalue_value_0builder.setFloatvalue(0.42f);
+                    res_intkeymapvalue_value_0builder.setBoolvalue(false);
+                    com.google.protobuf.ByteString res_intkeymapvalue_value_0_bytesvalue = null;
+                    {
+                        res_intkeymapvalue_value_0_bytesvalue = com.google.protobuf.ByteString.copyFromUtf8("helloworld");
+                    }
+                    res_intkeymapvalue_value_0builder.setBytesvalue(res_intkeymapvalue_value_0_bytesvalue);
+                    res_intkeymapvalue_value_0builder.setEnumvalue(((io.grpc.examples.evotests.datatypes.SimpleEnum)(io.grpc.examples.evotests.datatypes.SimpleEnum.ONE)));
+                    res_intkeymapvalue_value_0 = res_intkeymapvalue_value_0builder.build();
+                }
+                res_intkeymapvalue.put(res_intkeymapvalue_key_0,res_intkeymapvalue_value_0);
+            }
+            resbuilder.putAllIntkeymapvalue(res_intkeymapvalue);
+            java.util.Map<java.lang.String,io.grpc.examples.evotests.datatypes.SimpleObj> res_stringkeymapvalue = null;
+            {
+                res_stringkeymapvalue = new java.util.HashMap<>();
+                java.lang.String res_stringkeymapvalue_key_0 = "strbar";
+                io.grpc.examples.evotests.datatypes.SimpleObj res_stringkeymapvalue_value_0 = null;
+                {
+                    io.grpc.examples.evotests.datatypes.SimpleObj.Builder res_stringkeymapvalue_value_0builder = io.grpc.examples.evotests.datatypes.SimpleObj.newBuilder();
+                    res_stringkeymapvalue_value_0builder.setName("strbarFoo");
+                    res_stringkeymapvalue_value_0builder.setDoublevalue(0.42);
+                    res_stringkeymapvalue_value_0builder.setInt32Value(42);
+                    res_stringkeymapvalue_value_0builder.setInt64Value(42L);
+                    res_stringkeymapvalue_value_0builder.setFloatvalue(0.42f);
+                    res_stringkeymapvalue_value_0builder.setBoolvalue(false);
+                    com.google.protobuf.ByteString res_stringkeymapvalue_value_0_bytesvalue = null;
+                    {
+                        res_stringkeymapvalue_value_0_bytesvalue = com.google.protobuf.ByteString.copyFromUtf8("helloworld");
+                    }
+                    res_stringkeymapvalue_value_0builder.setBytesvalue(res_stringkeymapvalue_value_0_bytesvalue);
+                    res_stringkeymapvalue_value_0builder.setEnumvalue(((io.grpc.examples.evotests.datatypes.SimpleEnum)(io.grpc.examples.evotests.datatypes.SimpleEnum.TWO)));
+                    res_stringkeymapvalue_value_0 = res_stringkeymapvalue_value_0builder.build();
+                }
+                res_stringkeymapvalue.put(res_stringkeymapvalue_key_0,res_stringkeymapvalue_value_0);
+            }
+            resbuilder.putAllStringkeymapvalue(res_stringkeymapvalue);
+            res = resbuilder.build();
+        }
     }
 
 
@@ -351,6 +457,7 @@ public class DataTypesTestgRPCEndpointsBuilderTest extends RPCEndpointsBuilderTe
             .setInt64Value(42L)
             .setFloatvalue(0.42f)
             .setBoolvalue(false)
+            .setBytesvalue(ByteString.copyFromUtf8("helloworld-foo"))
             .setEnumvalue(SimpleEnum.ONE)
             .build();
 
@@ -362,6 +469,7 @@ public class DataTypesTestgRPCEndpointsBuilderTest extends RPCEndpointsBuilderTe
             .setInt64Value(42L)
             .setFloatvalue(0.42f)
             .setBoolvalue(false)
+            .setBytesvalue(ByteString.copyFromUtf8("helloworld-bar"))
             .setEnumvalue(SimpleEnum.TWO)
             .build();
 
@@ -420,6 +528,11 @@ public class DataTypesTestgRPCEndpointsBuilderTest extends RPCEndpointsBuilderTe
             "   res_objlistvalue_e_0builder.setInt64Value(42L);\n" +
             "   res_objlistvalue_e_0builder.setFloatvalue(0.42f);\n" +
             "   res_objlistvalue_e_0builder.setBoolvalue(false);\n" +
+            "   com.google.protobuf.ByteString res_objlistvalue_e_0_bytesvalue = null;\n" +
+            "   {\n" +
+            "    res_objlistvalue_e_0_bytesvalue = com.google.protobuf.ByteString.copyFromUtf8(\"helloworld-foo\");\n" +
+            "   }\n" +
+            "   res_objlistvalue_e_0builder.setBytesvalue(res_objlistvalue_e_0_bytesvalue);\n" +
             "   res_objlistvalue_e_0builder.setEnumvalue(((io.grpc.examples.evotests.datatypes.SimpleEnum)(io.grpc.examples.evotests.datatypes.SimpleEnum.ONE)));\n" +
             "   res_objlistvalue_e_0 = res_objlistvalue_e_0builder.build();\n" +
             "  }\n" +
@@ -433,6 +546,11 @@ public class DataTypesTestgRPCEndpointsBuilderTest extends RPCEndpointsBuilderTe
             "   res_objlistvalue_e_1builder.setInt64Value(42L);\n" +
             "   res_objlistvalue_e_1builder.setFloatvalue(0.42f);\n" +
             "   res_objlistvalue_e_1builder.setBoolvalue(false);\n" +
+            "   com.google.protobuf.ByteString res_objlistvalue_e_1_bytesvalue = null;\n" +
+            "   {\n" +
+            "    res_objlistvalue_e_1_bytesvalue = com.google.protobuf.ByteString.copyFromUtf8(\"helloworld-bar\");\n" +
+            "   }\n" +
+            "   res_objlistvalue_e_1builder.setBytesvalue(res_objlistvalue_e_1_bytesvalue);\n" +
             "   res_objlistvalue_e_1builder.setEnumvalue(((io.grpc.examples.evotests.datatypes.SimpleEnum)(io.grpc.examples.evotests.datatypes.SimpleEnum.TWO)));\n" +
             "   res_objlistvalue_e_1 = res_objlistvalue_e_1builder.build();\n" +
             "  }\n" +
@@ -448,6 +566,69 @@ public class DataTypesTestgRPCEndpointsBuilderTest extends RPCEndpointsBuilderTe
             assertEquals(expectedContents[i], param1InstanceJava.get(i));
 
 
+        io.grpc.examples.evotests.datatypes.ListObj res = null;
+        {
+            io.grpc.examples.evotests.datatypes.ListObj.Builder resbuilder = io.grpc.examples.evotests.datatypes.ListObj.newBuilder();
+            resbuilder.setName("bar");
+            java.util.List<java.lang.Integer> res_intlistvalue = null;
+            {
+                res_intlistvalue = new java.util.ArrayList<>();
+                java.lang.Integer res_intlistvalue_e_0 = 42;
+                res_intlistvalue.add(res_intlistvalue_e_0);
+            }
+            resbuilder.addAllIntlistvalue(res_intlistvalue);
+            java.util.List<java.lang.String> res_stringlistvalue = null;
+            {
+                res_stringlistvalue = new java.util.ArrayList<>();
+                java.lang.String res_stringlistvalue_e_0 = "barInList";
+                res_stringlistvalue.add(res_stringlistvalue_e_0);
+                java.lang.String res_stringlistvalue_e_1 = "fooInList";
+                res_stringlistvalue.add(res_stringlistvalue_e_1);
+            }
+            resbuilder.addAllStringlistvalue(res_stringlistvalue);
+            java.util.List<io.grpc.examples.evotests.datatypes.SimpleObj> res_objlistvalue = null;
+            {
+                res_objlistvalue = new java.util.ArrayList<>();
+                io.grpc.examples.evotests.datatypes.SimpleObj res_objlistvalue_e_0 = null;
+                {
+                    io.grpc.examples.evotests.datatypes.SimpleObj.Builder res_objlistvalue_e_0builder = io.grpc.examples.evotests.datatypes.SimpleObj.newBuilder();
+                    res_objlistvalue_e_0builder.setName("int1Foo");
+                    res_objlistvalue_e_0builder.setDoublevalue(0.42);
+                    res_objlistvalue_e_0builder.setInt32Value(42);
+                    res_objlistvalue_e_0builder.setInt64Value(42L);
+                    res_objlistvalue_e_0builder.setFloatvalue(0.42f);
+                    res_objlistvalue_e_0builder.setBoolvalue(false);
+                    com.google.protobuf.ByteString res_objlistvalue_e_0_bytesvalue = null;
+                    {
+                        res_objlistvalue_e_0_bytesvalue = com.google.protobuf.ByteString.copyFromUtf8("helloworld-foo");
+                    }
+                    res_objlistvalue_e_0builder.setBytesvalue(res_objlistvalue_e_0_bytesvalue);
+                    res_objlistvalue_e_0builder.setEnumvalue(((io.grpc.examples.evotests.datatypes.SimpleEnum)(io.grpc.examples.evotests.datatypes.SimpleEnum.ONE)));
+                    res_objlistvalue_e_0 = res_objlistvalue_e_0builder.build();
+                }
+                res_objlistvalue.add(res_objlistvalue_e_0);
+                io.grpc.examples.evotests.datatypes.SimpleObj res_objlistvalue_e_1 = null;
+                {
+                    io.grpc.examples.evotests.datatypes.SimpleObj.Builder res_objlistvalue_e_1builder = io.grpc.examples.evotests.datatypes.SimpleObj.newBuilder();
+                    res_objlistvalue_e_1builder.setName("strbarFoo");
+                    res_objlistvalue_e_1builder.setDoublevalue(0.42);
+                    res_objlistvalue_e_1builder.setInt32Value(42);
+                    res_objlistvalue_e_1builder.setInt64Value(42L);
+                    res_objlistvalue_e_1builder.setFloatvalue(0.42f);
+                    res_objlistvalue_e_1builder.setBoolvalue(false);
+                    com.google.protobuf.ByteString res_objlistvalue_e_1_bytesvalue = null;
+                    {
+                        res_objlistvalue_e_1_bytesvalue = com.google.protobuf.ByteString.copyFromUtf8("helloworld-bar");
+                    }
+                    res_objlistvalue_e_1builder.setBytesvalue(res_objlistvalue_e_1_bytesvalue);
+                    res_objlistvalue_e_1builder.setEnumvalue(((io.grpc.examples.evotests.datatypes.SimpleEnum)(io.grpc.examples.evotests.datatypes.SimpleEnum.TWO)));
+                    res_objlistvalue_e_1 = res_objlistvalue_e_1builder.build();
+                }
+                res_objlistvalue.add(res_objlistvalue_e_1);
+            }
+            resbuilder.addAllObjlistvalue(res_objlistvalue);
+            res = resbuilder.build();
+        }
 
     }
 }

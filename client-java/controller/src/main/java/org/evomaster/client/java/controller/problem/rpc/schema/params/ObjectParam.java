@@ -256,13 +256,13 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
             if (f.accessibleSchema != null && f.accessibleSchema.setterMethodName != null){
                 String fName = ownVarName;
                 boolean fdeclar = false;
-                if (f instanceof ObjectParam || f instanceof MapParam || f instanceof CollectionParam || f instanceof DateParam || f instanceof  BigDecimalParam || f instanceof BigIntegerParam){
+                if (needRenameField(f)){
                      fName = varName+"_"+f.getName();
                      fdeclar = true;
                 }
                 codes.addAll(f.newInstanceWithJava(fdeclar, true, fName, indent+1));
 
-                if (f instanceof ObjectParam || f instanceof MapParam || f instanceof CollectionParam || f instanceof DateParam || f instanceof  BigDecimalParam || f instanceof BigIntegerParam){
+                if (needRenameField(f)){
                     CodeJavaGenerator.addCode(codes, CodeJavaGenerator.methodInvocation(ownVarName, f.accessibleSchema.setterMethodName, fName)+CodeJavaGenerator.appendLast(),indent+1);
                 }
             }else {
@@ -277,6 +277,10 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
         }
         CodeJavaGenerator.addCode(codes, "}", indent);
         return codes;
+    }
+
+    private boolean needRenameField(NamedTypedValue f){
+        return f instanceof ObjectParam || f instanceof MapParam || f instanceof CollectionParam || f instanceof DateParam || f instanceof  BigDecimalParam || f instanceof BigIntegerParam || f instanceof Protobuf3ByteStringParam;
     }
 
     @Override
