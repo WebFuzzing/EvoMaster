@@ -14,10 +14,6 @@ Also, some of these papers provides full replication packages, which are linked 
 ## Recent arXiv Technical Reports, not Peer-Reviewed (Yet)
 
 
-* A. Golmohammadi, M. Zhang, A. Arcuri.
-  *Testing RESTful APIs: A Survey*.
-  [[arxiv](https://arxiv.org/abs/2212.14604)]
-
   
 * M. Zhang, A. Arcuri, Y. Li, K Xue, Z Wang, J. Huo, W Huang.
   *Fuzzing Microservices In Industry: Experience of Applying EvoMaster at Meituan*.
@@ -30,6 +26,13 @@ Also, some of these papers provides full replication packages, which are linked 
 
 
 ### 2023
+
+* A. Golmohammadi, M. Zhang, A. Arcuri.
+  *Testing RESTful APIs: A Survey*.
+  ACM Transactions on Software Engineering and Methodology (TOSEM). (to appear)
+  [[arxiv](https://arxiv.org/abs/2212.14604)]
+
+
 
 * A. Golmohammadi, M. Zhang, A. Arcuri
   *.NET/C# Instrumentation for Search-Based Software Testing*.
