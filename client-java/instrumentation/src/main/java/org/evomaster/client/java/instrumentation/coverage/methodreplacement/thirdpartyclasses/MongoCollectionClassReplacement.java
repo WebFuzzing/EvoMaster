@@ -76,9 +76,7 @@ public class MongoCollectionClassReplacement extends ThirdPartyMethodReplacement
     }
 
     private static void handleMongo(Object mongoCollection, Object bson, boolean successfullyExecuted, long executionTime) {
-        ClassToSchema.setObjectFieldsRequired(true);
-        String schema = ClassToSchema.getOrDeriveSchemaWithItsRef(extractDocumentsType(mongoCollection));
-        ClassToSchema.setObjectFieldsRequired(false);
+        String schema = ClassToSchema.getOrDeriveSchemaWithItsRef(extractDocumentsType(mongoCollection), true);
         MongoInfo info = new MongoInfo(getCollectionName(mongoCollection), getDatabaseName(mongoCollection), schema, getDocuments(mongoCollection), bson, successfullyExecuted, executionTime);
         ExecutionTracer.addMongoInfo(info);
     }
