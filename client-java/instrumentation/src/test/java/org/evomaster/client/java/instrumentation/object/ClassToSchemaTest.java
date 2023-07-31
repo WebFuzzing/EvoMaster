@@ -208,6 +208,19 @@ public class ClassToSchemaTest {
         verifyEnumOfFieldInProperties(obj, "bar", new String[]{"ONE", "TWO", "THREE"});
     }
 
+    @Test
+    public void testObjectRequiredFields(){
+
+        String schema = ClassToSchema.getOrDeriveNonNestedSchema(DtoBase.class, true);
+        JsonObject json = parse(schema);
+
+        JsonObject obj = json.get(DtoBase.class.getName()).getAsJsonObject();
+        assertNotNull(obj);
+        assertNotNull(obj.get("required"));
+        assertEquals(1, obj.get("required").getAsJsonArray().size());
+        assertEquals("foo", obj.get("required").getAsJsonArray().get(0).getAsString());
+    }
+
 
     private void checkDtoArray(JsonObject obj){
         assertEquals(5, obj.get("properties").getAsJsonObject().entrySet().size());

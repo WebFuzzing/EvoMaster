@@ -67,7 +67,12 @@ public class ClassToSchema {
 
     private static final String fieldRefPostfix = "\"}";
 
+
     public static void registerSchemaIfNeeded(Class<?> valueType) {
+        registerSchemaIfNeeded(valueType, false);
+    }
+
+    public static void registerSchemaIfNeeded(Class<?> valueType, boolean objectFieldsRequired) {
 
         if (valueType == null) {
             return;
@@ -83,7 +88,7 @@ public class ClassToSchema {
             String name = valueType.getName();
             if (!UnitsInfoRecorder.isDtoSchemaRegister(name)) {
                 List<Class<?>> embedded = new ArrayList<>();
-                String schema = ClassToSchema.getOrDeriveSchema(valueType, embedded);
+                String schema = ClassToSchema.getOrDeriveSchema(valueType, embedded, objectFieldsRequired);
                 UnitsInfoRecorder.registerNewParsedDto(name, schema);
                 ExecutionTracer.addParsedDtoName(name);
                 if (!embedded.isEmpty()){
@@ -205,7 +210,7 @@ public class ClassToSchema {
     public static Map<String, String> getOrDeriveSchemaAndNestedClasses(Class<?> klass, boolean objectFieldsRequired) {
         if (!cacheMapOfDtoAndItsRefToSchemas.containsKey(klass)) {
             List<Class<?>> nested = new ArrayList<>();
-            registerSchemaIfNeeded(klass);
+            registerSchemaIfNeeded(klass, objectFieldsRequired);
             findAllNestedClassAndRegisterThemIfNeeded(klass, nested, objectFieldsRequired);
             Map<String, String> map = new LinkedHashMap<>();
             for (Class<?> nkclass : nested) {
