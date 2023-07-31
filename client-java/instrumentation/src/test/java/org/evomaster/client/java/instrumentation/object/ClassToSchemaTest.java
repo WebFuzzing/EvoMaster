@@ -211,10 +211,10 @@ public class ClassToSchemaTest {
     @Test
     public void testObjectRequiredFields(){
 
-        String schema = ClassToSchema.getOrDeriveNonNestedSchema(DtoBase.class, true);
+        String schema = ClassToSchema.getOrDeriveNonNestedSchema(DtoObj.class, true);
         JsonObject json = parse(schema);
 
-        JsonObject obj = json.get(DtoBase.class.getName()).getAsJsonObject();
+        JsonObject obj = json.get(DtoObj.class.getName()).getAsJsonObject();
         assertNotNull(obj);
         assertNotNull(obj.get("required"));
         assertEquals(1, obj.get("required").getAsJsonArray().size());
