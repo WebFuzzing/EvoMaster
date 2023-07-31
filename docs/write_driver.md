@@ -324,6 +324,21 @@ To test a GraphQL API, in the the `getProblemInfo()`, you need to return an inst
 Here, you need to specify the endpoint of where the GraphQL API can be accessed. Default value is `/graphql`.
 Note: must be able to do an _introspective query_ on such API to fetch its schema. If this is disabled for security reasons, _EvoMaster_ will fail.  
 
+## RPC APIs
+
+To test RPC APIs, in the the `getProblemInfo()`, you need to return an instance of the
+`RPCProblem` class.
+Fuzzing RPC APIs requires a driver, and importing a JVM version of the API client library used to communicate with it.
+There is no direct support for file formats such as `.proto` and `.thrift`.
+Schema definitions are derived from the Java/Kotlin interfaces of the API client library.
+On the one hand, this means it is possible to fuzz any type of RPC API (and not just gRPC and Thrift), as long as there is a JVM client library.
+On the other hand, _black-box_ testing would require to write a driver. 
+
+Here, in `RPCProblem` there are 3 main things you need to specify:
+- the interface for the client library, defining the operations available in the API.
+- implementation for the interface, with actual client code doing the calls to the API.
+- specify the RPC type (e.g., gRPC or Thrift).
+
 ## Security
 
 The SUT might require authenticated requests (e.g., when _Spring Security_ is used).
