@@ -5,7 +5,10 @@ import org.evomaster.client.java.controller.api.Formats;
 import org.evomaster.client.java.controller.api.dto.*;
 import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.MongoDatabaseCommandDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionResultsDto;
 import org.evomaster.client.java.controller.api.dto.problem.*;
+import org.evomaster.client.java.controller.mongo.MongoScriptRunner;
 import org.evomaster.client.java.controller.problem.*;
 import org.evomaster.client.java.controller.db.QueryResult;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
@@ -366,6 +369,7 @@ public class EMController {
                             return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
                         }
                         noKillSwitch(() -> sutController.initSqlHandler());
+                        noKillSwitch(() -> sutController.initMongoHandler());
                     } else {
                         //TODO as starting should be blocking, need to check
                         //if initialized, and wait if not
@@ -757,6 +761,64 @@ public class EMController {
             return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
         } finally {
             sutController.setExecutingInitSql(false);
+        }
+    }
+
+    @Path(ControllerConstants.MONGO_INSERTION)
+    @Consumes(Formats.JSON_V1)
+    @POST
+    public Response executeMongoInsertion(MongoDatabaseCommandDto dto, @Context HttpServletRequest httpServletRequest) {
+
+        assert trackRequestSource(httpServletRequest);
+
+        try {
+
+            sutController.setExecutingInitMongo(true);
+
+            SimpleLogger.debug("Received mongo database command");
+
+            Object connection = noKillSwitch(sutController::getMongoConnection);
+            if (connection == null) {
+                String msg = "No active database connection";
+                SimpleLogger.warn(msg);
+                return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
+            }
+
+            if (dto.insertions == null || dto.insertions.isEmpty()) {
+                String msg = "No input command";
+                SimpleLogger.warn(msg);
+                return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
+            }
+
+            if (dto.insertions.stream().anyMatch(i -> i.collectionName.isEmpty() || i.databaseName.isEmpty())) {
+                String msg = "Insertion with no target collection or database";
+                SimpleLogger.warn(msg);
+                return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
+            }
+
+            MongoInsertionResultsDto mongoInsertionResultsDto = null;
+
+
+            try {
+                mongoInsertionResultsDto = MongoScriptRunner.executeInsert(connection, dto.insertions);
+            } catch (Exception e) {
+                String msg = "Failed to execute database command: " + e.getMessage();
+                SimpleLogger.warn(msg);
+                return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
+            }
+
+            if (mongoInsertionResultsDto != null) {
+                return Response.status(200).entity(WrappedResponseDto.withData(mongoInsertionResultsDto)).build();
+            } else {
+                return Response.status(204).entity(WrappedResponseDto.withNoData()).build();
+            }
+
+        } catch (RuntimeException e) {
+            String msg = "Thrown exception: " + e.getMessage();
+            SimpleLogger.error(msg, e);
+            return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
+        } finally {
+            sutController.setExecutingInitMongo(false);
         }
     }
 }

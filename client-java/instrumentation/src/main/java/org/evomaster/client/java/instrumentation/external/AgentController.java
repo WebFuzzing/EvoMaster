@@ -93,6 +93,10 @@ public class AgentController {
                         handleExecutingInitSql();
                         sendCommand(Command.ACK);
                         break;
+                    case EXECUTING_INIT_MONGO:
+                        handleExecutingInitMongo();
+                        sendCommand(Command.ACK);
+                        break;
                     case EXECUTING_ACTION:
                         handleExecutingAction();
                         sendCommand(Command.ACK);
@@ -162,6 +166,16 @@ public class AgentController {
             InstrumentationController.setExecutingInitSql(executingInitSql);
         } catch (Exception e){
             SimpleLogger.error("Failure in handling executing-init-sql: "+e.getMessage());
+        }
+    }
+
+    private static void handleExecutingInitMongo() {
+        try {
+            Object msg = in.readObject();
+            Boolean executingInitMongo = (Boolean) msg;
+            InstrumentationController.setExecutingInitMongo(executingInitMongo);
+        } catch (Exception e){
+            SimpleLogger.error("Failure in handling executing-init-mongo: "+e.getMessage());
         }
     }
 

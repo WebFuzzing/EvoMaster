@@ -11,7 +11,10 @@ import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionResult
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.problem.api.service.ApiWsFitness
+import org.evomaster.core.mongo.MongoDbAction
+import org.evomaster.core.mongo.MongoDbActionResult
+import org.evomaster.core.mongo.MongoDbActionTransformer
+import org.evomaster.core.mongo.MongoExecution
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionResult
@@ -122,6 +125,31 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
                 return false
             }
         }
+        return true
+    }
+
+    fun doMongoDbCalls(allDbActions: List<MongoDbAction>, actionResults: MutableList<ActionResult>) : Boolean {
+
+        if (allDbActions.isEmpty()) {
+            return true
+        }
+
+        val mongoDbResults = (allDbActions.indices).map { MongoDbActionResult() }
+        actionResults.addAll(mongoDbResults)
+
+        val dto = try {
+            MongoDbActionTransformer.transform(allDbActions)
+        }catch (e : IllegalArgumentException){
+            throw e
+        }
+
+        val mongoResults = rc.executeMongoDatabaseInsertions(dto)
+        val executedResults = mongoResults?.executionResults
+
+        executedResults?.forEachIndexed { index, b ->
+            mongoDbResults[index].setInsertExecutionResult(b)
+        }
+
         return true
     }
 
@@ -245,6 +273,16 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
 
                 if (toMinimize.isNotEmpty()) fv.setExtraToMinimize(i, toMinimize)
             }
+        }
+
+        if (configuration.extractMongoExecutionInfo) {
+
+            for (i in 0 until dto.extraHeuristics.size) {
+                val extra = dto.extraHeuristics[i]
+                fv.setMongoExecution(i, MongoExecution.fromDto(extra.mongoExecutionDto))
+            }
+
+            fv.aggregateMongoDatabaseData()
         }
     }
 }

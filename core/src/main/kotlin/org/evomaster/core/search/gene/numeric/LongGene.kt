@@ -68,7 +68,8 @@ class LongGene(
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
-        return value.toString()
+        val stringValue = value.toString()
+        return if(mode==GeneUtils.EscapeMode.EJSON) "{\"\$numberLong\":\"$stringValue\"}" else stringValue
     }
 
     override fun copyValueFrom(other: Gene): Boolean {

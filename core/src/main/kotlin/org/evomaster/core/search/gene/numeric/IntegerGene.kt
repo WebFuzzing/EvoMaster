@@ -143,7 +143,8 @@ class IntegerGene(
         targetFormat: OutputFormat?,
         extraCheck: Boolean
     ): String {
-        return value.toString()
+        val stringValue = value.toString()
+        return if(mode==GeneUtils.EscapeMode.EJSON) "{\"\$numberInt\":\"$stringValue\"}" else stringValue
     }
 
 

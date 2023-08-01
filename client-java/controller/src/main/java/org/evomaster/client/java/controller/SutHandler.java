@@ -2,6 +2,8 @@ package org.evomaster.client.java.controller;
 
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionResultsDto;
 import org.evomaster.client.java.controller.db.DbCleaner;
 import org.evomaster.client.java.controller.internal.db.DbSpecification;
 
@@ -85,6 +87,7 @@ public interface SutHandler {
      */
     InsertionResultsDto execInsertionsIntoDatabase(List<InsertionDto> insertions, InsertionResultsDto... previous);
 
+    MongoInsertionResultsDto execInsertionsIntoMongoDatabase(List<MongoInsertionDto> insertions);
 
     /**
      * <p>
@@ -172,6 +175,8 @@ public interface SutHandler {
      */
 
     List<DbSpecification> getDbSpecifications();
+
+    default Object getMongoConnection() {return null;}
 
 
     /**

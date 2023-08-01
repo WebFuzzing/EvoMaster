@@ -27,6 +27,11 @@ enum class ActionFilter {
     ONLY_SQL,
 
     /**
+     * actions which are MONGO-related actions
+     */
+    ONLY_MONGO,
+
+    /**
      * actions which are not SQL-related actions
      */
     NO_SQL,

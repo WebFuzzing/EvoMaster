@@ -1,9 +1,7 @@
 package org.evomaster.core.problem.rest.resource
 
 import io.swagger.parser.OpenAPIParser
-import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto
-import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto
-import org.evomaster.client.java.controller.api.dto.database.operations.QueryResultDto
+import org.evomaster.client.java.controller.api.dto.database.operations.*
 import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.EMConfig
@@ -270,6 +268,10 @@ class ResourceNodeWithDbTest {
     private class DbExecutor : DatabaseExecutor {
 
         override fun executeDatabaseInsertionsAndGetIdMapping(dto: DatabaseCommandDto): InsertionResultsDto? {
+            return null
+        }
+
+        override fun executeMongoDatabaseInsertions(dto: MongoDatabaseCommandDto): MongoInsertionResultsDto? {
             return null
         }
 

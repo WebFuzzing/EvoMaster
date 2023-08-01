@@ -2,6 +2,7 @@ package org.evomaster.core.search.impact.impactinfocollection
 
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
+import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.search.Action
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -194,7 +195,7 @@ class InitializationActionImpacts(val abstract: Boolean, val enableImpactOnDupli
         }
 
         val original = completeSequence.size
-        val seq = list.filterIsInstance<DbAction>().filter{ !it.representExistingData }
+        val seq = list.filter{(it is DbAction && !it.representExistingData) || it is MongoDbAction }
         if (seq.size > original) {
             log.warn("there are more db actions after the truncation")
             return

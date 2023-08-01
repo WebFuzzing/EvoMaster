@@ -26,5 +26,7 @@ public class ControllerConstants {
 
     public static final String DATABASE_COMMAND = "/databaseCommand";
 
+    public static final String MONGO_INSERTION = "/mongoInsertion";
+
     public static final String POST_SEARCH_ACTION = "/postSearchAction";
 }

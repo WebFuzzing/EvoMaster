@@ -3,9 +3,7 @@ package org.evomaster.core.problem.rest.service.resource
 import com.google.inject.Module
 import com.netflix.governator.lifecycle.LifecycleManager
 import com.netflix.governator.guice.LifecycleInjector
-import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto
-import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto
-import org.evomaster.client.java.controller.api.dto.database.operations.QueryResultDto
+import org.evomaster.client.java.controller.api.dto.database.operations.*
 import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.BaseModule
@@ -81,6 +79,10 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
     private class DirectDatabaseExecutor : DatabaseExecutor {
 
         override fun executeDatabaseInsertionsAndGetIdMapping(dto: DatabaseCommandDto): InsertionResultsDto? {
+            return null
+        }
+
+        override fun executeMongoDatabaseInsertions(dto: MongoDatabaseCommandDto): MongoInsertionResultsDto? {
             return null
         }
 
