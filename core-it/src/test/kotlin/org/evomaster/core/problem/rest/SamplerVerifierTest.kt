@@ -6,9 +6,7 @@ import com.google.inject.Provides
 import com.google.inject.Singleton
 import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.client.java.controller.api.dto.*
-import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto
-import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto
-import org.evomaster.client.java.controller.api.dto.database.operations.QueryResultDto
+import org.evomaster.client.java.controller.api.dto.database.operations.*
 import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto
 import org.evomaster.core.BaseModule
 import org.evomaster.core.problem.rest.service.ResourceRestModule
@@ -367,6 +365,10 @@ class SamplerVerifierTest {
         }
 
         override fun executeDatabaseInsertionsAndGetIdMapping(dto: DatabaseCommandDto): InsertionResultsDto? {
+            return null
+        }
+
+        override fun executeMongoDatabaseInsertions(dto: MongoDatabaseCommandDto): MongoInsertionResultsDto? {
             return null
         }
 

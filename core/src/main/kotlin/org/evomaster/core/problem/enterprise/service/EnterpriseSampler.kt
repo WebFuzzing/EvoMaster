@@ -4,6 +4,8 @@ import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.SqlInsertBuilder
+import org.evomaster.core.mongo.MongoDbAction
+import org.evomaster.core.mongo.MongoInsertBuilder
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
@@ -74,6 +76,12 @@ abstract class EnterpriseSampler<T> : Sampler<T>() where T : Individual {
         }
 
         return actions
+    }
+
+    fun sampleMongoInsertion(database: String, collection: String, documentsType: String): MongoDbAction {
+        val action = MongoInsertBuilder().createMongoInsertionAction(database, collection, documentsType)
+        action.seeTopGenes().forEach{it.doInitialize(randomness)}
+        return action
     }
 
     fun canInsertInto(tableName: String) : Boolean {

@@ -94,7 +94,23 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!--
+                    There is an issue that arises when running the MongoEMGenerationTest after other Mongo tests.
+                    The problem is that MappingMongoEntityInformationReplacement does not work in that case, causing the test to fail.
+                    This replacement relies on the flag "instrumentMR_MONGO" to be true when the SUT starts.
+                    However, in the other tests, except for MongoEMGenerationTest, "instrumentMR_MONGO" is set to false when the SUT starts.
+                    It seems that when the replacement does not occur in the other tests, some component is left in an inconsistent state,
+                    or there may be a related cache that prevents the replacement from happening in the MongoEMGenerationTest.
+                    The issue can be resolved by using separate JVM processes for each test
+                     -->
+                    <reuseForks>false</reuseForks>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
-    
+
 </project>

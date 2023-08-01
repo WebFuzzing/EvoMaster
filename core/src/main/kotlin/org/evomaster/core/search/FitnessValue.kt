@@ -1,10 +1,12 @@
 package org.evomaster.core.search
 
 import org.evomaster.client.java.controller.api.dto.BootTimeInfoDto
+import org.evomaster.client.java.controller.api.dto.database.execution.MongoFailedQuery
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DatabaseExecution
 import org.evomaster.core.EMConfig.SecondaryObjectiveStrategy.*
 import org.evomaster.core.Lazy
+import org.evomaster.core.mongo.MongoExecution
 import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceRequest
 import org.evomaster.core.search.service.IdMapper
@@ -73,11 +75,19 @@ class FitnessValue(
      */
     val databaseExecutions: MutableMap<Int, DatabaseExecution> = mutableMapOf()
 
+    val mongoExecutions: MutableMap<Int, MongoExecution> = mutableMapOf()
+
     /**
      * When SUT does SQL commands using WHERE, keep track of when those "fails" (ie evaluate
      * to false), in particular the tables and columns in them involved
      */
     private val aggregatedFailedWhere: MutableMap<String, Set<String>> = mutableMapOf()
+
+    /**
+     * When SUT does MONGO commands using FIND, keep track of when those "fails" (ie evaluate
+     * to false), in particular the collection and fields in them involved
+     */
+    private val aggregatedFailedFind: MutableList<MongoFailedQuery> = mutableListOf()
 
     /**
      * To keep track of accessed external services prevent from adding them again
@@ -109,7 +119,9 @@ class FitnessValue(
         copy.targets.putAll(this.targets)
         copy.extraToMinimize.putAll(this.extraToMinimize)
         copy.databaseExecutions.putAll(this.databaseExecutions) //note: DatabaseExecution supposed to be immutable
+        copy.mongoExecutions.putAll(this.mongoExecutions)
         copy.aggregateDatabaseData()
+        copy.aggregateMongoDatabaseData()
         copy.executionTimeMs = executionTimeMs
         copy.accessedExternalServiceRequests.putAll(this.accessedExternalServiceRequests)
         copy.accessedDefaultWM.putAll(this.accessedDefaultWM.toMap())
@@ -129,6 +141,10 @@ class FitnessValue(
                 {x ->  x.failedWhere}
         ))
     }
+    fun aggregateMongoDatabaseData(){
+        aggregatedFailedFind.clear()
+        mongoExecutions.values.map { it.failedQueries?.let { it1 -> aggregatedFailedFind.addAll(it1) } }
+    }
 
     fun setExtraToMinimize(actionIndex: Int, list: List<Double>) {
         extraToMinimize[actionIndex] = list.sorted()
@@ -138,6 +154,10 @@ class FitnessValue(
         databaseExecutions[actionIndex] = databaseExecution
     }
 
+    fun setMongoExecution(actionIndex: Int, mongoExecution: MongoExecution){
+        mongoExecutions[actionIndex] = mongoExecution
+    }
+
     fun isAnyDatabaseExecutionInfo() = databaseExecutions.isNotEmpty()
 
     fun getViewOfData(): Map<Int, Heuristics> {
@@ -145,6 +165,8 @@ class FitnessValue(
     }
 
     fun getViewOfAggregatedFailedWhere() = aggregatedFailedWhere
+
+    fun getViewOfAggregatedFailedFind() = aggregatedFailedFind
 
     fun doesCover(target: Int): Boolean {
         return targets[target]?.distance == MAX_VALUE

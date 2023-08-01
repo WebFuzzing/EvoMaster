@@ -31,7 +31,7 @@ public class QueryParser {
             new NotSelector(),
             new ExistsSelector(),
             new TypeSelector(),
-            new ImplicitEqualsSelector()
+            new ImplicitSelector()
     );
 
     public QueryOperation parse(Object query) {

@@ -181,6 +181,8 @@ There are 3 types of options:
 |`externalRequestResponseSelectionStrategy`| __Enum__. Harvested external request response selection strategy. *Valid values*: `EXACT, CLOSEST_SAME_DOMAIN, CLOSEST_SAME_PATH, RANDOM`. *Default value*: `EXACT`.|
 |`externalServiceIP`| __String__. User provided external service IP. *Constraints*: `regex ^127\.((25[0-5]\|2[0-4][0-9]\|[01]?[0-9][0-9]?)\.){2}(25[0-5]\|2[0-4][0-9]\|[01]?[0-9][0-9]?)$`. *Default value*: `127.0.0.2`.|
 |`externalServiceIPSelectionStrategy`| __Enum__. Specify a method to select the first external service spoof IP address. *Valid values*: `NONE, DEFAULT, USER, RANDOM`. *Default value*: `NONE`.|
+|`extractMongoExecutionInfo`| __Boolean__. Enable extracting Mongo execution info. *Default value*: `false`.|
+|`generateMongoData`| __Boolean__. Enable EvoMaster to generate Mongo data with direct accesses to the database. *Default value*: `false`.|
 |`generateSqlDataWithDSE`| __Boolean__. Enable EvoMaster to generate SQL data with direct accesses to the database. Use Dynamic Symbolic Execution. *Default value*: `false`.|
 |`heuristicsForMongo`| __Boolean__. Tracking of Mongo commands to improve test generation. *Default value*: `false`.|
 |`impactAfterMutationFile`| __String__. Specify a path to save collected impact info after each mutation during search, only useful for debugging. *Default value*: `impactSnapshot.csv`.|

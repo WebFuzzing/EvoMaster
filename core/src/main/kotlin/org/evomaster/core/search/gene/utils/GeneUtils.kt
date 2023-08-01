@@ -54,6 +54,7 @@ object GeneUtils {
         SQL,
         ASSERTION,
         EXPECTATION,
+        EJSON,
         JSON,
         TEXT,
         XML,
@@ -172,7 +173,7 @@ object GeneUtils {
             EscapeMode.SQL -> applySqlEscapes(string, format)
             EscapeMode.ASSERTION -> applyAssertionEscapes(string, format)
             EscapeMode.EXPECTATION -> applyExpectationEscapes(string, format)
-            EscapeMode.JSON -> applyJsonEscapes(string, format)
+            EscapeMode.JSON, EscapeMode.EJSON-> applyJsonEscapes(string, format)
             EscapeMode.TEXT -> applyTextEscapes(string, format)
             EscapeMode.NONE,
             EscapeMode.X_WWW_FORM_URLENCODED,
