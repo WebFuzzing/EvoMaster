@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.externalservice
 
 import org.evomaster.core.problem.externalservice.param.ResponseParam
+import org.evomaster.core.search.EnvironmentAction
 import org.evomaster.core.search.action.Action
 
 abstract class ApiExternalServiceAction(
@@ -16,7 +17,7 @@ abstract class ApiExternalServiceAction(
     response: ResponseParam,
     active : Boolean = false,
     used : Boolean = false
-) : Action(listOf(response)){
+) : EnvironmentAction(listOf(response)){
 
     companion object{
         /**

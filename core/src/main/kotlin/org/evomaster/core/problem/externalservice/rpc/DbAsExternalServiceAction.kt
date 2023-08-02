@@ -47,9 +47,6 @@ class DbAsExternalServiceAction (
         return response.genes
     }
 
-    override fun shouldCountForFitnessEvaluations(): Boolean {
-        return false
-    }
 
     override fun copyContent(): StructuralElement {
         return DbAsExternalServiceAction(commandName, descriptiveInfo, requestRuleIdentifier, response.copy() as ClassResponseParam, active, used)

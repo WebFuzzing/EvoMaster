@@ -2,6 +2,7 @@ package org.evomaster.core.database
 
 import org.evomaster.core.database.schema.Column
 import org.evomaster.core.database.schema.Table
+import org.evomaster.core.search.EnvironmentAction
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
@@ -9,8 +10,8 @@ import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 
 /**
- *  An action executed on the database.
- *  Typically, a SQL Insertion
+ *  An action executed on a SQL database.
+ *  Typically, a SQL Insertion operation.
  */
 class SqlAction(
         /**
@@ -29,7 +30,7 @@ class SqlAction(
          * This is very helpful when dealing with Foreign Keys.
          */
         val representExistingData: Boolean = false
-) : Action(listOf()) {
+) : EnvironmentAction(listOf()) {
 
     init {
         /*
@@ -100,10 +101,6 @@ class SqlAction(
 
     override fun copyContent(): Action {
         return SqlAction(table, selectedColumns, id, genes.map(Gene::copy), representExistingData)
-    }
-
-    override fun shouldCountForFitnessEvaluations(): Boolean {
-        return false
     }
 
     fun geInsertionId(): Long {

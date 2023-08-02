@@ -1,6 +1,7 @@
 package org.evomaster.core.mongo
 
 import org.evomaster.core.problem.rest.RestActionBuilderV3.createObjectGenesForDTOs
+import org.evomaster.core.search.EnvironmentAction
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.Gene
 import java.util.*
@@ -19,7 +20,7 @@ class MongoDbAction(
      */
     val documentsType: String,
     computedGenes: List<Gene>? = null
-) : Action(listOf()) {
+) : EnvironmentAction(listOf()) {
 
     private val genes: List<Gene> = (computedGenes ?: computeGenes()).also { addChildren(it) }
 
@@ -38,10 +39,6 @@ class MongoDbAction(
 
     override fun seeTopGenes(): List<out Gene> {
         return genes
-    }
-
-    override fun shouldCountForFitnessEvaluations(): Boolean {
-        return false
     }
 
     override fun copyContent(): Action {
