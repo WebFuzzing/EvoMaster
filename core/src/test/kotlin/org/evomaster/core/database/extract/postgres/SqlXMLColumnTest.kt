@@ -2,8 +2,8 @@ package org.evomaster.core.database.extract.postgres
 
 import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.DbActionTransformer
+import org.evomaster.core.database.SqlAction
+import org.evomaster.core.database.SqlActionTransformer
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.numeric.IntegerGene
@@ -50,7 +50,7 @@ class SqlXMLColumnTest : ExtractTestBasePostgres() {
         val queryResultBeforeInsertion = SqlScriptRunner.execCommand(connection, query)
         assertTrue(queryResultBeforeInsertion.isEmpty)
 
-        val dbCommandDto = DbActionTransformer.transform(actions)
+        val dbCommandDto = SqlActionTransformer.transform(actions)
 
         SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
         val queryResultAfterInsertion = SqlScriptRunner.execCommand(connection, query)
@@ -74,14 +74,14 @@ class SqlXMLColumnTest : ExtractTestBasePostgres() {
         val action = actions[0]
 
         val newGene = SqlXMLGene("xmldata", ObjectGene("anElement", listOf(IntegerGene("integerElement", value = 0))))
-        val newInsertAction = DbAction(table = action.table, selectedColumns = action.selectedColumns, id = action.geInsertionId(), computedGenes = listOf(newGene))
+        val newInsertAction = SqlAction(table = action.table, selectedColumns = action.selectedColumns, id = action.geInsertionId(), computedGenes = listOf(newGene))
 
         val query = "Select * from x"
 
         val queryResultBeforeInsertion = SqlScriptRunner.execCommand(connection, query)
         assertTrue(queryResultBeforeInsertion.isEmpty)
 
-        val dbCommandDto = DbActionTransformer.transform(listOf(newInsertAction))
+        val dbCommandDto = SqlActionTransformer.transform(listOf(newInsertAction))
 
         SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
         val queryResultAfterInsertion = SqlScriptRunner.execCommand(connection, query)
@@ -105,14 +105,14 @@ class SqlXMLColumnTest : ExtractTestBasePostgres() {
         val action = actions[0]
 
         val newGene = SqlXMLGene("xmldata", ObjectGene("anElement", listOf(BooleanGene("booleanElement", value = false))))
-        val newInsertAction = DbAction(table = action.table, selectedColumns = action.selectedColumns, id = action.geInsertionId(), computedGenes = listOf(newGene))
+        val newInsertAction = SqlAction(table = action.table, selectedColumns = action.selectedColumns, id = action.geInsertionId(), computedGenes = listOf(newGene))
 
         val query = "Select * from x"
 
         val queryResultBeforeInsertion = SqlScriptRunner.execCommand(connection, query)
         assertTrue(queryResultBeforeInsertion.isEmpty)
 
-        val dbCommandDto = DbActionTransformer.transform(listOf(newInsertAction))
+        val dbCommandDto = SqlActionTransformer.transform(listOf(newInsertAction))
 
         SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
         val queryResultAfterInsertion = SqlScriptRunner.execCommand(connection, query)
@@ -136,14 +136,14 @@ class SqlXMLColumnTest : ExtractTestBasePostgres() {
         val action = actions[0]
 
         val newGene = SqlXMLGene("xmldata", ObjectGene("anElement", listOf(StringGene("stringElement", value = "Hello World"))))
-        val newInsertAction = DbAction(table = action.table, selectedColumns = action.selectedColumns, id = action.geInsertionId(), computedGenes = listOf(newGene))
+        val newInsertAction = SqlAction(table = action.table, selectedColumns = action.selectedColumns, id = action.geInsertionId(), computedGenes = listOf(newGene))
 
         val query = "Select * from x"
 
         val queryResultBeforeInsertion = SqlScriptRunner.execCommand(connection, query)
         assertTrue(queryResultBeforeInsertion.isEmpty)
 
-        val dbCommandDto = DbActionTransformer.transform(listOf(newInsertAction))
+        val dbCommandDto = SqlActionTransformer.transform(listOf(newInsertAction))
 
         SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
         val queryResultAfterInsertion = SqlScriptRunner.execCommand(connection, query)
@@ -167,14 +167,14 @@ class SqlXMLColumnTest : ExtractTestBasePostgres() {
         val action = actions[0]
 
         val newGene = SqlXMLGene("xmldata", ObjectGene("anElement", listOf(StringGene("stringElement", value = "<xml>This should be escaped</xml>"))))
-        val newInsertAction = DbAction(table = action.table, selectedColumns = action.selectedColumns, id = action.geInsertionId(), computedGenes = listOf(newGene))
+        val newInsertAction = SqlAction(table = action.table, selectedColumns = action.selectedColumns, id = action.geInsertionId(), computedGenes = listOf(newGene))
 
         val query = "Select * from x"
 
         val queryResultBeforeInsertion = SqlScriptRunner.execCommand(connection, query)
         assertTrue(queryResultBeforeInsertion.isEmpty)
 
-        val dbCommandDto = DbActionTransformer.transform(listOf(newInsertAction))
+        val dbCommandDto = SqlActionTransformer.transform(listOf(newInsertAction))
 
         SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
         val queryResultAfterInsertion = SqlScriptRunner.execCommand(connection, query)
@@ -203,14 +203,14 @@ class SqlXMLColumnTest : ExtractTestBasePostgres() {
         val newGene = SqlXMLGene("xmldata", parentElement)
         val expectedXML = newGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.XML)
 
-        val newInsertAction = DbAction(table = action.table, selectedColumns = action.selectedColumns, id = action.geInsertionId(), computedGenes = listOf(newGene))
+        val newInsertAction = SqlAction(table = action.table, selectedColumns = action.selectedColumns, id = action.geInsertionId(), computedGenes = listOf(newGene))
 
         val query = "Select * from x"
 
         val queryResultBeforeInsertion = SqlScriptRunner.execCommand(connection, query)
         assertTrue(queryResultBeforeInsertion.isEmpty)
 
-        val dbCommandDto = DbActionTransformer.transform(listOf(newInsertAction))
+        val dbCommandDto = SqlActionTransformer.transform(listOf(newInsertAction))
 
         SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
         val queryResultAfterInsertion = SqlScriptRunner.execCommand(connection, query)

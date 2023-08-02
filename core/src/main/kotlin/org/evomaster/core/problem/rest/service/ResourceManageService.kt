@@ -3,8 +3,8 @@ package org.evomaster.core.problem.rest.service
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.EMConfig.SqlInitResourceStrategy
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.DbActionUtils
+import org.evomaster.core.database.SqlAction
+import org.evomaster.core.database.SqlActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.*
@@ -224,7 +224,7 @@ class ResourceManageService {
 
                 val created = handleDbActionForCall(
                     call, forceSQLInsert, false, call.is2POST,
-                    previousDbActions = bindWith?.flatMap { it.seeActions(ActionFilter.ONLY_SQL) as List<DbAction>} ?: listOf())
+                    previousSqlActions = bindWith?.flatMap { it.seeActions(ActionFilter.ONLY_SQL) as List<SqlAction>} ?: listOf())
 
                 if(!created){
                     /*
@@ -252,7 +252,7 @@ class ResourceManageService {
         forceInsert: Boolean = false,
         forceSelect: Boolean = false,
         employSQL: Boolean,
-        previousDbActions: List<DbAction> = listOf()
+        previousSqlActions: List<SqlAction> = listOf()
     ) : Boolean{
 
         val paramToTables = dm.extractRelatedTablesForCall(call, withSql = employSQL)
@@ -266,7 +266,7 @@ class ResourceManageService {
         val enableSingleInsertionForTable = randomness.nextBoolean(config.probOfEnablingSingleInsertionForTable)
 
         val dbActions = cluster.createSqlAction(
-            relatedTables, getSqlBuilder()!!, previousDbActions,
+            relatedTables, getSqlBuilder()!!, previousSqlActions,
             doNotCreateDuplicatedAction = true, isInsertion = !employSQLSelect,
             randomness = randomness,
             useExtraSqlDbConstraints = extraConstraints,
@@ -298,9 +298,9 @@ class ResourceManageService {
     }
 
     // might be useful for debugging
-    private fun containTables(dbActions: MutableList<DbAction>, tables: Set<String>) : Boolean{
+    private fun containTables(sqlActions: MutableList<SqlAction>, tables: Set<String>) : Boolean{
 
-        val missing = tables.filter { t-> dbActions.none { d-> d.table.name.equals(t, ignoreCase = true) } }
+        val missing = tables.filter { t-> sqlActions.none { d-> d.table.name.equals(t, ignoreCase = true) } }
         if (missing.isNotEmpty())
             log.warn("missing rows of tables {} to be created.", missing.joinToString(",") { it })
         return missing.isEmpty()
@@ -311,13 +311,13 @@ class ResourceManageService {
 
     private fun hasDBHandler() : Boolean = sqlInsertBuilder!=null
 
-    private fun repairDbActionsForResource(dbActions: MutableList<DbAction>) : Boolean{
+    private fun repairDbActionsForResource(sqlActions: MutableList<SqlAction>) : Boolean{
         /**
          * First repair SQL Genes (i.e. SQL Timestamps)
          */
-        GeneUtils.repairGenes(dbActions.flatMap { it.seeTopGenes() })
+        GeneUtils.repairGenes(sqlActions.flatMap { it.seeTopGenes() })
 
-        return DbActionUtils.repairBrokenDbActionsList(dbActions, randomness)
+        return SqlActionUtils.repairBrokenDbActionsList(sqlActions, randomness)
     }
 
 

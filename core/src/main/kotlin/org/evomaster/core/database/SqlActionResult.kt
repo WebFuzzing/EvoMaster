@@ -5,17 +5,17 @@ import org.evomaster.core.search.action.ActionResult
 /**
  * sql insert action execution result
  */
-class DbActionResult : ActionResult {
+class SqlActionResult : ActionResult {
 
     constructor(stopping: Boolean = false) : super(stopping)
-    constructor(other: DbActionResult): super(other)
+    constructor(other: SqlActionResult): super(other)
 
     companion object{
         const val INSERT_SQL_EXECUTE_SUCCESSFULLY = "INSERT_SQL_EXECUTE_SUCCESSFULLY"
     }
 
-    override fun copy(): DbActionResult {
-        return DbActionResult(this)
+    override fun copy(): SqlActionResult {
+        return SqlActionResult(this)
     }
 
     /**
@@ -31,6 +31,6 @@ class DbActionResult : ActionResult {
     fun getInsertExecutionResult() = getResultValue(INSERT_SQL_EXECUTE_SUCCESSFULLY)?.toBoolean()?:false
 
     override fun matchedType(action: Action): Boolean {
-        return action is DbAction
+        return action is SqlAction
     }
 }

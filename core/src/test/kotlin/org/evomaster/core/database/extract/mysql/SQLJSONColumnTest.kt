@@ -2,8 +2,8 @@ package org.evomaster.core.database.extract.mysql
 
 import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.DbActionTransformer
+import org.evomaster.core.database.SqlAction
+import org.evomaster.core.database.SqlActionTransformer
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.ArrayGene
@@ -50,7 +50,7 @@ class SQLJSONColumnTest : ExtractTestBaseMySQL() {
         val queryResultBeforeInsertion = SqlScriptRunner.execCommand(connection, query)
         assertTrue(queryResultBeforeInsertion.isEmpty)
 
-        val dbCommandDto = DbActionTransformer.transform(actions)
+        val dbCommandDto = SqlActionTransformer.transform(actions)
         SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
 
         val queryResultAfterInsertion = SqlScriptRunner.execCommand(connection, query)
@@ -81,14 +81,14 @@ class SQLJSONColumnTest : ExtractTestBaseMySQL() {
         val objectGene = ObjectGene("jsondata", fields = listOf(IntegerGene("integerValue", value = 0), StringGene("stringValue", value = "Hello World"), BooleanGene("booleanValue", value = false)))
         val newGene = SqlJSONGene("jsondata", objectGene)
 
-        val newInsertAction = DbAction(table = action.table, selectedColumns = action.selectedColumns, id = action.geInsertionId(), computedGenes = listOf(genes[0], newGene))
+        val newInsertAction = SqlAction(table = action.table, selectedColumns = action.selectedColumns, id = action.geInsertionId(), computedGenes = listOf(genes[0], newGene))
 
         val query = "Select * from people where id=%s".format(idValue)
 
         val queryResultBeforeInsertion = SqlScriptRunner.execCommand(connection, query)
         assertTrue(queryResultBeforeInsertion.isEmpty)
 
-        val dbCommandDto = DbActionTransformer.transform(listOf(newInsertAction))
+        val dbCommandDto = SqlActionTransformer.transform(listOf(newInsertAction))
         SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
 
         val queryResultAfterInsertion = SqlScriptRunner.execCommand(connection, query)
@@ -125,14 +125,14 @@ class SQLJSONColumnTest : ExtractTestBaseMySQL() {
         val objectGene = ObjectGene("jsondata", fields = listOf(DoubleGene("doubleValue", value = Math.PI)))
         val newGene = SqlJSONGene("jsondata", objectGene)
 
-        val newInsertAction = DbAction(table = action.table, selectedColumns = action.selectedColumns, id = action.geInsertionId(), computedGenes = listOf(genes[0], newGene))
+        val newInsertAction = SqlAction(table = action.table, selectedColumns = action.selectedColumns, id = action.geInsertionId(), computedGenes = listOf(genes[0], newGene))
 
         val query = "Select * from people where id=%s".format(idValue)
 
         val queryResultBeforeInsertion = SqlScriptRunner.execCommand(connection, query)
         assertTrue(queryResultBeforeInsertion.isEmpty)
 
-        val dbCommandDto = DbActionTransformer.transform(listOf(newInsertAction))
+        val dbCommandDto = SqlActionTransformer.transform(listOf(newInsertAction))
         SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
 
         val queryResultAfterInsertion = SqlScriptRunner.execCommand(connection, query)
@@ -171,14 +171,14 @@ class SQLJSONColumnTest : ExtractTestBaseMySQL() {
         val objectGene = ObjectGene("jsondata", fields = listOf(arrayGene))
         val newGene = SqlJSONGene("jsondata", objectGene)
 
-        val newInsertAction = DbAction(table = action.table, selectedColumns = action.selectedColumns, id = action.geInsertionId(), computedGenes = listOf(genes[0], newGene))
+        val newInsertAction = SqlAction(table = action.table, selectedColumns = action.selectedColumns, id = action.geInsertionId(), computedGenes = listOf(genes[0], newGene))
 
         val query = "Select * from people where id=%s".format(idValue)
 
         val queryResultBeforeInsertion = SqlScriptRunner.execCommand(connection, query)
         assertTrue(queryResultBeforeInsertion.isEmpty)
 
-        val dbCommandDto = DbActionTransformer.transform(listOf(newInsertAction))
+        val dbCommandDto = SqlActionTransformer.transform(listOf(newInsertAction))
         SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
 
         val queryResultAfterInsertion = SqlScriptRunner.execCommand(connection, query)
@@ -215,14 +215,14 @@ class SQLJSONColumnTest : ExtractTestBaseMySQL() {
         val objectGene = ObjectGene("jsondata", fields = listOf(innerObjectGene))
         val newGene = SqlJSONGene("jsondata", objectGene)
 
-        val newInsertAction = DbAction(table = action.table, selectedColumns = action.selectedColumns, id = action.geInsertionId(), computedGenes = listOf(genes[0], newGene))
+        val newInsertAction = SqlAction(table = action.table, selectedColumns = action.selectedColumns, id = action.geInsertionId(), computedGenes = listOf(genes[0], newGene))
 
         val query = "Select * from people where id=%s".format(idValue)
 
         val queryResultBeforeInsertion = SqlScriptRunner.execCommand(connection, query)
         assertTrue(queryResultBeforeInsertion.isEmpty)
 
-        val dbCommandDto = DbActionTransformer.transform(listOf(newInsertAction))
+        val dbCommandDto = SqlActionTransformer.transform(listOf(newInsertAction))
         SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
 
         val queryResultAfterInsertion = SqlScriptRunner.execCommand(connection, query)

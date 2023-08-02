@@ -1,8 +1,8 @@
 package org.evomaster.core.database.extract.h2
 
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
-import org.evomaster.core.database.DbActionTransformer
-import org.evomaster.core.database.DbActionUtils
+import org.evomaster.core.database.SqlActionTransformer
+import org.evomaster.core.database.SqlActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.enterprise.SampleType
@@ -28,9 +28,9 @@ class DoctorsExtractTest : ExtractTestBaseH2() {
 
         //force binding
         val randomness = Randomness()
-        DbActionUtils.randomizeDbActionGenes(actions, randomness)
+        SqlActionUtils.randomizeDbActionGenes(actions, randomness)
 
-        val dto = DbActionTransformer.transform(actions)
+        val dto = SqlActionTransformer.transform(actions)
 
         assertEquals(actions.size, dto.insertions.size)
     }

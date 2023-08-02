@@ -1,6 +1,6 @@
 package org.evomaster.core.search.service.mutator
 
-import org.evomaster.core.database.DbAction
+import org.evomaster.core.database.SqlAction
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
@@ -28,8 +28,8 @@ data class MutatedGeneSpecification (
     val addedInitializationGroup: MutableList<List<Action>> = mutableListOf(),
 
         //SQL resource handling
-    val addedDbActions : MutableList<List<DbAction>> = mutableListOf(),
-    val removedDbActions : MutableList<Pair<DbAction, Int>> = mutableListOf(),
+    val addedSqlActions : MutableList<List<SqlAction>> = mutableListOf(),
+    val removedSqlActions : MutableList<Pair<SqlAction, Int>> = mutableListOf(),
 
         // external service actions
     val addedExternalServiceActions : MutableList<Action> = mutableListOf()
@@ -157,12 +157,12 @@ data class MutatedGeneSpecification (
     // add, remove, swap, add_sql, remove_sql
     fun didStructureMutation() =  mutatedGenes.any { it.type != MutatedType.MODIFY }
             || (mutatedInitGenes.plus(mutatedDbGenes)).any { it.type != MutatedType.MODIFY }
-            || addedDbActions.isNotEmpty() || removedDbActions.isNotEmpty()
+            || addedSqlActions.isNotEmpty() || removedSqlActions.isNotEmpty()
 
     fun isMutated(gene: Gene) = (mutatedInitGenes.plus(mutatedDbGenes)).any { it.gene == gene }
             || mutatedGenes.any { it.gene == gene }
-            || addedDbActions.flatten().any { it.seeTopGenes().contains(gene) }
-            || removedDbActions.map { it.first }.any { it.seeTopGenes().contains(gene) }
+            || addedSqlActions.flatten().any { it.seeTopGenes().contains(gene) }
+            || removedSqlActions.map { it.first }.any { it.seeTopGenes().contains(gene) }
 
     fun mutatedActionOrInit() = setOf((mutatedGenes.plus(mutatedDbGenes)).isEmpty(), mutatedInitGenes.isNotEmpty())
 

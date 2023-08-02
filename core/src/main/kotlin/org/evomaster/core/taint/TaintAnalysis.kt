@@ -5,7 +5,7 @@ import org.evomaster.client.java.instrumentation.shared.StringSpecialization
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.client.java.instrumentation.shared.TaintType
-import org.evomaster.core.database.DbAction
+import org.evomaster.core.database.SqlAction
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.problem.rest.RestCallAction
@@ -51,7 +51,7 @@ object TaintAnalysis {
         if (log.isTraceEnabled) {
             log.trace("do taint analysis for individual which contains dbactions: {} and rest actions: {}",
                     individual.seeInitializingActions().joinToString(",") {
-                        if (it is DbAction) it.getResolvedName() else it.getName()
+                        if (it is SqlAction) it.getResolvedName() else it.getName()
                     },
                     individual.seeAllActions().joinToString(",") {
                         if (it is RestCallAction) it.resolvedPath() else it.getName()

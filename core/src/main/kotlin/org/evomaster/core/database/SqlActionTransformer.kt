@@ -9,18 +9,18 @@ import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.sql.SqlWrapperGene
 
 
-object DbActionTransformer {
+object SqlActionTransformer {
 
     /**
      * @param sqlIdMap is a map from Insertion Id to generated Id in database
      */
-    fun transform(insertions: List<DbAction>, sqlIdMap : Map<Long, Long> = mapOf(), previousDbActions: MutableList<DbAction> = mutableListOf()) : DatabaseCommandDto {
+    fun transform(insertions: List<SqlAction>, sqlIdMap : Map<Long, Long> = mapOf(), previousSqlActions: MutableList<SqlAction> = mutableListOf()) : DatabaseCommandDto {
 
         val list = mutableListOf<InsertionDto>()
         val previous = mutableListOf<Gene>()
 
         previous.addAll(
-            previousDbActions.flatMap(DbAction::seeTopGenes)
+            previousSqlActions.flatMap(SqlAction::seeTopGenes)
         )
         for (i in 0 until insertions.size) {
 

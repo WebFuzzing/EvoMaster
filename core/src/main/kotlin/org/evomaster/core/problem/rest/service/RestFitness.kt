@@ -1,6 +1,6 @@
 package org.evomaster.core.problem.rest.service
 
-import org.evomaster.core.database.DbAction
+import org.evomaster.core.database.SqlAction
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
@@ -34,7 +34,7 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
 
         val actionResults: MutableList<ActionResult> = mutableListOf()
 
-        doDbCalls(individual.seeInitializingActions().filterIsInstance<DbAction>(), actionResults = actionResults)
+        doDbCalls(individual.seeInitializingActions().filterIsInstance<SqlAction>(), actionResults = actionResults)
         doMongoDbCalls(individual.seeInitializingActions().filterIsInstance<MongoDbAction>(), actionResults = actionResults)
 
 

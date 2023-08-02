@@ -2,7 +2,7 @@ package org.evomaster.core.problem.rest.service
 
 
 import com.google.inject.Inject
-import org.evomaster.core.database.DbAction
+import org.evomaster.core.database.SqlAction
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
@@ -50,16 +50,16 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
             This map is used to record the key mapping in SQL, e.g., PK, FK
          */
         val sqlIdMap = mutableMapOf<Long, Long>()
-        val executedDbActions = mutableListOf<DbAction>()
+        val executedSqlActions = mutableListOf<SqlAction>()
 
         val actionResults: MutableList<ActionResult> = mutableListOf()
 
         //whether there exist some SQL execution failure
         var failureBefore = doDbCalls(
-            individual.seeInitializingActions().filterIsInstance<DbAction>(),
+            individual.seeInitializingActions().filterIsInstance<SqlAction>(),
             sqlIdMap,
             true,
-            executedDbActions,
+            executedSqlActions,
             actionResults
         )
 
@@ -82,10 +82,10 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
         for (call in individual.getResourceCalls()) {
 
             val result = doDbCalls(
-                call.seeActions(ActionFilter.ONLY_SQL) as List<DbAction>,
+                call.seeActions(ActionFilter.ONLY_SQL) as List<SqlAction>,
                 sqlIdMap,
                 failureBefore,
-                executedDbActions,
+                executedSqlActions,
                 actionResults
             )
             failureBefore = failureBefore || result

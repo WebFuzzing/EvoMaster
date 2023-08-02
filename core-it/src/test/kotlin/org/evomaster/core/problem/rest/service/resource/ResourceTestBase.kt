@@ -12,8 +12,8 @@ import org.evomaster.core.TestUtils
 import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.database.DatabaseExecutor
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.DbActionResult
+import org.evomaster.core.database.SqlAction
+import org.evomaster.core.database.SqlActionResult
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.database.extract.h2.ExtractTestBaseH2
 import org.evomaster.core.problem.rest.RestCallAction
@@ -209,9 +209,9 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
     ) : Boolean{
 
         if(resourceCalls.seeActions(ActionFilter.ONLY_SQL).isEmpty()) return false
-        if(!(resourceCalls.seeActions(ActionFilter.ONLY_SQL) as List<DbAction>).any { it.table.name.equals(tableName, ignoreCase = true) }) return false
+        if(!(resourceCalls.seeActions(ActionFilter.ONLY_SQL) as List<SqlAction>).any { it.table.name.equals(tableName, ignoreCase = true) }) return false
 
-        val dbGene = (resourceCalls.seeActions(ActionFilter.ONLY_SQL) as List<DbAction>).find { it.table.name.equals(tableName, ignoreCase = true) }!!.seeTopGenes().find { it.name.equals(colName, ignoreCase = true) }?: return false
+        val dbGene = (resourceCalls.seeActions(ActionFilter.ONLY_SQL) as List<SqlAction>).find { it.table.name.equals(tableName, ignoreCase = true) }!!.seeTopGenes().find { it.name.equals(colName, ignoreCase = true) }?: return false
 
         return resourceCalls.seeActions(ActionFilter.ONLY_SQL).filterIsInstance<RestCallAction>().flatMap { it.parameters.filter { it.name == paramName } }.all { p->
             ParamUtil.compareGenesWithValue(ParamUtil.getValueGene(dbGene!!), ParamUtil.getValueGene(p.gene))
@@ -452,7 +452,7 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
 
     private fun generateIndividualResults(individual: Individual) : List<ActionResult> = individual.seeActions(
         ActionFilter.ALL).map {
-        if (it is DbAction) DbActionResult().also { it.setInsertExecutionResult(true) }
+        if (it is SqlAction) SqlActionResult().also { it.setInsertExecutionResult(true) }
         else ActionResult()
     }
 }

@@ -1,7 +1,7 @@
 package org.evomaster.core.search.impact.impactinfocollection
 
 import org.evomaster.core.Lazy
-import org.evomaster.core.database.DbAction
+import org.evomaster.core.database.SqlAction
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.search.action.Action
 import org.slf4j.Logger
@@ -99,7 +99,7 @@ class InitializationActionImpacts(val abstract: Boolean, val enableImpactOnDupli
      * remove impacts of actions in initialization of the individual
      * @param removed to be removed, a list of Dbaction to its index
      */
-    fun removeInitialization(removed: List<Pair<DbAction, Int>>){
+    fun removeInitialization(removed: List<Pair<SqlAction, Int>>){
         val removedIndex = removed.map { it.second - existingSQLData}.sorted()
         val removedImpacts = removedIndex.map { completeSequence[it] }
 
@@ -189,13 +189,13 @@ class InitializationActionImpacts(val abstract: Boolean, val enableImpactOnDupli
      * @param list actions after truncation
      */
     fun truncation(list: List<Action>) {
-        val ignoreExisting = list.filterIsInstance<DbAction>().count{it.representExistingData }
+        val ignoreExisting = list.filterIsInstance<SqlAction>().count{it.representExistingData }
         if (ignoreExisting != getExistingData()){
             log.warn("mismatched existing data")
         }
 
         val original = completeSequence.size
-        val seq = list.filter{(it is DbAction && !it.representExistingData) || it is MongoDbAction }
+        val seq = list.filter{(it is SqlAction && !it.representExistingData) || it is MongoDbAction }
         if (seq.size > original) {
             log.warn("there are more db actions after the truncation")
             return

@@ -2,7 +2,7 @@ package org.evomaster.core.problem.enterprise.service
 
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
-import org.evomaster.core.database.DbAction
+import org.evomaster.core.database.SqlAction
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.mongo.MongoInsertBuilder
@@ -27,7 +27,7 @@ abstract class EnterpriseSampler<T> : Sampler<T>() where T : Individual {
     var sqlInsertBuilder: SqlInsertBuilder? = null
         protected set
 
-    var existingSqlData : List<DbAction> = listOf()
+    var existingSqlData : List<SqlAction> = listOf()
         protected set
 
 
@@ -53,7 +53,7 @@ abstract class EnterpriseSampler<T> : Sampler<T>() where T : Individual {
         }
     }
 
-    fun sampleSqlInsertion(tableName: String, columns: Set<String>): List<DbAction> {
+    fun sampleSqlInsertion(tableName: String, columns: Set<String>): List<SqlAction> {
 
         val extraConstraints = randomness.nextBoolean(apc.getExtraSqlDbConstraintsProbability())
         val enableSingleInsertionForTable = randomness.nextBoolean(config.probOfEnablingSingleInsertionForTable)
@@ -71,7 +71,7 @@ abstract class EnterpriseSampler<T> : Sampler<T>() where T : Individual {
         if (log.isTraceEnabled){
             log.trace("at sampleSqlInsertion, {} insertions are added, and they are {}", actions.size,
                 actions.joinToString(",") {
-                    if (it is DbAction) it.getResolvedName() else it.getName()
+                    if (it is SqlAction) it.getResolvedName() else it.getName()
                 })
         }
 

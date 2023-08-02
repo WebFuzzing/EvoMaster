@@ -1,11 +1,9 @@
 package org.evomaster.core.problem.webfrontend
 
-import org.evomaster.core.database.DbAction
+import org.evomaster.core.database.SqlAction
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.enterprise.SampleType
-import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.gui.GuiIndividual
-import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.search.action.ActionComponent
 import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.Individual
@@ -23,7 +21,7 @@ class WebIndividual(
     children = children,
     childTypeVerifier = {
         EnterpriseActionGroup::class.java.isAssignableFrom(it)
-                || DbAction::class.java.isAssignableFrom(it)
+                || SqlAction::class.java.isAssignableFrom(it)
     },
     groups = groups
 ) {

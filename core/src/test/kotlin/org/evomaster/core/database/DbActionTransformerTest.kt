@@ -7,8 +7,8 @@ class DbActionTransformerTest {
 
     @Test
     fun testEmpty() {
-        val actions = listOf<DbAction>()
-        val dto = DbActionTransformer.transform(actions)
+        val actions = listOf<SqlAction>()
+        val dto = SqlActionTransformer.transform(actions)
         assertTrue(dto.insertions.isEmpty())
     }
 

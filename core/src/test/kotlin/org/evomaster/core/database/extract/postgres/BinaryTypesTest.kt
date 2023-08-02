@@ -3,7 +3,7 @@ package org.evomaster.core.database.extract.postgres
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
-import org.evomaster.core.database.DbActionTransformer
+import org.evomaster.core.database.SqlActionTransformer
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
@@ -42,7 +42,7 @@ class BinaryTypesTest : ExtractTestBasePostgres() {
         assertTrue(genes[0] is SqlBinaryStringGene) //character varying
         assertEquals(0, (genes[0] as SqlBinaryStringGene).minSize)
 
-        val dbCommandDto = DbActionTransformer.transform(actions)
+        val dbCommandDto = SqlActionTransformer.transform(actions)
         SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
 
     }
@@ -91,7 +91,7 @@ class BinaryTypesTest : ExtractTestBasePostgres() {
 
         assertEquals("\"\\x002aff10\"",sqlBinaryStringGene.getValueAsPrintableString())
 
-        val dbCommandDto = DbActionTransformer.transform(actions)
+        val dbCommandDto = SqlActionTransformer.transform(actions)
         SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
 
     }

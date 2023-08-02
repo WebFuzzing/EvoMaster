@@ -12,7 +12,7 @@ import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
  *  An action executed on the database.
  *  Typically, a SQL Insertion
  */
-class DbAction(
+class SqlAction(
         /**
          * The involved table
          */
@@ -51,7 +51,7 @@ class DbAction(
 
     private
     val genes: List<Gene> = (computedGenes ?: selectedColumns.map {
-        DbActionGeneBuilder().buildGene(id, table, it)
+        SqlActionGeneBuilder().buildGene(id, table, it)
     }).also {
         // init children for DbAction
         addChildren(it)
@@ -75,7 +75,7 @@ class DbAction(
             based on the column name
          */
         if (column.name.contains("time", ignoreCase = true)) {
-            return DbActionGeneBuilder().buildSqlTimestampGene(column.name, databaseType = column.databaseType)
+            return SqlActionGeneBuilder().buildSqlTimestampGene(column.name, databaseType = column.databaseType)
         } else {
             //go for a default string
             return StringGene(name = column.name, minLength = 0, maxLength = column.size)
@@ -99,7 +99,7 @@ class DbAction(
     }
 
     override fun copyContent(): Action {
-        return DbAction(table, selectedColumns, id, genes.map(Gene::copy), representExistingData)
+        return SqlAction(table, selectedColumns, id, genes.map(Gene::copy), representExistingData)
     }
 
     override fun shouldCountForFitnessEvaluations(): Boolean {

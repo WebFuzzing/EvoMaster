@@ -3,8 +3,8 @@ package org.evomaster.core.database.extract.h2
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
-import org.evomaster.core.database.DbActionTransformer
-import org.evomaster.core.database.DbActionUtils
+import org.evomaster.core.database.SqlActionTransformer
+import org.evomaster.core.database.SqlActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.enterprise.SampleType
@@ -56,7 +56,7 @@ class CatwatchSqlExtractTest : ExtractTestBaseH2(){
 
         val ind = RestIndividual(mutableListOf(), SampleType.RANDOM,null,insertions.toMutableList(),null,-1)
 
-        DbActionUtils.randomizeDbActionGenes(insertions.toMutableList(), Randomness())
+        SqlActionUtils.randomizeDbActionGenes(insertions.toMutableList(), Randomness())
 
         assertEquals(2, insertions.size)
         assert(insertions[0].table.name.equals("PROJECT", ignoreCase = true))
@@ -64,7 +64,7 @@ class CatwatchSqlExtractTest : ExtractTestBaseH2(){
 
         val projectId = (insertions[0].seeTopGenes().filterIsInstance<SqlPrimaryKeyGene>()).first().uniqueId
 
-        val dtoForPersons = DbActionTransformer.transform(listOf(insertions[0]), execSqlIdMaps)
+        val dtoForPersons = SqlActionTransformer.transform(listOf(insertions[0]), execSqlIdMaps)
         val responseForPersons = SqlScriptRunner.execInsert(connection, dtoForPersons.insertions).idMapping
 
         assertNotNull(responseForPersons)
@@ -72,7 +72,7 @@ class CatwatchSqlExtractTest : ExtractTestBaseH2(){
 
         execSqlIdMaps.putAll(responseForPersons)
 
-        val dtoForDoctors = DbActionTransformer.transform(listOf(insertions[1]), execSqlIdMaps)
+        val dtoForDoctors = SqlActionTransformer.transform(listOf(insertions[1]), execSqlIdMaps)
         SqlScriptRunner.execInsert(connection, dtoForDoctors.insertions)
 
         val selections = SqlScriptRunner.execCommand(connection, "SELECT * FROM lANGUAGE_LIST WHERE PROJECT_ID = ${execSqlIdMaps.getValue(projectId)};");

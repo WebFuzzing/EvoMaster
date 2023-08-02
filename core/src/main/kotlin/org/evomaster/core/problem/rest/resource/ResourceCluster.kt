@@ -3,8 +3,8 @@ package org.evomaster.core.problem.rest.resource
 import org.evomaster.client.java.controller.api.dto.database.operations.DataRowDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.DbActionUtils
+import org.evomaster.core.database.SqlAction
+import org.evomaster.core.database.SqlActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.database.schema.Table
 import org.evomaster.core.problem.rest.RestCallAction
@@ -156,16 +156,16 @@ class ResourceCluster {
      */
     fun createSqlAction(tables: List<String>,
                         sqlInsertBuilder: SqlInsertBuilder,
-                        previous: List<DbAction>,
+                        previous: List<SqlAction>,
                         doNotCreateDuplicatedAction: Boolean,
                         isInsertion: Boolean = true,
                         randomness: Randomness,
                         forceSynDataInDb: Boolean = false,
                         useExtraSqlDbConstraints: Boolean = false,
                         enableSingleInsertionForTable : Boolean = false
-    ) : MutableList<DbAction>{
-        val sorted = DbActionUtils.sortTable(tables.mapNotNull { getTableByName(it) }.run { if (doNotCreateDuplicatedAction) this.distinct() else this })
-        val added = mutableListOf<DbAction>()
+    ) : MutableList<SqlAction>{
+        val sorted = SqlActionUtils.sortTable(tables.mapNotNull { getTableByName(it) }.run { if (doNotCreateDuplicatedAction) this.distinct() else this })
+        val added = mutableListOf<SqlAction>()
         val preTables = previous.filter { !isInsertion || !it.representExistingData }.map { it.table.name }.toMutableList()
 
 

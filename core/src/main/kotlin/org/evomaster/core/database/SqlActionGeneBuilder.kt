@@ -32,7 +32,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.math.BigDecimal
 
-class DbActionGeneBuilder {
+class SqlActionGeneBuilder {
 
 
     private fun getForeignKey(table: Table, column: Column): ForeignKey? {
@@ -995,6 +995,6 @@ class DbActionGeneBuilder {
         // The double precision type has a range of around 1E-307 to 1E+308 with a precision of at least 15 digits
         val MIN_FLOAT8_VALUE: Double = MAX_FLOAT8_VALUE.unaryMinus()
 
-        private val log: Logger = LoggerFactory.getLogger(DbActionGeneBuilder::class.java)
+        private val log: Logger = LoggerFactory.getLogger(SqlActionGeneBuilder::class.java)
     }
 }

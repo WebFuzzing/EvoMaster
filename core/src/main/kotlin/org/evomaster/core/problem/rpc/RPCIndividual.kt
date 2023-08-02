@@ -4,8 +4,8 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionComponent
 import org.evomaster.core.search.action.ActionFilter
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.DbActionUtils
+import org.evomaster.core.database.SqlAction
+import org.evomaster.core.database.SqlActionUtils
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
@@ -33,7 +33,7 @@ class RPCIndividual(
     trackOperator, index, allActions,
     childTypeVerifier = {
         EnterpriseActionGroup::class.java.isAssignableFrom(it)
-                || DbAction::class.java.isAssignableFrom(it)
+                || SqlAction::class.java.isAssignableFrom(it)
     },
     groups
 ) {
@@ -45,7 +45,7 @@ class RPCIndividual(
         /*
             TODO might add sample type here as REST (check later)
          */
-        dbInitialization: MutableList<DbAction> = mutableListOf(),
+        dbInitialization: MutableList<SqlAction> = mutableListOf(),
         trackOperator: TrackOperator? = null,
         index: Int = -1
     ) : this(
@@ -74,7 +74,7 @@ class RPCIndividual(
             GeneFilter.ALL -> seeAllActions().flatMap(Action::seeTopGenes)
             GeneFilter.NO_SQL -> seeActions(ActionFilter.NO_SQL).flatMap(Action::seeTopGenes)
             GeneFilter.ONLY_MONGO -> seeMongoDbActions().flatMap(MongoDbAction::seeTopGenes)
-            GeneFilter.ONLY_SQL -> seeDbActions().flatMap(DbAction::seeTopGenes)
+            GeneFilter.ONLY_SQL -> seeDbActions().flatMap(SqlAction::seeTopGenes)
             GeneFilter.ONLY_EXTERNAL_SERVICE -> seeExternalServiceActions().flatMap(ApiExternalServiceAction::seeTopGenes)
         }
     }
@@ -89,7 +89,7 @@ class RPCIndividual(
     fun seeIndexedRPCCalls(): Map<Int, RPCCallAction> = getIndexedChildren(RPCCallAction::class.java)
 
     override fun verifyInitializationActions(): Boolean {
-        return DbActionUtils.verifyActions(seeInitializingActions().filterIsInstance<DbAction>())
+        return SqlActionUtils.verifyActions(seeInitializingActions().filterIsInstance<SqlAction>())
     }
 
 
@@ -116,7 +116,7 @@ class RPCIndividual(
         killChildByIndex(getFirstIndexOfEnterpriseActionGroup() + position) as EnterpriseActionGroup
     }
 
-    private fun getFirstIndexOfEnterpriseActionGroup() = max(0, max(children.indexOfLast { it is DbAction }+1, children.indexOfFirst { it is EnterpriseActionGroup }))
+    private fun getFirstIndexOfEnterpriseActionGroup() = max(0, max(children.indexOfLast { it is SqlAction }+1, children.indexOfFirst { it is EnterpriseActionGroup }))
 
     override fun copyContent(): Individual {
         return RPCIndividual(

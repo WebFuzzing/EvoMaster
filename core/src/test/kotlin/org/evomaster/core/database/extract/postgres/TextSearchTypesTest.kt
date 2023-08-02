@@ -3,7 +3,7 @@ package org.evomaster.core.database.extract.postgres
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
-import org.evomaster.core.database.DbActionTransformer
+import org.evomaster.core.database.SqlActionTransformer
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.sql.textsearch.SqlTextSearchQueryGene
@@ -53,7 +53,7 @@ class TextSearchTypesTest : ExtractTestBasePostgres() {
         textSearchQueryElementGene0.value = "foo"
         textSearchQueryGene.queryLexemes.addElement(textSearchQueryElementGene0)
 
-        val dbCommandDto = DbActionTransformer.transform(actions)
+        val dbCommandDto = SqlActionTransformer.transform(actions)
         SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
 
     }
@@ -76,7 +76,7 @@ class TextSearchTypesTest : ExtractTestBasePostgres() {
         )
         )
 
-        val dbCommandDto = DbActionTransformer.transform(actions)
+        val dbCommandDto = SqlActionTransformer.transform(actions)
         SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
 
     }
@@ -118,7 +118,7 @@ class TextSearchTypesTest : ExtractTestBasePostgres() {
         textSearchQueryGene.queryLexemes.addElement(gene0)
         textSearchQueryGene.queryLexemes.addElement(gene1)
 
-        val dbCommandDto = DbActionTransformer.transform(actions)
+        val dbCommandDto = SqlActionTransformer.transform(actions)
         SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
 
     }
@@ -153,7 +153,7 @@ class TextSearchTypesTest : ExtractTestBasePostgres() {
         val stringGene = textSearchVectorGene.getViewOfChildren()[0] as StringGene
         stringGene.value = "   "
 
-        val dbCommandDto = DbActionTransformer.transform(actions)
+        val dbCommandDto = SqlActionTransformer.transform(actions)
         SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
 
     }

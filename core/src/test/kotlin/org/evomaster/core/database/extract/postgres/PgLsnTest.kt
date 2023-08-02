@@ -3,9 +3,8 @@ package org.evomaster.core.database.extract.postgres
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
-import org.evomaster.core.database.DbActionTransformer
+import org.evomaster.core.database.SqlActionTransformer
 import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.gene.sql.SqlLogSeqNumberGene
@@ -93,7 +92,7 @@ class PgLsnTest : ExtractTestBasePostgres() {
         leftPartGene.value = 4294967295L
         rightPartGene.value = 4294967295L
 
-        val dbCommandDto = DbActionTransformer.transform(actions)
+        val dbCommandDto = SqlActionTransformer.transform(actions)
         SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
 
     }

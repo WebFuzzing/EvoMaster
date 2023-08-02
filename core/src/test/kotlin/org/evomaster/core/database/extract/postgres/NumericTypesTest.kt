@@ -3,7 +3,7 @@ package org.evomaster.core.database.extract.postgres
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
-import org.evomaster.core.database.DbActionTransformer
+import org.evomaster.core.database.SqlActionTransformer
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.FloatGene
@@ -57,7 +57,7 @@ class NumericTypesTest : ExtractTestBasePostgres() {
         assertTrue(genes[8] is SqlAutoIncrementGene) // serial
         assertTrue(genes[9] is SqlAutoIncrementGene) // bigserial
 
-        val dbCommandDto = DbActionTransformer.transform(actions)
+        val dbCommandDto = SqlActionTransformer.transform(actions)
         SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
 
     }
@@ -104,13 +104,13 @@ class NumericTypesTest : ExtractTestBasePostgres() {
         realColumnGene.value = "1E+38".toDouble()
         doublePrecisionColumnGene.value = "1E+308".toDouble()
 
-        var dbCommandDto = DbActionTransformer.transform(actions)
+        var dbCommandDto = SqlActionTransformer.transform(actions)
         SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
 
         realColumnGene.value = "-1E+38".toDouble()
         doublePrecisionColumnGene.value = "-1E+308".toDouble()
 
-        dbCommandDto = DbActionTransformer.transform(actions)
+        dbCommandDto = SqlActionTransformer.transform(actions)
         SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
 
     }

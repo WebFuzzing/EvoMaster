@@ -12,27 +12,27 @@ import java.util.regex.Pattern
  * The evaluator expects that the database is initially empty (only the previous actions
  * are considered for the evaluation).
  */
-class TableConstraintEvaluator(val previousActions: List<DbAction> = listOf())
-    : TableConstraintVisitor<Boolean, DbAction> {
+class TableConstraintEvaluator(val previousActions: List<SqlAction> = listOf())
+    : TableConstraintVisitor<Boolean, SqlAction> {
 
 
     /**
      * Evaluates to true when both left and right expressions are evaluated to true
      */
-    override fun visit(constraint: AndConstraint, dbAction: DbAction): Boolean {
-        val leftValue = constraint.left.accept(this, dbAction)
-        val rightValue = constraint.right.accept(this, dbAction)
+    override fun visit(constraint: AndConstraint, sqlAction: SqlAction): Boolean {
+        val leftValue = constraint.left.accept(this, sqlAction)
+        val rightValue = constraint.right.accept(this, sqlAction)
         return leftValue && rightValue
     }
 
     /**
      * Evaluates to true when both any of the OR-expressions is evaluated to true
      */
-    override fun visit(constraint: OrConstraint, dbAction: DbAction): Boolean {
+    override fun visit(constraint: OrConstraint, sqlAction: SqlAction): Boolean {
         return constraint.constraintList
                 .stream()
                 .anyMatch {
-                    it.accept(this, dbAction)
+                    it.accept(this, sqlAction)
                 }
     }
 
@@ -40,24 +40,24 @@ class TableConstraintEvaluator(val previousActions: List<DbAction> = listOf())
      * Evaluates to true when both left and right have the same evaluated value (i.e.
      * both evaluate to true or both evaluate to false)
      */
-    override fun visit(constraint: IffConstraint, dbAction: DbAction): Boolean {
-        val leftValue = constraint.left.accept(this, dbAction)
-        val rightValue = constraint.right.accept(this, dbAction)
+    override fun visit(constraint: IffConstraint, sqlAction: SqlAction): Boolean {
+        val leftValue = constraint.left.accept(this, sqlAction)
+        val rightValue = constraint.right.accept(this, sqlAction)
         return leftValue == rightValue
     }
 
     /**
      * Evaluates to true if the column value is different than NULL
      */
-    override fun visit(constraint: IsNotNullConstraint, dbAction: DbAction): Boolean {
+    override fun visit(constraint: IsNotNullConstraint, sqlAction: SqlAction): Boolean {
         // if the action is not referred to this action, we conclude
         // the action does not invalidate the constraint
-        if (dbAction.table.name != constraint.tableName) {
+        if (sqlAction.table.name != constraint.tableName) {
             return true
         }
 
         // get the gene with the corresponding column name
-        val gene = dbAction.seeTopGenes().firstOrNull { it.name == constraint.columnName }
+        val gene = sqlAction.seeTopGenes().firstOrNull { it.name == constraint.columnName }
 
 
         val isPresent = when (gene) {
@@ -80,10 +80,10 @@ class TableConstraintEvaluator(val previousActions: List<DbAction> = listOf())
      * Evaluates to true if the column value is not null and the column value is a
      * numerica value that is greater than the lower bound value
      */
-    override fun visit(constraint: LowerBoundConstraint, dbAction: DbAction): Boolean {
+    override fun visit(constraint: LowerBoundConstraint, sqlAction: SqlAction): Boolean {
         // if the action is not referred to this action, we conclude
         // the action does not invalidate the constraint
-        if (dbAction.table.name != constraint.tableName) {
+        if (sqlAction.table.name != constraint.tableName) {
             return true
         }
         val columnName = constraint.columnName
@@ -92,7 +92,7 @@ class TableConstraintEvaluator(val previousActions: List<DbAction> = listOf())
         // will be NULL as default value. Therefore, the range is not satisfied
         // However, it is possible to specify DEFAULT values in the
         // TODO: Handle DEFAULT column values different than NULL
-        val gene = dbAction.seeTopGenes().firstOrNull { it.name == constraint.columnName } ?: return false
+        val gene = sqlAction.seeTopGenes().firstOrNull { it.name == constraint.columnName } ?: return false
         val numberGene = gene.flatView().filterIsInstance<NumberGene<*>>().first()
 
         return constraint.lowerBound <= numberGene.toLong()
@@ -101,10 +101,10 @@ class TableConstraintEvaluator(val previousActions: List<DbAction> = listOf())
     /**
      * Evaluates to true if the column value is lesser or equal to the constant value
      */
-    override fun visit(constraint: UpperBoundConstraint, dbAction: DbAction): Boolean {
+    override fun visit(constraint: UpperBoundConstraint, sqlAction: SqlAction): Boolean {
         // if the action is not referred to this action, we conclude
         // the action does not invalidate the constraint
-        if (dbAction.table.name != constraint.tableName) {
+        if (sqlAction.table.name != constraint.tableName) {
             return true
         }
         val columnName = constraint.columnName
@@ -113,7 +113,7 @@ class TableConstraintEvaluator(val previousActions: List<DbAction> = listOf())
         // will be NULL as default value. Therefore, the range is not satisfied
         // However, it is possible to specify DEFAULT values in the
         // TODO: Handle DEFAULT column values different than NULL
-        val gene = dbAction.seeTopGenes().firstOrNull { it.name == constraint.columnName } ?: return false
+        val gene = sqlAction.seeTopGenes().firstOrNull { it.name == constraint.columnName } ?: return false
         val numberGene = gene.flatView().filterIsInstance<NumberGene<*>>().first()
 
         return numberGene.toLong() <= constraint.upperBound
@@ -123,10 +123,10 @@ class TableConstraintEvaluator(val previousActions: List<DbAction> = listOf())
     /**
      * Evaluates the table.column in range [minValue,maxValue]
      */
-    override fun visit(constraint: RangeConstraint, dbAction: DbAction): Boolean {
+    override fun visit(constraint: RangeConstraint, sqlAction: SqlAction): Boolean {
         // if the action is not referred to this action, we conclude
         // the action does not invalidate the constraint
-        if (dbAction.table.name != constraint.tableName) {
+        if (sqlAction.table.name != constraint.tableName) {
             return true
         }
         val columnName = constraint.columnName
@@ -135,7 +135,7 @@ class TableConstraintEvaluator(val previousActions: List<DbAction> = listOf())
         // will be NULL as default value. Therefore, the range is not satisfied
         // However, it is possible to specify DEFAULT values in the
         // TODO: Handle DEFAULT column values different than NULL
-        val gene = dbAction.seeTopGenes().firstOrNull { it.name == constraint.columnName } ?: return false
+        val gene = sqlAction.seeTopGenes().firstOrNull { it.name == constraint.columnName } ?: return false
         val numberGene = gene.flatView().filterIsInstance<NumberGene<*>>().first()
 
         return constraint.minValue <= numberGene.toLong()
@@ -147,13 +147,13 @@ class TableConstraintEvaluator(val previousActions: List<DbAction> = listOf())
      * Evaluates to true when the column value is not null and matches any of
      * the enumerated values
      */
-    override fun visit(constraint: EnumConstraint, dbAction: DbAction): Boolean {
+    override fun visit(constraint: EnumConstraint, sqlAction: SqlAction): Boolean {
         // if the action is not referred to this action, we conclude
         // the action does not invalidate the constraint
-        if (dbAction.table.name != constraint.tableName) {
+        if (sqlAction.table.name != constraint.tableName) {
             return true
         }
-        val gene = dbAction.seeTopGenes().firstOrNull { it.name == constraint.columnName } ?: return false
+        val gene = sqlAction.seeTopGenes().firstOrNull { it.name == constraint.columnName } ?: return false
         val rawString = gene.getValueAsRawString()
 
         return constraint.valuesAsStrings.contains(rawString)
@@ -164,11 +164,11 @@ class TableConstraintEvaluator(val previousActions: List<DbAction> = listOf())
      * are unique with respect to this value. Includes partial support
      * for multi-column unique constraints
      */
-    override fun visit(constraint: UniqueConstraint, dbAction: DbAction): Boolean {
+    override fun visit(constraint: UniqueConstraint, sqlAction: SqlAction): Boolean {
         val tableName = constraint.tableName
 
         val tuples = mutableListOf<MutableMap<String, String?>>()
-        val allActions = this.previousActions + dbAction
+        val allActions = this.previousActions + sqlAction
         for (previousAction in allActions) {
             if (previousAction.table.name != tableName) {
                 // if the action is not related to this action, ignore the action
@@ -208,7 +208,7 @@ class TableConstraintEvaluator(val previousActions: List<DbAction> = listOf())
     /**
      * Unsupported constraints are true by default
      */
-    override fun visit(constraint: UnsupportedTableConstraint, dbAction: DbAction): Boolean {
+    override fun visit(constraint: UnsupportedTableConstraint, sqlAction: SqlAction): Boolean {
         return true
     }
 
@@ -218,7 +218,7 @@ class TableConstraintEvaluator(val previousActions: List<DbAction> = listOf())
      * matches the LIKE pattern. Different Database Types (e.g. H2, POSTGRES, etc)
      * might have different pattern matching behaviour.
      */
-    override fun visit(constraint: LikeConstraint, dbAction: DbAction): Boolean {
+    override fun visit(constraint: LikeConstraint, sqlAction: SqlAction): Boolean {
         val tableName = constraint.tableName
         val columnName = constraint.columnName
         val databaseType = constraint.databaseType
@@ -226,12 +226,12 @@ class TableConstraintEvaluator(val previousActions: List<DbAction> = listOf())
 
         // if the action is not referred to this action, we conclude
         // the action does not invalidate the constraint
-        if (dbAction.table.name != tableName) {
+        if (sqlAction.table.name != tableName) {
             return true
         }
 
 
-        val gene = dbAction.seeTopGenes().firstOrNull { it.name == columnName } ?: return false
+        val gene = sqlAction.seeTopGenes().firstOrNull { it.name == columnName } ?: return false
         val instance = gene.getValueAsRawString()
 
         val javaRegexPattern = when (databaseType) {
@@ -245,7 +245,7 @@ class TableConstraintEvaluator(val previousActions: List<DbAction> = listOf())
     }
 
 
-    override fun visit(constraint: SimilarToConstraint, dbAction: DbAction): Boolean {
+    override fun visit(constraint: SimilarToConstraint, sqlAction: SqlAction): Boolean {
         val tableName = constraint.tableName
         val columnName = constraint.columnName
         val databaseType = constraint.databaseType
@@ -253,11 +253,11 @@ class TableConstraintEvaluator(val previousActions: List<DbAction> = listOf())
 
         // if the action is not referred to this action, we conclude
         // the action does not invalidate the constraint
-        if (dbAction.table.name != tableName) {
+        if (sqlAction.table.name != tableName) {
             return true
         }
 
-        val gene = dbAction.seeTopGenes().firstOrNull { it.name == columnName } ?: return false
+        val gene = sqlAction.seeTopGenes().firstOrNull { it.name == columnName } ?: return false
         val instance = gene.getValueAsRawString()
 
         val javaRegexPattern = when (databaseType) {

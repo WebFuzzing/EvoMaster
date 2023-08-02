@@ -3,8 +3,8 @@ package org.evomaster.core.output
 import org.evomaster.core.TestUtils
 import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.action.ActionResult
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.DbActionResult
+import org.evomaster.core.database.SqlAction
+import org.evomaster.core.database.SqlActionResult
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.problem.externalservice.rpc.DbAsExternalServiceAction
@@ -25,7 +25,7 @@ import org.evomaster.core.search.gene.string.StringGene
 class EvaluatedIndividualBuilder {
 
     companion object {
-        fun buildEvaluatedIndividual(dbInitialization: MutableList<DbAction>): Triple<OutputFormat, String, EvaluatedIndividual<RestIndividual>> {
+        fun buildEvaluatedIndividual(dbInitialization: MutableList<SqlAction>): Triple<OutputFormat, String, EvaluatedIndividual<RestIndividual>> {
             val format = OutputFormat.JAVA_JUNIT_4
 
             val baseUrlOfSut = "baseUrlOfSut"
@@ -44,16 +44,16 @@ class EvaluatedIndividualBuilder {
         }
 
         fun generateIndividualResults(individual: Individual) : List<ActionResult> = individual.seeActions(ActionFilter.ALL).map {
-            if (it is DbAction) DbActionResult().also { it.setInsertExecutionResult(true) }
+            if (it is SqlAction) SqlActionResult().also { it.setInsertExecutionResult(true) }
             else ActionResult()
         }
 
         fun buildResourceEvaluatedIndividual(
-            dbInitialization: MutableList<DbAction>,
-            groups: MutableList<Pair<MutableList<DbAction>, MutableList<RestCallAction>>>,
-            results: List<ActionResult> = dbInitialization.map { DbActionResult().also { it.setInsertExecutionResult(true) } }.plus(
+            dbInitialization: MutableList<SqlAction>,
+            groups: MutableList<Pair<MutableList<SqlAction>, MutableList<RestCallAction>>>,
+            results: List<ActionResult> = dbInitialization.map { SqlActionResult().also { it.setInsertExecutionResult(true) } }.plus(
                 groups.flatMap { g->
-                    g.first.map { DbActionResult().also { it.setInsertExecutionResult(true) } }.plus(g.second.map { RestCallResult().also { it.setTimedout(true) } })
+                    g.first.map { SqlActionResult().also { it.setInsertExecutionResult(true) } }.plus(g.second.map { RestCallResult().also { it.setTimedout(true) } })
                 }
             ),
             format: OutputFormat = OutputFormat.JAVA_JUNIT_4

@@ -230,7 +230,7 @@ open class ResourceSampler : AbstractRestSampler() {
                     template = node.getTemplate(it.verb.toString()),
                     node = node,
                     actions = mutableListOf(it),
-                    dbActions = listOf()
+                    sqlActions = listOf()
             )
         }.toMutableList()
         val ind =  RestIndividual(

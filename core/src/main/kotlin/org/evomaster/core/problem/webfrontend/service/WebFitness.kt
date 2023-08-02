@@ -2,7 +2,7 @@ package org.evomaster.core.problem.webfrontend.service
 
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.core.Lazy
-import org.evomaster.core.database.DbAction
+import org.evomaster.core.database.SqlAction
 import org.evomaster.core.problem.enterprise.service.EnterpriseFitness
 import org.evomaster.core.problem.webfrontend.*
 import org.evomaster.core.search.action.ActionResult
@@ -45,7 +45,7 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
 
         val actionResults: MutableList<ActionResult> = mutableListOf()
 
-        doDbCalls(individual.seeInitializingActions().filterIsInstance<DbAction>(), actionResults = actionResults)
+        doDbCalls(individual.seeInitializingActions().filterIsInstance<SqlAction>(), actionResults = actionResults)
 
         val fv = FitnessValue(individual.size().toDouble())
 

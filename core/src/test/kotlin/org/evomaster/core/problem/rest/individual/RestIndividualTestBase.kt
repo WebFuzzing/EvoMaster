@@ -25,7 +25,7 @@ import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
-import org.evomaster.core.database.DbAction
+import org.evomaster.core.database.SqlAction
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.database.schema.ColumnDataType
 import org.evomaster.core.problem.rest.RestCallAction
@@ -45,7 +45,6 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
@@ -190,7 +189,7 @@ abstract class RestIndividualTestBase {
             if (ind.seeDbActions().isNotEmpty()){
                 // all db actions should be before rest actions
                 ind.getResourceCalls().forEach { r->
-                    val dbIndexes = r.getIndexedChildren(DbAction::class.java).keys
+                    val dbIndexes = r.getIndexedChildren(SqlAction::class.java).keys
                     val restIndexes = r.getIndexedChildren(RestCallAction::class.java).keys
                     assertTrue(restIndexes.all {
                         it > (dbIndexes.maxOrNull() ?: -1)
@@ -231,7 +230,7 @@ abstract class RestIndividualTestBase {
     private fun checkActionIndex(mutated: RestIndividual){
         assertEquals(0, mutated.getIndexedChildren(RestCallAction::class.java).size)
 
-        val indexedDb = mutated.getIndexedChildren(DbAction::class.java)
+        val indexedDb = mutated.getIndexedChildren(SqlAction::class.java)
         val indexedRest = mutated.getIndexedChildren(RestResourceCalls::class.java)
 
         val dbBeforeRest = indexedRest.keys.all { it > (indexedDb.keys.maxOrNull() ?: -1) }

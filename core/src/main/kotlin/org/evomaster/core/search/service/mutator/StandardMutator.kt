@@ -4,8 +4,8 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N
 import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N_BIASED_SQL
 import org.evomaster.core.Lazy
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.DbActionUtils
+import org.evomaster.core.database.SqlAction
+import org.evomaster.core.database.SqlActionUtils
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.api.ApiWsAction
 import org.evomaster.core.problem.api.param.Param
@@ -293,8 +293,8 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
     override fun postActionAfterMutation(mutatedIndividual: T, mutated: MutatedGeneSpecification?) {
 
         Lazy.assert {
-            DbActionUtils.verifyForeignKeys(
-                mutatedIndividual.seeInitializingActions().filterIsInstance<DbAction>()
+            SqlActionUtils.verifyForeignKeys(
+                mutatedIndividual.seeInitializingActions().filterIsInstance<SqlAction>()
             )
         }
 

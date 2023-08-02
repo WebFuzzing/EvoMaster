@@ -16,7 +16,7 @@ class DbActionGeneBuilderTest {
         val randomness = Randomness()
 
         val javaRegex = "/foo/../bar/(left|right)/[0-9]{4}-[0-9]{2}-[0-9]{2}(/[0-9]*)?"
-        val gene = DbActionGeneBuilder().buildSimilarToRegexGene("w_id", javaRegex, databaseType = DatabaseType.POSTGRES)
+        val gene = SqlActionGeneBuilder().buildSimilarToRegexGene("w_id", javaRegex, databaseType = DatabaseType.POSTGRES)
 
         for (seed in 1..100L) {
             randomness.updateSeed(seed)
@@ -45,7 +45,7 @@ class DbActionGeneBuilderTest {
 
             val chosenRegex = randomness.nextInt(0,likePatterns.size-1)
 
-            val gene = DbActionGeneBuilder().buildLikeRegexGene("f_id", likePatterns[chosenRegex], databaseType = DatabaseType.POSTGRES)
+            val gene = SqlActionGeneBuilder().buildLikeRegexGene("f_id", likePatterns[chosenRegex], databaseType = DatabaseType.POSTGRES)
 
             assertEquals("${DATABASE_REGEX_PREFIX}${likePatterns[chosenRegex]}", gene.sourceRegex)
 

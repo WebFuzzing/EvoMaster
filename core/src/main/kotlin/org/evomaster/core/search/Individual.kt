@@ -5,8 +5,8 @@ import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionComponent
 import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.action.ActionTree
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.DbActionUtils
+import org.evomaster.core.database.SqlAction
+import org.evomaster.core.database.SqlActionUtils
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
@@ -146,7 +146,7 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
 
         groupsView()?.verifyGroups()
 
-        if(!DbActionUtils.verifyActions(seeInitializingActions().filterIsInstance<DbAction>())){
+        if(!SqlActionUtils.verifyActions(seeInitializingActions().filterIsInstance<SqlAction>())){
             throw IllegalStateException("Initializing actions break SQL constraints")
         }
 

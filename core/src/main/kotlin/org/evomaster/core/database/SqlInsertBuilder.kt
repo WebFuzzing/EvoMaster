@@ -618,7 +618,7 @@ class SqlInsertBuilder(
          *
          */
         enableSingleInsertionForTable: Boolean = false
-    ): List<DbAction> {
+    ): List<SqlAction> {
 
         history.add(tableName)
 
@@ -652,7 +652,7 @@ class SqlInsertBuilder(
             }
         }
 
-        val insertion = DbAction(table, selectedColumns, counter++)
+        val insertion = SqlAction(table, selectedColumns, counter++)
         if (log.isTraceEnabled) {
             log.trace("create an insertion which is {} and the counter is {}", insertion.getResolvedName(), counter)
         }
@@ -711,13 +711,13 @@ class SqlInsertBuilder(
      * For each row, create a DbAction containing only Primary Keys
      * and immutable data
      */
-    fun extractExistingPKs(): List<DbAction> {
+    fun extractExistingPKs(): List<SqlAction> {
 
         if (dbExecutor == null) {
             throw IllegalStateException("No Database Executor registered for this object")
         }
 
-        val list = mutableListOf<DbAction>()
+        val list = mutableListOf<SqlAction>()
 
         for (table in tables.values) {
 
@@ -754,7 +754,7 @@ class SqlInsertBuilder(
                     genes.add(pk)
                 }
 
-                val action = DbAction(table, pks.toSet(), id, genes, true)
+                val action = SqlAction(table, pks.toSet(), id, genes, true)
                 list.add(action)
             }
         }
@@ -782,7 +782,7 @@ class SqlInsertBuilder(
         pkValues: DataRowDto,
         useExtraSqlDbConstraints: Boolean,
         columnIds: List<String> = mutableListOf()
-    ): DbAction {
+    ): SqlAction {
 
         if (dbExecutor == null) {
             throw IllegalStateException("No Database Executor registered for this object")
@@ -846,7 +846,7 @@ class SqlInsertBuilder(
             }
         }
 
-        val db = DbAction(table, pks.toSet(), id, genes, true)
+        val db = SqlAction(table, pks.toSet(), id, genes, true)
 
         db.doInitialize()
         return db

@@ -3,8 +3,8 @@ package org.evomaster.core.problem.httpws.service
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.evomaster.client.java.controller.api.dto.*
 import org.evomaster.core.StaticCounter
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.DbActionTransformer
+import org.evomaster.core.database.SqlAction
+import org.evomaster.core.database.SqlActionTransformer
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.CookieWriter
 import org.evomaster.core.output.TokenWriter
@@ -15,7 +15,6 @@ import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.remote.SutProblemException
-import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.Individual
 import org.glassfish.jersey.client.ClientConfig
 import org.glassfish.jersey.client.ClientProperties
@@ -259,12 +258,12 @@ abstract class HttpWsFitness<T>: ApiWsFitness<T>() where T : Individual {
 
         if (log.isTraceEnabled){
             log.trace("do {} InitializingActions: {}", ind.seeInitializingActions().size,
-                ind.seeInitializingActions().filterIsInstance<DbAction>().joinToString(","){
+                ind.seeInitializingActions().filterIsInstance<SqlAction>().joinToString(","){
                     it.getResolvedName()
                 })
         }
 
-        if (ind.seeInitializingActions().filterIsInstance<DbAction>().none { !it.representExistingData }) {
+        if (ind.seeInitializingActions().filterIsInstance<SqlAction>().none { !it.representExistingData }) {
             /*
                 We are going to do an initialization of database only if there
                 is data to add.
@@ -274,7 +273,7 @@ abstract class HttpWsFitness<T>: ApiWsFitness<T>() where T : Individual {
             return
         }
 
-        val dto = DbActionTransformer.transform(ind.seeInitializingActions().filterIsInstance<DbAction>())
+        val dto = SqlActionTransformer.transform(ind.seeInitializingActions().filterIsInstance<SqlAction>())
         dto.idCounter = StaticCounter.getAndIncrease()
 
         val ok = rc.executeDatabaseCommand(dto)
