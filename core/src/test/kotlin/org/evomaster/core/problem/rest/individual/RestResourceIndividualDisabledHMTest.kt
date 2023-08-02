@@ -1,8 +1,8 @@
 package org.evomaster.core.problem.rest.individual
 
 import com.google.inject.*
-import org.evomaster.core.database.SqlAction
-import org.evomaster.core.database.schema.Table
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.sql.schema.Table
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.resource.ResourceCluster

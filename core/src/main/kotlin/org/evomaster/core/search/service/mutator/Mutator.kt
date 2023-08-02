@@ -3,7 +3,7 @@ package org.evomaster.core.search.service.mutator
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
-import org.evomaster.core.database.SqlAction
+import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual

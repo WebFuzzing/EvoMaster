@@ -1,6 +1,6 @@
 package org.evomaster.core.problem.webfrontend
 
-import org.evomaster.core.database.SqlAction
+import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.gui.GuiIndividual

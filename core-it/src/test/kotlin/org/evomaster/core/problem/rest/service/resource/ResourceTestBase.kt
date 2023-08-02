@@ -11,11 +11,11 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.TestUtils
 import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.action.ActionResult
-import org.evomaster.core.database.DatabaseExecutor
-import org.evomaster.core.database.SqlAction
-import org.evomaster.core.database.SqlActionResult
-import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.database.extract.h2.ExtractTestBaseH2
+import org.evomaster.core.sql.DatabaseExecutor
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.sql.SqlActionResult
+import org.evomaster.core.sql.SqlInsertBuilder
+import org.evomaster.core.sql.extract.h2.ExtractTestBaseH2
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.enterprise.SampleType

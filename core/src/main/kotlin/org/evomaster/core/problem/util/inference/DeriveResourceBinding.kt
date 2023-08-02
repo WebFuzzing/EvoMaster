@@ -1,7 +1,7 @@
 package org.evomaster.core.problem.util.inference
 
-import org.evomaster.core.database.SqlAction
-import org.evomaster.core.database.schema.Table
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.sql.schema.Table
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.resource.ParamInfo
 import org.evomaster.core.problem.rest.resource.RestResourceCalls

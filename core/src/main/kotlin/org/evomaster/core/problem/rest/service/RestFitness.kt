@@ -1,6 +1,6 @@
 package org.evomaster.core.problem.rest.service
 
-import org.evomaster.core.database.SqlAction
+import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult

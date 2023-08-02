@@ -25,9 +25,9 @@ import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
-import org.evomaster.core.database.SqlAction
-import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.database.schema.ColumnDataType
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.sql.SqlInsertBuilder
+import org.evomaster.core.sql.schema.ColumnDataType
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.resource.RestResourceCalls

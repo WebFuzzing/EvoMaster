@@ -1,6 +1,6 @@
 package org.evomaster.core.problem.rest.resource
 
-import org.evomaster.core.database.SqlAction
+import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.impact.impactinfocollection.ActionStructureImpact

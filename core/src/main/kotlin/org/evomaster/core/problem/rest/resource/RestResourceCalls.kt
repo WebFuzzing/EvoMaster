@@ -5,8 +5,8 @@ import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionComponent
 import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.action.ActionTree
-import org.evomaster.core.database.SqlAction
-import org.evomaster.core.database.SqlActionUtils
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.sql.SqlActionUtils
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual

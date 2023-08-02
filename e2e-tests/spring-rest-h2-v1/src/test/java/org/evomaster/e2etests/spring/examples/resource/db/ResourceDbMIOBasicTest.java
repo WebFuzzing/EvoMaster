@@ -1,7 +1,7 @@
 package org.evomaster.e2etests.spring.examples.resource.db;
 
 import com.google.inject.Injector;
-import org.evomaster.core.database.SqlAction;
+import org.evomaster.core.sql.SqlAction;
 import org.evomaster.core.problem.rest.resource.RestResourceCalls;
 import org.evomaster.core.problem.rest.resource.RestResourceNode;
 import org.evomaster.core.problem.rest.service.ResourceManageService;

@@ -4,8 +4,8 @@ import com.google.common.annotations.VisibleForTesting
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.Lazy
 import org.evomaster.core.StaticCounter
-import org.evomaster.core.database.SqlAction
-import org.evomaster.core.database.SqlActionUtils
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.sql.SqlActionUtils
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.rest.RestCallAction

@@ -6,10 +6,10 @@ import org.evomaster.client.java.controller.api.dto.HeuristicEntryDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.StaticCounter
-import org.evomaster.core.database.DatabaseExecution
-import org.evomaster.core.database.SqlAction
-import org.evomaster.core.database.SqlActionResult
-import org.evomaster.core.database.SqlActionTransformer
+import org.evomaster.core.sql.DatabaseExecution
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.sql.SqlActionResult
+import org.evomaster.core.sql.SqlActionTransformer
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.mongo.MongoDbActionResult

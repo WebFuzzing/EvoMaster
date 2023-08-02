@@ -5,8 +5,8 @@ import org.evomaster.client.java.controller.api.dto.database.operations.*
 import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.EMConfig
-import org.evomaster.core.database.DatabaseExecutor
-import org.evomaster.core.database.SqlInsertBuilder
+import org.evomaster.core.sql.DatabaseExecutor
+import org.evomaster.core.sql.SqlInsertBuilder
 import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.problem.rest.resource.dependency.BodyParamRelatedToTable
 import org.evomaster.core.search.action.Action

@@ -1,6 +1,6 @@
 package org.evomaster.core.search.gene
 
-import org.evomaster.core.database.SqlActionGeneBuilder
+import org.evomaster.core.sql.SqlActionGeneBuilder
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.numeric.FloatGene
 import org.evomaster.core.search.gene.numeric.IntegerGene

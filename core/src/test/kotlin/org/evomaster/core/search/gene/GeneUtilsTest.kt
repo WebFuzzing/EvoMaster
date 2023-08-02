@@ -1,6 +1,6 @@
 package org.evomaster.core.search.gene
 
-import org.evomaster.core.database.SqlActionGeneBuilder
+import org.evomaster.core.sql.SqlActionGeneBuilder
 import org.evomaster.core.problem.graphql.GqlConst
 import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.builder.GraphQLActionBuilder

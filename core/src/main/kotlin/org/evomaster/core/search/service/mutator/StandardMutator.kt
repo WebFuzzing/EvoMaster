@@ -4,8 +4,8 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N
 import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N_BIASED_SQL
 import org.evomaster.core.Lazy
-import org.evomaster.core.database.SqlAction
-import org.evomaster.core.database.SqlActionUtils
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.sql.SqlActionUtils
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.api.ApiWsAction
 import org.evomaster.core.problem.api.param.Param

@@ -5,7 +5,7 @@ import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 import org.evomaster.core.EMConfig;
 import org.evomaster.core.Main;
-import org.evomaster.core.database.SqlAction;
+import org.evomaster.core.sql.SqlAction;
 import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.RestCallAction;
 import org.evomaster.core.problem.rest.RestCallResult;

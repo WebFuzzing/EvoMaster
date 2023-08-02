@@ -1,6 +1,6 @@
 package org.evomaster.core.search.impact.impactinfocollection
 
-import org.evomaster.core.database.SqlAction
+import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.FitnessValue

@@ -3,8 +3,8 @@ package org.evomaster.core.output
 import org.evomaster.core.TestUtils
 import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.action.ActionResult
-import org.evomaster.core.database.SqlAction
-import org.evomaster.core.database.SqlActionResult
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.sql.SqlActionResult
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.problem.externalservice.rpc.DbAsExternalServiceAction

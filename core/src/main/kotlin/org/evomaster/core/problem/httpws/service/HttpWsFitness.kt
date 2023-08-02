@@ -3,8 +3,8 @@ package org.evomaster.core.problem.httpws.service
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.evomaster.client.java.controller.api.dto.*
 import org.evomaster.core.StaticCounter
-import org.evomaster.core.database.SqlAction
-import org.evomaster.core.database.SqlActionTransformer
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.sql.SqlActionTransformer
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.CookieWriter
 import org.evomaster.core.output.TokenWriter

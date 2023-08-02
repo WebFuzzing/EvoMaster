@@ -1,6 +1,6 @@
 package org.evomaster.core.search
 
-import org.evomaster.core.database.SqlAction
+import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.output.Termination
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction

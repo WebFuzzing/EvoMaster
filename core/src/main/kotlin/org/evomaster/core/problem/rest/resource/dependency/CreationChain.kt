@@ -1,6 +1,6 @@
 package org.evomaster.core.problem.rest.resource.dependency
 
-import org.evomaster.core.database.SqlAction
+import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.search.service.Randomness
 

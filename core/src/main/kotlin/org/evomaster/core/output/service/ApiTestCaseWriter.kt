@@ -2,8 +2,8 @@ package org.evomaster.core.output.service
 
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
-import org.evomaster.core.database.SqlAction
-import org.evomaster.core.database.SqlActionResult
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.sql.SqlActionResult
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.mongo.MongoDbActionResult
 import org.evomaster.core.output.*
