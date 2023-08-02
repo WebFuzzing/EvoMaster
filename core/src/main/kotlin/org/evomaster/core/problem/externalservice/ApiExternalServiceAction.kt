@@ -1,7 +1,7 @@
 package org.evomaster.core.problem.externalservice
 
 import org.evomaster.core.problem.externalservice.param.ResponseParam
-import org.evomaster.core.search.Action
+import org.evomaster.core.search.action.Action
 
 abstract class ApiExternalServiceAction(
     /**

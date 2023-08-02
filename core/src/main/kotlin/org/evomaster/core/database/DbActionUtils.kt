@@ -1,7 +1,7 @@
 package org.evomaster.core.database
 
 import org.evomaster.core.Lazy
-import org.evomaster.core.search.Action
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
@@ -230,8 +230,8 @@ object DbActionUtils {
      * If no such gene is found, the function returns the tuple (-1,null).
      */
     private fun findFirstOffendingGeneWithIndex(
-            actions: List<Action>,
-            randomness: Randomness? = null
+        actions: List<Action>,
+        randomness: Randomness? = null
     ): Pair<Gene?, Int> {
 
         /*

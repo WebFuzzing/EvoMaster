@@ -1,4 +1,4 @@
-package org.evomaster.core.search
+package org.evomaster.core.search.action
 
 enum class ActionFilter {
     /**

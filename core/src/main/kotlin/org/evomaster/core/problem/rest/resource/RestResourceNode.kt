@@ -12,8 +12,8 @@ import org.evomaster.core.problem.rest.resource.dependency.*
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.rest.util.ParserUtil
 import org.evomaster.core.problem.util.RestResourceTemplateHandler
-import org.evomaster.core.search.ActionFilter
-import org.evomaster.core.search.ActionResult
+import org.evomaster.core.search.action.ActionFilter
+import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
@@ -327,7 +327,8 @@ open class RestResourceNode(
      * generated another resource calls which differs from [calls]
      */
     fun generateAnother(calls : RestResourceCalls, randomness: Randomness, maxTestSize: Int) : RestResourceCalls?{
-        val current = calls.template?.template?: RestResourceTemplateHandler.getStringTemplateByActions(calls.seeActions(ActionFilter.NO_SQL).filterIsInstance<RestCallAction>())
+        val current = calls.template?.template?: RestResourceTemplateHandler.getStringTemplateByActions(calls.seeActions(
+            ActionFilter.NO_SQL).filterIsInstance<RestCallAction>())
         val rest = templates.filter { it.value.template != current}
         if(rest.isEmpty()) return null
         val selected = randomness.choose(rest.keys)

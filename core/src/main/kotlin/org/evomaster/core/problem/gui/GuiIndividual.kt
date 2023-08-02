@@ -2,7 +2,7 @@ package org.evomaster.core.problem.gui
 
 import org.evomaster.core.problem.enterprise.EnterpriseIndividual
 import org.evomaster.core.problem.enterprise.SampleType
-import org.evomaster.core.search.ActionComponent
+import org.evomaster.core.search.action.ActionComponent
 import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.tracer.TrackOperator

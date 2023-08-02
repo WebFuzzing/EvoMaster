@@ -13,7 +13,7 @@ import org.evomaster.core.problem.rest.service.*
 import org.evomaster.core.problem.util.BindingBuilder
 import org.evomaster.core.problem.util.BindingBuilder.isExtraTaintParam
 import org.evomaster.core.problem.util.ParamUtil
-import org.evomaster.core.search.ActionFilter
+import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene

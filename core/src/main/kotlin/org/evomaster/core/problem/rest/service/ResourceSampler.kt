@@ -8,7 +8,7 @@ import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.httpws.auth.NoAuth
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.SamplerSpecification
-import org.evomaster.core.search.ActionFilter
+import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.tracer.Traceable

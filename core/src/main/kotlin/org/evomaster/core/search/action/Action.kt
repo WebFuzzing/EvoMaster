@@ -1,5 +1,7 @@
-package org.evomaster.core.search
+package org.evomaster.core.search.action
 
+import org.evomaster.core.search.Individual
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger

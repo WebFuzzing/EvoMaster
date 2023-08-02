@@ -3,7 +3,7 @@ package org.evomaster.core.search.impact.impactinfocollection
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.mongo.MongoDbAction
-import org.evomaster.core.search.Action
+import org.evomaster.core.search.action.Action
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -147,9 +147,9 @@ class InitializationActionImpacts(val abstract: Boolean, val enableImpactOnDupli
     }
 
     private fun addedInitialization(
-            insertions: List<Action>,
-            completeSequence : MutableList<ImpactsOfAction>,
-            indexMap: MutableList<Pair<String, Int>>
+        insertions: List<Action>,
+        completeSequence : MutableList<ImpactsOfAction>,
+        indexMap: MutableList<Pair<String, Int>>
     ){
         val group = insertions.map { a-> ImpactsOfAction(a) }
         val key = generateTemplateKey(group.map { i-> i.actionName!! })

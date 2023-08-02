@@ -13,7 +13,7 @@ import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.util.inference.model.MatchedInfo
 import org.evomaster.core.problem.util.inference.model.ParamGeneBindMap
 import org.evomaster.core.problem.util.StringSimilarityComparator
-import org.evomaster.core.search.ActionFilter
+import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.ObjectGene
 
 /**

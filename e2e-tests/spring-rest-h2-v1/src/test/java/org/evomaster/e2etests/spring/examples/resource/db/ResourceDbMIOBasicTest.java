@@ -6,9 +6,8 @@ import org.evomaster.core.problem.rest.resource.RestResourceCalls;
 import org.evomaster.core.problem.rest.resource.RestResourceNode;
 import org.evomaster.core.problem.rest.service.ResourceManageService;
 import org.evomaster.core.problem.util.BindingBuilder;
-import org.evomaster.core.search.ActionFilter;
+import org.evomaster.core.search.action.ActionFilter;
 import org.evomaster.core.search.Individual.GeneFilter;
-import org.evomaster.core.search.gene.Gene;
 import org.evomaster.e2etests.spring.examples.resource.ResourceMIOHWTestBase;
 import org.junit.jupiter.api.Test;
 

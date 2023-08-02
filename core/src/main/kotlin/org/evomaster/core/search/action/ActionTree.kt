@@ -1,5 +1,6 @@
-package org.evomaster.core.search
+package org.evomaster.core.search.action
 
+import org.evomaster.core.search.GroupsOfChildren
 
 /**
  * Tree/group of actions that are strongly related.
@@ -8,9 +9,9 @@ package org.evomaster.core.search
  * When executing a test case, such tree-structure groups need to be flattened
  */
 abstract class ActionTree(
-        children: MutableList<out ActionComponent>,
-        childTypeVerifier: (Class<*>) -> Boolean = {k -> ActionComponent::class.java.isAssignableFrom(k)},
-        groups : GroupsOfChildren<out ActionComponent>? = null
+    children: MutableList<out ActionComponent>,
+    childTypeVerifier: (Class<*>) -> Boolean = {k -> ActionComponent::class.java.isAssignableFrom(k)},
+    groups : GroupsOfChildren<out ActionComponent>? = null
 ) : ActionComponent(
     children,
     childTypeVerifier,

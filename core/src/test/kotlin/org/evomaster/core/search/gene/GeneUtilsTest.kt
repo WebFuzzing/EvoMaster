@@ -6,7 +6,7 @@ import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.builder.GraphQLActionBuilder
 import org.evomaster.core.problem.graphql.PetClinicCheckMain
 import org.evomaster.core.problem.graphql.param.GQReturnParam
-import org.evomaster.core.search.Action
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.TupleGene
 import org.evomaster.core.search.gene.datetime.DateGene

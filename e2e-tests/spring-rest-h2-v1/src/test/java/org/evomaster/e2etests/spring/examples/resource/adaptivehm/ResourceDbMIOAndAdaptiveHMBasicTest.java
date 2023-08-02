@@ -9,7 +9,7 @@ import org.evomaster.core.problem.rest.resource.RestResourceCalls;
 import org.evomaster.core.problem.rest.service.ResourceManageService;
 import org.evomaster.core.problem.rest.service.ResourceRestMutator;
 import org.evomaster.core.problem.rest.service.RestResourceFitness;
-import org.evomaster.core.search.ActionFilter;
+import org.evomaster.core.search.action.ActionFilter;
 import org.evomaster.core.search.EvaluatedIndividual;
 import org.evomaster.core.search.impact.impactinfocollection.ImpactsOfIndividual;
 import org.evomaster.core.search.service.Archive;

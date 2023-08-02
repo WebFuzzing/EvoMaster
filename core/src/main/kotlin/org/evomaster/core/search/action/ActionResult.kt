@@ -1,5 +1,4 @@
-package org.evomaster.core.search
-
+package org.evomaster.core.search.action
 
 open class ActionResult constructor(
         /** Specify whether the result of this action led to stop the evaluation
@@ -17,7 +16,7 @@ open class ActionResult constructor(
     }
 
 
-    open fun copy() : ActionResult{
+    open fun copy() : ActionResult {
         return ActionResult(this)
     }
 

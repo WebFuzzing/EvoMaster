@@ -2,10 +2,10 @@ package org.evomaster.core.search.impact.impactinfocollection
 
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.mongo.MongoDbAction
-import org.evomaster.core.search.Action
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.ActionFilter
+import org.evomaster.core.search.action.ActionFilter
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 

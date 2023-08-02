@@ -4,7 +4,7 @@ package org.evomaster.core.problem.graphql
 import com.google.gson.Gson
 import org.evomaster.core.problem.graphql.builder.GraphQLActionBuilder
 import org.evomaster.core.problem.graphql.schema.SchemaObj
-import org.evomaster.core.search.Action
+import org.evomaster.core.search.action.Action
 
 class PetClinicCheckMain {
 

@@ -1,4 +1,7 @@
-package org.evomaster.core.search
+package org.evomaster.core.search.action
+
+import org.evomaster.core.search.GroupsOfChildren
+import org.evomaster.core.search.StructuralElement
 
 open class ActionDependentGroup(
     children: MutableList<out Action>,

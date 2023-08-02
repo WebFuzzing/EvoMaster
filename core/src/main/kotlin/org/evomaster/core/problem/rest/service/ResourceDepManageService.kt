@@ -22,8 +22,8 @@ import org.evomaster.core.problem.rest.resource.dependency.SelfResourcesRelation
 import org.evomaster.core.problem.util.inference.SimpleDeriveResourceBinding
 import org.evomaster.core.problem.util.inference.model.ParamGeneBindMap
 import org.evomaster.core.problem.util.StringSimilarityComparator
-import org.evomaster.core.search.ActionFilter
-import org.evomaster.core.search.ActionFilter.*
+import org.evomaster.core.search.action.ActionFilter
+import org.evomaster.core.search.action.ActionFilter.*
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness

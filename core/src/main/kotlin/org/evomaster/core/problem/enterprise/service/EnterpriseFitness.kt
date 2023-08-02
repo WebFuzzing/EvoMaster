@@ -16,8 +16,8 @@ import org.evomaster.core.mongo.MongoDbActionResult
 import org.evomaster.core.mongo.MongoDbActionTransformer
 import org.evomaster.core.mongo.MongoExecution
 import org.evomaster.core.remote.service.RemoteController
-import org.evomaster.core.search.Action
-import org.evomaster.core.search.ActionResult
+import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene

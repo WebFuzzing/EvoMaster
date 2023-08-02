@@ -1,6 +1,9 @@
 package org.evomaster.core.problem.rpc
 
 import org.evomaster.core.Lazy
+import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.action.ActionComponent
+import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.mongo.MongoDbAction

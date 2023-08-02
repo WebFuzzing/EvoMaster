@@ -6,7 +6,7 @@ import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.gui.GuiIndividual
 import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.search.ActionComponent
+import org.evomaster.core.search.action.ActionComponent
 import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.StructuralElement

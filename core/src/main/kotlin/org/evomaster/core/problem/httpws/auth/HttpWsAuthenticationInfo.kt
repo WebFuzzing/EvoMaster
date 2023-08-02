@@ -2,7 +2,7 @@ package org.evomaster.core.problem.httpws.auth
 
 import org.evomaster.core.problem.api.auth.AuthenticationInfo
 import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.search.Action
+import org.evomaster.core.search.action.Action
 
 /**
  * should be immutable

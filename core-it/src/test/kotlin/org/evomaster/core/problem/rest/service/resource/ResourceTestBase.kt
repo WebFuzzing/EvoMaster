@@ -9,6 +9,8 @@ import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
 import org.evomaster.core.TestUtils
+import org.evomaster.core.search.action.ActionFilter
+import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.database.DatabaseExecutor
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionResult
@@ -157,7 +159,8 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
                     assertEquals(1, this!!.getResourceCalls().size)
                     getResourceCalls().first().apply {
                         assertTrue(!template!!.independent || seeActions(ActionFilter.ONLY_SQL).isNotEmpty()){
-                            "the first call with $method should not be independent, but ${template!!.template} with ${seeActionSize(ActionFilter.ONLY_SQL)} dbActions"
+                            "the first call with $method should not be independent, but ${template!!.template} with ${seeActionSize(
+                                ActionFilter.ONLY_SQL)} dbActions"
                         }
                     }
 
@@ -166,7 +169,8 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
                     assertEquals(2, this!!.getResourceCalls().size)
                     getResourceCalls().first().apply {
                         assertTrue(!template!!.independent || seeActions(ActionFilter.ONLY_SQL).isNotEmpty()){
-                            "the first call with $method should not be independent, but ${template!!.template} with ${seeActionSize(ActionFilter.ONLY_SQL)} dbActions"
+                            "the first call with $method should not be independent, but ${template!!.template} with ${seeActionSize(
+                                ActionFilter.ONLY_SQL)} dbActions"
                         }
                     }
 
@@ -175,7 +179,8 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
                     assertTrue(2 <= this!!.getResourceCalls().size)
                     getResourceCalls().first().apply {
                         assertTrue(!template!!.independent || seeActions(ActionFilter.ONLY_SQL).isNotEmpty()){
-                            "the first call with $method should not be independent, but ${template!!.template} with ${seeActionSize(ActionFilter.ONLY_SQL)} dbActions"
+                            "the first call with $method should not be independent, but ${template!!.template} with ${seeActionSize(
+                                ActionFilter.ONLY_SQL)} dbActions"
                         }
                     }
                 }
@@ -445,7 +450,8 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
     }
 
 
-    private fun generateIndividualResults(individual: Individual) : List<ActionResult> = individual.seeActions(ActionFilter.ALL).map {
+    private fun generateIndividualResults(individual: Individual) : List<ActionResult> = individual.seeActions(
+        ActionFilter.ALL).map {
         if (it is DbAction) DbActionResult().also { it.setInsertExecutionResult(true) }
         else ActionResult()
     }
