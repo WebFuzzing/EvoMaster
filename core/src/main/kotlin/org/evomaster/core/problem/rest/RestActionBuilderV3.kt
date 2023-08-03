@@ -1203,6 +1203,7 @@ object RestActionBuilderV3 {
                 0 -> warn("There is _NO_ usable RESTful API endpoint defined in the schema configuration")
                 1 -> info("There is only one usable RESTful API endpoint defined in the schema configuration")
                 else -> info("There are $n usable RESTful API endpoints defined in the schema configuration")
+                FIXME do same for GraphQL
             }
 
             if (errorEndpoints.isNotEmpty()){
