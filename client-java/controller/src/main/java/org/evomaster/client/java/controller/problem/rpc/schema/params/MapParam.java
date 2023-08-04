@@ -113,7 +113,7 @@ public class MapParam extends NamedTypedValue<MapType, List<PairParam>>{
     public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava) {
         String fullName = getType().getTypeNameForInstanceInJavaOrKotlin(isJava);
         List<String> codes = new ArrayList<>();
-        String var = oneLineInstance(isDeclaration, doesIncludeName, fullName, variableName, null, isJava);
+        String var = oneLineInstance(isDeclaration, doesIncludeName, fullName, variableName, null, isJava, isNullable());
         addCode(codes, var, indent);
         if (getValue() == null) return codes;
         addCode(codes, codeBlockStart(isJava), indent);
@@ -153,7 +153,7 @@ public class MapParam extends NamedTypedValue<MapType, List<PairParam>>{
             addCode(codes, junitAssertNull(responseVarName, isJava), indent);
             return codes;
         }
-        addCode(codes, junitAssertEquals(String.valueOf(getValue().size()), CodeJavaOrKotlinGenerator.withSize(responseVarName, isJava), isJava), indent);
+        addCode(codes, junitAssertEquals(String.valueOf(getValue().size()), CodeJavaOrKotlinGenerator.withSize(responseVarName, isJava, isNullable()), isJava), indent);
 
         if (maxAssertionForDataInCollection == 0)
             return codes;

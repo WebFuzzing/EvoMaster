@@ -106,7 +106,7 @@ public class BigDecimalParam extends NamedTypedValue<BigDecimalType, BigDecimal>
 
         List<String> codes = new ArrayList<>();
         boolean isNull = (getValue() == null);
-        String var = oneLineInstance(isDeclaration, doesIncludeName, typeName, variableName, null, isJava);
+        String var = oneLineInstance(isDeclaration, doesIncludeName, typeName, variableName, null, isJava, isNullable());
         addCode(codes, var, indent);
         if (isNull) return codes;
 
@@ -115,12 +115,12 @@ public class BigDecimalParam extends NamedTypedValue<BigDecimalType, BigDecimal>
         String consParam = getValueAsJavaString(isJava);
         if (getPrecision() != null){
             addCode(codes, oneLineInstance(true, true, MathContext.class.getName(), mcVar,
-                    newObjectConsParams(MathContext.class.getName(), getPrecision().toString(), isJava), isJava), indent+1);
+                    newObjectConsParams(MathContext.class.getName(), getPrecision().toString(), isJava), isJava, isNullable()), indent+1);
             consParam += ", "+mcVar;
         }
         addCode(codes, setInstance(variableName, newObjectConsParams(typeName, consParam, isJava), isJava), indent+1);
         if (getScale() != null){
-            addCode(codes, oneLineSetterInstance("setScale", null, variableName, getScale()+", "+RoundingMode.class.getName()+".HALF_UP", isJava), indent+1);
+            addCode(codes, oneLineSetterInstance("setScale", null, variableName, getScale()+", "+RoundingMode.class.getName()+".HALF_UP", isJava, isNullable()), indent+1);
         }
 
         addCode(codes, codeBlockEnd(isJava), indent);

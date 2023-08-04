@@ -104,7 +104,7 @@ public class ListParam extends CollectionParam<List<NamedTypedValue>>{
     public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava) {
         String fullName = getType().getTypeNameForInstanceInJavaOrKotlin(isJava);
         List<String> codes = new ArrayList<>();
-        String var = oneLineInstance(isDeclaration, doesIncludeName, fullName, variableName, null, isJava);
+        String var = oneLineInstance(isDeclaration, doesIncludeName, fullName, variableName, null, isJava, isNullable());
         addCode(codes, var, indent);
         if (getValue() == null) return codes;
         addCode(codes, codeBlockStart(isJava), indent);
@@ -133,7 +133,7 @@ public class ListParam extends CollectionParam<List<NamedTypedValue>>{
             return codes;
         }
 
-        addCode(codes, junitAssertEquals(String.valueOf(getValue().size()), withSize(responseVarName, isJava), isJava), indent);
+        addCode(codes, junitAssertEquals(String.valueOf(getValue().size()), withSize(responseVarName, isJava, isNullable()), isJava), indent);
 
         if (maxAssertionForDataInCollection == 0)
             return codes;
@@ -146,7 +146,7 @@ public class ListParam extends CollectionParam<List<NamedTypedValue>>{
 
         for (int index : nvalue){
             NamedTypedValue e = getValue().get(index);
-            String eVar = methodInvocation(responseVarName, "get", String.valueOf(index), isJava);
+            String eVar = methodInvocation(responseVarName, "get", String.valueOf(index), isJava, isNullable());
             codes.addAll(e.newAssertionWithJavaOrKotlin(indent, eVar, maxAssertionForDataInCollection, isJava));
         }
 

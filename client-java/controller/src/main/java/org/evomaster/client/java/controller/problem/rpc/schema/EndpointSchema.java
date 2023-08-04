@@ -199,7 +199,7 @@ public class EndpointSchema {
         List<String> javaCode = new ArrayList<>();
         if (response != null){
             boolean isPrimitive = (response.getType() instanceof PrimitiveOrWrapperType) && !((PrimitiveOrWrapperType)response.getType()).isWrapper;
-            javaCode.add(oneLineInstance(true, true, response.getType().getTypeNameForInstanceInJavaOrKotlin(outputFormat.isJava()), responseVarName, null, isPrimitive, outputFormat.isJava()));
+            javaCode.add(oneLineInstance(true, true, response.getType().getTypeNameForInstanceInJavaOrKotlin(outputFormat.isJava()), responseVarName, null, isPrimitive, outputFormat.isJava(), response.isNullable()));
         }
         javaCode.add(codeBlockStart(outputFormat.isJava()));
         int indent = 1;
@@ -220,7 +220,7 @@ public class EndpointSchema {
                 javaCode,
                 setInstance(response!= null,
                         responseVarName,
-                        methodInvocation(client, getName(), paramVars, outputFormat.isJava() ), outputFormat.isJava()),
+                        methodInvocation(client, getName(), paramVars, outputFormat.isJava(), response.isNullable()), outputFormat.isJava()),
                 indent);
 
         javaCode.add(codeBlockEnd(outputFormat.isJava()));

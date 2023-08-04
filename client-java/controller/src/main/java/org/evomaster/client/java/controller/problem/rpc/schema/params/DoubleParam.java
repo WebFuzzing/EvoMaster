@@ -90,7 +90,7 @@ public class DoubleParam extends PrimitiveOrWrapperParam<Double> {
     @Override
     public String getPrimitiveValue(String responseVarName, boolean isJava) {
         if (getType().isWrapper)
-            return methodInvocation(responseVarName, "doubleValue", "", isJava);
+            return methodInvocation(responseVarName, "doubleValue", "", isJava, isNullable());
         return responseVarName;
     }
 }

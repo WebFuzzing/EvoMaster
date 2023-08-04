@@ -68,7 +68,7 @@ public class LongParam extends PrimitiveOrWrapperParam<Long> {
     @Override
     public String getPrimitiveValue(String responseVarName, boolean isJava) {
         if (getType().isWrapper)
-            return methodInvocation(responseVarName, "longValue", "", isJava);
+            return methodInvocation(responseVarName, "longValue", "", isJava, isNullable());
         return responseVarName;
     }
 }

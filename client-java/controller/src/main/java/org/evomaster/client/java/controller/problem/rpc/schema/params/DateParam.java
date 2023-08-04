@@ -78,7 +78,7 @@ public class DateParam extends NamedTypedValue<DateType, List<IntParam>>{
         List<String> codes = new ArrayList<>();
         boolean isNull = (getValue() == null);
 
-        String var = oneLineInstance(isDeclaration, doesIncludeName, typeName, varName, null, isJava);
+        String var = oneLineInstance(isDeclaration, doesIncludeName, typeName, varName, null, isJava, isNullable());
         addCode(codes, var, indent);
         if (isNull) return codes;
 

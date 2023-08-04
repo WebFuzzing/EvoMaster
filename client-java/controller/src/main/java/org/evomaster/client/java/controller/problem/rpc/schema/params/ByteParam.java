@@ -72,7 +72,7 @@ public class ByteParam extends PrimitiveOrWrapperParam<Byte> {
     @Override
     public String getPrimitiveValue(String responseVarName, boolean isJava) {
         if (getType().isWrapper)
-            return methodInvocation(responseVarName, "byteValue", "", isJava);
+            return methodInvocation(responseVarName, "byteValue", "", isJava, isNullable());
         return responseVarName;
     }
 

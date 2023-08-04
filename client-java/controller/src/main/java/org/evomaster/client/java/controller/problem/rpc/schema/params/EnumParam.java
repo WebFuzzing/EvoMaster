@@ -73,11 +73,11 @@ public class EnumParam extends NamedTypedValue<EnumType, Integer> {
     public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava) {
         String code;
         if (accessibleSchema != null && accessibleSchema.setterMethodName != null)
-            code = oneLineSetterInstance(accessibleSchema.setterMethodName, getType().getFullTypeName(), variableName, getValueAsJavaString(isJava),isJava );
+            code = oneLineSetterInstance(accessibleSchema.setterMethodName, getType().getFullTypeName(), variableName, getValueAsJavaString(isJava),isJava, isNullable());
         else{
             if (accessibleSchema != null && !accessibleSchema.isAccessible)
                 throw new IllegalStateException("Error: private field, but there is no setter method");
-            code = oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, getValueAsJavaString(isJava), isJava);
+            code = oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, getValueAsJavaString(isJava), isJava, isNullable());
 
         }
         return Collections.singletonList(getIndent(indent)+ code);

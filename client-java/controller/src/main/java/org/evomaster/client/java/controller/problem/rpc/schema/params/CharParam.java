@@ -71,7 +71,7 @@ public class CharParam extends PrimitiveOrWrapperParam<Character> {
     @Override
     public String getPrimitiveValue(String responseVarName, boolean isJava) {
         if (getType().isWrapper)
-            return methodInvocation(responseVarName, "charValue", "", isJava);
+            return methodInvocation(responseVarName, "charValue", "", isJava, isNullable());
         return responseVarName;
     }
 }

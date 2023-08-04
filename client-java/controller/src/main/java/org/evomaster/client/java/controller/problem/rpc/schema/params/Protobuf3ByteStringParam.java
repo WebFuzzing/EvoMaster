@@ -93,12 +93,12 @@ public class Protobuf3ByteStringParam extends NamedTypedValue<Protobuf3ByteStrin
     @Override
     public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava) {
         List<String> codes = new ArrayList<>();
-        String var = oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, null,isJava );
+        String var = oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, null,isJava, isNullable());
         addCode(codes, var, indent);
         if (getValue() == null) return codes;
         addCode(codes, codeBlockStart(isJava), indent);
         addCode(codes,
-            oneLineInstance(false, true, getType().getFullTypeName(), variableName, getType().getFullTypeName()+"."+PROTOBUF3_BYTE_STRING_METHOD_COPY_FROM_METHOD+"(\""+ getValue() + "\")",isJava ), indent + 1);
+            oneLineInstance(false, true, getType().getFullTypeName(), variableName, getType().getFullTypeName()+"."+PROTOBUF3_BYTE_STRING_METHOD_COPY_FROM_METHOD+"(\""+ getValue() + "\")",isJava, isNullable()), indent + 1);
         addCode(codes, codeBlockEnd(isJava), indent);
         return codes;
     }

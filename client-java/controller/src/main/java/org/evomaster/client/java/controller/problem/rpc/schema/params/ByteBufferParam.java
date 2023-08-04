@@ -73,18 +73,18 @@ public class ByteBufferParam extends NamedTypedValue<ByteBufferType, ByteBuffer>
     @Override
     public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava) {
         List<String> codes = new ArrayList<>();
-        String var = oneLineInstance(isDeclaration, doesIncludeName, ByteBuffer.class.getName(), variableName, null,isJava );
+        String var = oneLineInstance(isDeclaration, doesIncludeName, ByteBuffer.class.getName(), variableName, null,isJava,isNullable() );
         addCode(codes, var, indent);
         if (getValue() == null) return codes;
         addCode(codes, codeBlockStart(isJava), indent);
         String varValue = variableName+"_byteArray";
         String byteArray = "\""+ new String(getValue().array(), StandardCharsets.UTF_8) + "\".getBytes("+StandardCharsets.class.getName()+".UTF_8)";
         addCode(codes,
-                oneLineInstance(true, true, "byte[]", varValue, byteArray, isJava), indent + 1);
+                oneLineInstance(true, true, "byte[]", varValue, byteArray, isJava,isNullable() ), indent + 1);
         addCode(codes,
-                oneLineInstance(false, true, String.class.getName(), variableName, ByteBuffer.class.getName()+".allocate("+varValue+".length)", isJava), indent + 1);
+                oneLineInstance(false, true, String.class.getName(), variableName, ByteBuffer.class.getName()+".allocate("+varValue+".length)", isJava,isNullable() ), indent + 1);
         addCode(codes,
-            methodInvocation(variableName, "put", variableName, isJava)+ getStatementLast(isJava),
+            methodInvocation(variableName, "put", variableName, isJava, isNullable())+ getStatementLast(isJava),
             indent+1);
         addCode(codes, codeBlockEnd(isJava), indent);
 

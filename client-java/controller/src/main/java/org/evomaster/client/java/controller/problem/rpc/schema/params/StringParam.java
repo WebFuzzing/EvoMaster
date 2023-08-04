@@ -184,11 +184,11 @@ public class StringParam extends NamedTypedValue<StringType, String> implements 
 
         String code;
         if (accessibleSchema != null && accessibleSchema.setterMethodName != null)
-            code = oneLineSetterInstance(accessibleSchema.setterMethodName, null, variableName, getValueAsJavaString(isJava), isJava);
+            code = oneLineSetterInstance(accessibleSchema.setterMethodName, null, variableName, getValueAsJavaString(isJava), isJava, isNullable());
         else {
             if (accessibleSchema != null && !accessibleSchema.isAccessible)
                 throw new IllegalStateException("Error: private field, but there is no setter method");
-            code = oneLineInstance(isDeclaration, doesIncludeName, getType().getTypeNameForInstanceInJavaOrKotlin(isJava), variableName, getValueAsJavaString(isJava), isJava);
+            code = oneLineInstance(isDeclaration, doesIncludeName, getType().getTypeNameForInstanceInJavaOrKotlin(isJava), variableName, getValueAsJavaString(isJava), isJava, isNullable());
 
         }
         return Collections.singletonList(getIndent(indent)+ code);

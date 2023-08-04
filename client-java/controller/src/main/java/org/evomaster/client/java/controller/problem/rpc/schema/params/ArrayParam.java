@@ -112,7 +112,7 @@ public class ArrayParam extends CollectionParam<List<NamedTypedValue>>{
     public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava) {
         String fullName = getType().getTypeNameForInstanceInJavaOrKotlin(isJava);
         List<String> codes = new ArrayList<>();
-        String var = oneLineInstance(isDeclaration, doesIncludeName, fullName, variableName, null, isJava);
+        String var = oneLineInstance(isDeclaration, doesIncludeName, fullName, variableName, null, isJava, isNullable());
         addCode(codes, var, indent);
         if (getValue() == null) return codes;
         int length = getValue().size();
@@ -141,7 +141,7 @@ public class ArrayParam extends CollectionParam<List<NamedTypedValue>>{
             addCode(codes, junitAssertNull(responseVarName, isJava), indent);
             return codes;
         }
-        addCode(codes, junitAssertEquals(String.valueOf(getValue().size()), withLength(responseVarName, isJava), isJava), indent);
+        addCode(codes, junitAssertEquals(String.valueOf(getValue().size()), withLength(responseVarName, isJava, isNullable()), isJava), indent);
 
         if (maxAssertionForDataInCollection == 0)
             return codes;

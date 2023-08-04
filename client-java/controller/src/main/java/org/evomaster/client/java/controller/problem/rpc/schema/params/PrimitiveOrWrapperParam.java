@@ -154,11 +154,11 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
             return Collections.emptyList();
         }
         if (accessibleSchema != null && accessibleSchema.setterMethodName != null)
-            code = CodeJavaOrKotlinGenerator.oneLineSetterInstance(accessibleSchema.setterMethodName, getCastType(), variableName, getValueAsJavaString(isJava),isJava );
+            code = CodeJavaOrKotlinGenerator.oneLineSetterInstance(accessibleSchema.setterMethodName, getCastType(), variableName, getValueAsJavaString(isJava),isJava, isNullable());
         else {
             if (accessibleSchema != null && !accessibleSchema.isAccessible)
                 throw new IllegalStateException("Error: private field, but there is no setter method");
-            code = CodeJavaOrKotlinGenerator.oneLineInstance(isDeclaration, doesIncludeName, getType().getTypeNameForInstanceInJavaOrKotlin(isJava), variableName, getValueAsJavaString(isJava), isJava);
+            code = CodeJavaOrKotlinGenerator.oneLineInstance(isDeclaration, doesIncludeName, getType().getTypeNameForInstanceInJavaOrKotlin(isJava), variableName, getValueAsJavaString(isJava), isJava, isNullable());
         }
 
         return Collections.singletonList(CodeJavaOrKotlinGenerator.getIndent(indent)+ code);

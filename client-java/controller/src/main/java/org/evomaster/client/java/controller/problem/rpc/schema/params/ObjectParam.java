@@ -236,7 +236,7 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
 
         List<String> codes = new ArrayList<>();
         boolean isNull = (getValue() == null);
-        String var = oneLineInstance(isDeclaration, doesIncludeName, typeName, varName, null,isJava );
+        String var = oneLineInstance(isDeclaration, doesIncludeName, typeName, varName, null,isJava, isNullable());
         addCode(codes, var, indent);
         if (isNull) return codes;
 
@@ -264,18 +264,18 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
                 codes.addAll(f.newInstanceWithJavaOrKotlin(fdeclar, true, fName, indent+1, isJava));
 
                 if (needRenameField(f)){
-                    addCode(codes, methodInvocation(ownVarName, f.accessibleSchema.setterMethodName, fName,isJava)+ getStatementLast(isJava),indent+1);
+                    addCode(codes, methodInvocation(ownVarName, f.accessibleSchema.setterMethodName, fName,isJava, f.isNullable())+ getStatementLast(isJava),indent+1);
                 }
             }else {
                 codes.addAll(f.newInstanceWithJavaOrKotlin(false, true,
-                    methodInvocation(var,f.getName(),"",isJava), indent+1, isJava));
+                    methodInvocation(var,f.getName(),"",isJava, f.isNullable()), indent+1, isJava));
             }
         }
 
         if (getType().spec == JavaDtoSpec.PROTO3){
 
             addCode(codes,
-                setInstance(true, varName, methodInvocation(ownVarName, PROTO3_OBJECT_BUILD_METHOD, "",isJava ), isJava),indent+1);
+                setInstance(true, varName, methodInvocation(ownVarName, PROTO3_OBJECT_BUILD_METHOD, "",isJava, isNullable()), isJava),indent+1);
         }
         addCode(codes, codeBlockEnd(isJava), indent);
         return codes;
@@ -302,7 +302,7 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
                     SimpleLogger.uniqueWarn(msg);
                     addComment(codes, msg, indent);
                 }else{
-                    fName = methodInvocation(responseVarName, f.accessibleSchema.getterMethodName, "", isJava);
+                    fName = methodInvocation(responseVarName, f.accessibleSchema.getterMethodName, "", isJava, isNullable());
                 }
             }
             if (fName != null)

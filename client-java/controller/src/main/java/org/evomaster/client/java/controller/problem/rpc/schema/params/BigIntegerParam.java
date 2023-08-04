@@ -105,7 +105,7 @@ public class BigIntegerParam extends NamedTypedValue<BigIntegerType, BigInteger>
 
         List<String> codes = new ArrayList<>();
         boolean isNull = (getValue() == null);
-        String var = oneLineInstance(isDeclaration, doesIncludeName, typeName, variableName, null, isJava);
+        String var = oneLineInstance(isDeclaration, doesIncludeName, typeName, variableName, null, isJava, isNullable());
         addCode(codes, var, indent);
         if (isNull) return codes;
 

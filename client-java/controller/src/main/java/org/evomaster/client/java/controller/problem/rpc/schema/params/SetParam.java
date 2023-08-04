@@ -108,7 +108,7 @@ public class SetParam extends CollectionParam<Set<NamedTypedValue>>{
     public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava) {
         String fullName = getType().getTypeNameForInstanceInJavaOrKotlin(isJava);
         List<String> codes = new ArrayList<>();
-        String var = oneLineInstance(isDeclaration, doesIncludeName, fullName, variableName, null, isJava);
+        String var = oneLineInstance(isDeclaration, doesIncludeName, fullName, variableName, null, isJava, isNullable());
         addCode(codes, var, indent);
         if (getValue() == null) return codes;
         addCode(codes, codeBlockStart(isJava), indent);
@@ -121,7 +121,7 @@ public class SetParam extends CollectionParam<Set<NamedTypedValue>>{
         for (NamedTypedValue e: getValue()){
             String eVarName = handleVariableName(variableName+"_e_"+index);
             codes.addAll(e.newInstanceWithJavaOrKotlin(true, true, eVarName, indent+1, isJava));
-            addCode(codes, methodInvocation(variableName, "add", eVarName, isJava), indent+1);
+            addCode(codes, methodInvocation(variableName, "add", eVarName, isJava, isNullable()), indent+1);
             index++;
         }
 
@@ -136,7 +136,7 @@ public class SetParam extends CollectionParam<Set<NamedTypedValue>>{
             addCode(codes, junitAssertNull(responseVarName, isJava), indent);
             return codes;
         }
-        addCode(codes, junitAssertEquals(String.valueOf(getValue().size()), CodeJavaOrKotlinGenerator.withSize(responseVarName, isJava),isJava ), indent);
+        addCode(codes, junitAssertEquals(String.valueOf(getValue().size()), CodeJavaOrKotlinGenerator.withSize(responseVarName, isJava, isNullable()),isJava ), indent);
         /*
             it is tricky to check values for set since the sequence is not determinate
          */
