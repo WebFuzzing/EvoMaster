@@ -49,7 +49,7 @@ public class ObjectType extends TypeSchema {
             }
         }
         List<String> genericTypes = this.genericTypes != null? new ArrayList<>(this.genericTypes): null;
-        ObjectType objectType = new ObjectType(getType(), getFullTypeName(), cfields ,getClazz(), genericTypes, spec);
+        ObjectType objectType = new ObjectType(getSimpleTypeName(), getFullTypeName(), cfields ,getClazz(), genericTypes, spec);
         objectType.depth = depth;
         return objectType;
     }

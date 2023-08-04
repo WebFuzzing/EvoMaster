@@ -44,6 +44,6 @@ public class MapType extends TypeSchema{
 
     @Override
     public MapType copy() {
-        return new MapType(getType(),getFullTypeName(), template, getClazz(), spec);
+        return new MapType(getSimpleTypeName(),getFullTypeName(), template, getClazz(), spec);
     }
 }

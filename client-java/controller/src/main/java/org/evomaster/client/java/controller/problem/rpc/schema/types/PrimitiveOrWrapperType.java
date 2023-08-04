@@ -43,7 +43,7 @@ public class PrimitiveOrWrapperType extends TypeSchema {
 
     @Override
     public PrimitiveOrWrapperType copy() {
-        return new PrimitiveOrWrapperType(getType(), getFullTypeName(), isWrapper, getClazz(), spec);
+        return new PrimitiveOrWrapperType(getSimpleTypeName(), getFullTypeName(), isWrapper, getClazz(), spec);
     }
 
     public boolean isNumber(){
@@ -56,5 +56,10 @@ public class PrimitiveOrWrapperType extends TypeSchema {
 
     public boolean isIntegralNumber(){
         return INTEGRAL_NUMBER.contains(getClazz());
+    }
+
+    @Override
+    public String getTypeNameForInstanceInJavaOrKotlin(boolean isJava) {
+        return getSimpleTypeName();
     }
 }
