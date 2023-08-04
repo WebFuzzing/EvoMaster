@@ -3,7 +3,6 @@ package org.evomaster.client.java.controller.problem.rpc.schema;
 import org.evomaster.client.java.controller.api.dto.SutInfoDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.SeededRPCActionDto;
-import org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.PrimitiveOrWrapperType;
 
@@ -13,6 +12,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import static org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator.*;
 
 /**
  * endpoint dto for RPC service
@@ -194,34 +195,35 @@ public class EndpointSchema {
      * @param outputFormat
      * @return code to send the request and set the response if exists
      */
-    public List<String> newInvocationWithSpecifiedFormat(String responseVarName, String controllerVarName, String clientVariable, SutInfoDto.OutputFormat outputFormat){
+    public List<String> newInvocationWithJavaOrKotlin(String responseVarName, String controllerVarName, String clientVariable, SutInfoDto.OutputFormat outputFormat){
         List<String> javaCode = new ArrayList<>();
         if (response != null){
             boolean isPrimitive = (response.getType() instanceof PrimitiveOrWrapperType) && !((PrimitiveOrWrapperType)response.getType()).isWrapper;
-            javaCode.add(CodeJavaOrKotlinGenerator.oneLineInstance(true, true, response.getType().getTypeNameForInstanceInJavaOrKotlin(outputFormat.isJava()), responseVarName, null, isPrimitive));
+            javaCode.add(oneLineInstance(true, true, response.getType().getTypeNameForInstanceInJavaOrKotlin(outputFormat.isJava()), responseVarName, null, isPrimitive));
         }
-        javaCode.add("{");
+        javaCode.add(codeBlockStart(outputFormat.isJava()));
         int indent = 1;
         for (NamedTypedValue param: getRequestParams()){
-            javaCode.addAll(param.newInstanceWithJavaOrKotlin(indent, true));
+            javaCode.addAll(param.newInstanceWithJavaOrKotlin(indent, outputFormat.isJava()));
         }
         String paramVars = requestParams.stream().map(NamedTypedValue::getName).collect(Collectors.joining(","));
         String client = clientVariable;
+
         if (client == null)
-            client = CodeJavaOrKotlinGenerator.castToType(clientTypeName, CodeJavaOrKotlinGenerator.getGetClientMethod(controllerVarName,"\""+interfaceName+"\""), outputFormat.isJava() );
+            client = castToType(clientTypeName, getGetClientMethod(controllerVarName,"\""+handleEscapeCharInString(interfaceName, outputFormat.isJava())+"\""), outputFormat.isJava() );
 
         if (client == null){
             throw new IllegalArgumentException("fail to generate code for accessing client :"+clientTypeName);
         }
 
-        CodeJavaOrKotlinGenerator.addCode(
+        addCode(
                 javaCode,
-                CodeJavaOrKotlinGenerator.setInstance(response!= null,
+                setInstance(response!= null,
                         responseVarName,
-                        CodeJavaOrKotlinGenerator.methodInvocation(client, getName(), paramVars), outputFormat.isJava()),
+                        methodInvocation(client, getName(), paramVars, outputFormat.isJava() ), outputFormat.isJava()),
                 indent);
 
-        javaCode.add("}");
+        javaCode.add(codeBlockEnd(outputFormat.isJava()));
         return javaCode;
     }
 }

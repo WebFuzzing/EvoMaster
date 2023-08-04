@@ -105,5 +105,19 @@ public class RegistrationServicegRPCEndpointsBuilderTest extends RPCEndpointsBui
         }
         assertEquals("foo", request.getSessionId().toStringUtf8());
 
+
+
+        List<String> param1InstanceKotlin = inputParam.newInstanceWithJavaOrKotlin(true, true, "request", 0, false);
+        param1InstanceKotlin.forEach(System.out::println);
+//        String[] expectedKotlinContents = ("org.signal.registration.rpc.GetRegistrationSessionMetadataRequest request = null;\n" +
+//            "{\n" +
+//            " org.signal.registration.rpc.GetRegistrationSessionMetadataRequest.Builder requestbuilder = org.signal.registration.rpc.GetRegistrationSessionMetadataRequest.newBuilder();\n" +
+//            " com.google.protobuf.ByteString request_sessionId = null;\n" +
+//            " {\n" +
+//            "  request_sessionId = com.google.protobuf.ByteString.copyFromUtf8(\"foo\");\n" +
+//            " }\n" +
+//            " requestbuilder.setSessionId(request_sessionId);\n" +
+//            " request = requestbuilder.build();\n" +
+//            "}").split("\n");
     }
 }

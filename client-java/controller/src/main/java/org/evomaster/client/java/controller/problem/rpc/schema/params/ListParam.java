@@ -3,7 +3,6 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
-import org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.CollectionType;
 
@@ -11,6 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import static org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator.*;
 
 /**
  * thrift
@@ -103,24 +104,24 @@ public class ListParam extends CollectionParam<List<NamedTypedValue>>{
     public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava) {
         String fullName = getType().getTypeNameForInstanceInJavaOrKotlin(isJava);
         List<String> codes = new ArrayList<>();
-        String var = CodeJavaOrKotlinGenerator.oneLineInstance(isDeclaration, doesIncludeName, fullName, variableName, null, isJava);
-        CodeJavaOrKotlinGenerator.addCode(codes, var, indent);
+        String var = oneLineInstance(isDeclaration, doesIncludeName, fullName, variableName, null, isJava);
+        addCode(codes, var, indent);
         if (getValue() == null) return codes;
-        CodeJavaOrKotlinGenerator.addCode(codes, "{", indent);
+        addCode(codes, codeBlockStart(isJava), indent);
         // new array
-        CodeJavaOrKotlinGenerator.addCode(codes,
-                CodeJavaOrKotlinGenerator.setInstance(
+        addCode(codes,
+                setInstance(
                         variableName,
-                        CodeJavaOrKotlinGenerator.newList(isJava, getType().getTemplate().getType().getTypeNameForInstanceInJavaOrKotlin(isJava)), isJava), indent+1);
+                        newList(isJava, getType().getTemplate().getType().getTypeNameForInstanceInJavaOrKotlin(isJava)), isJava), indent+1);
         int index = 0;
         for (NamedTypedValue e: getValue()){
-            String eVarName = CodeJavaOrKotlinGenerator.handleVariableName(variableName+"_e_"+index);
+            String eVarName = handleVariableName(variableName+"_e_"+index);
             codes.addAll(e.newInstanceWithJavaOrKotlin(true, true, eVarName, indent+1, isJava));
-            CodeJavaOrKotlinGenerator.addCode(codes, variableName+".add("+eVarName+");", indent+1);
+            addCode(codes, variableName+".add("+eVarName+");", indent+1);
             index++;
         }
 
-        CodeJavaOrKotlinGenerator.addCode(codes, "}", indent);
+        addCode(codes, codeBlockEnd(isJava), indent);
         return codes;
     }
 
@@ -128,24 +129,24 @@ public class ListParam extends CollectionParam<List<NamedTypedValue>>{
     public List<String> newAssertionWithJavaOrKotlin(int indent, String responseVarName, int maxAssertionForDataInCollection, boolean isJava) {
         List<String> codes = new ArrayList<>();
         if (getValue() == null){
-            CodeJavaOrKotlinGenerator.addCode(codes, CodeJavaOrKotlinGenerator.junitAssertNull(responseVarName, isJava), indent);
+            addCode(codes, junitAssertNull(responseVarName, isJava), indent);
             return codes;
         }
 
-        CodeJavaOrKotlinGenerator.addCode(codes, CodeJavaOrKotlinGenerator.junitAssertEquals(String.valueOf(getValue().size()), CodeJavaOrKotlinGenerator.withSize(responseVarName), isJava), indent);
+        addCode(codes, junitAssertEquals(String.valueOf(getValue().size()), withSize(responseVarName, isJava), isJava), indent);
 
         if (maxAssertionForDataInCollection == 0)
             return codes;
 
         List<Integer> nvalue = null;
         if (maxAssertionForDataInCollection > 0 && getValue().size() > maxAssertionForDataInCollection){
-            nvalue = CodeJavaOrKotlinGenerator.randomNInt(getValue().size(), maxAssertionForDataInCollection);
+            nvalue = randomNInt(getValue().size(), maxAssertionForDataInCollection);
         }else
             nvalue = IntStream.range(0, getValue().size()).boxed().collect(Collectors.toList());
 
         for (int index : nvalue){
             NamedTypedValue e = getValue().get(index);
-            String eVar = responseVarName+".get("+index+")";
+            String eVar = methodInvocation(responseVarName, "get", String.valueOf(index), isJava);
             codes.addAll(e.newAssertionWithJavaOrKotlin(indent, eVar, maxAssertionForDataInCollection, isJava));
         }
 
@@ -153,7 +154,7 @@ public class ListParam extends CollectionParam<List<NamedTypedValue>>{
     }
 
     @Override
-    public String getValueAsJavaString() {
+    public String getValueAsJavaString(boolean isJava) {
         return null;
     }
 

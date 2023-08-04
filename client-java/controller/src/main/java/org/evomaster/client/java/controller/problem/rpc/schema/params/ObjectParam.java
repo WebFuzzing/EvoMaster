@@ -2,7 +2,6 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
-import org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.*;
 import org.evomaster.client.java.utils.SimpleLogger;
 
@@ -14,6 +13,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator.*;
 
 /**
  * object param
@@ -235,20 +236,20 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
 
         List<String> codes = new ArrayList<>();
         boolean isNull = (getValue() == null);
-        String var = CodeJavaOrKotlinGenerator.oneLineInstance(isDeclaration, doesIncludeName, typeName, varName, null,isJava );
-        CodeJavaOrKotlinGenerator.addCode(codes, var, indent);
+        String var = oneLineInstance(isDeclaration, doesIncludeName, typeName, varName, null,isJava );
+        addCode(codes, var, indent);
         if (isNull) return codes;
 
-        CodeJavaOrKotlinGenerator.addCode(codes, "{", indent);
+        addCode(codes, codeBlockStart(isJava), indent);
 
         String ownVarName = null;
         if (getType().spec == JavaDtoSpec.DEFAULT){
             // new obj
-            CodeJavaOrKotlinGenerator.addCode(codes, CodeJavaOrKotlinGenerator.setInstanceObject(typeName, varName, isJava), indent + 1 );
+            addCode(codes, setInstanceObject(typeName, varName, isJava), indent + 1 );
             ownVarName = varName;
         }else{
             String varBuilderName = varName+"builder";
-            CodeJavaOrKotlinGenerator.addCode(codes, CodeJavaOrKotlinGenerator.newBuilderProto3(typeName, varBuilderName,isJava ), indent + 1);
+            addCode(codes, newBuilderProto3(typeName, varBuilderName,isJava ), indent + 1);
             ownVarName = varBuilderName;
         }
 
@@ -263,19 +264,20 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
                 codes.addAll(f.newInstanceWithJavaOrKotlin(fdeclar, true, fName, indent+1, isJava));
 
                 if (needRenameField(f)){
-                    CodeJavaOrKotlinGenerator.addCode(codes, CodeJavaOrKotlinGenerator.methodInvocation(ownVarName, f.accessibleSchema.setterMethodName, fName)+ CodeJavaOrKotlinGenerator.getStatementLast(isJava),indent+1);
+                    addCode(codes, methodInvocation(ownVarName, f.accessibleSchema.setterMethodName, fName,isJava )+ getStatementLast(isJava),indent+1);
                 }
             }else {
-                String fName = varName+"."+f.getName();
-                codes.addAll(f.newInstanceWithJavaOrKotlin(false, true, fName, indent+1, isJava));
+                codes.addAll(f.newInstanceWithJavaOrKotlin(false, true,
+                    methodInvocation(var,f.getName(),"",isJava), indent+1, isJava));
             }
         }
 
         if (getType().spec == JavaDtoSpec.PROTO3){
 
-            CodeJavaOrKotlinGenerator.addCode(codes, CodeJavaOrKotlinGenerator.setInstance(true, varName, CodeJavaOrKotlinGenerator.methodInvocation(ownVarName, PROTO3_OBJECT_BUILD_METHOD, ""), isJava),indent+1);
+            addCode(codes,
+                setInstance(true, varName, methodInvocation(ownVarName, PROTO3_OBJECT_BUILD_METHOD, "",isJava ), isJava),indent+1);
         }
-        CodeJavaOrKotlinGenerator.addCode(codes, "}", indent);
+        addCode(codes, codeBlockEnd(isJava), indent);
         return codes;
     }
 
@@ -287,7 +289,7 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
     public List<String> newAssertionWithJavaOrKotlin(int indent, String responseVarName, int maxAssertionForDataInCollection, boolean isJava) {
         List<String> codes = new ArrayList<>();
         if (getValue() == null){
-            CodeJavaOrKotlinGenerator.addCode(codes, CodeJavaOrKotlinGenerator.junitAssertNull(responseVarName, isJava), indent);
+            addCode(codes, junitAssertNull(responseVarName, isJava), indent);
             return codes;
         }
         for (NamedTypedValue f : getValue()){
@@ -298,9 +300,9 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
                 if (f.accessibleSchema.getterMethodName == null){
                     String msg = "Error: Object("+getType().getFullTypeName()+") has private field "+f.getName()+", but there is no getter method";
                     SimpleLogger.uniqueWarn(msg);
-                    CodeJavaOrKotlinGenerator.addComment(codes, msg, indent);
+                    addComment(codes, msg, indent);
                 }else{
-                    fName = responseVarName+"."+f.accessibleSchema.getterMethodName+"()";
+                    fName = methodInvocation(responseVarName, f.accessibleSchema.getterMethodName, "", isJava);
                 }
             }
             if (fName != null)
@@ -310,7 +312,7 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
     }
 
     @Override
-    public String getValueAsJavaString() {
+    public String getValueAsJavaString(boolean isJava) {
         return null;
     }
 

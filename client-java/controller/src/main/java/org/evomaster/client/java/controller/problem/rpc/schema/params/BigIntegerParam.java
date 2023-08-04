@@ -3,7 +3,6 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
-import org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.BigIntegerType;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.JavaDtoSpec;
@@ -12,6 +11,8 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import static org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator.*;
 
 /**
  * info for JDK:
@@ -104,13 +105,13 @@ public class BigIntegerParam extends NamedTypedValue<BigIntegerType, BigInteger>
 
         List<String> codes = new ArrayList<>();
         boolean isNull = (getValue() == null);
-        String var = CodeJavaOrKotlinGenerator.oneLineInstance(isDeclaration, doesIncludeName, typeName, variableName, null, isJava);
-        CodeJavaOrKotlinGenerator.addCode(codes, var, indent);
+        String var = oneLineInstance(isDeclaration, doesIncludeName, typeName, variableName, null, isJava);
+        addCode(codes, var, indent);
         if (isNull) return codes;
 
-        CodeJavaOrKotlinGenerator.addCode(codes, "{", indent);
-        CodeJavaOrKotlinGenerator.addCode(codes, CodeJavaOrKotlinGenerator.setInstance(variableName, CodeJavaOrKotlinGenerator.newObjectConsParams(typeName, getValueAsJavaString(),isJava ), isJava), indent+1);
-        CodeJavaOrKotlinGenerator.addCode(codes, "}", indent);
+        addCode(codes, codeBlockStart(isJava), indent);
+        addCode(codes, setInstance(variableName, newObjectConsParams(typeName, getValueAsJavaString(isJava),isJava ), isJava), indent+1);
+        addCode(codes, codeBlockEnd(isJava), indent);
 
         return codes;
     }
@@ -119,17 +120,17 @@ public class BigIntegerParam extends NamedTypedValue<BigIntegerType, BigInteger>
     public List<String> newAssertionWithJavaOrKotlin(int indent, String responseVarName, int maxAssertionForDataInCollection, boolean isJava) {
         // assertion with its string representation
         StringBuilder sb = new StringBuilder();
-        sb.append(CodeJavaOrKotlinGenerator.getIndent(indent));
+        sb.append(getIndent(indent));
         if (getValue() == null)
-            sb.append(CodeJavaOrKotlinGenerator.junitAssertNull(responseVarName, isJava));
+            sb.append(junitAssertNull(responseVarName, isJava));
         else
-            sb.append(CodeJavaOrKotlinGenerator.junitAssertEquals(getValueAsJavaString(), responseVarName+".toString()", isJava));
+            sb.append(junitAssertEquals(getValueAsJavaString(isJava), responseVarName+".toString()", isJava));
 
         return Collections.singletonList(sb.toString());
     }
 
     @Override
-    public String getValueAsJavaString() {
+    public String getValueAsJavaString(boolean isJava) {
         if (getValue() == null)
             return null;
         return "\""+getValue().toString()+"\"";

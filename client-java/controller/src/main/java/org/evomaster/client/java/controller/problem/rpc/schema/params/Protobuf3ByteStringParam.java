@@ -1,7 +1,6 @@
 package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
-import org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.Protobuf3ByteStringType;
 
@@ -10,6 +9,8 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import static org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator.*;
 
 /**
  * this is for handling bytes in gRPC with protobuf3 <a href="https://protobuf.dev/reference/java/api-docs/com/google/protobuf/ByteString">ByteString</a>
@@ -92,31 +93,31 @@ public class Protobuf3ByteStringParam extends NamedTypedValue<Protobuf3ByteStrin
     @Override
     public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava) {
         List<String> codes = new ArrayList<>();
-        String var = CodeJavaOrKotlinGenerator.oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, null,isJava );
-        CodeJavaOrKotlinGenerator.addCode(codes, var, indent);
+        String var = oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, null,isJava );
+        addCode(codes, var, indent);
         if (getValue() == null) return codes;
-        CodeJavaOrKotlinGenerator.addCode(codes, "{", indent);
-        CodeJavaOrKotlinGenerator.addCode(codes,
-            CodeJavaOrKotlinGenerator.oneLineInstance(false, true, getType().getFullTypeName(), variableName, getType().getFullTypeName()+"."+PROTOBUF3_BYTE_STRING_METHOD_COPY_FROM_METHOD+"(\""+ getValue() + "\")",isJava ), indent + 1);
-        CodeJavaOrKotlinGenerator.addCode(codes, "}", indent);
+        addCode(codes, codeBlockStart(isJava), indent);
+        addCode(codes,
+            oneLineInstance(false, true, getType().getFullTypeName(), variableName, getType().getFullTypeName()+"."+PROTOBUF3_BYTE_STRING_METHOD_COPY_FROM_METHOD+"(\""+ getValue() + "\")",isJava ), indent + 1);
+        addCode(codes, codeBlockEnd(isJava), indent);
         return codes;
     }
 
     @Override
     public List<String> newAssertionWithJavaOrKotlin(int indent, String responseVarName, int maxAssertionForDataInCollection, boolean isJava) {
         StringBuilder sb = new StringBuilder();
-        sb.append(CodeJavaOrKotlinGenerator.getIndent(indent));
+        sb.append(getIndent(indent));
         if (getValue() == null)
-            sb.append(CodeJavaOrKotlinGenerator.junitAssertNull(responseVarName, isJava));
+            sb.append(junitAssertNull(responseVarName, isJava));
         else{
-            sb.append(CodeJavaOrKotlinGenerator.junitAssertEquals("\""+getValueAsJavaString()+"\"", responseVarName+"."+PROTOBUF3_BYTE_STRING_METHOD_TO_STRING_UTF8+"()", isJava));
+            sb.append(junitAssertEquals("\""+getValueAsJavaString(isJava)+"\"", responseVarName+"."+PROTOBUF3_BYTE_STRING_METHOD_TO_STRING_UTF8+"()", isJava));
         }
 
         return Collections.singletonList(sb.toString());
     }
 
     @Override
-    public String getValueAsJavaString() {
+    public String getValueAsJavaString(boolean isJava) {
         return getValue();
     }
 }

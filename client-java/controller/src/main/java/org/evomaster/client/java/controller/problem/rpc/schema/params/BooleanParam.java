@@ -6,6 +6,8 @@ import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleS
 import org.evomaster.client.java.controller.problem.rpc.schema.types.JavaDtoSpec;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.PrimitiveOrWrapperType;
 
+import static org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator.methodInvocation;
+
 /**
  * boolean param
  */
@@ -19,10 +21,10 @@ public class BooleanParam extends PrimitiveOrWrapperParam<Boolean> {
     }
 
     @Override
-    public String getValueAsJavaString() {
+    public String getValueAsJavaString(boolean isJava) {
         if (getValue() == null)
             return null;
-        return ""+getValue();
+        return String.valueOf(getValue());
     }
 
     @Override
@@ -63,9 +65,9 @@ public class BooleanParam extends PrimitiveOrWrapperParam<Boolean> {
     }
 
     @Override
-    public String getPrimitiveValue(String responseVarName) {
+    public String getPrimitiveValue(String responseVarName, boolean isJava) {
         if (getType().isWrapper)
-            return responseVarName+".booleanValue()";
+            return methodInvocation(responseVarName, "booleanValue", "", isJava);
         return responseVarName;
     }
 }

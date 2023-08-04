@@ -1,7 +1,6 @@
 package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
-import org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.DateType;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.JavaDtoSpec;
@@ -11,6 +10,8 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator.*;
 
 /**
  * handle date param with java.util.Date
@@ -77,15 +78,15 @@ public class DateParam extends NamedTypedValue<DateType, List<IntParam>>{
         List<String> codes = new ArrayList<>();
         boolean isNull = (getValue() == null);
 
-        String var = CodeJavaOrKotlinGenerator.oneLineInstance(isDeclaration, doesIncludeName, typeName, varName, null, isJava);
-        CodeJavaOrKotlinGenerator.addCode(codes, var, indent);
+        String var = oneLineInstance(isDeclaration, doesIncludeName, typeName, varName, null, isJava);
+        addCode(codes, var, indent);
         if (isNull) return codes;
 
-        CodeJavaOrKotlinGenerator.addCode(codes, "{", indent);
-        CodeJavaOrKotlinGenerator.addComment(codes, "Date is " + getType().getDateString(getValue()), indent+1);
+        addCode(codes, codeBlockStart(isJava), indent);
+        addComment(codes, "Date is " + getType().getDateString(getValue()), indent+1);
         String time = getType().getDateLong(getValue())+"L";
-        CodeJavaOrKotlinGenerator.addCode(codes, CodeJavaOrKotlinGenerator.setInstance(varName, CodeJavaOrKotlinGenerator.newObjectConsParams(typeName, time, isJava), isJava), indent+1);
-        CodeJavaOrKotlinGenerator.addCode(codes, "}", indent);
+        addCode(codes, setInstance(varName, newObjectConsParams(typeName, time, isJava), isJava), indent+1);
+        addCode(codes, codeBlockEnd(isJava), indent);
 
         return codes;
     }
@@ -93,9 +94,9 @@ public class DateParam extends NamedTypedValue<DateType, List<IntParam>>{
     @Override
     public List<String> newAssertionWithJavaOrKotlin(int indent, String responseVarName, int maxAssertionForDataInCollection, boolean isJava) {
         StringBuilder sb = new StringBuilder();
-        sb.append(CodeJavaOrKotlinGenerator.getIndent(indent));
+        sb.append(getIndent(indent));
         if (getValue() == null)
-            sb.append(CodeJavaOrKotlinGenerator.junitAssertNull(responseVarName, isJava));
+            sb.append(junitAssertNull(responseVarName, isJava));
         else{
             /*
                 it might be tricky to handle date assertion since it might be `now`
@@ -109,7 +110,7 @@ public class DateParam extends NamedTypedValue<DateType, List<IntParam>>{
     }
 
     @Override
-    public String getValueAsJavaString() {
+    public String getValueAsJavaString(boolean isJava) {
         return null;
     }
 }

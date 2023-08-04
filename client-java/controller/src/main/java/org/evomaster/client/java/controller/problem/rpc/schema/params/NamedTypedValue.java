@@ -293,7 +293,7 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
      * @return a string which could representing the value of the param with java
      * eg, float 4.2 could be 4.2f
      */
-    public abstract String getValueAsJavaString();
+    public abstract String getValueAsJavaString(boolean isJava);
 
     public boolean isMutable() {
         return isMutable;

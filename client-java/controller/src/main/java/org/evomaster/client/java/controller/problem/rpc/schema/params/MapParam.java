@@ -12,6 +12,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator.*;
+
 /**
  * thrift
  *  HashMap (see https://thrift.apache.org/docs/types#containers)
@@ -111,22 +113,22 @@ public class MapParam extends NamedTypedValue<MapType, List<PairParam>>{
     public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava) {
         String fullName = getType().getTypeNameForInstanceInJavaOrKotlin(isJava);
         List<String> codes = new ArrayList<>();
-        String var = CodeJavaOrKotlinGenerator.oneLineInstance(isDeclaration, doesIncludeName, fullName, variableName, null, isJava);
-        CodeJavaOrKotlinGenerator.addCode(codes, var, indent);
+        String var = oneLineInstance(isDeclaration, doesIncludeName, fullName, variableName, null, isJava);
+        addCode(codes, var, indent);
         if (getValue() == null) return codes;
-        CodeJavaOrKotlinGenerator.addCode(codes, "{", indent);
+        addCode(codes, codeBlockStart(isJava), indent);
         // new map
-        CodeJavaOrKotlinGenerator.addCode(codes,
-                CodeJavaOrKotlinGenerator.setInstance(
+        addCode(codes,
+                setInstance(
                         variableName,
-                        CodeJavaOrKotlinGenerator.newMap(
+                        newMap(
                             isJava,
                             getType().getTemplate().getType().getFirstTemplate().getType().getTypeNameForInstanceInJavaOrKotlin(isJava),
                             getType().getTemplate().getType().getSecondTemplate().getType().getTypeNameForInstanceInJavaOrKotlin(isJava)),
                     isJava), indent+1);
         int index = 0;
         for (PairParam e: getValue()){
-            String eKeyVarName = CodeJavaOrKotlinGenerator.handleVariableName(variableName+"_key_"+index);
+            String eKeyVarName = handleVariableName(variableName+"_key_"+index);
             if (e.getValue().getKey() == null)
                 throw new RuntimeException("key should not been null");
             codes.addAll(e.getValue().getKey().newInstanceWithJavaOrKotlin(true, true, eKeyVarName, indent+1, isJava));
@@ -134,11 +136,11 @@ public class MapParam extends NamedTypedValue<MapType, List<PairParam>>{
             if (e.getValue().getValue() == null)
                 throw new RuntimeException("value should not been null");
             codes.addAll(e.getValue().getValue().newInstanceWithJavaOrKotlin(true, true, eValueVarName, indent+1, isJava));
-            CodeJavaOrKotlinGenerator.addCode(codes, variableName+".put("+eKeyVarName+","+eValueVarName+");", indent+1);
+            addCode(codes, variableName+".put("+eKeyVarName+","+eValueVarName+");", indent+1);
             index++;
         }
 
-        CodeJavaOrKotlinGenerator.addCode(codes, "}", indent);
+        addCode(codes, codeBlockEnd(isJava), indent);
         return codes;
     }
 
@@ -148,10 +150,10 @@ public class MapParam extends NamedTypedValue<MapType, List<PairParam>>{
     public List<String> newAssertionWithJavaOrKotlin(int indent, String responseVarName, int maxAssertionForDataInCollection, boolean isJava) {
         List<String> codes = new ArrayList<>();
         if (getValue() == null){
-            CodeJavaOrKotlinGenerator.addCode(codes, CodeJavaOrKotlinGenerator.junitAssertNull(responseVarName, isJava), indent);
+            addCode(codes, junitAssertNull(responseVarName, isJava), indent);
             return codes;
         }
-        CodeJavaOrKotlinGenerator.addCode(codes, CodeJavaOrKotlinGenerator.junitAssertEquals(String.valueOf(getValue().size()), CodeJavaOrKotlinGenerator.withSize(responseVarName), isJava), indent);
+        addCode(codes, junitAssertEquals(String.valueOf(getValue().size()), CodeJavaOrKotlinGenerator.withSize(responseVarName, isJava), isJava), indent);
 
         if (maxAssertionForDataInCollection == 0)
             return codes;
@@ -159,13 +161,13 @@ public class MapParam extends NamedTypedValue<MapType, List<PairParam>>{
         if (doAssertion(getType().getTemplate().getType().getFirstTemplate())){
             List<Integer> nvalue = null;
             if (maxAssertionForDataInCollection > 0 && getValue().size() > maxAssertionForDataInCollection){
-                nvalue = CodeJavaOrKotlinGenerator.randomNInt(getValue().size(), maxAssertionForDataInCollection);
+                nvalue = randomNInt(getValue().size(), maxAssertionForDataInCollection);
             }else
                 nvalue = IntStream.range(0, getValue().size()).boxed().collect(Collectors.toList());
 
             for (int index : nvalue){
                 PairParam e = getValue().get(index);
-                String key = e.getValue().getKey().getValueAsJavaString();
+                String key = e.getValue().getKey().getValueAsJavaString(isJava);
                 if (key == null)
                     throw new RuntimeException("key is null");
                 String eValueVarName = responseVarName+".get("+key+")";
@@ -186,7 +188,7 @@ public class MapParam extends NamedTypedValue<MapType, List<PairParam>>{
     }
 
     @Override
-    public String getValueAsJavaString() {
+    public String getValueAsJavaString(boolean isJava) {
         return null;
     }
 

@@ -808,8 +808,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         endpointSchema.setValue(dto);
         handleLocalAuthenticationSetup(endpointSchema.getAuthenticationInfo());
 
-        if (dto.responseVariable != null && dto.doGenerateTestScript){
-            responseDto.testScript = endpointSchema.newInvocationWithSpecifiedFormat(dto.responseVariable, dto.controllerVariable,dto.clientVariable, SutInfoDto.OutputFormat.JAVA_JUNIT_4);
+        if (dto.responseVariable != null && dto.doGenerateTestScript && dto.outputFormat.isJavaOrKotlin()){
+            responseDto.testScript = endpointSchema.newInvocationWithJavaOrKotlin(dto.responseVariable, dto.controllerVariable,dto.clientVariable, SutInfoDto.OutputFormat.JAVA_JUNIT_4);
         }
     }
 
@@ -819,9 +819,9 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      */
     public final void executeAction(RPCActionDto dto, ActionResponseDto responseDto) {
         EndpointSchema endpointSchema = getEndpointSchema(dto);
-        if (dto.responseVariable != null && dto.doGenerateTestScript){
+        if (dto.responseVariable != null && dto.doGenerateTestScript && dto.outputFormat.isJavaOrKotlin()){
             try{
-                responseDto.testScript = endpointSchema.newInvocationWithSpecifiedFormat(dto.responseVariable, dto.controllerVariable,dto.clientVariable, dto.outputFormat);
+                responseDto.testScript = endpointSchema.newInvocationWithJavaOrKotlin(dto.responseVariable, dto.controllerVariable,dto.clientVariable, dto.outputFormat);
             }catch (Exception e){
                 SimpleLogger.warn("Fail to generate test script"+e.getMessage());
             }
@@ -869,7 +869,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                 try{
                     resSchema.setValueBasedOnInstance(response);
                     responseDto.rpcResponse = resSchema.getDto();
-                    if (dto.doGenerateAssertions && dto.responseVariable != null)
+                    if (dto.doGenerateAssertions && dto.responseVariable != null && dto.outputFormat.isJavaOrKotlin())
                         responseDto.assertionScript = resSchema.newAssertionWithJavaOrKotlin(dto.responseVariable, dto.maxAssertionForDataInCollection, dto.outputFormat.isJava());
                     /*
                         ActionResponseDto.jsonResponse could be used to generate assertions in core side
@@ -896,7 +896,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                     //throw new RuntimeException("ERROR: fail to categorize result with implemented categorizeBasedOnResponse "+ e.getMessage());
                 }
             } else {
-                if (dto.doGenerateAssertions && dto.responseVariable != null)
+                if (dto.doGenerateAssertions && dto.responseVariable != null && dto.outputFormat.isJavaOrKotlin())
                     responseDto.assertionScript = resSchema.newAssertionWithJavaOrKotlin(dto.responseVariable, dto.maxAssertionForDataInCollection, dto.outputFormat.isJava());
             }
         }

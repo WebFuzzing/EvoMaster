@@ -6,6 +6,8 @@ import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleS
 import org.evomaster.client.java.controller.problem.rpc.schema.types.JavaDtoSpec;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.PrimitiveOrWrapperType;
 
+import static org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator.methodInvocation;
+
 /**
  * int param
  */
@@ -20,10 +22,10 @@ public class ShortParam extends PrimitiveOrWrapperParam<Short> {
     }
 
     @Override
-    public String getValueAsJavaString() {
+    public String getValueAsJavaString(boolean isJava) {
         if (getValue() == null)
             return null;
-        return ""+getValue();
+        return String.valueOf(getValue());
     }
 
     @Override
@@ -65,9 +67,9 @@ public class ShortParam extends PrimitiveOrWrapperParam<Short> {
     }
 
     @Override
-    public String getPrimitiveValue(String responseVarName) {
+    public String getPrimitiveValue(String responseVarName, boolean isJava) {
         if (getType().isWrapper)
-            return responseVarName+".shortValue()";
+            return methodInvocation(responseVarName, "shortValue", "", isJava);
         return responseVarName;
     }
 

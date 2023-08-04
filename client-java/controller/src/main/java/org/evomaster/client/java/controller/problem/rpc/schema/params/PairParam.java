@@ -90,7 +90,7 @@ public class PairParam extends NamedTypedValue<PairType, AbstractMap.SimpleEntry
     }
 
     @Override
-    public String getValueAsJavaString() {
+    public String getValueAsJavaString(boolean isJava) {
         return null;
     }
 }

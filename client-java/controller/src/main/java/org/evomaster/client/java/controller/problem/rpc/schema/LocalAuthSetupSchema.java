@@ -14,6 +14,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator.*;
+
 
 public class LocalAuthSetupSchema extends EndpointSchema{
 
@@ -34,21 +36,21 @@ public class LocalAuthSetupSchema extends EndpointSchema{
     }
 
     @Override
-    public List<String> newInvocationWithSpecifiedFormat(String responseVarName, String controllerVarName, String clientVariable, SutInfoDto.OutputFormat outputFormat) {
+    public List<String> newInvocationWithJavaOrKotlin(String responseVarName, String controllerVarName, String clientVariable, SutInfoDto.OutputFormat outputFormat) {
         List<String> javaCode = new ArrayList<>();
-        javaCode.add("{");
+        javaCode.add(codeBlockStart(outputFormat.isJava()));
         int indent = 1;
         for (NamedTypedValue param: getRequestParams()){
             javaCode.addAll(param.newInstanceWithJavaOrKotlin(indent, true));
         }
         String paramVars = getRequestParams().stream().map(NamedTypedValue::getName).collect(Collectors.joining(","));
 
-        CodeJavaOrKotlinGenerator.addCode(
+        addCode(
                 javaCode,
-                CodeJavaOrKotlinGenerator.methodInvocation(controllerVarName, getName(), paramVars) + CodeJavaOrKotlinGenerator.getStatementLast(outputFormat.isJava()),
+                CodeJavaOrKotlinGenerator.methodInvocation(controllerVarName, getName(), paramVars,outputFormat.isJava()) + getStatementLast(outputFormat.isJava()),
                 indent);
 
-        javaCode.add("}");
+        javaCode.add(codeBlockEnd(outputFormat.isJava()));
         return javaCode;
     }
 

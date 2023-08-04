@@ -2,13 +2,14 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
-import org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.JavaDtoSpec;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.PrimitiveOrWrapperType;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator.*;
 
 /**
  * double param
@@ -28,7 +29,7 @@ public class DoubleParam extends PrimitiveOrWrapperParam<Double> {
     }
 
     @Override
-    public String getValueAsJavaString() {
+    public String getValueAsJavaString(boolean isJava) {
         if (getValue() == null)
             return null;
         return ""+getValue();
@@ -79,17 +80,17 @@ public class DoubleParam extends PrimitiveOrWrapperParam<Double> {
         List<String> codes = new ArrayList<>();
         if ((getValue().isInfinite() || getValue().isNaN())){
             // here we just add comments for it
-            CodeJavaOrKotlinGenerator.addComment(codes, "// "+responseVarName+ " is "+getValueAsJavaString(), indent);
+            addComment(codes, "// "+responseVarName+ " is "+getValueAsJavaString(isJava), indent);
         }else{
-            CodeJavaOrKotlinGenerator.addCode(codes, CodeJavaOrKotlinGenerator.junitAssertNumbersMatch(getValueAsJavaString(), responseVarName, isJava), indent);
+            addCode(codes, junitAssertNumbersMatch(getValueAsJavaString(isJava), responseVarName, isJava), indent);
         }
         return codes;
     }
 
     @Override
-    public String getPrimitiveValue(String responseVarName) {
+    public String getPrimitiveValue(String responseVarName, boolean isJava) {
         if (getType().isWrapper)
-            return responseVarName+".doubleValue()";
+            return methodInvocation(responseVarName, "doubleValue", "", isJava);
         return responseVarName;
     }
 }

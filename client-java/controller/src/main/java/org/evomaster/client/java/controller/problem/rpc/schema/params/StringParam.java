@@ -2,7 +2,6 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
-import org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.JavaDtoSpec;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.StringType;
@@ -11,6 +10,8 @@ import org.evomaster.client.java.utils.SimpleLogger;
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
+
+import static org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator.*;
 
 /**
  * string param
@@ -183,31 +184,31 @@ public class StringParam extends NamedTypedValue<StringType, String> implements 
 
         String code;
         if (accessibleSchema != null && accessibleSchema.setterMethodName != null)
-            code = CodeJavaOrKotlinGenerator.oneLineSetterInstance(accessibleSchema.setterMethodName, null, variableName, getValueAsJavaString(), isJava);
+            code = oneLineSetterInstance(accessibleSchema.setterMethodName, null, variableName, getValueAsJavaString(isJava), isJava);
         else {
             if (accessibleSchema != null && !accessibleSchema.isAccessible)
                 throw new IllegalStateException("Error: private field, but there is no setter method");
-            code = CodeJavaOrKotlinGenerator.oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, getValueAsJavaString(), isJava);
+            code = oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, getValueAsJavaString(isJava), isJava);
 
         }
-        return Collections.singletonList(CodeJavaOrKotlinGenerator.getIndent(indent)+ code);
+        return Collections.singletonList(getIndent(indent)+ code);
     }
 
     @Override
     public List<String> newAssertionWithJavaOrKotlin(int indent, String responseVarName, int maxAssertionForDataInCollection, boolean isJava) {
         StringBuilder sb = new StringBuilder();
-        sb.append(CodeJavaOrKotlinGenerator.getIndent(indent));
+        sb.append(getIndent(indent));
         if (getValue() == null)
-            sb.append(CodeJavaOrKotlinGenerator.junitAssertNull(responseVarName, isJava));
+            sb.append(junitAssertNull(responseVarName, isJava));
         else
-            sb.append(CodeJavaOrKotlinGenerator.junitAssertEquals(getValueAsJavaString(), responseVarName, isJava));
+            sb.append(junitAssertEquals(getValueAsJavaString(isJava), responseVarName, isJava));
 
         return Collections.singletonList(sb.toString());
     }
 
     @Override
-    public String getValueAsJavaString() {
-        return getValue() == null? null:"\""+ CodeJavaOrKotlinGenerator.handleEscapeCharInString(getValue())+"\"";
+    public String getValueAsJavaString(boolean isJava) {
+        return getValue() == null? null:"\""+ handleEscapeCharInString(getValue(), isJava)+"\"";
     }
 
     @Override

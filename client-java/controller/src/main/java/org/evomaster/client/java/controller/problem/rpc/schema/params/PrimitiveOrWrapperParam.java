@@ -154,11 +154,11 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
             return Collections.emptyList();
         }
         if (accessibleSchema != null && accessibleSchema.setterMethodName != null)
-            code = CodeJavaOrKotlinGenerator.oneLineSetterInstance(accessibleSchema.setterMethodName, getCastType(), variableName, getValueAsJavaString(),isJava );
+            code = CodeJavaOrKotlinGenerator.oneLineSetterInstance(accessibleSchema.setterMethodName, getCastType(), variableName, getValueAsJavaString(isJava),isJava );
         else {
             if (accessibleSchema != null && !accessibleSchema.isAccessible)
                 throw new IllegalStateException("Error: private field, but there is no setter method");
-            code = CodeJavaOrKotlinGenerator.oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, getValueAsJavaString(), isJava);
+            code = CodeJavaOrKotlinGenerator.oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, getValueAsJavaString(isJava), isJava);
         }
 
         return Collections.singletonList(CodeJavaOrKotlinGenerator.getIndent(indent)+ code);
@@ -171,7 +171,7 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
         if (getValue() == null)
             sb.append(CodeJavaOrKotlinGenerator.junitAssertNull(responseVarName, isJava));
         else
-            sb.append(CodeJavaOrKotlinGenerator.junitAssertEquals(getValueAsJavaString(), getPrimitiveValue(responseVarName), isJava));
+            sb.append(CodeJavaOrKotlinGenerator.junitAssertEquals(getValueAsJavaString(isJava), getPrimitiveValue(responseVarName, isJava), isJava));
 
         return Collections.singletonList(sb.toString());
     }
@@ -210,12 +210,12 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
     abstract public void setValueBasedOnStringValue(String stringValue);
 
     /**
-     *
      * @param responseVarName refers to the variable name in response
+     * @param isJava
      * @return a string to get its primitive value if the param is Wrapper class
-     *          eg, res.byteValue() for byte with a response variable name res
+     * eg, res.byteValue() for byte with a response variable name res
      */
-    abstract public String getPrimitiveValue(String responseVarName);
+    abstract public String getPrimitiveValue(String responseVarName, boolean isJava);
 
     @Override
     public void copyProperties(NamedTypedValue copy) {

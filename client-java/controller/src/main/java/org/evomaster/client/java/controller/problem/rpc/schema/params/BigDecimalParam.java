@@ -2,7 +2,6 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
-import org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.BigDecimalType;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.JavaDtoSpec;
@@ -111,9 +110,9 @@ public class BigDecimalParam extends NamedTypedValue<BigDecimalType, BigDecimal>
         addCode(codes, var, indent);
         if (isNull) return codes;
 
-        addCode(codes, "{", indent);
+        addCode(codes, codeBlockStart(isJava), indent);
         String mcVar = variableName + "_mc";
-        String consParam = getValueAsJavaString();
+        String consParam = getValueAsJavaString(isJava);
         if (getPrecision() != null){
             addCode(codes, oneLineInstance(true, true, MathContext.class.getName(), mcVar,
                     newObjectConsParams(MathContext.class.getName(), getPrecision().toString(), isJava), isJava), indent+1);
@@ -124,7 +123,7 @@ public class BigDecimalParam extends NamedTypedValue<BigDecimalType, BigDecimal>
             addCode(codes, oneLineSetterInstance("setScale", null, variableName, getScale()+", "+RoundingMode.class.getName()+".HALF_UP", isJava), indent+1);
         }
 
-        addCode(codes, "}", indent);
+        addCode(codes, codeBlockEnd(isJava), indent);
 
         return codes;
     }
@@ -133,11 +132,11 @@ public class BigDecimalParam extends NamedTypedValue<BigDecimalType, BigDecimal>
     public List<String> newAssertionWithJavaOrKotlin(int indent, String responseVarName, int maxAssertionForDataInCollection, boolean isJava) {
         // assertion with its string representation
         StringBuilder sb = new StringBuilder();
-        sb.append(CodeJavaOrKotlinGenerator.getIndent(indent));
+        sb.append(getIndent(indent));
         if (getValue() == null)
-            sb.append(CodeJavaOrKotlinGenerator.junitAssertNull(responseVarName, isJava));
+            sb.append(junitAssertNull(responseVarName, isJava));
         else
-            sb.append(CodeJavaOrKotlinGenerator.junitAssertEquals(getValueAsJavaString(), responseVarName+".toString()", isJava));
+            sb.append(junitAssertEquals(getValueAsJavaString(isJava), responseVarName+".toString()", isJava));
 
         return Collections.singletonList(sb.toString());
     }
@@ -152,7 +151,7 @@ public class BigDecimalParam extends NamedTypedValue<BigDecimalType, BigDecimal>
     }
 
     @Override
-    public String getValueAsJavaString() {
+    public String getValueAsJavaString(boolean isJava) {
         if (getValue() == null)
             return null;
         return "\""+getValue().toString()+"\"";

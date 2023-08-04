@@ -23,6 +23,12 @@ public class CodeJavaOrKotlinGenerator {
 
     private final static String KOTLIN_DECLARATION_VARIABLE = "var";
     private final static String KOTLIN_DECLARATION_VARIABLE_NULLABLE = "?";
+
+
+    private final static String JAVA_LANGE = "java.lang.";
+
+    private final static String KOTLIN_DEFAULT = "kotlin";
+
     /**
      * representation of class with generic
      */
@@ -33,11 +39,13 @@ public class CodeJavaOrKotlinGenerator {
 
     /**
      * handle escape char in string in java
-     *      https://docs.oracle.com/javase/tutorial/java/data/characters.html
+     * https://docs.oracle.com/javase/tutorial/java/data/characters.html
+     *
      * @param orgValue is an original string
+     * @param isJava
      * @return string with handled escape char
      */
-    public static String handleEscapeCharInString(String orgValue){
+    public static String handleEscapeCharInString(String orgValue, boolean isJava){
         StringBuilder sb = new StringBuilder();
         for (char c: orgValue.toCharArray()){
             switch (c){
@@ -49,6 +57,10 @@ public class CodeJavaOrKotlinGenerator {
                 case '\'': sb.append("\\'"); break;
                 case '\"': sb.append("\\\""); break;
                 case '\\': sb.append("\\\\"); break;
+                case '$':{
+                    if (!isJava)
+                        sb.append("\\$");break;
+                }
                 default: sb.append(c); break;
             }
         }
@@ -111,15 +123,16 @@ public class CodeJavaOrKotlinGenerator {
         StringBuilder sb = new StringBuilder();
         if (isDeclaration){
             if (isJava)
-                sb.append(handleNestedSymbolInTypeName(fullName)).append(" ");
+                sb.append(handleNestedSymbolInTypeName(fullName));
             else
                 sb.append(KOTLIN_DECLARATION_VARIABLE);
+            sb.append(" ");
         }
 
         if (doesIncludeName){
             sb.append(varName);
             if (!isJava)
-                sb.append(KOTLIN_DECLARATION_VARIABLE_NULLABLE);
+                sb.append(String.format(":%s%s", handleNestedSymbolInTypeName(fullName), KOTLIN_DECLARATION_VARIABLE_NULLABLE));
 
             if (value != null || !isPrimitive)
                 sb.append(" = ");
@@ -154,7 +167,7 @@ public class CodeJavaOrKotlinGenerator {
         if (value != null)
             stringValue = castToType(fullName, value, isJava);
 
-        return String.format("%s.%s(%s);", varName, setterMethodName, stringValue);
+        return String.format("%s%s.%s(%s);", varName, variableNullableMark(isJava),setterMethodName, stringValue);
     }
 
     /**
@@ -187,10 +200,19 @@ public class CodeJavaOrKotlinGenerator {
      * @return code to instantiate builder for proto3 dto
      */
     public static String newBuilderProto3(String fullName, String varBuilderName, boolean isJava){
-        String dec = KOTLIN_DECLARATION_VARIABLE;
-        if (isJava)
-            dec = String.format("%s.Builder", fullName);
-        return String.format("%s %s = %s.newBuilder()%s", dec, varBuilderName, fullName, getStatementLast(isJava));
+        String dec = String.format("%s.Builder", fullName);
+        String afterVar = "";
+        if (!isJava){
+            dec =  KOTLIN_DECLARATION_VARIABLE;
+            afterVar = String.format(":%s%s", String.format("%s.Builder", fullName), KOTLIN_DECLARATION_VARIABLE_NULLABLE);
+        }
+
+        return String.format("%s %s%s = %s.newBuilder()%s", dec, varBuilderName, afterVar, fullName, getStatementLast(isJava));
+    }
+
+    private static String variableNullableMark(boolean isJava){
+        if (isJava) return "";
+        return KOTLIN_DECLARATION_VARIABLE_NULLABLE;
     }
 
     /**
@@ -227,7 +249,7 @@ public class CodeJavaOrKotlinGenerator {
      * @param isJava
      * @return code to new object with default constructor
      */
-    public static String newObject(String fullName, boolean isJava){
+    private static String newObject(String fullName, boolean isJava){
         return newObjectConsParams(fullName, "", isJava);
     }
 
@@ -315,6 +337,15 @@ public class CodeJavaOrKotlinGenerator {
         return codes;
     }
 
+    public static String codeBlockStart(boolean isJava){
+        if (isJava) return "{";
+        return "run {";
+    }
+
+    public static String codeBlockEnd(boolean isJava){
+        return "}";
+    }
+
     /**
      *
      * @param codes is a list of current code
@@ -358,17 +389,17 @@ public class CodeJavaOrKotlinGenerator {
     }
 
     /**
-     *
-     * @param obj specifies an object which owns the method. it is nullable
+     * @param obj        specifies an object which owns the method. it is nullable
      * @param methodName specifies a name of the method
-     * @param params specifies a list of params
+     * @param params     specifies a list of params
+     * @param isJava
      * @return code to invoke the method
      */
-    public static String methodInvocation(String obj, String methodName, String params){
+    public static String methodInvocation(String obj, String methodName, String params, boolean isJava){
         if (obj == null)
             return String.format("%s(%s)", methodName, params);
 
-        return String.format("%s.%s(%s)", obj, methodName, params);
+        return String.format("%s%s.%s(%s)", obj,variableNullableMark(isJava), methodName, params);
     }
 
     /**
@@ -410,20 +441,20 @@ public class CodeJavaOrKotlinGenerator {
     }
 
     /**
-     *
      * @param variableName is the variable which has size() method
+     * @param isJava
      * @return a string to get size() of the variable
      */
-    public static String withSize(String variableName){
-        return String.format("%s.size()", variableName);
+    public static String withSize(String variableName, boolean isJava){
+        return String.format("%s%s.size()", variableName, variableNullableMark(isJava));
     }
     /**
-     *
      * @param variableName is the variable which has length field
+     * @param isJava
      * @return a string to get length of the variable
      */
-    public static String withLength(String variableName){
-        return String.format("%s.length", variableName);
+    public static String withLength(String variableName, boolean isJava){
+        return String.format("%s%s.length", variableName, variableNullableMark(isJava));
     }
 
     /**
