@@ -72,7 +72,7 @@ public abstract class TypeSchema {
         return originalType!= null? originalType: clazz;
     }
 
-    public String getTypeNameForInstance(){
+    public String getTypeNameForInstanceInJavaOrKotlin(boolean isJava){
         return getFullTypeNameWithGenericType();
     }
 }

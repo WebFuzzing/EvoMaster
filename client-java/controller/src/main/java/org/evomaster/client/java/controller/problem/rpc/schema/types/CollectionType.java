@@ -1,6 +1,7 @@
 package org.evomaster.client.java.controller.problem.rpc.schema.types;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.TypeDto;
+import org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
 
 /**
@@ -29,11 +30,9 @@ public class CollectionType extends TypeSchema{
     }
 
     @Override
-    public String getTypeNameForInstance() {
-        String generic = template.getType().getTypeNameForInstance();
-        if (getClazz().isArray())
-            return generic+"[]";
-        return getFullTypeName()+"<"+generic+">";
+    public String getTypeNameForInstanceInJavaOrKotlin(boolean isJava) {
+        String generic = template.getType().getTypeNameForInstanceInJavaOrKotlin(isJava);
+        return CodeJavaOrKotlinGenerator.typeNameOfArrayOrCollection(getFullTypeName(), getClazz().isArray(), generic, isJava);
     }
 
     @Override

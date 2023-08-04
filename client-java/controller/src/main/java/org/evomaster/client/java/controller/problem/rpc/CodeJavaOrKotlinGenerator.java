@@ -55,6 +55,19 @@ public class CodeJavaOrKotlinGenerator {
         return sb.toString();
     }
 
+
+    public static String typeNameOfArrayOrCollection(String collectionType, boolean isArray, String genericType, boolean isJava){
+        if (isArray){
+            if (isJava)
+                return String.format("%s[]", genericType);
+            else
+                return String.format("Array<%s>", genericType);
+        }
+
+        return String.format("%s<%s>", collectionType, genericType);
+
+    }
+
     /**
      *
      * @param enumTypeName the enum name

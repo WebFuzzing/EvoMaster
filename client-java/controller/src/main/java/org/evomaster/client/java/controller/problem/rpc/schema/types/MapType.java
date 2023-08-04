@@ -36,9 +36,9 @@ public class MapType extends TypeSchema{
     }
 
     @Override
-    public String getTypeNameForInstance() {
-        String key = template.getType().getFirstTemplate().getType().getTypeNameForInstance();
-        String value = template.getType().getSecondTemplate().getType().getTypeNameForInstance();
+    public String getTypeNameForInstanceInJavaOrKotlin(boolean isJava) {
+        String key = template.getType().getFirstTemplate().getType().getTypeNameForInstanceInJavaOrKotlin(isJava);
+        String value = template.getType().getSecondTemplate().getType().getTypeNameForInstanceInJavaOrKotlin(isJava);
         return Map.class.getName()+"<"+key+","+value+">";
     }
 

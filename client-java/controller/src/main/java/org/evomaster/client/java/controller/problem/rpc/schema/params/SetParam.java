@@ -104,21 +104,21 @@ public class SetParam extends CollectionParam<Set<NamedTypedValue>>{
 
     @Override
     public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava) {
-        String fullName = getType().getTypeNameForInstance();
+        String fullName = getType().getTypeNameForInstanceInJavaOrKotlin(isJava);
         List<String> codes = new ArrayList<>();
-        String var = CodeJavaOrKotlinGenerator.oneLineInstance(isDeclaration, doesIncludeName, fullName, variableName, null, );
+        String var = CodeJavaOrKotlinGenerator.oneLineInstance(isDeclaration, doesIncludeName, fullName, variableName, null, isJava);
         CodeJavaOrKotlinGenerator.addCode(codes, var, indent);
         if (getValue() == null) return codes;
         CodeJavaOrKotlinGenerator.addCode(codes, "{", indent);
-        // new array
+        // new set
         CodeJavaOrKotlinGenerator.addCode(codes,
                 CodeJavaOrKotlinGenerator.setInstance(
                         variableName,
-                        CodeJavaOrKotlinGenerator.newSet()), indent+1);
+                        CodeJavaOrKotlinGenerator.newSet(isJava, getType().getTemplate().getType().getTypeNameForInstanceInJavaOrKotlin(isJava)), isJava), indent+1);
         int index = 0;
         for (NamedTypedValue e: getValue()){
             String eVarName = CodeJavaOrKotlinGenerator.handleVariableName(variableName+"_e_"+index);
-            codes.addAll(e.newInstanceWithJavaOrKotlin(true, true, eVarName, indent+1, ));
+            codes.addAll(e.newInstanceWithJavaOrKotlin(true, true, eVarName, indent+1, isJava));
             CodeJavaOrKotlinGenerator.addCode(codes, variableName+".add("+eVarName+");", indent+1);
             index++;
         }
@@ -128,13 +128,13 @@ public class SetParam extends CollectionParam<Set<NamedTypedValue>>{
     }
 
     @Override
-    public List<String> newAssertionWithJava(int indent, String responseVarName, int maxAssertionForDataInCollection) {
+    public List<String> newAssertionWithJavaOrKotlin(int indent, String responseVarName, int maxAssertionForDataInCollection, boolean isJava) {
         List<String> codes = new ArrayList<>();
         if (getValue() == null){
-            CodeJavaOrKotlinGenerator.addCode(codes, CodeJavaOrKotlinGenerator.junitAssertNull(responseVarName), indent);
+            CodeJavaOrKotlinGenerator.addCode(codes, CodeJavaOrKotlinGenerator.junitAssertNull(responseVarName, isJava), indent);
             return codes;
         }
-        CodeJavaOrKotlinGenerator.addCode(codes, CodeJavaOrKotlinGenerator.junitAssertEquals(""+getValue().size(), CodeJavaOrKotlinGenerator.withSize(responseVarName)), indent);
+        CodeJavaOrKotlinGenerator.addCode(codes, CodeJavaOrKotlinGenerator.junitAssertEquals(String.valueOf(getValue().size()), CodeJavaOrKotlinGenerator.withSize(responseVarName),isJava ), indent);
         /*
             it is tricky to check values for set since the sequence is not determinate
          */
