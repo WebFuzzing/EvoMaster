@@ -92,24 +92,24 @@ public class Protobuf3ByteStringParam extends NamedTypedValue<Protobuf3ByteStrin
     @Override
     public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava) {
         List<String> codes = new ArrayList<>();
-        String var = CodeJavaOrKotlinGenerator.oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, null, );
+        String var = CodeJavaOrKotlinGenerator.oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, null,isJava );
         CodeJavaOrKotlinGenerator.addCode(codes, var, indent);
         if (getValue() == null) return codes;
         CodeJavaOrKotlinGenerator.addCode(codes, "{", indent);
         CodeJavaOrKotlinGenerator.addCode(codes,
-            CodeJavaOrKotlinGenerator.oneLineInstance(false, true, getType().getFullTypeName(), variableName, getType().getFullTypeName()+"."+PROTOBUF3_BYTE_STRING_METHOD_COPY_FROM_METHOD+"(\""+ getValue() + "\")", ), indent + 1);
+            CodeJavaOrKotlinGenerator.oneLineInstance(false, true, getType().getFullTypeName(), variableName, getType().getFullTypeName()+"."+PROTOBUF3_BYTE_STRING_METHOD_COPY_FROM_METHOD+"(\""+ getValue() + "\")",isJava ), indent + 1);
         CodeJavaOrKotlinGenerator.addCode(codes, "}", indent);
         return codes;
     }
 
     @Override
-    public List<String> newAssertionWithJava(int indent, String responseVarName, int maxAssertionForDataInCollection) {
+    public List<String> newAssertionWithJavaOrKotlin(int indent, String responseVarName, int maxAssertionForDataInCollection, boolean isJava) {
         StringBuilder sb = new StringBuilder();
         sb.append(CodeJavaOrKotlinGenerator.getIndent(indent));
         if (getValue() == null)
-            sb.append(CodeJavaOrKotlinGenerator.junitAssertNull(responseVarName));
+            sb.append(CodeJavaOrKotlinGenerator.junitAssertNull(responseVarName, isJava));
         else{
-            sb.append(CodeJavaOrKotlinGenerator.junitAssertEquals("\""+getValueAsJavaString()+"\"", responseVarName+"."+PROTOBUF3_BYTE_STRING_METHOD_TO_STRING_UTF8+"()"));
+            sb.append(CodeJavaOrKotlinGenerator.junitAssertEquals("\""+getValueAsJavaString()+"\"", responseVarName+"."+PROTOBUF3_BYTE_STRING_METHOD_TO_STRING_UTF8+"()", isJava));
         }
 
         return Collections.singletonList(sb.toString());

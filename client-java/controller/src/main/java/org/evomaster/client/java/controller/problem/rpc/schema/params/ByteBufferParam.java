@@ -72,16 +72,16 @@ public class ByteBufferParam extends NamedTypedValue<ByteBufferType, ByteBuffer>
     @Override
     public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava) {
         List<String> codes = new ArrayList<>();
-        String var = CodeJavaOrKotlinGenerator.oneLineInstance(isDeclaration, doesIncludeName, ByteBuffer.class.getName(), variableName, null, );
+        String var = CodeJavaOrKotlinGenerator.oneLineInstance(isDeclaration, doesIncludeName, ByteBuffer.class.getName(), variableName, null,isJava );
         CodeJavaOrKotlinGenerator.addCode(codes, var, indent);
         if (getValue() == null) return codes;
         CodeJavaOrKotlinGenerator.addCode(codes, "{", indent);
         String varValue = variableName+"_byteArray";
         String byteArray = "\""+ new String(getValue().array(), StandardCharsets.UTF_8) + "\".getBytes("+StandardCharsets.class.getName()+".UTF_8)";
         CodeJavaOrKotlinGenerator.addCode(codes,
-                CodeJavaOrKotlinGenerator.oneLineInstance(true, true, "byte[]", varValue, byteArray, ), indent + 1);
+                CodeJavaOrKotlinGenerator.oneLineInstance(true, true, "byte[]", varValue, byteArray, isJava), indent + 1);
         CodeJavaOrKotlinGenerator.addCode(codes,
-                CodeJavaOrKotlinGenerator.oneLineInstance(false, true, String.class.getName(), variableName, ByteBuffer.class.getName()+".allocate("+varValue+".length)", ), indent + 1);
+                CodeJavaOrKotlinGenerator.oneLineInstance(false, true, String.class.getName(), variableName, ByteBuffer.class.getName()+".allocate("+varValue+".length)", isJava), indent + 1);
         CodeJavaOrKotlinGenerator.addCode(codes, variableName+".put("+varValue+");", indent+1);
         CodeJavaOrKotlinGenerator.addCode(codes, "}", indent);
 
@@ -89,11 +89,11 @@ public class ByteBufferParam extends NamedTypedValue<ByteBufferType, ByteBuffer>
     }
 
     @Override
-    public List<String> newAssertionWithJava(int indent, String responseVarName, int maxAssertionForDataInCollection) {
+    public List<String> newAssertionWithJavaOrKotlin(int indent, String responseVarName, int maxAssertionForDataInCollection, boolean isJava) {
         StringBuilder sb = new StringBuilder();
         sb.append(CodeJavaOrKotlinGenerator.getIndent(indent));
         if (getValue() == null)
-            sb.append(CodeJavaOrKotlinGenerator.junitAssertNull(responseVarName));
+            sb.append(CodeJavaOrKotlinGenerator.junitAssertNull(responseVarName, isJava));
         else
             sb.append("// not handle ByteBuffer assertion");
         return Collections.singletonList(sb.toString());

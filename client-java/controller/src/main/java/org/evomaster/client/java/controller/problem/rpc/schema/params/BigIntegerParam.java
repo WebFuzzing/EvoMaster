@@ -100,30 +100,30 @@ public class BigIntegerParam extends NamedTypedValue<BigIntegerType, BigInteger>
 
     @Override
     public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava) {
-        String typeName = getType().getTypeNameForInstance();
+        String typeName = getType().getTypeNameForInstanceInJavaOrKotlin(isJava);
 
         List<String> codes = new ArrayList<>();
         boolean isNull = (getValue() == null);
-        String var = CodeJavaOrKotlinGenerator.oneLineInstance(isDeclaration, doesIncludeName, typeName, variableName, null, );
+        String var = CodeJavaOrKotlinGenerator.oneLineInstance(isDeclaration, doesIncludeName, typeName, variableName, null, isJava);
         CodeJavaOrKotlinGenerator.addCode(codes, var, indent);
         if (isNull) return codes;
 
         CodeJavaOrKotlinGenerator.addCode(codes, "{", indent);
-        CodeJavaOrKotlinGenerator.addCode(codes, CodeJavaOrKotlinGenerator.setInstance(variableName, CodeJavaOrKotlinGenerator.newObjectConsParams(typeName, getValueAsJavaString())), indent+1);
+        CodeJavaOrKotlinGenerator.addCode(codes, CodeJavaOrKotlinGenerator.setInstance(variableName, CodeJavaOrKotlinGenerator.newObjectConsParams(typeName, getValueAsJavaString(),isJava ), isJava), indent+1);
         CodeJavaOrKotlinGenerator.addCode(codes, "}", indent);
 
         return codes;
     }
 
     @Override
-    public List<String> newAssertionWithJava(int indent, String responseVarName, int maxAssertionForDataInCollection) {
+    public List<String> newAssertionWithJavaOrKotlin(int indent, String responseVarName, int maxAssertionForDataInCollection, boolean isJava) {
         // assertion with its string representation
         StringBuilder sb = new StringBuilder();
         sb.append(CodeJavaOrKotlinGenerator.getIndent(indent));
         if (getValue() == null)
-            sb.append(CodeJavaOrKotlinGenerator.junitAssertNull(responseVarName));
+            sb.append(CodeJavaOrKotlinGenerator.junitAssertNull(responseVarName, isJava));
         else
-            sb.append(CodeJavaOrKotlinGenerator.junitAssertEquals(getValueAsJavaString(), responseVarName+".toString()"));
+            sb.append(CodeJavaOrKotlinGenerator.junitAssertEquals(getValueAsJavaString(), responseVarName+".toString()", isJava));
 
         return Collections.singletonList(sb.toString());
     }

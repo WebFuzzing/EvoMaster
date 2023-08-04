@@ -870,7 +870,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                     resSchema.setValueBasedOnInstance(response);
                     responseDto.rpcResponse = resSchema.getDto();
                     if (dto.doGenerateAssertions && dto.responseVariable != null)
-                        responseDto.assertionScript = resSchema.newAssertionWithJava(dto.responseVariable, dto.maxAssertionForDataInCollection);
+                        responseDto.assertionScript = resSchema.newAssertionWithJavaOrKotlin(dto.responseVariable, dto.maxAssertionForDataInCollection, dto.outputFormat.isJava());
                     /*
                         ActionResponseDto.jsonResponse could be used to generate assertions in core side
                         however, as we do not support the test generate in core side yet and not all DTO can be converted into json,
@@ -897,7 +897,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                 }
             } else {
                 if (dto.doGenerateAssertions && dto.responseVariable != null)
-                    responseDto.assertionScript = resSchema.newAssertionWithJava(dto.responseVariable, dto.maxAssertionForDataInCollection);
+                    responseDto.assertionScript = resSchema.newAssertionWithJavaOrKotlin(dto.responseVariable, dto.maxAssertionForDataInCollection, dto.outputFormat.isJava());
             }
         }
     }

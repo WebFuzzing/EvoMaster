@@ -752,7 +752,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals("}", javaCodes.get(36));
 
 
-        List<String> assertionJavaCode = p1.newAssertionWithJavaOrKotlin(0, "res1", -1, );
+        List<String> assertionJavaCode = p1.newAssertionWithJavaOrKotlin(0, "res1", -1, true);
 
         assertEquals(18, assertionJavaCode.size());
         assertEquals("assertEquals(\"foo\", res1.pubField);", assertionJavaCode.get(0));
@@ -781,7 +781,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         }};
 
         res.setValueBasedOnInstance(resInstance);
-        List<String> javaCodesForResponse = res.newInstanceWithJavaOrKotlin(true, true, "tmp", 0, );
+        List<String> javaCodesForResponse = res.newInstanceWithJavaOrKotlin(true, true, "tmp", 0, true);
 
         assertEquals(43, javaCodesForResponse.size());
         assertEquals("com.thrift.example.artificial.PrivateFieldInResponseDto tmp = null;", javaCodesForResponse.get(0));
@@ -828,7 +828,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals(" tmp.setPriRequest(tmp_priRequest);", javaCodesForResponse.get(41));
         assertEquals("}", javaCodesForResponse.get(42));
 
-        List<String> assertionJavaCodeForResponse = res.newAssertionWithJavaOrKotlin(0, "res1", -1, );
+        List<String> assertionJavaCodeForResponse = res.newAssertionWithJavaOrKotlin(0, "res1", -1, true);
         assertEquals(19, assertionJavaCodeForResponse.size());
         assertEquals("assertEquals(42, res1.pubField);", assertionJavaCodeForResponse.get(0));
         assertEquals("assertEquals(\"foo\", res1.getPriRequest().pubField);", assertionJavaCodeForResponse.get(1));
@@ -891,7 +891,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals("}", javaCodes.get(18));
 
 
-        List<String> assertionJavaCode = p1.newAssertionWithJavaOrKotlin(0, "res1", -1, );
+        List<String> assertionJavaCode = p1.newAssertionWithJavaOrKotlin(0, "res1", -1, true);
 
         assertEquals(13, assertionJavaCode.size());
         assertEquals("assertNull(res1.pubField);", assertionJavaCode.get(0));
@@ -914,7 +914,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         }};
 
         res.setValueBasedOnInstance(resInstance);
-        List<String> javaCodesForResponse = res.newInstanceWithJavaOrKotlin(true, true, "tmp", 0, );
+        List<String> javaCodesForResponse = res.newInstanceWithJavaOrKotlin(true, true, "tmp", 0, true);
         assertEquals(7, javaCodesForResponse.size());
         assertEquals("com.thrift.example.artificial.PrivateFieldInResponseDto tmp = null;", javaCodesForResponse.get(0));
         assertEquals("{", javaCodesForResponse.get(1));
@@ -924,7 +924,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals(" tmp.setPriRequest(tmp_priRequest);", javaCodesForResponse.get(5));
         assertEquals("}", javaCodesForResponse.get(6));
 
-        List<String> assertionJavaCodeForResponse = res.newAssertionWithJavaOrKotlin(0, "res1", -1, );
+        List<String> assertionJavaCodeForResponse = res.newAssertionWithJavaOrKotlin(0, "res1", -1, true);
         assertEquals(2, assertionJavaCodeForResponse.size());
         assertEquals("assertEquals(42, res1.pubField);", assertionJavaCodeForResponse.get(0));
         assertEquals("assertNull(res1.getPriRequest());", assertionJavaCodeForResponse.get(1));
@@ -936,7 +936,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
 
         res.setValueBasedOnInstance(resInstance2);
 
-        javaCodesForResponse = res.newInstanceWithJavaOrKotlin(true, true, "tmp", 0, );
+        javaCodesForResponse = res.newInstanceWithJavaOrKotlin(true, true, "tmp", 0, true);
         assertEquals(25, javaCodesForResponse.size());
         assertEquals("com.thrift.example.artificial.PrivateFieldInResponseDto tmp = null;", javaCodesForResponse.get(0));
         assertEquals("{", javaCodesForResponse.get(1));
@@ -964,7 +964,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals(" tmp.setPriRequest(tmp_priRequest);", javaCodesForResponse.get(23));
         assertEquals("}", javaCodesForResponse.get(24));
 
-        assertionJavaCodeForResponse = res.newAssertionWithJavaOrKotlin(0, "res1", -1, );
+        assertionJavaCodeForResponse = res.newAssertionWithJavaOrKotlin(0, "res1", -1, true);
         assertEquals(14, assertionJavaCodeForResponse.size());
         assertEquals("assertEquals(42, res1.pubField);", assertionJavaCodeForResponse.get(0));
         assertEquals("assertNull(res1.getPriRequest().pubField);", assertionJavaCodeForResponse.get(1));
@@ -1020,7 +1020,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals(" arg0 = new java.util.Date(" + time + "L);", javacode.get(3));
         assertEquals("}", javacode.get(4));
 
-        List<String> assertions = p1.newAssertionWithJavaOrKotlin(0, "res1", -1, );
+        List<String> assertions = p1.newAssertionWithJavaOrKotlin(0, "res1", -1, true);
         assertEquals(1, assertions.size());
         assertTrue(assertions.get(0).contains("// runtime value is "));
 

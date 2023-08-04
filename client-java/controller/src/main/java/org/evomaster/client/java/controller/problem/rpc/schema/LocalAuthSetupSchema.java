@@ -45,7 +45,7 @@ public class LocalAuthSetupSchema extends EndpointSchema{
 
         CodeJavaOrKotlinGenerator.addCode(
                 javaCode,
-                CodeJavaOrKotlinGenerator.methodInvocation(controllerVarName, getName(), paramVars) + CodeJavaOrKotlinGenerator.appendLast(),
+                CodeJavaOrKotlinGenerator.methodInvocation(controllerVarName, getName(), paramVars) + CodeJavaOrKotlinGenerator.getStatementLast(outputFormat.isJava()),
                 indent);
 
         javaCode.add("}");

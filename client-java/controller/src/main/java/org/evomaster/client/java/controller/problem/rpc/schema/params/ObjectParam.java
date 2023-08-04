@@ -230,12 +230,12 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
 
     @Override
     public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava) {
-        String typeName = getType().getTypeNameForInstance();
+        String typeName = getType().getTypeNameForInstanceInJavaOrKotlin(isJava);
         String varName = variableName;
 
         List<String> codes = new ArrayList<>();
         boolean isNull = (getValue() == null);
-        String var = CodeJavaOrKotlinGenerator.oneLineInstance(isDeclaration, doesIncludeName, typeName, varName, null, );
+        String var = CodeJavaOrKotlinGenerator.oneLineInstance(isDeclaration, doesIncludeName, typeName, varName, null,isJava );
         CodeJavaOrKotlinGenerator.addCode(codes, var, indent);
         if (isNull) return codes;
 
@@ -244,11 +244,11 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
         String ownVarName = null;
         if (getType().spec == JavaDtoSpec.DEFAULT){
             // new obj
-            CodeJavaOrKotlinGenerator.addCode(codes, CodeJavaOrKotlinGenerator.setInstanceObject(typeName, varName), indent + 1 );
+            CodeJavaOrKotlinGenerator.addCode(codes, CodeJavaOrKotlinGenerator.setInstanceObject(typeName, varName, isJava), indent + 1 );
             ownVarName = varName;
         }else{
             String varBuilderName = varName+"builder";
-            CodeJavaOrKotlinGenerator.addCode(codes, CodeJavaOrKotlinGenerator.newBuilderProto3(typeName, varBuilderName), indent + 1);
+            CodeJavaOrKotlinGenerator.addCode(codes, CodeJavaOrKotlinGenerator.newBuilderProto3(typeName, varBuilderName,isJava ), indent + 1);
             ownVarName = varBuilderName;
         }
 
@@ -260,20 +260,20 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
                      fName = varName+"_"+f.getName();
                      fdeclar = true;
                 }
-                codes.addAll(f.newInstanceWithJavaOrKotlin(fdeclar, true, fName, indent+1, ));
+                codes.addAll(f.newInstanceWithJavaOrKotlin(fdeclar, true, fName, indent+1, isJava));
 
                 if (needRenameField(f)){
-                    CodeJavaOrKotlinGenerator.addCode(codes, CodeJavaOrKotlinGenerator.methodInvocation(ownVarName, f.accessibleSchema.setterMethodName, fName)+ CodeJavaOrKotlinGenerator.appendLast(),indent+1);
+                    CodeJavaOrKotlinGenerator.addCode(codes, CodeJavaOrKotlinGenerator.methodInvocation(ownVarName, f.accessibleSchema.setterMethodName, fName)+ CodeJavaOrKotlinGenerator.getStatementLast(isJava),indent+1);
                 }
             }else {
                 String fName = varName+"."+f.getName();
-                codes.addAll(f.newInstanceWithJavaOrKotlin(false, true, fName, indent+1, ));
+                codes.addAll(f.newInstanceWithJavaOrKotlin(false, true, fName, indent+1, isJava));
             }
         }
 
         if (getType().spec == JavaDtoSpec.PROTO3){
 
-            CodeJavaOrKotlinGenerator.addCode(codes, CodeJavaOrKotlinGenerator.setInstance(true, varName, CodeJavaOrKotlinGenerator.methodInvocation(ownVarName, PROTO3_OBJECT_BUILD_METHOD, "")),indent+1);
+            CodeJavaOrKotlinGenerator.addCode(codes, CodeJavaOrKotlinGenerator.setInstance(true, varName, CodeJavaOrKotlinGenerator.methodInvocation(ownVarName, PROTO3_OBJECT_BUILD_METHOD, ""), isJava),indent+1);
         }
         CodeJavaOrKotlinGenerator.addCode(codes, "}", indent);
         return codes;
@@ -284,10 +284,10 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
     }
 
     @Override
-    public List<String> newAssertionWithJava(int indent, String responseVarName, int maxAssertionForDataInCollection) {
+    public List<String> newAssertionWithJavaOrKotlin(int indent, String responseVarName, int maxAssertionForDataInCollection, boolean isJava) {
         List<String> codes = new ArrayList<>();
         if (getValue() == null){
-            CodeJavaOrKotlinGenerator.addCode(codes, CodeJavaOrKotlinGenerator.junitAssertNull(responseVarName), indent);
+            CodeJavaOrKotlinGenerator.addCode(codes, CodeJavaOrKotlinGenerator.junitAssertNull(responseVarName, isJava), indent);
             return codes;
         }
         for (NamedTypedValue f : getValue()){
@@ -304,7 +304,7 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
                 }
             }
             if (fName != null)
-                codes.addAll(f.newAssertionWithJava(indent, fName, maxAssertionForDataInCollection));
+                codes.addAll(f.newAssertionWithJavaOrKotlin(indent, fName, maxAssertionForDataInCollection, isJava));
         }
         return codes;
     }

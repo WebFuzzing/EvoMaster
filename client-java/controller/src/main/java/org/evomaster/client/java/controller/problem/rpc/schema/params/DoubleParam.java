@@ -73,15 +73,15 @@ public class DoubleParam extends PrimitiveOrWrapperParam<Double> {
     }
 
     @Override
-    public List<String> newAssertionWithJava(int indent, String responseVarName, int maxAssertionForDataInCollection) {
-        if (getValue() == null) return super.newAssertionWithJava(indent, responseVarName, maxAssertionForDataInCollection);
+    public List<String> newAssertionWithJavaOrKotlin(int indent, String responseVarName, int maxAssertionForDataInCollection, boolean isJava) {
+        if (getValue() == null) return super.newAssertionWithJavaOrKotlin(indent, responseVarName, maxAssertionForDataInCollection, isJava);
 
         List<String> codes = new ArrayList<>();
         if ((getValue().isInfinite() || getValue().isNaN())){
             // here we just add comments for it
             CodeJavaOrKotlinGenerator.addComment(codes, "// "+responseVarName+ " is "+getValueAsJavaString(), indent);
         }else{
-            CodeJavaOrKotlinGenerator.addCode(codes, CodeJavaOrKotlinGenerator.junitAssertNumbersMatch(getValueAsJavaString(), responseVarName), indent);
+            CodeJavaOrKotlinGenerator.addCode(codes, CodeJavaOrKotlinGenerator.junitAssertNumbersMatch(getValueAsJavaString(), responseVarName, isJava), indent);
         }
         return codes;
     }

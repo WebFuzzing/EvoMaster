@@ -71,31 +71,31 @@ public class DateParam extends NamedTypedValue<DateType, List<IntParam>>{
 
     @Override
     public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava) {
-        String typeName = getType().getTypeNameForInstance();
+        String typeName = getType().getTypeNameForInstanceInJavaOrKotlin(isJava);
         String varName = variableName;
 
         List<String> codes = new ArrayList<>();
         boolean isNull = (getValue() == null);
 
-        String var = CodeJavaOrKotlinGenerator.oneLineInstance(isDeclaration, doesIncludeName, typeName, varName, null, );
+        String var = CodeJavaOrKotlinGenerator.oneLineInstance(isDeclaration, doesIncludeName, typeName, varName, null, isJava);
         CodeJavaOrKotlinGenerator.addCode(codes, var, indent);
         if (isNull) return codes;
 
         CodeJavaOrKotlinGenerator.addCode(codes, "{", indent);
         CodeJavaOrKotlinGenerator.addComment(codes, "Date is " + getType().getDateString(getValue()), indent+1);
         String time = getType().getDateLong(getValue())+"L";
-        CodeJavaOrKotlinGenerator.addCode(codes, CodeJavaOrKotlinGenerator.setInstance(varName, CodeJavaOrKotlinGenerator.newObjectConsParams(typeName, time)), indent+1);
+        CodeJavaOrKotlinGenerator.addCode(codes, CodeJavaOrKotlinGenerator.setInstance(varName, CodeJavaOrKotlinGenerator.newObjectConsParams(typeName, time, isJava), isJava), indent+1);
         CodeJavaOrKotlinGenerator.addCode(codes, "}", indent);
 
         return codes;
     }
 
     @Override
-    public List<String> newAssertionWithJava(int indent, String responseVarName, int maxAssertionForDataInCollection) {
+    public List<String> newAssertionWithJavaOrKotlin(int indent, String responseVarName, int maxAssertionForDataInCollection, boolean isJava) {
         StringBuilder sb = new StringBuilder();
         sb.append(CodeJavaOrKotlinGenerator.getIndent(indent));
         if (getValue() == null)
-            sb.append(CodeJavaOrKotlinGenerator.junitAssertNull(responseVarName));
+            sb.append(CodeJavaOrKotlinGenerator.junitAssertNull(responseVarName, isJava));
         else{
             /*
                 it might be tricky to handle date assertion since it might be `now`

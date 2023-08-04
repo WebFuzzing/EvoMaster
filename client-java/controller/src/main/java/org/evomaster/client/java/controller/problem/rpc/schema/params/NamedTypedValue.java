@@ -270,20 +270,22 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
 
     /**
      * create assertions with java for response
-     * @param indent specifies the current indent of the code
-     * @param responseVarName a variable name for responses
+     *
+     * @param indent                          specifies the current indent of the code
+     * @param responseVarName                 a variable name for responses
      * @param maxAssertionForDataInCollection
+     * @param isJava
      * @return a list of string for assertions
      */
-    public abstract List<String> newAssertionWithJava(int indent, String responseVarName, int maxAssertionForDataInCollection);
+    public abstract List<String> newAssertionWithJavaOrKotlin(int indent, String responseVarName, int maxAssertionForDataInCollection, boolean isJava);
 
     /**
-     *
      * @param responseVarName is the variable name of the response
+     * @param isJava
      * @return a list of assertions based on this which could be a response
      */
-    public List<String> newAssertionWithJava(String responseVarName, int maxAssertionForDataInCollection){
-        return newAssertionWithJava(0, responseVarName, maxAssertionForDataInCollection);
+    public List<String> newAssertionWithJavaOrKotlin(String responseVarName, int maxAssertionForDataInCollection, boolean isJava){
+        return newAssertionWithJavaOrKotlin(0, responseVarName, maxAssertionForDataInCollection, isJava);
     }
 
     /**

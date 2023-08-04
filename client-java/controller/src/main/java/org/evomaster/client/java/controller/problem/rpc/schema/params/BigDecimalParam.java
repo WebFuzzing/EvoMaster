@@ -103,11 +103,11 @@ public class BigDecimalParam extends NamedTypedValue<BigDecimalType, BigDecimal>
 
     @Override
     public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava) {
-        String typeName = getType().getTypeNameForInstance();
+        String typeName = getType().getTypeNameForInstanceInJavaOrKotlin(isJava);
 
         List<String> codes = new ArrayList<>();
         boolean isNull = (getValue() == null);
-        String var = oneLineInstance(isDeclaration, doesIncludeName, typeName, variableName, null, );
+        String var = oneLineInstance(isDeclaration, doesIncludeName, typeName, variableName, null, isJava);
         addCode(codes, var, indent);
         if (isNull) return codes;
 
@@ -116,12 +116,12 @@ public class BigDecimalParam extends NamedTypedValue<BigDecimalType, BigDecimal>
         String consParam = getValueAsJavaString();
         if (getPrecision() != null){
             addCode(codes, oneLineInstance(true, true, MathContext.class.getName(), mcVar,
-                    newObjectConsParams(MathContext.class.getName(), getPrecision().toString()), ), indent+1);
+                    newObjectConsParams(MathContext.class.getName(), getPrecision().toString(), isJava), isJava), indent+1);
             consParam += ", "+mcVar;
         }
-        addCode(codes, setInstance(variableName, newObjectConsParams(typeName, consParam)), indent+1);
+        addCode(codes, setInstance(variableName, newObjectConsParams(typeName, consParam, isJava), isJava), indent+1);
         if (getScale() != null){
-            addCode(codes, oneLineSetterInstance("setScale", null, variableName, getScale()+", "+RoundingMode.class.getName()+".HALF_UP", ), indent+1);
+            addCode(codes, oneLineSetterInstance("setScale", null, variableName, getScale()+", "+RoundingMode.class.getName()+".HALF_UP", isJava), indent+1);
         }
 
         addCode(codes, "}", indent);
@@ -130,14 +130,14 @@ public class BigDecimalParam extends NamedTypedValue<BigDecimalType, BigDecimal>
     }
 
     @Override
-    public List<String> newAssertionWithJava(int indent, String responseVarName, int maxAssertionForDataInCollection) {
+    public List<String> newAssertionWithJavaOrKotlin(int indent, String responseVarName, int maxAssertionForDataInCollection, boolean isJava) {
         // assertion with its string representation
         StringBuilder sb = new StringBuilder();
         sb.append(CodeJavaOrKotlinGenerator.getIndent(indent));
         if (getValue() == null)
-            sb.append(CodeJavaOrKotlinGenerator.junitAssertNull(responseVarName));
+            sb.append(CodeJavaOrKotlinGenerator.junitAssertNull(responseVarName, isJava));
         else
-            sb.append(CodeJavaOrKotlinGenerator.junitAssertEquals(getValueAsJavaString(), responseVarName+".toString()"));
+            sb.append(CodeJavaOrKotlinGenerator.junitAssertEquals(getValueAsJavaString(), responseVarName+".toString()", isJava));
 
         return Collections.singletonList(sb.toString());
     }

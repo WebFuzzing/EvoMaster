@@ -198,7 +198,7 @@ public class EndpointSchema {
         List<String> javaCode = new ArrayList<>();
         if (response != null){
             boolean isPrimitive = (response.getType() instanceof PrimitiveOrWrapperType) && !((PrimitiveOrWrapperType)response.getType()).isWrapper;
-            javaCode.add(CodeJavaOrKotlinGenerator.oneLineInstance(true, true, response.getType().getTypeNameForInstance(), responseVarName, null, isPrimitive));
+            javaCode.add(CodeJavaOrKotlinGenerator.oneLineInstance(true, true, response.getType().getTypeNameForInstanceInJavaOrKotlin(outputFormat.isJava()), responseVarName, null, isPrimitive));
         }
         javaCode.add("{");
         int indent = 1;
@@ -208,7 +208,7 @@ public class EndpointSchema {
         String paramVars = requestParams.stream().map(NamedTypedValue::getName).collect(Collectors.joining(","));
         String client = clientVariable;
         if (client == null)
-            client = CodeJavaOrKotlinGenerator.castToType(clientTypeName, CodeJavaOrKotlinGenerator.getGetClientMethod(controllerVarName,"\""+interfaceName+"\""), );
+            client = CodeJavaOrKotlinGenerator.castToType(clientTypeName, CodeJavaOrKotlinGenerator.getGetClientMethod(controllerVarName,"\""+interfaceName+"\""), outputFormat.isJava() );
 
         if (client == null){
             throw new IllegalArgumentException("fail to generate code for accessing client :"+clientTypeName);
@@ -218,7 +218,7 @@ public class EndpointSchema {
                 javaCode,
                 CodeJavaOrKotlinGenerator.setInstance(response!= null,
                         responseVarName,
-                        CodeJavaOrKotlinGenerator.methodInvocation(client, getName(), paramVars)),
+                        CodeJavaOrKotlinGenerator.methodInvocation(client, getName(), paramVars), outputFormat.isJava()),
                 indent);
 
         javaCode.add("}");
