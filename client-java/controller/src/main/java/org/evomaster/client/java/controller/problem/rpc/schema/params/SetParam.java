@@ -3,7 +3,7 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
-import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
+import org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.CollectionType;
 
@@ -103,27 +103,27 @@ public class SetParam extends CollectionParam<Set<NamedTypedValue>>{
     }
 
     @Override
-    public List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent) {
+    public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava) {
         String fullName = getType().getTypeNameForInstance();
         List<String> codes = new ArrayList<>();
-        String var = CodeJavaGenerator.oneLineInstance(isDeclaration, doesIncludeName, fullName, variableName, null);
-        CodeJavaGenerator.addCode(codes, var, indent);
+        String var = CodeJavaOrKotlinGenerator.oneLineInstance(isDeclaration, doesIncludeName, fullName, variableName, null, );
+        CodeJavaOrKotlinGenerator.addCode(codes, var, indent);
         if (getValue() == null) return codes;
-        CodeJavaGenerator.addCode(codes, "{", indent);
+        CodeJavaOrKotlinGenerator.addCode(codes, "{", indent);
         // new array
-        CodeJavaGenerator.addCode(codes,
-                CodeJavaGenerator.setInstance(
+        CodeJavaOrKotlinGenerator.addCode(codes,
+                CodeJavaOrKotlinGenerator.setInstance(
                         variableName,
-                        CodeJavaGenerator.newSet()), indent+1);
+                        CodeJavaOrKotlinGenerator.newSet()), indent+1);
         int index = 0;
         for (NamedTypedValue e: getValue()){
-            String eVarName = CodeJavaGenerator.handleVariableName(variableName+"_e_"+index);
-            codes.addAll(e.newInstanceWithJava(true, true, eVarName, indent+1));
-            CodeJavaGenerator.addCode(codes, variableName+".add("+eVarName+");", indent+1);
+            String eVarName = CodeJavaOrKotlinGenerator.handleVariableName(variableName+"_e_"+index);
+            codes.addAll(e.newInstanceWithJavaOrKotlin(true, true, eVarName, indent+1, ));
+            CodeJavaOrKotlinGenerator.addCode(codes, variableName+".add("+eVarName+");", indent+1);
             index++;
         }
 
-        CodeJavaGenerator.addCode(codes, "}", indent);
+        CodeJavaOrKotlinGenerator.addCode(codes, "}", indent);
         return codes;
     }
 
@@ -131,10 +131,10 @@ public class SetParam extends CollectionParam<Set<NamedTypedValue>>{
     public List<String> newAssertionWithJava(int indent, String responseVarName, int maxAssertionForDataInCollection) {
         List<String> codes = new ArrayList<>();
         if (getValue() == null){
-            CodeJavaGenerator.addCode(codes, CodeJavaGenerator.junitAssertNull(responseVarName), indent);
+            CodeJavaOrKotlinGenerator.addCode(codes, CodeJavaOrKotlinGenerator.junitAssertNull(responseVarName), indent);
             return codes;
         }
-        CodeJavaGenerator.addCode(codes, CodeJavaGenerator.junitAssertEquals(""+getValue().size(), CodeJavaGenerator.withSize(responseVarName)), indent);
+        CodeJavaOrKotlinGenerator.addCode(codes, CodeJavaOrKotlinGenerator.junitAssertEquals(""+getValue().size(), CodeJavaOrKotlinGenerator.withSize(responseVarName)), indent);
         /*
             it is tricky to check values for set since the sequence is not determinate
          */

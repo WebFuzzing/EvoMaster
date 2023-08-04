@@ -77,7 +77,7 @@ public class DataTypesTestgRPCEndpointsBuilderTest extends RPCEndpointsBuilderTe
         assertTrue(param1Instance instanceof GetInfo);
         assertEquals("bar", ((GetInfo) param1Instance).getName());
 
-        List<String> param1InstanceJava = param1.newInstanceWithJava(0);
+        List<String> param1InstanceJava = param1.newInstanceWithJavaOrKotlin(0, true);
         List<String> expectedContents = Arrays.asList(
             "io.grpc.examples.evotests.datatypes.GetInfo arg0 = null;",
             "{",
@@ -138,7 +138,7 @@ public class DataTypesTestgRPCEndpointsBuilderTest extends RPCEndpointsBuilderTe
         assertEquals(42, ((SimpleObj) param1Instance).getInt32Value());
 
 
-        List<String> param1InstanceJava = param1.newInstanceWithJava(0);
+        List<String> param1InstanceJava = param1.newInstanceWithJavaOrKotlin(0, true);
         String[] expectedContents = ("io.grpc.examples.evotests.datatypes.SimpleObj arg0 = null;\n" +
             "{\n" +
             " io.grpc.examples.evotests.datatypes.SimpleObj.Builder arg0builder = io.grpc.examples.evotests.datatypes.SimpleObj.newBuilder();\n" +
@@ -201,7 +201,7 @@ public class DataTypesTestgRPCEndpointsBuilderTest extends RPCEndpointsBuilderTe
         assertEquals(42, ((NestedObj) param1Instance).getObjvalue().getInt32Value());
 
 
-        List<String> param1InstanceJava = response.newInstanceWithJava(true, true, "res", 0);
+        List<String> param1InstanceJava = response.newInstanceWithJavaOrKotlin(true, true, "res", 0, );
 
         String[] expectedContents = ("io.grpc.examples.evotests.datatypes.NestedObj res = null;\n" +
             "{\n" +
@@ -314,7 +314,7 @@ public class DataTypesTestgRPCEndpointsBuilderTest extends RPCEndpointsBuilderTe
         assertEquals(42, ((MapObj) param1Instance).getIntkeymapvalueMap().get(1).getInt32Value());
 
 
-        List<String> param1InstanceJava = response.newInstanceWithJava(true, true, "res", 0);
+        List<String> param1InstanceJava = response.newInstanceWithJavaOrKotlin(true, true, "res", 0, );
 
         String[] expectedContents = ("io.grpc.examples.evotests.datatypes.MapObj res = null;\n" +
             "{\n" +
@@ -494,7 +494,7 @@ public class DataTypesTestgRPCEndpointsBuilderTest extends RPCEndpointsBuilderTe
         assertEquals(2, param1InstanceValue.getObjlistvalueList().size());
 
 
-        List<String> param1InstanceJava = response.newInstanceWithJava(true, true, "res", 0);
+        List<String> param1InstanceJava = response.newInstanceWithJavaOrKotlin(true, true, "res", 0, );
 
         String[] expectedContents = ("io.grpc.examples.evotests.datatypes.ListObj res = null;\n" +
             "{\n" +

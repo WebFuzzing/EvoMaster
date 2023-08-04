@@ -2,7 +2,7 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
-import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
+import org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.JavaDtoSpec;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.PrimitiveOrWrapperType;
@@ -79,9 +79,9 @@ public class DoubleParam extends PrimitiveOrWrapperParam<Double> {
         List<String> codes = new ArrayList<>();
         if ((getValue().isInfinite() || getValue().isNaN())){
             // here we just add comments for it
-            CodeJavaGenerator.addComment(codes, "// "+responseVarName+ " is "+getValueAsJavaString(), indent);
+            CodeJavaOrKotlinGenerator.addComment(codes, "// "+responseVarName+ " is "+getValueAsJavaString(), indent);
         }else{
-            CodeJavaGenerator.addCode(codes, CodeJavaGenerator.junitAssertNumbersMatch(getValueAsJavaString(), responseVarName), indent);
+            CodeJavaOrKotlinGenerator.addCode(codes, CodeJavaOrKotlinGenerator.junitAssertNumbersMatch(getValueAsJavaString(), responseVarName), indent);
         }
         return codes;
     }

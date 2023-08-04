@@ -9,12 +9,10 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedData
 import org.evomaster.client.java.controller.problem.rpc.schema.params.*;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.*;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCType;
-import org.glassfish.jersey.server.model.Suspendable;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -303,7 +301,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals("-10", dto.innerContent.get(6).stringValue);
         assertEquals("-2", dto.innerContent.get(7).stringValue);
 
-        List<String> testScript = p1.newInstanceWithJava(0);
+        List<String> testScript = p1.newInstanceWithJavaOrKotlin(0, true);
         assertEquals("com.thrift.example.artificial.BigNumberObj arg0 = null;",testScript.get(0));
         assertEquals("{",testScript.get(1));
         assertEquals(" arg0 = new com.thrift.example.artificial.BigNumberObj();",testScript.get(2));
@@ -383,7 +381,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         }};
 
         p1.setValueBasedOnInstance(objectEnum);
-        List<String> testScript = p1.newInstanceWithJava(0);
+        List<String> testScript = p1.newInstanceWithJavaOrKotlin(0, true);
 
         assertEquals(5, testScript.size());
         assertEquals("com.thrift.example.artificial.ObjectEnum arg0 = null;", testScript.get(0));
@@ -406,11 +404,11 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertNull(((ObjectParam)p1).getValue());
         Object p1Instance = p1.newInstance();
         assertNull(p1Instance);
-        List<String> testScript = p1.newInstanceWithJava(0);
+        List<String> testScript = p1.newInstanceWithJavaOrKotlin(0, true);
         ParamDto dto  = p1.getDto();
         dto.innerContent = null;
         p1.setValueBasedOnDto(dto);
-        List<String> testScriptWithDto =  p1.newInstanceWithJava(0);
+        List<String> testScriptWithDto =  p1.newInstanceWithJavaOrKotlin(0, true);
         assertEquals(testScript, testScriptWithDto);
     }
 
@@ -546,7 +544,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         dto.innerContent.get(1).stringValue = null;
         dto.innerContent.get(2).stringValue = null;
         p1.setValueBasedOnDto(dto);
-        List<String> javaCode  = p1.newInstanceWithJava(0);
+        List<String> javaCode  = p1.newInstanceWithJavaOrKotlin(0, true);
         assertEquals(13, javaCode.size());
         assertEquals("com.thrift.example.artificial.ConstrainedRequest arg0 = null;", javaCode.get(0));
         assertEquals("{", javaCode.get(1));
@@ -712,7 +710,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
 
         p1.setValueBasedOnInstance(p1Instance);
 
-        List<String> javaCodes = p1.newInstanceWithJava(0);
+        List<String> javaCodes = p1.newInstanceWithJavaOrKotlin(0, true);
 
         assertEquals(37, javaCodes.size());
         assertEquals("com.thrift.example.artificial.PrivateFieldInRequestDto arg0 = null;", javaCodes.get(0));
@@ -783,7 +781,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         }};
 
         res.setValueBasedOnInstance(resInstance);
-        List<String> javaCodesForResponse = res.newInstanceWithJava(true, true, "tmp", 0);
+        List<String> javaCodesForResponse = res.newInstanceWithJavaOrKotlin(true, true, "tmp", 0, );
 
         assertEquals(43, javaCodesForResponse.size());
         assertEquals("com.thrift.example.artificial.PrivateFieldInResponseDto tmp = null;", javaCodesForResponse.get(0));
@@ -869,7 +867,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
 
         p1.setValueBasedOnInstance(p1Instance);
 
-        List<String> javaCodes = p1.newInstanceWithJava(0);
+        List<String> javaCodes = p1.newInstanceWithJavaOrKotlin(0, true);
 
         assertEquals(19, javaCodes.size());
         assertEquals("com.thrift.example.artificial.PrivateFieldInRequestDto arg0 = null;", javaCodes.get(0));
@@ -916,7 +914,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         }};
 
         res.setValueBasedOnInstance(resInstance);
-        List<String> javaCodesForResponse = res.newInstanceWithJava(true, true, "tmp", 0);
+        List<String> javaCodesForResponse = res.newInstanceWithJavaOrKotlin(true, true, "tmp", 0, );
         assertEquals(7, javaCodesForResponse.size());
         assertEquals("com.thrift.example.artificial.PrivateFieldInResponseDto tmp = null;", javaCodesForResponse.get(0));
         assertEquals("{", javaCodesForResponse.get(1));
@@ -938,7 +936,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
 
         res.setValueBasedOnInstance(resInstance2);
 
-        javaCodesForResponse = res.newInstanceWithJava(true, true, "tmp", 0);
+        javaCodesForResponse = res.newInstanceWithJavaOrKotlin(true, true, "tmp", 0, );
         assertEquals(25, javaCodesForResponse.size());
         assertEquals("com.thrift.example.artificial.PrivateFieldInResponseDto tmp = null;", javaCodesForResponse.get(0));
         assertEquals("{", javaCodesForResponse.get(1));
@@ -1014,7 +1012,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
 //        assertEquals("722", dto.innerContent.get(6).jsonValue);
 //        assertEquals("100", dto.innerContent.get(7).jsonValue);
 
-        List<String> javacode = p1.newInstanceWithJava(0);
+        List<String> javacode = p1.newInstanceWithJavaOrKotlin(0, true);
         assertEquals(5, javacode.size());
         assertEquals("java.util.Date arg0 = null;", javacode.get(0));
         assertEquals("{", javacode.get(1));

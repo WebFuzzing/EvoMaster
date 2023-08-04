@@ -3,7 +3,7 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
-import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
+import org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.CollectionType;
 
@@ -100,27 +100,27 @@ public class ListParam extends CollectionParam<List<NamedTypedValue>>{
     }
 
     @Override
-    public List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent) {
+    public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava) {
         String fullName = getType().getTypeNameForInstance();
         List<String> codes = new ArrayList<>();
-        String var = CodeJavaGenerator.oneLineInstance(isDeclaration, doesIncludeName, fullName, variableName, null);
-        CodeJavaGenerator.addCode(codes, var, indent);
+        String var = CodeJavaOrKotlinGenerator.oneLineInstance(isDeclaration, doesIncludeName, fullName, variableName, null, );
+        CodeJavaOrKotlinGenerator.addCode(codes, var, indent);
         if (getValue() == null) return codes;
-        CodeJavaGenerator.addCode(codes, "{", indent);
+        CodeJavaOrKotlinGenerator.addCode(codes, "{", indent);
         // new array
-        CodeJavaGenerator.addCode(codes,
-                CodeJavaGenerator.setInstance(
+        CodeJavaOrKotlinGenerator.addCode(codes,
+                CodeJavaOrKotlinGenerator.setInstance(
                         variableName,
-                        CodeJavaGenerator.newList()), indent+1);
+                        CodeJavaOrKotlinGenerator.newList()), indent+1);
         int index = 0;
         for (NamedTypedValue e: getValue()){
-            String eVarName = CodeJavaGenerator.handleVariableName(variableName+"_e_"+index);
-            codes.addAll(e.newInstanceWithJava(true, true, eVarName, indent+1));
-            CodeJavaGenerator.addCode(codes, variableName+".add("+eVarName+");", indent+1);
+            String eVarName = CodeJavaOrKotlinGenerator.handleVariableName(variableName+"_e_"+index);
+            codes.addAll(e.newInstanceWithJavaOrKotlin(true, true, eVarName, indent+1, ));
+            CodeJavaOrKotlinGenerator.addCode(codes, variableName+".add("+eVarName+");", indent+1);
             index++;
         }
 
-        CodeJavaGenerator.addCode(codes, "}", indent);
+        CodeJavaOrKotlinGenerator.addCode(codes, "}", indent);
         return codes;
     }
 
@@ -128,18 +128,18 @@ public class ListParam extends CollectionParam<List<NamedTypedValue>>{
     public List<String> newAssertionWithJava(int indent, String responseVarName, int maxAssertionForDataInCollection) {
         List<String> codes = new ArrayList<>();
         if (getValue() == null){
-            CodeJavaGenerator.addCode(codes, CodeJavaGenerator.junitAssertNull(responseVarName), indent);
+            CodeJavaOrKotlinGenerator.addCode(codes, CodeJavaOrKotlinGenerator.junitAssertNull(responseVarName), indent);
             return codes;
         }
 
-        CodeJavaGenerator.addCode(codes, CodeJavaGenerator.junitAssertEquals(""+getValue().size(), CodeJavaGenerator.withSize(responseVarName)), indent);
+        CodeJavaOrKotlinGenerator.addCode(codes, CodeJavaOrKotlinGenerator.junitAssertEquals(""+getValue().size(), CodeJavaOrKotlinGenerator.withSize(responseVarName)), indent);
 
         if (maxAssertionForDataInCollection == 0)
             return codes;
 
         List<Integer> nvalue = null;
         if (maxAssertionForDataInCollection > 0 && getValue().size() > maxAssertionForDataInCollection){
-            nvalue = CodeJavaGenerator.randomNInt(getValue().size(), maxAssertionForDataInCollection);
+            nvalue = CodeJavaOrKotlinGenerator.randomNInt(getValue().size(), maxAssertionForDataInCollection);
         }else
             nvalue = IntStream.range(0, getValue().size()).boxed().collect(Collectors.toList());
 

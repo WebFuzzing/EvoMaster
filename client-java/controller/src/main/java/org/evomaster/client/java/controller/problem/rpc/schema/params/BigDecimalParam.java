@@ -2,7 +2,7 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
-import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
+import org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.BigDecimalType;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.JavaDtoSpec;
@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator.*;
+import static org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator.*;
 
 public class BigDecimalParam extends NamedTypedValue<BigDecimalType, BigDecimal> implements NumericConstraintBase<BigDecimal> {
 
@@ -102,12 +102,12 @@ public class BigDecimalParam extends NamedTypedValue<BigDecimalType, BigDecimal>
     }
 
     @Override
-    public List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent) {
+    public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava) {
         String typeName = getType().getTypeNameForInstance();
 
         List<String> codes = new ArrayList<>();
         boolean isNull = (getValue() == null);
-        String var = oneLineInstance(isDeclaration, doesIncludeName, typeName, variableName, null);
+        String var = oneLineInstance(isDeclaration, doesIncludeName, typeName, variableName, null, );
         addCode(codes, var, indent);
         if (isNull) return codes;
 
@@ -116,12 +116,12 @@ public class BigDecimalParam extends NamedTypedValue<BigDecimalType, BigDecimal>
         String consParam = getValueAsJavaString();
         if (getPrecision() != null){
             addCode(codes, oneLineInstance(true, true, MathContext.class.getName(), mcVar,
-                    newObjectConsParams(MathContext.class.getName(), getPrecision().toString())), indent+1);
+                    newObjectConsParams(MathContext.class.getName(), getPrecision().toString()), ), indent+1);
             consParam += ", "+mcVar;
         }
         addCode(codes, setInstance(variableName, newObjectConsParams(typeName, consParam)), indent+1);
         if (getScale() != null){
-            addCode(codes, oneLineSetterInstance("setScale", null, variableName, getScale()+", "+RoundingMode.class.getName()+".HALF_UP"), indent+1);
+            addCode(codes, oneLineSetterInstance("setScale", null, variableName, getScale()+", "+RoundingMode.class.getName()+".HALF_UP", ), indent+1);
         }
 
         addCode(codes, "}", indent);
@@ -133,11 +133,11 @@ public class BigDecimalParam extends NamedTypedValue<BigDecimalType, BigDecimal>
     public List<String> newAssertionWithJava(int indent, String responseVarName, int maxAssertionForDataInCollection) {
         // assertion with its string representation
         StringBuilder sb = new StringBuilder();
-        sb.append(CodeJavaGenerator.getIndent(indent));
+        sb.append(CodeJavaOrKotlinGenerator.getIndent(indent));
         if (getValue() == null)
-            sb.append(CodeJavaGenerator.junitAssertNull(responseVarName));
+            sb.append(CodeJavaOrKotlinGenerator.junitAssertNull(responseVarName));
         else
-            sb.append(CodeJavaGenerator.junitAssertEquals(getValueAsJavaString(), responseVarName+".toString()"));
+            sb.append(CodeJavaOrKotlinGenerator.junitAssertEquals(getValueAsJavaString(), responseVarName+".toString()"));
 
         return Collections.singletonList(sb.toString());
     }

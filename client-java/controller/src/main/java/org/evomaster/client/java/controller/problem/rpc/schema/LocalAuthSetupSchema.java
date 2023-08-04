@@ -2,7 +2,7 @@ package org.evomaster.client.java.controller.problem.rpc.schema;
 
 import org.evomaster.client.java.controller.api.dto.SutInfoDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
-import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
+import org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.StringParam;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
@@ -39,13 +39,13 @@ public class LocalAuthSetupSchema extends EndpointSchema{
         javaCode.add("{");
         int indent = 1;
         for (NamedTypedValue param: getRequestParams()){
-            javaCode.addAll(param.newInstanceWithJava(indent));
+            javaCode.addAll(param.newInstanceWithJavaOrKotlin(indent, true));
         }
         String paramVars = getRequestParams().stream().map(NamedTypedValue::getName).collect(Collectors.joining(","));
 
-        CodeJavaGenerator.addCode(
+        CodeJavaOrKotlinGenerator.addCode(
                 javaCode,
-                CodeJavaGenerator.methodInvocation(controllerVarName, getName(), paramVars) + CodeJavaGenerator.appendLast(),
+                CodeJavaOrKotlinGenerator.methodInvocation(controllerVarName, getName(), paramVars) + CodeJavaOrKotlinGenerator.appendLast(),
                 indent);
 
         javaCode.add("}");

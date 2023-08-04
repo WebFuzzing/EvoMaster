@@ -1,7 +1,7 @@
 package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
-import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
+import org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.EnumType;
 
@@ -69,27 +69,27 @@ public class EnumParam extends NamedTypedValue<EnumType, Integer> {
     }
 
     @Override
-    public List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent) {
+    public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava) {
         String code;
         if (accessibleSchema != null && accessibleSchema.setterMethodName != null)
-            code = CodeJavaGenerator.oneLineSetterInstance(accessibleSchema.setterMethodName, getType().getFullTypeName(), variableName, getValueAsJavaString());
+            code = CodeJavaOrKotlinGenerator.oneLineSetterInstance(accessibleSchema.setterMethodName, getType().getFullTypeName(), variableName, getValueAsJavaString(), );
         else{
             if (accessibleSchema != null && !accessibleSchema.isAccessible)
                 throw new IllegalStateException("Error: private field, but there is no setter method");
-            code = CodeJavaGenerator.oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, getValueAsJavaString());
+            code = CodeJavaOrKotlinGenerator.oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, getValueAsJavaString(), );
 
         }
-        return Collections.singletonList(CodeJavaGenerator.getIndent(indent)+ code);
+        return Collections.singletonList(CodeJavaOrKotlinGenerator.getIndent(indent)+ code);
     }
 
     @Override
     public List<String> newAssertionWithJava(int indent, String responseVarName, int maxAssertionForDataInCollection) {
         StringBuilder sb = new StringBuilder();
-        sb.append(CodeJavaGenerator.getIndent(indent));
+        sb.append(CodeJavaOrKotlinGenerator.getIndent(indent));
         if (getValue() == null)
-            sb.append(CodeJavaGenerator.junitAssertNull(responseVarName));
+            sb.append(CodeJavaOrKotlinGenerator.junitAssertNull(responseVarName));
         else
-            sb.append(CodeJavaGenerator.junitAssertEquals(CodeJavaGenerator.enumValue(getType().getFullTypeName(), getType().getItems()[getValue()]), responseVarName));
+            sb.append(CodeJavaOrKotlinGenerator.junitAssertEquals(CodeJavaOrKotlinGenerator.enumValue(getType().getFullTypeName(), getType().getItems()[getValue()]), responseVarName));
 
         return Collections.singletonList(sb.toString());
     }
@@ -98,6 +98,6 @@ public class EnumParam extends NamedTypedValue<EnumType, Integer> {
     public String getValueAsJavaString() {
         if (getValue() == null)
             return null;
-        return CodeJavaGenerator.enumValue(getType().getFullTypeName(), getType().getItems()[getValue()]);
+        return CodeJavaOrKotlinGenerator.enumValue(getType().getFullTypeName(), getType().getItems()[getValue()]);
     }
 }

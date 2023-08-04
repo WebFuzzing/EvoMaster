@@ -8,7 +8,7 @@ import java.util.stream.IntStream;
  * a set of util for generating instance creation and assertion with java in tests
  * in order to make endpoint invocation
  */
-public class CodeJavaGenerator {
+public class CodeJavaOrKotlinGenerator {
 
     /**
      * a null expression in java
@@ -21,6 +21,11 @@ public class CodeJavaGenerator {
     private final static String GET_CLIENT_METHOD = "getRPCClient";
 
 
+    private final static String KOTLIN_DECLARATION_VARIABLE = "var";
+    private final static String KOTLIN_DECLARATION_VARIABLE_NULLABLE = "?";
+    /**
+     * representation of class with generic
+     */
     public static String handleClassNameWithGeneric(String fullName, List<String> genericTypes){
         if (genericTypes == null || genericTypes.isEmpty()) return fullName;
         return String.format("%s<%s>", fullName, String.join(", ", genericTypes));
@@ -63,60 +68,78 @@ public class CodeJavaGenerator {
     /**
      * create an instance with one line
      * eg, fullName varName = value;
-     * @param isDeclaration whether the instance is also for declaration
+     *
+     * @param isDeclaration   whether the instance is also for declaration
      * @param doesIncludeName whether to include variable name
-     * @param fullName is the full name of the variable
-     * @param varName is the variable name
-     * @param value is string to create the instance
+     * @param fullName        is the full name of the variable
+     * @param varName         is the variable name
+     * @param value           is string to create the instance
+     * @param isJava
      * @return a string which could create the instance
      */
-    public static String oneLineInstance(boolean isDeclaration, boolean doesIncludeName, String fullName, String varName, String value){
-        return oneLineInstance(isDeclaration, doesIncludeName, fullName, varName, value, false);
+    public static String oneLineInstance(boolean isDeclaration, boolean doesIncludeName, String fullName, String varName, String value, boolean isJava){
+        return oneLineInstance(isDeclaration, doesIncludeName, fullName, varName, value, false, isJava);
     }
 
     /**
      * create an instance with one line
      * eg, fullName varName = value;
-     * @param isDeclaration whether the instance is also for declaration
+     *
+     * @param isDeclaration   whether the instance is also for declaration
      * @param doesIncludeName whether to include variable name
-     * @param fullName is the full name of the variable
-     * @param varName is the variable name
-     * @param value is string to create the instance
-     * @param isPrimitive indicates whether it is primitive type
+     * @param fullName        is the full name of the variable
+     * @param varName         is the variable name
+     * @param value           is string to create the instance
+     * @param isPrimitive     indicates whether it is primitive type
+     * @param isJava
      * @return a string which could create the instance
      */
-    public static String oneLineInstance(boolean isDeclaration, boolean doesIncludeName, String fullName, String varName, String value, Boolean isPrimitive){
+    public static String oneLineInstance(boolean isDeclaration, boolean doesIncludeName, String fullName, String varName, String value, Boolean isPrimitive, boolean isJava){
         StringBuilder sb = new StringBuilder();
-        if (isDeclaration)
-            sb.append(handleNestedSymbolInTypeName(fullName)).append(" ");
+        if (isDeclaration){
+            if (isJava)
+                sb.append(handleNestedSymbolInTypeName(fullName)).append(" ");
+            else
+                sb.append(KOTLIN_DECLARATION_VARIABLE);
+        }
+
         if (doesIncludeName){
             sb.append(varName);
+            if (!isJava)
+                sb.append(KOTLIN_DECLARATION_VARIABLE_NULLABLE);
+
             if (value != null || !isPrimitive)
                 sb.append(" = ");
         }
         String stringValue = NULL_EXP;
+
         if (isPrimitive)
             stringValue = "";
         if (value != null)
             stringValue = value;
 
-        sb.append(stringValue).append(";");
+        sb.append(stringValue);
+
+        if (isJava)
+            sb.append(";");
         return sb.toString();
     }
 
     /**
      * set instance with setter
      * eg, varName.setterMethodName((fullName)value)
+     *
      * @param setterMethodName is the setter method name
-     * @param fullName is full name of the instance
-     * @param varName is variable name
-     * @param value of the instance
+     * @param fullName         is full name of the instance
+     * @param varName          is variable name
+     * @param value            of the instance
+     * @param isJava
      * @return a string which set instance
      */
-    public static String oneLineSetterInstance(String setterMethodName, String fullName, String varName, String value){
+    public static String oneLineSetterInstance(String setterMethodName, String fullName, String varName, String value, boolean isJava){
         String stringValue = NULL_EXP;
         if (value != null)
-            stringValue = castToType(fullName, value);
+            stringValue = castToType(fullName, value, isJava);
 
         return String.format("%s.%s(%s);", varName, setterMethodName, stringValue);
     }
@@ -228,7 +251,7 @@ public class CodeJavaGenerator {
      * @return a list of indented codes
      */
     public static List<String> getStringListWithIndent(List<String> codes, int indent){
-        codes.replaceAll(s-> CodeJavaGenerator.getIndent(indent)+s);
+        codes.replaceAll(s-> CodeJavaOrKotlinGenerator.getIndent(indent)+s);
         return codes;
     }
 
@@ -258,13 +281,18 @@ public class CodeJavaGenerator {
 
     /**
      * cast object to a type
+     *
      * @param typeName to cast
-     * @param objCode is the code representing object to cast
+     * @param objCode  is the code representing object to cast
+     * @param isJava
      * @return a java code which casts obj to a type
      */
-    public static String castToType(String typeName, String objCode){
+    public static String castToType(String typeName, String objCode, boolean isJava){
         if (typeName == null) return objCode;
-        return String.format("((%s)(%s))", handleNestedSymbolInTypeName(typeName), objCode);
+        if (isJava)
+            return String.format("((%s)(%s))", handleNestedSymbolInTypeName(typeName), objCode);
+        else
+            return String.format("%s as? %s?", objCode, handleNestedSymbolInTypeName(typeName));
     }
 
     private static String handleNestedSymbolInTypeName(String typeName){

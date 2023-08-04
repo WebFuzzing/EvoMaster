@@ -2,7 +2,7 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
-import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
+import org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.JavaDtoSpec;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.StringType;
@@ -179,35 +179,35 @@ public class StringParam extends NamedTypedValue<StringType, String> implements 
     }
 
     @Override
-    public List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent) {
+    public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava) {
 
         String code;
         if (accessibleSchema != null && accessibleSchema.setterMethodName != null)
-            code = CodeJavaGenerator.oneLineSetterInstance(accessibleSchema.setterMethodName, null, variableName, getValueAsJavaString());
+            code = CodeJavaOrKotlinGenerator.oneLineSetterInstance(accessibleSchema.setterMethodName, null, variableName, getValueAsJavaString(), );
         else {
             if (accessibleSchema != null && !accessibleSchema.isAccessible)
                 throw new IllegalStateException("Error: private field, but there is no setter method");
-            code = CodeJavaGenerator.oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, getValueAsJavaString());
+            code = CodeJavaOrKotlinGenerator.oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, getValueAsJavaString(), );
 
         }
-        return Collections.singletonList(CodeJavaGenerator.getIndent(indent)+ code);
+        return Collections.singletonList(CodeJavaOrKotlinGenerator.getIndent(indent)+ code);
     }
 
     @Override
     public List<String> newAssertionWithJava(int indent, String responseVarName, int maxAssertionForDataInCollection) {
         StringBuilder sb = new StringBuilder();
-        sb.append(CodeJavaGenerator.getIndent(indent));
+        sb.append(CodeJavaOrKotlinGenerator.getIndent(indent));
         if (getValue() == null)
-            sb.append(CodeJavaGenerator.junitAssertNull(responseVarName));
+            sb.append(CodeJavaOrKotlinGenerator.junitAssertNull(responseVarName));
         else
-            sb.append(CodeJavaGenerator.junitAssertEquals(getValueAsJavaString(), responseVarName));
+            sb.append(CodeJavaOrKotlinGenerator.junitAssertEquals(getValueAsJavaString(), responseVarName));
 
         return Collections.singletonList(sb.toString());
     }
 
     @Override
     public String getValueAsJavaString() {
-        return getValue() == null? null:"\""+CodeJavaGenerator.handleEscapeCharInString(getValue())+"\"";
+        return getValue() == null? null:"\""+ CodeJavaOrKotlinGenerator.handleEscapeCharInString(getValue())+"\"";
     }
 
     @Override

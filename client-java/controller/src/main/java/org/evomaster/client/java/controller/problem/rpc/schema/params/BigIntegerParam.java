@@ -3,7 +3,7 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
-import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
+import org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.BigIntegerType;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.JavaDtoSpec;
@@ -99,18 +99,18 @@ public class BigIntegerParam extends NamedTypedValue<BigIntegerType, BigInteger>
     }
 
     @Override
-    public List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent) {
+    public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava) {
         String typeName = getType().getTypeNameForInstance();
 
         List<String> codes = new ArrayList<>();
         boolean isNull = (getValue() == null);
-        String var = CodeJavaGenerator.oneLineInstance(isDeclaration, doesIncludeName, typeName, variableName, null);
-        CodeJavaGenerator.addCode(codes, var, indent);
+        String var = CodeJavaOrKotlinGenerator.oneLineInstance(isDeclaration, doesIncludeName, typeName, variableName, null, );
+        CodeJavaOrKotlinGenerator.addCode(codes, var, indent);
         if (isNull) return codes;
 
-        CodeJavaGenerator.addCode(codes, "{", indent);
-        CodeJavaGenerator.addCode(codes, CodeJavaGenerator.setInstance(variableName, CodeJavaGenerator.newObjectConsParams(typeName, getValueAsJavaString())), indent+1);
-        CodeJavaGenerator.addCode(codes, "}", indent);
+        CodeJavaOrKotlinGenerator.addCode(codes, "{", indent);
+        CodeJavaOrKotlinGenerator.addCode(codes, CodeJavaOrKotlinGenerator.setInstance(variableName, CodeJavaOrKotlinGenerator.newObjectConsParams(typeName, getValueAsJavaString())), indent+1);
+        CodeJavaOrKotlinGenerator.addCode(codes, "}", indent);
 
         return codes;
     }
@@ -119,11 +119,11 @@ public class BigIntegerParam extends NamedTypedValue<BigIntegerType, BigInteger>
     public List<String> newAssertionWithJava(int indent, String responseVarName, int maxAssertionForDataInCollection) {
         // assertion with its string representation
         StringBuilder sb = new StringBuilder();
-        sb.append(CodeJavaGenerator.getIndent(indent));
+        sb.append(CodeJavaOrKotlinGenerator.getIndent(indent));
         if (getValue() == null)
-            sb.append(CodeJavaGenerator.junitAssertNull(responseVarName));
+            sb.append(CodeJavaOrKotlinGenerator.junitAssertNull(responseVarName));
         else
-            sb.append(CodeJavaGenerator.junitAssertEquals(getValueAsJavaString(), responseVarName+".toString()"));
+            sb.append(CodeJavaOrKotlinGenerator.junitAssertEquals(getValueAsJavaString(), responseVarName+".toString()"));
 
         return Collections.singletonList(sb.toString());
     }

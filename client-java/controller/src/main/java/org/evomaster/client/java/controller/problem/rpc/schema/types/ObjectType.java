@@ -2,7 +2,7 @@ package org.evomaster.client.java.controller.problem.rpc.schema.types;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.TypeDto;
-import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
+import org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
 
 import java.util.ArrayList;
@@ -59,6 +59,6 @@ public class ObjectType extends TypeSchema {
         if (genericTypes == null || genericTypes.isEmpty())
             return getFullTypeName();
         else
-            return CodeJavaGenerator.handleClassNameWithGeneric(getFullTypeName(),genericTypes);
+            return CodeJavaOrKotlinGenerator.handleClassNameWithGeneric(getFullTypeName(),genericTypes);
     }
 }

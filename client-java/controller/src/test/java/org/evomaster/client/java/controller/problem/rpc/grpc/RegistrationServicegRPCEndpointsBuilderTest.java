@@ -10,8 +10,6 @@ import org.evomaster.client.java.controller.problem.rpc.schema.types.Protobuf3By
 import org.junit.Test;
 import org.signal.registration.rpc.GetRegistrationSessionMetadataRequest;
 import org.signal.registration.rpc.RegistrationServiceGrpc;
-import org.signal.registration.rpc.RegistrationSessionMetadata;
-import org.signal.registration.rpc.RegistrationSessionMetadataOrBuilder;
 
 import java.util.Arrays;
 import java.util.List;
@@ -68,7 +66,7 @@ public class RegistrationServicegRPCEndpointsBuilderTest extends RPCEndpointsBui
         assertTrue(inputInstance instanceof GetRegistrationSessionMetadataRequest);
         assertEquals("foo", ((GetRegistrationSessionMetadataRequest) inputInstance).getSessionId().toStringUtf8());
 
-        List<String> param1InstanceJava = inputParam.newInstanceWithJava(true, true, "request", 0);
+        List<String> param1InstanceJava = inputParam.newInstanceWithJavaOrKotlin(true, true, "request", 0, );
 
         String[] expectedContents = ("org.signal.registration.rpc.GetRegistrationSessionMetadataRequest request = null;\n" +
             "{\n" +

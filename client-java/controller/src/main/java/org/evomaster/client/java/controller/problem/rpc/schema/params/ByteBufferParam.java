@@ -2,7 +2,7 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
-import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
+import org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.ByteBufferType;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.JavaDtoSpec;
@@ -70,20 +70,20 @@ public class ByteBufferParam extends NamedTypedValue<ByteBufferType, ByteBuffer>
     }
 
     @Override
-    public List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent) {
+    public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava) {
         List<String> codes = new ArrayList<>();
-        String var = CodeJavaGenerator.oneLineInstance(isDeclaration, doesIncludeName, ByteBuffer.class.getName(), variableName, null);
-        CodeJavaGenerator.addCode(codes, var, indent);
+        String var = CodeJavaOrKotlinGenerator.oneLineInstance(isDeclaration, doesIncludeName, ByteBuffer.class.getName(), variableName, null, );
+        CodeJavaOrKotlinGenerator.addCode(codes, var, indent);
         if (getValue() == null) return codes;
-        CodeJavaGenerator.addCode(codes, "{", indent);
+        CodeJavaOrKotlinGenerator.addCode(codes, "{", indent);
         String varValue = variableName+"_byteArray";
         String byteArray = "\""+ new String(getValue().array(), StandardCharsets.UTF_8) + "\".getBytes("+StandardCharsets.class.getName()+".UTF_8)";
-        CodeJavaGenerator.addCode(codes,
-                CodeJavaGenerator.oneLineInstance(true, true, "byte[]", varValue, byteArray), indent + 1);
-        CodeJavaGenerator.addCode(codes,
-                CodeJavaGenerator.oneLineInstance(false, true, String.class.getName(), variableName, ByteBuffer.class.getName()+".allocate("+varValue+".length)"), indent + 1);
-        CodeJavaGenerator.addCode(codes, variableName+".put("+varValue+");", indent+1);
-        CodeJavaGenerator.addCode(codes, "}", indent);
+        CodeJavaOrKotlinGenerator.addCode(codes,
+                CodeJavaOrKotlinGenerator.oneLineInstance(true, true, "byte[]", varValue, byteArray, ), indent + 1);
+        CodeJavaOrKotlinGenerator.addCode(codes,
+                CodeJavaOrKotlinGenerator.oneLineInstance(false, true, String.class.getName(), variableName, ByteBuffer.class.getName()+".allocate("+varValue+".length)", ), indent + 1);
+        CodeJavaOrKotlinGenerator.addCode(codes, variableName+".put("+varValue+");", indent+1);
+        CodeJavaOrKotlinGenerator.addCode(codes, "}", indent);
 
         return codes;
     }
@@ -91,9 +91,9 @@ public class ByteBufferParam extends NamedTypedValue<ByteBufferType, ByteBuffer>
     @Override
     public List<String> newAssertionWithJava(int indent, String responseVarName, int maxAssertionForDataInCollection) {
         StringBuilder sb = new StringBuilder();
-        sb.append(CodeJavaGenerator.getIndent(indent));
+        sb.append(CodeJavaOrKotlinGenerator.getIndent(indent));
         if (getValue() == null)
-            sb.append(CodeJavaGenerator.junitAssertNull(responseVarName));
+            sb.append(CodeJavaOrKotlinGenerator.junitAssertNull(responseVarName));
         else
             sb.append("// not handle ByteBuffer assertion");
         return Collections.singletonList(sb.toString());

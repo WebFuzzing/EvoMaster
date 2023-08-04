@@ -3,7 +3,7 @@ package org.evomaster.client.java.controller.problem.rpc.schema;
 import org.evomaster.client.java.controller.api.dto.SutInfoDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.SeededRPCActionDto;
-import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
+import org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.PrimitiveOrWrapperType;
 
@@ -198,27 +198,27 @@ public class EndpointSchema {
         List<String> javaCode = new ArrayList<>();
         if (response != null){
             boolean isPrimitive = (response.getType() instanceof PrimitiveOrWrapperType) && !((PrimitiveOrWrapperType)response.getType()).isWrapper;
-            javaCode.add(CodeJavaGenerator.oneLineInstance(true, true, response.getType().getTypeNameForInstance(), responseVarName, null, isPrimitive));
+            javaCode.add(CodeJavaOrKotlinGenerator.oneLineInstance(true, true, response.getType().getTypeNameForInstance(), responseVarName, null, isPrimitive));
         }
         javaCode.add("{");
         int indent = 1;
         for (NamedTypedValue param: getRequestParams()){
-            javaCode.addAll(param.newInstanceWithJava(indent));
+            javaCode.addAll(param.newInstanceWithJavaOrKotlin(indent, true));
         }
         String paramVars = requestParams.stream().map(NamedTypedValue::getName).collect(Collectors.joining(","));
         String client = clientVariable;
         if (client == null)
-            client = CodeJavaGenerator.castToType(clientTypeName, CodeJavaGenerator.getGetClientMethod(controllerVarName,"\""+interfaceName+"\""));
+            client = CodeJavaOrKotlinGenerator.castToType(clientTypeName, CodeJavaOrKotlinGenerator.getGetClientMethod(controllerVarName,"\""+interfaceName+"\""), );
 
         if (client == null){
             throw new IllegalArgumentException("fail to generate code for accessing client :"+clientTypeName);
         }
 
-        CodeJavaGenerator.addCode(
+        CodeJavaOrKotlinGenerator.addCode(
                 javaCode,
-                CodeJavaGenerator.setInstance(response!= null,
+                CodeJavaOrKotlinGenerator.setInstance(response!= null,
                         responseVarName,
-                        CodeJavaGenerator.methodInvocation(client, getName(), paramVars)),
+                        CodeJavaOrKotlinGenerator.methodInvocation(client, getName(), paramVars)),
                 indent);
 
         javaCode.add("}");

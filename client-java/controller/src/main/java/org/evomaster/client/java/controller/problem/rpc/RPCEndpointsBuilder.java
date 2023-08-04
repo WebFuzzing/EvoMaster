@@ -511,7 +511,7 @@ public class RPCEndpointsBuilder {
                                          Map<TypeVariable, Type> genericTypeMap, boolean isTypeToIdentify) {
         handleGenericSuperclass(clazz, genericTypeMap);
         List<String> genericTypes = handleGenericType(clazz, genericType, genericTypeMap);
-        String clazzWithGenericTypes = CodeJavaGenerator.handleClassNameWithGeneric(clazz.getName(), genericTypes);
+        String clazzWithGenericTypes = CodeJavaOrKotlinGenerator.handleClassNameWithGeneric(clazz.getName(), genericTypes);
         flattenDepth.add(getObjectTypeNameWithFlag(clazz, clazzWithGenericTypes, level));
         NamedTypedValue namedValue = null;
 
