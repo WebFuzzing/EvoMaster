@@ -253,7 +253,7 @@ class RPCTestCaseWriter : ApiTestCaseWriter() {
 
         val clientVariables = rpcHandler.getClientAndItsVariable()
         clientVariables.forEach { (t, u)->
-            val getClient = "${TestSuiteWriter.controller}.getRPCClient(\"${u.second}\")"
+            val getClient = "${TestSuiteWriter.controller}.getRPCClient(\"${if (format.isKotlin()) u.second.replace("$","\\$") else u.second}\")"
             when{
                 config.outputFormat.isKotlin()-> lines.add("$t = $getClient as ${handleClientType(u.first)}")
                 config.outputFormat.isJava() -> lines.add("$t = (${handleClientType(u.first)}) $getClient")
