@@ -71,7 +71,7 @@ public class ByteBufferParam extends NamedTypedValue<ByteBufferType, ByteBuffer>
     }
 
     @Override
-    public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava) {
+    public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava, boolean isVariableNullable) {
         List<String> codes = new ArrayList<>();
         String var = oneLineInstance(isDeclaration, doesIncludeName, ByteBuffer.class.getName(), variableName, null,isJava,isNullable() );
         addCode(codes, var, indent);

@@ -41,7 +41,7 @@ public class LocalAuthSetupSchema extends EndpointSchema{
         javaCode.add(codeBlockStart(outputFormat.isJava()));
         int indent = 1;
         for (NamedTypedValue param: getRequestParams()){
-            javaCode.addAll(param.newInstanceWithJavaOrKotlin(indent, true));
+            javaCode.addAll(param.newInstanceWithJavaOrKotlin(indent, true, true));
         }
         String paramVars = getRequestParams().stream().map(NamedTypedValue::getName).collect(Collectors.joining(","));
 

@@ -401,14 +401,14 @@ public class CodeJavaOrKotlinGenerator {
      * @param methodName specifies a name of the method
      * @param params     specifies a list of params
      * @param isJava
-     * @param isNullable
+     * @param objIsNullable
      * @return code to invoke the method
      */
-    public static String methodInvocation(String obj, String methodName, String params, boolean isJava, boolean isNullable){
+    public static String methodInvocation(String obj, String methodName, String params, boolean isJava, boolean objIsNullable){
         if (obj == null)
             return String.format("%s(%s)", methodName, params);
 
-        return String.format("%s%s.%s(%s)", obj,variableNullableMark(isJava, isNullable), methodName, params);
+        return String.format("%s%s.%s(%s)", obj,variableNullableMark(isJava, objIsNullable), methodName, params);
     }
 
     /**

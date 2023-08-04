@@ -230,7 +230,7 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
     }
 
     @Override
-    public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava) {
+    public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava, boolean isVariableNullable) {
         String typeName = getType().getTypeNameForInstanceInJavaOrKotlin(isJava);
         String varName = variableName;
 
@@ -261,14 +261,14 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
                      fName = varName+"_"+f.getName();
                      fdeclar = true;
                 }
-                codes.addAll(f.newInstanceWithJavaOrKotlin(fdeclar, true, fName, indent+1, isJava));
+                codes.addAll(f.newInstanceWithJavaOrKotlin(fdeclar, true, fName, indent+1, isJava, isNullable()));
 
                 if (needRenameField(f)){
-                    addCode(codes, methodInvocation(ownVarName, f.accessibleSchema.setterMethodName, fName,isJava, f.isNullable())+ getStatementLast(isJava),indent+1);
+                    addCode(codes, methodInvocation(ownVarName, f.accessibleSchema.setterMethodName, fName,isJava, isNullable())+ getStatementLast(isJava),indent+1);
                 }
             }else {
                 codes.addAll(f.newInstanceWithJavaOrKotlin(false, true,
-                    methodInvocation(var,f.getName(),"",isJava, f.isNullable()), indent+1, isJava));
+                    methodInvocation(var,f.getName(),"",isJava, isNullable()), indent+1, isJava, isNullable()));
             }
         }
 

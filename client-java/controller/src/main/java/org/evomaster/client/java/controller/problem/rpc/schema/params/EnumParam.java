@@ -70,7 +70,7 @@ public class EnumParam extends NamedTypedValue<EnumType, Integer> {
     }
 
     @Override
-    public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava) {
+    public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava, boolean isVariableNullable) {
         String code;
         if (accessibleSchema != null && accessibleSchema.setterMethodName != null)
             code = oneLineSetterInstance(accessibleSchema.setterMethodName, getType().getFullTypeName(), variableName, getValueAsJavaString(isJava),isJava, isNullable());

@@ -147,18 +147,18 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
     }
 
     @Override
-    public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava) {
+    public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava, boolean isVariableNullable) {
         String code;
         if (!getType().isWrapper && getValue() == null){
             // ignore instance of primitive types if the value is not assigned
             return Collections.emptyList();
         }
         if (accessibleSchema != null && accessibleSchema.setterMethodName != null)
-            code = CodeJavaOrKotlinGenerator.oneLineSetterInstance(accessibleSchema.setterMethodName, getCastType(), variableName, getValueAsJavaString(isJava),isJava, isNullable());
+            code = CodeJavaOrKotlinGenerator.oneLineSetterInstance(accessibleSchema.setterMethodName, getCastType(), variableName, getValueAsJavaString(isJava),isJava, isVariableNullable);
         else {
             if (accessibleSchema != null && !accessibleSchema.isAccessible)
                 throw new IllegalStateException("Error: private field, but there is no setter method");
-            code = CodeJavaOrKotlinGenerator.oneLineInstance(isDeclaration, doesIncludeName, getType().getTypeNameForInstanceInJavaOrKotlin(isJava), variableName, getValueAsJavaString(isJava), isJava, isNullable());
+            code = CodeJavaOrKotlinGenerator.oneLineInstance(isDeclaration, doesIncludeName, getType().getTypeNameForInstanceInJavaOrKotlin(isJava), variableName, getValueAsJavaString(isJava), isJava, isVariableNullable);
         }
 
         return Collections.singletonList(CodeJavaOrKotlinGenerator.getIndent(indent)+ code);

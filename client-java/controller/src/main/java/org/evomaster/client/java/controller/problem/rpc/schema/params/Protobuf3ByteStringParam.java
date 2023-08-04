@@ -91,7 +91,7 @@ public class Protobuf3ByteStringParam extends NamedTypedValue<Protobuf3ByteStrin
     }
 
     @Override
-    public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava) {
+    public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava, boolean isVariableNullable) {
         List<String> codes = new ArrayList<>();
         String var = oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, null,isJava, isNullable());
         addCode(codes, var, indent);

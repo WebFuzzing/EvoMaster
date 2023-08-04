@@ -109,7 +109,7 @@ public class ArrayParam extends CollectionParam<List<NamedTypedValue>>{
     }
 
     @Override
-    public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava) {
+    public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava, boolean isVariableNullable) {
         String fullName = getType().getTypeNameForInstanceInJavaOrKotlin(isJava);
         List<String> codes = new ArrayList<>();
         String var = oneLineInstance(isDeclaration, doesIncludeName, fullName, variableName, null, isJava, isNullable());
@@ -126,7 +126,7 @@ public class ArrayParam extends CollectionParam<List<NamedTypedValue>>{
         int index = 0;
         for (NamedTypedValue e: getValue()){
             String eVar = variableName+"["+index+"]";
-            codes.addAll(e.newInstanceWithJavaOrKotlin(false, true, eVar, indent+1, isJava));
+            codes.addAll(e.newInstanceWithJavaOrKotlin(false, true, eVar, indent+1, isJava, isVariableNullable));
             index++;
         }
 

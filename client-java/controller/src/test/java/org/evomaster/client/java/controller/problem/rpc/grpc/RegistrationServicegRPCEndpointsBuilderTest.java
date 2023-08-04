@@ -66,7 +66,7 @@ public class RegistrationServicegRPCEndpointsBuilderTest extends RPCEndpointsBui
         assertTrue(inputInstance instanceof GetRegistrationSessionMetadataRequest);
         assertEquals("foo", ((GetRegistrationSessionMetadataRequest) inputInstance).getSessionId().toStringUtf8());
 
-        List<String> param1InstanceJava = inputParam.newInstanceWithJavaOrKotlin(true, true, "request", 0, true);
+        List<String> param1InstanceJava = inputParam.newInstanceWithJavaOrKotlin(true, true, "request", 0, true, true);
 
         String[] expectedContents = ("org.signal.registration.rpc.GetRegistrationSessionMetadataRequest request = null;\n" +
             "{\n" +
@@ -107,7 +107,7 @@ public class RegistrationServicegRPCEndpointsBuilderTest extends RPCEndpointsBui
 
 
 
-        List<String> param1InstanceKotlin = inputParam.newInstanceWithJavaOrKotlin(true, true, "request", 0, false);
+        List<String> param1InstanceKotlin = inputParam.newInstanceWithJavaOrKotlin(true, true, "request", 0, false, true);
         param1InstanceKotlin.forEach(System.out::println);
 //        String[] expectedKotlinContents = ("org.signal.registration.rpc.GetRegistrationSessionMetadataRequest request = null;\n" +
 //            "{\n" +

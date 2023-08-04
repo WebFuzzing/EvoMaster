@@ -204,7 +204,7 @@ public class EndpointSchema {
         javaCode.add(codeBlockStart(outputFormat.isJava()));
         int indent = 1;
         for (NamedTypedValue param: getRequestParams()){
-            javaCode.addAll(param.newInstanceWithJavaOrKotlin(indent, outputFormat.isJava()));
+            javaCode.addAll(param.newInstanceWithJavaOrKotlin(indent, outputFormat.isJava(), getResponse().isNullable()));
         }
         String paramVars = requestParams.stream().map(NamedTypedValue::getName).collect(Collectors.joining(","));
         String client = clientVariable;

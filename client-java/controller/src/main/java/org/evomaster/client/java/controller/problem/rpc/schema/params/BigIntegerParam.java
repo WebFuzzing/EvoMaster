@@ -100,7 +100,7 @@ public class BigIntegerParam extends NamedTypedValue<BigIntegerType, BigInteger>
     }
 
     @Override
-    public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava) {
+    public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava, boolean isVariableNullable) {
         String typeName = getType().getTypeNameForInstanceInJavaOrKotlin(isJava);
 
         List<String> codes = new ArrayList<>();

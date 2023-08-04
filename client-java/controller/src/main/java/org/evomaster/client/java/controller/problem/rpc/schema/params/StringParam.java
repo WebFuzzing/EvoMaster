@@ -180,15 +180,15 @@ public class StringParam extends NamedTypedValue<StringType, String> implements 
     }
 
     @Override
-    public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava) {
+    public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava, boolean isVariableNullable) {
 
         String code;
         if (accessibleSchema != null && accessibleSchema.setterMethodName != null)
-            code = oneLineSetterInstance(accessibleSchema.setterMethodName, null, variableName, getValueAsJavaString(isJava), isJava, isNullable());
+            code = oneLineSetterInstance(accessibleSchema.setterMethodName, null, variableName, getValueAsJavaString(isJava), isJava, isVariableNullable);
         else {
             if (accessibleSchema != null && !accessibleSchema.isAccessible)
                 throw new IllegalStateException("Error: private field, but there is no setter method");
-            code = oneLineInstance(isDeclaration, doesIncludeName, getType().getTypeNameForInstanceInJavaOrKotlin(isJava), variableName, getValueAsJavaString(isJava), isJava, isNullable());
+            code = oneLineInstance(isDeclaration, doesIncludeName, getType().getTypeNameForInstanceInJavaOrKotlin(isJava), variableName, getValueAsJavaString(isJava), isJava, isVariableNullable);
 
         }
         return Collections.singletonList(getIndent(indent)+ code);

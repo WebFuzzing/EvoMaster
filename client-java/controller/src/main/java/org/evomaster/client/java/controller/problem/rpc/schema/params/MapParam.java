@@ -110,7 +110,7 @@ public class MapParam extends NamedTypedValue<MapType, List<PairParam>>{
     }
 
     @Override
-    public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava) {
+    public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava, boolean isVariableNullable) {
         String fullName = getType().getTypeNameForInstanceInJavaOrKotlin(isJava);
         List<String> codes = new ArrayList<>();
         String var = oneLineInstance(isDeclaration, doesIncludeName, fullName, variableName, null, isJava, isNullable());
@@ -131,11 +131,11 @@ public class MapParam extends NamedTypedValue<MapType, List<PairParam>>{
             String eKeyVarName = handleVariableName(variableName+"_key_"+index);
             if (e.getValue().getKey() == null)
                 throw new RuntimeException("key should not been null");
-            codes.addAll(e.getValue().getKey().newInstanceWithJavaOrKotlin(true, true, eKeyVarName, indent+1, isJava));
+            codes.addAll(e.getValue().getKey().newInstanceWithJavaOrKotlin(true, true, eKeyVarName, indent+1, isJava, isVariableNullable));
             String eValueVarName = CodeJavaOrKotlinGenerator.handleVariableName(variableName+"_value_"+index);
             if (e.getValue().getValue() == null)
                 throw new RuntimeException("value should not been null");
-            codes.addAll(e.getValue().getValue().newInstanceWithJavaOrKotlin(true, true, eValueVarName, indent+1, isJava));
+            codes.addAll(e.getValue().getValue().newInstanceWithJavaOrKotlin(true, true, eValueVarName, indent+1, isJava, isVariableNullable));
             addCode(codes, variableName+".put("+eKeyVarName+","+eValueVarName+");", indent+1);
             index++;
         }

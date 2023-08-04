@@ -71,7 +71,7 @@ public class DateParam extends NamedTypedValue<DateType, List<IntParam>>{
     }
 
     @Override
-    public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava) {
+    public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava, boolean isVariableNullable) {
         String typeName = getType().getTypeNameForInstanceInJavaOrKotlin(isJava);
         String varName = variableName;
 
