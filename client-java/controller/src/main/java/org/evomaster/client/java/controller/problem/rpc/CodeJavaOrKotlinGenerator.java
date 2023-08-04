@@ -167,7 +167,7 @@ public class CodeJavaOrKotlinGenerator {
         if (value != null)
             stringValue = castToType(fullName, value, isJava);
 
-        return String.format("%s%s.%s(%s);", varName, variableNullableMark(isJava),setterMethodName, stringValue);
+        return String.format("%s%s.%s(%s)%s", varName, variableNullableMark(isJava),setterMethodName, stringValue, getStatementLast(isJava));
     }
 
     /**

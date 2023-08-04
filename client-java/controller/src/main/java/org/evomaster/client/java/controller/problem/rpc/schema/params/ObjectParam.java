@@ -264,7 +264,7 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
                 codes.addAll(f.newInstanceWithJavaOrKotlin(fdeclar, true, fName, indent+1, isJava));
 
                 if (needRenameField(f)){
-                    addCode(codes, methodInvocation(ownVarName, f.accessibleSchema.setterMethodName, fName,isJava )+ getStatementLast(isJava),indent+1);
+                    addCode(codes, methodInvocation(ownVarName, f.accessibleSchema.setterMethodName, fName,isJava)+ getStatementLast(isJava),indent+1);
                 }
             }else {
                 codes.addAll(f.newInstanceWithJavaOrKotlin(false, true,
