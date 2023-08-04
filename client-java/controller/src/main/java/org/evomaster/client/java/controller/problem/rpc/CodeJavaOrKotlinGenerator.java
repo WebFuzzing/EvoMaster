@@ -146,94 +146,129 @@ public class CodeJavaOrKotlinGenerator {
 
     /**
      * process [varName] = new Object()
-     * @param varName specifies the variable name
+     *
      * @param fullName specifies the full name of the class
+     * @param varName  specifies the variable name
+     * @param isJava
      * @return code to set value with new object which has default constructor
      */
-    public static String setInstanceObject(String fullName, String varName){
-        return String.format("%s = %s;", varName, newObject(fullName));
+    public static String setInstanceObject(String fullName, String varName, boolean isJava){
+
+        return String.format("%s = %s%s", varName, newObject(fullName, isJava), getStatementLast(isJava));
     }
 
+    /**
+     * handle last of statement for Java or kotlin
+     * @return eg, a string which appends ; at last for Java
+     */
+    public static String getStatementLast(boolean isJava){
+        if (isJava)
+            return ";";
+        return "";
+    }
 
     /**
-     *
-     * @param fullName is the full name of the dto
+     * @param fullName       is the full name of the dto
      * @param varBuilderName is the variable name for the builder
+     * @param isJava
      * @return code to instantiate builder for proto3 dto
      */
-    public static String newBuilderProto3(String fullName, String varBuilderName){
-        return String.format("%s.Builder %s = %s.newBuilder();", fullName, varBuilderName, fullName);
+    public static String newBuilderProto3(String fullName, String varBuilderName, boolean isJava){
+        String dec = KOTLIN_DECLARATION_VARIABLE;
+        if (isJava)
+            dec = String.format("%s.Builder", fullName);
+        return String.format("%s %s = %s.newBuilder()%s", dec, varBuilderName, fullName, getStatementLast(isJava));
     }
 
     /**
      * process [varName] = [instance]
-     * @param varName specifies the variable name
+     *
+     * @param varName  specifies the variable name
      * @param instance specifies the instance
+     * @param isJava
      * @return code to set value
      */
-    public static String setInstance(String varName, String instance){
-        return String.format("%s = %s;", varName, instance);
+    public static String setInstance(String varName, String instance, boolean isJava){
+        return String.format("%s = %s%s", varName, instance,getStatementLast(isJava));
     }
 
     /**
      * process [varName] = [instance]; or [instance];
+     *
      * @param includeVarName specifies whether to set instance to variable
-     * @param varName specifies the variable name
-     * @param instance specifies the instance
+     * @param varName        specifies the variable name
+     * @param instance       specifies the instance
+     * @param isJava
      * @return code to set value
      */
-    public static String setInstance(boolean includeVarName, String varName, String instance){
+    public static String setInstance(boolean includeVarName, String varName, String instance, boolean isJava){
         if (includeVarName)
-            return String.format("%s = %s;", varName, instance);
-        return instance+ appendLast();
+            return String.format("%s = %s%s", varName, instance,getStatementLast(isJava));
+        return instance + getStatementLast(isJava);
     }
 
     /**
      * process new Object()
+     *
      * @param fullName is a full name of the type of object
+     * @param isJava
      * @return code to new object with default constructor
      */
-    public static String newObject(String fullName){
-        return newObjectConsParams(fullName, "");
+    public static String newObject(String fullName, boolean isJava){
+        return newObjectConsParams(fullName, "", isJava);
     }
 
     /**
      * process new Object(p1, p2)
+     *
      * @param fullName is a full name of the type of object
-     * @param params is a string which could represent a list of params divided with ,
+     * @param params   is a string which could represent a list of params divided with ,
+     * @param isJava
      * @return code to new object with params constructor
      */
-    public static String newObjectConsParams(String fullName, String params){
-        return String.format("new %s(%s)", handleNestedSymbolInTypeName(fullName), params);
+    public static String newObjectConsParams(String fullName, String params, boolean isJava){
+        if (isJava)
+            return String.format("new %s(%s)", handleNestedSymbolInTypeName(fullName), params);
+        else
+            return String.format("%s(%s)", handleNestedSymbolInTypeName(fullName), params);
     }
 
     /**
-     *
      * @param fullName is full name of the type
-     * @param length is length of array to new
+     * @param length   is length of array to new
+     * @param isJava
      * @return a string which could create a new array, eg, new String[5]
      */
-    public static String newArray(String fullName, int length){
-        return String.format("new %s[%d]", fullName, length);
+    public static String newArray(String fullName, int length, boolean isJava){
+        if (isJava)
+            return String.format("new %s[%d]", fullName, length);
+        else
+            return String.format("Array<%s>(%d)", fullName, length);
     }
 
     /**
      * @return a string which could create a new HashSet
      */
-    public static String newSet(){
-        return "new "+ HashSet.class.getName()+"<>()";
+    public static String newSet(boolean isJava, String genericType){
+        if (!isJava)
+            return String.format("mutableSetOf<%s>()", genericType);
+        return String.format("new %s<>()", HashSet.class.getName());
     }
     /**
      * @return a string which could create a new HashMap
      */
-    public static String newMap(){
-        return "new " + HashMap.class.getName()+"<>()";
+    public static String newMap(boolean isJava, String keyGenericType, String valueGenericType){
+        if (!isJava)
+            return String.format("mutableMapOf<%s, %s>()", keyGenericType, valueGenericType);
+        return String.format("new %s<>()", HashMap.class.getName());
     }
     /**
      * @return a string which could create a new ArrayList
      */
-    public static String newList(){
-        return "new "+ArrayList.class.getName()+"<>()";
+    public static String newList(boolean isJava, String genericType){
+        if (!isJava)
+            return String.format("mutableListOf<%s>()", genericType);
+        return String.format("new %s<>()", ArrayList.class.getName());
     }
 
     /**
@@ -324,21 +359,13 @@ public class CodeJavaOrKotlinGenerator {
     }
 
     /**
-     * handle last for java
-     * @return a string which appends ; at last
-     */
-    public static String appendLast(){
-        return ";";
-    }
-
-    /**
-     *
      * @param expectedValue is the excepted value
-     * @param variableName is the variable name to be checked
+     * @param variableName  is the variable name to be checked
+     * @param isJava
      * @return an assertion for equal with junit
      */
-    public static String junitAssertEquals(String expectedValue, String variableName){
-        String assertionScript= String.format("assertEquals(%s, %s)", expectedValue, variableName) + appendLast();
+    public static String junitAssertEquals(String expectedValue, String variableName, boolean isJava){
+        String assertionScript= String.format("assertEquals(%s, %s)", expectedValue, variableName) + getStatementLast(isJava);
         if (AssertionsUtil.getAssertionsWithComment(assertionScript)){
             return "//" + assertionScript;
         }
@@ -357,12 +384,12 @@ public class CodeJavaOrKotlinGenerator {
     }
 
     /**
-     *
      * @param variableName is the variable name to be checked
+     * @param isJava
      * @return a null assertion with junit
      */
-    public static String junitAssertNull(String variableName){
-        String assertionScript= String.format("assertNull(%s)", variableName) + appendLast();
+    public static String junitAssertNull(String variableName, boolean isJava){
+        String assertionScript= String.format("assertNull(%s)", variableName) + getStatementLast(isJava);
         if (AssertionsUtil.getAssertionsWithComment(assertionScript)){
             return "//" + assertionScript;
         }
@@ -388,12 +415,14 @@ public class CodeJavaOrKotlinGenerator {
 
     /**
      * junit does not support equal assertions for double type, then employ numbersMatch here
+     *
      * @param expectedValue is the excepted value
-     * @param variableName is the variable name to be checked
+     * @param variableName  is the variable name to be checked
+     * @param isJava
      * @return a True assertion with numbersMatch method.
      */
-    public static String junitAssertNumbersMatch(String expectedValue, String variableName){
-        String assertionScript= String.format("assertTrue(numbersMatch(%s, %s))", expectedValue, variableName) + appendLast();
+    public static String junitAssertNumbersMatch(String expectedValue, String variableName, boolean isJava){
+        String assertionScript= String.format("assertTrue(numbersMatch(%s, %s))", expectedValue, variableName) + getStatementLast(isJava);
         if (AssertionsUtil.getAssertionsWithComment(assertionScript)){
             return "//" + assertionScript;
         }
