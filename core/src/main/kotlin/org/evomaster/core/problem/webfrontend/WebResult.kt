@@ -1,7 +1,7 @@
 package org.evomaster.core.problem.webfrontend
 
-import org.evomaster.core.search.Action
-import org.evomaster.core.search.ActionResult
+import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.action.ActionResult
 import java.net.URL
 
 class WebResult : ActionResult {

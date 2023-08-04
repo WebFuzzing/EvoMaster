@@ -6,8 +6,8 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCExceptionInfo
 import org.evomaster.client.java.controller.api.dto.problem.rpc.exception.RPCExceptionCategory
 import org.evomaster.client.java.controller.api.dto.problem.rpc.exception.RPCExceptionType
 import org.evomaster.core.Lazy
-import org.evomaster.core.search.Action
-import org.evomaster.core.search.ActionResult
+import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.action.ActionResult
 
 /**
  * define RPC call result with various situations,

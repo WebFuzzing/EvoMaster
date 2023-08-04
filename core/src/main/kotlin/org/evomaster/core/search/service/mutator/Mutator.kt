@@ -3,7 +3,7 @@ package org.evomaster.core.search.service.mutator
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
-import org.evomaster.core.database.DbAction
+import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
@@ -106,7 +106,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
             log.trace("mutator will be applied, and the individual contains {} dbactions which are",
                 individual.individual.seeInitializingActions().size,
                 individual.individual.seeInitializingActions().joinToString(","){
-                    if (it is DbAction) it.getResolvedName() else it.getName()
+                    if (it is SqlAction) it.getResolvedName() else it.getName()
                 } )
         }
 

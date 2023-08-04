@@ -3,7 +3,7 @@ package org.evomaster.core.problem.httpws
 import com.google.common.annotations.VisibleForTesting
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
-import org.evomaster.core.search.ActionResult
+import org.evomaster.core.search.action.ActionResult
 import javax.ws.rs.core.MediaType
 
 abstract class HttpWsCallResult : ActionResult {

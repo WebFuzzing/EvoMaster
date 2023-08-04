@@ -1,8 +1,8 @@
 package org.evomaster.e2etests.spring.examples.resource;
 
 import org.evomaster.core.problem.rest.resource.RestResourceCalls;
-import org.evomaster.core.search.Action;
-import org.evomaster.core.search.ActionFilter;
+import org.evomaster.core.search.action.Action;
+import org.evomaster.core.search.action.ActionFilter;
 import org.evomaster.core.search.gene.Gene;
 
 import java.util.*;
