@@ -188,7 +188,7 @@ public class StringParam extends NamedTypedValue<StringType, String> implements 
         else {
             if (accessibleSchema != null && !accessibleSchema.isAccessible)
                 throw new IllegalStateException("Error: private field, but there is no setter method");
-            code = oneLineInstance(isDeclaration, doesIncludeName, getType().getSimpleTypeName(), variableName, getValueAsJavaString(isJava), isJava);
+            code = oneLineInstance(isDeclaration, doesIncludeName, getType().getTypeNameForInstanceInJavaOrKotlin(isJava), variableName, getValueAsJavaString(isJava), isJava);
 
         }
         return Collections.singletonList(getIndent(indent)+ code);
