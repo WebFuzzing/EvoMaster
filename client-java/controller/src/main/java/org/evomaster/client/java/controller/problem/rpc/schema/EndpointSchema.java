@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.problem.rpc.schema;
 
+import org.evomaster.client.java.controller.api.dto.SutInfoDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.SeededRPCActionDto;
 import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
@@ -187,11 +188,13 @@ public class EndpointSchema {
 
     /**
      * process to generate java code to invoke this request
+     *
      * @param responseVarName specifies a variable name representing a response of this endpoint
      * @param clientVariable
+     * @param outputFormat
      * @return code to send the request and set the response if exists
      */
-    public List<String> newInvocationWithJava(String responseVarName, String controllerVarName, String clientVariable){
+    public List<String> newInvocationWithSpecifiedFormat(String responseVarName, String controllerVarName, String clientVariable, SutInfoDto.OutputFormat outputFormat){
         List<String> javaCode = new ArrayList<>();
         if (response != null){
             boolean isPrimitive = (response.getType() instanceof PrimitiveOrWrapperType) && !((PrimitiveOrWrapperType)response.getType()).isWrapper;

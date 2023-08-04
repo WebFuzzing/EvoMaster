@@ -809,7 +809,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         handleLocalAuthenticationSetup(endpointSchema.getAuthenticationInfo());
 
         if (dto.responseVariable != null && dto.doGenerateTestScript){
-            responseDto.testScript = endpointSchema.newInvocationWithJava(dto.responseVariable, dto.controllerVariable,dto.clientVariable);
+            responseDto.testScript = endpointSchema.newInvocationWithSpecifiedFormat(dto.responseVariable, dto.controllerVariable,dto.clientVariable, SutInfoDto.OutputFormat.JAVA_JUNIT_4);
         }
     }
 
@@ -821,7 +821,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         EndpointSchema endpointSchema = getEndpointSchema(dto);
         if (dto.responseVariable != null && dto.doGenerateTestScript){
             try{
-                responseDto.testScript = endpointSchema.newInvocationWithJava(dto.responseVariable, dto.controllerVariable,dto.clientVariable);
+                responseDto.testScript = endpointSchema.newInvocationWithSpecifiedFormat(dto.responseVariable, dto.controllerVariable,dto.clientVariable, dto.outputFormat);
             }catch (Exception e){
                 SimpleLogger.warn("Fail to generate test script"+e.getMessage());
             }

@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.problem.rpc.schema;
 
+import org.evomaster.client.java.controller.api.dto.SutInfoDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
 import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
@@ -33,7 +34,7 @@ public class LocalAuthSetupSchema extends EndpointSchema{
     }
 
     @Override
-    public List<String> newInvocationWithJava(String responseVarName, String controllerVarName, String clientVariable) {
+    public List<String> newInvocationWithSpecifiedFormat(String responseVarName, String controllerVarName, String clientVariable, SutInfoDto.OutputFormat outputFormat) {
         List<String> javaCode = new ArrayList<>();
         javaCode.add("{");
         int indent = 1;

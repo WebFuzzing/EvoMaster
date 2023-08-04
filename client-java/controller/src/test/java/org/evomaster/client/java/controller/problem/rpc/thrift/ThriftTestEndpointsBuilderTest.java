@@ -2,6 +2,7 @@ package org.evomaster.client.java.controller.problem.rpc.thrift;
 
 import com.thrift.example.real.thrift.test.*;
 import org.apache.thrift.TException;
+import org.evomaster.client.java.controller.api.dto.SutInfoDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
 import org.evomaster.client.java.controller.problem.rpc.RPCEndpointsBuilderTestBase;
@@ -97,7 +98,7 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertTrue(javaCode.get(0).equals("java.lang.String arg0 = \"foo\";"));
 
 
-        List<String> endpointJavaCode = endpoint.newInvocationWithJava("res1","controller",null);
+        List<String> endpointJavaCode = endpoint.newInvocationWithSpecifiedFormat("res1","controller",null, SutInfoDto.OutputFormat.JAVA_JUNIT_4);
         assertEquals(5, endpointJavaCode.size());
         assertEquals("java.lang.String res1 = null;", endpointJavaCode.get(0));
         assertEquals("{", endpointJavaCode.get(1));

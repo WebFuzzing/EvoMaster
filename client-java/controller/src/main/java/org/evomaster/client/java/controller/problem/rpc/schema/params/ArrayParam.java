@@ -138,7 +138,7 @@ public class ArrayParam extends CollectionParam<List<NamedTypedValue>>{
             CodeJavaGenerator.addCode(codes, CodeJavaGenerator.junitAssertNull(responseVarName), indent);
             return codes;
         }
-        CodeJavaGenerator.addCode(codes, CodeJavaGenerator.junitAssertEquals(""+getValue().size(), CodeJavaGenerator.withLength(responseVarName)), indent);
+        CodeJavaGenerator.addCode(codes, CodeJavaGenerator.junitAssertEquals(String.valueOf(getValue().size()), CodeJavaGenerator.withLength(responseVarName)), indent);
 
         if (maxAssertionForDataInCollection == 0)
             return codes;
