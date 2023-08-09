@@ -364,7 +364,7 @@ class EMConfig {
             //throw IllegalArgumentException("The option to turn on Executive Summary is only meaningful when clustering is turned on (--testSuiteSplitType CLUSTERING).")
         }
 
-        if ((enablePureRPCTestGeneration || enableRPCAssertionWithInstance) && !outputFormat.isJavaOrKotlin()){
+        if (problemType == ProblemType.RPC && (enablePureRPCTestGeneration || enableRPCAssertionWithInstance) && !outputFormat.isJavaOrKotlin()){
             throw IllegalArgumentException("when generating RPC tests with actual object instances in specified format, outputFormat only supports Java or Kotlin now")
         }
 
