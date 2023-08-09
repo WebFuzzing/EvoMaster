@@ -69,8 +69,10 @@ public class CodeJavaOrKotlinGenerator {
                 case '\"': sb.append("\\\""); break;
                 case '\\': sb.append("\\\\"); break;
                 case '$':{
-                    if (!isJava)
-                        sb.append("\\$");break;
+                    if (!isJava){
+                        sb.append("\\$");
+                        break;
+                    }
                 }
                 default: sb.append(c); break;
             }
