@@ -117,7 +117,7 @@ public class RPCActionDto {
     /**
      * the output format
      */
-    public SutInfoDto.OutputFormat outputFormat;
+    public SutInfoDto.OutputFormat outputFormat = SutInfoDto.OutputFormat.JAVA_JUNIT_5;
 
     /**
      * the maximum number of assertions to be generated for data in collections
