@@ -27,14 +27,25 @@ public class CodeJavaOrKotlinGenerator {
 
     private final static String JAVA_LANGE = "java.lang.";
 
-    private final static String KOTLIN_DEFAULT = "kotlin";
+    private final static String KOTLIN_DEFAULT = "kotlin.";
 
     /**
      * representation of class with generic
      */
     public static String handleClassNameWithGeneric(String fullName, List<String> genericTypes){
         if (genericTypes == null || genericTypes.isEmpty()) return fullName;
-        return String.format("%s<%s>", fullName, String.join(", ", genericTypes));
+        return String.format("%s<%s>", fullName, String.join(", ", formatBasicTypes(genericTypes)));
+    }
+
+
+    private static List<String> formatBasicTypes(List<String> types){
+        return types.stream().map(CodeJavaOrKotlinGenerator::formateBasicType).collect(Collectors.toList());
+    }
+
+    private static String formateBasicType(String type){
+        if (!type.startsWith(JAVA_LANGE) && !type.startsWith(KOTLIN_DEFAULT)) return type;
+        String[] pars = type.split("\\.");
+        return pars[pars.length -1];
     }
 
     /**
@@ -140,21 +151,17 @@ public class CodeJavaOrKotlinGenerator {
                 sb.append(String.format(":%s%s", handleNestedSymbolInTypeName(fullName), afterType));
             }
 
-
-            if (value != null || !isPrimitive)
-                sb.append(" = ");
         }
-        String stringValue = NULL_EXP;
 
-        if (isPrimitive || !isNullable)
-            stringValue = "";
-        if (value != null)
-            stringValue = value;
+        if (!isPrimitive && (isJava || isNullable)){
+            String stringValue = NULL_EXP;
+            if (value != null)
+                stringValue = value;
+            sb.append(" = ").append(stringValue);
+        }
 
-        sb.append(stringValue);
+        sb.append(getStatementLast(isJava));
 
-        if (isJava)
-            sb.append(";");
         return sb.toString();
     }
 
@@ -409,6 +416,14 @@ public class CodeJavaOrKotlinGenerator {
             return String.format("%s(%s)", methodName, params);
 
         return String.format("%s%s.%s(%s)", obj,variableNullableMark(isJava, objIsNullable), methodName, params);
+    }
+
+
+    public static String fieldAccess(String obj, String filedName, boolean isJava, boolean objIsNullable){
+        if (obj == null)
+            return filedName;
+
+        return String.format("%s%s.%s", obj,variableNullableMark(isJava, objIsNullable), filedName);
     }
 
     /**

@@ -104,8 +104,7 @@ public class ListParam extends CollectionParam<List<NamedTypedValue>>{
     public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava, boolean isVariableNullable) {
         String fullName = getType().getTypeNameForInstanceInJavaOrKotlin(isJava);
         List<String> codes = new ArrayList<>();
-        String var = oneLineInstance(isDeclaration, doesIncludeName, fullName, variableName, null, isJava, isNullable());
-        addCode(codes, var, indent);
+        addCode(codes, oneLineInstance(isDeclaration, doesIncludeName, fullName, variableName, null, isJava, isNullable()), indent);
         if (getValue() == null) return codes;
         addCode(codes, codeBlockStart(isJava), indent);
         // new array
@@ -117,7 +116,7 @@ public class ListParam extends CollectionParam<List<NamedTypedValue>>{
         for (NamedTypedValue e: getValue()){
             String eVarName = handleVariableName(variableName+"_e_"+index);
             codes.addAll(e.newInstanceWithJavaOrKotlin(true, true, eVarName, indent+1, isJava, isVariableNullable));
-            addCode(codes, variableName+".add("+eVarName+");", indent+1);
+            addCode(codes, methodInvocation(variableName, "add", eVarName, isJava, isNullable()) + getStatementLast(isJava), indent+1);
             index++;
         }
 

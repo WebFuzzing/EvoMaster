@@ -236,8 +236,7 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
 
         List<String> codes = new ArrayList<>();
         boolean isNull = (getValue() == null);
-        String var = oneLineInstance(isDeclaration, doesIncludeName, typeName, varName, null,isJava, isNullable());
-        addCode(codes, var, indent);
+        addCode(codes, oneLineInstance(isDeclaration, doesIncludeName, typeName, varName, null,isJava, isNullable()), indent);
         if (isNull) return codes;
 
         addCode(codes, codeBlockStart(isJava), indent);
@@ -249,7 +248,7 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
             ownVarName = varName;
         }else{
             String varBuilderName = varName+"builder";
-            addCode(codes, newBuilderProto3(typeName, varBuilderName,isJava ), indent + 1);
+            addCode(codes, newBuilderProto3(typeName, varBuilderName, isJava), indent + 1);
             ownVarName = varBuilderName;
         }
 
@@ -264,11 +263,11 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
                 codes.addAll(f.newInstanceWithJavaOrKotlin(fdeclar, true, fName, indent+1, isJava, isNullable()));
 
                 if (needRenameField(f)){
-                    addCode(codes, methodInvocation(ownVarName, f.accessibleSchema.setterMethodName, fName,isJava, isNullable())+ getStatementLast(isJava),indent+1);
+                    addCode(codes, methodInvocation(ownVarName, f.accessibleSchema.setterMethodName, fName, isJava, isNullable())+ getStatementLast(isJava),indent+1);
                 }
             }else {
                 codes.addAll(f.newInstanceWithJavaOrKotlin(false, true,
-                    methodInvocation(var,f.getName(),"",isJava, isNullable()), indent+1, isJava, isNullable()));
+                    fieldAccess(varName, f.getName(),isJava, isNullable()), indent+1, isJava, isNullable()));
             }
         }
 

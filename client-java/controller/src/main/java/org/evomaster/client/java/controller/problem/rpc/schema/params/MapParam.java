@@ -113,8 +113,7 @@ public class MapParam extends NamedTypedValue<MapType, List<PairParam>>{
     public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava, boolean isVariableNullable) {
         String fullName = getType().getTypeNameForInstanceInJavaOrKotlin(isJava);
         List<String> codes = new ArrayList<>();
-        String var = oneLineInstance(isDeclaration, doesIncludeName, fullName, variableName, null, isJava, isNullable());
-        addCode(codes, var, indent);
+        addCode(codes, oneLineInstance(isDeclaration, doesIncludeName, fullName, variableName, null, isJava, isNullable()), indent);
         if (getValue() == null) return codes;
         addCode(codes, codeBlockStart(isJava), indent);
         // new map
@@ -136,7 +135,8 @@ public class MapParam extends NamedTypedValue<MapType, List<PairParam>>{
             if (e.getValue().getValue() == null)
                 throw new RuntimeException("value should not been null");
             codes.addAll(e.getValue().getValue().newInstanceWithJavaOrKotlin(true, true, eValueVarName, indent+1, isJava, isVariableNullable));
-            addCode(codes, variableName+".put("+eKeyVarName+","+eValueVarName+");", indent+1);
+
+            addCode(codes, methodInvocation(variableName, "put", eKeyVarName+","+eValueVarName, isJava, isNullable()) + getStatementLast(isJava), indent+1);
             index++;
         }
 
