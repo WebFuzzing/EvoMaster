@@ -18,6 +18,7 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.rest.param.*
+import org.evomaster.core.problem.util.ActionBuilderUtil
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
@@ -137,7 +138,8 @@ object RestActionBuilderV3 {
                     if (e.value.head != null) handleOperation(actionCluster, HttpVerb.HEAD, restPath, e.value.head, swagger, doParseDescription, enableConstraintHandling, errorEndpoints)
                 }
 
-        checkSkipped(skipped, endpointsToSkip, actionCluster, errorEndpoints)
+        ActionBuilderUtil.verifySkipped(skipped,endpointsToSkip)
+        ActionBuilderUtil.printActionNumberInfo("RESTful API", actionCluster.size, skipped.size, errorEndpoints.size)
     }
 
     /**
@@ -1173,44 +1175,6 @@ object RestActionBuilderV3 {
         return selection
     }
 
-
-    private fun checkSkipped(
-        skipped: List<String>,
-        endpointsToSkip: List<String>,
-        actionCluster: Map<String, Action>,
-        errorEndpoints: List<String>
-    ) {
-        if(endpointsToSkip.toSet().size != endpointsToSkip.size){
-            throw SutProblemException("There are repeated, non-unique endpoint-to-skip declarations")
-        }
-
-        if (skipped.size != endpointsToSkip.size) {
-            val msg = "${endpointsToSkip.size} were set to be skipped, but only ${skipped.size}" +
-                    " were found in the schema"
-            LoggingUtil.getInfoLogger().error(msg)
-            endpointsToSkip.filter { !skipped.contains(it) }
-                    .forEach { LoggingUtil.getInfoLogger().warn("Missing endpoint: $it") }
-            throw SutProblemException(msg)
-        }
-
-        LoggingUtil.getInfoLogger().apply {
-            if (skipped.isNotEmpty()) {
-                info("Skipped ${skipped.size} path endpoints from the schema configuration")
-            }
-
-            val n = actionCluster.size
-            when (n) {
-                0 -> warn("There is _NO_ usable RESTful API endpoint defined in the schema configuration")
-                1 -> info("There is only one usable RESTful API endpoint defined in the schema configuration")
-                else -> info("There are $n usable RESTful API endpoints defined in the schema configuration")
-                FIXME do same for GraphQL
-            }
-
-            if (errorEndpoints.isNotEmpty()){
-                warn("There are ${errorEndpoints.size} endpoints which might have errors and would not be handled in the generation")
-            }
-        }
-    }
 
     fun getModelsFromSwagger(swagger: OpenAPI,
                              modelCluster: MutableMap<String, ObjectGene>,
