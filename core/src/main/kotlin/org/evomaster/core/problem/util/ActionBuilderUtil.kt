@@ -2,7 +2,7 @@ package org.evomaster.core.problem.util
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.remote.SutProblemException
-import org.evomaster.core.search.Action
+
 
 /**
  * Set of common utilities used when creating actions from schemas (e.g., for REST, GraphQL and RPC).
