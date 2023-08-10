@@ -127,10 +127,16 @@ class EMConfig {
                 val constraints: String,
                 val enumExperimentalValues: String,
                 val enumValidValues: String,
-                val experimental: Boolean
+                val experimental: Boolean,
+                val debug: Boolean
         ) {
             override fun toString(): String {
+
                 var description = text
+
+                if(debug){
+                    description += " [DEBUG option]."
+                }
                 if (constraints.isNotBlank()) {
                     description += " [Constraints: $constraints]."
                 }
@@ -141,9 +147,6 @@ class EMConfig {
                     description += " [Experimental Values: $enumExperimentalValues]."
                 }
 
-
-
-
                 if (experimental) {
                     /*
                     TODO: For some reasons, coloring is not working here.
@@ -153,6 +156,7 @@ class EMConfig {
                     //description = AnsiColor.inRed("EXPERIMENTAL: $description")
                     description = "EXPERIMENTAL: $description"
                 }
+
                 return description
             }
         }
@@ -160,7 +164,7 @@ class EMConfig {
         fun getDescription(m: KMutableProperty<*>): ConfigDescription {
 
             val cfg = (m.annotations.find { it is Cfg } as? Cfg)
-                    ?: throw IllegalArgumentException("Property ${m.name} is not annotated with @Cfg")
+                ?: throw IllegalArgumentException("Property ${m.name} is not annotated with @Cfg")
 
             val text = cfg.description.trim().run {
                 when {
@@ -196,24 +200,30 @@ class EMConfig {
                 }
             }
 
-            var experimentalValues =""
+            var experimentalValues = ""
             var validValues = ""
             val returnType = m.returnType.javaType as Class<*>
 
             if (returnType.isEnum) {
                 val elements = returnType.getDeclaredMethod("values")
-                        .invoke(null) as Array<*>
-                val experimentElements= elements.filter{ it is WithExperimentalOptions && it.isExperimental()}
-                val validElements= elements.filter{ it !is WithExperimentalOptions || !it.isExperimental()}
+                    .invoke(null) as Array<*>
+                val experimentElements = elements.filter { it is WithExperimentalOptions && it.isExperimental() }
+                val validElements = elements.filter { it !is WithExperimentalOptions || !it.isExperimental() }
                 experimentalValues = experimentElements.joinToString(", ")
                 validValues = validElements.joinToString(", ")
             }
 
             val experimental = (m.annotations.find { it is Experimental } as? Experimental)
+            val debug = (m.annotations.find { it is Debug } as? Debug)
 
-            val cd = ConfigDescription(text, constraints, experimentalValues ,validValues, experimental != null)
-
-            return cd
+            return ConfigDescription(
+                text,
+                constraints,
+                experimentalValues,
+                validValues,
+                experimental != null,
+                debug != null
+            )
         }
 
 
