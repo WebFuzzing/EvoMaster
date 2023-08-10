@@ -1,6 +1,6 @@
 package org.evomaster.core.search.gene
 
-import org.evomaster.core.database.DbActionGeneBuilder
+import org.evomaster.core.sql.SqlActionGeneBuilder
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.numeric.FloatGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
@@ -21,7 +21,7 @@ class FlatViewTest {
 
     @Test
     fun testExcludeTimeStampGene() {
-        val gene = DbActionGeneBuilder().buildSqlTimestampGene("gene")
+        val gene = SqlActionGeneBuilder().buildSqlTimestampGene("gene")
         assertEquals(1, gene.flatView { true }.size)
 
     }

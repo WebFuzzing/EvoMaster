@@ -1,8 +1,8 @@
 package org.evomaster.core.search.impact.impactinfocollection
 
-import org.evomaster.core.search.Action
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.ActionFilter
+import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.sql.*
 import org.evomaster.core.search.impact.impactinfocollection.sql.*

@@ -2,8 +2,8 @@ package org.evomaster.core.output.service
 
 import org.evomaster.core.output.Lines
 import org.evomaster.core.problem.webfrontend.*
-import org.evomaster.core.search.Action
-import org.evomaster.core.search.ActionResult
+import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import java.lang.IllegalStateException
 import java.nio.file.Path

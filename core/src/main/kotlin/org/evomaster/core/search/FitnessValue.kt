@@ -3,9 +3,8 @@ package org.evomaster.core.search
 import org.evomaster.client.java.controller.api.dto.BootTimeInfoDto
 import org.evomaster.client.java.controller.api.dto.database.execution.MongoFailedQuery
 import org.evomaster.core.EMConfig
-import org.evomaster.core.database.DatabaseExecution
+import org.evomaster.core.sql.DatabaseExecution
 import org.evomaster.core.EMConfig.SecondaryObjectiveStrategy.*
-import org.evomaster.core.Lazy
 import org.evomaster.core.mongo.MongoExecution
 import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceRequest

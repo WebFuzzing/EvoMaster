@@ -1,6 +1,6 @@
 package org.evomaster.core.search.impact.impactinfocollection
 
-import org.evomaster.core.search.Action
+import org.evomaster.core.search.action.Action
 
 /**
  * @property localId represent local id of the action

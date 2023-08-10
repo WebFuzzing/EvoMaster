@@ -77,9 +77,6 @@ class HttpExternalServiceAction(
         return response.genes
     }
 
-    override fun shouldCountForFitnessEvaluations(): Boolean {
-        return false
-    }
 
     /**
      * Each external service will have a WireMock instance representing that

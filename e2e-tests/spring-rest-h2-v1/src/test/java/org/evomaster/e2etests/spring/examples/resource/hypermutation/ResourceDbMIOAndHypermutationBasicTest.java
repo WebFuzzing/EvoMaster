@@ -10,7 +10,7 @@ import org.evomaster.core.problem.rest.service.ResourceRestMutator;
 import org.evomaster.core.problem.rest.service.RestResourceFitness;
 import org.evomaster.core.problem.rest.service.RestResourceStructureMutator;
 import org.evomaster.core.problem.util.BindingBuilder;
-import org.evomaster.core.search.ActionFilter;
+import org.evomaster.core.search.action.ActionFilter;
 import org.evomaster.core.search.EvaluatedIndividual;
 import org.evomaster.core.search.Individual.GeneFilter;
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification;

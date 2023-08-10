@@ -2,8 +2,8 @@ package org.evomaster.core.search.service
 
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
-import org.evomaster.core.database.DatabaseExecution
-import org.evomaster.core.search.Action
+import org.evomaster.core.sql.DatabaseExecution
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.Individual
 import org.evomaster.core.utils.ReportWriter.wrapWithQuotation
 import org.evomaster.core.utils.ReportWriter.writeByChannel

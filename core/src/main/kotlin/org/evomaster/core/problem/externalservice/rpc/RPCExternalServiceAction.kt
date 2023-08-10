@@ -53,9 +53,6 @@ class RPCExternalServiceAction(
         return response.genes
     }
 
-    override fun shouldCountForFitnessEvaluations(): Boolean {
-        return false
-    }
 
     override fun copyContent(): RPCExternalServiceAction {
         return RPCExternalServiceAction(interfaceName, functionName, inputParamTypes?.toList(), descriptiveInfo, requestRuleIdentifier, response.copy() as ClassResponseParam, active, used)

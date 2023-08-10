@@ -2,10 +2,10 @@ package org.evomaster.core.output
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.core.EMConfig
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.schema.Column
-import org.evomaster.core.database.schema.ColumnDataType
-import org.evomaster.core.database.schema.Table
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.sql.schema.Column
+import org.evomaster.core.sql.schema.ColumnDataType
+import org.evomaster.core.sql.schema.Table
 import org.evomaster.core.output.EvaluatedIndividualBuilder.Companion.buildEvaluatedIndividual
 import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.output.service.RestTestCaseWriter
@@ -35,7 +35,7 @@ class WriteXMLTest {
         val objectGene = ObjectGene("anElement", listOf())
         val sqlXMLGene = SqlXMLGene("xmlColumn", objectGene)
 
-        val insert = DbAction(table, setOf(xmlColumn), 0L, listOf(sqlXMLGene))
+        val insert = SqlAction(table, setOf(xmlColumn), 0L, listOf(sqlXMLGene))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert))
         val config = getConfig(format)
@@ -82,7 +82,7 @@ class WriteXMLTest {
         val objectGene = ObjectGene("anElement", listOf(child0, child1, child2, child3))
         val sqlXMLGene = SqlXMLGene("xmlColumn", objectGene)
 
-        val insert = DbAction(table, setOf(xmlColumn), 0L, listOf(sqlXMLGene))
+        val insert = SqlAction(table, setOf(xmlColumn), 0L, listOf(sqlXMLGene))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert))
         val config = getConfig(format)
@@ -125,7 +125,7 @@ class WriteXMLTest {
         val objectGene = ObjectGene("anElement", listOf(stringGene))
         val sqlXMLGene = SqlXMLGene("xmlColumn", objectGene)
 
-        val insert = DbAction(table, setOf(xmlColumn), 0L, listOf(sqlXMLGene))
+        val insert = SqlAction(table, setOf(xmlColumn), 0L, listOf(sqlXMLGene))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert))
         val config = getConfig(format)
