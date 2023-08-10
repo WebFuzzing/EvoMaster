@@ -1,7 +1,7 @@
 package org.evomaster.core.problem.util.inference
 
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.schema.Table
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.sql.schema.Table
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.param.BodyParam
@@ -13,7 +13,7 @@ import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.util.inference.model.MatchedInfo
 import org.evomaster.core.problem.util.inference.model.ParamGeneBindMap
 import org.evomaster.core.problem.util.StringSimilarityComparator
-import org.evomaster.core.search.ActionFilter
+import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.ObjectGene
 
 /**
@@ -216,17 +216,17 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
      *
      * @param paramsInfo of calls to be bound
      * @param calls to be bound
-     * @param dbActions specifies the tables to be analyzed.
+     * @param sqlActions specifies the tables to be analyzed.
      *          if [dbActions] is empty, the tables would be all related tables extracted from its resource node
      */
-    override fun generateRelatedTables(paramsInfo: List<ParamInfo>, calls: RestResourceCalls, dbActions : List<DbAction>): MutableMap<RestCallAction, MutableList<ParamGeneBindMap>> {
+    override fun generateRelatedTables(paramsInfo: List<ParamInfo>, calls: RestResourceCalls, sqlActions : List<SqlAction>): MutableMap<RestCallAction, MutableList<ParamGeneBindMap>> {
 
         val result = mutableMapOf<RestCallAction, MutableList<ParamGeneBindMap>>()
 
         val missingParams = paramsInfo.map { it.key }
         val resource = calls.getResourceNode()
 
-        val relatedTables = dbActions.map { it.table.name }.toHashSet()
+        val relatedTables = sqlActions.map { it.table.name }.toHashSet()
 
         val list = if(relatedTables.isEmpty())
             getBindMap(missingParams.toSet(), resource.resourceToTable)

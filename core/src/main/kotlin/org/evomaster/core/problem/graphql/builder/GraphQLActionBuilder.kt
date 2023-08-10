@@ -11,7 +11,7 @@ import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.problem.graphql.schema.*
 import org.evomaster.core.problem.graphql.schema.__TypeKind.*
 import org.evomaster.core.remote.SutProblemException
-import org.evomaster.core.search.Action
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
@@ -156,7 +156,7 @@ object GraphQLActionBuilder {
         actionCluster: MutableMap<String, Action>,
         state: TempState,
 
-    ) {
+        ) {
         val action:GraphQLAction = if (state.inputTypeName[element.fieldName]?.isNotEmpty() == true)
                 GraphQLAction(actionId, state.inputTypeName[element.fieldName].toString(), type, params)
              else

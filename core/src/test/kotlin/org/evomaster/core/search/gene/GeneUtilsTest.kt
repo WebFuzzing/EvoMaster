@@ -1,19 +1,18 @@
 package org.evomaster.core.search.gene
 
-import org.evomaster.core.database.DbActionGeneBuilder
+import org.evomaster.core.sql.SqlActionGeneBuilder
 import org.evomaster.core.problem.graphql.GqlConst
 import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.builder.GraphQLActionBuilder
 import org.evomaster.core.problem.graphql.PetClinicCheckMain
 import org.evomaster.core.problem.graphql.param.GQReturnParam
-import org.evomaster.core.search.Action
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.TupleGene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
-import org.evomaster.core.search.gene.placeholder.LimitObjectGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.junit.jupiter.api.Assertions.*
@@ -61,7 +60,7 @@ internal class GeneUtilsTest {
 
     @Test
     fun testRepairBrokenSqlTimestampGene() {
-        val sqlTimestampGene = DbActionGeneBuilder().buildSqlTimestampGene("timestamp")
+        val sqlTimestampGene = SqlActionGeneBuilder().buildSqlTimestampGene("timestamp")
         sqlTimestampGene.date.apply {
             year.value = 1998
             month.value = 4
@@ -91,7 +90,7 @@ internal class GeneUtilsTest {
 
     @Test
     fun testFlatViewWithExcludeDateGene() {
-        val sqlTimestampGene = DbActionGeneBuilder().buildSqlTimestampGene("timestamp")
+        val sqlTimestampGene = SqlActionGeneBuilder().buildSqlTimestampGene("timestamp")
         sqlTimestampGene.date.apply {
             year.value = 1998
             month.value = 4

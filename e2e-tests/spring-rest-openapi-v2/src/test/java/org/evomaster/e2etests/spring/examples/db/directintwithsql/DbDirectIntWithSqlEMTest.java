@@ -5,7 +5,7 @@ import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 import org.evomaster.core.EMConfig;
 import org.evomaster.core.Main;
-import org.evomaster.core.database.DbAction;
+import org.evomaster.core.sql.SqlAction;
 import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.RestCallAction;
 import org.evomaster.core.problem.rest.RestCallResult;
@@ -140,7 +140,7 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
 
         //now, try to execute an action in which as well we add SQL data
 
-        List<DbAction> insertions = sampler.sampleSqlInsertion("DB_DIRECT_INT_ENTITY", Collections.singleton("*"));
+        List<SqlAction> insertions = sampler.sampleSqlInsertion("DB_DIRECT_INT_ENTITY", Collections.singleton("*"));
         assertEquals(1, insertions.size());
 
         //extract the x/y values from the random call

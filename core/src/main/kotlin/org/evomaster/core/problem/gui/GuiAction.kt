@@ -1,6 +1,6 @@
 package org.evomaster.core.problem.gui
 
-import org.evomaster.core.search.Action
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.StructuralElement
 
 

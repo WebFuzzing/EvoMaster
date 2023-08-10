@@ -1,6 +1,6 @@
 package org.evomaster.core.problem.rest.resource
 
-import org.evomaster.core.database.DbAction
+import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.impact.impactinfocollection.ActionStructureImpact
@@ -64,7 +64,7 @@ class ResourceImpactOfIndividual : ImpactsOfIndividual {
             }
         }
         sqlTableSizeImpact = mutableMapOf<String, IntegerGeneImpact>().apply {
-            individual.seeInitializingActions().filterIsInstance<DbAction>().filterNot { it.representExistingData }.forEach { d->
+            individual.seeInitializingActions().filterIsInstance<SqlAction>().filterNot { it.representExistingData }.forEach { d->
                 putIfAbsent(d.table.name, IntegerGeneImpact("size"))
             }
         }
@@ -130,8 +130,8 @@ class ResourceImpactOfIndividual : ImpactsOfIndividual {
             }
         }
 
-        val currentTs = current.seeInitializingActions().filterIsInstance<DbAction>().filterNot { it.representExistingData }.map { it.table.name }
-        val previousTs = previous.seeInitializingActions().filterIsInstance<DbAction>().filterNot { it.representExistingData }.map { it.table.name }
+        val currentTs = current.seeInitializingActions().filterIsInstance<SqlAction>().filterNot { it.representExistingData }.map { it.table.name }
+        val previousTs = previous.seeInitializingActions().filterIsInstance<SqlAction>().filterNot { it.representExistingData }.map { it.table.name }
         var anySqlChange = false
         currentTs.toSet().forEach { cr ->
             val tImpact = sqlTableSizeImpact.getOrPut(cr){IntegerGeneImpact("size")}

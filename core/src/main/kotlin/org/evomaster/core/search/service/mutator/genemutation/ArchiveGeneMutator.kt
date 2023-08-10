@@ -4,7 +4,7 @@ import com.google.inject.Inject
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
-import org.evomaster.core.search.Action
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.numeric.*
@@ -447,7 +447,7 @@ class ArchiveGeneMutator{
      * extract mutated info only for standard mutation
      */
     private fun mutatedGenePairForIndividualWithActions(
-            originalActions: List<Action>, mutatedActions : List<Action>, mutatedGenes: List<Gene>, genesAtActionIndex: List<Int>
+        originalActions: List<Action>, mutatedActions : List<Action>, mutatedGenes: List<Gene>, genesAtActionIndex: List<Int>
     ) : MutableList<Pair<Gene, Gene>>{
         Lazy.assert {
             mutatedActions.isEmpty()  || mutatedActions.size > genesAtActionIndex.maxOrNull()!!

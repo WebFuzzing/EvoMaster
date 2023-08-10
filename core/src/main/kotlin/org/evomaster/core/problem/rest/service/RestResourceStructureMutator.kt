@@ -2,8 +2,8 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.core.Lazy
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.SqlInsertBuilder
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.sql.SqlInsertBuilder
 import org.evomaster.core.problem.api.service.ApiWsStructureMutator
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
@@ -12,7 +12,7 @@ import org.evomaster.core.problem.rest.resource.ResourceImpactOfIndividual
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.ActionFilter.*
+import org.evomaster.core.search.action.ActionFilter.*
 import org.evomaster.core.search.impact.impactinfocollection.value.numeric.IntegerGeneImpact
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.mutator.MutationWeightControl
@@ -177,7 +177,7 @@ class RestResourceStructureMutator : ApiWsStructureMutator() {
         val candidates = if (doesApplyDependencyHeuristics())
             dm.identifyRelatedSQL(ind)
         else
-            ind.seeInitializingActions().filterIsInstance<DbAction>().map { it.table.name }.toSet() // adding an unrelated table would waste budget, then we add existing ones
+            ind.seeInitializingActions().filterIsInstance<SqlAction>().map { it.table.name }.toSet() // adding an unrelated table would waste budget, then we add existing ones
 
         val selectedAdded = if (config.enableAdaptiveResourceStructureMutation){
             adaptiveSelectResource(evaluatedIndividual, bySQL = true, candidates.toList(), targets)
@@ -216,7 +216,7 @@ class RestResourceStructureMutator : ApiWsStructureMutator() {
      * It might be useful to reduce the useless db genes.
      */
     private fun handleRemoveSQL(ind: RestIndividual, mutatedGenes: MutatedGeneSpecification?, evaluatedIndividual: EvaluatedIndividual<RestIndividual>?, targets: Set<Int>?){
-        val availableToRemove = ind.seeInitializingActions().filterIsInstance<DbAction>().filterNot { it.representExistingData }
+        val availableToRemove = ind.seeInitializingActions().filterIsInstance<SqlAction>().filterNot { it.representExistingData }
 
         // remove unrelated tables
         val candidates = if (doesApplyDependencyHeuristics())

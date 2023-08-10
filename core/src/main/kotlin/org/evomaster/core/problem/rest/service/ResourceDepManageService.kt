@@ -5,9 +5,9 @@ import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.DbActionUtils
-import org.evomaster.core.database.schema.Table
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.sql.SqlActionUtils
+import org.evomaster.core.sql.schema.Table
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
@@ -22,8 +22,8 @@ import org.evomaster.core.problem.rest.resource.dependency.SelfResourcesRelation
 import org.evomaster.core.problem.util.inference.SimpleDeriveResourceBinding
 import org.evomaster.core.problem.util.inference.model.ParamGeneBindMap
 import org.evomaster.core.problem.util.StringSimilarityComparator
-import org.evomaster.core.search.ActionFilter
-import org.evomaster.core.search.ActionFilter.*
+import org.evomaster.core.search.action.ActionFilter
+import org.evomaster.core.search.action.ActionFilter.*
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
@@ -999,14 +999,14 @@ class ResourceDepManageService {
     /**
      * @return a list of db actions of [ind] which are possibly not related to rest actions of [ind]
      */
-    fun unRelatedSQL(ind: RestIndividual, candidates: List<DbAction>?) : List<DbAction>{
+    fun unRelatedSQL(ind: RestIndividual, candidates: List<SqlAction>?) : List<SqlAction>{
         val allrelated = getAllRelatedTables(ind)
-        return (candidates?:ind.seeInitializingActions().filterIsInstance<DbAction>().filterNot { it.representExistingData }).filterNot { allrelated.any { r-> r.equals(it.table.name, ignoreCase = true) } }
+        return (candidates?:ind.seeInitializingActions().filterIsInstance<SqlAction>().filterNot { it.representExistingData }).filterNot { allrelated.any { r-> r.equals(it.table.name, ignoreCase = true) } }
     }
 
-    fun identifyUnRelatedSqlTable(ind: RestIndividual, candidates: List<DbAction>?) : List<String>{
+    fun identifyUnRelatedSqlTable(ind: RestIndividual, candidates: List<SqlAction>?) : List<String>{
         val actions = unRelatedSQL(ind, candidates)
-        return if (actions.isNotEmpty()) actions.map { it.table.name } else ind.seeInitializingActions().filterIsInstance<DbAction>().filterNot { it.representExistingData }.map { it.table.name }
+        return if (actions.isNotEmpty()) actions.map { it.table.name } else ind.seeInitializingActions().filterIsInstance<SqlAction>().filterNot { it.representExistingData }.map { it.table.name }
     }
     /**
      * add [num] related resources into [ind] with SQL
@@ -1016,7 +1016,7 @@ class ResourceDepManageService {
      * Man: shall we set probability 1.0? because the related tables for the resource might be determinate based on
      * tracking of SQL execution.
      */
-    fun addRelatedSQL(ind: RestIndividual, num: Int, probability: Double = 1.0) : List<List<DbAction>>{
+    fun addRelatedSQL(ind: RestIndividual, num: Int, probability: Double = 1.0) : List<List<SqlAction>>{
         val other = randomness.choose(identifyRelatedSQL(ind, probability))
         return createDbActions(other, num)
     }
@@ -1031,7 +1031,7 @@ class ResourceDepManageService {
 
         if (allrelated.isNotEmpty() && randomness.nextBoolean(probability)){
             val notincluded = allrelated.filterNot {
-                ind.seeInitializingActions().filterIsInstance<DbAction>().any { d-> it.equals(d.table.name, ignoreCase = true) }
+                ind.seeInitializingActions().filterIsInstance<SqlAction>().any { d-> it.equals(d.table.name, ignoreCase = true) }
             }
             //prioritize notincluded related ones with a probability 0.8
             return if (notincluded.isNotEmpty() && randomness.nextBoolean(0.8)){
@@ -1039,14 +1039,14 @@ class ResourceDepManageService {
             }else allrelated
         }else{
             val left = rm.getTableInfo().keys.filterNot {
-                ind.seeInitializingActions().filterIsInstance<DbAction>().any { d-> it.equals(d.table.name, ignoreCase = true) }
+                ind.seeInitializingActions().filterIsInstance<SqlAction>().any { d-> it.equals(d.table.name, ignoreCase = true) }
             }
             return if (left.isNotEmpty() && randomness.nextBoolean()) left.toSet()
             else rm.getTableInfo().keys
         }
     }
 
-    fun createDbActions(name : String, num : Int) : List<List<DbAction>>{
+    fun createDbActions(name : String, num : Int) : List<List<SqlAction>>{
         rm.getSqlBuilder() ?:throw IllegalStateException("attempt to create resource with SQL but the sqlBuilder is null")
         if (num <= 0)
             throw IllegalArgumentException("invalid num (i.e.,$num) for creating resource")
@@ -1064,8 +1064,8 @@ class ResourceDepManageService {
                 })
         }
 
-        DbActionUtils.randomizeDbActionGenes(list.flatten(), randomness)
-        DbActionUtils.repairBrokenDbActionsList(list.flatten().toMutableList(), randomness)
+        SqlActionUtils.randomizeDbActionGenes(list.flatten(), randomness)
+        SqlActionUtils.repairBrokenDbActionsList(list.flatten().toMutableList(), randomness)
         return list
     }
 
@@ -1123,7 +1123,7 @@ class ResourceDepManageService {
                 randomness,
                 useExtraSqlDbConstraints = extraConstraints, enableSingleInsertionForTable= enableSingleInsertionForTable)
 
-        DbActionUtils.repairBrokenDbActionsList(added,randomness)
+        SqlActionUtils.repairBrokenDbActionsList(added,randomness)
 
         ind.addInitializingDbActions(actions = added)
     }
@@ -1151,13 +1151,13 @@ class ResourceDepManageService {
     }
 
     /**
-     * @return extracted related tables for [call] regarding [dbActions]
-     * if [dbActions] is not empty, return related table from tables in [dbActions]
-     * if [dbActions] is empty, return all derived related table
+     * @return extracted related tables for [call] regarding [sqlActions]
+     * if [sqlActions] is not empty, return related table from tables in [sqlActions]
+     * if [sqlActions] is empty, return all derived related table
      */
-    fun extractRelatedTablesForCall(call: RestResourceCalls, dbActions: MutableList<DbAction> = mutableListOf(), withSql : Boolean): MutableMap<RestCallAction, MutableList<ParamGeneBindMap>> {
+    fun extractRelatedTablesForCall(call: RestResourceCalls, sqlActions: MutableList<SqlAction> = mutableListOf(), withSql : Boolean): MutableMap<RestCallAction, MutableList<ParamGeneBindMap>> {
         val paramsInfo = call.getResourceNode().getPossiblyBoundParams(call.getRestTemplate(), withSql, randomness)
-        return SimpleDeriveResourceBinding.generateRelatedTables(paramsInfo, call, dbActions)
+        return SimpleDeriveResourceBinding.generateRelatedTables(paramsInfo, call, sqlActions)
     }
 
     /**

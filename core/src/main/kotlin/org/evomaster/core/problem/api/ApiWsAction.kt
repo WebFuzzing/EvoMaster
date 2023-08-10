@@ -2,7 +2,7 @@ package org.evomaster.core.problem.api
 
 import org.evomaster.core.problem.api.auth.AuthenticationInfo
 import org.evomaster.core.problem.api.param.Param
-import org.evomaster.core.search.Action
+import org.evomaster.core.search.action.Action
 
 /**
  * an action for handling API

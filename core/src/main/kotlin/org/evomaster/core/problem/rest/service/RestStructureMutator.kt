@@ -2,12 +2,12 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.core.Lazy
-import org.evomaster.core.database.SqlInsertBuilder
+import org.evomaster.core.sql.SqlInsertBuilder
 import org.evomaster.core.problem.api.service.ApiWsStructureMutator
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
-import org.evomaster.core.search.ActionFilter
+import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
@@ -139,7 +139,7 @@ class RestStructureMutator : ApiWsStructureMutator() {
                 POSTs
              */
             //ind.seeActions().add(idx, post)
-            ind.addResourceCall(idx, RestResourceCalls(actions = mutableListOf(post), dbActions = listOf()))
+            ind.addResourceCall(idx, RestResourceCalls(actions = mutableListOf(post), sqlActions = listOf()))
 
             //save mutated genes
             mutatedGenes?.addRemovedOrAddedByAction(
@@ -161,7 +161,7 @@ class RestStructureMutator : ApiWsStructureMutator() {
 
 
             //ind.seeActions().add(sampledAction)
-            ind.addResourceCall(restCalls = RestResourceCalls(actions = mutableListOf(sampledAction), dbActions = listOf()))
+            ind.addResourceCall(restCalls = RestResourceCalls(actions = mutableListOf(sampledAction), sqlActions = listOf()))
 
             //save mutated genes
             mutatedGenes?.addRemovedOrAddedByAction(
@@ -203,7 +203,7 @@ class RestStructureMutator : ApiWsStructureMutator() {
             val sampledAction = sampler.sampleRandomAction(0.05) as RestCallAction
             val chosen = randomness.nextInt(ind.seeMainActionComponents().size)
             //ind.seeActions().add(chosen, sampledAction)
-            ind.addResourceCall(chosen, RestResourceCalls(actions = mutableListOf(sampledAction), dbActions = listOf()))
+            ind.addResourceCall(chosen, RestResourceCalls(actions = mutableListOf(sampledAction), sqlActions = listOf()))
 
             //save mutated genes
             mutatedGenes?.addRemovedOrAddedByAction(

@@ -2,8 +2,8 @@ package org.evomaster.core.problem.graphql
 
 import com.google.common.annotations.VisibleForTesting
 import org.evomaster.core.problem.httpws.HttpWsCallResult
-import org.evomaster.core.search.Action
-import org.evomaster.core.search.ActionResult
+import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.action.ActionResult
 
 class GraphQlCallResult : HttpWsCallResult {
 
