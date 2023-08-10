@@ -562,9 +562,11 @@ class RPCEndpointsHandler {
     private fun nameClientVariable(index: Int, interfaceSimpleName: String) : String = "var_client${index}_${interfaceSimpleName.replace("\$","_").replace("\\.","_")}"
 
     private fun reportEndpointsStatistics(numSchema: Int, skipped: Int, numSeededTest: Int){
-        ActionBuilderUtil.printActionNumberInfo("RPC", numSchema, skipped, 0)
+        ActionBuilderUtil.printActionNumberInfo("RPC", actionSchemaCluster.size, skipped, 0)
         LoggingUtil.getInfoLogger().apply {
-            info("There are $numSchema defined RPC interfaces.")
+            if(numSchema > 1) {
+                info("There are $numSchema defined RPC interfaces (used as schema declarations).")
+            }
             if (numSeededTest > 0)
                 info("$numSeededTest test${if (numSeededTest > 1) "s are" else " is"} seeded.")
         }

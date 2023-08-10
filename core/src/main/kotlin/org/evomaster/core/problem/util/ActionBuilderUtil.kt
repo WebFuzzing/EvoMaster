@@ -42,7 +42,7 @@ object ActionBuilderUtil {
 
             when (n) {
                 0 -> warn("There is _NO_ usable $type endpoint defined in the schema configuration")
-                1 -> info("There is only one usable $type endpoint defined in the schema configuration")
+                1 -> info("There is only 1 usable $type endpoint defined in the schema configuration")
                 else -> info("There are $n usable $type endpoints defined in the schema configuration")
             }
 
