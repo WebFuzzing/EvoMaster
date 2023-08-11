@@ -112,4 +112,9 @@ public class DateParam extends NamedTypedValue<DateType, List<IntParam>>{
     public String getValueAsJavaString() {
         return null;
     }
+
+    @Override
+    public List<String> referenceTypes() {
+        return null;
+    }
 }

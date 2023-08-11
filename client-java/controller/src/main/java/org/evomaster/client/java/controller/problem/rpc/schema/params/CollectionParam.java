@@ -4,6 +4,9 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.CollectionType;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * collection param
  * @param <V> representing the value of the collection
@@ -60,5 +63,19 @@ public abstract class CollectionParam<V> extends NamedTypedValue<CollectionType,
             ((CollectionParam)copy).setMinSize(minSize);
             ((CollectionParam)copy).setMaxSize(maxSize);
         }
+    }
+
+    @Override
+    public List<String> referenceTypes() {
+        List<String> references = new ArrayList<>();
+        NamedTypedValue template = getType().getTemplate();
+        references.add(template.getType().getFullTypeName());
+
+        List<String> refrefTypes = template.referenceTypes();
+        if (refrefTypes != null)
+            references.addAll(refrefTypes);
+
+        if (references.isEmpty()) return null;
+        return references;
     }
 }

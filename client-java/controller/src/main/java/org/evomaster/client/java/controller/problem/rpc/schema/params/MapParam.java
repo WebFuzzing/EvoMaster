@@ -212,4 +212,17 @@ public class MapParam extends NamedTypedValue<MapType, List<PairParam>>{
             ((MapParam)copy).setMaxSize(maxSize);
         }
     }
+
+    @Override
+    public List<String> referenceTypes() {
+        List<String> references = new ArrayList<>();
+        PairParam template = getType().getTemplate();
+
+        List<String> refrefTypes = template.referenceTypes();
+        if (refrefTypes != null)
+            references.addAll(refrefTypes);
+
+        if (references.isEmpty()) return null;
+        return references;
+    }
 }

@@ -35,6 +35,7 @@ import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionComponent
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.GroupsOfChildren
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
@@ -552,6 +553,17 @@ class RPCEndpointsHandler {
         reportMsgLog(infoDto.errorMsg)
     }
 
+
+    fun expandSchema(latestSchemaDto: RPCInterfaceSchemaDto){
+        latestSchemaDto.types
+            .plus(latestSchemaDto.identifiedResponseTypes?: listOf())
+            .filterNot { typeCache.containsKey(it.type.fullTypeNameWithGenericType) }
+            .sortedBy { it.type.depth }
+            .filter { it.type.type == RPCSupportedDataType.CUSTOM_OBJECT }.forEach { t ->
+                buildTypeCache(t)
+            }
+    }
+
     private fun buildTypeCache(type: ParamDto){
         if (type.type.type == RPCSupportedDataType.CUSTOM_OBJECT && !typeCache.containsKey(type.type.fullTypeNameWithGenericType)){
             typeCache[type.type.fullTypeNameWithGenericType] = handleObjectType(type, true)
@@ -582,7 +594,7 @@ class RPCEndpointsHandler {
     /**
      * get rpc action dto based on specified [action]
      */
-    fun transformActionDto(action: RPCCallAction, index : Int = -1) : RPCActionDto {
+    fun transformActionDto(action: RPCCallAction, index : Int = -1, externalActions: List<StructuralElement>? = null) : RPCActionDto {
         // generate RPCActionDto
         val rpcAction = actionSchemaCluster[action.id]?.copy()?: throw IllegalStateException("cannot find the ${action.id} in actionSchemaCluster")
 
@@ -603,10 +615,16 @@ class RPCEndpointsHandler {
         setGenerationConfiguration(rpcAction, index, generateResponseVariable(index))
 
         val missingDto = mutableSetOf<String>()
-        // get external action
-        if (action.parent is EnterpriseActionGroup){
-            val exActions = (action.parent as EnterpriseActionGroup)
+
+        var eactions : List<StructuralElement>? = externalActions
+        // get external action if not specified
+        if (externalActions.isNullOrEmpty()){
+            eactions = (action.parent as EnterpriseActionGroup)
                 .groupsView()!!.getAllInGroup(GroupsOfChildren.EXTERNAL_SERVICES)
+        }
+
+        if (!eactions.isNullOrEmpty()){
+            val exActions = eactions
                 .flatMap { (it as ActionComponent).flatten() }
                 .filterIsInstance<RPCExternalServiceAction>()
                 .map { e->
@@ -616,8 +634,7 @@ class RPCEndpointsHandler {
                     }
                     transformMockRPCExternalServiceDto(e)
                 }
-            val mockDbActions = (action.parent as EnterpriseActionGroup)
-                .groupsView()!!.getAllInGroup(GroupsOfChildren.EXTERNAL_SERVICES)
+            val mockDbActions = eactions
                 .flatMap { (it as ActionComponent).flatten() }
                 .filterIsInstance<DbAsExternalServiceAction>()
                 .map { e->
@@ -638,26 +655,27 @@ class RPCEndpointsHandler {
         return rpcAction
     }
 
-    fun getJVMSchemaForDto(names: Set<String>): Map<String, Gene> {
-
-        if (names.any { infoDto.unitsInfoDto?.extractedSpecifiedDtos?.containsKey(it) == false} ) {
-            infoDto = remoteController.getSutInfo()!!
-
-        names.filter { infoDto.unitsInfoDto?.extractedSpecifiedDtos?.containsKey(it)  == false}.run {
-            if (isNotEmpty())
-                LoggingUtil.uniqueWarn(log, "cannot extract schema for dtos (ie, ${this.joinToString(",")}) in the SUT driver and instrumentation agent")
-            }
-        }
-
-        val allDtoNames = infoDto.unitsInfoDto.parsedDtos.keys.toList()
-        val allDtoSchemas = allDtoNames.map { infoDto.unitsInfoDto.parsedDtos[it]!! }
-        RestActionBuilderV3.createObjectGeneForDTOs(allDtoNames, allDtoSchemas, allDtoNames, enableConstraintHandling = config.enableSchemaConstraintHandling)
-
-        return names.filter { infoDto.unitsInfoDto?.extractedSpecifiedDtos?.containsKey(it)  == true}.associateWith { name ->
-            val schema = infoDto.unitsInfoDto.extractedSpecifiedDtos[name]!!
-            RestActionBuilderV3.createObjectGeneForDTO(name, schema, name, config.enableSchemaConstraintHandling)
-        }
-    }
+    // Man: comment it out for the moment
+//    fun getJVMSchemaForDto(names: Set<String>): Map<String, Gene> {
+//
+//        if (names.any { infoDto.unitsInfoDto?.extractedSpecifiedDtos?.containsKey(it) == false} ) {
+//            infoDto = remoteController.getSutInfo()!!
+//
+//        names.filter { infoDto.unitsInfoDto?.extractedSpecifiedDtos?.containsKey(it)  == false}.run {
+//            if (isNotEmpty())
+//                LoggingUtil.uniqueWarn(log, "cannot extract schema for dtos (ie, ${this.joinToString(",")}) in the SUT driver and instrumentation agent")
+//            }
+//        }
+//
+//        val allDtoNames = infoDto.unitsInfoDto.parsedDtos.keys.toList()
+//        val allDtoSchemas = allDtoNames.map { infoDto.unitsInfoDto.parsedDtos[it]!! }
+//        RestActionBuilderV3.createObjectGeneForDTOs(allDtoNames, allDtoSchemas, allDtoNames, enableConstraintHandling = config.enableSchemaConstraintHandling)
+//
+//        return names.filter { infoDto.unitsInfoDto?.extractedSpecifiedDtos?.containsKey(it)  == true}.associateWith { name ->
+//            val schema = infoDto.unitsInfoDto.extractedSpecifiedDtos[name]!!
+//            RestActionBuilderV3.createObjectGeneForDTO(name, schema, name, config.enableSchemaConstraintHandling)
+//        }
+//    }
 
     private fun transformResponseDto(action: RPCCallAction) : EvaluatedRPCActionDto{
         // generate RPCActionDto
@@ -1219,6 +1237,11 @@ class RPCEndpointsHandler {
         val objType = typeCache[param.type.fullTypeNameWithGenericType]
             ?:throw IllegalStateException("missing ${param.type.fullTypeNameWithGenericType} in typeCache")
         return objType.copy().apply { this.name = param.name }
+    }
+
+    fun getGeneIfExist(typeName: String, paramName : String): Gene?{
+        val objType = typeCache[typeName]?: return null
+        return objType.copy().apply { this.name = paramName }
     }
 
     /**

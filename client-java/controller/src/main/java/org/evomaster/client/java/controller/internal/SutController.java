@@ -39,6 +39,7 @@ import org.evomaster.client.java.controller.problem.rpc.RPCExceptionHandler;
 import org.evomaster.client.java.controller.problem.rpc.schema.EndpointSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.InterfaceSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.LocalAuthSetupSchema;
+import org.evomaster.client.java.controller.problem.rpc.schema.params.CollectionParam;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
 import org.evomaster.client.java.instrumentation.BootTimeObjectiveInfo;
@@ -1192,15 +1193,30 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                 buildExternalServiceResponse(schema,
                     dto.missingDto,
                     schema.getRpcType());
-                Map<String, ParamDto> map = new HashMap<>();
                 Map<String, NamedTypedValue> types = schema.getObjParamCollections();
-                for (String name : dto.missingDto){
-                    if ((!map.containsKey(name)) && (types.containsKey(name))){
-                        map.put(name, types.get(name).getDto());
-                    }
+
+                if (dto.missingDto.stream().anyMatch(s-> types.containsKey(s))){
+                    response.latestSchemaDto = schema.getDto();
                 }
-                if (!map.isEmpty()){
-                    response.extractedMissingDto = map;
+            }
+        }
+    }
+
+    private void extractTypesAndRelated(Map<String, NamedTypedValue> all, List<String> typesToExtract, Map<String, ParamDto> results){
+        for (String type : typesToExtract){
+            extractTypeAndRelated(all, type, results);
+        }
+    }
+
+    private void extractTypeAndRelated(Map<String, NamedTypedValue> all, String typeName, Map<String, ParamDto> results){
+        if (results.containsKey(typeName)) return;
+        NamedTypedValue type = all.get(typeName);
+        if (type != null){
+            results.put(typeName, type.getDto());
+            List<String> referenceTypes = type.referenceTypes();
+            if (referenceTypes != null && !referenceTypes.isEmpty()){
+                for (String refType : referenceTypes){
+                    extractTypeAndRelated(all, refType, results);
                 }
             }
         }

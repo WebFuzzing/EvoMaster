@@ -276,4 +276,9 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
     public void setScale(Integer scale) {
         this.scale = scale;
     }
+
+    @Override
+    public List<String> referenceTypes() {
+        return null;
+    }
 }

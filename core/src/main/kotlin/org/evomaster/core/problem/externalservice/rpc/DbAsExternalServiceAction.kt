@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.externalservice.rpc
 
+import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.problem.externalservice.rpc.parm.ClassResponseParam
 import org.evomaster.core.search.StructuralElement
@@ -59,5 +60,7 @@ class DbAsExternalServiceAction (
         return DbAsExternalServiceAction(commandName, descriptiveInfo, null, response.copy() as ClassResponseParam)
     }
 
-
+    fun addUpdateForParam(param: Param){
+        addChild(param)
+    }
 }

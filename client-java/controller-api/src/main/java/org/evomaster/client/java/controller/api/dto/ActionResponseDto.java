@@ -2,6 +2,7 @@ package org.evomaster.client.java.controller.api.dto;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCExceptionInfoDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCInterfaceSchemaDto;
 
 import java.util.List;
 import java.util.Map;
@@ -72,9 +73,8 @@ public class ActionResponseDto {
     public String error500Msg;
 
     /**
-     * a map from class name to dto structure for missing dtos,
-     * eg, response of external services
+     * latest schema dto which might contain new DTOs
      */
-    public Map<String, ParamDto> extractedMissingDto;
+    public RPCInterfaceSchemaDto latestSchemaDto;
 
 }

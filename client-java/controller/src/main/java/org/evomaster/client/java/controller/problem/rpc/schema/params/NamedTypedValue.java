@@ -121,6 +121,8 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
 
     public abstract Object newInstance() throws ClassNotFoundException;
 
+    public abstract List<String> referenceTypes();
+
     public void setValue(V value) {
         this.value = value;
     }
@@ -305,4 +307,5 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
     public void setDefaultValue(NamedTypedValue defaultValue) {
         this.defaultValue = defaultValue;
     }
+
 }
