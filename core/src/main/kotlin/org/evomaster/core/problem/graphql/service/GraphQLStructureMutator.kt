@@ -2,7 +2,7 @@ package org.evomaster.core.problem.graphql.service
 
 import com.google.inject.Inject
 import org.evomaster.core.Lazy
-import org.evomaster.core.database.SqlInsertBuilder
+import org.evomaster.core.sql.SqlInsertBuilder
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.GraphQLIndividual

@@ -1,6 +1,6 @@
 package org.evomaster.core.search.gene.binding
 
-import org.evomaster.core.search.Action
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene

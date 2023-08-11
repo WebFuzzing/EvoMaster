@@ -1,7 +1,7 @@
 package org.evomaster.core.remote.service
 
 import org.evomaster.client.java.controller.api.dto.*
-import org.evomaster.core.database.DatabaseExecutor
+import org.evomaster.core.sql.DatabaseExecutor
 
 
 /**

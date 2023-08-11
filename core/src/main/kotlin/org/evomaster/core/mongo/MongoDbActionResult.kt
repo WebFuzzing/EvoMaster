@@ -1,7 +1,7 @@
 package org.evomaster.core.mongo
 
-import org.evomaster.core.search.Action
-import org.evomaster.core.search.ActionResult
+import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.action.ActionResult
 
 /**
  * sql insert action execution result

@@ -1,7 +1,7 @@
 package org.evomaster.core.search.matchproblem
 
 
-import org.evomaster.core.search.Action
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.Gene
 
 class PrimitiveTypeMatchAction(gene: Gene) : Action(listOf(gene)) {

@@ -21,8 +21,8 @@ import org.evomaster.core.problem.rest.param.UpdateForBodyParam
 import org.evomaster.core.problem.util.ParserDtoUtil
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.TcpUtils
-import org.evomaster.core.search.Action
-import org.evomaster.core.search.ActionResult
+import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.*

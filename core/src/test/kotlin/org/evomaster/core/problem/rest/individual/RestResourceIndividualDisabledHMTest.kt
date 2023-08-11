@@ -1,8 +1,8 @@
 package org.evomaster.core.problem.rest.individual
 
 import com.google.inject.*
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.schema.Table
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.sql.schema.Table
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.resource.ResourceCluster
@@ -13,7 +13,7 @@ import org.evomaster.core.problem.rest.service.*
 import org.evomaster.core.problem.util.BindingBuilder
 import org.evomaster.core.problem.util.BindingBuilder.isExtraTaintParam
 import org.evomaster.core.problem.util.ParamUtil
-import org.evomaster.core.search.ActionFilter
+import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
@@ -82,9 +82,9 @@ class RestResourceIndividualDisabledHMTest : RestIndividualTestBase(){
 
     override fun getFitnessFunction(): AbstractRestFitness<RestIndividual> = ff
 
-    private fun sampleDbAction(table : Table) : List<DbAction>{
+    private fun sampleDbAction(table : Table) : List<SqlAction>{
         val actions = sqlInsertBuilder!!.createSqlInsertionAction(table.name)
-        return actions.map { it.copy() as DbAction }
+        return actions.map { it.copy() as SqlAction }
     }
 
     private fun sampleResourceCall(resNode: RestResourceNode? = null): RestResourceCalls {
@@ -100,19 +100,19 @@ class RestResourceIndividualDisabledHMTest : RestIndividualTestBase(){
     }
 
     private fun sampleRestIndividual(dbSize : Int, resourceSize: Int): RestIndividual{
-        val dbActions = mutableListOf<DbAction>()
+        val sqlActions = mutableListOf<SqlAction>()
         val resoureCalls = mutableListOf<RestResourceCalls>()
         do {
             val table = randomness.choose(cluster.getTableInfo().values)
-            dbActions.addAll(sampleDbAction(table))
-        }while (dbActions.size < dbSize)
+            sqlActions.addAll(sampleDbAction(table))
+        }while (sqlActions.size < dbSize)
 
 
         do {
             val node = randomness.choose(cluster.getCluster().values)
             resoureCalls.add(sampleResourceCall(node))
         }while (resoureCalls.size < resourceSize)
-        return RestIndividual(dbInitialization = dbActions, resourceCalls = resoureCalls, sampleType = SampleType.RANDOM)
+        return RestIndividual(dbInitialization = sqlActions, resourceCalls = resoureCalls, sampleType = SampleType.RANDOM)
     }
 
     /**
@@ -272,7 +272,7 @@ class RestResourceIndividualDisabledHMTest : RestIndividualTestBase(){
                     if (dbActions.isNotEmpty()){
                         val g = ParamUtil.getValueGene(nosql[0])
                         if (g !is DateGene
-                                || dbActions.any { (it as? DbAction)?.representExistingData == false } // DateGene cannot bind with ImmutableDataHolderGene now
+                                || dbActions.any { (it as? SqlAction)?.representExistingData == false } // DateGene cannot bind with ImmutableDataHolderGene now
                         ){
                             // rest gene should be bound with at least one sql gene
                             assertTrue(g.isBoundGene())

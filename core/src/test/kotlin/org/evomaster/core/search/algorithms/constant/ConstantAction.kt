@@ -1,6 +1,6 @@
 package org.evomaster.core.search.algorithms.constant
 
-import org.evomaster.core.search.Action
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.numeric.IntegerGene
