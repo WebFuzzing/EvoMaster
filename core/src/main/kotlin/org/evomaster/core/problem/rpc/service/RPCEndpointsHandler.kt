@@ -31,8 +31,8 @@ import org.evomaster.core.problem.util.ParserDtoUtil.parseJsonNodeAsGene
 import org.evomaster.core.problem.util.ParserDtoUtil.setGeneBasedOnString
 import org.evomaster.core.problem.util.ParserDtoUtil.wrapWithOptionalGene
 import org.evomaster.core.remote.service.RemoteController
-import org.evomaster.core.search.Action
-import org.evomaster.core.search.ActionComponent
+import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.action.ActionComponent
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.gene.*

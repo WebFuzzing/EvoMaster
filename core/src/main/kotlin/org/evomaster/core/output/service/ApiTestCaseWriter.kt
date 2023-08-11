@@ -2,8 +2,8 @@ package org.evomaster.core.output.service
 
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.DbActionResult
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.sql.SqlActionResult
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.mongo.MongoDbActionResult
 import org.evomaster.core.output.*
@@ -34,9 +34,9 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
 
         //FIXME this doing initializations, not field declaration
         //REFACTOR TO HANDLE MULTIPLE DATABASES
-        val initializingSqlActions = ind.individual.seeInitializingActions().filterIsInstance<DbAction>()
+        val initializingSqlActions = ind.individual.seeInitializingActions().filterIsInstance<SqlAction>()
         val initializingSqlActionResults = (ind.seeResults(initializingSqlActions))
-        if (initializingSqlActionResults.any { (it as? DbActionResult) == null })
+        if (initializingSqlActionResults.any { (it as? SqlActionResult) == null })
             throw IllegalStateException("the type of results are expected as DbActionResults")
 
         val initializingMongoActions = ind.individual.seeInitializingActions().filterIsInstance<MongoDbAction>()
@@ -49,7 +49,7 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
             SqlWriter.handleDbInitialization(
                     format,
                 initializingSqlActions.indices.map {
-                        EvaluatedDbAction(initializingSqlActions[it], initializingSqlActionResults[it] as DbActionResult)
+                        EvaluatedDbAction(initializingSqlActions[it], initializingSqlActionResults[it] as SqlActionResult)
                     },
                     lines, insertionVars = insertionVars, skipFailure = config.skipFailureSQLInTestFile)
         }

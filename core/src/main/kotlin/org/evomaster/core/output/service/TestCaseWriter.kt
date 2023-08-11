@@ -9,8 +9,8 @@ import org.evomaster.core.output.service.TestWriterUtils.Companion.getWireMockVa
 import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.param.HttpWsResponseParam
-import org.evomaster.core.search.Action
-import org.evomaster.core.search.ActionResult
+import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
@@ -225,13 +225,13 @@ abstract class TestCaseWriter {
     open fun addExtraInitStatement(lines: Lines) {}
 
     protected fun addActionInTryCatch(
-            call: Action,
-            index: Int,
-            testCaseName: String,
-            lines: Lines,
-            res: ActionResult,
-            testSuitePath: Path?,
-            baseUrlOfSut: String
+        call: Action,
+        index: Int,
+        testCaseName: String,
+        lines: Lines,
+        res: ActionResult,
+        testSuitePath: Path?,
+        baseUrlOfSut: String
     ) {
         when {
             /*

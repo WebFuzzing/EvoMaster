@@ -7,7 +7,7 @@ import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.FormParam
 import org.evomaster.core.problem.rest.resource.ResourceCluster
 import org.evomaster.core.problem.util.ParamUtil
-import org.evomaster.core.search.Action
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene

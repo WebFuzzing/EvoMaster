@@ -9,7 +9,7 @@ import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.param.PathParam
-import org.evomaster.core.search.Action
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene

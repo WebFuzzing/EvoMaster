@@ -19,7 +19,7 @@ import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.rest.param.*
 import org.evomaster.core.remote.SutProblemException
-import org.evomaster.core.search.Action
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
@@ -260,14 +260,14 @@ object RestActionBuilderV3 {
 
 
     private fun handleOperation(
-            actionCluster: MutableMap<String, Action>,
-            verb: HttpVerb,
-            restPath: RestPath,
-            operation: Operation,
-            swagger: OpenAPI,
-            doParseDescription: Boolean,
-            enableConstraintHandling: Boolean,
-            errorEndpoints : MutableList<String> = mutableListOf()
+        actionCluster: MutableMap<String, Action>,
+        verb: HttpVerb,
+        restPath: RestPath,
+        operation: Operation,
+        swagger: OpenAPI,
+        doParseDescription: Boolean,
+        enableConstraintHandling: Boolean,
+        errorEndpoints : MutableList<String> = mutableListOf()
     ) {
 
         try{

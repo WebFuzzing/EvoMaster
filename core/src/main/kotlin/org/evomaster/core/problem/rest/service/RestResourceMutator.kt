@@ -1,7 +1,6 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
-import org.evomaster.core.database.DbAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.search.EvaluatedIndividual

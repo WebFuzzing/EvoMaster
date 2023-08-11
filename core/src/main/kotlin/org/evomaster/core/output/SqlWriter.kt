@@ -2,7 +2,7 @@ package org.evomaster.core.output
 
 import org.apache.commons.lang3.StringEscapeUtils
 import org.evomaster.core.Lazy
-import org.evomaster.core.database.DbAction
+import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.search.EvaluatedDbAction
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
@@ -28,13 +28,13 @@ object SqlWriter {
      * @param skipFailure specifies whether to skip failure tests
      */
     fun handleDbInitialization(
-            format: OutputFormat,
-            dbInitialization: List<EvaluatedDbAction>,
-            lines: Lines,
-            allDbInitialization: List<DbAction> = dbInitialization.map { it.action },
-            groupIndex: String ="",
-            insertionVars: MutableList<Pair<String, String>>,
-            skipFailure: Boolean) {
+        format: OutputFormat,
+        dbInitialization: List<EvaluatedDbAction>,
+        lines: Lines,
+        allDbInitialization: List<SqlAction> = dbInitialization.map { it.action },
+        groupIndex: String ="",
+        insertionVars: MutableList<Pair<String, String>>,
+        skipFailure: Boolean) {
 
         if (dbInitialization.isEmpty() || dbInitialization.none { !it.action.representExistingData && (!skipFailure || it.result.getInsertExecutionResult())}) {
             return
@@ -118,7 +118,7 @@ object SqlWriter {
         }
     }
 
-    private fun handleFK(format: OutputFormat, fkg: SqlForeignKeyGene, action: DbAction, allActions: List<DbAction>): String {
+    private fun handleFK(format: OutputFormat, fkg: SqlForeignKeyGene, action: SqlAction, allActions: List<SqlAction>): String {
 
 
         /*

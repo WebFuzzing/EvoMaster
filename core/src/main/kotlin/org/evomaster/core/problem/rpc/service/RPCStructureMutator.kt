@@ -1,7 +1,7 @@
 package org.evomaster.core.problem.rpc.service
 
 import com.google.inject.Inject
-import org.evomaster.core.database.SqlInsertBuilder
+import org.evomaster.core.sql.SqlInsertBuilder
 import org.evomaster.core.problem.api.service.ApiWsStructureMutator
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.search.EvaluatedIndividual

@@ -4,7 +4,7 @@ import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.exception.RPCExceptionType
 import org.evomaster.core.Lazy
-import org.evomaster.core.database.DbAction
+import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.problem.api.service.ApiWsFitness
 import org.evomaster.core.problem.externalservice.rpc.RPCExternalServiceAction
 import org.evomaster.core.problem.externalservice.rpc.parm.ClassResponseParam
@@ -16,7 +16,7 @@ import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.problem.rpc.param.RPCParam
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.util.ParserDtoUtil.wrapWithOptionalGene
-import org.evomaster.core.search.ActionResult
+import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.gene.interfaces.CollectionGene
@@ -45,7 +45,7 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
         // TODO handle auth
         val actionResults: MutableList<ActionResult> = mutableListOf()
 
-        doDbCalls(individual.seeInitializingActions().filterIsInstance<DbAction>(), actionResults = actionResults)
+        doDbCalls(individual.seeInitializingActions().filterIsInstance<SqlAction>(), actionResults = actionResults)
 
         val fv = FitnessValue(individual.size().toDouble())
 

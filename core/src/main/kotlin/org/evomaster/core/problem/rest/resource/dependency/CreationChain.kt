@@ -1,6 +1,6 @@
 package org.evomaster.core.problem.rest.resource.dependency
 
-import org.evomaster.core.database.DbAction
+import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.search.service.Randomness
 
@@ -65,6 +65,6 @@ class PostCreationChain(val actions: MutableList<RestCallAction>, private var fa
     }
 }
 
-class DBCreationChain(val actions: MutableList<DbAction>) : CreationChain()
+class DBCreationChain(val actions: MutableList<SqlAction>) : CreationChain()
 
 class CompositeCreationChain(val actions: MutableList<Any>) : CreationChain()

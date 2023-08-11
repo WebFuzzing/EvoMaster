@@ -4,7 +4,7 @@ import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.httpws.auth.NoAuth
 import org.evomaster.core.problem.api.param.Param
-import org.evomaster.core.search.Action
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.Gene
 
 

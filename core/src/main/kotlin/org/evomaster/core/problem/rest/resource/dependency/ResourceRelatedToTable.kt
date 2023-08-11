@@ -1,7 +1,7 @@
 package org.evomaster.core.problem.rest.resource.dependency
 
 import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto
-import org.evomaster.core.database.SQLKey
+import org.evomaster.core.sql.SQLKey
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.util.inference.model.MatchedInfo

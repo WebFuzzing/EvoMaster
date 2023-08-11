@@ -1,7 +1,9 @@
 package org.evomaster.core.problem.graphql
 
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.DbActionUtils
+import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.action.ActionComponent
+import org.evomaster.core.search.action.ActionFilter
+import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
@@ -21,7 +23,7 @@ class GraphQLIndividual(
     children = allActions,
     childTypeVerifier = {
         EnterpriseActionGroup::class.java.isAssignableFrom(it)
-                || DbAction::class.java.isAssignableFrom(it)
+                || SqlAction::class.java.isAssignableFrom(it)
     },
     groups = groups
 ) {
@@ -42,7 +44,7 @@ class GraphQLIndividual(
         return when (filter) {
             GeneFilter.ALL -> seeAllActions().flatMap(Action::seeTopGenes)
             GeneFilter.NO_SQL -> seeActions(ActionFilter.NO_SQL).flatMap(Action::seeTopGenes)
-            GeneFilter.ONLY_SQL -> seeDbActions().flatMap(DbAction::seeTopGenes)
+            GeneFilter.ONLY_SQL -> seeDbActions().flatMap(SqlAction::seeTopGenes)
             GeneFilter.ONLY_MONGO -> seeMongoDbActions().flatMap(MongoDbAction::seeTopGenes)
             GeneFilter.ONLY_EXTERNAL_SERVICE -> seeExternalServiceActions().flatMap(ApiExternalServiceAction::seeTopGenes)
         }

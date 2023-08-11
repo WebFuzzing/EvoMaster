@@ -5,8 +5,8 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.search.Action
-import org.evomaster.core.search.ActionFilter
+import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*

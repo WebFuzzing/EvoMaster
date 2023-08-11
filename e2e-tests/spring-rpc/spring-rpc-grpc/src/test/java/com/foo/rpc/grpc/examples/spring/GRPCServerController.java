@@ -24,6 +24,7 @@ public abstract class GRPCServerController extends EmbeddedSutController {
 
     public GRPCServerController(BindableService service){
         registeredService = service;
+        super.setControllerPort(0);
     }
 
     abstract public String startClient();
