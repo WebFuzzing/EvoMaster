@@ -65,8 +65,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.evomaster.client.java.controller.problem.rpc.RPCEndpointsBuilder.buildExternalServiceResponse;
-
 /**
  * Abstract class used to connect to the EvoMaster process, and
  * that is responsible to start/stop/restart the tested application,

@@ -53,4 +53,11 @@ public class MockDatabaseDto {
      */
     public String responseFullType;
 
+
+    /**
+     * explict type info with generics
+     * the info is used by evomaster
+     */
+    public String responseFullTypeWithGeneric;
+
 }
