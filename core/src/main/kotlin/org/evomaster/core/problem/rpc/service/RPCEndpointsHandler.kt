@@ -261,17 +261,18 @@ class RPCEndpointsHandler {
             if (dto.requestRules!=null && dto.requestRules.isNotEmpty() && dto.requestRules.size != dto.responses.size && dto.responses.size != dto.responseTypes.size)
                 throw IllegalArgumentException("the size of request identifications and responses should same but ${dto.requestRules.size} vs. ${dto.responses.size} vs. ${dto.responseTypes.size}")
 
-            dto.responseTypes.forEachIndexed { index, s ->
+
+            (dto.responseFullTypesWithGeneric?:dto.responseTypes).forEachIndexed { index, s ->
 
                 val exkey = RPCExternalServiceAction.getRPCExternalServiceActionName(
                     dto.interfaceFullName, dto.functionName, dto.requestRules?.get(index), s
                 )
                 if (!seededExternalServiceCluster.containsKey(exkey)){
-                    val responseTypeClass = interfaceDto.identifiedResponseTypes?.find { it.type.fullTypeName == s }
+                    val responseTypeClass = interfaceDto.identifiedResponseTypes?.find { it.type.fullTypeNameWithGenericType == s || it.type.fullTypeName == s }
                     var fromClass = false
                     val responseGene = (
                             if (responseTypeClass != null){
-                                handleDtoParam(responseTypeClass).also { fromClass = true }
+                                handleDtoParam(responseTypeClass).also { fromClass = (dto.responseFullTypesWithGeneric != null) }
                             }else if(sutInfoDto.unitsInfoDto.extractedSpecifiedDtos?.containsKey(s) == true){
                                 val schema = sutInfoDto.unitsInfoDto.extractedSpecifiedDtos[s]!!
                                 fromClass = true
@@ -303,16 +304,20 @@ class RPCEndpointsHandler {
             }
         }
 
-
         rpcActionDto.mockDatabaseDtos?.forEach{ dbDto->
             if (dbDto.commandName != null && dbDto.appKey!=null && dbDto.responseFullType != null){
-                val exKey = DbAsExternalServiceAction.getDbAsExternalServiceAction(dbDto.commandName, dbDto.requests, dbDto.responseFullType)
+                val exKey = DbAsExternalServiceAction
+                    .getDbAsExternalServiceAction(dbDto.commandName, dbDto.requests, dbDto.responseFullTypeWithGeneric?:dbDto.responseFullType)
 
                 if (!seededDbMockObjects.containsKey(exKey)){
-                    /*
-                        currently we only handle the response with json
-                     */
-                    val responseGene = (if (dbDto.response != null){
+                    val responseTypeClass = interfaceDto.identifiedResponseTypes?.find {
+                        it.type.fullTypeNameWithGenericType == dbDto.responseFullTypeWithGeneric || it.type.fullTypeName == dbDto.responseFullType
+                    }
+                    var fromClass = false
+
+                    val responseGene = (if (responseTypeClass != null){
+                        handleDtoParam(responseTypeClass).also { fromClass = (dbDto.responseFullTypeWithGeneric != null) }
+                    }else if (dbDto.response != null){
                         val node = readJson(dbDto.response)
                         if (node != null){
                             parseJsonNodeAsGene("return", node)
@@ -323,8 +328,8 @@ class RPCEndpointsHandler {
                         StringGene("return")
                     }.run { wrapWithOptionalGene(this, true) }) as OptionalGene
 
-
-                    val response = ClassResponseParam(className = dbDto.responseFullType, responseType = EnumGene("responseType", listOf("JSON")), response = responseGene)
+                    val response = ClassResponseParam(className = dbDto.responseFullTypeWithGeneric?:dbDto.responseFullType, responseType = EnumGene("responseType", listOf("JSON")), response = responseGene)
+                    if (fromClass) response.responseParsedWithClass()
                     val dbExAction = DbAsExternalServiceAction(
                         dbDto.commandName,
                         dbDto.appKey,

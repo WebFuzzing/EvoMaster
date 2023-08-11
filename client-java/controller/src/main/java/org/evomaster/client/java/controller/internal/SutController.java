@@ -688,30 +688,30 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             throw new IllegalStateException("EM driver RPC: the specified problem is not RPC");
         RPCType rpcType = ((RPCProblem) rpcp).getType();
 
-        Map<String, List<RPCActionDto>> results = RPCEndpointsBuilder.buildSeededTest(rpcInterfaceSchema, seedRPCTests, rpcType);
+        return RPCEndpointsBuilder.buildSeededTest(rpcInterfaceSchema, seedRPCTests, rpcType);
 
-        try{
-            if (isSUTRunning){
-                if (jvmClassToExtract.isEmpty()){
-                /*
-                    distinct might be a bit expensive, however, the specified responses are probably limited
-                 */
-                    Set<String> dtoNames = seedRPCTests.stream()
-                            .flatMap(s-> s.rpcFunctions == null? Stream.empty() : s.rpcFunctions.stream()
-                                    .flatMap(f-> f.mockRPCExternalServiceDtos == null ? Stream.empty() : f.mockRPCExternalServiceDtos.stream()
-                                            .flatMap(e-> e.responseTypes == null ? Stream.empty(): e.responseTypes.stream()))).collect(Collectors.toSet());
-                    if (dtoNames != null && !dtoNames.isEmpty())
-                        jvmClassToExtract.addAll(dtoNames);
-                }
-
-                if (!jvmClassToExtract.isEmpty())
-                    getJvmDtoSchema(jvmClassToExtract);
-            }
-        }catch (Exception e){
-            SimpleLogger.recordErrorMessage("Fail to extract JVM Class due to "+ e.getMessage());
-        }
-
-        return results;
+//        try{
+//            if (isSUTRunning){
+//                if (jvmClassToExtract.isEmpty()){
+//                /*
+//                    distinct might be a bit expensive, however, the specified responses are probably limited
+//                 */
+//                    Set<String> dtoNames = seedRPCTests.stream()
+//                            .flatMap(s-> s.rpcFunctions == null? Stream.empty() : s.rpcFunctions.stream()
+//                                    .flatMap(f-> f.mockRPCExternalServiceDtos == null ? Stream.empty() : f.mockRPCExternalServiceDtos.stream()
+//                                            .flatMap(e-> e.responseTypes == null ? Stream.empty(): e.responseTypes.stream()))).collect(Collectors.toSet());
+//                    if (dtoNames != null && !dtoNames.isEmpty())
+//                        jvmClassToExtract.addAll(dtoNames);
+//                }
+//
+//                if (!jvmClassToExtract.isEmpty())
+//                    getJvmDtoSchema(jvmClassToExtract);
+//            }
+//        }catch (Exception e){
+//            SimpleLogger.recordErrorMessage("Fail to extract JVM Class due to "+ e.getMessage());
+//        }
+//
+//        return results;
     }
 
 

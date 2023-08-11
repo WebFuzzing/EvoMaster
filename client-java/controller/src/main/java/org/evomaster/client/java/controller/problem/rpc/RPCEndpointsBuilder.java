@@ -149,7 +149,7 @@ public class RPCEndpointsBuilder {
                     Arrays.stream(interfaceClazz.getDeclaredMethods()).filter(m-> m.getName().equals(apiDto.functionName)).collect(Collectors.toList());
                 Method method = findMethod(methods, apiDto.inputParameterTypes);
                 Map<TypeVariable, Type> genericTypeMap = new HashMap<>();
-                NamedTypedValue response= build(schema, method.getReturnType(), method.getGenericReturnType(), "response", rpcType, new ArrayList<>(), 0, null, null, null, null, null, genericTypeMap, false);
+                NamedTypedValue response= build(schema, method.getReturnType(), method.getGenericReturnType(), "return", rpcType, new ArrayList<>(), 0, null, null, null, null, null, genericTypeMap, true);
                 List<String> modifiedTypes = new ArrayList<>(apiDto.responseTypes);
                 for (int i = 0; i < modifiedTypes.size(); i ++){
                     if (modifiedTypes.get(i).equals(method.getReturnType().getName())){
@@ -185,7 +185,7 @@ public class RPCEndpointsBuilder {
                         Arrays.stream(dbClazz.getDeclaredMethods()).filter(m-> m.getName().equals(methodName)).collect(Collectors.toList());
                     Method method = findMethod(methods, null);
                     Map<TypeVariable, Type> genericTypeMap = new HashMap<>();
-                    NamedTypedValue response = build(schema, method.getReturnType(), method.getGenericReturnType(), "response", rpcType, new ArrayList<>(), 0, null, null, null, null, null, genericTypeMap, false);
+                    NamedTypedValue response = build(schema, method.getReturnType(), method.getGenericReturnType(), "return", rpcType, new ArrayList<>(), 0, null, null, null, null, null, genericTypeMap, true);
                     dbDto.responseFullTypeWithGeneric = response.getType().getFullTypeNameWithGenericType();
                     return response;
                 }
@@ -214,7 +214,7 @@ public class RPCEndpointsBuilder {
             if (s.keyValues.values.isEmpty()){
                 throw new IllegalArgumentException("Driver Config Error: at least one values is needed for customizing keyValues with the key "+s.keyValues.key);
             }
-            String key = "key:"+s.keyValues.key+""+getKeyForCustomizedRequestValueDto(s);
+            String key = "key:"+s.keyValues.key+getKeyForCustomizedRequestValueDto(s);
             if (handled.contains(key))
                 throw new IllegalArgumentException("Driver Config Error: "+key+" should be specified only once");
             handled.add(key);
