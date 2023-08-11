@@ -134,7 +134,27 @@ public class FakeMockObjectController extends SpringController {
                                 );
                             }}
                     );
-                }}
+                }},
+
+            new SeededRPCTestDto(){{
+                testName = "test_3";
+                rpcFunctions = Arrays.asList(
+                    new SeededRPCActionDto(){{
+                        interfaceName = FakeMockObjectService.Iface.class.getName();
+                        functionName = "getAllBarFromDatabase";
+                        inputParams= Arrays.asList();
+                        inputParamTypes= Arrays.asList();
+                        mockDatabaseDtos = Arrays.asList(
+                            new MockDatabaseDto(){{
+                                appKey = "fake.app";
+                                commandName = "fake.list.command";
+                                response = "[]";
+                                responseFullType = ArrayList.class.getName();
+                            }}
+                        );
+                    }}
+                );
+            }}
         );
     }
 
@@ -146,8 +166,16 @@ public class FakeMockObjectController extends SpringController {
                 for (MockDatabaseDto dto: databaseDtos){
                     if (dto.response!= null && dto.responseFullType != null){
                         Class clazz = Class.forName(dto.responseFullType);
-                        FakeDatabaseRow data = (FakeDatabaseRow) mapper.readValue(dto.response, clazz);
-                        ok = ok && client.backdoor(null, data);
+
+                        if (dto.responseFullType.equals(FakeDatabaseRow.class.getName())){
+                            FakeDatabaseRow data = (FakeDatabaseRow) mapper.readValue(dto.response, clazz);
+                            ok = ok && client.backdoor(null, data);
+                        }else if (dto.responseFullType.equals(ArrayList.class.getName())){
+                            List data = (List) mapper.readValue(dto.response, clazz);
+                            if (!data.isEmpty()){
+                                //TODO
+                            }
+                        }
                     }
                 }
                 return ok;

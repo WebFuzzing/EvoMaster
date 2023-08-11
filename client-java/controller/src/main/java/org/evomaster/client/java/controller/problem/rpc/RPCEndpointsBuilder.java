@@ -563,11 +563,19 @@ public class RPCEndpointsBuilder {
                 Protobuf3ByteStringType type = Protobuf3ByteStringType.getInstance(spec, clazz);
                 namedValue = new Protobuf3ByteStringParam(name, type, accessibleSchema);
             } else if (List.class.isAssignableFrom(clazz) || Set.class.isAssignableFrom(clazz)){
-                if (genericType == null)
-                    throw new RuntimeException("genericType should not be null for List and Set class");
-                Type type = ((ParameterizedType) genericType).getActualTypeArguments()[0];
-                Class<?> templateClazz = getTemplateClass(type, genericTypeMap);
-                NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, flattenDepth, level, customizationDtos, relatedCustomization, null, notNullAnnotations, null, genericTypeMap, isTypeToIdentify);
+//                if (genericType == null)
+//                    throw new RuntimeException("genericType should not be null for List and Set class");
+
+                NamedTypedValue template = null;
+                if (genericType != null){
+                    Type type = ((ParameterizedType) genericType).getActualTypeArguments()[0];
+                    Class<?> templateClazz = getTemplateClass(type, genericTypeMap);
+                    template = build(schema, templateClazz, type,"template", rpcType, flattenDepth, level, customizationDtos, relatedCustomization, null, notNullAnnotations, null, genericTypeMap, isTypeToIdentify);
+                }else {
+                    // if the generic type is not specified, use String as default for the moment
+                    template = new StringParam(name, new StringType(spec), null);
+                }
+
                 template.setNullable(false);
                 CollectionType ctype = new CollectionType(clazz.getSimpleName(),clazz.getName(), template, clazz, spec);
                 ctype.depth = getDepthLevel(clazz, flattenDepth, level, clazzWithGenericTypes);
