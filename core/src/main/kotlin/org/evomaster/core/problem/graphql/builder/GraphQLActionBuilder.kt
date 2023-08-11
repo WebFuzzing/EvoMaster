@@ -10,6 +10,7 @@ import org.evomaster.core.problem.graphql.param.GQInputParam
 import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.problem.graphql.schema.*
 import org.evomaster.core.problem.graphql.schema.__TypeKind.*
+import org.evomaster.core.problem.util.ActionBuilderUtil
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.*
@@ -85,6 +86,9 @@ object GraphQLActionBuilder {
         } else {
             throw SutProblemException("The given GraphQL schema has no Query nor Mutation operation")
         }
+
+        //TODO should handle skipped
+        ActionBuilderUtil.printActionNumberInfo("GraphQL API", actionCluster.size, 0, 0)
     }
 
 
