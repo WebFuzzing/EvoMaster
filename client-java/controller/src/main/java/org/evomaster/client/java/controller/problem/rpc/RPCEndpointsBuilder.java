@@ -126,7 +126,6 @@ public class RPCEndpointsBuilder {
         }
     }
 
-
     private static void validateKeyValues(List<CustomizedRequestValueDto> customizedRequestValueDtos){
         List<String> handled = new ArrayList<>();
         customizedRequestValueDtos.stream().filter(s-> s.keyValues !=null).forEach(s->{
@@ -1209,11 +1208,11 @@ public class RPCEndpointsBuilder {
                                 }
                                 RPCActionDto rpcActionDto = copy.getDto();
                                 rpcActionDto.mockRPCExternalServiceDtos = actionDto.mockRPCExternalServiceDtos;
-                                if (actionDto.mockRPCExternalServiceDtos!= null && !actionDto.mockRPCExternalServiceDtos.isEmpty())
+                                if (actionDto.mockRPCExternalServiceDtos!= null && !actionDto.mockRPCExternalServiceDtos.isEmpty()){
                                     buildExternalServiceResponse(schema,
-                                            actionDto.mockRPCExternalServiceDtos.stream().flatMap(s-> s.responseTypes.stream()).distinct().collect(Collectors.toList()),
-                                            rpcType);
-
+                                        actionDto.mockRPCExternalServiceDtos.stream().flatMap(s-> s.responseTypes.stream()).distinct().collect(Collectors.toList()),
+                                        rpcType);
+                                }
                                 rpcActionDto.mockDatabaseDtos = actionDto.mockDatabaseDtos;
                                 if (actionDto.mockDatabaseDtos != null && !actionDto.mockDatabaseDtos.isEmpty()){
                                     buildExternalServiceResponse(schema,
