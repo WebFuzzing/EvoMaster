@@ -64,6 +64,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.evomaster.client.java.controller.problem.rpc.RPCEndpointsBuilder.buildExternalServiceResponse;
+
 /**
  * Abstract class used to connect to the EvoMaster process, and
  * that is responsible to start/stop/restart the tested application,
@@ -842,6 +844,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                     SimpleLogger.warn("Warning: Fail to start mocked instances of databases with the customized method");
             }
             response = executeRPCEndpoint(dto, false);
+            handleMissingDto(dto, responseDto);
         } catch (Exception e) {
             throw new RuntimeException("ERROR: target exception should be caught, but "+ e.getMessage());
         } finally {
@@ -1182,10 +1185,24 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     public abstract void getJvmDtoSchema(List<String> dtoNames);
 
-    private void getSeededExternalServiceResponseDto(){
-        if (seedRPCTests() != null && !seedRPCTests().isEmpty() ){
-
-
+    private void handleMissingDto(RPCActionDto dto, ActionResponseDto response){
+        if (dto.missingDto != null && !dto.missingDto.isEmpty()){
+            InterfaceSchema schema = rpcInterfaceSchema.get(dto.interfaceId);
+            if (schema != null){
+                buildExternalServiceResponse(schema,
+                    dto.missingDto,
+                    schema.getRpcType());
+                Map<String, ParamDto> map = new HashMap<>();
+                Map<String, NamedTypedValue> types = schema.getObjParamCollections();
+                for (String name : dto.missingDto){
+                    if ((!map.containsKey(name)) && (types.containsKey(name))){
+                        map.put(name, types.get(name).getDto());
+                    }
+                }
+                if (!map.isEmpty()){
+                    response.extractedMissingDto = map;
+                }
+            }
         }
     }
 

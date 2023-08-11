@@ -4,6 +4,7 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCExceptionInfoDto;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * handling response of actions which are executed in driver side
@@ -70,5 +71,10 @@ public class ActionResponseDto {
      */
     public String error500Msg;
 
+    /**
+     * a map from class name to dto structure for missing dtos,
+     * eg, response of external services
+     */
+    public Map<String, ParamDto> extractedMissingDto;
 
 }
