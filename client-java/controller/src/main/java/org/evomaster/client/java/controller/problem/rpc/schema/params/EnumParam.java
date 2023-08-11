@@ -30,6 +30,11 @@ public class EnumParam extends NamedTypedValue<EnumType, Integer> {
     }
 
     @Override
+    public List<String> referenceTypes() {
+        return null;
+    }
+
+    @Override
     public ParamDto getDto() {
         ParamDto dto = super.getDto();
         if (getValue() != null)

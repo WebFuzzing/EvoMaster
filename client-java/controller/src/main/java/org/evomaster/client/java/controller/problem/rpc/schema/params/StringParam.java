@@ -131,6 +131,11 @@ public class StringParam extends NamedTypedValue<StringType, String> implements 
     }
 
     @Override
+    public List<String> referenceTypes() {
+        return null;
+    }
+
+    @Override
     public StringParam copyStructure() {
         return new StringParam(getName(), getType(),accessibleSchema);
     }
