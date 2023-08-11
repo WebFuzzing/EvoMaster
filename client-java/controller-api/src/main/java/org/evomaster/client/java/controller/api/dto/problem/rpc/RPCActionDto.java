@@ -120,6 +120,12 @@ public class RPCActionDto {
     public int maxAssertionForDataInCollection;
 
     /**
+     * a list of DTOs which need to be extracted at the driver side
+     * they can be eg, response of external services
+     */
+    public List<String> missingDto;
+
+    /**
      *
      * @return a copy of RPCActionDto for enabling its invocation
      * eg, exclude all possible candidates of param values and auth

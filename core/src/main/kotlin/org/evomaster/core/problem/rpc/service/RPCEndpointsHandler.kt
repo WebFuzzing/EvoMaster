@@ -602,6 +602,7 @@ class RPCEndpointsHandler {
 
         setGenerationConfiguration(rpcAction, index, generateResponseVariable(index))
 
+        val missingDto = mutableSetOf<String>()
         // get external action
         if (action.parent is EnterpriseActionGroup){
             val exActions = (action.parent as EnterpriseActionGroup)
@@ -609,6 +610,10 @@ class RPCEndpointsHandler {
                 .flatMap { (it as ActionComponent).flatten() }
                 .filterIsInstance<RPCExternalServiceAction>()
                 .map { e->
+                    (e.response as? ClassResponseParam)?.run {
+                        if (!this.fromClass && this.className.isNotBlank())
+                            missingDto.add(this.className)
+                    }
                     transformMockRPCExternalServiceDto(e)
                 }
             val mockDbActions = (action.parent as EnterpriseActionGroup)
@@ -616,6 +621,10 @@ class RPCEndpointsHandler {
                 .flatMap { (it as ActionComponent).flatten() }
                 .filterIsInstance<DbAsExternalServiceAction>()
                 .map { e->
+                    (e.response as? ClassResponseParam)?.run {
+                        if (!this.fromClass && this.className.isNotBlank())
+                            missingDto.add(this.className)
+                    }
                     transformMockDatabaseDto(e)
                 }
             if (exActions.isNotEmpty())
@@ -624,6 +633,8 @@ class RPCEndpointsHandler {
                 rpcAction.mockDatabaseDtos = mockDbActions
         }
 
+        if (missingDto.isNotEmpty())
+            rpcAction.missingDto = missingDto.toList()
         return rpcAction
     }
 
