@@ -51,6 +51,7 @@ public class InstrumentedSutStarter {
                         "\n -Djdk.attach.allowAttachSelf=true " +
                         "\nAlso, if you are using JDK 17 or above, you also need the following:" +
                         "\n"+JDK_17_JVM_OPTIONS+
+                        "\nThis can also be set globally with the JDK_JAVA_OPTIONS environment variable."+
                         "\nSee documentation at https://github.com/EMResearch/EvoMaster/blob/master/docs/jdks.md", e);
             }
         }

@@ -22,6 +22,17 @@ To use JDK __17__, besides passing `-Djdk.attach.allowAttachSelf=true`, you will
 
 isn't it lovely? 
 
+An option to solve this issue is to set those options in an environment variable called `JDK_JAVA_OPTIONS` (which was introduced in JDK __9__).
+However, this would apply to _all_ JVM programs running on your machine.
+So, use it with care.
+A further alternative is to set them up globally in your IDE per project, but of course that is IDE dependent.
+For example, for IntelliJ there are plugins such as [JVM Default Options](https://plugins.jetbrains.com/plugin/21136-jvm-default-options) that might help. 
+But we have not tried them.
+
+
+Regarding the incoming JDK __21__, it looks like thanks to JEP 451 the attachment of agents will give a warning, as it will be deactivated by default in future releases.
+When that will happen, there will be yet again another JVM option that will need to be set. 
+
 
 ## evomaster.jar
 
