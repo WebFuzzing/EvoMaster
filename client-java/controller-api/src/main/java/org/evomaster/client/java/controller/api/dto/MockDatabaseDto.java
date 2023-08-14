@@ -1,5 +1,7 @@
 package org.evomaster.client.java.controller.api.dto;
 
+import java.util.ArrayList;
+
 /**
  * mock object for database
  */
@@ -60,4 +62,18 @@ public class MockDatabaseDto {
      */
     public String responseFullTypeWithGeneric;
 
+
+    public MockDatabaseDto copy(){
+        MockDatabaseDto copy = new MockDatabaseDto();
+        copy.appKey = appKey;
+        copy.databaseOrFrameworkType = databaseOrFrameworkType;
+        copy.commandName = commandName;
+        copy.commandType = commandType;
+        copy.sqlCommand = sqlCommand;
+        copy.requests = requests;
+        copy.response = response;
+        copy.responseFullType = responseFullType;
+        copy.responseFullTypeWithGeneric = responseFullTypeWithGeneric;
+        return copy;
+    }
 }

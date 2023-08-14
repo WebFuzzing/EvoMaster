@@ -1210,8 +1210,12 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                 .filter(s-> s.responseFullTypesWithGeneric == null);
             exstream.forEach(s-> anyUpdate.set(buildExternalServiceResponse(schema, s, schema.getRpcType()) != null));
         }
-        if (anyUpdate.get())
-            responseDto.latestSchemaDto = schema.getDto();
+        if (anyUpdate.get()){
+            ExpandRPCInfoDto expand = new ExpandRPCInfoDto();
+            expand.schemaDto = schema.getDto();
+            expand.expandActionDto = dto.copy();
+            responseDto.expandInfo = expand;
+        }
     }
 
 //    private void handleMissingDto(RPCActionDto dto, ActionResponseDto response){

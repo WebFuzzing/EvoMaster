@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.api.dto;
 
+import org.evomaster.client.java.controller.api.dto.problem.rpc.ExpandRPCInfoDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCExceptionInfoDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCInterfaceSchemaDto;
@@ -73,8 +74,8 @@ public class ActionResponseDto {
     public String error500Msg;
 
     /**
-     * latest schema dto which might contain new DTOs
+     * for RPC problem, its schema or mock object might be expanded during the search
      */
-    public RPCInterfaceSchemaDto latestSchemaDto;
+    public ExpandRPCInfoDto expandInfo;
 
 }

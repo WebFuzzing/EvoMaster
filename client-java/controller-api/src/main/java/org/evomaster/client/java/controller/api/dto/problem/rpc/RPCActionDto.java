@@ -148,6 +148,8 @@ public class RPCActionDto {
         copy.isAuthorized = isAuthorized;
         if (mockRPCExternalServiceDtos != null)
             copy.mockRPCExternalServiceDtos = mockRPCExternalServiceDtos.stream().map(MockRPCExternalServiceDto::copy).collect(Collectors.toList());
+        if (mockDatabaseDtos != null)
+            copy.mockDatabaseDtos = mockDatabaseDtos.stream().map(MockDatabaseDto::copy).collect(Collectors.toList());
         if (missingDto != null)
             copy.missingDto = new ArrayList<>(missingDto);
         return copy;
