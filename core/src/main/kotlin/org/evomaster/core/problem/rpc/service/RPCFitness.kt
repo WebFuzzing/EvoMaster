@@ -189,7 +189,7 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
             }
 
             // expand
-            if (externalActions != null && response.exceptionInfoDto != null){
+            if (externalActions != null && response.expandInfo != null){
                 rpcHandler.expandSchema(action, response.expandInfo);
                 rpcHandler.expandRPCAction(externalActions)
             }
