@@ -189,34 +189,10 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
             }
 
             // expand
-            if (externalActions != null && response.latestSchemaDto != null){
-                rpcHandler.expandSchema(response.latestSchemaDto);
-
-                externalActions
-                    .flatMap { (it as ActionComponent).flatten() }
-                    .forEach { a->
-                        val exResponse = if (a is RPCExternalServiceAction)
-                            a.response as? ClassResponseParam
-                        else if (a is DbAsExternalServiceAction)
-                            a.response as? ClassResponseParam
-                        else
-                            null
-                        if (exResponse?.fromClass == false){
-                            val rGene = rpcHandler.getGeneIfExist(exResponse.className, exResponse.name)
-                            if (rGene != null){
-                                val gene = wrapWithOptionalGene(rGene, true) as OptionalGene
-                                val updatedParam = exResponse.copyWithSpecifiedResponseBody(gene)
-                                updatedParam.responseParsedWithClass()
-                                val update = UpdateForRPCResponseParam(updatedParam)
-                                if (a is RPCExternalServiceAction)
-                                    a.addUpdateForParam(update)
-                                else if (a is DbAsExternalServiceAction)
-                                    a.addUpdateForParam(update)
-                            }
-                        }
-                    }
+            if (externalActions != null && response.exceptionInfoDto != null){
+                rpcHandler.expandSchema(action, response.expandInfo);
+                rpcHandler.expandRPCAction(externalActions)
             }
-
         }else{
             actionResult.setFailedCall()
         }

@@ -19,6 +19,7 @@ import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.problem.externalservice.rpc.DbAsExternalServiceAction
 import org.evomaster.core.problem.externalservice.rpc.RPCExternalServiceAction
 import org.evomaster.core.problem.externalservice.rpc.parm.ClassResponseParam
+import org.evomaster.core.problem.externalservice.rpc.parm.UpdateForRPCResponseParam
 import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCCallResult
@@ -364,6 +365,7 @@ class RPCEndpointsHandler {
             requestRules = if (action.requestRuleIdentifier.isNullOrEmpty()) null else listOf(action.requestRuleIdentifier)
             responses = listOf(action.response.responseBody.getValueAsPrintableString(mode = mode))
             responseTypes = if ((action.response as? ClassResponseParam)?.className?.isNotBlank() == true) listOf((action.response as ClassResponseParam).className) else null
+            responseFullTypesWithGeneric = if ((action.response as? ClassResponseParam)?.run { className.isNotBlank() && fromClass  } == true) listOf((action.response as ClassResponseParam).className) else null
         }
     }
 
@@ -375,6 +377,7 @@ class RPCEndpointsHandler {
             requests = action.requestRuleIdentifier
             response = action.response.responseBody.getValueAsPrintableString(mode = mode)
             responseFullType  = if ((action.response as? ClassResponseParam)?.className?.isNotBlank() == true) (action.response as ClassResponseParam).className else null
+            responseFullTypeWithGeneric = if ((action.response as? ClassResponseParam)?.run { className.isNotBlank() && fromClass  } == true) (action.response as ClassResponseParam).className else null
         }
     }
 
@@ -559,16 +562,131 @@ class RPCEndpointsHandler {
     }
 
 
-    fun expandSchema(latestSchemaDto: RPCInterfaceSchemaDto){
-        latestSchemaDto.types
-            .plus(latestSchemaDto.identifiedResponseTypes?: listOf())
+    /**
+     * expand RPC schema during service with [latestSchemaDto]
+     */
+    fun expandSchema(action: RPCCallAction, expandInfo: ExpandRPCInfoDto){
+        (expandInfo.schemaDto?.types?: listOf())
+            .plus(expandInfo.schemaDto?.identifiedResponseTypes?: listOf())
             .filterNot { typeCache.containsKey(it.type.fullTypeNameWithGenericType) }
             .sortedBy { it.type.depth }
             .filter { it.type.type == RPCSupportedDataType.CUSTOM_OBJECT }.forEach { t ->
                 buildTypeCache(t)
             }
+
+        // update actionToExternalServiceMap and seededDbMockObjects
+        expandInfo.expandActionDto?.mockDatabaseDtos?.filter { it.responseFullTypeWithGeneric != null }?.forEach{db->
+            val exkey = DbAsExternalServiceAction
+                .getDbAsExternalServiceAction(db.commandName, db.requests, db.responseFullTypeWithGeneric)
+
+            val responseGene = (if (typeCache.containsKey(db.responseFullTypeWithGeneric)){
+                typeCache[db.responseFullTypeWithGeneric]!!.copy()
+            }else{
+                val responseTypeClass = expandInfo.schemaDto?.identifiedResponseTypes?.find {
+                    it.type.fullTypeNameWithGenericType == db.responseFullTypeWithGeneric
+                }
+                if (responseTypeClass != null)
+                    handleDtoParam(responseTypeClass)
+                else null
+            }?.run { wrapWithOptionalGene(this, true) } as? OptionalGene)
+
+            if (responseGene != null){
+                val expandResponse = ClassResponseParam(className = db.responseFullTypeWithGeneric, responseType = EnumGene("responseType", listOf("JSON")), response = responseGene)
+                expandResponse.responseParsedWithClass()
+
+                val dbExAction = DbAsExternalServiceAction(
+                    db.commandName,
+                    db.appKey,
+                    db.requests,
+                    expandResponse
+                )
+                seededDbMockObjects[exkey] = dbExAction
+                actionToExternalServiceMap.getOrPut(action.id){ mutableSetOf() }.add(exkey)
+
+                if (db.responseFullTypeWithGeneric != db.responseFullType){
+                    val oldkey = DbAsExternalServiceAction
+                        .getDbAsExternalServiceAction(db.commandName, db.requests, db.responseFullType)
+                    seededDbMockObjects[oldkey] = dbExAction.copy() as DbAsExternalServiceAction
+                    actionToExternalServiceMap[action.id]?.remove(oldkey)
+                }
+            }
+
+        }
+
+        // update actionToExternalServiceMap and seededExternalServiceCluster
+        expandInfo.expandActionDto?.mockRPCExternalServiceDtos?.filter { it.responseFullTypesWithGeneric != null }?.forEach{ex->
+            ex.responseFullTypesWithGeneric.forEachIndexed { index, s ->
+                val exkey = RPCExternalServiceAction.getRPCExternalServiceActionName(
+                    ex.interfaceFullName, ex.functionName, ex.requestRules?.get(index), s
+                )
+                val responseGene = (if (typeCache.containsKey(s)){
+                    typeCache[s]!!.copy()
+                }else{
+                    val responseTypeClass = expandInfo.schemaDto?.identifiedResponseTypes?.find {
+                        it.type.fullTypeNameWithGenericType == s
+                    }
+                    if (responseTypeClass != null)
+                        handleDtoParam(responseTypeClass)
+                    else null
+                }?.run { wrapWithOptionalGene(this, true) } as? OptionalGene)
+
+                if (responseGene != null){
+                    val response = ClassResponseParam(className = s, responseType = EnumGene("responseType", listOf("JSON")), response = responseGene)
+                    response.responseParsedWithClass()
+                    val externalAction = RPCExternalServiceAction(
+                        interfaceName = ex.interfaceFullName,
+                        functionName = ex.functionName,
+                        descriptiveInfo = ex.appKey,
+                        inputParamTypes = ex.inputParameterTypes,
+                        requestRuleIdentifier = ex.requestRules?.get(index),
+                        responseParam = response)
+                    Lazy.assert { exkey == externalAction.getName() }
+                    seededExternalServiceCluster[exkey] = externalAction
+                    actionToExternalServiceMap.getOrPut(action.id){ mutableSetOf() }.add(exkey)
+
+                    if (ex.responseTypes[index] != s){
+                        val oldkey = RPCExternalServiceAction.getRPCExternalServiceActionName(
+                            ex.interfaceFullName, ex.functionName, ex.requestRules?.get(index), ex.responseTypes[index]
+                        )
+                        seededExternalServiceCluster[oldkey] = externalAction.copy() as ApiExternalServiceAction
+                        actionToExternalServiceMap[action.id]?.remove(oldkey)
+                    }
+                }
+            }
+        }
     }
 
+
+    /**
+     * expand RPC action during service with [latestSchemaDto]
+     */
+    fun expandRPCAction(externalActions: List<StructuralElement>){
+        externalActions
+            .flatMap { (it as ActionComponent).flatten() }
+            .forEach { a->
+                var oldResponse : ClassResponseParam? = null
+                var newResponse : ClassResponseParam? = null
+                if (a is RPCExternalServiceAction){
+                    oldResponse = a.response as? ClassResponseParam
+                    if (oldResponse?.fromClass == false){
+                        newResponse = seededExternalServiceCluster[a.getName()]?.response?.copy() as? ClassResponseParam
+                    }
+                } else if (a is DbAsExternalServiceAction){
+                    oldResponse = a.response as? ClassResponseParam
+                    if (oldResponse?.fromClass == false){
+                        newResponse = seededDbMockObjects[a.getName()]?.response?.copy() as? ClassResponseParam
+                    }
+                }
+                if (oldResponse != null && newResponse != null  && newResponse.fromClass){
+                    a.killChild(oldResponse)
+                    val update = UpdateForRPCResponseParam(oldResponse)
+                    if (a is RPCExternalServiceAction)
+                        a.addUpdateForParam(update)
+                    else if (a is DbAsExternalServiceAction)
+                        a.addUpdateForParam(update)
+                }
+            }
+    }
     private fun buildTypeCache(type: ParamDto){
         if (type.type.type == RPCSupportedDataType.CUSTOM_OBJECT && !typeCache.containsKey(type.type.fullTypeNameWithGenericType)){
             typeCache[type.type.fullTypeNameWithGenericType] = handleObjectType(type, true)
