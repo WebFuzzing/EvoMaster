@@ -39,7 +39,6 @@ import org.evomaster.client.java.controller.problem.rpc.RPCExceptionHandler;
 import org.evomaster.client.java.controller.problem.rpc.schema.EndpointSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.InterfaceSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.LocalAuthSetupSchema;
-import org.evomaster.client.java.controller.problem.rpc.schema.params.CollectionParam;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
 import org.evomaster.client.java.instrumentation.BootTimeObjectiveInfo;
@@ -61,9 +60,13 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static org.evomaster.client.java.controller.problem.rpc.RPCEndpointsBuilder.buildDbExternalServiceResponse;
+import static org.evomaster.client.java.controller.problem.rpc.RPCEndpointsBuilder.buildExternalServiceResponse;
 
 /**
  * Abstract class used to connect to the EvoMaster process, and
@@ -843,7 +846,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                     SimpleLogger.warn("Warning: Fail to start mocked instances of databases with the customized method");
             }
             response = executeRPCEndpoint(dto, false);
-            handleMissingDto(dto, responseDto);
+            expandMockObjectIfNeeded(dto, responseDto);
         } catch (Exception e) {
             throw new RuntimeException("ERROR: target exception should be caught, but "+ e.getMessage());
         } finally {
@@ -1184,21 +1187,48 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     public abstract void getJvmDtoSchema(List<String> dtoNames);
 
-    private void handleMissingDto(RPCActionDto dto, ActionResponseDto response){
-        if (dto.missingDto != null && !dto.missingDto.isEmpty()){
-            InterfaceSchema schema = rpcInterfaceSchema.get(dto.interfaceId);
-            if (schema != null){
-                buildExternalServiceResponse(schema,
-                    dto.missingDto,
-                    schema.getRpcType());
-                Map<String, NamedTypedValue> types = schema.getObjParamCollections();
 
-                if (dto.missingDto.stream().anyMatch(s-> types.containsKey(s))){
-                    response.latestSchemaDto = schema.getDto();
-                }
-            }
+    /**
+     * mock object might not be loaded when extracting schema with client library
+     * after the SUT is started, we attempt to expand mock objects if needed,
+     * eg, handle generic types, unidentified DTO class
+     */
+    private void expandMockObjectIfNeeded(RPCActionDto dto, ActionResponseDto responseDto){
+        AtomicBoolean anyUpdate = new AtomicBoolean(false);
+        InterfaceSchema schema = rpcInterfaceSchema.get(dto.interfaceId);
+
+        if (dto.mockDatabaseDtos != null && (!dto.mockDatabaseDtos.isEmpty())){
+            Stream<MockDatabaseDto> dbstream = dto.mockDatabaseDtos
+                .stream()
+                .filter(s-> s.responseFullTypeWithGeneric == null);
+            dbstream.forEach(s-> anyUpdate.set(buildDbExternalServiceResponse(schema, s, schema.getRpcType()) != null));
         }
+
+        if (dto.mockRPCExternalServiceDtos != null && (!dto.mockRPCExternalServiceDtos.isEmpty())){
+            Stream<MockRPCExternalServiceDto> exstream = dto.mockRPCExternalServiceDtos
+                .stream()
+                .filter(s-> s.responseFullTypesWithGeneric == null);
+            exstream.forEach(s-> anyUpdate.set(buildExternalServiceResponse(schema, s, schema.getRpcType()) != null));
+        }
+        if (anyUpdate.get())
+            responseDto.latestSchemaDto = schema.getDto();
     }
+
+//    private void handleMissingDto(RPCActionDto dto, ActionResponseDto response){
+//        if (dto.missingDto != null && !dto.missingDto.isEmpty()){
+//            InterfaceSchema schema = rpcInterfaceSchema.get(dto.interfaceId);
+//            if (schema != null){
+//                buildExternalServiceResponse(schema,
+//                    dto.missingDto,
+//                    schema.getRpcType());
+//                Map<String, NamedTypedValue> types = schema.getObjParamCollections();
+//
+//                if (dto.missingDto.stream().anyMatch(s-> types.containsKey(s))){
+//                    response.latestSchemaDto = schema.getDto();
+//                }
+//            }
+//        }
+//    }
 
     private void extractTypesAndRelated(Map<String, NamedTypedValue> all, List<String> typesToExtract, Map<String, ParamDto> results){
         for (String type : typesToExtract){

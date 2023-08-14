@@ -139,7 +139,7 @@ public class RPCEndpointsBuilder {
     }
 
 
-    private static NamedTypedValue buildExternalServiceResponse(InterfaceSchema schema, MockRPCExternalServiceDto apiDto, RPCType rpcType){
+    public static NamedTypedValue buildExternalServiceResponse(InterfaceSchema schema, MockRPCExternalServiceDto apiDto, RPCType rpcType){
 
         try {
             if (apiDto != null){
@@ -172,7 +172,7 @@ public class RPCEndpointsBuilder {
         return null;
     }
 
-    private static NamedTypedValue buildDbExternalServiceResponse(InterfaceSchema schema, MockDatabaseDto dbDto, RPCType rpcType){
+    public static NamedTypedValue buildDbExternalServiceResponse(InterfaceSchema schema, MockDatabaseDto dbDto, RPCType rpcType){
 
         try {
             if (dbDto != null){
