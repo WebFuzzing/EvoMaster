@@ -75,6 +75,11 @@ __Known limitations__:
   We recommend to try _blackbox_ mode first (should just need a few minutes to get it up and running) to get
   an idea of what _EvoMaster_ can do for you.
 
+* _JDK 9+_: whitebox testing requires bytecode manipulation. 
+            Each new release of the JDK makes doing this harder and harder. 
+            Dealing with JDKs above __8__ is doable, but it requires some settings.
+            [See documentation](docs/jdks.md).
+
 * _Execution time_: to get good results, you might need to run the search for several hours.
   We recommend to first try the search for 10 minutes, just to get an idea of what type of tests can be generated.
   But, then, you should run _EvoMaster_ for something like between 1 and 24 hours (the longer the better, but
