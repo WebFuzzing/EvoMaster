@@ -138,7 +138,10 @@ public class RPCEndpointsBuilder {
         return null;
     }
 
-
+    /**
+     * identify return datatype for API services as external services
+     * @return identified datatype
+     */
     public static NamedTypedValue buildExternalServiceResponse(InterfaceSchema schema, MockRPCExternalServiceDto apiDto, RPCType rpcType){
 
         try {
@@ -172,6 +175,10 @@ public class RPCEndpointsBuilder {
         return null;
     }
 
+    /**
+     * identify return datatype for database as external services
+     * @return identified datatype
+     */
     public static NamedTypedValue buildDbExternalServiceResponse(InterfaceSchema schema, MockDatabaseDto dbDto, RPCType rpcType){
 
         try {
