@@ -1,7 +1,9 @@
 package com.foo.rpc.examples.spring.fakemockobject;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.foo.rpc.examples.spring.SpringController;
 import com.foo.rpc.examples.spring.fakemockobject.generated.FakeDatabaseRow;
 import com.foo.rpc.examples.spring.fakemockobject.generated.FakeMockObjectService;
@@ -68,30 +70,6 @@ public class FakeMockObjectController extends SpringController {
     @Override
     public List<SeededRPCTestDto> seedRPCTests() {
 
-        FakeRetrieveData seededData = new FakeRetrieveData(){{
-            id = 0;
-            name = "foo";
-            info = "2023-06-16";
-        }};
-
-        FakeDatabaseRow seededRow = new FakeDatabaseRow(){{
-             id = 42;
-             name = "bar";
-             info = "2023-06-16";
-        }};
-
-
-        String seededDataJson = null;
-        String seededRowJson = null;
-        try {
-            seededDataJson = serializer.toString(seededData);
-            seededRowJson = serializer.toString(seededRow);
-        } catch (TException e) {
-            throw new RuntimeException(e);
-        }
-
-        String finalSeededDataJson = seededDataJson;
-        String finalSeededRowJson = seededRowJson;
         return Arrays.asList(
                 new SeededRPCTestDto(){{
                     testName = "test_1";
@@ -104,11 +82,11 @@ public class FakeMockObjectController extends SpringController {
                                 mockRPCExternalServiceDtos= Arrays.asList(
                                         new MockRPCExternalServiceDto(){{
                                             appKey = "fake.app";
-                                            interfaceFullName = "fake.interface";
-                                            functionName = "fake.func";
-                                            responses = Arrays.asList(finalSeededDataJson);
+                                            interfaceFullName = "fake.api.GetApiData";
+                                            functionName = "one";
+                                            responses = Arrays.asList("{\"exName\":\"foo\",\"exId\":42,\"exInfo\":[\"2023-08-14\"]}");
                                             responseTypes = Arrays.asList(
-                                                    FakeRetrieveData.class.getName()
+                                                    "fake.api.ExApiDto"
                                             );
                                         }}
                                 );
@@ -127,9 +105,9 @@ public class FakeMockObjectController extends SpringController {
                                 mockDatabaseDtos = Arrays.asList(
                                         new MockDatabaseDto(){{
                                             appKey = "fake.app";
-                                            commandName = "fake.command";
-                                            response = finalSeededRowJson;
-                                            responseFullType = FakeDatabaseRow.class.getName();
+                                            commandName = "fake.GetData.one";
+                                            response = "{\"exName\":\"bar\",\"exId\":0,\"exInfo\":[\"2023-08-14\"]}";
+                                            responseFullType = "fake.db.ExDbDto";
                                         }}
                                 );
                             }}
@@ -147,7 +125,7 @@ public class FakeMockObjectController extends SpringController {
                         mockDatabaseDtos = Arrays.asList(
                             new MockDatabaseDto(){{
                                 appKey = "fake.app";
-                                commandName = "fake.list.command";
+                                commandName = "fake.GetData.all";
                                 response = "[]";
                                 responseFullType = ArrayList.class.getName();
                             }}
@@ -165,16 +143,35 @@ public class FakeMockObjectController extends SpringController {
                 boolean ok = true;
                 for (MockDatabaseDto dto: databaseDtos){
                     if (dto.response!= null && dto.responseFullType != null){
-                        Class clazz = Class.forName(dto.responseFullType);
-
-                        if (dto.responseFullType.equals(FakeDatabaseRow.class.getName())){
-                            FakeDatabaseRow data = (FakeDatabaseRow) mapper.readValue(dto.response, clazz);
-                            ok = ok && client.backdoor(null, data);
-                        }else if (dto.responseFullType.equals(ArrayList.class.getName())){
-                            List data = (List) mapper.readValue(dto.response, clazz);
-                            if (!data.isEmpty()){
-                                //TODO
+                        JsonNode json = mapper.readTree(dto.response);
+                        if (json instanceof ArrayNode){
+                            for (JsonNode j : json){
+                                FakeDatabaseRow data = new FakeDatabaseRow();
+                                if (j.has("exId"))
+                                    data.id = Integer.parseInt(j.get("exId").asText());
+                                if (j.has("exName"))
+                                    data.name = j.get("exName").asText();
+                                else
+                                    data.name = j.asText();
+                                if (j.has("exInfo") && j.get("exInfo") instanceof ArrayNode){
+                                    if (!j.get("exInfo").isEmpty()){
+                                        data.info = j.get("exInfo").asText();
+                                    }
+                                }
+                                ok = ok && client.backdoor(null, data);
                             }
+                        }else {
+                            FakeDatabaseRow data = new FakeDatabaseRow();
+                            if (json.has("exId"))
+                                data.id = Integer.parseInt(json.get("exId").asText());
+                            if (json.has("exName"))
+                                data.name = json.get("exName").asText();
+                            if (json.has("exInfo") && json.get("exInfo") instanceof ArrayNode){
+                                if (!json.get("exInfo").isEmpty()){
+                                    data.info = json.get("exInfo").asText();
+                                }
+                            }
+                            ok = ok && client.backdoor(null, data);
                         }
                     }
                 }
@@ -182,7 +179,7 @@ public class FakeMockObjectController extends SpringController {
             }else {
                 return client.backdoor(null, null);
             }
-        } catch (TException | ClassNotFoundException | JsonProcessingException e) {
+        } catch (TException | JsonProcessingException e) {
             return false;
         }
     }
@@ -195,8 +192,17 @@ public class FakeMockObjectController extends SpringController {
                 boolean ok = true;
                 for (MockRPCExternalServiceDto dto: externalServiceDtos){
                     if (dto.responses!= null && !dto.responses.isEmpty() && dto.responses.size() == dto.responseTypes.size()){
-                        Class clazz = Class.forName(dto.responseTypes.get(0));
-                        FakeRetrieveData data = (FakeRetrieveData) mapper.readValue(dto.responses.get(0), clazz);
+                        JsonNode json = mapper.readTree(dto.responses.get(0));
+                        FakeRetrieveData data = new FakeRetrieveData();
+                        if (json.has("exId"))
+                            data.id = Integer.parseInt(json.get("exId").asText());
+                        if (json.has("exName"))
+                            data.name = json.get("exName").asText();
+                        if (json.has("exInfo") && json.get("exInfo") instanceof ArrayNode){
+                            if (!json.get("exInfo").isEmpty()){
+                                data.info = json.get("exInfo").asText();
+                            }
+                        }
                         ok = ok && client.backdoor(data, null);
                     }
                 }
@@ -204,7 +210,7 @@ public class FakeMockObjectController extends SpringController {
             }else {
                 return client.backdoor(null, null);
             }
-        } catch (TException | ClassNotFoundException | JsonProcessingException e) {
+        } catch (TException | JsonProcessingException e) {
             return false;
         }
     }
