@@ -105,7 +105,7 @@ public class FakeMockObjectController extends SpringController {
                                 mockDatabaseDtos = Arrays.asList(
                                         new MockDatabaseDto(){{
                                             appKey = "fake.app";
-                                            commandName = "fake.GetData.one";
+                                            commandName = "fake.db.GetDbData.one";
                                             response = "{\"exName\":\"bar\",\"exId\":0,\"exInfo\":[\"2023-08-14\"]}";
                                             responseFullType = "fake.db.ExDbDto";
                                         }}
@@ -125,7 +125,7 @@ public class FakeMockObjectController extends SpringController {
                         mockDatabaseDtos = Arrays.asList(
                             new MockDatabaseDto(){{
                                 appKey = "fake.app";
-                                commandName = "fake.GetData.all";
+                                commandName = "fake.db.GetDbData.all";
                                 response = "[]";
                                 responseFullType = ArrayList.class.getName();
                             }}

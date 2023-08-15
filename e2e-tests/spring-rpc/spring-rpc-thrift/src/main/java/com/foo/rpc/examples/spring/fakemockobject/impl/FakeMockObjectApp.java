@@ -20,8 +20,11 @@ public class FakeMockObjectApp {
 
     private static final String JAR_TO_LOAD = "jars/Fake-1.0-SNAPSHOT.jar";
 
-    public static void main(String[] args) {
+    static {
         loadClass();
+    }
+
+    public static void main(String[] args) {
         SpringApplication.run(FakeMockObjectApp.class, args);
     }
 
