@@ -155,12 +155,16 @@ public class CodeJavaOrKotlinGenerator {
 
         }
 
+        String stringValue = "";
         if (!isPrimitive && (isJava || isNullable)){
-            String stringValue = NULL_EXP;
-            if (value != null)
-                stringValue = value;
-            sb.append(" = ").append(stringValue);
+            stringValue = NULL_EXP;
         }
+
+        if (value != null)
+            stringValue = value;
+
+        if (stringValue.length() > 0)
+            sb.append(" = ").append(stringValue);
 
         sb.append(getStatementLast(isJava));
 

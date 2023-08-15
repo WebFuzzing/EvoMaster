@@ -33,7 +33,7 @@ public class IntParam extends PrimitiveOrWrapperParam<Integer> {
     public String getValueAsJavaString(boolean isJava) {
         if (getValue() == null)
             return null;
-        return ""+getValue();
+        return String.valueOf(getValue());
     }
 
     @Override
