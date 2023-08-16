@@ -86,7 +86,7 @@ public class CodeJavaOrKotlinGenerator {
             if (isJava)
                 return String.format("%s[]", genericType);
             else
-                return String.format("Array<%s>", genericType);
+                return String.format("%s<%s>", collectionType, genericType);
         }
 
         return String.format("%s<%s>", collectionType, genericType);
