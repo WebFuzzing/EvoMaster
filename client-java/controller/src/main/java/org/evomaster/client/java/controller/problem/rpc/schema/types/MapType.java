@@ -11,6 +11,9 @@ import java.util.Map;
  * map type
  */
 public class MapType extends TypeSchema{
+
+    private final static String KOTLIN_MAP = "MutableMap";
+
     /**
      * template of keys of the map
      */
@@ -39,7 +42,11 @@ public class MapType extends TypeSchema{
     public String getTypeNameForInstanceInJavaOrKotlin(boolean isJava) {
         String key = template.getType().getFirstTemplate().getType().getTypeNameForInstanceInJavaOrKotlin(isJava);
         String value = template.getType().getSecondTemplate().getType().getTypeNameForInstanceInJavaOrKotlin(isJava);
-        return Map.class.getName()+"<"+key+","+value+">";
+        String type = getFullTypeName();
+        if (!isJava)
+            type = KOTLIN_MAP;
+
+        return type+"<"+key+","+value+">";
     }
 
     @Override
