@@ -130,13 +130,13 @@ public class MapParam extends NamedTypedValue<MapType, List<PairParam>>{
             String eKeyVarName = handleVariableName(variableName+"_key_"+index);
             if (e.getValue().getKey() == null)
                 throw new RuntimeException("key should not been null");
-            codes.addAll(e.getValue().getKey().newInstanceWithJavaOrKotlin(true, true, eKeyVarName, indent+1, isJava, isVariableNullable));
+            codes.addAll(e.getValue().getKey().newInstanceWithJavaOrKotlin(true, true, eKeyVarName, indent+1, isJava, false));
             String eValueVarName = CodeJavaOrKotlinGenerator.handleVariableName(variableName+"_value_"+index);
             if (e.getValue().getValue() == null)
                 throw new RuntimeException("value should not been null");
-            codes.addAll(e.getValue().getValue().newInstanceWithJavaOrKotlin(true, true, eValueVarName, indent+1, isJava, isVariableNullable));
+            codes.addAll(e.getValue().getValue().newInstanceWithJavaOrKotlin(true, true, eValueVarName, indent+1, isJava, false));
 
-            addCode(codes, methodInvocation(variableName, "put", eKeyVarName+","+eValueVarName, isJava, isNullable()) + getStatementLast(isJava), indent+1);
+            addCode(codes, methodInvocation(variableName, "put", eKeyVarName+","+eValueVarName, isJava, isNullable(), false) + getStatementLast(isJava), indent+1);
             index++;
         }
 
@@ -153,7 +153,7 @@ public class MapParam extends NamedTypedValue<MapType, List<PairParam>>{
             addCode(codes, junitAssertNull(responseVarName, isJava), indent);
             return codes;
         }
-        addCode(codes, junitAssertEquals(String.valueOf(getValue().size()), CodeJavaOrKotlinGenerator.withSize(responseVarName, isJava, isNullable()), isJava), indent);
+        addCode(codes, junitAssertEquals(String.valueOf(getValue().size()), CodeJavaOrKotlinGenerator.withSizeInAssertion(responseVarName, isJava, isNullable()), isJava), indent);
 
         if (maxAssertionForDataInCollection == 0)
             return codes;

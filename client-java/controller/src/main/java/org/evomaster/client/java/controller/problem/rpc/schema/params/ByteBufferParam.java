@@ -84,7 +84,7 @@ public class ByteBufferParam extends NamedTypedValue<ByteBufferType, ByteBuffer>
         addCode(codes,
                 oneLineInstance(false, true, String.class.getName(), variableName, ByteBuffer.class.getName()+".allocate("+varValue+".length)", isJava,isNullable() ), indent + 1);
         addCode(codes,
-            methodInvocation(variableName, "put", varValue, isJava, isNullable())+ getStatementLast(isJava),
+            methodInvocation(variableName, "put", varValue, isJava, isNullable(), false)+ getStatementLast(isJava),
             indent+1);
         addCode(codes, codeBlockEnd(isJava), indent);
 

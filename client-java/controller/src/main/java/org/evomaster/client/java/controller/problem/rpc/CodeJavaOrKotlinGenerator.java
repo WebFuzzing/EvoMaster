@@ -24,6 +24,7 @@ public class CodeJavaOrKotlinGenerator {
     private final static String KOTLIN_DECLARATION_VARIABLE = "var";
     private final static String KOTLIN_DECLARATION_VARIABLE_NULLABLE = "?";
 
+    private final static String KOTLIN_NON_NULL_ASSERTED = "!!";
 
     private final static String JAVA_LANGE = "java.lang.";
 
@@ -236,6 +237,11 @@ public class CodeJavaOrKotlinGenerator {
         return KOTLIN_DECLARATION_VARIABLE_NULLABLE;
     }
 
+    private static String variableNonNullAssertedMark(boolean isJava, boolean isNullable){
+        if (isJava || !isNullable) return "";
+        return KOTLIN_NON_NULL_ASSERTED;
+    }
+
     /**
      * process [varName] = [instance]
      *
@@ -410,18 +416,22 @@ public class CodeJavaOrKotlinGenerator {
     }
 
     /**
-     * @param obj        specifies an object which owns the method. it is nullable
-     * @param methodName specifies a name of the method
-     * @param params     specifies a list of params
+     * @param obj            specifies an object which owns the method. it is nullable
+     * @param methodName     specifies a name of the method
+     * @param params         specifies a list of params
      * @param isJava
      * @param objIsNullable
+     * @param isNotNullAsserted
      * @return code to invoke the method
      */
-    public static String methodInvocation(String obj, String methodName, String params, boolean isJava, boolean objIsNullable){
+    public static String methodInvocation(String obj, String methodName, String params, boolean isJava, boolean objIsNullable, boolean isNotNullAsserted){
         if (obj == null)
             return String.format("%s(%s)", methodName, params);
 
-        return String.format("%s%s.%s(%s)", obj,variableNullableMark(isJava, objIsNullable), methodName, params);
+        String mark = variableNullableMark(isJava, objIsNullable);
+        if (isNotNullAsserted)
+            mark = variableNonNullAssertedMark(isJava, objIsNullable);
+        return String.format("%s%s.%s(%s)", obj,mark, methodName, params);
     }
 
 
@@ -476,8 +486,8 @@ public class CodeJavaOrKotlinGenerator {
      * @param isNullable
      * @return a string to get size() of the variable
      */
-    public static String withSize(String variableName, boolean isJava, boolean isNullable){
-        return String.format("%s%s.size()", variableName, variableNullableMark(isJava, isNullable));
+    public static String withSizeInAssertion(String variableName, boolean isJava, boolean isNullable){
+        return String.format("%s%s.size()", variableName, variableNonNullAssertedMark(isJava, isNullable));
     }
     /**
      * @param variableName is the variable which has length field
@@ -485,8 +495,8 @@ public class CodeJavaOrKotlinGenerator {
      * @param isNullable
      * @return a string to get length of the variable
      */
-    public static String withLength(String variableName, boolean isJava, boolean isNullable){
-        return String.format("%s%s.length", variableName, variableNullableMark(isJava, isNullable));
+    public static String withLengthInAssertion(String variableName, boolean isJava, boolean isNullable){
+        return String.format("%s%s.length", variableName, variableNonNullAssertedMark(isJava, isNullable));
     }
 
     /**

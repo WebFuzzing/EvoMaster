@@ -141,7 +141,7 @@ public class ArrayParam extends CollectionParam<List<NamedTypedValue>>{
             addCode(codes, junitAssertNull(responseVarName, isJava), indent);
             return codes;
         }
-        addCode(codes, junitAssertEquals(String.valueOf(getValue().size()), withLength(responseVarName, isJava, isNullable()), isJava), indent);
+        addCode(codes, junitAssertEquals(String.valueOf(getValue().size()), withLengthInAssertion(responseVarName, isJava, isNullable()), isJava), indent);
 
         if (maxAssertionForDataInCollection == 0)
             return codes;
@@ -154,7 +154,7 @@ public class ArrayParam extends CollectionParam<List<NamedTypedValue>>{
 
         for (int index : nvalue){
             NamedTypedValue e = getValue().get(index);
-            String eVar = responseVarName+".get("+index+")";
+            String eVar = methodInvocation(responseVarName, "get", String.valueOf(index), isJava, isNullable(), true);
             codes.addAll(e.newAssertionWithJavaOrKotlin(indent, eVar, maxAssertionForDataInCollection, isJava));
         }
 

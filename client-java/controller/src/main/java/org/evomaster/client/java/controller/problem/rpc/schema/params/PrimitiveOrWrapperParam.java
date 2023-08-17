@@ -171,7 +171,7 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
         if (getValue() == null)
             sb.append(CodeJavaOrKotlinGenerator.junitAssertNull(responseVarName, isJava));
         else
-            sb.append(CodeJavaOrKotlinGenerator.junitAssertEquals(getValueAsJavaString(isJava), getPrimitiveValue(responseVarName, isJava), isJava));
+            sb.append(CodeJavaOrKotlinGenerator.junitAssertEquals(getValueAsJavaString(isJava), getPrimitiveValueInAssertion(responseVarName, isJava), isJava));
 
         return Collections.singletonList(sb.toString());
     }
@@ -215,7 +215,7 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
      * @return a string to get its primitive value if the param is Wrapper class
      * eg, res.byteValue() for byte with a response variable name res
      */
-    abstract public String getPrimitiveValue(String responseVarName, boolean isJava);
+    abstract public String getPrimitiveValueInAssertion(String responseVarName, boolean isJava);
 
     @Override
     public void copyProperties(NamedTypedValue copy) {

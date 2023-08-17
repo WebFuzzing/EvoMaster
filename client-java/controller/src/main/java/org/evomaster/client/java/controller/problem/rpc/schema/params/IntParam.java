@@ -76,9 +76,9 @@ public class IntParam extends PrimitiveOrWrapperParam<Integer> {
     }
 
     @Override
-    public String getPrimitiveValue(String responseVarName, boolean isJava) {
+    public String getPrimitiveValueInAssertion(String responseVarName, boolean isJava) {
         if (getType().isWrapper)
-            return methodInvocation(responseVarName, "intValue", "", isJava, isNullable());
+            return methodInvocation(responseVarName, "intValue", "", isJava, isNullable(), true);
         return responseVarName;
     }
 }

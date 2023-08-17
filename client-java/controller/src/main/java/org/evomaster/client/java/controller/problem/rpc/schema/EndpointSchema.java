@@ -220,7 +220,7 @@ public class EndpointSchema {
                 javaCode,
                 setInstance(response!= null,
                         responseVarName,
-                        methodInvocation(client, getName(), paramVars, outputFormat.isJava(), response.isNullable()), outputFormat.isJava()),
+                        methodInvocation(client, getName(), paramVars, outputFormat.isJava(), response.isNullable(), false), outputFormat.isJava()),
                 indent);
 
         javaCode.add(codeBlockEnd(outputFormat.isJava()));

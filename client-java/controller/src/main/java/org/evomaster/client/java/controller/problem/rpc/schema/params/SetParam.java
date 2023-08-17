@@ -120,7 +120,7 @@ public class SetParam extends CollectionParam<Set<NamedTypedValue>>{
         for (NamedTypedValue e: getValue()){
             String eVarName = handleVariableName(variableName+"_e_"+index);
             codes.addAll(e.newInstanceWithJavaOrKotlin(true, true, eVarName, indent+1, isJava, isVariableNullable));
-            addCode(codes, methodInvocation(variableName, "add", eVarName, isJava, isNullable()) + getStatementLast(isJava), indent+1);
+            addCode(codes, methodInvocation(variableName, "add", eVarName, isJava, isNullable(), false) + getStatementLast(isJava), indent+1);
             index++;
         }
 
@@ -135,7 +135,7 @@ public class SetParam extends CollectionParam<Set<NamedTypedValue>>{
             addCode(codes, junitAssertNull(responseVarName, isJava), indent);
             return codes;
         }
-        addCode(codes, junitAssertEquals(String.valueOf(getValue().size()), CodeJavaOrKotlinGenerator.withSize(responseVarName, isJava, isNullable()),isJava ), indent);
+        addCode(codes, junitAssertEquals(String.valueOf(getValue().size()), CodeJavaOrKotlinGenerator.withSizeInAssertion(responseVarName, isJava, isNullable()),isJava ), indent);
         /*
             it is tricky to check values for set since the sequence is not determinate
          */

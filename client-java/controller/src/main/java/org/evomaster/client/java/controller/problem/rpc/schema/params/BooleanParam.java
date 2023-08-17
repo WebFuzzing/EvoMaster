@@ -65,9 +65,9 @@ public class BooleanParam extends PrimitiveOrWrapperParam<Boolean> {
     }
 
     @Override
-    public String getPrimitiveValue(String responseVarName, boolean isJava) {
+    public String getPrimitiveValueInAssertion(String responseVarName, boolean isJava) {
         if (getType().isWrapper)
-            return methodInvocation(responseVarName, "booleanValue", "", isJava, isNullable());
+            return methodInvocation(responseVarName, "booleanValue", "", isJava, isNullable(), true);
         return responseVarName;
     }
 }

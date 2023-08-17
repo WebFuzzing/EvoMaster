@@ -263,7 +263,7 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
                 codes.addAll(f.newInstanceWithJavaOrKotlin(fdeclar, true, fName, indent+1, isJava, isNullable()));
 
                 if (needRenameField(f)){
-                    addCode(codes, methodInvocation(ownVarName, f.accessibleSchema.setterMethodName, fName, isJava, isNullable())+ getStatementLast(isJava),indent+1);
+                    addCode(codes, methodInvocation(ownVarName, f.accessibleSchema.setterMethodName, fName, isJava, isNullable(), false)+ getStatementLast(isJava),indent+1);
                 }
             }else {
                 codes.addAll(f.newInstanceWithJavaOrKotlin(false, true,
@@ -274,7 +274,7 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
         if (getType().spec == JavaDtoSpec.PROTO3){
 
             addCode(codes,
-                setInstance(true, varName, methodInvocation(ownVarName, PROTO3_OBJECT_BUILD_METHOD, "",isJava, isNullable()), isJava),indent+1);
+                setInstance(true, varName, methodInvocation(ownVarName, PROTO3_OBJECT_BUILD_METHOD, "",isJava, isNullable(), false), isJava),indent+1);
         }
         addCode(codes, codeBlockEnd(isJava), indent);
         return codes;
@@ -301,7 +301,7 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
                     SimpleLogger.uniqueWarn(msg);
                     addComment(codes, msg, indent);
                 }else{
-                    fName = methodInvocation(responseVarName, f.accessibleSchema.getterMethodName, "", isJava, isNullable());
+                    fName = methodInvocation(responseVarName, f.accessibleSchema.getterMethodName, "", isJava, isNullable(), true);
                 }
             }
             if (fName != null)

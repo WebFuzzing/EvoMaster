@@ -84,9 +84,9 @@ public class FloatParam extends PrimitiveOrWrapperParam<Float> {
     }
 
     @Override
-    public String getPrimitiveValue(String responseVarName, boolean isJava) {
+    public String getPrimitiveValueInAssertion(String responseVarName, boolean isJava) {
         if (getType().isWrapper)
-            return methodInvocation(responseVarName, "floatValue", "", isJava, isNullable()) ;
+            return methodInvocation(responseVarName, "floatValue", "", isJava, isNullable(), true) ;
         return responseVarName;
     }
 }
