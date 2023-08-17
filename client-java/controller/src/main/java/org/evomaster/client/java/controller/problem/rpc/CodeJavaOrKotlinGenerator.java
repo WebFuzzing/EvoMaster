@@ -435,11 +435,13 @@ public class CodeJavaOrKotlinGenerator {
     }
 
 
-    public static String fieldAccess(String obj, String filedName, boolean isJava, boolean objIsNullable){
+    public static String fieldAccess(String obj, String filedName, boolean isJava, boolean objIsNullable, boolean isNonNullAsserted){
         if (obj == null)
             return filedName;
-
-        return String.format("%s%s.%s", obj,variableNullableMark(isJava, objIsNullable), filedName);
+        String mark = variableNullableMark(isJava, objIsNullable);
+        if (isNonNullAsserted)
+            mark = variableNonNullAssertedMark(isJava, objIsNullable);
+        return String.format("%s%s.%s", obj,mark, filedName);
     }
 
     /**

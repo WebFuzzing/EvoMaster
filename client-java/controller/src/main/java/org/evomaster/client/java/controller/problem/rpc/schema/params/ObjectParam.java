@@ -267,7 +267,7 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
                 }
             }else {
                 codes.addAll(f.newInstanceWithJavaOrKotlin(false, true,
-                    fieldAccess(varName, f.getName(),isJava, isNullable()), indent+1, isJava, isNullable()));
+                    fieldAccess(varName, f.getName(),isJava, isNullable(),false), indent+1, isJava, isNullable()));
             }
         }
 
@@ -293,9 +293,9 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
         }
         for (NamedTypedValue f : getValue()){
             String fName = null;
-            if (f.accessibleSchema == null || f.accessibleSchema.isAccessible)
-                fName = responseVarName+"."+f.getName();
-            else{
+            if (f.accessibleSchema == null || f.accessibleSchema.isAccessible){
+                fName = fieldAccess(responseVarName, f.getName(),isJava, isNullable(),true);
+            } else{
                 if (f.accessibleSchema.getterMethodName == null){
                     String msg = "Error: Object("+getType().getFullTypeName()+") has private field "+f.getName()+", but there is no getter method";
                     SimpleLogger.uniqueWarn(msg);
