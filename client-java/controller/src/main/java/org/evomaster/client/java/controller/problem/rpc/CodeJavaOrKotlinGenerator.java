@@ -489,7 +489,10 @@ public class CodeJavaOrKotlinGenerator {
      * @return a string to get size() of the variable
      */
     public static String withSizeInAssertion(String variableName, boolean isJava, boolean isNullable){
-        return String.format("%s%s.size()", variableName, variableNonNullAssertedMark(isJava, isNullable));
+        String methodName = "size()";
+        if (!isJava)
+            methodName = "size";
+        return String.format("%s%s.%s", variableName, variableNonNullAssertedMark(isJava, isNullable), methodName);
     }
     /**
      * @param variableName is the variable which has length field
