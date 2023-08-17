@@ -147,13 +147,13 @@ public class CodeJavaOrKotlinGenerator {
 
         if (doesIncludeName){
             sb.append(varName);
-            if (!isJava){
+            if (!isJava && isDeclaration){
                 String afterType = "";
                 if (isNullable)
                     afterType = KOTLIN_DECLARATION_VARIABLE_NULLABLE;
-                sb.append(String.format(":%s%s", handleNestedSymbolInTypeName(fullName), afterType));
+                if (fullName !=null)
+                    sb.append(String.format(": %s%s", handleNestedSymbolInTypeName(fullName), afterType));
             }
-
         }
 
         String stringValue = "";
