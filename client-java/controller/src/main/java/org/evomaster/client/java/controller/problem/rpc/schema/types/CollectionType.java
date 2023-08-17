@@ -5,6 +5,7 @@ import org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerato
 import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * collection type which includes Array, List, Set
@@ -45,7 +46,7 @@ public class CollectionType extends TypeSchema{
             // adapt to kolin
             if (List.class.isAssignableFrom(getClazz())){
                 collectionType = KOTLIN_LIST;
-            }else if (List.class.isAssignableFrom(getClazz())){
+            }else if (Set.class.isAssignableFrom(getClazz())){
                 collectionType = KOTLIN_SET;
             }else if (getClazz().isArray()){
                 collectionType = KOTLIN_ARRAY;
