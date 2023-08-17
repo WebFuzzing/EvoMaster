@@ -168,9 +168,17 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
         try {
             controllerServer.start();
-        } catch (Exception e) {
-            SimpleLogger.error("Failed to start Jetty: " + e.getMessage());
-            controllerServer.destroy();
+        } catch (Exception estart) {
+            String msg = "Failed to start Jetty for EM Driver: " + estart.getMessage();
+            SimpleLogger.error(msg);
+            try {
+                controllerServer.stop();
+                controllerServer.destroy();
+            } catch (Exception estop) {
+                SimpleLogger.error("Failed to stop Jetty: " + estop.getMessage());
+            }
+
+            throw new RuntimeException(msg,estart);
         }
 
         //just make sure we start from a clean state

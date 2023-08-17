@@ -26,6 +26,7 @@ import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.problem.rpc.auth.RPCAuthenticationInfo
 import org.evomaster.core.problem.rpc.auth.RPCNoAuth
 import org.evomaster.core.problem.rpc.param.RPCParam
+import org.evomaster.core.problem.util.ActionBuilderUtil
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.util.ParserDtoUtil.parseJsonNodeAsGene
 import org.evomaster.core.problem.util.ParserDtoUtil.setGeneBasedOnString
@@ -561,8 +562,11 @@ class RPCEndpointsHandler {
     private fun nameClientVariable(index: Int, interfaceSimpleName: String) : String = "var_client${index}_${interfaceSimpleName.replace("\$","_").replace("\\.","_")}"
 
     private fun reportEndpointsStatistics(numSchema: Int, skipped: Int, numSeededTest: Int){
+        ActionBuilderUtil.printActionNumberInfo("RPC", actionSchemaCluster.size, skipped, 0)
         LoggingUtil.getInfoLogger().apply {
-            info("There are $numSchema defined RPC interfaces with ${actionSchemaCluster.size} accessible endpoints and $skipped skipped endpoints.")
+            if(numSchema > 1) {
+                info("There are $numSchema defined RPC interfaces (used as schema declarations).")
+            }
             if (numSeededTest > 0)
                 info("$numSeededTest test${if (numSeededTest > 1) "s are" else " is"} seeded.")
         }
