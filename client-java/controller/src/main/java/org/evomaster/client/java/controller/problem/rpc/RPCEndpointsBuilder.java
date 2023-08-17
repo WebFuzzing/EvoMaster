@@ -935,6 +935,10 @@ public class RPCEndpointsBuilder {
         if (found.size() == 1)
             return found.get(0).getName();
 
+        // no need to get setter or getter
+        if (Modifier.isPublic(field.getModifiers()))
+            return null;
+
         String msg = "RPC extract schema Error: cannot access field property, there exist "+found.size()+" methods to access the field "+ field.getName() + " for the class "+ clazz.getName();
 
         if (found.size() > 1){

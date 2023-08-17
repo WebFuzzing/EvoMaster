@@ -40,4 +40,12 @@ public class CollectionType extends TypeSchema{
     public CollectionType copy() {
         return new CollectionType(getType(), getFullTypeName(), template, getClazz(), spec);
     }
+
+    @Override
+    public String getFullTypeNameWithGenericType() {
+        String generic = template.getType().getFullTypeNameWithGenericType();
+        if (getClazz().isArray())
+            return super.getFullTypeNameWithGenericType();
+        return getFullTypeName()+"<"+generic+">";
+    }
 }

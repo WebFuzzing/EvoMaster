@@ -17,7 +17,9 @@ import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.problem.externalservice.rpc.DbAsExternalServiceAction
+import org.evomaster.core.problem.externalservice.rpc.DbAsExternalServiceAction.Companion.getDbAsExternalServiceAction
 import org.evomaster.core.problem.externalservice.rpc.RPCExternalServiceAction
+import org.evomaster.core.problem.externalservice.rpc.RPCExternalServiceAction.Companion.getRPCExternalServiceActionName
 import org.evomaster.core.problem.externalservice.rpc.parm.ClassResponseParam
 import org.evomaster.core.problem.externalservice.rpc.parm.UpdateForRPCResponseParam
 import org.evomaster.core.problem.rest.RestActionBuilderV3
@@ -190,7 +192,7 @@ class RPCEndpointsHandler {
                     val ex = rpcActionDto.mockRPCExternalServiceDtos.map { e->
                         e.responses.mapIndexed { index, r->
                             val exAction = seededExternalServiceCluster[
-                                RPCExternalServiceAction.getRPCExternalServiceActionName(e.interfaceFullName, e.functionName, e.requestRules?.get(index), e.responseTypes[index])
+                                getRPCExternalServiceActionName(e, index)
                             ]!!.copy() as ApiExternalServiceAction
                             try {
                                 setGeneBasedOnString(exAction.response.responseBody, r)
@@ -209,7 +211,7 @@ class RPCEndpointsHandler {
                if (rpcActionDto.mockDatabaseDtos != null && rpcActionDto.mockDatabaseDtos.isNotEmpty()){
                    val dbEx = rpcActionDto.mockDatabaseDtos.map { dbDto->
                         val dbExAction = seededDbMockObjects[
-                                DbAsExternalServiceAction.getDbAsExternalServiceAction(dbDto.commandName, dbDto.requests, dbDto.responseFullType)
+                            getDbAsExternalServiceAction(dbDto)
                         ]!!.copy() as DbAsExternalServiceAction
                         try {
                             if (dbDto.response != null)
