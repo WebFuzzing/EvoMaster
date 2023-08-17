@@ -83,7 +83,7 @@ public class ByteBufferParam extends NamedTypedValue<ByteBufferType, ByteBuffer>
                 oneLineInstance(true, true, isJava?"byte[]":"ByteArray", varValue, byteArray, isJava,isNullable() ), indent + 1);
         addCode(codes,
                 oneLineInstance(false, true, "String", variableName, ByteBuffer.class.getName()+".allocate("+
-                        fieldAccess(varValue, (isJava?"length":"size"), isJava, isNullable(), true), isJava,isNullable() ), indent + 1);
+                        fieldAccess(varValue, (isJava?"length":"size")+")", isJava, isNullable(), true), isJava,isNullable() ), indent + 1);
         addCode(codes,
             methodInvocation(variableName, "put", varValue, isJava, isNullable(), false)+ getStatementLast(isJava),
             indent+1);

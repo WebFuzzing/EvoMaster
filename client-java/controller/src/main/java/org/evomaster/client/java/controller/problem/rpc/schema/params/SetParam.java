@@ -119,7 +119,7 @@ public class SetParam extends CollectionParam<Set<NamedTypedValue>>{
         int index = 0;
         for (NamedTypedValue e: getValue()){
             String eVarName = handleVariableName(variableName+"_e_"+index);
-            codes.addAll(e.newInstanceWithJavaOrKotlin(true, true, eVarName, indent+1, isJava, isVariableNullable));
+            codes.addAll(e.newInstanceWithJavaOrKotlin(true, true, eVarName, indent+1, isJava, false));
             addCode(codes, methodInvocation(variableName, "add", eVarName, isJava, isNullable(), false) + getStatementLast(isJava), indent+1);
             index++;
         }
