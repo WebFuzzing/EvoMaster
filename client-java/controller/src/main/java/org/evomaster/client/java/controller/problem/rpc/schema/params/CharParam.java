@@ -12,6 +12,11 @@ import static org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinG
  * char param
  */
 public class CharParam extends PrimitiveOrWrapperParam<Character> {
+
+    private final static String JAVA_PR_METHOD = "charValue";
+    private final static String KOTLIN_PR_METHOD = "toChar";
+
+
     public CharParam(String name, String type, String fullTypeName, Class<?> clazz, AccessibleSchema accessibleSchema, JavaDtoSpec spec) {
         super(name, type, fullTypeName, clazz, accessibleSchema, spec);
     }
@@ -71,7 +76,13 @@ public class CharParam extends PrimitiveOrWrapperParam<Character> {
     @Override
     public String getPrimitiveValueInAssertion(String responseVarName, boolean isJava) {
         if (getType().isWrapper)
-            return methodInvocation(responseVarName, "charValue", "", isJava, isNullable(), true);
+            return methodInvocation(responseVarName, primitiveValueMethod(isJava), "", isJava, isNullable(), true);
         return responseVarName;
+    }
+
+    @Override
+    public String primitiveValueMethod(boolean isJava) {
+        if (isJava) return JAVA_PR_METHOD;
+        return KOTLIN_PR_METHOD;
     }
 }

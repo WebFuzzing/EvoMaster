@@ -12,6 +12,10 @@ import static org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinG
  * boolean param
  */
 public class BooleanParam extends PrimitiveOrWrapperParam<Boolean> {
+
+    private final static String JAVA_PR_METHOD = "booleanValue";
+    private final static String KOTLIN_PR_METHOD = "toBoolean";
+
     public BooleanParam(String name, String type, String fullTypeName, Class<?> clazz, AccessibleSchema accessibleSchema, JavaDtoSpec spec) {
         super(name, type, fullTypeName, clazz, accessibleSchema, spec);
     }
@@ -67,7 +71,13 @@ public class BooleanParam extends PrimitiveOrWrapperParam<Boolean> {
     @Override
     public String getPrimitiveValueInAssertion(String responseVarName, boolean isJava) {
         if (getType().isWrapper)
-            return methodInvocation(responseVarName, "booleanValue", "", isJava, isNullable(), true);
+            return methodInvocation(responseVarName, primitiveValueMethod(isJava), "", isJava, isNullable(), true);
         return responseVarName;
+    }
+
+    @Override
+    public String primitiveValueMethod(boolean isJava) {
+        if (isJava) return JAVA_PR_METHOD;
+        return KOTLIN_PR_METHOD;
     }
 }

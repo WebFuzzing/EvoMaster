@@ -153,12 +153,21 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
             // ignore instance of primitive types if the value is not assigned
             return Collections.emptyList();
         }
-        if (accessibleSchema != null && accessibleSchema.setterMethodName != null)
-            code = CodeJavaOrKotlinGenerator.oneLineSetterInstance(accessibleSchema.setterMethodName, getCastType(), variableName, getValueAsJavaString(isJava),isJava, isVariableNullable);
-        else {
+        if (accessibleSchema != null && accessibleSchema.setterMethodName != null){
+            String castType = getCastType();
+            if (castValueWithSpecificMethod(isJava)){
+                castType = null;
+            }
+            code = CodeJavaOrKotlinGenerator.oneLineSetterInstance(accessibleSchema.setterMethodName, castType, variableName, castValueInTestGenerationIfNeeded(getValueAsJavaString(isJava), isJava),isJava, isVariableNullable);
+        } else {
             if (accessibleSchema != null && !accessibleSchema.isAccessible)
                 throw new IllegalStateException("Error: private field, but there is no setter method");
-            code = CodeJavaOrKotlinGenerator.oneLineInstance(isDeclaration, doesIncludeName, getType().getTypeNameForInstanceInJavaOrKotlin(isJava), variableName, getValueAsJavaString(isJava), isJava, isVariableNullable);
+            String castType = getType().getTypeNameForInstanceInJavaOrKotlin(isJava);
+            if (castValueWithSpecificMethod(isJava)){
+                castType = null;
+            }
+
+            code = CodeJavaOrKotlinGenerator.oneLineInstance(isDeclaration, doesIncludeName, castType, variableName, castValueInTestGenerationIfNeeded(getValueAsJavaString(isJava), isJava), isJava, isVariableNullable);
         }
 
         return Collections.singletonList(CodeJavaOrKotlinGenerator.getIndent(indent)+ code);
@@ -228,6 +237,15 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
         handleConstraintsInCopy(copy);
     }
 
+    public boolean castValueWithSpecificMethod(boolean isJava){
+        return false;
+    }
+
+
+    public String castValueInTestGenerationIfNeeded(String stringValue, boolean isJava){
+        return getValueAsJavaString(isJava);
+    }
+
     /**
      *
      * @return a cast type for this param, null means that there is no need to cast the value to a type
@@ -276,4 +294,6 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
     public void setScale(Integer scale) {
         this.scale = scale;
     }
+
+    abstract public String primitiveValueMethod(boolean isJava);
 }

@@ -12,6 +12,10 @@ import static org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinG
  * long param
  */
 public class LongParam extends PrimitiveOrWrapperParam<Long> {
+
+    private final static String JAVA_PR_METHOD = "longValue";
+    private final static String KOTLIN_PR_METHOD = "toLong";
+
     public LongParam(String name, String type, String fullTypeName, Class<?> clazz, AccessibleSchema accessibleSchema, JavaDtoSpec spec) {
         super(name, type, fullTypeName, clazz, accessibleSchema, spec);
     }
@@ -68,7 +72,13 @@ public class LongParam extends PrimitiveOrWrapperParam<Long> {
     @Override
     public String getPrimitiveValueInAssertion(String responseVarName, boolean isJava) {
         if (getType().isWrapper)
-            return methodInvocation(responseVarName, "longValue", "", isJava, isNullable(), true);
+            return methodInvocation(responseVarName, primitiveValueMethod(isJava), "", isJava, isNullable(), true);
         return responseVarName;
+    }
+
+    @Override
+    public String primitiveValueMethod(boolean isJava) {
+        if (isJava) return JAVA_PR_METHOD;
+        return KOTLIN_PR_METHOD;
     }
 }

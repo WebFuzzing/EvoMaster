@@ -16,6 +16,8 @@ import static org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinG
  */
 public class DoubleParam extends PrimitiveOrWrapperParam<Double> {
 
+    private final static String JAVA_PR_METHOD = "doubleValue";
+    private final static String KOTLIN_PR_METHOD = "toDouble";
     boolean minInclusive;
 
     boolean maxInclusive;
@@ -90,7 +92,13 @@ public class DoubleParam extends PrimitiveOrWrapperParam<Double> {
     @Override
     public String getPrimitiveValueInAssertion(String responseVarName, boolean isJava) {
         if (getType().isWrapper)
-            return methodInvocation(responseVarName, "doubleValue", "", isJava, isNullable(), true);
+            return methodInvocation(responseVarName, primitiveValueMethod(isJava), "", isJava, isNullable(), true);
         return responseVarName;
+    }
+
+    @Override
+    public String primitiveValueMethod(boolean isJava) {
+        if (isJava) return JAVA_PR_METHOD;
+        return KOTLIN_PR_METHOD;
     }
 }

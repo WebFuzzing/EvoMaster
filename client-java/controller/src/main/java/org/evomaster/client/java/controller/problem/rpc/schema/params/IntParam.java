@@ -13,6 +13,9 @@ import static org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinG
  */
 public class IntParam extends PrimitiveOrWrapperParam<Integer> {
 
+    private final static String JAVA_PR_METHOD = "intValue";
+    private final static String KOTLIN_PR_METHOD = "toInt";
+
     public IntParam(String name, String type, String fullTypeName, Class<?> clazz, AccessibleSchema accessibleSchema, JavaDtoSpec spec) {
         super(name, type, fullTypeName, clazz, accessibleSchema, spec);
     }
@@ -78,7 +81,13 @@ public class IntParam extends PrimitiveOrWrapperParam<Integer> {
     @Override
     public String getPrimitiveValueInAssertion(String responseVarName, boolean isJava) {
         if (getType().isWrapper)
-            return methodInvocation(responseVarName, "intValue", "", isJava, isNullable(), true);
+            return methodInvocation(responseVarName, primitiveValueMethod(isJava), "", isJava, isNullable(), true);
         return responseVarName;
+    }
+
+    @Override
+    public String primitiveValueMethod(boolean isJava) {
+        if (isJava) return JAVA_PR_METHOD;
+        return KOTLIN_PR_METHOD;
     }
 }

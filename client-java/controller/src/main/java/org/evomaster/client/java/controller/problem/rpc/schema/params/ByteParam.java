@@ -16,6 +16,9 @@ public class ByteParam extends PrimitiveOrWrapperParam<Byte> {
     public final static String TYPE_NAME = byte.class.getSimpleName();
     public final static String FULL_TYPE_NAME = byte.class.getName();
 
+    private final static String JAVA_PR_METHOD  = "byteValue";
+    private final static String KOTLIN_PR_METHOD = "toByte";
+
     public ByteParam(String name, String type, String fullTypeName, Class<?> clazz, AccessibleSchema accessibleSchema, JavaDtoSpec spec) {
         super(name, type, fullTypeName, clazz, accessibleSchema, spec);
     }
@@ -71,13 +74,33 @@ public class ByteParam extends PrimitiveOrWrapperParam<Byte> {
 
     @Override
     public String getPrimitiveValueInAssertion(String responseVarName, boolean isJava) {
-        if (getType().isWrapper)
-            return methodInvocation(responseVarName, "byteValue", "", isJava, isNullable(), true);
+        if (getType().isWrapper){
+            return methodInvocation(responseVarName, primitiveValueMethod(isJava), "", isJava, isNullable(), true);
+        }
         return responseVarName;
     }
 
     @Override
     public String getCastType() {
         return byte.class.getName();
+    }
+
+    @Override
+    public boolean castValueWithSpecificMethod(boolean isJava) {
+        return !isJava;
+    }
+
+    @Override
+    public String castValueInTestGenerationIfNeeded(String stringValue, boolean isJava) {
+        if (isJava)
+            return super.castValueInTestGenerationIfNeeded(stringValue, true);
+        return methodInvocation(stringValue, primitiveValueMethod(false), "", false, isNullable(), true);
+    }
+
+    @Override
+    public String primitiveValueMethod(boolean isJava) {
+        if (isJava)
+            return JAVA_PR_METHOD;
+        return KOTLIN_PR_METHOD;
     }
 }
