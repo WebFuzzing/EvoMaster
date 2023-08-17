@@ -809,7 +809,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         handleLocalAuthenticationSetup(endpointSchema.getAuthenticationInfo());
 
         if (dto.responseVariable != null && dto.doGenerateTestScript && dto.outputFormat.isJavaOrKotlin()){
-            responseDto.testScript = endpointSchema.newInvocationWithJavaOrKotlin(dto.responseVariable, dto.controllerVariable,dto.clientVariable, SutInfoDto.OutputFormat.JAVA_JUNIT_4);
+            responseDto.testScript = endpointSchema.newInvocationWithJavaOrKotlin(dto.responseVariable, dto.controllerVariable,dto.clientVariable, dto.outputFormat);
         }
     }
 
