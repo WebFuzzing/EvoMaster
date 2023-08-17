@@ -94,7 +94,7 @@ public class ByteParam extends PrimitiveOrWrapperParam<Byte> {
     public String castValueInTestGenerationIfNeeded(String stringValue, boolean isJava) {
         if (isJava)
             return super.castValueInTestGenerationIfNeeded(stringValue, true);
-        return methodInvocation(stringValue, primitiveValueMethod(false), "", false, isNullable(), true);
+        return methodInvocation(String.format("(%s)", stringValue), primitiveValueMethod(false), "", false, isNullable(), true);
     }
 
     @Override

@@ -78,11 +78,11 @@ public class ByteBufferParam extends NamedTypedValue<ByteBufferType, ByteBuffer>
         if (getValue() == null) return codes;
         addCode(codes, codeBlockStart(isJava), indent);
         String varValue = variableName+"_byteArray";
-        String byteArray = "\""+ new String(getValue().array(), StandardCharsets.UTF_8) + "\".getBytes("+StandardCharsets.class.getName()+".UTF_8)";
+        String byteArray = methodInvocation("\""+ new String(getValue().array(), StandardCharsets.UTF_8)+ "\".", isJava?"getBytes":"toByteArray", StandardCharsets.class.getName()+".UTF_8", isJava, false, false);
         addCode(codes,
-                oneLineInstance(true, true, "byte[]", varValue, byteArray, isJava,isNullable() ), indent + 1);
+                oneLineInstance(true, true, isJava?"byte[]":"ByteArray", varValue, byteArray, isJava,isNullable() ), indent + 1);
         addCode(codes,
-                oneLineInstance(false, true, String.class.getName(), variableName, ByteBuffer.class.getName()+".allocate("+varValue+".length)", isJava,isNullable() ), indent + 1);
+                oneLineInstance(false, true, "String", variableName, ByteBuffer.class.getName()+".allocate("+varValue+"."+(isJava?"length":"size")+")", isJava,isNullable() ), indent + 1);
         addCode(codes,
             methodInvocation(variableName, "put", varValue, isJava, isNullable(), false)+ getStatementLast(isJava),
             indent+1);
