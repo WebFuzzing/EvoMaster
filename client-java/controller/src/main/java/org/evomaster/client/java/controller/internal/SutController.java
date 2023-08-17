@@ -823,7 +823,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             try{
                 responseDto.testScript = endpointSchema.newInvocationWithJavaOrKotlin(dto.responseVariable, dto.controllerVariable,dto.clientVariable, dto.outputFormat);
             }catch (Exception e){
-                SimpleLogger.warn("Fail to generate test script"+e.getMessage());
+                SimpleLogger.warn("Fail to generate test script "+e.getMessage());
             }
             if (responseDto.testScript ==null)
                 SimpleLogger.warn("Null test script for action "+dto.actionName);

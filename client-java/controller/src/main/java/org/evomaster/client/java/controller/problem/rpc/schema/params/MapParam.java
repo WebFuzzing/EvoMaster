@@ -170,7 +170,7 @@ public class MapParam extends NamedTypedValue<MapType, List<PairParam>>{
                 String key = e.getValue().getKey().getValueAsJavaString(isJava);
                 if (key == null)
                     throw new RuntimeException("key is null");
-                String eValueVarName = responseVarName+".get("+key+")";
+                String eValueVarName = methodInvocation(responseVarName, "get", key, isJava, isNullable(), true);
                 if (e.getValue().getValue() == null)
                     throw new RuntimeException("value should not been null");
                 codes.addAll(e.getValue().getValue().newAssertionWithJavaOrKotlin(indent, eValueVarName, maxAssertionForDataInCollection, isJava));
