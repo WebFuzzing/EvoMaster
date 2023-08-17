@@ -82,11 +82,11 @@ public class FakeMockObjectController extends SpringController {
                                 mockRPCExternalServiceDtos= Arrays.asList(
                                         new MockRPCExternalServiceDto(){{
                                             appKey = "fake.app";
-                                            interfaceFullName = "fake.api.GetApiData";
+                                            interfaceFullName = "com.foo.rpc.examples.spring.fakemockobject.external.fake.api.GetApiData";
                                             functionName = "one";
-                                            responses = Arrays.asList("{\"exName\":\"foo\",\"exId\":42,\"exInfo\":[\"2023-08-14\"]}");
+                                            responses = Arrays.asList("{\"exName\":\"foo\",\"exId\":0,\"exInfo\":[\"2023-08-14\"]}");
                                             responseTypes = Arrays.asList(
-                                                    "fake.api.ExApiDto"
+                                                    "com.foo.rpc.examples.spring.fakemockobject.external.fake.api.ExApiDto"
                                             );
                                         }}
                                 );
@@ -105,9 +105,9 @@ public class FakeMockObjectController extends SpringController {
                                 mockDatabaseDtos = Arrays.asList(
                                         new MockDatabaseDto(){{
                                             appKey = "fake.app";
-                                            commandName = "fake.db.GetDbData.one";
-                                            response = "{\"exName\":\"bar\",\"exId\":0,\"exInfo\":[\"2023-08-14\"]}";
-                                            responseFullType = "fake.db.ExDbDto";
+                                            commandName = "com.foo.rpc.examples.spring.fakemockobject.external.fake.db.GetDbData.one";
+                                            response = "{\"exName\":\"bar\",\"exId\":42,\"exInfo\":[\"2023-08-14\"]}";
+                                            responseFullType = "com.foo.rpc.examples.spring.fakemockobject.external.fake.db.ExDbDto";
                                         }}
                                 );
                             }}
@@ -125,7 +125,7 @@ public class FakeMockObjectController extends SpringController {
                         mockDatabaseDtos = Arrays.asList(
                             new MockDatabaseDto(){{
                                 appKey = "fake.app";
-                                commandName = "fake.db.GetDbData.all";
+                                commandName = "com.foo.rpc.examples.spring.fakemockobject.external.fake.db.GetDbData.all";
                                 response = "[]";
                                 responseFullType = ArrayList.class.getName();
                             }}

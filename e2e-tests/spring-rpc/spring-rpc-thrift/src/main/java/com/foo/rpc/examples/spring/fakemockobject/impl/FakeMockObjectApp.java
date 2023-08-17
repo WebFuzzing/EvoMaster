@@ -18,30 +18,29 @@ import java.net.URLClassLoader;
 @SpringBootApplication(exclude = SecurityAutoConfiguration.class)
 public class FakeMockObjectApp {
 
-    private static final String JAR_TO_LOAD = "jars/Fake-1.0-SNAPSHOT.jar";
-
-    static {
-        loadClass();
-    }
+    /*
+        enable this later for extracting specified data schema
+     */
+//    private static final String JAR_TO_LOAD = "jars/Fake-1.0-SNAPSHOT.jar";
 
     public static void main(String[] args) {
         SpringApplication.run(FakeMockObjectApp.class, args);
     }
 
-    private static void loadClass(){
-        // load jar
-        try {
-            ClassLoader loader = FakeMockObjectApp.class.getClassLoader();
-            URL jar = loader.getResource(JAR_TO_LOAD);
-            URLClassLoader child = new URLClassLoader(
-                new URL[] {jar},
-                loader
-            );
-            Class.forName("fake.db.GetDbData", true, child);
-        } catch (Throwable e) {
-            throw new RuntimeException("fail to load jar", e);
-        }
-    }
+//    private static void loadClass(){
+//        // load jar
+//        try {
+//            ClassLoader loader = FakeMockObjectApp.class.getClassLoader();
+//            URL jar = loader.getResource(JAR_TO_LOAD);
+//            URLClassLoader child = new URLClassLoader(
+//                new URL[] {jar},
+//                loader
+//            );
+//            Class.forName("fake.db.GetDbData", true, child);
+//        } catch (Throwable e) {
+//            throw new RuntimeException("fail to load jar", e);
+//        }
+//    }
 
     @Bean
     public TProtocolFactory tProtocolFactory() {
