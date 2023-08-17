@@ -28,8 +28,9 @@ object JdkIssue {
                     " Unfortunately, Java has broken a lot of backward compatibility in its recent versions." +
                     " You should use the EvoMaster OS installers (e.g., .msi and .dmg files)." +
                     " If you want to use the JAR file directly, you need to either upgrade to JDK 8 or 11, or" +
-                    " setup --add-opens JVM option manually:\n") +
-                    inBlue("--add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED"))
+                    " setup --add-opens JVM option manually on the command-line" +
+                    "  (or in the JDK_JAVA_OPTIONS environment variable):\n") +
+                    inBlue("$command"))
 
             return false
         }

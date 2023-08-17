@@ -18,7 +18,7 @@ _EvoMaster_ ([www.evomaster.org](http://evomaster.org)) is the first (2016) open
 that automatically *generates* system-level test cases
 for web/enterprise applications.
 This is related to [Fuzzing](https://en.wikipedia.org/wiki/Fuzzing).
-Not only _EvoMaster_ can generate inputs that find program crashes, but also it generates small effective test suites that can be used for _regression testing_.
+Not only _EvoMaster_ can generate inputs that find program crashes, but also it generates small effective test suites (e.g., in JUnit format) that can be used for _regression testing_.
 
 _EvoMaster_ is an AI driven tool.
 In particular, internally it uses an [Evolutionary Algorithm](https://en.wikipedia.org/wiki/Evolutionary_algorithm)
@@ -74,6 +74,11 @@ __Known limitations__:
 * _Driver_: to be used for _whitebox_ testing, users need to write a [driver manually](docs/write_driver.md).
   We recommend to try _blackbox_ mode first (should just need a few minutes to get it up and running) to get
   an idea of what _EvoMaster_ can do for you.
+
+* _JDK 9+_: whitebox testing requires bytecode manipulation. 
+            Each new release of the JDK makes doing this harder and harder. 
+            Dealing with JDKs above __8__ is doable, but it requires some settings.
+            [See documentation](docs/jdks.md).
 
 * _Execution time_: to get good results, you might need to run the search for several hours.
   We recommend to first try the search for 10 minutes, just to get an idea of what type of tests can be generated.

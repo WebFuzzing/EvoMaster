@@ -172,9 +172,17 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
         try {
             controllerServer.start();
-        } catch (Exception e) {
-            SimpleLogger.error("Failed to start Jetty: " + e.getMessage());
-            controllerServer.destroy();
+        } catch (Exception estart) {
+            String msg = "Failed to start Jetty for EM Driver: " + estart.getMessage();
+            SimpleLogger.error(msg);
+            try {
+                controllerServer.stop();
+                controllerServer.destroy();
+            } catch (Exception estop) {
+                SimpleLogger.error("Failed to stop Jetty: " + estop.getMessage());
+            }
+
+            throw new RuntimeException(msg,estart);
         }
 
         //just make sure we start from a clean state
@@ -812,8 +820,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         endpointSchema.setValue(dto);
         handleLocalAuthenticationSetup(endpointSchema.getAuthenticationInfo());
 
-        if (dto.responseVariable != null && dto.doGenerateTestScript){
-            responseDto.testScript = endpointSchema.newInvocationWithJava(dto.responseVariable, dto.controllerVariable,dto.clientVariable);
+        if (dto.responseVariable != null && dto.doGenerateTestScript && dto.outputFormat.isJavaOrKotlin()){
+            responseDto.testScript = endpointSchema.newInvocationWithJavaOrKotlin(dto.responseVariable, dto.controllerVariable,dto.clientVariable, dto.outputFormat);
         }
     }
 
@@ -823,11 +831,13 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      */
     public final void executeAction(RPCActionDto dto, ActionResponseDto responseDto) {
         EndpointSchema endpointSchema = getEndpointSchema(dto);
-        if (dto.responseVariable != null && dto.doGenerateTestScript){
+        if (dto.responseVariable != null && dto.doGenerateTestScript && dto.outputFormat.isJavaOrKotlin()){
             try{
-                responseDto.testScript = endpointSchema.newInvocationWithJava(dto.responseVariable, dto.controllerVariable,dto.clientVariable);
+                responseDto.testScript = endpointSchema.newInvocationWithJavaOrKotlin(dto.responseVariable, dto.controllerVariable,dto.clientVariable, dto.outputFormat);
             }catch (Exception e){
-                SimpleLogger.warn("Fail to generate test script"+e.getMessage());
+                // for tests
+                assert(false);
+                SimpleLogger.warn("Fail to generate test script "+e.getMessage());
             }
             if (responseDto.testScript ==null)
                 SimpleLogger.warn("Null test script for action "+dto.actionName);
@@ -874,8 +884,15 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                 try{
                     resSchema.setValueBasedOnInstance(response);
                     responseDto.rpcResponse = resSchema.getDto();
-                    if (dto.doGenerateAssertions && dto.responseVariable != null)
-                        responseDto.assertionScript = resSchema.newAssertionWithJava(dto.responseVariable, dto.maxAssertionForDataInCollection);
+                    if (dto.doGenerateAssertions && dto.responseVariable != null && dto.outputFormat.isJavaOrKotlin()){
+                        try{
+                            responseDto.assertionScript = resSchema.newAssertionWithJavaOrKotlin(dto.responseVariable, dto.maxAssertionForDataInCollection, dto.outputFormat.isJava());
+                        }catch (Exception e){
+                            // for tests
+                            assert(false);
+                            SimpleLogger.error("ERROR: fail to handle assertion generations with the given response "+ e.getMessage());
+                        }
+                    }
                     /*
                         ActionResponseDto.jsonResponse could be used to generate assertions in core side
                         however, as we do not support the test generate in core side yet and not all DTO can be converted into json,
@@ -901,8 +918,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                     //throw new RuntimeException("ERROR: fail to categorize result with implemented categorizeBasedOnResponse "+ e.getMessage());
                 }
             } else {
-                if (dto.doGenerateAssertions && dto.responseVariable != null)
-                    responseDto.assertionScript = resSchema.newAssertionWithJava(dto.responseVariable, dto.maxAssertionForDataInCollection);
+                if (dto.doGenerateAssertions && dto.responseVariable != null && dto.outputFormat.isJavaOrKotlin())
+                    responseDto.assertionScript = resSchema.newAssertionWithJavaOrKotlin(dto.responseVariable, dto.maxAssertionForDataInCollection, dto.outputFormat.isJava());
             }
         }
     }

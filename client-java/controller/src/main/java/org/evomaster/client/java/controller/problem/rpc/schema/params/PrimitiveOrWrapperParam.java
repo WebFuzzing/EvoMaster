@@ -1,7 +1,7 @@
 package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
-import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
+import org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.JavaDtoSpec;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.PrimitiveOrWrapperType;
@@ -147,31 +147,40 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
     }
 
     @Override
-    public List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent) {
+    public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava, boolean isVariableNullable) {
         String code;
         if (!getType().isWrapper && getValue() == null){
             // ignore instance of primitive types if the value is not assigned
             return Collections.emptyList();
         }
-        if (accessibleSchema != null && accessibleSchema.setterMethodName != null)
-            code = CodeJavaGenerator.oneLineSetterInstance(accessibleSchema.setterMethodName, getCastType(), variableName, getValueAsJavaString());
-        else {
+        if (accessibleSchema != null && accessibleSchema.setterMethodName != null){
+            String castType = getCastType();
+            if (castValueWithSpecificMethod(isJava)){
+                castType = null;
+            }
+            code = CodeJavaOrKotlinGenerator.oneLineSetterInstance(accessibleSchema.setterMethodName, castType, variableName, castValueInTestGenerationIfNeeded(getValueAsJavaString(isJava), isJava),isJava, isVariableNullable);
+        } else {
             if (accessibleSchema != null && !accessibleSchema.isAccessible)
                 throw new IllegalStateException("Error: private field, but there is no setter method");
-            code = CodeJavaGenerator.oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, getValueAsJavaString());
+            String castType = getType().getTypeNameForInstanceInJavaOrKotlin(isJava);
+            if (castValueWithSpecificMethod(isJava)){
+                castType = null;
+            }
+
+            code = CodeJavaOrKotlinGenerator.oneLineInstance(isDeclaration, doesIncludeName, castType, variableName, castValueInTestGenerationIfNeeded(getValueAsJavaString(isJava), isJava), isJava, isVariableNullable);
         }
 
-        return Collections.singletonList(CodeJavaGenerator.getIndent(indent)+ code);
+        return Collections.singletonList(CodeJavaOrKotlinGenerator.getIndent(indent)+ code);
     }
 
     @Override
-    public List<String> newAssertionWithJava(int indent, String responseVarName, int maxAssertionForDataInCollection) {
+    public List<String> newAssertionWithJavaOrKotlin(int indent, String responseVarName, int maxAssertionForDataInCollection, boolean isJava) {
         StringBuilder sb = new StringBuilder();
-        sb.append(CodeJavaGenerator.getIndent(indent));
+        sb.append(CodeJavaOrKotlinGenerator.getIndent(indent));
         if (getValue() == null)
-            sb.append(CodeJavaGenerator.junitAssertNull(responseVarName));
+            sb.append(CodeJavaOrKotlinGenerator.junitAssertNull(responseVarName, isJava));
         else
-            sb.append(CodeJavaGenerator.junitAssertEquals(getValueAsJavaString(), getPrimitiveValue(responseVarName)));
+            sb.append(CodeJavaOrKotlinGenerator.junitAssertEquals(getValueAsJavaString(isJava), getPrimitiveValueInAssertion(responseVarName, isJava), isJava));
 
         return Collections.singletonList(sb.toString());
     }
@@ -210,12 +219,12 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
     abstract public void setValueBasedOnStringValue(String stringValue);
 
     /**
-     *
      * @param responseVarName refers to the variable name in response
+     * @param isJava
      * @return a string to get its primitive value if the param is Wrapper class
-     *          eg, res.byteValue() for byte with a response variable name res
+     * eg, res.byteValue() for byte with a response variable name res
      */
-    abstract public String getPrimitiveValue(String responseVarName);
+    abstract public String getPrimitiveValueInAssertion(String responseVarName, boolean isJava);
 
     @Override
     public void copyProperties(NamedTypedValue copy) {
@@ -226,6 +235,15 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
         }
 
         handleConstraintsInCopy(copy);
+    }
+
+    public boolean castValueWithSpecificMethod(boolean isJava){
+        return false;
+    }
+
+
+    public String castValueInTestGenerationIfNeeded(String stringValue, boolean isJava){
+        return getValueAsJavaString(isJava);
     }
 
     /**
@@ -281,4 +299,6 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
     public List<String> referenceTypes() {
         return null;
     }
+
+    abstract public String primitiveValueMethod(boolean isJava);
 }
