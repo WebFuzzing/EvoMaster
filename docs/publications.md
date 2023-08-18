@@ -40,8 +40,8 @@ Also, some of these papers provides full replication packages, which are linked 
 
 * A. Belhadi, M. Zhang, A. Arcuri.
   *Random Testing and Evolutionary Testing for Fuzzing GraphQL APIs*.
-  ACM Transactions on the Web (TWEB). (to appear)
-  [[arXiv](https://arxiv.org/abs/2209.05833)]
+  ACM Transactions on the Web (TWEB). 
+  [[PDF](publications/2023_tweb.pdf)]
   [[Script 0](exp/arxiv_gql_bb.py)]
   [[Script 1](exp/arxiv_gql_wb.py)]
 
