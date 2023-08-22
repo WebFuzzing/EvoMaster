@@ -283,8 +283,6 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     public final void initSqlHandler() {
         sqlHandler.setConnection(getConnectionIfExist());
         sqlHandler.setSchema(getSqlDatabaseSchema());
-
-        registerInitSqlCommands(getConnectionIfExist(), getDbSpecifications());
     }
 
     public final void initMongoHandler() {
@@ -421,6 +419,25 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         }
     }
 
+
+    /**
+     * handle specified init sql script
+     */
+    public final void registerOrExecuteInitSqlCommandsIfNeeded()  {
+        Connection connection = getConnectionIfExist();
+        List<DbSpecification> dbSpecifications = getDbSpecifications();
+
+        if (dbSpecifications != null && connection != null){
+            for (DbSpecification dbSpecification: dbSpecifications){
+                try {
+                    registerInitSqlCommands(connection, dbSpecification);
+                } catch (SQLException e) {
+                    throw new RuntimeException("Fail to register or execute the script for initializing data in SQL database, please check specified `initSqlScript` or initSqlOnResourcePath. Error Msg:", e);
+                }
+            }
+        }
+    }
+
     /**
      * perform smart db clean by cleaning the data in accessed table
      */
@@ -511,17 +528,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         return list.entrySet().stream().filter(x-> x.getKey().equalsIgnoreCase(name)).findFirst();
     }
 
-    private void registerInitSqlCommands(Connection connection, List<DbSpecification> dbSpecifications)  {
-        if (dbSpecifications != null && connection != null){
-            for (DbSpecification dbSpecification: dbSpecifications){
-                try {
-                    registerInitSqlCommands(connection, dbSpecification);
-                } catch (SQLException e) {
-                    throw new RuntimeException("Fail to register or execute the script for initializing data in SQL database, please check specified `initSqlScript` or initSqlOnResourcePath. Error Msg:", e);
-                }
-            }
-        }
-    }
+
 
 
     /**
