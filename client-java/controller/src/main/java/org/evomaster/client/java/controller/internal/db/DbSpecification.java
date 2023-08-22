@@ -46,7 +46,11 @@ public class DbSpecification {
 
     /**
      * specify whether to execute init sql script after starting SUT
-     * Default is True
+     * Default is True.
+     * In some cases, the script might be handled with the application itself.
+     * For instance, with H2 database using JPA, there is no need to execute
+     * the `data.sql` script under resource folder,
+     * thus, set executeInitSqlAfterStartup False.
      */
     public final boolean executeInitSqlAfterStartup;
 
