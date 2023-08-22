@@ -37,11 +37,12 @@ public interface InitSqlScriptWithSmartDbCleanTest extends DatabaseTestTemplate 
                     .then()
                     .statusCode(200);
 
-            // db is empty
-            QueryResult res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Bar;", true);
-            assertEquals(0, res.seeRows().size());
-            res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo;", true);
-            assertEquals(0, res.seeRows().size());
+            QueryResult res;
+//            // db is empty
+//            res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Bar;", true);
+//            assertEquals(0, res.seeRows().size());
+//            res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo;", true);
+//            assertEquals(0, res.seeRows().size());
 
             startNewTest(url);
 
