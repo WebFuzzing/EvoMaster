@@ -3,7 +3,6 @@ package org.evomaster.client.java.controller.internal.db;
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
 
 import java.sql.Connection;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -47,7 +46,7 @@ public class DbSpecification {
 
     /**
      * specify whether to execute init sql script after starting SUT
-     * Default is false
+     * Default is True
      */
     public final boolean executeInitSqlAfterStartup;
 
@@ -63,7 +62,7 @@ public class DbSpecification {
     }
 
     public DbSpecification(DatabaseType dbType, Connection connection) {
-        this(dbType, connection, null, null, null, true, false);
+        this(dbType, connection, null, null, null, true, true);
     }
 
     public DbSpecification withSchemas(String... schemas){
@@ -101,6 +100,9 @@ public class DbSpecification {
     }
 
     public DbSpecification executeInitSQLScriptAfterStartup(){
+        if (this.executeInitSqlAfterStartup)
+            return this;
+
         return new DbSpecification(
             this.dbType,
             this.connection,
@@ -109,6 +111,22 @@ public class DbSpecification {
             this.initSqlOnResourcePath,
             this.employSmartDbClean,
             true
+        );
+    }
+
+
+    public DbSpecification disableExecutionOfInitSQLScriptAfterStartup(){
+        if (!this.executeInitSqlAfterStartup)
+            return this;
+
+        return new DbSpecification(
+                this.dbType,
+                this.connection,
+                this.schemaNames,
+                this.initSqlScript,
+                this.initSqlOnResourcePath,
+                this.employSmartDbClean,
+                false
         );
     }
 

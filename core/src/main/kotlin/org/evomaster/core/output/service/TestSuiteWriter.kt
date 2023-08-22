@@ -610,7 +610,7 @@ class TestSuiteWriter {
                         addStatement("$controller.setupForGeneratedTest()", lines)
                         addStatement("$baseUrlOfSut = $controller.startSut()", lines)
                         //registerOrExecuteInitSqlCommands
-                        addStatement("$baseUrlOfSut = $controller.registerOrExecuteInitSqlCommandsIfNeeded()", lines)
+                        addStatement("$controller.registerOrExecuteInitSqlCommandsIfNeeded()", lines)
 
                         if(config.problemType == EMConfig.ProblemType.WEBFRONTEND){
                             val infoDto = remoteController.getSutInfo()!! //TODO refactor. save it in a service
