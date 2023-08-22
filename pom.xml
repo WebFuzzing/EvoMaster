@@ -1004,7 +1004,7 @@
                             Fucking JDK 17!!! And fuck you JEP 403!!!
                             https://bugs.openjdk.java.net/browse/JDK-8266851
                         -->
-                        <argLine>@{argLine} -ea -Xms1024m -Xmx8192m -Xss4m -Djdk.attach.allowAttachSelf=true ${addOpens}</argLine>
+                        <argLine>@{argLine} -ea -Xms1024m -Xmx4096m -Xss4m -Djdk.attach.allowAttachSelf=true ${addOpens}</argLine>
                         <!-- Needed for some weird bug in JDK used in CircleCI-->
                         <!--  Commented out, as no longer using CircleCI-->
                         <!--  <useSystemClassLoader>false</useSystemClassLoader>-->
@@ -1021,7 +1021,7 @@
                         <forkCount>1</forkCount>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
                         <rerunFailingTestsCount>2</rerunFailingTestsCount>
-                        <argLine>@{argLine} -ea -Xms1024m -Xmx8192m -Djdk.attach.allowAttachSelf=true ${addOpens}</argLine>
+                        <argLine>@{argLine} -ea -Xms1024m -Xmx4096m -Djdk.attach.allowAttachSelf=true ${addOpens}</argLine>
                         <useSystemClassLoader>false</useSystemClassLoader>
                     </configuration>
                     <executions>
