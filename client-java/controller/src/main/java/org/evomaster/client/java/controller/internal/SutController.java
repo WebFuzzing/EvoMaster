@@ -428,6 +428,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         List<DbSpecification> dbSpecifications = getDbSpecifications();
 
         if (dbSpecifications != null && connection != null){
+            tableInitSqlMap.clear();
+
             for (DbSpecification dbSpecification: dbSpecifications){
                 if (dbSpecification != null) {
                     try {
@@ -539,25 +541,24 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      * @return whether the init script is executed
      */
     private boolean registerInitSqlCommands(Connection connection, DbSpecification dbSpecification) throws SQLException {
+
         if (dbSpecification.initSqlOnResourcePath == null
                 && dbSpecification.initSqlScript == null) return false;
-        // TODO to handle initSqlMap for multiple connections
-        if (tableInitSqlMap.isEmpty()){
-            List<String> all = new ArrayList<>();
-            if (dbSpecification.initSqlOnResourcePath != null){
-               all.addAll(SqlScriptRunnerCached.extractSqlScriptFromResourceFile(dbSpecification.initSqlOnResourcePath));
-            }
-            if (dbSpecification.initSqlScript != null){
-                all.addAll(SqlScriptRunner.extractSql(dbSpecification.initSqlScript));
-            }
-            if (!all.isEmpty()){
-                // collect insert sql commands map, key is table name, and value is a list sql insert commands
-                tableInitSqlMap.putAll(SqlScriptRunner.extractSqlTableMap(all));
-                // execute all init sql commands
-                if (dbSpecification.executeInitSqlAfterStartup)
-                    SqlScriptRunner.runCommands(connection, all);
-                return true;
-            }
+
+        List<String> all = new ArrayList<>();
+        if (dbSpecification.initSqlOnResourcePath != null){
+            all.addAll(SqlScriptRunnerCached.extractSqlScriptFromResourceFile(dbSpecification.initSqlOnResourcePath));
+        }
+        if (dbSpecification.initSqlScript != null){
+            all.addAll(SqlScriptRunner.extractSql(dbSpecification.initSqlScript));
+        }
+        if (!all.isEmpty()){
+            // collect insert sql commands map, key is table name, and value is a list sql insert commands
+            tableInitSqlMap.putAll(SqlScriptRunner.extractSqlTableMap(all));
+            // execute all init sql commands
+            if (dbSpecification.executeInitSqlAfterStartup)
+                SqlScriptRunner.runCommands(connection, all);
+            return true;
         }
         return false;
     }
