@@ -429,10 +429,12 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
         if (dbSpecifications != null && connection != null){
             for (DbSpecification dbSpecification: dbSpecifications){
-                try {
-                    registerInitSqlCommands(connection, dbSpecification);
-                } catch (SQLException e) {
-                    throw new RuntimeException("Fail to register or execute the script for initializing data in SQL database, please check specified `initSqlScript` or initSqlOnResourcePath. Error Msg:", e);
+                if (dbSpecification != null) {
+                    try {
+                        registerInitSqlCommands(connection, dbSpecification);
+                    } catch (SQLException e) {
+                        throw new RuntimeException("Fail to register or execute the script for initializing data in SQL database, please check specified `initSqlScript` or initSqlOnResourcePath. Error Msg:", e);
+                    }
                 }
             }
         }
