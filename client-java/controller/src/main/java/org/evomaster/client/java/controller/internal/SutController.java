@@ -425,20 +425,17 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      */
     public final void registerOrExecuteInitSqlCommandsIfNeeded()  {
         Connection connection = getConnectionIfExist();
-        List<DbSpecification> dbSpecifications = getDbSpecifications();
+        if (connection == null) return;
+        DbSpecification dbSpecification = getDbSpecifications().get(0);
+        if (dbSpecification == null) return;
+        if (!dbSpecification.employSmartDbClean) return;
 
-        if (dbSpecifications != null && connection != null){
-            tableInitSqlMap.clear();
+        tableInitSqlMap.clear();
 
-            for (DbSpecification dbSpecification: dbSpecifications){
-                if (dbSpecification != null) {
-                    try {
-                        registerInitSqlCommands(connection, dbSpecification);
-                    } catch (SQLException e) {
-                        throw new RuntimeException("Fail to register or execute the script for initializing data in SQL database, please check specified `initSqlScript` or initSqlOnResourcePath. Error Msg:", e);
-                    }
-                }
-            }
+        try {
+            registerInitSqlCommands(connection, dbSpecification);
+        } catch (SQLException e) {
+            throw new RuntimeException("Fail to register or execute the script for initializing data in SQL database, please check specified `initSqlScript` or initSqlOnResourcePath. Error Msg:", e);
         }
     }
 
