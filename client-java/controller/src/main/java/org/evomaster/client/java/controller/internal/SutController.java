@@ -421,7 +421,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
 
     /**
-     * handle specified init sql script
+     * handle specified init sql script after SUT is started.
      */
     public final void registerOrExecuteInitSqlCommandsIfNeeded()  {
         Connection connection = getConnectionIfExist();
@@ -556,11 +556,26 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             // collect insert sql commands map, key is table name, and value is a list sql insert commands
             tableInitSqlMap.putAll(SqlScriptRunner.extractSqlTableMap(all));
             // execute all init sql commands
-            if (dbSpecification.executeInitSqlAfterStartup)
+            if (dbSpecification.executeInitSqlAfterStartup){
+                /*
+                    ensure that data in connection is cleaned if the data initialization is managed by evomaster
+                    note that such an action is performed only after `startSUT`
+                    likely once if the SUT does not crash during search
+                 */
+                cleanDataInDbConnection(connection, dbSpecification);
+                // insert data
                 SqlScriptRunner.runCommands(connection, all);
+            }
             return true;
         }
         return false;
+    }
+
+    private void cleanDataInDbConnection(Connection connection, DbSpecification dbSpecification){
+        if (dbSpecification.schemaNames != null && !dbSpecification.schemaNames.isEmpty()){
+            dbSpecification.schemaNames.forEach(sch-> DbCleaner.clearDatabase(connection, sch,  null, dbSpecification.dbType));
+        }else
+            DbCleaner.clearDatabase(connection, null, dbSpecification.dbType);
     }
 
     /**
