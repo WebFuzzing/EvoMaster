@@ -116,6 +116,7 @@ public class RPCActionDto {
 
     /**
      * the output format
+     * DEFAULT is Java Junit 5
      */
     public SutInfoDto.OutputFormat outputFormat = SutInfoDto.OutputFormat.JAVA_JUNIT_5;
 

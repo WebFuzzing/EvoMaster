@@ -56,7 +56,7 @@ public class SutInfoDto {
         }
 
         public boolean isJavaOrKotlin(){
-            return this.name().startsWith("JAVA") || this.name().startsWith("KOTLIN");
+            return isJava() || this.name().startsWith("KOTLIN");
         }
     }
 
