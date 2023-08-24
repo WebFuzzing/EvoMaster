@@ -915,8 +915,8 @@ public class RPCEndpointsBuilder {
     }
 
     private static AccessibleSchema extractAccessibleSchema(Class<?> clazz, Field field){
-        if (Modifier.isPublic(field.getModifiers()))
-            return new AccessibleSchema();
+//        if (Modifier.isPublic(field.getModifiers()))
+//            return new AccessibleSchema();
 
         Method getter = Arrays.stream(clazz.getMethods()).filter(m->
                 Modifier.isPublic(m.getModifiers()) && isGetter(field.getName(), m.getName(), field.getType().getTypeName()) && m.getParameterCount() == 0
@@ -930,7 +930,7 @@ public class RPCEndpointsBuilder {
                     (m.getParameterTypes()[0].equals(field.getType()) || m.getParameterTypes()[0].equals(PrimitiveOrWrapperParam.getPrimitiveOrWrapper(field.getType())))
         ).findFirst().orElse(null);
 
-        return new AccessibleSchema(false, (setter != null)?setter.getName():null, (getter != null)?getter.getName():null, (getter != null)?getter.getReturnType():null);
+        return new AccessibleSchema(Modifier.isPublic(field.getModifiers()), (setter != null)?setter.getName():null, (getter != null)?getter.getName():null, (getter != null)?getter.getReturnType():null);
 
     }
 
