@@ -116,7 +116,7 @@ public class RPCActionDto {
 
     /**
      * the output format
-     * DEFAULT is Java Junit 5
+     * Note that the info is kept in sync with what the user specifies in driver or EMConfig
      */
     public SutInfoDto.OutputFormat outputFormat = SutInfoDto.OutputFormat.JAVA_JUNIT_5;
 
