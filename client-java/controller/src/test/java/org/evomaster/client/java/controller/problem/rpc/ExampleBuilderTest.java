@@ -768,7 +768,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals("assertEquals(5, res1.getPribyte());", assertionJavaCode.get(10));
         assertEquals("assertEquals('\\u0061', res1.getPriCharacter().charValue());", assertionJavaCode.get(11));
         assertEquals("assertEquals('\\u0030', res1.getPriChar());", assertionJavaCode.get(12));
-        assertEquals("assertEquals(2, res1.getPriShort());", assertionJavaCode.get(13));
+        assertEquals("assertEquals(2, res1.getPriShort().shortValue());", assertionJavaCode.get(13));
         assertEquals("assertEquals(42, res1.getPriSShort().shortValue());", assertionJavaCode.get(14));
         assertEquals("assertEquals(2, res1.getPriMap().size());", assertionJavaCode.get(15));
         assertEquals("assertEquals(\"bar\", res1.getPriMap().get(\"bar\"));", assertionJavaCode.get(16));
@@ -844,7 +844,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals("assertEquals(5, res1.getPriRequest().getPribyte());", assertionJavaCodeForResponse.get(11));
         assertEquals("assertEquals('\\u0061', res1.getPriRequest().getPriCharacter().charValue());", assertionJavaCodeForResponse.get(12));
         assertEquals("assertEquals('\\u0030', res1.getPriRequest().getPriChar());", assertionJavaCodeForResponse.get(13));
-        assertEquals("assertEquals(2, res1.getPriRequest().getPriShort());", assertionJavaCodeForResponse.get(14));
+        assertEquals("assertEquals(2, res1.getPriRequest().getPriShort().shortValue());", assertionJavaCodeForResponse.get(14));
         assertEquals("assertEquals(42, res1.getPriRequest().getPriSShort().shortValue());", assertionJavaCodeForResponse.get(15));
         assertEquals("assertEquals(2, res1.getPriRequest().getPriMap().size());", assertionJavaCodeForResponse.get(16));
         assertEquals("assertEquals(\"bar\", res1.getPriRequest().getPriMap().get(\"bar\"));", assertionJavaCodeForResponse.get(17));
@@ -904,7 +904,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals("assertEquals(0, res1.getPribyte());", assertionJavaCode.get(7));
         assertEquals("assertNull(res1.getPriCharacter());", assertionJavaCode.get(8));
         assertEquals("assertEquals('\\u0000', res1.getPriChar());", assertionJavaCode.get(9));
-        assertEquals("assertEquals(0, res1.getPriShort());", assertionJavaCode.get(10));
+        assertEquals("assertEquals(0, res1.getPriShort().shortValue());", assertionJavaCode.get(10));
         assertEquals("assertNull(res1.getPriSShort());", assertionJavaCode.get(11));
         assertEquals("assertNull(res1.getPriMap());", assertionJavaCode.get(12));
 
@@ -977,7 +977,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals("assertEquals(0, res1.getPriRequest().getPribyte());", assertionJavaCodeForResponse.get(8));
         assertEquals("assertNull(res1.getPriRequest().getPriCharacter());", assertionJavaCodeForResponse.get(9));
         assertEquals("assertEquals('\\u0000', res1.getPriRequest().getPriChar());", assertionJavaCodeForResponse.get(10));
-        assertEquals("assertEquals(0, res1.getPriRequest().getPriShort());", assertionJavaCodeForResponse.get(11));
+        assertEquals("assertEquals(0, res1.getPriRequest().getPriShort().shortValue());", assertionJavaCodeForResponse.get(11));
         assertEquals("assertNull(res1.getPriRequest().getPriSShort());", assertionJavaCodeForResponse.get(12));
         assertEquals("assertNull(res1.getPriRequest().getPriMap());", assertionJavaCodeForResponse.get(13));
     }
