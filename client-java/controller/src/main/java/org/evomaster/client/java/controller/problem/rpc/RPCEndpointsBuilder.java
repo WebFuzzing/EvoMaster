@@ -692,7 +692,7 @@ public class RPCEndpointsBuilder {
                     throw new RuntimeException("NOT support "+clazz.getName()+" date type in java yet");
             } else if (Exception.class.isAssignableFrom(clazz) && clazz.getName().startsWith("java")){
                 // note that here we only extract class name and message
-                StringParam msgField = new StringParam("message", new AccessibleSchema(false, null, "getMessage"), spec);
+                StringParam msgField = new StringParam("message", new AccessibleSchema(false, null, "getMessage", String.class), spec);
                 ObjectType exceptionType = new ObjectType(clazz.getSimpleName(), clazz.getName(), Collections.singletonList(msgField), clazz, genericTypes,spec );
                 namedValue = new ObjectParam(name, exceptionType, accessibleSchema);
             } else {
@@ -712,7 +712,7 @@ public class RPCEndpointsBuilder {
                     if (rpcType == RPCType.gRPC || isProtobuf(clazz)){
                         List<Protobuf3Field> pfList = getProtobuf3FieldsAndType(clazz);
                         for (Protobuf3Field pf : pfList){
-                            AccessibleSchema faccessSchema = new AccessibleSchema(false, pf.setterName, pf.getterName, pf.setterInputParams);
+                            AccessibleSchema faccessSchema = new AccessibleSchema(false, pf.setterName, pf.getterName, pf.fieldType, pf.setterInputParams);
 
                             NamedTypedValue field = build(schema, pf.fieldType, pf.genericType, pf.fieldName, rpcType, flattenDepth, flevel, objRelatedCustomizationDtos, relatedCustomization, faccessSchema, notNullAnnotations, null, genericTypeMap, isTypeToIdentify);
 
@@ -733,7 +733,7 @@ public class RPCEndpointsBuilder {
                                 continue;
 
                             // always try to find the setter and getter
-                            AccessibleSchema faccessSchema = new AccessibleSchema(Modifier.isPublic(f.getModifiers()), findGetterOrSetter(clazz, f, false), findGetterOrSetter(clazz, f, true));
+                            AccessibleSchema faccessSchema = extractAccessibleSchema(clazz, f);
                             //check accessible
                             if (!Modifier.isPublic(f.getModifiers())){
                                 if (faccessSchema.getterMethodName == null || faccessSchema.setterMethodName == null){
@@ -912,6 +912,26 @@ public class RPCEndpointsBuilder {
         if (customizationDtos == null) return null;
         return customizationDtos.entrySet().stream().filter(s-> s.getValue().specificRequestTypeName == null ||
                 s.getValue().specificRequestTypeName.equals(objTypeName)).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    private static AccessibleSchema extractAccessibleSchema(Class<?> clazz, Field field){
+        if (Modifier.isPublic(field.getModifiers()))
+            return new AccessibleSchema();
+
+        Method getter = Arrays.stream(clazz.getMethods()).filter(m->
+                Modifier.isPublic(m.getModifiers()) && isGetter(field.getName(), m.getName(), field.getType().getTypeName()) && m.getParameterCount() == 0
+        ).findFirst().orElse(null);
+
+
+        Method setter = Arrays.stream(clazz.getMethods()).filter(m->
+                Modifier.isPublic(m.getModifiers()) &&
+                    isSetter(field.getName(), m.getName(), field.getType().getTypeName()) &&
+                    m.getParameterCount() == 1 &&
+                    (m.getParameterTypes()[0].equals(field.getType()) || m.getParameterTypes()[0].equals(PrimitiveOrWrapperParam.getPrimitiveOrWrapper(field.getType())))
+        ).findFirst().orElse(null);
+
+        return new AccessibleSchema(false, (setter != null)?setter.getName():null, (getter != null)?getter.getName():null, (getter != null)?getter.getReturnType():null);
+
     }
 
     private static String findGetterOrSetter(Class<?> clazz, Field field, boolean findGetter){
