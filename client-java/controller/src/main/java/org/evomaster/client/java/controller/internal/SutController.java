@@ -9,6 +9,7 @@ import org.eclipse.jetty.server.handler.ErrorHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.evomaster.client.java.controller.CustomizationHandler;
+import org.evomaster.client.java.controller.DtoUtils;
 import org.evomaster.client.java.controller.SutHandler;
 import org.evomaster.client.java.controller.api.ControllerConstants;
 import org.evomaster.client.java.controller.api.dto.*;
@@ -816,7 +817,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         endpointSchema.setValue(dto);
         handleLocalAuthenticationSetup(endpointSchema.getAuthenticationInfo());
 
-        if (dto.responseVariable != null && dto.doGenerateTestScript && dto.outputFormat.isJavaOrKotlin()){
+        if (dto.responseVariable != null && dto.doGenerateTestScript && DtoUtils.isJavaOrKotlin(dto.outputFormat)){
             responseDto.testScript = endpointSchema.newInvocationWithJavaOrKotlin(dto.responseVariable, dto.controllerVariable,dto.clientVariable, dto.outputFormat);
         }
     }
@@ -827,7 +828,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      */
     public final void executeAction(RPCActionDto dto, ActionResponseDto responseDto) {
         EndpointSchema endpointSchema = getEndpointSchema(dto);
-        if (dto.responseVariable != null && dto.doGenerateTestScript && dto.outputFormat.isJavaOrKotlin()){
+        if (dto.responseVariable != null && dto.doGenerateTestScript && DtoUtils.isJavaOrKotlin(dto.outputFormat)){
             try{
                 responseDto.testScript = endpointSchema.newInvocationWithJavaOrKotlin(dto.responseVariable, dto.controllerVariable,dto.clientVariable, dto.outputFormat);
             }catch (Exception e){
@@ -879,9 +880,9 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                 try{
                     resSchema.setValueBasedOnInstance(response);
                     responseDto.rpcResponse = resSchema.getDto();
-                    if (dto.doGenerateAssertions && dto.responseVariable != null && dto.outputFormat.isJavaOrKotlin()){
+                    if (dto.doGenerateAssertions && dto.responseVariable != null && DtoUtils.isJavaOrKotlin(dto.outputFormat)){
                         try{
-                            responseDto.assertionScript = resSchema.newAssertionWithJavaOrKotlin(dto.responseVariable, dto.maxAssertionForDataInCollection, dto.outputFormat.isJava());
+                            responseDto.assertionScript = resSchema.newAssertionWithJavaOrKotlin(dto.responseVariable, dto.maxAssertionForDataInCollection, DtoUtils.isJava(dto.outputFormat));
                         }catch (Exception e){
                             // for tests
                             assert(false);
@@ -913,8 +914,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                     //throw new RuntimeException("ERROR: fail to categorize result with implemented categorizeBasedOnResponse "+ e.getMessage());
                 }
             } else {
-                if (dto.doGenerateAssertions && dto.responseVariable != null && dto.outputFormat.isJavaOrKotlin())
-                    responseDto.assertionScript = resSchema.newAssertionWithJavaOrKotlin(dto.responseVariable, dto.maxAssertionForDataInCollection, dto.outputFormat.isJava());
+                if (dto.doGenerateAssertions && dto.responseVariable != null && DtoUtils.isJavaOrKotlin(dto.outputFormat))
+                    responseDto.assertionScript = resSchema.newAssertionWithJavaOrKotlin(dto.responseVariable, dto.maxAssertionForDataInCollection, DtoUtils.isJava(dto.outputFormat));
             }
         }
     }

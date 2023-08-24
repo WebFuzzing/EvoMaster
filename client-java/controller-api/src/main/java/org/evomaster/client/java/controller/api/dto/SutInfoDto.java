@@ -49,15 +49,7 @@ public class SutInfoDto {
         KOTLIN_JUNIT_4,
         KOTLIN_JUNIT_5,
         JS_JEST,
-        CSHARP_XUNIT;
-
-        public boolean isJava(){
-            return this.name().startsWith("JAVA");
-        }
-
-        public boolean isJavaOrKotlin(){
-            return isJava() || this.name().startsWith("KOTLIN");
-        }
+        CSHARP_XUNIT
     }
 
     /**
