@@ -547,12 +547,15 @@ class RPCEndpointsHandler {
 
         setAuthInfo(infoDto)
 
-        // handle seeded test dto
-        infoDto.rpcProblem.seededTestDtos?.values?.forEach { t->
-            t.forEach { a->
-                extractRPCExternalServiceAction(infoDto, a)
+        if (config.seedTestCases){
+            // handle seeded test dto
+            infoDto.rpcProblem.seededTestDtos?.values?.forEach { t->
+                t.forEach { a->
+                    extractRPCExternalServiceAction(infoDto, a)
+                }
             }
         }
+
 
         // report statistic of endpoints
         reportEndpointsStatistics(
