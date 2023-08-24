@@ -11,6 +11,8 @@ import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 
+import static org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator.methodInvocation;
+
 /**
  * Primitive types Param
  */
@@ -224,7 +226,16 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
      * @return a string to get its primitive value if the param is Wrapper class
      * eg, res.byteValue() for byte with a response variable name res
      */
-    abstract public String getPrimitiveValueInAssertion(String responseVarName, boolean isJava);
+    public String getPrimitiveValueInAssertion(String responseVarName, boolean isJava) {
+        boolean isWrapper = getType().isWrapper;
+        if (accessibleSchema!=null && !accessibleSchema.isAccessible && accessibleSchema.getterReturn != null){
+            isWrapper = !accessibleSchema.getterReturn.isPrimitive();
+        }
+
+        if (isWrapper)
+            return methodInvocation(responseVarName, primitiveValueMethod(isJava), "", isJava, isNullable(), true);
+        return responseVarName;
+    }
 
     @Override
     public void copyProperties(NamedTypedValue copy) {
@@ -299,6 +310,8 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
     public List<String> referenceTypes() {
         return null;
     }
+
+
 
     abstract public String primitiveValueMethod(boolean isJava);
 }
