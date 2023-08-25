@@ -19,7 +19,7 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
 
 
 
-    private final static ObjectMapper objectMaper = new ObjectMapper();
+    protected final static ObjectMapper objectMaper = new ObjectMapper();
 
     /**
      * name of the instance, eg param name

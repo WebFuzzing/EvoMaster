@@ -87,14 +87,18 @@ public class SetParam extends CollectionParam<Set<NamedTypedValue>>{
             setValue(null); return;
         }
 
-        if (!isValidInstance(instance))
+        if (!isValidInstance(instance)
+            && Collection.class.isAssignableFrom(instance.getClass()) // jackson might get list of json object
+        )
             throw new RuntimeException("cannot parse Set param "+getName()+" with the type "+json.getClass().getName());
+
+
 
         NamedTypedValue t = getType().getTemplate();
         Set<NamedTypedValue> values = new LinkedHashSet<>();
 
 
-        for (Object e : (Set) instance){
+        for (Object e : (Collection) instance){
             NamedTypedValue copy = t.copyStructureWithProperties();
             copy.setValueBasedOnInstanceOrJson(e);
             values.add(copy);
