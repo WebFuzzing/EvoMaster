@@ -400,7 +400,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
 
         NamedTypedValue p1 = endpoint.getRequestParams().get(0);
         assertTrue(p1 instanceof ObjectParam);
-        assertEquals(3, ((ObjectParam)p1).getType().getFields().size());
+        assertEquals(4, ((ObjectParam)p1).getType().getFields().size());
         assertNull(((ObjectParam)p1).getValue());
         Object p1Instance = p1.newInstance();
         assertNull(p1Instance);

@@ -110,7 +110,7 @@ public class RPCSutControllerTest {
     @Test
     public void testSeedcheck(){
 
-        assertEquals(2, seededTestDtos.size());
+        assertEquals(3, seededTestDtos.size());
         List<List<RPCActionDto>> list = new ArrayList<>(seededTestDtos.values());
 
         assertEquals(1, list.get(0).size());
@@ -155,6 +155,21 @@ public class RPCSutControllerTest {
         rpcController.executeAction(dto2, responseDto2);
 
         assertEquals("", responseDto2.rpcResponse.stringValue);
+
+
+        RPCActionDto test_3 = list.get(2).get(0);
+        RPCActionDto dto3 = test_3.copy();
+
+        dto3.doGenerateAssertions = true;
+        dto3.doGenerateTestScript = true;
+        dto3.controllerVariable = "rpcController";
+        dto3.responseVariable = "res1";
+        dto3.maxAssertionForDataInCollection = -1;
+
+        ActionResponseDto responseDto3 = new ActionResponseDto();
+        rpcController.executeAction(dto3, responseDto3);
+
+        assertTrue(responseDto3.assertionScript.stream().anyMatch(s->s.contains("assertEquals(2, res1.set.size());")));
     }
 
     @Test
@@ -535,7 +550,7 @@ public class RPCSutControllerTest {
         rpcController.executeAction(dto, responseDto);
 
 
-        assertEquals(11, responseDto.testScript.size());
+        assertEquals(12, responseDto.testScript.size());
         assertEquals("com.thrift.example.artificial.NestedGenericDto<String> res1 = null;", responseDto.testScript.get(0));
         assertEquals("{", responseDto.testScript.get(1));
         assertEquals(" com.thrift.example.artificial.NestedGenericDto<String> arg0 = null;", responseDto.testScript.get(2));
@@ -544,9 +559,10 @@ public class RPCSutControllerTest {
         assertEquals("  arg0.intData = null;", responseDto.testScript.get(5));
         assertEquals("  arg0.stringData = null;", responseDto.testScript.get(6));
         assertEquals("  arg0.list = null;", responseDto.testScript.get(7));
-        assertEquals(" }", responseDto.testScript.get(8));
-        assertEquals(" res1 = ((com.thrift.example.artificial.RPCInterfaceExampleImpl)(rpcController.getRPCClient(\"com.thrift.example.artificial.RPCInterfaceExample\"))).handleNestedGenericString(arg0);", responseDto.testScript.get(9));
-        assertEquals("}", responseDto.testScript.get(10));
+        assertEquals("  arg0.set = null;", responseDto.testScript.get(8));
+        assertEquals(" }", responseDto.testScript.get(9));
+        assertEquals(" res1 = ((com.thrift.example.artificial.RPCInterfaceExampleImpl)(rpcController.getRPCClient(\"com.thrift.example.artificial.RPCInterfaceExample\"))).handleNestedGenericString(arg0);", responseDto.testScript.get(10));
+        assertEquals("}", responseDto.testScript.get(11));
 
         assertEquals("assertEquals(\"child\", res1.intData.data1);", responseDto.assertionScript.get(0));
         assertEquals("assertEquals(0, res1.intData.data2.intValue());", responseDto.assertionScript.get(1));

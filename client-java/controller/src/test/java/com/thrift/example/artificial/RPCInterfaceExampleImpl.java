@@ -217,6 +217,12 @@ public class RPCInterfaceExampleImpl implements RPCInterfaceExample{
             dto.list = Arrays.asList(child_mark, child_mark);
         }
 
+        if (dto.set == null){
+            dto.set = new HashSet<String>(){{
+                add(child_mark);
+            }};
+        }
+
         return dto;
     }
 
