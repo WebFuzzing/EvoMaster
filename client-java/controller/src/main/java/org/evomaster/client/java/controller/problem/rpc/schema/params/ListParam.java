@@ -88,7 +88,7 @@ public class ListParam extends CollectionParam<List<NamedTypedValue>>{
         }
 
         if (!isValidInstance(instance)
-            && Collection.class.isAssignableFrom(instance.getClass())
+            && !Collection.class.isAssignableFrom(instance.getClass())
         )
             throw new RuntimeException("cannot parse List param "+getName()+" with the type "+json.getClass().getName());
 

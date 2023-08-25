@@ -88,7 +88,7 @@ public class SetParam extends CollectionParam<Set<NamedTypedValue>>{
         }
 
         if (!isValidInstance(instance)
-            && Collection.class.isAssignableFrom(instance.getClass()) // jackson might get list of json object
+            && !Collection.class.isAssignableFrom(instance.getClass()) // jackson might get list of json object
         )
             throw new RuntimeException("cannot parse Set param "+getName()+" with the type "+json.getClass().getName());
 
