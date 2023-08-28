@@ -8,6 +8,7 @@ import org.apache.thrift.transport.TTransportException;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -96,6 +97,11 @@ public class RPCInterfaceExampleImpl implements RPCInterfaceExample{
 
     @Override
     public String dateToString(Date date) {
+        return date.toString();
+    }
+
+    @Override
+    public String localDateToString(LocalDate date) {
         return date.toString();
     }
 

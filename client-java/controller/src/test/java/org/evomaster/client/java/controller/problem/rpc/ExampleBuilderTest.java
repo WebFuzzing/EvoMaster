@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.ParseException;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -32,7 +33,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
 
     @Override
     public int expectedNumberOfEndpoints() {
-        return 43;
+        return 44;
     }
 
     @Override
@@ -1024,6 +1025,55 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals(1, assertions.size());
         assertTrue(assertions.get(0).contains("// runtime value is "));
 
+    }
+
+
+    @Test
+    public void testLocalDateToString() throws ClassNotFoundException, ParseException {
+        EndpointSchema endpoint = getOneEndpoint("localDateToString");
+        assertNotNull(endpoint.getResponse());
+        assertEquals(1, endpoint.getRequestParams().size());
+
+        NamedTypedValue p1 = endpoint.getRequestParams().get(0);
+        assertTrue(p1 instanceof DateParam);
+
+        LocalDate date = LocalDate.of(2023, 8, 28);
+
+        p1.setValueBasedOnInstance(date);
+        Object instance = p1.newInstance();
+        assertTrue(instance instanceof LocalDate);
+        assertEquals(date.toString(), ((LocalDate) instance).toString());
+        assertEquals(date.toEpochDay(), ((LocalDate) instance).toEpochDay());
+
+        ParamDto dto = p1.getDto();
+        assertEquals(3, dto.innerContent.size());
+        assertEquals("2023", dto.innerContent.get(0).stringValue);
+        assertEquals("8", dto.innerContent.get(1).stringValue);
+        assertEquals("28", dto.innerContent.get(2).stringValue);
+
+
+        List<String> javacode = p1.newInstanceWithJavaOrKotlin(0, true, true);
+
+        String[] expectedContents = ("java.time.LocalDate arg0 = null;\n" +
+            "{\n" +
+            " // Date is 2023-08-28\n" +
+            " arg0 = java.time.LocalDate.ofEpochDay(19597L);\n" +
+            "}"
+        ).split("\n");
+        assertEquals(expectedContents.length, javacode.size());
+
+
+        for (int i = 0; i < javacode.size(); i++)
+            assertEquals(expectedContents[i], javacode.get(i));
+
+        List<String> assertions = p1.newAssertionWithJavaOrKotlin(0, "res1", -1, true);
+
+        List<String> expectedAssertions = Arrays.asList("// runtime value is 2023-08-28");
+        assertEquals(expectedAssertions.size(), assertions.size());
+
+
+        for (int i = 0; i < assertions.size(); i++)
+            assertEquals(expectedAssertions.get(i), assertions.get(i));
     }
 
     @Test
