@@ -17,11 +17,6 @@ import java.util.stream.Collectors;
 public abstract class DateType extends TypeSchema {
 
     /**
-     * represent the type employs SimpleDateFormat as [SIMPLE_DATE_FORMATTER]
-     */
-    public final boolean EMPLOY_SIMPLE_Format;
-
-    /**
      * year field
      */
     public final IntParam year = new IntParam("year", spec);
@@ -56,7 +51,7 @@ public abstract class DateType extends TypeSchema {
     /**
      * a sequence of fields representing the date
      */
-    public final List<IntParam> dateFields;
+    private List<IntParam> dateFields;
 
     /**
      * simple date format
@@ -72,33 +67,19 @@ public abstract class DateType extends TypeSchema {
      */
     public final static SimpleDateFormat DATE_FORMATTER =new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS ZZZZ");
 
-    /**
-     * @param type         is the type name
-     * @param fullTypeName is the full type name
-     * @param clazz        is the class representing the type
-     * @param simpleFormat specifies if use simple format as SIMPLE_DATE_FORMATTER
-     * @param spec
-     */
-    public DateType(String type, String fullTypeName, Class<?> clazz, boolean simpleFormat, JavaDtoSpec spec) {
-        super(type, fullTypeName, clazz, spec);
-        EMPLOY_SIMPLE_Format = simpleFormat;
-        if (EMPLOY_SIMPLE_Format)
-            dateFields = Arrays.asList(year, month, day, hour, minute, second);
-        else
-            dateFields = Arrays.asList(year, month, day, hour, minute, second, millisecond, timezone);
-
-    }
-    /**
-     * DateType with simpleFormat
-     *
-     * @param type         is the type name
-     * @param fullTypeName is the full type name
-     * @param clazz        is the class representing the type
-     * @param spec         is dto specification
-     */
     public DateType(String type, String fullTypeName, Class<?> clazz, JavaDtoSpec spec) {
-        this(type, fullTypeName, clazz, true, spec);
+        super(type, fullTypeName, clazz, spec);
     }
+
+    public DateType(String type, String fullTypeName, Class<?> clazz, JavaDtoSpec spec, List<IntParam> dateFields) {
+        this(type, fullTypeName, clazz, spec);
+        setDateFields(dateFields);
+    }
+
+    protected void setDateFields(List<IntParam> fields){
+        this.dateFields = fields;
+    }
+
 
     /**
      * a java.util.Date with simple format
@@ -143,33 +124,10 @@ public abstract class DateType extends TypeSchema {
      * @param values are a list of values for the date
      * @return a string representing the date with the specified values
      */
-    public String getDateString(List<IntParam> values){
-        if (values.size() != dateFields.size())
-            throw new RuntimeException("mismatched size of values, it should be "+dateFields.size() + ", but it is "+values.size());
-        if (EMPLOY_SIMPLE_Format)
-            return String.format("%04d-%02d-%02d %02d:%02d:%02d",
-                    values.get(0).getValue(),
-                    values.get(1).getValue(),
-                    values.get(2).getValue(),
-                    values.get(3).getValue(),
-                    values.get(4).getValue(),
-                    values.get(5).getValue()
-            );
-
-        return String.format("%04d-%02d-%02d %02d:%02d:%02d.%03d %s",
-                values.get(0).getValue(),
-                values.get(1).getValue(),
-                values.get(2).getValue(),
-                values.get(3).getValue(),
-                values.get(4).getValue(),
-                values.get(5).getValue(),
-                values.get(6).getValue(),
-                formatZZZZ(values.get(7).getValue())
-        );
-    }
+    public abstract String getDateString(List<IntParam> values);
 
 
-    private String formatZZZZ(int zone){
+    protected String formatZZZZ(int zone){
         int value = zone;
         if (zone < 0)
             value = value * -1;

@@ -5,23 +5,83 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.TypeDto;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.IntParam;
 
 import java.text.ParseException;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class UtilDateType extends DateType{
-    public UtilDateType(String type, boolean simpleFormat, JavaDtoSpec spec) {
-        super(type, Date.class.getName(), Date.class, simpleFormat, spec);
+
+    /**
+     * represent the type employs SimpleDateFormat as [SIMPLE_DATE_FORMATTER]
+     */
+    public final boolean EMPLOY_SIMPLE_Format;
+
+
+    public UtilDateType(String type, String fullTypeName, Class<?> clazz, JavaDtoSpec spec, List<IntParam> dateFields, boolean simpleFormat) {
+        super(type, fullTypeName, clazz, spec, dateFields);
+        EMPLOY_SIMPLE_Format = simpleFormat;
     }
 
-    public UtilDateType(String type, JavaDtoSpec spec) {
-        super(type, Date.class.getName(), Date.class, spec);
+    public UtilDateType(String type, String fullTypeName, Class<?> clazz, boolean simpleFormat, JavaDtoSpec spec) {
+        super(type, fullTypeName, clazz, spec);
+        EMPLOY_SIMPLE_Format = simpleFormat;
+        List<IntParam> dateFields = null;
+        if (simpleFormat)
+            dateFields = Arrays.asList(year, month, day, hour, minute, second);
+        else
+            dateFields = Arrays.asList(year, month, day, hour, minute, second, millisecond, timezone);
+        setDateFields(dateFields);
+
+    }
+
+    /**
+     * DateType with simpleFormat
+     *
+     * @param type               is the type name
+     * @param fullTypeName       is the full type name
+     * @param clazz              is the class representing the type
+     * @param spec               is dto specification
+     * @param employSimpleFormat
+     */
+    public UtilDateType(String type, String fullTypeName, Class<?> clazz, JavaDtoSpec spec, boolean employSimpleFormat) {
+        this(type, fullTypeName, clazz, employSimpleFormat, spec);
+    }
+
+    public UtilDateType(JavaDtoSpec spec, boolean employSimpleFormat) {
+        this(Date.class.getSimpleName(), Date.class.getName(), Date.class, spec, employSimpleFormat);
     }
 
     public UtilDateType(JavaDtoSpec spec) {
         super(Date.class.getSimpleName(), Date.class.getName(), Date.class, spec);
+        EMPLOY_SIMPLE_Format = true;
     }
 
+    @Override
+    public String getDateString(List<IntParam> values){
+        if (values.size() != getDateFields().size())
+            throw new RuntimeException("mismatched size of values, it should be "+getDateFields().size() + ", but it is "+values.size());
+        if (EMPLOY_SIMPLE_Format)
+            return String.format("%04d-%02d-%02d %02d:%02d:%02d",
+                values.get(0).getValue(),
+                values.get(1).getValue(),
+                values.get(2).getValue(),
+                values.get(3).getValue(),
+                values.get(4).getValue(),
+                values.get(5).getValue()
+            );
+
+        return String.format("%04d-%02d-%02d %02d:%02d:%02d.%03d %s",
+            values.get(0).getValue(),
+            values.get(1).getValue(),
+            values.get(2).getValue(),
+            values.get(3).getValue(),
+            values.get(4).getValue(),
+            values.get(5).getValue(),
+            values.get(6).getValue(),
+            formatZZZZ(values.get(7).getValue())
+        );
+    }
 
     public Date getDateInstance(List<IntParam> values){
         String stringValue = getDateString(values);
@@ -46,7 +106,7 @@ public class UtilDateType extends DateType{
             throw new IllegalArgumentException("invalid a string for specifying a date:"+ stringValue);
         }
 
-        List<IntParam> values = dateFields.stream().map(x-> (IntParam)x.copyStructureWithProperties()).collect(Collectors.toList());
+        List<IntParam> values = getDateFields().stream().map(x-> (IntParam)x.copyStructureWithProperties()).collect(Collectors.toList());
         //date
         String[] dateValues = strValues[0].split("-");
 
@@ -95,6 +155,6 @@ public class UtilDateType extends DateType{
 
     @Override
     public UtilDateType copy() {
-        return new UtilDateType(spec);
+        return new UtilDateType(spec, EMPLOY_SIMPLE_Format);
     }
 }

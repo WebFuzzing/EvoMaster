@@ -5,22 +5,26 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.TypeDto;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.IntParam;
 
 import java.time.LocalDate;
-import java.util.Date;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class LocalDateType extends DateType{
-    public LocalDateType(String type, boolean simpleFormat, JavaDtoSpec spec) {
-        super(type, LocalDate.class.getName(), LocalDate.class, simpleFormat, spec);
+
+    public final static String INSTANCE_LOCALDATE_OF_EPOCHDAY = "ofEpochDay";
+
+    public LocalDateType(String type, String fullTypeName, Class<?> clazz, JavaDtoSpec spec) {
+        super(type, fullTypeName, clazz, spec);
     }
 
-    public LocalDateType(String type, JavaDtoSpec spec) {
-        super(type, LocalDate.class.getName(), LocalDate.class, spec);
+    public LocalDateType(String type, String fullTypeName, Class<?> clazz, JavaDtoSpec spec, List<IntParam> dateFields) {
+        super(type, fullTypeName, clazz, spec, dateFields);
     }
 
     public LocalDateType(JavaDtoSpec spec) {
-        super(LocalDate.class.getSimpleName(), LocalDate.class.getName(), LocalDate.class, spec);
+        this(LocalDate.class.getSimpleName(), LocalDate.class.getName(), LocalDate.class, spec);
+        setDateFields(Arrays.asList(year, month, day));
     }
-
 
     @Override
     public LocalDateType copy() {
@@ -29,17 +33,39 @@ public class LocalDateType extends DateType{
 
     @Override
     public Object getDateInstance(List<IntParam> values) {
-        return null;
+        if (values.size() != 3)
+            throw new IllegalArgumentException("LocalDateType must have three integer parameters representing year, month and day of month");
+        return LocalDate.of(values.get(0).getValue(), values.get(1).getValue(), values.get(2).getValue());
     }
 
     @Override
     public List<IntParam> getIntValues(Object date) {
-        return null;
+        if (!(date instanceof LocalDate))
+            throw new IllegalArgumentException("cannot handle the object instance which is not java.time.LocalDate");
+
+        List<IntParam> values = getDateFields().stream().map(x-> (IntParam)x.copyStructureWithProperties()).collect(Collectors.toList());
+        values.get(0).setValue(((LocalDate) date).getYear());
+        values.get(1).setValue(((LocalDate) date).getMonthValue());
+        values.get(2).setValue(((LocalDate) date).getDayOfMonth());
+
+        return values;
     }
 
     @Override
     public long getDateLong(List<IntParam> values) {
-        return 0;
+        return ((LocalDate)getDateInstance(values)).toEpochDay();
+    }
+
+    @Override
+    public String getDateString(List<IntParam> values) {
+        /*
+            apply ISO-8601 format uuuu-MM-dd.
+            see toString() of java.time.LocalDate
+         */
+        return String.format("%04d-%02d-%02d",
+            values.get(0).getValue(),
+            values.get(1).getValue(),
+            values.get(2).getValue());
     }
 
     @Override

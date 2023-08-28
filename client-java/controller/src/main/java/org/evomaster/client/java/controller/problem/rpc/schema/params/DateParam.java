@@ -1,13 +1,10 @@
 package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
-import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
-import org.evomaster.client.java.controller.problem.rpc.schema.types.DateType;
-import org.evomaster.client.java.controller.problem.rpc.schema.types.JavaDtoSpec;
+import org.evomaster.client.java.controller.problem.rpc.schema.types.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -20,10 +17,6 @@ public class DateParam extends NamedTypedValue<DateType, List<IntParam>>{
 
     public DateParam(String name, DateType type, AccessibleSchema accessibleSchema) {
         super(name, type, accessibleSchema);
-    }
-
-    public DateParam(String name, AccessibleSchema accessibleSchema, JavaDtoSpec spec){
-        this(name, new DateType(spec), accessibleSchema);
     }
 
     @Override
@@ -67,7 +60,7 @@ public class DateParam extends NamedTypedValue<DateType, List<IntParam>>{
     @Override
     protected void setValueBasedOnValidInstance(Object instance) {
         if (instance == null) return;
-        setValue(getType().getIntValues((Date) instance));
+        setValue(getType().getIntValues(instance));
     }
 
     @Override
@@ -85,7 +78,10 @@ public class DateParam extends NamedTypedValue<DateType, List<IntParam>>{
         addCode(codes, codeBlockStart(isJava), indent);
         addComment(codes, "Date is " + getType().getDateString(getValue()), indent+1);
         String time = getType().getDateLong(getValue())+"L";
-        addCode(codes, setInstance(varName, newObjectConsParams(typeName, time, isJava), isJava), indent+1);
+        if (getType() instanceof UtilDateType)
+            addCode(codes, setInstance(varName, newObjectConsParams(typeName, time, isJava), isJava), indent+1);
+        else if (getType() instanceof LocalDateType)
+            addCode(codes, setInstance(varName, methodInvocation(typeName, LocalDateType.INSTANCE_LOCALDATE_OF_EPOCHDAY, time, isJava, false, false), isJava), indent+1);
         addCode(codes, codeBlockEnd(isJava), indent);
 
         return codes;
