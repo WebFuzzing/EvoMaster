@@ -45,6 +45,7 @@ import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.collection.FixedMapGene
 import org.evomaster.core.search.gene.collection.PairGene
+import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.numeric.*
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
@@ -886,7 +887,7 @@ class RPCEndpointsHandler {
 
         if (gene is OptionalGene && !gene.isActive){
             // set null value
-            if (gene.gene is ObjectGene || gene.gene is DateTimeGene){
+            if (gene.gene is ObjectGene || gene.gene is DateTimeGene || gene.gene is DateGene){
 //                dto.innerContent = null
 //                dto.stringValue = null
                 dto.setNullValue()
@@ -925,6 +926,12 @@ class RPCEndpointsHandler {
                 transformGeneToParamDto(valueGene.time.hour, dto.innerContent[3])
                 transformGeneToParamDto(valueGene.time.minute, dto.innerContent[4])
                 transformGeneToParamDto(valueGene.time.second, dto.innerContent[5])
+            }
+
+            is DateGene -> {
+                transformGeneToParamDto(valueGene.year, dto.innerContent[0])
+                transformGeneToParamDto(valueGene.month, dto.innerContent[1])
+                transformGeneToParamDto(valueGene.day, dto.innerContent[2])
             }
             is PairGene<*, *> ->{
                 val template = dto.type.example?.copy()
@@ -1007,6 +1014,12 @@ class RPCEndpointsHandler {
                     setGeneBasedOnParamDto(valueGene.time.minute, dto.innerContent[4])
                     setGeneBasedOnParamDto(valueGene.time.second, dto.innerContent[5])
                 }
+                is DateGene -> {
+                    Lazy.assert { dto.innerContent.size == 3 }
+                    setGeneBasedOnParamDto(valueGene.year, dto.innerContent[0])
+                    setGeneBasedOnParamDto(valueGene.month, dto.innerContent[1])
+                    setGeneBasedOnParamDto(valueGene.day, dto.innerContent[2])
+                }
                 is ArrayGene<*> -> {
                     val template = valueGene.template
                     dto.innerContent.run {
@@ -1080,7 +1093,7 @@ class RPCEndpointsHandler {
             RPCSupportedDataType.P_LONG, RPCSupportedDataType.LONG,
             RPCSupportedDataType.ENUM,
             RPCSupportedDataType.BIGDECIMAL, RPCSupportedDataType.BIGINTEGER,
-            RPCSupportedDataType.UTIL_DATE, RPCSupportedDataType.CUSTOM_OBJECT -> dto.stringValue == null
+            RPCSupportedDataType.UTIL_DATE, RPCSupportedDataType.LOCAL_DATE, RPCSupportedDataType.CUSTOM_OBJECT -> dto.stringValue == null
             RPCSupportedDataType.ARRAY, RPCSupportedDataType.SET, RPCSupportedDataType.LIST,
             RPCSupportedDataType.MAP,
             RPCSupportedDataType.CUSTOM_CYCLE_OBJECT,
@@ -1114,6 +1127,7 @@ class RPCEndpointsHandler {
             RPCSupportedDataType.CUSTOM_OBJECT -> valueGene is ObjectGene || valueGene is FixedMapGene<*, *>
             RPCSupportedDataType.CUSTOM_CYCLE_OBJECT -> valueGene is CycleObjectGene
             RPCSupportedDataType.UTIL_DATE -> valueGene is DateTimeGene
+            RPCSupportedDataType.LOCAL_DATE -> valueGene is DateGene
             RPCSupportedDataType.PAIR -> valueGene is PairGene<*, *>
             RPCSupportedDataType.BIGDECIMAL -> valueGene is BigDecimalGene
             RPCSupportedDataType.BIGINTEGER -> valueGene is BigIntegerGene
@@ -1223,6 +1237,7 @@ class RPCEndpointsHandler {
             RPCSupportedDataType.ARRAY, RPCSupportedDataType.SET, RPCSupportedDataType.LIST-> handleCollectionParam(param, building)
             RPCSupportedDataType.MAP -> handleMapParam(param, building)
             RPCSupportedDataType.UTIL_DATE -> handleUtilDate(param)
+            RPCSupportedDataType.LOCAL_DATE -> handleLocalDate(param)
             RPCSupportedDataType.CUSTOM_OBJECT -> handleObjectParam(param)
             RPCSupportedDataType.CUSTOM_CYCLE_OBJECT -> CycleObjectGene(param.name)
             RPCSupportedDataType.PAIR -> throw IllegalStateException("ERROR: pair should be handled inside Map")
@@ -1317,6 +1332,13 @@ class RPCEndpointsHandler {
         return DateTimeGene(param.name)
     }
 
+    private fun handleLocalDate(param: ParamDto) : DateGene {
+        /*
+            only support simple format (more details see [org.evomaster.client.java.controller.problem.rpc.schema.types.DateType]) for the moment
+         */
+        Lazy.assert { param.innerContent.size == 3 }
+        return DateGene(param.name)
+    }
 
 
     private fun handleEnumParam(param: ParamDto): Gene{
