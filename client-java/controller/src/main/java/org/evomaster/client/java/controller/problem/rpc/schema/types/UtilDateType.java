@@ -53,8 +53,7 @@ public class UtilDateType extends DateType{
     }
 
     public UtilDateType(JavaDtoSpec spec) {
-        super(Date.class.getSimpleName(), Date.class.getName(), Date.class, spec);
-        EMPLOY_SIMPLE_Format = true;
+        this(Date.class.getSimpleName(), Date.class.getName(), Date.class, spec, true);
     }
 
     @Override
