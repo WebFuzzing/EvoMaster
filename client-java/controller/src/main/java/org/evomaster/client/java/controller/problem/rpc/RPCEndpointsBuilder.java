@@ -20,6 +20,7 @@ import java.lang.reflect.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -687,9 +688,15 @@ public class RPCEndpointsBuilder {
                 namedValue = new MapParam(name, mtype, accessibleSchema);
             } else if (Date.class.isAssignableFrom(clazz)){
                 if (clazz == Date.class)
-                    namedValue = new DateParam(name, accessibleSchema, spec);
+                    namedValue = new DateParam(name, new UtilDateType(spec), accessibleSchema);
                 else
                     throw new RuntimeException("NOT support "+clazz.getName()+" date type in java yet");
+            } else if (LocalDate.class.isAssignableFrom(clazz)){
+                if (clazz == LocalDate.class)
+                    namedValue = new DateParam(name, new LocalDateType(spec), accessibleSchema);
+                else
+                    throw new RuntimeException("NOT support "+clazz.getName()+" date type in java yet");
+
             } else if (Exception.class.isAssignableFrom(clazz) && clazz.getName().startsWith("java")){
                 // note that here we only extract class name and message
                 StringParam msgField = new StringParam("message", new AccessibleSchema(false, null, "getMessage", String.class), spec);

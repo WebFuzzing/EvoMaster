@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 /**
  * type schema for date
  */
-public class DateType extends TypeSchema {
+public abstract class DateType extends TypeSchema {
 
     /**
      * represent the type employs SimpleDateFormat as [SIMPLE_DATE_FORMATTER]
@@ -103,9 +103,9 @@ public class DateType extends TypeSchema {
     /**
      * a java.util.Date with simple format
      */
-    public DateType(JavaDtoSpec spec){
-        this(Date.class.getSimpleName(), Date.class.getName(), Date.class, spec);
-    }
+//    public DateType(JavaDtoSpec spec){
+//        this(Date.class.getSimpleName(), Date.class.getName(), Date.class, spec);
+//    }
 
     /**
      *
@@ -120,17 +120,23 @@ public class DateType extends TypeSchema {
      * @param values are a list of values for the date
      * @return a date instance based on the values
      */
-    public Date getDateInstance(List<IntParam> values){
-        String stringValue = getDateString(values);
-        try {
-            if (EMPLOY_SIMPLE_Format)
-                return SIMPLE_DATE_FORMATTER.parse(stringValue);
-            else
-                return DATE_FORMATTER.parse(stringValue);
-        } catch (ParseException e) {
-            throw new RuntimeException("ERROR: fail to parse values to Date");
-        }
-    }
+    public abstract Object getDateInstance(List<IntParam> values);
+
+
+    /**
+     * extract value of fields based on the date instance
+     * @param date is an instance of Date, eg, java.util.Date or java.time.LocalDate
+     * @return a list of fields which contains specific values
+     */
+    public abstract List<IntParam> getIntValues(Object date);
+
+
+    /**
+     * @param values
+     * @return date with long format
+     */
+    public abstract long getDateLong(List<IntParam> values);
+
 
     /**
      *
@@ -162,9 +168,6 @@ public class DateType extends TypeSchema {
         );
     }
 
-    public long getDateLong(List<IntParam> values){
-        return getDateInstance(values).getTime();
-    }
 
     private String formatZZZZ(int zone){
         int value = zone;
@@ -179,67 +182,5 @@ public class DateType extends TypeSchema {
         return stringValue;
     }
 
-    /**
-     * extract value of fields based on the date instance
-     * @param date is an instance of Date
-     * @return a list of fields which contains specific values
-     */
-    public List<IntParam> getIntValues(Date date){
-        String stringValue = DATE_FORMATTER.format(date);
-        String[] strValues = stringValue.split(" ");
-//        assert strValues.length == 3;
-        if (strValues.length != 3){
-            throw new IllegalArgumentException("invalid a string for specifying a date:"+ stringValue);
-        }
 
-        List<IntParam> values = dateFields.stream().map(x-> (IntParam)x.copyStructureWithProperties()).collect(Collectors.toList());
-        //date
-        String[] dateValues = strValues[0].split("-");
-//        assert dateValues.length == 3;
-
-        if (dateValues.length != 3){
-            throw new IllegalArgumentException("invalid a string for specifying a date:"+ strValues[0]);
-        }
-        values.get(0).setValue(Integer.parseInt(dateValues[0]));
-        values.get(1).setValue(Integer.parseInt(dateValues[1]));
-        values.get(2).setValue(Integer.parseInt(dateValues[2]));
-
-        //time
-        String[] timeValues = strValues[1].split(":");
-//        assert timeValues.length == 3;
-        if (timeValues.length != 3){
-            throw new IllegalArgumentException("invalid a string for specifying a time:"+ strValues[1]);
-        }
-        values.get(3).setValue(Integer.parseInt(timeValues[0]));
-        values.get(4).setValue(Integer.parseInt(timeValues[1]));
-
-        String[] secondValue = timeValues[2].split("\\.");
-//        assert secondValue.length == 2;
-        if (secondValue.length != 2){
-            throw new IllegalArgumentException("invalid a string for specifying seconds:"+ strValues[2]);
-        }
-        values.get(5).setValue(Integer.parseInt(secondValue[0]));
-        if (!EMPLOY_SIMPLE_Format){
-            values.get(6).setValue(Integer.parseInt(secondValue[1]));
-
-            //timezone
-            values.get(7).setValue(Integer.parseInt(strValues[2]));
-        }
-
-        return values;
-    }
-
-    @Override
-    public TypeDto getDto() {
-        TypeDto dto = super.getDto();
-        dto.depth = depth;
-        dto.type = RPCSupportedDataType.UTIL_DATE;
-        return dto;
-    }
-
-
-    @Override
-    public DateType copy() {
-        return new DateType(spec);
-    }
 }
