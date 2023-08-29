@@ -100,6 +100,10 @@ public class SqlScriptRunner {
         }
     }
 
+    public String readSQLCommandsAsString(Reader reader){
+        return String.join(";"+System.lineSeparator(), readCommands(reader));
+    }
+
     public List<String> readCommands(Reader reader) {
 
         List<String> list = new ArrayList<>();
