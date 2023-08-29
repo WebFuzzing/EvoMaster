@@ -100,6 +100,11 @@ public class SqlScriptRunner {
         }
     }
 
+    /**
+     *
+     * @param reader for SQL script
+     * @return extract SQL commands
+     */
     public String readSQLCommandsAsString(Reader reader){
         return String.join(";"+System.lineSeparator(), readCommands(reader));
     }
