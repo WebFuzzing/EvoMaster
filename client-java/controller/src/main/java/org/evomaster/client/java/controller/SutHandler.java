@@ -181,6 +181,13 @@ public interface SutHandler {
 
     /**
      * <p>
+     * register or execute specified SQL script for initalizing data in database
+     * </p>
+     */
+    default void registerOrExecuteInitSqlCommandsIfNeeded(){}
+
+    /**
+     * <p>
      * reset database if the smart db cleaning is employed
      * </p>
      */

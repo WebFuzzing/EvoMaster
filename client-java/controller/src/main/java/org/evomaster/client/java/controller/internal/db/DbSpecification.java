@@ -3,7 +3,6 @@ package org.evomaster.client.java.controller.internal.db;
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
 
 import java.sql.Connection;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -45,18 +44,29 @@ public class DbSpecification {
      */
     public final boolean employSmartDbClean;
 
+    /**
+     * specify whether to execute init sql script after starting SUT
+     * Default is True.
+     * In some cases, the script might be handled with the application itself.
+     * For instance, with H2 database using JPA, there is no need to execute
+     * the `data.sql` script under resource folder,
+     * thus, set executeInitSqlAfterStartup False.
+     */
+    public final boolean executeInitSqlAfterStartup;
 
-    private DbSpecification(DatabaseType dbType, Connection connection, List<String> schemaNames, String initSqlScript, String initSqlOnResourcePath, boolean employSmartDbClean) {
+
+    private DbSpecification(DatabaseType dbType, Connection connection, List<String> schemaNames, String initSqlScript, String initSqlOnResourcePath, boolean employSmartDbClean, boolean executeInitSqlAfterStartup) {
         this.dbType = Objects.requireNonNull(dbType);
         this.connection = Objects.requireNonNull(connection);
         this.schemaNames = schemaNames;
         this.initSqlScript = initSqlScript;
         this.initSqlOnResourcePath = initSqlOnResourcePath;
         this.employSmartDbClean = employSmartDbClean;
+        this.executeInitSqlAfterStartup = executeInitSqlAfterStartup;
     }
 
     public DbSpecification(DatabaseType dbType, Connection connection) {
-        this(dbType, connection, null, null, null, true);
+        this(dbType, connection, null, null, null, true, true);
     }
 
     public DbSpecification withSchemas(String... schemas){
@@ -76,7 +86,8 @@ public class DbSpecification {
                 Arrays.asList(schemas),
                 this.initSqlScript,
                 this.initSqlOnResourcePath,
-                this.employSmartDbClean
+                this.employSmartDbClean,
+                this.executeInitSqlAfterStartup
         );
     }
 
@@ -87,6 +98,38 @@ public class DbSpecification {
                 this.schemaNames,
                 this.initSqlScript,
                 this.initSqlOnResourcePath,
+                false,
+                this.executeInitSqlAfterStartup
+        );
+    }
+
+    public DbSpecification executeInitSQLScriptAfterStartup(){
+        if (this.executeInitSqlAfterStartup)
+            return this;
+
+        return new DbSpecification(
+            this.dbType,
+            this.connection,
+            this.schemaNames,
+            this.initSqlScript,
+            this.initSqlOnResourcePath,
+            this.employSmartDbClean,
+            true
+        );
+    }
+
+
+    public DbSpecification disableExecutionOfInitSQLScriptAfterStartup(){
+        if (!this.executeInitSqlAfterStartup)
+            return this;
+
+        return new DbSpecification(
+                this.dbType,
+                this.connection,
+                this.schemaNames,
+                this.initSqlScript,
+                this.initSqlOnResourcePath,
+                this.employSmartDbClean,
                 false
         );
     }
@@ -103,7 +146,8 @@ public class DbSpecification {
                 this.schemaNames,
                 script,
                 this.initSqlOnResourcePath,
-                this.employSmartDbClean
+                this.employSmartDbClean,
+                this.executeInitSqlAfterStartup
         );
     }
 
@@ -119,7 +163,8 @@ public class DbSpecification {
                 this.schemaNames,
                 this.initSqlScript,
                 path,
-                this.employSmartDbClean
+                this.employSmartDbClean,
+                this.executeInitSqlAfterStartup
         );
     }
 }
