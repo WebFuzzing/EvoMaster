@@ -19,6 +19,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -1057,5 +1058,56 @@ public class RPCSutControllerTest {
         responseDto.testScript.forEach(System.out::println);
         responseDto.assertionScript.forEach(System.out::println);
 
+    }
+
+    @Test
+    public void testLocalDate(){
+        List<RPCActionDto> dtos = interfaceSchemas.get(0).endpoints.stream().filter(s-> s.actionName.equals("localDateToString")).collect(Collectors.toList());
+        assertEquals(1, dtos.size());
+        RPCActionDto dto = dtos.get(0).copy();
+        assertEquals(1, dto.requestParams.size());
+        ParamDto request = dto.requestParams.get(0);
+        assertEquals(RPCSupportedDataType.LOCAL_DATE, request.type.type);
+        assertEquals(3, request.innerContent.size());
+        request.innerContent.get(0).stringValue = ""+2023;
+        request.innerContent.get(1).stringValue = ""+8;
+        request.innerContent.get(2).stringValue = ""+28;
+
+        ActionResponseDto responseDto = new ActionResponseDto();
+        dto.doGenerateTestScript = true;
+        dto.doGenerateAssertions = true;
+        dto.controllerVariable = "rpcController";
+        dto.responseVariable = "res1";
+        rpcController.executeAction(dto, responseDto);
+
+        String[] expectedScript = ("String res1 = null;\n" +
+            "{\n" +
+            " java.time.LocalDate arg0 = null;\n" +
+            " {\n" +
+            "  // Date is 2023-08-28\n" +
+            "  arg0 = java.time.LocalDate.ofEpochDay(19597L);\n" +
+            " }\n" +
+            " res1 = ((com.thrift.example.artificial.RPCInterfaceExampleImpl)(rpcController.getRPCClient(\"com.thrift.example.artificial.RPCInterfaceExample\"))).localDateToString(arg0);\n" +
+            "}").split("\n");
+
+        assertEquals(expectedScript.length, responseDto.testScript.size());
+        for (int i = 0; i < expectedScript.length; i++)
+            assertEquals(expectedScript[i], responseDto.testScript.get(i));
+
+        String[] expectedAssertions = ("//assertEquals(\"2023-08-28\", res1);").split("\n");
+        for (int i = 0; i < expectedAssertions.length; i++)
+            assertEquals(expectedAssertions[i], responseDto.assertionScript.get(i));
+
+
+        String res1 = null;
+        {
+            java.time.LocalDate arg0 = null;
+            {
+                // Date is 2023-08-28
+                arg0 = java.time.LocalDate.ofEpochDay(19597L);
+            }
+            res1 = ((com.thrift.example.artificial.RPCInterfaceExampleImpl)(rpcController.getRPCClient("com.thrift.example.artificial.RPCInterfaceExample"))).localDateToString(arg0);
+        }
+        assertEquals("2023-08-28", res1);
     }
 }
