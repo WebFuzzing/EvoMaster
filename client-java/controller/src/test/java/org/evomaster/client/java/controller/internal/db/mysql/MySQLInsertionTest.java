@@ -1,6 +1,8 @@
 package org.evomaster.client.java.controller.internal.db.mysql;
 
 import org.evomaster.client.java.controller.DatabaseTestTemplate;
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
+import org.evomaster.client.java.controller.db.DbCleaner;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.evomaster.client.java.controller.internal.SutController;
 import org.junit.jupiter.api.Test;
@@ -138,6 +140,7 @@ public class MySQLInsertionTest extends DatabaseMySQLTestInit implements Databas
     public SutController getSutController() {
         return new DatabaseFakeMySQLSutController(connection);
     }
+
 
 
 }
