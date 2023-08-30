@@ -21,7 +21,7 @@ public interface HeuristicsCalculatorInDBTest extends DatabaseTestTemplate {
     default void testHeuristic() throws Exception {
 
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT)", true);
-        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x) VALUES (10)", true);
+
 
         InstrumentedSutStarter starter = getInstrumentedSutStarter();
 
@@ -31,6 +31,8 @@ public interface HeuristicsCalculatorInDBTest extends DatabaseTestTemplate {
 
             startNewTest(url);
 
+            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x) VALUES (10)", false);
+
             given().accept(ContentType.JSON)
                     .get(url + TEST_RESULTS)
                     .then()
@@ -39,6 +41,8 @@ public interface HeuristicsCalculatorInDBTest extends DatabaseTestTemplate {
                     .body("data.extraHeuristics[0].heuristics.size()", is(0));
 
             startNewTest(url);
+
+            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x) VALUES (10)", false);
 
             SqlScriptRunner.execCommand(getConnection(), "SELECT x FROM Foo WHERE x = 12", true);
             SqlScriptRunner.execCommand(getConnection(), "SELECT x FROM Foo WHERE x = 10", true);
@@ -75,7 +79,7 @@ public interface HeuristicsCalculatorInDBTest extends DatabaseTestTemplate {
     default void testMultiline() throws Exception {
 
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT, y INT)", true);
-        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x, y) VALUES (0, 0)", true);
+
 
         int y = 42;
         String select = "select f.x \n from Foo f \n where f.y=" + y;
@@ -88,6 +92,8 @@ public interface HeuristicsCalculatorInDBTest extends DatabaseTestTemplate {
             url += BASE_PATH;
 
             startNewTest(url);
+
+            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x, y) VALUES (0, 0)", false);
 
             SqlScriptRunner.execCommand(getConnection(), select, true);
 
@@ -110,7 +116,7 @@ public interface HeuristicsCalculatorInDBTest extends DatabaseTestTemplate {
     default void testVarNotInSelect() throws Exception {
 
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT, y INT)", true);
-        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x, y) VALUES (0, 0)", true);
+
 
         int y = 42;
         String select = "select f.x from Foo f where f.y=" + y;
@@ -123,6 +129,8 @@ public interface HeuristicsCalculatorInDBTest extends DatabaseTestTemplate {
             url += BASE_PATH;
 
             startNewTest(url);
+
+            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x, y) VALUES (0, 0)", false);
 
             SqlScriptRunner.execCommand(getConnection(), select, true);
 
@@ -148,8 +156,7 @@ public interface HeuristicsCalculatorInDBTest extends DatabaseTestTemplate {
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(id INT Primary Key, valueColumn INT, bar_id INT, " +
                 "CONSTRAINT fk FOREIGN KEY (bar_id) REFERENCES Bar(id) )", true);
 
-        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Bar (id, valueColumn) VALUES (0, 0)", true);
-        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, valueColumn, bar_id) VALUES (0, 0, 0)", true);
+
 
         int x = 10;
         int y = 20;
@@ -164,6 +171,10 @@ public interface HeuristicsCalculatorInDBTest extends DatabaseTestTemplate {
             url += BASE_PATH;
 
             startNewTest(url);
+
+
+            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Bar (id, valueColumn) VALUES (0, 0)", false);
+            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, valueColumn, bar_id) VALUES (0, 0, 0)", false);
 
             SqlScriptRunner.execCommand(getConnection(), select, true);
 
