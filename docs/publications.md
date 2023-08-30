@@ -29,8 +29,8 @@ Also, some of these papers provides full replication packages, which are linked 
 
 * A. Golmohammadi, M. Zhang, A. Arcuri.
   *Testing RESTful APIs: A Survey*.
-  ACM Transactions on Software Engineering and Methodology (TOSEM). (to appear)
-  [[arxiv](https://arxiv.org/abs/2212.14604)]
+  ACM Transactions on Software Engineering and Methodology (TOSEM). 
+  [[PDF](publications/2023_tosem_survey.pdf)]
 
 
 
