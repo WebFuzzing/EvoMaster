@@ -433,9 +433,12 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         tableInitSqlMap.clear();
 
         try {
+            setExecutingInitSql(true);
             registerInitSqlCommands(connection, dbSpecification);
         } catch (SQLException e) {
             throw new RuntimeException("Fail to register or execute the script for initializing data in SQL database, please check specified `initSqlScript` or initSqlOnResourcePath. Error Msg:", e);
+        } finally {
+            setExecutingInitSql(false);
         }
     }
 
