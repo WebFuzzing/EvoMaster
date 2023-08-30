@@ -36,10 +36,14 @@ class InetReplacementEMTest : SpringTestBase() {
                 args.add("--externalServiceIP")
                 args.add("127.0.0.2")
 
-                //FIXME should make sure it works with true.
-                //looks like a bug in resetting the DNS cache to default state
+                // FIXME should make sure it works with true.
+                //  looks like a bug in resetting the DNS cache to default state.
+                //  Since the test application does not makes any calls, rather tries to
+                //  to connect to the host and close the connection.
+                //  ExternalServiceAction will be created if there is a call made only.
+                //  So the application is modified to make a dummy call.
                 args.add("--minimize")
-                args.add("false")
+                args.add("true")
 
                 val solution = initAndRun(args)
 
@@ -48,9 +52,9 @@ class InetReplacementEMTest : SpringTestBase() {
                 if (!CIUtils.isRunningGA()) {
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/inet/exp", "OK")
                     //FIXME should also have check on 500 and 400.
-                    //actually should change code, as thrown exception leads to 500, need way to distinguish
-                    //assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/inet/exp",null)
-                    //assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/inet/exp",null)
+                    // actually should change code, as thrown exception leads to 500, need way to distinguish
+//                    assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/inet/exp",null)
+//                    assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/inet/exp",null)
                 }
             },
             3
