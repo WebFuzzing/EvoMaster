@@ -3,10 +3,12 @@ package org.evomaster.core.search.service
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.enterprise.EnterpriseIndividual
 import org.evomaster.core.problem.gui.GuiIndividual
 import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.mutator.StructureMutator
+import org.evomaster.core.sql.SqlAction
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -182,11 +184,17 @@ class Minimizer<T: Individual> {
 
         val n = getSize(ind)
 
+        val sqlActions = if (ind is EnterpriseIndividual) ind.seeSQLActionBeforeIndex(index).map { it.copy() as SqlAction} else null
+
         for(i in n-1 downTo index+1){
             ind.removeMainExecutableAction(i)
         }
         for(i in 0 until index){
             ind.removeMainExecutableAction(0)
+        }
+
+        if (!sqlActions.isNullOrEmpty()){
+            ind.addChildrenToGroup(sqlActions, GroupsOfChildren.INITIALIZATION_SQL)
         }
     }
 
