@@ -482,7 +482,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         // init db script
         //boolean initAll = registerInitSqlCommands(getConnectionIfExist(), spec);
         if (tableDataToInit!= null &&!tableDataToInit.isEmpty()){
-            tableDataToInit.forEach(a->{
+            tableDataToInit.stream().sorted((s1, s2)-> tableFkCompartor(s1, s2)).forEach(a->{
                 tableInitSqlMap.keySet().stream().filter(t-> t.equalsIgnoreCase(a)).forEach(t->{
                     tableInitSqlMap.get(t).forEach(c->{
                         try {
@@ -494,7 +494,26 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                 });
             });
         }
+    }
 
+    private int tableFkCompartor(String tableA, String tableB){
+        return getFkDepth(tableA, new HashSet<>()) - getFkDepth(tableB, new HashSet<>());
+    }
+
+    private int getFkDepth(String tableName, Set<String> checked){
+        if(!fkMap.containsKey(tableName)) return -1;
+        checked.add(tableName);
+        List<String> fks = fkMap.get(tableName);
+        if (fks.isEmpty()) {
+            return 0;
+        }
+        int sum = fks.size();
+        for (String fk: fks){
+            if (!checked.contains(fk)){
+                sum += getFkDepth(fk, checked);
+            }
+        }
+        return sum;
     }
 
     /**
