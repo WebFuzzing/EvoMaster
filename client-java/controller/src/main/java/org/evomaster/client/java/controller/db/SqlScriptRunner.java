@@ -421,7 +421,10 @@ public class SqlScriptRunner {
                 Insert stmt = (Insert) ParserUtils.asStatement(command);
                 Table table = stmt.getTable();
                 tableSqlMap.putIfAbsent(table.getName(), new ArrayList<>());
-                tableSqlMap.get(table.getName()).add(command+";");
+                String end = "";
+                if (!command.replaceAll(" ","").replaceAll("\r","").replaceAll("\n","").endsWith(";"))
+                    end = ";";
+                tableSqlMap.get(table.getName()).add(command+end);
             }
         }
         return tableSqlMap;
