@@ -549,4 +549,11 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
     fun areAllTopGenesLocallyValid() : Boolean{
         return seeGenes().all { it.isLocallyValid() }
     }
+
+    /**
+     * compute transitive binding relationship for all genes in this individual
+     */
+    fun computeTransitiveBindingGenes(){
+        seeGenes().forEach(Gene::computeAllTransitiveBindingGenes)
+    }
 }

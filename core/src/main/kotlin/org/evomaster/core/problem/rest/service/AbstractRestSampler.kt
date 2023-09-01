@@ -325,6 +325,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         val ind =  RestIndividual(restCalls, sampleType, mutableListOf()//, usedObjects.copy()
                 ,trackOperator = if (config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else Traceable.DEFAULT_INDEX)
         ind.doInitializeLocalId()
+        ind.computeTransitiveBindingGenes()
         org.evomaster.core.Lazy.assert { ind.isInitialized() }
         return ind
     }

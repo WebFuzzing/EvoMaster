@@ -94,7 +94,7 @@ class ResourceManageService {
                 call.seeActions(ActionFilter.NO_SQL).forEach { ra->
                     if(ra is RestCallAction) ra.auth = auth
                 }
-                adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE))
+                adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE).apply { this.computeTransitiveBindingGenes() })
             }
         }
 
@@ -103,7 +103,7 @@ class ResourceManageService {
             ar.actions.filter { it.verb == HttpVerb.POST}.forEach { a->
                 val call = ar.sampleOneAction(a.copy() as RestCallAction, randomness)
                 (call.seeActions(ActionFilter.NO_SQL) as List<RestCallAction>).forEach { it.auth = auth }
-                adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE))
+                adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE).apply { this.computeTransitiveBindingGenes() })
             }
         }
 
@@ -112,7 +112,7 @@ class ResourceManageService {
                 .forEach { ar->
                     ar.genPostChain(randomness, maxTestSize)?.let {call->
                         call.seeActions(ActionFilter.NO_SQL).forEach { (it as RestCallAction).auth = auth }
-                        adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE))
+                        adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE).apply { this.computeTransitiveBindingGenes() })
                     }
                 }
 
@@ -121,7 +121,7 @@ class ResourceManageService {
             ar.actions.filter { it.verb == HttpVerb.PUT }.forEach {a->
                 val call = ar.sampleOneAction(a.copy() as RestCallAction, randomness)
                 call.seeActions(ActionFilter.NO_SQL).forEach { (it as RestCallAction).auth = auth }
-                adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE))
+                adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE).apply { this.computeTransitiveBindingGenes() })
             }
         }
 
@@ -131,7 +131,7 @@ class ResourceManageService {
                     .forEach {ct->
                         val call = ar.sampleRestResourceCalls(ct.template, randomness, maxTestSize)
                         call.seeActions(ActionFilter.NO_SQL).forEach { if(it is RestCallAction) it.auth = auth }
-                        adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE))
+                        adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE).apply { this.computeTransitiveBindingGenes() })
                     }
         }
 
