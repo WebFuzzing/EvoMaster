@@ -195,12 +195,13 @@ class Minimizer<T: Individual> {
             ind.removeMainExecutableAction(0)
         }
 
-        if (!ind.verifyBindingGenes()){
-            ind.cleanBrokenBindingReference()
-        }
-
         if (!sqlActions.isNullOrEmpty()){
             ind.addChildrenToGroup(sqlActions, GroupsOfChildren.INITIALIZATION_SQL)
+        }
+
+        if (!ind.verifyBindingGenes()){
+            ind.cleanBrokenBindingReference()
+            ind.computeTransitiveBindingGenes()
         }
     }
 
