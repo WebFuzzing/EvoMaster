@@ -176,7 +176,9 @@ class Minimizer<T: Individual> {
 
         return (0 until n)
             .map {index ->  (copy.copy() as T)
-                                .apply { removeAllMainActionsButIndex(this,index) }
+                                .apply {
+                                    removeAllMainActionsButIndex(this,index)
+                                }
             }
     }
 
@@ -191,6 +193,10 @@ class Minimizer<T: Individual> {
         }
         for(i in 0 until index){
             ind.removeMainExecutableAction(0)
+        }
+
+        if (!ind.verifyBindingGenes()){
+            ind.cleanBrokenBindingReference()
         }
 
         if (!sqlActions.isNullOrEmpty()){
