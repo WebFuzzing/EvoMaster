@@ -270,15 +270,33 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         return  infoDto.restProblem?.endpointsToSkip ?: listOf()
     }
 
-    private fun initForBlackBox() {
+private fun initForBlackBox() {
 
         swagger = OpenApiAccess.getOpenAPIFromURL(configuration.bbSwaggerUrl)
         if (swagger.paths == null) {
             throw SutProblemException("There is no endpoint definition in the retrieved Swagger file")
         }
 
+        // ONUR: Add all paths to list of paths to ignore except endpointFocus
+        val endpointsToSkip = ArrayList<String>()
+
+        val endpoint_to_focus = configuration.endpointFocus
+
+        for (k in swagger.paths.keys) {
+            //print(k)
+
+            if (!k.equals(endpoint_to_focus))
+            {
+                endpointsToSkip.add(k)
+            }
+
+        }
+
         actionCluster.clear()
-        RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, listOf(), enableConstraintHandling = config.enableSchemaConstraintHandling)
+
+        // ONUR: Rather than an empty list, give the list of endpoints to skip.
+        //RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, listOf(), enableConstraintHandling = config.enableSchemaConstraintHandling)
+        RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, endpointsToSkip, enableConstraintHandling = config.enableSchemaConstraintHandling)
 
         initAdHocInitialIndividuals()
         if (config.seedTestCases)
