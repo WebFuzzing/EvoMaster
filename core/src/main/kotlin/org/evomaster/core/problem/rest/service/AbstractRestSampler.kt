@@ -285,7 +285,7 @@ private fun initForBlackBox() {
         for (k in swagger.paths.keys) {
             //print(k)
 
-            if (!k.equals(endpoint_to_focus))
+            if ( !(endpoint_to_focus.toString() in k))
             {
                 endpointsToSkip.add(k)
             }
