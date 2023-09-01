@@ -101,6 +101,11 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
 
         if ((executedResults?.size?:0) > allSqlActions.size)
             throw IllegalStateException("incorrect insertion execution results (${executedResults!!.size}) which is more than the size of insertions (${allSqlActions.size}).")
+        if (executedResults != null){
+            if (dbresults.size < startingIndex + executedResults.size)
+                throw IllegalStateException("incorrect insertion execution results (${executedResults.size}) which is more than initialized db results (${dbresults.size}).")
+
+        }
         executedResults?.forEachIndexed { index, b ->
             dbresults[startingIndex+index].setInsertExecutionResult(b)
         }
