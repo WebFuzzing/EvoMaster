@@ -814,7 +814,9 @@ abstract class Gene(
     private fun computeTransitiveBindingGenes(all : MutableSet<Gene>){
         val root = getRoot()
         val allBindingGene = bindingGenes.plus(
-            if (root is Individual) root.seeGenes().flatMap { it.flatView() }.filter { r-> r.bindingGenes.contains(this) }
+            if (root is Individual) root.seeGenes().flatMap { it.flatView() }.filter {
+                r-> r != this && r.bindingGenes.contains(this)
+            }
             else emptyList()
         )
         if (allBindingGene.isEmpty()) {
@@ -840,6 +842,7 @@ abstract class Gene(
     private fun computeTransitiveBindingGenes(){
         val all = mutableSetOf<Gene>()
         computeTransitiveBindingGenes(all)
+        all.remove(this)
         resetBinding(all)
     }
 
