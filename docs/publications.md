@@ -39,7 +39,8 @@ Also, some of these papers provides full replication packages, which are linked 
 
 * A. Golmohammadi, M. Zhang, A. Arcuri
   *.NET/C# Instrumentation for Search-Based Software Testing*.
-  Software Quality Journal (SQJ). (to appear)
+  Software Quality Journal (SQJ). 
+  [[PDF](publications/2023_sqj_dotnet.pdf)]
 
 * A. Belhadi, M. Zhang, A. Arcuri.
   *Random Testing and Evolutionary Testing for Fuzzing GraphQL APIs*.
