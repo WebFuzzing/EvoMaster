@@ -245,6 +245,22 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         initAdHocInitialIndividuals()
     }
 
+    private fun getEndPointsToSkipHelper(swagger: OpenAPI)
+    :List<String>{
+
+        // all endpoints
+        val all = swagger.paths.map{it.key}
+
+        if(all.none { it == configuration.endpointFocus }){
+            throw IllegalArgumentException(
+                "Invalid endpointFocus: ${configuration.endpointFocus}. " +
+                        "\nAvailable:\n${all.joinToString("\n")}")
+        }
+
+        // filter all items which do not contain the user provided item
+        return all.filterNot { it.toString().contains(configuration.endpointFocus.toString()) }
+    }
+
     protected fun getEndpointsToSkip(swagger: OpenAPI, infoDto: SutInfoDto)
             : List<String>{
 
@@ -270,7 +286,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         return  infoDto.restProblem?.endpointsToSkip ?: listOf()
     }
 
-private fun initForBlackBox() {
+    private fun initForBlackBox() {
 
         swagger = OpenApiAccess.getOpenAPIFromURL(configuration.bbSwaggerUrl)
         if (swagger.paths == null) {
@@ -278,24 +294,11 @@ private fun initForBlackBox() {
         }
 
         // ONUR: Add all paths to list of paths to ignore except endpointFocus
-        val endpointsToSkip = ArrayList<String>()
-
-        val endpoint_to_focus = configuration.endpointFocus
-
-        for (k in swagger.paths.keys) {
-            //print(k)
-
-            if ( !(endpoint_to_focus.toString() in k))
-            {
-                endpointsToSkip.add(k)
-            }
-
-        }
+        val endpointsToSkip = getEndPointsToSkipHelper(swagger);
 
         actionCluster.clear()
 
         // ONUR: Rather than an empty list, give the list of endpoints to skip.
-        //RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, listOf(), enableConstraintHandling = config.enableSchemaConstraintHandling)
         RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, endpointsToSkip, enableConstraintHandling = config.enableSchemaConstraintHandling)
 
         initAdHocInitialIndividuals()
