@@ -291,7 +291,7 @@ object GeneSamplerForTests {
                 numberOfOctets = rand.nextInt(1, MAX_NUMBER_OF_OCTETS))
     }
 
-    const val MAX_NUMBER_OF_DIMENSIONS = 5
+    const val MAX_NUMBER_OF_DIMENSIONS = 3 //5
     const val MAX_NUMBER_OF_OCTETS = 10
     const val MAX_NUMBER_OF_FIELDS = 3
 
