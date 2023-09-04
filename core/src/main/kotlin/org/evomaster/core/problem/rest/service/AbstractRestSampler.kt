@@ -245,7 +245,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         initAdHocInitialIndividuals()
     }
 
-    private fun getEndPointsToSkipHelper(swagger: OpenAPI)
+    private fun getEndPointsToSkipSimilarHelper(swagger: OpenAPI)
     :List<String>{
 
         // all endpoints
@@ -261,6 +261,22 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         return all.filterNot { it.toString().contains(configuration.endpointFocus.toString()) }
     }
 
+    private fun getEndPointsToSkipExactHelper(swagger: OpenAPI)
+            :List<String>
+    {
+        val all = swagger.paths.map{it.key}
+
+        if(all.none { it == configuration.endpointFocus }){
+            throw IllegalArgumentException(
+                "Invalid endpointFocus: ${configuration.endpointFocus}. " +
+                        "\nAvailable:\n${all.joinToString("\n")}")
+        }
+
+        return all.filter { it != configuration.endpointFocus }
+    }
+
+
+
     protected fun getEndpointsToSkip(swagger: OpenAPI, infoDto: SutInfoDto)
             : List<String>{
 
@@ -272,15 +288,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
         if(configuration.endpointFocus != null){
 
-            val all = swagger.paths.map{it.key}
-
-            if(all.none { it == configuration.endpointFocus }){
-                throw IllegalArgumentException(
-                        "Invalid endpointFocus: ${configuration.endpointFocus}. " +
-                                "\nAvailable:\n${all.joinToString("\n")}")
-            }
-
-            return all.filter { it != configuration.endpointFocus }
+            return getEndPointsToSkipExactHelper(swagger)
         }
 
         return  infoDto.restProblem?.endpointsToSkip ?: listOf()
@@ -294,7 +302,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         }
 
         // ONUR: Add all paths to list of paths to ignore except endpointFocus
-        val endpointsToSkip = getEndPointsToSkipHelper(swagger);
+        val endpointsToSkip = getEndPointsToSkipExactHelper(swagger);
 
         actionCluster.clear()
 
