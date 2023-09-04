@@ -27,12 +27,15 @@ Also, some of these papers provides full replication packages, which are linked 
 
 ### 2023
 
+* A. Golmohammadi.
+  *Enhancing White-Box Search-Based Testing of RESTful APIs*.
+  IEEE International Symposium on Software Reliability Engineering (ISSRE).
+  [[PDF](publications/2023-issre-ds.pdf)]
+
 * A. Golmohammadi, M. Zhang, A. Arcuri.
   *Testing RESTful APIs: A Survey*.
   ACM Transactions on Software Engineering and Methodology (TOSEM). 
   [[PDF](publications/2023_tosem_survey.pdf)]
-
-
 
 * A. Golmohammadi, M. Zhang, A. Arcuri
   *.NET/C# Instrumentation for Search-Based Software Testing*.
@@ -45,21 +48,17 @@ Also, some of these papers provides full replication packages, which are linked 
   [[Script 0](exp/arxiv_gql_bb.py)]
   [[Script 1](exp/arxiv_gql_wb.py)]
 
-
 * M. Zhang, A. Arcuri.
   *Open Problems in Fuzzing RESTful APIs: A Comparison of Tools*.
   ACM Transactions on Software Engineering and Methodology (TOSEM).
   [[PDF](publications/2023_tosem_comparisons.pdf)]
   [[Script 0](exp/arxiv_open_problems_bb.py)]
   [[Script 1](exp/arxiv_open_problems_wb.py)]
-  
-
 
 * M. Zhang, A. Belhadi, A. Arcuri.
   *JavaScript SBST Heuristics To Enable Effective Fuzzing of NodeJS Web APIs*.
   ACM Transactions on Software Engineering and Methodology (TOSEM).
   [[PDF](publications/2023_tosem_js.pdf)]
-  
 
 * A. Arcuri, M Zhang, A. Belhadi, B. Marculescu, A. Golmohammadi, J. P. Galeotti, S. Seran.
   *Building An Open-Source System Test Generation Tool: Lessons Learned And Empirical Analyses with EvoMaster*.
