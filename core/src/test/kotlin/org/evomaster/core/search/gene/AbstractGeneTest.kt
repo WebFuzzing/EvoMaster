@@ -4,7 +4,7 @@ import org.evomaster.core.search.service.Randomness
 
 abstract class AbstractGeneTest {
 
-    private val geneClasses = GeneSamplerForTests.geneClasses
+    protected val geneClasses = GeneSamplerForTests.geneClasses
 
 
     protected fun getSample(seed: Long): List<Gene> {
