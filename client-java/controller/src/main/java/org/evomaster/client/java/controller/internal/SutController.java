@@ -828,16 +828,22 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      */
     public final void executeAction(RPCActionDto dto, ActionResponseDto responseDto) {
         EndpointSchema endpointSchema = getEndpointSchema(dto);
-        if (dto.responseVariable != null && dto.doGenerateTestScript && DtoUtils.isJavaOrKotlin(dto.outputFormat)){
-            try{
-                responseDto.testScript = endpointSchema.newInvocationWithJavaOrKotlin(dto.responseVariable, dto.controllerVariable,dto.clientVariable, dto.outputFormat);
-            }catch (Exception e){
-                // for tests
-                assert(false);
-                SimpleLogger.warn("Fail to generate test script "+e.getMessage());
+        if (dto.responseVariable != null && dto.doGenerateTestScript){
+            if (dto.outputFormat == null)
+                throw new IllegalArgumentException("When doGenerateTestScript is specified as True, outputFormat cannot be null");
+
+            if (DtoUtils.isJavaOrKotlin(dto.outputFormat)){
+                try{
+                    responseDto.testScript = endpointSchema.newInvocationWithJavaOrKotlin(dto.responseVariable, dto.controllerVariable,dto.clientVariable, dto.outputFormat);
+                }catch (Exception e){
+                    // for tests
+                    assert(false);
+                    SimpleLogger.warn("Fail to generate test script "+e.getMessage());
+                }
+                if (responseDto.testScript ==null)
+                    SimpleLogger.warn("Null test script for action "+dto.actionName);
             }
-            if (responseDto.testScript ==null)
-                SimpleLogger.warn("Null test script for action "+dto.actionName);
+
         }
 
         Object response;
