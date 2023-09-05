@@ -128,6 +128,8 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
         this.searchGlobalState = searchGlobalState
 
         seeGenes().forEach { it.doGlobalInitialize() }
+
+        computeTransitiveBindingGenes()
     }
 
     fun isInitialized() : Boolean{
