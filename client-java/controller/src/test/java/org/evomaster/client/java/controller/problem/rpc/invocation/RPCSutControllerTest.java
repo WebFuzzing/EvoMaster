@@ -11,6 +11,7 @@ import org.apache.thrift.protocol.TProtocolException;
 import org.apache.thrift.transport.TTransportException;
 import org.evomaster.client.java.controller.api.Formats;
 import org.evomaster.client.java.controller.api.dto.ActionResponseDto;
+import org.evomaster.client.java.controller.api.dto.SutInfoDto;
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.*;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.exception.RPCExceptionType;
@@ -131,6 +132,7 @@ public class RPCSutControllerTest {
         dto.controllerVariable = "rpcController";
         dto.responseVariable = "res1";
         dto.maxAssertionForDataInCollection = -1;
+        dto.outputFormat = SutInfoDto.OutputFormat.JAVA_JUNIT_5;
 
         ActionResponseDto responseDto = new ActionResponseDto();
         rpcController.executeAction(dto, responseDto);
@@ -150,6 +152,7 @@ public class RPCSutControllerTest {
         dto2.controllerVariable = "rpcController";
         dto2.responseVariable = "res1";
         dto2.maxAssertionForDataInCollection = -1;
+        dto2.outputFormat = SutInfoDto.OutputFormat.JAVA_JUNIT_5;
 
         ActionResponseDto responseDto2 = new ActionResponseDto();
         rpcController.executeAction(dto2, responseDto2);
@@ -173,6 +176,7 @@ public class RPCSutControllerTest {
             dto.controllerVariable = "rpcController";
             dto.responseVariable = "res"+index;
             dto.maxAssertionForDataInCollection = -1;
+            dto.outputFormat = SutInfoDto.OutputFormat.JAVA_JUNIT_5;
 
             ActionResponseDto responseDto = new ActionResponseDto();
             rpcController.executeAction(dto, responseDto);
@@ -237,6 +241,7 @@ public class RPCSutControllerTest {
         dto.controllerVariable = "rpcController";
         dto.responseVariable = "res1";
         dto.maxAssertionForDataInCollection = -1;
+        dto.outputFormat = SutInfoDto.OutputFormat.JAVA_JUNIT_5;
 
         ActionResponseDto responseDto = new ActionResponseDto();
         rpcController.executeAction(dto, responseDto);
@@ -272,6 +277,7 @@ public class RPCSutControllerTest {
         dto.controllerVariable = "rpcController";
         dto.responseVariable = "res1";
         dto.maxAssertionForDataInCollection = -1;
+        dto.outputFormat = SutInfoDto.OutputFormat.JAVA_JUNIT_5;
 
         ActionResponseDto responseDto = new ActionResponseDto();
         dto.requestParams.get(0).stringValue = "0";
@@ -334,6 +340,7 @@ public class RPCSutControllerTest {
         dto.controllerVariable = "rpcController";
         dto.responseVariable = "res1";
         dto.maxAssertionForDataInCollection = -1;
+        dto.outputFormat = SutInfoDto.OutputFormat.JAVA_JUNIT_5;
 
         ActionResponseDto responseDto = new ActionResponseDto();
         rpcController.executeAction(dto, responseDto);
@@ -366,6 +373,7 @@ public class RPCSutControllerTest {
         dto.doGenerateTestScript = true;
         dto.controllerVariable = "rpcController";
         dto.responseVariable = "res1";
+        dto.outputFormat = SutInfoDto.OutputFormat.JAVA_JUNIT_5;
 
         ActionResponseDto responseDto = new ActionResponseDto();
 
@@ -410,6 +418,7 @@ public class RPCSutControllerTest {
         dto.doGenerateTestScript = true;
         dto.controllerVariable = "rpcController";
         dto.responseVariable = "res1";
+        dto.outputFormat = SutInfoDto.OutputFormat.JAVA_JUNIT_5;
 
         ActionResponseDto responseDto = new ActionResponseDto();
 
@@ -469,6 +478,7 @@ public class RPCSutControllerTest {
         dto.doGenerateTestScript = true;
         dto.controllerVariable = "rpcController";
         dto.responseVariable = "res1";
+        dto.outputFormat = SutInfoDto.OutputFormat.JAVA_JUNIT_5;
 
         ActionResponseDto responseDto = new ActionResponseDto();
         rpcController.executeAction(dto, responseDto);
@@ -499,6 +509,7 @@ public class RPCSutControllerTest {
         dto.doGenerateTestScript = true;
         dto.controllerVariable = "rpcController";
         dto.responseVariable = "res1";
+        dto.outputFormat = SutInfoDto.OutputFormat.JAVA_JUNIT_5;
 
         ActionResponseDto responseDto = new ActionResponseDto();
         dto.requestParams.get(0).innerContent = null;
@@ -521,6 +532,7 @@ public class RPCSutControllerTest {
         dto.controllerVariable = "rpcController";
         dto.responseVariable = "res1";
         dto.maxAssertionForDataInCollection = 4;
+        dto.outputFormat = SutInfoDto.OutputFormat.JAVA_JUNIT_5;
 
         ParamDto request = dto.requestParams.get(0);
         request.stringValue = "{}";
@@ -568,6 +580,7 @@ public class RPCSutControllerTest {
         dto.doGenerateTestScript = true;
         dto.controllerVariable = "controller";
         dto.responseVariable = "res1";
+        dto.outputFormat = SutInfoDto.OutputFormat.JAVA_JUNIT_5;
 
         ActionResponseDto responseDto = new ActionResponseDto();
         rpcController.executeAction(dto, responseDto);
@@ -618,6 +631,7 @@ public class RPCSutControllerTest {
         dto.doGenerateTestScript = true;
         dto.controllerVariable = "controller";
         dto.responseVariable = "res1";
+        dto.outputFormat = SutInfoDto.OutputFormat.JAVA_JUNIT_5;
 
         ActionResponseDto responseDto = new ActionResponseDto();
         rpcController.executeAction(dto, responseDto);
@@ -672,6 +686,7 @@ public class RPCSutControllerTest {
         dto.doGenerateTestScript = true;
         dto.controllerVariable = "controller";
         dto.responseVariable = "res1";
+        dto.outputFormat = SutInfoDto.OutputFormat.JAVA_JUNIT_5;
 
         ActionResponseDto responseDto = new ActionResponseDto();
         rpcController.executeAction(dto, responseDto);
@@ -745,6 +760,7 @@ public class RPCSutControllerTest {
         dto.doGenerateTestScript = true;
         dto.controllerVariable = "controller";
         dto.responseVariable = "res1";
+        dto.outputFormat = SutInfoDto.OutputFormat.JAVA_JUNIT_5;
 
         ActionResponseDto responseDto = new ActionResponseDto();
         rpcController.executeAction(dto, responseDto);
@@ -822,6 +838,7 @@ public class RPCSutControllerTest {
         dto.controllerVariable = "controller";
         dto.responseVariable = "res1";
         dto.maxAssertionForDataInCollection = 10;
+        dto.outputFormat = SutInfoDto.OutputFormat.JAVA_JUNIT_5;
 
         ActionResponseDto responseDto = new ActionResponseDto();
         rpcController.executeAction(dto, responseDto);
@@ -943,7 +960,9 @@ public class RPCSutControllerTest {
         localDto.responseVariable = "res1_auth";
         localDto.doGenerateTestScript = true;
         localDto.controllerVariable = "controller";
+        localDto.outputFormat = SutInfoDto.OutputFormat.JAVA_JUNIT_5;
         ActionResponseDto authResponseDto = new ActionResponseDto();
+
         rpcController.executeHandleLocalAuthenticationSetup(localDto, authResponseDto);
         assertNotNull(authResponseDto.testScript);
         assertEquals(4, authResponseDto.testScript.size());
@@ -957,6 +976,8 @@ public class RPCSutControllerTest {
         dto.doGenerateTestScript = true;
         dto.controllerVariable = "controller";
         dto.responseVariable = "res1";
+        dto.outputFormat = SutInfoDto.OutputFormat.JAVA_JUNIT_5;
+
         ActionResponseDto responseDto = new ActionResponseDto();
         rpcController.executeAction(dto, responseDto);
         assertNotNull(responseDto.assertionScript);
@@ -1017,6 +1038,8 @@ public class RPCSutControllerTest {
         List<RPCActionDto> dtos = interfaceSchemas.get(0).endpoints.stream().filter(s-> s.actionName.equals("byteResponse")).collect(Collectors.toList());
         assertEquals(1, dtos.size());
         RPCActionDto dto = dtos.get(0).copy();
+        dto.outputFormat = SutInfoDto.OutputFormat.JAVA_JUNIT_5;
+
         dto.requestParams.get(0).stringValue = "" + Byte.parseByte("0");
         dto.requestParams.get(1).stringValue = "" + Byte.parseByte("42");
         assertEquals(2, dto.requestParams.size());
