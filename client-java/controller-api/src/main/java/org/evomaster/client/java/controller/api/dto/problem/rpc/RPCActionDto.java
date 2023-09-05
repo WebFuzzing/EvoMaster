@@ -116,9 +116,10 @@ public class RPCActionDto {
 
     /**
      * the output format
+     * if doGenerateTestScript is true, outputFormat cannot be null
      * Note that the info is kept in sync with what the user specifies in driver or EMConfig
      */
-    public SutInfoDto.OutputFormat outputFormat = SutInfoDto.OutputFormat.JAVA_JUNIT_5;
+    public SutInfoDto.OutputFormat outputFormat;
 
     /**
      * the maximum number of assertions to be generated for data in collections
