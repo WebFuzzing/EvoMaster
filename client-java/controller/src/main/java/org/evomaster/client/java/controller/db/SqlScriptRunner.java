@@ -100,6 +100,15 @@ public class SqlScriptRunner {
         }
     }
 
+    /**
+     *
+     * @param reader for SQL script
+     * @return extract SQL commands
+     */
+    public String readSQLCommandsAsString(Reader reader){
+        return String.join(";"+System.lineSeparator(), readCommands(reader));
+    }
+
     public List<String> readCommands(Reader reader) {
 
         List<String> list = new ArrayList<>();
@@ -412,7 +421,10 @@ public class SqlScriptRunner {
                 Insert stmt = (Insert) ParserUtils.asStatement(command);
                 Table table = stmt.getTable();
                 tableSqlMap.putIfAbsent(table.getName(), new ArrayList<>());
-                tableSqlMap.get(table.getName()).add(command+";");
+                String end = "";
+                if (!command.replaceAll(" ","").replaceAll("\r","").replaceAll("\n","").endsWith(";"))
+                    end = ";";
+                tableSqlMap.get(table.getName()).add(command+end);
             }
         }
         return tableSqlMap;

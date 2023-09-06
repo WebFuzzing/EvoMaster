@@ -2,6 +2,7 @@ package org.evomaster.client.java.controller.db;
 
 import io.restassured.http.ContentType;
 import org.evomaster.client.java.controller.DatabaseTestTemplate;
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
 import org.evomaster.client.java.controller.internal.SutController;
 import org.evomaster.client.java.controller.internal.db.h2.DatabaseFakeH2SutController;
 import org.evomaster.client.java.controller.internal.db.h2.DatabaseH2TestInit;
@@ -243,9 +244,9 @@ public class SqlScriptRunnerTest extends DatabaseH2TestInit implements DatabaseT
         String timestamp = year + "-2-17T4:55:50.000Z";
         String sql = "INSERT INTO Foo (CREATION_TIME) VALUES ('" + timestamp + "')";
 
-        SqlScriptRunner.execCommand(getConnection(), sql);
-
         executeViaRest(sql);
+
+        SqlScriptRunner.execCommand(getConnection(), sql);
 
         QueryResult res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo;");
         assertEquals(2, res.seeRows().size());
@@ -264,9 +265,10 @@ public class SqlScriptRunnerTest extends DatabaseH2TestInit implements DatabaseT
         String name = "a name";
         String sql = "INSERT INTO Foo (NAME) VALUES ('" + name + "')";
 
-        SqlScriptRunner.execCommand(getConnection(), sql);
 
         executeViaRest(sql);
+
+        SqlScriptRunner.execCommand(getConnection(), sql);
 
         QueryResult res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo;");
         assertEquals(2, res.seeRows().size());
@@ -497,4 +499,5 @@ public class SqlScriptRunnerTest extends DatabaseH2TestInit implements DatabaseT
     public SutController getSutController() {
         return new DatabaseFakeH2SutController(connection);
     }
+
 }

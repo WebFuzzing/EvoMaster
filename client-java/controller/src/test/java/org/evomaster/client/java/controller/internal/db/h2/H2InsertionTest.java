@@ -1,6 +1,8 @@
 package org.evomaster.client.java.controller.internal.db.h2;
 
 import org.evomaster.client.java.controller.DatabaseTestTemplate;
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
+import org.evomaster.client.java.controller.db.DbCleaner;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.evomaster.client.java.controller.internal.SutController;
 import org.evomaster.client.java.controller.internal.db.mysql.DatabaseFakeMySQLSutController;
@@ -54,6 +56,5 @@ public class H2InsertionTest extends DatabaseH2TestInit implements DatabaseTestT
     public SutController getSutController() {
         return new DatabaseFakeMySQLSutController(connection);
     }
-
 
 }

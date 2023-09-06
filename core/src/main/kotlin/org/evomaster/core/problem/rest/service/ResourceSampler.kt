@@ -80,6 +80,7 @@ open class ResourceSampler : AbstractRestSampler() {
         val ind = RestIndividual(
                 resourceCalls = restCalls, sampleType = SampleType.RANDOM, dbInitialization = mutableListOf(), trackOperator = this, index = time.evaluatedIndividuals)
         ind.doGlobalInitialize(searchGlobalState)
+//        ind.computeTransitiveBindingGenes()
         return ind
     }
 
@@ -148,6 +149,7 @@ open class ResourceSampler : AbstractRestSampler() {
                 dm.sampleResourceWithRelatedDbActions(individual, rm.getMaxNumOfResourceSizeHandling())
 
             individual.cleanBrokenBindingReference()
+//            individual.computeTransitiveBindingGenes()
             return individual
         }
         return null
@@ -239,6 +241,7 @@ open class ResourceSampler : AbstractRestSampler() {
                 trackOperator = if (config.trackingEnabled()) this else null,
                 index = if (config.trackingEnabled()) time.evaluatedIndividuals else Traceable.DEFAULT_INDEX)
         ind.doGlobalInitialize(searchGlobalState)
+//        ind.computeTransitiveBindingGenes()
         return ind
     }
 }

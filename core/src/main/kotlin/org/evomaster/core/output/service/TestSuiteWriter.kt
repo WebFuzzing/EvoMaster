@@ -609,6 +609,9 @@ class TestSuiteWriter {
                     config.outputFormat.isJavaOrKotlin() -> {
                         addStatement("$controller.setupForGeneratedTest()", lines)
                         addStatement("$baseUrlOfSut = $controller.startSut()", lines)
+                        //registerOrExecuteInitSqlCommands
+                        addStatement("$controller.registerOrExecuteInitSqlCommandsIfNeeded()", lines)
+
                         if(config.problemType == EMConfig.ProblemType.WEBFRONTEND){
                             val infoDto = remoteController.getSutInfo()!! //TODO refactor. save it in a service
                             addStatement("$baseUrlOfSut = validateAndGetUrlOfStartingPageForDocker($baseUrlOfSut,\"${infoDto.webProblem.urlPathOfStartingPage}\", true)", lines)

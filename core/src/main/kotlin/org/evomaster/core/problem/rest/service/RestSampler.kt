@@ -29,6 +29,7 @@ class RestSampler : AbstractRestSampler(){
         }
         val ind = RestIndividual(actions, SampleType.RANDOM, mutableListOf(), this, time.evaluatedIndividuals)
         ind.doGlobalInitialize(searchGlobalState)
+//        ind.computeTransitiveBindingGenes()
         return ind
     }
 
@@ -95,6 +96,7 @@ class RestSampler : AbstractRestSampler(){
                     ,trackOperator = if (config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else Traceable.DEFAULT_INDEX)
 
             objInd.doGlobalInitialize(searchGlobalState)
+//            objInd.computeTransitiveBindingGenes()
             return objInd
         }
         //usedObjects.clear()

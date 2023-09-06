@@ -420,6 +420,29 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         }
     }
 
+
+    /**
+     * handle specified init sql script after SUT is started.
+     */
+    public final void registerOrExecuteInitSqlCommandsIfNeeded()  {
+        Connection connection = getConnectionIfExist();
+        if (connection == null) return;
+        DbSpecification dbSpecification = getDbSpecifications().get(0);
+        if (dbSpecification == null) return;
+        if (!dbSpecification.employSmartDbClean) return;
+
+        tableInitSqlMap.clear();
+
+        try {
+            setExecutingInitSql(true);
+            registerInitSqlCommands(connection, dbSpecification);
+        } catch (SQLException e) {
+            throw new RuntimeException("Fail to register or execute the script for initializing data in SQL database, please check specified `initSqlScript` or initSqlOnResourcePath. Error Msg:", e);
+        } finally {
+            setExecutingInitSql(false);
+        }
+    }
+
     /**
      * perform smart db clean by cleaning the data in accessed table
      */
@@ -447,7 +470,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                     tableDataToInit = tablesToClean.stream().filter(a-> tableInitSqlMap.keySet().stream().anyMatch(t-> t.equalsIgnoreCase(a))).collect(Collectors.toSet());
                 }
             }
-            handleInitSql(tableDataToInit, emDbClean);
+            handleInitSqlInDbClean(tableDataToInit, emDbClean);
 
         }catch (SQLException e) {
             throw new RuntimeException("SQL Init Execution Error: fail to execute "+e);
@@ -456,11 +479,11 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         }
     }
 
-    private void handleInitSql(Collection<String> tableDataToInit, DbSpecification spec) throws SQLException {
+    private void handleInitSqlInDbClean(Collection<String> tableDataToInit, DbSpecification spec) throws SQLException {
         // init db script
-        boolean initAll = initSqlScriptAndGetInsertMap(getConnectionIfExist(), spec);
-        if (!initAll && tableDataToInit!= null &&!tableDataToInit.isEmpty()){
-            tableDataToInit.forEach(a->{
+        //boolean initAll = registerInitSqlCommands(getConnectionIfExist(), spec);
+        if (tableDataToInit!= null &&!tableDataToInit.isEmpty()){
+            tableDataToInit.stream().sorted((s1, s2)-> tableFkCompartor(s1, s2)).forEach(a->{
                 tableInitSqlMap.keySet().stream().filter(t-> t.equalsIgnoreCase(a)).forEach(t->{
                     tableInitSqlMap.get(t).forEach(c->{
                         try {
@@ -472,7 +495,26 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                 });
             });
         }
+    }
 
+    private int tableFkCompartor(String tableA, String tableB){
+        return getFkDepth(tableA, new HashSet<>()) - getFkDepth(tableB, new HashSet<>());
+    }
+
+    private int getFkDepth(String tableName, Set<String> checked){
+        if(!fkMap.containsKey(tableName)) return -1;
+        checked.add(tableName);
+        List<String> fks = fkMap.get(tableName);
+        if (fks.isEmpty()) {
+            return 0;
+        }
+        int sum = fks.size();
+        for (String fk: fks){
+            if (!checked.contains(fk)){
+                sum += getFkDepth(fk, checked);
+            }
+        }
+        return sum;
     }
 
     /**
@@ -510,32 +552,46 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         return list.entrySet().stream().filter(x-> x.getKey().equalsIgnoreCase(name)).findFirst();
     }
 
+
+
+
     /**
      *
      * @param dbSpecification contains info of the db connection
      * @return whether the init script is executed
      */
-    private boolean initSqlScriptAndGetInsertMap(Connection connection, DbSpecification dbSpecification) throws SQLException {
+    private boolean registerInitSqlCommands(Connection connection, DbSpecification dbSpecification) throws SQLException {
+
         if (dbSpecification.initSqlOnResourcePath == null
                 && dbSpecification.initSqlScript == null) return false;
-        // TODO to handle initSqlMap for multiple connections
-        if (tableInitSqlMap.isEmpty()){
-            List<String> all = new ArrayList<>();
-            if (dbSpecification.initSqlOnResourcePath != null){
-               all.addAll(SqlScriptRunnerCached.extractSqlScriptFromResourceFile(dbSpecification.initSqlOnResourcePath));
-            }
-            if (dbSpecification.initSqlScript != null){
-                all.addAll(SqlScriptRunner.extractSql(dbSpecification.initSqlScript));
-            }
-            if (!all.isEmpty()){
-                // collect insert sql commands map, key is table name, and value is a list sql insert commands
-                tableInitSqlMap.putAll(SqlScriptRunner.extractSqlTableMap(all));
-                // execute all commands
-                SqlScriptRunner.runCommands(connection, all);
-                return true;
-            }
+
+        List<String> all = new ArrayList<>();
+        if (dbSpecification.initSqlOnResourcePath != null){
+            all.addAll(SqlScriptRunnerCached.extractSqlScriptFromResourceFile(dbSpecification.initSqlOnResourcePath));
+        }
+        if (dbSpecification.initSqlScript != null){
+            all.addAll(SqlScriptRunner.extractSql(dbSpecification.initSqlScript));
+        }
+        if (!all.isEmpty()){
+            // collect insert sql commands map, key is table name, and value is a list sql insert commands
+            tableInitSqlMap.putAll(SqlScriptRunner.extractSqlTableMap(all));
+            /*
+                comment out this for the moment
+                this clean is specified by user in driver for handling the case if any table needs to be skipped
+             */
+//            cleanDataInDbConnection(connection, dbSpecification);
+            // insert data
+            SqlScriptRunner.runCommands(connection, all);
+            return true;
         }
         return false;
+    }
+
+    private void cleanDataInDbConnection(Connection connection, DbSpecification dbSpecification){
+        if (dbSpecification.schemaNames != null && !dbSpecification.schemaNames.isEmpty()){
+            dbSpecification.schemaNames.forEach(sch-> DbCleaner.clearDatabase(connection, sch,  null, dbSpecification.dbType));
+        }else
+            DbCleaner.clearDatabase(connection, null, dbSpecification.dbType);
     }
 
     /**
@@ -1328,7 +1384,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                     spec.schemaNames.forEach(sp-> DbCleaner.clearDatabase(spec.connection, sp, null, tablesToClean, spec.dbType));
 
                 try {
-                    handleInitSql(tablesToClean, spec);
+                    handleInitSqlInDbClean(tablesToClean, spec);
                 } catch (SQLException e) {
                     throw new RuntimeException("Fail to execute the specified initSqlScript "+e);
                 }
