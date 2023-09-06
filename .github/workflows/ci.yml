@@ -11,25 +11,23 @@ env:
   # For some "hilarious" case, see:
   # https://github.com/EMResearch/EvoMaster/issues/447
   release-jdk: 17
+  latest-jdk: 17
   build-jdk: 1.8
-  retention-days: 3
+  retention-days: 5
 
 
-# This build is quite expensive (1ish hour), so we run it whole only on 1 JVM version, and 1 OS.
-# Recall that we also build on CircleCI, with different configurations.
-# For the moment, we need to support JVM 8 and 11, with 17 when it comes out.
+# This build is quite expensive (some hours), so we run it whole only on some JVM versions and OSs.
+# For the moment, we need to support JVM 8 and all following LTS versions (e.g, 11 and  17).
 # EM should run an all OSs. As our main development machines are Windows and Mac, just
 # testing whole build with all E2E only on Linux should be fine.
 
 jobs:
 
-  base:
+  full-build-base:
     runs-on: ubuntu-latest
-
     steps:
       # Checkout code
       - uses: actions/checkout@v2
-
       # Build/test for JDK
       - name: Setup JDK ${{env.build-jdk}}
         uses: actions/setup-java@v1
@@ -69,9 +67,54 @@ jobs:
           java-version: 11
       - name: Compile with JDK 11
         run: mvn clean verify -DskipTests
+      - name: Setup JDK 17
+        uses: actions/setup-java@v1
+        with:
+          java-version: 17
+      - name: Compile with JDK 17
+        run: mvn clean verify -DskipTests
 
 
-  latest-LTS:
+  base-build-mac:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup JDK ${{env.latest-jdk}}
+        uses: actions/setup-java@v1
+        with:
+          java-version: ${{env.latest-jdk}}
+      - name: Cache Maven packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: Build with Maven
+        run: mvn clean verify -DskipTests
+        env:
+          CI_env: GithubAction
+
+  base-build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup JDK ${{env.latest-jdk}}
+        uses: actions/setup-java@v1
+        with:
+          java-version: ${{env.latest-jdk}}
+      - name: Cache Maven packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: Build with Maven
+        run: mvn clean verify -DskipTests
+        env:
+          CI_env: GithubAction
+
+
+  full-build-LTS:
     # run on a different OS from main build.
     # It would had been good, but does not work due to Docker support :(  see:
     # https://stackoverflow.com/questions/66077884/testcontainers-in-windows-environment-on-github-actions-could-not-find-a-valid
@@ -80,10 +123,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Setup JDK 17
+      - name: Setup JDK ${{env.latest-jdk}}
         uses: actions/setup-java@v1
         with:
-          java-version: 17
+          java-version: ${{env.latest-jdk}}
       - name: Cache Maven packages
         uses: actions/cache@v2
         with:
@@ -98,7 +141,7 @@ jobs:
 
 
   nodejs:
-    needs: base
+    needs: full-build-base
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -169,7 +212,7 @@ jobs:
 
 
   installer-for-windows:
-    needs: base
+    needs: full-build-base
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
@@ -194,7 +237,7 @@ jobs:
           if-no-files-found: error
 
   installer-for-osx:
-    needs: base
+    needs: full-build-base
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v2
@@ -219,7 +262,7 @@ jobs:
           if-no-files-found: error
 
   installer-for-debian:
-    needs: base
+    needs: full-build-base
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
