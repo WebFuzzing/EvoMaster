@@ -374,8 +374,11 @@ class EMConfig {
             //throw IllegalArgumentException("The option to turn on Executive Summary is only meaningful when clustering is turned on (--testSuiteSplitType CLUSTERING).")
         }
 
-        if (enablePureRPCTestGeneration && outputFormat != OutputFormat.DEFAULT && !outputFormat.isJava()){
-            throw IllegalArgumentException("when generating pure RPC tests, outputFormat only supports JAVA now")
+        if (problemType == ProblemType.RPC
+            && createTests
+            && (enablePureRPCTestGeneration || enableRPCAssertionWithInstance)
+            && outputFormat  != OutputFormat.DEFAULT && (!outputFormat.isJavaOrKotlin())){
+            throw IllegalArgumentException("when generating RPC tests with actual object instances in specified format, outputFormat only supports Java or Kotlin now")
         }
 
         val jaCoCo_on = jaCoCoAgentLocation.isNotBlank() && jaCoCoCliLocation.isNotBlank() && jaCoCoOutputFile.isNotBlank()
@@ -1721,13 +1724,11 @@ class EMConfig {
     @Cfg("Whether to enable customized responses indicating business logic")
     var enableRPCCustomizedResponseTargets = true
 
-    @Experimental
     @Cfg("Whether to generate RPC endpoint invocation which is independent from EM driver.")
-    var enablePureRPCTestGeneration = false
+    var enablePureRPCTestGeneration = true
 
-    @Experimental
     @Cfg("Whether to generate RPC Assertions based on response instance")
-    var enableRPCAssertionWithInstance = false
+    var enableRPCAssertionWithInstance = true
 
     @Experimental
     @Cfg("Whether to enable customized RPC Test output if 'customizeRPCTestOutput' is implemented")

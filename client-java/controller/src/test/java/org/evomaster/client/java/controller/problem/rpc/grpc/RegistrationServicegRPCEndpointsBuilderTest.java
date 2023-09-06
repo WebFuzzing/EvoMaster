@@ -10,8 +10,6 @@ import org.evomaster.client.java.controller.problem.rpc.schema.types.Protobuf3By
 import org.junit.Test;
 import org.signal.registration.rpc.GetRegistrationSessionMetadataRequest;
 import org.signal.registration.rpc.RegistrationServiceGrpc;
-import org.signal.registration.rpc.RegistrationSessionMetadata;
-import org.signal.registration.rpc.RegistrationSessionMetadataOrBuilder;
 
 import java.util.Arrays;
 import java.util.List;
@@ -68,7 +66,7 @@ public class RegistrationServicegRPCEndpointsBuilderTest extends RPCEndpointsBui
         assertTrue(inputInstance instanceof GetRegistrationSessionMetadataRequest);
         assertEquals("foo", ((GetRegistrationSessionMetadataRequest) inputInstance).getSessionId().toStringUtf8());
 
-        List<String> param1InstanceJava = inputParam.newInstanceWithJava(true, true, "request", 0);
+        List<String> param1InstanceJava = inputParam.newInstanceWithJavaOrKotlin(true, true, "request", 0, true, true);
 
         String[] expectedContents = ("org.signal.registration.rpc.GetRegistrationSessionMetadataRequest request = null;\n" +
             "{\n" +
@@ -86,7 +84,7 @@ public class RegistrationServicegRPCEndpointsBuilderTest extends RPCEndpointsBui
         for (int i = 0; i < param1InstanceJava.size(); i++)
             assertEquals(expectedContents[i], param1InstanceJava.get(i));
 
-        List<String> param1Assertions = inputParam.newAssertionWithJava("request", -1);
+        List<String> param1Assertions = inputParam.newAssertionWithJavaOrKotlin("request", -1, true);
 
         String[] expectedAssertions = ("assertEquals(\"foo\", request.getSessionId().toStringUtf8());").split("\n");
 
@@ -106,6 +104,10 @@ public class RegistrationServicegRPCEndpointsBuilderTest extends RPCEndpointsBui
             request = requestbuilder.build();
         }
         assertEquals("foo", request.getSessionId().toStringUtf8());
+
+
+
+        List<String> param1InstanceKotlin = inputParam.newInstanceWithJavaOrKotlin(true, true, "request", 0, false, true);
 
     }
 }

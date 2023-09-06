@@ -26,4 +26,9 @@ public class StringType extends TypeSchema {
     public StringType copy() {
         return new StringType(spec);
     }
+
+    @Override
+    public String getTypeNameForInstanceInJavaOrKotlin(boolean isJava) {
+        return getSimpleTypeName();
+    }
 }
