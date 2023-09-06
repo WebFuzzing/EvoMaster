@@ -25,6 +25,7 @@ public interface DatabaseTestTemplate {
 
         int port = starter.getControllerServerPort();
 
+
         startSut(port);
 
         return "http://localhost:" + port;

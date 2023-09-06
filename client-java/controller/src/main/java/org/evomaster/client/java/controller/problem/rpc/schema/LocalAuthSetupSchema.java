@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.problem.rpc.schema;
 
+import org.evomaster.client.java.controller.DtoUtils;
 import org.evomaster.client.java.controller.api.dto.SutInfoDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
 import org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator;
@@ -38,19 +39,19 @@ public class LocalAuthSetupSchema extends EndpointSchema{
     @Override
     public List<String> newInvocationWithJavaOrKotlin(String responseVarName, String controllerVarName, String clientVariable, SutInfoDto.OutputFormat outputFormat) {
         List<String> javaCode = new ArrayList<>();
-        javaCode.add(codeBlockStart(outputFormat.isJava()));
+        javaCode.add(codeBlockStart(DtoUtils.isJava(outputFormat)));
         int indent = 1;
         for (NamedTypedValue param: getRequestParams()){
-            javaCode.addAll(param.newInstanceWithJavaOrKotlin(indent, outputFormat.isJava(), true));
+            javaCode.addAll(param.newInstanceWithJavaOrKotlin(indent, DtoUtils.isJava(outputFormat), true));
         }
         String paramVars = getRequestParams().stream().map(NamedTypedValue::getName).collect(Collectors.joining(","));
 
         addCode(
                 javaCode,
-                CodeJavaOrKotlinGenerator.methodInvocation(controllerVarName, getName(), paramVars,outputFormat.isJava(), true, false) + getStatementLast(outputFormat.isJava()),
+                CodeJavaOrKotlinGenerator.methodInvocation(controllerVarName, getName(), paramVars,DtoUtils.isJava(outputFormat), true, false) + getStatementLast(DtoUtils.isJava(outputFormat)),
                 indent);
 
-        javaCode.add(codeBlockEnd(outputFormat.isJava()));
+        javaCode.add(codeBlockEnd(DtoUtils.isJava(outputFormat)));
         return javaCode;
     }
 

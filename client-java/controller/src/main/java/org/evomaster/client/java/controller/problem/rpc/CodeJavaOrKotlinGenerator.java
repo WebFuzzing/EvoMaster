@@ -26,7 +26,7 @@ public class CodeJavaOrKotlinGenerator {
 
     private final static String KOTLIN_NON_NULL_ASSERTED = "!!";
 
-    private final static String JAVA_LANGE = "java.lang.";
+    private final static String JAVA_LANG = "java.lang.";
 
     private final static String KOTLIN_DEFAULT = "kotlin.";
 
@@ -44,7 +44,7 @@ public class CodeJavaOrKotlinGenerator {
     }
 
     private static String formateBasicType(String type){
-        if (!type.startsWith(JAVA_LANGE) && !type.startsWith(KOTLIN_DEFAULT)) return type;
+        if (!type.startsWith(JAVA_LANG) && !type.startsWith(KOTLIN_DEFAULT)) return type;
         String[] pars = type.split("\\.");
         return pars[pars.length -1];
     }

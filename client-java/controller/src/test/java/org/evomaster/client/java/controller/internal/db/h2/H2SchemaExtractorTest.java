@@ -4,6 +4,7 @@ import io.restassured.http.ContentType;
 import org.evomaster.client.java.controller.DatabaseTestTemplate;
 import org.evomaster.client.java.controller.InstrumentedSutStarter;
 import org.evomaster.client.java.controller.api.dto.database.schema.*;
+import org.evomaster.client.java.controller.db.DbCleaner;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.evomaster.client.java.controller.internal.SutController;
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor;
@@ -748,4 +749,6 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
     public SutController getSutController() {
         return new DatabaseFakeH2SutController(connection);
     }
+
+
 }

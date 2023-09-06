@@ -4,6 +4,7 @@ import org.evomaster.client.java.controller.EmbeddedSutController;
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto;
 import org.evomaster.client.java.controller.api.dto.SutInfoDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
+import org.evomaster.client.java.controller.db.DbCleaner;
 import org.evomaster.client.java.controller.internal.db.DbSpecification;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RestProblem;
@@ -12,10 +13,14 @@ import java.sql.Connection;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.evomaster.client.java.controller.internal.db.mysql.DatabaseMySQLTestInit.DB_NAME;
+
 public class DatabaseFakeMySQLSutController extends EmbeddedSutController {
 
     private final Connection sqlConnection;
     private final String initScript;
+
+    public boolean running;
 
     public DatabaseFakeMySQLSutController(Connection connection) {
         this(connection, null);
@@ -29,7 +34,7 @@ public class DatabaseFakeMySQLSutController extends EmbeddedSutController {
     @Override
     public List<DbSpecification> getDbSpecifications() {
         if(initScript != null)
-            return Arrays.asList(new DbSpecification(DatabaseType.MYSQL, sqlConnection).withInitSqlScript(initScript).withSchemas("test"));
+            return Arrays.asList(new DbSpecification(DatabaseType.MYSQL, sqlConnection).withInitSqlScript(initScript).withSchemas(DB_NAME));
         else
             return Arrays.asList(new DbSpecification(DatabaseType.MYSQL, sqlConnection).withSchemas("test"));
     }
@@ -48,11 +53,15 @@ public class DatabaseFakeMySQLSutController extends EmbeddedSutController {
 
     @Override
     public String startSut() {
+        running = true;
+
+        DbCleaner.clearDatabase(sqlConnection, DB_NAME,null, DatabaseType.MYSQL);
         return "foo";
     }
 
     @Override
     public void stopSut() {
+        running = false;
     }
 
     @Override
@@ -61,7 +70,7 @@ public class DatabaseFakeMySQLSutController extends EmbeddedSutController {
 
     @Override
     public boolean isSutRunning() {
-        return false;
+        return running;
     }
 
     @Override

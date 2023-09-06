@@ -37,11 +37,7 @@ public interface InitSqlScriptWithSmartDbCleanTest extends DatabaseTestTemplate 
                     .then()
                     .statusCode(200);
 
-            // db is empty
-            QueryResult res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Bar;", true);
-            assertEquals(0, res.seeRows().size());
-            res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo;", true);
-            assertEquals(0, res.seeRows().size());
+            QueryResult res;
 
             startNewTest(url);
 
@@ -76,6 +72,30 @@ public interface InitSqlScriptWithSmartDbCleanTest extends DatabaseTestTemplate 
                     .get(url + TEST_RESULTS)
                     .then()
                     .statusCode(200);
+
+            startNewTest(url);
+
+            // db only contains init data
+            res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo;", true);
+            assertEquals(1, res.seeRows().size());
+
+            res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Bar;", true);
+            assertEquals(1, res.seeRows().size());
+
+
+            // table is accessed with INSERT
+            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, valueColumn, bar_id) VALUES (1, 0, 0);", true);
+
+            res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo;", true);
+            assertEquals(2, res.seeRows().size());
+
+            res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Bar;", true);
+            assertEquals(1, res.seeRows().size());
+
+            given().accept(ContentType.JSON)
+                .get(url + TEST_RESULTS)
+                .then()
+                .statusCode(200);
 
             startNewTest(url);
 
