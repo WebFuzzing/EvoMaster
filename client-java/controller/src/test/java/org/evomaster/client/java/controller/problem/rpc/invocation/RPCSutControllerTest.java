@@ -169,7 +169,7 @@ public class RPCSutControllerTest {
         dto3.controllerVariable = "rpcController";
         dto3.responseVariable = "res1";
         dto3.maxAssertionForDataInCollection = -1;
-
+        dto3.outputFormat = SutInfoDto.OutputFormat.JAVA_JUNIT_5;
         ActionResponseDto responseDto3 = new ActionResponseDto();
         rpcController.executeAction(dto3, responseDto3);
 
@@ -1101,6 +1101,7 @@ public class RPCSutControllerTest {
         dto.doGenerateAssertions = true;
         dto.controllerVariable = "rpcController";
         dto.responseVariable = "res1";
+        dto.outputFormat = SutInfoDto.OutputFormat.JAVA_JUNIT_5;
         rpcController.executeAction(dto, responseDto);
 
         String[] expectedScript = ("String res1 = null;\n" +
