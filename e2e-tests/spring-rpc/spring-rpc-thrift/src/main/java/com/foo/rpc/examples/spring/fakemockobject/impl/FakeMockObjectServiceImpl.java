@@ -6,10 +6,8 @@ import com.foo.rpc.examples.spring.fakemockobject.generated.FakeRetrieveData;
 import org.apache.thrift.TException;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class FakeMockObjectServiceImpl implements FakeMockObjectService.Iface{
@@ -34,6 +32,13 @@ public class FakeMockObjectServiceImpl implements FakeMockObjectService.Iface{
             return "DB:::"+(row.name==null?"untitled":row.name)+":::"+(row.info==null?"NONE":row.info);
         }
         return "NOT FOUND DB";
+    }
+
+    @Override
+    public List<String> getAllBarFromDatabase() throws TException {
+        if (dbDataMap.isEmpty())
+            return Collections.emptyList();
+        return dbDataMap.values().stream().map(s-> s.name).collect(Collectors.toList());
     }
 
     @Override

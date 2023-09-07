@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.ParseException;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -32,7 +33,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
 
     @Override
     public int expectedNumberOfEndpoints() {
-        return 43;
+        return 44;
     }
 
     @Override
@@ -400,7 +401,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
 
         NamedTypedValue p1 = endpoint.getRequestParams().get(0);
         assertTrue(p1 instanceof ObjectParam);
-        assertEquals(3, ((ObjectParam)p1).getType().getFields().size());
+        assertEquals(4, ((ObjectParam)p1).getType().getFields().size());
         assertNull(((ObjectParam)p1).getValue());
         Object p1Instance = p1.newInstance();
         assertNull(p1Instance);
@@ -768,7 +769,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals("assertEquals(5, res1.getPribyte());", assertionJavaCode.get(10));
         assertEquals("assertEquals('\\u0061', res1.getPriCharacter().charValue());", assertionJavaCode.get(11));
         assertEquals("assertEquals('\\u0030', res1.getPriChar());", assertionJavaCode.get(12));
-        assertEquals("assertEquals(2, res1.getPriShort());", assertionJavaCode.get(13));
+        assertEquals("assertEquals(2, res1.getPriShort().shortValue());", assertionJavaCode.get(13));
         assertEquals("assertEquals(42, res1.getPriSShort().shortValue());", assertionJavaCode.get(14));
         assertEquals("assertEquals(2, res1.getPriMap().size());", assertionJavaCode.get(15));
         assertEquals("assertEquals(\"bar\", res1.getPriMap().get(\"bar\"));", assertionJavaCode.get(16));
@@ -844,7 +845,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals("assertEquals(5, res1.getPriRequest().getPribyte());", assertionJavaCodeForResponse.get(11));
         assertEquals("assertEquals('\\u0061', res1.getPriRequest().getPriCharacter().charValue());", assertionJavaCodeForResponse.get(12));
         assertEquals("assertEquals('\\u0030', res1.getPriRequest().getPriChar());", assertionJavaCodeForResponse.get(13));
-        assertEquals("assertEquals(2, res1.getPriRequest().getPriShort());", assertionJavaCodeForResponse.get(14));
+        assertEquals("assertEquals(2, res1.getPriRequest().getPriShort().shortValue());", assertionJavaCodeForResponse.get(14));
         assertEquals("assertEquals(42, res1.getPriRequest().getPriSShort().shortValue());", assertionJavaCodeForResponse.get(15));
         assertEquals("assertEquals(2, res1.getPriRequest().getPriMap().size());", assertionJavaCodeForResponse.get(16));
         assertEquals("assertEquals(\"bar\", res1.getPriRequest().getPriMap().get(\"bar\"));", assertionJavaCodeForResponse.get(17));
@@ -904,7 +905,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals("assertEquals(0, res1.getPribyte());", assertionJavaCode.get(7));
         assertEquals("assertNull(res1.getPriCharacter());", assertionJavaCode.get(8));
         assertEquals("assertEquals('\\u0000', res1.getPriChar());", assertionJavaCode.get(9));
-        assertEquals("assertEquals(0, res1.getPriShort());", assertionJavaCode.get(10));
+        assertEquals("assertEquals(0, res1.getPriShort().shortValue());", assertionJavaCode.get(10));
         assertEquals("assertNull(res1.getPriSShort());", assertionJavaCode.get(11));
         assertEquals("assertNull(res1.getPriMap());", assertionJavaCode.get(12));
 
@@ -977,7 +978,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals("assertEquals(0, res1.getPriRequest().getPribyte());", assertionJavaCodeForResponse.get(8));
         assertEquals("assertNull(res1.getPriRequest().getPriCharacter());", assertionJavaCodeForResponse.get(9));
         assertEquals("assertEquals('\\u0000', res1.getPriRequest().getPriChar());", assertionJavaCodeForResponse.get(10));
-        assertEquals("assertEquals(0, res1.getPriRequest().getPriShort());", assertionJavaCodeForResponse.get(11));
+        assertEquals("assertEquals(0, res1.getPriRequest().getPriShort().shortValue());", assertionJavaCodeForResponse.get(11));
         assertEquals("assertNull(res1.getPriRequest().getPriSShort());", assertionJavaCodeForResponse.get(12));
         assertEquals("assertNull(res1.getPriRequest().getPriMap());", assertionJavaCodeForResponse.get(13));
     }
@@ -1024,6 +1025,55 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals(1, assertions.size());
         assertTrue(assertions.get(0).contains("// runtime value is "));
 
+    }
+
+
+    @Test
+    public void testLocalDateToString() throws ClassNotFoundException, ParseException {
+        EndpointSchema endpoint = getOneEndpoint("localDateToString");
+        assertNotNull(endpoint.getResponse());
+        assertEquals(1, endpoint.getRequestParams().size());
+
+        NamedTypedValue p1 = endpoint.getRequestParams().get(0);
+        assertTrue(p1 instanceof DateParam);
+
+        LocalDate date = LocalDate.of(2023, 8, 28);
+
+        p1.setValueBasedOnInstance(date);
+        Object instance = p1.newInstance();
+        assertTrue(instance instanceof LocalDate);
+        assertEquals(date.toString(), ((LocalDate) instance).toString());
+        assertEquals(date.toEpochDay(), ((LocalDate) instance).toEpochDay());
+
+        ParamDto dto = p1.getDto();
+        assertEquals(3, dto.innerContent.size());
+        assertEquals("2023", dto.innerContent.get(0).stringValue);
+        assertEquals("8", dto.innerContent.get(1).stringValue);
+        assertEquals("28", dto.innerContent.get(2).stringValue);
+
+
+        List<String> javacode = p1.newInstanceWithJavaOrKotlin(0, true, true);
+
+        String[] expectedContents = ("java.time.LocalDate arg0 = null;\n" +
+            "{\n" +
+            " // Date is 2023-08-28\n" +
+            " arg0 = java.time.LocalDate.ofEpochDay(19597L);\n" +
+            "}"
+        ).split("\n");
+        assertEquals(expectedContents.length, javacode.size());
+
+
+        for (int i = 0; i < javacode.size(); i++)
+            assertEquals(expectedContents[i], javacode.get(i));
+
+        List<String> assertions = p1.newAssertionWithJavaOrKotlin(0, "res1", -1, true);
+
+        List<String> expectedAssertions = Arrays.asList("// runtime value is 2023-08-28");
+        assertEquals(expectedAssertions.size(), assertions.size());
+
+
+        for (int i = 0; i < assertions.size(); i++)
+            assertEquals(expectedAssertions.get(i), assertions.get(i));
     }
 
     @Test

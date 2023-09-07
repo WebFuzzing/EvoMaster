@@ -70,13 +70,6 @@ public class ShortParam extends PrimitiveOrWrapperParam<Short> {
     }
 
     @Override
-    public String getPrimitiveValueInAssertion(String responseVarName, boolean isJava) {
-        if (getType().isWrapper)
-            return methodInvocation(responseVarName, primitiveValueMethod(isJava), "", isJava, isNullable(), true);
-        return responseVarName;
-    }
-
-    @Override
     public String getCastType() {
         return short.class.getName();
     }

@@ -119,6 +119,7 @@ public final class InterfaceSchema{
      * @param type is the type schema of the param for an object
      * @param param is the concrete param example
      *              note that multiple params could belong to the same type schema
+     * @param isTypeToIdentify is the type to identify which likely does not exist in client library
      */
     public void registerType(TypeSchema type, NamedTypedValue param, boolean isTypeToIdentify){
         if (isTypeToIdentify){

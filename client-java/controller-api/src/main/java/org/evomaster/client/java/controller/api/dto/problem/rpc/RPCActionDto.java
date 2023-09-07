@@ -128,6 +128,12 @@ public class RPCActionDto {
     public int maxAssertionForDataInCollection;
 
     /**
+     * a list of DTOs which need to be extracted at the driver side
+     * they can be eg, response of external services
+     */
+    public List<String> missingDto;
+
+    /**
      *
      * @return a copy of RPCActionDto for enabling its invocation
      * eg, exclude all possible candidates of param values and auth
@@ -150,7 +156,10 @@ public class RPCActionDto {
         copy.isAuthorized = isAuthorized;
         if (mockRPCExternalServiceDtos != null)
             copy.mockRPCExternalServiceDtos = mockRPCExternalServiceDtos.stream().map(MockRPCExternalServiceDto::copy).collect(Collectors.toList());
-
+        if (mockDatabaseDtos != null)
+            copy.mockDatabaseDtos = mockDatabaseDtos.stream().map(MockDatabaseDto::copy).collect(Collectors.toList());
+        if (missingDto != null)
+            copy.missingDto = new ArrayList<>(missingDto);
         return copy;
     }
 

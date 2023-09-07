@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto;
 import org.evomaster.client.java.controller.api.dto.CustomizedRequestValueDto;
 import org.evomaster.client.java.controller.api.dto.JsonAuthRPCEndpointDto;
+import org.evomaster.client.java.controller.api.dto.MockDatabaseDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.*;
 import org.evomaster.client.java.controller.problem.rpc.schema.LocalAuthSetupSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.*;
@@ -19,6 +20,7 @@ import java.lang.reflect.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -104,28 +106,113 @@ public class RPCEndpointsBuilder {
         });
     }
 
-    /**
-     * attempt to identify class from the given client
-     * @param schema is the interface schema which might request the responses from the external service
-     * @param responseTypes are a list of types to identify
-     * @param rpcType  is the rpc type
-     */
-    public static void buildExternalServiceResponse(InterfaceSchema schema, List<String> responseTypes, RPCType rpcType){
-
-        for (String responseType: responseTypes){
-            try {
-                // TODO cannot get generic types
-                Class<?> clazz = Class.forName(responseType);
-                Map<TypeVariable, Type> genericTypeMap = new HashMap<>();
-                build(schema, clazz, null, "return", rpcType, new ArrayList<>(), 0, null, null, null, null, null, genericTypeMap, true);
-            } catch (ClassNotFoundException e) {
-                SimpleLogger.recordErrorMessage("Warning: cannot identify the class from the driver "+e.getMessage());
-            } catch (Exception e){
-                throw new RuntimeException("EM schema parser error: fail to extract mocked response "+ responseType);
+    public static void handleExternalResponses(InterfaceSchema schema, SeededRPCActionDto actionDto, RPCType type){
+        if (actionDto.mockRPCExternalServiceDtos!= null && !actionDto.mockRPCExternalServiceDtos.isEmpty()){
+            for (MockRPCExternalServiceDto dto : actionDto.mockRPCExternalServiceDtos){
+                buildExternalServiceResponse(schema, dto, type);
+            }
+        }
+        if (actionDto.mockDatabaseDtos != null && !actionDto.mockDatabaseDtos.isEmpty()){
+            for (MockDatabaseDto dto : actionDto.mockDatabaseDtos){
+                buildDbExternalServiceResponse(schema, dto, type);
             }
         }
     }
 
+    /**
+     * attempt to identify class from the given client
+     * @param schema is the interface schema which might request the responses from the external service
+     * @param responseType a type to identify
+     * @param rpcType  is the rpc type
+     */
+    private static NamedTypedValue buildExternalServiceResponse(InterfaceSchema schema, String responseType, RPCType rpcType){
+
+        try {
+            Class<?> clazz = Class.forName(responseType);
+            Map<TypeVariable, Type> genericTypeMap = new HashMap<>();
+            return build(schema, clazz, null, "return", rpcType, new ArrayList<>(), 0, null, null, null, null, null, genericTypeMap, true);
+        } catch (ClassNotFoundException e) {
+            SimpleLogger.recordErrorMessage("Warning: cannot identify the class from the driver "+e.getMessage());
+        } catch (Exception e){
+            throw new RuntimeException("EM schema parser error: fail to extract mocked response "+ responseType);
+        }
+        return null;
+    }
+
+    /**
+     * identify return datatype for API services as external services
+     * @return identified datatype
+     */
+    public static NamedTypedValue buildExternalServiceResponse(InterfaceSchema schema, MockRPCExternalServiceDto apiDto, RPCType rpcType){
+
+        try {
+            if (apiDto != null){
+                // get info
+                Class<?> interfaceClazz = Class.forName(apiDto.interfaceFullName);
+                List<Method> methods =
+                    Arrays.stream(interfaceClazz.getDeclaredMethods()).filter(m-> m.getName().equals(apiDto.functionName)).collect(Collectors.toList());
+                Method method = findMethod(methods, apiDto.inputParameterTypes);
+                Map<TypeVariable, Type> genericTypeMap = new HashMap<>();
+                NamedTypedValue response= build(schema, method.getReturnType(), method.getGenericReturnType(), "return", rpcType, new ArrayList<>(), 0, null, null, null, null, null, genericTypeMap, true);
+                List<String> modifiedTypes = new ArrayList<>(apiDto.responseTypes);
+                for (int i = 0; i < modifiedTypes.size(); i ++){
+                    if (modifiedTypes.get(i).equals(method.getReturnType().getName())){
+                        modifiedTypes.set(i, response.getType().getFullTypeNameWithGenericType());
+                    }
+                }
+                apiDto.responseFullTypesWithGeneric = modifiedTypes;
+                return response;
+            }
+        } catch (ClassNotFoundException e) {
+            if (apiDto.responseTypes != null && (!apiDto.responseTypes.isEmpty())){
+                for (String responseType : apiDto.responseTypes){
+                    if (responseType.length() > 0){
+                        buildExternalServiceResponse(schema, responseType, rpcType);
+                    }
+                }
+            }
+            return null;
+        }
+        return null;
+    }
+
+    /**
+     * identify return datatype for database as external services
+     * @return identified datatype
+     */
+    public static NamedTypedValue buildDbExternalServiceResponse(InterfaceSchema schema, MockDatabaseDto dbDto, RPCType rpcType){
+
+        try {
+            if (dbDto != null){
+                int index = dbDto.commandName.lastIndexOf(".");
+                if (index > 0){
+                    String methodName = dbDto.commandName.substring(index+1);
+                    String dbClazzName = dbDto.commandName.substring(0, index);
+                    Class<?> dbClazz = Class.forName(dbClazzName);
+                    List<Method> methods =
+                        Arrays.stream(dbClazz.getDeclaredMethods()).filter(m-> m.getName().equals(methodName)).collect(Collectors.toList());
+                    Method method = findMethod(methods, null);
+                    Map<TypeVariable, Type> genericTypeMap = new HashMap<>();
+                    NamedTypedValue response = build(schema, method.getReturnType(), method.getGenericReturnType(), "return", rpcType, new ArrayList<>(), 0, null, null, null, null, null, genericTypeMap, true);
+                    dbDto.responseFullTypeWithGeneric = response.getType().getFullTypeNameWithGenericType();
+                    return response;
+                }
+            }
+        } catch (ClassNotFoundException e) {
+            if (dbDto.responseFullType != null && dbDto.responseFullType.length() > 0)
+                buildExternalServiceResponse(schema, dbDto.responseFullType, rpcType);
+            return null;
+        }
+        return null;
+    }
+
+    private static Method findMethod(List<Method> methods, List<String> inputs){
+        if (methods.isEmpty()) return null;
+        if (methods.size() == 1 || inputs == null) return methods.get(0);
+        return methods.stream().filter(m->
+            m.getParameterTypes().length == inputs.size() && Arrays.stream(m.getParameterTypes()).allMatch(fc-> inputs.contains(fc.getName()))
+        ).findFirst().orElse(null);
+    }
 
     private static void validateKeyValues(List<CustomizedRequestValueDto> customizedRequestValueDtos){
         List<String> handled = new ArrayList<>();
@@ -135,7 +222,7 @@ public class RPCEndpointsBuilder {
             if (s.keyValues.values.isEmpty()){
                 throw new IllegalArgumentException("Driver Config Error: at least one values is needed for customizing keyValues with the key "+s.keyValues.key);
             }
-            String key = "key:"+s.keyValues.key+""+getKeyForCustomizedRequestValueDto(s);
+            String key = "key:"+s.keyValues.key+getKeyForCustomizedRequestValueDto(s);
             if (handled.contains(key))
                 throw new IllegalArgumentException("Driver Config Error: "+key+" should be specified only once");
             handled.add(key);
@@ -564,11 +651,19 @@ public class RPCEndpointsBuilder {
                 Protobuf3ByteStringType type = Protobuf3ByteStringType.getInstance(spec, clazz);
                 namedValue = new Protobuf3ByteStringParam(name, type, accessibleSchema);
             } else if (List.class.isAssignableFrom(clazz) || Set.class.isAssignableFrom(clazz)){
-                if (genericType == null)
-                    throw new RuntimeException("genericType should not be null for List and Set class");
-                Type type = ((ParameterizedType) genericType).getActualTypeArguments()[0];
-                Class<?> templateClazz = getTemplateClass(type, genericTypeMap);
-                NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, flattenDepth, level, customizationDtos, relatedCustomization, null, notNullAnnotations, null, genericTypeMap, isTypeToIdentify);
+//                if (genericType == null)
+//                    throw new RuntimeException("genericType should not be null for List and Set class");
+
+                NamedTypedValue template = null;
+                if (genericType != null){
+                    Type type = ((ParameterizedType) genericType).getActualTypeArguments()[0];
+                    Class<?> templateClazz = getTemplateClass(type, genericTypeMap);
+                    template = build(schema, templateClazz, type,"template", rpcType, flattenDepth, level, customizationDtos, relatedCustomization, null, notNullAnnotations, null, genericTypeMap, isTypeToIdentify);
+                }else {
+                    // if the generic type is not specified, use String as default for the moment
+                    template = new StringParam(name, new StringType(spec), null);
+                }
+
                 template.setNullable(false);
                 CollectionType ctype = new CollectionType(clazz.getSimpleName(),clazz.getName(), template, clazz, spec);
                 ctype.depth = getDepthLevel(clazz, flattenDepth, level, clazzWithGenericTypes);
@@ -593,12 +688,18 @@ public class RPCEndpointsBuilder {
                 namedValue = new MapParam(name, mtype, accessibleSchema);
             } else if (Date.class.isAssignableFrom(clazz)){
                 if (clazz == Date.class)
-                    namedValue = new DateParam(name, accessibleSchema, spec);
+                    namedValue = new DateParam(name, new UtilDateType(spec), accessibleSchema);
                 else
                     throw new RuntimeException("NOT support "+clazz.getName()+" date type in java yet");
+            } else if (LocalDate.class.isAssignableFrom(clazz)){
+                if (clazz == LocalDate.class)
+                    namedValue = new DateParam(name, new LocalDateType(spec), accessibleSchema);
+                else
+                    throw new RuntimeException("NOT support "+clazz.getName()+" date type in java yet");
+
             } else if (Exception.class.isAssignableFrom(clazz) && clazz.getName().startsWith("java")){
                 // note that here we only extract class name and message
-                StringParam msgField = new StringParam("message", new AccessibleSchema(false, null, "getMessage"), spec);
+                StringParam msgField = new StringParam("message", new AccessibleSchema(false, null, "getMessage", String.class), spec);
                 ObjectType exceptionType = new ObjectType(clazz.getSimpleName(), clazz.getName(), Collections.singletonList(msgField), clazz, genericTypes,spec );
                 namedValue = new ObjectParam(name, exceptionType, accessibleSchema);
             } else {
@@ -618,7 +719,7 @@ public class RPCEndpointsBuilder {
                     if (rpcType == RPCType.gRPC || isProtobuf(clazz)){
                         List<Protobuf3Field> pfList = getProtobuf3FieldsAndType(clazz);
                         for (Protobuf3Field pf : pfList){
-                            AccessibleSchema faccessSchema = new AccessibleSchema(false, pf.setterName, pf.getterName, pf.setterInputParams);
+                            AccessibleSchema faccessSchema = new AccessibleSchema(false, pf.setterName, pf.getterName, pf.fieldType, pf.setterInputParams);
 
                             NamedTypedValue field = build(schema, pf.fieldType, pf.genericType, pf.fieldName, rpcType, flattenDepth, flevel, objRelatedCustomizationDtos, relatedCustomization, faccessSchema, notNullAnnotations, null, genericTypeMap, isTypeToIdentify);
 
@@ -639,7 +740,7 @@ public class RPCEndpointsBuilder {
                                 continue;
 
                             // always try to find the setter and getter
-                            AccessibleSchema faccessSchema = new AccessibleSchema(Modifier.isPublic(f.getModifiers()), findGetterOrSetter(clazz, f, false), findGetterOrSetter(clazz, f, true));
+                            AccessibleSchema faccessSchema = extractAccessibleSchema(clazz, f);
                             //check accessible
                             if (!Modifier.isPublic(f.getModifiers())){
                                 if (faccessSchema.getterMethodName == null || faccessSchema.setterMethodName == null){
@@ -820,6 +921,26 @@ public class RPCEndpointsBuilder {
                 s.getValue().specificRequestTypeName.equals(objTypeName)).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
+    private static AccessibleSchema extractAccessibleSchema(Class<?> clazz, Field field){
+//        if (Modifier.isPublic(field.getModifiers()))
+//            return new AccessibleSchema();
+
+        Method getter = Arrays.stream(clazz.getMethods()).filter(m->
+                Modifier.isPublic(m.getModifiers()) && isGetter(field.getName(), m.getName(), field.getType().getTypeName()) && m.getParameterCount() == 0
+        ).findFirst().orElse(null);
+
+
+        Method setter = Arrays.stream(clazz.getMethods()).filter(m->
+                Modifier.isPublic(m.getModifiers()) &&
+                    isSetter(field.getName(), m.getName(), field.getType().getTypeName()) &&
+                    m.getParameterCount() == 1 &&
+                    (m.getParameterTypes()[0].equals(field.getType()) || m.getParameterTypes()[0].equals(PrimitiveOrWrapperParam.getPrimitiveOrWrapper(field.getType())))
+        ).findFirst().orElse(null);
+
+        return new AccessibleSchema(Modifier.isPublic(field.getModifiers()), (setter != null)?setter.getName():null, (getter != null)?getter.getName():null, (getter != null)?getter.getReturnType():null);
+
+    }
+
     private static String findGetterOrSetter(Class<?> clazz, Field field, boolean findGetter){
         List<Method> found;
         if (findGetter){
@@ -840,6 +961,10 @@ public class RPCEndpointsBuilder {
         }
         if (found.size() == 1)
             return found.get(0).getName();
+
+        // no need to get setter or getter
+        if (Modifier.isPublic(field.getModifiers()))
+            return null;
 
         String msg = "RPC extract schema Error: cannot access field property, there exist "+found.size()+" methods to access the field "+ field.getName() + " for the class "+ clazz.getName();
 
@@ -1209,17 +1334,8 @@ public class RPCEndpointsBuilder {
                                 }
                                 RPCActionDto rpcActionDto = copy.getDto();
                                 rpcActionDto.mockRPCExternalServiceDtos = actionDto.mockRPCExternalServiceDtos;
-                                if (actionDto.mockRPCExternalServiceDtos!= null && !actionDto.mockRPCExternalServiceDtos.isEmpty())
-                                    buildExternalServiceResponse(schema,
-                                            actionDto.mockRPCExternalServiceDtos.stream().flatMap(s-> s.responseTypes.stream()).distinct().collect(Collectors.toList()),
-                                            rpcType);
-
                                 rpcActionDto.mockDatabaseDtos = actionDto.mockDatabaseDtos;
-                                if (actionDto.mockDatabaseDtos != null && !actionDto.mockDatabaseDtos.isEmpty()){
-                                    buildExternalServiceResponse(schema,
-                                            actionDto.mockDatabaseDtos.stream().map(s-> s.responseFullType).distinct().collect(Collectors.toList()),
-                                            rpcType);
-                                }
+                                handleExternalResponses(schema, actionDto, rpcType);
                                 test.add(rpcActionDto);
                             }else {
                                 SimpleLogger.recordErrorMessage("Seeded Test Error: cannot find the action "+actionDto.functionName);

@@ -61,9 +61,13 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static org.evomaster.client.java.controller.problem.rpc.RPCEndpointsBuilder.buildDbExternalServiceResponse;
+import static org.evomaster.client.java.controller.problem.rpc.RPCEndpointsBuilder.buildExternalServiceResponse;
 
 /**
  * Abstract class used to connect to the EvoMaster process, and
@@ -752,30 +756,30 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             throw new IllegalStateException("EM driver RPC: the specified problem is not RPC");
         RPCType rpcType = ((RPCProblem) rpcp).getType();
 
-        Map<String, List<RPCActionDto>> results = RPCEndpointsBuilder.buildSeededTest(rpcInterfaceSchema, seedRPCTests, rpcType);
+        return RPCEndpointsBuilder.buildSeededTest(rpcInterfaceSchema, seedRPCTests, rpcType);
 
-        try{
-            if (isSUTRunning){
-                if (jvmClassToExtract.isEmpty()){
-                /*
-                    distinct might be a bit expensive, however, the specified responses are probably limited
-                 */
-                    Set<String> dtoNames = seedRPCTests.stream()
-                            .flatMap(s-> s.rpcFunctions == null? Stream.empty() : s.rpcFunctions.stream()
-                                    .flatMap(f-> f.mockRPCExternalServiceDtos == null ? Stream.empty() : f.mockRPCExternalServiceDtos.stream()
-                                            .flatMap(e-> e.responseTypes == null ? Stream.empty(): e.responseTypes.stream()))).collect(Collectors.toSet());
-                    if (dtoNames != null && !dtoNames.isEmpty())
-                        jvmClassToExtract.addAll(dtoNames);
-                }
-
-                if (!jvmClassToExtract.isEmpty())
-                    getJvmDtoSchema(jvmClassToExtract);
-            }
-        }catch (Exception e){
-            SimpleLogger.recordErrorMessage("Fail to extract JVM Class due to "+ e.getMessage());
-        }
-
-        return results;
+//        try{
+//            if (isSUTRunning){
+//                if (jvmClassToExtract.isEmpty()){
+//                /*
+//                    distinct might be a bit expensive, however, the specified responses are probably limited
+//                 */
+//                    Set<String> dtoNames = seedRPCTests.stream()
+//                            .flatMap(s-> s.rpcFunctions == null? Stream.empty() : s.rpcFunctions.stream()
+//                                    .flatMap(f-> f.mockRPCExternalServiceDtos == null ? Stream.empty() : f.mockRPCExternalServiceDtos.stream()
+//                                            .flatMap(e-> e.responseTypes == null ? Stream.empty(): e.responseTypes.stream()))).collect(Collectors.toSet());
+//                    if (dtoNames != null && !dtoNames.isEmpty())
+//                        jvmClassToExtract.addAll(dtoNames);
+//                }
+//
+//                if (!jvmClassToExtract.isEmpty())
+//                    getJvmDtoSchema(jvmClassToExtract);
+//            }
+//        }catch (Exception e){
+//            SimpleLogger.recordErrorMessage("Fail to extract JVM Class due to "+ e.getMessage());
+//        }
+//
+//        return results;
     }
 
 
@@ -915,6 +919,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                     SimpleLogger.warn("Warning: Fail to start mocked instances of databases with the customized method");
             }
             response = executeRPCEndpoint(dto, false);
+            expandMockObjectIfNeeded(dto, responseDto);
         } catch (Exception e) {
             throw new RuntimeException("ERROR: target exception should be caught, but "+ e.getMessage());
         } finally {
@@ -1262,10 +1267,70 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     public abstract void getJvmDtoSchema(List<String> dtoNames);
 
-    private void getSeededExternalServiceResponseDto(){
-        if (seedRPCTests() != null && !seedRPCTests().isEmpty() ){
 
+    /**
+     * mock object might not be loaded when extracting schema with client library
+     * after the SUT is started, we attempt to expand mock objects if needed,
+     * eg, handle generic types, unidentified DTO class
+     */
+    private void expandMockObjectIfNeeded(RPCActionDto dto, ActionResponseDto responseDto){
+        AtomicBoolean anyUpdate = new AtomicBoolean(false);
+        InterfaceSchema schema = rpcInterfaceSchema.get(dto.interfaceId);
 
+        if (dto.mockDatabaseDtos != null && (!dto.mockDatabaseDtos.isEmpty())){
+            Stream<MockDatabaseDto> dbstream = dto.mockDatabaseDtos
+                .stream()
+                .filter(s-> s.responseFullTypeWithGeneric == null);
+            dbstream.forEach(s-> anyUpdate.set(buildDbExternalServiceResponse(schema, s, schema.getRpcType()) != null));
+        }
+
+        if (dto.mockRPCExternalServiceDtos != null && (!dto.mockRPCExternalServiceDtos.isEmpty())){
+            Stream<MockRPCExternalServiceDto> exstream = dto.mockRPCExternalServiceDtos
+                .stream()
+                .filter(s-> s.responseFullTypesWithGeneric == null);
+            exstream.forEach(s-> anyUpdate.set(buildExternalServiceResponse(schema, s, schema.getRpcType()) != null));
+        }
+        if (anyUpdate.get()){
+            ExpandRPCInfoDto expand = new ExpandRPCInfoDto();
+            expand.schemaDto = schema.getDto();
+            expand.expandActionDto = dto.copy();
+            responseDto.expandInfo = expand;
+        }
+    }
+
+//    private void handleMissingDto(RPCActionDto dto, ActionResponseDto response){
+//        if (dto.missingDto != null && !dto.missingDto.isEmpty()){
+//            InterfaceSchema schema = rpcInterfaceSchema.get(dto.interfaceId);
+//            if (schema != null){
+//                buildExternalServiceResponse(schema,
+//                    dto.missingDto,
+//                    schema.getRpcType());
+//                Map<String, NamedTypedValue> types = schema.getObjParamCollections();
+//
+//                if (dto.missingDto.stream().anyMatch(s-> types.containsKey(s))){
+//                    response.latestSchemaDto = schema.getDto();
+//                }
+//            }
+//        }
+//    }
+
+    private void extractTypesAndRelated(Map<String, NamedTypedValue> all, List<String> typesToExtract, Map<String, ParamDto> results){
+        for (String type : typesToExtract){
+            extractTypeAndRelated(all, type, results);
+        }
+    }
+
+    private void extractTypeAndRelated(Map<String, NamedTypedValue> all, String typeName, Map<String, ParamDto> results){
+        if (results.containsKey(typeName)) return;
+        NamedTypedValue type = all.get(typeName);
+        if (type != null){
+            results.put(typeName, type.getDto());
+            List<String> referenceTypes = type.referenceTypes();
+            if (referenceTypes != null && !referenceTypes.isEmpty()){
+                for (String refType : referenceTypes){
+                    extractTypeAndRelated(all, refType, results);
+                }
+            }
         }
     }
 

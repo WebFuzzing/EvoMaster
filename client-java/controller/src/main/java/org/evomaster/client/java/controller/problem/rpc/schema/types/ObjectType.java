@@ -54,6 +54,10 @@ public class ObjectType extends TypeSchema {
         return objectType;
     }
 
+    public List<String> getGenericTypes() {
+        return genericTypes;
+    }
+
     @Override
     public String getFullTypeNameWithGenericType() {
         if (genericTypes == null || genericTypes.isEmpty())

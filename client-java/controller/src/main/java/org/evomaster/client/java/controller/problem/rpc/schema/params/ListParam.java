@@ -7,6 +7,7 @@ import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleS
 import org.evomaster.client.java.controller.problem.rpc.schema.types.CollectionType;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -86,13 +87,15 @@ public class ListParam extends CollectionParam<List<NamedTypedValue>>{
             setValue(null); return;
         }
 
-        if (!isValidInstance(instance))
+        if (!isValidInstance(instance)
+            && !Collection.class.isAssignableFrom(instance.getClass())
+        )
             throw new RuntimeException("cannot parse List param "+getName()+" with the type "+json.getClass().getName());
 
         NamedTypedValue t = getType().getTemplate();
         List<NamedTypedValue> values = new ArrayList<>();
 
-        for (Object e : (List) instance){
+        for (Object e : (Collection) instance){
             NamedTypedValue copy = t.copyStructureWithProperties();
             copy.setValueBasedOnInstanceOrJson(e);
             values.add(copy);

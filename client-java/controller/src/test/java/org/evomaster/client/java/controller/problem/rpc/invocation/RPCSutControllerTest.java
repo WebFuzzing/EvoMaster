@@ -20,6 +20,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -111,7 +112,7 @@ public class RPCSutControllerTest {
     @Test
     public void testSeedcheck(){
 
-        assertEquals(2, seededTestDtos.size());
+        assertEquals(3, seededTestDtos.size());
         List<List<RPCActionDto>> list = new ArrayList<>(seededTestDtos.values());
 
         assertEquals(1, list.get(0).size());
@@ -158,6 +159,21 @@ public class RPCSutControllerTest {
         rpcController.executeAction(dto2, responseDto2);
 
         assertEquals("", responseDto2.rpcResponse.stringValue);
+
+
+        RPCActionDto test_3 = list.get(2).get(0);
+        RPCActionDto dto3 = test_3.copy();
+
+        dto3.doGenerateAssertions = true;
+        dto3.doGenerateTestScript = true;
+        dto3.controllerVariable = "rpcController";
+        dto3.responseVariable = "res1";
+        dto3.maxAssertionForDataInCollection = -1;
+        dto3.outputFormat = SutInfoDto.OutputFormat.JAVA_JUNIT_5;
+        ActionResponseDto responseDto3 = new ActionResponseDto();
+        rpcController.executeAction(dto3, responseDto3);
+
+        assertTrue(responseDto3.assertionScript.stream().anyMatch(s->s.contains("assertEquals(2, res1.set.size());")));
     }
 
     @Test
@@ -547,7 +563,7 @@ public class RPCSutControllerTest {
         rpcController.executeAction(dto, responseDto);
 
 
-        assertEquals(11, responseDto.testScript.size());
+        assertEquals(12, responseDto.testScript.size());
         assertEquals("com.thrift.example.artificial.NestedGenericDto<String> res1 = null;", responseDto.testScript.get(0));
         assertEquals("{", responseDto.testScript.get(1));
         assertEquals(" com.thrift.example.artificial.NestedGenericDto<String> arg0 = null;", responseDto.testScript.get(2));
@@ -556,9 +572,10 @@ public class RPCSutControllerTest {
         assertEquals("  arg0.intData = null;", responseDto.testScript.get(5));
         assertEquals("  arg0.stringData = null;", responseDto.testScript.get(6));
         assertEquals("  arg0.list = null;", responseDto.testScript.get(7));
-        assertEquals(" }", responseDto.testScript.get(8));
-        assertEquals(" res1 = ((com.thrift.example.artificial.RPCInterfaceExampleImpl)(rpcController.getRPCClient(\"com.thrift.example.artificial.RPCInterfaceExample\"))).handleNestedGenericString(arg0);", responseDto.testScript.get(9));
-        assertEquals("}", responseDto.testScript.get(10));
+        assertEquals("  arg0.set = null;", responseDto.testScript.get(8));
+        assertEquals(" }", responseDto.testScript.get(9));
+        assertEquals(" res1 = ((com.thrift.example.artificial.RPCInterfaceExampleImpl)(rpcController.getRPCClient(\"com.thrift.example.artificial.RPCInterfaceExample\"))).handleNestedGenericString(arg0);", responseDto.testScript.get(10));
+        assertEquals("}", responseDto.testScript.get(11));
 
         assertEquals("assertEquals(\"child\", res1.intData.data1);", responseDto.assertionScript.get(0));
         assertEquals("assertEquals(0, res1.intData.data2.intValue());", responseDto.assertionScript.get(1));
@@ -1064,5 +1081,57 @@ public class RPCSutControllerTest {
         responseDto.testScript.forEach(System.out::println);
         responseDto.assertionScript.forEach(System.out::println);
 
+    }
+
+    @Test
+    public void testLocalDate(){
+        List<RPCActionDto> dtos = interfaceSchemas.get(0).endpoints.stream().filter(s-> s.actionName.equals("localDateToString")).collect(Collectors.toList());
+        assertEquals(1, dtos.size());
+        RPCActionDto dto = dtos.get(0).copy();
+        assertEquals(1, dto.requestParams.size());
+        ParamDto request = dto.requestParams.get(0);
+        assertEquals(RPCSupportedDataType.LOCAL_DATE, request.type.type);
+        assertEquals(3, request.innerContent.size());
+        request.innerContent.get(0).stringValue = ""+2023;
+        request.innerContent.get(1).stringValue = ""+8;
+        request.innerContent.get(2).stringValue = ""+28;
+
+        ActionResponseDto responseDto = new ActionResponseDto();
+        dto.doGenerateTestScript = true;
+        dto.doGenerateAssertions = true;
+        dto.controllerVariable = "rpcController";
+        dto.responseVariable = "res1";
+        dto.outputFormat = SutInfoDto.OutputFormat.JAVA_JUNIT_5;
+        rpcController.executeAction(dto, responseDto);
+
+        String[] expectedScript = ("String res1 = null;\n" +
+            "{\n" +
+            " java.time.LocalDate arg0 = null;\n" +
+            " {\n" +
+            "  // Date is 2023-08-28\n" +
+            "  arg0 = java.time.LocalDate.ofEpochDay(19597L);\n" +
+            " }\n" +
+            " res1 = ((com.thrift.example.artificial.RPCInterfaceExampleImpl)(rpcController.getRPCClient(\"com.thrift.example.artificial.RPCInterfaceExample\"))).localDateToString(arg0);\n" +
+            "}").split("\n");
+
+        assertEquals(expectedScript.length, responseDto.testScript.size());
+        for (int i = 0; i < expectedScript.length; i++)
+            assertEquals(expectedScript[i], responseDto.testScript.get(i));
+
+        String[] expectedAssertions = ("//assertEquals(\"2023-08-28\", res1);").split("\n");
+        for (int i = 0; i < expectedAssertions.length; i++)
+            assertEquals(expectedAssertions[i], responseDto.assertionScript.get(i));
+
+
+        String res1 = null;
+        {
+            java.time.LocalDate arg0 = null;
+            {
+                // Date is 2023-08-28
+                arg0 = java.time.LocalDate.ofEpochDay(19597L);
+            }
+            res1 = ((com.thrift.example.artificial.RPCInterfaceExampleImpl)(rpcController.getRPCClient("com.thrift.example.artificial.RPCInterfaceExample"))).localDateToString(arg0);
+        }
+        assertEquals("2023-08-28", res1);
     }
 }

@@ -18,7 +18,9 @@ service FakeMockObjectService {
 
     string getFooFromExternalService(1:i32 id),
 
-    string getBarFromDatabase(1:i32 id)
+    string getBarFromDatabase(1:i32 id),
+
+    list<string> getAllBarFromDatabase(),
 
     bool backdoor(1:FakeRetrieveData exData, 2:FakeDatabaseRow dbData)
 
