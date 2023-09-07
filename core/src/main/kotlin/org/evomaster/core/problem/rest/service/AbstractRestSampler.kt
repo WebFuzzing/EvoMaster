@@ -91,7 +91,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         }
 
         actionCluster.clear()
-        val skip = getEndpointsToSkip(swagger, infoDto)
+        val skip = EndpointFilter.getEndpointsToSkip(config, swagger, infoDto)
         RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, skip, enableConstraintHandling = config.enableSchemaConstraintHandling)
 
         if(config.extraQueryParam){
@@ -245,54 +245,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         initAdHocInitialIndividuals()
     }
 
-    private fun getEndPointsToSkipSimilarHelper(swagger: OpenAPI)
-    :List<String>{
 
-        // all endpoints
-        val all = swagger.paths.map{it.key}
-
-        if(all.none { it == configuration.endpointFocus }){
-            throw IllegalArgumentException(
-                "Invalid endpointFocus: ${configuration.endpointFocus}. " +
-                        "\nAvailable:\n${all.joinToString("\n")}")
-        }
-
-        // filter all items which do not contain the user provided item
-        return all.filterNot { it.toString().contains(configuration.endpointFocus.toString()) }
-    }
-
-    private fun getEndPointsToSkipExactHelper(swagger: OpenAPI)
-            :List<String>
-    {
-        val all = swagger.paths.map{it.key}
-
-        if(all.none { it == configuration.endpointFocus }){
-            throw IllegalArgumentException(
-                "Invalid endpointFocus: ${configuration.endpointFocus}. " +
-                        "\nAvailable:\n${all.joinToString("\n")}")
-        }
-
-        return all.filter { it != configuration.endpointFocus }
-    }
-
-
-
-    protected fun getEndpointsToSkip(swagger: OpenAPI, infoDto: SutInfoDto)
-            : List<String>{
-
-        /*
-            If we are debugging, and focusing on a single endpoint, we skip
-            everything but it.
-            Otherwise, we just look at what configured in the SUT EM Driver.
-         */
-
-        if(configuration.endpointFocus != null){
-
-            return getEndPointsToSkipExactHelper(swagger)
-        }
-
-        return  infoDto.restProblem?.endpointsToSkip ?: listOf()
-    }
 
     private fun initForBlackBox() {
 
@@ -302,7 +255,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         }
 
         // ONUR: Add all paths to list of paths to ignore except endpointFocus
-        val endpointsToSkip = getEndPointsToSkipExactHelper(swagger);
+        val endpointsToSkip = EndpointFilter.getEndPointsToSkip(config,swagger);
 
         actionCluster.clear()
 

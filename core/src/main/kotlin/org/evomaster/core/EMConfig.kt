@@ -274,7 +274,7 @@ class EMConfig {
             Each option field might have specific constraints, setup with @annotations.
             However, there can be multi-field constraints as well.
             Those are defined here.
-            They can be check only once all fields have been updated
+            They can be checked only once all fields have been updated
          */
 
         if(!blackBox && bbSwaggerUrl.isNotBlank()){
@@ -282,6 +282,10 @@ class EMConfig {
         }
         if(!blackBox && bbTargetUrl.isNotBlank()){
             throw IllegalArgumentException("'bbTargetUrl' should be set only in black-box mode")
+        }
+
+        if(endpointFocus.isNotBlank() && endpointPrefix.isNotBlank()){
+            throw IllegalArgumentException("both 'endpointFocus' and 'endpointPrefix' are set")
         }
 
         if (blackBox && !bbExperiments) {
@@ -1642,8 +1646,11 @@ class EMConfig {
          */
     }
 
-    @Cfg("Only for debugging. Concentrate search on only one single REST endpoint")
+    @Cfg("Concentrate search on only one single REST endpoint")
     var endpointFocus : String? = null
+
+    @Cfg("Concentrate search on a set of REST endpoints defined by a common prefix")
+    var endpointPrefix : String? = null
 
     //TODO Andrea/Man. will need to discuss how this can be refactored for RPC as well
 
