@@ -81,7 +81,7 @@ public class FakeSutController extends EmbeddedSutController {
 
     @Override
     public SutInfoDto.OutputFormat getPreferredOutputFormat() {
-        return null;
+        return SutInfoDto.OutputFormat.JAVA_JUNIT_5;
     }
 
     @Override

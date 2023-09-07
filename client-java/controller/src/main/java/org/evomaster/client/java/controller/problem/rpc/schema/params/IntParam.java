@@ -6,10 +6,15 @@ import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleS
 import org.evomaster.client.java.controller.problem.rpc.schema.types.JavaDtoSpec;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.PrimitiveOrWrapperType;
 
+import static org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator.methodInvocation;
+
 /**
  * int param
  */
 public class IntParam extends PrimitiveOrWrapperParam<Integer> {
+
+    private final static String JAVA_PR_METHOD = "intValue";
+    private final static String KOTLIN_PR_METHOD = "toInt";
 
     public IntParam(String name, String type, String fullTypeName, Class<?> clazz, AccessibleSchema accessibleSchema, JavaDtoSpec spec) {
         super(name, type, fullTypeName, clazz, accessibleSchema, spec);
@@ -28,10 +33,10 @@ public class IntParam extends PrimitiveOrWrapperParam<Integer> {
     }
 
     @Override
-    public String getValueAsJavaString() {
+    public String getValueAsJavaString(boolean isJava) {
         if (getValue() == null)
             return null;
-        return ""+getValue();
+        return String.valueOf(getValue());
     }
 
     @Override
@@ -74,9 +79,15 @@ public class IntParam extends PrimitiveOrWrapperParam<Integer> {
     }
 
     @Override
-    public String getPrimitiveValue(String responseVarName) {
+    public String getPrimitiveValueInAssertion(String responseVarName, boolean isJava) {
         if (getType().isWrapper)
-            return responseVarName+".intValue()";
+            return methodInvocation(responseVarName, primitiveValueMethod(isJava), "", isJava, isNullable(), true);
         return responseVarName;
+    }
+
+    @Override
+    public String primitiveValueMethod(boolean isJava) {
+        if (isJava) return JAVA_PR_METHOD;
+        return KOTLIN_PR_METHOD;
     }
 }

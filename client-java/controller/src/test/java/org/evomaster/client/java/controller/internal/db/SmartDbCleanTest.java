@@ -17,7 +17,6 @@ public interface SmartDbCleanTest extends DatabaseTestTemplate {
     @Test
     default void testAccessedClean() throws Exception {
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT, y INT)", true);
-        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x, y) VALUES (0, 0)", true);
 
         InstrumentedSutStarter starter = getInstrumentedSutStarter();
 
@@ -31,9 +30,11 @@ public interface SmartDbCleanTest extends DatabaseTestTemplate {
                     .statusCode(200);
 
             QueryResult res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo;", true);
-            assertEquals(1, res.seeRows().size());
+            assertEquals(0, res.seeRows().size());
 
             startNewTest(url);
+
+            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x, y) VALUES (0, 0)", true);
 
             // perform select sql and the result should be one as init
             res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo;", true);
@@ -46,14 +47,13 @@ public interface SmartDbCleanTest extends DatabaseTestTemplate {
 
             startNewTest(url);
 
-            // the row should be still one since the select would not lead to clean data
+            // empty data in db
             res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo;", true);
-            assertEquals(1, res.seeRows().size());
+            assertEquals(0, res.seeRows().size());
 
-            // perform insert sql, and the table should be clean afterwards
             SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x, y) VALUES (1, 1);", true);
             res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo;", true);
-            assertEquals(2, res.seeRows().size());
+            assertEquals(1, res.seeRows().size());
 
             given().accept(ContentType.JSON)
                     .get(url + TEST_RESULTS)
@@ -78,8 +78,7 @@ public interface SmartDbCleanTest extends DatabaseTestTemplate {
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(id INT Primary Key, valueColumn INT, bar_id INT, " +
                 "CONSTRAINT fk FOREIGN KEY (bar_id) REFERENCES Bar(id) )", true);
 
-        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Bar (id, valueColumn) VALUES (0, 0)", true);
-        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, valueColumn, bar_id) VALUES (0, 0, 0)", true);
+
 
         InstrumentedSutStarter starter = getInstrumentedSutStarter();
 
@@ -93,49 +92,55 @@ public interface SmartDbCleanTest extends DatabaseTestTemplate {
                     .statusCode(200);
 
             QueryResult res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Bar;", true);
-            assertEquals(1, res.seeRows().size());
-
-            res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo;", true);
-            assertEquals(1, res.seeRows().size());
-
-            startNewTest(url);
-
-            res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Bar;", true);
-            assertEquals(1, res.seeRows().size());
-            res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo;", true);
-            assertEquals(1, res.seeRows().size());
-
-            given().accept(ContentType.JSON)
-                    .get(url + TEST_RESULTS)
-                    .then()
-                    .statusCode(200);
-
-            startNewTest(url);
-
-            res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Bar;", true);
-            assertEquals(1, res.seeRows().size());
-            res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo;", true);
-            assertEquals(1, res.seeRows().size());
-
-            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, valueColumn, bar_id) VALUES (1, 1, 0);", true);
-            res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo;", true);
-            assertEquals(2, res.seeRows().size());
-
-            res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Bar;", true);
-            assertEquals(1, res.seeRows().size());
-
-            given().accept(ContentType.JSON)
-                    .get(url + TEST_RESULTS)
-                    .then()
-                    .statusCode(200);
-
-            startNewTest(url);
+            assertEquals(0, res.seeRows().size());
 
             res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo;", true);
             assertEquals(0, res.seeRows().size());
 
+            startNewTest(url);
+
+            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Bar (id, valueColumn) VALUES (0, 0)", true);
+            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, valueColumn, bar_id) VALUES (0, 0, 0)", true);
+
             res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Bar;", true);
             assertEquals(1, res.seeRows().size());
+            res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo;", true);
+            assertEquals(1, res.seeRows().size());
+
+            given().accept(ContentType.JSON)
+                    .get(url + TEST_RESULTS)
+                    .then()
+                    .statusCode(200);
+
+            startNewTest(url);
+
+            // empty data in db
+            res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Bar;", true);
+            assertEquals(0, res.seeRows().size());
+            res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo;", true);
+            assertEquals(0, res.seeRows().size());
+
+            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Bar (id, valueColumn) VALUES (0, 0)", true);
+            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, valueColumn, bar_id) VALUES (1, 1, 0);", true);
+            res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo;", true);
+            assertEquals(1, res.seeRows().size());
+
+            res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Bar;", true);
+            assertEquals(1, res.seeRows().size());
+
+            given().accept(ContentType.JSON)
+                    .get(url + TEST_RESULTS)
+                    .then()
+                    .statusCode(200);
+
+            startNewTest(url);
+
+            // empty data in db
+            res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo;", true);
+            assertEquals(0, res.seeRows().size());
+
+            res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Bar;", true);
+            assertEquals(0, res.seeRows().size());
 
         } finally {
             starter.stop();
@@ -149,9 +154,6 @@ public interface SmartDbCleanTest extends DatabaseTestTemplate {
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(id INT Primary Key, valueColumn INT, bar_id INT, " +
                 "CONSTRAINT fk FOREIGN KEY (bar_id) REFERENCES Bar(id) )", true);
 
-        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Bar (id, valueColumn) VALUES (0, 0)", true);
-        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, valueColumn, bar_id) VALUES (0, 0, 0)", true);
-
         InstrumentedSutStarter starter = getInstrumentedSutStarter();
 
         try {
@@ -164,12 +166,15 @@ public interface SmartDbCleanTest extends DatabaseTestTemplate {
                     .statusCode(200);
 
             QueryResult res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Bar;", true);
-            assertEquals(1, res.seeRows().size());
+            assertEquals(0, res.seeRows().size());
 
             res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo;", true);
-            assertEquals(1, res.seeRows().size());
+            assertEquals(0, res.seeRows().size());
 
             startNewTest(url);
+
+            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Bar (id, valueColumn) VALUES (0, 0)", true);
+            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, valueColumn, bar_id) VALUES (0, 0, 0)", true);
 
             res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Bar;", true);
             assertEquals(1, res.seeRows().size());
@@ -184,16 +189,16 @@ public interface SmartDbCleanTest extends DatabaseTestTemplate {
             startNewTest(url);
 
             res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Bar;", true);
-            assertEquals(1, res.seeRows().size());
+            assertEquals(0, res.seeRows().size());
             res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo;", true);
-            assertEquals(1, res.seeRows().size());
+            assertEquals(0, res.seeRows().size());
 
             SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Bar (id, valueColumn) VALUES (1, 1);", true);
             res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo;", true);
-            assertEquals(1, res.seeRows().size());
+            assertEquals(0, res.seeRows().size());
 
             res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Bar;", true);
-            assertEquals(2, res.seeRows().size());
+            assertEquals(1, res.seeRows().size());
 
             given().accept(ContentType.JSON)
                     .get(url + TEST_RESULTS)

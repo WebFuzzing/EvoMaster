@@ -18,7 +18,7 @@ public abstract class DatabaseMySQLTestInit {
 
     protected static Connection connection;
 
-    private static final String DB_NAME = "test";
+    protected static final String DB_NAME = "test";
 
     private static final int PORT = 3306;
 

@@ -80,17 +80,17 @@ public class PairParam extends NamedTypedValue<PairType, AbstractMap.SimpleEntry
     }
 
     @Override
-    public List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent) {
+    public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava, boolean isVariableNullable) {
         return null;
     }
 
     @Override
-    public List<String> newAssertionWithJava(int indent, String responseVarName, int maxAssertionForDataInCollection) {
+    public List<String> newAssertionWithJavaOrKotlin(int indent, String responseVarName, int maxAssertionForDataInCollection, boolean isJava) {
         return null;
     }
 
     @Override
-    public String getValueAsJavaString() {
+    public String getValueAsJavaString(boolean isJava) {
         return null;
     }
 }

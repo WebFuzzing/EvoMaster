@@ -667,6 +667,8 @@ class RPCEndpointsHandler {
     private fun setGenerationConfiguration(action: RPCActionDto, index: Int, responseVarName: String){
         // check generation configuration, might be removed later
         action.doGenerateTestScript = config.enablePureRPCTestGeneration && (index != -1)
+        action.outputFormat = SutInfoDto.OutputFormat.valueOf(config.outputFormat.toString())
+
         action.doGenerateAssertions = config.enableRPCAssertionWithInstance
 
         if (action.doGenerateTestScript){

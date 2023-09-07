@@ -1,6 +1,7 @@
 package org.evomaster.client.java.controller.api.dto.problem.rpc;
 
 import org.evomaster.client.java.controller.api.dto.MockDatabaseDto;
+import org.evomaster.client.java.controller.api.dto.SutInfoDto;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -112,6 +113,13 @@ public class RPCActionDto {
      * if generate test script on driver side and send back core
      */
     public boolean doGenerateTestScript;
+
+    /**
+     * the output format
+     * if doGenerateTestScript is true, outputFormat cannot be null
+     * Note that the info is kept in sync with what the user specifies in driver or EMConfig
+     */
+    public SutInfoDto.OutputFormat outputFormat;
 
     /**
      * the maximum number of assertions to be generated for data in collections

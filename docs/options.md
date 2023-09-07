@@ -81,6 +81,8 @@ There are 3 types of options:
 |`enableNLPParser`| __Boolean__. Whether to employ NLP parser to process text. Note that to enable this parser, it is required to build the EvoMaster with the resource profile, i.e., mvn clean install -Presourceexp -DskipTests. *Default value*: `false`.|
 |`enableOptimizedTestSize`| __Boolean__. Based on some heuristics, there are cases in which 'maxTestSize' can be overridden at runtime. *Default value*: `true`.|
 |`enableProcessMonitor`| __Boolean__. Whether or not enable a search process monitor for archiving evaluated individuals and Archive regarding an evaluation of search. This is only needed when running experiments with different parameter settings. *DEBUG option*. *Default value*: `false`.|
+|`enablePureRPCTestGeneration`| __Boolean__. Whether to generate RPC endpoint invocation which is independent from EM driver. *Default value*: `true`.|
+|`enableRPCAssertionWithInstance`| __Boolean__. Whether to generate RPC Assertions based on response instance. *Default value*: `true`.|
 |`enableRPCCustomizedResponseTargets`| __Boolean__. Whether to enable customized responses indicating business logic. *Default value*: `true`.|
 |`enableRPCExtraResponseTargets`| __Boolean__. Whether to enable extra targets for responses, e.g., regarding nullable response, having extra targets for whether it is null. *Default value*: `true`.|
 |`enableTrackEvaluatedIndividual`| __Boolean__. Whether to enable tracking the history of modifications of the individuals with its fitness values (i.e., evaluated individual) during the search. Note that we enforced that set enableTrackIndividual false when enableTrackEvaluatedIndividual is true since information of individual is part of evaluated individual. *Default value*: `true`.|
@@ -201,8 +203,6 @@ There are 3 types of options:
 |`employResourceSizeHandlingStrategy`| __Enum__. Specify a strategy to determinate a number of resources to be manipulated throughout the search. *Valid values*: `NONE, RANDOM, DPC`. *Default value*: `NONE`.|
 |`enableAdaptiveResourceStructureMutation`| __Boolean__. Specify whether to decide the resource-based structure mutator and resource to be mutated adaptively based on impacts during focused search.Note that it only works when resource-based solution is enabled for solving REST problem. *Default value*: `false`.|
 |`enableCustomizedMethodForMockObjectHandling`| __Boolean__. Whether to apply customized method (i.e., implement 'customizeMockingRPCExternalService' for external services or 'customizeMockingDatabase' for database) to handle mock object. *Default value*: `false`.|
-|`enablePureRPCTestGeneration`| __Boolean__. Whether to generate RPC endpoint invocation which is independent from EM driver. *Default value*: `false`.|
-|`enableRPCAssertionWithInstance`| __Boolean__. Whether to generate RPC Assertions based on response instance. *Default value*: `false`.|
 |`enableRPCCustomizedTestOutput`| __Boolean__. Whether to enable customized RPC Test output if 'customizeRPCTestOutput' is implemented. *Default value*: `false`.|
 |`enableSchemaConstraintHandling`| __Boolean__. Whether to employ constraints specified in API schema (e.g., OpenAPI) in test generation. *Default value*: `false`.|
 |`enableWriteSnapshotTests`| __Boolean__. Enable to print snapshots of the generated tests during the search in an interval defined in snapshotsInterval. *Default value*: `false`.|

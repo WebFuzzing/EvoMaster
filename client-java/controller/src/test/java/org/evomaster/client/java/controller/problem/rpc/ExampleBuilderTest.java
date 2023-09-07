@@ -9,12 +9,10 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedData
 import org.evomaster.client.java.controller.problem.rpc.schema.params.*;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.*;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCType;
-import org.glassfish.jersey.server.model.Suspendable;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -303,7 +301,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals("-10", dto.innerContent.get(6).stringValue);
         assertEquals("-2", dto.innerContent.get(7).stringValue);
 
-        List<String> testScript = p1.newInstanceWithJava(0);
+        List<String> testScript = p1.newInstanceWithJavaOrKotlin(0, true, true);
         assertEquals("com.thrift.example.artificial.BigNumberObj arg0 = null;",testScript.get(0));
         assertEquals("{",testScript.get(1));
         assertEquals(" arg0 = new com.thrift.example.artificial.BigNumberObj();",testScript.get(2));
@@ -357,7 +355,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals(" arg0.setBiNegativeOrZero(arg0_biNegativeOrZero);",testScript.get(50));
         assertEquals("}",testScript.get(51));
 
-        List<String> assertionScript = p1.newAssertionWithJava("arg0", 0);
+        List<String> assertionScript = p1.newAssertionWithJavaOrKotlin("arg0", 0, true);
         assertEquals("assertEquals(\"10.12\", arg0.getBdPositiveFloat().toString());", assertionScript.get(0));
         assertEquals("assertEquals(\"-10.12\", arg0.getBdNegativeFloat().toString());", assertionScript.get(1));
         assertEquals("assertEquals(\"0.00\", arg0.getBdPositiveOrZeroFloat().toString());", assertionScript.get(2));
@@ -383,7 +381,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         }};
 
         p1.setValueBasedOnInstance(objectEnum);
-        List<String> testScript = p1.newInstanceWithJava(0);
+        List<String> testScript = p1.newInstanceWithJavaOrKotlin(0, true, true);
 
         assertEquals(5, testScript.size());
         assertEquals("com.thrift.example.artificial.ObjectEnum arg0 = null;", testScript.get(0));
@@ -406,11 +404,11 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertNull(((ObjectParam)p1).getValue());
         Object p1Instance = p1.newInstance();
         assertNull(p1Instance);
-        List<String> testScript = p1.newInstanceWithJava(0);
+        List<String> testScript = p1.newInstanceWithJavaOrKotlin(0, true, true);
         ParamDto dto  = p1.getDto();
         dto.innerContent = null;
         p1.setValueBasedOnDto(dto);
-        List<String> testScriptWithDto =  p1.newInstanceWithJava(0);
+        List<String> testScriptWithDto =  p1.newInstanceWithJavaOrKotlin(0, true, true);
         assertEquals(testScript, testScriptWithDto);
     }
 
@@ -546,7 +544,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         dto.innerContent.get(1).stringValue = null;
         dto.innerContent.get(2).stringValue = null;
         p1.setValueBasedOnDto(dto);
-        List<String> javaCode  = p1.newInstanceWithJava(0);
+        List<String> javaCode  = p1.newInstanceWithJavaOrKotlin(0, true, true);
         assertEquals(13, javaCode.size());
         assertEquals("com.thrift.example.artificial.ConstrainedRequest arg0 = null;", javaCode.get(0));
         assertEquals("{", javaCode.get(1));
@@ -712,7 +710,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
 
         p1.setValueBasedOnInstance(p1Instance);
 
-        List<String> javaCodes = p1.newInstanceWithJava(0);
+        List<String> javaCodes = p1.newInstanceWithJavaOrKotlin(0, true, true);
 
         assertEquals(37, javaCodes.size());
         assertEquals("com.thrift.example.artificial.PrivateFieldInRequestDto arg0 = null;", javaCodes.get(0));
@@ -720,14 +718,14 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals(" arg0 = new com.thrift.example.artificial.PrivateFieldInRequestDto();", javaCodes.get(2));
         assertEquals(" arg0.setPubField(\"foo\");", javaCodes.get(3));
         assertEquals(" arg0.setPriField(\"bar\");", javaCodes.get(4));
-        assertEquals(" java.util.List<java.lang.String> arg0_stringList = null;", javaCodes.get(5));
+        assertEquals(" java.util.List<String> arg0_stringList = null;", javaCodes.get(5));
         assertEquals(" {", javaCodes.get(6));
         assertEquals("  arg0_stringList = new java.util.ArrayList<>();", javaCodes.get(7));
-        assertEquals("  java.lang.String arg0_stringList_e_0 = \"1\";", javaCodes.get(8));
+        assertEquals("  String arg0_stringList_e_0 = \"1\";", javaCodes.get(8));
         assertEquals("  arg0_stringList.add(arg0_stringList_e_0);", javaCodes.get(9));
-        assertEquals("  java.lang.String arg0_stringList_e_1 = \"2\";", javaCodes.get(10));
+        assertEquals("  String arg0_stringList_e_1 = \"2\";", javaCodes.get(10));
         assertEquals("  arg0_stringList.add(arg0_stringList_e_1);", javaCodes.get(11));
-        assertEquals("  java.lang.String arg0_stringList_e_2 = \"3\";", javaCodes.get(12));
+        assertEquals("  String arg0_stringList_e_2 = \"3\";", javaCodes.get(12));
         assertEquals("  arg0_stringList.add(arg0_stringList_e_2);", javaCodes.get(13));
         assertEquals(" }", javaCodes.get(14));
         assertEquals(" arg0.setStringList(arg0_stringList);", javaCodes.get(15));
@@ -740,21 +738,21 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals(" arg0.setPriChar('\\u0030');", javaCodes.get(22));
         assertEquals(" arg0.setPriShort(((short)(2)));", javaCodes.get(23));
         assertEquals(" arg0.setPriSShort(((short)(42)));", javaCodes.get(24));
-        assertEquals(" java.util.Map<java.lang.String,java.lang.String> arg0_priMap = null;", javaCodes.get(25));
+        assertEquals(" java.util.Map<String,String> arg0_priMap = null;", javaCodes.get(25));
         assertEquals(" {", javaCodes.get(26));
         assertEquals("  arg0_priMap = new java.util.HashMap<>();", javaCodes.get(27));
-        assertEquals("  java.lang.String arg0_priMap_key_0 = \"bar\";", javaCodes.get(28));
-        assertEquals("  java.lang.String arg0_priMap_value_0 = \"bar\";", javaCodes.get(29));
+        assertEquals("  String arg0_priMap_key_0 = \"bar\";", javaCodes.get(28));
+        assertEquals("  String arg0_priMap_value_0 = \"bar\";", javaCodes.get(29));
         assertEquals("  arg0_priMap.put(arg0_priMap_key_0,arg0_priMap_value_0);", javaCodes.get(30));
-        assertEquals("  java.lang.String arg0_priMap_key_1 = \"foo\";", javaCodes.get(31));
-        assertEquals("  java.lang.String arg0_priMap_value_1 = \"foo\";", javaCodes.get(32));
+        assertEquals("  String arg0_priMap_key_1 = \"foo\";", javaCodes.get(31));
+        assertEquals("  String arg0_priMap_value_1 = \"foo\";", javaCodes.get(32));
         assertEquals("  arg0_priMap.put(arg0_priMap_key_1,arg0_priMap_value_1);", javaCodes.get(33));
         assertEquals(" }", javaCodes.get(34));
         assertEquals(" arg0.setPriMap(arg0_priMap);", javaCodes.get(35));
         assertEquals("}", javaCodes.get(36));
 
 
-        List<String> assertionJavaCode = p1.newAssertionWithJava(0, "res1", -1);
+        List<String> assertionJavaCode = p1.newAssertionWithJavaOrKotlin(0, "res1", -1, true);
 
         assertEquals(18, assertionJavaCode.size());
         assertEquals("assertEquals(\"foo\", res1.pubField);", assertionJavaCode.get(0));
@@ -783,7 +781,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         }};
 
         res.setValueBasedOnInstance(resInstance);
-        List<String> javaCodesForResponse = res.newInstanceWithJava(true, true, "tmp", 0);
+        List<String> javaCodesForResponse = res.newInstanceWithJavaOrKotlin(true, true, "tmp", 0, true, true);
 
         assertEquals(43, javaCodesForResponse.size());
         assertEquals("com.thrift.example.artificial.PrivateFieldInResponseDto tmp = null;", javaCodesForResponse.get(0));
@@ -795,14 +793,14 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals("  tmp_priRequest = new com.thrift.example.artificial.PrivateFieldInRequestDto();", javaCodesForResponse.get(6));
         assertEquals("  tmp_priRequest.setPubField(\"foo\");", javaCodesForResponse.get(7));
         assertEquals("  tmp_priRequest.setPriField(\"bar\");", javaCodesForResponse.get(8));
-        assertEquals("  java.util.List<java.lang.String> tmp_priRequest_stringList = null;", javaCodesForResponse.get(9));
+        assertEquals("  java.util.List<String> tmp_priRequest_stringList = null;", javaCodesForResponse.get(9));
         assertEquals("  {", javaCodesForResponse.get(10));
         assertEquals("   tmp_priRequest_stringList = new java.util.ArrayList<>();", javaCodesForResponse.get(11));
-        assertEquals("   java.lang.String tmp_priRequest_stringList_e_0 = \"1\";", javaCodesForResponse.get(12));
+        assertEquals("   String tmp_priRequest_stringList_e_0 = \"1\";", javaCodesForResponse.get(12));
         assertEquals("   tmp_priRequest_stringList.add(tmp_priRequest_stringList_e_0);", javaCodesForResponse.get(13));
-        assertEquals("   java.lang.String tmp_priRequest_stringList_e_1 = \"2\";", javaCodesForResponse.get(14));
+        assertEquals("   String tmp_priRequest_stringList_e_1 = \"2\";", javaCodesForResponse.get(14));
         assertEquals("   tmp_priRequest_stringList.add(tmp_priRequest_stringList_e_1);", javaCodesForResponse.get(15));
-        assertEquals("   java.lang.String tmp_priRequest_stringList_e_2 = \"3\";", javaCodesForResponse.get(16));
+        assertEquals("   String tmp_priRequest_stringList_e_2 = \"3\";", javaCodesForResponse.get(16));
         assertEquals("   tmp_priRequest_stringList.add(tmp_priRequest_stringList_e_2);", javaCodesForResponse.get(17));
         assertEquals("  }", javaCodesForResponse.get(18));
         assertEquals("  tmp_priRequest.setStringList(tmp_priRequest_stringList);", javaCodesForResponse.get(19));
@@ -815,14 +813,14 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals("  tmp_priRequest.setPriChar('\\u0030');", javaCodesForResponse.get(26));
         assertEquals("  tmp_priRequest.setPriShort(((short)(2)));", javaCodesForResponse.get(27));
         assertEquals("  tmp_priRequest.setPriSShort(((short)(42)));", javaCodesForResponse.get(28));
-        assertEquals("  java.util.Map<java.lang.String,java.lang.String> tmp_priRequest_priMap = null;", javaCodesForResponse.get(29));
+        assertEquals("  java.util.Map<String,String> tmp_priRequest_priMap = null;", javaCodesForResponse.get(29));
         assertEquals("  {", javaCodesForResponse.get(30));
         assertEquals("   tmp_priRequest_priMap = new java.util.HashMap<>();", javaCodesForResponse.get(31));
-        assertEquals("   java.lang.String tmp_priRequest_priMap_key_0 = \"bar\";", javaCodesForResponse.get(32));
-        assertEquals("   java.lang.String tmp_priRequest_priMap_value_0 = \"bar\";", javaCodesForResponse.get(33));
+        assertEquals("   String tmp_priRequest_priMap_key_0 = \"bar\";", javaCodesForResponse.get(32));
+        assertEquals("   String tmp_priRequest_priMap_value_0 = \"bar\";", javaCodesForResponse.get(33));
         assertEquals("   tmp_priRequest_priMap.put(tmp_priRequest_priMap_key_0,tmp_priRequest_priMap_value_0);", javaCodesForResponse.get(34));
-        assertEquals("   java.lang.String tmp_priRequest_priMap_key_1 = \"foo\";", javaCodesForResponse.get(35));
-        assertEquals("   java.lang.String tmp_priRequest_priMap_value_1 = \"foo\";", javaCodesForResponse.get(36));
+        assertEquals("   String tmp_priRequest_priMap_key_1 = \"foo\";", javaCodesForResponse.get(35));
+        assertEquals("   String tmp_priRequest_priMap_value_1 = \"foo\";", javaCodesForResponse.get(36));
         assertEquals("   tmp_priRequest_priMap.put(tmp_priRequest_priMap_key_1,tmp_priRequest_priMap_value_1);", javaCodesForResponse.get(37));
         assertEquals("  }", javaCodesForResponse.get(38));
         assertEquals("  tmp_priRequest.setPriMap(tmp_priRequest_priMap);", javaCodesForResponse.get(39));
@@ -830,7 +828,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals(" tmp.setPriRequest(tmp_priRequest);", javaCodesForResponse.get(41));
         assertEquals("}", javaCodesForResponse.get(42));
 
-        List<String> assertionJavaCodeForResponse = res.newAssertionWithJava(0, "res1", -1);
+        List<String> assertionJavaCodeForResponse = res.newAssertionWithJavaOrKotlin(0, "res1", -1, true);
         assertEquals(19, assertionJavaCodeForResponse.size());
         assertEquals("assertEquals(42, res1.pubField);", assertionJavaCodeForResponse.get(0));
         assertEquals("assertEquals(\"foo\", res1.getPriRequest().pubField);", assertionJavaCodeForResponse.get(1));
@@ -869,7 +867,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
 
         p1.setValueBasedOnInstance(p1Instance);
 
-        List<String> javaCodes = p1.newInstanceWithJava(0);
+        List<String> javaCodes = p1.newInstanceWithJavaOrKotlin(0, true, true);
 
         assertEquals(19, javaCodes.size());
         assertEquals("com.thrift.example.artificial.PrivateFieldInRequestDto arg0 = null;", javaCodes.get(0));
@@ -877,7 +875,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals(" arg0 = new com.thrift.example.artificial.PrivateFieldInRequestDto();", javaCodes.get(2));
         assertEquals(" arg0.setPubField(null);", javaCodes.get(3));
         assertEquals(" arg0.setPriField(null);", javaCodes.get(4));
-        assertEquals(" java.util.List<java.lang.String> arg0_stringList = null;", javaCodes.get(5));
+        assertEquals(" java.util.List<String> arg0_stringList = null;", javaCodes.get(5));
         assertEquals(" arg0.setStringList(arg0_stringList);", javaCodes.get(6));
         assertEquals(" arg0.setPriEnum(null);", javaCodes.get(7));
         assertEquals(" arg0.setPriBoolean(null);", javaCodes.get(8));
@@ -888,12 +886,12 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals(" arg0.setPriChar('\\u0000');", javaCodes.get(13));
         assertEquals(" arg0.setPriShort(((short)(0)));", javaCodes.get(14));
         assertEquals(" arg0.setPriSShort(null);", javaCodes.get(15));
-        assertEquals(" java.util.Map<java.lang.String,java.lang.String> arg0_priMap = null;", javaCodes.get(16));
+        assertEquals(" java.util.Map<String,String> arg0_priMap = null;", javaCodes.get(16));
         assertEquals(" arg0.setPriMap(arg0_priMap);", javaCodes.get(17));
         assertEquals("}", javaCodes.get(18));
 
 
-        List<String> assertionJavaCode = p1.newAssertionWithJava(0, "res1", -1);
+        List<String> assertionJavaCode = p1.newAssertionWithJavaOrKotlin(0, "res1", -1, true);
 
         assertEquals(13, assertionJavaCode.size());
         assertEquals("assertNull(res1.pubField);", assertionJavaCode.get(0));
@@ -916,7 +914,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         }};
 
         res.setValueBasedOnInstance(resInstance);
-        List<String> javaCodesForResponse = res.newInstanceWithJava(true, true, "tmp", 0);
+        List<String> javaCodesForResponse = res.newInstanceWithJavaOrKotlin(true, true, "tmp", 0, true, true);
         assertEquals(7, javaCodesForResponse.size());
         assertEquals("com.thrift.example.artificial.PrivateFieldInResponseDto tmp = null;", javaCodesForResponse.get(0));
         assertEquals("{", javaCodesForResponse.get(1));
@@ -926,7 +924,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals(" tmp.setPriRequest(tmp_priRequest);", javaCodesForResponse.get(5));
         assertEquals("}", javaCodesForResponse.get(6));
 
-        List<String> assertionJavaCodeForResponse = res.newAssertionWithJava(0, "res1", -1);
+        List<String> assertionJavaCodeForResponse = res.newAssertionWithJavaOrKotlin(0, "res1", -1, true);
         assertEquals(2, assertionJavaCodeForResponse.size());
         assertEquals("assertEquals(42, res1.pubField);", assertionJavaCodeForResponse.get(0));
         assertEquals("assertNull(res1.getPriRequest());", assertionJavaCodeForResponse.get(1));
@@ -938,7 +936,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
 
         res.setValueBasedOnInstance(resInstance2);
 
-        javaCodesForResponse = res.newInstanceWithJava(true, true, "tmp", 0);
+        javaCodesForResponse = res.newInstanceWithJavaOrKotlin(true, true, "tmp", 0, true, true);
         assertEquals(25, javaCodesForResponse.size());
         assertEquals("com.thrift.example.artificial.PrivateFieldInResponseDto tmp = null;", javaCodesForResponse.get(0));
         assertEquals("{", javaCodesForResponse.get(1));
@@ -949,7 +947,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals("  tmp_priRequest = new com.thrift.example.artificial.PrivateFieldInRequestDto();", javaCodesForResponse.get(6));
         assertEquals("  tmp_priRequest.setPubField(null);", javaCodesForResponse.get(7));
         assertEquals("  tmp_priRequest.setPriField(null);", javaCodesForResponse.get(8));
-        assertEquals("  java.util.List<java.lang.String> tmp_priRequest_stringList = null;", javaCodesForResponse.get(9));
+        assertEquals("  java.util.List<String> tmp_priRequest_stringList = null;", javaCodesForResponse.get(9));
         assertEquals("  tmp_priRequest.setStringList(tmp_priRequest_stringList);", javaCodesForResponse.get(10));
         assertEquals("  tmp_priRequest.setPriEnum(null);", javaCodesForResponse.get(11));
         assertEquals("  tmp_priRequest.setPriBoolean(null);", javaCodesForResponse.get(12));
@@ -960,13 +958,13 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals("  tmp_priRequest.setPriChar('\\u0000');", javaCodesForResponse.get(17));
         assertEquals("  tmp_priRequest.setPriShort(((short)(0)));", javaCodesForResponse.get(18));
         assertEquals("  tmp_priRequest.setPriSShort(null);", javaCodesForResponse.get(19));
-        assertEquals("  java.util.Map<java.lang.String,java.lang.String> tmp_priRequest_priMap = null;", javaCodesForResponse.get(20));
+        assertEquals("  java.util.Map<String,String> tmp_priRequest_priMap = null;", javaCodesForResponse.get(20));
         assertEquals("  tmp_priRequest.setPriMap(tmp_priRequest_priMap);", javaCodesForResponse.get(21));
         assertEquals(" }", javaCodesForResponse.get(22));
         assertEquals(" tmp.setPriRequest(tmp_priRequest);", javaCodesForResponse.get(23));
         assertEquals("}", javaCodesForResponse.get(24));
 
-        assertionJavaCodeForResponse = res.newAssertionWithJava(0, "res1", -1);
+        assertionJavaCodeForResponse = res.newAssertionWithJavaOrKotlin(0, "res1", -1, true);
         assertEquals(14, assertionJavaCodeForResponse.size());
         assertEquals("assertEquals(42, res1.pubField);", assertionJavaCodeForResponse.get(0));
         assertEquals("assertNull(res1.getPriRequest().pubField);", assertionJavaCodeForResponse.get(1));
@@ -1014,7 +1012,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
 //        assertEquals("722", dto.innerContent.get(6).jsonValue);
 //        assertEquals("100", dto.innerContent.get(7).jsonValue);
 
-        List<String> javacode = p1.newInstanceWithJava(0);
+        List<String> javacode = p1.newInstanceWithJavaOrKotlin(0, true, true);
         assertEquals(5, javacode.size());
         assertEquals("java.util.Date arg0 = null;", javacode.get(0));
         assertEquals("{", javacode.get(1));
@@ -1022,7 +1020,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals(" arg0 = new java.util.Date(" + time + "L);", javacode.get(3));
         assertEquals("}", javacode.get(4));
 
-        List<String> assertions = p1.newAssertionWithJava(0, "res1", -1);
+        List<String> assertions = p1.newAssertionWithJavaOrKotlin(0, "res1", -1, true);
         assertEquals(1, assertions.size());
         assertTrue(assertions.get(0).contains("// runtime value is "));
 
