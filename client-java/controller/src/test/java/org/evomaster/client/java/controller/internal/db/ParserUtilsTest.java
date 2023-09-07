@@ -60,4 +60,9 @@ public class ParserUtilsTest {
         boolean isSelectOne = ParserUtils.isSelectOne(sql);
         assertTrue(isSelectOne);
     }
+
+    @Test
+    public void testOnConflictPostgresql(){
+        assertThrows(IllegalArgumentException.class, () -> ParserUtils.asStatement("INSERT INTO vets VALUES (1, 'James', 'Carter') ON CONFLICT DO NOTHING;"));
+    }
 }

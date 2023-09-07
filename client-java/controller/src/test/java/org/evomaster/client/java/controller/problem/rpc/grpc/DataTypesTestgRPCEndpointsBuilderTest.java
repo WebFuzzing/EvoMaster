@@ -77,7 +77,7 @@ public class DataTypesTestgRPCEndpointsBuilderTest extends RPCEndpointsBuilderTe
         assertTrue(param1Instance instanceof GetInfo);
         assertEquals("bar", ((GetInfo) param1Instance).getName());
 
-        List<String> param1InstanceJava = param1.newInstanceWithJava(0);
+        List<String> param1InstanceJava = param1.newInstanceWithJavaOrKotlin(0, true, true);
         List<String> expectedContents = Arrays.asList(
             "io.grpc.examples.evotests.datatypes.GetInfo arg0 = null;",
             "{",
@@ -138,7 +138,7 @@ public class DataTypesTestgRPCEndpointsBuilderTest extends RPCEndpointsBuilderTe
         assertEquals(42, ((SimpleObj) param1Instance).getInt32Value());
 
 
-        List<String> param1InstanceJava = param1.newInstanceWithJava(0);
+        List<String> param1InstanceJava = param1.newInstanceWithJavaOrKotlin(0, true, true);
         String[] expectedContents = ("io.grpc.examples.evotests.datatypes.SimpleObj arg0 = null;\n" +
             "{\n" +
             " io.grpc.examples.evotests.datatypes.SimpleObj.Builder arg0builder = io.grpc.examples.evotests.datatypes.SimpleObj.newBuilder();\n" +
@@ -201,7 +201,7 @@ public class DataTypesTestgRPCEndpointsBuilderTest extends RPCEndpointsBuilderTe
         assertEquals(42, ((NestedObj) param1Instance).getObjvalue().getInt32Value());
 
 
-        List<String> param1InstanceJava = response.newInstanceWithJava(true, true, "res", 0);
+        List<String> param1InstanceJava = response.newInstanceWithJavaOrKotlin(true, true, "res", 0, true, true);
 
         String[] expectedContents = ("io.grpc.examples.evotests.datatypes.NestedObj res = null;\n" +
             "{\n" +
@@ -314,16 +314,16 @@ public class DataTypesTestgRPCEndpointsBuilderTest extends RPCEndpointsBuilderTe
         assertEquals(42, ((MapObj) param1Instance).getIntkeymapvalueMap().get(1).getInt32Value());
 
 
-        List<String> param1InstanceJava = response.newInstanceWithJava(true, true, "res", 0);
+        List<String> param1InstanceJava = response.newInstanceWithJavaOrKotlin(true, true, "res", 0, true, true);
 
         String[] expectedContents = ("io.grpc.examples.evotests.datatypes.MapObj res = null;\n" +
             "{\n" +
             " io.grpc.examples.evotests.datatypes.MapObj.Builder resbuilder = io.grpc.examples.evotests.datatypes.MapObj.newBuilder();\n" +
             " resbuilder.setName(\"bar\");\n" +
-            " java.util.Map<java.lang.Integer,io.grpc.examples.evotests.datatypes.SimpleObj> res_intkeymapvalue = null;\n" +
+            " java.util.Map<Integer,io.grpc.examples.evotests.datatypes.SimpleObj> res_intkeymapvalue = null;\n" +
             " {\n" +
             "  res_intkeymapvalue = new java.util.HashMap<>();\n" +
-            "  java.lang.Integer res_intkeymapvalue_key_0 = 1;\n" +
+            "  Integer res_intkeymapvalue_key_0 = 1;\n" +
             "  io.grpc.examples.evotests.datatypes.SimpleObj res_intkeymapvalue_value_0 = null;\n" +
             "  {\n" +
             "   io.grpc.examples.evotests.datatypes.SimpleObj.Builder res_intkeymapvalue_value_0builder = io.grpc.examples.evotests.datatypes.SimpleObj.newBuilder();\n" +
@@ -344,10 +344,10 @@ public class DataTypesTestgRPCEndpointsBuilderTest extends RPCEndpointsBuilderTe
             "  res_intkeymapvalue.put(res_intkeymapvalue_key_0,res_intkeymapvalue_value_0);\n" +
             " }\n" +
             " resbuilder.putAllIntkeymapvalue(res_intkeymapvalue);\n" +
-            " java.util.Map<java.lang.String,io.grpc.examples.evotests.datatypes.SimpleObj> res_stringkeymapvalue = null;\n" +
+            " java.util.Map<String,io.grpc.examples.evotests.datatypes.SimpleObj> res_stringkeymapvalue = null;\n" +
             " {\n" +
             "  res_stringkeymapvalue = new java.util.HashMap<>();\n" +
-            "  java.lang.String res_stringkeymapvalue_key_0 = \"strbar\";\n" +
+            "  String res_stringkeymapvalue_key_0 = \"strbar\";\n" +
             "  io.grpc.examples.evotests.datatypes.SimpleObj res_stringkeymapvalue_value_0 = null;\n" +
             "  {\n" +
             "   io.grpc.examples.evotests.datatypes.SimpleObj.Builder res_stringkeymapvalue_value_0builder = io.grpc.examples.evotests.datatypes.SimpleObj.newBuilder();\n" +
@@ -380,10 +380,10 @@ public class DataTypesTestgRPCEndpointsBuilderTest extends RPCEndpointsBuilderTe
         {
             io.grpc.examples.evotests.datatypes.MapObj.Builder resbuilder = io.grpc.examples.evotests.datatypes.MapObj.newBuilder();
             resbuilder.setName("bar");
-            java.util.Map<java.lang.Integer,io.grpc.examples.evotests.datatypes.SimpleObj> res_intkeymapvalue = null;
+            java.util.Map<Integer,io.grpc.examples.evotests.datatypes.SimpleObj> res_intkeymapvalue = null;
             {
                 res_intkeymapvalue = new java.util.HashMap<>();
-                java.lang.Integer res_intkeymapvalue_key_0 = 1;
+                Integer res_intkeymapvalue_key_0 = 1;
                 io.grpc.examples.evotests.datatypes.SimpleObj res_intkeymapvalue_value_0 = null;
                 {
                     io.grpc.examples.evotests.datatypes.SimpleObj.Builder res_intkeymapvalue_value_0builder = io.grpc.examples.evotests.datatypes.SimpleObj.newBuilder();
@@ -404,10 +404,10 @@ public class DataTypesTestgRPCEndpointsBuilderTest extends RPCEndpointsBuilderTe
                 res_intkeymapvalue.put(res_intkeymapvalue_key_0,res_intkeymapvalue_value_0);
             }
             resbuilder.putAllIntkeymapvalue(res_intkeymapvalue);
-            java.util.Map<java.lang.String,io.grpc.examples.evotests.datatypes.SimpleObj> res_stringkeymapvalue = null;
+            java.util.Map<String,io.grpc.examples.evotests.datatypes.SimpleObj> res_stringkeymapvalue = null;
             {
                 res_stringkeymapvalue = new java.util.HashMap<>();
-                java.lang.String res_stringkeymapvalue_key_0 = "strbar";
+                String res_stringkeymapvalue_key_0 = "strbar";
                 io.grpc.examples.evotests.datatypes.SimpleObj res_stringkeymapvalue_value_0 = null;
                 {
                     io.grpc.examples.evotests.datatypes.SimpleObj.Builder res_stringkeymapvalue_value_0builder = io.grpc.examples.evotests.datatypes.SimpleObj.newBuilder();
@@ -494,25 +494,25 @@ public class DataTypesTestgRPCEndpointsBuilderTest extends RPCEndpointsBuilderTe
         assertEquals(2, param1InstanceValue.getObjlistvalueList().size());
 
 
-        List<String> param1InstanceJava = response.newInstanceWithJava(true, true, "res", 0);
+        List<String> param1InstanceJava = response.newInstanceWithJavaOrKotlin(true, true, "res", 0, true, true);
 
         String[] expectedContents = ("io.grpc.examples.evotests.datatypes.ListObj res = null;\n" +
             "{\n" +
             " io.grpc.examples.evotests.datatypes.ListObj.Builder resbuilder = io.grpc.examples.evotests.datatypes.ListObj.newBuilder();\n" +
             " resbuilder.setName(\"bar\");\n" +
-            " java.util.List<java.lang.Integer> res_intlistvalue = null;\n" +
+            " java.util.List<Integer> res_intlistvalue = null;\n" +
             " {\n" +
             "  res_intlistvalue = new java.util.ArrayList<>();\n" +
-            "  java.lang.Integer res_intlistvalue_e_0 = 42;\n" +
+            "  Integer res_intlistvalue_e_0 = 42;\n" +
             "  res_intlistvalue.add(res_intlistvalue_e_0);\n" +
             " }\n" +
             " resbuilder.addAllIntlistvalue(res_intlistvalue);\n" +
-            " java.util.List<java.lang.String> res_stringlistvalue = null;\n" +
+            " java.util.List<String> res_stringlistvalue = null;\n" +
             " {\n" +
             "  res_stringlistvalue = new java.util.ArrayList<>();\n" +
-            "  java.lang.String res_stringlistvalue_e_0 = \"barInList\";\n" +
+            "  String res_stringlistvalue_e_0 = \"barInList\";\n" +
             "  res_stringlistvalue.add(res_stringlistvalue_e_0);\n" +
-            "  java.lang.String res_stringlistvalue_e_1 = \"fooInList\";\n" +
+            "  String res_stringlistvalue_e_1 = \"fooInList\";\n" +
             "  res_stringlistvalue.add(res_stringlistvalue_e_1);\n" +
             " }\n" +
             " resbuilder.addAllStringlistvalue(res_stringlistvalue);\n" +
@@ -570,19 +570,19 @@ public class DataTypesTestgRPCEndpointsBuilderTest extends RPCEndpointsBuilderTe
         {
             io.grpc.examples.evotests.datatypes.ListObj.Builder resbuilder = io.grpc.examples.evotests.datatypes.ListObj.newBuilder();
             resbuilder.setName("bar");
-            java.util.List<java.lang.Integer> res_intlistvalue = null;
+            java.util.List<Integer> res_intlistvalue = null;
             {
                 res_intlistvalue = new java.util.ArrayList<>();
-                java.lang.Integer res_intlistvalue_e_0 = 42;
+                Integer res_intlistvalue_e_0 = 42;
                 res_intlistvalue.add(res_intlistvalue_e_0);
             }
             resbuilder.addAllIntlistvalue(res_intlistvalue);
-            java.util.List<java.lang.String> res_stringlistvalue = null;
+            java.util.List<String> res_stringlistvalue = null;
             {
                 res_stringlistvalue = new java.util.ArrayList<>();
-                java.lang.String res_stringlistvalue_e_0 = "barInList";
+                String res_stringlistvalue_e_0 = "barInList";
                 res_stringlistvalue.add(res_stringlistvalue_e_0);
-                java.lang.String res_stringlistvalue_e_1 = "fooInList";
+                String res_stringlistvalue_e_1 = "fooInList";
                 res_stringlistvalue.add(res_stringlistvalue_e_1);
             }
             resbuilder.addAllStringlistvalue(res_stringlistvalue);

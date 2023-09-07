@@ -1,6 +1,7 @@
 package org.evomaster.client.java.controller.api.dto.problem.rpc;
 
 import org.evomaster.client.java.controller.api.dto.MockDatabaseDto;
+import org.evomaster.client.java.controller.api.dto.SutInfoDto;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -114,10 +115,23 @@ public class RPCActionDto {
     public boolean doGenerateTestScript;
 
     /**
+     * the output format
+     * if doGenerateTestScript is true, outputFormat cannot be null
+     * Note that the info is kept in sync with what the user specifies in driver or EMConfig
+     */
+    public SutInfoDto.OutputFormat outputFormat;
+
+    /**
      * the maximum number of assertions to be generated for data in collections
      * zero or negative number means that assertions would be generated for all data in collection
      */
     public int maxAssertionForDataInCollection;
+
+    /**
+     * a list of DTOs which need to be extracted at the driver side
+     * they can be eg, response of external services
+     */
+    public List<String> missingDto;
 
     /**
      *
@@ -142,7 +156,10 @@ public class RPCActionDto {
         copy.isAuthorized = isAuthorized;
         if (mockRPCExternalServiceDtos != null)
             copy.mockRPCExternalServiceDtos = mockRPCExternalServiceDtos.stream().map(MockRPCExternalServiceDto::copy).collect(Collectors.toList());
-
+        if (mockDatabaseDtos != null)
+            copy.mockDatabaseDtos = mockDatabaseDtos.stream().map(MockDatabaseDto::copy).collect(Collectors.toList());
+        if (missingDto != null)
+            copy.missingDto = new ArrayList<>(missingDto);
         return copy;
     }
 

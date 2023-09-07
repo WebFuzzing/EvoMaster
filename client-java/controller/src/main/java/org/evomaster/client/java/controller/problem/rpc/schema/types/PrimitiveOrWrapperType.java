@@ -1,7 +1,9 @@
 package org.evomaster.client.java.controller.problem.rpc.schema.types;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * primitive types
@@ -16,6 +18,33 @@ public class PrimitiveOrWrapperType extends TypeSchema {
 
     private final static List<Class<?>> INTEGRAL_NUMBER = Arrays.asList(Byte.class, byte.class, Short.class, short.class, Integer.class, int.class, Long.class, long.class);
     private final static List<Class<?>> FLOATINGPOINT_NUMBER = Arrays.asList(Float.class, float.class, Double.class, double.class);
+
+
+    private final static Map<Class, String> javaToKotlin = new HashMap<Class, String>(){{
+        put(Byte.class, "Byte");
+        put(byte.class, "Byte");
+
+        put(Short.class, "Short");
+        put(short.class, "Short");
+
+        put(Integer.class, "Int");
+        put(int.class, "Int");
+
+        put(Long.class, "Long");
+        put(long.class, "Long");
+
+        put(Float.class, "Float");
+        put(float.class, "Float");
+
+        put(Double.class, "Double");
+        put(double.class, "Double");
+
+        put(Boolean.class, "Boolean");
+        put(boolean.class, "Boolean");
+
+        put(Character.class, "Char");
+        put(char.class, "Char");
+    }};
 
     public PrimitiveOrWrapperType(String type, String fullTypeName, boolean isWrapper, Class<?> clazz, JavaDtoSpec spec) {
         super(type, fullTypeName, clazz, spec);
@@ -43,7 +72,7 @@ public class PrimitiveOrWrapperType extends TypeSchema {
 
     @Override
     public PrimitiveOrWrapperType copy() {
-        return new PrimitiveOrWrapperType(getType(), getFullTypeName(), isWrapper, getClazz(), spec);
+        return new PrimitiveOrWrapperType(getSimpleTypeName(), getFullTypeName(), isWrapper, getClazz(), spec);
     }
 
     public boolean isNumber(){
@@ -56,5 +85,12 @@ public class PrimitiveOrWrapperType extends TypeSchema {
 
     public boolean isIntegralNumber(){
         return INTEGRAL_NUMBER.contains(getClazz());
+    }
+
+    @Override
+    public String getTypeNameForInstanceInJavaOrKotlin(boolean isJava) {
+        if (!isJava)
+            return javaToKotlin.get(getClazz());
+        return getSimpleTypeName();
     }
 }

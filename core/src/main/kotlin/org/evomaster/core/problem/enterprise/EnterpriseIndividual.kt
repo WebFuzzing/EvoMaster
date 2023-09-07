@@ -160,6 +160,17 @@ abstract class EnterpriseIndividual(
     }
 
     /**
+     * @return SQL all actions before relativeIndex (exclusive) in GroupsOfChildren.MAIN
+     */
+    fun seeSQLActionBeforeIndex(relativeIndex: Int): List<SqlAction>{
+        val main = GroupsOfChildren.MAIN
+        val base = groupsView()!!.startIndexForGroupInsertionInclusive(main)
+        return (0 until relativeIndex).flatMap {
+            (children[base + it] as ActionComponent).flatten()
+        }.filterIsInstance<SqlAction>()
+    }
+
+    /**
      * return a list of all db actions in [this] individual
      * that include all initializing actions plus db actions among main actions.
      *

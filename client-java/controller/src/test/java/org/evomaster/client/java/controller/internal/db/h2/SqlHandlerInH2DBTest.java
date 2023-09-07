@@ -2,6 +2,8 @@ package org.evomaster.client.java.controller.internal.db.h2;
 
 import org.evomaster.client.java.controller.InstrumentedSutStarter;
 import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
+import org.evomaster.client.java.controller.db.DbCleaner;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.evomaster.client.java.controller.internal.SutController;
 import org.evomaster.client.java.controller.internal.db.SqlHandlerInDBTest;
@@ -55,4 +57,5 @@ public class SqlHandlerInH2DBTest extends DatabaseH2TestInit implements SqlHandl
     public SutController getSutController() {
         return new DatabaseFakeH2SutController(connection);
     }
+
 }

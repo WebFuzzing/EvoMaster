@@ -81,7 +81,7 @@ public class FakeSutController extends EmbeddedSutController {
 
     @Override
     public SutInfoDto.OutputFormat getPreferredOutputFormat() {
-        return null;
+        return SutInfoDto.OutputFormat.JAVA_JUNIT_5;
     }
 
     @Override
@@ -93,9 +93,11 @@ public class FakeSutController extends EmbeddedSutController {
 
     @Override
     public List<SeededRPCTestDto> seedRPCTests() {
-        String mockedResponse;
+        String mockedResponse_test1;
+        String seed_requests_test3;
         try {
-            mockedResponse = objectMapper.writeValueAsString(TestData.NESTED_STRING_GENERIC_DTO);
+            mockedResponse_test1 = objectMapper.writeValueAsString(TestData.NESTED_STRING_GENERIC_DTO);
+            seed_requests_test3 = objectMapper.writeValueAsString(TestData.NESTED_GENERIC_DTO);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
@@ -113,7 +115,7 @@ public class FakeSutController extends EmbeddedSutController {
                                             this.appKey = "seedcheck.fake.mock.appkey";
                                             this.interfaceFullName = "seedcheck.fake.mock.interfaceName";
                                             this.responseTypes = Arrays.asList(NestedStringGenericDto.class.getName());
-                                            this.responses= Arrays.asList(mockedResponse);
+                                            this.responses= Arrays.asList(mockedResponse_test1);
 
                                         }}
                                 );
@@ -129,6 +131,17 @@ public class FakeSutController extends EmbeddedSutController {
                                 inputParams= Arrays.asList("null","null","null","null","null");
                                 inputParamTypes= Arrays.asList(List.class.getName(),List.class.getName(),List.class.getName(), Map.class.getName(), BigNumberObj.class.getName());
                             }}
+                    );
+                }},
+                new SeededRPCTestDto(){{
+                    testName = "test_3";
+                    rpcFunctions = Arrays.asList(
+                        new SeededRPCActionDto(){{
+                            interfaceName = RPCInterfaceExample.class.getName();
+                            functionName = "handleNestedGenericString";
+                            inputParams= Arrays.asList(seed_requests_test3);
+                            inputParamTypes= Arrays.asList(NestedGenericDto.class.getName());
+                        }}
                     );
                 }}
 

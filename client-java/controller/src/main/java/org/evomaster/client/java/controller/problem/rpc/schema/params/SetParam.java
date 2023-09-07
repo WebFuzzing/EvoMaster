@@ -3,12 +3,14 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
-import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
+import org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.CollectionType;
 
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator.*;
 
 /**
  *
@@ -85,14 +87,18 @@ public class SetParam extends CollectionParam<Set<NamedTypedValue>>{
             setValue(null); return;
         }
 
-        if (!isValidInstance(instance))
+        if (!isValidInstance(instance)
+            && !Collection.class.isAssignableFrom(instance.getClass()) // jackson might get list of json object
+        )
             throw new RuntimeException("cannot parse Set param "+getName()+" with the type "+json.getClass().getName());
+
+
 
         NamedTypedValue t = getType().getTemplate();
         Set<NamedTypedValue> values = new LinkedHashSet<>();
 
 
-        for (Object e : (Set) instance){
+        for (Object e : (Collection) instance){
             NamedTypedValue copy = t.copyStructureWithProperties();
             copy.setValueBasedOnInstanceOrJson(e);
             values.add(copy);
@@ -103,38 +109,37 @@ public class SetParam extends CollectionParam<Set<NamedTypedValue>>{
     }
 
     @Override
-    public List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent) {
-        String fullName = getType().getTypeNameForInstance();
+    public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava, boolean isVariableNullable) {
+        String fullName = getType().getTypeNameForInstanceInJavaOrKotlin(isJava);
         List<String> codes = new ArrayList<>();
-        String var = CodeJavaGenerator.oneLineInstance(isDeclaration, doesIncludeName, fullName, variableName, null);
-        CodeJavaGenerator.addCode(codes, var, indent);
+        addCode(codes, oneLineInstance(isDeclaration, doesIncludeName, fullName, variableName, null, isJava, isNullable()), indent);
         if (getValue() == null) return codes;
-        CodeJavaGenerator.addCode(codes, "{", indent);
-        // new array
-        CodeJavaGenerator.addCode(codes,
-                CodeJavaGenerator.setInstance(
+        addCode(codes, codeBlockStart(isJava), indent);
+        // new set
+        addCode(codes,
+                setInstance(
                         variableName,
-                        CodeJavaGenerator.newSet()), indent+1);
+                        newSet(isJava, getType().getTemplate().getType().getTypeNameForInstanceInJavaOrKotlin(isJava)), isJava), indent+1);
         int index = 0;
         for (NamedTypedValue e: getValue()){
-            String eVarName = CodeJavaGenerator.handleVariableName(variableName+"_e_"+index);
-            codes.addAll(e.newInstanceWithJava(true, true, eVarName, indent+1));
-            CodeJavaGenerator.addCode(codes, variableName+".add("+eVarName+");", indent+1);
+            String eVarName = handleVariableName(variableName+"_e_"+index);
+            codes.addAll(e.newInstanceWithJavaOrKotlin(true, true, eVarName, indent+1, isJava, false));
+            addCode(codes, methodInvocation(variableName, "add", eVarName, isJava, isNullable(), false) + getStatementLast(isJava), indent+1);
             index++;
         }
 
-        CodeJavaGenerator.addCode(codes, "}", indent);
+        addCode(codes, "}", indent);
         return codes;
     }
 
     @Override
-    public List<String> newAssertionWithJava(int indent, String responseVarName, int maxAssertionForDataInCollection) {
+    public List<String> newAssertionWithJavaOrKotlin(int indent, String responseVarName, int maxAssertionForDataInCollection, boolean isJava) {
         List<String> codes = new ArrayList<>();
         if (getValue() == null){
-            CodeJavaGenerator.addCode(codes, CodeJavaGenerator.junitAssertNull(responseVarName), indent);
+            addCode(codes, junitAssertNull(responseVarName, isJava), indent);
             return codes;
         }
-        CodeJavaGenerator.addCode(codes, CodeJavaGenerator.junitAssertEquals(""+getValue().size(), CodeJavaGenerator.withSize(responseVarName)), indent);
+        addCode(codes, junitAssertEquals(String.valueOf(getValue().size()), CodeJavaOrKotlinGenerator.withSizeInAssertion(responseVarName, isJava, isNullable()),isJava ), indent);
         /*
             it is tricky to check values for set since the sequence is not determinate
          */
@@ -142,7 +147,7 @@ public class SetParam extends CollectionParam<Set<NamedTypedValue>>{
     }
 
     @Override
-    public String getValueAsJavaString() {
+    public String getValueAsJavaString(boolean isJava) {
         return null;
     }
 }

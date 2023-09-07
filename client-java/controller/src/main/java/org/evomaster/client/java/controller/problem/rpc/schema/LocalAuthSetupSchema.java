@@ -1,7 +1,9 @@
 package org.evomaster.client.java.controller.problem.rpc.schema;
 
+import org.evomaster.client.java.controller.DtoUtils;
+import org.evomaster.client.java.controller.api.dto.SutInfoDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
-import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
+import org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.StringParam;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
@@ -12,6 +14,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator.*;
 
 
 public class LocalAuthSetupSchema extends EndpointSchema{
@@ -33,21 +37,21 @@ public class LocalAuthSetupSchema extends EndpointSchema{
     }
 
     @Override
-    public List<String> newInvocationWithJava(String responseVarName, String controllerVarName, String clientVariable) {
+    public List<String> newInvocationWithJavaOrKotlin(String responseVarName, String controllerVarName, String clientVariable, SutInfoDto.OutputFormat outputFormat) {
         List<String> javaCode = new ArrayList<>();
-        javaCode.add("{");
+        javaCode.add(codeBlockStart(DtoUtils.isJava(outputFormat)));
         int indent = 1;
         for (NamedTypedValue param: getRequestParams()){
-            javaCode.addAll(param.newInstanceWithJava(indent));
+            javaCode.addAll(param.newInstanceWithJavaOrKotlin(indent, DtoUtils.isJava(outputFormat), true));
         }
         String paramVars = getRequestParams().stream().map(NamedTypedValue::getName).collect(Collectors.joining(","));
 
-        CodeJavaGenerator.addCode(
+        addCode(
                 javaCode,
-                CodeJavaGenerator.methodInvocation(controllerVarName, getName(), paramVars) + CodeJavaGenerator.appendLast(),
+                CodeJavaOrKotlinGenerator.methodInvocation(controllerVarName, getName(), paramVars,DtoUtils.isJava(outputFormat), true, false) + getStatementLast(DtoUtils.isJava(outputFormat)),
                 indent);
 
-        javaCode.add("}");
+        javaCode.add(codeBlockEnd(DtoUtils.isJava(outputFormat)));
         return javaCode;
     }
 

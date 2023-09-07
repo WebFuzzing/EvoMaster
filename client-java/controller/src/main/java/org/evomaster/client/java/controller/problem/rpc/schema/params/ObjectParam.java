@@ -2,7 +2,6 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
-import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.*;
 import org.evomaster.client.java.utils.SimpleLogger;
 
@@ -14,6 +13,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator.*;
 
 /**
  * object param
@@ -229,26 +230,25 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
     }
 
     @Override
-    public List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent) {
-        String typeName = getType().getTypeNameForInstance();
+    public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava, boolean isVariableNullable) {
+        String typeName = getType().getTypeNameForInstanceInJavaOrKotlin(isJava);
         String varName = variableName;
 
         List<String> codes = new ArrayList<>();
         boolean isNull = (getValue() == null);
-        String var = CodeJavaGenerator.oneLineInstance(isDeclaration, doesIncludeName, typeName, varName, null);
-        CodeJavaGenerator.addCode(codes, var, indent);
+        addCode(codes, oneLineInstance(isDeclaration, doesIncludeName, typeName, varName, null,isJava, isNullable()), indent);
         if (isNull) return codes;
 
-        CodeJavaGenerator.addCode(codes, "{", indent);
+        addCode(codes, codeBlockStart(isJava), indent);
 
         String ownVarName = null;
         if (getType().spec == JavaDtoSpec.DEFAULT){
             // new obj
-            CodeJavaGenerator.addCode(codes, CodeJavaGenerator.setInstanceObject(typeName, varName), indent + 1 );
+            addCode(codes, setInstanceObject(typeName, varName, isJava), indent + 1 );
             ownVarName = varName;
         }else{
             String varBuilderName = varName+"builder";
-            CodeJavaGenerator.addCode(codes, CodeJavaGenerator.newBuilderProto3(typeName, varBuilderName), indent + 1);
+            addCode(codes, newBuilderProto3(typeName, varBuilderName, isJava), indent + 1);
             ownVarName = varBuilderName;
         }
 
@@ -260,22 +260,23 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
                      fName = varName+"_"+f.getName();
                      fdeclar = true;
                 }
-                codes.addAll(f.newInstanceWithJava(fdeclar, true, fName, indent+1));
+                codes.addAll(f.newInstanceWithJavaOrKotlin(fdeclar, true, fName, indent+1, isJava, isNullable()));
 
                 if (needRenameField(f)){
-                    CodeJavaGenerator.addCode(codes, CodeJavaGenerator.methodInvocation(ownVarName, f.accessibleSchema.setterMethodName, fName)+CodeJavaGenerator.appendLast(),indent+1);
+                    addCode(codes, methodInvocation(ownVarName, f.accessibleSchema.setterMethodName, fName, isJava, isNullable(), false)+ getStatementLast(isJava),indent+1);
                 }
             }else {
-                String fName = varName+"."+f.getName();
-                codes.addAll(f.newInstanceWithJava(false, true, fName, indent+1));
+                codes.addAll(f.newInstanceWithJavaOrKotlin(false, true,
+                    fieldAccess(varName, f.getName(),isJava, isNullable(),false), indent+1, isJava, isNullable()));
             }
         }
 
         if (getType().spec == JavaDtoSpec.PROTO3){
 
-            CodeJavaGenerator.addCode(codes, CodeJavaGenerator.setInstance(true, varName, CodeJavaGenerator.methodInvocation(ownVarName, PROTO3_OBJECT_BUILD_METHOD, "")),indent+1);
+            addCode(codes,
+                setInstance(true, varName, methodInvocation(ownVarName, PROTO3_OBJECT_BUILD_METHOD, "",isJava, isNullable(), false), isJava),indent+1);
         }
-        CodeJavaGenerator.addCode(codes, "}", indent);
+        addCode(codes, codeBlockEnd(isJava), indent);
         return codes;
     }
 
@@ -284,34 +285,53 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
     }
 
     @Override
-    public List<String> newAssertionWithJava(int indent, String responseVarName, int maxAssertionForDataInCollection) {
+    public List<String> newAssertionWithJavaOrKotlin(int indent, String responseVarName, int maxAssertionForDataInCollection, boolean isJava) {
         List<String> codes = new ArrayList<>();
         if (getValue() == null){
-            CodeJavaGenerator.addCode(codes, CodeJavaGenerator.junitAssertNull(responseVarName), indent);
+            addCode(codes, junitAssertNull(responseVarName, isJava), indent);
             return codes;
         }
         for (NamedTypedValue f : getValue()){
             String fName = null;
-            if (f.accessibleSchema == null || f.accessibleSchema.isAccessible)
-                fName = responseVarName+"."+f.getName();
-            else{
+            if (f.accessibleSchema == null || f.accessibleSchema.isAccessible){
+                fName = fieldAccess(responseVarName, f.getName(),isJava, isNullable(),true);
+            } else{
                 if (f.accessibleSchema.getterMethodName == null){
                     String msg = "Error: Object("+getType().getFullTypeName()+") has private field "+f.getName()+", but there is no getter method";
                     SimpleLogger.uniqueWarn(msg);
-                    CodeJavaGenerator.addComment(codes, msg, indent);
+                    addComment(codes, msg, indent);
                 }else{
-                    fName = responseVarName+"."+f.accessibleSchema.getterMethodName+"()";
+                    fName = methodInvocation(responseVarName, f.accessibleSchema.getterMethodName, "", isJava, isNullable(), true);
                 }
             }
             if (fName != null)
-                codes.addAll(f.newAssertionWithJava(indent, fName, maxAssertionForDataInCollection));
+                codes.addAll(f.newAssertionWithJavaOrKotlin(indent, fName, maxAssertionForDataInCollection, isJava));
         }
         return codes;
     }
 
     @Override
-    public String getValueAsJavaString() {
+    public String getValueAsJavaString(boolean isJava) {
         return null;
+    }
+
+
+    @Override
+    public List<String> referenceTypes() {
+        List<String> references = new ArrayList<>();
+        for (NamedTypedValue ref : getType().getFields()){
+            if (ref instanceof ObjectParam){
+                references.add(ref.getType().getFullTypeName());
+                List<String> genericTypes = ((ObjectType)ref.getType()).getGenericTypes();
+                if (genericTypes != null && !genericTypes.isEmpty())
+                    references.addAll(genericTypes);
+            }
+            List<String> refrefTypes = ref.referenceTypes();
+            if (refrefTypes != null)
+                references.addAll(refrefTypes);
+        }
+        if (references.isEmpty()) return null;
+        return references;
     }
 
 }

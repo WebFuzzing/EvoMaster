@@ -1,5 +1,7 @@
 package org.evomaster.core.problem.externalservice.rpc
 
+import org.evomaster.client.java.controller.api.dto.MockDatabaseDto
+import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.problem.externalservice.rpc.parm.ClassResponseParam
 import org.evomaster.core.search.StructuralElement
@@ -31,6 +33,11 @@ class DbAsExternalServiceAction (
 ) : ApiExternalServiceAction(responseParam, active, used) {
 
     companion object{
+        fun getDbAsExternalServiceAction(
+            dbDto : MockDatabaseDto
+        ) =  getDbAsExternalServiceAction(dbDto.commandName, dbDto.requests, dbDto.responseFullTypeWithGeneric?:dbDto.responseFullType)
+
+
 
         fun getDbAsExternalServiceAction(
             commandName: String,
@@ -59,5 +66,7 @@ class DbAsExternalServiceAction (
         return DbAsExternalServiceAction(commandName, descriptiveInfo, null, response.copy() as ClassResponseParam)
     }
 
-
+    fun addUpdateForParam(param: Param){
+        addChild(param)
+    }
 }

@@ -53,6 +53,13 @@ public class MockRPCExternalServiceDto {
     public List<String> responseTypes;
 
 
+    /**
+     * explict type info with generics
+     * the info is used by evomaster
+     */
+    public List<String> responseFullTypesWithGeneric;
+
+
     public MockRPCExternalServiceDto copy(){
         MockRPCExternalServiceDto copy = new MockRPCExternalServiceDto();
         copy.appKey = appKey;
@@ -66,6 +73,9 @@ public class MockRPCExternalServiceDto {
             copy.requestRules = new ArrayList<>(requestRules);
         if (responseTypes != null)
             copy.responseTypes = new ArrayList<>(responseTypes);
+        if (responseFullTypesWithGeneric != null){
+            copy.responseFullTypesWithGeneric = new ArrayList<>(responseFullTypesWithGeneric);
+        }
 
         return copy;
     }

@@ -19,7 +19,7 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
 
 
 
-    private final static ObjectMapper objectMaper = new ObjectMapper();
+    protected final static ObjectMapper objectMaper = new ObjectMapper();
 
     /**
      * name of the instance, eg param name
@@ -120,6 +120,8 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
     }
 
     public abstract Object newInstance() throws ClassNotFoundException;
+
+    public abstract List<String> referenceTypes();
 
     public void setValue(V value) {
         this.value = value;
@@ -245,42 +247,49 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
 
     /**
      * create instances with Java
-     * @param isDeclaration specifies whether it is used to declare the instance (ie, with type name).
-     * @param doesIncludeName specifies whether it is required to have the variable name
-     *                        eg, if true, var = new instance(); if yes, new instance();
-     * @param variableName specifies the name of variable
-     * @param indent specifies the indent of this block of the code
+     *
+     * @param isDeclaration      specifies whether it is used to declare the instance (ie, with type name).
+     * @param doesIncludeName    specifies whether it is required to have the variable name
+     *                           eg, if true, var = new instance(); if yes, new instance();
+     * @param variableName       specifies the name of variable
+     * @param indent             specifies the indent of this block of the code
+     * @param isJava
+     * @param isVariableNullable
      * @return a list of string which could create instance with java
      */
-    public abstract List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent);
+    public abstract List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava, boolean isVariableNullable);
 
 
     /**
      * create instances with Java
      *
-     * @param indent specifies the current indent of the code
+     * @param indent             specifies the current indent of the code
+     * @param isJava
+     * @param isVariableNullable
      * @return a list of string which could create instance with java
      */
-    public List<String> newInstanceWithJava(int indent){
-        return newInstanceWithJava(true, true, getName(), indent);
+    public List<String> newInstanceWithJavaOrKotlin(int indent, boolean isJava, boolean isVariableNullable){
+        return newInstanceWithJavaOrKotlin(true, true, getName(), indent, isJava, isVariableNullable);
     }
 
     /**
      * create assertions with java for response
-     * @param indent specifies the current indent of the code
-     * @param responseVarName a variable name for responses
+     *
+     * @param indent                          specifies the current indent of the code
+     * @param responseVarName                 a variable name for responses
      * @param maxAssertionForDataInCollection
+     * @param isJava
      * @return a list of string for assertions
      */
-    public abstract List<String> newAssertionWithJava(int indent, String responseVarName, int maxAssertionForDataInCollection);
+    public abstract List<String> newAssertionWithJavaOrKotlin(int indent, String responseVarName, int maxAssertionForDataInCollection, boolean isJava);
 
     /**
-     *
      * @param responseVarName is the variable name of the response
+     * @param isJava
      * @return a list of assertions based on this which could be a response
      */
-    public List<String> newAssertionWithJava(String responseVarName, int maxAssertionForDataInCollection){
-        return newAssertionWithJava(0, responseVarName, maxAssertionForDataInCollection);
+    public List<String> newAssertionWithJavaOrKotlin(String responseVarName, int maxAssertionForDataInCollection, boolean isJava){
+        return newAssertionWithJavaOrKotlin(0, responseVarName, maxAssertionForDataInCollection, isJava);
     }
 
     /**
@@ -288,7 +297,7 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
      * @return a string which could representing the value of the param with java
      * eg, float 4.2 could be 4.2f
      */
-    public abstract String getValueAsJavaString();
+    public abstract String getValueAsJavaString(boolean isJava);
 
     public boolean isMutable() {
         return isMutable;
@@ -305,4 +314,5 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
     public void setDefaultValue(NamedTypedValue defaultValue) {
         this.defaultValue = defaultValue;
     }
+
 }
