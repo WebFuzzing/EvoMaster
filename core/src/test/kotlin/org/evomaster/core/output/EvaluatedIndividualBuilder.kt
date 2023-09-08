@@ -76,7 +76,7 @@ class EvaluatedIndividualBuilder {
         }
 
         fun buildFakeRPCAction(n:Int) : MutableList<RPCCallAction>{
-            return (0 until n).map { RPCCallAction("FakeRPCCall_$it",
+            return (0 until n).map { RPCCallAction("FakeRPCCall","FakeRPCCall_$it",
                 inputParameters = mutableListOf(),
                 responseTemplate= null,
                 response = RPCParam("return", OptionalGene("return", StringGene("return")))
