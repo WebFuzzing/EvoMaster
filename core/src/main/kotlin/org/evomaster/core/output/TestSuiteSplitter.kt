@@ -15,7 +15,6 @@ import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.search.*
 import com.google.gson.*
 import org.evomaster.core.problem.api.ApiWsIndividual
-import kotlin.math.min
 
 /**
  * Created by arcuri82 on 11-Nov-19.
@@ -29,19 +28,29 @@ object TestSuiteSplitter {
 
 //        val group = solution.individuals.groupBy { i-> i.seeResults().any { r-> r is RPCCallResult && r.isExceptionThrown() } }
 
-        val otherGroup = solution.individuals.filter { i-> i.seeResults().any { r-> r is RPCCallResult && !r.isExceptionThrown() } }
-        val exceptionGroup = solution.individuals.filterNot { otherGroup.contains(it) }.groupBy {
+        val other = solution.individuals.filter { i-> i.seeResults().any { r-> r is RPCCallResult && !r.isExceptionThrown() } }
+        val all = other.flatMap { it.individual.getTestedInterfaces() }.toSortedSet()
+        val clusterOther = all.associate {
+            formatClassNameInTestName(it, true) to other.filter { o -> o.individual.getTestedInterfaces().contains(it) }
+        }
+
+        val exceptionGroup = solution.individuals.filterNot { other.contains(it) }.groupBy {
             i ->
             i.seeResults().filterIsInstance<RPCCallResult>()
                 .minOfOrNull { it.getExceptionImportanceLevel()}?:-1
         }
         return SplitResult().apply {
-            this.splitOutcome = listOf(
-                Solution(individuals = otherGroup.toMutableList(),
-                    testSuiteNamePrefix = solution.testSuiteNamePrefix,
+            this.splitOutcome = (if (all.size > 1)clusterOther.map {o->
+                Solution(individuals = o.value.toMutableList(),
+                    testSuiteNamePrefix = "${solution.testSuiteNamePrefix}_${o.key}",
                     testSuiteNameSuffix = solution.testSuiteNameSuffix,
                     termination = Termination.OTHER, listOf())
-            ).plus(
+            }else listOf())
+                .plus(Solution(individuals = other.toMutableList(),
+                    testSuiteNamePrefix = solution.testSuiteNamePrefix,
+                    testSuiteNameSuffix = solution.testSuiteNameSuffix,
+                    termination = Termination.OTHER, listOf()))
+                .plus(
                 exceptionGroup.map { e->
                     var level = "Undefined"
                     if (e.key >= 0)
@@ -392,6 +401,17 @@ object TestSuiteSplitter {
                 Solution(successses, solution.testSuiteNamePrefix, solution.testSuiteNameSuffix, Termination.SUCCESSES, listOf()),
                 Solution(remainder, solution.testSuiteNamePrefix, solution.testSuiteNameSuffix, Termination.OTHER, listOf())
         )
+    }
+
+    private fun formatTestedInterfacesInTestName(rpcIndividual: RPCIndividual) : String{
+        return rpcIndividual.getTestedInterfaces().joinToString("_") { formatClassNameInTestName(it, true) }
+    }
+
+    private fun formatClassNameInTestName(clazz: String, simpleName : Boolean): String{
+        val names = clazz.replace("$","_").split(".")
+        if (simpleName)
+            return names.last()
+        return names.joinToString("_")
     }
 
 

@@ -15,6 +15,7 @@ import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.search.*
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.tracer.TrackOperator
+import java.util.*
 import kotlin.math.max
 
 /**
@@ -131,5 +132,13 @@ class RPCIndividual(
 
     override fun seeMainExecutableActions(): List<RPCCallAction> {
         return super.seeMainExecutableActions() as List<RPCCallAction>
+    }
+
+
+    /**
+     * @return a sorted list of involved interfaces in this test
+     */
+    fun getTestedInterfaces() : SortedSet<String> {
+        return seeMainExecutableActions().map { it.interfaceId }.toSortedSet()
     }
 }
