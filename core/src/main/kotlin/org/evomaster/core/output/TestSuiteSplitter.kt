@@ -21,17 +21,21 @@ import org.evomaster.core.problem.api.ApiWsIndividual
  */
 object TestSuiteSplitter {
 
+    private const val MULTIPLE_RPC_INTERFACES  = "MultipleRPCInterfaces"
+
     /**
      * simple split based on whether it exists exception based on RPC results
      */
     fun splitRPCByException(solution: Solution<RPCIndividual>): SplitResult{
 
-//        val group = solution.individuals.groupBy { i-> i.seeResults().any { r-> r is RPCCallResult && r.isExceptionThrown() } }
-
         val other = solution.individuals.filter { i-> i.seeResults().any { r-> r is RPCCallResult && !r.isExceptionThrown() } }
-        val all = other.flatMap { it.individual.getTestedInterfaces() }.toSortedSet()
-        val clusterOther = all.associate {
-            formatClassNameInTestName(it, true) to other.filter { o -> o.individual.getTestedInterfaces().contains(it) }
+
+        val clusterOther = other.groupBy {
+            if (it.individual.getTestedInterfaces().size == 1){
+                it.individual.getTestedInterfaces().first()
+            }else{
+                MULTIPLE_RPC_INTERFACES
+            }
         }
 
         val exceptionGroup = solution.individuals.filterNot { other.contains(it) }.groupBy {
@@ -40,16 +44,16 @@ object TestSuiteSplitter {
                 .minOfOrNull { it.getExceptionImportanceLevel()}?:-1
         }
         return SplitResult().apply {
-            this.splitOutcome = (if (all.size > 1)clusterOther.map {o->
+            this.splitOutcome = clusterOther.map {o->
                 Solution(individuals = o.value.toMutableList(),
                     testSuiteNamePrefix = "${solution.testSuiteNamePrefix}_${o.key}",
                     testSuiteNameSuffix = solution.testSuiteNameSuffix,
                     termination = Termination.OTHER, listOf())
-            }else listOf())
-                .plus(Solution(individuals = other.toMutableList(),
-                    testSuiteNamePrefix = solution.testSuiteNamePrefix,
-                    testSuiteNameSuffix = solution.testSuiteNameSuffix,
-                    termination = Termination.OTHER, listOf()))
+            }
+//                .plus(Solution(individuals = other.toMutableList(),
+//                    testSuiteNamePrefix = solution.testSuiteNamePrefix,
+//                    testSuiteNameSuffix = solution.testSuiteNameSuffix,
+//                    termination = Termination.OTHER, listOf()))
                 .plus(
                 exceptionGroup.map { e->
                     var level = "Undefined"
