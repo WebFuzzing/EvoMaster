@@ -118,6 +118,23 @@ object TestSuiteSplitter {
         return splitResult
     }
 
+    /**
+     * @return split test suite based on specified maximum number [limit]
+     */
+    fun splitSolutionByLimitSize(solution: Solution<ApiWsIndividual>, limit: Int) : List<Solution<ApiWsIndividual>>{
+        if (limit < 0) return listOf(solution)
+        val group = solution.individuals.groupBy {
+            solution.individuals.indexOf(it) / limit
+        }
+
+        return group.map {g->
+            Solution(individuals = g.value.toMutableList(),
+                testSuiteNamePrefix = "${solution.testSuiteNamePrefix}_${g.key}",
+                testSuiteNameSuffix = solution.testSuiteNameSuffix,
+                termination = solution.termination, listOf())
+        }
+    }
+
     private fun conductClustering(solution: Solution<ApiWsIndividual>,
                                   oracles: PartialOracles = PartialOracles(),
                                   config: EMConfig,
