@@ -42,8 +42,10 @@ public class ThriftExceptionRPCEMTest extends SpringRPCTestBase {
                     assertResponseContainException(solution, "APP_INTERNAL_ERROR");
                 });
 
-        // two files for exception and others
-        Path exceptionPath = Paths.get("target/em-tests/ThriftExceptionRPCEM/org/foo/ThriftExceptionRPCEM_exceptions.kt");
+        // three files for exception and others
+        Path exceptionPath = Paths.get("target/em-tests/ThriftExceptionRPCEM/org/foo/ThriftExceptionRPCEM_P0_exceptions.kt");
+        assertTrue(Files.exists(exceptionPath));
+        exceptionPath = Paths.get("target/em-tests/ThriftExceptionRPCEM/org/foo/ThriftExceptionRPCEM_P1_exceptions.kt");
         assertTrue(Files.exists(exceptionPath));
         Path otherPath = Paths.get("target/em-tests/ThriftExceptionRPCEM/org/foo/ThriftExceptionRPCEM_others.kt");
         assertTrue(Files.exists(otherPath));

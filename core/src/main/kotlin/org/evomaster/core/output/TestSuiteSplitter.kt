@@ -43,7 +43,7 @@ object TestSuiteSplitter {
                     termination = Termination.OTHER, listOf())
             ).plus(
                 exceptionGroup.map { e->
-                    var level = ""
+                    var level = "Undefined"
                     if (e.key >= 0)
                         level = "_P${e.key}"
 
