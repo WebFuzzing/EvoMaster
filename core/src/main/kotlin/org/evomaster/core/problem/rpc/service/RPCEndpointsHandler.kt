@@ -1155,7 +1155,7 @@ class RPCEndpointsHandler {
             TODO Man exception
          */
 
-        return RPCCallAction(name, params, responseTemplate = response, response = null )
+        return RPCCallAction(endpointSchema.interfaceId, name, params, responseTemplate = response, response = null )
     }
 
     private fun actionName(interfaceName: String, endpointName: String) = "$interfaceName:$endpointName"
