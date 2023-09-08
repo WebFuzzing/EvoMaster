@@ -315,4 +315,23 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
         return null;
     }
 
+
+    @Override
+    public List<String> referenceTypes() {
+        List<String> references = new ArrayList<>();
+        for (NamedTypedValue ref : getType().getFields()){
+            if (ref instanceof ObjectParam){
+                references.add(ref.getType().getFullTypeName());
+                List<String> genericTypes = ((ObjectType)ref.getType()).getGenericTypes();
+                if (genericTypes != null && !genericTypes.isEmpty())
+                    references.addAll(genericTypes);
+            }
+            List<String> refrefTypes = ref.referenceTypes();
+            if (refrefTypes != null)
+                references.addAll(refrefTypes);
+        }
+        if (references.isEmpty()) return null;
+        return references;
+    }
+
 }

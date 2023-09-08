@@ -200,4 +200,9 @@ public class BigIntegerParam extends NamedTypedValue<BigIntegerType, BigInteger>
     public void setScale(Integer scale) {
         this.scale = scale;
     }
+
+    @Override
+    public List<String> referenceTypes() {
+        return null;
+    }
 }

@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.externalservice.rpc
 
+import org.evomaster.client.java.controller.api.dto.problem.rpc.MockRPCExternalServiceDto
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.problem.externalservice.rpc.parm.ClassResponseParam
@@ -42,6 +43,11 @@ class RPCExternalServiceAction(
 ) : ApiExternalServiceAction(responseParam, active, used) {
 
     companion object{
+        fun getRPCExternalServiceActionName(apiDto: MockRPCExternalServiceDto, index: Int) =
+            getRPCExternalServiceActionName(apiDto.interfaceFullName, apiDto.functionName, apiDto.requestRules?.get(index), apiDto.responseFullTypesWithGeneric?.get(index)?:apiDto.responseTypes[index])
+
+
+
         fun getRPCExternalServiceActionName(interfaceName: String, functionName: String, requestRuleIdentifier: String?, responseClassType: String) = "$interfaceName$EXACTION_NAME_SEPARATOR$functionName$EXACTION_NAME_SEPARATOR${requestRuleIdentifier?:"ANY"}$EXACTION_NAME_SEPARATOR$responseClassType"
     }
 

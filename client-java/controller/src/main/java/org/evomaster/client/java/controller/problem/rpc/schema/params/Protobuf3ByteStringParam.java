@@ -120,4 +120,9 @@ public class Protobuf3ByteStringParam extends NamedTypedValue<Protobuf3ByteStrin
     public String getValueAsJavaString(boolean isJava) {
         return getValue();
     }
+
+    @Override
+    public List<String> referenceTypes() {
+        return null;
+    }
 }

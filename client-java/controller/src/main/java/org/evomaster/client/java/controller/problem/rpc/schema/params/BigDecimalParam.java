@@ -221,4 +221,9 @@ public class BigDecimalParam extends NamedTypedValue<BigDecimalType, BigDecimal>
     public void setScale(Integer scale) {
         this.scale = scale;
     }
+
+    @Override
+    public List<String> referenceTypes() {
+        return null;
+    }
 }

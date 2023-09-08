@@ -108,5 +108,8 @@ public class ByteBufferParam extends NamedTypedValue<ByteBufferType, ByteBuffer>
         return null;
     }
 
-
+    @Override
+    public List<String> referenceTypes() {
+        return null;
+    }
 }
