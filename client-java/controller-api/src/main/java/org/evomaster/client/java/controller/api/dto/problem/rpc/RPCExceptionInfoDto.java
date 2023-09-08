@@ -26,7 +26,7 @@ public class RPCExceptionInfoDto {
      * importance level
      * lower value more important
      * 0 represents the most important exception which should be avoided and need to be fixed earliest
-     * a negative value (<0) represents undefined
+     * a negative value (less than 0) represents undefined
      */
     public int importanceLevel;
 
