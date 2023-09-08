@@ -7,12 +7,16 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.output.EvaluatedIndividualBuilder
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.Termination
+import org.evomaster.core.output.TestSuiteSplitter
+import org.evomaster.core.problem.api.ApiWsIndividual
+import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.search.Solution
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Paths
+import kotlin.math.ceil
 
 class TestSuiteWriterRPCTest{
 
@@ -108,5 +112,89 @@ class TestSuiteWriterRPCTest{
             assertTrue(testContent.contains("controller.mockDatabasesWithCustomizedHandling(controller.readFileAsStringFromTestResource(\"test_0_MockDatabaseObjectInfo_${it}.json\"),true)"))
             assertTrue(testContent.contains("controller.mockDatabasesWithCustomizedHandling(controller.readFileAsStringFromTestResource(\"test_0_MockDatabaseObjectInfo_${it}.json\"),false)"))
         }
+    }
+
+
+    @Test
+    fun testSuiteMaxTestSuiteLimitPerFile(){
+
+        val injector = LifecycleInjector.builder()
+            .withModules(BaseModule(), ReducedModule())
+            .build().createInjector()
+
+        val config = injector.getInstance(EMConfig::class.java)
+        config.maxTestsPerTestSuite = 5
+        config.maxTestSize = 4
+
+        val size = 12
+
+        val fileSize = ceil(size * 1.0 / config.maxTestsPerTestSuite).toInt()
+
+        val solution = Solution(
+            (0 until  size).map {
+                //build fake rpc individual in order to test its generated tests
+                EvaluatedIndividualBuilder.buildEvaluatedRPCIndividual(
+                    actions = EvaluatedIndividualBuilder.buildFakeRPCAction(config.maxTestSize),
+                    externalServicesActions = (0 until config.maxTestSize).map {
+                        listOf<ApiExternalServiceAction>()
+                    }.toMutableList(),
+                    format = OutputFormat.KOTLIN_JUNIT_5
+                )
+            }.toMutableList(),
+            config.outputFilePrefix,
+            config.outputFileSuffix,
+            Termination.NONE,
+            listOf()
+        )
+
+        val srcFolder = File(config.outputFolder)
+        srcFolder.deleteRecursively()
+
+        val split = TestSuiteSplitter.splitSolutionByLimitSize(solution as Solution<ApiWsIndividual>, config.maxTestsPerTestSuite)
+
+        assertEquals(fileSize, split.size)
+    }
+
+
+    @Test
+    fun testSuiteTestsByInterface(){
+
+        val injector = LifecycleInjector.builder()
+            .withModules(BaseModule(), ReducedModule())
+            .build().createInjector()
+
+        val config = injector.getInstance(EMConfig::class.java)
+
+        val size = 12
+        val interfaceSize = 4
+
+        val prefixes = (0 until interfaceSize).map { "${config.outputFilePrefix}_Fake${it}Interface" }
+            .plus(config.outputFilePrefix) // plus combined one
+
+        val solution = Solution(
+            (0 until  size).map {
+                //build fake rpc individual in order to test its generated tests
+                EvaluatedIndividualBuilder.buildEvaluatedRPCIndividual(
+                    actions = EvaluatedIndividualBuilder.buildFakeRPCAction(config.maxTestSize, "Fake${it % interfaceSize}Interface"),
+                    externalServicesActions = (0 until config.maxTestSize).map {
+                        listOf<ApiExternalServiceAction>()
+                    }.toMutableList(),
+                    format = OutputFormat.KOTLIN_JUNIT_5
+                )
+            }.toMutableList(),
+            config.outputFilePrefix,
+            config.outputFileSuffix,
+            Termination.NONE,
+            listOf()
+        )
+
+
+        val split = TestSuiteSplitter.splitRPCByException(solution).splitOutcome
+
+
+        assertEquals(interfaceSize + 1, split.size)
+        assertTrue(split.map { it.testSuiteNamePrefix }.containsAll(prefixes))
+
+
     }
 }
