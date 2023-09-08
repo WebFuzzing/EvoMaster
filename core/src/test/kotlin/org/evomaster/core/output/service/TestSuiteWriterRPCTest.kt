@@ -168,8 +168,9 @@ class TestSuiteWriterRPCTest{
         val size = 12
         val interfaceSize = 4
 
-        val prefixes = (0 until interfaceSize).map { "${config.outputFilePrefix}_Fake${it}Interface" }
-            .plus(config.outputFilePrefix) // plus combined one
+        val prefixes = (0 until interfaceSize).map { "${config.outputFilePrefix}_Fake${it}Interface" }.plus(
+            "${config.outputFilePrefix}_${TestSuiteSplitter.MULTIPLE_RPC_INTERFACES}"
+        )
 
         val solution = Solution(
             (0 until  size).map {
@@ -181,7 +182,18 @@ class TestSuiteWriterRPCTest{
                     }.toMutableList(),
                     format = OutputFormat.KOTLIN_JUNIT_5
                 )
-            }.toMutableList(),
+            }.plus(
+                EvaluatedIndividualBuilder.buildEvaluatedRPCIndividual(
+                    actions = (0 until interfaceSize).flatMap {
+                        EvaluatedIndividualBuilder.buildFakeRPCAction(1, "Fake${it % interfaceSize}Interface")
+                    }.toMutableList(),
+                    externalServicesActions = (0 until interfaceSize).map {
+                        listOf<ApiExternalServiceAction>()
+                    }.toMutableList(),
+                    format = OutputFormat.KOTLIN_JUNIT_5
+                )
+
+            ).toMutableList(),
             config.outputFilePrefix,
             config.outputFileSuffix,
             Termination.NONE,
@@ -192,7 +204,7 @@ class TestSuiteWriterRPCTest{
         val split = TestSuiteSplitter.splitRPCByException(solution).splitOutcome
 
 
-        assertEquals(interfaceSize + 1, split.size)
+        assertEquals(prefixes.size, split.size)
         assertTrue(split.map { it.testSuiteNamePrefix }.containsAll(prefixes))
 
 

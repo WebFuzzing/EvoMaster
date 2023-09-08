@@ -21,7 +21,7 @@ import org.evomaster.core.problem.api.ApiWsIndividual
  */
 object TestSuiteSplitter {
 
-    private const val MULTIPLE_RPC_INTERFACES  = "MultipleRPCInterfaces"
+    const val MULTIPLE_RPC_INTERFACES  = "MultipleRPCInterfaces"
 
     /**
      * simple split based on whether it exists exception based on RPC results
