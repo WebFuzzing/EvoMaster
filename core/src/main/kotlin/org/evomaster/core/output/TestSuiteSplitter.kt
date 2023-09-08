@@ -32,7 +32,7 @@ object TestSuiteSplitter {
 
         val clusterOther = other.groupBy {
             if (it.individual.getTestedInterfaces().size == 1){
-                it.individual.getTestedInterfaces().first()
+                formatClassNameInTestName(it.individual.getTestedInterfaces().first(), true)
             }else{
                 MULTIPLE_RPC_INTERFACES
             }
