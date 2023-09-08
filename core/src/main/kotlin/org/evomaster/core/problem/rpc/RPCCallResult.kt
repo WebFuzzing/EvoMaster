@@ -106,7 +106,15 @@ class RPCCallResult : ActionResult {
 
     fun getExceptionCode() = getResultValue(EXCEPTION_CODE)
 
-    fun getExceptionImportanceLevel() = getResultValue(EXCEPTION_IMPORTANCE_LEVEL)
+    fun getExceptionImportanceLevel() : Int{
+        val level = getResultValue(EXCEPTION_IMPORTANCE_LEVEL) ?: return -1
+        return try {
+            level.toInt()
+        }catch (e: NumberFormatException){
+            -1
+        }
+
+    }
 
     fun getExceptionTypeName() = getResultValue(EXCEPTION_TYPE_NAME)
 

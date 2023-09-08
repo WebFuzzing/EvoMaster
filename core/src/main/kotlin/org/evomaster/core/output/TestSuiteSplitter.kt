@@ -15,6 +15,7 @@ import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.search.*
 import com.google.gson.*
 import org.evomaster.core.problem.api.ApiWsIndividual
+import kotlin.math.min
 
 /**
  * Created by arcuri82 on 11-Nov-19.
@@ -26,14 +27,32 @@ object TestSuiteSplitter {
      */
     fun splitRPCByException(solution: Solution<RPCIndividual>): SplitResult{
 
-        val group = solution.individuals.groupBy { i-> i.seeResults().any { r-> r is RPCCallResult && r.isExceptionThrown() } }
+//        val group = solution.individuals.groupBy { i-> i.seeResults().any { r-> r is RPCCallResult && r.isExceptionThrown() } }
+
+        val otherGroup = solution.individuals.filter { i-> i.seeResults().any { r-> r is RPCCallResult && !r.isExceptionThrown() } }
+        val exceptionGroup = solution.individuals.filter { i-> i.seeResults().any { r-> r is RPCCallResult && r.isExceptionThrown() } }.groupBy {
+            i ->
+            i.seeResults().filterIsInstance<RPCCallResult>()
+                .minOfOrNull { it.getExceptionImportanceLevel()}?:-1
+        }
         return SplitResult().apply {
-            this.splitOutcome = group.map { g->
-                Solution(individuals = g.value.toMutableList(),
+            this.splitOutcome = listOf(
+                Solution(individuals = otherGroup.toMutableList(),
                     testSuiteNamePrefix = solution.testSuiteNamePrefix,
                     testSuiteNameSuffix = solution.testSuiteNameSuffix,
-                    termination = if (g.key) Termination.EXCEPTION else Termination.OTHER, listOf())
-            }
+                    termination = Termination.OTHER, listOf())
+            ).plus(
+                exceptionGroup.map { e->
+                    var level = ""
+                    if (e.key >= 0)
+                        level = "_P${e.key}"
+
+                    Solution(individuals = otherGroup.toMutableList(),
+                        testSuiteNamePrefix = "${solution.testSuiteNamePrefix}${level}",
+                        testSuiteNameSuffix = solution.testSuiteNameSuffix,
+                        termination = Termination.EXCEPTION, listOf())
+                }
+            )
         }
     }
 
