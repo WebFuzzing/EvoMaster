@@ -30,7 +30,7 @@ object TestSuiteSplitter {
 //        val group = solution.individuals.groupBy { i-> i.seeResults().any { r-> r is RPCCallResult && r.isExceptionThrown() } }
 
         val otherGroup = solution.individuals.filter { i-> i.seeResults().any { r-> r is RPCCallResult && !r.isExceptionThrown() } }
-        val exceptionGroup = solution.individuals.filter { i-> i.seeResults().any { r-> r is RPCCallResult && r.isExceptionThrown() } }.groupBy {
+        val exceptionGroup = solution.individuals.filterNot { otherGroup.contains(it) }.groupBy {
             i ->
             i.seeResults().filterIsInstance<RPCCallResult>()
                 .minOfOrNull { it.getExceptionImportanceLevel()}?:-1
@@ -47,7 +47,7 @@ object TestSuiteSplitter {
                     if (e.key >= 0)
                         level = "_P${e.key}"
 
-                    Solution(individuals = otherGroup.toMutableList(),
+                    Solution(individuals = e.value.toMutableList(),
                         testSuiteNamePrefix = "${solution.testSuiteNamePrefix}${level}",
                         testSuiteNameSuffix = solution.testSuiteNameSuffix,
                         termination = Termination.EXCEPTION, listOf())
