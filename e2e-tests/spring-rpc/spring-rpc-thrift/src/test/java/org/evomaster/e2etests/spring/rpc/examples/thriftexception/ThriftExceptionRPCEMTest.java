@@ -29,7 +29,7 @@ public class ThriftExceptionRPCEMTest extends SpringRPCTestBase {
         runTestHandlingFlakyAndCompilation(
                 "ThriftExceptionRPCEM",
                 "org.foo.ThriftExceptionRPCEM",
-                Arrays.asList("_exceptions","_others"),
+                Arrays.asList("_P0_exceptions","_P1_exceptions","_others"),
                 5000,
                 (args) -> {
 
