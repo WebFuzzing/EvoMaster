@@ -284,7 +284,8 @@ class EMConfig {
             throw IllegalArgumentException("'bbTargetUrl' should be set only in black-box mode")
         }
 
-        if(endpointFocus.isNotBlank() && endpointPrefix.isNotBlank()){
+        // ONUR, this line is changed since it did not compile in the previous case.
+        if(!endpointFocus.isNullOrBlank() && !endpointPrefix.isNullOrBlank()){
             throw IllegalArgumentException("both 'endpointFocus' and 'endpointPrefix' are set")
         }
 
