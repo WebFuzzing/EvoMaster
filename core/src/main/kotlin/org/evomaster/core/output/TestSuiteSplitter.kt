@@ -21,19 +21,51 @@ import org.evomaster.core.problem.api.ApiWsIndividual
  */
 object TestSuiteSplitter {
 
+    const val MULTIPLE_RPC_INTERFACES  = "MultipleRPCInterfaces"
+
     /**
      * simple split based on whether it exists exception based on RPC results
      */
     fun splitRPCByException(solution: Solution<RPCIndividual>): SplitResult{
 
-        val group = solution.individuals.groupBy { i-> i.seeResults().any { r-> r is RPCCallResult && r.isExceptionThrown() } }
-        return SplitResult().apply {
-            this.splitOutcome = group.map { g->
-                Solution(individuals = g.value.toMutableList(),
-                    testSuiteNamePrefix = solution.testSuiteNamePrefix,
-                    testSuiteNameSuffix = solution.testSuiteNameSuffix,
-                    termination = if (g.key) Termination.EXCEPTION else Termination.OTHER, listOf())
+        val other = solution.individuals.filter { i-> i.seeResults().any { r-> r is RPCCallResult && !r.isExceptionThrown() } }
+
+        val clusterOther = other.groupBy {
+            if (it.individual.getTestedInterfaces().size == 1){
+                formatClassNameInTestName(it.individual.getTestedInterfaces().first(), true)
+            }else{
+                MULTIPLE_RPC_INTERFACES
             }
+        }
+
+        val exceptionGroup = solution.individuals.filterNot { other.contains(it) }.groupBy {
+            i ->
+            i.seeResults().filterIsInstance<RPCCallResult>()
+                .minOfOrNull { it.getExceptionImportanceLevel()}?:-1
+        }
+        return SplitResult().apply {
+            this.splitOutcome = clusterOther.map {o->
+                Solution(individuals = o.value.toMutableList(),
+                    testSuiteNamePrefix = "${solution.testSuiteNamePrefix}_${o.key}",
+                    testSuiteNameSuffix = solution.testSuiteNameSuffix,
+                    termination = Termination.OTHER, listOf())
+            }
+//                .plus(Solution(individuals = other.toMutableList(),
+//                    testSuiteNamePrefix = solution.testSuiteNamePrefix,
+//                    testSuiteNameSuffix = solution.testSuiteNameSuffix,
+//                    termination = Termination.OTHER, listOf()))
+                .plus(
+                exceptionGroup.map { e->
+                    var level = "Undefined"
+                    if (e.key >= 0)
+                        level = "_P${e.key}"
+
+                    Solution(individuals = e.value.toMutableList(),
+                        testSuiteNamePrefix = "${solution.testSuiteNamePrefix}${level}",
+                        testSuiteNameSuffix = solution.testSuiteNameSuffix,
+                        termination = Termination.EXCEPTION, listOf())
+                }
+            )
         }
     }
 
@@ -88,6 +120,23 @@ object TestSuiteSplitter {
         }
 
         return splitResult
+    }
+
+    /**
+     * @return split test suite based on specified maximum number [limit]
+     */
+    fun splitSolutionByLimitSize(solution: Solution<ApiWsIndividual>, limit: Int) : List<Solution<ApiWsIndividual>>{
+        if (limit < 0) return listOf(solution)
+        val group = solution.individuals.groupBy {
+            solution.individuals.indexOf(it) / limit
+        }
+
+        return group.map {g->
+            Solution(individuals = g.value.toMutableList(),
+                testSuiteNamePrefix = "${solution.testSuiteNamePrefix}_${g.key}",
+                testSuiteNameSuffix = solution.testSuiteNameSuffix,
+                termination = solution.termination, listOf())
+        }
     }
 
     private fun conductClustering(solution: Solution<ApiWsIndividual>,
@@ -373,6 +422,17 @@ object TestSuiteSplitter {
                 Solution(successses, solution.testSuiteNamePrefix, solution.testSuiteNameSuffix, Termination.SUCCESSES, listOf()),
                 Solution(remainder, solution.testSuiteNamePrefix, solution.testSuiteNameSuffix, Termination.OTHER, listOf())
         )
+    }
+
+    private fun formatTestedInterfacesInTestName(rpcIndividual: RPCIndividual) : String{
+        return rpcIndividual.getTestedInterfaces().joinToString("_") { formatClassNameInTestName(it, true) }
+    }
+
+    private fun formatClassNameInTestName(clazz: String, simpleName : Boolean): String{
+        val names = clazz.replace("$","_").split(".")
+        if (simpleName)
+            return names.last()
+        return names.joinToString("_")
     }
 
 

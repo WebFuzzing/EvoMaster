@@ -12,6 +12,7 @@ import org.evomaster.client.java.utils.SimpleLogger;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.UndeclaredThrowableException;
+import java.util.Map;
 
 /**
  * handle RPC exception, for instance
@@ -29,7 +30,7 @@ public class RPCExceptionHandler {
      * @param endpointSchema is the schema of the endpoint
      * @param type is the RPC type
      */
-    public static void handle(Object e, ActionResponseDto dto, EndpointSchema endpointSchema, RPCType type){
+    public static void handle(Object e, ActionResponseDto dto, EndpointSchema endpointSchema, RPCType type, Map<Class, Integer> levelsMap){
 
         Object exceptionToHandle = e;
         boolean isCause = false;
@@ -46,6 +47,8 @@ public class RPCExceptionHandler {
         RPCExceptionInfoDto exceptionInfoDto = null;
         try {
             exceptionInfoDto = handleExceptionNameAndMessage(exceptionToHandle);
+
+            handleImportanceLevels(exceptionToHandle, exceptionInfoDto, levelsMap);
 
             handled = handleDefinedException(exceptionToHandle, endpointSchema, type, exceptionInfoDto);
 
@@ -77,6 +80,13 @@ public class RPCExceptionHandler {
         dto.exceptionInfoDto = exceptionInfoDto;
 
         dto.exceptionInfoDto.isCauseOfUndeclaredThrowable = isCause;
+    }
+
+    private static void handleImportanceLevels(Object e, RPCExceptionInfoDto dto, Map<Class, Integer> levelsMap) {
+        if (levelsMap == null) return;
+        Integer level = levelsMap.get(e.getClass());
+        if (level != null)
+            dto.importanceLevel = level;
     }
 
     private static void handleUnexpectedException(Object e, RPCExceptionInfoDto dto){

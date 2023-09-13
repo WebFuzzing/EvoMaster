@@ -932,7 +932,13 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         //handle exception
         if (response instanceof Exception){
             try{
-                RPCExceptionHandler.handle(response, responseDto, endpointSchema, getRPCType(dto));
+                Map<Class, Integer> levelsMap = null;
+                try{
+                    levelsMap = getExceptionImportanceLevels();
+                }catch (Throwable e){
+                    SimpleLogger.error("ERROR: fail to get specified importance levels for exceptions "+ e.getMessage());
+                }
+                RPCExceptionHandler.handle(response, responseDto, endpointSchema, getRPCType(dto), levelsMap);
                 return;
             } catch (Exception e){
                 SimpleLogger.error("ERROR: fail to handle exception instance to dto "+ e.getMessage());
@@ -1529,5 +1535,10 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     public final String readFileAsStringFromTestResource(String fileName){
         return (new BufferedReader(new InputStreamReader(Objects.requireNonNull(this.getClass().getClassLoader().getResourceAsStream(fileName)))))
                 .lines().collect(Collectors.joining(System.lineSeparator()));
+    }
+
+    @Override
+    public Map<Class, Integer> getExceptionImportanceLevels() {
+        return null;
     }
 }

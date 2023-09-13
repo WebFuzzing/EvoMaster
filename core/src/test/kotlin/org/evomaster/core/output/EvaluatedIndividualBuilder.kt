@@ -75,8 +75,8 @@ class EvaluatedIndividualBuilder {
             return Triple(format, baseUrlOfSut, ei)
         }
 
-        fun buildFakeRPCAction(n:Int) : MutableList<RPCCallAction>{
-            return (0 until n).map { RPCCallAction("FakeRPCCall_$it",
+        fun buildFakeRPCAction(n:Int, interfaceId : String = "FakeRPCCall") : MutableList<RPCCallAction>{
+            return (0 until n).map { RPCCallAction(interfaceId,"${interfaceId}_$it",
                 inputParameters = mutableListOf(),
                 responseTemplate= null,
                 response = RPCParam("return", OptionalGene("return", StringGene("return")))

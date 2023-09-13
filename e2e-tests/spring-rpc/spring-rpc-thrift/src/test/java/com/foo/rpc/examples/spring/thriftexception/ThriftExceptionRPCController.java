@@ -11,6 +11,7 @@ import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RPCProblem;
 
 import java.util.HashMap;
+import java.util.Map;
 
 public class ThriftExceptionRPCController extends SpringController {
 
@@ -38,5 +39,13 @@ public class ThriftExceptionRPCController extends SpringController {
         }
 
         return url;
+    }
+
+    @Override
+    public Map<Class, Integer> getExceptionImportanceLevels() {
+        return new HashMap<Class, Integer>(){{
+            put(BadResponse.class, 1);
+            put(ErrorResponse.class, 0);
+        }};
     }
 }
