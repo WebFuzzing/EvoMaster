@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RestController
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.Socket
+import java.net.UnknownHostException
 
 @RestController
 @RequestMapping(path = ["/api/inet"])
@@ -40,6 +41,22 @@ class InetReplacementRest {
 
             ResponseEntity.ok("OK")
         } catch (e: Exception) {
+           // log("Exception: ${e.message}")
+            ResponseEntity.status(400).build()
+        }
+    }
+
+
+    @GetMapping(path = ["/only"])
+    fun only(): ResponseEntity<String> {
+        return try {
+            val address = InetAddress.getByName("imaginary-host.local")
+
+            ResponseEntity.ok("OK : ${address.toString()}")
+        } catch (e: UnknownHostException) {
+            ResponseEntity.internalServerError().build()
+        }
+        catch (e: Exception) {
            // log("Exception: ${e.message}")
             ResponseEntity.status(400).build()
         }

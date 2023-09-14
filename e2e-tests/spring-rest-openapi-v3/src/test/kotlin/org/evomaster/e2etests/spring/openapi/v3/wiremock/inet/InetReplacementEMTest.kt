@@ -56,4 +56,38 @@ class InetReplacementEMTest : SpringTestBase() {
             3
         )
     }
+
+
+    @Test
+    fun testRunEM2() {
+        runTestHandlingFlakyAndCompilation(
+            "InetReplacementEM2",
+            "org.foo.InetReplacementEM2",
+            1000,
+//            !CIUtils.isRunningGA(),
+            false,
+            { args: MutableList<String> ->
+
+                args.add("--externalServiceIPSelectionStrategy")
+                args.add("USER")
+                args.add("--externalServiceIP")
+                args.add("127.0.0.2")
+
+                //FIXME should make sure it works with true.
+                //looks like a bug in resetting the DNS cache to default state
+                args.add("--minimize")
+                args.add("true")
+
+                val solution = initAndRun(args)
+
+                Assertions.assertTrue(solution.individuals.size >= 1)
+
+                if (!CIUtils.isRunningGA()) {
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/inet/only", "OK")
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/inet/only",null)
+                }
+            },
+            3
+        )
+    }
 }
