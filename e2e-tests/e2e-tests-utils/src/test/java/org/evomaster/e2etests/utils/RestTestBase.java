@@ -160,6 +160,117 @@ public abstract class RestTestBase  extends EnterpriseTestBase {
         return false;
     }
 
+    /*
+    Path only version of hasAtLeastOne
+     */
+    protected boolean hasFocusInPath(EvaluatedIndividual<RestIndividual> ind,
+                                    String path)
+    {
+
+        List<RestCallAction> actions = ind.getIndividual().seeMainExecutableActions();
+        List<ActionResult> results = ind.seeResults(actions);
+
+        //boolean stopped = false;
+
+        //for (int i = 0; i < actions.size() && !stopped; i++) {
+        for (int i = 0; i < actions.size(); i++) {
+
+            RestCallResult res = (RestCallResult) results.get(i);
+            //stopped = res.getStopping();
+
+            RestCallAction action = actions.get(i);
+
+            //System.out.println(action.getPath());
+
+            // check if it is the path with -1
+
+
+            if (path != null) {
+                RestPath target = new RestPath(path);
+
+                if (!action.getPath().isEquivalent(target)) {
+
+                    // to exclude /:-1/v2/swagger.json from search
+                    if (!action.getPath().toString().contains(".json"))
+                    {
+                        continue;
+                    }
+
+                }
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+    protected void assertAllSolutionsHavePathFocus(Solution<RestIndividual> solution,
+                                       String path) {
+
+        boolean ok = solution.getIndividuals().stream().allMatch(
+                ind -> hasFocusInPath(ind, path));
+
+        String errorMsg = "Seed " + (defaultSeed-1)+". ";
+        errorMsg += "Missing " + path + "\n";
+
+        assertTrue(ok, errorMsg + restActions(solution));
+    }
+
+    protected boolean hasPrefixInPath(EvaluatedIndividual<RestIndividual> ind,
+                                     String path)
+    {
+
+        List<RestCallAction> actions = ind.getIndividual().seeMainExecutableActions();
+        List<ActionResult> results = ind.seeResults(actions);
+
+        //boolean stopped = false;
+
+        //for (int i = 0; i < actions.size() && !stopped; i++) {
+        for (int i = 0; i < actions.size(); i++) {
+
+            RestCallResult res = (RestCallResult) results.get(i);
+            //stopped = res.getStopping();
+
+            RestCallAction action = actions.get(i);
+
+            //System.out.println(action.getPath());
+
+            // check if it is the path with -1
+
+
+            if (path != null) {
+                RestPath target = new RestPath(path);
+
+                if (!action.getPath().toString().startsWith(path)) {
+
+                    // to exclude /:-1/v2/swagger.json from search
+                    if (!action.getPath().toString().contains(".json"))
+                    {
+                        continue;
+                    }
+
+                }
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+    protected void assertAllSolutionsHavePathPrefix(Solution<RestIndividual> solution,
+                                                   String path) {
+
+        boolean ok = solution.getIndividuals().stream().allMatch(
+                ind -> hasPrefixInPath(ind, path));
+
+        String errorMsg = "Seed " + (defaultSeed-1)+". ";
+        errorMsg += "Missing " + path + "\n";
+
+        assertTrue(ok, errorMsg + restActions(solution));
+    }
+
+
+
     protected int countExpected(Solution<RestIndividual> solution,
                                        HttpVerb verb,
                                        int expectedStatusCode,
