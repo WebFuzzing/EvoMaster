@@ -3,12 +3,10 @@ package org.evomaster.e2etests.spring.examples.endpointFocusAndPrefix;
 import com.foo.rest.examples.spring.endpointFocusAndPrefix.EndpointFocusAndPrefixController;
 import org.evomaster.client.java.instrumentation.shared.ClassName;
 import org.evomaster.core.problem.rest.RestIndividual;
-import org.evomaster.core.problem.rest.OpenApiAccess;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import io.swagger.v3.oas.models.OpenAPI;
 
 
 import java.util.List;
