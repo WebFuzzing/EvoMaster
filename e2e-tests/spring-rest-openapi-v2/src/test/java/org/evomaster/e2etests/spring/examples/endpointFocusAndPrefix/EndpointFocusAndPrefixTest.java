@@ -8,7 +8,6 @@ import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Assertions;
 import io.swagger.v3.oas.models.OpenAPI;
 
 
@@ -18,7 +17,6 @@ import java.util.List;
 public class EndpointFocusAndPrefixTest extends SpringTestBase {
 
     private final String swaggerURLSample = "https://petstore.swagger.io/v2/swagger.json";
-    private OpenAPI swagger = OpenApiAccess.INSTANCE.getOpenAPIFromURL(swaggerURLSample);
 
 
     @BeforeAll
@@ -35,7 +33,7 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
     Black box test with existing endpointFocus
      */
     @Test
-    public void testRunBlackBoxWithFocus() throws Throwable {
+    public void testRunBlackBoxWithFocus() {
 
 
 
@@ -64,8 +62,6 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
         args.add("--endpointFocus");
         args.add(endpointFocus);
 
-        boolean hasAtLeastOneTest = true;
-
         Solution<RestIndividual> solution = initAndRun(args);
 
         String pathToSearch = "/v2" + endpointFocus;
@@ -81,7 +77,7 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
     the program has to throw an IllegalArgumentException and stop
      */
     @Test
-    public void testRunBlackBoxWithPrefix() throws Throwable {
+    public void testRunBlackBoxWithPrefix() {
 
 
 
@@ -110,7 +106,6 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
         args.add("--endpointPrefix");
         args.add(endpointPrefix);
 
-        boolean hasAtLeastOneTest = true;
 
         Solution<RestIndividual> solution = initAndRun(args);
 
