@@ -112,7 +112,7 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
 
         assertAllSolutionsHavePathPrefix(solution, pathToSearch);
 
-        //compile(outputFolder);
+        compile(outputFolder);
 
     }
 }
