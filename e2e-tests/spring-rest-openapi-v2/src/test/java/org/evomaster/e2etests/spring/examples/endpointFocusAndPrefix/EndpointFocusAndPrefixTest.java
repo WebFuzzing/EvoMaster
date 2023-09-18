@@ -9,7 +9,11 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 
 public class EndpointFocusAndPrefixTest extends SpringTestBase {
@@ -33,18 +37,8 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
     @Test
     public void testRunBlackBoxWithFocus() {
 
-
-
         String outputFolder = "EndpointFocus";
         String endpointFocus = "/pet";
-
-
-        //List<String> args = getArgsWithCompilation(
-         //       10,
-          //      outputFolder,
-           //     ClassName.get("org.foo.BlackBoxConstant"),
-           //     true);
-
 
         List<String> args = getArgsWithCompilation(
                 10,
@@ -77,18 +71,8 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
     @Test
     public void testRunBlackBoxWithPrefix() {
 
-
-
         String outputFolder = "EndpointPrefix";
         String endpointPrefix = "/pet";
-
-
-        //List<String> args = getArgsWithCompilation(
-        //       10,
-        //      outputFolder,
-        //     ClassName.get("org.foo.BlackBoxConstant"),
-        //     true);
-
 
         List<String> args = getArgsWithCompilation(
                 10,
@@ -113,6 +97,105 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
         assertAllSolutionsHavePathPrefix(solution, pathToSearch);
 
         compile(outputFolder);
+
+    }
+
+    @Test
+    void testNonExistingFocus() {
+
+        String a = null;
+
+        String outputFolder = "EndpointFocus";
+        String endpointFocusNonExisting = "/nopet";
+
+        List<String> args = getArgsWithCompilation(
+                10,
+                outputFolder,
+                ClassName.get("org.foo.EndpointFocus"),
+                true);
+
+        // program arguments for EvoMaster
+        args.add("--blackBox");
+        args.add("true");
+        args.add("--bbSwaggerUrl");
+        args.add(swaggerURLSample);
+        // endpointFocus
+        args.add("--endpointFocus");
+        args.add(endpointFocusNonExisting);
+
+        assertThrows(InvocationTargetException.class,
+                ()-> {
+                    // This run should throw exception
+                    initAndRun(args);
+                });
+
+
+    }
+
+    @Test
+    void testNonExistingPrefix() {
+
+        String a = null;
+
+        String outputFolder = "EndpointFocus";
+        String endpointPrefixNonExisting = "/nopet";
+
+        List<String> args = getArgsWithCompilation(
+                10,
+                outputFolder,
+                ClassName.get("org.foo.EndpointFocus"),
+                true);
+
+        // program arguments for EvoMaster
+        args.add("--blackBox");
+        args.add("true");
+        args.add("--bbSwaggerUrl");
+        args.add(swaggerURLSample);
+        // endpointFocus
+        args.add("--endpointPrefix");
+        args.add(endpointPrefixNonExisting);
+
+        assertThrows(IllegalArgumentException.class,
+                ()-> {
+                    // This run should throw exception
+                    initAndRun(args);
+                });
+
+
+    }
+
+    @Test
+    void testBothFocusAndPrefixProvided() {
+
+        String a = null;
+
+        String outputFolder = "EndpointFocus";
+        String endpointPrefix = "/pet";
+        String endpointFocus = "/user";
+
+        List<String> args = getArgsWithCompilation(
+                10,
+                outputFolder,
+                ClassName.get("org.foo.EndpointFocus"),
+                true);
+
+        // program arguments for EvoMaster
+        args.add("--blackBox");
+        args.add("true");
+        args.add("--bbSwaggerUrl");
+        args.add(swaggerURLSample);
+        // endpointFocus
+        args.add("--endpointPrefix");
+        args.add(endpointPrefix);
+        args.add("--endpointFocus");
+        args.add(endpointFocus);
+
+        assertThrows(IllegalArgumentException.class,
+                ()-> {
+                    // This run should throw exception
+                    initAndRun(args);
+                });
+
 
     }
 }
