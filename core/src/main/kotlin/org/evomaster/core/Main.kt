@@ -15,6 +15,7 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestSuiteSplitter
 import org.evomaster.core.output.clustering.SplitResult
 import org.evomaster.core.output.service.TestSuiteWriter
+import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.graphql.GraphQLIndividual
@@ -609,8 +610,15 @@ class Main {
                 val splitResult = TestSuiteSplitter.split(solution, config, writer.getPartialOracles())
 
                 solution.clusteringTime = splitResult.clusteringTime.toInt()
-                splitResult.splitOutcome.filter { !it.individuals.isNullOrEmpty() }
-                        .forEach { writer.writeTests(it, controllerInfoDto?.fullName,controllerInfoDto?.executableFullPath, snapshot) }
+                splitResult.splitOutcome
+                    .filter { !it.individuals.isNullOrEmpty() }
+                    .flatMap {
+                        TestSuiteSplitter.splitSolutionByLimitSize(
+                            it as Solution<ApiWsIndividual>,
+                            config.maxTestsPerTestSuite
+                        )
+                    }
+                    .forEach { writer.writeTests(it, controllerInfoDto?.fullName,controllerInfoDto?.executableFullPath, snapshot) }
 
                 if (config.executiveSummary) {
                     writeExecSummary(injector, controllerInfoDto, splitResult)
@@ -627,7 +635,14 @@ class Main {
                      */
                     EMConfig.TestSuiteSplitType.CLUSTER -> {
                         val splitResult = TestSuiteSplitter.splitRPCByException(solution as Solution<RPCIndividual>)
-                        splitResult.splitOutcome.filter { !it.individuals.isNullOrEmpty() }
+                        splitResult.splitOutcome
+                            .filter { !it.individuals.isNullOrEmpty() }
+                            .flatMap {
+                                TestSuiteSplitter.splitSolutionByLimitSize(
+                                    it as Solution<ApiWsIndividual>,
+                                    config.maxTestsPerTestSuite
+                                )
+                            }
                             .forEach { writer.writeTests(it, controllerInfoDto?.fullName,controllerInfoDto?.executableFullPath, snapshot) }
 
                         // disable executiveSummary
@@ -645,8 +660,15 @@ class Main {
                     else -> {
                         //throw IllegalStateException("GraphQL problem does not support splitting tests by code at this time")
                         val splitResult = TestSuiteSplitter.split(solution, config)
-                        splitResult.splitOutcome.filter{ !it.individuals.isNullOrEmpty() }
-                                .forEach { writer.writeTests(it, controllerInfoDto?.fullName, controllerInfoDto?.executableFullPath, snapshot ) }
+                        splitResult.splitOutcome
+                            .filter{ !it.individuals.isNullOrEmpty() }
+                            .flatMap {
+                                TestSuiteSplitter.splitSolutionByLimitSize(
+                                    it as Solution<ApiWsIndividual>,
+                                    config.maxTestsPerTestSuite
+                                )
+                            }
+                            .forEach { writer.writeTests(it, controllerInfoDto?.fullName, controllerInfoDto?.executableFullPath, snapshot ) }
                     }
                     /*
                       GraphQL could be split by code (where code is available and trustworthy)

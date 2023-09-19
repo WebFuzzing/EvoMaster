@@ -849,6 +849,11 @@ class EMConfig {
     @Cfg("Instead of generating a single test file, it could be split in several files, according to different strategies")
     var testSuiteSplitType = TestSuiteSplitType.CLUSTER
 
+    @Experimental
+    @Cfg("Specify the maximum number of tests to be generated in one test suite. " +
+            "Note that a negative number presents no limit per test suite")
+    var maxTestsPerTestSuite = -1
+
     @Cfg("Generate an executive summary, containing an example of each category of potential fault found." +
                     "NOTE: This option is only meaningful when used in conjuction with clustering. " +
                     "This is achieved by turning the option --testSuiteSplitType to CLUSTER")

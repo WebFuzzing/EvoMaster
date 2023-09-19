@@ -222,6 +222,7 @@ There are 3 types of options:
 |`maxSizeOfHandlingResource`| __Int__. Specify a maximum number of handling (remove/add) resource size at once, e.g., add 3 resource at most. *Constraints*: `min=0.0`. *Default value*: `0`.|
 |`maxSizeOfMutatingInitAction`| __Int__. Specify a maximum number of handling (remove/add) init actions at once, e.g., add 3 init actions at most. *Constraints*: `min=0.0`. *Default value*: `0`.|
 |`maxTestSizeStrategy`| __Enum__. Specify a strategy to handle a max size of a test. *Valid values*: `SPECIFIED, DPC_INCREASING, DPC_DECREASING`. *Default value*: `SPECIFIED`.|
+|`maxTestsPerTestSuite`| __Int__. Specify the maximum number of tests to be generated in one test suite. Note that a negative number presents no limit per test suite. *Default value*: `-1`.|
 |`maximumExistingDataToSampleInDb`| __Int__. Specify a maximum number of existing data in the database to sample when SQL handling is enabled. Note that a negative number means all existing data would be sampled. *Default value*: `-1`.|
 |`mutationTargetsSelectionStrategy`| __Enum__. Specify a strategy to select targets for evaluating mutation. *Valid values*: `FIRST_NOT_COVERED_TARGET, EXPANDED_UPDATED_NOT_COVERED_TARGET, UPDATED_NOT_COVERED_TARGET`. *Default value*: `FIRST_NOT_COVERED_TARGET`.|
 |`probOfHandlingLength`| __Double__. Specify a probability of applying length handling. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
