@@ -15,7 +15,7 @@ Also, some of these papers provides full replication packages, which are linked 
 
 * A. Arcuri, M. Zhang, J.P. Galeotti.
   *Advanced White-Box Heuristics for Search-Based Fuzzing of REST APIs*.
-  [[arXiv](https://arxiv.org/abs/2309.08360)]
+  [[arXiv](https://arxiv.org/abs/2309.08360)][[Scripts](exp/arxiv_advanced_heuristics.py)]
   
 * M. Zhang, A. Arcuri, Y. Li, K Xue, Z Wang, J. Huo, W Huang.
   *Fuzzing Microservices In Industry: Experience of Applying EvoMaster at Meituan*.
