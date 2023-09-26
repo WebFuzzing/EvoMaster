@@ -28,9 +28,7 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
     /*
      */
     public static void initClass() throws Exception {
-
         SpringTestBase.initClass(new EndpointFocusAndPrefixController());
-
     }
 
     @Test
@@ -41,7 +39,7 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
         List<String> args = getArgsWithCompilation(
                 40,
                 outputFolder,
-                ClassName.get("org.foo.WithoutFocusOrPrefix"),
+                ClassName.get("org.foo.BlackboxWithoutFocusOrPrefix"),
                 true);
         // program arguments for EvoMaster
         args.add("--blackBox");
@@ -73,7 +71,7 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
         List<String> args = getArgsWithCompilation(
                 40,
                 outputFolder,
-                ClassName.get("org.foo.WithoutFocusOrPrefixAllPaths"),
+                ClassName.get("org.foo.AllPathsInTestWhenFocusOrPrefixNotProvided"),
                 true);
         // program arguments for EvoMaster
         args.add("--blackBox");
@@ -130,13 +128,12 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
     public void testRunBlackboxWithFocusWithoutParameters() {
 
         String outputFolder = "EndPointFocusAndPrefix";
-
         String endpointFocus = "/api/pet";
 
         List<String> args = getArgsWithCompilation(
                 40,
                 outputFolder,
-                ClassName.get("org.foo.WithNonParametrizedFocus"),
+                ClassName.get("org.foo.BlackboxWithFocusWithoutParameters"),
                 true);
         // program arguments for EvoMaster
         args.add("--blackBox");
@@ -147,7 +144,6 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
         args.add(baseUrlOfSut + "/v2/api-docs");
         args.add("--endpointFocus");
         args.add(endpointFocus);
-
 
         // no endpointFocus or endpointPrefix is provided
         Solution<RestIndividual> solution = initAndRun(args);
@@ -169,13 +165,12 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
     public void testRunBlackboxWithFocusWithParameters() {
 
         String outputFolder = "EndPointFocusAndPrefix";
-
         String endpointFocus = "/api/pet/{petId}";
 
         List<String> args = getArgsWithCompilation(
                 40,
                 outputFolder,
-                ClassName.get("org.foo.WithParametrizedFocus"),
+                ClassName.get("org.foo.BlackboxWithFocusWithParameters"),
                 true);
 
         // program arguments for EvoMaster
@@ -207,13 +202,12 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
     public void testRunBlackboxWithFocusOneEndpoint() {
 
         String outputFolder = "EndPointFocusAndPrefix";
-
         String endpointFocus = "/api/store/inventory";
 
         List<String> args = getArgsWithCompilation(
                 40,
                 outputFolder,
-                ClassName.get("org.foo.InvalidFocusValidPrefix"),
+                ClassName.get("org.foo.BlackboxWithFocusOneEndpoint"),
                 true);
 
         // program arguments for EvoMaster
@@ -245,13 +239,12 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
     public void testRunBlackboxWithPrefixWithoutParameters() {
 
         String outputFolder = "EndPointFocusAndPrefix";
-
         String endpointPrefix = "/api/user";
 
         List<String> args = getArgsWithCompilation(
                 40,
                 outputFolder,
-                ClassName.get("org.foo.WithNonParametrizedPrefix"),
+                ClassName.get("org.foo.BlackboxWithPrefixWithoutParameters"),
                 true);
         // program arguments for EvoMaster
         args.add("--blackBox");
@@ -282,13 +275,12 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
     public void testRunBlackboxWithPrefixWithParameters() {
 
         String outputFolder = "EndPointFocusAndPrefix";
-
         String endpointPrefix = "/api/pet/{petId}";
 
         List<String> args = getArgsWithCompilation(
                 40,
                 outputFolder,
-                ClassName.get("org.foo.WithParametrizedPrefix"),
+                ClassName.get("org.foo.BlackboxWithPrefixWithParameters"),
                 true);
         // program arguments for EvoMaster
         args.add("--blackBox");
@@ -325,7 +317,7 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
         List<String> args = getArgsWithCompilation(
                 40,
                 outputFolder,
-                ClassName.get("org.foo.WithParametrizedPrefix"),
+                ClassName.get("org.foo.BlackboxFocusNonExistingFocusValidPrefix"),
                 true);
         // program arguments for EvoMaster
         args.add("--blackBox");
@@ -356,7 +348,7 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
         List<String> args = getArgsWithCompilation(
                 40,
                 outputFolder,
-                ClassName.get("org.foo.WithParametrizedPrefix"),
+                ClassName.get("org.foo.BlackboxPrefixNonExistingFocusValidPrefix"),
                 true);
         // program arguments for EvoMaster
         args.add("--blackBox");
@@ -388,13 +380,12 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
     public void testRunBlackboxNonExistingFocusNonExistingPrefix() {
 
         String outputFolder = "EndPointFocusAndPrefix";
-
         String endpointPrefix = "/api/ab/s1";
 
         List<String> args = getArgsWithCompilation(
                 40,
                 outputFolder,
-                ClassName.get("org.foo.WithParametrizedPrefix"),
+                ClassName.get("org.foo.BlackboxNonExistingFocusNonExistingPrefix"),
                 true);
         // program arguments for EvoMaster
         args.add("--blackBox");
@@ -408,21 +399,18 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
 
         // check for IllegalArgumentException
         assertThrows(IllegalArgumentException.class, () -> initAndRun(args));
-
     }
-
 
     @Test
     public void testRunBlackboxPrefixNonExistingPrefix() {
 
         String outputFolder = "EndPointFocusAndPrefix";
-
         String endpointPrefix = "/api/store/inventory/in";
 
         List<String> args = getArgsWithCompilation(
                 40,
                 outputFolder,
-                ClassName.get("org.foo.WithParametrizedPrefix"),
+                ClassName.get("org.foo.BlackboxPrefixNonExistingPrefix"),
                 true);
         // program arguments for EvoMaster
         args.add("--blackBox");
@@ -443,13 +431,12 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
 public void testRunBlackboxBothFocusAndPrefix() {
 
         String outputFolder = "EndPointFocusAndPrefix";
-
         String endpoint = "/api/store/order";
 
         List<String> args = getArgsWithCompilation(
                 40,
                 outputFolder,
-                ClassName.get("org.foo.WithParametrizedPrefix"),
+                ClassName.get("org.foo.BlackboxBothFocusAndPrefix"),
                 true);
 
         // program arguments for EvoMaster
