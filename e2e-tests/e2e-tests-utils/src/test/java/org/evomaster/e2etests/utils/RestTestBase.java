@@ -160,9 +160,83 @@ public abstract class RestTestBase  extends EnterpriseTestBase {
         return false;
     }
 
+
+    /**
+    Helper method to check if two given paths match based on focus or prefix
+     {@code @Parameter} path - Path we are analyzing
+     {@code @Parameter} pathFocusOrPrefix - Focus or prefix we are trying to check
+     {@code @Parameter} focusMode - true for checking focus, false for checking prefix
+
+     */
+    private boolean pathsMatchFocusOrPrefix(RestPath pathToAnalyze, RestPath pathFocusOrPrefix, boolean focusMode)
+    {
+        // check that pathToAnalyze and pathFocusOrPrefix are both not NULL
+        if(pathToAnalyze == null || pathFocusOrPrefix == null) {
+            throw new IllegalArgumentException("Invalid parameter(s), check that the given path parameters are" +
+                                               "both not NUL");
+        }
+
+        // if mode is focus, path and pathFocusOrPrefix match only if they are the same
+        if (focusMode) {
+
+            return pathToAnalyze.isEquivalent(pathFocusOrPrefix);
+        }
+        // focusMode is false, which means prefix match
+        else {
+            // if the path we are analyzing starts with pathFocusOrPrefix
+            return pathToAnalyze.toString().startsWith(pathFocusOrPrefix.toString());
+        }
+    }
+
+    /* Check if a given individual has either of the given paths as the focus or
+       as the prefix
+     */
+    protected boolean hasFocusOrPrefixInPath(EvaluatedIndividual<RestIndividual> ind,
+                                             List<RestPath> paths, boolean focusMode) {
+
+        // if no paths are provided, none of the paths are focus of emoty path
+        // every path contains empty path as a prefix
+        if (paths == null || ind == null) {
+            throw new IllegalArgumentException("Invalid parameters provided to method, one or both of them is " +
+                    "NULL: ind or paths");
+        }
+        // if no paths are provided, none of the paths are focus of empty path
+        // every path contains empty path as a prefix
+        else if (paths.isEmpty()) {
+
+            // in focusMode, none of the paths match with the empty path
+            // in prefix mode, every path matches with the empty path
+            return focusMode != true;
+        }
+        else {
+
+            // actions and results
+            List<RestCallAction> actions = ind.getIndividual().seeMainExecutableActions();
+            List<ActionResult> results = ind.seeResults(actions);
+
+            boolean noMatchFlag = false;
+
+            for (int i = 0; i < actions.size() && !noMatchFlag; i++) {
+
+                RestCallAction action = actions.get(i);
+
+                if (paths.stream().noneMatch(currentPath -> pathsMatchFocusOrPrefix(action.getPath(),
+                        currentPath, focusMode))) {
+                    noMatchFlag = true;
+                }
+
+            }
+
+            // if a patch which does not match has been encountered, return false
+            return noMatchFlag != true;
+        }
+
+
+    }
+
     /*
     Path only version of hasAtLeastOne
-     */
+
     protected boolean hasFocusInPath(EvaluatedIndividual<RestIndividual> ind,
                                     String path)
     {
@@ -204,6 +278,41 @@ public abstract class RestTestBase  extends EnterpriseTestBase {
 
         return false;
     }
+
+     */
+
+
+    /*
+    All solutions should have one of the provided paths as the focus or the prefix
+     */
+    protected void assertAllSolutionsHavePathFocusOrPrefixList(Solution<RestIndividual> solution,
+                                                               List<String> paths, boolean focusMode) {
+
+        // convert String list of paths to list of RestPaths
+        List<RestPath> listOfRestPaths = new ArrayList<>();
+
+        for (String path : paths) {
+            listOfRestPaths.add(new RestPath(path));
+        }
+
+        // check that all paths have any of given paths as the focus or prefix.
+        boolean ok = solution.getIndividuals().stream().allMatch(
+                ind -> hasFocusOrPrefixInPath(ind, listOfRestPaths, focusMode) );
+
+        String errorMsg = "Not all the provided paths are contained in the solution as" +
+                           " the focus or prefix\n";
+        errorMsg = errorMsg + "List of paths given to check:\n";
+        for (String path : paths) {
+            errorMsg = errorMsg + path + "\n";
+        }
+        errorMsg = errorMsg + "List of paths included in the solution\n";
+        errorMsg = errorMsg + restActions(solution);
+
+        assertTrue(ok, errorMsg + restActions(solution));
+
+    }
+
+    /*
     protected void assertAllSolutionsHavePathFocus(Solution<RestIndividual> solution,
                                        String path) {
 
@@ -215,7 +324,9 @@ public abstract class RestTestBase  extends EnterpriseTestBase {
 
         assertTrue(ok, errorMsg + restActions(solution));
     }
+     */
 
+    /*
     protected boolean hasPrefixInPath(EvaluatedIndividual<RestIndividual> ind,
                                      String path)
     {
@@ -257,6 +368,9 @@ public abstract class RestTestBase  extends EnterpriseTestBase {
 
         return false;
     }
+    */
+
+    /*
     protected void assertAllSolutionsHavePathPrefix(Solution<RestIndividual> solution,
                                                    String path) {
 
@@ -268,6 +382,8 @@ public abstract class RestTestBase  extends EnterpriseTestBase {
 
         assertTrue(ok, errorMsg + restActions(solution));
     }
+
+     */
 
 
 
