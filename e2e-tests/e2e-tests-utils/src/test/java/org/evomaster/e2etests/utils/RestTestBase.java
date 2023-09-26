@@ -162,12 +162,11 @@ public abstract class RestTestBase  extends EnterpriseTestBase {
     }
 
 
-    /**
-    Helper method to check if two given paths match based on focus or prefix
-     {@code @Parameter} path - Path we are analyzing
-     {@code @Parameter} pathFocusOrPrefix - Focus or prefix we are trying to check
-     {@code @Parameter} focusMode - true for checking focus, false for checking prefix
-
+    /*
+     Helper method to check if two given paths match based on focus or prefix
+     path - Path we are analyzing
+     pathFocusOrPrefix - Focus or prefix we are trying to check
+     focusMode - true for checking focus, false for checking prefix
      */
     private boolean pathsMatchFocusOrPrefix(RestPath pathToAnalyze, RestPath pathFocusOrPrefix, boolean focusMode)
     {
