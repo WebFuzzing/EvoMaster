@@ -2,6 +2,7 @@ package org.evomaster.core.sql
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.instrumentation.shared.RegexSharedUtils
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.sql.schema.Column
 import org.evomaster.core.sql.schema.ColumnDataType
 import org.evomaster.core.sql.schema.ForeignKey
@@ -680,31 +681,48 @@ class SqlActionGeneBuilder {
                     /**
                      * TODO Handle a conjunction of Regex patterns
                      */
-                    log.warn("Handling only a regex pattern for (${column.name}). Using like pattern: ${likePattern}}")
+                    LoggingUtil.uniqueWarn(log, "Handling only a regex pattern for (${column.name}). Using like pattern: ${likePattern}}")
                 }
                 buildLikeRegexGene(columnName, likePattern, databaseType = column.databaseType)
             } else if (column.javaRegExPattern != null) {
-               buildJavaRegexGene(column.name, column.javaRegExPattern)
+
+                try {
+                    buildJavaRegexGene(column.name, column.javaRegExPattern)
+                } catch (e: Exception){
+                    LoggingUtil.uniqueWarn(log, "Failed to handle regex: ${column.javaRegExPattern}")
+                    buildStringGene(isFixedLength, column)
+                }
+                /*
+                    TODO in those cases of regex, shouldn't still check for size constraints?
+                 */
+
             } else {
-                val columnMinLength = if (isFixedLength) {
-                    column.size
-                } else {
-                    if (column.minSize !=null && column.minSize>0) {
-                        column.minSize
-                    } else if (column.isNotBlank==true) {
-                        1
-                    }  else {
-                        0
-                    }
-                }
-                val columnMaxLength = if (column.maxSize!=null) {
-                    minOf(column.maxSize, column.size)
-                } else {
-                    column.size
-                }
-                StringGene(name = column.name, minLength = columnMinLength, maxLength = columnMaxLength)
+                buildStringGene(isFixedLength, column)
             }
         }
+    }
+
+    private fun buildStringGene(
+        isFixedLength: Boolean,
+        column: Column,
+    ): StringGene {
+        val columnMinLength = if (isFixedLength) {
+            column.size
+        } else {
+            if (column.minSize != null && column.minSize > 0) {
+                column.minSize
+            } else if (column.isNotBlank == true) {
+                1
+            } else {
+                0
+            }
+        }
+        val columnMaxLength = if (column.maxSize != null) {
+            minOf(column.maxSize, column.size)
+        } else {
+            column.size
+        }
+        return StringGene(name = column.name, minLength = columnMinLength, maxLength = columnMaxLength)
     }
 
     private fun buildJavaRegexGene(name: String, javaRegExPattern: String): RegexGene {
