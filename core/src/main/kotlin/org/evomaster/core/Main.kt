@@ -219,6 +219,8 @@ class Main {
                         val totalLines = unitsInfo.numberOfLines
                         val percentage = String.format("%.0f", (linesInfo.total / totalLines.toDouble()) * 100)
 
+                        assert(linesInfo.total <= totalLines)
+
                         info("Covered targets (lines, branches, faults, etc.): ${targetsInfo.total}")
                         info("Potential faults: ${faults.size}")
                         info("Bytecode line coverage: $percentage% (${linesInfo.total} out of $totalLines in $units units/classes)")
