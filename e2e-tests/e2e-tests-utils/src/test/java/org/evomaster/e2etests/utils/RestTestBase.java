@@ -10,6 +10,7 @@ import org.evomaster.core.logging.TestLoggingUtil;
 import org.evomaster.core.problem.rest.*;
 import org.evomaster.core.search.*;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -178,7 +179,6 @@ public abstract class RestTestBase  extends EnterpriseTestBase {
 
         // if mode is focus, path and pathFocusOrPrefix match only if they are the same
         if (focusMode) {
-
             return pathToAnalyze.isEquivalent(pathFocusOrPrefix);
         }
         // focusMode is false, which means prefix match
@@ -206,81 +206,28 @@ public abstract class RestTestBase  extends EnterpriseTestBase {
 
             // in focusMode, none of the paths match with the empty path
             // in prefix mode, every path matches with the empty path
-            return focusMode != true;
+            return !focusMode;
         }
         else {
-
-            // actions and results
+            // actions and noMAtchFlag
             List<RestCallAction> actions = ind.getIndividual().seeMainExecutableActions();
-            List<ActionResult> results = ind.seeResults(actions);
-
             boolean noMatchFlag = false;
 
             for (int i = 0; i < actions.size() && !noMatchFlag; i++) {
 
                 RestCallAction action = actions.get(i);
 
+                // if none of them match in one solution, noMatchFlag is true
                 if (paths.stream().noneMatch(currentPath -> pathsMatchFocusOrPrefix(action.getPath(),
                         currentPath, focusMode))) {
                     noMatchFlag = true;
                 }
 
             }
-
             // if a patch which does not match has been encountered, return false
-            return noMatchFlag != true;
+            return !noMatchFlag;
         }
-
-
     }
-
-    /*
-    Path only version of hasAtLeastOne
-
-    protected boolean hasFocusInPath(EvaluatedIndividual<RestIndividual> ind,
-                                    String path)
-    {
-
-        List<RestCallAction> actions = ind.getIndividual().seeMainExecutableActions();
-        List<ActionResult> results = ind.seeResults(actions);
-
-        //boolean stopped = false;
-
-        //for (int i = 0; i < actions.size() && !stopped; i++) {
-        for (int i = 0; i < actions.size(); i++) {
-
-            RestCallResult res = (RestCallResult) results.get(i);
-            //stopped = res.getStopping();
-
-            RestCallAction action = actions.get(i);
-
-            //System.out.println(action.getPath());
-
-            // check if it is the path with -1
-
-
-            if (path != null) {
-                RestPath target = new RestPath(path);
-
-                if (!action.getPath().isEquivalent(target)) {
-
-                    // to exclude /:-1/v2/swagger.json from search
-                    if (!action.getPath().toString().contains(".json"))
-                    {
-                        continue;
-                    }
-
-                }
-            }
-
-            return true;
-        }
-
-        return false;
-    }
-
-     */
-
 
     /*
     All solutions should have one of the provided paths as the focus or the prefix
@@ -291,6 +238,7 @@ public abstract class RestTestBase  extends EnterpriseTestBase {
         // convert String list of paths to list of RestPaths
         List<RestPath> listOfRestPaths = new ArrayList<>();
 
+        // convert list of Strings to a list of RestPaths
         for (String path : paths) {
             listOfRestPaths.add(new RestPath(path));
         }
@@ -299,93 +247,23 @@ public abstract class RestTestBase  extends EnterpriseTestBase {
         boolean ok = solution.getIndividuals().stream().allMatch(
                 ind -> hasFocusOrPrefixInPath(ind, listOfRestPaths, focusMode) );
 
+        // error message
         String errorMsg = "Not all the provided paths are contained in the solution as" +
                            " the focus or prefix\n";
         errorMsg = errorMsg + "List of paths given to check:\n";
+
+        // display paths in the error message
         for (String path : paths) {
-            errorMsg = errorMsg + path + "\n";
+            errorMsg = MessageFormat.format("{0}{1}\n", errorMsg, path);
         }
+
+        // display list of paths included in the solution in the error message
         errorMsg = errorMsg + "List of paths included in the solution\n";
         errorMsg = errorMsg + restActions(solution);
 
-        assertTrue(ok, errorMsg + restActions(solution));
-
-    }
-
-    /*
-    protected void assertAllSolutionsHavePathFocus(Solution<RestIndividual> solution,
-                                       String path) {
-
-        boolean ok = solution.getIndividuals().stream().allMatch(
-                ind -> hasFocusInPath(ind, path));
-
-        String errorMsg = "Seed " + (defaultSeed-1)+". ";
-        errorMsg += "Missing " + path + "\n";
-
+        // assertion
         assertTrue(ok, errorMsg + restActions(solution));
     }
-     */
-
-    /*
-    protected boolean hasPrefixInPath(EvaluatedIndividual<RestIndividual> ind,
-                                     String path)
-    {
-
-        List<RestCallAction> actions = ind.getIndividual().seeMainExecutableActions();
-        List<ActionResult> results = ind.seeResults(actions);
-
-        //boolean stopped = false;
-
-        //for (int i = 0; i < actions.size() && !stopped; i++) {
-        for (int i = 0; i < actions.size(); i++) {
-
-            RestCallResult res = (RestCallResult) results.get(i);
-            //stopped = res.getStopping();
-
-            RestCallAction action = actions.get(i);
-
-            //System.out.println(action.getPath());
-
-            // check if it is the path with -1
-
-
-            if (path != null) {
-                RestPath target = new RestPath(path);
-
-                if (!action.getPath().toString().startsWith(path)) {
-
-                    // to exclude /:-1/v2/swagger.json from search
-                    if (!action.getPath().toString().contains(".json"))
-                    {
-                        continue;
-                    }
-
-                }
-            }
-
-            return true;
-        }
-
-        return false;
-    }
-    */
-
-    /*
-    protected void assertAllSolutionsHavePathPrefix(Solution<RestIndividual> solution,
-                                                   String path) {
-
-        boolean ok = solution.getIndividuals().stream().allMatch(
-                ind -> hasPrefixInPath(ind, path));
-
-        String errorMsg = "Seed " + (defaultSeed-1)+". ";
-        errorMsg += "Missing " + path + "\n";
-
-        assertTrue(ok, errorMsg + restActions(solution));
-    }
-
-     */
-
-
 
     protected int countExpected(Solution<RestIndividual> solution,
                                        HttpVerb verb,
