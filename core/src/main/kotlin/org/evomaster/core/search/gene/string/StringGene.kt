@@ -35,6 +35,8 @@ import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMuta
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.lang.IllegalStateException
+import kotlin.math.max
 import kotlin.math.min
 
 class StringGene(
@@ -113,12 +115,12 @@ class StringGene(
         get() {return children}
 
 
-    fun actualMaxLength() : Int {
+    private fun actualMaxLength() : Int {
 
         val state = getSearchGlobalState()
             ?: return maxLength
 
-        return min(maxLength, state.config.maxLengthForStrings)
+        return max(minLength, min(maxLength, state.config.maxLengthForStrings))
     }
 
 
@@ -447,8 +449,18 @@ class StringGene(
         return false
     }
 
+    /**
+     * Force a tainted value. Must guarantee min-max length constraints are satisfied
+     */
     fun forceTaintedValue() {
-        value = TaintInputName.getTaintName(StaticCounter.getAndIncrease())
+        val taint = TaintInputName.getTaintName(StaticCounter.getAndIncrease())
+
+        FIXME for min, we can pad, but for max might be no option
+
+        if(taint.length !in minLength..maxLength){
+            throw IllegalStateException("Tainted value out of min-max range")
+        }
+        value = taint
         tainted = true
     }
 
