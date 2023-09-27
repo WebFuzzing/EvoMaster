@@ -9,47 +9,35 @@ class EndpointFilterTest {
     private val endpointFocus = "endpointFocus"
     private val endpointPrefix = "endpointPrefix"
 
-
     @Test
     /*
     Check endpointFocus exists in EMConfig
     */
-    fun testEndpointFocusExists()
-    {
-        val options = EMConfig.getOptionParser()
+    fun testEndpointFocusExists() {
 
+        val options = EMConfig.getOptionParser()
         assertTrue(options.recognizedOptions().containsKey(endpointFocus))
     }
-
 
     @Test
     /*
     Check endpointPrefix exists in EMConfig
      */
-    fun testEndpointPrefixExists()
-    {
+    fun testEndpointPrefixExists() {
+
         val options = EMConfig.getOptionParser()
-
         assertTrue(options.recognizedOptions().containsKey(endpointPrefix))
-
     }
 
     @Test
     /*
-    The user provides neither endpointFocusNorEndpointPrefix.
+    The user provides neither endpointFocus nor EndpointPrefix.
     In this case both endpointFocus and endpointPrefix should be NULL
     */
-    fun testNoEndpointFocusNoEndpointPrefix()
-    {
-
-        val config = EMConfig()
-
-        //config.validateOptions(params)
+    fun testNoEndpointFocusNoEndpointPrefix() {
 
         val parser = EMConfig.getOptionParser()
-
         val options = parser.parse()
-
         val endpointFocusVal = options.valueOf("endpointFocus")
         val endpointPrefixVal = options.valueOf("endpointPrefix")
 
@@ -59,20 +47,14 @@ class EndpointFilterTest {
     }
 
     /*
-    The user does not provide endpoint to focus, but
-    endpoint to prefix
+    The user does not provide endpointFocus, but provides endpointPrefix
      */
     @Test
-    fun testNoEndpointFocusEndpointPrefix()
-    {
-        //val parser = EMConfig.getOptionParser()
+    fun testNoEndpointFocusEndpointPrefix() {
 
         val sampleEndpointPrefix = "/endPointPrefixSample"
-
         val parser = EMConfig.getOptionParser()
-
         val options = parser.parse("--endpointPrefix", sampleEndpointPrefix)
-
         val endpointFocusVal = options.valueOf("endpointFocus")
         val endpointPrefixVal = options.valueOf("endpointPrefix")
 
@@ -83,19 +65,13 @@ class EndpointFilterTest {
 
     @Test
     /*
-    The user provides endpoint to focus but does not
-    provide endpoint to prefix
+    The user provides endpointFocus, but does not provide endpointPrefix
      */
-    fun testEndpointFocusNoEndpointPrefix()
-    {
+    fun testEndpointFocusNoEndpointPrefix() {
+
         val parser = EMConfig.getOptionParser()
-
         val sampleEndpointFocus = "/endpointFocusSample"
-
         val options = parser.parse("--endpointFocus", sampleEndpointFocus)
-
-        //EMConfig.check
-
         val endpointFocusVal = options.valueOf("endpointFocus")
         val endpointPrefixVal = options.valueOf("endpointPrefix")
 
@@ -106,33 +82,20 @@ class EndpointFilterTest {
 
     @Test
     /*
-    The user provides both, but in that case, an exception
+    The user provides both endpointFocus and endpointPrefix. In that case, an exception
     should be thrown.
      */
-    fun testEndPointToFocusEndpointToPrefix()
-    {
-        val parser = EMConfig.getOptionParser()
+    fun testEndPointToFocusEndpointToPrefix() {
 
         val sampleEndpointFocus = "/endpointFocusSample"
         val sampleEndpointPrefix = "/endPointPrefixSample"
 
-       // assertThrows (IllegalArgumentException, {
-       //     val options = parser.parse(
-       //         "--endpointFocus", sampleEndpointFocus,
-       //         "--endpointPrefix", sampleEndpointPrefix
-        //}
-
-        assertThrows<IllegalArgumentException>(
+        assertThrows(
             IllegalArgumentException::class.java
         ) {
             val params = arrayOf("--endpointFocus", sampleEndpointFocus,
                 "--endpointPrefix", sampleEndpointPrefix)
-
             EMConfig.validateOptions(params)
         }
-
-
     }
-
-
 }
