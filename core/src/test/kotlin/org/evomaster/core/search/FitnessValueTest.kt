@@ -72,15 +72,15 @@ class FitnessValueTest {
         var linesInfo = fv.unionWithBootTimeCoveredTargets(ObjectiveNaming.LINE, idMapper, null)
         assertEquals(3, linesInfo.total)
 
-        val bootTimeInfoDto = BootTimeInfoDto().apply {
+        var bootTimeInfoDto = BootTimeInfoDto().apply {
             targets = listOf(
-                    TargetInfoDto().apply{
+                    TargetInfoDto().apply{//new
                         id = 35
                         descriptiveId = "Line_at_com.foo.rest.examples.spring.postcollection.PostCollectionRest_00046"
                         value = 1.0
                         actionIndex = -1
                     },
-                    TargetInfoDto().apply{
+                    TargetInfoDto().apply{//other
                         id = 36
                         descriptiveId = "Success_Call_at_com.foo.rest.examples.spring.postcollection.PostCollectionRest_00046_0"
                         value = 1.0
@@ -92,6 +92,34 @@ class FitnessValueTest {
         linesInfo = fv.unionWithBootTimeCoveredTargets(ObjectiveNaming.LINE, idMapper, bootTimeInfoDto)
         assertEquals(4, linesInfo.total)
         assertEquals(1, linesInfo.bootTime)
+        assertEquals(3, linesInfo.searchTime)
+
+        bootTimeInfoDto = BootTimeInfoDto().apply {
+            targets = listOf(
+                    TargetInfoDto().apply{//duplicate
+                        id = 0
+                        descriptiveId = "Line_at_com.foo.rest.examples.spring.postcollection.CreateDto_00007"
+                        value = 1.0
+                        actionIndex = -1
+                    },
+                    TargetInfoDto().apply{//new
+                        id = 35
+                        descriptiveId = "Line_at_com.foo.rest.examples.spring.postcollection.PostCollectionRest_00046"
+                        value = 1.0
+                        actionIndex = -1
+                    },
+                    TargetInfoDto().apply{//other
+                        id = 36
+                        descriptiveId = "Success_Call_at_com.foo.rest.examples.spring.postcollection.PostCollectionRest_00046_0"
+                        value = 1.0
+                        actionIndex = -1
+                    }
+            )
+        }
+
+        linesInfo = fv.unionWithBootTimeCoveredTargets(ObjectiveNaming.LINE, idMapper, bootTimeInfoDto)
+        assertEquals(4, linesInfo.total)
+        assertEquals(2, linesInfo.bootTime)
         assertEquals(3, linesInfo.searchTime)
     }
 
