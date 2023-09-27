@@ -15,12 +15,6 @@ object EndpointFilter {
         val all = swagger.paths.map{it.key}
 
         val selection =  if(config.endpointFocus != null) {
-            if (all.none { it == config.endpointFocus }) {
-                throw IllegalArgumentException(
-                    "Invalid endpointFocus: ${config.endpointFocus}. " +
-                            "\nAvailable:\n${all.joinToString("\n")}"
-                )
-            }
             all.filter { it != config.endpointFocus }
         } else if(config.endpointPrefix != null){
             all.filter { ! it.startsWith(config.endpointPrefix!!) }
