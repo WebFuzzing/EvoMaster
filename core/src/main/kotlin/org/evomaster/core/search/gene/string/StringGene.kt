@@ -414,7 +414,7 @@ class StringGene(
 
     fun redoTaint(apc: AdaptiveParameterControl, randomness: Randomness) : Boolean{
 
-        if(TaintInputName.getTaintNameMaxLength() > actualMaxLength()){
+        if(!TaintInputName.getTaintNameSatisfyLengthConstraints( actualMaxLength())){
             return false
         }
 
@@ -453,9 +453,7 @@ class StringGene(
      * Force a tainted value. Must guarantee min-max length constraints are satisfied
      */
     fun forceTaintedValue() {
-        val taint = TaintInputName.getTaintName(StaticCounter.getAndIncrease())
-
-        FIXME for min, we can pad, but for max might be no option
+        val taint = TaintInputName.getTaintName(StaticCounter.getAndIncrease(), minLength)
 
         if(taint.length !in minLength..maxLength){
             throw IllegalStateException("Tainted value out of min-max range")
