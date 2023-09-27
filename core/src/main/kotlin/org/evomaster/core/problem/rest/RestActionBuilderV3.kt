@@ -44,6 +44,7 @@ import java.net.URI
 import java.net.URISyntaxException
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.math.max
 
 /**
  * https://github.com/OAI/OpenAPI-Specification/blob/3.0.1/versions/3.0.1.md
@@ -366,7 +367,7 @@ object RestActionBuilderV3 {
                             would lead to 2 variables, or any other char that does affect the
                             structure of the URL, like '.'
                          */
-            gene = StringGene(gene.name, gene.value, 1, gene.maxLength, listOf('/', '.'))
+            gene = StringGene(gene.name, gene.value, max(gene.minLength, 1), gene.maxLength, listOf('/', '.'))
         }
 
         if (p.required != true && p.`in` != "path" && gene !is OptionalGene) {
