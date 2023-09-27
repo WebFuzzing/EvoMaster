@@ -330,12 +330,17 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
         args.add(endpointFocus);
 
         // check for IllegalArgumentException
+        /*
         try {
             initAndRun(args);
         }
         catch (Exception e) {
             assertTrue(e.getCause().toString().contains(IllegalArgumentException.class.getName()));
         }
+
+         */
+        // check for IllegalArgumentException
+        assertThrows(IllegalArgumentException.class, () -> initAndRun(args));
     }
 
     @Test
