@@ -175,7 +175,6 @@ public abstract class RestTestBase  extends EnterpriseTestBase {
             throw new IllegalArgumentException("Invalid parameter(s), check that the given path parameters are" +
                                                "both not NUL");
         }
-
         // if mode is focus, path and pathFocusOrPrefix match only if they are the same
         if (focusMode) {
             return pathToAnalyze.isEquivalent(pathFocusOrPrefix);
@@ -192,7 +191,6 @@ public abstract class RestTestBase  extends EnterpriseTestBase {
      */
     protected boolean hasFocusOrPrefixInPath(EvaluatedIndividual<RestIndividual> ind,
                                              List<RestPath> paths, boolean focusMode) {
-
         // if no paths are provided, none of the paths are focus of emoty path
         // every path contains empty path as a prefix
         if (paths == null || ind == null) {
@@ -202,13 +200,17 @@ public abstract class RestTestBase  extends EnterpriseTestBase {
         // if no paths are provided, none of the paths are focus of empty path
         // every path contains empty path as a prefix
         else if (paths.isEmpty()) {
-
             // in focusMode, none of the paths match with the empty path
             // in prefix mode, every path matches with the empty path
-            return !focusMode;
+            if (focusMode == true) {
+                return false;
+            }
+            else {
+                return true;
+            }
         }
         else {
-            // actions and noMAtchFlag
+            // actions and noMatchFlag
             List<RestCallAction> actions = ind.getIndividual().seeMainExecutableActions();
             boolean noMatchFlag = false;
 
@@ -221,10 +223,14 @@ public abstract class RestTestBase  extends EnterpriseTestBase {
                         currentPath, focusMode))) {
                     noMatchFlag = true;
                 }
-
             }
             // if a patch which does not match has been encountered, return false
-            return !noMatchFlag;
+            if (noMatchFlag == true) {
+                return false;
+            }
+            else {
+                return true;
+            }
         }
     }
 
