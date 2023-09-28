@@ -232,6 +232,7 @@ class Main {
                 when(config.problemType){
                     EMConfig.ProblemType.REST -> {
                         val k = data.find { it.header == Statistics.COVERED_2XX }!!.element.toInt()
+                        assert(k <= n)
                         val p = String.format("%.0f", (k.toDouble()/n) * 100 )
                         info("Successfully executed (HTTP code 2xx) $k endpoints out of $n ($p%)")
                     }
