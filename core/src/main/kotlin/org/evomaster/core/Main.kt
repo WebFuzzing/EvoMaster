@@ -168,6 +168,7 @@ class Main {
 
             val solution = run(injector, controllerInfo)
             val faults = solution.overall.potentialFoundFaults(idMapper)
+            val sampler : Sampler<*> = injector.getInstance(Key.get(object : TypeLiteral<Sampler<*>>(){}))
 
             resetExternalServiceHandler(injector)
 
@@ -232,9 +233,18 @@ class Main {
                 when(config.problemType){
                     EMConfig.ProblemType.REST -> {
                         val k = data.find { it.header == Statistics.COVERED_2XX }!!.element.toInt()
-                        assert(k <= n)
-                        val p = String.format("%.0f", (k.toDouble()/n) * 100 )
-                        info("Successfully executed (HTTP code 2xx) $k endpoints out of $n ($p%)")
+                        val t = if (sampler.getPreDefinedIndividuals().isNotEmpty()) {
+                            /*
+                                FIXME this is a temporary hack...
+                                right now we might have 1 call to Schema that messes up this statistics
+                             */
+                            n + 1
+                        } else {
+                            n
+                        }
+                        assert(k <= t)
+                        val p = String.format("%.0f", (k.toDouble()/t) * 100 )
+                        info("Successfully executed (HTTP code 2xx) $k endpoints out of $t ($p%)")
                     }
                     EMConfig.ProblemType.GRAPHQL ->{
                         val k = data.find { it.header == Statistics.GQL_NO_ERRORS }!!.element.toInt()
