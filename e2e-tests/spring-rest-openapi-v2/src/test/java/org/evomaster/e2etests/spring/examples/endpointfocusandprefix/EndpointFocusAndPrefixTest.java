@@ -2,7 +2,6 @@ package org.evomaster.e2etests.spring.examples.endpointfocusandprefix;
 
 import com.foo.rest.examples.spring.endpointfocusandprefix.EndpointFocusAndPrefixController;
 
-import org.evomaster.client.java.instrumentation.shared.ClassName;
 import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.OpenApiAccess;
 import org.evomaster.core.problem.rest.RestIndividual;
@@ -32,422 +31,450 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
     }
 
     @Test
-    public void testRunBlackboxWithoutFocusOrPrefix() {
+    public void testWithoutFocusOrPrefix() throws Throwable {
 
-        String outputFolder = "EndPointFocusAndPrefix";
+        String outputFolder = "BlackboxWithoutFocusOrPrefix";
 
-        List<String> args = getArgsWithCompilation(
-                40,
+        runTestHandlingFlakyAndCompilation(
                 outputFolder,
-                ClassName.get("org.foo.BlackboxWithoutFocusOrPrefix"),
-                true);
-        // program arguments for EvoMaster
-        args.add("--blackBox");
-        args.add("true");
-        args.add("--bbTargetUrl");
-        args.add(baseUrlOfSut);
-        args.add("--bbSwaggerUrl");
-        args.add(baseUrlOfSut + "/v2/api-docs");
+                "BlackboxWithoutFocusOrPrefix",
+                1000,
+                (args) -> {
 
-        // no endpointFocus or endpointPrefix is provided
-        Solution<RestIndividual> solution = initAndRun(args);
+                    // program arguments for EvoMaster
+                    args.add("--blackBox");
+                    args.add("true");
+                    args.add("--bbTargetUrl");
+                    args.add(baseUrlOfSut);
+                    args.add("--bbSwaggerUrl");
+                    args.add(baseUrlOfSut + "/v2/api-docs");
 
-        // provide empty list to check for focus or prefix and put focusMode to false,
-        // which means prefix mode. Every path has the empty path as path prefix.
-        List<String> pathsToCheck = Collections.emptyList();
+                    // no endpointFocus or endpointPrefix is provided
+                    Solution<RestIndividual> solution = initAndRun(args);
 
-        // if neither focus nor prefix is provided, then all paths should include empty path as a prefix
-        assertAllSolutionsHavePathFocusOrPrefixList(solution, pathsToCheck, false);
+                    // paths to check
+                    List<String> pathsToCheck = Collections.emptyList();
 
-        // put into the output folder
-        compile(outputFolder);
+                    // if neither focus nor prefix is provided, then all paths should include empty path as a prefix
+                    assertAllSolutionsHavePathFocusOrPrefixList(solution, pathsToCheck, false);
+
+                    // get all paths from the swagger
+                    OpenAPI swagger = OpenApiAccess.INSTANCE.getOpenAPIFromURL(baseUrlOfSut + "/v2/api-docs");
+
+                    // api paths
+                    Paths apiPaths = swagger.getPaths();
+
+                    // current path item in the API
+                    PathItem currentPathItem;
+
+                    // All paths in the swagger has to be included in tests
+                    for (String apiPathString: apiPaths.keySet()){
+
+                        // current path item
+                        currentPathItem = apiPaths.get(apiPathString);
+
+                        // if the path item is a GET request
+                        if (currentPathItem.getGet() != null) {
+                            assertHasAtLeastOne(solution, HttpVerb.GET, 200, apiPathString, null);
+                        }
+                        // if the path item is a POST request
+                        else if (currentPathItem.getPost() != null) {
+                            assertHasAtLeastOne(solution, HttpVerb.POST, 200, apiPathString, null);
+                        }
+                        // if the path item is a PUT request
+                        else if (currentPathItem.getPut() != null) {
+                            assertHasAtLeastOne(solution, HttpVerb.PUT, 200, apiPathString, null);
+                        }
+                        // if the path item is a DELETE request
+                        else if (currentPathItem.getDelete() != null) {
+                            assertHasAtLeastOne(solution, HttpVerb.DELETE, 200, apiPathString, null);
+                        }
+                    }
+
+                    // write test into the output folder
+                    compile(outputFolder);
+                });
     }
 
     @Test
-    public void testAllPathsInTestWhenFocusOrPrefixNotProvided() {
+    public void testRunBlackboxWithFocusWithoutParameters() throws Throwable {
 
-        String outputFolder = "EndPointFocusAndPrefix";
+        String outputFolder = "BlackboxWithFocusWithoutParameters";
 
-        List<String> args = getArgsWithCompilation(
-                40,
+        runTestHandlingFlakyAndCompilation(
                 outputFolder,
-                ClassName.get("org.foo.AllPathsInTestWhenFocusOrPrefixNotProvided"),
-                true);
-        // program arguments for EvoMaster
-        args.add("--blackBox");
-        args.add("true");
-        args.add("--bbTargetUrl");
-        args.add(baseUrlOfSut);
-        args.add("--bbSwaggerUrl");
-        args.add(baseUrlOfSut + "/v2/api-docs");
+                "BlackboxWithFocusWithoutParameters",
+                1000,
+                (args) -> {
+                    String endpointFocus = "/api/pet";
 
-        // no endpointFocus or endpointPrefix is provided
-        Solution<RestIndividual> solution = initAndRun(args);
+                    // program arguments for EvoMaster
+                    args.add("--blackBox");
+                    args.add("true");
+                    args.add("--bbTargetUrl");
+                    args.add(baseUrlOfSut);
+                    args.add("--bbSwaggerUrl");
+                    args.add(baseUrlOfSut + "/v2/api-docs");
+                    args.add("--endpointFocus");
+                    args.add(endpointFocus);
 
-        // paths to check
-        List<String> pathsToCheck = Collections.emptyList();
+                    // no endpointFocus or endpointPrefix is provided
+                    Solution<RestIndividual> solution = initAndRun(args);
 
-        // if neither focus nor prefix is provided, then all paths should include empty path as a prefix
-        assertAllSolutionsHavePathFocusOrPrefixList(solution, pathsToCheck, false);
+                    // include swagger into possible solutions as /v2/api-docs
+                    List<String> pathsToCheck = Arrays.asList(endpointFocus, "/v2/api-docs");
 
-        // get all paths from the swagger
-        OpenAPI swagger = OpenApiAccess.INSTANCE.getOpenAPIFromURL(baseUrlOfSut + "/v2/api-docs");
+                    // if neither focus nor prefix is provided, then all paths should include empty path as a prefix
+                    assertAllSolutionsHavePathFocusOrPrefixList(solution, pathsToCheck, true);
 
-        // api paths
-        Paths apiPaths = swagger.getPaths();
+                    // There are 2 endpoints with /api/pet, those and the failure case should be included in tests
+                    // so check that the solution contains 3 elements
+                    assertEquals(solution.getIndividuals().size(), 3);
 
-        // current path item in the API
-        PathItem currentPathItem;
-
-        // All paths in the swagger has to be included in tests
-        for (String apiPathString: apiPaths.keySet()){
-
-            // current path item
-            currentPathItem = apiPaths.get(apiPathString);
-
-            // if the path item is a GET request
-            if (currentPathItem.getGet() != null) {
-                assertHasAtLeastOne(solution, HttpVerb.GET, 200, apiPathString, null);
-            }
-            // if the path item is a POST request
-            else if (currentPathItem.getPost() != null) {
-                assertHasAtLeastOne(solution, HttpVerb.POST, 200, apiPathString, null);
-            }
-            // if the path item is a PUT request
-            else if (currentPathItem.getPut() != null) {
-                assertHasAtLeastOne(solution, HttpVerb.PUT, 200, apiPathString, null);
-            }
-            // if the path item is a DELETE request
-            else if (currentPathItem.getDelete() != null) {
-                assertHasAtLeastOne(solution, HttpVerb.DELETE, 200, apiPathString, null);
-            }
-        }
+                    // write test into the output folder
+                    compile(outputFolder);
+                });
     }
 
     @Test
-    public void testRunBlackboxWithFocusWithoutParameters() {
+    public void testRunBlackboxWithFocusWithParameters() throws Throwable {
 
-        String outputFolder = "EndPointFocusAndPrefix";
-        String endpointFocus = "/api/pet";
+        String outputFolder = "BlackboxWithFocusWithParameters";
 
-        List<String> args = getArgsWithCompilation(
-                40,
+        runTestHandlingFlakyAndCompilation(
                 outputFolder,
-                ClassName.get("org.foo.BlackboxWithFocusWithoutParameters"),
-                true);
-        // program arguments for EvoMaster
-        args.add("--blackBox");
-        args.add("true");
-        args.add("--bbTargetUrl");
-        args.add(baseUrlOfSut);
-        args.add("--bbSwaggerUrl");
-        args.add(baseUrlOfSut + "/v2/api-docs");
-        args.add("--endpointFocus");
-        args.add(endpointFocus);
+                "BlackboxWithFocusWithParameters",
+                1000,
+                (args) -> {
 
-        // no endpointFocus or endpointPrefix is provided
-        Solution<RestIndividual> solution = initAndRun(args);
+                    String endpointFocus = "/api/pet/{petId}";
 
-        // include swagger into possible solutions as /v2/api-docs
-        List<String> pathsToCheck = Arrays.asList(endpointFocus, "/v2/api-docs");
+                    // program arguments for EvoMaster
+                    args.add("--blackBox");
+                    args.add("true");
+                    args.add("--bbTargetUrl");
+                    args.add(baseUrlOfSut);
+                    args.add("--bbSwaggerUrl");
+                    args.add(baseUrlOfSut + "/v2/api-docs");
+                    args.add("--endpointFocus");
+                    args.add(endpointFocus);
 
-        // if neither focus nor prefix is provided, then all paths should include empty path as a prefix
-        assertAllSolutionsHavePathFocusOrPrefixList(solution, pathsToCheck, true);
+                    // no endpointFocus or endpointPrefix is provided
+                    Solution<RestIndividual> solution = initAndRun(args);
 
-        // There are 2 endpoints with /api/pet, those and the failure case should be included in tests
-        // so check that the solution contains 3 elements
-        assertEquals(solution.getIndividuals().size(), 3);
+                    // include swagger into possible solutions as /v2/api-docs
+                    List<String> pathsToCheck = Arrays.asList(endpointFocus, "/v2/api-docs");
 
-        compile(outputFolder);
+                    // if neither focus nor prefix is provided, then all paths should include empty path as a prefix
+                    assertAllSolutionsHavePathFocusOrPrefixList(solution, pathsToCheck, true);
+
+                    // The solution should include 4 solutions, 3 endpoints and 1 failure case
+                    assertEquals(solution.getIndividuals().size(), 4);
+
+                    // write test into the output folder
+                    compile(outputFolder);
+                });
     }
 
     @Test
-    public void testRunBlackboxWithFocusWithParameters() {
+    public void testRunBlackboxWithFocusOneEndpoint() throws Throwable {
 
-        String outputFolder = "EndPointFocusAndPrefix";
-        String endpointFocus = "/api/pet/{petId}";
+        String outputFolder = "BlackboxWithFocusOneEndpoint";
 
-        List<String> args = getArgsWithCompilation(
-                40,
+        runTestHandlingFlakyAndCompilation(
                 outputFolder,
-                ClassName.get("org.foo.BlackboxWithFocusWithParameters"),
-                true);
+                "BlackboxWithFocusOneEndpoint",
+                1000,
+                (args) -> {
 
-        // program arguments for EvoMaster
-        args.add("--blackBox");
-        args.add("true");
-        args.add("--bbTargetUrl");
-        args.add(baseUrlOfSut);
-        args.add("--bbSwaggerUrl");
-        args.add(baseUrlOfSut + "/v2/api-docs");
-        args.add("--endpointFocus");
-        args.add(endpointFocus);
+                    String endpointFocus = "/api/store/inventory";
 
-        // no endpointFocus or endpointPrefix is provided
-        Solution<RestIndividual> solution = initAndRun(args);
+                    // program arguments for EvoMaster
+                    args.add("--blackBox");
+                    args.add("true");
+                    args.add("--bbTargetUrl");
+                    args.add(baseUrlOfSut);
+                    args.add("--bbSwaggerUrl");
+                    args.add(baseUrlOfSut + "/v2/api-docs");
+                    args.add("--endpointFocus");
+                    args.add(endpointFocus);
 
-        // include swagger into possible solutions as /v2/api-docs
-        List<String> pathsToCheck = Arrays.asList(endpointFocus, "/v2/api-docs");
+                    // no endpointFocus or endpointPrefix is provided
+                    Solution<RestIndividual> solution = initAndRun(args);
 
-        // if neither focus nor prefix is provided, then all paths should include empty path as a prefix
-        assertAllSolutionsHavePathFocusOrPrefixList(solution, pathsToCheck, true);
+                    // include swagger into possible solutions as /v2/api-docs
+                    List<String> pathsToCheck = Arrays.asList(endpointFocus, "/v2/api-docs");
 
-        // The solution should include 4 solutions, 3 endpoints and 1 failure case
-        assertEquals(solution.getIndividuals().size(), 4);
+                    // if neither focus nor prefix is provided, then all paths should include empty path as a prefix
+                    assertAllSolutionsHavePathFocusOrPrefixList(solution, pathsToCheck, true);
 
-        compile(outputFolder);
+                    // The solution should include 2 solutions, 1 endpoints and 1 failure case
+                    assertEquals(solution.getIndividuals().size(), 2);
+
+                    // write test into the output folder
+                    compile(outputFolder);
+                });
     }
 
     @Test
-    public void testRunBlackboxWithFocusOneEndpoint() {
+    public void testRunBlackboxWithPrefixWithoutParameters() throws Throwable {
 
-        String outputFolder = "EndPointFocusAndPrefix";
-        String endpointFocus = "/api/store/inventory";
+        String outputFolder = "BlackboxWithPrefixWithoutParameters";
 
-        List<String> args = getArgsWithCompilation(
-                40,
+        runTestHandlingFlakyAndCompilation(
                 outputFolder,
-                ClassName.get("org.foo.BlackboxWithFocusOneEndpoint"),
-                true);
+                "BlackboxWithPrefixWithoutParameters",
+                1000,
+                (args) -> {
 
-        // program arguments for EvoMaster
-        args.add("--blackBox");
-        args.add("true");
-        args.add("--bbTargetUrl");
-        args.add(baseUrlOfSut);
-        args.add("--bbSwaggerUrl");
-        args.add(baseUrlOfSut + "/v2/api-docs");
-        args.add("--endpointFocus");
-        args.add(endpointFocus);
+                    String endpointPrefix = "/api/user";
 
-        // no endpointFocus or endpointPrefix is provided
-        Solution<RestIndividual> solution = initAndRun(args);
+                    // program arguments for EvoMaster
+                    args.add("--blackBox");
+                    args.add("true");
+                    args.add("--bbTargetUrl");
+                    args.add(baseUrlOfSut);
+                    args.add("--bbSwaggerUrl");
+                    args.add(baseUrlOfSut + "/v2/api-docs");
+                    args.add("--endpointPrefix");
+                    args.add(endpointPrefix);
 
-        // include swagger into possible solutions as /v2/api-docs
-        List<String> pathsToCheck = Arrays.asList(endpointFocus, "/v2/api-docs");
+                    // no endpointFocus or endpointPrefix is provided
+                    Solution<RestIndividual> solution = initAndRun(args);
 
-        // if neither focus nor prefix is provided, then all paths should include empty path as a prefix
-        assertAllSolutionsHavePathFocusOrPrefixList(solution, pathsToCheck, true);
+                    // include swagger into possible solutions as /v2/api-docs
+                    List<String> pathsToCheck = Arrays.asList(endpointPrefix, "/v2/api-docs");
 
-        // The solution should include 2 solutions, 1 endpoints and 1 failure case
-        assertEquals(solution.getIndividuals().size(), 2);
+                    // if neither focus nor prefix is provided, then all paths should include empty path as a prefix
+                    assertAllSolutionsHavePathFocusOrPrefixList(solution, pathsToCheck, false);
 
-        compile(outputFolder);
+                    // The solution should include 8 solutions, 7 endpoints and 1 failure case
+                    assertEquals(solution.getIndividuals().size(), 8);
+
+                    // write test into the output folder
+                    compile(outputFolder);
+                });
     }
 
     @Test
-    public void testRunBlackboxWithPrefixWithoutParameters() {
+    public void testRunBlackboxWithPrefixWithParameters() throws Throwable {
 
-        String outputFolder = "EndPointFocusAndPrefix";
-        String endpointPrefix = "/api/user";
+        String outputFolder = "BlackboxWithPrefixWithParameters";
 
-        List<String> args = getArgsWithCompilation(
-                40,
+        runTestHandlingFlakyAndCompilation(
                 outputFolder,
-                ClassName.get("org.foo.BlackboxWithPrefixWithoutParameters"),
-                true);
-        // program arguments for EvoMaster
-        args.add("--blackBox");
-        args.add("true");
-        args.add("--bbTargetUrl");
-        args.add(baseUrlOfSut);
-        args.add("--bbSwaggerUrl");
-        args.add(baseUrlOfSut + "/v2/api-docs");
-        args.add("--endpointPrefix");
-        args.add(endpointPrefix);
+                "BlackboxWithPrefixWithParameters",
+                1000,
+                (args) -> {
 
-        // no endpointFocus or endpointPrefix is provided
-        Solution<RestIndividual> solution = initAndRun(args);
+                    String endpointPrefix = "/api/pet/{petId}";
 
-        // include swagger into possible solutions as /v2/api-docs
-        List<String> pathsToCheck = Arrays.asList(endpointPrefix, "/v2/api-docs");
+                    // program arguments for EvoMaster
+                    args.add("--blackBox");
+                    args.add("true");
+                    args.add("--bbTargetUrl");
+                    args.add(baseUrlOfSut);
+                    args.add("--bbSwaggerUrl");
+                    args.add(baseUrlOfSut + "/v2/api-docs");
+                    args.add("--endpointPrefix");
+                    args.add(endpointPrefix);
 
-        // if neither focus nor prefix is provided, then all paths should include empty path as a prefix
-        assertAllSolutionsHavePathFocusOrPrefixList(solution, pathsToCheck, false);
+                    // no endpointFocus or endpointPrefix is provided
+                    Solution<RestIndividual> solution = initAndRun(args);
 
-        // The solution should include 8 solutions, 7 endpoints and 1 failure case
-        assertEquals(solution.getIndividuals().size(), 8);
+                    // include swagger into possible solutions as /v2/api-docs
+                    List<String> pathsToCheck = Arrays.asList(endpointPrefix, "/v2/api-docs");
 
-        compile(outputFolder);
+                    // if neither focus nor prefix is provided, then all paths should include empty path as a prefix
+                    assertAllSolutionsHavePathFocusOrPrefixList(solution, pathsToCheck, false);
+
+                    // The solution should include 5 solutions, 4 endpoints and 1 failure case
+                    assertEquals(solution.getIndividuals().size(), 5);
+
+                    // write test into the output folder
+                    compile(outputFolder);
+                });
     }
 
     @Test
-    public void testRunBlackboxWithPrefixWithParameters() {
+    public void testRunBlackboxPrefixNonExistingFocusValidPrefix() throws Throwable {
 
-        String outputFolder = "EndPointFocusAndPrefix";
-        String endpointPrefix = "/api/pet/{petId}";
+        String outputFolder = "BlackboxPrefixNonExistingFocusValidPrefix";
 
-        List<String> args = getArgsWithCompilation(
-                40,
+        runTestHandlingFlakyAndCompilation(
                 outputFolder,
-                ClassName.get("org.foo.BlackboxWithPrefixWithParameters"),
-                true);
-        // program arguments for EvoMaster
-        args.add("--blackBox");
-        args.add("true");
-        args.add("--bbTargetUrl");
-        args.add(baseUrlOfSut);
-        args.add("--bbSwaggerUrl");
-        args.add(baseUrlOfSut + "/v2/api-docs");
-        args.add("--endpointPrefix");
-        args.add(endpointPrefix);
+                "BlackboxPrefixNonExistingFocusValidPrefix",
+                1000,
+                (args) -> {
 
-        // no endpointFocus or endpointPrefix is provided
-        Solution<RestIndividual> solution = initAndRun(args);
+                    String endpointPrefix = "/api/store";
 
-        // include swagger into possible solutions as /v2/api-docs
-        List<String> pathsToCheck = Arrays.asList(endpointPrefix, "/v2/api-docs");
+                    // program arguments for EvoMaster
+                    args.add("--blackBox");
+                    args.add("true");
+                    args.add("--bbTargetUrl");
+                    args.add(baseUrlOfSut);
+                    args.add("--bbSwaggerUrl");
+                    args.add(baseUrlOfSut + "/v2/api-docs");
+                    args.add("--endpointPrefix");
+                    args.add(endpointPrefix);
 
-        // if neither focus nor prefix is provided, then all paths should include empty path as a prefix
-        assertAllSolutionsHavePathFocusOrPrefixList(solution, pathsToCheck, false);
+                    // no endpointFocus or endpointPrefix is provided
+                    Solution<RestIndividual> solution = initAndRun(args);
 
-        // The solution should include 5 solutions, 4 endpoints and 1 failure case
-        assertEquals(solution.getIndividuals().size(), 5);
+                    // include swagger into possible solutions as /v2/api-docs
+                    List<String> pathsToCheck = Arrays.asList(endpointPrefix, "/v2/api-docs");
 
-        compile(outputFolder);
+                    // if neither focus nor prefix is provided, then all paths should include empty path as a prefix
+                    assertAllSolutionsHavePathFocusOrPrefixList(solution, pathsToCheck, false);
+
+                    // The solution should include 5 solutions, 4 endpoints and 1 failure case
+                    assertEquals(solution.getIndividuals().size(), 5);
+
+                    // write test into the output folder
+                    compile(outputFolder);
+                });
     }
 
     @Test
     public void testRunBlackboxFocusNonExistingFocusValidPrefix() {
 
-        String outputFolder = "EndPointFocusAndPrefix";
+        String outputFolder = "BlackboxFocusNonExistingFocusValidPrefix";
 
-        String endpointFocus = "/api/store";
+        assertThrows(IllegalArgumentException.class, () ->
 
-        List<String> args = getArgsWithCompilation(
-                40,
-                outputFolder,
-                ClassName.get("org.foo.BlackboxFocusNonExistingFocusValidPrefix"),
-                true);
-        // program arguments for EvoMaster
-        args.add("--blackBox");
-        args.add("true");
-        args.add("--bbTargetUrl");
-        args.add(baseUrlOfSut);
-        args.add("--bbSwaggerUrl");
-        args.add(baseUrlOfSut + "/v2/api-docs");
-        args.add("--endpointFocus");
-        args.add(endpointFocus);
+                runTestHandlingFlakyAndCompilation(
+                        outputFolder,
+                        "BlackboxFocusNonExistingFocusValidPrefix",
+                        1000,
+                        (args) -> {
 
-        // check for IllegalArgumentException
-        assertThrows(IllegalArgumentException.class, () -> initAndRun(args));
-    }
+                            String endpointFocus = "/api/store";
 
-    @Test
-    public void testRunBlackboxPrefixNonExistingFocusValidPrefix() {
+                            // program arguments for EvoMaster
+                            args.add("--blackBox");
+                            args.add("true");
+                            args.add("--bbTargetUrl");
+                            args.add(baseUrlOfSut);
+                            args.add("--bbSwaggerUrl");
+                            args.add(baseUrlOfSut + "/v2/api-docs");
+                            args.add("--endpointFocus");
+                            args.add(endpointFocus);
 
-        String outputFolder = "EndPointFocusAndPrefix";
+                            // run EvoMaster
+                            initAndRun(args);
 
-        String endpointPrefix = "/api/store";
-
-        List<String> args = getArgsWithCompilation(
-                40,
-                outputFolder,
-                ClassName.get("org.foo.BlackboxPrefixNonExistingFocusValidPrefix"),
-                true);
-        // program arguments for EvoMaster
-        args.add("--blackBox");
-        args.add("true");
-        args.add("--bbTargetUrl");
-        args.add(baseUrlOfSut);
-        args.add("--bbSwaggerUrl");
-        args.add(baseUrlOfSut + "/v2/api-docs");
-        args.add("--endpointPrefix");
-        args.add(endpointPrefix);
-
-        // no endpointFocus or endpointPrefix is provided
-        Solution<RestIndividual> solution = initAndRun(args);
-
-        // include swagger into possible solutions as /v2/api-docs
-        List<String> pathsToCheck = Arrays.asList(endpointPrefix, "/v2/api-docs");
-
-        // if neither focus nor prefix is provided, then all paths should include empty path as a prefix
-        assertAllSolutionsHavePathFocusOrPrefixList(solution, pathsToCheck, false);
-
-        // The solution should include 5 solutions, 4 endpoints and 1 failure case
-        assertEquals(solution.getIndividuals().size(), 5);
-
-        compile(outputFolder);
-
+                            // write test into the output folder
+                            compile(outputFolder);
+                        })
+        );
     }
 
     @Test
     public void testRunBlackboxNonExistingFocusNonExistingPrefix() {
 
-        String outputFolder = "EndPointFocusAndPrefix";
-        String endpointPrefix = "/api/ab/s1";
+        String outputFolder = "BlackboxNonExistingFocusNonExistingPrefix";
 
-        List<String> args = getArgsWithCompilation(
-                40,
-                outputFolder,
-                ClassName.get("org.foo.BlackboxNonExistingFocusNonExistingPrefix"),
-                true);
-        // program arguments for EvoMaster
-        args.add("--blackBox");
-        args.add("true");
-        args.add("--bbTargetUrl");
-        args.add(baseUrlOfSut);
-        args.add("--bbSwaggerUrl");
-        args.add(baseUrlOfSut + "/v2/api-docs");
-        args.add("--endpointPrefix");
-        args.add(endpointPrefix);
+        assertThrows(IllegalArgumentException.class, () ->
 
-        // check for IllegalArgumentException
-        assertThrows(IllegalArgumentException.class, () -> initAndRun(args));
+                runTestHandlingFlakyAndCompilation(
+                        outputFolder,
+                        "BlackboxNonExistingFocusNonExistingPrefix",
+                        1000,
+                        (args) -> {
+
+                            String endpointPrefix = "/api/ab/s1";
+
+                            // program arguments for EvoMaster
+                            args.add("--blackBox");
+                            args.add("true");
+                            args.add("--bbTargetUrl");
+                            args.add(baseUrlOfSut);
+                            args.add("--bbSwaggerUrl");
+                            args.add(baseUrlOfSut + "/v2/api-docs");
+                            args.add("--endpointPrefix");
+                            args.add(endpointPrefix);
+
+                            // run EvoMaster
+                            initAndRun(args);
+
+                            // write test into the output folder
+                            compile(outputFolder);
+                        })
+        );
     }
 
     @Test
     public void testRunBlackboxPrefixNonExistingPrefix() {
 
-        String outputFolder = "EndPointFocusAndPrefix";
-        String endpointPrefix = "/api/store/inventory/in";
+        String outputFolder = "BlackboxPrefixNonExistingPrefix";
 
-        List<String> args = getArgsWithCompilation(
-                40,
-                outputFolder,
-                ClassName.get("org.foo.BlackboxPrefixNonExistingPrefix"),
-                true);
-        // program arguments for EvoMaster
-        args.add("--blackBox");
-        args.add("true");
-        args.add("--bbTargetUrl");
-        args.add(baseUrlOfSut);
-        args.add("--bbSwaggerUrl");
-        args.add(baseUrlOfSut + "/v2/api-docs");
-        args.add("--endpointPrefix");
-        args.add(endpointPrefix);
+        assertThrows(IllegalArgumentException.class, () ->
 
-        // check for IllegalArgumentException
-        assertThrows(IllegalArgumentException.class, () -> initAndRun(args));
+                runTestHandlingFlakyAndCompilation(
+                        outputFolder,
+                        "BlackboxPrefixNonExistingPrefix",
+                        1000,
+                        (args) -> {
 
+                            String endpointPrefix = "/api/store/inventory/in";
+
+                            // program arguments for EvoMaster
+                            args.add("--blackBox");
+                            args.add("true");
+                            args.add("--bbTargetUrl");
+                            args.add(baseUrlOfSut);
+                            args.add("--bbSwaggerUrl");
+                            args.add(baseUrlOfSut + "/v2/api-docs");
+                            args.add("--endpointPrefix");
+                            args.add(endpointPrefix);
+
+                            // run EvoMaster
+                            initAndRun(args);
+
+                            // write test into the output folder
+                            compile(outputFolder);
+                        })
+        );
     }
 
-@Test
-public void testRunBlackboxBothFocusAndPrefix() {
 
-        String outputFolder = "EndPointFocusAndPrefix";
-        String endpoint = "/api/store/order";
+    @Test
+    public void testRunBlackboxBothFocusAndPrefix() {
 
-        List<String> args = getArgsWithCompilation(
-                40,
-                outputFolder,
-                ClassName.get("org.foo.BlackboxBothFocusAndPrefix"),
-                true);
+        String outputFolder = "BlackboxBothFocusAndPrefix";
 
-        // program arguments for EvoMaster
-        args.add("--blackBox");
-        args.add("true");
-        args.add("--bbTargetUrl");
-        args.add(baseUrlOfSut);
-        args.add("--bbSwaggerUrl");
-        args.add(baseUrlOfSut + "/v2/api-docs");
-        args.add("--endpointPrefix");
-        args.add(endpoint);
-        args.add("--endpointFocus");
-        args.add(endpoint);
+        assertThrows(IllegalArgumentException.class, () ->
 
-        // check for IllegalArgumentException
-        assertThrows(IllegalArgumentException.class, () -> initAndRun(args));
+                runTestHandlingFlakyAndCompilation(
+                        outputFolder,
+                        "BlackboxBothFocusAndPrefix",
+                        1000,
+                        (args) -> {
 
+                            String endpoint = "/api/store/order";
+
+                            // program arguments for EvoMaster
+                            args.add("--blackBox");
+                            args.add("true");
+                            args.add("--bbTargetUrl");
+                            args.add(baseUrlOfSut);
+                            args.add("--bbSwaggerUrl");
+                            args.add(baseUrlOfSut + "/v2/api-docs");
+                            args.add("--endpointPrefix");
+                            args.add(endpoint);
+                            args.add("--endpointFocus");
+                            args.add(endpoint);
+
+                            // run EvoMaster
+                            initAndRun(args);
+
+                            // write test into the output folder
+                            compile(outputFolder);
+                        })
+        );
     }
 }
+
+
+
