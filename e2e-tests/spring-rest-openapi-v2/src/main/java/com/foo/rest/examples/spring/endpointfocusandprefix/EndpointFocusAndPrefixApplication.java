@@ -1,4 +1,4 @@
-package com.foo.rest.examples.spring.endpointFocusAndPrefix;
+package com.foo.rest.examples.spring.endpointfocusandprefix;
 
 import com.foo.rest.examples.spring.SwaggerConfiguration;
 import org.springframework.boot.SpringApplication;

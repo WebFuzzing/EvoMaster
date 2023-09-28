@@ -1,6 +1,6 @@
-package org.evomaster.e2etests.spring.examples.endpointFocusAndPrefix;
+package org.evomaster.e2etests.spring.examples.endpointfocusandprefix;
 
-import com.foo.rest.examples.spring.endpointFocusAndPrefix.EndpointFocusAndPrefixController;
+import com.foo.rest.examples.spring.endpointfocusandprefix.EndpointFocusAndPrefixController;
 
 import org.evomaster.client.java.instrumentation.shared.ClassName;
 import org.evomaster.core.problem.rest.HttpVerb;

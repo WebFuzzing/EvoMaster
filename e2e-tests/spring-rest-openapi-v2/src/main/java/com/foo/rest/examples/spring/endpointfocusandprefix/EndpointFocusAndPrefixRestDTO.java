@@ -1,4 +1,4 @@
-package com.foo.rest.examples.spring.endpointFocusAndPrefix;
+package com.foo.rest.examples.spring.endpointfocusandprefix;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
