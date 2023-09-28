@@ -7,7 +7,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.validation.Valid;
 import javax.validation.constraints.Min;
+import javax.validation.constraints.Size;
 import javax.ws.rs.core.MediaType;
 
 @Validated
@@ -22,7 +24,7 @@ public class StringMinLengthRest {
             produces = MediaType.APPLICATION_JSON
     )
     public String min20(
-            @PathVariable("s") @Min(20) String s
+            @PathVariable("s") @Valid @Size(min = 20) String s
     ){
 
         return "OK";

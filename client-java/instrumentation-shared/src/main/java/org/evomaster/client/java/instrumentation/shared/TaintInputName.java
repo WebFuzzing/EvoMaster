@@ -89,7 +89,7 @@ public class TaintInputName {
      * Not sure if there is really any simple workaround... but hopefully should be
      * so rare that we can live with it
      */
-    public static boolean getTaintNameSatisfyLengthConstraints(int maxLength){
-        return (PREFIX.length() + POSTFIX.length() + 1) <= maxLength;
+    public static boolean doesTaintNameSatisfiesLengthConstraints(String id, int maxLength){
+        return (PREFIX.length() + POSTFIX.length() + id.length()) <= maxLength;
     }
 }
