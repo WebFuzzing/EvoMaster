@@ -1917,8 +1917,7 @@ class EMConfig {
     var externalRequestResponseSelectionStrategy = ExternalRequestResponseSelectionStrategy.EXACT
 
     @Cfg("Whether to employ constraints specified in API schema (e.g., OpenAPI) in test generation")
-    @Experimental
-    var enableSchemaConstraintHandling = false
+    var enableSchemaConstraintHandling = true
 
     @Cfg("a probability of enabling single insertion strategy to insert rows into database.")
     @Probability(activating = true)

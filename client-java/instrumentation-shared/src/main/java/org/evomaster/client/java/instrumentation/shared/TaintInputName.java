@@ -56,8 +56,15 @@ public class TaintInputName {
      * Create a tainted value, with the input id being part of it
      */
     public static String getTaintName(int id){
+        return getTaintName(id,0);
+    }
+
+    public static String getTaintName(int id, int minLength){
         if(id < 0){
             throw new IllegalArgumentException("Negative id");
+        }
+        if(minLength < 0){
+            throw new IllegalArgumentException("Negative minLength");
         }
         /*
             Note: this is quite simple, we simply add a unique prefix
@@ -65,7 +72,15 @@ public class TaintInputName {
             But we would not be able to check if the part of the id was
             modified.
          */
-        return PREFIX + id + POSTFIX;
+
+        String s = "" + id;
+        String taint =  PREFIX + s + POSTFIX;
+        if(taint.length() < minLength){
+            //need padding
+            int diff = minLength - taint.length();
+            taint = PREFIX + s + new String(new char[diff]).replace("\0", "0") + POSTFIX;
+        }
+        return taint;
     }
 
     /**
@@ -74,7 +89,7 @@ public class TaintInputName {
      * Not sure if there is really any simple workaround... but hopefully should be
      * so rare that we can live with it
      */
-    public static int getTaintNameMaxLength(){
-        return PREFIX.length() + POSTFIX.length() + 6;
+    public static boolean doesTaintNameSatisfiesLengthConstraints(String id, int maxLength){
+        return (PREFIX.length() + POSTFIX.length() + id.length()) <= maxLength;
     }
 }
