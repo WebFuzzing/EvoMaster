@@ -219,7 +219,20 @@ class Main {
                         val totalLines = unitsInfo.numberOfLines
                         val percentage = String.format("%.0f", (linesInfo.total / totalLines.toDouble()) * 100)
 
-                        assert(linesInfo.total <= totalLines){ "${linesInfo.total} > $totalLines"}
+                        /*
+                            This is a quite tricky case...
+                            the number of covered lines X should be less or equal than the total T, ie X<=T.
+                            However, we end up with cases like X > T where T=0.
+                            Should never happen in practice, but it does for E2E tests.
+                            This is because we could have different test suites working on same SUTs.
+                            Once one is finished, it would reset all data.
+                            Such data would not then be recomputed in the next test suite execution, as
+                            the classes are already loaded...
+                            Not sure if there is any clean solution for this...
+                            executing these tests in own process can be done with a flag in Failsafe/Surefire, but
+                            sounds like a potential performance loss for little benefits.
+                         */
+                        assert(totalLines == 0 || linesInfo.total <= totalLines){ "${linesInfo.total} > $totalLines"}
 
                         info("Covered targets (lines, branches, faults, etc.): ${targetsInfo.total}")
                         info("Potential faults: ${faults.size}")
