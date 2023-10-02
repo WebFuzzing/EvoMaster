@@ -53,7 +53,7 @@ jobs:
       # Make test report accessible from GitHub Actions (as Maven logs are long)
       - name: Publish Test Report
         if: success() || failure()
-        uses: mikepenz/action-junit-report@v3
+        uses: mikepenz/action-junit-report@v4
         with:
           report_paths: '**/target/surefire-reports/TEST-*.xml'
       # Upload coverage results
