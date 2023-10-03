@@ -7,6 +7,7 @@ import org.evomaster.core.remote.SutProblemException
 import java.net.ConnectException
 import java.net.URI
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
 import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.core.MediaType
@@ -39,11 +40,11 @@ object OpenApiAccess {
     fun getOpenAPIFromURL(openApiUrl: String): OpenAPI {
 
         //could be either JSON or YAML
-       val data = if(openApiUrl.startsWith("http", true)){
+        val data = if(openApiUrl.startsWith("http", true)){
            readFromRemoteServer(openApiUrl)
-       } else {
+        } else {
            readFromDisk(openApiUrl)
-       }
+        }
 
         return getOpenApi(data)
     }
@@ -62,17 +63,40 @@ object OpenApiAccess {
     }
 
     private fun readFromDisk(openApiUrl: String) : String {
+
+        // file scheme
         val fileScheme = "file:"
-        val path = if (openApiUrl.startsWith(fileScheme, true)) {
-            Paths.get(URI.create(openApiUrl))
-        } else {
-            Paths.get(openApiUrl)
+
+        // path variable
+        var path: Path? = null;
+
+        // checking the given URL
+        try {
+            path = when (openApiUrl.startsWith(fileScheme, true)) {
+
+                true -> Paths.get(URI.create(openApiUrl));
+                false -> Paths.get(openApiUrl);
+            }
         }
-        if (!Files.exists(path)) {
-            throw SutProblemException("Cannot find OpenAPI schema at file location: $openApiUrl")
+        // if the URL is not a valid one
+        catch (e: Exception) {
+            throw SutProblemException("The file path provided for the OpenAPI Schema $openApiUrl ," +
+                    " is not a valid path");
         }
 
-        return path.toFile().readText()
+        // Path should not be null, either
+        // it is set or an exception is thrown
+        if (path == null) {
+            throw SutProblemException("Could not set up the path");
+        }
+        else {
+            // if the file does not exists, throw cannot find OpenAPI schema
+            if (!Files.exists(path)) {
+                throw SutProblemException("Cannot find OpenAPI schema at file location: $openApiUrl")
+            }
+            // return the schema text
+            return path.toFile().readText()
+        }
     }
 
     private fun connectToServer(openApiUrl: String, attempts: Int): Response {
