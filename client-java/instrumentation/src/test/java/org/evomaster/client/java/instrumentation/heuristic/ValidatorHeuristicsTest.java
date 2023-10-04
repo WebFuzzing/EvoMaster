@@ -234,6 +234,18 @@ class ValidatorHeuristicsTest {
         assertTrue(t17.getOfTrue() > t16.getOfTrue());
 
         assertTrue(t17.isTrue());
+
+        bean.m = "   "; //@Email
+        Truthness t18 = ValidatorHeuristics.computeTruthness(validator, bean);
+        assertFalse(t18.isTrue());
+
+        bean.m = "r@g.com"; //@Email
+        Truthness t19 = ValidatorHeuristics.computeTruthness(validator, bean);
+        assertEquals(t19.getOfTrue(), t17.getOfTrue(), 0.00001); // null and valid email are the same
+        assertTrue(t19.getOfTrue() > t18.getOfTrue());
+
+        assertTrue(t19.isTrue());
+
     }
 
 
