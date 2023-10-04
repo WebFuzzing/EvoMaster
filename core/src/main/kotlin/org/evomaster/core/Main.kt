@@ -229,10 +229,14 @@ class Main {
                             Such data would not then be recomputed in the next test suite execution, as
                             the classes are already loaded...
                             Not sure if there is any clean solution for this...
-                            executing these tests in own process can be done with a flag in Failsafe/Surefire, but
-                            sounds like a potential performance loss for little benefits.
+                            executing these tests in own process might be done with Failsafe/Surefire.
+
+                            Having check for totalLines == 0 was not a good solution. If the assertion fails,
+                            and test is re-executed on same JVM with classes already loaded, then we would get
+                            totalLines == 0 after the reset... and so the test cases will always pass :(
                          */
-                        assert(totalLines == 0 || linesInfo.total <= totalLines){ "${linesInfo.total} > $totalLines"}
+                        //assert(totalLines == 0 || linesInfo.total <= totalLines){ "${linesInfo.total} > $totalLines"}
+                        assert(linesInfo.total <= totalLines){ "WRONG COVERAGE: ${linesInfo.total} > $totalLines"}
 
                         info("Covered targets (lines, branches, faults, etc.): ${targetsInfo.total}")
                         info("Potential faults: ${faults.size}")
