@@ -1,13 +1,16 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
+import org.evomaster.client.java.instrumentation.ExternalServiceInfo;
 import org.evomaster.client.java.instrumentation.HostnameInfo;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ExternalServiceInfoUtils;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
+import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils;
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+import sun.jvm.hotspot.HSDB;
 
 import java.net.*;
 
@@ -41,17 +44,17 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
                 String ip = ExecutionTracer.getLocalAddress(host);
                 return InetAddress.getByName(ip);
             }
-            return InetAddress.getByName(host);
+            InetAddress inetAddress = InetAddress.getByName(host);
+            ExecutionTracer.addHostnameInfo(new HostnameInfo(host, true));
+            return inetAddress;
         } catch (UnknownHostException e) {
-//            ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(
-//                    ExternalServiceSharedUtils.DEFAULT_SOCKET_CONNECT_PROTOCOL,
-//                    host,
-//                    -1,
-//                    false
-//            );
-            HostnameInfo hostnameInfo = new HostnameInfo(host, false);
-//            ExecutionTracer.addExternalServiceHost(remoteHostInfo);
-            ExecutionTracer.addHostnameInfo(hostnameInfo);
+            ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(
+                    ExternalServiceSharedUtils.DEFAULT_SOCKET_CONNECT_PROTOCOL,
+                    host,
+                    -1
+            );
+            ExecutionTracer.addExternalServiceHost(remoteHostInfo);
+            ExecutionTracer.addHostnameInfo(new HostnameInfo(host, false));
             throw e;
         }
     }
@@ -71,17 +74,17 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
                 String ip = ExecutionTracer.getLocalAddress(host);
                 return new InetAddress[]{InetAddress.getByName(ip)};
             }
-            return InetAddress.getAllByName(host);
+            InetAddress[] inetAddresses = InetAddress.getAllByName(host);
+            ExecutionTracer.addHostnameInfo(new HostnameInfo(host, true));
+            return inetAddresses;
         } catch (UnknownHostException e) {
-//            ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(
-//                    ExternalServiceSharedUtils.DEFAULT_SOCKET_CONNECT_PROTOCOL,
-//                    host,
-//                    -1,
-//                    false
-//            );
-            HostnameInfo hostnameInfo = new HostnameInfo(host, false);
-//            ExecutionTracer.addExternalServiceHost(remoteHostInfo);
-            ExecutionTracer.addHostnameInfo(hostnameInfo);
+            ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(
+                    ExternalServiceSharedUtils.DEFAULT_SOCKET_CONNECT_PROTOCOL,
+                    host,
+                    -1
+            );
+            ExecutionTracer.addHostnameInfo(new HostnameInfo(host, false));
+            ExecutionTracer.addExternalServiceHost(remoteHostInfo);
             throw e;
         }
     }
