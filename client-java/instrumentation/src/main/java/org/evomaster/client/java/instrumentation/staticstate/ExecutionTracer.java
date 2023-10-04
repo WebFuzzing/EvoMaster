@@ -8,9 +8,7 @@ import org.evomaster.client.java.instrumentation.shared.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Methods of this class will be injected in the SUT to
@@ -672,6 +670,10 @@ public class ExecutionTracer {
         Truthness t = HeuristicsForJumps.getForNullComparison(obj, opcode);
 
         updateBranch(className, line, branchId, t);
+    }
+
+    public static void addHostnameInfo(HostnameInfo hostnameInfo) {
+        getCurrentAdditionalInfo().addHostnameInfo(hostnameInfo);
     }
 
     /**

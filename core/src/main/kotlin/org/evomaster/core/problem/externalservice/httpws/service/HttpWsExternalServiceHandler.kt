@@ -6,6 +6,7 @@ import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUti
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.problem.externalservice.ExternalService
+import org.evomaster.core.problem.externalservice.HostnameInfo
 import org.evomaster.core.problem.externalservice.httpws.*
 import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalServiceUtils.generateRandomIPAddress
 import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalServiceUtils.isAddressAvailable
@@ -64,6 +65,9 @@ class HttpWsExternalServiceHandler {
      */
     private val skippedExternalServices: MutableList<ExternalService> = mutableListOf()
 
+
+    private val hostnames: MutableList<HostnameInfo> = mutableListOf()
+
     /**
      * Contains last used loopback address for reference when creating
      * a new address
@@ -107,6 +111,12 @@ class HttpWsExternalServiceHandler {
     fun addExternalService(externalServiceInfo: HttpExternalServiceInfo) {
         if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
             registerHttpExternalServiceInfo(externalServiceInfo)
+        }
+    }
+
+    fun addHostname(hostnameInfo: HostnameInfo) {
+        if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
+            hostnames.add(hostnameInfo);
         }
     }
 
