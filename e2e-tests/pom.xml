@@ -57,8 +57,11 @@
                             that is a problem when more than 1 test suite is using the same SUT.
                             In general, this a performance bottleneck, which should be avoided for unit tests.
                             However, for E2E that are already expensive to run, hopefully should not be a major problem.
+
+                            Unfortunately, it was a MAJOR problem, as execution time went up of at least double...
+                            on GA, there is a timeout of 6 hours, which was reached (so not 100% sure of total time...)
                         -->
-                        <reuseForks>false</reuseForks>
+<!--                        <reuseForks>false</reuseForks>-->
                     </configuration>
                 </plugin>
             </plugins>
