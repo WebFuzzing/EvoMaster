@@ -241,7 +241,7 @@ class Main {
                             Having this assertion is way too problematic... not only issue when more than 2 E2E use
                             the same SUT, but also when flacky tests are re-run (both in our scaffolding, and in Maven)
                          */
-                        //assert(linesInfo.total <= totalLines){ "WRONG COVERAGE: ${linesInfo.total} > $totalLines"}
+                        assert(linesInfo.total <= totalLines){ "WRONG COVERAGE: ${linesInfo.total} > $totalLines"}
 
                         info("Covered targets (lines, branches, faults, etc.): ${targetsInfo.total}")
                         info("Potential faults: ${faults.size}")
