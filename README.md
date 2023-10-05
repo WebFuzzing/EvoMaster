@@ -32,7 +32,7 @@ building on decades of research in the field of [Search-Based Software Testing](
 
 __Key features__:
 
-* _Web APIs_: At the moment, _EvoMaster_ can generate test cases for __REST__ and __GraphQL__ APIs.
+* _Web APIs_: At the moment, _EvoMaster_ can generate test cases for __REST__, __GraphQL__ and __RPC__ (e.g., __gRPC__ and __Thrift__) APIs.
 
 * _Blackbox_ testing mode: can run on any API (regardless of its programming language, e.g., Python and Go).
   However, results for blackbox testing will be worse than whitebox testing (e.g., due to lack of code analysis).
@@ -41,7 +41,7 @@ __Key features__:
   JVM (e.g., Java and Kotlin). _EvoMaster_ analyses the bytecode of the tested applications, and uses
   several heuristics such as _testability transformations_ and _taint analysis_ to be able to generate
   more effective test cases. We support JDK __8__ and the major LTS versions after that (currently JDK __17__). Might work on other JVM versions, but we provide __NO__ support for it.
-  Note: there is initial support for other languages as well, like for example JavaScript/TypeScript, but they are not in a stable, feature-complete state yet.
+  Note: there is initial support for other languages as well, like for example JavaScript/TypeScript and C#, but they are not in a stable, feature-complete state yet.
 
 * _Installation_: we provide installers for the main operating systems: Windows (`.msi`),
   OSX (`.dmg`) and Linux (`.deb`). We also provide an uber-fat JAR file.
@@ -84,6 +84,8 @@ __Known limitations__:
   We recommend to first try the search for 10 minutes, just to get an idea of what type of tests can be generated.
   But, then, you should run _EvoMaster_ for something like between 1 and 24 hours (the longer the better, but
   it is unlikely to get better results after 24 hours).
+
+* _RPC APIs_: for the moment, we do not directly support RPC schema definitions. Fuzzing RPC APIs requires to write a driver, using the client library of the API to make the calls.
 
 * _External services_: (e.g., other RESTful APIs) currently there is no support for them (e.g., to automatically mock them).
   It is work in progress.

@@ -222,7 +222,13 @@ class Main {
 
                         info("Covered targets (lines, branches, faults, etc.): ${targetsInfo.total}")
                         info("Potential faults: ${faults.size}")
-                        info("Bytecode line coverage: $percentage% (${linesInfo.total} out of $totalLines in $units units/classes)")
+
+                        if(totalLines == 0 || units == 0){
+                            logError("Detected $totalLines lines to cover, for a total of $units units/classes." +
+                                    " Are you sure you did setup getPackagePrefixesToCover() correctly?")
+                        } else {
+                            info("Bytecode line coverage: $percentage% (${linesInfo.total} out of $totalLines in $units units/classes)")
+                        }
                     } else {
                         warn("Failed to retrieve SUT info")
                     }
