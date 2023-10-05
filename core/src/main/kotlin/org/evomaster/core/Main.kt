@@ -168,6 +168,7 @@ class Main {
 
             val solution = run(injector, controllerInfo)
             val faults = solution.overall.potentialFoundFaults(idMapper)
+            val sampler : Sampler<*> = injector.getInstance(Key.get(object : TypeLiteral<Sampler<*>>(){}))
 
             resetExternalServiceHandler(injector)
 
@@ -244,7 +245,13 @@ class Main {
 
                         info("Covered targets (lines, branches, faults, etc.): ${targetsInfo.total}")
                         info("Potential faults: ${faults.size}")
-                        info("Bytecode line coverage: $percentage% (${linesInfo.total} out of $totalLines in $units units/classes)")
+
+                        if(totalLines == 0 || units == 0){
+                            logError("Detected $totalLines lines to cover, for a total of $units units/classes." +
+                                    " Are you sure you did setup getPackagePrefixesToCover() correctly?")
+                        } else {
+                            info("Bytecode line coverage: $percentage% (${linesInfo.total} out of $totalLines in $units units/classes)")
+                        }
                     } else {
                         warn("Failed to retrieve SUT info")
                     }
@@ -255,8 +262,18 @@ class Main {
                 when(config.problemType){
                     EMConfig.ProblemType.REST -> {
                         val k = data.find { it.header == Statistics.COVERED_2XX }!!.element.toInt()
-                        val p = String.format("%.0f", (k.toDouble()/n) * 100 )
-                        info("Successfully executed (HTTP code 2xx) $k endpoints out of $n ($p%)")
+                        val t = if (sampler.getPreDefinedIndividuals().isNotEmpty()) {
+                            /*
+                                FIXME this is a temporary hack...
+                                right now we might have 1 call to Schema that messes up this statistics
+                             */
+                            n + 1
+                        } else {
+                            n
+                        }
+                        assert(k <= t)
+                        val p = String.format("%.0f", (k.toDouble()/t) * 100 )
+                        info("Successfully executed (HTTP code 2xx) $k endpoints out of $t ($p%)")
                     }
                     EMConfig.ProblemType.GRAPHQL ->{
                         val k = data.find { it.header == Statistics.GQL_NO_ERRORS }!!.element.toInt()

@@ -91,7 +91,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         }
 
         actionCluster.clear()
-        val skip = getEndpointsToSkip(swagger, infoDto)
+        val skip = EndpointFilter.getEndpointsToSkip(config, swagger, infoDto)
         RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, skip, enableConstraintHandling = config.enableSchemaConstraintHandling)
 
         if(config.extraQueryParam){
@@ -245,30 +245,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         initAdHocInitialIndividuals()
     }
 
-    protected fun getEndpointsToSkip(swagger: OpenAPI, infoDto: SutInfoDto)
-            : List<String>{
 
-        /*
-            If we are debugging, and focusing on a single endpoint, we skip
-            everything but it.
-            Otherwise, we just look at what configured in the SUT EM Driver.
-         */
-
-        if(configuration.endpointFocus != null){
-
-            val all = swagger.paths.map{it.key}
-
-            if(all.none { it == configuration.endpointFocus }){
-                throw IllegalArgumentException(
-                        "Invalid endpointFocus: ${configuration.endpointFocus}. " +
-                                "\nAvailable:\n${all.joinToString("\n")}")
-            }
-
-            return all.filter { it != configuration.endpointFocus }
-        }
-
-        return  infoDto.restProblem?.endpointsToSkip ?: listOf()
-    }
 
     private fun initForBlackBox() {
 
@@ -277,8 +254,13 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
             throw SutProblemException("There is no endpoint definition in the retrieved Swagger file")
         }
 
+        // ONUR: Add all paths to list of paths to ignore except endpointFocus
+        val endpointsToSkip = EndpointFilter.getEndPointsToSkip(config,swagger);
+
         actionCluster.clear()
-        RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, listOf(), enableConstraintHandling = config.enableSchemaConstraintHandling)
+
+        // ONUR: Rather than an empty list, give the list of endpoints to skip.
+        RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, endpointsToSkip, enableConstraintHandling = config.enableSchemaConstraintHandling)
 
         initAdHocInitialIndividuals()
         if (config.seedTestCases)
