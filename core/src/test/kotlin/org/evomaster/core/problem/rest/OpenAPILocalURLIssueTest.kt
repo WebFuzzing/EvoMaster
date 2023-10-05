@@ -13,7 +13,8 @@ Testing the local URL issue with OpenAPI, 4 test cases:
 - a local file which does not exist and a valid URL
 - a local file which exists and an invalid URL
 - a local file which does not exist and an invalid URL
-- a local file which is not a valid swagger
+- a local file which is not a valid swagger but a valid JSON
+- a local file which is not a valid JSON
 - an invalid url
  */
 class OpenAPILocalURLIssueTest {
@@ -206,6 +207,32 @@ class OpenAPILocalURLIssueTest {
         Assertions.assertTrue(
             exception.message!!.contains("Cannot find OpenAPI " +
                     "schema at file location: $urlToTest"))
+    }
+
+    @Test
+    fun testInvalidJSON() {
+
+        // get the current directory
+        val urlToTest = "file://$executionPath/src/test" +
+                "/resources/invalid_json.json";
+
+        // exception to throw
+        val exception = Assertions.assertThrows(
+            SutProblemException::class.java
+        ) {
+            // create swagger
+            swagger = OpenApiAccess.getOpenAPIFromURL(urlToTest);
+        }
+
+        /*
+        An empty swagger should be created
+        */
+        //Assertions.assertTrue(swagger.paths.size == 0)
+
+        print(exception.message)
+
+        Assertions.assertTrue( exception.message!!.contains("Failed to parse OpenApi schema"))
+
     }
 
 
