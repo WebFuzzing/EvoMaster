@@ -259,7 +259,6 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
                     "is either invalid or it does not define endpoints")
         }
 
-
         // ONUR: Add all paths to list of paths to ignore except endpointFocus
         val endpointsToSkip = EndpointFilter.getEndPointsToSkip(config,swagger);
 

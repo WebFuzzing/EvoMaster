@@ -87,7 +87,7 @@ object OpenApiAccess {
         // Path should not be null, either
         // it is set or an exception is thrown
         if (path == null) {
-            throw SutProblemException("Could not set up the path");
+            throw SutProblemException("Could not set up the path: $openApiUrl");
         }
         else {
             // if the file does not exists, throw cannot find OpenAPI schema
