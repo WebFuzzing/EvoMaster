@@ -54,7 +54,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: SurefireReports
-          path: **/target/surefire-reports/TEST-*.xml
+          path: '**/target/surefire-reports/TEST-*.xml'
           if-no-files-found: error
           ### TODO disabled due to bug. See https://github.com/mikepenz/action-junit-report/issues/952
       # Make test report accessible from GitHub Actions (as Maven logs are long)
