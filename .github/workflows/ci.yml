@@ -51,6 +51,7 @@ jobs:
           retention-days: ${{env.retention-days}}
           if-no-files-found: error
       - name: Upload Surefire files
+        if: success() || failure()
         uses: actions/upload-artifact@v3
         with:
           name: SurefireReports
