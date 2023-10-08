@@ -250,7 +250,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
     private fun initForBlackBox() {
 
         swagger = OpenApiAccess.getOpenAPIFromURL(configuration.bbSwaggerUrl)
-        if (swagger.paths == null ) {
+        if (swagger.paths == null) {
             throw SutProblemException("There is no endpoint definition in the retrieved Swagger file")
         }
         // Onur: to give the error message for invalid swagger

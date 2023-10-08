@@ -80,7 +80,7 @@ object OpenApiAccess {
         }
         // if the URL is not a valid one
         catch (e: Exception) {
-            throw SutProblemException("The file path provided for the OpenAPI Schema $openApiUrl ," +
+            throw SutProblemException("The file path provided for the OpenAPI Schema $openApiUrl," +
                     " is not a valid path");
         }
 

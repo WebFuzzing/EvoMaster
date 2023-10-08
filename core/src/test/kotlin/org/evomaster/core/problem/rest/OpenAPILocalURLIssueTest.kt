@@ -22,10 +22,8 @@ class OpenAPILocalURLIssueTest {
     private val executionPath :String = System.getProperty("user.dir")
     private lateinit var swagger: OpenAPI
 
-
     /*
-    Check that the swagger is created with a valid URL
-    and an existing file
+    Check that the swagger is created with a valid URL and an existing file
     */
     @Test
     fun testExistingFileValidURL() {
@@ -41,19 +39,15 @@ class OpenAPILocalURLIssueTest {
     }
 
     /*
-    Check that an exception is thrown with a non-existing file
-    and a valid url
+    Check that an exception is thrown with a non-existing file and a valid url
     */
     @Test
     fun testNonExistingFileValidURL() {
 
         // get the current directory
-        val urlToTest = "file://$executionPath/src/test" +
-                "/resources/openapi_pet_non_existing.json";
+        val urlToTest = "file://$executionPath/src/test/resources/openapi_pet_non_existing.json";
 
-        // since the file does not exist,
-        // a valid swagger cannot be created but an
-        // SutException should be thrown
+        // since the file does not exist, a valid swagger cannot be created but an SutException should be thrown
         val exception = Assertions.assertThrows(
             SutProblemException::class.java
         ) {
@@ -61,29 +55,22 @@ class OpenAPILocalURLIssueTest {
             swagger = OpenApiAccess.getOpenAPIFromURL(urlToTest);
         }
 
-        // the message in the SutException should be
-        // Cannot find OpenAPI schema at file location: $urlToTest
-
-        // check that the message is correct
-        Assertions.assertTrue(
-            exception.message!!.contains("Cannot find OpenAPI " +
-                "schema at file location: $urlToTest"))
+        // the message in the SutException should be "Cannot find OpenAPI schema at file location: $urlToTest
+        // check that the message is correct"
+        Assertions.assertTrue(exception.message!!.contains("Cannot find OpenAPI schema at file " +
+                "location: $urlToTest"))
     }
 
     /*
-    Check that an exception is thrown when the file exists
-    but the URL is not valid, missing one slash (/)
+    Check that an exception is thrown when the file exists but the URL is not valid, missing one slash (/)
     */
     @Test
     fun testExistingFileInvalidURL() {
 
         // get the current directory
-        val urlToTest = "file:/$executionPath/src/test" +
-                "/resources/openapi_pet.json";
+        val urlToTest = "file:/$executionPath/src/test/resources/openapi_pet.json";
 
-        // since the file does not exist,
-        // a valid swagger cannot be created but an
-        // SutException should be thrown
+        // since the file URL is invalid, a valid swagger cannot be created but an  SutException should be thrown
         val exception = Assertions.assertThrows(
             SutProblemException::class.java
         ) {
@@ -91,31 +78,23 @@ class OpenAPILocalURLIssueTest {
             swagger = OpenApiAccess.getOpenAPIFromURL(urlToTest);
         }
 
-        /*
-        the message in the SutException should be
-        The file path provided for the OpenAPI Schema
-        $urlToTest , is not a valid path
-        */
-        Assertions.assertTrue(
-            exception.message!!.contains("The file path provided for the OpenAPI Schema $urlToTest ," +
-                    " is not a valid path"))
+        // The message in the SutException should contain "The file path provided for the OpenAPI Schema
+        // $urlToTest is not a valid path
+        Assertions.assertTrue(exception.message!!.contains("The file path provided for the OpenAPI Schema " +
+                "$urlToTest, is not a valid path"))
     }
 
     /*
-    Check that an exception is thrown when the file
-    does not exist and the URL is not valid,
-    missing one slash (/)
+    Check that an exception is thrown when the file does not exist and the URL is not valid, missing one slash (/)
     */
     @Test
     fun testNonExistingFileInvalidURL() {
 
         // get the current directory
-        val urlToTest = "file:/$executionPath/src/test" +
-                "/resources/openapi_pet_non_existent.json";
+        val urlToTest = "file:/$executionPath/src/test/resources/openapi_pet_non_existent.json";
 
-        // since the file does not exist,
-        // a valid swagger cannot be created but an
-        // SutException should be thrown
+        // since the file does not exist and URL is invalid, a valid swagger cannot be created
+        // but an SutException should be thrown
         val exception = Assertions.assertThrows(
             SutProblemException::class.java
         ) {
@@ -123,98 +102,31 @@ class OpenAPILocalURLIssueTest {
             swagger = OpenApiAccess.getOpenAPIFromURL(urlToTest);
         }
 
-        /*
-        the message in the SutException should be
-        The file path provided for the OpenAPI Schema
-        $urlToTest , is not a valid path
-        */
-        Assertions.assertTrue(
-            exception.message!!.contains("The file path provided for the OpenAPI Schema $urlToTest ," +
-                    " is not a valid path"))
+        // The message in the SutException should be "The file path provided for the OpenAPI Schema
+        // $urlToTest , is not a valid path"
+        Assertions.assertTrue(exception.message!!.contains("The file path provided for the OpenAPI Schema " +
+                "$urlToTest, is not a valid path"))
     }
 
-    /*
-    Check that an exception is thrown when the file
-    does not exist and the URL is not valid,
-    missing one slash (/)
-    */
-    @Test
-    fun testExistingFileInvalidSwagger() {
-
-        // get the current directory
-        val urlToTest = "file:/$executionPath/src/test" +
-                "/resources/openapi_pet_non_existent.json";
-
-        // since the file does not exist,
-        // a valid swagger cannot be created but an
-        // SutException should be thrown
-        val exception = Assertions.assertThrows(
-            SutProblemException::class.java
-        ) {
-            // create swagger
-            swagger = OpenApiAccess.getOpenAPIFromURL(urlToTest);
-        }
-
-        /*
-        the message in the SutException should be
-        The file path provided for the OpenAPI Schema
-        $urlToTest , is not a valid path
-        */
-        Assertions.assertTrue(
-            exception.message!!.contains("The file path provided for the OpenAPI Schema $urlToTest ," +
-                    " is not a valid path"))
-    }
-
-    /*
-    Check that when the swagger is invalid,
-    an exception is thrown with the message
-
-    */
+    //Check that when the swagger is invalid, an empty swagger object is created
     @Test
     fun testInvalidSwagger() {
 
         // get the current directory
-        val urlToTest = "file://$executionPath/src/test" +
-                "/resources/invalid_swagger.json";
+        val urlToTest = "file://$executionPath/src/test/resources/invalid_swagger.json";
 
         // create swagger
         swagger = OpenApiAccess.getOpenAPIFromURL(urlToTest);
 
-        /*
-        An empty swagger should be created
-        */
+        //An empty swagger should be created
         Assertions.assertTrue(swagger.paths.size == 0)
-    }
-
-    @Test
-    fun testInvalidURLI() {
-
-        // get the current directory
-        val urlToTest = "file://$executionPath/xxxxxxxx";
-
-        val exception = Assertions.assertThrows(
-            SutProblemException::class.java
-        ) {
-            // create swagger
-            swagger = OpenApiAccess.getOpenAPIFromURL(urlToTest);
-        }
-
-        /*
-        the message in the SutException should be
-        The file path provided for the OpenAPI Schema
-        $urlToTest , is not a valid path
-        */
-        Assertions.assertTrue(
-            exception.message!!.contains("Cannot find OpenAPI " +
-                    "schema at file location: $urlToTest"))
     }
 
     @Test
     fun testInvalidJSON() {
 
         // get the current directory
-        val urlToTest = "file://$executionPath/src/test" +
-                "/resources/invalid_json.json";
+        val urlToTest = "file://$executionPath/src/test/resources/invalid_json.json";
 
         // exception to throw
         val exception = Assertions.assertThrows(
@@ -224,17 +136,7 @@ class OpenAPILocalURLIssueTest {
             swagger = OpenApiAccess.getOpenAPIFromURL(urlToTest);
         }
 
-        /*
-        An empty swagger should be created
-        */
-        //Assertions.assertTrue(swagger.paths.size == 0)
-
-        print(exception.message)
-
+        // Failed to parse OpenApi schema
         Assertions.assertTrue( exception.message!!.contains("Failed to parse OpenApi schema"))
-
     }
-
-
-
 }
