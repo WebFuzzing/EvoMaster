@@ -254,15 +254,13 @@ class FitnessValue(
         var seedingTime = 0
         var searchTime = 0
 
-        targets.entries.forEach { e ->
-            (e.value.distance == MAX_VALUE && (prefix == null || idMapper.getDescriptiveId(e.key).startsWith(prefix))).apply {
-                if (coveredTargetsDuringSeeding.contains(e.key))
-                    seedingTime++
-                else
-                    searchTime++
-                if (this && bootTime.any { it.descriptiveId == idMapper.getDescriptiveId(e.key) })
-                    duplicatedcounter++
-            }
+        targets.entries.filter { e -> (e.value.distance == MAX_VALUE && (prefix == null || idMapper.getDescriptiveId(e.key).startsWith(prefix))) }.forEach { e ->
+            if (coveredTargetsDuringSeeding.contains(e.key))
+                seedingTime++
+            else
+                searchTime++
+            if (bootTime.any { it.descriptiveId == idMapper.getDescriptiveId(e.key) })
+                duplicatedcounter++
         }
 
         /*

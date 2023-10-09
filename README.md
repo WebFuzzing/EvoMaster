@@ -123,7 +123,7 @@ __Known limitations__:
 Depending on the year, we might have funding for _postdoc_ and _PhD student_ positions to work on this project (in Oslo, Norway).
 
 Current positions:
-* 2023: PhD student positions. No new calls scheduled for the moment.
+* 2023: PhD student positions, [1 position available](https://www.kristiania.no/en/about-kristiania/vacant-positions/?rmpage=job&rmjob=679&rmlang=UK).
 * 2023: Postdoc positions. No new calls scheduled for the moment.
 
 For questions on these positions, please contact Prof. Andrea Arcuri.
