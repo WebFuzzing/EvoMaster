@@ -50,12 +50,13 @@ jobs:
           path: core/target/evomaster.jar
           retention-days: ${{env.retention-days}}
           if-no-files-found: error
+          ### TODO disabled due to bug. See https://github.com/mikepenz/action-junit-report/issues/952
       # Make test report accessible from GitHub Actions (as Maven logs are long)
-      - name: Publish Test Report
-        if: success() || failure()
-        uses: mikepenz/action-junit-report@v3
-        with:
-          report_paths: '**/target/surefire-reports/TEST-*.xml'
+#      - name: Publish Test Report
+#        if: success() || failure()
+#        uses: mikepenz/action-junit-report@v4
+#        with:
+#          report_paths: '**/target/surefire-reports/TEST-*.xml'
       # Upload coverage results
       - name: Upload coverage to CodeCov
         run: curl -s https://codecov.io/bash | bash

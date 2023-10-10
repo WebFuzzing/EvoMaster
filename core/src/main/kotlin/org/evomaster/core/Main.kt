@@ -220,9 +220,38 @@ class Main {
                         val totalLines = unitsInfo.numberOfLines
                         val percentage = String.format("%.0f", (linesInfo.total / totalLines.toDouble()) * 100)
 
+                        /*
+                            This is a quite tricky case...
+                            the number of covered lines X should be less or equal than the total T, ie X<=T.
+                            However, we end up with cases like X > T where T=0.
+                            Should never happen in practice, but it does for E2E tests.
+                            This is because we could have different test suites working on same SUTs.
+                            Once one is finished, it would reset all data.
+                            Such data would not then be recomputed in the next test suite execution, as
+                            the classes are already loaded...
+                            Not sure if there is any clean solution for this...
+                            executing these tests in own process might be done with Failsafe/Surefire.
+
+                            Having check for totalLines == 0 was not a good solution. If the assertion fails,
+                            and test is re-executed on same JVM with classes already loaded, then we would get
+                            totalLines == 0 after the reset... and so the test cases will always pass :(
+                         */
+                        //assert(totalLines == 0 || linesInfo.total <= totalLines){ "${linesInfo.total} > $totalLines"}
+                        /*
+                            Having this assertion is way too problematic... not only issue when more than 2 E2E use
+                            the same SUT, but also when flacky tests are re-run (both in our scaffolding, and in Maven)
+                         */
+                        //assert(linesInfo.total <= totalLines){ "WRONG COVERAGE: ${linesInfo.total} > $totalLines"}
+
                         info("Covered targets (lines, branches, faults, etc.): ${targetsInfo.total}")
                         info("Potential faults: ${faults.size}")
-                        info("Bytecode line coverage: $percentage% (${linesInfo.total} out of $totalLines in $units units/classes)")
+
+                        if(totalLines == 0 || units == 0){
+                            logError("Detected $totalLines lines to cover, for a total of $units units/classes." +
+                                    " Are you sure you did setup getPackagePrefixesToCover() correctly?")
+                        } else {
+                            info("Bytecode line coverage: $percentage% (${linesInfo.total} out of $totalLines in $units units/classes)")
+                        }
                     } else {
                         warn("Failed to retrieve SUT info")
                     }
