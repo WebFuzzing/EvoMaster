@@ -126,4 +126,3 @@ Migrations/
 /test-old-libraries/target/
 /e2e-tests/spring-web/target/
 /e2e-tests/spring-rest-mongo/target/
-/core/src/main/resources/openapi_pet.json
