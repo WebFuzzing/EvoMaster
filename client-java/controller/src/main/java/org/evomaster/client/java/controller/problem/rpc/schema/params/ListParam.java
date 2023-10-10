@@ -3,14 +3,16 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
-import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.CollectionType;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import static org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator.*;
 
 /**
  * thrift
@@ -85,13 +87,15 @@ public class ListParam extends CollectionParam<List<NamedTypedValue>>{
             setValue(null); return;
         }
 
-        if (!isValidInstance(instance))
+        if (!isValidInstance(instance)
+            && !Collection.class.isAssignableFrom(instance.getClass())
+        )
             throw new RuntimeException("cannot parse List param "+getName()+" with the type "+json.getClass().getName());
 
         NamedTypedValue t = getType().getTemplate();
         List<NamedTypedValue> values = new ArrayList<>();
 
-        for (Object e : (List) instance){
+        for (Object e : (Collection) instance){
             NamedTypedValue copy = t.copyStructureWithProperties();
             copy.setValueBasedOnInstanceOrJson(e);
             values.add(copy);
@@ -100,60 +104,59 @@ public class ListParam extends CollectionParam<List<NamedTypedValue>>{
     }
 
     @Override
-    public List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent) {
-        String fullName = getType().getTypeNameForInstance();
+    public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava, boolean isVariableNullable) {
+        String fullName = getType().getTypeNameForInstanceInJavaOrKotlin(isJava);
         List<String> codes = new ArrayList<>();
-        String var = CodeJavaGenerator.oneLineInstance(isDeclaration, doesIncludeName, fullName, variableName, null);
-        CodeJavaGenerator.addCode(codes, var, indent);
+        addCode(codes, oneLineInstance(isDeclaration, doesIncludeName, fullName, variableName, null, isJava, isNullable()), indent);
         if (getValue() == null) return codes;
-        CodeJavaGenerator.addCode(codes, "{", indent);
+        addCode(codes, codeBlockStart(isJava), indent);
         // new array
-        CodeJavaGenerator.addCode(codes,
-                CodeJavaGenerator.setInstance(
+        addCode(codes,
+                setInstance(
                         variableName,
-                        CodeJavaGenerator.newList()), indent+1);
+                        newList(isJava, getType().getTemplate().getType().getTypeNameForInstanceInJavaOrKotlin(isJava)), isJava), indent+1);
         int index = 0;
         for (NamedTypedValue e: getValue()){
-            String eVarName = CodeJavaGenerator.handleVariableName(variableName+"_e_"+index);
-            codes.addAll(e.newInstanceWithJava(true, true, eVarName, indent+1));
-            CodeJavaGenerator.addCode(codes, variableName+".add("+eVarName+");", indent+1);
+            String eVarName = handleVariableName(variableName+"_e_"+index);
+            codes.addAll(e.newInstanceWithJavaOrKotlin(true, true, eVarName, indent+1, isJava, false));
+            addCode(codes, methodInvocation(variableName, "add", eVarName, isJava, isNullable(), false) + getStatementLast(isJava), indent+1);
             index++;
         }
 
-        CodeJavaGenerator.addCode(codes, "}", indent);
+        addCode(codes, codeBlockEnd(isJava), indent);
         return codes;
     }
 
     @Override
-    public List<String> newAssertionWithJava(int indent, String responseVarName, int maxAssertionForDataInCollection) {
+    public List<String> newAssertionWithJavaOrKotlin(int indent, String responseVarName, int maxAssertionForDataInCollection, boolean isJava) {
         List<String> codes = new ArrayList<>();
         if (getValue() == null){
-            CodeJavaGenerator.addCode(codes, CodeJavaGenerator.junitAssertNull(responseVarName), indent);
+            addCode(codes, junitAssertNull(responseVarName, isJava), indent);
             return codes;
         }
 
-        CodeJavaGenerator.addCode(codes, CodeJavaGenerator.junitAssertEquals(""+getValue().size(), CodeJavaGenerator.withSize(responseVarName)), indent);
+        addCode(codes, junitAssertEquals(String.valueOf(getValue().size()), withSizeInAssertion(responseVarName, isJava, isNullable()), isJava), indent);
 
         if (maxAssertionForDataInCollection == 0)
             return codes;
 
         List<Integer> nvalue = null;
         if (maxAssertionForDataInCollection > 0 && getValue().size() > maxAssertionForDataInCollection){
-            nvalue = CodeJavaGenerator.randomNInt(getValue().size(), maxAssertionForDataInCollection);
+            nvalue = randomNInt(getValue().size(), maxAssertionForDataInCollection);
         }else
             nvalue = IntStream.range(0, getValue().size()).boxed().collect(Collectors.toList());
 
         for (int index : nvalue){
             NamedTypedValue e = getValue().get(index);
-            String eVar = responseVarName+".get("+index+")";
-            codes.addAll(e.newAssertionWithJava(indent, eVar, maxAssertionForDataInCollection));
+            String eVar = methodInvocation(responseVarName, "get", String.valueOf(index), isJava, isNullable(), true);
+            codes.addAll(e.newAssertionWithJavaOrKotlin(indent, eVar, maxAssertionForDataInCollection, isJava));
         }
 
         return codes;
     }
 
     @Override
-    public String getValueAsJavaString() {
+    public String getValueAsJavaString(boolean isJava) {
         return null;
     }
 

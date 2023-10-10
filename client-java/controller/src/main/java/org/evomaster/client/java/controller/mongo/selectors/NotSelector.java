@@ -14,7 +14,7 @@ public class NotSelector extends SingleConditionQuerySelector {
         if (isDocument(value)) {
             // This is necessary for query parser to work correctly as the syntax for not is different
             // The field is at the beginning instead
-            Object docWithRemovedNot = newDocument();
+            Object docWithRemovedNot = newDocument(value);
             appendToDocument(docWithRemovedNot, fieldName, value);
             QueryOperation condition = new QueryParser().parse(docWithRemovedNot);
             return new NotOperation(fieldName, condition);

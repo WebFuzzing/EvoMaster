@@ -4,9 +4,7 @@ import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.client.java.controller.api.dto.*
-import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto
-import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto
-import org.evomaster.client.java.controller.api.dto.database.operations.QueryResultDto
+import org.evomaster.client.java.controller.api.dto.database.operations.*
 import org.evomaster.core.EMConfig
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.remote.NoRemoteConnectionException
@@ -232,7 +230,7 @@ class RemoteControllerImplementation() : RemoteController{
                 getWebTarget()
                         .path(ControllerConstants.RUN_SUT_PATH)
                         .request()
-                        .put(Entity.json(SutRunDto(run, reset, config.enableCustomizedExternalServiceHandling, computeSqlHeuristics, extractSqlExecutionInfo, config.methodReplacementCategories())))
+                        .put(Entity.json(SutRunDto(run, reset, config.enableCustomizedMethodForMockObjectHandling, computeSqlHeuristics, extractSqlExecutionInfo, config.methodReplacementCategories())))
             }
         } catch (e: Exception) {
             log.warn("Failed to connect to SUT: ${e.message}")
@@ -285,7 +283,11 @@ class RemoteControllerImplementation() : RemoteController{
         return readAndCheckResponse(response, "Failed to inform SUT of new search")
     }
 
-    override fun getTestResults(ids: Set<Int>, ignoreKillSwitch: Boolean): TestResultsDto? {
+    override fun getTestResults(ids: Set<Int>, ignoreKillSwitch: Boolean, allCovered: Boolean): TestResultsDto? {
+
+        if(allCovered && ids.isNotEmpty()){
+            throw IllegalArgumentException("Cannot specify allCovered and specific ids at same time")
+        }
 
         val queryParam = ids.joinToString(",")
 
@@ -294,6 +296,7 @@ class RemoteControllerImplementation() : RemoteController{
                     .path(ControllerConstants.TEST_RESULTS)
                     .queryParam("ids", queryParam)
                     .queryParam("killSwitch", !ignoreKillSwitch && config.killSwitch)
+                    .queryParam("allCovered", allCovered)
                     .request(MediaType.APPLICATION_JSON_TYPE)
                     .get()
         }
@@ -420,6 +423,10 @@ class RemoteControllerImplementation() : RemoteController{
         return executeDatabaseCommandAndGetResults(dto, object : GenericType<WrappedResponseDto<InsertionResultsDto>>() {})
     }
 
+    override fun executeMongoDatabaseInsertions(dto: MongoDatabaseCommandDto): MongoInsertionResultsDto? {
+        return executeMongoDatabaseCommandAndGetResults(dto, object : GenericType<WrappedResponseDto<MongoInsertionResultsDto>>() {})
+    }
+
     private fun <T> executeDatabaseCommandAndGetResults(dto: DatabaseCommandDto, type: GenericType<WrappedResponseDto<T>>): T?{
 
         val response = makeHttpCall {
@@ -432,6 +439,24 @@ class RemoteControllerImplementation() : RemoteController{
         val dto = getDtoFromResponse(response, type)
 
         if (!checkResponse(response, dto, "Failed to execute database command")) {
+            return null
+        }
+
+        return dto?.data
+    }
+
+    private fun <T> executeMongoDatabaseCommandAndGetResults(dto: MongoDatabaseCommandDto, type: GenericType<WrappedResponseDto<T>>): T? {
+
+        val response = makeHttpCall {
+            getWebTarget()
+                .path(ControllerConstants.MONGO_INSERTION)
+                .request()
+                .post(Entity.entity(dto, MediaType.APPLICATION_JSON_TYPE))
+        }
+
+        val dto = getDtoFromResponse(response, type)
+
+        if (!checkResponse(response, dto, "Failed to execute MongoDB insertion")) {
             return null
         }
 

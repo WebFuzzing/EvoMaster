@@ -4,7 +4,7 @@ import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.search.ActionResult
+import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.slf4j.Logger
@@ -18,7 +18,7 @@ class BlackBoxRestFitness : RestFitness() {
         private val log: Logger = LoggerFactory.getLogger(BlackBoxRestFitness::class.java)
     }
 
-    override fun doCalculateCoverage(individual: RestIndividual, targets: Set<Int>): EvaluatedIndividual<RestIndividual>? {
+    override fun doCalculateCoverage(individual: RestIndividual, targets: Set<Int>, allCovered: Boolean): EvaluatedIndividual<RestIndividual>? {
 
         val cookies = mutableMapOf<String, List<NewCookie>>()
         val tokens = mutableMapOf<String, String>()

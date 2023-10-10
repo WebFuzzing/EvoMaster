@@ -1,10 +1,10 @@
 package org.evomaster.core.problem.rest.individual
 
 import com.google.inject.*
-import org.evomaster.core.database.DbAction
+import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.service.*
-import org.evomaster.core.search.ActionFilter
+import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
 import org.evomaster.core.search.impact.impactinfocollection.ImpactsOfIndividual
@@ -80,7 +80,7 @@ class RestIndividualResourceTest : RestIndividualTestBase() {
         val existingData = mutatedImpact.getSQLExistingData()
         assertEquals(
             existingData,
-            mutated.individual.seeInitializingActions().filterIsInstance<DbAction>().count { it.representExistingData })
+            mutated.individual.seeInitializingActions().filterIsInstance<SqlAction>().count { it.representExistingData })
 
         val currentInit = mutatedImpact.initActionImpacts.getOriginalSize(includeExistingSQLData = true)
 
@@ -90,7 +90,7 @@ class RestIndividualResourceTest : RestIndividualTestBase() {
         assertEquals(mutatedInit.size, currentInit)
 
         // check whether impact info is consistent with individual after mutation
-        mutated.individual.seeInitializingActions().filterIsInstance<DbAction>().forEachIndexed { index, dbAction ->
+        mutated.individual.seeInitializingActions().filterIsInstance<SqlAction>().forEachIndexed { index, dbAction ->
             if (!dbAction.representExistingData) {
                 val impact = mutatedImpact.initActionImpacts.getImpactOfAction(dbAction.getName(), index)
                 assertNotNull(impact)
@@ -118,7 +118,7 @@ class RestIndividualResourceTest : RestIndividualTestBase() {
                 var improved = 0
                 var anyMutated = 0
                 mutated.individual.seeActions(ActionFilter.ALL).forEachIndexed { index, action ->
-                    if (action !is DbAction || !action.representExistingData) {
+                    if (action !is SqlAction || !action.representExistingData) {
                         action.seeTopGenes().filter { it.isMutable() }.forEach { g ->
                             val impactId = ImpactUtils.generateGeneId(mutated.individual, g)
                             val fromInit = mutatedInit.contains(action)

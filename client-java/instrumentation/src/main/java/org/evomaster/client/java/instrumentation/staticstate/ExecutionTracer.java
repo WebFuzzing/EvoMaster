@@ -189,6 +189,10 @@ public class ExecutionTracer {
         ExecutionTracer.executingInitSql = executingInitSql;
     }
 
+    public static void setExecutingInitMongo(boolean executingInitMongo) {
+        ExecutionTracer.executingInitMongo = executingInitMongo;
+    }
+
     public static boolean isExecutingAction() {
         return executingAction;
     }
@@ -415,6 +419,11 @@ public class ExecutionTracer {
     public static void addMongoInfo(MongoInfo info){
         if (!executingInitMongo)
             getCurrentAdditionalInfo().addMongoInfo(info);
+    }
+
+    public static void addMongoCollectionInfo(MongoCollectionInfo info){
+        if (!executingInitMongo)
+            getCurrentAdditionalInfo().addMongoCollectionInfo(info);
     }
 
     public static void markLastExecutedStatement(String lastLine, String lastMethod) {

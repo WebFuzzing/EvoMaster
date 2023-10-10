@@ -1,10 +1,10 @@
 package org.evomaster.core.search.gene.binding
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.schema.Column
-import org.evomaster.core.database.schema.ColumnDataType
-import org.evomaster.core.database.schema.Table
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.sql.schema.Column
+import org.evomaster.core.sql.schema.ColumnDataType
+import org.evomaster.core.sql.schema.Table
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestPath
@@ -64,7 +64,7 @@ class BindingBuildTest {
         val c3 = Column("intValue", ColumnDataType.INT4, databaseType = DatabaseType.H2)
         val c4 = Column("floatValue", ColumnDataType.REAL, databaseType = DatabaseType.H2)
         val table = Table("foo", columns = setOf(c1,c2,c3,c4), foreignKeys = setOf())
-        val dbAction = DbAction(table, setOf(c1,c2,c3,c4), 0L, representExistingData = false)
+        val sqlAction = SqlAction(table, setOf(c1,c2,c3,c4), 0L, representExistingData = false)
 
         val ancestorPath = RestPath("/api/foo")
         val f1 = LongGene("id", 1L)

@@ -1,18 +1,16 @@
 package org.evomaster.core.problem.rest.resource
 
 import io.swagger.parser.OpenAPIParser
-import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto
-import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto
-import org.evomaster.client.java.controller.api.dto.database.operations.QueryResultDto
+import org.evomaster.client.java.controller.api.dto.database.operations.*
 import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.EMConfig
-import org.evomaster.core.database.DatabaseExecutor
-import org.evomaster.core.database.SqlInsertBuilder
+import org.evomaster.core.sql.DatabaseExecutor
+import org.evomaster.core.sql.SqlInsertBuilder
 import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.problem.rest.resource.dependency.BodyParamRelatedToTable
-import org.evomaster.core.search.Action
-import org.evomaster.core.search.ActionFilter
+import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.service.Randomness
@@ -154,7 +152,7 @@ class ResourceNodeWithDbTest {
 
         // /v3/api/rfoo/{rfooId}
         val getFoo = cluster.getResourceNode("/v3/api/rfoo/{rfooId}")!!.sampleRestResourceCalls("GET", randomness, maxTestSize = 10)
-        val previousGetFooId = getGenePredict(getFoo.seeActions(ActionFilter.NO_SQL).first(), "rfooId"){g: Gene-> g is LongGene }
+        val previousGetFooId = getGenePredict(getFoo.seeActions(ActionFilter.NO_SQL).first(), "rfooId"){ g: Gene-> g is LongGene }
         (previousGetFooId as LongGene).value = 40
         getFoo.is2POST = true
         val createFoo = sqlInsertBuilder.createSqlInsertionAction("RFOO")
@@ -163,7 +161,7 @@ class ResourceNodeWithDbTest {
         (createGetFooId as LongGene).value = 42
 
         getFoo.initDbActions(createFoo, cluster, false, false)
-        val fooGetId = getGenePredict(getFoo.seeActions(ActionFilter.NO_SQL).first(), "rfooId"){g: Gene-> g is LongGene }
+        val fooGetId = getGenePredict(getFoo.seeActions(ActionFilter.NO_SQL).first(), "rfooId"){ g: Gene-> g is LongGene }
         val fooCreateGetId = getGenePredict(getFoo.seeActions(ActionFilter.ONLY_SQL).first(), "id") { g: Gene -> g is LongGene }
         assertEquals((fooGetId as LongGene).value, (fooCreateGetId as LongGene).value)
         assertEquals(42, fooGetId.value)
@@ -174,10 +172,10 @@ class ResourceNodeWithDbTest {
         val fooBarDbActionToCreate = cluster.createSqlAction(listOf("RFOO", "RBAR"), sqlInsertBuilder, mutableListOf(), true, randomness = randomness)
         assertEquals(2, fooBarDbActionToCreate.size)
         getBar.initDbActions(fooBarDbActionToCreate, cluster, false, false)
-        val barFooId = getGenePredict(getBar.seeActions(ActionFilter.NO_SQL).first(), "rfooId"){g: Gene-> g is LongGene }
-        val barId = getGenePredict(getBar.seeActions(ActionFilter.NO_SQL).first(), "rbarId"){g: Gene-> g is LongGene }
-        val dbFooIdInGetBar = getGenePredict(getBar.seeActions(ActionFilter.ONLY_SQL).first(), "id"){g: Gene -> g is LongGene }
-        val dbBarIdInGetBar = getGenePredict(getBar.seeActions(ActionFilter.ONLY_SQL)[1], "id"){g: Gene -> g is LongGene }
+        val barFooId = getGenePredict(getBar.seeActions(ActionFilter.NO_SQL).first(), "rfooId"){ g: Gene-> g is LongGene }
+        val barId = getGenePredict(getBar.seeActions(ActionFilter.NO_SQL).first(), "rbarId"){ g: Gene-> g is LongGene }
+        val dbFooIdInGetBar = getGenePredict(getBar.seeActions(ActionFilter.ONLY_SQL).first(), "id"){ g: Gene -> g is LongGene }
+        val dbBarIdInGetBar = getGenePredict(getBar.seeActions(ActionFilter.ONLY_SQL)[1], "id"){ g: Gene -> g is LongGene }
         assertEquals((barFooId as LongGene).value, (dbFooIdInGetBar as LongGene).value)
         assertTrue(dbFooIdInGetBar.isDirectBoundWith(barFooId))
         assertEquals((barId as LongGene).value, (dbBarIdInGetBar as LongGene).value)
@@ -198,12 +196,12 @@ class ResourceNodeWithDbTest {
         }
         assertEquals(3, xyzDbActions.size)
         getXYZ.initDbActions(xyzDbActions, cluster, false, false)
-        val xyzFooId = getGenePredict(getXYZ.seeActions(ActionFilter.NO_SQL)[0], "rfooId"){g: Gene-> g is LongGene }
-        val xyzBarId = getGenePredict(getXYZ.seeActions(ActionFilter.NO_SQL)[0], "rbarId"){g: Gene-> g is LongGene }
-        val xyzId = getGenePredict(getXYZ.seeActions(ActionFilter.NO_SQL)[0], "rxyzId"){g: Gene-> g is LongGene }
-        val dbXYZFooId = getGenePredict(getXYZ.seeActions(ActionFilter.ONLY_SQL)[0], "id"){g: Gene-> g is LongGene }
-        val dbXYZBarId = getGenePredict(getXYZ.seeActions(ActionFilter.ONLY_SQL)[1], "id"){g: Gene-> g is LongGene }
-        val dbXYZId = getGenePredict(getXYZ.seeActions(ActionFilter.ONLY_SQL)[2], "id"){g: Gene-> g is LongGene }
+        val xyzFooId = getGenePredict(getXYZ.seeActions(ActionFilter.NO_SQL)[0], "rfooId"){ g: Gene-> g is LongGene }
+        val xyzBarId = getGenePredict(getXYZ.seeActions(ActionFilter.NO_SQL)[0], "rbarId"){ g: Gene-> g is LongGene }
+        val xyzId = getGenePredict(getXYZ.seeActions(ActionFilter.NO_SQL)[0], "rxyzId"){ g: Gene-> g is LongGene }
+        val dbXYZFooId = getGenePredict(getXYZ.seeActions(ActionFilter.ONLY_SQL)[0], "id"){ g: Gene-> g is LongGene }
+        val dbXYZBarId = getGenePredict(getXYZ.seeActions(ActionFilter.ONLY_SQL)[1], "id"){ g: Gene-> g is LongGene }
+        val dbXYZId = getGenePredict(getXYZ.seeActions(ActionFilter.ONLY_SQL)[2], "id"){ g: Gene-> g is LongGene }
 
         assertEquals((xyzFooId as LongGene).value, (dbXYZFooId as LongGene).value)
         assertEquals(42, xyzFooId.value)
@@ -233,10 +231,10 @@ class ResourceNodeWithDbTest {
         }
         getXYZ.initDbActions(dbXYZ, cluster, false, false)
 
-        val xyzFooId = getGenePredict(getXYZ.seeActions(ActionFilter.NO_SQL)[0], "rfooId"){g: Gene-> g is LongGene }
-        val xyzBarId = getGenePredict(getXYZ.seeActions(ActionFilter.NO_SQL)[0], "rbarId"){g: Gene-> g is LongGene }
-        val dbXYZFooId = getGenePredict(getXYZ.seeActions(ActionFilter.ONLY_SQL)[0], "id"){g: Gene-> g is LongGene }
-        val dbXYZBarId = getGenePredict(getXYZ.seeActions(ActionFilter.ONLY_SQL)[1], "id"){g: Gene-> g is LongGene }
+        val xyzFooId = getGenePredict(getXYZ.seeActions(ActionFilter.NO_SQL)[0], "rfooId"){ g: Gene-> g is LongGene }
+        val xyzBarId = getGenePredict(getXYZ.seeActions(ActionFilter.NO_SQL)[0], "rbarId"){ g: Gene-> g is LongGene }
+        val dbXYZFooId = getGenePredict(getXYZ.seeActions(ActionFilter.ONLY_SQL)[0], "id"){ g: Gene-> g is LongGene }
+        val dbXYZBarId = getGenePredict(getXYZ.seeActions(ActionFilter.ONLY_SQL)[1], "id"){ g: Gene-> g is LongGene }
 
 
         val getBarNode = cluster.getResourceNode("/v3/api/rfoo/{rfooId}/rbar/{rbarId}")!!
@@ -251,8 +249,8 @@ class ResourceNodeWithDbTest {
         assertFalse(getXYZ.isDeletable)
         assertTrue(getXYZ.shouldBefore.contains(getBar.getResourceNodeKey()))
 
-        val barFooId = getGenePredict(getBar.seeActions(ActionFilter.NO_SQL).first(), "rfooId"){g: Gene-> g is LongGene }
-        val barId = getGenePredict(getBar.seeActions(ActionFilter.NO_SQL).first(), "rbarId"){g: Gene-> g is LongGene }
+        val barFooId = getGenePredict(getBar.seeActions(ActionFilter.NO_SQL).first(), "rfooId"){ g: Gene-> g is LongGene }
+        val barId = getGenePredict(getBar.seeActions(ActionFilter.NO_SQL).first(), "rbarId"){ g: Gene-> g is LongGene }
 
         assertEquals((xyzBarId as LongGene).value, (barId as LongGene).value)
         assertEquals((dbXYZBarId as LongGene).value, barId.value)
@@ -270,6 +268,10 @@ class ResourceNodeWithDbTest {
     private class DbExecutor : DatabaseExecutor {
 
         override fun executeDatabaseInsertionsAndGetIdMapping(dto: DatabaseCommandDto): InsertionResultsDto? {
+            return null
+        }
+
+        override fun executeMongoDatabaseInsertions(dto: MongoDatabaseCommandDto): MongoInsertionResultsDto? {
             return null
         }
 

@@ -35,6 +35,8 @@ import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMuta
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.lang.IllegalStateException
+import kotlin.math.max
 import kotlin.math.min
 
 class StringGene(
@@ -113,12 +115,12 @@ class StringGene(
         get() {return children}
 
 
-    fun actualMaxLength() : Int {
+    private fun actualMaxLength() : Int {
 
         val state = getSearchGlobalState()
             ?: return maxLength
 
-        return min(maxLength, state.config.maxLengthForStrings)
+        return max(minLength, min(maxLength, state.config.maxLengthForStrings))
     }
 
 
@@ -177,7 +179,17 @@ class StringGene(
         val maxForRandomization = getSearchGlobalState()?.config?.maxLengthForStringsAtSamplingTime ?: 16
 
         val adjustedMin = minLength
-        val adjustedMax = min(maxLength, maxForRandomization)
+        var adjustedMax = min(maxLength, maxForRandomization)
+
+        if(adjustedMax < adjustedMin){
+            /*
+            this can happen if there are constraints on min length that are longer than our typical strings.
+            even if we do not want to use too long strings for performance reasons, we still must satisfy
+            any min constrains
+            */
+            assert(minLength <= maxLength)
+            adjustedMax = adjustedMin
+        }
 
         if(adjustedMax == 0 && adjustedMin == adjustedMax){
             //only empty string is allowed
@@ -203,6 +215,18 @@ class StringGene(
             here
          */
         //assert(!tainted)
+
+        /*
+            the gene might be initialized without global constraint
+         */
+        if (!checkForGloballyValid())
+            repair()
+
+        /*
+            it binds with any value, skip to apply the global taint
+         */
+        if (isBoundGene())
+            return
 
         //check if starting directly with a tainted value
         val state = getSearchGlobalState()!! //cannot be null when this method is called
@@ -390,7 +414,7 @@ class StringGene(
 
     fun redoTaint(apc: AdaptiveParameterControl, randomness: Randomness) : Boolean{
 
-        if(TaintInputName.getTaintNameMaxLength() > actualMaxLength()){
+        if(!TaintInputName.doesTaintNameSatisfiesLengthConstraints("${StaticCounter.get()}", actualMaxLength())){
             return false
         }
 
@@ -425,8 +449,16 @@ class StringGene(
         return false
     }
 
+    /**
+     * Force a tainted value. Must guarantee min-max length constraints are satisfied
+     */
     fun forceTaintedValue() {
-        value = TaintInputName.getTaintName(StaticCounter.getAndIncrease())
+        val taint = TaintInputName.getTaintName(StaticCounter.getAndIncrease(), minLength)
+
+        if(taint.length !in minLength..maxLength){
+            throw IllegalStateException("Tainted value out of min-max range [$minLength,$maxLength]")
+        }
+        value = taint
         tainted = true
     }
 

@@ -1,6 +1,7 @@
 package org.evomaster.core.search.impact.impactinfocollection.individual
 
 import org.evomaster.core.EMConfig
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.output.EvaluatedIndividualBuilder.Companion.generateIndividualResults
 import org.evomaster.core.search.*
 import org.evomaster.core.search.gene.Gene

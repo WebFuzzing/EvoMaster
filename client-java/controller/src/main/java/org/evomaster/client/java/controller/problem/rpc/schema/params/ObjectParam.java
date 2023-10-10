@@ -2,11 +2,7 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
-import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
-import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
-import org.evomaster.client.java.controller.problem.rpc.schema.types.ObjectType;
-import org.evomaster.client.java.controller.problem.rpc.schema.types.PrimitiveOrWrapperType;
-import org.evomaster.client.java.controller.problem.rpc.schema.types.TypeSchema;
+import org.evomaster.client.java.controller.problem.rpc.schema.types.*;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.lang.reflect.Field;
@@ -18,10 +14,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator.*;
+
 /**
  * object param
  */
 public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValue>> {
+
+    public static final String PROTO3_BUILDER_METHOD = "newBuilder";
+
+    public static final String PROTO3_OBJECT_BUILD_METHOD = "build";
 
     public ObjectParam(String name, ObjectType type, AccessibleSchema accessibleSchema) {
         super(name, type, accessibleSchema);
@@ -33,34 +35,57 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
         String clazzName = getType().getFullTypeName();
         Class<?> clazz = Class.forName(clazzName);
         try {
-            Object instance = clazz.newInstance();
-            for (NamedTypedValue v: getValue()){
-                boolean setWithSetter = false;
+            Object instance = null;
+
+            if (getType().spec == JavaDtoSpec.PROTO3){
+                Object instanceBuilder = null;
+
+                Method builderMethod = clazz.getMethod(PROTO3_BUILDER_METHOD);
+                instanceBuilder = builderMethod.invoke(null);
+                Class<?>  builderClazz = instanceBuilder.getClass();
+                for (NamedTypedValue v: getValue()){
+                    Class<?> setterInputClazz = v.getType().getClazz();
+                    if (v.accessibleSchema.setterInputParams != null && v.accessibleSchema.setterInputParams.length > 0){
+                        setterInputClazz = v.accessibleSchema.setterInputParams[0];
+                    }
+
+                    Method builderSetter = builderClazz.getMethod(v.accessibleSchema.setterMethodName,setterInputClazz);
+                    builderSetter.invoke(instanceBuilder, v.newInstance());
+                }
+                Method buildMethod = builderClazz.getMethod(PROTO3_OBJECT_BUILD_METHOD);
+                instance = buildMethod.invoke(instanceBuilder);
+
+            } else if (getType().spec == JavaDtoSpec.DEFAULT){
+                instance = clazz.newInstance();
+
+                for (NamedTypedValue v: getValue()){
+                    boolean setWithSetter = false;
 
                 /*
                     if setter exists, we should prioritize the usage of the setter
                     for thrift, the setter contains additional info
                  */
-                if(v.accessibleSchema != null && v.accessibleSchema.setterMethodName != null){
-                    Method m =  getSetter(clazz, v.accessibleSchema.setterMethodName, v.getType(), v.getType().getClazz(), 0);
-                            //clazz.getMethod(v.accessibleSchema.setterMethodName, v.getType().getClazz());
-                    try {
-                        m.invoke(instance, v.newInstance());
-                        setWithSetter = true;
-                    } catch (InvocationTargetException e) {
-                        SimpleLogger.uniqueWarn("fail to access the method:"+clazzName+" with error msg:"+e.getMessage());
+                    if(v.accessibleSchema != null && v.accessibleSchema.setterMethodName != null){
+                        Method m =  getSetter(clazz, v.accessibleSchema.setterMethodName, v.getType(), v.getType().getClazz(), 0);
+                        //clazz.getMethod(v.accessibleSchema.setterMethodName, v.getType().getClazz());
+                        try {
+                            m.invoke(instance, v.newInstance());
+                            setWithSetter = true;
+                        } catch (InvocationTargetException e) {
+                            SimpleLogger.uniqueWarn("fail to access the method:"+clazzName+" with error msg:"+e.getMessage());
+                        }
+                    }
+
+                    if (!setWithSetter){
+                        Field f = clazz.getField(v.getName());
+                        f.setAccessible(true);
+                        Object vins = v.newInstance();
+                        if (vins != null)
+                            f.set(instance, vins);
                     }
                 }
-
-                if (!setWithSetter){
-                    Field f = clazz.getField(v.getName());
-                    f.setAccessible(true);
-                    Object vins = v.newInstance();
-                    if (vins != null)
-                        f.set(instance, vins);
-                }
-
             }
+
             return instance;
         } catch (InstantiationException e) {
             throw new RuntimeException("fail to construct the class:"+clazzName+" with error msg:"+e.getMessage());
@@ -70,13 +95,15 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
             throw new RuntimeException("fail to access the field:"+clazzName+" with error msg:"+e.getMessage());
         } catch (NoSuchMethodException e) {
             throw new RuntimeException("fail to access the method:"+clazzName+" with error msg:"+e.getMessage());
+        } catch (InvocationTargetException e) {
+            throw new RuntimeException("fail to find the builder:"+clazzName+" with error msg:"+e.getMessage());
         }
     }
 
     private Method getSetter(Class<?> clazz, String setterName, TypeSchema type, Class<?> typeClass, int attemptTimes) throws NoSuchMethodException {
 
         try {
-            Method m = clazz.getMethod(setterName, type.getClazz());
+            Method m = clazz.getMethod(setterName, typeClass);
             return m;
         } catch (NoSuchMethodException e) {
             if (type instanceof PrimitiveOrWrapperType && attemptTimes == 0){
@@ -203,71 +230,108 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
     }
 
     @Override
-    public List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent) {
-        String typeName = getType().getTypeNameForInstance();
+    public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava, boolean isVariableNullable) {
+        String typeName = getType().getTypeNameForInstanceInJavaOrKotlin(isJava);
         String varName = variableName;
 
         List<String> codes = new ArrayList<>();
         boolean isNull = (getValue() == null);
-        String var = CodeJavaGenerator.oneLineInstance(isDeclaration, doesIncludeName, typeName, varName, null);
-        CodeJavaGenerator.addCode(codes, var, indent);
+        addCode(codes, oneLineInstance(isDeclaration, doesIncludeName, typeName, varName, null,isJava, isNullable()), indent);
         if (isNull) return codes;
 
-        CodeJavaGenerator.addCode(codes, "{", indent);
-        // new obj
-        CodeJavaGenerator.addCode(codes, CodeJavaGenerator.setInstanceObject(typeName, varName), indent+1);
+        addCode(codes, codeBlockStart(isJava), indent);
+
+        String ownVarName = null;
+        if (getType().spec == JavaDtoSpec.DEFAULT){
+            // new obj
+            addCode(codes, setInstanceObject(typeName, varName, isJava), indent + 1 );
+            ownVarName = varName;
+        }else{
+            String varBuilderName = varName+"builder";
+            addCode(codes, newBuilderProto3(typeName, varBuilderName, isJava), indent + 1);
+            ownVarName = varBuilderName;
+        }
+
         for (NamedTypedValue f : getValue()){
             if (f.accessibleSchema != null && f.accessibleSchema.setterMethodName != null){
-                String fName = varName;
+                String fName = ownVarName;
                 boolean fdeclar = false;
-                if (f instanceof ObjectParam || f instanceof MapParam || f instanceof CollectionParam || f instanceof DateParam || f instanceof  BigDecimalParam || f instanceof BigIntegerParam){
+                if (needRenameField(f)){
                      fName = varName+"_"+f.getName();
                      fdeclar = true;
                 }
-                codes.addAll(f.newInstanceWithJava(fdeclar, true, fName, indent+1));
+                codes.addAll(f.newInstanceWithJavaOrKotlin(fdeclar, true, fName, indent+1, isJava, isNullable()));
 
-                if (f instanceof ObjectParam || f instanceof MapParam || f instanceof CollectionParam || f instanceof DateParam || f instanceof  BigDecimalParam || f instanceof BigIntegerParam){
-                    CodeJavaGenerator.addCode(codes, CodeJavaGenerator.methodInvocation(varName, f.accessibleSchema.setterMethodName, fName)+CodeJavaGenerator.appendLast(),indent+1);
+                if (needRenameField(f)){
+                    addCode(codes, methodInvocation(ownVarName, f.accessibleSchema.setterMethodName, fName, isJava, isNullable(), false)+ getStatementLast(isJava),indent+1);
                 }
             }else {
-                String fName = varName+"."+f.getName();
-                codes.addAll(f.newInstanceWithJava(false, true, fName, indent+1));
+                codes.addAll(f.newInstanceWithJavaOrKotlin(false, true,
+                    fieldAccess(varName, f.getName(),isJava, isNullable(),false), indent+1, isJava, isNullable()));
             }
         }
 
-        CodeJavaGenerator.addCode(codes, "}", indent);
+        if (getType().spec == JavaDtoSpec.PROTO3){
+
+            addCode(codes,
+                setInstance(true, varName, methodInvocation(ownVarName, PROTO3_OBJECT_BUILD_METHOD, "",isJava, isNullable(), false), isJava),indent+1);
+        }
+        addCode(codes, codeBlockEnd(isJava), indent);
         return codes;
     }
 
+    private boolean needRenameField(NamedTypedValue f){
+        return f instanceof ObjectParam || f instanceof MapParam || f instanceof CollectionParam || f instanceof DateParam || f instanceof  BigDecimalParam || f instanceof BigIntegerParam || f instanceof Protobuf3ByteStringParam;
+    }
+
     @Override
-    public List<String> newAssertionWithJava(int indent, String responseVarName, int maxAssertionForDataInCollection) {
+    public List<String> newAssertionWithJavaOrKotlin(int indent, String responseVarName, int maxAssertionForDataInCollection, boolean isJava) {
         List<String> codes = new ArrayList<>();
         if (getValue() == null){
-            CodeJavaGenerator.addCode(codes, CodeJavaGenerator.junitAssertNull(responseVarName), indent);
+            addCode(codes, junitAssertNull(responseVarName, isJava), indent);
             return codes;
         }
         for (NamedTypedValue f : getValue()){
             String fName = null;
-            if (f.accessibleSchema == null || f.accessibleSchema.isAccessible)
-                fName = responseVarName+"."+f.getName();
-            else{
+            if (f.accessibleSchema == null || f.accessibleSchema.isAccessible){
+                fName = fieldAccess(responseVarName, f.getName(),isJava, isNullable(),true);
+            } else{
                 if (f.accessibleSchema.getterMethodName == null){
                     String msg = "Error: Object("+getType().getFullTypeName()+") has private field "+f.getName()+", but there is no getter method";
                     SimpleLogger.uniqueWarn(msg);
-                    CodeJavaGenerator.addComment(codes, msg, indent);
+                    addComment(codes, msg, indent);
                 }else{
-                    fName = responseVarName+"."+f.accessibleSchema.getterMethodName+"()";
+                    fName = methodInvocation(responseVarName, f.accessibleSchema.getterMethodName, "", isJava, isNullable(), true);
                 }
             }
             if (fName != null)
-                codes.addAll(f.newAssertionWithJava(indent, fName, maxAssertionForDataInCollection));
+                codes.addAll(f.newAssertionWithJavaOrKotlin(indent, fName, maxAssertionForDataInCollection, isJava));
         }
         return codes;
     }
 
     @Override
-    public String getValueAsJavaString() {
+    public String getValueAsJavaString(boolean isJava) {
         return null;
+    }
+
+
+    @Override
+    public List<String> referenceTypes() {
+        List<String> references = new ArrayList<>();
+        for (NamedTypedValue ref : getType().getFields()){
+            if (ref instanceof ObjectParam){
+                references.add(ref.getType().getFullTypeName());
+                List<String> genericTypes = ((ObjectType)ref.getType()).getGenericTypes();
+                if (genericTypes != null && !genericTypes.isEmpty())
+                    references.addAll(genericTypes);
+            }
+            List<String> refrefTypes = ref.referenceTypes();
+            if (refrefTypes != null)
+                references.addAll(refrefTypes);
+        }
+        if (references.isEmpty()) return null;
+        return references;
     }
 
 }

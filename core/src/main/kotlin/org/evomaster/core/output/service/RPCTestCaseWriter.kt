@@ -5,18 +5,18 @@ import org.evomaster.core.output.Lines
 import org.evomaster.core.output.TestCase
 import org.evomaster.core.output.formatter.OutputFormatter
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
+import org.evomaster.core.problem.externalservice.rpc.DbAsExternalServiceAction
 import org.evomaster.core.problem.externalservice.rpc.RPCExternalServiceAction
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCCallResult
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.problem.rpc.service.RPCEndpointsHandler
-import org.evomaster.core.search.Action
-import org.evomaster.core.search.ActionResult
+import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.math.max
@@ -33,6 +33,12 @@ class RPCTestCaseWriter : ApiTestCaseWriter() {
          * name of method for customizing handling of external services for RPC problem
          */
         const val CUSTOMIZED_EXTERNAL_SERVICES = "mockRPCExternalServicesWithCustomizedHandling"
+
+        /**
+         * name of method for customizing handling of mocking database
+         * note that it is only for RPC problem now
+         */
+        const val CUSTOMIZED_MOCK_DATABASE_OBJECTS = "mockDatabasesWithCustomizedHandling"
     }
 
     @Inject
@@ -71,6 +77,7 @@ class RPCTestCaseWriter : ApiTestCaseWriter() {
 
         // generate actions for handling external services with customized methods
         handleCustomizedExternalServiceHandling(action, index, testCaseName, true, lines, testSuitePath)
+        handleCustomizedMockDatabaseHandling(action, index, testCaseName, true, lines, testSuitePath)
 
         val resVarName = createUniqueResponseVariableName()
 
@@ -90,6 +97,12 @@ class RPCTestCaseWriter : ApiTestCaseWriter() {
                 }
             }
         }
+
+        lines.addEmpty()
+
+        // reset mock object if any
+        handleCustomizedExternalServiceHandling(action, index, testCaseName, false, lines, testSuitePath)
+        handleCustomizedMockDatabaseHandling(action, index, testCaseName, false, lines, testSuitePath)
     }
 
     private fun handleAssertNull(lines: Lines, resVarName: String){
@@ -183,8 +196,8 @@ class RPCTestCaseWriter : ApiTestCaseWriter() {
     }
 
 
-    private fun saveJsonAndPrintReadJson(testCaseName: String, actionIndex: Int, json: String, lines: Lines){
-        val fileName = getFileNameToSaveMockedResponsesDtoAsJson(testCaseName, actionIndex)
+    private fun saveJsonAndPrintReadJson(testCaseName: String, actionIndex: Int, json: String, lines: Lines, infoTag: String){
+        val fileName = getFileNameToSaveMockedResponsesDtoAsJson(testCaseName, actionIndex, infoTag)
 
         val body = if (OutputFormatter.JSON_FORMATTER.isValid(json)) {
             OutputFormatter.JSON_FORMATTER.getFormatted(json)
@@ -199,7 +212,7 @@ class RPCTestCaseWriter : ApiTestCaseWriter() {
         lines.append("${TestSuiteWriter.controller}.readFileAsStringFromTestResource(\"$fileName\")")
     }
 
-    private fun getFileNameToSaveMockedResponsesDtoAsJson(testCaseName: String, actionIndex: Int) = "${testCaseName}_MockedResponseInfo_$actionIndex.json"
+    private fun getFileNameToSaveMockedResponsesDtoAsJson(testCaseName: String, actionIndex: Int, infoTag: String) = "${testCaseName}_${infoTag}_$actionIndex.json"
 
 
     private fun printExecutionJson(json: String, lines: Lines) {
@@ -240,7 +253,7 @@ class RPCTestCaseWriter : ApiTestCaseWriter() {
 
         val clientVariables = rpcHandler.getClientAndItsVariable()
         clientVariables.forEach { (t, u)->
-            val getClient = "${TestSuiteWriter.controller}.getRPCClient(\"${u.second}\")"
+            val getClient = "${TestSuiteWriter.controller}.getRPCClient(\"${if (format.isKotlin()) u.second.replace("$","\\$") else u.second}\")"
             when{
                 config.outputFormat.isKotlin()-> lines.add("$t = $getClient as ${handleClientType(u.first)}")
                 config.outputFormat.isJava() -> lines.add("$t = (${handleClientType(u.first)}) $getClient")
@@ -272,8 +285,8 @@ class RPCTestCaseWriter : ApiTestCaseWriter() {
      * @param enable a configuration to enable/disable specified mocking configuration
      * @param lines are generated lines which save the generated test scripts
      */
-    fun handleCustomizedExternalServiceHandling(action: Action, index: Int, testCaseName: String, enable: Boolean, lines: Lines, testSuitePath: Path?){
-        if(config.enableCustomizedExternalServiceHandling && action.parent is EnterpriseActionGroup){
+    private fun handleCustomizedExternalServiceHandling(action: Action, index: Int, testCaseName: String, enable: Boolean, lines: Lines, testSuitePath: Path?){
+        if(config.enableCustomizedMethodForMockObjectHandling && action.parent is EnterpriseActionGroup){
             val group = action.parent as EnterpriseActionGroup
 
             /*
@@ -290,29 +303,66 @@ class RPCTestCaseWriter : ApiTestCaseWriter() {
                     format.isJava() -> lines.add("${TestSuiteWriter.controller}.$CUSTOMIZED_EXTERNAL_SERVICES(")
                 }
 
-                val mockedConfigAsJson = rpcHandler.getJsonStringFromDto(exActions)
-
-                if (config.saveMockedResponseAsSeparatedFile){
-                    if (config.testResourcePathToSaveMockedResponse.isBlank())
-                        throw IllegalArgumentException("testResourcePathToSaveMockedResponse cannot be empty if it is required to save mocked responses in separated files")
-                    saveJsonAndPrintReadJson(testCaseName,index,mockedConfigAsJson, lines)
-                }else
-                    printExecutionJson(mockedConfigAsJson, lines)
-
-                when {
-                    format.isKotlin() -> lines.append(",$enable)")
-                    format.isJava() -> lines.append(",$enable);")
-                }
+                printJsonForMockObject(exActions, testCaseName, index, lines, enable, infoTag = "MockExternalServiceObjectInfo")
             }
 
         }
     }
 
+    /**
+     * handle generation of customized external service handling
+     * @param action is the call to be generated
+     * @param index the index of action
+     * @param testCaseName the test which contains the action [action]
+     * @param enable a configuration to enable/disable specified mocking configuration
+     * @param lines are generated lines which save the generated test scripts
+     */
+    private fun handleCustomizedMockDatabaseHandling(action: Action, index: Int, testCaseName: String, enable: Boolean, lines: Lines, testSuitePath: Path?){
+        if(config.enableCustomizedMethodForMockObjectHandling && action.parent is EnterpriseActionGroup){
+            val group = action.parent as EnterpriseActionGroup
+
+            val mockDbActions = group.getExternalServiceActions()
+                .filterIsInstance<DbAsExternalServiceAction>()
+                .map { rpcHandler.transformMockDatabaseDto(it) }
+
+            if (mockDbActions.isNotEmpty()){
+                when {
+                    format.isKotlin() -> lines.add("${TestSuiteWriter.controller}.$CUSTOMIZED_MOCK_DATABASE_OBJECTS(")
+                    format.isJava() -> lines.add("${TestSuiteWriter.controller}.$CUSTOMIZED_MOCK_DATABASE_OBJECTS(")
+                }
+
+                printJsonForMockObject(mockDbActions, testCaseName, index, lines, enable, infoTag = "MockDatabaseObjectInfo")
+            }
+
+        }
+    }
+
+    private fun printJsonForMockObject(mockObj : Any, testCaseName: String, index: Int, lines: Lines, enable: Boolean, infoTag: String){
+        val mockedConfigAsJson = rpcHandler.getJsonStringFromDto(mockObj)
+
+        if (config.saveMockedResponseAsSeparatedFile){
+            if (config.testResourcePathToSaveMockedResponse.isBlank())
+                throw IllegalArgumentException("testResourcePathToSaveMockedResponse cannot be empty if it is required to save mocked responses in separated files")
+            saveJsonAndPrintReadJson(testCaseName,index,mockedConfigAsJson, lines, infoTag)
+        }else
+            printExecutionJson(mockedConfigAsJson, lines)
+
+        when {
+            format.isKotlin() -> lines.append(",$enable)")
+            format.isJava() -> lines.append(",$enable);")
+        }
+    }
 
     fun resetExternalServicesWithCustomizedMethod() : String {
         if (!format.isJavaOrKotlin())
             throw IllegalStateException("Only support to generate Java/Kotlin tests with a reset of RPC external services with customized method")
         return "${TestSuiteWriter.controller}.$CUSTOMIZED_EXTERNAL_SERVICES(null,false)${if (format.isJava()) ";" else ""}"
+    }
+
+    fun resetMockDatabaseObjectWithCustomizedMethod() : String {
+        if (!format.isJavaOrKotlin())
+            throw IllegalStateException("Only support to generate Java/Kotlin tests with a reset of RPC external services with customized method")
+        return "${TestSuiteWriter.controller}.$CUSTOMIZED_MOCK_DATABASE_OBJECTS(null,false)${if (format.isJava()) ";" else ""}"
     }
 
     /*

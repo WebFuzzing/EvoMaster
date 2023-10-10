@@ -2,9 +2,9 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
-import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.BigDecimalType;
+import org.evomaster.client.java.controller.problem.rpc.schema.types.JavaDtoSpec;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator.*;
+import static org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator.*;
 
 public class BigDecimalParam extends NamedTypedValue<BigDecimalType, BigDecimal> implements NumericConstraintBase<BigDecimal> {
 
@@ -39,8 +39,8 @@ public class BigDecimalParam extends NamedTypedValue<BigDecimalType, BigDecimal>
         super(name, type, accessibleSchema);
     }
 
-    public BigDecimalParam(String name, AccessibleSchema accessibleSchema){
-        this(name, new BigDecimalType(), accessibleSchema);
+    public BigDecimalParam(String name, AccessibleSchema accessibleSchema, JavaDtoSpec spec){
+        this(name, new BigDecimalType(spec), accessibleSchema);
     }
 
     @Override
@@ -101,42 +101,42 @@ public class BigDecimalParam extends NamedTypedValue<BigDecimalType, BigDecimal>
     }
 
     @Override
-    public List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent) {
-        String typeName = getType().getTypeNameForInstance();
+    public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava, boolean isVariableNullable) {
+        String typeName = getType().getTypeNameForInstanceInJavaOrKotlin(isJava);
 
         List<String> codes = new ArrayList<>();
         boolean isNull = (getValue() == null);
-        String var = oneLineInstance(isDeclaration, doesIncludeName, typeName, variableName, null);
+        String var = oneLineInstance(isDeclaration, doesIncludeName, typeName, variableName, null, isJava, isNullable());
         addCode(codes, var, indent);
         if (isNull) return codes;
 
-        addCode(codes, "{", indent);
+        addCode(codes, codeBlockStart(isJava), indent);
         String mcVar = variableName + "_mc";
-        String consParam = getValueAsJavaString();
+        String consParam = getValueAsJavaString(isJava);
         if (getPrecision() != null){
             addCode(codes, oneLineInstance(true, true, MathContext.class.getName(), mcVar,
-                    newObjectConsParams(MathContext.class.getName(), getPrecision().toString())), indent+1);
+                    newObjectConsParams(MathContext.class.getName(), getPrecision().toString(), isJava), isJava, isNullable()), indent+1);
             consParam += ", "+mcVar;
         }
-        addCode(codes, setInstance(variableName, newObjectConsParams(typeName, consParam)), indent+1);
+        addCode(codes, setInstance(variableName, newObjectConsParams(typeName, consParam, isJava), isJava), indent+1);
         if (getScale() != null){
-            addCode(codes, oneLineSetterInstance("setScale", null, variableName, getScale()+", "+RoundingMode.class.getName()+".HALF_UP"), indent+1);
+            addCode(codes, oneLineSetterInstance("setScale", null, variableName, getScale()+", "+RoundingMode.class.getName()+".HALF_UP", isJava, isNullable()), indent+1);
         }
 
-        addCode(codes, "}", indent);
+        addCode(codes, codeBlockEnd(isJava), indent);
 
         return codes;
     }
 
     @Override
-    public List<String> newAssertionWithJava(int indent, String responseVarName, int maxAssertionForDataInCollection) {
+    public List<String> newAssertionWithJavaOrKotlin(int indent, String responseVarName, int maxAssertionForDataInCollection, boolean isJava) {
         // assertion with its string representation
         StringBuilder sb = new StringBuilder();
-        sb.append(CodeJavaGenerator.getIndent(indent));
+        sb.append(getIndent(indent));
         if (getValue() == null)
-            sb.append(CodeJavaGenerator.junitAssertNull(responseVarName));
+            sb.append(junitAssertNull(responseVarName, isJava));
         else
-            sb.append(CodeJavaGenerator.junitAssertEquals(getValueAsJavaString(), responseVarName+".toString()"));
+            sb.append(junitAssertEquals(getValueAsJavaString(isJava), responseVarName+".toString()", isJava));
 
         return Collections.singletonList(sb.toString());
     }
@@ -151,7 +151,7 @@ public class BigDecimalParam extends NamedTypedValue<BigDecimalType, BigDecimal>
     }
 
     @Override
-    public String getValueAsJavaString() {
+    public String getValueAsJavaString(boolean isJava) {
         if (getValue() == null)
             return null;
         return "\""+getValue().toString()+"\"";
@@ -220,5 +220,10 @@ public class BigDecimalParam extends NamedTypedValue<BigDecimalType, BigDecimal>
     @Override
     public void setScale(Integer scale) {
         this.scale = scale;
+    }
+
+    @Override
+    public List<String> referenceTypes() {
+        return null;
     }
 }

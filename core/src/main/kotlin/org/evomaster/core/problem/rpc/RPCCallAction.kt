@@ -12,6 +12,11 @@ import org.evomaster.core.search.gene.Gene
  */
 open class RPCCallAction(
     /**
+     * class name of the interface which defines this rpc function
+     */
+    val interfaceId: String,
+
+    /**
      * id of the RPCCallAction
      */
     val id: String,
@@ -49,7 +54,7 @@ open class RPCCallAction(
 
     override fun copyContent(): RPCCallAction {
         val p = parameters.asSequence().map(Param::copy).toMutableList()
-        return RPCCallAction(id, p, responseTemplate?.copy() as RPCParam?, response?.copy() as RPCParam?, auth)
+        return RPCCallAction(interfaceId, id, p, responseTemplate?.copy() as RPCParam?, response?.copy() as RPCParam?, auth)
     }
 
     /**

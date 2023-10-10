@@ -2,7 +2,7 @@ package org.evomaster.core.problem.rest.service.resource.model
 
 import io.swagger.parser.OpenAPIParser
 import org.evomaster.core.EMConfig
-import org.evomaster.core.database.SqlInsertBuilder
+import org.evomaster.core.sql.SqlInsertBuilder
 import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.service.ResourceSampler
@@ -22,6 +22,9 @@ class SimpleResourceSampler : ResourceSampler() {
         }
 
         initAdHocInitialIndividuals()
+        if (config.seedTestCases)
+            initSeededTests()
+
         postInits()
     }
 

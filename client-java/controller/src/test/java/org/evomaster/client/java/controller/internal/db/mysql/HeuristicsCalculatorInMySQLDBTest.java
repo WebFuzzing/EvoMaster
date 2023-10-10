@@ -1,5 +1,7 @@
 package org.evomaster.client.java.controller.internal.db.mysql;
 
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
+import org.evomaster.client.java.controller.db.DbCleaner;
 import org.evomaster.client.java.controller.internal.SutController;
 import org.evomaster.client.java.controller.internal.db.HeuristicsCalculatorInDBTest;
 
@@ -16,4 +18,5 @@ public class HeuristicsCalculatorInMySQLDBTest extends DatabaseMySQLTestInit imp
     public SutController getSutController() {
         return new DatabaseFakeMySQLSutController(connection);
     }
+
 }

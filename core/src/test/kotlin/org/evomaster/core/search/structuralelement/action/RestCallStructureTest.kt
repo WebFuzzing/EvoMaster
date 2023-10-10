@@ -5,7 +5,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.param.BodyParam
-import org.evomaster.core.search.Action
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.structuralelement.StructuralElementBaseTest
 import org.junit.jupiter.api.Assertions.assertEquals

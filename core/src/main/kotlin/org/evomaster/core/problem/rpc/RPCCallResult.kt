@@ -6,8 +6,8 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCExceptionInfo
 import org.evomaster.client.java.controller.api.dto.problem.rpc.exception.RPCExceptionCategory
 import org.evomaster.client.java.controller.api.dto.problem.rpc.exception.RPCExceptionType
 import org.evomaster.core.Lazy
-import org.evomaster.core.search.Action
-import org.evomaster.core.search.ActionResult
+import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.action.ActionResult
 
 /**
  * define RPC call result with various situations,
@@ -20,6 +20,7 @@ class RPCCallResult : ActionResult {
         const val INVOCATION_CODE = "INVOCATION_CODE"
         const val CUSTOM_EXP_BODY = "CUSTOM_EXP_BODY"
         const val EXCEPTION_CODE = "EXCEPTION_CODE"
+        const val EXCEPTION_IMPORTANCE_LEVEL = "EXCEPTION_IMPORTANCE_LEVEL"
         const val EXCEPTION_TYPE_NAME = "EXCEPTION_TYPE_NAME"
         const val CUSTOM_BUSINESS_LOGIC_CODE = "CUSTOM_BUSINESS_LOGIC_CODE"
         const val CUSTOM_BUSINESS_LOGIC_SUCCESS = 200
@@ -105,6 +106,16 @@ class RPCCallResult : ActionResult {
 
     fun getExceptionCode() = getResultValue(EXCEPTION_CODE)
 
+    fun getExceptionImportanceLevel() : Int{
+        val level = getResultValue(EXCEPTION_IMPORTANCE_LEVEL) ?: return -1
+        return try {
+            level.toInt()
+        }catch (e: NumberFormatException){
+            -1
+        }
+
+    }
+
     fun getExceptionTypeName() = getResultValue(EXCEPTION_TYPE_NAME)
 
     fun getExceptionInfo() : String{
@@ -148,6 +159,7 @@ class RPCCallResult : ActionResult {
             }
 
             addResultValue(EXCEPTION_CODE, dto.type.name)
+            addResultValue(EXCEPTION_IMPORTANCE_LEVEL, "${dto.importanceLevel}")
             addResultValue(EXCEPTION_TYPE_NAME, dto.exceptionName)
             addResultValue(INVOCATION_CODE, code.name)
 

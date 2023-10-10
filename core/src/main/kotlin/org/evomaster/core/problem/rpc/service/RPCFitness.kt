@@ -4,10 +4,12 @@ import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.exception.RPCExceptionType
 import org.evomaster.core.Lazy
-import org.evomaster.core.database.DbAction
+import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.problem.api.service.ApiWsFitness
+import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
+import org.evomaster.core.problem.externalservice.rpc.DbAsExternalServiceAction
 import org.evomaster.core.problem.externalservice.rpc.RPCExternalServiceAction
-import org.evomaster.core.problem.externalservice.rpc.parm.RPCResponseParam
+import org.evomaster.core.problem.externalservice.rpc.parm.ClassResponseParam
 import org.evomaster.core.problem.externalservice.rpc.parm.UpdateForRPCResponseParam
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCCallResult
@@ -16,9 +18,11 @@ import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.problem.rpc.param.RPCParam
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.util.ParserDtoUtil.wrapWithOptionalGene
-import org.evomaster.core.search.ActionResult
+import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
+import org.evomaster.core.search.GroupsOfChildren
+import org.evomaster.core.search.action.ActionComponent
 import org.evomaster.core.search.gene.interfaces.CollectionGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.taint.TaintAnalysis
@@ -38,14 +42,14 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
 
     @Inject lateinit var rpcHandler: RPCEndpointsHandler
 
-    override fun doCalculateCoverage(individual: RPCIndividual, targets: Set<Int>): EvaluatedIndividual<RPCIndividual>? {
+    override fun doCalculateCoverage(individual: RPCIndividual, targets: Set<Int>, allCovered: Boolean): EvaluatedIndividual<RPCIndividual>? {
 
         rc.resetSUT()
 
         // TODO handle auth
         val actionResults: MutableList<ActionResult> = mutableListOf()
 
-        doDbCalls(individual.seeInitializingActions().filterIsInstance<DbAction>(), actionResults = actionResults)
+        doDbCalls(individual.seeInitializingActions().filterIsInstance<SqlAction>(), actionResults = actionResults)
 
         val fv = FitnessValue(individual.size().toDouble())
 
@@ -56,11 +60,11 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
             }
         }
 
-        val dto = updateFitnessAfterEvaluation(targets, individual, fv)
+        val dto = updateFitnessAfterEvaluation(targets, allCovered, individual, fv)
                 ?: return null
         handleExtra(dto, fv)
 
-        expandIndividual(individual)
+//        expandIndividual(individual)
         /*
             TODO Man handle targets regarding info in responses,
             eg, exception
@@ -80,29 +84,34 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
 
     }
 
-    private fun expandIndividual(
-        individual: RPCIndividual
-    ){
-        val exMissingDto = individual.seeExternalServiceActions()
-            .filterIsInstance<RPCExternalServiceAction>()
-            .filterNot {
-                ((it.response as? RPCResponseParam)?:throw IllegalStateException("response of RPCExternalServiceAction should be RPCResponseParam, but it is ${it.response::class.java.simpleName}")).fromClass
-            }
-
-        if (exMissingDto.isEmpty()) {
-            return
-        }
-        val missingDtoClass = exMissingDto.map { (it.response as RPCResponseParam).className }
-        rpcHandler.getJVMSchemaForDto(missingDtoClass.toSet()).forEach { expandResponse->
-            exMissingDto.filter { (it.response as RPCResponseParam).run { !this.fromClass && expandResponse.key == this.className} }.forEach { a->
-                val gene = wrapWithOptionalGene(expandResponse.value, true) as OptionalGene
-                val updatedParam = (a.response as RPCResponseParam).copyWithSpecifiedResponseBody(gene)
-                updatedParam.responseParsedWithClass()
-                val update = UpdateForRPCResponseParam(updatedParam)
-                a.addUpdateForParam(update)
-            }
-        }
-    }
+    // Man: comment this for the comment, the expand is now handled after each action execution
+//    private fun expandIndividual(
+//        individual: RPCIndividual
+//    ){
+//
+//        /*
+//            might later need to handle missing class when mocking database
+//         */
+//        val exMissingDto = individual.seeExternalServiceActions()
+//            .filterIsInstance<RPCExternalServiceAction>()
+//            .filterNot {
+//                ((it.response as? ClassResponseParam)?:throw IllegalStateException("response of RPCExternalServiceAction should be RPCResponseParam, but it is ${it.response::class.java.simpleName}")).fromClass
+//            }
+//
+//        if (exMissingDto.isEmpty()) {
+//            return
+//        }
+//        val missingDtoClass = exMissingDto.map { (it.response as ClassResponseParam).className }
+//        rpcHandler.getJVMSchemaForDto(missingDtoClass.toSet()).forEach { expandResponse->
+//            exMissingDto.filter { (it.response as ClassResponseParam).run { !this.fromClass && expandResponse.key == this.className} }.forEach { a->
+//                val gene = wrapWithOptionalGene(expandResponse.value, true) as OptionalGene
+//                val updatedParam = (a.response as ClassResponseParam).copyWithSpecifiedResponseBody(gene)
+//                updatedParam.responseParsedWithClass()
+//                val update = UpdateForRPCResponseParam(updatedParam)
+//                a.addUpdateForParam(update)
+//            }
+//        }
+//    }
 
     private fun executeNewAction(action: RPCCallAction, index: Int, actionResults: MutableList<ActionResult>) : Boolean{
 
@@ -112,7 +121,12 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
         val actionResult = RPCCallResult()
         actionResults.add(actionResult)
         val dto = getActionDto(action, index)
-        val rpc = rpcHandler.transformActionDto(action, index)
+        val externalActions = if (action.parent is EnterpriseActionGroup){
+            (action.parent as EnterpriseActionGroup)
+                .groupsView()!!.getAllInGroup(GroupsOfChildren.EXTERNAL_SERVICES)
+        }else null
+
+        val rpc = rpcHandler.transformActionDto(action, index, externalActions)
         dto.rpcCall = rpc
 
         val response =  rc.executeNewRPCActionAndGetResponse(dto)
@@ -172,6 +186,12 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
                     }
 
                 }
+            }
+
+            // expand
+            if (externalActions != null && response.expandInfo != null){
+                rpcHandler.expandSchema(action, response.expandInfo);
+                rpcHandler.expandRPCAction(externalActions)
             }
         }else{
             actionResult.setFailedCall()

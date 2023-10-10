@@ -1,5 +1,6 @@
 package org.evomaster.core.search.matchproblem
 
+import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.search.service.Sampler
 
 /**
@@ -15,5 +16,9 @@ class PrimitiveTypeMatchSampler: Sampler<PrimitiveTypeMatchIndividual>() {
         ind.doInitialize(randomness)
         ind.doGlobalInitialize(searchGlobalState)
         return ind
+    }
+
+    override fun initSeededTests(infoDto: SutInfoDto?) {
+
     }
 }

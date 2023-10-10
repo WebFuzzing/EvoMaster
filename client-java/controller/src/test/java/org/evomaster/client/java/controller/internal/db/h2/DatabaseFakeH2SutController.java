@@ -4,6 +4,7 @@ import org.evomaster.client.java.controller.EmbeddedSutController;
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto;
 import org.evomaster.client.java.controller.api.dto.SutInfoDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
+import org.evomaster.client.java.controller.db.DbCleaner;
 import org.evomaster.client.java.controller.internal.db.DbSpecification;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RestProblem;
@@ -17,6 +18,8 @@ public class DatabaseFakeH2SutController extends EmbeddedSutController {
     private final Connection sqlConnection;
     private final String initScript;
 
+    public boolean running;
+
     public DatabaseFakeH2SutController(Connection connection) {
         this(connection, null);
     }
@@ -29,7 +32,9 @@ public class DatabaseFakeH2SutController extends EmbeddedSutController {
     @Override
     public List<DbSpecification> getDbSpecifications() {
         if(initScript != null)
-            return Arrays.asList(new DbSpecification(DatabaseType.H2, sqlConnection).withInitSqlScript(initScript));
+            return Arrays.asList(new DbSpecification(DatabaseType.H2, sqlConnection)
+                    .withInitSqlScript(initScript)
+            );
         else
             return Arrays.asList(new DbSpecification(DatabaseType.H2, sqlConnection));
     }
@@ -46,11 +51,14 @@ public class DatabaseFakeH2SutController extends EmbeddedSutController {
 
     @Override
     public String startSut() {
+        running = true;
+        DbCleaner.clearDatabase(sqlConnection, null, DatabaseType.H2);
         return "foo";
     }
 
     @Override
     public void stopSut() {
+        running = false;
     }
 
     @Override
@@ -59,7 +67,7 @@ public class DatabaseFakeH2SutController extends EmbeddedSutController {
 
     @Override
     public boolean isSutRunning() {
-        return false;
+        return running;
     }
 
     @Override

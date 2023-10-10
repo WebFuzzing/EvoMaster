@@ -4,8 +4,8 @@ import com.google.common.annotations.VisibleForTesting
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.Lazy
 import org.evomaster.core.StaticCounter
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.DbActionUtils
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.sql.SqlActionUtils
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.rest.RestCallAction
@@ -130,9 +130,9 @@ object BindingBuilder {
     }
 
     /**
-     *  bind [restAction] with [dbActions]
+     *  bind [restAction] with [sqlActions]
      *  @param restAction is the action
-     *  @param dbActions specified the dbactions
+     *  @param sqlActions specified the dbactions
      *  @param forceBindParamBasedOnDB specified whether to force to bind values of params in rest actions based on dbactions
      *  @param dbRemovedDueToRepair specified whether any db action is removed due to repair process.
      *          Note that dbactions might be truncated in the db repair process, thus the table related to rest actions might be removed.
@@ -141,11 +141,11 @@ object BindingBuilder {
     fun bindRestAndDbAction(restAction: RestCallAction,
                             restNode: RestResourceNode,
                             paramGeneBindMap: List<ParamGeneBindMap>,
-                            dbActions: List<DbAction>,
+                            sqlActions: List<SqlAction>,
                             forceBindParamBasedOnDB: Boolean = false,
                             dbRemovedDueToRepair : Boolean,
                             doBuildBindingGene: Boolean){
-        buildBindRestActionBasedOnDbActions(restAction, restNode, paramGeneBindMap, dbActions, forceBindParamBasedOnDB, dbRemovedDueToRepair).forEach { p->
+        buildBindRestActionBasedOnDbActions(restAction, restNode, paramGeneBindMap, sqlActions, forceBindParamBasedOnDB, dbRemovedDueToRepair).forEach { p->
             bindValues(p, doBuildBindingGene)
         }
     }
@@ -170,6 +170,13 @@ object BindingBuilder {
                 emptyList()
             }
         }
+    }
+
+    /**
+     * @return whether the param name represents an extra param handled by taint analysis
+     */
+    fun isExtraTaintParam(name : String) : Boolean{
+        return name == TaintInputName.EXTRA_HEADER_TAINT || name == TaintInputName.EXTRA_PARAM_TAINT
     }
 
     private fun buildBindHeaderParam(p : HeaderParam, params: List<Param>): Pair<Gene, Gene>?{
@@ -202,14 +209,16 @@ object BindingBuilder {
     }
 
     private fun buildBindBodyParam(bp : BodyParam, targetPath: RestPath, sourcePath: RestPath, params: List<Param>, inner : Boolean, randomness: Randomness?) : List<Pair<Gene, Gene>>{
-        if(ParamUtil.numOfBodyParam(params) != params.size ){
-            return params.filter { p -> p !is BodyParam }
+        val excludeExtraParams = params.filterNot { isExtraTaintParam(it.name) }
+
+        if(ParamUtil.numOfBodyParam(excludeExtraParams) != excludeExtraParams.size ){
+            return excludeExtraParams.filter { p -> p !is BodyParam }
                 .flatMap {ip->
                     buildBindBodyAndOther(bp, targetPath, ip, sourcePath, true, inner)
                 }
-        }else if(params.isNotEmpty()){
+        }else if(excludeExtraParams.isNotEmpty()){
             val valueGene = ParamUtil.getValueGene(bp.gene)
-            val pValueGene = ParamUtil.getValueGene(params[0].gene)
+            val pValueGene = ParamUtil.getValueGene(excludeExtraParams[0].gene)
             if(valueGene !is ObjectGene){
                 return listOf()
             }
@@ -311,18 +320,18 @@ object BindingBuilder {
     }
 
     /**
-     * bind values between [restAction] and [dbActions]
-     * @param restAction is the action to be bounded with [dbActions]
+     * bind values between [restAction] and [sqlActions]
+     * @param restAction is the action to be bounded with [sqlActions]
      * @param restNode is the resource node for the [restAction]
-     * @param dbActions are the dbactions generated for the [call]
-     * @param bindingMap presents how to map the [restAction] and [dbActions] at Gene-level
-     * @param forceBindParamBasedOnDB specifies whether to bind params based on [dbActions] or reversed
+     * @param sqlActions are the dbactions generated for the [call]
+     * @param bindingMap presents how to map the [restAction] and [sqlActions] at Gene-level
+     * @param forceBindParamBasedOnDB specifies whether to bind params based on [sqlActions] or reversed
      * @param dbRemovedDueToRepair indicates whether the dbactions are removed due to repair.
      */
     fun buildBindRestActionBasedOnDbActions(restAction: RestCallAction,
                                             restNode: RestResourceNode,
                                             paramGeneBindMap: List<ParamGeneBindMap>,
-                                            dbActions: List<DbAction>,
+                                            sqlActions: List<SqlAction>,
                                             forceBindParamBasedOnDB: Boolean = false,
                                             dbRemovedDueToRepair : Boolean) : List<Pair<Gene, Gene>>{
 
@@ -333,11 +342,11 @@ object BindingBuilder {
         }
 
         paramGeneBindMap.forEach { pToGene ->
-            val dbAction = DbActionUtils.findDbActionsByTableName(dbActions, pToGene.tableName).firstOrNull()
+            val dbAction = SqlActionUtils.findDbActionsByTableName(sqlActions, pToGene.tableName).firstOrNull()
             //there might due to a repair for dbactions
             if (dbAction == null && !dbRemovedDueToRepair)
                 log.warn("cannot find ${pToGene.tableName} in db actions ${
-                    dbActions.joinToString(";") { it.table.name }
+                    sqlActions.joinToString(";") { it.table.name }
                 }")
             if(dbAction != null){
                 // columngene might be null if the column is nullable

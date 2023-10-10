@@ -3,14 +3,21 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
+import org.evomaster.client.java.controller.problem.rpc.schema.types.JavaDtoSpec;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.PrimitiveOrWrapperType;
+
+import static org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator.methodInvocation;
 
 /**
  * boolean param
  */
 public class BooleanParam extends PrimitiveOrWrapperParam<Boolean> {
-    public BooleanParam(String name, String type, String fullTypeName, Class<?> clazz, AccessibleSchema accessibleSchema) {
-        super(name, type, fullTypeName, clazz, accessibleSchema);
+
+    private final static String JAVA_PR_METHOD = "booleanValue";
+    private final static String KOTLIN_PR_METHOD = "toBoolean";
+
+    public BooleanParam(String name, String type, String fullTypeName, Class<?> clazz, AccessibleSchema accessibleSchema, JavaDtoSpec spec) {
+        super(name, type, fullTypeName, clazz, accessibleSchema, spec);
     }
 
     public BooleanParam(String name, PrimitiveOrWrapperType type, AccessibleSchema accessibleSchema) {
@@ -18,10 +25,10 @@ public class BooleanParam extends PrimitiveOrWrapperParam<Boolean> {
     }
 
     @Override
-    public String getValueAsJavaString() {
+    public String getValueAsJavaString(boolean isJava) {
         if (getValue() == null)
             return null;
-        return ""+getValue();
+        return String.valueOf(getValue());
     }
 
     @Override
@@ -61,10 +68,11 @@ public class BooleanParam extends PrimitiveOrWrapperParam<Boolean> {
         return instance instanceof Boolean;
     }
 
+
+
     @Override
-    public String getPrimitiveValue(String responseVarName) {
-        if (getType().isWrapper)
-            return responseVarName+".booleanValue()";
-        return responseVarName;
+    public String primitiveValueMethod(boolean isJava) {
+        if (isJava) return JAVA_PR_METHOD;
+        return KOTLIN_PR_METHOD;
     }
 }

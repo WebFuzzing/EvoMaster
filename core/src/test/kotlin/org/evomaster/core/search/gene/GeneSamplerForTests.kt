@@ -291,7 +291,11 @@ object GeneSamplerForTests {
                 numberOfOctets = rand.nextInt(1, MAX_NUMBER_OF_OCTETS))
     }
 
-    const val MAX_NUMBER_OF_DIMENSIONS = 5
+    /*
+        reduce the number from 5 to 3
+        a larger number can lead to insane quantity of genes, even hundreds of thousands
+     */
+    const val MAX_NUMBER_OF_DIMENSIONS = 3 //5
     const val MAX_NUMBER_OF_OCTETS = 10
     const val MAX_NUMBER_OF_FIELDS = 3
 
@@ -527,7 +531,7 @@ object GeneSamplerForTests {
         val valueTemplate = samplePrintableTemplate(selection, rand)
         return FlexibleGene(valueTemplate.name, valueTemplate, null)
     }
-    
+
     fun sampleOptionalGene(rand: Randomness): OptionalGene {
 
         val selection = geneClasses.filter { !it.isAbstract }

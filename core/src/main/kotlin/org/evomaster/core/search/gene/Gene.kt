@@ -12,6 +12,8 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutation
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.evomaster.core.Lazy
+import org.evomaster.core.problem.enterprise.EnterpriseIndividual
+import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.search.RootElement
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.SearchGlobalState
@@ -213,7 +215,9 @@ abstract class Gene(
         if(ind.searchGlobalState == null){
             throw IllegalStateException("Search Global State was not setup for the individual")
         }
-        applyGlobalUpdates()
+
+        if (ind !is EnterpriseIndividual || ind.sampleType != SampleType.SEEDED)
+            applyGlobalUpdates()
 
         children.forEach { it.doGlobalInitialize() }
     }
@@ -351,6 +355,12 @@ abstract class Gene(
         return checkForGloballyValid() && getViewOfChildren().all { it.isGloballyValid() }
     }
 
+    override fun callWinstonWolfe() {
+        super.callWinstonWolfe()
+
+        removeThisFromItsBindingGenes()
+        //TODO in future will deal with FK as well here
+    }
 
     protected open fun checkForGloballyValid() = true
 
@@ -802,10 +812,19 @@ abstract class Gene(
      * because could use bindingGenes directly
      */
     private fun computeTransitiveBindingGenes(all : MutableSet<Gene>){
-        if (bindingGenes.isEmpty()) return
+        val root = getRoot()
+        val allBindingGene = bindingGenes.plus(
+            if (root is Individual) root.seeGenes().flatMap { it.flatView() }.filter {
+                r-> r != this && r.bindingGenes.contains(this)
+            }
+            else emptyList()
+        )
+        if (allBindingGene.isEmpty()) {
+            return
+        }
         all.add(this) //adding current
 
-        bindingGenes.filterNot { all.contains(it) }
+        allBindingGene.filterNot { all.contains(it) }
                 //all other genes that are bound to this and are NOT in all
                 .forEach { b->
             all.add(b)
@@ -814,7 +833,25 @@ abstract class Gene(
         /*
             TODO if [this] is bound, can any of its children be bound??? likely not
          */
-        children.filterNot { all.contains(it) }.forEach { it.computeTransitiveBindingGenes(all) }
+//        children.filterNot { all.contains(it) }.forEach { it.computeTransitiveBindingGenes(all) }
+    }
+
+    /**
+     * compute transitive BindingGenes of this gene in an individual
+     */
+    private fun computeTransitiveBindingGenes(){
+        val all = mutableSetOf<Gene>()
+        computeTransitiveBindingGenes(all)
+        all.remove(this)
+        resetBinding(all)
+    }
+
+    /**
+     * compute transitive BindingGenes of this gene and composed children genes in an individual
+     */
+    fun computeAllTransitiveBindingGenes(){
+        computeTransitiveBindingGenes()
+        children.forEach(Gene::computeTransitiveBindingGenes)
     }
 
     /**
@@ -828,17 +865,20 @@ abstract class Gene(
      * TODO possibly rename, see next TODO
      */
     fun removeThisFromItsBindingGenes(){
-        val all = mutableSetOf<Gene>()
+//        val all = mutableSetOf<Gene>()
+//
+//        //TODO can we remove a gene that is not in sync? if not, we can look at bindingGenes directly
+//        computeTransitiveBindingGenes(all)
 
-        //TODO can we remove a gene that is not in sync? if not, we can look at bindingGenes directly
-        computeTransitiveBindingGenes(all)
-        all.forEach { b->
+        bindingGenes.forEach { b->
             //FIXME this is a bug, removing to K, but not X and Y, isn'it?
             b.removeBindingGene(this)
         }
         //TODO should we do this???
         //bindingGenes.clear()
     }
+
+
 
     /**
      * @return whether [this] gene is bound with any other gene

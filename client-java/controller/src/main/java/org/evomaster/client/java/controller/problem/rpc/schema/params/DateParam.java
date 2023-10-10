@@ -1,15 +1,14 @@
 package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
-import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
-import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
-import org.evomaster.client.java.controller.problem.rpc.schema.types.DateType;
+import org.evomaster.client.java.controller.problem.rpc.schema.types.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator.*;
 
 /**
  * handle date param with java.util.Date
@@ -18,10 +17,6 @@ public class DateParam extends NamedTypedValue<DateType, List<IntParam>>{
 
     public DateParam(String name, DateType type, AccessibleSchema accessibleSchema) {
         super(name, type, accessibleSchema);
-    }
-
-    public DateParam(String name, AccessibleSchema accessibleSchema){
-        this(name, new DateType(), accessibleSchema);
     }
 
     @Override
@@ -65,36 +60,39 @@ public class DateParam extends NamedTypedValue<DateType, List<IntParam>>{
     @Override
     protected void setValueBasedOnValidInstance(Object instance) {
         if (instance == null) return;
-        setValue(getType().getIntValues((Date) instance));
+        setValue(getType().getIntValues(instance));
     }
 
     @Override
-    public List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent) {
-        String typeName = getType().getTypeNameForInstance();
+    public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava, boolean isVariableNullable) {
+        String typeName = getType().getTypeNameForInstanceInJavaOrKotlin(isJava);
         String varName = variableName;
 
         List<String> codes = new ArrayList<>();
         boolean isNull = (getValue() == null);
 
-        String var = CodeJavaGenerator.oneLineInstance(isDeclaration, doesIncludeName, typeName, varName, null);
-        CodeJavaGenerator.addCode(codes, var, indent);
+        String var = oneLineInstance(isDeclaration, doesIncludeName, typeName, varName, null, isJava, isNullable());
+        addCode(codes, var, indent);
         if (isNull) return codes;
 
-        CodeJavaGenerator.addCode(codes, "{", indent);
-        CodeJavaGenerator.addComment(codes, "Date is " + getType().getDateString(getValue()), indent+1);
+        addCode(codes, codeBlockStart(isJava), indent);
+        addComment(codes, "Date is " + getType().getDateString(getValue()), indent+1);
         String time = getType().getDateLong(getValue())+"L";
-        CodeJavaGenerator.addCode(codes, CodeJavaGenerator.setInstance(varName, CodeJavaGenerator.newObjectConsParams(typeName, time)), indent+1);
-        CodeJavaGenerator.addCode(codes, "}", indent);
+        if (getType() instanceof UtilDateType)
+            addCode(codes, setInstance(varName, newObjectConsParams(typeName, time, isJava), isJava), indent+1);
+        else if (getType() instanceof LocalDateType)
+            addCode(codes, setInstance(varName, methodInvocation(typeName, LocalDateType.INSTANCE_LOCALDATE_OF_EPOCHDAY, time, isJava, false, false), isJava), indent+1);
+        addCode(codes, codeBlockEnd(isJava), indent);
 
         return codes;
     }
 
     @Override
-    public List<String> newAssertionWithJava(int indent, String responseVarName, int maxAssertionForDataInCollection) {
+    public List<String> newAssertionWithJavaOrKotlin(int indent, String responseVarName, int maxAssertionForDataInCollection, boolean isJava) {
         StringBuilder sb = new StringBuilder();
-        sb.append(CodeJavaGenerator.getIndent(indent));
+        sb.append(getIndent(indent));
         if (getValue() == null)
-            sb.append(CodeJavaGenerator.junitAssertNull(responseVarName));
+            sb.append(junitAssertNull(responseVarName, isJava));
         else{
             /*
                 it might be tricky to handle date assertion since it might be `now`
@@ -108,7 +106,12 @@ public class DateParam extends NamedTypedValue<DateType, List<IntParam>>{
     }
 
     @Override
-    public String getValueAsJavaString() {
+    public String getValueAsJavaString(boolean isJava) {
+        return null;
+    }
+
+    @Override
+    public List<String> referenceTypes() {
         return null;
     }
 }

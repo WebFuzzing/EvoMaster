@@ -1,7 +1,7 @@
 package org.evomaster.core.remote.service
 
 import org.evomaster.client.java.controller.api.dto.*
-import org.evomaster.core.database.DatabaseExecutor
+import org.evomaster.core.sql.DatabaseExecutor
 
 
 /**
@@ -24,7 +24,7 @@ interface RemoteController : DatabaseExecutor {
 
     fun startANewSearch(): Boolean
 
-    fun getTestResults(ids: Set<Int> = setOf(), ignoreKillSwitch: Boolean = false): TestResultsDto?
+    fun getTestResults(ids: Set<Int> = setOf(), ignoreKillSwitch: Boolean = false, allCovered: Boolean = false): TestResultsDto?
 
     fun executeNewRPCActionAndGetResponse(actionDto: ActionDto) : ActionResponseDto?
 

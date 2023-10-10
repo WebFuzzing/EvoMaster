@@ -1,10 +1,11 @@
 package org.evomaster.core.search.impact
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.schema.Column
-import org.evomaster.core.database.schema.ColumnDataType
-import org.evomaster.core.database.schema.Table
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.sql.schema.Column
+import org.evomaster.core.sql.schema.ColumnDataType
+import org.evomaster.core.sql.schema.Table
+import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.search.gene.numeric.IntegerGene
@@ -20,12 +21,12 @@ import org.junit.jupiter.api.Test
  */
 class IndividualImpactTest {
 
-    private fun generateFakeDbAction(pkId : Long, pkGeneUniqueId: Long) : DbAction{
+    private fun generateFakeDbAction(pkId : Long, pkGeneUniqueId: Long) : SqlAction{
         val fooId = Column("Id", ColumnDataType.INTEGER, 10, primaryKey = true, databaseType = DatabaseType.H2)
         val foo = Table("Foo", setOf(fooId), setOf())
         val integerGene = IntegerGene(fooId.name)
         val pkFoo = SqlPrimaryKeyGene(fooId.name, "Foo", integerGene, pkGeneUniqueId)
-        return DbAction(foo, setOf(fooId), pkId, listOf(pkFoo))
+        return SqlAction(foo, setOf(fooId), pkId, listOf(pkFoo))
     }
 
     private fun generateFakeRestAction(id: String) : RestCallAction{
@@ -47,7 +48,7 @@ class IndividualImpactTest {
         val fkId = Column("fkId", ColumnDataType.INTEGER, 10, primaryKey = false, databaseType = DatabaseType.H2)
         val foreignKeyGene = SqlForeignKeyGene(fkId.name, barInsertionId, "Foo", false, uniqueIdOfPrimaryKey = pkGeneUniqueId)
         val bar = Table("Bar", setOf(fooId, fkId), setOf())
-        val barInsertion = DbAction(bar, setOf(fooId, fkId), barInsertionId, listOf(pkBar, foreignKeyGene))
+        val barInsertion = SqlAction(bar, setOf(fooId, fkId), barInsertionId, listOf(pkBar, foreignKeyGene))
 
         val queryIdParam = QueryParam("id", IntegerGene("id"))
 

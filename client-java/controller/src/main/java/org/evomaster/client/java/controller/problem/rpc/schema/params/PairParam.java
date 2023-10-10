@@ -5,10 +5,7 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.PairType;
 
-import java.util.AbstractMap;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * map entry which is only used for handling map
@@ -80,17 +77,42 @@ public class PairParam extends NamedTypedValue<PairType, AbstractMap.SimpleEntry
     }
 
     @Override
-    public List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent) {
+    public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava, boolean isVariableNullable) {
         return null;
     }
 
     @Override
-    public List<String> newAssertionWithJava(int indent, String responseVarName, int maxAssertionForDataInCollection) {
+    public List<String> newAssertionWithJavaOrKotlin(int indent, String responseVarName, int maxAssertionForDataInCollection, boolean isJava) {
         return null;
     }
 
     @Override
-    public String getValueAsJavaString() {
+    public String getValueAsJavaString(boolean isJava) {
         return null;
+    }
+
+
+    @Override
+    public List<String> referenceTypes() {
+        List<String> references = new ArrayList<>();
+        NamedTypedValue template = getType().getFirstTemplate();
+        if (template != null){
+            references.add(template.getType().getFullTypeName());
+            List<String> refrefTypes = template.referenceTypes();
+            if (refrefTypes != null)
+                references.addAll(refrefTypes);
+        }
+
+
+        template = getType().getSecondTemplate();
+        if (template != null){
+            references.add(template.getType().getFullTypeName());
+            List<String> refrefTypes = template.referenceTypes();
+            if (refrefTypes != null)
+                references.addAll(refrefTypes);
+        }
+
+        if (references.isEmpty()) return null;
+        return references;
     }
 }

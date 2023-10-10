@@ -3,14 +3,21 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
+import org.evomaster.client.java.controller.problem.rpc.schema.types.JavaDtoSpec;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.PrimitiveOrWrapperType;
+
+import static org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator.methodInvocation;
 
 /**
  * long param
  */
 public class LongParam extends PrimitiveOrWrapperParam<Long> {
-    public LongParam(String name, String type, String fullTypeName, Class<?> clazz, AccessibleSchema accessibleSchema) {
-        super(name, type, fullTypeName, clazz, accessibleSchema);
+
+    private final static String JAVA_PR_METHOD = "longValue";
+    private final static String KOTLIN_PR_METHOD = "toLong";
+
+    public LongParam(String name, String type, String fullTypeName, Class<?> clazz, AccessibleSchema accessibleSchema, JavaDtoSpec spec) {
+        super(name, type, fullTypeName, clazz, accessibleSchema, spec);
     }
 
     public LongParam(String name, PrimitiveOrWrapperType type, AccessibleSchema accessibleSchema) {
@@ -18,10 +25,10 @@ public class LongParam extends PrimitiveOrWrapperParam<Long> {
     }
 
     @Override
-    public String getValueAsJavaString() {
+    public String getValueAsJavaString(boolean isJava) {
         if (getValue() == null)
             return null;
-        return ""+getValue()+"L";
+        return getValue()+"L";
     }
 
     @Override
@@ -62,10 +69,10 @@ public class LongParam extends PrimitiveOrWrapperParam<Long> {
         return instance instanceof Long;
     }
 
+
     @Override
-    public String getPrimitiveValue(String responseVarName) {
-        if (getType().isWrapper)
-            return responseVarName+".longValue()";
-        return responseVarName;
+    public String primitiveValueMethod(boolean isJava) {
+        if (isJava) return JAVA_PR_METHOD;
+        return KOTLIN_PR_METHOD;
     }
 }

@@ -7,6 +7,7 @@ import org.evomaster.client.java.controller.api.dto.problem.ExternalServiceDto
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.PartialOracles
+import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.externalservice.ExternalService
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceInfo
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
@@ -18,7 +19,7 @@ import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.seeding.Parser
 import org.evomaster.core.problem.rest.seeding.postman.PostmanParser
 import org.evomaster.core.remote.SutProblemException
-import org.evomaster.core.search.Action
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
@@ -90,7 +91,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         }
 
         actionCluster.clear()
-        val skip = getEndpointsToSkip(swagger, infoDto)
+        val skip = EndpointFilter.getEndpointsToSkip(config, swagger, infoDto)
         RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, skip, enableConstraintHandling = config.enableSchemaConstraintHandling)
 
         if(config.extraQueryParam){
@@ -111,6 +112,9 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         }
 
         initAdHocInitialIndividuals()
+
+        if (config.seedTestCases)
+            initSeededTests()
 
         postInits()
 
@@ -168,24 +172,26 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
      */
     fun initAdHocInitialIndividuals(){
         customizeAdHocInitialIndividuals()
+    }
 
+    override fun initSeededTests(infoDto: SutInfoDto?) {
         // if test case seeding is enabled, add those test cases too
-        if (config.seedTestCases) {
-            val parser = getParser()
-            val seededTestCases = parser.parseTestCases(config.seedTestCasesPath)
-            adHocInitialIndividuals.addAll(seededTestCases.map {
-                it.forEach { a -> a.doInitialize() }
-                createIndividual(it)
-            })
+        if (!config.seedTestCases) {
+            throw IllegalStateException("'seedTestCases' should be true when initializing seeded tests")
         }
-
+        val parser = getParser()
+        val seededTestCases = parser.parseTestCases(config.seedTestCasesPath)
+        seededIndividuals.addAll(seededTestCases.map {
+            it.forEach { a -> a.doInitialize() }
+            createIndividual(SampleType.SEEDED, it)
+        })
     }
 
 
     override fun getPreDefinedIndividuals() : List<RestIndividual>{
         val addCallAction = addCallToSwagger() ?: return listOf()
         addCallAction.doInitialize()
-        return listOf(createIndividual(mutableListOf(addCallAction)))
+        return listOf(createIndividual(SampleType.PREDEFINED,mutableListOf(addCallAction)))
     }
 
     open fun getExcludedActions() : List<RestCallAction>{
@@ -239,30 +245,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         initAdHocInitialIndividuals()
     }
 
-    protected fun getEndpointsToSkip(swagger: OpenAPI, infoDto: SutInfoDto)
-            : List<String>{
 
-        /*
-            If we are debugging, and focusing on a single endpoint, we skip
-            everything but it.
-            Otherwise, we just look at what configured in the SUT EM Driver.
-         */
-
-        if(configuration.endpointFocus != null){
-
-            val all = swagger.paths.map{it.key}
-
-            if(all.none { it == configuration.endpointFocus }){
-                throw IllegalArgumentException(
-                        "Invalid endpointFocus: ${configuration.endpointFocus}. " +
-                                "\nAvailable:\n${all.joinToString("\n")}")
-            }
-
-            return all.filter { it != configuration.endpointFocus }
-        }
-
-        return  infoDto.restProblem?.endpointsToSkip ?: listOf()
-    }
 
     private fun initForBlackBox() {
 
@@ -271,10 +254,17 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
             throw SutProblemException("There is no endpoint definition in the retrieved Swagger file")
         }
 
+        // ONUR: Add all paths to list of paths to ignore except endpointFocus
+        val endpointsToSkip = EndpointFilter.getEndPointsToSkip(config,swagger);
+
         actionCluster.clear()
-        RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, listOf(), enableConstraintHandling = config.enableSchemaConstraintHandling)
+
+        // ONUR: Rather than an empty list, give the list of endpoints to skip.
+        RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, endpointsToSkip, enableConstraintHandling = config.enableSchemaConstraintHandling)
 
         initAdHocInitialIndividuals()
+        if (config.seedTestCases)
+            initSeededTests()
 
         addAuthFromConfig()
 
@@ -290,8 +280,8 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         return swagger
     }
 
-    override fun hasSpecialInit(): Boolean {
-        return adHocInitialIndividuals.isNotEmpty() && config.isEnabledSmartSampling()
+    override fun hasSpecialInitForSmartSampler(): Boolean {
+        return (adHocInitialIndividuals.isNotEmpty() && config.isEnabledSmartSampling())
     }
 
     /**
@@ -310,13 +300,14 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
      * @return a created individual with specified actions, i.e., [restCalls].
      * All actions must have been already initialized
      */
-    open fun createIndividual(restCalls: MutableList<RestCallAction>): RestIndividual {
+    open fun createIndividual(sampleType: SampleType, restCalls: MutableList<RestCallAction>): RestIndividual {
         if(restCalls.any { !it.isInitialized() }){
             throw IllegalArgumentException("Action is not initialized")
         }
-        val ind =  RestIndividual(restCalls, SampleType.SMART, mutableListOf()//, usedObjects.copy()
+        val ind =  RestIndividual(restCalls, sampleType, mutableListOf()//, usedObjects.copy()
                 ,trackOperator = if (config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else Traceable.DEFAULT_INDEX)
         ind.doInitializeLocalId()
+//        ind.computeTransitiveBindingGenes()
         org.evomaster.core.Lazy.assert { ind.isInitialized() }
         return ind
     }

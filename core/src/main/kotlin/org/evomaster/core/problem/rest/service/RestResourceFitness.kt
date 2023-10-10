@@ -2,15 +2,16 @@ package org.evomaster.core.problem.rest.service
 
 
 import com.google.inject.Inject
-import org.evomaster.core.database.DbAction
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceRequest
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.search.ActionFilter
-import org.evomaster.core.search.ActionResult
+import org.evomaster.core.search.action.ActionFilter
+import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.slf4j.Logger
@@ -37,7 +38,8 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
      */
     override fun doCalculateCoverage(
         individual: RestIndividual,
-        targets: Set<Int>
+        targets: Set<Int>,
+        allCovered: Boolean
     ): EvaluatedIndividual<RestIndividual>? {
 
         rc.resetSUT()
@@ -48,18 +50,20 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
             This map is used to record the key mapping in SQL, e.g., PK, FK
          */
         val sqlIdMap = mutableMapOf<Long, Long>()
-        val executedDbActions = mutableListOf<DbAction>()
+        val executedSqlActions = mutableListOf<SqlAction>()
 
         val actionResults: MutableList<ActionResult> = mutableListOf()
 
         //whether there exist some SQL execution failure
         var failureBefore = doDbCalls(
-            individual.seeInitializingActions().filterIsInstance<DbAction>(),
+            individual.seeInitializingActions().filterIsInstance<SqlAction>(),
             sqlIdMap,
             true,
-            executedDbActions,
+            executedSqlActions,
             actionResults
         )
+
+        doMongoDbCalls(individual.seeInitializingActions().filterIsInstance<MongoDbAction>(), actionResults)
 
         val cookies = getCookies(individual)
         val tokens = getTokens(individual)
@@ -78,10 +82,10 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
         for (call in individual.getResourceCalls()) {
 
             val result = doDbCalls(
-                call.seeActions(ActionFilter.ONLY_SQL) as List<DbAction>,
+                call.seeActions(ActionFilter.ONLY_SQL) as List<SqlAction>,
                 sqlIdMap,
                 failureBefore,
-                executedDbActions,
+                executedSqlActions,
                 actionResults
             )
             failureBefore = failureBefore || result
@@ -181,7 +185,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
         }
 
         val allRestResults = actionResults.filterIsInstance<RestCallResult>()
-        val dto = restActionResultHandling(individual, targets, allRestResults, fv) ?: return null
+        val dto = restActionResultHandling(individual, targets, allCovered, allRestResults, fv) ?: return null
 
         /*
             harvest actual requests once all actions are executed

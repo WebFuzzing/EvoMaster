@@ -11,7 +11,7 @@ import org.evomaster.core.problem.rest.resource.ActionRToken
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.rest.util.ParserUtil
 import org.evomaster.core.problem.util.BindingBuilder
-import org.evomaster.core.search.Action
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.service.Randomness

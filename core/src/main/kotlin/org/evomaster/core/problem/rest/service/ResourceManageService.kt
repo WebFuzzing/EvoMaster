@@ -3,15 +3,16 @@ package org.evomaster.core.problem.rest.service
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.EMConfig.SqlInitResourceStrategy
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.DbActionUtils
-import org.evomaster.core.database.SqlInsertBuilder
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.sql.SqlActionUtils
+import org.evomaster.core.sql.SqlInsertBuilder
+import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.rest.resource.*
 import org.evomaster.core.problem.util.RestResourceTemplateHandler
-import org.evomaster.core.search.Action
-import org.evomaster.core.search.ActionFilter
+import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
@@ -93,7 +94,8 @@ class ResourceManageService {
                 call.seeActions(ActionFilter.NO_SQL).forEach { ra->
                     if(ra is RestCallAction) ra.auth = auth
                 }
-                adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE))
+                adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE)//.apply { this.computeTransitiveBindingGenes() }
+                )
             }
         }
 
@@ -102,7 +104,8 @@ class ResourceManageService {
             ar.actions.filter { it.verb == HttpVerb.POST}.forEach { a->
                 val call = ar.sampleOneAction(a.copy() as RestCallAction, randomness)
                 (call.seeActions(ActionFilter.NO_SQL) as List<RestCallAction>).forEach { it.auth = auth }
-                adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE))
+                adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE)//.apply { this.computeTransitiveBindingGenes() }
+                )
             }
         }
 
@@ -111,7 +114,8 @@ class ResourceManageService {
                 .forEach { ar->
                     ar.genPostChain(randomness, maxTestSize)?.let {call->
                         call.seeActions(ActionFilter.NO_SQL).forEach { (it as RestCallAction).auth = auth }
-                        adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE))
+                        adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE)//.apply { this.computeTransitiveBindingGenes() }
+                        )
                     }
                 }
 
@@ -120,7 +124,8 @@ class ResourceManageService {
             ar.actions.filter { it.verb == HttpVerb.PUT }.forEach {a->
                 val call = ar.sampleOneAction(a.copy() as RestCallAction, randomness)
                 call.seeActions(ActionFilter.NO_SQL).forEach { (it as RestCallAction).auth = auth }
-                adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE))
+                adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE)//.apply { this.computeTransitiveBindingGenes() }
+                )
             }
         }
 
@@ -130,7 +135,8 @@ class ResourceManageService {
                     .forEach {ct->
                         val call = ar.sampleRestResourceCalls(ct.template, randomness, maxTestSize)
                         call.seeActions(ActionFilter.NO_SQL).forEach { if(it is RestCallAction) it.auth = auth }
-                        adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE))
+                        adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE)//.apply { this.computeTransitiveBindingGenes() }
+                        )
                     }
         }
 
@@ -223,7 +229,7 @@ class ResourceManageService {
 
                 val created = handleDbActionForCall(
                     call, forceSQLInsert, false, call.is2POST,
-                    previousDbActions = bindWith?.flatMap { it.seeActions(ActionFilter.ONLY_SQL) as List<DbAction>} ?: listOf())
+                    previousSqlActions = bindWith?.flatMap { it.seeActions(ActionFilter.ONLY_SQL) as List<SqlAction>} ?: listOf())
 
                 if(!created){
                     /*
@@ -251,7 +257,7 @@ class ResourceManageService {
         forceInsert: Boolean = false,
         forceSelect: Boolean = false,
         employSQL: Boolean,
-        previousDbActions: List<DbAction> = listOf()
+        previousSqlActions: List<SqlAction> = listOf()
     ) : Boolean{
 
         val paramToTables = dm.extractRelatedTablesForCall(call, withSql = employSQL)
@@ -265,7 +271,7 @@ class ResourceManageService {
         val enableSingleInsertionForTable = randomness.nextBoolean(config.probOfEnablingSingleInsertionForTable)
 
         val dbActions = cluster.createSqlAction(
-            relatedTables, getSqlBuilder()!!, previousDbActions,
+            relatedTables, getSqlBuilder()!!, previousSqlActions,
             doNotCreateDuplicatedAction = true, isInsertion = !employSQLSelect,
             randomness = randomness,
             useExtraSqlDbConstraints = extraConstraints,
@@ -297,9 +303,9 @@ class ResourceManageService {
     }
 
     // might be useful for debugging
-    private fun containTables(dbActions: MutableList<DbAction>, tables: Set<String>) : Boolean{
+    private fun containTables(sqlActions: MutableList<SqlAction>, tables: Set<String>) : Boolean{
 
-        val missing = tables.filter { t-> dbActions.none { d-> d.table.name.equals(t, ignoreCase = true) } }
+        val missing = tables.filter { t-> sqlActions.none { d-> d.table.name.equals(t, ignoreCase = true) } }
         if (missing.isNotEmpty())
             log.warn("missing rows of tables {} to be created.", missing.joinToString(",") { it })
         return missing.isEmpty()
@@ -310,13 +316,13 @@ class ResourceManageService {
 
     private fun hasDBHandler() : Boolean = sqlInsertBuilder!=null
 
-    private fun repairDbActionsForResource(dbActions: MutableList<DbAction>) : Boolean{
+    private fun repairDbActionsForResource(sqlActions: MutableList<SqlAction>) : Boolean{
         /**
          * First repair SQL Genes (i.e. SQL Timestamps)
          */
-        GeneUtils.repairGenes(dbActions.flatMap { it.seeTopGenes() })
+        GeneUtils.repairGenes(sqlActions.flatMap { it.seeTopGenes() })
 
-        return DbActionUtils.repairBrokenDbActionsList(dbActions, randomness)
+        return SqlActionUtils.repairBrokenDbActionsList(sqlActions, randomness)
     }
 
 

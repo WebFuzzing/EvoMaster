@@ -1,8 +1,9 @@
 package org.evomaster.core.problem.externalservice.rpc
 
+import org.evomaster.client.java.controller.api.dto.problem.rpc.MockRPCExternalServiceDto
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
-import org.evomaster.core.problem.externalservice.rpc.parm.RPCResponseParam
+import org.evomaster.core.problem.externalservice.rpc.parm.ClassResponseParam
 import org.evomaster.core.search.gene.Gene
 
 class RPCExternalServiceAction(
@@ -36,38 +37,38 @@ class RPCExternalServiceAction(
      */
     val requestRuleIdentifier: String?,
 
-    responseParam: RPCResponseParam,
+    responseParam: ClassResponseParam,
     active : Boolean = false,
     used : Boolean = false
 ) : ApiExternalServiceAction(responseParam, active, used) {
 
     companion object{
-        private const val RPC_EX_NAME_SEPARATOR =":::"
+        fun getRPCExternalServiceActionName(apiDto: MockRPCExternalServiceDto, index: Int) =
+            getRPCExternalServiceActionName(apiDto.interfaceFullName, apiDto.functionName, apiDto.requestRules?.get(index), apiDto.responseFullTypesWithGeneric?.get(index)?:apiDto.responseTypes[index])
 
-        fun getRPCExternalServiceActionName(interfaceName: String, functionName: String, requestRuleIdentifier: String?, responseClassType: String) = "$interfaceName$RPC_EX_NAME_SEPARATOR$functionName$RPC_EX_NAME_SEPARATOR${requestRuleIdentifier?:"ANY"}$RPC_EX_NAME_SEPARATOR$responseClassType"
+
+
+        fun getRPCExternalServiceActionName(interfaceName: String, functionName: String, requestRuleIdentifier: String?, responseClassType: String) = "$interfaceName$EXACTION_NAME_SEPARATOR$functionName$EXACTION_NAME_SEPARATOR${requestRuleIdentifier?:"ANY"}$EXACTION_NAME_SEPARATOR$responseClassType"
     }
 
     override fun getName(): String {
-        return getRPCExternalServiceActionName(interfaceName, functionName, requestRuleIdentifier, (response as RPCResponseParam).className)
+        return getRPCExternalServiceActionName(interfaceName, functionName, requestRuleIdentifier, (response as ClassResponseParam).className)
     }
 
     override fun seeTopGenes(): List<out Gene> {
         return response.genes
     }
 
-    override fun shouldCountForFitnessEvaluations(): Boolean {
-        return false
-    }
 
     override fun copyContent(): RPCExternalServiceAction {
-        return RPCExternalServiceAction(interfaceName, functionName, inputParamTypes?.toList(), descriptiveInfo, requestRuleIdentifier, response.copy() as RPCResponseParam, active, used)
+        return RPCExternalServiceAction(interfaceName, functionName, inputParamTypes?.toList(), descriptiveInfo, requestRuleIdentifier, response.copy() as ClassResponseParam, active, used)
     }
 
     /**
      * @return a copy of this and release its restricted request identifier
      */
     fun getUnrestrictedRPCExternalServiceAction(): RPCExternalServiceAction {
-        return RPCExternalServiceAction(interfaceName, functionName, inputParamTypes?.toList(), descriptiveInfo, null, response.copy() as RPCResponseParam)
+        return RPCExternalServiceAction(interfaceName, functionName, inputParamTypes?.toList(), descriptiveInfo, null, response.copy() as ClassResponseParam)
     }
 
     fun addUpdateForParam(param: Param){

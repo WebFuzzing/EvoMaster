@@ -153,7 +153,6 @@ class ObjectGene(
         }
 
         val remove = randomness.choose(additionalFields!!)
-        remove.removeThisFromItsBindingGenes()
         killChild(remove)
         return true
     }
@@ -332,7 +331,7 @@ class ObjectGene(
         } .filter { it.isPrintable() }
 
 
-        if (shouldPrintAsJSON(mode)) {
+        if (shouldPrintAsJSON(mode) || mode == GeneUtils.EscapeMode.EJSON) {
             buffer.append("{")
 
             includedFields.map {

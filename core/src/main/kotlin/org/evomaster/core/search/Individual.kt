@@ -1,8 +1,12 @@
 package org.evomaster.core.search
 
 import org.evomaster.core.EMConfig
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.DbActionUtils
+import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.action.ActionComponent
+import org.evomaster.core.search.action.ActionFilter
+import org.evomaster.core.search.action.ActionTree
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.sql.SqlActionUtils
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
@@ -124,6 +128,8 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
         this.searchGlobalState = searchGlobalState
 
         seeGenes().forEach { it.doGlobalInitialize() }
+
+        computeTransitiveBindingGenes()
     }
 
     fun isInitialized() : Boolean{
@@ -142,7 +148,7 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
 
         groupsView()?.verifyGroups()
 
-        if(!DbActionUtils.verifyActions(seeInitializingActions().filterIsInstance<DbAction>())){
+        if(!SqlActionUtils.verifyActions(seeInitializingActions().filterIsInstance<SqlAction>())){
             throw IllegalStateException("Initializing actions break SQL constraints")
         }
 
@@ -159,7 +165,7 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
         throw IllegalStateException("${this::class.java.simpleName}: copyContent() IS NOT IMPLEMENTED")
     }
 
-    enum class GeneFilter { ALL, NO_SQL, ONLY_SQL, ONLY_EXTERNAL_SERVICE }
+    enum class GeneFilter { ALL, NO_SQL, ONLY_SQL, ONLY_MONGO, ONLY_EXTERNAL_SERVICE }
 
     /**
      * Return a view of all the Genes in this chromosome/individual
@@ -213,6 +219,18 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
         val list = seeActions(ActionFilter.MAIN_EXECUTABLE)
         org.evomaster.core.Lazy.assert { list.all { it.shouldCountForFitnessEvaluations() } }
         return list
+    }
+
+    /**
+     * Remove a main action, using relative index between 0 and this.size()
+     */
+    open fun removeMainExecutableAction(relativeIndex: Int){
+        if(seeInitializingActions().isNotEmpty()){
+            throw IllegalStateException("For cases in which there are initializing actions, this method must be overridden")
+            //also MUST be overwritten if direct children might have subtrees with more than one main action, like in case of RestResource
+        }
+        //if there is no init action, then the relativeIndex is an actual index
+        killChildByIndex(relativeIndex)
     }
 
     /**
@@ -532,5 +550,12 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
      */
     fun areAllTopGenesLocallyValid() : Boolean{
         return seeGenes().all { it.isLocallyValid() }
+    }
+
+    /**
+     * compute transitive binding relationship for all genes in this individual
+     */
+    fun computeTransitiveBindingGenes(){
+        seeGenes().forEach(Gene::computeAllTransitiveBindingGenes)
     }
 }

@@ -2,12 +2,12 @@ package org.evomaster.core.problem.graphql.service
 
 import com.google.inject.Inject
 import org.evomaster.core.Lazy
-import org.evomaster.core.database.SqlInsertBuilder
+import org.evomaster.core.sql.SqlInsertBuilder
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.api.service.ApiWsStructureMutator
-import org.evomaster.core.problem.rest.SampleType
+import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification

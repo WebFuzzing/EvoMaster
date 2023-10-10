@@ -3,15 +3,15 @@ package org.evomaster.core.search.mutationweight
 import io.swagger.parser.OpenAPIParser
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.core.EMConfig
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.schema.Column
-import org.evomaster.core.database.schema.ColumnDataType
-import org.evomaster.core.database.schema.Table
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.sql.schema.Column
+import org.evomaster.core.sql.schema.ColumnDataType
+import org.evomaster.core.sql.schema.Table
 import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.SampleType
-import org.evomaster.core.search.Action
+import org.evomaster.core.problem.enterprise.SampleType
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.ObjectGene
@@ -48,14 +48,14 @@ object GeneWeightTestSchema {
         val gk0 = SqlPrimaryKeyGene(key.name, table.name, IntegerGene(key.name, 1), 1)
         val gd0 = DateGene(date.name)
         val gj0 = ObjectGene(info.name, listOf(DateGene("field1"), IntegerGene("field2", 2)))
-        val action0 =  DbAction(table, setOf(key, date, info), 0L, listOf(gk0, gd0, gj0))
+        val action0 =  SqlAction(table, setOf(key, date, info), 0L, listOf(gk0, gd0, gj0))
 
-        val dbActions = (0 until numSQLAction).map { action0.copy() as DbAction }.toMutableList()
+        val sqlActions = (0 until numSQLAction).map { action0.copy() as SqlAction }.toMutableList()
 
         val action1 = actions[name]?: throw IllegalArgumentException("$name cannot found in defined schema")
 
         // 1 dbaction with 3 genes, and 1 restaction with 1 bodyGene and 1 contentType
-        return RestIndividual(actions = (0 until numRestAction).map { action1.copy() as RestCallAction }.toMutableList(), dbInitialization = dbActions, sampleType = SampleType.RANDOM)
+        return RestIndividual(actions = (0 until numRestAction).map { action1.copy() as RestCallAction }.toMutableList(), dbInitialization = sqlActions, sampleType = SampleType.RANDOM)
     }
 
 }

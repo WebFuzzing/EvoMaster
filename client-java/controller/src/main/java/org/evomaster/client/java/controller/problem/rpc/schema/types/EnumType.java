@@ -14,8 +14,8 @@ public class EnumType extends TypeSchema {
      */
     private final String[] items;
 
-    public EnumType(String type, String fullTypeName, String[] items, Class<?> clazz) {
-        super(type, fullTypeName, clazz);
+    public EnumType(String type, String fullTypeName, String[] items, Class<?> clazz, JavaDtoSpec spec) {
+        super(type, fullTypeName, clazz, spec);
         this.items = items;
     }
 
@@ -33,6 +33,6 @@ public class EnumType extends TypeSchema {
 
     @Override
     public EnumType copy() {
-        return new EnumType(getType(), getFullTypeName(), items, getClazz());
+        return new EnumType(getSimpleTypeName(), getFullTypeName(), items, getClazz(), spec);
     }
 }

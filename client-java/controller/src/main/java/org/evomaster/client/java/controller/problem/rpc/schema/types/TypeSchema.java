@@ -10,7 +10,7 @@ public abstract class TypeSchema {
     /**
      * simple name of the type
      */
-    private final String type;
+    private final String simpleTypeName;
     /**
      * full name of the type, ie, including full package path
      */
@@ -21,6 +21,8 @@ public abstract class TypeSchema {
      */
     private final Class<?> clazz;
 
+    public final JavaDtoSpec spec;
+
     private Class<?> originalType;
 
     /**
@@ -29,18 +31,19 @@ public abstract class TypeSchema {
      */
     public int depth;
 
-    public TypeSchema(String type, String fullTypeName, Class<?> clazz){
-        this.type = type;
+    public TypeSchema(String type, String fullTypeName, Class<?> clazz, JavaDtoSpec spec){
+        this.simpleTypeName = type;
         this.fullTypeName = fullTypeName;
         this.clazz = clazz;
+        this.spec = spec;
     }
 
     public void setOriginalType(Class<?> originalType) {
         this.originalType = originalType;
     }
 
-    public String getType() {
-        return type;
+    public String getSimpleTypeName() {
+        return simpleTypeName;
     }
 
     public String getFullTypeName() {
@@ -69,7 +72,7 @@ public abstract class TypeSchema {
         return originalType!= null? originalType: clazz;
     }
 
-    public String getTypeNameForInstance(){
+    public String getTypeNameForInstanceInJavaOrKotlin(boolean isJava){
         return getFullTypeNameWithGenericType();
     }
 }

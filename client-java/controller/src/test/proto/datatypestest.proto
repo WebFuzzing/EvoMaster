@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "io.grpc.examples.evotests.datatypes";
+option java_outer_classname = "DataTypesTestProto";
+option objc_class_prefix = "DTT";
+
+package datatypes;
+
+
+service DataTypesTest {
+  rpc getSimpleObj (GetInfo) returns (SimpleObj) {}
+
+  rpc getNestedObj (GetInfo) returns (NestedObj) {}
+  rpc setNestedObj (SimpleObj) returns (NestedObj) {}
+
+  rpc getMapObj (GetInfo) returns (MapObj) {}
+  rpc addMapObj (SimpleObj) returns (MapObj) {}
+
+
+  rpc getListObj (GetInfo) returns (ListObj) {}
+  rpc addListObj  (SimpleObj) returns (ListObj) {}
+
+}
+
+message GetInfo{
+  string name = 1;
+}
+
+message SimpleObj {
+  string name = 1;
+  double doublevalue = 2;
+  int32  int32value = 3;
+  int64  int64value = 4;
+  float  floatvalue = 5;
+  bool  boolvalue = 6;
+  bytes bytesvalue = 7;
+  SimpleEnum enumvalue = 8;
+}
+
+enum SimpleEnum {
+  ONE = 0;
+  TWO = 1;
+  THREE = 2;
+  FOUR = 3;
+  FIVE = 4;
+}
+
+message NestedObj {
+  string name = 1;
+  SimpleObj objvalue = 2;
+}
+
+message MapObj{
+  string  name = 1;
+  map<int32, SimpleObj> intkeymapvalue = 2;
+  map<string, SimpleObj> stringkeymapvalue = 3;
+}
+
+message ListObj{
+  string  name = 1;
+  repeated int32  intlistvalue = 2;
+  repeated string  stringlistvalue = 3;
+  repeated SimpleObj objlistvalue = 4;
+}
+
+

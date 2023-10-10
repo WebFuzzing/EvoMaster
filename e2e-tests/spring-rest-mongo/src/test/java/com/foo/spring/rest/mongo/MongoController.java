@@ -41,7 +41,6 @@ public abstract class MongoController extends EmbeddedSutController {
 
         mongoClient = MongoClients.create("mongodb://localhost:" + port + "/" + databaseName);
 
-
         SpringApplicationBuilder app = new SpringApplicationBuilder(mongoAppClass);
 
         app.properties(
@@ -54,7 +53,6 @@ public abstract class MongoController extends EmbeddedSutController {
         ctx = app.run();
 
         return "http://localhost:" + getSutPort();
-
     }
 
     @Override
@@ -101,5 +99,10 @@ public abstract class MongoController extends EmbeddedSutController {
         return (Integer) ((Map) ctx.getEnvironment()
                 .getPropertySources().get("server.ports").getSource())
                 .get("local.server.port");
+    }
+
+    @Override
+    public MongoClient getMongoConnection() {
+        return mongoClient;
     }
 }

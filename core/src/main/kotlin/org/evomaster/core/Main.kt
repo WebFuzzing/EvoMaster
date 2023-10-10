@@ -15,6 +15,7 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestSuiteSplitter
 import org.evomaster.core.output.clustering.SplitResult
 import org.evomaster.core.output.service.TestSuiteWriter
+import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.graphql.GraphQLIndividual
@@ -167,6 +168,7 @@ class Main {
 
             val solution = run(injector, controllerInfo)
             val faults = solution.overall.potentialFoundFaults(idMapper)
+            val sampler : Sampler<*> = injector.getInstance(Key.get(object : TypeLiteral<Sampler<*>>(){}))
 
             resetExternalServiceHandler(injector)
 
@@ -218,9 +220,38 @@ class Main {
                         val totalLines = unitsInfo.numberOfLines
                         val percentage = String.format("%.0f", (linesInfo.total / totalLines.toDouble()) * 100)
 
+                        /*
+                            This is a quite tricky case...
+                            the number of covered lines X should be less or equal than the total T, ie X<=T.
+                            However, we end up with cases like X > T where T=0.
+                            Should never happen in practice, but it does for E2E tests.
+                            This is because we could have different test suites working on same SUTs.
+                            Once one is finished, it would reset all data.
+                            Such data would not then be recomputed in the next test suite execution, as
+                            the classes are already loaded...
+                            Not sure if there is any clean solution for this...
+                            executing these tests in own process might be done with Failsafe/Surefire.
+
+                            Having check for totalLines == 0 was not a good solution. If the assertion fails,
+                            and test is re-executed on same JVM with classes already loaded, then we would get
+                            totalLines == 0 after the reset... and so the test cases will always pass :(
+                         */
+                        //assert(totalLines == 0 || linesInfo.total <= totalLines){ "${linesInfo.total} > $totalLines"}
+                        /*
+                            Having this assertion is way too problematic... not only issue when more than 2 E2E use
+                            the same SUT, but also when flacky tests are re-run (both in our scaffolding, and in Maven)
+                         */
+                        //assert(linesInfo.total <= totalLines){ "WRONG COVERAGE: ${linesInfo.total} > $totalLines"}
+
                         info("Covered targets (lines, branches, faults, etc.): ${targetsInfo.total}")
                         info("Potential faults: ${faults.size}")
-                        info("Bytecode line coverage: $percentage% (${linesInfo.total} out of $totalLines in $units units/classes)")
+
+                        if(totalLines == 0 || units == 0){
+                            logError("Detected $totalLines lines to cover, for a total of $units units/classes." +
+                                    " Are you sure you did setup getPackagePrefixesToCover() correctly?")
+                        } else {
+                            info("Bytecode line coverage: $percentage% (${linesInfo.total} out of $totalLines in $units units/classes)")
+                        }
                     } else {
                         warn("Failed to retrieve SUT info")
                     }
@@ -231,8 +262,18 @@ class Main {
                 when(config.problemType){
                     EMConfig.ProblemType.REST -> {
                         val k = data.find { it.header == Statistics.COVERED_2XX }!!.element.toInt()
-                        val p = String.format("%.0f", (k.toDouble()/n) * 100 )
-                        info("Successfully executed (HTTP code 2xx) $k endpoints out of $n ($p%)")
+                        val t = if (sampler.getPreDefinedIndividuals().isNotEmpty()) {
+                            /*
+                                FIXME this is a temporary hack...
+                                right now we might have 1 call to Schema that messes up this statistics
+                             */
+                            n + 1
+                        } else {
+                            n
+                        }
+                        assert(k <= t)
+                        val p = String.format("%.0f", (k.toDouble()/t) * 100 )
+                        info("Successfully executed (HTTP code 2xx) $k endpoints out of $t ($p%)")
                     }
                     EMConfig.ProblemType.GRAPHQL ->{
                         val k = data.find { it.header == Statistics.GQL_NO_ERRORS }!!.element.toInt()
@@ -609,8 +650,15 @@ class Main {
                 val splitResult = TestSuiteSplitter.split(solution, config, writer.getPartialOracles())
 
                 solution.clusteringTime = splitResult.clusteringTime.toInt()
-                splitResult.splitOutcome.filter { !it.individuals.isNullOrEmpty() }
-                        .forEach { writer.writeTests(it, controllerInfoDto?.fullName,controllerInfoDto?.executableFullPath, snapshot) }
+                splitResult.splitOutcome
+                    .filter { !it.individuals.isNullOrEmpty() }
+                    .flatMap {
+                        TestSuiteSplitter.splitSolutionByLimitSize(
+                            it as Solution<ApiWsIndividual>,
+                            config.maxTestsPerTestSuite
+                        )
+                    }
+                    .forEach { writer.writeTests(it, controllerInfoDto?.fullName,controllerInfoDto?.executableFullPath, snapshot) }
 
                 if (config.executiveSummary) {
                     writeExecSummary(injector, controllerInfoDto, splitResult)
@@ -627,7 +675,14 @@ class Main {
                      */
                     EMConfig.TestSuiteSplitType.CLUSTER -> {
                         val splitResult = TestSuiteSplitter.splitRPCByException(solution as Solution<RPCIndividual>)
-                        splitResult.splitOutcome.filter { !it.individuals.isNullOrEmpty() }
+                        splitResult.splitOutcome
+                            .filter { !it.individuals.isNullOrEmpty() }
+                            .flatMap {
+                                TestSuiteSplitter.splitSolutionByLimitSize(
+                                    it as Solution<ApiWsIndividual>,
+                                    config.maxTestsPerTestSuite
+                                )
+                            }
                             .forEach { writer.writeTests(it, controllerInfoDto?.fullName,controllerInfoDto?.executableFullPath, snapshot) }
 
                         // disable executiveSummary
@@ -645,8 +700,15 @@ class Main {
                     else -> {
                         //throw IllegalStateException("GraphQL problem does not support splitting tests by code at this time")
                         val splitResult = TestSuiteSplitter.split(solution, config)
-                        splitResult.splitOutcome.filter{ !it.individuals.isNullOrEmpty() }
-                                .forEach { writer.writeTests(it, controllerInfoDto?.fullName, controllerInfoDto?.executableFullPath, snapshot ) }
+                        splitResult.splitOutcome
+                            .filter{ !it.individuals.isNullOrEmpty() }
+                            .flatMap {
+                                TestSuiteSplitter.splitSolutionByLimitSize(
+                                    it as Solution<ApiWsIndividual>,
+                                    config.maxTestsPerTestSuite
+                                )
+                            }
+                            .forEach { writer.writeTests(it, controllerInfoDto?.fullName, controllerInfoDto?.executableFullPath, snapshot ) }
                     }
                     /*
                       GraphQL could be split by code (where code is available and trustworthy)

@@ -1,18 +1,20 @@
 package org.evomaster.core.problem.api.service
 
 import com.google.inject.Inject
+import org.evomaster.client.java.controller.api.dto.database.execution.MongoFailedQuery
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.DbActionUtils
-import org.evomaster.core.database.SqlInsertBuilder
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.sql.SqlActionUtils
+import org.evomaster.core.sql.SqlInsertBuilder
+import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.param.HttpWsResponseParam
-import org.evomaster.core.search.Action
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.Individual
@@ -143,6 +145,39 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         sampler: ApiWsSampler<T>
     ) {
         addInitializingDbActions(individual, mutatedGenes, sampler)
+        addInitializingMongoDbActions(individual, mutatedGenes, sampler)
+    }
+
+    private fun <T: ApiWsIndividual> addInitializingMongoDbActions(
+        individual: EvaluatedIndividual<*>,
+        mutatedGenes: MutatedGeneSpecification?,
+        sampler: ApiWsSampler<T>
+    ) {
+        if (!config.shouldGenerateMongoData()) {
+            return
+        }
+
+        val ind = individual.individual as? T
+            ?: throw IllegalArgumentException("Invalid individual type")
+
+        val fw = individual.fitness.getViewOfAggregatedFailedFind()
+
+        if (fw.isEmpty()) {
+            return
+        }
+
+        val old = mutableListOf<Action>().plus(ind.seeInitializingActions().filterIsInstance<MongoDbAction>())
+
+        val addedInsertions = handleFailedFind(ind, fw, mutatedGenes, sampler)
+
+        // update impact based on added genes
+        if (mutatedGenes != null && config.isEnabledArchiveGeneSelection()) {
+            individual.updateImpactGeneDueToAddedInitializationGenes(
+                mutatedGenes,
+                old,
+                addedInsertions
+            )
+        }
     }
 
     private fun <T : ApiWsIndividual> addInitializingDbActions(
@@ -176,7 +211,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
             return
         }
 
-        val old = mutableListOf<Action>().plus(ind.seeInitializingActions().filterIsInstance<DbAction>())
+        val old = mutableListOf<Action>().plus(ind.seeInitializingActions().filterIsInstance<SqlAction>())
 
         val addedInsertions = handleFailedWhereSQL(ind, fw, mutatedGenes, sampler)
 
@@ -209,7 +244,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
                 we might remove the condition check on representExistingData.
          */
         if (ind.seeDbActions().isEmpty()
-            || !ind.seeDbActions().any { it is DbAction && it.representExistingData }
+            || !ind.seeDbActions().any { it is SqlAction && it.representExistingData }
         ) {
 
             /*
@@ -235,7 +270,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 
         // add fw into dbInitialization
         val max = config.maxSqlInitActionsPerMissingData
-        val initializingActions = ind.seeInitializingActions().filterIsInstance<DbAction>()
+        val initializingActions = ind.seeInitializingActions().filterIsInstance<SqlAction>()
 
         var missing = findMissing(fw, initializingActions)
 
@@ -269,7 +304,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
                 imply generating an action for B as well.
                 So, we need to recompute "missing" each time
              */
-            missing = findMissing(fw, ind.seeInitializingActions().filterIsInstance<DbAction>())
+            missing = findMissing(fw, ind.seeInitializingActions().filterIsInstance<SqlAction>())
         }
 
         if (config.generateSqlDataWithDSE) {
@@ -279,7 +314,24 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         return addedInsertions
     }
 
-    private fun findMissing(fw: Map<String, Set<String>>, dbactions: List<DbAction>): Map<String, Set<String>> {
+    private fun <T : ApiWsIndividual> handleFailedFind(
+        ind: T,
+        ff: List<MongoFailedQuery>,
+        mutatedGenes: MutatedGeneSpecification?, sampler: ApiWsSampler<T>
+    ): MutableList<List<Action>>? {
+
+        val addedInsertions = if (mutatedGenes != null) mutableListOf<List<Action>>() else null
+
+        ff.forEach {
+            val insertion = listOf(sampler.sampleMongoInsertion(it.database, it.collection, it.documentsType))
+            ind.addInitializingMongoDbActions(actions = insertion)
+            addedInsertions?.add(insertion)
+        }
+
+        return addedInsertions
+    }
+
+    private fun findMissing(fw: Map<String, Set<String>>, dbactions: List<SqlAction>): Map<String, Set<String>> {
 
         return fw.filter { e ->
             //shouldn't have already an action adding such SQL data
@@ -313,7 +365,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         */
 
         val candidatesToMutate =
-            individual.seeInitializingActions().filterIsInstance<DbAction>().filterNot { it.representExistingData }
+            individual.seeInitializingActions().filterIsInstance<SqlAction>().filterNot { it.representExistingData }
         val tables = candidatesToMutate.map { it.table.name }.run {
             ifEmpty { getSqlInsertBuilder()!!.getTableNames() }
         }
@@ -342,11 +394,11 @@ abstract class ApiWsStructureMutator : StructureMutator() {
      */
     fun handleInitSqlAddition(
         individual: ApiWsIndividual,
-        add: List<List<DbAction>>,
+        add: List<List<SqlAction>>,
         mutatedGenes: MutatedGeneSpecification?
     ) {
         individual.addInitializingDbActions(actions = add.flatten())
-        mutatedGenes?.addedDbActions?.addAll(add)
+        mutatedGenes?.addedSqlActions?.addAll(add)
     }
 
     /**
@@ -354,30 +406,30 @@ abstract class ApiWsStructureMutator : StructureMutator() {
      */
     fun handleInitSqlRemoval(
         individual: ApiWsIndividual,
-        remove: List<DbAction>,
+        remove: List<SqlAction>,
         mutatedGenes: MutatedGeneSpecification?
     ) {
-        val relatedRemove = mutableListOf<DbAction>()
+        val relatedRemove = mutableListOf<SqlAction>()
         relatedRemove.addAll(remove)
         remove.forEach {
             getRelatedRemoveDbActions(individual, it, relatedRemove)
         }
         val set = relatedRemove.filterNot { it.representExistingData }.toSet().toMutableList()
-        mutatedGenes?.removedDbActions?.addAll(set.map { it to individual.seeInitializingActions().indexOf(it) })
+        mutatedGenes?.removedSqlActions?.addAll(set.map { it to individual.seeInitializingActions().indexOf(it) })
         individual.removeInitDbActions(set)
     }
 
     private fun getRelatedRemoveDbActions(
         ind: ApiWsIndividual,
-        remove: DbAction,
-        relatedRemove: MutableList<DbAction>
+        remove: SqlAction,
+        relatedRemove: MutableList<SqlAction>
     ) {
         val pks = remove.seeTopGenes().flatMap { it.flatView() }.filterIsInstance<SqlPrimaryKeyGene>()
         val index = ind.seeInitializingActions().indexOf(remove)
         if (index < ind.seeInitializingActions().size - 1 && pks.isNotEmpty()) {
 
-            val removeDbFKs = ind.seeInitializingActions().filterIsInstance<DbAction>()
-                .subList(index + 1, ind.seeInitializingActions().filterIsInstance<DbAction>().size).filter {
+            val removeDbFKs = ind.seeInitializingActions().filterIsInstance<SqlAction>()
+                .subList(index + 1, ind.seeInitializingActions().filterIsInstance<SqlAction>().size).filter {
                     it.seeTopGenes().flatMap { g -> g.flatView() }.filterIsInstance<SqlForeignKeyGene>()
                         .any { fk -> pks.any { pk -> fk.uniqueIdOfPrimaryKey == pk.uniqueId } }
                 }
@@ -392,7 +444,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
      * @param name is the table name
      * @param num is a number of table with [name] to be added
      */
-    fun createInsertSqlAction(name: String, num: Int): List<List<DbAction>> {
+    fun createInsertSqlAction(name: String, num: Int): List<List<SqlAction>> {
         getSqlInsertBuilder()
             ?: throw IllegalStateException("attempt to create resource with SQL but the sqlBuilder is null")
         if (num <= 0)
@@ -419,11 +471,11 @@ abstract class ApiWsStructureMutator : StructureMutator() {
                 })
         }
 
-        DbActionUtils.randomizeDbActionGenes(list.flatten(), randomness)
+        SqlActionUtils.randomizeDbActionGenes(list.flatten(), randomness)
         //FIXME refactoring
         list.flatten().forEach { it.seeTopGenes().forEach { g -> g.markAllAsInitialized() } }
         //FIXME broken elements are not removed from list
-        DbActionUtils.repairBrokenDbActionsList(list.flatten().toMutableList(), randomness)
+        SqlActionUtils.repairBrokenDbActionsList(list.flatten().toMutableList(), randomness)
         return list
     }
 

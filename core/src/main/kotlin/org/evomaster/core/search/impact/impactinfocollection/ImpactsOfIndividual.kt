@@ -1,10 +1,11 @@
 package org.evomaster.core.search.impact.impactinfocollection
 
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.search.Action
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.mongo.MongoDbAction
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.ActionFilter
+import org.evomaster.core.search.action.ActionFilter
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -186,7 +187,7 @@ open class ImpactsOfIndividual(
      * thus, we need to synchronize the action impacts based on the [individual]
      */
     fun syncBasedOnIndividual(individual: Individual) {
-        val initActions = individual.seeInitializingActions().filterIsInstance<DbAction>()
+        val initActions = individual.seeInitializingActions().filter { it is SqlAction || it is MongoDbAction }
         //for initialization due to db action fixing
         val diff = initActions.size - initActionImpacts.getOriginalSize()
         if (diff < 0) { //truncation
@@ -314,7 +315,7 @@ open class ImpactsOfIndividual(
     /**
      * remove impacts for initialization
      */
-    fun removeInitializationImpacts(removed : List<Pair<DbAction, Int>>, existingDataSize: Int){
+    fun removeInitializationImpacts(removed : List<Pair<SqlAction, Int>>, existingDataSize: Int){
         initActionImpacts.updateSizeOfExistingData(existingDataSize)
         initActionImpacts.removeInitialization(removed)
     }

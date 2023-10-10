@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class InstrumentationController {
 
@@ -46,8 +47,23 @@ public class InstrumentationController {
         ExecutionTracer.setExecutingInitSql(executingInitSql);
     }
 
+    public static void setExecutingInitMongo(boolean executingInitMongo){
+        ExecutionTracer.setExecutingInitMongo(executingInitMongo);
+    }
+
     public static void setExecutingAction(boolean executingAction){
         ExecutionTracer.setExecutingAction(executingAction);
+    }
+
+    public static List<TargetInfo> getAllCoveredTargetInfos(){
+
+        Map<String, TargetInfo> objectives = ExecutionTracer.getInternalReferenceToObjectiveCoverage();
+
+        return objectives.entrySet().stream()
+                .filter(e -> e.getValue().value == 1d) // only covered
+                //try to save bandwidth by only sending mapped ids
+                .map(e -> e.getValue().enforceMappedId().withNoDescriptiveId())
+                .collect(Collectors.toList());
     }
 
     public static List<TargetInfo> getTargetInfos(Collection<Integer> ids){

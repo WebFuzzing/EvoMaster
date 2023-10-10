@@ -2,9 +2,9 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
-import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.ByteBufferType;
+import org.evomaster.client.java.controller.problem.rpc.schema.types.JavaDtoSpec;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -12,14 +12,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator.*;
+
 /**
  * this is created for handling binary in thrift, see https://thrift.apache.org/docs/types
  * handle it as string
  */
 public class ByteBufferParam extends NamedTypedValue<ByteBufferType, ByteBuffer>{
 
-    public ByteBufferParam(String name, AccessibleSchema accessibleSchema) {
-        super(name, new ByteBufferType(), accessibleSchema);
+    public ByteBufferParam(String name, AccessibleSchema accessibleSchema, JavaDtoSpec spec) {
+        super(name, new ByteBufferType(spec), accessibleSchema);
     }
 
     public void setValue(byte[] value) {
@@ -46,7 +48,7 @@ public class ByteBufferParam extends NamedTypedValue<ByteBufferType, ByteBuffer>
 
     @Override
     public ByteBufferParam copyStructure() {
-        return new ByteBufferParam(getName(), accessibleSchema);
+        return new ByteBufferParam(getName(), accessibleSchema, this.getType().spec);
     }
 
     @Override
@@ -69,39 +71,45 @@ public class ByteBufferParam extends NamedTypedValue<ByteBufferType, ByteBuffer>
     }
 
     @Override
-    public List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent) {
+    public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava, boolean isVariableNullable) {
         List<String> codes = new ArrayList<>();
-        String var = CodeJavaGenerator.oneLineInstance(isDeclaration, doesIncludeName, ByteBuffer.class.getName(), variableName, null);
-        CodeJavaGenerator.addCode(codes, var, indent);
+        String var = oneLineInstance(isDeclaration, doesIncludeName, ByteBuffer.class.getName(), variableName, null,isJava,isNullable() );
+        addCode(codes, var, indent);
         if (getValue() == null) return codes;
-        CodeJavaGenerator.addCode(codes, "{", indent);
+        addCode(codes, codeBlockStart(isJava), indent);
         String varValue = variableName+"_byteArray";
-        String byteArray = "\""+ new String(getValue().array(), StandardCharsets.UTF_8) + "\".getBytes("+StandardCharsets.class.getName()+".UTF_8)";
-        CodeJavaGenerator.addCode(codes,
-                CodeJavaGenerator.oneLineInstance(true, true, "byte[]", varValue, byteArray), indent + 1);
-        CodeJavaGenerator.addCode(codes,
-                CodeJavaGenerator.oneLineInstance(false, true, String.class.getName(), variableName, ByteBuffer.class.getName()+".allocate("+varValue+".length)"), indent + 1);
-        CodeJavaGenerator.addCode(codes, variableName+".put("+varValue+");", indent+1);
-        CodeJavaGenerator.addCode(codes, "}", indent);
+        String byteArray = methodInvocation("\""+ new String(getValue().array(), StandardCharsets.UTF_8)+ "\"", isJava?"getBytes":"toByteArray", StandardCharsets.class.getName()+".UTF_8", isJava, false, false);
+        addCode(codes,
+                oneLineInstance(true, true, isJava?"byte[]":"ByteArray", varValue, byteArray, isJava,isNullable() ), indent + 1);
+        addCode(codes,
+                oneLineInstance(false, true, "String", variableName, ByteBuffer.class.getName()+".allocate("+
+                        fieldAccess(varValue, (isJava?"length":"size")+")", isJava, isNullable(), true), isJava,isNullable() ), indent + 1);
+        addCode(codes,
+            methodInvocation(variableName, "put", varValue, isJava, isNullable(), false)+ getStatementLast(isJava),
+            indent+1);
+        addCode(codes, codeBlockEnd(isJava), indent);
 
         return codes;
     }
 
     @Override
-    public List<String> newAssertionWithJava(int indent, String responseVarName, int maxAssertionForDataInCollection) {
+    public List<String> newAssertionWithJavaOrKotlin(int indent, String responseVarName, int maxAssertionForDataInCollection, boolean isJava) {
         StringBuilder sb = new StringBuilder();
-        sb.append(CodeJavaGenerator.getIndent(indent));
+        sb.append(getIndent(indent));
         if (getValue() == null)
-            sb.append(CodeJavaGenerator.junitAssertNull(responseVarName));
+            sb.append(junitAssertNull(responseVarName, isJava));
         else
             sb.append("// not handle ByteBuffer assertion");
         return Collections.singletonList(sb.toString());
     }
 
     @Override
-    public String getValueAsJavaString() {
+    public String getValueAsJavaString(boolean isJava) {
         return null;
     }
 
-
+    @Override
+    public List<String> referenceTypes() {
+        return null;
+    }
 }

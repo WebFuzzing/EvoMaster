@@ -8,20 +8,24 @@ import org.evomaster.core.search.tracer.Traceable
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
 import org.evomaster.core.Lazy
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.DbActionResult
+import org.evomaster.core.search.action.Action
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.sql.SqlActionResult
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.resource.ResourceImpactOfIndividual
 import org.evomaster.core.search.Individual.GeneFilter
-import org.evomaster.core.search.ActionFilter.*
+import org.evomaster.core.search.action.ActionFilter.*
+import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.tracer.TrackingHistory
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import kotlin.reflect.KClass
 
 /**
  * EvaluatedIndividual allows to tracking its evolution.
@@ -192,9 +196,9 @@ class EvaluatedIndividual<T>(
             list.add(
                 dbResults.mapIndexed { index, actionResult ->
                     EvaluatedDbAction(
-                        (dbActions[index] as? DbAction)
+                        (dbActions[index] as? SqlAction)
                             ?: throw IllegalStateException("mismatched action type, expected is DbAction but it is ${dbActions[index]::class.java.simpleName}"),
-                        (actionResult as? DbActionResult)
+                        (actionResult as? SqlActionResult)
                             ?: throw IllegalStateException("mismatched action result type, expected is DbActionResult but it is ${actionResult::class.java.simpleName}")
                     )
                 } to restResult.mapIndexed { index, actionResult ->
@@ -392,14 +396,14 @@ class EvaluatedIndividual<T>(
         if (this.index == next.index) {
 
             //remove a number of resource with sql
-            if (mutatedGenes.removedDbActions.isNotEmpty()) {
+            if (mutatedGenes.removedSqlActions.isNotEmpty()) {
                 impactInfo!!.removeInitializationImpacts(
-                    mutatedGenes.removedDbActions,
-                    individual.seeInitializingActions().count { it is DbAction && it.representExistingData })
+                    mutatedGenes.removedSqlActions,
+                    individual.seeInitializingActions().count { it is SqlAction && it.representExistingData })
             }
 
-            if (mutatedGenes.addedDbActions.isNotEmpty()) {
-                impactInfo!!.appendInitializationImpacts(mutatedGenes.addedDbActions)
+            if (mutatedGenes.addedSqlActions.isNotEmpty()) {
+                impactInfo!!.appendInitializationImpacts(mutatedGenes.addedSqlActions)
             }
 
             /*
@@ -548,7 +552,7 @@ class EvaluatedIndividual<T>(
         if (mutatedGenes.didAddInitializationGenes()) {
             Lazy.assert {
                 impactInfo!!.getSQLExistingData() == individual.seeInitializingActions()
-                    .count { it is DbAction && it.representExistingData }
+                    .count { it is SqlAction && it.representExistingData }
             }
         }
 
@@ -709,20 +713,21 @@ class EvaluatedIndividual<T>(
             )
         }
 
-        /*
-            if there exist other types of action (ie, not DbAction), this might need to be extended
-         */
-        action = individual.seeInitializingActions().filterIsInstance<DbAction>().find { it.seeTopGenes().contains(gene) }
+        initializingActionClasses().forEach { initializingActionClass ->
+            action = individual.seeInitializingActions().filter { initializingActionClass.isInstance(it)}
+                .find { it.seeTopGenes().contains(gene) }
 
-        if (action != null) {
-            return impactInfo.getGene(
-                localId = null,
-                fixedIndexedAction = true,
-                actionName = action.getName(),
-                actionIndex = individual.seeInitializingActions().indexOf(action),
-                geneId = id,
-                fromInitialization = true
-            )
+            if (action != null) {
+                action as Action
+                return impactInfo.getGene(
+                    localId = null,
+                    fixedIndexedAction = true,
+                    actionName = action!!.getName(),
+                    actionIndex = individual.seeInitializingActions().indexOf(action),
+                    geneId = id,
+                    fromInitialization = true
+                )
+            }
         }
 
         return impactInfo.getGene(
@@ -762,9 +767,9 @@ class EvaluatedIndividual<T>(
     ) {
         impactInfo ?: throw IllegalStateException("there is no any impact initialized")
 
-        val allExistingData = individual.seeInitializingActions().filter { it is DbAction && it.representExistingData }
+        val allExistingData = individual.seeInitializingActions().filter { it is SqlAction && it.representExistingData }
         val diff = individual.seeInitializingActions()
-            .filter { !old.contains(it) && it is DbAction && !it.representExistingData }
+            .filter { !old.contains(it) && ((it is SqlAction && !it.representExistingData) || it is MongoDbAction) }
 
         if (allExistingData.isNotEmpty())
             impactInfo.updateExistingSQLData(allExistingData.size)
@@ -802,7 +807,7 @@ class EvaluatedIndividual<T>(
 
         Lazy.assert {
             individual.seeInitializingActions()
-                .filter { it is DbAction && !it.representExistingData }.size == impactInfo.getSizeOfActionImpacts(true)
+                .filter { (it is SqlAction && !it.representExistingData) || it is MongoDbAction }.size == impactInfo.getSizeOfActionImpacts(true)
         }
     }
 
@@ -886,5 +891,8 @@ class EvaluatedIndividual<T>(
             !results[it].matchedType(all[it])
         }
         return !invalid
+    }
+    private fun initializingActionClasses(): List<KClass<*>> {
+        return listOf(MongoDbAction::class, SqlAction::class)
     }
 }

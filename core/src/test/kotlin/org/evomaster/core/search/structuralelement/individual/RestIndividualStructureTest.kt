@@ -1,14 +1,13 @@
 package org.evomaster.core.search.structuralelement.individual
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.schema.Column
-import org.evomaster.core.database.schema.ColumnDataType
-import org.evomaster.core.database.schema.ForeignKey
-import org.evomaster.core.database.schema.Table
-import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.sql.schema.Column
+import org.evomaster.core.sql.schema.ColumnDataType
+import org.evomaster.core.sql.schema.ForeignKey
+import org.evomaster.core.sql.schema.Table
 import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.SampleType
+import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.ObjectGene
@@ -18,7 +17,6 @@ import org.evomaster.core.search.structuralelement.StructuralElementBaseTest
 import org.evomaster.core.search.structuralelement.resourcecall.ResourceNodeCluster
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 class RestIndividualStructureTest : StructuralElementBaseTest(){
@@ -50,13 +48,13 @@ class RestIndividualStructureTest : StructuralElementBaseTest(){
 
         val insertId0 = 1001L
         val pkGeneFoo = SqlPrimaryKeyGene("Id", "Foo", IntegerGene("Id", 1, 0, 10), insertId0)
-        val action0 = DbAction(foo, setOf(idColumn), insertId0, listOf(pkGeneFoo))
+        val action0 = SqlAction(foo, setOf(idColumn), insertId0, listOf(pkGeneFoo))
 
         val insertId1 = 1002L
         val pkGeneBar = SqlPrimaryKeyGene("Id", "Bar", IntegerGene("Id", 2, 0, 10), insertId0)
         val fkGene = SqlForeignKeyGene("fooId", insertId1, "Foo", false, insertId0)
 
-        val action1 = DbAction(bar, setOf(barIdColumn, fkColumn), insertId1, listOf(pkGeneBar, fkGene))
+        val action1 = SqlAction(bar, setOf(barIdColumn, fkColumn), insertId1, listOf(pkGeneBar, fkGene))
 
 
         val fooNode = ResourceNodeCluster.cluster.getResourceNode("/v3/api/rfoo/{rfooId}")

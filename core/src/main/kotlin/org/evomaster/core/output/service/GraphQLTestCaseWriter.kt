@@ -9,8 +9,8 @@ import org.evomaster.core.problem.graphql.GraphQlCallResult
 import org.evomaster.core.problem.graphql.service.GraphQLFitness
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.HttpWsCallResult
-import org.evomaster.core.search.Action
-import org.evomaster.core.search.ActionResult
+import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.slf4j.LoggerFactory

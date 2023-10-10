@@ -11,8 +11,8 @@ public class StringType extends TypeSchema {
     private final static String FULL_STRING_TYPE_NAME = String.class.getName();
 
 
-    public StringType() {
-        super(STRING_TYPE_NAME, FULL_STRING_TYPE_NAME, String.class);
+    public StringType(JavaDtoSpec spec) {
+        super(STRING_TYPE_NAME, FULL_STRING_TYPE_NAME, String.class, spec);
     }
 
     @Override
@@ -24,6 +24,11 @@ public class StringType extends TypeSchema {
 
     @Override
     public StringType copy() {
-        return new StringType();
+        return new StringType(spec);
+    }
+
+    @Override
+    public String getTypeNameForInstanceInJavaOrKotlin(boolean isJava) {
+        return getSimpleTypeName();
     }
 }

@@ -2,14 +2,14 @@ package org.evomaster.core.output.service
 
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.DbActionResult
-import org.evomaster.core.output.CookieWriter
-import org.evomaster.core.output.Lines
-import org.evomaster.core.output.SqlWriter
-import org.evomaster.core.output.TokenWriter
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.sql.SqlActionResult
+import org.evomaster.core.mongo.MongoDbAction
+import org.evomaster.core.mongo.MongoDbActionResult
+import org.evomaster.core.output.*
 import org.evomaster.core.search.EvaluatedDbAction
 import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.EvaluatedMongoDbAction
 import org.evomaster.core.search.gene.utils.GeneUtils
 
 abstract class ApiTestCaseWriter : TestCaseWriter() {
@@ -33,19 +33,34 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         TokenWriter.handleGettingTokens(format, ind, lines, baseUrlOfSut, this)
 
         //FIXME this doing initializations, not field declaration
-        val initializingActions = ind.individual.seeInitializingActions().filterIsInstance<DbAction>()
-        val initializingActionResults = (ind.seeResults(initializingActions))
-        if (initializingActionResults.any { (it as? DbActionResult) == null })
+        //REFACTOR TO HANDLE MULTIPLE DATABASES
+        val initializingSqlActions = ind.individual.seeInitializingActions().filterIsInstance<SqlAction>()
+        val initializingSqlActionResults = (ind.seeResults(initializingSqlActions))
+        if (initializingSqlActionResults.any { (it as? SqlActionResult) == null })
             throw IllegalStateException("the type of results are expected as DbActionResults")
 
+        val initializingMongoActions = ind.individual.seeInitializingActions().filterIsInstance<MongoDbAction>()
+        val initializingMongoResults = (ind.seeResults(initializingMongoActions))
+        if (initializingMongoResults.any { (it as? MongoDbActionResult) == null })
+            throw IllegalStateException("the type of results are expected as MongoDbActionResults")
 
-        if (ind.individual.seeInitializingActions().isNotEmpty()) {
+
+        if (initializingSqlActions.isNotEmpty()) {
             SqlWriter.handleDbInitialization(
                     format,
-                    initializingActions.indices.map {
-                        EvaluatedDbAction(initializingActions[it], initializingActionResults[it] as DbActionResult)
+                initializingSqlActions.indices.map {
+                        EvaluatedDbAction(initializingSqlActions[it], initializingSqlActionResults[it] as SqlActionResult)
                     },
                     lines, insertionVars = insertionVars, skipFailure = config.skipFailureSQLInTestFile)
+        }
+
+        if (initializingMongoActions.isNotEmpty()) {
+            MongoWriter.handleMongoDbInitialization(
+                format,
+                initializingMongoActions.indices.map {
+                    EvaluatedMongoDbAction(initializingMongoActions[it], initializingMongoResults[it] as MongoDbActionResult)
+                },
+                lines, insertionVars = insertionVars, skipFailure = config.skipFailureSQLInTestFile)
         }
     }
 

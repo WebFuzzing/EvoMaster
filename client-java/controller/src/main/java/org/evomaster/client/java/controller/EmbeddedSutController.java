@@ -56,6 +56,11 @@ public abstract class EmbeddedSutController extends SutController {
     }
 
     @Override
+    public final List<TargetInfo> getAllCoveredTargetInfos(){
+        return InstrumentationController.getAllCoveredTargetInfos();
+    }
+
+    @Override
     public final List<AdditionalInfo> getAdditionalInfoList(){
         return InstrumentationController.getAdditionalInfoList();
     }
@@ -85,6 +90,11 @@ public abstract class EmbeddedSutController extends SutController {
     @Override
     public final void setExecutingInitSql(boolean executingInitSql) {
         ExecutionTracer.setExecutingInitSql(executingInitSql);
+    }
+
+    @Override
+    public final void setExecutingInitMongo(boolean executingInitMongo) {
+        ExecutionTracer.setExecutingInitMongo(executingInitMongo);
     }
 
     @Override

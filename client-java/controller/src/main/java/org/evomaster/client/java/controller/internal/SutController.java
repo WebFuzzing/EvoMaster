@@ -9,6 +9,7 @@ import org.eclipse.jetty.server.handler.ErrorHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.evomaster.client.java.controller.CustomizationHandler;
+import org.evomaster.client.java.controller.DtoUtils;
 import org.evomaster.client.java.controller.SutHandler;
 import org.evomaster.client.java.controller.api.ControllerConstants;
 import org.evomaster.client.java.controller.api.dto.*;
@@ -16,8 +17,11 @@ import org.evomaster.client.java.controller.api.dto.constraint.ElementConstraint
 import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionResultsDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.ExtraConstraintsDto;
+import org.evomaster.client.java.controller.api.dto.MockDatabaseDto;
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.*;
 import org.evomaster.client.java.controller.db.DbCleaner;
@@ -27,6 +31,7 @@ import org.evomaster.client.java.controller.internal.db.DbSpecification;
 import org.evomaster.client.java.controller.internal.db.MongoHandler;
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor;
 import org.evomaster.client.java.controller.internal.db.SqlHandler;
+import org.evomaster.client.java.controller.mongo.MongoScriptRunner;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RPCProblem;
 import org.evomaster.client.java.controller.problem.rpc.CustomizedNotNullAnnotationForRPCDto;
@@ -56,8 +61,13 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static org.evomaster.client.java.controller.problem.rpc.RPCEndpointsBuilder.buildDbExternalServiceResponse;
+import static org.evomaster.client.java.controller.problem.rpc.RPCEndpointsBuilder.buildExternalServiceResponse;
 
 /**
  * Abstract class used to connect to the EvoMaster process, and
@@ -163,9 +173,17 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
         try {
             controllerServer.start();
-        } catch (Exception e) {
-            SimpleLogger.error("Failed to start Jetty: " + e.getMessage());
-            controllerServer.destroy();
+        } catch (Exception estart) {
+            String msg = "Failed to start Jetty for EM Driver: " + estart.getMessage();
+            SimpleLogger.error(msg);
+            try {
+                controllerServer.stop();
+                controllerServer.destroy();
+            } catch (Exception estop) {
+                SimpleLogger.error("Failed to stop Jetty: " + estop.getMessage());
+            }
+
+            throw new RuntimeException(msg,estart);
         }
 
         //just make sure we start from a clean state
@@ -181,7 +199,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             controllerServer.stop();
             return true;
         } catch (Exception e) {
-            SimpleLogger.error("Failed to stop the controller server: " + e.toString());
+            SimpleLogger.error("Failed to stop the controller server: " + e);
             return false;
         }
     }
@@ -225,6 +243,21 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         }
     }
 
+    @Override
+    public MongoInsertionResultsDto execInsertionsIntoMongoDatabase(List<MongoInsertionDto> insertions) {
+
+        Object connection = getMongoConnection();
+        if (connection == null) {
+            throw new IllegalStateException("No connection to mongo database");
+        }
+
+        try {
+            return MongoScriptRunner.executeInsert(connection, insertions);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public int getActionIndex(){
         return actionIndex;
     }
@@ -255,6 +288,16 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     public final void initSqlHandler() {
         sqlHandler.setConnection(getConnectionIfExist());
         sqlHandler.setSchema(getSqlDatabaseSchema());
+    }
+
+    public final void initMongoHandler() {
+        // This is needed because the replacement use to get this info occurs during the start of the SUT.
+
+        List<AdditionalInfo> list = getAdditionalInfoList();
+        if(!list.isEmpty()) {
+            AdditionalInfo last = list.get(list.size() - 1);
+            last.getMongoCollectionInfoData().forEach(mongoHandler::handle);
+        }
     }
 
 
@@ -346,9 +389,9 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     public final void computeMongoHeuristics(ExtraHeuristicsDto dto){
-        if(mongoHandler.isCalculateHeuristics()){
+        List<AdditionalInfo> list = getAdditionalInfoList();
 
-            List<AdditionalInfo> list = getAdditionalInfoList();
+        if(mongoHandler.isCalculateHeuristics()){
             if(!list.isEmpty()) {
                 AdditionalInfo last = list.get(list.size() - 1);
                 last.getMongoInfoData().forEach(it -> {
@@ -370,6 +413,37 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                                     p.distance
                             ))
                     .forEach(h -> dto.heuristics.add(h));
+        }
+
+        if(mongoHandler.isExtractMongoExecution()){
+            if(!list.isEmpty()) {
+                AdditionalInfo last = list.get(list.size() - 1);
+                last.getMongoCollectionInfoData().forEach(mongoHandler::handle);
+            }
+            dto.mongoExecutionDto = mongoHandler.getExecutionDto();
+        }
+    }
+
+
+    /**
+     * handle specified init sql script after SUT is started.
+     */
+    public final void registerOrExecuteInitSqlCommandsIfNeeded()  {
+        Connection connection = getConnectionIfExist();
+        if (connection == null) return;
+        DbSpecification dbSpecification = getDbSpecifications().get(0);
+        if (dbSpecification == null) return;
+        if (!dbSpecification.employSmartDbClean) return;
+
+        tableInitSqlMap.clear();
+
+        try {
+            setExecutingInitSql(true);
+            registerInitSqlCommands(connection, dbSpecification);
+        } catch (SQLException e) {
+            throw new RuntimeException("Fail to register or execute the script for initializing data in SQL database, please check specified `initSqlScript` or initSqlOnResourcePath. Error Msg:", e);
+        } finally {
+            setExecutingInitSql(false);
         }
     }
 
@@ -400,7 +474,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                     tableDataToInit = tablesToClean.stream().filter(a-> tableInitSqlMap.keySet().stream().anyMatch(t-> t.equalsIgnoreCase(a))).collect(Collectors.toSet());
                 }
             }
-            handleInitSql(tableDataToInit, emDbClean);
+            handleInitSqlInDbClean(tableDataToInit, emDbClean);
 
         }catch (SQLException e) {
             throw new RuntimeException("SQL Init Execution Error: fail to execute "+e);
@@ -409,11 +483,11 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         }
     }
 
-    private void handleInitSql(Collection<String> tableDataToInit, DbSpecification spec) throws SQLException {
+    private void handleInitSqlInDbClean(Collection<String> tableDataToInit, DbSpecification spec) throws SQLException {
         // init db script
-        boolean initAll = initSqlScriptAndGetInsertMap(getConnectionIfExist(), spec);
-        if (!initAll && tableDataToInit!= null &&!tableDataToInit.isEmpty()){
-            tableDataToInit.forEach(a->{
+        //boolean initAll = registerInitSqlCommands(getConnectionIfExist(), spec);
+        if (tableDataToInit!= null &&!tableDataToInit.isEmpty()){
+            tableDataToInit.stream().sorted((s1, s2)-> tableFkCompartor(s1, s2)).forEach(a->{
                 tableInitSqlMap.keySet().stream().filter(t-> t.equalsIgnoreCase(a)).forEach(t->{
                     tableInitSqlMap.get(t).forEach(c->{
                         try {
@@ -425,7 +499,26 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                 });
             });
         }
+    }
 
+    private int tableFkCompartor(String tableA, String tableB){
+        return getFkDepth(tableA, new HashSet<>()) - getFkDepth(tableB, new HashSet<>());
+    }
+
+    private int getFkDepth(String tableName, Set<String> checked){
+        if(!fkMap.containsKey(tableName)) return -1;
+        checked.add(tableName);
+        List<String> fks = fkMap.get(tableName);
+        if (fks.isEmpty()) {
+            return 0;
+        }
+        int sum = fks.size();
+        for (String fk: fks){
+            if (!checked.contains(fk)){
+                sum += getFkDepth(fk, checked);
+            }
+        }
+        return sum;
     }
 
     /**
@@ -463,32 +556,46 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         return list.entrySet().stream().filter(x-> x.getKey().equalsIgnoreCase(name)).findFirst();
     }
 
+
+
+
     /**
      *
      * @param dbSpecification contains info of the db connection
      * @return whether the init script is executed
      */
-    private boolean initSqlScriptAndGetInsertMap(Connection connection, DbSpecification dbSpecification) throws SQLException {
+    private boolean registerInitSqlCommands(Connection connection, DbSpecification dbSpecification) throws SQLException {
+
         if (dbSpecification.initSqlOnResourcePath == null
                 && dbSpecification.initSqlScript == null) return false;
-        // TODO to handle initSqlMap for multiple connections
-        if (tableInitSqlMap.isEmpty()){
-            List<String> all = new ArrayList<>();
-            if (dbSpecification.initSqlOnResourcePath != null){
-               all.addAll(SqlScriptRunnerCached.extractSqlScriptFromResourceFile(dbSpecification.initSqlOnResourcePath));
-            }
-            if (dbSpecification.initSqlScript != null){
-                all.addAll(SqlScriptRunner.extractSql(dbSpecification.initSqlScript));
-            }
-            if (!all.isEmpty()){
-                // collect insert sql commands map, key is table name, and value is a list sql insert commands
-                tableInitSqlMap.putAll(SqlScriptRunner.extractSqlTableMap(all));
-                // execute all commands
-                SqlScriptRunner.runCommands(connection, all);
-                return true;
-            }
+
+        List<String> all = new ArrayList<>();
+        if (dbSpecification.initSqlOnResourcePath != null){
+            all.addAll(SqlScriptRunnerCached.extractSqlScriptFromResourceFile(dbSpecification.initSqlOnResourcePath));
+        }
+        if (dbSpecification.initSqlScript != null){
+            all.addAll(SqlScriptRunner.extractSql(dbSpecification.initSqlScript));
+        }
+        if (!all.isEmpty()){
+            // collect insert sql commands map, key is table name, and value is a list sql insert commands
+            tableInitSqlMap.putAll(SqlScriptRunner.extractSqlTableMap(all));
+            /*
+                comment out this for the moment
+                this clean is specified by user in driver for handling the case if any table needs to be skipped
+             */
+//            cleanDataInDbConnection(connection, dbSpecification);
+            // insert data
+            SqlScriptRunner.runCommands(connection, all);
+            return true;
         }
         return false;
+    }
+
+    private void cleanDataInDbConnection(Connection connection, DbSpecification dbSpecification){
+        if (dbSpecification.schemaNames != null && !dbSpecification.schemaNames.isEmpty()){
+            dbSpecification.schemaNames.forEach(sch-> DbCleaner.clearDatabase(connection, sch,  null, dbSpecification.dbType));
+        }else
+            DbCleaner.clearDatabase(connection, null, dbSpecification.dbType);
     }
 
     /**
@@ -649,30 +756,30 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             throw new IllegalStateException("EM driver RPC: the specified problem is not RPC");
         RPCType rpcType = ((RPCProblem) rpcp).getType();
 
-        Map<String, List<RPCActionDto>> results = RPCEndpointsBuilder.buildSeededTest(rpcInterfaceSchema, seedRPCTests, rpcType);
+        return RPCEndpointsBuilder.buildSeededTest(rpcInterfaceSchema, seedRPCTests, rpcType);
 
-        try{
-            if (isSUTRunning){
-                if (jvmClassToExtract.isEmpty()){
-                /*
-                    distinct might be a bit expensive, however, the specified responses are probably limited
-                 */
-                    Set<String> dtoNames = seedRPCTests.stream()
-                            .flatMap(s-> s.rpcFunctions == null? Stream.empty() : s.rpcFunctions.stream()
-                                    .flatMap(f-> f.mockRPCExternalServiceDtos == null ? Stream.empty() : f.mockRPCExternalServiceDtos.stream()
-                                            .flatMap(e-> e.responseTypes == null ? Stream.empty(): e.responseTypes.stream()))).collect(Collectors.toSet());
-                    if (dtoNames != null && !dtoNames.isEmpty())
-                        jvmClassToExtract.addAll(dtoNames);
-                }
-
-                if (!jvmClassToExtract.isEmpty())
-                    getJvmDtoSchema(jvmClassToExtract);
-            }
-        }catch (Exception e){
-            SimpleLogger.recordErrorMessage("Fail to extract JVM Class due to "+ e.getMessage());
-        }
-
-        return results;
+//        try{
+//            if (isSUTRunning){
+//                if (jvmClassToExtract.isEmpty()){
+//                /*
+//                    distinct might be a bit expensive, however, the specified responses are probably limited
+//                 */
+//                    Set<String> dtoNames = seedRPCTests.stream()
+//                            .flatMap(s-> s.rpcFunctions == null? Stream.empty() : s.rpcFunctions.stream()
+//                                    .flatMap(f-> f.mockRPCExternalServiceDtos == null ? Stream.empty() : f.mockRPCExternalServiceDtos.stream()
+//                                            .flatMap(e-> e.responseTypes == null ? Stream.empty(): e.responseTypes.stream()))).collect(Collectors.toSet());
+//                    if (dtoNames != null && !dtoNames.isEmpty())
+//                        jvmClassToExtract.addAll(dtoNames);
+//                }
+//
+//                if (!jvmClassToExtract.isEmpty())
+//                    getJvmDtoSchema(jvmClassToExtract);
+//            }
+//        }catch (Exception e){
+//            SimpleLogger.recordErrorMessage("Fail to extract JVM Class due to "+ e.getMessage());
+//        }
+//
+//        return results;
     }
 
 
@@ -770,8 +877,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         endpointSchema.setValue(dto);
         handleLocalAuthenticationSetup(endpointSchema.getAuthenticationInfo());
 
-        if (dto.responseVariable != null && dto.doGenerateTestScript){
-            responseDto.testScript = endpointSchema.newInvocationWithJava(dto.responseVariable, dto.controllerVariable,dto.clientVariable);
+        if (dto.responseVariable != null && dto.doGenerateTestScript && DtoUtils.isJavaOrKotlin(dto.outputFormat)){
+            responseDto.testScript = endpointSchema.newInvocationWithJavaOrKotlin(dto.responseVariable, dto.controllerVariable,dto.clientVariable, dto.outputFormat);
         }
     }
 
@@ -782,38 +889,56 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     public final void executeAction(RPCActionDto dto, ActionResponseDto responseDto) {
         EndpointSchema endpointSchema = getEndpointSchema(dto);
         if (dto.responseVariable != null && dto.doGenerateTestScript){
-            try{
-                responseDto.testScript = endpointSchema.newInvocationWithJava(dto.responseVariable, dto.controllerVariable,dto.clientVariable);
-            }catch (Exception e){
-                SimpleLogger.warn("Fail to generate test script"+e.getMessage());
+            if (dto.outputFormat == null)
+                throw new IllegalArgumentException("When doGenerateTestScript is specified as True, outputFormat cannot be null");
+
+            if (DtoUtils.isJavaOrKotlin(dto.outputFormat)){
+                try{
+                    responseDto.testScript = endpointSchema.newInvocationWithJavaOrKotlin(dto.responseVariable, dto.controllerVariable,dto.clientVariable, dto.outputFormat);
+                }catch (Exception e){
+                    // for tests
+                    assert(false);
+                    SimpleLogger.warn("Fail to generate test script "+e.getMessage());
+                }
+                if (responseDto.testScript ==null)
+                    SimpleLogger.warn("Null test script for action "+dto.actionName);
             }
-            if (responseDto.testScript ==null)
-                SimpleLogger.warn("Null test script for action "+dto.actionName);
+
         }
 
         Object response;
         try {
             if (dto.mockRPCExternalServiceDtos != null && !dto.mockRPCExternalServiceDtos.isEmpty()){
-                try {
-                    boolean ok = customizeMockingRPCExternalService(dto.mockRPCExternalServiceDtos, true);
-                    if (!ok)
-                        SimpleLogger.warn("Warning: Fail to start mocked instances of RPC-based external services");
-                }catch (Exception e){
-                    SimpleLogger.error("ERROR: Fail to process mocking of RPC-based external services:", e);
-                }
+                Boolean ok = handleCustomizedMethod(()->customizeMockingRPCExternalService(dto.mockRPCExternalServiceDtos, true));
+                if (ok == null || !ok)
+                    SimpleLogger.warn("Warning: Fail to start mocked instances of RPC-based external services with the customized method");
+            }
+            if (dto.mockDatabaseDtos != null && !dto.mockDatabaseDtos.isEmpty()){
+                Boolean ok = handleCustomizedMethod(()-> customizeMockingDatabase(dto.mockDatabaseDtos, true));
+                if (ok == null || !ok)
+                    SimpleLogger.warn("Warning: Fail to start mocked instances of databases with the customized method");
             }
             response = executeRPCEndpoint(dto, false);
+            expandMockObjectIfNeeded(dto, responseDto);
         } catch (Exception e) {
             throw new RuntimeException("ERROR: target exception should be caught, but "+ e.getMessage());
         } finally {
             if (dto.mockRPCExternalServiceDtos != null && !dto.mockRPCExternalServiceDtos.isEmpty())
-                customizeMockingRPCExternalService(dto.mockRPCExternalServiceDtos, false); // disable mocked responses
+                handleCustomizedMethod(()-> customizeMockingRPCExternalService(dto.mockRPCExternalServiceDtos, false)); // disable mocked responses
+            if (dto.mockDatabaseDtos != null && !dto.mockDatabaseDtos.isEmpty())
+                handleCustomizedMethod(()-> customizeMockingDatabase(dto.mockDatabaseDtos, false)); // disable mock objects for database
         }
 
         //handle exception
         if (response instanceof Exception){
             try{
-                RPCExceptionHandler.handle(response, responseDto, endpointSchema, getRPCType(dto));
+                Map<Class, Integer> levelsMap = null;
+                try{
+                    levelsMap = getExceptionImportanceLevels();
+                }catch (Throwable e){
+                    SimpleLogger.error("ERROR: fail to get specified importance levels for exceptions "+ e.getMessage());
+                }
+                RPCExceptionHandler.handle(response, responseDto, endpointSchema, getRPCType(dto), levelsMap);
                 return;
             } catch (Exception e){
                 SimpleLogger.error("ERROR: fail to handle exception instance to dto "+ e.getMessage());
@@ -828,10 +953,28 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                 try{
                     resSchema.setValueBasedOnInstance(response);
                     responseDto.rpcResponse = resSchema.getDto();
-                    if (dto.doGenerateAssertions && dto.responseVariable != null)
-                        responseDto.assertionScript = resSchema.newAssertionWithJava(dto.responseVariable, dto.maxAssertionForDataInCollection);
-                    else
-                        responseDto.jsonResponse = objectMapper.writeValueAsString(response);
+                    if (dto.doGenerateAssertions && dto.responseVariable != null && DtoUtils.isJavaOrKotlin(dto.outputFormat)){
+                        try{
+                            responseDto.assertionScript = resSchema.newAssertionWithJavaOrKotlin(dto.responseVariable, dto.maxAssertionForDataInCollection, DtoUtils.isJava(dto.outputFormat));
+                        }catch (Exception e){
+                            // for tests
+                            assert(false);
+                            SimpleLogger.error("ERROR: fail to handle assertion generations with the given response "+ e.getMessage());
+                        }
+                    }
+                    /*
+                        ActionResponseDto.jsonResponse could be used to generate assertions in core side
+                        however, as we do not support the test generate in core side yet and not all DTO can be converted into json,
+                        we comment out this code
+                     */
+//                    else{
+//                        try {
+//                            responseDto.jsonResponse = objectMapper.writeValueAsString(response);
+//                        }catch (JsonProcessingException e){
+//                            // cannot convert to json
+//                        }
+//                    }
+
                 } catch (Exception e){
                     SimpleLogger.error("ERROR: fail to set successful response instance value to dto "+ e.getMessage());
                     //throw new RuntimeException("ERROR: fail to set successful response instance value to dto "+ e.getMessage());
@@ -844,10 +987,23 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                     //throw new RuntimeException("ERROR: fail to categorize result with implemented categorizeBasedOnResponse "+ e.getMessage());
                 }
             } else {
-                if (dto.doGenerateAssertions && dto.responseVariable != null)
-                    responseDto.assertionScript = resSchema.newAssertionWithJava(dto.responseVariable, dto.maxAssertionForDataInCollection);
+                if (dto.doGenerateAssertions && dto.responseVariable != null && DtoUtils.isJavaOrKotlin(dto.outputFormat))
+                    responseDto.assertionScript = resSchema.newAssertionWithJavaOrKotlin(dto.responseVariable, dto.maxAssertionForDataInCollection, DtoUtils.isJava(dto.outputFormat));
             }
         }
+    }
+
+
+    /**
+     * avoid any exception introduced by customized method
+     */
+    private<T> T handleCustomizedMethod(Supplier<T> call){
+        try{
+            return call.get();
+        }catch (Throwable e){
+            SimpleLogger.error("ERROR: Fail to process mocking with customized method:", e);
+        }
+        return null;
     }
 
     private Object executeRPCEndpoint(RPCActionDto dto, boolean throwTargetException) throws Exception {
@@ -892,7 +1048,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      * @param client is the client to execute the endpoint
      * @param endpoint is the endpoint to be executed
      */
-    private final Object executeRPCEndpoint(Object client, EndpointSchema endpoint) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, ClassNotFoundException {
+    private Object executeRPCEndpoint(Object client, EndpointSchema endpoint) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, ClassNotFoundException {
         if (endpoint.getRequestParams().isEmpty()){
             Method method = client.getClass().getDeclaredMethod(endpoint.getName());
             return method.invoke(client);
@@ -1050,6 +1206,9 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     public abstract List<TargetInfo> getTargetInfos(Collection<Integer> ids);
 
+    public abstract List<TargetInfo> getAllCoveredTargetInfos();
+
+
     /**
      * @return additional info for each action in the test.
      * The list is ordered based on the action index.
@@ -1089,6 +1248,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     public abstract void setExecutingInitSql(boolean executingInitSql);
 
+    public abstract void setExecutingInitMongo(boolean executingInitMongo);
+
     public abstract void setExecutingAction(boolean executingAction);
 
     public abstract BootTimeInfoDto getBootTimeInfoDto();
@@ -1112,10 +1273,70 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     public abstract void getJvmDtoSchema(List<String> dtoNames);
 
-    private void getSeededExternalServiceResponseDto(){
-        if (seedRPCTests() != null && !seedRPCTests().isEmpty() ){
 
+    /**
+     * mock object might not be loaded when extracting schema with client library
+     * after the SUT is started, we attempt to expand mock objects if needed,
+     * eg, handle generic types, unidentified DTO class
+     */
+    private void expandMockObjectIfNeeded(RPCActionDto dto, ActionResponseDto responseDto){
+        AtomicBoolean anyUpdate = new AtomicBoolean(false);
+        InterfaceSchema schema = rpcInterfaceSchema.get(dto.interfaceId);
 
+        if (dto.mockDatabaseDtos != null && (!dto.mockDatabaseDtos.isEmpty())){
+            Stream<MockDatabaseDto> dbstream = dto.mockDatabaseDtos
+                .stream()
+                .filter(s-> s.responseFullTypeWithGeneric == null);
+            dbstream.forEach(s-> anyUpdate.set(buildDbExternalServiceResponse(schema, s, schema.getRpcType()) != null));
+        }
+
+        if (dto.mockRPCExternalServiceDtos != null && (!dto.mockRPCExternalServiceDtos.isEmpty())){
+            Stream<MockRPCExternalServiceDto> exstream = dto.mockRPCExternalServiceDtos
+                .stream()
+                .filter(s-> s.responseFullTypesWithGeneric == null);
+            exstream.forEach(s-> anyUpdate.set(buildExternalServiceResponse(schema, s, schema.getRpcType()) != null));
+        }
+        if (anyUpdate.get()){
+            ExpandRPCInfoDto expand = new ExpandRPCInfoDto();
+            expand.schemaDto = schema.getDto();
+            expand.expandActionDto = dto.copy();
+            responseDto.expandInfo = expand;
+        }
+    }
+
+//    private void handleMissingDto(RPCActionDto dto, ActionResponseDto response){
+//        if (dto.missingDto != null && !dto.missingDto.isEmpty()){
+//            InterfaceSchema schema = rpcInterfaceSchema.get(dto.interfaceId);
+//            if (schema != null){
+//                buildExternalServiceResponse(schema,
+//                    dto.missingDto,
+//                    schema.getRpcType());
+//                Map<String, NamedTypedValue> types = schema.getObjParamCollections();
+//
+//                if (dto.missingDto.stream().anyMatch(s-> types.containsKey(s))){
+//                    response.latestSchemaDto = schema.getDto();
+//                }
+//            }
+//        }
+//    }
+
+    private void extractTypesAndRelated(Map<String, NamedTypedValue> all, List<String> typesToExtract, Map<String, ParamDto> results){
+        for (String type : typesToExtract){
+            extractTypeAndRelated(all, type, results);
+        }
+    }
+
+    private void extractTypeAndRelated(Map<String, NamedTypedValue> all, String typeName, Map<String, ParamDto> results){
+        if (results.containsKey(typeName)) return;
+        NamedTypedValue type = all.get(typeName);
+        if (type != null){
+            results.put(typeName, type.getDto());
+            List<String> referenceTypes = type.referenceTypes();
+            if (referenceTypes != null && !referenceTypes.isEmpty()){
+                for (String refType : referenceTypes){
+                    extractTypeAndRelated(all, refType, results);
+                }
+            }
         }
     }
 
@@ -1150,7 +1371,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                     ec.decimalMaxValue = c.getDecimalMaxValue();
                     ec.isNegative = c.getIsNegative();
                     ec.isNegativeOrZero = c.getIsNegativeOrZero();
-                    ec.isPositive = c.getIsPositiveOrZero();
+                    ec.isPositive = c.getIsPositive();
                     ec.isPositiveOrZero = c.getIsPositiveOrZero();
                     ec.isFuture = c.getIsFuture();
                     ec.isFutureOrPresent = c.getIsFutureOrPresent();
@@ -1216,6 +1437,11 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     @Override
+    public boolean customizeMockingDatabase(List<MockDatabaseDto> databaseDtos, boolean enabled) {
+        return false;
+    }
+
+    @Override
     public void resetDatabase(List<String> tablesToClean) {
 
         if (getDbSpecifications()!= null && !getDbSpecifications().isEmpty()){
@@ -1229,7 +1455,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                     spec.schemaNames.forEach(sp-> DbCleaner.clearDatabase(spec.connection, sp, null, tablesToClean, spec.dbType));
 
                 try {
-                    handleInitSql(tablesToClean, spec);
+                    handleInitSqlInDbClean(tablesToClean, spec);
                 } catch (SQLException e) {
                     throw new RuntimeException("Fail to execute the specified initSqlScript "+e);
                 }
@@ -1243,7 +1469,6 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      *  This is mainly used as workaround for cases in which EM's instrumentation crashes due
      *  to some bugs in it.
      *  (This is also the reason why it is not abstract)
-     *
      *  Note: we currently cannot test this in a E2E, as agent is loaded _before_ te controller is defined
      */
     public String packagesToSkipInstrumentation(){
@@ -1257,9 +1482,11 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      * </p>
      */
     @Override
-    public final boolean resetMockedExternalServicesWithCustomizedMethod(){
+    public final boolean resetCustomizedMethodForMockObject(){
         if (getProblemInfo() instanceof RPCProblem){
-            return mockRPCExternalServicesWithCustomizedHandling(null, false);
+            boolean ok = mockRPCExternalServicesWithCustomizedHandling(null, false);
+            ok = ok && mockDatabasesWithCustomizedHandling(null, false);
+            return ok;
         }
         return false;
     }
@@ -1287,6 +1514,19 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         return customizeMockingRPCExternalService(exDto, enabled);
     }
 
+    @Override
+    public boolean mockDatabasesWithCustomizedHandling(String mockDatabaseObjectDtos, boolean enabled) {
+        List<MockDatabaseDto> mockDbObject = null;
+        try {
+            if (mockDatabaseObjectDtos != null && !mockDatabaseObjectDtos.isEmpty()) {
+                mockDbObject = objectMapper.readValue(mockDatabaseObjectDtos, new TypeReference<List<MockDatabaseDto>>(){});
+            }
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Fail to handle the given mock object for database with the info:", e);
+        }
+        return customizeMockingDatabase(mockDbObject, enabled);
+    }
+
     /**
      *
      * @param fileName the name of file which exist in the same directory of the class
@@ -1295,5 +1535,10 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     public final String readFileAsStringFromTestResource(String fileName){
         return (new BufferedReader(new InputStreamReader(Objects.requireNonNull(this.getClass().getClassLoader().getResourceAsStream(fileName)))))
                 .lines().collect(Collectors.joining(System.lineSeparator()));
+    }
+
+    @Override
+    public Map<Class, Integer> getExceptionImportanceLevels() {
+        return null;
     }
 }

@@ -2,6 +2,7 @@ package org.evomaster.core.output.service
 
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto
+import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.*
 import org.evomaster.core.output.service.TestWriterUtils.Companion.getWireMockVariableName
@@ -367,6 +368,12 @@ class TestSuiteWriter {
                 addImport(InsertionDto::class.qualifiedName!!, lines)
             }
 
+            if(solution.hasAnyMongoAction()) {
+                addImport("org.evomaster.client.java.controller.mongo.dsl.MongoDsl.mongo", lines, true)
+                addImport("org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionResultsDto", lines)
+                addImport(MongoInsertionDto::class.qualifiedName!!, lines)
+            }
+
 
             // TODO: BMR - this is temporarily added as WiP. Should we have a more targeted import (i.e. not import everything?)
             if (config.enableBasicAssertions) {
@@ -602,10 +609,12 @@ class TestSuiteWriter {
                     config.outputFormat.isJavaOrKotlin() -> {
                         addStatement("$controller.setupForGeneratedTest()", lines)
                         addStatement("$baseUrlOfSut = $controller.startSut()", lines)
+                        //registerOrExecuteInitSqlCommands
+                        addStatement("$controller.registerOrExecuteInitSqlCommandsIfNeeded()", lines)
+
                         if(config.problemType == EMConfig.ProblemType.WEBFRONTEND){
                             val infoDto = remoteController.getSutInfo()!! //TODO refactor. save it in a service
-                            val url = "$baseUrlOfSut+\"${infoDto.webProblem.urlPathOfStartingPage}\""
-                            addStatement("$baseUrlOfSut = validateAndGetUrlOfStartingPageForDocker($url, true)", lines)
+                            addStatement("$baseUrlOfSut = validateAndGetUrlOfStartingPageForDocker($baseUrlOfSut,\"${infoDto.webProblem.urlPathOfStartingPage}\", true)", lines)
                         }
                         /*
                             now only support white-box
@@ -800,8 +809,11 @@ class TestSuiteWriter {
                         }
                 }
 
-                if (config.enableCustomizedExternalServiceHandling && testCaseWriter is RPCTestCaseWriter)
+                if (config.enableCustomizedMethodForMockObjectHandling && testCaseWriter is RPCTestCaseWriter){
                     lines.add((testCaseWriter as RPCTestCaseWriter).resetExternalServicesWithCustomizedMethod())
+                    lines.add((testCaseWriter as RPCTestCaseWriter).resetMockDatabaseObjectWithCustomizedMethod())
+                }
+
 
             } else if (format.isCsharp()) {
                 addStatement("$fixture = fixture", lines)

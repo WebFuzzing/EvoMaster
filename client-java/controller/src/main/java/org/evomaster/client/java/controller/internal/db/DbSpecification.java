@@ -3,7 +3,6 @@ package org.evomaster.client.java.controller.internal.db;
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
 
 import java.sql.Connection;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -90,6 +89,7 @@ public class DbSpecification {
                 false
         );
     }
+
 
     public DbSpecification withInitSqlScript(String script){
 

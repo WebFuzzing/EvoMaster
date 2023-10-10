@@ -29,7 +29,7 @@ public class ThriftExceptionRPCEMTest extends SpringRPCTestBase {
         runTestHandlingFlakyAndCompilation(
                 "ThriftExceptionRPCEM",
                 "org.foo.ThriftExceptionRPCEM",
-                Arrays.asList("_exceptions","_others"),
+                Arrays.asList("_P0_exceptions","_P1_exceptions","_ThriftExceptionService_Iface_others"),
                 5000,
                 (args) -> {
 
@@ -42,10 +42,12 @@ public class ThriftExceptionRPCEMTest extends SpringRPCTestBase {
                     assertResponseContainException(solution, "APP_INTERNAL_ERROR");
                 });
 
-        // two files for exception and others
-        Path exceptionPath = Paths.get("target/em-tests/ThriftExceptionRPCEM/org/foo/ThriftExceptionRPCEM_exceptions.kt");
+        // three files for exception and others
+        Path exceptionPath = Paths.get("target/em-tests/ThriftExceptionRPCEM/org/foo/ThriftExceptionRPCEM_P0_exceptions.kt");
         assertTrue(Files.exists(exceptionPath));
-        Path otherPath = Paths.get("target/em-tests/ThriftExceptionRPCEM/org/foo/ThriftExceptionRPCEM_others.kt");
+        exceptionPath = Paths.get("target/em-tests/ThriftExceptionRPCEM/org/foo/ThriftExceptionRPCEM_P1_exceptions.kt");
+        assertTrue(Files.exists(exceptionPath));
+        Path otherPath = Paths.get("target/em-tests/ThriftExceptionRPCEM/org/foo/ThriftExceptionRPCEM_ThriftExceptionService_Iface_others.kt");
         assertTrue(Files.exists(otherPath));
     }
 }

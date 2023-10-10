@@ -5,7 +5,10 @@ import org.evomaster.client.java.controller.api.Formats;
 import org.evomaster.client.java.controller.api.dto.*;
 import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.MongoDatabaseCommandDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionResultsDto;
 import org.evomaster.client.java.controller.api.dto.problem.*;
+import org.evomaster.client.java.controller.mongo.MongoScriptRunner;
 import org.evomaster.client.java.controller.problem.*;
 import org.evomaster.client.java.controller.db.QueryResult;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
@@ -366,6 +369,8 @@ public class EMController {
                             return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
                         }
                         noKillSwitch(() -> sutController.initSqlHandler());
+                        noKillSwitch(() -> sutController.registerOrExecuteInitSqlCommandsIfNeeded());
+                        noKillSwitch(() -> sutController.initMongoHandler());
                     } else {
                         //TODO as starting should be blocking, need to check
                         //if initialized, and wait if not
@@ -381,8 +386,8 @@ public class EMController {
                             // clean db with accessed tables
                             noKillSwitchForceCheck(() -> sutController.cleanAccessedTables());
 
-                            if (dto.resetMockedExternalServicesWithCustomizedMethod != null && dto.resetMockedExternalServicesWithCustomizedMethod){
-                                noKillSwitch(()-> sutController.resetMockedExternalServicesWithCustomizedMethod());
+                            if (dto.resetCustomizedMethodForMockObject != null && dto.resetCustomizedMethodForMockObject){
+                                noKillSwitch(()-> sutController.resetCustomizedMethodForMockObject());
                             }
 
                             /*
@@ -434,7 +439,15 @@ public class EMController {
             String idList,
             @QueryParam("killSwitch") @DefaultValue("false")
             boolean killSwitch,
+            @QueryParam("allCovered") @DefaultValue("false")
+            boolean allCovered,
             @Context HttpServletRequest httpServletRequest) {
+
+        if(allCovered && !idList.isEmpty()){
+            String msg = "Cannot specify to collect all covered targets and also at same time specify some targets manually: " + idList;
+            SimpleLogger.warn(msg);
+            return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
+        }
 
         // notify that actions execution is done.
         noKillSwitch(() -> sutController.setExecutingAction(false));
@@ -444,24 +457,36 @@ public class EMController {
         try {
             TestResultsDto dto = new TestResultsDto();
 
-            Set<Integer> ids;
+            List<TargetInfo> targetInfos = null;
 
-            try {
-                ids = Arrays.stream(idList.split(","))
-                        .filter(s -> !s.trim().isEmpty())
-                        .map(Integer::parseInt)
-                        .collect(Collectors.toSet());
-            } catch (NumberFormatException e) {
-                String msg = "Invalid parameter 'ids': " + e.getMessage();
-                SimpleLogger.warn(msg);
-                return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
-            }
+            if(! allCovered) {
+                Set<Integer> ids;
 
-            List<TargetInfo> targetInfos = noKillSwitch(() -> sutController.getTargetInfos(ids));
-            if (targetInfos == null) {
-                String msg = "Failed to collect target information for " + ids.size() + " ids";
-                SimpleLogger.error(msg);
-                return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
+                try {
+                    ids = Arrays.stream(idList.split(","))
+                            .filter(s -> !s.trim().isEmpty())
+                            .map(Integer::parseInt)
+                            .collect(Collectors.toSet());
+                } catch (NumberFormatException e) {
+                    String msg = "Invalid parameter 'ids': " + e.getMessage();
+                    SimpleLogger.warn(msg);
+                    return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
+                }
+
+                targetInfos = noKillSwitch(() -> sutController.getTargetInfos(ids));
+                if (targetInfos == null) {
+                    String msg = "Failed to collect target information for " + ids.size() + " ids";
+                    SimpleLogger.error(msg);
+                    return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
+                }
+            } else{
+
+                targetInfos = noKillSwitch(() -> sutController.getAllCoveredTargetInfos());
+                if (targetInfos == null) {
+                    String msg = "Failed to collect all covered target information";
+                    SimpleLogger.error(msg);
+                    return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
+                }
             }
 
             targetInfos.forEach(t -> {
@@ -474,6 +499,11 @@ public class EMController {
                 dto.targets.add(info);
             });
 
+            //if we want just info on covered targets, don't add extra info...
+            //however, it was problematic, as such info was used in different ways around the codebase...
+            //so put back only if major performance issue, an track down each usage of each piece of info
+//            if(!allCovered) {
+
             /*
                 Note: it is important that extra is computed before AdditionalInfo,
                 as heuristics on SQL might add new entries to String specializations
@@ -482,55 +512,69 @@ public class EMController {
                 not on External :(
                 But, as anyway we are going to refactor it in Core at a later point, no need
                 to waste time for a tmp workaround
+                TODO: actually ended up fixing it for External. but still need to decide if
+                refactoring everything into core
              */
-            dto.extraHeuristics = noKillSwitch(() -> sutController.getExtraHeuristics());
+                dto.extraHeuristics = noKillSwitch(() -> sutController.getExtraHeuristics());
 
-            List<AdditionalInfo> additionalInfos = noKillSwitch(() -> sutController.getAdditionalInfoList());
-            if (additionalInfos != null) {
-                additionalInfos.forEach(a -> {
-                    AdditionalInfoDto info = new AdditionalInfoDto();
-                    info.queryParameters = new HashSet<>(a.getQueryParametersView());
-                    info.headers = new HashSet<>(a.getHeadersView());
-                    info.lastExecutedStatement = a.getLastExecutedStatement();
-                    info.rawAccessOfHttpBodyPayload = a.isRawAccessOfHttpBodyPayload();
-                    info.parsedDtoNames = new HashSet<>(a.getParsedDtoNamesView());
-                    info.externalServices = a.getExternalServices().stream()
-                            .map(es -> new ExternalServiceInfoDto(
-                                    es.getProtocol(),
-                                    es.getHostname(),
-                                    es.getRemotePort()
-                            ))
-                            .collect(Collectors.toList());
-                    info.employedDefaultWM = a.getEmployedDefaultWM().stream().map(
-                            des -> new ExternalServiceInfoDto(
-                                    des.getProtocol(),
-                                    des.getHostname(),
-                                    des.getRemotePort()
-                            )
-                    ).collect(Collectors.toList());
-                    info.stringSpecializations = new LinkedHashMap<>();
-                    for (Map.Entry<String, Set<StringSpecializationInfo>> entry :
-                            a.getStringSpecializationsView().entrySet()) {
-
-                        assert !entry.getValue().isEmpty();
-
-                        List<StringSpecializationInfoDto> list = entry.getValue().stream()
-                                .map(it -> new StringSpecializationInfoDto(
-                                        it.getStringSpecialization().toString(),
-                                        it.getValue(),
-                                        it.getType().toString()))
+                List<AdditionalInfo> additionalInfos = noKillSwitch(() -> sutController.getAdditionalInfoList());
+                if (additionalInfos != null) {
+                    additionalInfos.forEach(a -> {
+                        AdditionalInfoDto info = new AdditionalInfoDto();
+                        info.queryParameters = new HashSet<>(a.getQueryParametersView());
+                        info.headers = new HashSet<>(a.getHeadersView());
+                        info.lastExecutedStatement = a.getLastExecutedStatement();
+                        info.rawAccessOfHttpBodyPayload = a.isRawAccessOfHttpBodyPayload();
+                        info.parsedDtoNames = new HashSet<>(a.getParsedDtoNamesView());
+                        info.externalServices = a.getExternalServices().stream()
+                                .map(es -> new ExternalServiceInfoDto(
+                                        es.getProtocol(),
+                                        es.getHostname(),
+                                        es.getRemotePort()
+                                ))
                                 .collect(Collectors.toList());
+                        info.employedDefaultWM = a.getEmployedDefaultWM().stream().map(
+                                des -> new ExternalServiceInfoDto(
+                                        des.getProtocol(),
+                                        des.getHostname(),
+                                        des.getRemotePort()
+                                )
+                        ).collect(Collectors.toList());
+                        info.stringSpecializations = new LinkedHashMap<>();
+                        for (Map.Entry<String, Set<StringSpecializationInfo>> entry :
+                                a.getStringSpecializationsView().entrySet()) {
 
-                        info.stringSpecializations.put(entry.getKey(), list);
-                    }
+                            assert !entry.getValue().isEmpty();
 
-                    dto.additionalInfoList.add(info);
-                });
-            } else {
-                String msg = "Failed to collect additional info";
-                SimpleLogger.error(msg);
-                return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
-            }
+                            List<StringSpecializationInfoDto> list = entry.getValue().stream()
+                                    .map(it -> new StringSpecializationInfoDto(
+                                            it.getStringSpecialization().toString(),
+                                            it.getValue(),
+                                            it.getType().toString()))
+                                    .collect(Collectors.toList());
+
+                            info.stringSpecializations.put(entry.getKey(), list);
+                        }
+
+                        dto.additionalInfoList.add(info);
+                    });
+                } else {
+                    String msg = "Failed to collect additional info";
+                    SimpleLogger.error(msg);
+                    return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
+                }
+//            }
+//        else {
+//                // there is still some data that we need during minimization
+//                List<AdditionalInfo> additionalInfos = noKillSwitch(() -> sutController.getAdditionalInfoList());
+//                if (additionalInfos != null) {
+//                    additionalInfos.forEach(a -> {
+//                        AdditionalInfoDto info = new AdditionalInfoDto();
+//                        info.lastExecutedStatement = a.getLastExecutedStatement();
+//                        dto.additionalInfoList.add(info);
+//                    });
+//                }
+//            }
 
             if (killSwitch) {
                 sutController.setKillSwitch(true);
@@ -718,6 +762,64 @@ public class EMController {
             return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
         } finally {
             sutController.setExecutingInitSql(false);
+        }
+    }
+
+    @Path(ControllerConstants.MONGO_INSERTION)
+    @Consumes(Formats.JSON_V1)
+    @POST
+    public Response executeMongoInsertion(MongoDatabaseCommandDto dto, @Context HttpServletRequest httpServletRequest) {
+
+        assert trackRequestSource(httpServletRequest);
+
+        try {
+
+            sutController.setExecutingInitMongo(true);
+
+            SimpleLogger.debug("Received mongo database command");
+
+            Object connection = noKillSwitch(sutController::getMongoConnection);
+            if (connection == null) {
+                String msg = "No active database connection";
+                SimpleLogger.warn(msg);
+                return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
+            }
+
+            if (dto.insertions == null || dto.insertions.isEmpty()) {
+                String msg = "No input command";
+                SimpleLogger.warn(msg);
+                return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
+            }
+
+            if (dto.insertions.stream().anyMatch(i -> i.collectionName.isEmpty() || i.databaseName.isEmpty())) {
+                String msg = "Insertion with no target collection or database";
+                SimpleLogger.warn(msg);
+                return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
+            }
+
+            MongoInsertionResultsDto mongoInsertionResultsDto = null;
+
+
+            try {
+                mongoInsertionResultsDto = MongoScriptRunner.executeInsert(connection, dto.insertions);
+            } catch (Exception e) {
+                String msg = "Failed to execute database command: " + e.getMessage();
+                SimpleLogger.warn(msg);
+                return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
+            }
+
+            if (mongoInsertionResultsDto != null) {
+                return Response.status(200).entity(WrappedResponseDto.withData(mongoInsertionResultsDto)).build();
+            } else {
+                return Response.status(204).entity(WrappedResponseDto.withNoData()).build();
+            }
+
+        } catch (RuntimeException e) {
+            String msg = "Thrown exception: " + e.getMessage();
+            SimpleLogger.error(msg, e);
+            return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
+        } finally {
+            sutController.setExecutingInitMongo(false);
         }
     }
 }

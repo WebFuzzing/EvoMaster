@@ -33,6 +33,7 @@ Those can be imported with:
      <groupId>org.evomaster</groupId>
      <artifactId>evomaster-client-java-dependencies</artifactId>
      <version>LATEST</version>
+     <type>pom</type>
      <scope>test</scope>
 </dependency>
 ```

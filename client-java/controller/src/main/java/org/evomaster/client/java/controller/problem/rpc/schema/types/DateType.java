@@ -14,49 +14,44 @@ import java.util.stream.Collectors;
 /**
  * type schema for date
  */
-public class DateType extends TypeSchema {
-
-    /**
-     * represent the type employs SimpleDateFormat as [SIMPLE_DATE_FORMATTER]
-     */
-    public final boolean EMPLOY_SIMPLE_Format;
+public abstract class DateType extends TypeSchema {
 
     /**
      * year field
      */
-    public final IntParam year = new IntParam("year");
+    public final IntParam year = new IntParam("year", spec);
     /**
      * month field
      */
-    public final IntParam month = new IntParam("month");
+    public final IntParam month = new IntParam("month", spec);
     /**
      * day field
      */
-    public final IntParam day = new IntParam("day");
+    public final IntParam day = new IntParam("day", spec);
     /**
      * hour field
      */
-    public final IntParam hour = new IntParam("hour");
+    public final IntParam hour = new IntParam("hour", spec);
     /**
      * minute field
      */
-    public final IntParam minute = new IntParam("minute");
+    public final IntParam minute = new IntParam("minute", spec);
     /**
      * second field
      */
-    public final IntParam second = new IntParam("second");
+    public final IntParam second = new IntParam("second", spec);
     /**
      * millisecond field
      */
-    public final IntParam millisecond = new IntParam("millisecond");
+    public final IntParam millisecond = new IntParam("millisecond", spec);
     /**
      * time zone field
      */
-    public final IntParam timezone = new IntParam("timezone");
+    public final IntParam timezone = new IntParam("timezone", spec);
     /**
      * a sequence of fields representing the date
      */
-    public final List<IntParam> dateFields;
+    private List<IntParam> dateFields;
 
     /**
      * simple date format
@@ -72,39 +67,26 @@ public class DateType extends TypeSchema {
      */
     public final static SimpleDateFormat DATE_FORMATTER =new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS ZZZZ");
 
-    /**
-     *
-     * @param type is the type name
-     * @param fullTypeName is the full type name
-     * @param clazz is the class representing the type
-     * @param simpleFormat specifies if use simple format as SIMPLE_DATE_FORMATTER
-     */
-    public DateType(String type, String fullTypeName, Class<?> clazz, boolean simpleFormat) {
-        super(type, fullTypeName, clazz);
-        EMPLOY_SIMPLE_Format = simpleFormat;
-        if (EMPLOY_SIMPLE_Format)
-            dateFields = Arrays.asList(year, month, day, hour, minute, second);
-        else
-            dateFields = Arrays.asList(year, month, day, hour, minute, second, millisecond, timezone);
+    public DateType(String type, String fullTypeName, Class<?> clazz, JavaDtoSpec spec) {
+        super(type, fullTypeName, clazz, spec);
+    }
 
+    public DateType(String type, String fullTypeName, Class<?> clazz, JavaDtoSpec spec, List<IntParam> dateFields) {
+        this(type, fullTypeName, clazz, spec);
+        setDateFields(dateFields);
     }
-    /**
-     * DateType with simpleFormat
-     * @param type is the type name
-     * @param fullTypeName is the full type name
-     * @param clazz is the class representing the type
-     *
-     */
-    public DateType(String type, String fullTypeName, Class<?> clazz) {
-        this(type, fullTypeName, clazz, true);
+
+    protected void setDateFields(List<IntParam> fields){
+        this.dateFields = fields;
     }
+
 
     /**
      * a java.util.Date with simple format
      */
-    public DateType(){
-        this(Date.class.getSimpleName(), Date.class.getName(), Date.class);
-    }
+//    public DateType(JavaDtoSpec spec){
+//        this(Date.class.getSimpleName(), Date.class.getName(), Date.class, spec);
+//    }
 
     /**
      *
@@ -119,53 +101,33 @@ public class DateType extends TypeSchema {
      * @param values are a list of values for the date
      * @return a date instance based on the values
      */
-    public Date getDateInstance(List<IntParam> values){
-        String stringValue = getDateString(values);
-        try {
-            if (EMPLOY_SIMPLE_Format)
-                return SIMPLE_DATE_FORMATTER.parse(stringValue);
-            else
-                return DATE_FORMATTER.parse(stringValue);
-        } catch (ParseException e) {
-            throw new RuntimeException("ERROR: fail to parse values to Date");
-        }
-    }
+    public abstract Object getDateInstance(List<IntParam> values);
+
+
+    /**
+     * extract value of fields based on the date instance
+     * @param date is an instance of Date, eg, java.util.Date or java.time.LocalDate
+     * @return a list of fields which contains specific values
+     */
+    public abstract List<IntParam> getIntValues(Object date);
+
+
+    /**
+     * @param values
+     * @return date with long format
+     */
+    public abstract long getDateLong(List<IntParam> values);
+
 
     /**
      *
      * @param values are a list of values for the date
      * @return a string representing the date with the specified values
      */
-    public String getDateString(List<IntParam> values){
-        if (values.size() != dateFields.size())
-            throw new RuntimeException("mismatched size of values, it should be "+dateFields.size() + ", but it is "+values.size());
-        if (EMPLOY_SIMPLE_Format)
-            return String.format("%04d-%02d-%02d %02d:%02d:%02d",
-                    values.get(0).getValue(),
-                    values.get(1).getValue(),
-                    values.get(2).getValue(),
-                    values.get(3).getValue(),
-                    values.get(4).getValue(),
-                    values.get(5).getValue()
-            );
+    public abstract String getDateString(List<IntParam> values);
 
-        return String.format("%04d-%02d-%02d %02d:%02d:%02d.%03d %s",
-                values.get(0).getValue(),
-                values.get(1).getValue(),
-                values.get(2).getValue(),
-                values.get(3).getValue(),
-                values.get(4).getValue(),
-                values.get(5).getValue(),
-                values.get(6).getValue(),
-                formatZZZZ(values.get(7).getValue())
-        );
-    }
 
-    public long getDateLong(List<IntParam> values){
-        return getDateInstance(values).getTime();
-    }
-
-    private String formatZZZZ(int zone){
+    protected String formatZZZZ(int zone){
         int value = zone;
         if (zone < 0)
             value = value * -1;
@@ -178,67 +140,5 @@ public class DateType extends TypeSchema {
         return stringValue;
     }
 
-    /**
-     * extract value of fields based on the date instance
-     * @param date is an instance of Date
-     * @return a list of fields which contains specific values
-     */
-    public List<IntParam> getIntValues(Date date){
-        String stringValue = DATE_FORMATTER.format(date);
-        String[] strValues = stringValue.split(" ");
-//        assert strValues.length == 3;
-        if (strValues.length != 3){
-            throw new IllegalArgumentException("invalid a string for specifying a date:"+ stringValue);
-        }
 
-        List<IntParam> values = dateFields.stream().map(x-> (IntParam)x.copyStructureWithProperties()).collect(Collectors.toList());
-        //date
-        String[] dateValues = strValues[0].split("-");
-//        assert dateValues.length == 3;
-
-        if (dateValues.length != 3){
-            throw new IllegalArgumentException("invalid a string for specifying a date:"+ strValues[0]);
-        }
-        values.get(0).setValue(Integer.parseInt(dateValues[0]));
-        values.get(1).setValue(Integer.parseInt(dateValues[1]));
-        values.get(2).setValue(Integer.parseInt(dateValues[2]));
-
-        //time
-        String[] timeValues = strValues[1].split(":");
-//        assert timeValues.length == 3;
-        if (timeValues.length != 3){
-            throw new IllegalArgumentException("invalid a string for specifying a time:"+ strValues[1]);
-        }
-        values.get(3).setValue(Integer.parseInt(timeValues[0]));
-        values.get(4).setValue(Integer.parseInt(timeValues[1]));
-
-        String[] secondValue = timeValues[2].split("\\.");
-//        assert secondValue.length == 2;
-        if (secondValue.length != 2){
-            throw new IllegalArgumentException("invalid a string for specifying seconds:"+ strValues[2]);
-        }
-        values.get(5).setValue(Integer.parseInt(secondValue[0]));
-        if (!EMPLOY_SIMPLE_Format){
-            values.get(6).setValue(Integer.parseInt(secondValue[1]));
-
-            //timezone
-            values.get(7).setValue(Integer.parseInt(strValues[2]));
-        }
-
-        return values;
-    }
-
-    @Override
-    public TypeDto getDto() {
-        TypeDto dto = super.getDto();
-        dto.depth = depth;
-        dto.type = RPCSupportedDataType.UTIL_DATE;
-        return dto;
-    }
-
-
-    @Override
-    public DateType copy() {
-        return new DateType();
-    }
 }

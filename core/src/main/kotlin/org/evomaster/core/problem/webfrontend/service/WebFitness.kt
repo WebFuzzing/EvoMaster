@@ -2,10 +2,10 @@ package org.evomaster.core.problem.webfrontend.service
 
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.core.Lazy
-import org.evomaster.core.database.DbAction
+import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.problem.enterprise.service.EnterpriseFitness
 import org.evomaster.core.problem.webfrontend.*
-import org.evomaster.core.search.ActionResult
+import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.taint.TaintAnalysis
@@ -36,7 +36,8 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
 
     override fun doCalculateCoverage(
         individual: WebIndividual,
-        targets: Set<Int>
+        targets: Set<Int>,
+        allCovered: Boolean
     ): EvaluatedIndividual<WebIndividual>? {
 
         rc.resetSUT()
@@ -44,7 +45,7 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
 
         val actionResults: MutableList<ActionResult> = mutableListOf()
 
-        doDbCalls(individual.seeInitializingActions().filterIsInstance<DbAction>(), actionResults = actionResults)
+        doDbCalls(individual.seeInitializingActions().filterIsInstance<SqlAction>(), actionResults = actionResults)
 
         val fv = FitnessValue(individual.size().toDouble())
 
@@ -70,7 +71,7 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
             }
         }
 
-        val dto = updateFitnessAfterEvaluation(targets, individual, fv)
+        val dto = updateFitnessAfterEvaluation(targets, allCovered, individual, fv)
             ?: return null
 
         handleExtra(dto, fv)

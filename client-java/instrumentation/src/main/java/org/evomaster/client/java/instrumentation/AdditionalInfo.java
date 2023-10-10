@@ -104,6 +104,8 @@ public class AdditionalInfo implements Serializable {
 
     private final Set<MongoInfo> mongoInfoData = new CopyOnWriteArraySet<>();
 
+    private final Set<MongoCollectionInfo> mongoCollectionInfoData = new CopyOnWriteArraySet<>();
+
     public Set<SqlInfo> getSqlInfoData(){
         return Collections.unmodifiableSet(sqlInfoData);
     }
@@ -112,12 +114,20 @@ public class AdditionalInfo implements Serializable {
         return Collections.unmodifiableSet(mongoInfoData);
     }
 
+    public Set<MongoCollectionInfo> getMongoCollectionInfoData(){
+        return Collections.unmodifiableSet(mongoCollectionInfoData);
+    }
+
     public void addSqlInfo(SqlInfo info){
         sqlInfoData.add(info);
     }
 
     public void addMongoInfo(MongoInfo info){
         mongoInfoData.add(info);
+    }
+
+    public void addMongoCollectionInfo(MongoCollectionInfo info){
+        mongoCollectionInfoData.add(info);
     }
 
     public Set<String> getParsedDtoNamesView(){

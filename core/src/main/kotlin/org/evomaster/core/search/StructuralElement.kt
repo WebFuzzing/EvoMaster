@@ -1,6 +1,7 @@
 package org.evomaster.core.search
 
 import org.evomaster.core.Lazy
+import org.evomaster.core.search.action.ActionComponent
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.root.CompositeGene
@@ -220,8 +221,22 @@ abstract class StructuralElement (
         (children as MutableList<StructuralElement>).addAll(position, list)
     }
 
+
+    /**
+     * Subclasses overriding this will need to call super method.
+     *
+     * Make sure that after we kill children, we do not leave a mess (eg dangling cross-tree dependencies)
+     */
+    open fun callWinstonWolfe(){
+        children.forEach{it.callWinstonWolfe()}
+    }
+
     //https://preview.redd.it/hg27vjl7x0241.jpg?auto=webp&s=d3c8b5d2cfbf12a05715271e0cf7f1c26e962827
     open fun killAllChildren(){
+
+        //we are prepared... we call Winston Wolfe before the "mess"...
+        callWinstonWolfe()
+
         children.forEach {
             it.parent = null; //let's avoid memory leaks
         }
@@ -250,6 +265,9 @@ abstract class StructuralElement (
     open fun killChildByIndex(index: Int) : StructuralElement{
         val groupId = groups?.groupForChild(index)?.id
         val child = children.removeAt(index)
+
+        child.callWinstonWolfe()
+
         child.parent = null
         groups?.removedFromGroup(groupId!!)
         return  child

@@ -1,8 +1,13 @@
 package org.evomaster.core.problem.rest.resource
 
 import org.evomaster.core.Lazy
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.DbActionUtils
+import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.action.ActionComponent
+import org.evomaster.core.search.action.ActionFilter
+import org.evomaster.core.search.action.ActionTree
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.sql.SqlActionUtils
+import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.api.param.Param
@@ -24,7 +29,7 @@ import org.slf4j.LoggerFactory
  * @property template is a resource template, e.g., POST-GET
  * @property node is a resource node which creates [this] call. Note that [node] could null if it is not created by [ResourceSampler]
  * @property mainActions is a sequence of actions in the [RestResourceCalls] that follows [template]
- * @property dbActions are used to initialize data for rest actions, either select from db or insert new data into db
+ * @property sqlActions are used to initialize data for rest actions, either select from db or insert new data into db
  * @param withBinding specifies whether to build binding between rest genes
  * @param randomness is required when [withBinding] is true
  *
@@ -37,16 +42,16 @@ class RestResourceCalls(
     randomness: Randomness? = null
 ) : ActionTree(
     children,
-    { k -> DbAction::class.java.isAssignableFrom(k) || EnterpriseActionGroup::class.java.isAssignableFrom(k) }
+    { k -> SqlAction::class.java.isAssignableFrom(k) || MongoDbAction::class.java.isAssignableFrom(k)  || EnterpriseActionGroup::class.java.isAssignableFrom(k) }
 ) {
 
     constructor(
         template: CallsTemplate? = null, node: RestResourceNode? = null, actions: List<RestCallAction>,
-        dbActions: List<DbAction>, withBinding: Boolean = false, randomness: Randomness? = null
+        sqlActions: List<SqlAction>, withBinding: Boolean = false, randomness: Randomness? = null
     ) :
             this(template, node,
                 mutableListOf<ActionComponent>().apply {
-                    addAll(dbActions);
+                    addAll(sqlActions);
                     addAll(actions.map { a -> EnterpriseActionGroup(mutableListOf(a), RestCallAction::class.java) })
                 }, withBinding, randomness)
 
@@ -73,9 +78,13 @@ class RestResourceCalls(
             return children.flatMap { it.flatten() }.filterIsInstance<RestCallAction>()
         }
 
-    private val dbActions: List<DbAction>
+    private val sqlActions: List<SqlAction>
         get() {
-            return children.flatMap { it.flatten() }.filterIsInstance<DbAction>()
+            return children.flatMap { it.flatten() }.filterIsInstance<SqlAction>()
+        }
+    private val mongoDbActions: List<MongoDbAction>
+        get() {
+            return children.flatMap { it.flatten() }.filterIsInstance<MongoDbAction>()
         }
 
     private val externalServiceActions: List<ApiExternalServiceAction>
@@ -169,12 +178,14 @@ class RestResourceCalls(
      */
     fun seeActions(filter: ActionFilter): List<out Action> {
         return when (filter) {
-            ActionFilter.ALL -> dbActions.plus(externalServiceActions).plus(mainActions)
-            ActionFilter.INIT, ActionFilter.ONLY_SQL -> dbActions
+            ActionFilter.ALL -> sqlActions.plus(externalServiceActions).plus(mainActions)
+            ActionFilter.INIT -> sqlActions.plus(mongoDbActions)
+            ActionFilter.ONLY_SQL -> sqlActions
             ActionFilter.NO_INIT, ActionFilter.NO_SQL -> externalServiceActions.plus(mainActions)
             ActionFilter.MAIN_EXECUTABLE -> mainActions
             ActionFilter.ONLY_EXTERNAL_SERVICE -> externalServiceActions
-            ActionFilter.NO_EXTERNAL_SERVICE -> dbActions.plus(mainActions)
+            ActionFilter.NO_EXTERNAL_SERVICE -> sqlActions.plus(mainActions)
+            ActionFilter.ONLY_MONGO -> mongoDbActions
         }
     }
 
@@ -188,8 +199,8 @@ class RestResourceCalls(
     /**
      * reset dbactions with [actions]
      */
-    fun resetDbAction(actions: List<DbAction>) {
-        killChildren { it is DbAction }
+    fun resetDbAction(actions: List<SqlAction>) {
+        killChildren { it is SqlAction }
         /*
             keep db action in the front of rest resource call,
             otherwise it might be a problem to get corresponding action result
@@ -201,15 +212,15 @@ class RestResourceCalls(
     /**
      * remove dbaction based on [removePredict]
      */
-    fun removeDbActionIf(removePredict: (DbAction) -> Boolean) {
-        val removed = dbActions.filter { removePredict(it) }
+    fun removeDbActionIf(removePredict: (SqlAction) -> Boolean) {
+        val removed = sqlActions.filter { removePredict(it) }
         resetDbAction(removed)
     }
 
-    private fun removeDbActions(remove: List<DbAction>) {
+    private fun removeDbActions(remove: List<SqlAction>) {
         val removedGenes = remove.flatMap { it.seeTopGenes() }.flatMap { it.flatView() }
         killChildren(remove)
-        (dbActions.plus(mainActions).flatMap { it.seeTopGenes() }).flatMap { it.flatView() }.filter { it.isBoundGene() }
+        (sqlActions.plus(mainActions).flatMap { it.seeTopGenes() }).flatMap { it.flatView() }.filter { it.isBoundGene() }
             .forEach {
                 it.cleanRemovedGenes(removedGenes)
             }
@@ -220,7 +231,7 @@ class RestResourceCalls(
      *
      * */
     private fun seeMutableSQLGenes(): List<out Gene> = getResourceNode()
-        .getMutableSQLGenes(dbActions, getRestTemplate(), is2POST)
+        .getMutableSQLGenes(sqlActions, getRestTemplate(), is2POST)
 
 
     /**
@@ -237,7 +248,7 @@ class RestResourceCalls(
         randomness: Randomness?
     ) {
         // handling [this.dbActions]
-        if (this.dbActions.isNotEmpty() && doRemoveDuplicatedTable) {
+        if (this.sqlActions.isNotEmpty() && doRemoveDuplicatedTable) {
             removeDuplicatedDbActions(relatedResourceCalls, cluster, doRemoveDuplicatedTable, randomness)
         }
 
@@ -287,19 +298,19 @@ class RestResourceCalls(
         return true
     }
 
-    fun repairFK(previous: List<DbAction>) {
+    fun repairFK(previous: List<SqlAction>) {
 
-        if (!DbActionUtils.verifyForeignKeys(previous.plus(dbActions))) {
+        if (!SqlActionUtils.verifyForeignKeys(previous.plus(sqlActions))) {
             val current = previous.toMutableList()
-            dbActions.forEach { d ->
-                val ok = DbActionUtils.repairFk(d, current)
+            sqlActions.forEach { d ->
+                val ok = SqlActionUtils.repairFk(d, current)
                 if (!ok.first) {
                     throw IllegalStateException("fail to find pk in the previous dbactions")
                 }
                 current.add(d)
             }
 
-            Lazy.assert { DbActionUtils.verifyForeignKeys(previous.plus(dbActions)) }
+            Lazy.assert { SqlActionUtils.verifyForeignKeys(previous.plus(sqlActions)) }
         }
     }
 
@@ -308,7 +319,7 @@ class RestResourceCalls(
      * @param withRest specifies whether to synchronize values based on rest actions ([withRest] is true) or db actions ([withRest] is false)
      */
     private fun syncValues(withRest: Boolean = true) {
-        (if (withRest) mainActions else dbActions).forEach {
+        (if (withRest) mainActions else sqlActions).forEach {
             it.seeTopGenes().flatMap { i -> i.flatView() }.forEach { g ->
                 g.syncBindingGenesBasedOnThis()
             }
@@ -323,19 +334,19 @@ class RestResourceCalls(
     ) {
 
         val dbRelatedToTables =
-            calls.flatMap { it.seeActions(ActionFilter.ONLY_SQL) as List<DbAction> }.map { it.table.name }.toHashSet()
+            calls.flatMap { it.seeActions(ActionFilter.ONLY_SQL) as List<SqlAction> }.map { it.table.name }.toHashSet()
 
-        val dbactionInOtherCalls = calls.flatMap { it.seeActions(ActionFilter.ONLY_SQL) as List<DbAction> }
+        val dbactionInOtherCalls = calls.flatMap { it.seeActions(ActionFilter.ONLY_SQL) as List<SqlAction> }
         // remove duplicated dbactions
         if (doRemoveDuplicatedTable) {
-            val dbActionsToRemove = this.dbActions.filter { dbRelatedToTables.contains(it.table.name) }
+            val dbActionsToRemove = this.sqlActions.filter { dbRelatedToTables.contains(it.table.name) }
             if (dbActionsToRemove.isNotEmpty()) {
                 removeDbActions(dbActionsToRemove)
                 val frontDbActions = dbactionInOtherCalls.toMutableList()
-                this.dbActions
+                this.sqlActions
                     .forEach { db ->
                         // fix fk with front dbactions
-                        val ok = DbActionUtils.repairFk(db, frontDbActions)
+                        val ok = SqlActionUtils.repairFk(db, frontDbActions)
                         if (!ok.first) {
                             throw IllegalStateException("cannot fix the fk of ${db.getResolvedName()}")
                         }
@@ -348,7 +359,7 @@ class RestResourceCalls(
                                     bindRestActionBasedOnDbActions(listOf(ddb), cluster, false, false, randomness)
                                 }
                             }else{
-                                Lazy.assert { dbActions.contains(ddb) }
+                                Lazy.assert { sqlActions.contains(ddb) }
                             }
                         }
                         frontDbActions.add(db)
@@ -366,7 +377,7 @@ class RestResourceCalls(
 
     /**
      *  init dbactions for [this] RestResourceCall which would build binding relationship with its rest [mainActions].
-     *  @param dbActions specified the dbactions to be initialized for this call
+     *  @param sqlActions specified the dbactions to be initialized for this call
      *  @param cluster specified the resource cluster
      *  @param forceBindParamBasedOnDB specified whether to force to bind values of params in rest actions based on dbactions
      *  @param dbRemovedDueToRepair specified whether any db action is removed due to repair process.
@@ -374,7 +385,7 @@ class RestResourceCalls(
      *  @param bindWith specified a list of resource call which might be bound with [this]
      */
     fun initDbActions(
-        dbActions: List<DbAction>,
+        sqlActions: List<SqlAction>,
         cluster: ResourceCluster,
         forceBindParamBasedOnDB: Boolean,
         dbRemovedDueToRepair: Boolean,
@@ -382,22 +393,22 @@ class RestResourceCalls(
         bindWith: List<RestResourceCalls>? = null
     ) {
         bindWith?.forEach { p ->
-            val dependent = p.seeActions(ActionFilter.ONLY_SQL).any { dbActions.contains(it) }
+            val dependent = p.seeActions(ActionFilter.ONLY_SQL).any { sqlActions.contains(it) }
             if (dependent) {
                 setDependentCall(p)
             }
         }
 
-        if (this.dbActions.isNotEmpty()) throw IllegalStateException("dbactions of this RestResourceCall is not empty")
+        if (this.sqlActions.isNotEmpty()) throw IllegalStateException("dbactions of this RestResourceCall is not empty")
         // db action should add in the front of rest actions
-        addChildren(0, dbActions)
+        addChildren(0, sqlActions)
 
-        bindRestActionBasedOnDbActions(dbActions, cluster, forceBindParamBasedOnDB, dbRemovedDueToRepair, randomness)
+        bindRestActionBasedOnDbActions(sqlActions, cluster, forceBindParamBasedOnDB, dbRemovedDueToRepair, randomness)
 
     }
 
     private fun bindRestActionBasedOnDbActions(
-        dbActions: List<DbAction>,
+        sqlActions: List<SqlAction>,
         cluster: ResourceCluster,
         forceBindParamBasedOnDB: Boolean,
         dbRemovedDueToRepair: Boolean,
@@ -405,7 +416,7 @@ class RestResourceCalls(
     ) {
 
         val paramInfo = getResourceNode().getPossiblyBoundParams(template!!.template, is2POST, randomness)
-        val paramToTables = SimpleDeriveResourceBinding.generateRelatedTables(paramInfo, this, dbActions)
+        val paramToTables = SimpleDeriveResourceBinding.generateRelatedTables(paramInfo, this, sqlActions)
 
         if (paramToTables.isEmpty()) return
 
@@ -419,7 +430,7 @@ class RestResourceCalls(
                     restaction,
                     cluster.getResourceNode(restaction, true)!!,
                     list,
-                    dbActions,
+                    sqlActions,
                     forceBindParamBasedOnDB,
                     dbRemovedDueToRepair,
                     true
@@ -444,14 +455,7 @@ class RestResourceCalls(
         }
     }
 
-    /**
-     * removing all binding which refers to [this] RestResourceCalls
-     */
-    fun removeThisFromItsBindingGenes() {
-        (dbActions.plus(mainActions)).forEach { a ->
-            a.removeThisFromItsBindingGenes()
-        }
-    }
+
 
     /**
      * employing the longest action to represent a group of calls on a resource
@@ -509,7 +513,7 @@ class RestResourceCalls(
      *
      * if the action is bounded with existing data from db, it is not mutable
      */
-    fun isMutable() = dbActions.none {
+    fun isMutable() = sqlActions.none {
         it.representExistingData
     }
 

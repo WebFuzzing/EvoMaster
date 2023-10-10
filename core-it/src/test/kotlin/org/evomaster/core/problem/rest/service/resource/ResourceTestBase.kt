@@ -3,22 +3,22 @@ package org.evomaster.core.problem.rest.service.resource
 import com.google.inject.Module
 import com.netflix.governator.lifecycle.LifecycleManager
 import com.netflix.governator.guice.LifecycleInjector
-import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto
-import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto
-import org.evomaster.client.java.controller.api.dto.database.operations.QueryResultDto
+import org.evomaster.client.java.controller.api.dto.database.operations.*
 import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
 import org.evomaster.core.TestUtils
-import org.evomaster.core.database.DatabaseExecutor
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.DbActionResult
-import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.database.extract.h2.ExtractTestBaseH2
+import org.evomaster.core.search.action.ActionFilter
+import org.evomaster.core.search.action.ActionResult
+import org.evomaster.core.sql.DatabaseExecutor
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.sql.SqlActionResult
+import org.evomaster.core.sql.SqlInsertBuilder
+import org.evomaster.core.sql.extract.h2.ExtractTestBaseH2
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.SampleType
+import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.service.*
 import org.evomaster.core.problem.rest.service.resource.model.ResourceBasedTestInterface
@@ -81,6 +81,10 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
     private class DirectDatabaseExecutor : DatabaseExecutor {
 
         override fun executeDatabaseInsertionsAndGetIdMapping(dto: DatabaseCommandDto): InsertionResultsDto? {
+            return null
+        }
+
+        override fun executeMongoDatabaseInsertions(dto: MongoDatabaseCommandDto): MongoInsertionResultsDto? {
             return null
         }
 
@@ -155,7 +159,8 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
                     assertEquals(1, this!!.getResourceCalls().size)
                     getResourceCalls().first().apply {
                         assertTrue(!template!!.independent || seeActions(ActionFilter.ONLY_SQL).isNotEmpty()){
-                            "the first call with $method should not be independent, but ${template!!.template} with ${seeActionSize(ActionFilter.ONLY_SQL)} dbActions"
+                            "the first call with $method should not be independent, but ${template!!.template} with ${seeActionSize(
+                                ActionFilter.ONLY_SQL)} dbActions"
                         }
                     }
 
@@ -164,7 +169,8 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
                     assertEquals(2, this!!.getResourceCalls().size)
                     getResourceCalls().first().apply {
                         assertTrue(!template!!.independent || seeActions(ActionFilter.ONLY_SQL).isNotEmpty()){
-                            "the first call with $method should not be independent, but ${template!!.template} with ${seeActionSize(ActionFilter.ONLY_SQL)} dbActions"
+                            "the first call with $method should not be independent, but ${template!!.template} with ${seeActionSize(
+                                ActionFilter.ONLY_SQL)} dbActions"
                         }
                     }
 
@@ -173,7 +179,8 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
                     assertTrue(2 <= this!!.getResourceCalls().size)
                     getResourceCalls().first().apply {
                         assertTrue(!template!!.independent || seeActions(ActionFilter.ONLY_SQL).isNotEmpty()){
-                            "the first call with $method should not be independent, but ${template!!.template} with ${seeActionSize(ActionFilter.ONLY_SQL)} dbActions"
+                            "the first call with $method should not be independent, but ${template!!.template} with ${seeActionSize(
+                                ActionFilter.ONLY_SQL)} dbActions"
                         }
                     }
                 }
@@ -202,9 +209,9 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
     ) : Boolean{
 
         if(resourceCalls.seeActions(ActionFilter.ONLY_SQL).isEmpty()) return false
-        if(!(resourceCalls.seeActions(ActionFilter.ONLY_SQL) as List<DbAction>).any { it.table.name.equals(tableName, ignoreCase = true) }) return false
+        if(!(resourceCalls.seeActions(ActionFilter.ONLY_SQL) as List<SqlAction>).any { it.table.name.equals(tableName, ignoreCase = true) }) return false
 
-        val dbGene = (resourceCalls.seeActions(ActionFilter.ONLY_SQL) as List<DbAction>).find { it.table.name.equals(tableName, ignoreCase = true) }!!.seeTopGenes().find { it.name.equals(colName, ignoreCase = true) }?: return false
+        val dbGene = (resourceCalls.seeActions(ActionFilter.ONLY_SQL) as List<SqlAction>).find { it.table.name.equals(tableName, ignoreCase = true) }!!.seeTopGenes().find { it.name.equals(colName, ignoreCase = true) }?: return false
 
         return resourceCalls.seeActions(ActionFilter.ONLY_SQL).filterIsInstance<RestCallAction>().flatMap { it.parameters.filter { it.name == paramName } }.all { p->
             ParamUtil.compareGenesWithValue(ParamUtil.getValueGene(dbGene!!), ParamUtil.getValueGene(p.gene))
@@ -443,8 +450,9 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
     }
 
 
-    private fun generateIndividualResults(individual: Individual) : List<ActionResult> = individual.seeActions(ActionFilter.ALL).map {
-        if (it is DbAction) DbActionResult().also { it.setInsertExecutionResult(true) }
+    private fun generateIndividualResults(individual: Individual) : List<ActionResult> = individual.seeActions(
+        ActionFilter.ALL).map {
+        if (it is SqlAction) SqlActionResult().also { it.setInsertExecutionResult(true) }
         else ActionResult()
     }
 }

@@ -1,11 +1,15 @@
 package org.evomaster.core.output
 
 import org.evomaster.core.TestUtils
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.DbActionResult
+import org.evomaster.core.search.action.ActionFilter
+import org.evomaster.core.search.action.ActionResult
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.sql.SqlActionResult
+import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
+import org.evomaster.core.problem.externalservice.rpc.DbAsExternalServiceAction
 import org.evomaster.core.problem.externalservice.rpc.RPCExternalServiceAction
-import org.evomaster.core.problem.externalservice.rpc.parm.RPCResponseParam
+import org.evomaster.core.problem.externalservice.rpc.parm.ClassResponseParam
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rpc.RPCCallAction
@@ -21,7 +25,7 @@ import org.evomaster.core.search.gene.string.StringGene
 class EvaluatedIndividualBuilder {
 
     companion object {
-        fun buildEvaluatedIndividual(dbInitialization: MutableList<DbAction>): Triple<OutputFormat, String, EvaluatedIndividual<RestIndividual>> {
+        fun buildEvaluatedIndividual(dbInitialization: MutableList<SqlAction>): Triple<OutputFormat, String, EvaluatedIndividual<RestIndividual>> {
             val format = OutputFormat.JAVA_JUNIT_4
 
             val baseUrlOfSut = "baseUrlOfSut"
@@ -40,16 +44,16 @@ class EvaluatedIndividualBuilder {
         }
 
         fun generateIndividualResults(individual: Individual) : List<ActionResult> = individual.seeActions(ActionFilter.ALL).map {
-            if (it is DbAction) DbActionResult().also { it.setInsertExecutionResult(true) }
+            if (it is SqlAction) SqlActionResult().also { it.setInsertExecutionResult(true) }
             else ActionResult()
         }
 
         fun buildResourceEvaluatedIndividual(
-            dbInitialization: MutableList<DbAction>,
-            groups: MutableList<Pair<MutableList<DbAction>, MutableList<RestCallAction>>>,
-            results: List<ActionResult> = dbInitialization.map { DbActionResult().also { it.setInsertExecutionResult(true) } }.plus(
+            dbInitialization: MutableList<SqlAction>,
+            groups: MutableList<Pair<MutableList<SqlAction>, MutableList<RestCallAction>>>,
+            results: List<ActionResult> = dbInitialization.map { SqlActionResult().also { it.setInsertExecutionResult(true) } }.plus(
                 groups.flatMap { g->
-                    g.first.map { DbActionResult().also { it.setInsertExecutionResult(true) } }.plus(g.second.map { RestCallResult().also { it.setTimedout(true) } })
+                    g.first.map { SqlActionResult().also { it.setInsertExecutionResult(true) } }.plus(g.second.map { RestCallResult().also { it.setTimedout(true) } })
                 }
             ),
             format: OutputFormat = OutputFormat.JAVA_JUNIT_4
@@ -71,8 +75,8 @@ class EvaluatedIndividualBuilder {
             return Triple(format, baseUrlOfSut, ei)
         }
 
-        fun buildFakeRPCAction(n:Int) : MutableList<RPCCallAction>{
-            return (0 until n).map { RPCCallAction("FakeRPCCall_$it",
+        fun buildFakeRPCAction(n:Int, interfaceId : String = "FakeRPCCall") : MutableList<RPCCallAction>{
+            return (0 until n).map { RPCCallAction(interfaceId,"${interfaceId}_$it",
                 inputParameters = mutableListOf(),
                 responseTemplate= null,
                 response = RPCParam("return", OptionalGene("return", StringGene("return")))
@@ -87,8 +91,27 @@ class EvaluatedIndividualBuilder {
                     functionName = "foo",
                     inputParamTypes = null,
                     requestRuleIdentifier = null,
-                    responseParam = RPCResponseParam(
+                    responseParam = ClassResponseParam(
                         className = "FakeRPCReturnDto",
+                        responseType = EnumGene("responseType", listOf("JSON")),
+                        response = OptionalGene("return",
+                            ObjectGene("return", fields = listOf(StringGene("fakeMsg", "This is a fake response from a RPC-based external service"))) )
+                    ),
+                    active = true,
+                    used = true
+                )
+            }
+        }
+
+        fun buildFakeDbExternalServiceAction(n : Int): List<DbAsExternalServiceAction>{
+            return (0 until n).map {
+
+                DbAsExternalServiceAction(
+                    descriptiveInfo = "FakeDB_bar",
+                    commandName = "bar",
+                    requestRuleIdentifier = null,
+                    responseParam = ClassResponseParam(
+                        className = "FakeDbReturnDto",
                         responseType = EnumGene("responseType", listOf("JSON")),
                         response = OptionalGene("return",
                             ObjectGene("return", fields = listOf(StringGene("fakeMsg", "This is a fake response from a RPC-based external service"))) )
@@ -106,7 +129,7 @@ class EvaluatedIndividualBuilder {
         ): EvaluatedIndividual<RPCIndividual>{
             if (!format.isJavaOrKotlin())
                 throw IllegalArgumentException("do not support to generate faked evaluated RPC individual for testing test writer")
-            val individual = RPCIndividual(actions = actions, externalServicesActions = externalServicesActions)
+            val individual = RPCIndividual(SampleType.RANDOM, actions = actions, externalServicesActions = externalServicesActions)
 
             individual.doInitialize()
 
