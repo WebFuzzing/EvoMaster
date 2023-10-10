@@ -7,7 +7,6 @@ import org.evomaster.core.remote.SutProblemException
 import java.net.ConnectException
 import java.net.URI
 import java.nio.file.Files
-import java.nio.file.Path
 import java.nio.file.Paths
 import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.core.MediaType
@@ -72,15 +71,15 @@ object OpenApiAccess {
 
         val path = try {
             if (openApiUrl.startsWith(fileScheme, true)) {
-                Paths.get(URI.create(openApiUrl));
+                Paths.get(URI.create(openApiUrl))
             }
             else {
-                Paths.get(openApiUrl);
+                Paths.get(openApiUrl)
             }
         }
         catch (e: Exception) {
             throw SutProblemException("The file path provided for the OpenAPI Schema $openApiUrl," +
-                    " is not a valid path");
+                    " is not a valid path")
         } ?: throw SutProblemException("Could not set up the path: $openApiUrl")
 
 
