@@ -254,8 +254,8 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
             throw SutProblemException("There is no endpoint definition in the retrieved Swagger file")
         }
         // Onur: to give the error message for invalid swagger
-        else if (swagger.paths.size == 0){
-            throw SutProblemException("The swagger file ${configuration.bbSwaggerUrl.toString()} " +
+        if (swagger.paths.size == 0){
+            throw SutProblemException("The swagger file ${configuration.bbSwaggerUrl} " +
                     "is either invalid or it does not define endpoints")
         }
 
