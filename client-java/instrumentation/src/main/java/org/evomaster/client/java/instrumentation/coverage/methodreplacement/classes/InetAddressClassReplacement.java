@@ -10,7 +10,6 @@ import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUti
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
-import sun.jvm.hotspot.HSDB;
 
 import java.net.*;
 
