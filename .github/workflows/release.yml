@@ -11,9 +11,10 @@ env:
   evomaster-version: 1.6.2
   jdk: 17
   retention-days: 1
-  installer-windows: evomaster-${evomaster-version}.msi
-  installer-osx: evomaster-${evomaster-version}.dmg
-  installer-debian: evomaster-${evomaster-version}-1_amd64.deb
+## Doesn't work, ie, use env in env
+#  installer-windows: evomaster-${evomaster-version}.msi
+#  installer-osx: evomaster-${evomaster-version}.dmg
+#  installer-debian: evomaster-${evomaster-version}-1_amd64.deb
 
 jobs:
 
@@ -65,7 +66,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: evomaster.msi
-          path: release/${{env.installer-windows}}
+          path: release/evomaster-${evomaster-version}.msi
           retention-days: ${{env.retention-days}}
           if-no-files-found: error
 
@@ -90,7 +91,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: evomaster.dmg
-          path: release/${{env.installer-osx}}
+          path: release/evomaster-${evomaster-version}.dmg
           retention-days: ${{env.retention-days}}
           if-no-files-found: error
 
@@ -115,7 +116,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: evomaster.deb
-          path: release/${{env.installer-debian}}
+          path: release/evomaster-${evomaster-version}-1_amd64.deb
           retention-days: ${{env.retention-days}}
           if-no-files-found: error
 
@@ -163,7 +164,7 @@ jobs:
           fail_on_unmatched_files: true
           files: |
             evomaster.jar
-            ${{env.installer-windows}}
-            ${{env.installer-osx}}
-            ${{env.installer-debian}}
+            evomaster-${evomaster-version}.msi
+            evomaster-${evomaster-version}.dmg
+            evomaster-${evomaster-version}-1_amd64.deb
 
