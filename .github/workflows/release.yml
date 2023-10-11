@@ -14,7 +14,7 @@ env:
 ## Doesn't work, ie, use env in env
 #  installer-windows: evomaster-${evomaster-version}.msi
 #  installer-osx: evomaster-${evomaster-version}.dmg
-#  installer-debian: evomaster-${evomaster-version}-1_amd64.deb
+#  installer-debian: evomaster_${evomaster-version}-1_amd64.deb
 
 jobs:
 
@@ -116,7 +116,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: evomaster.deb
-          path: release/evomaster-${{env.evomaster-version}}-1_amd64.deb
+          path: release/evomaster_${{env.evomaster-version}}-1_amd64.deb
           retention-days: ${{env.retention-days}}
           if-no-files-found: error
 
@@ -166,5 +166,5 @@ jobs:
             evomaster.jar
             evomaster-${{env.evomaster-version}}.msi
             evomaster-${{env.evomaster-version}}.dmg
-            evomaster-${{env.evomaster-version}}-1_amd64.deb
+            evomaster_${{env.evomaster-version}}-1_amd64.deb
 
