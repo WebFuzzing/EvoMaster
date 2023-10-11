@@ -3,9 +3,13 @@ package org.evomaster.core.problem.rest
 import org.evomaster.core.remote.SutProblemException
 
 import io.swagger.v3.oas.models.OpenAPI
+import org.junit.BeforeClass
 
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
+import java.util.*
 
 /*
 Testing the local URL issue with OpenAPI, 4 test cases:
@@ -19,9 +23,46 @@ Testing the local URL issue with OpenAPI, 4 test cases:
  */
 class OpenAPILocalURLIssueTest {
 
-    private val executionPath :String = System.getProperty("user.dir")
-    private lateinit var swagger: OpenAPI
-    private val swaggerTestDirectory = "$executionPath/src/test/resources/swagger/urlissue"
+    companion object {
+
+        private var executionPath :String = System.getProperty("user.dir")
+        private lateinit var swagger: OpenAPI
+        //private val swaggerTestDirectoryLinux = "$executionPath/src/test/resources/swagger/urlissue"
+        //private val swaggerTestDirectoryWin = "$executionPath\\src\\test\\resources\\swagger\\urlissue"
+        private lateinit var swaggerTestDirectory: String
+        private lateinit var hostOs: String
+
+
+        @JvmStatic
+        @BeforeAll
+        fun setSwaggerDirectoryBasedOnOS() {
+
+            hostOs = System.getProperty("os.name").lowercase(Locale.getDefault())
+
+            if (hostOs.contains("win")) {
+                executionPath = executionPath.replace('\\', '/')
+            }
+
+            swaggerTestDirectory = "$executionPath/src/test/resources/swagger/urlissue"
+        }
+    }
+
+    /*
+    @BeforeAll
+    private fun setSwaggerDirectoryBasedOnOS() {
+
+        hostOs = System.getProperty("os.name").lowercase(Locale.getDefault())
+
+        if (hostOs.contains("win")) {
+            executionPath = executionPath.replace('\\', '/')
+        }
+
+        swaggerTestDirectory = "$executionPath/src/test/resources/swagger/urlissue"
+
+    }
+    */
+
+
 
     /*
     Check that the swagger is created with a valid URL and an existing file
@@ -35,8 +76,8 @@ class OpenAPILocalURLIssueTest {
         // create swagger from URI
         swagger = OpenApiAccess.getOpenAPIFromURL(urlToTest)
 
-        // a valid swagger is created
-        Assertions.assertTrue(swagger != null)
+        // a valid swagger is created with 13 endpoints
+        Assertions.assertTrue(swagger.paths.size == 13)
     }
 
     /*
@@ -58,8 +99,8 @@ class OpenAPILocalURLIssueTest {
 
         // the message in the SutException should be "Cannot find OpenAPI schema at file location: $urlToTest
         // check that the message is correct"
-        Assertions.assertTrue(exception.message!!.contains("Cannot find OpenAPI schema at file " +
-                "location: $urlToTest"))
+        Assertions.assertTrue(exception.message!!.contains("The provided swagger file does " +
+                "not exist: $urlToTest"))
     }
 
     /*
@@ -69,7 +110,7 @@ class OpenAPILocalURLIssueTest {
     fun testExistingFileInvalidURL() {
 
         // get the current directory
-        val urlToTest = "file:"
+        val urlToTest = "file:/$swaggerTestDirectory/openapi_pet.json"
 
         // since the file URL is invalid, a valid swagger cannot be created but an  SutException should be thrown
         val exception = Assertions.assertThrows(
@@ -82,7 +123,7 @@ class OpenAPILocalURLIssueTest {
         // The message in the SutException should contain "The file path provided for the OpenAPI Schema
         // $urlToTest is not a valid path
         Assertions.assertTrue(exception.message!!.contains("The file path provided for the OpenAPI Schema " +
-                "$urlToTest, is not a valid path"))
+                "$urlToTest," + " ended up with the following error: "))
     }
 
     /*
@@ -106,11 +147,32 @@ class OpenAPILocalURLIssueTest {
         // The message in the SutException should be "The file path provided for the OpenAPI Schema
         // $urlToTest , is not a valid path"
         Assertions.assertTrue(exception.message!!.contains("The file path provided for the OpenAPI Schema " +
-                "$urlToTest, is not a valid path"))
+                "$urlToTest," + " ended up with the following error: "))
     }
 
     @Test
-    fun testRelativeFilePath() {
+    fun testRelativeFilePathExistingFile() {
+
+        // swagger test directory
+        val urlToTest = "file://./src/test/resources/swagger/openapi_pet.json"
+
+        // since the file does not exist and URL is invalid, a valid swagger cannot be created
+        // but an SutException should be thrown
+        val exception = Assertions.assertThrows(
+            SutProblemException::class.java
+        ) {
+            // create swagger
+            swagger = OpenApiAccess.getOpenAPIFromURL(urlToTest)
+        }
+
+        // The message in the SutException should be "The file path provided for the OpenAPI Schema
+        // $urlToTest , is not a valid path"
+        Assertions.assertTrue(exception.message!!.contains("The file path provided for the OpenAPI Schema " +
+                "$urlToTest," + " ended up with the following error: "))
+    }
+
+    @Test
+    fun testFileNameOnlyNonExistingFile() {
 
         // get the current directory
         val urlToTest = "file://openapi_pet.json"
@@ -126,8 +188,16 @@ class OpenAPILocalURLIssueTest {
 
         // The message in the SutException should be "The file path provided for the OpenAPI Schema
         // $urlToTest , is not a valid path"
-        Assertions.assertTrue(exception.message!!.contains("The file path provided for the OpenAPI Schema " +
-                "$urlToTest, is not a valid path"))
+        if (hostOs.contains("win")) {
+            Assertions.assertTrue(exception.message!!.contains("The file path provided for the OpenAPI " +
+                    "Schema $urlToTest is empty"))
+        }
+        else {
+            Assertions.assertTrue(exception.message!!.contains("The file path provided for the OpenAPI Schema " +
+                    "$urlToTest," + " ended up with the following error: URI has an authority component"
+                )
+            )
+        }
     }
 
     //Check that when the swagger is invalid, an empty swagger object is created

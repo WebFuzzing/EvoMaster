@@ -66,9 +66,6 @@ object OpenApiAccess {
         // file scheme
         val fileScheme = "file:"
 
-        // path variable
-        //var path: Path? = null;
-
         val path = try {
             if (openApiUrl.startsWith(fileScheme, true)) {
                 Paths.get(URI.create(openApiUrl))
@@ -77,46 +74,27 @@ object OpenApiAccess {
                 Paths.get(openApiUrl)
             }
         }
+        // empty file path ends up as an exception, which is handled here.
+        // Added a separate exception handler for the empty file path
         catch (e: Exception) {
-            throw SutProblemException("The file path provided for the OpenAPI Schema $openApiUrl," +
-                    " is not a valid path")
-        } ?: throw SutProblemException("Could not set up the path: $openApiUrl")
+            // if the file has an empty path, state that
+            if (e.message.equals("URI path component is empty")) {
+                throw SutProblemException("The file path provided for the OpenAPI Schema $openApiUrl is empty")
+            }
+            // for other errors, state the error message
+            else {
+                throw SutProblemException("The file path provided for the OpenAPI Schema $openApiUrl," +
+                        " ended up with the following error: " + e.message)
+            }
+        } ?: throw SutProblemException("Could not set up the URI from: $openApiUrl")
 
-
-        // checking the given URL
-        //try {
-        //    path = when (openApiUrl.startsWith(fileScheme, true)) {
-
-        //        true -> Paths.get(URI.create(openApiUrl));
-        //        false -> Paths.get(openApiUrl);
-        //    }
-        //}
-        // if the URL is not a valid one
-        //catch (e: Exception) {
-        //    throw SutProblemException("The file path provided for the OpenAPI Schema $openApiUrl," +
-        //            " is not a valid path");
-        //}
-
-        // Path should not be null, either
-        // it is set or an exception is thrown
-
+        // if the URI can be created but the file does not exist
         if (!Files.exists(path)) {
-            throw SutProblemException("Cannot find OpenAPI schema at file location: $openApiUrl")
+            throw SutProblemException("The provided swagger file does not exist: $openApiUrl")
         }
 
         // return the schema text
         return path.toFile().readText()
-
-
-
-        //else {
-            // if the file does not exist, throw cannot find OpenAPI schema
-        //    if (!Files.exists(path)) {
-        //        throw SutProblemException("Cannot find OpenAPI schema at file location: $openApiUrl")
-        //    }
-            // return the schema text
-        //    return path.toFile().readText()
-        //}
     }
 
     private fun connectToServer(openApiUrl: String, attempts: Int): Response {
