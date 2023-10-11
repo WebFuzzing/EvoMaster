@@ -1,6 +1,7 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 
 import org.evomaster.client.java.instrumentation.ExternalServiceInfo;
+import org.evomaster.client.java.instrumentation.HostnameInfo;
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
@@ -20,6 +21,10 @@ public class ExternalServiceInfoUtils {
         // Note: Checking whether there is any active mapping or not will reduce the amount
         // of time the same info gets added again and again. To do this, have to change the
         // data structure of the external service mapping inside ExecutionTracer
+
+        // TODO: Experiment
+        ExecutionTracer.addHostnameInfo(new HostnameInfo(remoteHostInfo.getHostname(), true));
+
         ExecutionTracer.addExternalServiceHost(remoteHostInfo);
 
         if (!ExecutionTracer.hasMockServer(remoteHostInfo.getHostname())) {
