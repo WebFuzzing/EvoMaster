@@ -1,6 +1,7 @@
 package org.evomaster.client.java.instrumentation;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 public class HostnameInfo implements Serializable {
     private final String remoteHostname;
@@ -21,5 +22,23 @@ public class HostnameInfo implements Serializable {
 
     public Boolean getResolved() {
         return resolved;
+    }
+
+    public HostnameInfo copy(){
+        return new HostnameInfo(remoteHostname, resolved);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        HostnameInfo that = (HostnameInfo) o;
+        return Objects.equals(remoteHostname, that.remoteHostname);
+    }
+
+    @Override
+    public int hashCode() {
+        // TODO: Excluded resolved from equals and hashCode, have to verify
+        return Objects.hash(remoteHostname);
     }
 }

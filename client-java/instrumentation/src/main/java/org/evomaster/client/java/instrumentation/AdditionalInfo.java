@@ -271,6 +271,10 @@ public class AdditionalInfo implements Serializable {
         hostnameInfos.add(hostnameInfo);
     }
 
+    public Set<HostnameInfo> getHostnameInfos() {
+        return Collections.unmodifiableSet(hostnameInfos);
+    }
+
     public Set<ExternalServiceInfo> getExternalServices() {
         return Collections.unmodifiableSet(externalServices);
     }

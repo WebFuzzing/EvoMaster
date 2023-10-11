@@ -8,6 +8,7 @@ import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils.getWMDefaultSignature
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.externalservice.HostnameInfo
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceInfo
@@ -802,6 +803,13 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
          */
 
         infoDto.forEachIndexed { index, info ->
+            info.hostnameInfoDtos.forEach { hn ->
+                externalServiceHandler.addHostname(HostnameInfo(
+                    hn.remoteHostname,
+                    hn.resolved
+                ))
+            }
+
             info.externalServices.forEach { es ->
 
                 /*
@@ -809,7 +817,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                  */
 
                 /*
-                    TODO: check, do we really want to start WireMock isntances right now after a fitness evaluation?
+                    TODO: check, do we really want to start WireMock instances right now after a fitness evaluation?
                     We need to make sure then, if we do this, that a call in instrumented SUT with (now) and
                     without (previous fitness evaluation) WM instances would result in same behavior.
 
@@ -841,7 +849,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
         // TODO: Need to move under ApiWsFitness after the GraphQL and RPC support is completed
         if (index == 0) {
             actionDto.externalServiceMapping = externalServiceHandler.getExternalServiceMappings()
-            actionDto.localAddressMapping = externalServiceHandler.getLocalAddressMapping()
+            actionDto.localAddressMapping = externalServiceHandler.getLocalDomainNameMapping()
             actionDto.skippedExternalServices = externalServiceHandler.getSkippedExternalServices()
         }
         return actionDto

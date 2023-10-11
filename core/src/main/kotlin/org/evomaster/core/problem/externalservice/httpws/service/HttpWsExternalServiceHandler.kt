@@ -7,6 +7,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.problem.externalservice.ExternalService
 import org.evomaster.core.problem.externalservice.HostnameInfo
+import org.evomaster.core.problem.externalservice.LocalDomainNameMapping
 import org.evomaster.core.problem.externalservice.httpws.*
 import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalServiceUtils.generateRandomIPAddress
 import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalServiceUtils.isAddressAvailable
@@ -57,7 +58,7 @@ class HttpWsExternalServiceHandler {
      * Map from hostname (used in SUT for external services) and local ip addresses, that we resolve
      * those hostname (ie like DNS)
      */
-    private val localAddressMapping: MutableMap<String, String> = mutableMapOf()
+//    private val localAddressMapping: MutableMap<String, String> = mutableMapOf()
 
     /**
      * Skipped external services information provided through the driver to skip from
@@ -65,8 +66,10 @@ class HttpWsExternalServiceHandler {
      */
     private val skippedExternalServices: MutableList<ExternalService> = mutableListOf()
 
-
-    private val hostnames: MutableList<HostnameInfo> = mutableListOf()
+    /**
+     * Map of remote hostname vs local DNS replacement
+     */
+    private val hostnameMapping: MutableMap<String, LocalDomainNameMapping> = mutableMapOf()
 
     /**
      * Contains last used loopback address for reference when creating
@@ -95,6 +98,7 @@ class HttpWsExternalServiceHandler {
     private fun initDefaultWM() {
         if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
             if (!isDefaultInitialized) {
+                addHostname(HostnameInfo("no_host_name", true))
                 registerHttpExternalServiceInfo(DefaultHttpExternalServiceInfo.createDefaultHttps())
                 registerHttpExternalServiceInfo(DefaultHttpExternalServiceInfo.createDefaultHttp())
                 isDefaultInitialized = true
@@ -116,7 +120,11 @@ class HttpWsExternalServiceHandler {
 
     fun addHostname(hostnameInfo: HostnameInfo) {
         if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
-            hostnames.add(hostnameInfo);
+            if (!hostnameMapping.containsKey(hostnameInfo.remoteHostName)) {
+                val ip = getNewIP()
+                lastIPAddress = ip
+                hostnameMapping[hostnameInfo.remoteHostName] = LocalDomainNameMapping(hostnameInfo, ip)
+            }
         }
     }
 
@@ -125,13 +133,19 @@ class HttpWsExternalServiceHandler {
             return
         }
 
-        val ip: String = localAddressMapping[externalServiceInfo.remoteHostname]
-            ?: run {
-                val x = getNewIP()
-                lastIPAddress = x
-                localAddressMapping[externalServiceInfo.remoteHostname] = x
-                x
-            }
+//        val ip: String = localAddressMapping[externalServiceInfo.remoteHostname]
+//            ?: run {
+//                val x = getNewIP()
+//                lastIPAddress = x
+//                localAddressMapping[externalServiceInfo.remoteHostname] = x
+//                x
+//            }
+
+        if (!hostnameMapping.containsKey(externalServiceInfo.remoteHostname)) {
+            return
+        }
+
+        val ip: String = hostnameMapping[externalServiceInfo.remoteHostname]!!.localIP
 
         val registered = externalServices.filterValues {
             it.getRemoteHostName() == externalServiceInfo.remoteHostname &&
@@ -175,8 +189,12 @@ class HttpWsExternalServiceHandler {
         return externalServices.mapValues { it.value.getIP() }
     }
 
-    fun getLocalAddressMapping(): Map<String, String> {
-        return localAddressMapping
+//    fun getLocalAddressMapping(): Map<String, String> {
+//        return localAddressMapping
+//    }
+
+    fun getLocalDomainNameMapping(): Map<String, String> {
+        return hostnameMapping.mapValues { it.value.localIP }
     }
 
     /**
