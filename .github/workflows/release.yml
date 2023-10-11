@@ -11,9 +11,9 @@ env:
   evomaster-version: 1.6.2
   jdk: 17
   retention-days: 1
-  installer-windows: evomaster-${{env.evomaster-version}}.msi
-  installer-osx: evomaster-${{env.evomaster-version}}.dmg
-  installer-debian: evomaster_${{env.evomaster-version}}-1_amd64.deb
+  installer-windows: evomaster-${evomaster-version}.msi
+  installer-osx: evomaster-${evomaster-version}.dmg
+  installer-debian: evomaster-${evomaster-version}-1_amd64.deb
 
 jobs:
 
