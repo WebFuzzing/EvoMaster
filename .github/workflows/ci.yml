@@ -1,6 +1,9 @@
 name: CI
 
-on: [push]
+on:
+  push:
+    tags-ignore:
+      - '**'
 
 env:
   evomaster-version: 1.6.2

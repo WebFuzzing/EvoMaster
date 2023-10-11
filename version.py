@@ -50,6 +50,7 @@ def replaceInCI():
     regex = re.compile(r'  evomaster-version:.*')
     replacement = '  evomaster-version: '+reducedVersion+'\n'
     replace(".github/workflows/ci.yml", regex, replacement)
+    replace(".github/workflows/release.yml", regex, replacement)
 
 def replaceInJS():
     regex = re.compile(r'\s*"version"\s*:.*')
