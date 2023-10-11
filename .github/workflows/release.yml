@@ -66,7 +66,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: evomaster.msi
-          path: release/evomaster-${evomaster-version}.msi
+          path: release/evomaster-${{env.evomaster-version}}.msi
           retention-days: ${{env.retention-days}}
           if-no-files-found: error
 
@@ -91,7 +91,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: evomaster.dmg
-          path: release/evomaster-${evomaster-version}.dmg
+          path: release/evomaster-${{env.evomaster-version}}.dmg
           retention-days: ${{env.retention-days}}
           if-no-files-found: error
 
@@ -116,7 +116,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: evomaster.deb
-          path: release/evomaster-${evomaster-version}-1_amd64.deb
+          path: release/evomaster-${{env.evomaster-version}}-1_amd64.deb
           retention-days: ${{env.retention-days}}
           if-no-files-found: error
 
@@ -164,7 +164,7 @@ jobs:
           fail_on_unmatched_files: true
           files: |
             evomaster.jar
-            evomaster-${evomaster-version}.msi
-            evomaster-${evomaster-version}.dmg
-            evomaster-${evomaster-version}-1_amd64.deb
+            evomaster-${{env.evomaster-version}}.msi
+            evomaster-${{env.evomaster-version}}.dmg
+            evomaster-${{env.evomaster-version}}-1_amd64.deb
 
