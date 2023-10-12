@@ -23,13 +23,14 @@ public class ExternalServiceInfoUtils {
         // data structure of the external service mapping inside ExecutionTracer
 
         // TODO: Experiment
-        ExecutionTracer.addHostnameInfo(new HostnameInfo(remoteHostInfo.getHostname(), true));
+//        ExecutionTracer.addHostnameInfo(new HostnameInfo(remoteHostInfo.getHostname(), true));
 
-        ExecutionTracer.addExternalServiceHost(remoteHostInfo);
 
-        if (!ExecutionTracer.hasMockServer(remoteHostInfo.getHostname())) {
+        if (!ExecutionTracer.hasExternalMapping(remoteHostInfo.signature())) {
             String signature = remoteHostInfo.signature();
             int connectPort = remotePort;
+
+            ExecutionTracer.addExternalServiceHost(remoteHostInfo);
 
             if (!ExecutionTracer.hasExternalMapping(remoteHostInfo.signature())) {
                 ExecutionTracer.addEmployedDefaultWMHost(remoteHostInfo);
@@ -37,10 +38,10 @@ public class ExternalServiceInfoUtils {
                 connectPort = ExternalServiceSharedUtils.getDefaultWMPort(signature);
             }
 
-            return new String[]{remoteHostInfo.getHostname(), "" + connectPort};
-//            return new String[]{ExecutionTracer.getExternalMapping(signature), "" + connectPort};
+//            return new String[]{remoteHostInfo.getHostname(), "" + remotePort};
+            return new String[]{ExecutionTracer.getExternalMapping(signature), "" + connectPort};
         } else {
-            return new String[]{ExecutionTracer.getExternalMapping(remoteHostInfo.getHostname()), "" + remotePort};
+            return new String[]{ExecutionTracer.getExternalMapping(remoteHostInfo.signature()), "" + remotePort};
         }
     }
 

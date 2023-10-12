@@ -705,10 +705,6 @@ public class ExecutionTracer {
         return externalServiceMapping.containsKey(signature);
     }
 
-    public static boolean hasMockServer(String hostname) {
-        return externalServiceMapping.containsValue(hostname);
-    }
-
     /**
      * Check whether there is a local IP address available for the given
      * remote hostname.
