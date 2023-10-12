@@ -31,6 +31,7 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
     @Replacement(
             type = ReplacementType.TRACKER,
             category = ReplacementCategory.NET,
+            id = "InetAddress_getAllByName_Replacement",
             replacingStatic = true,
             usageFilter = UsageFilter.ANY
     )
@@ -61,6 +62,7 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
     @Replacement(
             type = ReplacementType.TRACKER,
             category = ReplacementCategory.NET,
+            id = "InetAddress_getAllByName_Replacement",
             replacingStatic = true,
             usageFilter = UsageFilter.ANY
     )
