@@ -221,7 +221,7 @@ jobs:
     needs: full-build-base
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@4
+      - uses: actions/checkout@v4
       - name: Setup JDK ${{env.release-jdk}}
         uses: actions/setup-java@v1
         with:
