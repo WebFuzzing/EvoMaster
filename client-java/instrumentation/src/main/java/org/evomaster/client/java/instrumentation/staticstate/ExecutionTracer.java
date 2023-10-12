@@ -709,14 +709,14 @@ public class ExecutionTracer {
      * Check whether there is a local IP address available for the given
      * remote hostname.
      */
-    public static boolean hasLocalAddress(String hostname) {
+    public static boolean hasLocalAddressForHost(String hostname) {
         return localAddressMapping.containsKey(hostname);
     }
 
     /**
      * Checks for any replacement available to given local IP address.
      */
-    public static boolean hasLocalAddressReplacement(String localAddress) {
+    public static boolean hasMappingForLocalAddress(String localAddress) {
         return localAddressMapping.containsValue(localAddress);
     }
 

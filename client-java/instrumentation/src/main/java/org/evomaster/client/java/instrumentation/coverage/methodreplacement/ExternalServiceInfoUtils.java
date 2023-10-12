@@ -22,10 +22,6 @@ public class ExternalServiceInfoUtils {
         // of time the same info gets added again and again. To do this, have to change the
         // data structure of the external service mapping inside ExecutionTracer
 
-        // TODO: Experiment
-//        ExecutionTracer.addHostnameInfo(new HostnameInfo(remoteHostInfo.getHostname(), true));
-
-
         if (!ExecutionTracer.hasExternalMapping(remoteHostInfo.signature())) {
             String signature = remoteHostInfo.signature();
             int connectPort = remotePort;
@@ -38,7 +34,6 @@ public class ExternalServiceInfoUtils {
                 connectPort = ExternalServiceSharedUtils.getDefaultWMPort(signature);
             }
 
-//            return new String[]{remoteHostInfo.getHostname(), "" + remotePort};
             return new String[]{ExecutionTracer.getExternalMapping(signature), "" + connectPort};
         } else {
             return new String[]{ExecutionTracer.getExternalMapping(remoteHostInfo.signature()), "" + remotePort};
@@ -57,7 +52,7 @@ public class ExternalServiceInfoUtils {
                 || hostname.startsWith("0.0.0")
                 || hostname.startsWith("10.")
                 || hostname.startsWith("docker.socket")
-                || (hostname.startsWith("127.") && !ExecutionTracer.hasLocalAddressReplacement(hostname))) {
+                || (hostname.startsWith("127.") && !ExecutionTracer.hasMappingForLocalAddress(hostname))) {
             return true;
         }
 

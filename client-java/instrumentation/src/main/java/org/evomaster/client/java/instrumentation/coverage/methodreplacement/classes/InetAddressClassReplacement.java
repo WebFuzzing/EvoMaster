@@ -40,7 +40,7 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
             return InetAddress.getByName(host);
 
         try {
-            if (ExecutionTracer.hasLocalAddress(host)) {
+            if (ExecutionTracer.hasLocalAddressForHost(host)) {
                 String ip = ExecutionTracer.getLocalAddress(host);
                 return InetAddress.getByName(ip);
             }
@@ -71,7 +71,7 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
             return InetAddress.getAllByName(host);
 
         try {
-            if (ExecutionTracer.hasLocalAddress(host)) {
+            if (ExecutionTracer.hasLocalAddressForHost(host)) {
                 String ip = ExecutionTracer.getLocalAddress(host);
                 return new InetAddress[]{InetAddress.getByName(ip)};
             }

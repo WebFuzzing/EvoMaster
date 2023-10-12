@@ -58,7 +58,7 @@ public class SocketClassReplacement implements MethodReplacementClass {
                     and if there is a mapping available then Socket will use that value to connect. Otherwise,
                     nothing will happen.
                  */
-                if (ExecutionTracer.hasLocalAddressReplacement(socketAddress.getHostString())) {
+                if (ExecutionTracer.hasMappingForLocalAddress(socketAddress.getHostString())) {
                     String newHostname = ExecutionTracer.getRemoteHostname(socketAddress.getHostString());
                     ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(
                             ExternalServiceSharedUtils.DEFAULT_SOCKET_CONNECT_PROTOCOL,
