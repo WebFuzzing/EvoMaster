@@ -101,7 +101,14 @@ class OpenAPILocalURLIssueTest {
     fun testExistingFileInvalidURL() {
 
         // get the current directory
-        val urlToTest = "file:/$swaggerTestDirectory/openapi_pet.json"
+        //val urlToTest = "file:/$swaggerTestDirectory/openapi_pet.json"
+
+        val urlToTest = if (hostOs.contains("win")) {
+            "file://$swaggerTestDirectory/openapi_pet_non_existing.json"
+        }
+        else {
+            "file:/$swaggerTestDirectory/openapi_pet.json"
+        }
 
         // since the file URL is invalid, a valid swagger cannot be created but an  SutException should be thrown
         val exception = Assertions.assertThrows(
