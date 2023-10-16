@@ -181,8 +181,16 @@ class OpenAPILocalURLIssueTest {
 
         // The message in the SutException should be "The file path provided for the OpenAPI Schema
         // $urlToTest , is not a valid path"
-        Assertions.assertTrue(exception.message!!.contains("The file path provided for the OpenAPI Schema " +
-                "$urlToTest," + " ended up with the following error: "))
+
+        // The file path provided for the OpenAPI Schema file://./src/test/resources/swagger/openapi_pet.json, ended up with the following error: URI authority component has undefined host
+        if (hostOs.contains("win")) {
+            Assertions.assertTrue(exception.message!!.contains("The file path provided for the OpenAPI Schema " +
+                    "$urlToTest," + " ended up with the following error: URI authority component has undefined host"))
+        }
+        else {
+            Assertions.assertTrue(exception.message!!.contains("The file path provided for the OpenAPI Schema " +
+                    "$urlToTest," + " ended up with the following error: "))
+        }
     }
 
     @Test
