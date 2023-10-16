@@ -167,8 +167,13 @@ class OpenAPILocalURLIssueTest {
     @Test
     fun testRelativeFilePathExistingFile() {
 
-        // swagger test directory
-        val urlToTest = "file://./src/test/resources/swagger/openapi_pet.json"
+        // get the current directory
+        val urlToTest = if (hostOs.contains("win")) {
+            "file:/./src/test/resources/swagger/openapi_pet.json"
+        }
+        else {
+            "file://./src/test/resources/swagger/openapi_pet.json"
+        }
 
         // since the file does not exist and URL is invalid, a valid swagger cannot be created
         // but an SutException should be thrown
@@ -227,7 +232,12 @@ class OpenAPILocalURLIssueTest {
     fun testInvalidSwagger() {
 
         // get the current directory
-        val urlToTest = "file://$swaggerTestDirectory/invalid_swagger.json"
+        val urlToTest = if (hostOs.contains("win")) {
+            "file:/$swaggerTestDirectory/invalid_swagger.json"
+        }
+        else {
+            "file://$swaggerTestDirectory/invalid_swagger.json"
+        }
 
         // create swagger
         swagger = OpenApiAccess.getOpenAPIFromURL(urlToTest)
@@ -240,7 +250,12 @@ class OpenAPILocalURLIssueTest {
     fun testInvalidJSON() {
 
         // get the current directory
-        val urlToTest = "file://$swaggerTestDirectory/invalid_json.json"
+        val urlToTest = if (hostOs.contains("win")) {
+            "file:/$swaggerTestDirectory/invalid_json.json"
+        }
+        else {
+            "file://$swaggerTestDirectory/invalid_json.json"
+        }
 
         // exception to throw
         val exception = Assertions.assertThrows(
