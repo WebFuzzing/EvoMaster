@@ -50,8 +50,14 @@ class OpenAPILocalURLIssueTest {
     @Test
     fun testExistingFileValidURL() {
 
-        // get the current directory
-        val urlToTest = "file://$swaggerTestDirectory/openapi_pet.json"
+        // get the current directory, in Mac or Linux, it starts with //
+        // but in Windows, it has to have just one /
+        val urlToTest = if (hostOs.contains("win")) {
+            "file:/$swaggerTestDirectory/openapi_pet.json"
+        }
+        else {
+            "file://$swaggerTestDirectory/openapi_pet.json"
+        }
 
         // create swagger from URI
         swagger = OpenApiAccess.getOpenAPIFromURL(urlToTest)
