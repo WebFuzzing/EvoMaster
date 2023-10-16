@@ -211,8 +211,8 @@ class OpenAPILocalURLIssueTest {
         // The message in the SutException should be "The file path provided for the OpenAPI Schema
         // $urlToTest , is not a valid path"
         if (hostOs.contains("win")) {
-            Assertions.assertTrue(exception.message!!.contains("The file path provided for the OpenAPI " +
-                    "Schema $urlToTest is empty"))
+            Assertions.assertTrue(exception.message!!.contains("The file path provided for the OpenAPI Schema " +
+                    "$urlToTest," + " ended up with the following error: URI path component is empty"))
         }
         else {
             Assertions.assertTrue(exception.message!!.contains("The file path provided for the OpenAPI Schema " +
