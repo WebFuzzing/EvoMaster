@@ -3,12 +3,11 @@ package org.evomaster.core.problem.rest
 import org.evomaster.core.remote.SutProblemException
 
 import io.swagger.v3.oas.models.OpenAPI
-import org.junit.BeforeClass
 
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.TestInstance
+
 import java.util.*
 
 /*
@@ -27,8 +26,6 @@ class OpenAPILocalURLIssueTest {
 
         private var executionPath :String = System.getProperty("user.dir")
         private lateinit var swagger: OpenAPI
-        //private val swaggerTestDirectoryLinux = "$executionPath/src/test/resources/swagger/urlissue"
-        //private val swaggerTestDirectoryWin = "$executionPath\\src\\test\\resources\\swagger\\urlissue"
         private lateinit var swaggerTestDirectory: String
         private lateinit var hostOs: String
 
@@ -46,23 +43,6 @@ class OpenAPILocalURLIssueTest {
             swaggerTestDirectory = "$executionPath/src/test/resources/swagger/urlissue"
         }
     }
-
-    /*
-    @BeforeAll
-    private fun setSwaggerDirectoryBasedOnOS() {
-
-        hostOs = System.getProperty("os.name").lowercase(Locale.getDefault())
-
-        if (hostOs.contains("win")) {
-            executionPath = executionPath.replace('\\', '/')
-        }
-
-        swaggerTestDirectory = "$executionPath/src/test/resources/swagger/urlissue"
-
-    }
-    */
-
-
 
     /*
     Check that the swagger is created with a valid URL and an existing file

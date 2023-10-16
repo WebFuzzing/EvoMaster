@@ -8,9 +8,14 @@ import java.net.ConnectException
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.io.File
+import java.util.*
+
 import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
+
+
 
 /**
  * Created by arcuri82 on 22-Jan-20.
@@ -63,11 +68,25 @@ object OpenApiAccess {
 
     private fun readFromDisk(openApiUrl: String) : String {
 
+        // find the host OS
+        val hostOS = System.getProperty("os.name").lowercase(Locale.getDefault())
+
         // file scheme
         val fileScheme = "file:"
 
+        // remove file: to make it readable by windows
+
         val path = try {
             if (openApiUrl.startsWith(fileScheme, true)) {
+
+                // if the OS is windows, remove file:: from URI
+                if(hostOS.contains("win", true))
+                {
+                    openApiUrl.replace(fileScheme, "")
+                }
+
+                //val urlToUse = openApiUrl.replace(fileScheme, "")
+
                 Paths.get(URI.create(openApiUrl))
             }
             else {
@@ -87,6 +106,7 @@ object OpenApiAccess {
                         " ended up with the following error: " + e.message)
             }
         } ?: throw SutProblemException("Could not set up the URI from: $openApiUrl")
+
 
         // if the URI can be created but the file does not exist
         if (!Files.exists(path)) {
