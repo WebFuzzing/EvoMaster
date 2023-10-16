@@ -153,10 +153,15 @@ class OpenAPILocalURLIssueTest {
             swagger = OpenApiAccess.getOpenAPIFromURL(urlToTest)
         }
 
-        // The message in the SutException should be "The file path provided for the OpenAPI Schema
-        // $urlToTest , is not a valid path"
-        Assertions.assertTrue(exception.message!!.contains("The file path provided for the OpenAPI Schema " +
-                "$urlToTest," + " ended up with the following error: "))
+        // In windows, the file cannot be located, in others the error is URL related
+        if (hostOs.contains("win")) {
+            Assertions.assertTrue(exception.message!!.contains("The provided swagger file " +
+                    "does not exist: $urlToTest"))
+        }
+        else {
+            Assertions.assertTrue(exception.message!!.contains("The file path provided for the OpenAPI Schema " +
+                    "$urlToTest," + " ended up with the following error: "))
+        }
     }
 
     @Test
