@@ -189,8 +189,8 @@ class OpenAPILocalURLIssueTest {
 
         // The file path provided for the OpenAPI Schema file://./src/test/resources/swagger/openapi_pet.json, ended up with the following error: URI authority component has undefined host
         if (hostOs.contains("win")) {
-            Assertions.assertTrue(exception.message!!.contains("The file path provided for the OpenAPI Schema " +
-                    "$urlToTest," + " ended up with the following error: URI authority component has undefined host"))
+            Assertions.assertTrue(exception.message!!.contains("The provided swagger file " +
+                    "does not exist: $urlToTest"))
         }
         else {
             Assertions.assertTrue(exception.message!!.contains("The file path provided for the OpenAPI Schema " +
