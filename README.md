@@ -118,6 +118,8 @@ __Known limitations__:
 
 * How to [Download and Install EvoMaster on Windows 10](https://youtu.be/uh_XzGxws9o), using its _.msi_ installer.
 
+* [Short presentation](https://youtu.be/iQSAlrr-PZo) (5 minutes) about version 2.0.0. 
+
 ### Hiring
 
 Depending on the year, we might have funding for _postdoc_ and _PhD student_ positions to work on this project (in Oslo, Norway).
