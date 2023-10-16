@@ -88,14 +88,8 @@ object OpenApiAccess {
         // Added a separate exception handler for the empty file path
         catch (e: Exception) {
             // if the file has an empty path, state that
-            if (e.message.equals("URI path component is empty")) {
-                throw SutProblemException("The file path provided for the OpenAPI Schema $openApiUrl is empty")
-            }
-            // for other errors, state the error message
-            else {
-                throw SutProblemException("The file path provided for the OpenAPI Schema $openApiUrl," +
+            throw SutProblemException("The file path provided for the OpenAPI Schema $openApiUrl," +
                         " ended up with the following error: " + e.message)
-            }
         } ?: throw SutProblemException("Could not set up the URI from: $openApiUrl")
 
 
