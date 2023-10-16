@@ -8,12 +8,9 @@ import java.net.ConnectException
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Paths
-
 import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
-
-
 
 /**
  * Created by arcuri82 on 22-Jan-20.
@@ -42,11 +39,11 @@ object OpenApiAccess {
     fun getOpenAPIFromURL(openApiUrl: String): OpenAPI {
 
         //could be either JSON or YAML
-        val data = if(openApiUrl.startsWith("http", true)){
-            readFromRemoteServer(openApiUrl)
-        } else {
-            readFromDisk(openApiUrl)
-        }
+       val data = if(openApiUrl.startsWith("http", true)){
+           readFromRemoteServer(openApiUrl)
+       } else {
+           readFromDisk(openApiUrl)
+       }
 
         return getOpenApi(data)
     }
@@ -66,7 +63,7 @@ object OpenApiAccess {
 
     private fun readFromDisk(openApiUrl: String) : String {
 
-        // file scheme
+        // file schema
         val fileScheme = "file:"
 
         // create paths
