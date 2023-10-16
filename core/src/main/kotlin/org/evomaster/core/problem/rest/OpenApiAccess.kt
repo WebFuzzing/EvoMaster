@@ -82,12 +82,12 @@ object OpenApiAccess {
                 // if the OS is windows, remove file:: from URI
                 if(hostOS.contains("win", true))
                 {
-                    openApiUrl.replace(fileScheme, "")
+                    File(openApiUrl.replace(fileScheme, "")).toPath()
                 }
-
-                //val urlToUse = openApiUrl.replace(fileScheme, "")
-
-                Paths.get(URI.create(openApiUrl))
+                else {
+                    //val urlToUse = openApiUrl.replace(fileScheme, "")
+                    Paths.get(URI.create(openApiUrl))
+                }
             }
             else {
                 Paths.get(openApiUrl)
