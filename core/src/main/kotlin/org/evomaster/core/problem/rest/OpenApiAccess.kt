@@ -8,8 +8,6 @@ import java.net.ConnectException
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Paths
-import java.io.File
-import java.util.*
 
 import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.core.MediaType
@@ -45,9 +43,9 @@ object OpenApiAccess {
 
         //could be either JSON or YAML
         val data = if(openApiUrl.startsWith("http", true)){
-           readFromRemoteServer(openApiUrl)
+            readFromRemoteServer(openApiUrl)
         } else {
-           readFromDisk(openApiUrl)
+            readFromDisk(openApiUrl)
         }
 
         return getOpenApi(data)
@@ -68,14 +66,10 @@ object OpenApiAccess {
 
     private fun readFromDisk(openApiUrl: String) : String {
 
-        // find the host OS
-        val hostOS = System.getProperty("os.name").lowercase(Locale.getDefault())
-
         // file scheme
         val fileScheme = "file:"
 
-        // remove file: to make it readable by windows
-
+        // create paths
         val path = try {
             if (openApiUrl.startsWith(fileScheme, true)) {
                 Paths.get(URI.create(openApiUrl))
@@ -84,16 +78,14 @@ object OpenApiAccess {
                 Paths.get(openApiUrl)
             }
         }
-        // empty file path ends up as an exception, which is handled here.
-        // Added a separate exception handler for the empty file path
+        // Exception is thrown if the path is not valid
         catch (e: Exception) {
-            // if the file has an empty path, state that
+            // state the exception with the error message
             throw SutProblemException("The file path provided for the OpenAPI Schema $openApiUrl," +
                         " ended up with the following error: " + e.message)
-        } ?: throw SutProblemException("Could not set up the URI from: $openApiUrl")
+        }
 
-
-        // if the URI can be created but the file does not exist
+        // If the path is valid but the file does not exist, an exception is thrown
         if (!Files.exists(path)) {
             throw SutProblemException("The provided swagger file does not exist: $openApiUrl")
         }

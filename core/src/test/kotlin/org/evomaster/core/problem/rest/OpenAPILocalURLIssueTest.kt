@@ -12,46 +12,60 @@ import java.util.*
 
 /*
 Testing the local URL issue with OpenAPI, 4 test cases:
-- a local file which exists and a valid URL
-- a local file which does not exist and a valid URL
-- a local file which exists and an invalid URL
-- a local file which does not exist and an invalid URL
-- a local file which is not a valid swagger but a valid JSON
-- a local file which is not a valid JSON
-- an invalid url
+1. A local file which exists and the provided URL is valid.
+2. A local file does not exist but the provided URL is valid.
+3. A local file exists but the provided URL is not valid.
+4. A local file does not exist and the provided URL is not valid.
+5. A local file which exists but the relative file path is provided.
+6. Two different exceptions in Windows and others (e.g., "URI Path Component is empty" is tested here).
+7. The swagger is an existing valid json file, but it is not a valid swagger.
+8: The swagger is an invalid json file.
+
  */
 class OpenAPILocalURLIssueTest {
 
+    // companion object to set up tests.
     companion object {
 
+        // execution path, it can be different from one machine to another
         private var executionPath :String = System.getProperty("user.dir")
-        private lateinit var swagger: OpenAPI
-        private lateinit var swaggerTestDirectory: String
-        private lateinit var hostOs: String
 
+        // swagger object
+        private lateinit var swagger: OpenAPI
+
+        // swagger test directory to find test files
+        private lateinit var swaggerTestDirectory: String
+
+        // host operating system
+        private lateinit var hostOs: String
 
         @JvmStatic
         @BeforeAll
+        // This is to deal with differences in Windows and Linux paths
         fun setSwaggerDirectoryBasedOnOS() {
 
+            // get the name of the current operating system
             hostOs = System.getProperty("os.name").lowercase(Locale.getDefault())
 
+            // if the operating system is Windows, then replace \ with /
             if (hostOs.contains("win")) {
                 executionPath = executionPath.replace('\\', '/')
             }
 
+            // swagger files for testing
             swaggerTestDirectory = "$executionPath/src/test/resources/swagger/urlissue"
         }
     }
 
     /*
+    Test Case 1: A local file which exists and the provided URL is valid
     Check that the swagger is created with a valid URL and an existing file
     */
     @Test
     fun testExistingFileValidURL() {
 
-        // get the current directory, in Mac or Linux, it starts with //
-        // but in Windows, it has to have just one /
+        // get the current directory, in Mac or Linux, it starts with file://
+        // but in Windows, it has to have just one file:/
         val urlToTest = if (hostOs.contains("win")) {
             "file:/$swaggerTestDirectory/openapi_pet.json"
         }
@@ -59,7 +73,7 @@ class OpenAPILocalURLIssueTest {
             "file://$swaggerTestDirectory/openapi_pet.json"
         }
 
-        // create swagger from URI
+        // create swagger from URL
         swagger = OpenApiAccess.getOpenAPIFromURL(urlToTest)
 
         // a valid swagger is created with 13 endpoints
@@ -67,54 +81,58 @@ class OpenAPILocalURLIssueTest {
     }
 
     /*
-    Check that an exception is thrown with a non-existing file and a valid url
+    Test Case 2: A local file schema does not exist but the provided URL is valid
+    Check that an exception is thrown which states that the provided swagger file does not exist
     */
     @Test
     fun testNonExistingFileValidURL() {
 
-        // get the current directory
+        // The Windows file URL starts with file:/
         val urlToTest = if (hostOs.contains("win")) {
             "file:/$swaggerTestDirectory/openapi_pet_non_existing.json"
         }
+        // file URL in other operating systems
         else {
             "file://$swaggerTestDirectory/openapi_pet_non_existing.json"
         }
 
-        // since the file does not exist, a valid swagger cannot be created but an SutException should be thrown
+        // since the file does not exist, a valid swagger cannot be created
+        // but an SutException should be thrown
         val exception = Assertions.assertThrows(
             SutProblemException::class.java
         ) {
-            // create swagger
+            // create swagger from URL
             swagger = OpenApiAccess.getOpenAPIFromURL(urlToTest)
         }
 
-        // the message in the SutException should be "Cannot find OpenAPI schema at file location: $urlToTest
-        // check that the message is correct"
+        // the message in the SutException should be "The provided swagger file does not exist: $urlToTest
+        // check that the message is correct", it is the same for both Windows and other operating systems
         Assertions.assertTrue(exception.message!!.contains("The provided swagger file does " +
                 "not exist: $urlToTest"))
     }
 
     /*
-    Check that an exception is thrown when the file exists but the URL is not valid, missing one slash (/)
+    Test Case 3: A local file which exists but the provided URL is invalid
+    Check that an exception is thrown when the file exists but the URL is not valid, for Windows file:// is
+    not valid, for others file:/ is not valid
     */
     @Test
     fun testExistingFileInvalidURL() {
 
-        // get the current directory
-        //val urlToTest = "file:/$swaggerTestDirectory/openapi_pet.json"
-
+        // The Windows file URL starts with file://, which is not valid
         val urlToTest = if (hostOs.contains("win")) {
-            "file://$swaggerTestDirectory/openapi_pet_non_existing.json"
+            "file://$swaggerTestDirectory/openapi_pet.json"
         }
+        // URL starts with file:/ for other operating systems.
         else {
             "file:/$swaggerTestDirectory/openapi_pet.json"
         }
 
-        // since the file URL is invalid, a valid swagger cannot be created but an  SutException should be thrown
+        // since the file URL is invalid, a valid swagger cannot be created,
+        // so an SutException should be thrown
         val exception = Assertions.assertThrows(
             SutProblemException::class.java
         ) {
-            // create swagger
             swagger = OpenApiAccess.getOpenAPIFromURL(urlToTest)
         }
 
@@ -124,19 +142,20 @@ class OpenAPILocalURLIssueTest {
                     "does not exist: $urlToTest"))
         }
         else {
-            Assertions.assertTrue(exception.message!!.contains("The file path provided for the OpenAPI Schema " +
-                    "$urlToTest," + " ended up with the following error: "))
+            Assertions.assertTrue(exception.message!!.contains("The file path provided for the " +
+                    "OpenAPI Schema $urlToTest," + " ended up with the following error: "))
         }
 
     }
 
-    /*
-    Check that an exception is thrown when the file does not exist and the URL is not valid, missing one slash (/)
+    /* Test Case 4: A local file does not exist and the provided URL is not valid
+    Check that an exception is thrown for non-existent file in Windows, and an SUTException
+    is thrown with the error message for others.
     */
     @Test
     fun testNonExistingFileInvalidURL() {
 
-        // get the current directory
+        // File path in Windows and others
         val urlToTest = if (hostOs.contains("win")) {
             "file://$swaggerTestDirectory/openapi_pet_non_existent.json"
         }
@@ -149,7 +168,6 @@ class OpenAPILocalURLIssueTest {
         val exception = Assertions.assertThrows(
             SutProblemException::class.java
         ) {
-            // create swagger
             swagger = OpenApiAccess.getOpenAPIFromURL(urlToTest)
         }
 
@@ -159,15 +177,20 @@ class OpenAPILocalURLIssueTest {
                     "does not exist: $urlToTest"))
         }
         else {
-            Assertions.assertTrue(exception.message!!.contains("The file path provided for the OpenAPI Schema " +
-                    "$urlToTest," + " ended up with the following error: "))
+            Assertions.assertTrue(exception.message!!.contains("The file path provided for the OpenAPI " +
+                    "Schema $urlToTest," + " ended up with the following error: "))
         }
     }
 
+
     @Test
+    /* Test Case 5: A local file which exists but the relative file path is provided.
+    In that case, an exception stating the file does not exist is thrown in Windows
+    SutException is thrown in other operating systems.
+     */
     fun testRelativeFilePathExistingFile() {
 
-        // get the current directory
+        // file path in Windows and others
         val urlToTest = if (hostOs.contains("win")) {
             "file:/./src/test/resources/swagger/openapi_pet.json"
         }
@@ -175,63 +198,65 @@ class OpenAPILocalURLIssueTest {
             "file://./src/test/resources/swagger/openapi_pet.json"
         }
 
-        // since the file does not exist and URL is invalid, a valid swagger cannot be created
-        // but an SutException should be thrown
+        // create swagger
         val exception = Assertions.assertThrows(
             SutProblemException::class.java
         ) {
-            // create swagger
             swagger = OpenApiAccess.getOpenAPIFromURL(urlToTest)
         }
 
-        // The message in the SutException should be "The file path provided for the OpenAPI Schema
-        // $urlToTest , is not a valid path"
-
-        // The file path provided for the OpenAPI Schema file://./src/test/resources/swagger/openapi_pet.json, ended up with the following error: URI authority component has undefined host
+        // Assert the thrown exception
         if (hostOs.contains("win")) {
             Assertions.assertTrue(exception.message!!.contains("The provided swagger file " +
                     "does not exist: $urlToTest"))
         }
         else {
-            Assertions.assertTrue(exception.message!!.contains("The file path provided for the OpenAPI Schema " +
-                    "$urlToTest," + " ended up with the following error: "))
+            Assertions.assertTrue(exception.message!!.contains("The file path provided for the " +
+                    "OpenAPI Schema $urlToTest," + " ended up with the following error: "))
         }
     }
 
+    /*
+    Test case 6: Test for two different exceptions in Windows and others
+    For the URL file://openapi_pet.json, Windows throws URI path component is empty,
+    others throw URI has an authority component
+     */
     @Test
     fun testFileNameOnlyNonExistingFile() {
 
-        // get the current directory
+        // same URL for both Windows and others, but different exceptions are expected
         val urlToTest = "file://openapi_pet.json"
 
-        // since the file does not exist and URL is invalid, a valid swagger cannot be created
-        // but an SutException should be thrown
+        // create swagger
         val exception = Assertions.assertThrows(
             SutProblemException::class.java
         ) {
-            // create swagger
             swagger = OpenApiAccess.getOpenAPIFromURL(urlToTest)
         }
 
-        // The message in the SutException should be "The file path provided for the OpenAPI Schema
-        // $urlToTest , is not a valid path"
+        // Check the thrown exception for windows and others
         if (hostOs.contains("win")) {
-            Assertions.assertTrue(exception.message!!.contains("The file path provided for the OpenAPI Schema " +
-                    "$urlToTest," + " ended up with the following error: URI path component is empty"))
+            Assertions.assertTrue(exception.message!!.contains("The file path provided for the " +
+                    "OpenAPI Schema $urlToTest," + " ended up with the following error: " +
+                    "URI path component is empty"))
         }
         else {
-            Assertions.assertTrue(exception.message!!.contains("The file path provided for the OpenAPI Schema " +
-                    "$urlToTest," + " ended up with the following error: URI has an authority component"
+            Assertions.assertTrue(exception.message!!.contains("The file path provided for the " +
+                    "OpenAPI Schema $urlToTest," + " ended up with the following error: " +
+                    "URI has an authority component"
                 )
             )
         }
     }
 
-    //Check that when the swagger is invalid, an empty swagger object is created
+    /*
+    Test case 7: If the swagger is an existing valid json file, but it is not
+    a valid swagger, a swagger object is created with 0 endpoints
+     */
     @Test
     fun testInvalidSwagger() {
 
-        // get the current directory
+        // file path in Windows and others
         val urlToTest = if (hostOs.contains("win")) {
             "file:/$swaggerTestDirectory/invalid_swagger.json"
         }
@@ -246,10 +271,14 @@ class OpenAPILocalURLIssueTest {
         Assertions.assertTrue(swagger.paths.size == 0)
     }
 
+    /*
+    Test case 8: If the swagger is an invalid json file, an exception stating that the swagger
+    could not be parsed should be thrown
+     */
     @Test
     fun testInvalidJSON() {
 
-        // get the current directory
+        // file path in Windows and others
         val urlToTest = if (hostOs.contains("win")) {
             "file:/$swaggerTestDirectory/invalid_json.json"
         }
@@ -257,7 +286,7 @@ class OpenAPILocalURLIssueTest {
             "file://$swaggerTestDirectory/invalid_json.json"
         }
 
-        // exception to throw
+        // create swagger
         val exception = Assertions.assertThrows(
             SutProblemException::class.java
         ) {
