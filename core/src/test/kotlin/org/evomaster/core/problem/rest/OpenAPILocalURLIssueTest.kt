@@ -20,7 +20,6 @@ Testing the local URL issue with OpenAPI, 4 test cases:
 6. Two different exceptions in Windows and others (e.g., "URI Path Component is empty" is tested here).
 7. The swagger is an existing valid json file, but it is not a valid swagger.
 8: The swagger is an invalid json file.
-
  */
 class OpenAPILocalURLIssueTest {
 
