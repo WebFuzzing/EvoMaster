@@ -106,7 +106,7 @@ class OpenAPILocalURLIssueTest {
 
         // the message in the SutException should be "The provided swagger file does not exist: $urlToTest
         // check that the message is correct", it is the same for both Windows and other operating systems
-        Assertions.assertTrue(exception.message!!.contains("The provided swagger file does " +
+        Assertions.assertTrue(exception.message!!.contains("The provided OpenAPI file does " +
                 "not exist: $urlToTest"))
     }
 
@@ -137,12 +137,12 @@ class OpenAPILocalURLIssueTest {
 
         // In windows, the file cannot be located, in others the error is URL related
         if (hostOs.contains("win")) {
-            Assertions.assertTrue(exception.message!!.contains("The provided swagger file " +
+            Assertions.assertTrue(exception.message!!.contains("The provided OpenAPI file " +
                     "does not exist: $urlToTest"))
         }
         else {
             Assertions.assertTrue(exception.message!!.contains("The file path provided for the " +
-                    "OpenAPI Schema $urlToTest," + " ended up with the following error: "))
+                    "OpenAPI Schema $urlToTest ended up with the following error: "))
         }
 
     }
@@ -172,12 +172,12 @@ class OpenAPILocalURLIssueTest {
 
         // In windows, the file cannot be located, in others the error is URL related
         if (hostOs.contains("win")) {
-            Assertions.assertTrue(exception.message!!.contains("The provided swagger file " +
+            Assertions.assertTrue(exception.message!!.contains("The provided OpenAPI file " +
                     "does not exist: $urlToTest"))
         }
         else {
             Assertions.assertTrue(exception.message!!.contains("The file path provided for the OpenAPI " +
-                    "Schema $urlToTest," + " ended up with the following error: "))
+                    "Schema $urlToTest ended up with the following error: "))
         }
     }
 
@@ -206,12 +206,12 @@ class OpenAPILocalURLIssueTest {
 
         // Assert the thrown exception
         if (hostOs.contains("win")) {
-            Assertions.assertTrue(exception.message!!.contains("The provided swagger file " +
+            Assertions.assertTrue(exception.message!!.contains("The provided OpenAPI file " +
                     "does not exist: $urlToTest"))
         }
         else {
             Assertions.assertTrue(exception.message!!.contains("The file path provided for the " +
-                    "OpenAPI Schema $urlToTest," + " ended up with the following error: "))
+                    "OpenAPI Schema $urlToTest ended up with the following error: "))
         }
     }
 
@@ -236,12 +236,12 @@ class OpenAPILocalURLIssueTest {
         // Check the thrown exception for windows and others
         if (hostOs.contains("win")) {
             Assertions.assertTrue(exception.message!!.contains("The file path provided for the " +
-                    "OpenAPI Schema $urlToTest," + " ended up with the following error: " +
+                    "OpenAPI Schema $urlToTest ended up with the following error: " +
                     "URI path component is empty"))
         }
         else {
             Assertions.assertTrue(exception.message!!.contains("The file path provided for the " +
-                    "OpenAPI Schema $urlToTest," + " ended up with the following error: " +
+                    "OpenAPI Schema $urlToTest ended up with the following error: " +
                     "URI has an authority component"
                 )
             )
