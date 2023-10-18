@@ -78,13 +78,13 @@ object OpenApiAccess {
         // Exception is thrown if the path is not valid
         catch (e: Exception) {
             // state the exception with the error message
-            throw SutProblemException("The file path provided for the OpenAPI Schema $openApiUrl," +
+            throw SutProblemException("The file path provided for the OpenAPI Schema $openApiUrl" +
                         " ended up with the following error: " + e.message)
         }
 
         // If the path is valid but the file does not exist, an exception is thrown
         if (!Files.exists(path)) {
-            throw SutProblemException("The provided swagger file does not exist: $openApiUrl")
+            throw SutProblemException("The provided OpenAPI file does not exist: $openApiUrl")
         }
 
         // return the schema text
