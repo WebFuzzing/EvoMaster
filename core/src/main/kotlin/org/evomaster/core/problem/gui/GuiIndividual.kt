@@ -33,5 +33,5 @@ abstract class GuiIndividual (
      */
     children: MutableList<out ActionComponent>,
     childTypeVerifier: (Class<*>) -> Boolean,
-    groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(children, children.size, 0)
+    groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(children, children.size, 0, 0 ,0)
 ): EnterpriseIndividual(sampleType, trackOperator, index, children, childTypeVerifier, groups)

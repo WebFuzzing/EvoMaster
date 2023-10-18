@@ -14,8 +14,10 @@ class WebIndividual(
     sampleType: SampleType,
     children: MutableList<out ActionComponent>,
     mainSize : Int = children.size,
-    dbSize: Int = 0,
-    groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(children,mainSize,dbSize)
+    sqlSize: Int = 0,
+    mongoSize: Int = 0,
+    dnsSize: Int = 0,
+    groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(children,mainSize,sqlSize,mongoSize,dnsSize)
 ) : GuiIndividual(
     sampleType = sampleType,
     children = children,
@@ -31,7 +33,9 @@ class WebIndividual(
             sampleType,
             children.map { it.copy() }.toMutableList() as MutableList<ActionComponent>,
             mainSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.MAIN),
-            dbSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_SQL)
+            sqlSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_SQL),
+            mongoSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_MONGO),
+            dnsSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_DNS)
         )
     }
 
