@@ -62,7 +62,7 @@ public class TestabilityExcInstrumentedTest {
 
         info = UnitsInfoRecorder.getInstance();
         assertEquals(1, info.getNumberOfUnits());
-        assertEquals(26, info.getNumberOfReplacedMethodsInSut());
+        assertEquals(27, info.getNumberOfReplacedMethodsInSut());
     }
 
 
