@@ -35,4 +35,8 @@ public class StringBean {
 
     @Size(min = 1, max = 3)
     public Map<String,String> l;
+
+    @Email
+    public String m;
+
 }

@@ -1,5 +1,6 @@
 package org.evomaster.client.java.instrumentation.heuristic;
 
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.RegexDistanceUtils;
 import org.evomaster.client.java.instrumentation.heuristic.validator.javax.*;
 import org.evomaster.client.java.instrumentation.shared.TaintInputName;
 import org.junit.jupiter.api.Test;
@@ -234,6 +235,18 @@ class ValidatorHeuristicsTest {
         assertTrue(t17.getOfTrue() > t16.getOfTrue());
 
         assertTrue(t17.isTrue());
+
+        bean.m = "   "; //@Email
+        Truthness t18 = ValidatorHeuristics.computeTruthness(validator, bean);
+        assertFalse(t18.isTrue());
+
+        bean.m = "r@g.com"; //@Email
+        Truthness t19 = ValidatorHeuristics.computeTruthness(validator, bean);
+        assertEquals(t19.getOfTrue(), t17.getOfTrue(), 0.00001); // null and valid email are the same
+        assertTrue(t19.getOfTrue() > t18.getOfTrue());
+
+        assertTrue(t19.isTrue());
+
     }
 
 
@@ -385,7 +398,7 @@ class ValidatorHeuristicsTest {
 
 
     @Test
-    public void testPattern(){
+    public void testPattern() {
 
         PatternBean bean = new PatternBean();
 
@@ -402,5 +415,82 @@ class ValidatorHeuristicsTest {
 
         bean.foo = TaintInputName.getTaintName(0);
         ValidatorHeuristics.computeTruthness(validator, bean); //should not crash
+    }
+
+    @Test
+    public void testValidEmailRegexDistance() {
+        assertEquals(0, RegexDistanceUtils.getStandardDistance("someaddress@somedomain.com",
+                ValidatorHeuristics.EMAIL_REGEX_PATTERN), 0.0);
+
+        assertEquals(0, RegexDistanceUtils.getStandardDistance("someaddress@subdomain.somedomain.com",
+                ValidatorHeuristics.EMAIL_REGEX_PATTERN), 0.0);
+
+        assertEquals(0, RegexDistanceUtils.getStandardDistance("firstname.lastname@subdomain.somedomain.com",
+                ValidatorHeuristics.EMAIL_REGEX_PATTERN), 0.0);
+
+        assertEquals(0, RegexDistanceUtils.getStandardDistance("firstname_lastname@subdomain.somedomain.com",
+                ValidatorHeuristics.EMAIL_REGEX_PATTERN), 0.0);
+
+        assertEquals(0, RegexDistanceUtils.getStandardDistance("firstname-lastname@subdomain.somedomain.com",
+                ValidatorHeuristics.EMAIL_REGEX_PATTERN), 0.0);
+
+        assertEquals(0, RegexDistanceUtils.getStandardDistance("firstname+lastname@subdomain.somedomain.com",
+                ValidatorHeuristics.EMAIL_REGEX_PATTERN), 0.0);
+
+    }
+
+    @Test
+    public void testInvalidEmailRegexDistance() {
+
+        // Missing "@" symbol:
+        assertTrue(RegexDistanceUtils.getStandardDistance("johndoe.com",
+                ValidatorHeuristics.EMAIL_REGEX_PATTERN) > 0);
+        assertTrue(RegexDistanceUtils.getStandardDistance("examplemail",
+                ValidatorHeuristics.EMAIL_REGEX_PATTERN) > 0);
+
+        // Missing domain name:
+        assertTrue(RegexDistanceUtils.getStandardDistance("user@",
+                ValidatorHeuristics.EMAIL_REGEX_PATTERN) > 0);
+        assertTrue(RegexDistanceUtils.getStandardDistance("user@.com",
+                ValidatorHeuristics.EMAIL_REGEX_PATTERN) > 0);
+        assertTrue(RegexDistanceUtils.getStandardDistance("user@.net",
+                ValidatorHeuristics.EMAIL_REGEX_PATTERN) > 0);
+
+        // Multiple "@" symbols:
+        assertTrue(RegexDistanceUtils.getStandardDistance("user@domain@company.com",
+                ValidatorHeuristics.EMAIL_REGEX_PATTERN) > 0);
+        assertTrue(RegexDistanceUtils.getStandardDistance("john@doe@gmail.com",
+                ValidatorHeuristics.EMAIL_REGEX_PATTERN) > 0);
+
+        // Invalid characters
+        assertTrue(RegexDistanceUtils.getStandardDistance("user$@domain.com",
+                ValidatorHeuristics.EMAIL_REGEX_PATTERN) > 0);
+        assertTrue(RegexDistanceUtils.getStandardDistance("user#@domain.com",
+                ValidatorHeuristics.EMAIL_REGEX_PATTERN) > 0);
+        assertTrue(RegexDistanceUtils.getStandardDistance("user!@domain.com",
+                ValidatorHeuristics.EMAIL_REGEX_PATTERN) > 0);
+
+        assertTrue(RegexDistanceUtils.getStandardDistance("user@domain$.com",
+                ValidatorHeuristics.EMAIL_REGEX_PATTERN) > 0);
+        assertTrue(RegexDistanceUtils.getStandardDistance("user#example.com",
+                ValidatorHeuristics.EMAIL_REGEX_PATTERN) > 0);
+        assertTrue(RegexDistanceUtils.getStandardDistance("user&domain.com",
+                ValidatorHeuristics.EMAIL_REGEX_PATTERN) > 0);
+
+        // Spaces
+        assertTrue(RegexDistanceUtils.getStandardDistance("user name@example.com",
+                ValidatorHeuristics.EMAIL_REGEX_PATTERN) > 0);
+        assertTrue(RegexDistanceUtils.getStandardDistance("user@ example.com",
+                ValidatorHeuristics.EMAIL_REGEX_PATTERN) > 0);
+        assertTrue(RegexDistanceUtils.getStandardDistance("user@example .com",
+                ValidatorHeuristics.EMAIL_REGEX_PATTERN) > 0);
+
+        // Invalid top-level domain (TLD)
+        assertTrue(RegexDistanceUtils.getStandardDistance("user@example.c0m",
+                ValidatorHeuristics.EMAIL_REGEX_PATTERN) > 0);
+        assertTrue(RegexDistanceUtils.getStandardDistance("user@example.c",
+                ValidatorHeuristics.EMAIL_REGEX_PATTERN) > 0);
+
+
     }
 }
