@@ -22,11 +22,14 @@ public class ExternalServiceInfoUtils {
         // of time the same info gets added again and again. To do this, have to change the
         // data structure of the external service mapping inside ExecutionTracer
 
+        // TODO: Experiment
+        ExecutionTracer.addHostnameInfo(new HostnameInfo(remoteHostInfo.getHostname(), true));
+
+        ExecutionTracer.addExternalServiceHost(remoteHostInfo);
+
         if (!ExecutionTracer.hasExternalMapping(remoteHostInfo.signature())) {
             String signature = remoteHostInfo.signature();
             int connectPort = remotePort;
-
-            ExecutionTracer.addExternalServiceHost(remoteHostInfo);
 
             if (!ExecutionTracer.hasExternalMapping(remoteHostInfo.signature())) {
                 ExecutionTracer.addEmployedDefaultWMHost(remoteHostInfo);
@@ -34,6 +37,7 @@ public class ExternalServiceInfoUtils {
                 connectPort = ExternalServiceSharedUtils.getDefaultWMPort(signature);
             }
 
+//            return new String[]{remoteHostInfo.getHostname(), "" + remotePort};
             return new String[]{ExecutionTracer.getExternalMapping(signature), "" + connectPort};
         } else {
             return new String[]{ExecutionTracer.getExternalMapping(remoteHostInfo.signature()), "" + remotePort};
