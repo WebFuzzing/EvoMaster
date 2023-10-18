@@ -68,7 +68,8 @@ public class ReplacementList {
                     new URLClassReplacement(),
                     new UUIDClassReplacement(),
                     new ValidatorClassReplacement(),
-                    new WebRequestClassReplacement()
+                    new WebRequestClassReplacement(),
+                    new Base64DecoderClassReplacement()
             );
 
             /*

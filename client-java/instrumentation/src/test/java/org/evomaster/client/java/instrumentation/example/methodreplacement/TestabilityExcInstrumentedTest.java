@@ -51,7 +51,7 @@ public class TestabilityExcInstrumentedTest {
 
 
     @Test
-    public void testUnitsInfo() throws Exception{
+    public void testUnitsInfo() throws Exception {
 
         UnitsInfoRecorder.reset();
         UnitsInfoRecorder info = UnitsInfoRecorder.getInstance();
@@ -1278,4 +1278,31 @@ public class TestabilityExcInstrumentedTest {
         assertTrue(Pattern.compile(pattern).matcher("*.class").find());
         assertTrue(Pattern.compile("(.*)((" + pattern + "))(.*)").matcher("*.class").matches());
     }
+
+    @Test
+    public void testBase64Decode() throws Exception {
+        TestabilityExc te = getInstance();
+
+        try {
+            te.decode(Base64.getDecoder(), "$");
+            fail();
+        } catch (IllegalArgumentException ex) {
+            assertEquals(2, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+
+            String targetId = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT)
+                    .iterator().next();  // normal branch
+            double h0 = ExecutionTracer.getValue(targetId);
+            assertTrue(h0 > 0); // reached
+            assertTrue(h0 < 1); // but not covered
+
+            te.decode(Base64.getDecoder(), "Hell");
+
+            double h1 = ExecutionTracer.getValue(targetId);
+            assertEquals(1, h1);// covered
+
+
+        }
+
+    }
+
 }

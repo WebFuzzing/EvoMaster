@@ -19,37 +19,89 @@ public class Base64DecoderClassReplacementTest {
 
     @Test
     public void testUnsuccessfulDecode() {
-        String invalidEncodingString  = "$";
+        String invalidEncodingString = "$";
         Base64.Decoder decoder = Base64.getDecoder();
         String prefix = ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate";
         try {
             Base64DecoderClassReplacement.decode(decoder, invalidEncodingString, prefix);
             fail();
         } catch (IllegalArgumentException ex) {
-            assertEquals(1, ExecutionTracer.getNonCoveredObjectives(prefix).size());
+            assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(prefix));
             String objectiveId = ExecutionTracer.getNonCoveredObjectives(prefix)
                     .iterator().next();
             double h0 = ExecutionTracer.getValue(objectiveId);
-            assertEquals(0.5d, h0);
+            assertTrue(h0 > 0);
         }
-
     }
 
 
     @Test
     public void testSuccessfulDecode() {
-        String encodedString  = Base64.getEncoder().encodeToString(new byte[] {0,1,2});
+        String encodedString = Base64.getEncoder().encodeToString(new byte[]{0, 1, 2});
         byte[] expected = Base64.getDecoder().decode(encodedString);
         Base64.Decoder decoder = Base64.getDecoder();
         String prefix = ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate";
         byte[] actual = Base64DecoderClassReplacement.decode(decoder, encodedString, prefix);
         assertArrayEquals(expected, actual);
 
-        assertEquals(1, ExecutionTracer.getNonCoveredObjectives(prefix).size());
+        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(prefix));
 
         String objectiveId = ExecutionTracer.getNonCoveredObjectives(prefix)
                 .iterator().next();
         double h0 = ExecutionTracer.getValue(objectiveId);
         assertEquals(DistanceHelper.H_NOT_NULL, h0);
     }
+
+    @Test
+    public void testSuccessfulDecodeUsingString() {
+        String encodedString = "Hello+World/";
+        byte[] expected = Base64.getDecoder().decode(encodedString);
+        Base64.Decoder decoder = Base64.getDecoder();
+        String prefix = ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate";
+        byte[] actual = Base64DecoderClassReplacement.decode(decoder, encodedString, prefix);
+        assertArrayEquals(expected, actual);
+
+        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(prefix));
+
+        String objectiveId = ExecutionTracer.getNonCoveredObjectives(prefix)
+                .iterator().next();
+        double h0 = ExecutionTracer.getValue(objectiveId);
+        assertEquals(DistanceHelper.H_NOT_NULL, h0);
+    }
+
+    @Test
+    public void testUnsuccessfulDecodeUsingString() {
+        String invalidEncodingString = "Hello+World/=";
+        Base64.Decoder decoder = Base64.getDecoder();
+        String prefix = ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate";
+        try {
+            Base64DecoderClassReplacement.decode(decoder, invalidEncodingString, prefix);
+            fail();
+        } catch (IllegalArgumentException ex) {
+            assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(prefix));
+            String objectiveId = ExecutionTracer.getNonCoveredObjectives(prefix)
+                    .iterator().next();
+            double h0 = ExecutionTracer.getValue(objectiveId);
+            assertTrue(h0 > 0);
+        }
+    }
+
+
+    @Test
+    public void testSuccessfulPadding() {
+        String encodedString = "Helloo==";
+        byte[] expected = Base64.getDecoder().decode(encodedString);
+        Base64.Decoder decoder = Base64.getDecoder();
+        String prefix = ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate";
+        byte[] actual = Base64DecoderClassReplacement.decode(decoder, encodedString, prefix);
+        assertArrayEquals(expected, actual);
+
+        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(prefix));
+
+        String objectiveId = ExecutionTracer.getNonCoveredObjectives(prefix)
+                .iterator().next();
+        double h0 = ExecutionTracer.getValue(objectiveId);
+        assertEquals(DistanceHelper.H_NOT_NULL, h0);
+    }
+
 }

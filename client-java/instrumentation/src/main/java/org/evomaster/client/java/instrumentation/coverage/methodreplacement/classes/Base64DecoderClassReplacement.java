@@ -18,7 +18,10 @@ public class Base64DecoderClassReplacement implements MethodReplacementClass {
         return Base64.Decoder.class;
     }
 
-    private final static String BASE64_REGEX = "^[A-Za-z0-9+/]+={0,2}$";
+    /**
+     * Source: <code>https://stackoverflow.com/questions/52923168/is-there-any-regular-expression-available-to-identify-whether-a-string-is-base64</code>
+     */
+    private final static String BASE64_REGEX = "^([A-Za-z0-9\\+/]{4})*([A-Za-z0-9\\+/]{4}|[A-Za-z0-9\\+/]{3}=|[A-Za-z0-9\\+/]{2}==)$";
 
 
     @Replacement(type = ReplacementType.EXCEPTION, category = ReplacementCategory.EXT_0)
