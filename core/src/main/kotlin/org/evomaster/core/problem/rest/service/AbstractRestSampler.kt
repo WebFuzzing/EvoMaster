@@ -251,7 +251,12 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
         swagger = OpenApiAccess.getOpenAPIFromURL(configuration.bbSwaggerUrl)
         if (swagger.paths == null) {
-            throw SutProblemException("There is no endpoint definition in the retrieved Swagger file")
+            throw SutProblemException("There is no endpoint definition in the retrieved OpenAPI file")
+        }
+        // Onur: to give the error message for invalid swagger
+        if (swagger.paths.size == 0){
+            throw SutProblemException("The OpenAPI file ${configuration.bbSwaggerUrl} " +
+                    "is either invalid or it does not define endpoints")
         }
 
         // ONUR: Add all paths to list of paths to ignore except endpointFocus

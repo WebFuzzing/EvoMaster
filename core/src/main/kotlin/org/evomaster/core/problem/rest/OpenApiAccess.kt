@@ -62,16 +62,32 @@ object OpenApiAccess {
     }
 
     private fun readFromDisk(openApiUrl: String) : String {
+
+        // file schema
         val fileScheme = "file:"
-        val path = if (openApiUrl.startsWith(fileScheme, true)) {
-            Paths.get(URI.create(openApiUrl))
-        } else {
-            Paths.get(openApiUrl)
+
+        // create paths
+        val path = try {
+            if (openApiUrl.startsWith(fileScheme, true)) {
+                Paths.get(URI.create(openApiUrl))
+            }
+            else {
+                Paths.get(openApiUrl)
+            }
         }
-        if (!Files.exists(path)) {
-            throw SutProblemException("Cannot find OpenAPI schema at file location: $openApiUrl")
+        // Exception is thrown if the path is not valid
+        catch (e: Exception) {
+            // state the exception with the error message
+            throw SutProblemException("The file path provided for the OpenAPI Schema $openApiUrl" +
+                        " ended up with the following error: " + e.message)
         }
 
+        // If the path is valid but the file does not exist, an exception is thrown
+        if (!Files.exists(path)) {
+            throw SutProblemException("The provided OpenAPI file does not exist: $openApiUrl")
+        }
+
+        // return the schema text
         return path.toFile().readText()
     }
 
