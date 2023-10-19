@@ -9,6 +9,7 @@ import org.evomaster.core.sql.SqlActionUtils
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
+import org.evomaster.core.problem.externalservice.DnsAction
 import org.evomaster.core.search.*
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Randomness
@@ -46,7 +47,10 @@ abstract class EnterpriseIndividual(
      */
     children: MutableList<out ActionComponent>,
     childTypeVerifier: (Class<*>) -> Boolean,
-    groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(children,children.size,0)
+    /**
+     * if no group definition is specified, then it is assumed that all action are for the MAIN group
+     */
+    groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(children,children.size,0, 0, 0)
 ) : Individual(
     trackOperator,
     index,
@@ -59,52 +63,70 @@ abstract class EnterpriseIndividual(
 
         /**
          * Return group definition for the given children.
-         * The first [sizeDb] are assumed to be database actions, followed by [sizeMain] main actions
+         * The first [sizeSQL] are assumed to be database actions, followed by [sizeMain] main actions
          */
         fun getEnterpriseTopGroups(
             children: List<ActionComponent>,
             sizeMain: Int,
-            sizeDb: Int
+            sizeSQL: Int,
+            sizeMongo: Int,
+            sizeDNS: Int
         ) : GroupsOfChildren<StructuralElement>{
 
-            if(children.size != sizeDb + sizeMain){
+            if(children.size != sizeSQL +sizeMongo + sizeDNS + sizeMain){
                 throw IllegalArgumentException("Group size mismatch. Expected a total of ${children.size}, but" +
-                        " got main=$sizeMain and db=$sizeDb")
+                        " got main=$sizeMain,  sql=$sizeSQL, mongo=$sizeMongo, dns=$sizeDNS")
             }
-            if(sizeDb < 0){
-                throw IllegalArgumentException("Negative size for sizeDb: $sizeDb")
+            if(sizeSQL < 0){
+                throw IllegalArgumentException("Negative size for sizeSQL: $sizeSQL")
+            }
+            if(sizeMongo < 0){
+                throw IllegalArgumentException("Negative size for sizeMongo: $sizeMain")
+            }
+            if(sizeDNS < 0){
+                throw IllegalArgumentException("Negative size for sizeDNS: $sizeMain")
             }
             if(sizeMain < 0){
                 throw IllegalArgumentException("Negative size for sizeMain: $sizeMain")
             }
 
-            //TODO in future ll need to refactor to handle multiple databases and NoSQL ones
-            //CHANGE: This is momentary. Needs refactor to handle multiple databases
+            /*
+                TODO in future ll need to refactor to handle multiple databases, possibly handled with
+                one action group per database...
+                but is it really common that a SUT directly access several databases of same kind?
+             */
 
             val startIndexSQL = children.indexOfFirst { a -> a is SqlAction }
             val endIndexSQL = children.indexOfLast { a -> a is SqlAction }
+            val db = ChildGroup<StructuralElement>(GroupsOfChildren.INITIALIZATION_SQL,{e -> e is ActionComponent && e.flatten().all { a -> a is SqlAction }},
+                if(sizeSQL==0) -1 else startIndexSQL , if(sizeSQL==0) -1 else endIndexSQL
+            )
+
             val startIndexMongo = children.indexOfFirst { a -> a is MongoDbAction }
             val endIndexMongo = children.indexOfLast { a -> a is MongoDbAction }
-
-            val db = ChildGroup<StructuralElement>(GroupsOfChildren.INITIALIZATION_SQL,{e -> e is ActionComponent && e.flatten().all { a -> a is SqlAction }},
-                if(sizeDb==0) -1 else startIndexSQL , if(sizeDb==0) -1 else endIndexSQL
-            )
-
             val mongodb = ChildGroup<StructuralElement>(GroupsOfChildren.INITIALIZATION_MONGO,{e -> e is ActionComponent && e.flatten().all { a -> a is MongoDbAction }},
-                if(sizeDb==0) -1 else startIndexMongo , if(sizeDb==0) -1 else endIndexMongo
+                if(sizeMongo==0) -1 else startIndexMongo , if(sizeMongo==0) -1 else endIndexMongo
             )
 
-            val main = ChildGroup<StructuralElement>(GroupsOfChildren.MAIN, {e -> e !is SqlAction && e !is ApiExternalServiceAction },
-                if(sizeMain == 0) -1 else sizeDb, if(sizeMain == 0) -1 else sizeDb + sizeMain - 1)
+            val startIndexDns = children.indexOfFirst { a -> a is DnsAction }
+            val endIndexDns = children.indexOfLast { a -> a is DnsAction }
+            val dns = ChildGroup<StructuralElement>(GroupsOfChildren.INITIALIZATION_DNS,{e -> e is ActionComponent && e.flatten().all { a -> a is DnsAction }},
+                if(sizeDNS==0) -1 else startIndexDns , if(sizeDNS==0) -1 else endIndexDns
+            )
 
-            return GroupsOfChildren(children, listOf(db, mongodb, main))
+            val initSize = sizeSQL+sizeMongo+sizeDNS
+
+            val main = ChildGroup<StructuralElement>(GroupsOfChildren.MAIN, {e -> e !is EnvironmentAction },
+                if(sizeMain == 0) -1 else initSize, if(sizeMain == 0) -1 else initSize + sizeMain - 1)
+
+            return GroupsOfChildren(children, listOf(db, mongodb, dns, main))
         }
     }
 
     /**
      * a list of db actions for its Initialization
      */
-    private val dbInitialization: List<SqlAction>
+    private val sqlInitialization: List<SqlAction>
         get() {
             return groupsView()!!.getAllInGroup(GroupsOfChildren.INITIALIZATION_SQL)
                 .flatMap { (it as ActionComponent).flatten() }
@@ -117,9 +139,10 @@ abstract class EnterpriseIndividual(
             ActionFilter.MAIN_EXECUTABLE -> groupsView()!!.getAllInGroup(GroupsOfChildren.MAIN)
                 .flatMap { (it as ActionComponent).flatten() }
                 .filter { it !is SqlAction && it !is ApiExternalServiceAction }
-            ActionFilter.INIT -> groupsView()!!.getAllInGroup(GroupsOfChildren.INITIALIZATION_SQL)
-                .flatMap { (it as ActionComponent).flatten() } + groupsView()!!.getAllInGroup(GroupsOfChildren.INITIALIZATION_MONGO)
-                .flatMap { (it as ActionComponent).flatten() }
+            ActionFilter.INIT ->
+                groupsView()!!
+                    .getAllInGroup(GroupsOfChildren.INITIALIZATION_SQL).flatMap { (it as ActionComponent).flatten() } + groupsView()!!
+                    .getAllInGroup(GroupsOfChildren.INITIALIZATION_MONGO).flatMap { (it as ActionComponent).flatten()}
             // WARNING: this can still return DbAction, MongoDbAction and External ones...
             ActionFilter.NO_INIT -> groupsView()!!.getAllInGroup(GroupsOfChildren.MAIN).flatMap { (it as ActionComponent).flatten() }
             ActionFilter.ONLY_SQL -> seeAllActions().filterIsInstance<SqlAction>()
@@ -214,7 +237,7 @@ abstract class EnterpriseIndividual(
         if (!verifyInitializationActions()) {
             if (log.isTraceEnabled)
                 log.trace("invoke GeneUtils.repairBrokenDbActionsList")
-            val previous = dbInitialization.toMutableList()
+            val previous = sqlInitialization.toMutableList()
             SqlActionUtils.repairBrokenDbActionsList(previous, randomness)
             resetInitializingActions(previous)
             Lazy.assert{verifyInitializationActions()}
@@ -222,7 +245,7 @@ abstract class EnterpriseIndividual(
     }
 
     override fun hasAnyAction(): Boolean {
-        return super.hasAnyAction() || dbInitialization.isNotEmpty()
+        return super.hasAnyAction() || sqlInitialization.isNotEmpty()
     }
 
     override fun size() = seeMainExecutableActions().size
@@ -266,7 +289,7 @@ abstract class EnterpriseIndividual(
     }
 
     /**
-     * remove specified dbactions i.e., [actions] from [dbInitialization]
+     * remove specified dbactions i.e., [actions] from [sqlInitialization]
      */
     fun removeInitDbActions(actions: List<SqlAction>) {
         killChildren { it is SqlAction && actions.contains(it)}
@@ -276,6 +299,6 @@ abstract class EnterpriseIndividual(
      * @return a list table names which are used to insert data directly
      */
     open fun getInsertTableNames(): List<String>{
-        return dbInitialization.filterNot { it.representExistingData }.map { it.table.name }
+        return sqlInitialization.filterNot { it.representExistingData }.map { it.table.name }
     }
 }
