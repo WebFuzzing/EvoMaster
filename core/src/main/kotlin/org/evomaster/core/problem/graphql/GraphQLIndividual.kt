@@ -16,8 +16,10 @@ class GraphQLIndividual(
     sampleType: SampleType,
     allActions : MutableList<out ActionComponent>,
     mainSize : Int = allActions.size,
-    dbSize: Int = 0,
-    groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(allActions,mainSize,dbSize)
+    sqlSize: Int = 0,
+    mongoSize: Int = 0,
+    dnsSize: Int = 0,
+    groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(allActions,mainSize,sqlSize,mongoSize,dnsSize)
 ) : ApiWsIndividual(
     sampleType = sampleType,
     children = allActions,
@@ -35,7 +37,9 @@ class GraphQLIndividual(
                 sampleType,
                 children.map { it.copy() }.toMutableList() as MutableList<ActionComponent>,
                 mainSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.MAIN),
-                dbSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_SQL)
+                sqlSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_SQL),
+                mongoSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_MONGO),
+                dnsSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_DNS)
         )
 
     }

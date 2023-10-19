@@ -27,8 +27,10 @@ class RPCIndividual(
     index: Int = -1,
     allActions: MutableList<ActionComponent>,
     mainSize: Int = allActions.size,
-    dbSize: Int = 0,
-    groups: GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(allActions, mainSize, dbSize)
+    sqlSize: Int = 0,
+    mongoSize: Int = 0,
+    dnsSize: Int = 0,
+    groups: GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(allActions, mainSize, sqlSize,mongoSize,dnsSize)
 ) : ApiWsIndividual(
     sampleType,
     trackOperator, index, allActions,
@@ -65,7 +67,7 @@ class RPCIndividual(
                     )
                 }})
         },
-        mainSize = actions.size, dbSize = dbInitialization.size)
+        mainSize = actions.size, sqlSize = dbInitialization.size)
 
     /**
      * TODO: Verify the implementation
@@ -126,7 +128,9 @@ class RPCIndividual(
             index,
             children.map { it.copy() }.toMutableList() as MutableList<ActionComponent>,
             mainSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.MAIN),
-            dbSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_SQL)
+            sqlSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_SQL),
+            mongoSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_MONGO),
+            dnsSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_DNS)
         )
     }
 

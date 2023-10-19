@@ -33,8 +33,10 @@ class RestIndividual(
     index : Int = -1,
     allActions : MutableList<out ActionComponent>,
     mainSize : Int = allActions.size,
-    dbSize: Int = 0,
-    groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(allActions,mainSize,dbSize)
+    sqlSize: Int = 0,
+    mongoSize: Int = 0,
+    dnsSize: Int = 0,
+    groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(allActions,mainSize,sqlSize,mongoSize,dnsSize)
 ): ApiWsIndividual(sampleType, trackOperator, index, allActions,
     childTypeVerifier = {
         RestResourceCalls::class.java.isAssignableFrom(it)
@@ -81,8 +83,9 @@ class RestIndividual(
                 index,
                 children.map { it.copy() }.toMutableList() as MutableList<out ActionComponent>,
                 mainSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.MAIN),
-                //CHANGE: This is momentary for testing. Needs refactor to handle multiple databases
-                dbSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_MONGO ) + groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_SQL )
+                sqlSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_SQL),
+                mongoSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_MONGO),
+                dnsSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_DNS)
         )
     }
 
