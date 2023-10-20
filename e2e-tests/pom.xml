@@ -68,4 +68,16 @@
         </pluginManagement>
     </build>
 
+    <profiles>
+        <profile>
+            <id>Configs for JDK >= 17</id>
+            <activation>
+                <jdk>[17,)</jdk>
+            </activation>
+            <modules>
+                <module>spring-rest-jakarta</module>
+            </modules>
+        </profile>
+    </profiles>
+
 </project>
