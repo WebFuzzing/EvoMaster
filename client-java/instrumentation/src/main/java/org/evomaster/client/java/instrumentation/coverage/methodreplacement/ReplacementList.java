@@ -26,6 +26,7 @@ public class ReplacementList {
         if(listCache == null) {
             listCache = Arrays.asList(
                     new AbstractEndpointClassReplacement(),
+                    new Base64DecoderClassReplacement(),
                     new BooleanClassReplacement(),
                     new ByteClassReplacement(),
                     new CharacterClassReplacement(),
@@ -68,8 +69,8 @@ public class ReplacementList {
                     new URLClassReplacement(),
                     new UUIDClassReplacement(),
                     new ValidatorClassReplacement(),
-                    new WebRequestClassReplacement(),
-                    new Base64DecoderClassReplacement()
+                    new WebRequestClassReplacement()
+                    /* Note: Add new class replacements only in alphabetic order */
             );
 
             /*
