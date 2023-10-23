@@ -538,7 +538,7 @@ object RestActionBuilderV3 {
                         if (it !is String)
                             LoggingUtil.uniqueWarn(log, "an item of enum is not string (ie, ${it::class.java.simpleName}) for a property whose `type` is string and `name` is $name")
                         it.toString()
-                    } as MutableList<String>).apply { add("EVOMASTER") })
+                    } as MutableList<String>).apply {})
                 /*
                     Looks like a possible bug in the parser, where numeric enums can be read as strings... got this
                     issue in GitLab schemas, eg for visibility_level
@@ -583,7 +583,7 @@ object RestActionBuilderV3 {
             "password" -> return createNonObjectGeneWithSchemaConstraints(schema, name, StringGene::class.java, enableConstraintHandling)//StringGene(name) //nothing special to do, it is just a hint
             "binary" -> return createNonObjectGeneWithSchemaConstraints(schema, name, StringGene::class.java, enableConstraintHandling)//StringGene(name) //does it need to be treated specially?
             "byte" -> return createNonObjectGeneWithSchemaConstraints(schema, name, Base64StringGene::class.java, enableConstraintHandling)//Base64StringGene(name)
-            "date" -> return DateGene(name)
+            "date" -> return DateGene(name, onlyValidDates = true)
             "date-time" -> return DateTimeGene(name)
             else -> if (format != null) {
                 LoggingUtil.uniqueWarn(log, "Unhandled format '$format'")
