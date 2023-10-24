@@ -7,6 +7,7 @@ import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUti
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.problem.externalservice.ExternalService
+import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.externalservice.HostnameResolutionInfo
 import org.evomaster.core.problem.externalservice.httpws.*
 import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalServiceUtils.generateRandomIPAddress
@@ -71,6 +72,8 @@ class HttpWsExternalServiceHandler {
      */
     private val hostnameLocalAddressMapping: MutableMap<String, String> = mutableMapOf()
 
+    private val hostnameResolutionInfos: MutableList<HostnameResolutionInfo> = mutableListOf()
+
     /**
      * Contains last used loopback address for reference when creating
      * a new address
@@ -124,6 +127,7 @@ class HttpWsExternalServiceHandler {
                 val ip = getNewIP()
                 lastIPAddress = ip
                 hostnameLocalAddressMapping[hostnameResolutionInfo.remoteHostName] = ip
+                hostnameResolutionInfos.add(hostnameResolutionInfo)
             }
         }
     }
@@ -201,6 +205,15 @@ class HttpWsExternalServiceHandler {
 
     fun getLocalDomainNameMapping(): Map<String, String> {
         return hostnameLocalAddressMapping.toMap()
+    }
+
+    fun getHostnameResolutionActions(): List<HostnameResolutionAction> {
+        val output: MutableList<HostnameResolutionAction> = mutableListOf()
+        hostnameResolutionInfos.forEach {
+            val action = HostnameResolutionAction(it.remoteHostName, it.resolved)
+            output.add(action)
+        }
+        return output
     }
 
     /**
