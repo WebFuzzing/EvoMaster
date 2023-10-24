@@ -38,12 +38,10 @@ public class ExternalServiceInfoUtils {
                 connectPort = ExternalServiceSharedUtils.getDefaultWMPort(signature);
             }
 
-            ExternalServiceMapping externalServiceMapping = ExecutionTracer.getExternalMappingBySignature(signature);
-
-            return new String[]{externalServiceMapping.getLocalIPAddress(), "" + connectPort};
+            return new String[]{ExecutionTracer.getExternalMappingBySignature(signature), "" + connectPort};
         } else {
 
-            return new String[]{ExecutionTracer.getExternalMappingByHostname(remoteHostInfo.getHostname()).getLocalIPAddress(), "" + remotePort};
+            return new String[]{ExecutionTracer.getExternalMappingByHostname(remoteHostInfo.getHostname()), "" + remotePort};
         }
     }
 

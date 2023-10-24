@@ -697,21 +697,24 @@ public class ExecutionTracer {
      * Return the WireMock IP if there is a mapping for the hostname. If there is
      * no mapping NULL will be returned
      */
-    public static ExternalServiceMapping getExternalMappingBySignature(String signature) {
+    public static String getExternalMappingBySignature(String signature) {
         List<ExternalServiceMapping> m = externalServiceMapping
                 .stream()
                 .filter(e -> e.getSignature().equals(signature))
                 .collect(Collectors.toList());
 
-        return m.get(0);
+        if (m.isEmpty()) {
+            return null;
+        }
+        return m.get(0).getLocalIPAddress();
     }
 
-    public static ExternalServiceMapping getExternalMappingByHostname(String hostname) {
+    public static String getExternalMappingByHostname(String hostname) {
         return externalServiceMapping
                 .stream()
                 .filter(e -> e.getRemoteHostname().equals(hostname))
                 .collect(Collectors.toList())
-                .get(0);
+                .get(0).getLocalIPAddress();
     }
 
     public static boolean hasActiveExternalMapping(String signature) {
@@ -724,7 +727,7 @@ public class ExecutionTracer {
     public static boolean hasMockServerForHost(String hostname) {
         return externalServiceMapping
                 .stream()
-                .filter(e -> e.getRemoteHostname() == hostname)
+                .filter(e -> e.getRemoteHostname().equals(hostname))
                 .count() > 0;
     }
 
