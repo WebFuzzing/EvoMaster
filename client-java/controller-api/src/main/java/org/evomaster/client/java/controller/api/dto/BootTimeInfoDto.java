@@ -20,5 +20,5 @@ public class BootTimeInfoDto {
     /**
      * Collections of hostnames collected through InetAddressReplacement
      */
-    public List<HostnameInfoDto> hostnameInfoDtos;
+    public List<HostnameResolutionInfoDto> hostnameResolutionInfoDtos;
 }

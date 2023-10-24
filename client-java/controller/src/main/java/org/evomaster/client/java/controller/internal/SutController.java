@@ -1265,8 +1265,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                     value = e.getValue();
                 }}).collect(Collectors.toList());
 
-        infoDto.hostnameInfoDtos = info.getHostnameInfos().stream()
-                .map(h -> new HostnameInfoDto(h.getHostname(), h.getResolved())).collect(Collectors.toList());
+        infoDto.hostnameResolutionInfoDtos = info.getHostnameInfos().stream()
+                .map(h -> new HostnameResolutionInfoDto(h.getHostname(), h.getResolved())).collect(Collectors.toList());
         infoDto.externalServicesDto = info.getExternalServiceInfo().stream()
                 .map(e -> new ExternalServiceInfoDto(e.getProtocol(), e.getHostname(), e.getRemotePort()))
                 .collect(Collectors.toList());

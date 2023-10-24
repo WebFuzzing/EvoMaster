@@ -4,7 +4,7 @@ import org.evomaster.core.search.EnvironmentAction
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 
-class DnsAction(
+class HostnameResolutionAction(
     private val hostname: String,
     val resolved: Boolean,
 ) : EnvironmentAction(listOf()) {
@@ -21,6 +21,6 @@ class DnsAction(
     }
 
     override fun copyContent(): StructuralElement {
-        return DnsAction(hostname, resolved)
+        return HostnameResolutionAction(hostname, resolved)
     }
 }

@@ -36,16 +36,16 @@ public class BootTimeObjectiveInfo implements Serializable {
      */
     private final List<ExternalServiceInfo> externalServiceInfo = new CopyOnWriteArrayList<>();
 
-    private final List<HostnameInfo> hostnameInfos = new CopyOnWriteArrayList<>();
+    private final List<HostnameResolutionInfo> hostnameResolutionInfos = new CopyOnWriteArrayList<>();
 
     public void reset(){
         maxObjectiveCoverage.clear();
         externalServiceInfo.clear();
     }
 
-    public void registerHostnameInfoAtSutBootTime(HostnameInfo hostnameInfo) {
-        if (hostnameInfos.isEmpty() || hostnameInfos.stream().noneMatch(h -> h.equals(hostnameInfo))) {
-            hostnameInfos.add(hostnameInfo.copy());
+    public void registerHostnameInfoAtSutBootTime(HostnameResolutionInfo hostnameResolutionInfo) {
+        if (hostnameResolutionInfos.isEmpty() || hostnameResolutionInfos.stream().noneMatch(h -> h.equals(hostnameResolutionInfo))) {
+            hostnameResolutionInfos.add(hostnameResolutionInfo.copy());
         }
     }
 
@@ -63,8 +63,8 @@ public class BootTimeObjectiveInfo implements Serializable {
         return Collections.unmodifiableList(externalServiceInfo);
     }
 
-    public List<HostnameInfo> getHostnameInfos() {
-        return Collections.unmodifiableList(hostnameInfos);
+    public List<HostnameResolutionInfo> getHostnameInfos() {
+        return Collections.unmodifiableList(hostnameResolutionInfos);
     }
 
     public void updateMaxObjectiveCoverage(String descriptiveId, double value){

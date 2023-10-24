@@ -3,7 +3,7 @@ package org.evomaster.client.java.instrumentation;
 import java.io.Serializable;
 import java.util.Objects;
 
-public class HostnameInfo implements Serializable {
+public class HostnameResolutionInfo implements Serializable {
     private final String remoteHostname;
 
     /**
@@ -11,7 +11,7 @@ public class HostnameInfo implements Serializable {
      */
     private final Boolean resolved;
 
-    public HostnameInfo(String remoteHostname, Boolean resolved) {
+    public HostnameResolutionInfo(String remoteHostname, Boolean resolved) {
         this.remoteHostname = remoteHostname;
         this.resolved = resolved;
     }
@@ -24,15 +24,15 @@ public class HostnameInfo implements Serializable {
         return resolved;
     }
 
-    public HostnameInfo copy(){
-        return new HostnameInfo(remoteHostname, resolved);
+    public HostnameResolutionInfo copy(){
+        return new HostnameResolutionInfo(remoteHostname, resolved);
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        HostnameInfo that = (HostnameInfo) o;
+        HostnameResolutionInfo that = (HostnameResolutionInfo) o;
         return Objects.equals(remoteHostname, that.remoteHostname);
     }
 

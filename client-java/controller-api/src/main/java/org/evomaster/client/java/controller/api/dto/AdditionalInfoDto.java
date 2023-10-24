@@ -66,5 +66,5 @@ public class AdditionalInfoDto {
      */
     public List<ExternalServiceInfoDto> employedDefaultWM = new ArrayList<>();
 
-    public List<HostnameInfoDto> hostnameInfoDtos = new ArrayList<>();
+    public List<HostnameResolutionInfoDto> hostnameResolutionInfoDtos = new ArrayList<>();
 }

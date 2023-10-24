@@ -9,7 +9,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.externalservice.ExternalService
-import org.evomaster.core.problem.externalservice.HostnameInfo
+import org.evomaster.core.problem.externalservice.HostnameResolutionInfo
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceInfo
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.httpws.service.HttpWsSampler
@@ -330,9 +330,9 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
      * To collect external service info through SutInfoDto
      */
     private fun initHostnameInfo(info: SutInfoDto) {
-        if (info.bootTimeInfoDto?.hostnameInfoDtos != null) {
-            info.bootTimeInfoDto.hostnameInfoDtos.forEach {
-                externalServiceHandler.addHostname(HostnameInfo(
+        if (info.bootTimeInfoDto?.hostnameResolutionInfoDtos != null) {
+            info.bootTimeInfoDto.hostnameResolutionInfoDtos.forEach {
+                externalServiceHandler.addHostname(HostnameResolutionInfo(
                     it.remoteHostname,
                     it.resolved
                 ))

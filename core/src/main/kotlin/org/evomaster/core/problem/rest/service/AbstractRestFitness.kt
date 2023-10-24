@@ -8,7 +8,7 @@ import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils.getWMDefaultSignature
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.problem.externalservice.HostnameInfo
+import org.evomaster.core.problem.externalservice.HostnameResolutionInfo
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceInfo
@@ -803,8 +803,8 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
          */
 
         infoDto.forEachIndexed { index, info ->
-            info.hostnameInfoDtos.forEach { hn ->
-                externalServiceHandler.addHostname(HostnameInfo(
+            info.hostnameResolutionInfoDtos.forEach { hn ->
+                externalServiceHandler.addHostname(HostnameResolutionInfo(
                     hn.remoteHostname,
                     hn.resolved
                 ))

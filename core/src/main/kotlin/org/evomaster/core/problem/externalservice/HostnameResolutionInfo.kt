@@ -1,6 +1,6 @@
 package org.evomaster.core.problem.externalservice
 
-open class HostnameInfo (
+open class HostnameResolutionInfo (
     val remoteHostName: String,
     val resolved: Boolean
 )

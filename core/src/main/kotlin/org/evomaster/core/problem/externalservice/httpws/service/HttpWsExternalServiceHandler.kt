@@ -7,8 +7,7 @@ import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUti
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.problem.externalservice.ExternalService
-import org.evomaster.core.problem.externalservice.HostnameInfo
-import org.evomaster.core.problem.externalservice.LocalDomainNameMapping
+import org.evomaster.core.problem.externalservice.HostnameResolutionInfo
 import org.evomaster.core.problem.externalservice.httpws.*
 import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalServiceUtils.generateRandomIPAddress
 import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalServiceUtils.isAddressAvailable
@@ -70,7 +69,7 @@ class HttpWsExternalServiceHandler {
     /**
      * Map of remote hostname vs local DNS replacement
      */
-    private val hostnameMapping: MutableMap<String, LocalDomainNameMapping> = mutableMapOf()
+    private val hostnameLocalAddressMapping: MutableMap<String, String> = mutableMapOf()
 
     /**
      * Contains last used loopback address for reference when creating
@@ -99,7 +98,7 @@ class HttpWsExternalServiceHandler {
     private fun initDefaultWM() {
         if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
             if (!isDefaultInitialized) {
-                addHostname(HostnameInfo("no_host_name", true))
+                addHostname(HostnameResolutionInfo("no_host_name", true))
                 registerHttpExternalServiceInfo(DefaultHttpExternalServiceInfo.createDefaultHttps())
                 registerHttpExternalServiceInfo(DefaultHttpExternalServiceInfo.createDefaultHttp())
                 isDefaultInitialized = true
@@ -119,12 +118,12 @@ class HttpWsExternalServiceHandler {
         }
     }
 
-    fun addHostname(hostnameInfo: HostnameInfo) {
+    fun addHostname(hostnameResolutionInfo: HostnameResolutionInfo) {
         if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
-            if (!hostnameMapping.containsKey(hostnameInfo.remoteHostName)) {
+            if (!hostnameLocalAddressMapping.containsKey(hostnameResolutionInfo.remoteHostName)) {
                 val ip = getNewIP()
                 lastIPAddress = ip
-                hostnameMapping[hostnameInfo.remoteHostName] = LocalDomainNameMapping(hostnameInfo, ip)
+                hostnameLocalAddressMapping[hostnameResolutionInfo.remoteHostName] = ip
             }
         }
     }
@@ -142,11 +141,11 @@ class HttpWsExternalServiceHandler {
 //                x
 //            }
 
-        if (!hostnameMapping.containsKey(externalServiceInfo.remoteHostname)) {
+        if (!hostnameLocalAddressMapping.containsKey(externalServiceInfo.remoteHostname)) {
             return
         }
 
-        val ip: String = hostnameMapping[externalServiceInfo.remoteHostname]!!.localIP
+        val ip: String = hostnameLocalAddressMapping[externalServiceInfo.remoteHostname]!!
 
         val registered = externalServices.filterValues {
             it.getRemoteHostName() == externalServiceInfo.remoteHostname &&
@@ -201,7 +200,7 @@ class HttpWsExternalServiceHandler {
     }
 
     fun getLocalDomainNameMapping(): Map<String, String> {
-        return hostnameMapping.mapValues { it.value.localIP }
+        return hostnameLocalAddressMapping.toMap()
     }
 
     /**

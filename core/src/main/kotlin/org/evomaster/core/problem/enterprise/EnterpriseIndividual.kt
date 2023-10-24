@@ -9,7 +9,7 @@ import org.evomaster.core.sql.SqlActionUtils
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
-import org.evomaster.core.problem.externalservice.DnsAction
+import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.search.*
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Randomness
@@ -108,9 +108,9 @@ abstract class EnterpriseIndividual(
                 if(sizeMongo==0) -1 else startIndexMongo , if(sizeMongo==0) -1 else endIndexMongo
             )
 
-            val startIndexDns = children.indexOfFirst { a -> a is DnsAction }
-            val endIndexDns = children.indexOfLast { a -> a is DnsAction }
-            val dns = ChildGroup<StructuralElement>(GroupsOfChildren.INITIALIZATION_DNS,{e -> e is ActionComponent && e.flatten().all { a -> a is DnsAction }},
+            val startIndexDns = children.indexOfFirst { a -> a is HostnameResolutionAction }
+            val endIndexDns = children.indexOfLast { a -> a is HostnameResolutionAction }
+            val dns = ChildGroup<StructuralElement>(GroupsOfChildren.INITIALIZATION_DNS,{e -> e is ActionComponent && e.flatten().all { a -> a is HostnameResolutionAction }},
                 if(sizeDNS==0) -1 else startIndexDns , if(sizeDNS==0) -1 else endIndexDns
             )
 

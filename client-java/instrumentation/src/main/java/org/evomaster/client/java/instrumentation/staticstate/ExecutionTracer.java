@@ -672,8 +672,8 @@ public class ExecutionTracer {
         updateBranch(className, line, branchId, t);
     }
 
-    public static void addHostnameInfo(HostnameInfo hostnameInfo) {
-        getCurrentAdditionalInfo().addHostnameInfo(hostnameInfo);
+    public static void addHostnameInfo(HostnameResolutionInfo hostnameResolutionInfo) {
+        getCurrentAdditionalInfo().addHostnameInfo(hostnameResolutionInfo);
     }
 
     /**

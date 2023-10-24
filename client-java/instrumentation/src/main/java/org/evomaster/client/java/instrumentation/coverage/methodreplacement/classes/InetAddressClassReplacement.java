@@ -1,12 +1,10 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
-import org.evomaster.client.java.instrumentation.ExternalServiceInfo;
-import org.evomaster.client.java.instrumentation.HostnameInfo;
+import org.evomaster.client.java.instrumentation.HostnameResolutionInfo;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ExternalServiceInfoUtils;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
-import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils;
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
@@ -45,7 +43,7 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
                 return InetAddress.getByName(ip);
             }
             InetAddress inetAddress = InetAddress.getByName(host);
-            ExecutionTracer.addHostnameInfo(new HostnameInfo(host, true));
+            ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(host, true));
             return inetAddress;
         } catch (UnknownHostException e) {
 //            ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(
@@ -54,7 +52,7 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
 //                    -1
 //            );
 //            ExecutionTracer.addExternalServiceHost(remoteHostInfo);
-            ExecutionTracer.addHostnameInfo(new HostnameInfo(host, false));
+            ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(host, false));
             throw e;
         }
     }
@@ -76,7 +74,7 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
                 return new InetAddress[]{InetAddress.getByName(ip)};
             }
             InetAddress[] inetAddresses = InetAddress.getAllByName(host);
-            ExecutionTracer.addHostnameInfo(new HostnameInfo(host, true));
+            ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(host, true));
             return inetAddresses;
         } catch (UnknownHostException e) {
 //            ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(
@@ -85,7 +83,7 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
 //                    -1
 //            );
 //            ExecutionTracer.addExternalServiceHost(remoteHostInfo);
-            ExecutionTracer.addHostnameInfo(new HostnameInfo(host, false));
+            ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(host, false));
             throw e;
         }
     }
