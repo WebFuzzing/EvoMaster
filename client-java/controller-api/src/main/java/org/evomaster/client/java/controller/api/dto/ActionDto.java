@@ -41,7 +41,7 @@ public class ActionDto {
      * Mapping of external service signature to internal WireMock
      * instance addresses.
      */
-    public Map<String, String> externalServiceMapping = new HashMap<>();
+    public List<ExternalServiceMappingDto> externalServiceMapping = new ArrayList<>();
 
     /**
      * Mapping of external service domain name and local address used

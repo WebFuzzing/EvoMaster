@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.externalservice.httpws.service
 
 import com.google.inject.Inject
+import org.evomaster.client.java.controller.api.dto.ExternalServiceMappingDto
 import org.evomaster.client.java.controller.api.dto.problem.ExternalServiceDto
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils.isDefaultSignature
 import org.evomaster.core.EMConfig
@@ -185,13 +186,19 @@ class HttpWsExternalServiceHandler {
         }
     }
 
-    fun getExternalServiceMappings(): Map<String, String> {
-        return externalServices.mapValues { it.value.getIP() }
-    }
+    fun getExternalServiceMappings(): List<ExternalServiceMappingDto> {
+        val output: MutableList<ExternalServiceMappingDto> = mutableListOf()
 
-//    fun getLocalAddressMapping(): Map<String, String> {
-//        return localAddressMapping
-//    }
+        externalServices.forEach {
+            val dto = ExternalServiceMappingDto()
+            dto.remoteHostname = it.value.getRemoteHostName()
+            dto.localIPAddress = it.value.getIP()
+            dto.signature = it.value.getSignature()
+            dto.isActive = it.value.isActive()
+            output.add(dto)
+        }
+        return output
+    }
 
     fun getLocalDomainNameMapping(): Map<String, String> {
         return hostnameMapping.mapValues { it.value.localIP }

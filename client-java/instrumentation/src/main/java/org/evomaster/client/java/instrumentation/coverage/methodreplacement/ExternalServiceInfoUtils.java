@@ -1,6 +1,7 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 
 import org.evomaster.client.java.instrumentation.ExternalServiceInfo;
+import org.evomaster.client.java.instrumentation.ExternalServiceMapping;
 import org.evomaster.client.java.instrumentation.HostnameInfo;
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
@@ -23,24 +24,26 @@ public class ExternalServiceInfoUtils {
         // data structure of the external service mapping inside ExecutionTracer
 
         // TODO: Experiment
-//        ExecutionTracer.addHostnameInfo(new HostnameInfo(remoteHostInfo.getHostname(), true));
+        ExecutionTracer.addHostnameInfo(new HostnameInfo(remoteHostInfo.getHostname(), true));
 
         ExecutionTracer.addExternalServiceHost(remoteHostInfo);
+        String signature = remoteHostInfo.signature();
 
-        if (!ExecutionTracer.hasExternalMapping(remoteHostInfo.signature())) {
-            String signature = remoteHostInfo.signature();
+        if (!ExecutionTracer.hasMockServerForHost(remoteHostInfo.getHostname())) {
             int connectPort = remotePort;
 
-//            if (!ExecutionTracer.hasExternalMapping(remoteHostInfo.signature())) {
-//                ExecutionTracer.addEmployedDefaultWMHost(remoteHostInfo);
-//                signature = ExternalServiceSharedUtils.getWMDefaultSignature(remoteHostInfo.getProtocol(), remotePort);
-//                connectPort = ExternalServiceSharedUtils.getDefaultWMPort(signature);
-//            }
+            if (!ExecutionTracer.hasActiveExternalMapping(signature)) {
+                ExecutionTracer.addEmployedDefaultWMHost(remoteHostInfo);
+                signature = ExternalServiceSharedUtils.getWMDefaultSignature(remoteHostInfo.getProtocol(), remotePort);
+                connectPort = ExternalServiceSharedUtils.getDefaultWMPort(signature);
+            }
 
-//            return new String[]{remoteHostInfo.getHostname(), "" + remotePort};
-            return new String[]{ExecutionTracer.getExternalMapping(signature), "" + connectPort};
+            ExternalServiceMapping externalServiceMapping = ExecutionTracer.getExternalMappingBySignature(signature);
+
+            return new String[]{externalServiceMapping.getLocalIPAddress(), "" + connectPort};
         } else {
-            return new String[]{ExecutionTracer.getExternalMapping(remoteHostInfo.signature()), "" + remotePort};
+
+            return new String[]{ExecutionTracer.getExternalMappingByHostname(remoteHostInfo.getHostname()).getLocalIPAddress(), "" + remotePort};
         }
     }
 

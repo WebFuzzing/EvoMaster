@@ -4,18 +4,23 @@ import org.evomaster.core.search.EnvironmentAction
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 
+class DnsAction(
+    private val hostname: String,
+    val resolved: Boolean,
+) : EnvironmentAction(listOf()) {
 
-//TODO
-class DnsAction(children: List<StructuralElement>) : EnvironmentAction(children) {
+    fun getHostname(): String {
+        return hostname
+    }
     override fun getName(): String {
-        TODO("Not yet implemented")
+        return "Hostname_${hostname}_${resolved}"
     }
 
     override fun seeTopGenes(): List<out Gene> {
-        TODO("Not yet implemented")
+        return listOf()
     }
 
     override fun copyContent(): StructuralElement {
-        TODO("Not yet implemented")
+        return DnsAction(hostname, resolved)
     }
 }

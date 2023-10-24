@@ -22,7 +22,7 @@ public class Action implements Serializable {
     /**
      * A map of hostname and WireMock IP to mock external service calls.
      */
-    private final Map<String, String> externalServiceMapping;
+    private final List<ExternalServiceMapping> externalServiceMapping;
 
     /**
      * A map of external service domain name against to the local IP
@@ -35,11 +35,11 @@ public class Action implements Serializable {
      */
     private final List<ExternalService> skippedExternalServices;
 
-    public Action(int index, String name, Collection<String> inputVariables, Map<String, String> externalServiceMapping, Map<String, String> localAddressMapping, List<ExternalService> skippedExternalServices) {
+    public Action(int index, String name, Collection<String> inputVariables, List<ExternalServiceMapping> externalServiceMapping, Map<String, String> localAddressMapping, List<ExternalService> skippedExternalServices) {
         this.index = index;
         this.name = name;
         this.inputVariables = Collections.unmodifiableSet(new HashSet<>(inputVariables));
-        this.externalServiceMapping = Collections.unmodifiableMap(new HashMap<>(externalServiceMapping));
+        this.externalServiceMapping = Collections.unmodifiableList(new ArrayList<>(externalServiceMapping));
         this.localAddressMapping = Collections.unmodifiableMap(new HashMap<>(localAddressMapping));
         this.skippedExternalServices = Collections.unmodifiableList(new ArrayList<>(skippedExternalServices));
     }
@@ -52,7 +52,7 @@ public class Action implements Serializable {
         return inputVariables;
     }
 
-    public Map<String, String> getExternalServiceMapping() {
+    public List<ExternalServiceMapping> getExternalServiceMapping() {
         return externalServiceMapping;
     }
 
