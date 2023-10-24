@@ -29,6 +29,16 @@ Also, some of these papers provides full replication packages, which are linked 
 
 ### 2023
 
+* S. Seran, M. Zhang, A. Arcuri.
+  *Search-Based Mock Generation of External Web Service Interactions*.
+  Symposium on Search-based Software Engineering (SSBSE).
+  (to appear)
+
+* A. Golmohammadi, M. Zhang, A. Arcuri.
+  *On the Impact of Tool Evolution and Case Study Size on SBSE Experiments: A Replicated Study with EvoMaster*.
+  Symposium on Search-based Software Engineering (SSBSE).
+  (to appear)
+
 * A. Golmohammadi.
   *Enhancing White-Box Search-Based Testing of RESTful APIs*.
   IEEE International Symposium on Software Reliability Engineering (ISSRE).
