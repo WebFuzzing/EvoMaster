@@ -1,7 +1,6 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 
 import org.evomaster.client.java.instrumentation.ExternalServiceInfo;
-import org.evomaster.client.java.instrumentation.ExternalServiceMapping;
 import org.evomaster.client.java.instrumentation.HostnameResolutionInfo;
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
@@ -40,7 +39,6 @@ public class ExternalServiceInfoUtils {
 
             return new String[]{ExecutionTracer.getExternalMappingBySignature(signature), "" + connectPort};
         } else {
-
             return new String[]{ExecutionTracer.getExternalMappingByHostname(remoteHostInfo.getHostname()), "" + remotePort};
         }
     }

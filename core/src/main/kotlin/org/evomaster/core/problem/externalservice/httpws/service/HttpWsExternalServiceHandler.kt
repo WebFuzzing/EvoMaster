@@ -101,7 +101,7 @@ class HttpWsExternalServiceHandler {
     private fun initDefaultWM() {
         if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
             if (!isDefaultInitialized) {
-                addHostname(HostnameResolutionInfo("no_host_name", true))
+                addHostname(HostnameResolutionInfo("no_host_name", false))
                 registerHttpExternalServiceInfo(DefaultHttpExternalServiceInfo.createDefaultHttps())
                 registerHttpExternalServiceInfo(DefaultHttpExternalServiceInfo.createDefaultHttp())
                 isDefaultInitialized = true
