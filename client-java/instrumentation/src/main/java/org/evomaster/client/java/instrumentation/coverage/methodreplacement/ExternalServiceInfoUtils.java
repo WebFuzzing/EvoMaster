@@ -23,7 +23,7 @@ public class ExternalServiceInfoUtils {
         // data structure of the external service mapping inside ExecutionTracer
 
         // TODO: Experiment
-        ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(remoteHostInfo.getHostname(), true));
+//        ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(remoteHostInfo.getHostname(), true));
 
         ExecutionTracer.addExternalServiceHost(remoteHostInfo);
         String signature = remoteHostInfo.signature();
