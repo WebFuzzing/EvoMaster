@@ -229,6 +229,7 @@ else:
 
 JDK_8 = "JDK_8"
 JDK_11 = "JDK_11"
+JDK_17 = "JDK_17"
 JS = "JS"
 DOTNET_3 = "DOTNET_3"
 
@@ -254,6 +255,8 @@ SUTS = [
     #Sut("ind0", 1, JDK_8),
     #Sut("ind1", 1, JDK_11),
     # REST JVM
+    Sut("reservations-api", 1, JDK_11),
+    Sut("bibliothek", 1, JDK_17),
     Sut("features-service", 1, JDK_8),
     Sut("scout-api", 2, JDK_8),
     Sut("proxyprint", 2, JDK_8),
@@ -275,6 +278,7 @@ SUTS = [
     Sut("graphql-ncs", 1, JDK_8),
     Sut("graphql-scs", 1, JDK_8),
     # RPC
+    Sut("signal-registration",1,JDK_17)
     Sut("rpc-thrift-ncs", 1, JDK_8),
     Sut("rpc-thrift-scs", 1, JDK_8),
     # REST NodeJS
