@@ -233,6 +233,10 @@ JDK_17 = "JDK_17"
 JS = "JS"
 DOTNET_3 = "DOTNET_3"
 
+def isJava(sut):
+    return sut.platform == JDK_8 or sut.platform == JDK_11 or sut.platform == JDK_17
+
+
 class Sut:
     def __init__(self, name, timeWeight, platform):
         self.name = name
@@ -362,6 +366,10 @@ else:
     JAVA_HOME_11 = os.environ.get("JAVA_HOME_11", "")
     if JAVA_HOME_11 == "":
         raise Exception("You must specify a JAVA_HOME_11 env variable specifying where JDK 11 is installed")
+
+    JAVA_HOME_17 = os.environ.get("JAVA_HOME_17", "")
+    if JAVA_HOME_17 == "":
+        raise Exception("You must specify a JAVA_HOME_17 env variable specifying where JDK 17 is installed")
 
 
 # How to run EvoMaster
@@ -535,8 +543,7 @@ def createJobHead(port, sut, timeoutMinutes):
         command = "dotnet " + sut.name+"/"+sut.name + EM_POSTFIX_DOTNET + " " + params + " > " + sut_log + " 2>&1 &"
 
     else:
-        print("ERROR: unrecognized " + sut.platform)
-        exit(1)
+        raise Exception("ERROR: unrecognized " + sut.platform)
 
     if not CLUSTER:
         script.write("\n\necho \"Starting EM Runner with: " + command + "\"\n")
@@ -635,14 +642,11 @@ def createOneJob(state, sut, seed, setting, configName):
     state.generated += 1
     return code
 
-def isJava(sut):
-    return sut.platform == JDK_8 or sut.platform == JDK_11 or sut.platform == JDK_17
 
 def getJavaCommand(sut):
 
     if not isJava(sut):
-        print("ERROR: not a recognized JVM SUT: " + sut.platform)
-        exit(1)
+        raise Exception("ERROR: not a recognized JVM SUT: " + sut.platform)
 
     JAVA = "java "
     if not CLUSTER:
@@ -653,8 +657,7 @@ def getJavaCommand(sut):
         elif sut.platform == JDK_17:
             JAVA = "\"" + JAVA_HOME_17 +"\"/bin/java "
         else:
-        print("ERROR: unhandled JVM version: " + sut.platform)
-        exit(1)
+            raise Exception("ERROR: unhandled JVM version: " + sut.platform)
 
     return JAVA
 
@@ -775,8 +778,7 @@ def createJobs():
         for c in list(set(CONFIGFILTER.split(","))):
             found = list(filter(lambda x: x.name.lower() == c.lower(), CONFIGS))
             if len(found) == 0:
-                print("ERROR: cannot find the specified config: "+c)
-                exit(1)
+                raise Exception("ERROR: cannot find the specified config: "+c)
             filteredconfigs.extend(found)
 
         CONFIGS = filteredconfigs
@@ -874,8 +876,7 @@ class Config:
     # settings is an array of ParameterSetting objects
     def __init__(self, settings, name="exp"):
         if " " in name:
-            print("Config name must have no space. Wrong value: " + name)
-            exit(1)
+            raise Exception("Config name must have no space. Wrong value: " + name)
         self.name = name
         self.settings = settings
         self.numOfSettings = 1
