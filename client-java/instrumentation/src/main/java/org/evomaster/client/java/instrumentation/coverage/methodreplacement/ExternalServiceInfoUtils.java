@@ -5,6 +5,9 @@ import org.evomaster.client.java.instrumentation.HostnameResolutionInfo;
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
 public class ExternalServiceInfoUtils {
 
     /**
@@ -23,7 +26,13 @@ public class ExternalServiceInfoUtils {
         // data structure of the external service mapping inside ExecutionTracer
 
         // TODO: Experiment
-//        ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(remoteHostInfo.getHostname(), true));
+
+        try {
+            InetAddress.getByName(remoteHostInfo.getHostname());
+            ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(remoteHostInfo.getHostname(), true));
+        } catch (UnknownHostException e) {
+            ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(remoteHostInfo.getHostname(), false));
+        }
 
         ExecutionTracer.addExternalServiceHost(remoteHostInfo);
         String signature = remoteHostInfo.signature();
