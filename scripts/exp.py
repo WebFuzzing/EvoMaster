@@ -655,7 +655,7 @@ def getJavaCommand(sut):
         elif sut.platform == JDK_11:
             JAVA = "\"" + JAVA_HOME_11 +"\"/bin/java "
         elif sut.platform == JDK_17:
-            JAVA = "\"" + JAVA_HOME_17 +"\"/bin/java "
+            JAVA = "\"" + JAVA_HOME_17 +"\"/bin/java --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED "
         else:
             raise Exception("ERROR: unhandled JVM version: " + sut.platform)
 
