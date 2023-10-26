@@ -408,7 +408,7 @@ if not CLUSTER:
 
     #Due to Windows limitations (ie crappy FS), we need to copy JARs over
     for sut in SUTS:
-        if sut.platform == JDK_8 or sut.platform == JDK_11:
+        if isJava(sut):
             # copy jar files
             shutil.copy(os.path.join(CASESTUDY_DIR, sut.name + EM_POSTFIX), BASE_DIR)
             shutil.copy(os.path.join(CASESTUDY_DIR, sut.name + SUT_POSTFIX), BASE_DIR)
@@ -497,7 +497,7 @@ def createJobHead(port, sut, timeoutMinutes):
         script.write("cp " + EVOMASTER_DIR + "/evomaster.jar . \n")
 
         # Not sure if great idea to copy 1000s of files for JS intro SCRATCH
-        if sut.platform == JDK_8 or sut.platform == JDK_11:
+        if isJava(sut):
             sut_em_path = os.path.join(CASESTUDY_DIR, sut.name + EM_POSTFIX)
             sut_jar_path = os.path.join(CASESTUDY_DIR, sut.name + SUT_POSTFIX)
             agent_path = os.path.join(CASESTUDY_DIR, AGENT)
@@ -513,7 +513,7 @@ def createJobHead(port, sut, timeoutMinutes):
 
     command = ""
 
-    if sut.platform == JDK_8 or sut.platform == JDK_11:
+    if isJava(sut):
         params = " " + controllerPort + " " + sutPort + " " + sut.name + SUT_POSTFIX + " " + str(timeoutStart) + " " + getJavaCommand(sut)
 
         # Note: this is for the process of the Driver. The Xmx settings of the SUTs will need to be specified directly
@@ -533,6 +533,10 @@ def createJobHead(port, sut, timeoutMinutes):
     elif sut.platform == DOTNET_3:
         params = " " + controllerPort + " " + sutPort
         command = "dotnet " + sut.name+"/"+sut.name + EM_POSTFIX_DOTNET + " " + params + " > " + sut_log + " 2>&1 &"
+
+    else:
+        print("ERROR: unrecognized " + sut.platform)
+        exit(1)
 
     if not CLUSTER:
         script.write("\n\necho \"Starting EM Runner with: " + command + "\"\n")
@@ -631,14 +635,27 @@ def createOneJob(state, sut, seed, setting, configName):
     state.generated += 1
     return code
 
+def isJava(sut):
+    return sut.platform == JDK_8 or sut.platform == JDK_11 or sut.platform == JDK_17
 
 def getJavaCommand(sut):
+
+    if not isJava(sut):
+        print("ERROR: not a recognized JVM SUT: " + sut.platform)
+        exit(1)
+
     JAVA = "java "
     if not CLUSTER:
         if sut.platform == JDK_8:
             JAVA = "\"" + JAVA_HOME_8 +"\"/bin/java "
         elif sut.platform == JDK_11:
             JAVA = "\"" + JAVA_HOME_11 +"\"/bin/java "
+        elif sut.platform == JDK_17:
+            JAVA = "\"" + JAVA_HOME_17 +"\"/bin/java "
+        else:
+        print("ERROR: unhandled JVM version: " + sut.platform)
+        exit(1)
+
     return JAVA
 
 
