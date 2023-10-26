@@ -320,7 +320,7 @@ class RPCEndpointsHandler {
                     }
                     var fromClass = false
 
-                    val responseGene = (if (responseTypeClass != null){
+                    val responseGene = ((if (responseTypeClass != null){
                         handleDtoParam(responseTypeClass).also { fromClass = (dbDto.responseFullTypeWithGeneric != null) }
                     }else if (dbDto.response != null){
                         val node = readJson(dbDto.response)
@@ -331,7 +331,9 @@ class RPCEndpointsHandler {
                         }
                     }else{
                         StringGene("return")
-                    }.run { wrapWithOptionalGene(this, true) }) as OptionalGene
+                    }).run {
+                        wrapWithOptionalGene(this, true)
+                    }) as OptionalGene
 
                     val response = ClassResponseParam(className = dbDto.responseFullTypeWithGeneric?:dbDto.responseFullType, responseType = EnumGene("responseType", listOf("JSON")), response = responseGene)
                     if (fromClass) response.responseParsedWithClass()
