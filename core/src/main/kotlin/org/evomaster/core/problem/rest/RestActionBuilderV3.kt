@@ -1227,7 +1227,7 @@ object RestActionBuilderV3 {
 
 
     fun getModelsFromSwagger(swagger: OpenAPI,
-                             modelCluster: MutableMap<String, ObjectGene>
+                             modelCluster: MutableMap<String, ObjectGene>,
                             options: Options
     ) {
         modelCluster.clear()
