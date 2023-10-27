@@ -68,6 +68,14 @@ object RestActionBuilderV3 {
 
     private val mapper = ObjectMapper()
 
+    class Options(
+        /** presents whether apply name/text analysis on description and summary of rest action */
+        val doParseDescription: Boolean = false,
+        val enableConstraintHandling: Boolean = true,
+        val wrongData: Boolean = false
+    )
+
+
     /**
      * clean cache in order to avoid different dto schema with different configurations, eg, enableConstraintHandling
      */
