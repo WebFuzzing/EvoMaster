@@ -404,6 +404,11 @@ class EMConfig {
 
         if (saveMockedResponseAsSeparatedFile && testResourcePathToSaveMockedResponse.isBlank())
             throw IllegalArgumentException("testResourcePathToSaveMockedResponse cannot be empty if it is required to save mocked responses in separated files (ie, saveMockedResponseAsSeparatedFile=true)")
+
+        if(probRestDefault + probRestExamples > 1){
+            throw IllegalArgumentException("Invalid combination of probabilities for probRestDefault and probRestExamples. " +
+                    "Their sum should be lower or equal to 1.")
+        }
     }
 
     private fun checkPropertyConstraints(m: KMutableProperty<*>) {
@@ -1940,6 +1945,18 @@ class EMConfig {
 
     var excludedTargetsForImpactCollection : List<String> = extractExcludedTargetsForImpactCollection()
         private set
+
+
+    @Experimental
+    @Cfg("In REST, specify probability of using 'default' values, if any is specified in the schema")
+    @Probability(true)
+    var probRestDefault = 0.0
+
+    @Experimental
+    @Cfg("In REST, specify probability of using 'example(s)' values, if any is specified in the schema")
+    @Probability(true)
+    var probRestExamples = 0.0
+
 
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
