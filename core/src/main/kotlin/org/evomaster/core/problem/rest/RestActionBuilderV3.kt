@@ -69,13 +69,24 @@ object RestActionBuilderV3 {
     private val mapper = ObjectMapper()
 
     class Options(
-        /** presents whether apply name/text analysis on description and summary of rest action */
+        /**
+         * presents whether apply name/text analysis on description and summary of rest action
+         */
+        @Deprecated("No longer maintained")
         val doParseDescription: Boolean = false,
+        /**
+         * Whether constraints should be considered and satisfied, eg min/max for numbers
+         */
         val enableConstraintHandling: Boolean = true,
-        val wrongData: Boolean = false
+        /**
+         * Purposely add invalid data, eg wrongly formatted dates.
+         * TODO remove/deprecate once we support Robustness Testing
+         */
+        val invalidData: Boolean = false
     ){
         constructor(config: EMConfig): this(
-            enableConstraintHandling = config.enableSchemaConstraintHandling
+            enableConstraintHandling = config.enableSchemaConstraintHandling,
+            invalidData = config.allowInvalidData
         )
     }
 
@@ -89,6 +100,9 @@ object RestActionBuilderV3 {
     }
 
 
+    /**
+     * @param doParseDescription presents whether apply name/text analysis on description and summary of rest action
+     */
     fun addActionsFromSwagger(swagger: OpenAPI,
                               actionCluster: MutableMap<String, Action>,
                               endpointsToSkip: List<String> = listOf(),
@@ -100,9 +114,6 @@ object RestActionBuilderV3 {
         )
     }
 
-    /**
-     * @param doParseDescription presents whether apply name/text analysis on description and summary of rest action
-     */
     fun addActionsFromSwagger(swagger: OpenAPI,
                               actionCluster: MutableMap<String, Action>,
                               endpointsToSkip: List<String> = listOf(),
@@ -554,14 +565,18 @@ object RestActionBuilderV3 {
 
         if (schema.enum?.isNotEmpty() == true) {
 
-            //Besides the defined values, add one to test robustness
             when (type) {
                 "string" ->
                     return EnumGene(name, (schema.enum.map {
                         if (it !is String)
                             LoggingUtil.uniqueWarn(log, "an item of enum is not string (ie, ${it::class.java.simpleName}) for a property whose `type` is string and `name` is $name")
                         it.toString()
-                    } as MutableList<String>).apply { add("EVOMASTER") })
+                    } as MutableList<String>).apply {
+                        if(options.invalidData) {
+                            //Besides the defined values, add one to test robustness
+                            add("EVOMASTER")
+                        }
+                    })
                 /*
                     Looks like a possible bug in the parser, where numeric enums can be read as strings... got this
                     issue in GitLab schemas, eg for visibility_level
@@ -606,7 +621,7 @@ object RestActionBuilderV3 {
             "password" -> return createNonObjectGeneWithSchemaConstraints(schema, name, StringGene::class.java, options)//StringGene(name) //nothing special to do, it is just a hint
             "binary" -> return createNonObjectGeneWithSchemaConstraints(schema, name, StringGene::class.java, options)//StringGene(name) //does it need to be treated specially?
             "byte" -> return createNonObjectGeneWithSchemaConstraints(schema, name, Base64StringGene::class.java, options)//Base64StringGene(name)
-            "date" -> return DateGene(name)
+            "date" -> return DateGene(name, onlyValidDates = !options.invalidData)
             "date-time" -> return DateTimeGene(name)
             else -> if (format != null) {
                 LoggingUtil.uniqueWarn(log, "Unhandled format '$format'")

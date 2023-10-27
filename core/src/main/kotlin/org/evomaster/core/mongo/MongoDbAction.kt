@@ -29,7 +29,7 @@ class MongoDbAction(
         val documentsTypeName = documentsType.substringBefore(":").drop(1).dropLast(1)
         return Collections.singletonList(
             createObjectGenesForDTOs(
-                documentsTypeName, documentsType, RestActionBuilderV3.Options(wrongData = false)
+                documentsTypeName, documentsType, RestActionBuilderV3.Options(invalidData = false)
             )
         )
     }
