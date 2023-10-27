@@ -801,7 +801,7 @@ class RestActionBuilderV3Test{
         assertEquals(expectedNumberOfActions, actions.size)
 
         //should not crash
-        RestActionBuilderV3.getModelsFromSwagger(schema, mutableMapOf())
+        RestActionBuilderV3.getModelsFromSwagger(schema, mutableMapOf(), options = RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling))
 
         return actions
     }
@@ -1244,7 +1244,7 @@ class RestActionBuilderV3Test{
 
         val schema = OpenAPIParser().readLocation(resourcePath, null, null).openAPI
         val map = mutableMapOf<String,ObjectGene>()
-        RestActionBuilderV3.getModelsFromSwagger(schema, map)
+        RestActionBuilderV3.getModelsFromSwagger(schema, map, RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling))
 
         assertEquals(3, map.size)
         val x = map["Iterable«Item»"] as ObjectGene //this is due to bug in SpringFox that does not handle Iterable<T>
