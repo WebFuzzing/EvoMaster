@@ -69,7 +69,8 @@ object RestActionBuilderV3 {
     private val mapper = ObjectMapper()
 
     /**
-     * clean cache in order to avoid different dto schema with different configurations, eg, enableConstraintHandling
+     * clean cache in order to avoid different dto schema with different configurations, eg, enableConstraintHandling.
+     * Only needed for testing.
      */
     fun cleanCache(){
         refCache.clear()
@@ -568,10 +569,6 @@ object RestActionBuilderV3 {
                 else -> log.warn("Cannot handle enum of type: $type")
             }
         }
-
-        /*
-            TODO constraints like min/max
-         */
 
 
         //first check for "optional" format
