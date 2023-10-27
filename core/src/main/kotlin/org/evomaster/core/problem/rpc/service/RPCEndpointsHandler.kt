@@ -281,7 +281,8 @@ class RPCEndpointsHandler {
                             }else if(sutInfoDto.unitsInfoDto.extractedSpecifiedDtos?.containsKey(s) == true){
                                 val schema = sutInfoDto.unitsInfoDto.extractedSpecifiedDtos[s]!!
                                 fromClass = true
-                                RestActionBuilderV3.createObjectGeneForDTO("return", schema, s, config.enableSchemaConstraintHandling)
+                                RestActionBuilderV3.createObjectGeneForDTO("return", schema, s,
+                                    RestActionBuilderV3.Options(enableConstraintHandling=config.enableSchemaConstraintHandling))
                             }else{
                                 val node = readJson(dto.responses[index])
                                 if (node != null){
