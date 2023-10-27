@@ -333,7 +333,7 @@ class Randomness {
     }
 
     /**
-     * Choose a value from the [map] based on the associated probabilities.
+     * Choose a key from the [map] based on the associated probabilities.
      * The highest the associated probability, the *more* chances to be selected.
      * If an element [K] is not present in the map, then
      * its probability is 0.

@@ -82,12 +82,27 @@ object RestActionBuilderV3 {
          * Purposely add invalid data, eg wrongly formatted dates.
          * TODO remove/deprecate once we support Robustness Testing
          */
-        val invalidData: Boolean = false
+        val invalidData: Boolean = false,
+
+        val probUseDefault: Double = 0.0,
+
+        val probUseExamples: Double = 0.0
     ){
         constructor(config: EMConfig): this(
             enableConstraintHandling = config.enableSchemaConstraintHandling,
-            invalidData = config.allowInvalidData
+            invalidData = config.allowInvalidData,
+            probUseDefault = config.probRestDefault,
+            probUseExamples = config.probRestExamples
         )
+
+        init {
+            if(probUseDefault < 0 || probUseDefault > 1){
+                throw IllegalArgumentException("Invalid probUseDefault: $probUseDefault")
+            }
+            if(probUseExamples < 0 || probUseExamples > 1){
+                throw IllegalArgumentException("Invalid probUseExamples: $probUseExamples")
+            }
+        }
     }
 
 
