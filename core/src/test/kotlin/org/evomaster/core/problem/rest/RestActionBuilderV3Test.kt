@@ -383,7 +383,8 @@ class RestActionBuilderV3Test{
         """.trimIndent()
 
 
-        val gene = RestActionBuilderV3.createObjectGeneForDTO(name, dtoSchema, name, RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling)) as ObjectGene
+        val gene = RestActionBuilderV3.createObjectGeneForDTO(name, dtoSchema, name,
+            RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling, invalidData = false)) as ObjectGene
         assertEquals(name, gene.name)
         assertEquals(2, gene.fields.size)
 
@@ -400,8 +401,7 @@ class RestActionBuilderV3Test{
             assertNotNull(ParamUtil.getValueGene(this!!) is EnumGene<*>)
             (ParamUtil.getValueGene(this) as EnumGene<String>).apply {
                 assertEquals("bar", this.name)
-                // need to check with Andrea, additional EVOMASTER is added for Enum
-                assertEquals(4, values.size)
+                assertEquals(3, values.size)
                 listOf("ONE","TWO","THREE").forEach {  s ->
                     assertTrue(values.contains(s))
                 }
