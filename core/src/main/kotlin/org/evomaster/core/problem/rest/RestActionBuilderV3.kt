@@ -1239,8 +1239,9 @@ object RestActionBuilderV3 {
 
 
     fun getModelsFromSwagger(swagger: OpenAPI,
-                             modelCluster: MutableMap<String, ObjectGene>
-                             ) {
+                             modelCluster: MutableMap<String, ObjectGene>,
+                            options: Options
+    ) {
         modelCluster.clear()
 
         /*
@@ -1256,7 +1257,7 @@ object RestActionBuilderV3 {
                         val model = createObjectFromReference(it.key,
                                 it.component1(),
                                 swagger,
-                                options = Options()
+                                options = options
                         )
                         when (model) {
                             //BMR: the modelCluster expects an ObjectGene. If the result is not that, it is wrapped in one.

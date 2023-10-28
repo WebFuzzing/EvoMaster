@@ -383,7 +383,8 @@ class RestActionBuilderV3Test{
         """.trimIndent()
 
 
-        val gene = RestActionBuilderV3.createObjectGeneForDTO(name, dtoSchema, name, RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling)) as ObjectGene
+        val gene = RestActionBuilderV3.createObjectGeneForDTO(name, dtoSchema, name,
+            RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling, invalidData = false)) as ObjectGene
         assertEquals(name, gene.name)
         assertEquals(2, gene.fields.size)
 
@@ -400,8 +401,7 @@ class RestActionBuilderV3Test{
             assertNotNull(ParamUtil.getValueGene(this!!) is EnumGene<*>)
             (ParamUtil.getValueGene(this) as EnumGene<String>).apply {
                 assertEquals("bar", this.name)
-                // need to check with Andrea, additional EVOMASTER is added for Enum
-                assertEquals(4, values.size)
+                assertEquals(3, values.size)
                 listOf("ONE","TWO","THREE").forEach {  s ->
                     assertTrue(values.contains(s))
                 }
@@ -801,7 +801,7 @@ class RestActionBuilderV3Test{
         assertEquals(expectedNumberOfActions, actions.size)
 
         //should not crash
-        RestActionBuilderV3.getModelsFromSwagger(schema, mutableMapOf())
+        RestActionBuilderV3.getModelsFromSwagger(schema, mutableMapOf(), options = RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling))
 
         return actions
     }
@@ -1244,7 +1244,7 @@ class RestActionBuilderV3Test{
 
         val schema = OpenAPIParser().readLocation(resourcePath, null, null).openAPI
         val map = mutableMapOf<String,ObjectGene>()
-        RestActionBuilderV3.getModelsFromSwagger(schema, map)
+        RestActionBuilderV3.getModelsFromSwagger(schema, map, RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling))
 
         assertEquals(3, map.size)
         val x = map["Iterable«Item»"] as ObjectGene //this is due to bug in SpringFox that does not handle Iterable<T>
