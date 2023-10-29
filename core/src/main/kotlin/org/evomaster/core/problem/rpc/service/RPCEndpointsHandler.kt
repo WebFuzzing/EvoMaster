@@ -281,7 +281,8 @@ class RPCEndpointsHandler {
                             }else if(sutInfoDto.unitsInfoDto.extractedSpecifiedDtos?.containsKey(s) == true){
                                 val schema = sutInfoDto.unitsInfoDto.extractedSpecifiedDtos[s]!!
                                 fromClass = true
-                                RestActionBuilderV3.createObjectGeneForDTO("return", schema, s, config.enableSchemaConstraintHandling)
+                                RestActionBuilderV3.createObjectGeneForDTO("return", schema, s,
+                                    RestActionBuilderV3.Options(enableConstraintHandling=config.enableSchemaConstraintHandling))
                             }else{
                                 val node = readJson(dto.responses[index])
                                 if (node != null){
@@ -320,7 +321,7 @@ class RPCEndpointsHandler {
                     }
                     var fromClass = false
 
-                    val responseGene = (if (responseTypeClass != null){
+                    val responseGene = ((if (responseTypeClass != null){
                         handleDtoParam(responseTypeClass).also { fromClass = (dbDto.responseFullTypeWithGeneric != null) }
                     }else if (dbDto.response != null){
                         val node = readJson(dbDto.response)
@@ -331,7 +332,9 @@ class RPCEndpointsHandler {
                         }
                     }else{
                         StringGene("return")
-                    }.run { wrapWithOptionalGene(this, true) }) as OptionalGene
+                    }).run {
+                        wrapWithOptionalGene(this, true)
+                    }) as OptionalGene
 
                     val response = ClassResponseParam(className = dbDto.responseFullTypeWithGeneric?:dbDto.responseFullType, responseType = EnumGene("responseType", listOf("JSON")), response = responseGene)
                     if (fromClass) response.responseParsedWithClass()

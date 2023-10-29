@@ -1,5 +1,6 @@
 package org.evomaster.core.mongo
 
+import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.problem.rest.RestActionBuilderV3.createObjectGenesForDTOs
 import org.evomaster.core.search.EnvironmentAction
 import org.evomaster.core.search.action.Action
@@ -29,7 +30,7 @@ class MongoDbAction(
     private fun computeGenes(): List<Gene> {
         val documentsTypeName = documentsType.substringBefore(":").drop(1).dropLast(1)
         val gene = createObjectGenesForDTOs(
-            documentsTypeName, documentsType, true
+            documentsTypeName, documentsType, RestActionBuilderV3.Options(invalidData = false)
         )
         gene as ObjectGene
         return Collections.singletonList(

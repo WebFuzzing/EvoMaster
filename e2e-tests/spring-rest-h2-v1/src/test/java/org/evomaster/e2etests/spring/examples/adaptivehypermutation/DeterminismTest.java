@@ -26,7 +26,9 @@ public class DeterminismTest extends AHypermuationTestBase {
     public void testDeterminismOfLog(boolean enableConstraintHandling){
 
         OpenAPI schema = (new OpenAPIParser()).readLocation("swagger-ahm/ahm.json", null, null).getOpenAPI();
-        isDeterminismConsumer( new ArrayList<>(), (args) -> RestActionBuilderV3.INSTANCE.getModelsFromSwagger(schema, new LinkedHashMap<>(), enableConstraintHandling));
+        isDeterminismConsumer( new ArrayList<>(), (args) -> RestActionBuilderV3.INSTANCE
+                .getModelsFromSwagger(schema, new LinkedHashMap<>(),
+                        new RestActionBuilderV3.Options(false,enableConstraintHandling,false)));
     }
 
 
