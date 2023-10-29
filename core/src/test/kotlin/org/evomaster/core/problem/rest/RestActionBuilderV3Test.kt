@@ -790,18 +790,22 @@ class RestActionBuilderV3Test{
 
     private fun loadAndAssertActions(resourcePath: String, expectedNumberOfActions: Int, enableConstraintHandling: Boolean)
             : MutableMap<String, Action> {
+        return loadAndAssertActions(resourcePath, expectedNumberOfActions, RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling))
+    }
 
+    private fun loadAndAssertActions(resourcePath: String, expectedNumberOfActions: Int, options: RestActionBuilderV3.Options)
+            : MutableMap<String, Action> {
 
         val schema = OpenAPIParser().readLocation(resourcePath, null, null).openAPI
 
         val actions: MutableMap<String, Action> = mutableMapOf()
 
-        RestActionBuilderV3.addActionsFromSwagger(schema, actions, enableConstraintHandling = enableConstraintHandling)
+        RestActionBuilderV3.addActionsFromSwagger(schema, actions, options=options)
 
         assertEquals(expectedNumberOfActions, actions.size)
 
         //should not crash
-        RestActionBuilderV3.getModelsFromSwagger(schema, mutableMapOf(), options = RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling))
+        RestActionBuilderV3.getModelsFromSwagger(schema, mutableMapOf(), options = options)
 
         return actions
     }
@@ -1279,4 +1283,18 @@ class RestActionBuilderV3Test{
 
         }
     }
+
+
+    @Test
+    fun testDefaultInt(){
+        val path = "/swagger/artificial/defaultandexamples/default_int.yml"
+        val without = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseDefault = 0.0))
+
+        //TODO
+
+        val with = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseDefault = 0.5))
+
+        //TODO
+    }
+
 }

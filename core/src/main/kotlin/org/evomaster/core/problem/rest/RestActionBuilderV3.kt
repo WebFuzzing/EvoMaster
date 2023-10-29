@@ -417,6 +417,7 @@ object RestActionBuilderV3 {
                             would lead to 2 variables, or any other char that does affect the
                             structure of the URL, like '.'
                          */
+            //FIXME this lose info, eg other constraints and default/examples
             gene = StringGene(gene.name, gene.value, max(gene.minLength, 1), gene.maxLength, listOf('/', '.'))
         }
 
@@ -1026,58 +1027,69 @@ object RestActionBuilderV3 {
      *      - uniqueItems
      *
      */
-    private fun createNonObjectGeneWithSchemaConstraints(schema: Schema<*>, name: String, geneClass: Class<*>, options: Options, collectionTemplate: Gene? = null) : Gene{
-        when(geneClass){
+    private fun createNonObjectGeneWithSchemaConstraints(
+        schema: Schema<*>,
+        name: String,
+        geneClass: Class<*>,
+        options: Options,
+        collectionTemplate: Gene? = null
+    ) : Gene{
+
+
+        val maxInclusive =  if (options.enableConstraintHandling) !(schema.exclusiveMaximum?:false) else true
+        val minInclusive = if (options.enableConstraintHandling) !(schema.exclusiveMinimum?:false) else true
+
+        val mainGene = when(geneClass){
             // number gene
-            IntegerGene::class.java -> return IntegerGene(
+            IntegerGene::class.java -> IntegerGene(
                     name,
                     min = if (options.enableConstraintHandling) schema.minimum?.intValueExact() else null,
                     max = if (options.enableConstraintHandling) schema.maximum?.intValueExact() else null,
-                    maxInclusive = if (options.enableConstraintHandling) !(schema.exclusiveMaximum?:false) else true,
-                    minInclusive = if (options.enableConstraintHandling) !(schema.exclusiveMinimum?:false) else true
+                    maxInclusive = maxInclusive,
+                    minInclusive = minInclusive
             )
-            LongGene::class.java -> return LongGene(
+            LongGene::class.java -> LongGene(
                     name,
                     min = if (options.enableConstraintHandling) schema.minimum?.longValueExact() else null,
                     max = if (options.enableConstraintHandling) schema.maximum?.longValueExact() else null,
-                    maxInclusive = if (options.enableConstraintHandling) !(schema.exclusiveMaximum?:false) else true,
-                    minInclusive = if (options.enableConstraintHandling) !(schema.exclusiveMinimum?:false) else true
+                    maxInclusive = maxInclusive,
+                    minInclusive = minInclusive
             )
-            FloatGene::class.java -> return FloatGene(
+            FloatGene::class.java -> FloatGene(
                     name,
                     min = if (options.enableConstraintHandling) schema.minimum?.toFloat() else null,
                     max = if (options.enableConstraintHandling) schema.maximum?.toFloat() else null,
-                    maxInclusive = if (options.enableConstraintHandling) !(schema.exclusiveMaximum?:false) else true,
-                    minInclusive = if (options.enableConstraintHandling) !(schema.exclusiveMinimum?:false) else true
+                    maxInclusive = maxInclusive,
+                    minInclusive = minInclusive
             )
-            DoubleGene::class.java -> return DoubleGene(
+            DoubleGene::class.java -> DoubleGene(
                     name,
                     min = if (options.enableConstraintHandling) schema.minimum?.toDouble() else null,
                     max = if (options.enableConstraintHandling) schema.maximum?.toDouble() else null,
-                    maxInclusive = if (options.enableConstraintHandling) !(schema.exclusiveMaximum?:false) else true,
-                    minInclusive = if (options.enableConstraintHandling) !(schema.exclusiveMinimum?:false) else true
+                    maxInclusive = maxInclusive,
+                    minInclusive = minInclusive
             )
-            BigDecimalGene::class.java -> return BigDecimalGene(
+            BigDecimalGene::class.java ->  BigDecimalGene(
                     name,
                     min = if (options.enableConstraintHandling) schema.minimum else null,
                     max = if (options.enableConstraintHandling) schema.maximum else null,
-                    maxInclusive = if (options.enableConstraintHandling) !(schema.exclusiveMaximum?:false) else true,
-                    minInclusive = if (options.enableConstraintHandling) !(schema.exclusiveMinimum?:false) else true
+                    maxInclusive = maxInclusive,
+                    minInclusive = minInclusive
             )
-            BigIntegerGene::class.java -> return BigIntegerGene(
+            BigIntegerGene::class.java -> BigIntegerGene(
                     name,
                     min = if (options.enableConstraintHandling) schema.minimum?.toBigIntegerExact() else null,
                     max = if (options.enableConstraintHandling) schema.maximum?.toBigIntegerExact() else null,
-                    maxInclusive = if (options.enableConstraintHandling) !(schema.exclusiveMaximum?:false) else true,
-                    minInclusive = if (options.enableConstraintHandling) !(schema.exclusiveMinimum?:false) else true
+                    maxInclusive = maxInclusive,
+                    minInclusive = minInclusive
             )
             // string, Base64StringGene and regex gene
-            StringGene::class.java -> return StringGene(
+            StringGene::class.java -> StringGene(
                     name,
                     maxLength = if (options.enableConstraintHandling) schema.maxLength?: EMConfig.stringLengthHardLimit else EMConfig.stringLengthHardLimit,
                     minLength = if (options.enableConstraintHandling) schema.minLength?: 0 else 0
             )
-            Base64StringGene::class.java -> return Base64StringGene(
+            Base64StringGene::class.java ->  Base64StringGene(
                     name,
                     StringGene(
                             name,
@@ -1090,12 +1102,12 @@ object RestActionBuilderV3 {
                     TODO handle constraints for regex gene
                     eg,  min and max
                  */
-                return RegexHandler.createGeneForEcma262(schema.pattern).apply { this.name = name }
+                 RegexHandler.createGeneForEcma262(schema.pattern).apply { this.name = name }
             }
             ArrayGene::class.java -> {
                 if (collectionTemplate == null)
                     throw IllegalArgumentException("cannot create ArrayGene when collectionTemplate is null")
-                return ArrayGene(
+                ArrayGene(
                         name,
                         template = collectionTemplate,
                         uniqueElements = if (options.enableConstraintHandling) schema.uniqueItems?:false else false,
@@ -1105,6 +1117,34 @@ object RestActionBuilderV3 {
             }
             else -> throw IllegalStateException("cannot create gene with constraints for gene:${geneClass.name}")
         }
+
+        //https://swagger.io/docs/specification/adding-examples/
+        val defaultValue = if(options.probUseDefault > 0) schema.default else null
+        val exampleValue = if(options.probUseExamples > 0) schema.example else null
+        val multiExampleValues = if(options.probUseExamples > 0) schema.examples else null
+
+        if(defaultValue != null){
+
+            val defaultGene = when{
+                NumberGene::class.java.isAssignableFrom(geneClass)
+                -> EnumGene("default", listOf(defaultValue.toString()),0,true)
+
+                geneClass == StringGene::class.java
+                        || geneClass == Base64StringGene::class.java
+                        || geneClass == RegexGene::class.java
+                -> EnumGene<String>("default", listOf(defaultValue.toString()),0,false)
+
+                //TODO Arrays
+                else -> throw IllegalStateException("Not handling 'default' for gene: ${geneClass.name}")
+            }
+
+            val pd = options.probUseDefault
+            val pm = 1 - pd
+
+            return ChoiceGene(name, listOf(defaultGene,mainGene),0, listOf(pd,pm))
+        }
+
+        return mainGene
     }
 
 
