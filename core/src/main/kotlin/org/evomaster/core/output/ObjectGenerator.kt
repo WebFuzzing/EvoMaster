@@ -18,7 +18,7 @@ class ObjectGenerator {
                    enableConstraintHandling: Boolean){
         swagger = sw
         modelCluster.clear()
-        RestActionBuilderV3.getModelsFromSwagger(swagger, modelCluster, enableConstraintHandling)
+        RestActionBuilderV3.getModelsFromSwagger(swagger, modelCluster, RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling))
     }
 
     fun getSwagger(): OpenAPI{
