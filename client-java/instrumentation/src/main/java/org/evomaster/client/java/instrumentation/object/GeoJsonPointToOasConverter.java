@@ -1,5 +1,10 @@
 package org.evomaster.client.java.instrumentation.object;
 
+/**
+ * Point: {type: "Point", coordinates: [[longitude,latitude]]}
+ * type "Point" is case-sensitive
+ * <a href="https://datatracker.ietf.org/doc/html/rfc7946#section-3.1.2">GeoJsonPoint Documentation</a>
+ */
 public class GeoJsonPointToOasConverter extends CustomTypeToOasConverter {
     @Override
     public String convert() {
