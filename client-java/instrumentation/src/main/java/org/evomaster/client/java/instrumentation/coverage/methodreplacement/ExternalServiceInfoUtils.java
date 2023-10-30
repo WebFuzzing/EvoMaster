@@ -28,10 +28,10 @@ public class ExternalServiceInfoUtils {
         // TODO: Experiment
 
         try {
-            InetAddress.getByName(remoteHostInfo.getHostname());
-            ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(remoteHostInfo.getHostname(), true));
+            InetAddress address = InetAddress.getByName(remoteHostInfo.getHostname());
+            ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(remoteHostInfo.getHostname(), address.getHostAddress(),true));
         } catch (UnknownHostException e) {
-            ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(remoteHostInfo.getHostname(), false));
+            ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(remoteHostInfo.getHostname(), null,false));
         }
 
         ExecutionTracer.addExternalServiceHost(remoteHostInfo);

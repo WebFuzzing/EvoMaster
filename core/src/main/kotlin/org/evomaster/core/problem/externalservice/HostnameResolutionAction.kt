@@ -5,15 +5,15 @@ import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 
 class HostnameResolutionAction(
-    private val hostname: String,
+    val hostname: String,
+    val resolvedAddress: String,
     val resolved: Boolean,
 ) : EnvironmentAction(listOf()) {
 
-    fun getHostname(): String {
-        return hostname
-    }
+    fun getRemoteHostname(): String { return hostname }
+
     override fun getName(): String {
-        return "Hostname_${hostname}_${resolved}"
+        return "Hostname_${hostname}_${resolvedAddress}"
     }
 
     override fun seeTopGenes(): List<out Gene> {
@@ -21,6 +21,6 @@ class HostnameResolutionAction(
     }
 
     override fun copyContent(): StructuralElement {
-        return HostnameResolutionAction(hostname, resolved)
+        return HostnameResolutionAction(hostname, resolvedAddress, resolved)
     }
 }

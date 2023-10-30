@@ -46,7 +46,7 @@ class RestStructureMutator : ApiWsStructureMutator() {
 
         val addedInsertions: MutableList<Action> = mutableListOf()
         externalServiceHandler.getHostnameResolutionActions().forEach {
-            if ((old as HostnameResolutionAction).getHostname() != it.getHostname()) {
+            if ((old as HostnameResolutionAction).getRemoteHostname() != it.getRemoteHostname()) {
                 addedInsertions.add(it)
             }
         }

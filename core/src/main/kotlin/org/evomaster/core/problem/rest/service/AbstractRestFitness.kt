@@ -806,6 +806,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
             info.hostnameResolutionInfoDtos.forEach { hn ->
                 externalServiceHandler.addHostname(HostnameResolutionInfo(
                     hn.remoteHostname,
+                    hn.resolvedAddress,
                     hn.resolved
                 ))
             }

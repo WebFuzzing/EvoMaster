@@ -29,7 +29,6 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
     @Replacement(
             type = ReplacementType.TRACKER,
             category = ReplacementCategory.NET,
-            id = "InetAddress_getByName_Replacement",
             replacingStatic = true,
             usageFilter = UsageFilter.ANY
     )
@@ -43,7 +42,7 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
                 return InetAddress.getByName(ip);
             }
             InetAddress inetAddress = InetAddress.getByName(host);
-            ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(host, true));
+            ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(host, inetAddress.getHostAddress(), true));
             return inetAddress;
         } catch (UnknownHostException e) {
 //            ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(
@@ -52,7 +51,7 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
 //                    -1
 //            );
 //            ExecutionTracer.addExternalServiceHost(remoteHostInfo);
-            ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(host, false));
+            ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(host, "",false));
             throw e;
         }
     }
@@ -60,7 +59,6 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
     @Replacement(
             type = ReplacementType.TRACKER,
             category = ReplacementCategory.NET,
-            id = "InetAddress_getAllByName_Replacement",
             replacingStatic = true,
             usageFilter = UsageFilter.ANY
     )
@@ -74,7 +72,7 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
                 return new InetAddress[]{InetAddress.getByName(ip)};
             }
             InetAddress[] inetAddresses = InetAddress.getAllByName(host);
-            ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(host, true));
+            ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(host, inetAddresses[0].getHostAddress(), true));
             return inetAddresses;
         } catch (UnknownHostException e) {
 //            ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(
@@ -83,7 +81,7 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
 //                    -1
 //            );
 //            ExecutionTracer.addExternalServiceHost(remoteHostInfo);
-            ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(host, false));
+            ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(host, "", false));
             throw e;
         }
     }
