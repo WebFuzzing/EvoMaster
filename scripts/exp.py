@@ -229,8 +229,13 @@ else:
 
 JDK_8 = "JDK_8"
 JDK_11 = "JDK_11"
+JDK_17 = "JDK_17"
 JS = "JS"
 DOTNET_3 = "DOTNET_3"
+
+def isJava(sut):
+    return sut.platform == JDK_8 or sut.platform == JDK_11 or sut.platform == JDK_17
+
 
 class Sut:
     def __init__(self, name, timeWeight, platform):
@@ -254,6 +259,8 @@ SUTS = [
     #Sut("ind0", 1, JDK_8),
     #Sut("ind1", 1, JDK_11),
     # REST JVM
+    Sut("reservations-api", 1, JDK_11),
+    Sut("bibliothek", 1, JDK_17),
     Sut("features-service", 1, JDK_8),
     Sut("scout-api", 2, JDK_8),
     Sut("proxyprint", 2, JDK_8),
@@ -275,6 +282,7 @@ SUTS = [
     Sut("graphql-ncs", 1, JDK_8),
     Sut("graphql-scs", 1, JDK_8),
     # RPC
+    Sut("signal-registration",1,JDK_17)
     Sut("rpc-thrift-ncs", 1, JDK_8),
     Sut("rpc-thrift-scs", 1, JDK_8),
     # REST NodeJS
@@ -359,6 +367,10 @@ else:
     if JAVA_HOME_11 == "":
         raise Exception("You must specify a JAVA_HOME_11 env variable specifying where JDK 11 is installed")
 
+    JAVA_HOME_17 = os.environ.get("JAVA_HOME_17", "")
+    if JAVA_HOME_17 == "":
+        raise Exception("You must specify a JAVA_HOME_17 env variable specifying where JDK 17 is installed")
+
 
 # How to run EvoMaster
 EVOMASTER_JAVA_OPTIONS = " -Xms2G -Xmx4G  -jar evomaster.jar "
@@ -404,7 +416,7 @@ if not CLUSTER:
 
     #Due to Windows limitations (ie crappy FS), we need to copy JARs over
     for sut in SUTS:
-        if sut.platform == JDK_8 or sut.platform == JDK_11:
+        if isJava(sut):
             # copy jar files
             shutil.copy(os.path.join(CASESTUDY_DIR, sut.name + EM_POSTFIX), BASE_DIR)
             shutil.copy(os.path.join(CASESTUDY_DIR, sut.name + SUT_POSTFIX), BASE_DIR)
@@ -493,7 +505,7 @@ def createJobHead(port, sut, timeoutMinutes):
         script.write("cp " + EVOMASTER_DIR + "/evomaster.jar . \n")
 
         # Not sure if great idea to copy 1000s of files for JS intro SCRATCH
-        if sut.platform == JDK_8 or sut.platform == JDK_11:
+        if isJava(sut):
             sut_em_path = os.path.join(CASESTUDY_DIR, sut.name + EM_POSTFIX)
             sut_jar_path = os.path.join(CASESTUDY_DIR, sut.name + SUT_POSTFIX)
             agent_path = os.path.join(CASESTUDY_DIR, AGENT)
@@ -509,7 +521,7 @@ def createJobHead(port, sut, timeoutMinutes):
 
     command = ""
 
-    if sut.platform == JDK_8 or sut.platform == JDK_11:
+    if isJava(sut):
         params = " " + controllerPort + " " + sutPort + " " + sut.name + SUT_POSTFIX + " " + str(timeoutStart) + " " + getJavaCommand(sut)
 
         # Note: this is for the process of the Driver. The Xmx settings of the SUTs will need to be specified directly
@@ -529,6 +541,9 @@ def createJobHead(port, sut, timeoutMinutes):
     elif sut.platform == DOTNET_3:
         params = " " + controllerPort + " " + sutPort
         command = "dotnet " + sut.name+"/"+sut.name + EM_POSTFIX_DOTNET + " " + params + " > " + sut_log + " 2>&1 &"
+
+    else:
+        raise Exception("ERROR: unrecognized " + sut.platform)
 
     if not CLUSTER:
         script.write("\n\necho \"Starting EM Runner with: " + command + "\"\n")
@@ -629,12 +644,21 @@ def createOneJob(state, sut, seed, setting, configName):
 
 
 def getJavaCommand(sut):
+
+    if not isJava(sut):
+        raise Exception("ERROR: not a recognized JVM SUT: " + sut.platform)
+
     JAVA = "java "
     if not CLUSTER:
         if sut.platform == JDK_8:
             JAVA = "\"" + JAVA_HOME_8 +"\"/bin/java "
         elif sut.platform == JDK_11:
             JAVA = "\"" + JAVA_HOME_11 +"\"/bin/java "
+        elif sut.platform == JDK_17:
+            JAVA = "\"" + JAVA_HOME_17 +"\"/bin/java --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED "
+        else:
+            raise Exception("ERROR: unhandled JVM version: " + sut.platform)
+
     return JAVA
 
 
@@ -754,8 +778,7 @@ def createJobs():
         for c in list(set(CONFIGFILTER.split(","))):
             found = list(filter(lambda x: x.name.lower() == c.lower(), CONFIGS))
             if len(found) == 0:
-                print("ERROR: cannot find the specified config: "+c)
-                exit(1)
+                raise Exception("ERROR: cannot find the specified config: "+c)
             filteredconfigs.extend(found)
 
         CONFIGS = filteredconfigs
@@ -853,8 +876,7 @@ class Config:
     # settings is an array of ParameterSetting objects
     def __init__(self, settings, name="exp"):
         if " " in name:
-            print("Config name must have no space. Wrong value: " + name)
-            exit(1)
+            raise Exception("Config name must have no space. Wrong value: " + name)
         self.name = name
         self.settings = settings
         self.numOfSettings = 1
