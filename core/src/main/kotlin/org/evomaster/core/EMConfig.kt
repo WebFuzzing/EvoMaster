@@ -1941,6 +1941,10 @@ class EMConfig {
     var excludedTargetsForImpactCollection : List<String> = extractExcludedTargetsForImpactCollection()
         private set
 
+    //TODO mark as deprecated once we support proper Robustness Testing
+    @Cfg("When generating data, allow in some cases to use invalid values on purpose")
+    var allowInvalidData: Boolean = true
+
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
             return maxTimeInSeconds
