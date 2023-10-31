@@ -31,7 +31,7 @@ public class ExternalServiceInfoUtils {
             InetAddress address = InetAddress.getByName(remoteHostInfo.getHostname());
             ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(remoteHostInfo.getHostname(), address.getHostAddress(),true));
         } catch (UnknownHostException e) {
-            ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(remoteHostInfo.getHostname(), null,false));
+            ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(remoteHostInfo.getHostname(), "",false));
         }
 
         ExecutionTracer.addExternalServiceHost(remoteHostInfo);

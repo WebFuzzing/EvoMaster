@@ -12,8 +12,9 @@ public class HostnameResolutionInfoDto {
 
     public HostnameResolutionInfoDto(){};
 
-    public HostnameResolutionInfoDto(String remoteHostname, Boolean resolved) {
+    public HostnameResolutionInfoDto(String remoteHostname, String resolvedAddress, Boolean resolved) {
         this.remoteHostname = remoteHostname;
+        this.resolvedAddress = resolvedAddress;
         this.resolved = resolved;
     }
 
