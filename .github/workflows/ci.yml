@@ -6,6 +6,13 @@ on:
       - "**"
     tags-ignore:
       - '**'
+    paths-ignore:
+      - 'scripts/**'
+      - 'docs/**'
+      - 'version.py'
+      - 'makeExecutable.sh'
+      - 'buildAll.sh'
+      - 'README.md'
 
 env:
   evomaster-version: 2.0.1

@@ -93,7 +93,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
         actionCluster.clear()
         val skip = EndpointFilter.getEndpointsToSkip(config, swagger, infoDto)
-        RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, skip, enableConstraintHandling = config.enableSchemaConstraintHandling)
+        RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, skip, RestActionBuilderV3.Options(config))
 
         if(config.extraQueryParam){
             addExtraQueryParam(actionCluster)
@@ -268,7 +268,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         actionCluster.clear()
 
         // ONUR: Rather than an empty list, give the list of endpoints to skip.
-        RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, endpointsToSkip, enableConstraintHandling = config.enableSchemaConstraintHandling)
+        RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, endpointsToSkip, RestActionBuilderV3.Options(config))
 
         initAdHocInitialIndividuals()
         if (config.seedTestCases)
