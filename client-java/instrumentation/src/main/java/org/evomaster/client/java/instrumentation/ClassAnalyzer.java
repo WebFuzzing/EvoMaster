@@ -479,7 +479,7 @@ public class ClassAnalyzer {
      * Returns a boolean if the <code>javax.validation.constraints.NotNull</code> annotation is present.
      *
      * @param f         the target field of the entity.
-     * @param namespace
+     * @param namespace the namespace (e.g. javax.* or jakarta.*) for Java Persistence API (JPA) or Jakarta Persistence Layer (JPL)
      * @return false if the field is annotated as NotNull, otherwise it returns null
      */
     private static Boolean getIsNullableAnnotation(Field f, NameSpace namespace) {
