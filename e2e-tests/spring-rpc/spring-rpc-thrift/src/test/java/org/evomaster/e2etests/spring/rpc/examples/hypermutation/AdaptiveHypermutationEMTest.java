@@ -16,21 +16,21 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class HypermutationEMTest extends SpringRPCTestBase {
+public class AdaptiveHypermutationEMTest extends SpringRPCTestBase {
 
 
     @BeforeAll
     public static void initClass() throws Exception {
         SpringRPCTestBase.initClass(new HypermutationController(new HashMap<String, List<String>>(){{
-            put(HypermutationService.Iface.class.getName(), new ArrayList<String>(){{add("lowWeightHighCoverage");}});
+            put(HypermutationService.Iface.class.getName(), new ArrayList<String>(){{add("differentWeight");}});
         }}));
     }
 
     @Test
     public void testRunEM() throws Throwable {
         runTestHandlingFlakyAndCompilation(
-                "HypermutationEM",
-                "org.bar.HypermutationEM",
+                "AdaptiveHypermutationEM",
+                "org.bar.AdaptiveHypermutationEM",
                 25_000,
                 (args) -> {
                     args.add("--baseTaintAnalysisProbability");
@@ -40,8 +40,8 @@ public class HypermutationEMTest extends SpringRPCTestBase {
 
                     assertTrue(solution.getIndividuals().size() >= 1);
 
-                    assertRPCEndpointResult(solution, HypermutationService.Iface.class.getName()+":differentWeight", RPCCallResultCategory.HANDLED.name());
-                    assertAllContentInResponseForEndpoint(solution,HypermutationService.Iface.class.getName()+":differentWeight" , Arrays.asList("x", "y", "z"));
+                    assertRPCEndpointResult(solution, HypermutationService.Iface.class.getName()+":lowWeightHighCoverage", RPCCallResultCategory.HANDLED.name());
+                    assertAllContentInResponseForEndpoint(solution,HypermutationService.Iface.class.getName()+":lowWeightHighCoverage" , Arrays.asList("x1","x2","x3","x4","x5", "y", "z"));
                 });
     }
 }
