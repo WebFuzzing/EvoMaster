@@ -1,8 +1,6 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
     <parent>
         <groupId>org.evomaster</groupId>
@@ -10,56 +8,50 @@
         <version>2.0.1-SNAPSHOT</version>
     </parent>
 
-
-    <modelVersion>4.0.0</modelVersion>
-
     <artifactId>evomaster-e2e-tests-spring-rest-jakarta</artifactId>
     <packaging>jar</packaging>
 
-    <dependencies>
+     <dependencies>
+
         <dependency>
             <groupId>jakarta.validation</groupId>
             <artifactId>jakarta.validation-api</artifactId>
-            <version>3.0.0</version>
+            <version>${jakarta.validation-api.version}</version>
         </dependency>
 
         <dependency>
             <groupId>jakarta.persistence</groupId>
             <artifactId>jakarta.persistence-api</artifactId>
-            <version>3.1.0</version>
+            <version>${jakarta.persistence-api.version}</version>
         </dependency>
 
         <dependency>
-            <groupId>org.evomaster</groupId>
-            <artifactId>evomaster-e2e-tests-utils</artifactId>
-            <type>test-jar</type>
+            <groupId>jakarta.ws.rs</groupId>
+            <artifactId>jakarta.ws.rs-api</artifactId>
+            <version>${jakarta.ws.rs-api.version}</version>
         </dependency>
+
         <dependency>
-            <groupId>org.evomaster</groupId>
-            <artifactId>evomaster-client-java-controller</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.evomaster</groupId>
-            <artifactId>evomaster-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.evomaster</groupId>
-            <artifactId>evomaster-client-java-instrumentation</artifactId>
-            <type>test-jar</type>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+            <version>${springboot3.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
+            <version>${springboot3.version}</version>
         </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-jpa</artifactId>
-        </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
+            <version>${springboot3.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
         </dependency>
 
         <dependency>
@@ -72,18 +64,9 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <dependency>
-            <groupId>io.springfox</groupId>
-            <artifactId>springfox-spring-web</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.swagger</groupId>
-            <artifactId>swagger-parser</artifactId>
-        </dependency>
-
-
 
     </dependencies>
+
 
     <profiles>
         <profile>

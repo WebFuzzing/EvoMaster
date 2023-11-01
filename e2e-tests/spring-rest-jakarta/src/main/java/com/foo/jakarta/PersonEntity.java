@@ -1,9 +1,13 @@
-package com.foo.jakarta.entity;
+package com.foo.jakarta;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Id;
 import jakarta.validation.constraints.*;
+
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -61,6 +65,7 @@ public class PersonEntity {
     private String nickname;
 
     @Size(min = 0, max = 100, message = "Must contain between 0 and 100 items")
+    @ElementCollection
     private List<String> otherDetails;
 
     @Digits(integer = 6, fraction = 2, message = "Invalid format, max 6 digits with 2 decimal places")

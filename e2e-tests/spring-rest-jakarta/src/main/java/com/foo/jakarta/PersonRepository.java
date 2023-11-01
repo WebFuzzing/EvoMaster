@@ -1,4 +1,4 @@
-package com.foo.jakarta.entity;
+package com.foo.jakarta;
 
 import org.springframework.data.repository.CrudRepository;
 
