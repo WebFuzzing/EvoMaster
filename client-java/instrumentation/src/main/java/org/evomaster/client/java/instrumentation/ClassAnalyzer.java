@@ -73,7 +73,7 @@ public class ClassAnalyzer {
      * <p>
      * Note: this will have side-effects on static data-structures
      *
-     * @param classNames
+     * @param classNames the list of names of classes to be analyzed
      */
     public static void doAnalyze(Collection<String> classNames) {
 
@@ -178,10 +178,10 @@ public class ClassAnalyzer {
         return s.replaceAll(regex, replacement).toLowerCase();
     }
 
-    private static void analyzeJpaConstraints(Class<?> klass) throws Exception {
-
-    }
-
+    /**
+     * Indicates if the Java Persistence API (jpa) is being used (with prefix javax.*) or
+     * the Jakarta Persistence Layer (with prefix jakarta.*) is being used.
+     */
     enum NameSpace {JAVAX, JAKARTA}
 
     private static void analyzeConstraints(Class<?> klass, NameSpace namespace) throws Exception {
@@ -414,12 +414,6 @@ public class ClassAnalyzer {
 
     private static Integer getIntegerElement(Field f, String annotationName, String elementName) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
         return (Integer) getElement(f, annotationName, elementName);
-    }
-
-
-    private static String getDigitsAnnotationName(NameSpace namespace) {
-        final String digitsAnnotationName = getAnnotationName(namespace, JAVAX_DIGITS_ANNOTATION_NAME, JAKARTA_DIGITS_ANNOTATION_NAME);
-        return digitsAnnotationName;
     }
 
     private static Integer getSizeMin(Field f, NameSpace namespace) throws Exception {
