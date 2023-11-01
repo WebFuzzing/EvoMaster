@@ -44,13 +44,7 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
             InetAddress inetAddress = InetAddress.getByName(host);
             ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(host, inetAddress.getHostAddress(), true));
             return inetAddress;
-        } catch (UnknownHostException e) {
-//            ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(
-//                    ExternalServiceSharedUtils.DEFAULT_SOCKET_CONNECT_PROTOCOL,
-//                    host,
-//                    -1
-//            );
-//            ExecutionTracer.addExternalServiceHost(remoteHostInfo);
+         } catch (UnknownHostException e) {
             ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(host, "",false));
             throw e;
         }
@@ -75,12 +69,6 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
             ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(host, inetAddresses[0].getHostAddress(), true));
             return inetAddresses;
         } catch (UnknownHostException e) {
-//            ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(
-//                    ExternalServiceSharedUtils.DEFAULT_SOCKET_CONNECT_PROTOCOL,
-//                    host,
-//                    -1
-//            );
-//            ExecutionTracer.addExternalServiceHost(remoteHostInfo);
             ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(host, "", false));
             throw e;
         }
