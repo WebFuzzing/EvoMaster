@@ -2,7 +2,7 @@ package com.foo.graphql.db
 
 import com.foo.graphql.SpringController
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
-import org.evomaster.client.java.controller.internal.db.DbSpecification
+import org.evomaster.sql.internal.DbSpecification
 import org.hibernate.dialect.H2Dialect
 import org.springframework.boot.SpringApplication
 import org.springframework.jdbc.core.JdbcTemplate
@@ -77,8 +77,9 @@ abstract class SpringWithDbController(applicationClass: Class<*>) : SpringContro
 //        dbconnection = null
     }
 
-    override fun getDbSpecifications(): MutableList<DbSpecification>? =mutableListOf(
-            DbSpecification(DatabaseType.H2,dbconnection))
+    override fun getDbSpecifications(): MutableList<org.evomaster.sql.internal.DbSpecification>? =mutableListOf(
+        org.evomaster.sql.internal.DbSpecification(DatabaseType.H2, dbconnection)
+    )
 
 
 }

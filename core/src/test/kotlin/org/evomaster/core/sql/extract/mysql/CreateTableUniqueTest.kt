@@ -1,7 +1,7 @@
 package org.evomaster.core.sql.extract.mysql
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
-import org.evomaster.client.java.controller.internal.db.SchemaExtractor
+import org.evomaster.sql.internal.SchemaExtractor
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -12,7 +12,7 @@ class CreateTableUniqueTest : ExtractTestBaseMySQL() {
     @Test
     fun testCreateAndExtract() {
 
-        val schema = SchemaExtractor.extract(connection)
+        val schema = org.evomaster.sql.internal.SchemaExtractor.extract(connection)
 
         assertNotNull(schema)
 

@@ -1,7 +1,7 @@
 package org.evomaster.core.sql.extract.mysql
 
 import org.evomaster.client.java.controller.db.SqlScriptRunner
-import org.evomaster.client.java.controller.internal.db.SchemaExtractor
+import org.evomaster.sql.internal.SchemaExtractor
 import org.evomaster.core.sql.SqlActionTransformer
 import org.evomaster.core.sql.SqlInsertBuilder
 import org.evomaster.core.search.gene.regex.RegexGene
@@ -16,7 +16,7 @@ class LikeCheckTest : ExtractTestBaseMySQL() {
 
     @Test
     fun testRegex(){
-        val schema = SchemaExtractor.extract(connection)
+        val schema = org.evomaster.sql.internal.SchemaExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("x", setOf("f_id"))
@@ -29,7 +29,7 @@ class LikeCheckTest : ExtractTestBaseMySQL() {
     @Test
     fun testInsertRegexGene() {
         val randomness = Randomness()
-        val schema = SchemaExtractor.extract(connection)
+        val schema = org.evomaster.sql.internal.SchemaExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("x", setOf("f_id"))

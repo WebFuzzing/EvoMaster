@@ -2,7 +2,7 @@ package org.evomaster.core.sql.extract.postgres
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.controller.db.SqlScriptRunner
-import org.evomaster.client.java.controller.internal.db.SchemaExtractor
+import org.evomaster.sql.internal.SchemaExtractor
 import org.evomaster.core.sql.SqlActionTransformer
 import org.evomaster.core.sql.SqlInsertBuilder
 import org.evomaster.core.search.gene.string.StringGene
@@ -22,7 +22,7 @@ class TextSearchTypesTest : ExtractTestBasePostgres() {
     @Test
     fun testInsertionOfOneLexemeTextSearchTypes() {
 
-        val schema = SchemaExtractor.extract(connection)
+        val schema = org.evomaster.sql.internal.SchemaExtractor.extract(connection)
 
         assertNotNull(schema)
 
@@ -61,7 +61,7 @@ class TextSearchTypesTest : ExtractTestBasePostgres() {
     @Test
     fun testInsertEmptyTypes() {
 
-        val schema = SchemaExtractor.extract(connection)
+        val schema = org.evomaster.sql.internal.SchemaExtractor.extract(connection)
 
         assertNotNull(schema)
 
@@ -84,7 +84,7 @@ class TextSearchTypesTest : ExtractTestBasePostgres() {
     @Test
     fun testInsertionOfManyLexemesTextSearchQueryType() {
 
-        val schema = SchemaExtractor.extract(connection)
+        val schema = org.evomaster.sql.internal.SchemaExtractor.extract(connection)
 
         assertNotNull(schema)
 
@@ -127,7 +127,7 @@ class TextSearchTypesTest : ExtractTestBasePostgres() {
     @Test
     fun testInsertionOfBlankTextSearchVector() {
 
-        val schema = SchemaExtractor.extract(connection)
+        val schema = org.evomaster.sql.internal.SchemaExtractor.extract(connection)
 
         assertNotNull(schema)
 

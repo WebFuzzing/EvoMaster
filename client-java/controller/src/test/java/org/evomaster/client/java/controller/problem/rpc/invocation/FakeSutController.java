@@ -10,10 +10,9 @@ import org.evomaster.client.java.controller.api.dto.SutInfoDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.MockRPCExternalServiceDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.SeededRPCActionDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.SeededRPCTestDto;
-import org.evomaster.client.java.controller.internal.db.DbSpecification;
+import org.evomaster.sql.internal.DbSpecification;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RPCProblem;
-import org.junit.jupiter.api.Test;
 
 import java.util.*;
 

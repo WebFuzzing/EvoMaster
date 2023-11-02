@@ -7,7 +7,6 @@ import org.evomaster.client.java.controller.internal.db.DbSpecification;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RestProblem;
 
-import java.sql.Connection;
 import java.util.List;
 
 public class MicronautTestController extends EmbeddedSutController {

@@ -1,6 +1,5 @@
 package com.foo.rpc.grpc.examples.spring;
 
-import com.foo.rpc.grpc.examples.spring.branches.generated.BranchGRPCServiceGrpc;
 import io.grpc.BindableService;
 import io.grpc.ManagedChannel;
 import io.grpc.Server;

@@ -2,7 +2,7 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
-import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto
+import org.evomaster.client.java.controller.api.dto.database.ExecutionDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.sql.SqlAction
@@ -222,7 +222,7 @@ class ResourceDepManageService {
         }
     }
 
-    private fun updateResourceToTable(action: RestCallAction, dto: ExecutionDto, tables: Map<String, Table>,
+    private fun updateResourceToTable(action: RestCallAction, dto: org.evomaster.client.java.controller.api.dto.database.ExecutionDto, tables: Map<String, Table>,
                                       addedMap: MutableMap<String, MutableSet<String>>, removedMap: MutableMap<String, MutableSet<String>>) {
 
         dto.insertedData.filter { u -> tables.any { it.key.toLowerCase() == u.key } }.let { added ->

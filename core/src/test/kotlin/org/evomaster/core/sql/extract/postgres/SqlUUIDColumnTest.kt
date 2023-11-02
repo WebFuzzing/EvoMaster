@@ -1,7 +1,7 @@
 package org.evomaster.core.sql.extract.postgres
 
 import org.evomaster.client.java.controller.db.SqlScriptRunner
-import org.evomaster.client.java.controller.internal.db.SchemaExtractor
+import org.evomaster.sql.internal.SchemaExtractor
 import org.evomaster.core.sql.SqlActionTransformer
 import org.evomaster.core.sql.SqlInsertBuilder
 import org.evomaster.core.search.gene.numeric.IntegerGene
@@ -23,7 +23,7 @@ class SqlUUIDColumnTest : ExtractTestBasePostgres() {
 
     @Test
     fun testExtraction() {
-        val schema = SchemaExtractor.extract(connection)
+        val schema = org.evomaster.sql.internal.SchemaExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("purchases", setOf("id", "uuid"))
@@ -41,7 +41,7 @@ class SqlUUIDColumnTest : ExtractTestBasePostgres() {
 
     @Test
     fun testInsertion() {
-        val schema = SchemaExtractor.extract(connection)
+        val schema = org.evomaster.sql.internal.SchemaExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("purchases", setOf("id", "uuid"))
@@ -68,7 +68,7 @@ class SqlUUIDColumnTest : ExtractTestBasePostgres() {
 
     @Test
     fun testExtractUUIDPrimaryKey() {
-        val schema = SchemaExtractor.extract(connection)
+        val schema = org.evomaster.sql.internal.SchemaExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("x", setOf("uuid"))
@@ -88,7 +88,7 @@ class SqlUUIDColumnTest : ExtractTestBasePostgres() {
 
     @Test
     fun testInsertUUIDPrimaryKey() {
-        val schema = SchemaExtractor.extract(connection)
+        val schema = org.evomaster.sql.internal.SchemaExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("x", setOf("uuid"))
@@ -119,7 +119,7 @@ class SqlUUIDColumnTest : ExtractTestBasePostgres() {
 
     @Test
     fun testExtractUUIDFirstColumn() {
-        val schema = SchemaExtractor.extract(connection)
+        val schema = org.evomaster.sql.internal.SchemaExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("y", setOf("uuid"))
@@ -138,7 +138,7 @@ class SqlUUIDColumnTest : ExtractTestBasePostgres() {
 
     @Test
     fun testInsertUUIFirstColumn() {
-        val schema = SchemaExtractor.extract(connection)
+        val schema = org.evomaster.sql.internal.SchemaExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("y", setOf("uuid"))

@@ -3,7 +3,7 @@ package com.foo.rest.examples.spring.openapi.v3
 import org.evomaster.client.java.controller.EmbeddedSutController
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
-import org.evomaster.client.java.controller.internal.db.DbSpecification
+import org.evomaster.sql.internal.DbSpecification
 import org.evomaster.client.java.controller.problem.ProblemInfo
 import org.evomaster.client.java.controller.problem.RestProblem
 import org.springframework.boot.SpringApplication
@@ -55,7 +55,7 @@ abstract class SpringController(protected val applicationClass: Class<*>) : Embe
         return listOf()
     }
 
-    override fun getDbSpecifications(): MutableList<DbSpecification>? {
+    override fun getDbSpecifications(): MutableList<org.evomaster.sql.internal.DbSpecification>? {
         return null
     }
 

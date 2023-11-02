@@ -15,6 +15,7 @@ import org.evomaster.client.java.controller.api.ControllerConstants;
 import org.evomaster.client.java.controller.api.dto.*;
 import org.evomaster.client.java.controller.api.dto.constraint.ElementConstraintsDto;
 import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto;
+import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionLogDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionDto;
@@ -27,10 +28,10 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.*;
 import org.evomaster.client.java.controller.db.DbCleaner;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.evomaster.client.java.controller.db.SqlScriptRunnerCached;
-import org.evomaster.client.java.controller.internal.db.DbSpecification;
+import org.evomaster.sql.internal.DbSpecification;
 import org.evomaster.client.java.controller.internal.db.MongoHandler;
-import org.evomaster.client.java.controller.internal.db.SchemaExtractor;
-import org.evomaster.client.java.controller.internal.db.SqlHandler;
+import org.evomaster.sql.internal.SchemaExtractor;
+import org.evomaster.sql.internal.SqlHandler;
 import org.evomaster.client.java.controller.mongo.MongoScriptRunner;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RPCProblem;
@@ -354,7 +355,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                 last.getSqlInfoData().stream().forEach(it -> {
 //                    String sql = it.getCommand();
                     try {
-                        sqlHandler.handle(it);
+                        sqlHandler.handle(new SqlExecutionLogDto(it.getCommand(), it.getExecutionTime()));
                     } catch (Exception e){
                         SimpleLogger.error("FAILED TO HANDLE SQL COMMAND: " + it.getCommand());
                         assert false; //we should try to handle all cases in our tests

@@ -1,7 +1,7 @@
 package org.evomaster.client.java.controller.db;
 
 import org.evomaster.client.java.controller.api.dto.database.operations.DataRowDto;
-import org.evomaster.client.java.controller.internal.db.SqlNameContext;
+import org.evomaster.sql.internal.SqlNameContext;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.sql.Clob;

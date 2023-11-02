@@ -1,7 +1,7 @@
 package org.evomaster.core.sql.extract.postgres
 
 import org.evomaster.client.java.controller.db.SqlScriptRunner
-import org.evomaster.client.java.controller.internal.db.SchemaExtractor
+import org.evomaster.sql.internal.SchemaExtractor
 import org.evomaster.core.sql.SqlActionTransformer
 import org.evomaster.core.sql.SqlInsertBuilder
 import org.evomaster.core.search.gene.regex.RegexGene
@@ -22,7 +22,7 @@ class ManySimilarToChecksTest : ExtractTestBasePostgres() {
 
     @Test
     fun testManySimilarToPatternsSchemaExtraction() {
-        val schema = SchemaExtractor.extract(connection)
+        val schema = org.evomaster.sql.internal.SchemaExtractor.extract(connection)
 
         assertEquals(2, schema.tables.first { it.name.equals("email_table", ignoreCase = true) }.tableCheckExpressions.size)
 
@@ -38,7 +38,7 @@ class ManySimilarToChecksTest : ExtractTestBasePostgres() {
 
     @Test
     fun testCheckRegexGenesAreCreatedForMultiplePatterns() {
-        val schema = SchemaExtractor.extract(connection)
+        val schema = org.evomaster.sql.internal.SchemaExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("email_table", setOf("email_column"))
@@ -54,7 +54,7 @@ class ManySimilarToChecksTest : ExtractTestBasePostgres() {
     @Test
     fun testCheckInsertionOfValuesUsingMultipleSimilarToPatterns() {
         val randomness = Randomness()
-        val schema = SchemaExtractor.extract(connection)
+        val schema = org.evomaster.sql.internal.SchemaExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("email_table", setOf("email_column"))

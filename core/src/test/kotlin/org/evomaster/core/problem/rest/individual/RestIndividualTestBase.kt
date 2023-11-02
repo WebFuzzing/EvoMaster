@@ -18,11 +18,10 @@ import io.swagger.v3.oas.models.parameters.RequestBody
 import io.swagger.v3.oas.models.responses.ApiResponse
 import io.swagger.v3.oas.models.responses.ApiResponses
 import org.evomaster.client.java.controller.api.dto.*
-import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto
+import org.evomaster.client.java.controller.api.dto.database.ExecutionDto
 import org.evomaster.client.java.controller.api.dto.database.operations.*
 import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto
 import org.evomaster.client.java.controller.db.SqlScriptRunner
-import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
 import org.evomaster.core.sql.SqlAction
@@ -265,7 +264,7 @@ abstract class RestIndividualTestBase {
         }
         val openAPI = openApiSchema(spec)
 
-        val schema = SchemaExtractor.extract(getConnection())
+        val schema = org.evomaster.sql.internal.SchemaExtractor.extract(getConnection())
 
         val defaultConfigs : Array<String> = listOf(
             "--useTimeInFeedbackSampling=false",
@@ -600,7 +599,8 @@ abstract class RestIndividualTestBase {
                 extraHeuristics = (0 until executedActionCounter).map {
                     ExtraHeuristicsDto().apply {
                         if (employFakeDbHeuristicResult && randomness.nextBoolean()){
-                            databaseExecutionDto = ExecutionDto().apply {
+                            databaseExecutionDto = org.evomaster.client.java.controller.api.dto.database.ExecutionDto()
+                                .apply {
                                 val table = randomness.choose( sqlInsertBuilder!!.getTableNames())
                                 val failed = randomness.choose(sqlInsertBuilder!!.getTable(table,true).columns.map { it.name })
                                 failedWhere = mapOf(table to setOf(failed))

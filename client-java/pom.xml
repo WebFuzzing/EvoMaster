@@ -21,6 +21,8 @@
         <module>ci-utils</module>
         <module>dependencies</module>
         <module>sql</module>
+        <module>sql-dto</module>
+        <module>distance-heuristics</module>
     </modules>
 
     <dependencyManagement>

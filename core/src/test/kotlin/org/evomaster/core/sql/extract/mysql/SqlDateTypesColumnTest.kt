@@ -1,6 +1,6 @@
 package org.evomaster.core.sql.extract.mysql
 
-import org.evomaster.client.java.controller.internal.db.SchemaExtractor
+import org.evomaster.sql.internal.SchemaExtractor
 import org.evomaster.core.sql.SqlInsertBuilder
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.TimeGene
@@ -13,7 +13,7 @@ class SqlDateTypesColumnTest : ExtractTestBaseMySQL() {
 
     @Test
     fun testExtraction() {
-        val schema = SchemaExtractor.extract(connection)
+        val schema = org.evomaster.sql.internal.SchemaExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("t1", setOf("t", "dt", "ts"))
