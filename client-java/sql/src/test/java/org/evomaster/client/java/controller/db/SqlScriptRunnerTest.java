@@ -2,7 +2,6 @@ package org.evomaster.client.java.controller.db;
 
 import io.restassured.http.ContentType;
 import org.evomaster.client.java.controller.DatabaseTestTemplate;
-import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
 import org.evomaster.client.java.controller.internal.SutController;
 import org.evomaster.client.java.controller.internal.db.h2.DatabaseFakeH2SutController;
 import org.evomaster.client.java.controller.internal.db.h2.DatabaseH2TestInit;
@@ -10,6 +9,7 @@ import org.evomaster.client.java.controller.InstrumentedSutStarter;
 import org.evomaster.client.java.controller.api.dto.database.operations.DataRowDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
@@ -284,9 +284,9 @@ public class SqlScriptRunnerTest extends DatabaseH2TestInit implements DatabaseT
 
         String url = start(starter);
 
-        given().contentType(ContentType.JSON)
+        RestAssured.given().contentType(ContentType.JSON)
                 .body(dto)
-                .post(url + BASE_PATH + DATABASE_COMMAND)
+                .post(url + ControllerConstants.BASE_PATH + ControllerConstants.DATABASE_COMMAND)
                 .then()
                 .statusCode(200);
     }
@@ -369,8 +369,8 @@ public class SqlScriptRunnerTest extends DatabaseH2TestInit implements DatabaseT
         QueryResult res = SqlScriptRunner.execCommand(getConnection(), "SELECT ID,CREATION_TIME, EMAIL FROM Foo;");
 
         DataRowDto row = res.seeRows().get(0).toDto();
-        assertEquals(row.columnData.size(), 3);
-        assertEquals(row.columnData.get(2), "NULL");
+        Assertions.assertEquals(row.columnData.size(), 3);
+        Assertions.assertEquals(row.columnData.get(2), "NULL");
 
     }
 
@@ -492,12 +492,12 @@ public class SqlScriptRunnerTest extends DatabaseH2TestInit implements DatabaseT
 
     @Override
     public Connection getConnection() {
-        return connection;
+        return DatabaseH2TestInit.connection;
     }
 
     @Override
     public SutController getSutController() {
-        return new DatabaseFakeH2SutController(connection);
+        return new DatabaseFakeH2SutController(DatabaseH2TestInit.connection);
     }
 
 }

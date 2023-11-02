@@ -346,57 +346,57 @@ public class DbCleaner {
 
     private static void disableReferentialIntegrity(Statement s, DatabaseType type) throws SQLException {
         switch (type) {
-            case POSTGRES:
+            case DatabaseType.POSTGRES:
                 break;
-            case MS_SQL_SERVER:
+            case DatabaseType.MS_SQL_SERVER:
                 //https://stackoverflow.com/questions/159038/how-can-foreign-key-constraints-be-temporarily-disabled-using-t-sql
                 //https://stackoverflow.com/questions/155246/how-do-you-truncate-all-tables-in-a-database-using-tsql#156813
                 //https://docs.microsoft.com/en-us/sql/relational-databases/tables/disable-foreign-key-constraints-with-insert-and-update-statements?view=sql-server-ver15
                 s.execute("EXEC sp_MSForEachTable \"ALTER TABLE ? NOCHECK CONSTRAINT all\"");
                 break;
-            case H2:
+            case DatabaseType.H2:
                 s.execute("SET REFERENTIAL_INTEGRITY FALSE");
                 break;
-            case MARIADB:
-            case MYSQL:
+            case DatabaseType.MARIADB:
+            case DatabaseType.MYSQL:
                 s.execute("SET @@foreign_key_checks = 0;");
                 break;
-            case OTHER:
+            case DatabaseType.OTHER:
                 throw new DbUnsupportedException(type);
         }
     }
 
     private static void enableReferentialIntegrity(Statement s, DatabaseType type) throws SQLException {
         switch (type) {
-            case POSTGRES:
+            case DatabaseType.POSTGRES:
                 break;
-            case MS_SQL_SERVER:
+            case DatabaseType.MS_SQL_SERVER:
                 s.execute("exec sp_MSForEachTable \"ALTER TABLE ? WITH CHECK CHECK CONSTRAINT all\"");
                 break;
-            case H2:
+            case DatabaseType.H2:
                 /*
                     For H2, we have to delete tables one at a time... but, to avoid issues
                     with FKs, we must temporarily disable the integrity checks
                 */
                 s.execute("SET REFERENTIAL_INTEGRITY TRUE");
                 break;
-            case MARIADB:
-            case MYSQL:
+            case DatabaseType.MARIADB:
+            case DatabaseType.MYSQL:
                 s.execute("SET @@foreign_key_checks = 1;");
                 break;
-            case OTHER:
+            case DatabaseType.OTHER:
                 throw new DbUnsupportedException(type);
         }
     }
 
     private static int getDefaultRetries(DatabaseType type) {
         switch (type) {
-            case MS_SQL_SERVER:
-            case POSTGRES:
+            case DatabaseType.MS_SQL_SERVER:
+            case DatabaseType.POSTGRES:
                 return 0;
-            case H2:
-            case MARIADB:
-            case MYSQL:
+            case DatabaseType.H2:
+            case DatabaseType.MARIADB:
+            case DatabaseType.MYSQL:
                 return 3;
         }
         throw new DbUnsupportedException(type);
@@ -404,15 +404,15 @@ public class DbCleaner {
 
     private static String getDefaultSchema(DatabaseType type) {
         switch (type) {
-            case H2:
+            case DatabaseType.H2:
                 return "PUBLIC";
             //https://docs.microsoft.com/en-us/dotnet/framework/data/adonet/sql/ownership-and-user-schema-separation-in-sql-server
-            case MS_SQL_SERVER:
+            case DatabaseType.MS_SQL_SERVER:
                 return "dbo";
-            case MARIADB:
-            case MYSQL:
+            case DatabaseType.MARIADB:
+            case DatabaseType.MYSQL:
                 throw new IllegalArgumentException("there is no default schema for " + type + ", and you must specify a db name here");
-            case POSTGRES:
+            case DatabaseType.POSTGRES:
                 return "public";
         }
         throw new DbUnsupportedException(type);
@@ -433,12 +433,12 @@ public class DbCleaner {
 
         switch (type) {
             // https://stackoverflow.com/questions/175415/how-do-i-get-list-of-all-tables-in-a-database-using-tsql, TABLE_CATALOG='"+dbname+"'"
-            case MS_SQL_SERVER:
+            case DatabaseType.MS_SQL_SERVER:
                 // for MySQL, schema is dbname
-            case MYSQL:
-            case MARIADB:
-            case H2:
-            case POSTGRES:
+            case DatabaseType.MYSQL:
+            case DatabaseType.MARIADB:
+            case DatabaseType.H2:
+            case DatabaseType.POSTGRES:
                 if (schema.isEmpty())
                     return command;
                 return command + " AND TABLE_SCHEMA='" + schema + "'";
@@ -451,13 +451,13 @@ public class DbCleaner {
     private static String getAllSequenceCommand(DatabaseType type, String schemaName) {
         String command = "SELECT SEQUENCE_NAME FROM INFORMATION_SCHEMA.SEQUENCES";
         switch (type) {
-            case MYSQL:
-            case MARIADB:
+            case DatabaseType.MYSQL:
+            case DatabaseType.MARIADB:
                 return getAllTableCommand(type, schemaName);
-            case H2:
-            case POSTGRES:
+            case DatabaseType.H2:
+            case DatabaseType.POSTGRES:
                 //https://docs.microsoft.com/en-us/sql/relational-databases/system-information-schema-views/sequences-transact-sql?view=sql-server-ver15
-            case MS_SQL_SERVER:
+            case DatabaseType.MS_SQL_SERVER:
                 if (schemaName.isEmpty())
                     return command;
                 else
@@ -469,12 +469,12 @@ public class DbCleaner {
 
     private static String resetSequenceCommand(String sequence, DatabaseType type) {
         switch (type) {
-            case MARIADB:
-            case MYSQL:
+            case DatabaseType.MARIADB:
+            case DatabaseType.MYSQL:
                 return "ALTER TABLE " + sequence + " AUTO_INCREMENT=1;";
-            case MS_SQL_SERVER:
-            case H2:
-            case POSTGRES:
+            case DatabaseType.MS_SQL_SERVER:
+            case DatabaseType.H2:
+            case DatabaseType.POSTGRES:
                 return "ALTER SEQUENCE " + sequence + " RESTART WITH 1";
         }
         throw new DbUnsupportedException(type);
