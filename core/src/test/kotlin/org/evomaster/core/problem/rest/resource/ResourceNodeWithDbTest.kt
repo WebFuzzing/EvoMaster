@@ -2,6 +2,7 @@ package org.evomaster.core.problem.rest.resource
 
 import io.swagger.parser.OpenAPIParser
 import org.evomaster.client.java.controller.api.dto.database.operations.*
+import org.evomaster.client.java.sql.SchemaExtractor
 import org.evomaster.client.java.sql.SqlScriptRunner
 import org.evomaster.core.EMConfig
 import org.evomaster.core.sql.DatabaseExecutor

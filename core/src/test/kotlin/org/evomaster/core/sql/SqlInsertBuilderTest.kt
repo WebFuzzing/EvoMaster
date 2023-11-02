@@ -1,6 +1,7 @@
 package org.evomaster.core.sql
 
 import org.evomaster.client.java.controller.api.dto.database.operations.*
+import org.evomaster.client.java.sql.SchemaExtractor
 import org.evomaster.client.java.sql.SqlScriptRunner
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.EnumGene

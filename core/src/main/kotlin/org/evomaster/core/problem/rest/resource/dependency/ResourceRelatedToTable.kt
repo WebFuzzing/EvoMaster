@@ -1,6 +1,6 @@
 package org.evomaster.core.problem.rest.resource.dependency
 
-import org.evomaster.client.java.controller.api.dto.database.ExecutionDto
+import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto
 import org.evomaster.core.sql.SQLKey
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.api.param.Param
@@ -56,7 +56,7 @@ class ResourceRelatedToTable(val key: String) {
     private val actionToTables : MutableMap<String, MutableList<ActionRelatedToTable>> = mutableMapOf()
 
 
-    fun updateActionRelatedToTable(verb : String, dto: org.evomaster.client.java.controller.api.dto.database.ExecutionDto, existingTables : Set<String>) : Boolean{
+    fun updateActionRelatedToTable(verb : String, dto: org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto, existingTables : Set<String>) : Boolean{
 
         val tables = mutableListOf<String>().plus(dto.deletedData).plus(dto.updatedData.keys).plus(dto.insertedData.keys).plus(dto.queriedData.keys)
                 .filter { existingTables.contains(it) || existingTables.any { e->e.toLowerCase() == it.toLowerCase() }}.toHashSet()

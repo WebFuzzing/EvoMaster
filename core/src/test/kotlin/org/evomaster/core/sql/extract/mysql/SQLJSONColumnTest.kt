@@ -1,5 +1,6 @@
 package org.evomaster.core.sql.extract.mysql
 
+import org.evomaster.client.java.sql.SchemaExtractor
 import org.evomaster.client.java.sql.SqlScriptRunner
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.SqlActionTransformer
