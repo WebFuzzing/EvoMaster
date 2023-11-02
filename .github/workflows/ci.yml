@@ -13,6 +13,7 @@ on:
       - 'makeExecutable.sh'
       - 'buildAll.sh'
       - 'README.md'
+      - '.gitignore'
 
 env:
   evomaster-version: 2.0.1
