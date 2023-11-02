@@ -5,7 +5,7 @@ import org.evomaster.client.java.controller.DatabaseTestTemplate;
 import org.evomaster.client.java.controller.InstrumentedSutStarter;
 import org.evomaster.client.java.controller.api.dto.TestResultsDto;
 import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto;
-import org.evomaster.client.java.controller.db.SqlScriptRunner;
+import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -16,7 +16,7 @@ import java.sql.SQLException;
 
 import  io.restassured.RestAssured;
 import  org.evomaster.client.java.controller.api.ControllerConstants;
-import  org.evomaster.client.java.controller.api.ControllerConstants;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 /**

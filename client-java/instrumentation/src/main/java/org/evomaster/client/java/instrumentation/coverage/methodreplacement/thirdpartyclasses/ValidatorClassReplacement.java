@@ -3,7 +3,7 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement.thi
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyMethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
-import org.evomaster.client.java.instrumentation.heuristic.Truthness;
+import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.instrumentation.heuristic.ValidatorHeuristics;
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;

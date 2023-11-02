@@ -1,14 +1,12 @@
 package org.evomaster.client.java.controller;
 
 import io.restassured.http.ContentType;
-import org.evomaster.client.java.controller.DatabaseTestTemplate;
-import org.evomaster.client.java.controller.db.DataRow;
-import org.evomaster.client.java.controller.db.QueryResult;
-import org.evomaster.client.java.controller.db.SqlScriptRunner;
+import org.evomaster.client.java.sql.DataRow;
+import org.evomaster.client.java.sql.QueryResult;
+import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.evomaster.client.java.controller.internal.SutController;
 import org.evomaster.client.java.controller.internal.db.sql.h2.DatabaseFakeH2SutController;
 import org.evomaster.client.java.controller.internal.db.sql.h2.DatabaseH2TestInit;
-import org.evomaster.client.java.controller.InstrumentedSutStarter;
 import org.evomaster.client.java.controller.api.dto.database.operations.DataRowDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
@@ -22,7 +20,7 @@ import java.util.Map;
 
 import  io.restassured.RestAssured;
 import  org.evomaster.client.java.controller.api.ControllerConstants;
-import static org.evomaster.client.java.controller.db.dsl.SqlDsl.sql;
+import static org.evomaster.client.java.sql.dsl.SqlDsl.sql;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class SqlScriptRunnerTest extends DatabaseH2TestInit implements DatabaseTestTemplate {

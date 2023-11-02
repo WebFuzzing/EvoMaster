@@ -2,7 +2,7 @@ package org.evomaster.client.java.controller.mongo;
 
 import org.evomaster.client.java.controller.mongo.operations.*;
 import org.evomaster.client.java.controller.mongo.operations.synthetic.*;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
+import org.evomaster.client.java.distance.heuristics.DistanceHelper;
 
 import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.*;
 import static java.lang.Math.abs;

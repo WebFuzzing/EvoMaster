@@ -1,7 +1,7 @@
 package org.evomaster.client.java.controller.internal.db.sql;
 
-import org.evomaster.client.java.controller.db.QueryResult;
-import org.evomaster.client.java.controller.db.SqlScriptRunner;
+import org.evomaster.client.java.sql.QueryResult;
+import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes.StatementClassReplacement;
 import org.evomaster.client.java.utils.SimpleLogger;
 

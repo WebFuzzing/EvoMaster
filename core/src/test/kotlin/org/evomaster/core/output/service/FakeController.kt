@@ -5,7 +5,7 @@ import org.evomaster.client.java.controller.api.dto.database.operations.Insertio
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto
 import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionDto
 import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionResultsDto
-import org.evomaster.sql.internal.DbSpecification
+import org.evomaster.client.java.sql.DbSpecification
 
 
 class FakeController : SutHandler {
@@ -27,7 +27,7 @@ class FakeController : SutHandler {
         return null
     }
 
-    override fun getDbSpecifications(): MutableList<org.evomaster.sql.internal.DbSpecification>? {
+    override fun getDbSpecifications(): MutableList<DbSpecification>? {
         return null
     }
 }

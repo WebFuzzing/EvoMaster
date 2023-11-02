@@ -3,8 +3,7 @@ package org.evomaster.client.java.controller.internal.db.sql;
 import io.restassured.http.ContentType;
 import org.evomaster.client.java.controller.DatabaseTestTemplate;
 import org.evomaster.client.java.controller.InstrumentedSutStarter;
-import org.evomaster.client.java.controller.db.QueryResult;
-import org.evomaster.client.java.controller.db.SqlScriptRunner;
+import org.evomaster.client.java.sql.QueryResult;
 import org.junit.jupiter.api.Test;
 
 import  io.restassured.RestAssured;

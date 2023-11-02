@@ -21,7 +21,8 @@ import org.evomaster.client.java.controller.api.dto.*
 import org.evomaster.client.java.controller.api.dto.database.ExecutionDto
 import org.evomaster.client.java.controller.api.dto.database.operations.*
 import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto
-import org.evomaster.client.java.controller.db.SqlScriptRunner
+import org.evomaster.client.java.sql.SqlScriptRunner
+import org.evomaster.client.java.sql.SchemaExtractor
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
 import org.evomaster.core.sql.SqlAction
@@ -264,7 +265,7 @@ abstract class RestIndividualTestBase {
         }
         val openAPI = openApiSchema(spec)
 
-        val schema = org.evomaster.sql.internal.SchemaExtractor.extract(getConnection())
+        val schema = SchemaExtractor.extract(getConnection())
 
         val defaultConfigs : Array<String> = listOf(
             "--useTimeInFeedbackSampling=false",

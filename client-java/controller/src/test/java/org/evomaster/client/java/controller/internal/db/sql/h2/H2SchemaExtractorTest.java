@@ -4,9 +4,9 @@ import io.restassured.http.ContentType;
 import org.evomaster.client.java.controller.DatabaseTestTemplate;
 import org.evomaster.client.java.controller.InstrumentedSutStarter;
 import org.evomaster.client.java.controller.api.dto.database.schema.*;
-import org.evomaster.client.java.controller.db.SqlScriptRunner;
+import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.evomaster.client.java.controller.internal.SutController;
-import org.evomaster.sql.internal.SchemaExtractor;
+import org.evomaster.client.java.sql.SchemaExtractor;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;

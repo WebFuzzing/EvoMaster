@@ -1,7 +1,6 @@
 package org.evomaster.core.sql.extract.postgres
 
-import org.evomaster.client.java.controller.db.SqlScriptRunner
-import org.evomaster.sql.internal.SchemaExtractor
+import org.evomaster.client.java.sql.SqlScriptRunner
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.SqlActionTransformer
 import org.evomaster.core.sql.SqlInsertBuilder
@@ -25,7 +24,7 @@ class SqlJSONBColumnTest : ExtractTestBasePostgres() {
 
     @Test
     fun testExtraction() {
-        val schema = org.evomaster.sql.internal.SchemaExtractor.extract(connection)
+        val schema = SchemaExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("people", setOf("id", "jsonData"))
@@ -39,7 +38,7 @@ class SqlJSONBColumnTest : ExtractTestBasePostgres() {
 
     @Test
     fun testInsertionEmptyObject() {
-        val schema = org.evomaster.sql.internal.SchemaExtractor.extract(connection)
+        val schema = SchemaExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("people", setOf("id", "jsonData"))
@@ -66,7 +65,7 @@ class SqlJSONBColumnTest : ExtractTestBasePostgres() {
 
     @Test
     fun testInsertionNonEmptyObject() {
-        val schema = org.evomaster.sql.internal.SchemaExtractor.extract(connection)
+        val schema = SchemaExtractor.extract(connection)
 
 
         val tableDto = schema.tables[0]
@@ -113,7 +112,7 @@ class SqlJSONBColumnTest : ExtractTestBasePostgres() {
 
     @Test
     fun testInsertionRealValue() {
-        val schema = org.evomaster.sql.internal.SchemaExtractor.extract(connection)
+        val schema = SchemaExtractor.extract(connection)
 
 
         val tableDto = schema.tables[0]
@@ -157,7 +156,7 @@ class SqlJSONBColumnTest : ExtractTestBasePostgres() {
 
     @Test
     fun testInsertionArrayValue() {
-        val schema = org.evomaster.sql.internal.SchemaExtractor.extract(connection)
+        val schema = SchemaExtractor.extract(connection)
 
 
         val tableDto = schema.tables[0]
@@ -206,7 +205,7 @@ class SqlJSONBColumnTest : ExtractTestBasePostgres() {
 
     @Test
     fun testInsertionNestedObject() {
-        val schema = org.evomaster.sql.internal.SchemaExtractor.extract(connection)
+        val schema = SchemaExtractor.extract(connection)
 
 
         val tableDto = schema.tables[0]

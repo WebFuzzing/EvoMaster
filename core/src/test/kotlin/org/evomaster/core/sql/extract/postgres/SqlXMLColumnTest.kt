@@ -1,7 +1,6 @@
 package org.evomaster.core.sql.extract.postgres
 
-import org.evomaster.client.java.controller.db.SqlScriptRunner
-import org.evomaster.sql.internal.SchemaExtractor
+import org.evomaster.client.java.sql.SqlScriptRunner
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.SqlActionTransformer
 import org.evomaster.core.sql.SqlInsertBuilder
@@ -24,7 +23,7 @@ class SqlXMLColumnTest : ExtractTestBasePostgres() {
 
     @Test
     fun testXMLColumnExtraction() {
-        val schema = org.evomaster.sql.internal.SchemaExtractor.extract(connection)
+        val schema = SchemaExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("x", setOf("xmlData"))
@@ -37,7 +36,7 @@ class SqlXMLColumnTest : ExtractTestBasePostgres() {
 
     @Test
     fun testEmptyXMLInsertion() {
-        val schema = org.evomaster.sql.internal.SchemaExtractor.extract(connection)
+        val schema = SchemaExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("x", setOf("xmlData"))
@@ -66,7 +65,7 @@ class SqlXMLColumnTest : ExtractTestBasePostgres() {
 
     @Test
     fun testIntegerElementInsertion() {
-        val schema = org.evomaster.sql.internal.SchemaExtractor.extract(connection)
+        val schema = SchemaExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("x", setOf("xmldata"))
@@ -97,7 +96,7 @@ class SqlXMLColumnTest : ExtractTestBasePostgres() {
 
     @Test
     fun testBooleanElementInsertion() {
-        val schema = org.evomaster.sql.internal.SchemaExtractor.extract(connection)
+        val schema = SchemaExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("x", setOf("xmldata"))
@@ -128,7 +127,7 @@ class SqlXMLColumnTest : ExtractTestBasePostgres() {
 
     @Test
     fun testStringElementInsertion() {
-        val schema = org.evomaster.sql.internal.SchemaExtractor.extract(connection)
+        val schema = SchemaExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("x", setOf("xmldata"))
@@ -159,7 +158,7 @@ class SqlXMLColumnTest : ExtractTestBasePostgres() {
 
     @Test
     fun testEscapeString() {
-        val schema = org.evomaster.sql.internal.SchemaExtractor.extract(connection)
+        val schema = SchemaExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("x", setOf("xmldata"))
@@ -191,7 +190,7 @@ class SqlXMLColumnTest : ExtractTestBasePostgres() {
 
     @Test
     fun testNestedXMLInsertion() {
-        val schema = org.evomaster.sql.internal.SchemaExtractor.extract(connection)
+        val schema = SchemaExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("x", setOf("xmldata"))

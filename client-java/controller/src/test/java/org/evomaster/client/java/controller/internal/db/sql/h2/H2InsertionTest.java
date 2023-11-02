@@ -1,7 +1,7 @@
 package org.evomaster.client.java.controller.internal.db.sql.h2;
 
 import org.evomaster.client.java.controller.DatabaseTestTemplate;
-import org.evomaster.client.java.controller.db.SqlScriptRunner;
+import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.evomaster.client.java.controller.internal.SutController;
 import org.evomaster.client.java.controller.internal.db.sql.mysql.DatabaseFakeMySQLSutController;
 import org.junit.jupiter.api.Test;

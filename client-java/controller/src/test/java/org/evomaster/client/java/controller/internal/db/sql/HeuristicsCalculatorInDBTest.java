@@ -3,7 +3,6 @@ package org.evomaster.client.java.controller.internal.db.sql;
 import io.restassured.http.ContentType;
 import org.evomaster.client.java.controller.DatabaseTestTemplate;
 import org.evomaster.client.java.controller.InstrumentedSutStarter;
-import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
@@ -11,7 +10,6 @@ import  io.restassured.RestAssured;
 import static org.evomaster.client.java.controller.api.ControllerConstants.BASE_PATH;
 import static org.evomaster.client.java.controller.api.ControllerConstants.TEST_RESULTS;
 import org.evomaster.client.java.controller.api.ControllerConstants;
-import static org.hamcrest.Matchers.greaterThan;
 import org.hamcrest.Matchers;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;

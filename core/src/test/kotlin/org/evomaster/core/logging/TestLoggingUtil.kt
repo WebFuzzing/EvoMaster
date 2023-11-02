@@ -1,6 +1,5 @@
 package org.evomaster.core.logging
 
-import org.evomaster.sql.internal.WrappedPrintStream
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 

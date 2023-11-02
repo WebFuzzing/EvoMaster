@@ -1,6 +1,6 @@
 package org.evomaster.testoldlibraries.heuristic;
 
-import org.evomaster.client.java.instrumentation.heuristic.Truthness;
+import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.instrumentation.heuristic.ValidatorHeuristics;
 import org.evomaster.client.java.instrumentation.shared.TaintInputName;
 import org.evomaster.testoldlibraries.heuristic.validator.PatternBean;

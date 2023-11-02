@@ -1,8 +1,7 @@
 package org.evomaster.testoldlibraries.heuristic;
 
-import org.evomaster.client.java.instrumentation.heuristic.Truthness;
+import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.instrumentation.heuristic.ValidatorHeuristics;
-import org.evomaster.testoldlibraries.heuristic.validator.RangeBean;
 import org.evomaster.testoldlibraries.heuristic.validator.ocvn.YearFilterPagingRequest;
 import org.junit.jupiter.api.Test;
 

@@ -2,7 +2,7 @@ package org.evomaster.client.java.controller.internal.db.sql.h2;
 
 import org.evomaster.client.java.controller.InstrumentedSutStarter;
 import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto;
-import org.evomaster.client.java.controller.db.SqlScriptRunner;
+import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.evomaster.client.java.controller.internal.SutController;
 import org.evomaster.client.java.controller.internal.db.sql.SqlHandlerInDBTest;
 import org.junit.jupiter.api.Test;

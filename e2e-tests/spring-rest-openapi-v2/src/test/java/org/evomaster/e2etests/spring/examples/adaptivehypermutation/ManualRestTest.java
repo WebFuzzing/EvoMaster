@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import java.util.List;
 import static io.restassured.RestAssured.given;
-import static org.evomaster.client.java.controller.db.dsl.SqlDsl.sql;
+import static org.evomaster.client.java.sql.dsl.SqlDsl.sql;
 import static org.hamcrest.Matchers.equalTo;
 
 

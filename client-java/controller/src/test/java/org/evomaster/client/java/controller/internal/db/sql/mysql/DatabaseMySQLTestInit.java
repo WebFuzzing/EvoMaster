@@ -2,7 +2,7 @@ package org.evomaster.client.java.controller.internal.db.sql.mysql;
 
 import io.restassured.RestAssured;
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
-import org.evomaster.client.java.controller.db.DbCleaner;
+import org.evomaster.client.java.sql.DbCleaner;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;

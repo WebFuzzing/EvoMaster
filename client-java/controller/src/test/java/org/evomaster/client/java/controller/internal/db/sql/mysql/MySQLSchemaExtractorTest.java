@@ -3,9 +3,9 @@ package org.evomaster.client.java.controller.internal.db.sql.mysql;
 import org.evomaster.client.java.controller.DatabaseTestTemplate;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
-import org.evomaster.client.java.controller.db.SqlScriptRunner;
+import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.evomaster.client.java.controller.internal.SutController;
-import org.evomaster.sql.internal.SchemaExtractor;
+import org.evomaster.client.java.sql.SchemaExtractor;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;

@@ -3,17 +3,15 @@ package org.evomaster.client.java.controller.internal.db.sql;
 import io.restassured.http.ContentType;
 import org.evomaster.client.java.controller.DatabaseTestTemplate;
 import org.evomaster.client.java.controller.InstrumentedSutStarter;
-import org.evomaster.client.java.controller.db.QueryResult;
-import org.evomaster.client.java.controller.db.SqlScriptRunner;
+import org.evomaster.client.java.sql.QueryResult;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
 import static io.restassured.RestAssured.given;
 import io.restassured.RestAssured;
-import static org.evomaster.client.java.controller.api.ControllerConstants.*;
 import org.evomaster.client.java.controller.api.ControllerConstants;
-import static org.evomaster.client.java.controller.api.ControllerConstants.TEST_RESULTS;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public interface InitSqlScriptWithSmartDbCleanTest extends DatabaseTestTemplate {

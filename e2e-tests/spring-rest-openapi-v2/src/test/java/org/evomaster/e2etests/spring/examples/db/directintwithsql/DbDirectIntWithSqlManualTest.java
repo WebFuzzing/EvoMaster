@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static io.restassured.RestAssured.given;
-import static org.evomaster.client.java.controller.db.dsl.SqlDsl.sql;
+import static org.evomaster.client.java.sql.dsl.SqlDsl.sql;
 
 public class DbDirectIntWithSqlManualTest extends DbDirectIntWithSqlTestBase {
 
