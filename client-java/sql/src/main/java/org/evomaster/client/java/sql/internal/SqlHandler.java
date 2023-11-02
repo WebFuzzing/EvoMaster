@@ -259,7 +259,7 @@ public class SqlHandler {
             throw new RuntimeException(e);
         }
 
-
+        //TODO isn't this a bug, as we do not pass the schema???
         return HeuristicsCalculator.computeDistance(command, data);
     }
 
