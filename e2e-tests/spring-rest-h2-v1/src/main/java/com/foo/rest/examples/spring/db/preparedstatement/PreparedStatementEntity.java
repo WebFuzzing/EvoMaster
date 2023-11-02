@@ -1,40 +1,33 @@
 package com.foo.rest.examples.spring.db.preparedstatement;
 
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
+import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 
+@Entity
+@Table(name = "Foo")
 public class PreparedStatementEntity {
 
-    // unique identifier
-    @Id
-    @GeneratedValue
-    private Long identifier;
 
+
+    @Column(name="integervalue")
+    @Id
     // integer value
     @NotNull
     private Integer integerValue;
 
     // string value
+    @Column(name="stringvalue")
     @NotNull
     private String stringValue;
 
     // boolean value
+    @Column(name="booleanvalue")
     @NotNull
     private boolean booleanValue;
 
     // empty constructor
     public PreparedStatementEntity() { }
 
-    // get method for the identifier
-    public Long getIdentifier() {
-        return identifier;
-    }
-
-    // set method for the identifier
-    public void setIdentifier(Long identifier) {
-        this.identifier = identifier;
-    }
 
     // get method for the integerValue
     public Integer getIntegerValue() {

@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.annotation.PostConstruct;
+import javax.sql.DataSource;
 import javax.ws.rs.core.MediaType;
 import java.sql.*;
 import java.util.List;
@@ -19,18 +21,21 @@ import java.util.List;
 @RequestMapping(path = "/api/db/preparedStatement")
 public class PreparedStatementRest {
 
-    @Autowired
-    private static Connection connection;
 
-    static {
+    @Autowired
+    private DataSource dataSource;
+
+    private  Connection connection;
+
+    @PostConstruct
+    public void init(){
         try {
-            connection = DriverManager.getConnection("jdbc:h2:mem:db_prepared_statement", "sa", "");
-            SqlScriptRunner.execCommand(connection, "DROP ALL OBJECTS;");
-            SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo (integerValue INT, stringValue VARCHAR, booleanValue BOOL)");
+            connection = dataSource.getConnection();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
+
 
     @RequestMapping(
             method = RequestMethod.POST

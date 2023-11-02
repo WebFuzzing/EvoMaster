@@ -8,13 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
 
-public class PreparedStatementTest extends SpringTestBase {
-
-    @BeforeAll
-    public static void initClass() throws Exception {
-
-        SpringTestBase.initClass(new PreparedStatementController());
-    }
+public class PreparedStatementTest extends PreparedStatementTestBase {
 
     @Test
     public void testEmpty(){

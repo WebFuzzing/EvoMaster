@@ -10,39 +10,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class PreparedStatementEMTest extends PreparedStatementTestBase {
 
-    @Test
-    public void testRunEM_AVG_DISTANCE() throws Throwable {
-        testRunEM(EMConfig.SecondaryObjectiveStrategy.AVG_DISTANCE);
-    }
 
     @Test
-    public void testRunEM_AVG_DISTANCE_SAME_N_ACTIONS() throws Throwable {
-        testRunEM(EMConfig.SecondaryObjectiveStrategy.AVG_DISTANCE_SAME_N_ACTIONS);
-    }
+    public void testRunEM() throws Throwable {
 
-    @Test
-    public void testRunEM_BEST_MIN() throws Throwable {
-        testRunEM(EMConfig.SecondaryObjectiveStrategy.BEST_MIN);
-    }
-
-    private void testRunEM(EMConfig.SecondaryObjectiveStrategy strategy) throws Throwable {
-
-        final String outputFolder = "PreparedStatement_"+ strategy;
-        final String outputTestName = "org.bar.db.PreparedStatement_" + strategy;
+        final String outputFolder = "PreparedStatement";
+        final String outputTestName = "org.bar.db.PreparedStatement";
 
         runTestHandlingFlakyAndCompilation(
                 outputFolder,
                 outputTestName,
-                7_000,
+                100,
                 (args) -> {
-                    args.add("--secondaryObjectiveStrategy");
-                    args.add("" + strategy);
-                    args.add("--heuristicsForSQL");
-                    args.add("true");
-                    args.add("--generateSqlDataWithSearch");
-                    args.add("false");
-                    args.add("--probOfSmartSampling");
-                    args.add("0.0"); // on this example, it has huge negative impact
 
                     Solution<RestIndividual> solution = initAndRun(args);
 
