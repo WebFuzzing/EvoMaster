@@ -128,3 +128,7 @@ Migrations/
 /e2e-tests/spring-rest-mongo/target/
 /client-java/target/
 /client-java/dependencies/target/
+/client-java/sql-dto/target/
+/client-java/sql/target/
+/client-java/distance-heuristics/target/
+/e2e-tests/spring-rpc/spring-rpc-grpc/target/
