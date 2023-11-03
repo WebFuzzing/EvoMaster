@@ -41,8 +41,9 @@ public class PreparedStatementRest {
             method = RequestMethod.POST
     )
     public void post() {
+
         try {
-            PreparedStatement statement = connection.prepareStatement("INSERT INTO Foo VALUES(?, ?, ?)");
+            PreparedStatement statement = connection.prepareStatement("INSERT INTO Foo (integervalue, stringvalue, booleanvalue) VALUES(?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
             statement.setInt(1, 42);
             statement.setString(2, "BAR");
             statement.setBoolean(3, false);
@@ -64,10 +65,10 @@ public class PreparedStatementRest {
     public ResponseEntity<Void> get(@PathVariable("integerValue") int x, @PathVariable("stringValue") String y, @PathVariable("booleanValue") boolean z) {
 
         try {
-            PreparedStatement statement = connection.prepareStatement("SELECT * FROM Foo WHERE integerValue=? AND stringValue=? AND booleanValue=?");
+            PreparedStatement statement = connection.prepareStatement("SELECT * FROM Foo WHERE integerValue=? AND stringValue=?");
             statement.setInt(1, x);
             statement.setString(2, y);
-            statement.setBoolean(3, z);
+            //statement.setBoolean(3, z);
 
             ResultSet results = PreparedStatementClassReplacement.executeQuery(statement);
 

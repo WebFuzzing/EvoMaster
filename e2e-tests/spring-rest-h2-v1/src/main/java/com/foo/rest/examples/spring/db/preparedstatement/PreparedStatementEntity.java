@@ -8,9 +8,14 @@ import javax.validation.constraints.NotNull;
 public class PreparedStatementEntity {
 
 
+    @Id
+    @Column(name="identifier")
+    @NotNull
+    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    private Integer identifier;
+
 
     @Column(name="integervalue")
-    @Id
     // integer value
     @NotNull
     private Integer integerValue;
@@ -21,9 +26,9 @@ public class PreparedStatementEntity {
     private String stringValue;
 
     // boolean value
-    @Column(name="booleanvalue")
-    @NotNull
-    private boolean booleanValue;
+   @Column(name="booleanvalue")
+   @NotNull
+   private boolean booleanValue;
 
     // empty constructor
     public PreparedStatementEntity() { }
