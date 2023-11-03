@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene.mongo
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.regex.*
 import org.evomaster.core.search.gene.root.CompositeFixedGene
@@ -22,26 +23,7 @@ class ObjectIdGene(
      */
     name: String,
 
-    private val id: RegexGene = RegexGene(
-        "_id",
-        DisjunctionListRxGene(
-            listOf(
-                DisjunctionRxGene(
-                    "disj", listOf(
-                        QuantifierRxGene(
-                            "hex", CharacterRangeRxGene(
-                                false, listOf(
-                                    Pair('0', '9'),
-                                    Pair('a', 'f')
-                                )
-                            ), 24, 24
-                        )
-                    ), matchStart = true, matchEnd = true
-                )
-            )
-        ),
-        "[0-9a-f]{24}"
-    )
+    private val id: RegexGene = RegexHandler.createGeneForJVM("[0-9a-f]{24}")
 
 ) : CompositeFixedGene(name, mutableListOf(id)) {
 

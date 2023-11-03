@@ -292,7 +292,11 @@ public class MongoHeuristicsCalculator {
         double x2;
         double y2;
 
-        // GeoJsonPoint in document
+        /*
+          GeoJSON Point in document.
+          type key is case-sensitive.
+          (https://datatracker.ietf.org/doc/html/rfc7946#section-1.4) for more details.
+         */
         if (isDocument(actualPoint) && getValue(actualPoint, "type").equals("Point") && getValue(actualPoint, "coordinates") instanceof List<?>) {
 
             List<?> coordinates = (List<?>) getValue(actualPoint, "coordinates");

@@ -41,14 +41,4 @@ public class CursorPreparerClassReplacement extends MongoOperationClassReplaceme
 
         return result;
     }
-
-    private static Object getField(Object object, String fieldName) {
-        try {
-            Field field = object.getClass().getDeclaredField(fieldName);
-            field.setAccessible(true);
-            return field.get(object);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
-    }
 }
