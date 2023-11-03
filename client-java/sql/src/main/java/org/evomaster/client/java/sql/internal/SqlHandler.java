@@ -11,7 +11,6 @@ import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecut
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.sql.QueryResult;
 import org.evomaster.client.java.sql.SqlScriptRunner;
-//import org.evomaster.client.java.instrumentation.SqlInfo;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.sql.Connection;
@@ -30,6 +29,8 @@ public class SqlHandler {
     private final static Set<String> booleanConstantNames = Collections.unmodifiableSet(
             new LinkedHashSet<>(Arrays.asList("t", "true", "f", "false", "yes", "y", "no", "n", "on", "off", "unknown"))
     );
+
+    private final TaintHandler taintHandler;
 
     /**
      * Computing heuristics on SQL is expensive, as we need to run
@@ -65,7 +66,10 @@ public class SqlHandler {
      */
     private volatile DbSchemaDto schema;
 
-    public SqlHandler() {
+    public SqlHandler(TaintHandler taintHandler) {
+
+        this.taintHandler = taintHandler;
+
         buffer = new CopyOnWriteArrayList<>();
         distances = new ArrayList<>();
         queriedData = new ConcurrentHashMap<>();
@@ -259,8 +263,7 @@ public class SqlHandler {
             throw new RuntimeException(e);
         }
 
-        //TODO isn't this a bug, as we do not pass the schema???
-        return HeuristicsCalculator.computeDistance(command, data);
+        return HeuristicsCalculator.computeDistance(command, data, schema, taintHandler);
     }
 
     private String createSelectForSingleTable(String tableName, Set<String> columns) {

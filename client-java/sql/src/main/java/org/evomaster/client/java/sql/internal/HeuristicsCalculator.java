@@ -10,7 +10,6 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.sql.DataRow;
 import org.evomaster.client.java.sql.QueryResult;
 import org.evomaster.client.java.distance.heuristics.DistanceHelper;
-//import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.sql.Timestamp;
@@ -34,15 +33,18 @@ public class HeuristicsCalculator {
 
     private final SqlNameContext context;
 
-    public HeuristicsCalculator(SqlNameContext context) {
+    private final TaintHandler taintHandler;
+
+    public HeuristicsCalculator(SqlNameContext context, TaintHandler handler) {
         this.context = Objects.requireNonNull(context);
+        this.taintHandler = handler;
     }
 
     public static double computeDistance(String statement, QueryResult data) {
-        return computeDistance(statement, data, null);
+        return computeDistance(statement, data, null, null);
     }
 
-    public static double computeDistance(String statement, QueryResult data, DbSchemaDto schema) {
+    public static double computeDistance(String statement, QueryResult data, DbSchemaDto schema, TaintHandler taintHandler) {
 
         if (data.isEmpty()) {
             //if no data, we have no info whatsoever
@@ -62,7 +64,7 @@ public class HeuristicsCalculator {
         if (schema != null) {
             context.setSchema(schema);
         }
-        HeuristicsCalculator calculator = new HeuristicsCalculator(context);
+        HeuristicsCalculator calculator = new HeuristicsCalculator(context, taintHandler);
 
         double min = Double.MAX_VALUE;
         for (DataRow row : data.seeRows()) {
@@ -86,7 +88,7 @@ public class HeuristicsCalculator {
      * @param data current data raw in the database, based on the columns/tables involved in the WHERE
      * @return a branch distance, where 0 means that the data would make the WHERE resolves to true
      */
-    public double computeExpression(Expression exp, DataRow data) {
+    private double computeExpression(Expression exp, DataRow data) {
 
         //TODO all cases
 
@@ -441,12 +443,9 @@ public class HeuristicsCalculator {
 
         if (exp instanceof EqualsTo) {
 
-            /*
-                FIXME: this is very tricky and not clean... works fine for embedded, but need
-                custom hack for external to make it work. See ExternalSutContoller.getAdditionalInfoList()
-             */
-            //FIXME put back
-            //ExecutionTracer.handleTaintForStringEquals(a, b, false);
+            if(taintHandler != null){
+                taintHandler.handleTaintForStringEquals(a,b,false);
+            }
             return DistanceHelper.getLeftAlignmentDistance(a, b);
 
         } else if (exp instanceof NotEqualsTo) {

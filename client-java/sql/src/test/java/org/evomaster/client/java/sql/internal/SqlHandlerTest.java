@@ -21,7 +21,7 @@ public class SqlHandlerTest {
 
         Statement stmt = CCJSqlParserUtil.parse(select);
 
-        Map<String, Set<String>> columns = new SqlHandler().extractColumnsInvolvedInWhere(stmt);
+        Map<String, Set<String>> columns = new SqlHandler(null).extractColumnsInvolvedInWhere(stmt);
         assertTrue(columns.values().stream().flatMap(s -> s.stream()).noneMatch(c -> c.equals("false")));
 
         //TODO add more check on returned columns
@@ -37,7 +37,7 @@ public class SqlHandlerTest {
         /*
             TODO in the future, when handle boolean constants in parser, this ll need to be updated
          */
-        Map<String, Set<String>> columns = new SqlHandler().extractColumnsInvolvedInWhere(stmt);
+        Map<String, Set<String>> columns = new SqlHandler(null).extractColumnsInvolvedInWhere(stmt);
         assertTrue(columns.isEmpty());
     }
 

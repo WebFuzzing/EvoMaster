@@ -80,7 +80,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     private int controllerPort = ControllerConstants.DEFAULT_CONTROLLER_PORT;
     private String controllerHost = ControllerConstants.DEFAULT_CONTROLLER_HOST;
 
-    private final SqlHandler sqlHandler = new SqlHandler();
+    private final SqlHandler sqlHandler = new SqlHandler(new TaintHandlerExecutionTracer());
 
     private final MongoHandler mongoHandler = new MongoHandler();
 
