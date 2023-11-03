@@ -18,6 +18,7 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutation
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 
@@ -114,7 +115,13 @@ class DateGene(
         targetFormat: OutputFormat?,
         extraCheck: Boolean
     ): String {
-        return if(mode == GeneUtils.EscapeMode.EJSON) "{\"\$date\":\"${getValueAsRawString()}\"}" else "\"${getValueAsRawString()}\""
+        return if (mode == GeneUtils.EscapeMode.EJSON) {
+            val millis = LocalDate.of(year.value, month.value, day.value).atStartOfDay().atZone(ZoneId.systemDefault())
+                .toInstant().toEpochMilli()
+            "{\"\$date\":{\"\$numberLong\":\"$millis\"}}"
+        } else {
+            "\"${getValueAsRawString()}\""
+        }
     }
 
     override fun getValueAsRawString(): String {

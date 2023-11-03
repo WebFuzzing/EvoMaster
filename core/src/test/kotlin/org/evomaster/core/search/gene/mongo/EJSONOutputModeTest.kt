@@ -11,6 +11,8 @@ import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import java.time.LocalDate
+import java.time.ZoneId
 
 class EJSONOutputModeTest {
     @Test
@@ -49,7 +51,9 @@ class EJSONOutputModeTest {
     @Test
     fun testDateGene() {
         val gene = DateGene("someField")
-        assertEquals("{\"\$date\":\"2016-03-12\"}", gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.EJSON))
+        val millis = LocalDate.of(2016, 3, 12).atStartOfDay().atZone(ZoneId.systemDefault())
+            .toInstant().toEpochMilli()
+        assertEquals("{\"\$date\":{\"\$numberLong\":\"$millis\"}}", gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.EJSON))
     }
 
     @Test
