@@ -6,6 +6,7 @@ import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.gene.interfaces.ComparableGene
+import org.evomaster.core.search.gene.mongo.ObjectIdGene
 import org.evomaster.core.search.gene.regex.*
 import org.evomaster.core.search.gene.sql.*
 import org.evomaster.core.search.gene.sql.geometric.*
@@ -168,6 +169,9 @@ object GeneSamplerForTests {
             UriGene::class -> sampleUrlGene(rand) as T
             UrlHttpGene::class -> sampleUrlHttpGene(rand) as T
             UriDataGene::class -> sampleUrlDataGene(rand) as T
+
+            // Mongo genes
+            ObjectIdGene::class -> sampleMongoObjectIdGene(rand) as T
 
             else -> throw IllegalStateException("No sampler for $klass")
         }
@@ -381,6 +385,10 @@ object GeneSamplerForTests {
 
     private fun sampleSqlJSONPathGene(rand: Randomness): SqlJSONPathGene {
         return SqlJSONPathGene("rand JSONPathGene ${rand.nextInt()}")
+    }
+
+    private fun sampleMongoObjectIdGene(rand: Randomness): ObjectIdGene {
+        return ObjectIdGene("rand ObjectIdGene ${rand.nextInt()}")
     }
 
     fun sampleRegexGene(rand: Randomness): RegexGene {

@@ -1,9 +1,7 @@
 package org.evomaster.client.java.controller.internal.db.mongo;
 
 import com.mongodb.client.model.Filters;
-import org.bson.BsonDocument;
-import org.bson.BsonType;
-import org.bson.Document;
+import org.bson.*;
 import org.bson.codecs.DecoderContext;
 import org.bson.codecs.DocumentCodec;
 import org.bson.conversions.Bson;
@@ -108,6 +106,7 @@ class MongoHeuristicCalculatorTest {
         assertEquals(0.0, distanceMatch);
         assertEquals(4.0, distanceNotMatch);
     }
+
     @Test
     public void testImplicitAnd() {
         Document doc = new Document().append("age", 10).append("kg", 50);
@@ -241,7 +240,19 @@ class MongoHeuristicCalculatorTest {
         assertEquals(2.0, distanceNotMatch);
     }
 
-    private static Document convertToDocument(Bson filter){
+    @Test
+    public void testNearSphere() {
+        Document doc = new Document().append("location", new Document().append("type", "Point").append("coordinates", Arrays.asList(-74.044502, 40.689247)));
+        BsonDocument point = new BsonDocument().append("type", new BsonString("Point")).append("coordinates", new BsonArray(Arrays.asList(new BsonDouble(2.29441692356368), new BsonDouble(48.858504187164684))));
+        Bson bsonTrue = Filters.nearSphere("location", point, 6000000.0, 0.0);
+        Bson bsonFalse = Filters.nearSphere("location", point, 5000000.0, 0.0);
+        Double distanceMatch = new MongoHeuristicsCalculator().computeExpression(convertToDocument(bsonTrue), doc);
+        Double distanceNotMatch = new MongoHeuristicsCalculator().computeExpression(convertToDocument(bsonFalse), doc);
+        assertEquals(0.0, distanceMatch);
+        assertEquals(837402.9310023151, distanceNotMatch);
+    }
+
+    private static Document convertToDocument(Bson filter) {
         BsonDocument bsonDocument = filter.toBsonDocument();
         DocumentCodec documentCodec = new DocumentCodec();
         return documentCodec.decode(bsonDocument.asBsonReader(), DecoderContext.builder().build());
