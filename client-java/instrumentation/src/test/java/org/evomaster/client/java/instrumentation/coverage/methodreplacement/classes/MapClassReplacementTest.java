@@ -1,6 +1,6 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
+import org.evomaster.client.java.distance.heuristics.DistanceHelper;
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
 import org.evomaster.client.java.instrumentation.shared.TaintInputName;

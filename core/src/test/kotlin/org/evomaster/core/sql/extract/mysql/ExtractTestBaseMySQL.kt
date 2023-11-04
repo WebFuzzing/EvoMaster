@@ -1,8 +1,8 @@
 package org.evomaster.core.sql.extract.mysql
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
-import org.evomaster.client.java.controller.db.DbCleaner
-import org.evomaster.client.java.controller.db.SqlScriptRunner
+import org.evomaster.client.java.sql.DbCleaner
+import org.evomaster.client.java.sql.SqlScriptRunner
 import org.evomaster.core.KGenericContainer
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach

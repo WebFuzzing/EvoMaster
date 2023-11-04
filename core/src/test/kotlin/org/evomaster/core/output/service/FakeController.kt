@@ -5,7 +5,7 @@ import org.evomaster.client.java.controller.api.dto.database.operations.Insertio
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto
 import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionDto
 import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionResultsDto
-import org.evomaster.client.java.controller.internal.db.DbSpecification
+import org.evomaster.client.java.sql.DbSpecification
 
 
 class FakeController : SutHandler {

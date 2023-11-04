@@ -1,9 +1,10 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
+import org.evomaster.client.java.distance.heuristics.DistanceHelper;
 import org.evomaster.client.java.instrumentation.ExternalServiceInfo;
 import org.evomaster.client.java.instrumentation.shared.PreDefinedSSLInfo;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.*;
-import org.evomaster.client.java.instrumentation.heuristic.Truthness;
+import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.instrumentation.shared.*;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.utils.SimpleLogger;

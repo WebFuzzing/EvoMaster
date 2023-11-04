@@ -10,8 +10,8 @@ import org.evomaster.client.java.controller.api.dto.database.operations.MongoIns
 import org.evomaster.client.java.controller.api.dto.problem.*;
 import org.evomaster.client.java.controller.mongo.MongoScriptRunner;
 import org.evomaster.client.java.controller.problem.*;
-import org.evomaster.client.java.controller.db.QueryResult;
-import org.evomaster.client.java.controller.db.SqlScriptRunner;
+import org.evomaster.client.java.sql.QueryResult;
+import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.evomaster.client.java.controller.problem.rpc.schema.LocalAuthSetupSchema;
 import org.evomaster.client.java.instrumentation.*;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;

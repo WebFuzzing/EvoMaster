@@ -1,7 +1,7 @@
 package org.evomaster.core.sql.insertion.postgres
 
 import com.google.gson.Gson
-import org.evomaster.client.java.controller.db.SqlScriptRunner
+import org.evomaster.client.java.sql.SqlScriptRunner
 import org.evomaster.core.KGenericContainer
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*

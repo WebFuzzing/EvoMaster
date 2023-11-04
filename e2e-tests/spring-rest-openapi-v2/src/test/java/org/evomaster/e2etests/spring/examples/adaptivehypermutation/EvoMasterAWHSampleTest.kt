@@ -9,7 +9,7 @@ import  org.junit.jupiter.api.Assertions.*
 import  io.restassured.RestAssured
 import  io.restassured.RestAssured.given
 import  org.evomaster.client.java.controller.SutHandler
-import  org.evomaster.client.java.controller.db.dsl.SqlDsl.sql
+import  org.evomaster.client.java.sql.dsl.SqlDsl.sql
 import  org.hamcrest.Matchers.*
 import  io.restassured.config.JsonConfig
 import  io.restassured.path.json.config.JsonPathConfig

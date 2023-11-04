@@ -1,11 +1,8 @@
 package com.foo.rest.examples.spring.db.existingdata;
 
 import com.foo.rest.examples.spring.db.SpringWithDbController;
-import org.evomaster.client.java.controller.internal.db.DbSpecification;
-import org.springframework.util.ResourceUtils;
+import org.evomaster.client.java.sql.DbSpecification;
 
-import java.io.FileNotFoundException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 

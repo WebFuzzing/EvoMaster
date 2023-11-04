@@ -1,6 +1,6 @@
 package org.evomaster.core.sql.extract.postgres
 
-import org.evomaster.client.java.controller.internal.db.SchemaExtractor
+import org.evomaster.client.java.sql.SchemaExtractor
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
