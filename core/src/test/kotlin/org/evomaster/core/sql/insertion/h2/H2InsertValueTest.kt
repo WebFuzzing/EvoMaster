@@ -1,6 +1,6 @@
 package org.evomaster.core.sql.insertion.h2
 
-import org.evomaster.client.java.controller.db.SqlScriptRunner
+import org.evomaster.client.java.sql.SqlScriptRunner
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach

@@ -2,8 +2,8 @@ package org.evomaster.core.problem.rest.resource
 
 import io.swagger.parser.OpenAPIParser
 import org.evomaster.client.java.controller.api.dto.database.operations.*
-import org.evomaster.client.java.controller.db.SqlScriptRunner
-import org.evomaster.client.java.controller.internal.db.SchemaExtractor
+import org.evomaster.client.java.sql.SchemaExtractor
+import org.evomaster.client.java.sql.SqlScriptRunner
 import org.evomaster.core.EMConfig
 import org.evomaster.core.sql.DatabaseExecutor
 import org.evomaster.core.sql.SqlInsertBuilder

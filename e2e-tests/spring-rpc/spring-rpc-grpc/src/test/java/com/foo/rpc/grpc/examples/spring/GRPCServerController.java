@@ -1,6 +1,5 @@
 package com.foo.rpc.grpc.examples.spring;
 
-import com.foo.rpc.grpc.examples.spring.branches.generated.BranchGRPCServiceGrpc;
 import io.grpc.BindableService;
 import io.grpc.ManagedChannel;
 import io.grpc.Server;
@@ -8,7 +7,7 @@ import io.grpc.ServerBuilder;
 import org.evomaster.client.java.controller.EmbeddedSutController;
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto;
 import org.evomaster.client.java.controller.api.dto.SutInfoDto;
-import org.evomaster.client.java.controller.internal.db.DbSpecification;
+import org.evomaster.client.java.sql.DbSpecification;
 
 
 import java.io.IOException;

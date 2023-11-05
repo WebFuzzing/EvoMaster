@@ -1,6 +1,6 @@
 package org.evomaster.core.sql.insertion.mysql
 
-import org.evomaster.client.java.controller.db.SqlScriptRunner
+import org.evomaster.client.java.sql.SqlScriptRunner
 import org.evomaster.core.KGenericContainer
 import org.junit.jupiter.api.*
 import org.testcontainers.containers.GenericContainer
