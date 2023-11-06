@@ -1,8 +1,5 @@
 package com.foo.rest.examples.spring.db.preparedstatement;
 
-import com.foo.rest.examples.spring.db.directint.DbDirectIntEntity;
-import com.foo.rest.examples.spring.db.directint.DbDirectIntRepository;
-import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes.PreparedStatementClassReplacement;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
