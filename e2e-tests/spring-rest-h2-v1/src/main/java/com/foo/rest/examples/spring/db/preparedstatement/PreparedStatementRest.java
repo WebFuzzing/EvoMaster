@@ -43,7 +43,7 @@ public class PreparedStatementRest {
     public void post() {
 
         try {
-            PreparedStatement statement = connection.prepareStatement("INSERT INTO Foo (integervalue, stringvalue, booleanvalue) VALUES(?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
+            PreparedStatement statement = connection.prepareStatement("INSERT INTO Foo (integervalue, stringvalue, booleanvalue) VALUES(?, ?, ?)");
             statement.setInt(1, 42);
             statement.setString(2, "BAR");
             statement.setBoolean(3, false);
