@@ -1,5 +1,6 @@
 package org.evomaster.client.java.instrumentation.heuristic;
 
+import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.Opcodes;
 

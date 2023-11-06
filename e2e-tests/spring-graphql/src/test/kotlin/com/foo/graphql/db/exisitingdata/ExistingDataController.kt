@@ -1,7 +1,7 @@
 package com.foo.graphql.db.exisitingdata
 
 import com.foo.graphql.db.SpringWithDbController
-import org.evomaster.client.java.controller.internal.db.DbSpecification
+import org.evomaster.client.java.sql.DbSpecification
 
 
 class ExistingDataController : SpringWithDbController(ExistingDataApplication::class.java) {

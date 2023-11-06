@@ -8,7 +8,7 @@ import io.restassured.config.RedirectConfig.redirectConfig
 import io.restassured.path.json.config.JsonPathConfig
 import org.evomaster.client.java.controller.SutHandler
 import org.evomaster.client.java.controller.contentMatchers.NumberMatcher.numberMatches
-import org.evomaster.client.java.controller.db.dsl.SqlDsl.sql
+import org.evomaster.client.java.sql.dsl.SqlDsl.sql
 import org.hamcrest.Matchers.*
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertNotNull

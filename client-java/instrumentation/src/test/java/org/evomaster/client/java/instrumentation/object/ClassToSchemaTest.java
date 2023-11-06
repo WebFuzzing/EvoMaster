@@ -9,6 +9,7 @@ import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -209,9 +210,18 @@ public class ClassToSchemaTest {
     }
 
     @Test
+    public void testDate(){
+        String schema = ClassToSchema.getOrDeriveNonNestedSchema(DtoDate.class);
+        JsonObject json = parse(schema);
+        JsonObject obj = json.get(DtoDate.class.getName()).getAsJsonObject();
+        assertEquals(1, obj.get("properties").getAsJsonObject().entrySet().size());
+        verifyTypeAndFormatOfFieldInProperties(obj, "string", "date", "foo");
+    }
+
+    @Test
     public void testObjectRequiredFields(){
 
-        String schema = ClassToSchema.getOrDeriveNonNestedSchema(DtoObj.class, true);
+        String schema = ClassToSchema.getOrDeriveNonNestedSchema(DtoObj.class, true, Collections.emptyList());
         JsonObject json = parse(schema);
 
         JsonObject obj = json.get(DtoObj.class.getName()).getAsJsonObject();

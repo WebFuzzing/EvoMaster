@@ -6,6 +6,7 @@ import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.*;
 
@@ -296,5 +297,15 @@ public abstract class ThirdPartyMethodReplacementClass implements MethodReplacem
     @Override
     public final String getTargetClassName() {
         return getNameOfThirdPartyTargetClass();
+    }
+
+    protected static Object getField(Object object, String fieldName) {
+        try {
+            Field field = object.getClass().getDeclaredField(fieldName);
+            field.setAccessible(true);
+            return field.get(object);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

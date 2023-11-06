@@ -2,7 +2,7 @@ package org.evomaster.client.java.controller.mongo;
 
 import org.evomaster.client.java.controller.mongo.operations.*;
 import org.evomaster.client.java.controller.mongo.operations.synthetic.*;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
+import org.evomaster.client.java.distance.heuristics.DistanceHelper;
 
 import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.*;
 import static java.lang.Math.abs;
@@ -66,6 +66,8 @@ public class MongoHeuristicsCalculator {
         if (operation instanceof TypeOperation) return calculateDistanceForType((TypeOperation) operation, doc);
         if (operation instanceof InvertedTypeOperation)
             return calculateDistanceForInvertedType((InvertedTypeOperation) operation, doc);
+        if (operation instanceof NearSphereOperation)
+            return calculateDistanceForNearSphere((NearSphereOperation) operation, doc);
         return Double.MAX_VALUE;
     }
 
@@ -281,6 +283,54 @@ public class MongoHeuristicsCalculator {
         return !Objects.equals(actualType, expectedType) ? 0.0 : MIN_DISTANCE_TO_TRUE_VALUE;
     }
 
+    private double calculateDistanceForNearSphere(NearSphereOperation operation, Object doc) {
+        String field = operation.getFieldName();
+        Object actualPoint = getValue(doc, field);
+
+        double x1 = Math.toRadians(operation.getLongitude());
+        double y1 = Math.toRadians(operation.getLatitude());
+        double x2;
+        double y2;
+
+        /*
+          GeoJSON Point in document.
+          type key is case-sensitive.
+          (https://datatracker.ietf.org/doc/html/rfc7946#section-1.4) for more details.
+         */
+        if (isDocument(actualPoint) && getValue(actualPoint, "type").equals("Point") && getValue(actualPoint, "coordinates") instanceof List<?>) {
+
+            List<?> coordinates = (List<?>) getValue(actualPoint, "coordinates");
+            x2 = Math.toRadians((Double) coordinates.get(0));
+            y2 = Math.toRadians((Double) coordinates.get(1));
+        } else {
+            return Double.MAX_VALUE;
+        }
+
+        double distanceBetweenPoints = haversineDistance(x1, y1, x2, y2);
+
+        double max = operation.getMaxDistance() == null ? Double.MAX_VALUE : operation.getMaxDistance();
+        double min = operation.getMinDistance() == null ? 0.0 : operation.getMinDistance();
+
+        if (min <= distanceBetweenPoints && distanceBetweenPoints <= max) {
+            return 0.0;
+        } else {
+            return distanceBetweenPoints > max ? Math.abs(distanceBetweenPoints - max) : Math.abs(distanceBetweenPoints - min);
+        }
+    }
+
+    private static double haversineDistance(double x1, double y1, double x2, double y2) {
+        // Earth's radius in meters
+        double radius = 6371000.0;
+
+        double dLat = y2 - y1;
+        double dLon = x2 - x1;
+
+        double a = Math.pow(Math.sin(dLat / 2), 2) + Math.cos(y1) * Math.cos(y2) * Math.pow(Math.sin(dLon / 2), 2);
+
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return radius * c;
+    }
+
     private QueryOperation invertOperation(QueryOperation operation) {
         if (operation instanceof EqualsOperation<?>) {
             EqualsOperation<?> op = (EqualsOperation<?>) operation;
@@ -386,12 +436,29 @@ public class MongoHeuristicsCalculator {
             return val1 == val2 ? 0d : 1d;
         }
 
+        if (val1 instanceof String && isObjectId(val2)) {
+            return (double) DistanceHelper.getLeftAlignmentDistance((String) val1, val2.toString());
+        }
+
+        if (val2 instanceof String && isObjectId(val1)) {
+            return (double) DistanceHelper.getLeftAlignmentDistance(val1.toString(), (String) val2);
+        }
+
+        if (isObjectId(val2) && isObjectId(val1)) {
+            return (double) DistanceHelper.getLeftAlignmentDistance(val1.toString(), val2.toString());
+        }
+
+
         if (val1 instanceof List<?> && val2 instanceof List<?>) {
             // Modify
             return Double.MAX_VALUE;
         }
 
         return Double.MAX_VALUE;
+    }
+
+    private static boolean isObjectId(Object obj) {
+        return obj.getClass().getName().equals("org.bson.types.ObjectId");
     }
 
     private double distanceToClosestElem(List<?> list, Object value) {
