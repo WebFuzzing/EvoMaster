@@ -63,9 +63,4 @@ public class PreparedStatementEntity {
     public void setBooleanValue(boolean booleanValue) {
         this.booleanValue = booleanValue;
     }
-
-
-
-
-
 }

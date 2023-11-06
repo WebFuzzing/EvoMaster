@@ -26,12 +26,9 @@ public class PreparedStatementEMTest extends PreparedStatementTestBase {
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertTrue(solution.getIndividuals().size() >= 1);
-
                     assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/db/preparedStatement/{integerValue}/{stringValue}/{booleanValue}", null);
                     assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/db/preparedStatement/", null);
-                    //assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/db/preparedStatement/{integerValue}/{stringValue}/{booleanValue}", null);
 
-                    //assertTextInTests(outputFolder, outputTestName, "controller.resetDatabase(listOf(\"db_prepared_statement_entity\"))");
                 });
     }
 }
