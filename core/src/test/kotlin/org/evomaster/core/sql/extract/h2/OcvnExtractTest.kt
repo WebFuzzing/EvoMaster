@@ -1,7 +1,7 @@
 package org.evomaster.core.sql.extract.h2
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
-import org.evomaster.client.java.controller.internal.db.SchemaExtractor
+import org.evomaster.client.java.sql.SchemaExtractor
 import org.evomaster.core.sql.SqlInsertBuilder
 import org.evomaster.core.search.gene.optional.NullableGene
 import org.evomaster.core.search.gene.string.StringGene

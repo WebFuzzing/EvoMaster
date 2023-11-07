@@ -363,7 +363,7 @@ class TestSuiteWriter {
 
 
             if(solution.hasAnySqlAction()) {
-                addImport("org.evomaster.client.java.controller.db.dsl.SqlDsl.sql", lines, true)
+                addImport("org.evomaster.client.java.sql.dsl.SqlDsl.sql", lines, true)
                 addImport("org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto", lines)
                 addImport(InsertionDto::class.qualifiedName!!, lines)
             }

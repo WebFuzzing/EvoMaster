@@ -4,12 +4,11 @@ package org.evomaster.e2etests.spring.examples.adaptivehypermutation;
 import io.restassured.http.ContentType;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import java.util.List;
 import static io.restassured.RestAssured.given;
-import static org.evomaster.client.java.controller.db.dsl.SqlDsl.sql;
+import static org.evomaster.client.java.sql.dsl.SqlDsl.sql;
 import static org.hamcrest.Matchers.equalTo;
 
 

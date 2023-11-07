@@ -1,7 +1,7 @@
 package org.evomaster.core.sql.extract.mysql
 
-import org.evomaster.client.java.controller.db.SqlScriptRunner
-import org.evomaster.client.java.controller.internal.db.SchemaExtractor
+import org.evomaster.client.java.sql.SchemaExtractor
+import org.evomaster.client.java.sql.SqlScriptRunner
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.SqlActionTransformer
 import org.evomaster.core.sql.SqlInsertBuilder
