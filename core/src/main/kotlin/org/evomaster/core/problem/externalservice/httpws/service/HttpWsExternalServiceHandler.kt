@@ -80,6 +80,8 @@ class HttpWsExternalServiceHandler {
      */
     private var lastIPAddress: String = ""
 
+    private var defaultServiceIP: String = ""
+
     private var counter: Long = 0
 
     /**
@@ -150,6 +152,10 @@ class HttpWsExternalServiceHandler {
         }
 
         val ip: String = hostnameLocalAddressMapping[externalServiceInfo.remoteHostname]!!
+
+        if (externalServiceInfo.remoteHostname.equals("no_host_name")) {
+            defaultServiceIP = ip
+        }
 
         val registered = externalServices.filterValues {
             it.getRemoteHostName() == externalServiceInfo.remoteHostname &&
