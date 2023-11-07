@@ -344,6 +344,9 @@ class EMConfig {
             throw IllegalArgumentException("Cannot collect heuristics SQL data if you not enable " +
                     "extracting SQL execution info with 'extractSqlExecutionInfo'")
         }
+        if(!heuristicsForSQL && heuristicsForSQLAdvanced){
+            throw IllegalArgumentException("Advanced SQL heuristics requires enabling base ones as well")
+        }
 
         if (enableTrackEvaluatedIndividual && enableTrackIndividual) {
             throw IllegalArgumentException("When tracking EvaluatedIndividual, it is not necessary to track individual")
@@ -1075,6 +1078,10 @@ class EMConfig {
 
     @Cfg("Tracking of SQL commands to improve test generation")
     var heuristicsForSQL = true
+
+    @Experimental
+    @Cfg("If using SQL heuristics, enable more advanced version")
+    var heuristicsForSQLAdvanced = false
 
     @Experimental
     @Cfg("Tracking of Mongo commands to improve test generation")

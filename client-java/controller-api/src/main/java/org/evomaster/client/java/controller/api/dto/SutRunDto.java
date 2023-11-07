@@ -27,6 +27,11 @@ public class SutRunDto {
     public Boolean calculateSqlHeuristics;
 
     /**
+     * If using SQL heuristics, enabled advanced version
+    */
+    public Boolean advancedHeuristics;
+
+    /**
      *  Whether SQL execution info should be saved.
      */
     public Boolean extractSqlExecutionInfo;
@@ -44,9 +49,18 @@ public class SutRunDto {
     public SutRunDto() {
     }
 
-    public SutRunDto(Boolean run, Boolean resetState, Boolean resetCustomizedMethodForMockObject, Boolean calculateSqlHeuristics, Boolean extractSqlExecutionInfo, String methodReplacementCategories) {
+    public SutRunDto(
+            Boolean run,
+            Boolean resetState,
+            Boolean resetCustomizedMethodForMockObject,
+            Boolean calculateSqlHeuristics,
+            Boolean extractSqlExecutionInfo,
+            String methodReplacementCategories
+    ) {
         if (calculateSqlHeuristics != null && calculateSqlHeuristics && extractSqlExecutionInfo != null && !extractSqlExecutionInfo)
             throw new IllegalArgumentException("extractSqlExecutionInfo should be enabled when calculateSqlHeuristics is enabled");
+
+
         this.run = run;
         this.resetState = resetState;
         this.resetCustomizedMethodForMockObject = resetCustomizedMethodForMockObject;
