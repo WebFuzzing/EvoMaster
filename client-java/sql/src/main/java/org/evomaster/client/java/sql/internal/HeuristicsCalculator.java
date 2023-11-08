@@ -35,16 +35,29 @@ public class HeuristicsCalculator {
 
     private final TaintHandler taintHandler;
 
-    public HeuristicsCalculator(SqlNameContext context, TaintHandler handler) {
+    private final boolean advancedHeuristics;
+
+    protected HeuristicsCalculator(SqlNameContext context, TaintHandler handler, boolean advancedHeuristics) {
         this.context = Objects.requireNonNull(context);
         this.taintHandler = handler;
+        this.advancedHeuristics = advancedHeuristics;
     }
 
-    public static double computeDistance(String statement, QueryResult data) {
-        return computeDistance(statement, data, null, null);
+    //only for tests
+    protected static double computeDistance(String statement, QueryResult data) {
+        return computeDistance(statement, data, null, null,false);
     }
 
-    public static double computeDistance(String statement, QueryResult data, DbSchemaDto schema, TaintHandler taintHandler) {
+    public static double computeDistance(
+            String statement,
+            QueryResult data,
+            DbSchemaDto schema,
+            TaintHandler taintHandler,
+            /**
+             * Enable more advance techniques since first SQL support
+             */
+            boolean advancedHeuristics
+    ) {
 
         if (data.isEmpty()) {
             //if no data, we have no info whatsoever
@@ -55,7 +68,7 @@ public class HeuristicsCalculator {
 
         Expression where = getWhere(stmt);
         if (where == null) {
-            //no constraint, and at least one data point
+            //no constraint and at least one data point
             return 0;
         }
 
@@ -64,7 +77,7 @@ public class HeuristicsCalculator {
         if (schema != null) {
             context.setSchema(schema);
         }
-        HeuristicsCalculator calculator = new HeuristicsCalculator(context, taintHandler);
+        HeuristicsCalculator calculator = new HeuristicsCalculator(context, taintHandler, advancedHeuristics);
 
         double min = Double.MAX_VALUE;
         for (DataRow row : data.seeRows()) {
@@ -133,7 +146,7 @@ public class HeuristicsCalculator {
             //TODO
         }
         if (exp instanceof LikeExpression) {
-            //TODO
+            //TODO  too complex for branch distance, but could have taint analysis
         }
         if (exp instanceof Matches) {
             //TODO
@@ -145,7 +158,7 @@ public class HeuristicsCalculator {
             //TODO
         }
         if (exp instanceof RegExpMatchOperator) {
-            //TODO
+            //TODO  too complex for branch distance, but could have taint analysis
         }
         return cannotHandle(exp);
     }

@@ -336,8 +336,9 @@ public class EMController {
 
             boolean sqlHeuristics = dto.calculateSqlHeuristics != null && dto.calculateSqlHeuristics;
             boolean sqlExecution = dto.extractSqlExecutionInfo != null && dto.extractSqlExecutionInfo;
+            boolean advancedHeuristics = dto.advancedHeuristics != null && dto.advancedHeuristics;
 
-            noKillSwitch(() -> sutController.enableComputeSqlHeuristicsOrExtractExecution(sqlHeuristics, sqlExecution));
+            noKillSwitch(() -> sutController.enableComputeSqlHeuristicsOrExtractExecution(sqlHeuristics, sqlExecution, advancedHeuristics));
 
             boolean doReset = dto.resetState != null && dto.resetState;
 

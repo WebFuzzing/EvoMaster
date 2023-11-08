@@ -60,6 +60,8 @@ public class SqlHandler {
 
     private volatile boolean extractSqlExecution;
 
+    private volatile boolean advancedHeuristics;
+
     /**
      * WARNING: in general we shouldn't use mutable DTO as internal data structures.
      * But, here, what we need is very simple (just checking for names).
@@ -263,7 +265,7 @@ public class SqlHandler {
             throw new RuntimeException(e);
         }
 
-        return HeuristicsCalculator.computeDistance(command, data, schema, taintHandler);
+        return HeuristicsCalculator.computeDistance(command, data, schema, taintHandler,advancedHeuristics);
     }
 
     private String createSelectForSingleTable(String tableName, Set<String> columns) {
@@ -402,5 +404,13 @@ public class SqlHandler {
 
     public void setExtractSqlExecution(boolean extractSqlExecution) {
         this.extractSqlExecution = extractSqlExecution;
+    }
+
+    public boolean isAdvancedHeuristics() {
+        return advancedHeuristics;
+    }
+
+    public void setAdvancedHeuristics(boolean advancedHeuristics) {
+        this.advancedHeuristics = advancedHeuristics;
     }
 }
