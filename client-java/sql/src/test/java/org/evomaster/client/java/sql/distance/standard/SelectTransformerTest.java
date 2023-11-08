@@ -1,6 +1,5 @@
-package org.evomaster.client.java.sql.internal;
+package org.evomaster.client.java.sql.distance.standard;
 
-import org.evomaster.client.java.sql.internal.SelectTransformer;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

@@ -9,16 +9,19 @@ import net.sf.jsqlparser.statement.Statement;
 import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto;
 import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionLogDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
-import org.evomaster.client.java.sql.QueryResult;
-import org.evomaster.client.java.sql.SqlScriptRunner;
+import org.evomaster.client.java.sql.distance.advanced.AdvancedDistance;
+import org.evomaster.client.java.sql.distance.advanced.driver.SqlDriver;
+import org.evomaster.client.java.sql.distance.advanced.driver.cache.ConcurrentCache;
+import org.evomaster.client.java.sql.distance.standard.StandardDistance;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static java.util.Objects.isNull;
+import static org.evomaster.client.java.sql.distance.advanced.driver.SqlDriver.createSqlDriver;
 import static org.evomaster.client.java.sql.internal.ParserUtils.*;
 
 /**
@@ -62,6 +65,8 @@ public class SqlHandler {
 
     private volatile boolean advancedHeuristics;
 
+    private volatile SqlDriver sqlDriver;
+
     /**
      * WARNING: in general we shouldn't use mutable DTO as internal data structures.
      * But, here, what we need is very simple (just checking for names).
@@ -96,6 +101,8 @@ public class SqlHandler {
         executedInfo.clear();
 
         numberOfSqlCommands = 0;
+
+        sqlDriver = null;
     }
 
     public void setConnection(Connection connection) {
@@ -223,7 +230,16 @@ public class SqlHandler {
             //TODO check if table(s) not empty, and give >0 otherwise
             dist = 0;
         } else {
-            dist = getDistanceForWhere(command, columns);
+            if(isAdvancedHeuristics()){
+                if(isNull(sqlDriver)){
+                    sqlDriver = createSqlDriver(connection, new ConcurrentCache());
+                }
+                AdvancedDistance advancedDistance = new AdvancedDistance(sqlDriver);
+                dist = advancedDistance.calculate(command);
+            } else {
+                StandardDistance standardDistance = new StandardDistance(connection, schema, taintHandler);
+                dist = standardDistance.calculateDistance(command, columns);
+            }
         }
 
         if (dist > 0) {
@@ -231,55 +247,6 @@ public class SqlHandler {
         }
 
         return dist;
-    }
-
-    private double getDistanceForWhere(String command, Map<String, Set<String>> columns) {
-        String select;
-
-        /*
-           TODO:
-           this might be likely unnecessary... we are only interested in the variables used
-           in the WHERE. Furthermore, this would not support DELETE/INSERT/UPDATE.
-           So, we just need to create a new SELECT based on that.
-           But SELECT could be complex with many JOINs... whereas DIP would be simple(r)?
-
-           TODO: we need a general solution
-         */
-        if (isSelect(command)) {
-            select = SelectTransformer.addFieldsToSelect(command);
-            select = SelectTransformer.removeConstraints(select);
-            select = SelectTransformer.removeOperations(select);
-        } else {
-            if (columns.size() > 1) {
-                SimpleLogger.uniqueWarn("Cannot analyze: " + command);
-            }
-            Map.Entry<String, Set<String>> mapping = columns.entrySet().iterator().next();
-            select = createSelectForSingleTable(mapping.getKey(), mapping.getValue());
-        }
-
-        QueryResult data;
-
-        try {
-            data = SqlScriptRunner.execCommand(connection, select);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-
-        return HeuristicsCalculator.computeDistance(command, data, schema, taintHandler,advancedHeuristics);
-    }
-
-    private String createSelectForSingleTable(String tableName, Set<String> columns) {
-
-        StringBuilder buffer = new StringBuilder();
-        buffer.append("SELECT ");
-
-        String variables = String.join(", ", columns);
-
-        buffer.append(variables);
-        buffer.append(" FROM ");
-        buffer.append(tableName);
-
-        return buffer.toString();
     }
 
     /**

@@ -1,4 +1,4 @@
-package org.evomaster.client.java.sql.internal;
+package org.evomaster.client.java.sql.distance.standard;
 
 import net.sf.jsqlparser.expression.*;
 import net.sf.jsqlparser.expression.operators.conditional.AndExpression;
@@ -10,6 +10,9 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.sql.DataRow;
 import org.evomaster.client.java.sql.QueryResult;
 import org.evomaster.client.java.distance.heuristics.DistanceHelper;
+import org.evomaster.client.java.sql.internal.ParserUtils;
+import org.evomaster.client.java.sql.internal.SqlNameContext;
+import org.evomaster.client.java.sql.internal.TaintHandler;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.sql.Timestamp;
@@ -35,28 +38,21 @@ public class HeuristicsCalculator {
 
     private final TaintHandler taintHandler;
 
-    private final boolean advancedHeuristics;
-
-    protected HeuristicsCalculator(SqlNameContext context, TaintHandler handler, boolean advancedHeuristics) {
+    protected HeuristicsCalculator(SqlNameContext context, TaintHandler handler) {
         this.context = Objects.requireNonNull(context);
         this.taintHandler = handler;
-        this.advancedHeuristics = advancedHeuristics;
     }
 
     //only for tests
     protected static double computeDistance(String statement, QueryResult data) {
-        return computeDistance(statement, data, null, null,false);
+        return computeDistance(statement, data, null, null);
     }
 
     public static double computeDistance(
             String statement,
             QueryResult data,
             DbSchemaDto schema,
-            TaintHandler taintHandler,
-            /**
-             * Enable more advance techniques since first SQL support
-             */
-            boolean advancedHeuristics
+            TaintHandler taintHandler
     ) {
 
         if (data.isEmpty()) {
@@ -77,7 +73,7 @@ public class HeuristicsCalculator {
         if (schema != null) {
             context.setSchema(schema);
         }
-        HeuristicsCalculator calculator = new HeuristicsCalculator(context, taintHandler, advancedHeuristics);
+        HeuristicsCalculator calculator = new HeuristicsCalculator(context, taintHandler);
 
         double min = Double.MAX_VALUE;
         for (DataRow row : data.seeRows()) {
@@ -151,9 +147,6 @@ public class HeuristicsCalculator {
         if (exp instanceof Matches) {
             //TODO
         }
-        if (exp instanceof MultiExpressionList) {
-            //TODO
-        }
         if (exp instanceof NamedExpressionList) {
             //TODO
         }
@@ -180,15 +173,15 @@ public class HeuristicsCalculator {
 
         //TODO can left be a list???
 
-        ItemsList itemsList = exp.getRightItemsList();
-        if (itemsList instanceof ExpressionList) {
-            ExpressionList list = (ExpressionList) itemsList;
+        Expression expression = exp.getRightExpression();
+        if (expression instanceof ExpressionList) {
+            ExpressionList<?> list = (ExpressionList<?>) expression;
 
             if (exp.isNot()) {
 
                 double max = 0;
 
-                for (Expression element : list.getExpressions()) {
+                for (Expression element : list) {
                     ComparisonOperator op = new NotEqualsTo();
                     op.setLeftExpression(exp.getLeftExpression());
                     op.setRightExpression(element);

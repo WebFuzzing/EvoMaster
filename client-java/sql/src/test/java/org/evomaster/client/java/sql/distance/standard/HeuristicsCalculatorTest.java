@@ -1,8 +1,7 @@
-package org.evomaster.client.java.sql.internal;
+package org.evomaster.client.java.sql.distance.standard;
 
 import org.evomaster.client.java.sql.DataRow;
 import org.evomaster.client.java.sql.QueryResult;
-import org.evomaster.client.java.sql.internal.HeuristicsCalculator;
 import org.evomaster.client.java.sql.internal.ParserUtils;
 import org.evomaster.client.java.sql.internal.SqlNameContext;
 import org.junit.jupiter.api.Assertions;
@@ -30,7 +29,7 @@ public class HeuristicsCalculatorTest {
             "2020-05-19T14:58:38.552+0200",
     })
     public void testTimeZoneIssue(String date) {
-        HeuristicsCalculator hc = new HeuristicsCalculator(Mockito.mock(SqlNameContext.class),null, false);
+        HeuristicsCalculator hc = new HeuristicsCalculator(Mockito.mock(SqlNameContext.class),null);
         Instant instant = hc.getAsInstant(date);
         assertNotNull(instant);
     }

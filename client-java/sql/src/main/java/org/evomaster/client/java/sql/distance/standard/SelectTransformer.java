@@ -1,4 +1,4 @@
-package org.evomaster.client.java.sql.internal;
+package org.evomaster.client.java.sql.distance.standard;
 
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.ExpressionVisitorAdapter;
@@ -6,12 +6,13 @@ import net.sf.jsqlparser.expression.Function;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.select.*;
+import org.evomaster.client.java.sql.internal.ParserUtils;
 
 import java.util.List;
 
+import static org.evomaster.client.java.sql.internal.ParserUtils.getSelectBody;
+
 public class SelectTransformer {
-
-
 
     /**
      * The constraints in the WHERE clause might reference
@@ -26,7 +27,7 @@ public class SelectTransformer {
 
         Select stmt = asSelectStatement(select);
 
-        SelectBody selectBody = stmt.getSelectBody();
+        Select selectBody = getSelectBody(stmt);
         if (selectBody instanceof PlainSelect) {
             PlainSelect plainSelect = (PlainSelect) selectBody;
 
@@ -36,9 +37,11 @@ public class SelectTransformer {
                 return select;
             }
 
-            List<SelectItem> fields = plainSelect.getSelectItems();
+            List<SelectItem<?>> fields = plainSelect.getSelectItems();
 
-            boolean allColumns = fields.stream().anyMatch(f -> f instanceof AllColumns || f instanceof AllTableColumns);
+            //AllTableColumns is instance of AllColumns in newer JQL parser versions, so it is enough to check
+            //if field is instance of AllColumns
+            boolean allColumns = fields.stream().map(SelectItem::getExpression).anyMatch(e -> e instanceof AllColumns);
 
             if(! allColumns) {
                 where.accept(new ExpressionVisitorAdapter() {
@@ -48,16 +51,15 @@ public class SelectTransformer {
                         String target = column.toString();
 
                         boolean found = false;
-                        for (SelectItem si : fields) {
-                            SelectExpressionItem field = (SelectExpressionItem) si;
-                            String exp = field.getExpression().toString();
+                        for (SelectItem<?> si : fields) {
+                            String exp = si.getExpression().toString();
                             if (target.equals(exp)) {
                                 found = true;
                                 break;
                             }
                         }
                         if (!found) {
-                            SelectExpressionItem item = new SelectExpressionItem();
+                            SelectItem<Column> item = new SelectItem<>();
                             item.setExpression(column);
                             fields.add(item);
                         }
@@ -66,7 +68,7 @@ public class SelectTransformer {
             }
         }
 
-        return stmt.toString();
+        return selectBody.toString();
     }
 
     /**
@@ -80,15 +82,14 @@ public class SelectTransformer {
     public static String removeOperations(String select){
 
         Select stmt = asSelectStatement(select);
-        SelectBody selectBody = stmt.getSelectBody();
+        Select selectBody = getSelectBody(stmt);
 
         if (selectBody instanceof PlainSelect) {
             PlainSelect plainSelect = (PlainSelect) selectBody;
 
             plainSelect.getSelectItems()
                     .removeIf(item ->
-                            (item instanceof SelectExpressionItem) &&
-                            ((SelectExpressionItem)item).getExpression() instanceof Function);
+                            item.getExpression() instanceof Function);
         }
 
         return stmt.toString();
@@ -99,7 +100,7 @@ public class SelectTransformer {
 
         Select stmt = asSelectStatement(select);
 
-        SelectBody selectBody = stmt.getSelectBody();
+        Select selectBody = getSelectBody(stmt);
         handleSelectBody(selectBody);
 
         return stmt.toString();
@@ -113,21 +114,18 @@ public class SelectTransformer {
         return (Select) stmt;
     }
 
-    private static void handleSelectBody(SelectBody selectBody) {
+    private static void handleSelectBody(Select selectBody) {
         if (selectBody instanceof PlainSelect) {
             PlainSelect plainSelect = (PlainSelect) selectBody;
             plainSelect.setWhere(null);
             plainSelect.setLimit(null);
             plainSelect.setGroupByElement(null);
         } else if (selectBody instanceof SetOperationList) {
-            for(SelectBody select : ((SetOperationList) selectBody).getSelects()){
-                handleSelectBody(select);
+            for(Select select : ((SetOperationList) selectBody).getSelects()){
+                handleSelectBody(getSelectBody(select));
             }
         } else {
             throw new RuntimeException("Cannot handle " + selectBody.getClass());
         }
-
     }
-
-
 }

@@ -8,6 +8,8 @@ import net.sf.jsqlparser.statement.update.Update;
 
 import java.util.*;
 
+import static org.evomaster.client.java.sql.internal.ParserUtils.getSelectBody;
+
 /**
  * Created by arcuri82 on 24-Apr-19.
  */
@@ -108,7 +110,7 @@ public class ColumnTableAnalyzer {
          */
 
         Select stmt = (Select) ParserUtils.asStatement(select);
-        SelectBody selectBody = stmt.getSelectBody();
+        Select selectBody = getSelectBody(stmt);
 
         if (selectBody instanceof PlainSelect) {
 

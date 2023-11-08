@@ -4,10 +4,9 @@ import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.delete.Delete;
-import net.sf.jsqlparser.statement.insert.Insert;
+import net.sf.jsqlparser.statement.select.ParenthesedSelect;
 import net.sf.jsqlparser.statement.select.PlainSelect;
 import net.sf.jsqlparser.statement.select.Select;
-import net.sf.jsqlparser.statement.select.SelectBody;
 import net.sf.jsqlparser.statement.update.Update;
 
 public class ParserUtils {
@@ -59,7 +58,7 @@ public class ParserUtils {
 
         if(statement instanceof Select) {
             Select select = (Select) statement;
-            SelectBody selectBody = select.getSelectBody();
+            Select selectBody = getSelectBody(select);
             if (selectBody instanceof PlainSelect) {
                 PlainSelect plainSelect = (PlainSelect) selectBody;
                 return plainSelect.getWhere();
@@ -91,5 +90,13 @@ public class ParserUtils {
         }
 
         return true;
+    }
+
+    public static Select getSelectBody(Select select) {
+        if(select instanceof ParenthesedSelect){
+            return getSelectBody(((ParenthesedSelect) select).getSelect());
+        } else {
+            return select;
+        }
     }
 }

@@ -13,6 +13,8 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 
 import java.util.*;
 
+import static org.evomaster.client.java.sql.internal.ParserUtils.getSelectBody;
+
 /**
  * Given a column, we need to determinate to which table it
  * belongs to. This is not always simple, as SQL queries can use "aliases".
@@ -146,7 +148,7 @@ public class SqlNameContext {
         FromItem fromItem = null;
 
         if(statement instanceof Select) {
-            SelectBody selectBody = ((Select) statement).getSelectBody();
+            Select selectBody = getSelectBody((Select) statement);
 
             if (selectBody instanceof PlainSelect) {
                 PlainSelect plainSelect = (PlainSelect) selectBody;
@@ -170,7 +172,7 @@ public class SqlNameContext {
             FromItem fromItem = getFromItem();
             fromItem.accept(new AliasVisitor(tableAliases));
 
-            SelectBody selectBody = ((Select) statement).getSelectBody();
+            Select selectBody = getSelectBody((Select) statement);
             PlainSelect plainSelect = (PlainSelect) selectBody;
 
             List<Join> joins = plainSelect.getJoins();
@@ -204,14 +206,14 @@ public class SqlNameContext {
         }
 
         @Override
-        public void visit(SubSelect subSelect) {
+        public void visit(ParenthesedSelect subSelect) {
             handleAlias(aliases, subSelect);
         }
 
     }
 
 
-    private static void handleAlias(Map<String, String> aliases, SubSelect subSelect) {
+    private static void handleAlias(Map<String, String> aliases, ParenthesedSelect subSelect) {
         Alias alias = subSelect.getAlias();
         if (alias != null) {
             String aliasName = alias.getName();

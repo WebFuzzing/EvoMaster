@@ -11,6 +11,11 @@
     <artifactId>evomaster-client-java-sql</artifactId>
     <packaging>jar</packaging>
 
+    <properties>
+        <commons-dbutils.version>1.8.0</commons-dbutils.version>
+        <jsqlparser.version>4.7</jsqlparser.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.evomaster</groupId>
@@ -39,6 +44,7 @@
         <dependency>
             <groupId>com.github.jsqlparser</groupId>
             <artifactId>jsqlparser</artifactId>
+            <version>${jsqlparser.version}</version>
         </dependency>
 
         <!-- Only used for a utility function... TODO possibly refactor       -->
@@ -92,6 +98,11 @@
             <scope>test</scope>
         </dependency>
 
+        <dependency>
+            <groupId>commons-dbutils</groupId>
+            <artifactId>commons-dbutils</artifactId>
+            <version>${commons-dbutils.version}</version>
+        </dependency>
     </dependencies>
 
 
