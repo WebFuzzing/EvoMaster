@@ -74,9 +74,13 @@
             <activation>
                 <jdk>[17,)</jdk>
             </activation>
-            <modules>
-                <module>spring-rest-jakarta</module>
-            </modules>
+           <!--
+           This module should be enabled after Spring2 dependencies
+           are pulled down to each e2e project
+           -->
+<!--            <modules>-->
+<!--                <module>spring-rest-jakarta</module>-->
+<!--            </modules>-->
         </profile>
     </profiles>
 

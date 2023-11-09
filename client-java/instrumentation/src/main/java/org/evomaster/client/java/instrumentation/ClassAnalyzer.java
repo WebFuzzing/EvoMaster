@@ -59,12 +59,14 @@ public class ClassAnalyzer {
 
     private static final String JAVAX_NOT_NULL_ANNOTATION_NAME = "javax.validation.constraints.NotNull";
     private static final String JAKARTA_NOT_NULL_ANNOTATION_NAME = "jakarta.validation.constraints.NotNull";
-    public static final String JAVAX_COLUMN_ANNOTATION_NAME = "javax.persistence.Column";
-    public static final String JAKARTA_COLUMN_ANNOTATION_NAME = "jakarta.persistence.Column";
-    public static final String JAVAX_TRANSIENT_ANNOTATION_NAME = "javax.persistence.Transient";
-    public static final String JAKARTA_TRANSIENT_ANNOTATION_NAME = "jakarta.persistence.Transient";
-    public static final String JAVAX_ENUMERATED_ANNOTATION_NAME = "javax.persistence.Enumerated";
-    public static final String JAKARTA_ENUMERATED_ANNOTATION_NAME = "jakarta.persistence.Enumerated";
+    private static final String JAVAX_COLUMN_ANNOTATION_NAME = "javax.persistence.Column";
+    private static final String JAKARTA_COLUMN_ANNOTATION_NAME = "jakarta.persistence.Column";
+    private static final String JAVAX_TRANSIENT_ANNOTATION_NAME = "javax.persistence.Transient";
+    private static final String JAKARTA_TRANSIENT_ANNOTATION_NAME = "jakarta.persistence.Transient";
+    private static final String JAVAX_ENUMERATED_ANNOTATION_NAME = "javax.persistence.Enumerated";
+    private static final String JAKARTA_ENUMERATED_ANNOTATION_NAME = "jakarta.persistence.Enumerated";
+    private static final String JAVAX_PREFIX = "javax.";
+    private static final String JAKARTA_PREFIX = "jakarta.";
 
     /**
      * Try to load the given classes, and do different kind of analysis via reflection.
@@ -81,13 +83,13 @@ public class ClassAnalyzer {
         boolean canUseJavaPersistenceApi = canUseJavaxJPA();
 
         // Jakarta Persistence
-        boolean useJakartaPersistenceLayer;
+        boolean canUseJakartaPersistenceLayer;
         if (canUseJavaPersistenceApi) {
             // If JPA can be used, then JPL cannot be used
-            useJakartaPersistenceLayer = false;
+            canUseJakartaPersistenceLayer = false;
         } else {
             // Check if Jakarta Persistence Layer can be used
-            useJakartaPersistenceLayer = canUseJakartaPersistenceLayer();
+            canUseJakartaPersistenceLayer = canUseJakartaPersistenceLayer();
         }
 
         for (String name : classNames) {
@@ -107,7 +109,7 @@ public class ClassAnalyzer {
             }
 
             try {
-                if (canUseJavaPersistenceApi || useJakartaPersistenceLayer) {
+                if (canUseJavaPersistenceApi || canUseJakartaPersistenceLayer) {
                     NameSpace namespace;
                     if (canUseJavaPersistenceApi) {
                         namespace = NameSpace.JAVAX;
@@ -394,10 +396,16 @@ public class ClassAnalyzer {
 
     private static String getAnnotationName(NameSpace namespace, String javaxAnnotationName, String jakartaAnnotationName) {
         switch (namespace) {
-            case JAVAX:
+            case JAVAX: {
+                Objects.requireNonNull(javaxAnnotationName);
+                assert (javaxAnnotationName.startsWith(JAVAX_PREFIX));
                 return javaxAnnotationName;
-            case JAKARTA:
+            }
+            case JAKARTA: {
+                Objects.requireNonNull(jakartaAnnotationName);
+                assert (jakartaAnnotationName.startsWith(JAKARTA_PREFIX));
                 return jakartaAnnotationName;
+            }
             default:
                 throw new IllegalArgumentException("Unsupported namespace " + namespace);
         }
