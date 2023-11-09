@@ -62,6 +62,7 @@ public class ParserUtilsTest {
         assertTrue(isSelectOne);
     }
 
+    @Disabled("The query is parseable in the new version of JSQL parser")
     @Test
     public void testOnConflictPostgresql(){
         assertThrows(IllegalArgumentException.class, () -> ParserUtils.asStatement("INSERT INTO vets VALUES (1, 'James', 'Carter') ON CONFLICT DO NOTHING;"));
