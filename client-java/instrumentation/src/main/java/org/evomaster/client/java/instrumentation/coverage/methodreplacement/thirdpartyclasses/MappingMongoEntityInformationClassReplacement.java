@@ -5,6 +5,8 @@ import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Repl
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyCast;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyMethodReplacementClass;
 import org.evomaster.client.java.instrumentation.object.ClassToSchema;
+import org.evomaster.client.java.instrumentation.object.CustomTypeToOasConverter;
+import org.evomaster.client.java.instrumentation.object.GeoJsonPointToOasConverter;
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
@@ -89,7 +91,8 @@ public class MappingMongoEntityInformationClassReplacement extends ThirdPartyMet
             addInstance(mappingMongoEntityInformation);
             String collectionName = (String) mappingMongoEntityInformation.getClass().getMethod("getCollectionName").invoke(mappingMongoEntityInformation);
             Class<?> repositoryType = (Class<?>) mappingMongoEntityInformation.getClass().getMethod("getJavaType").invoke(mappingMongoEntityInformation);
-            String schema = ClassToSchema.getOrDeriveSchemaWithItsRef(repositoryType, true);
+            List<CustomTypeToOasConverter> converters = Collections.singletonList(new GeoJsonPointToOasConverter());
+            String schema = ClassToSchema.getOrDeriveSchemaWithItsRef(repositoryType, true, converters);
             ExecutionTracer.addMongoCollectionInfo(new MongoCollectionInfo(collectionName, schema));
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             throw new RuntimeException(e);

@@ -56,7 +56,7 @@ class ResourceRelatedToTable(val key: String) {
     private val actionToTables : MutableMap<String, MutableList<ActionRelatedToTable>> = mutableMapOf()
 
 
-    fun updateActionRelatedToTable(verb : String, dto: ExecutionDto, existingTables : Set<String>) : Boolean{
+    fun updateActionRelatedToTable(verb : String, dto: org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto, existingTables : Set<String>) : Boolean{
 
         val tables = mutableListOf<String>().plus(dto.deletedData).plus(dto.updatedData.keys).plus(dto.insertedData.keys).plus(dto.queriedData.keys)
                 .filter { existingTables.contains(it) || existingTables.any { e->e.toLowerCase() == it.toLowerCase() }}.toHashSet()

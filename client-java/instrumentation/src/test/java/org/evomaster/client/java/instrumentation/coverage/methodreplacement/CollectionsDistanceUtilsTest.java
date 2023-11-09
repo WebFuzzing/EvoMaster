@@ -6,8 +6,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper.H_NOT_EMPTY;
-import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper.H_REACHED_BUT_EMPTY;
+import static org.evomaster.client.java.distance.heuristics.DistanceHelper.H_NOT_EMPTY;
+import static org.evomaster.client.java.distance.heuristics.DistanceHelper.H_REACHED_BUT_EMPTY;
 import static org.junit.jupiter.api.Assertions.*;
 
 class CollectionsDistanceUtilsTest {

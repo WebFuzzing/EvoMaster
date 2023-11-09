@@ -1,7 +1,7 @@
 package org.evomaster.client.java.instrumentation.coverage.noninteger;
 
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
-import org.evomaster.client.java.instrumentation.heuristic.TruthnessUtils;
+import org.evomaster.client.java.distance.heuristics.DistanceHelper;
+import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
 /**

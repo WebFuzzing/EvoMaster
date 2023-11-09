@@ -28,7 +28,7 @@ class DatabaseExecution(
 
     companion object {
 
-        fun fromDto(dto: ExecutionDto?): DatabaseExecution {
+        fun fromDto(dto: org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto?): DatabaseExecution {
 
             return DatabaseExecution(
                     cloneData(dto?.queriedData),
@@ -63,7 +63,7 @@ class DatabaseExecution(
             return data.toList()
         }
 
-        private fun cloneSqlExecutionInfo(data: List<SqlExecutionLogDto>?): List<SqlExecutionInfo> {
+        private fun cloneSqlExecutionInfo(data: List<org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionLogDto>?): List<SqlExecutionInfo> {
             if (data == null) {
                 return listOf()
             }

@@ -31,6 +31,7 @@ public class QueryParser {
             new NotSelector(),
             new ExistsSelector(),
             new TypeSelector(),
+            new NearSphereSelector(),
             new ImplicitSelector()
     );
 

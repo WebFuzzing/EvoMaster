@@ -3,14 +3,13 @@ package com.foo.rest.examples.spring.db;
 import com.foo.rest.examples.spring.SpringController;
 import kotlin.random.Random;
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
-import org.evomaster.client.java.controller.internal.db.DbSpecification;
+import org.evomaster.client.java.sql.DbSpecification;
 import org.hibernate.dialect.H2Dialect;
 import org.springframework.boot.SpringApplication;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
