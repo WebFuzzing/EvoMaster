@@ -1,0 +1,17 @@
+version: '3.3'
+services:
+  db:
+    image: mysql:8.1
+    environment:
+      MYSQL_DATABASE: 'my_db'
+      MYSQL_ROOT_PASSWORD: 'pass'
+      MYSQL_USER: 'user'
+      MYSQL_PASSWORD: 'pass'
+    ports:
+      - '3306:3306'
+    volumes:
+      - ./scripts:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: "mysqladmin ping --host=127.0.0.1 --user=user --password=pass"
+      interval: 1s
+      retries: 60

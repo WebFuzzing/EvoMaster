@@ -8,6 +8,7 @@ import org.evomaster.client.java.sql.distance.advanced.driver.row.RowHandler;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -27,8 +28,12 @@ public class SqlDriver {
         return new SqlDriver(connection, cache);
     }
 
-    public static SqlDriver createSqlDriver(Connection connection) {
-        return createSqlDriver(connection, new NoCache());
+    public static SqlDriver createSqlDriver(String url, String username, String password) {
+        try {
+            return createSqlDriver(DriverManager.getConnection(url, username, password), new NoCache());
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void execute(String sql) {

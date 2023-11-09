@@ -235,7 +235,7 @@ public class SqlHandler {
                     sqlDriver = createSqlDriver(connection, new ConcurrentCache());
                 }
                 AdvancedDistance advancedDistance = new AdvancedDistance(sqlDriver);
-                dist = advancedDistance.calculate(command);
+                dist = advancedDistance.calculate(command).getValue();
             } else {
                 StandardDistance standardDistance = new StandardDistance(connection, schema, taintHandler);
                 dist = standardDistance.calculateDistance(command, columns);
