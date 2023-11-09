@@ -1288,13 +1288,58 @@ class RestActionBuilderV3Test{
     @Test
     fun testDefaultInt(){
         val path = "/swagger/artificial/defaultandexamples/default_int.yml"
-        val without = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseDefault = 0.0))
 
-        //TODO
+        val without = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseDefault = 0.0))
+                        .values.first()
+        assertEquals(1, without.seeTopGenes().size)
+        val x = without.seeTopGenes().first().flatView()
+        assertTrue(x.any { it is IntegerGene })
+        assertTrue(x.none { it is ChoiceGene<*> })
+        assertTrue(x.none {it is EnumGene<*>})
 
         val with = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseDefault = 0.5))
+                        .values.first()
+        assertEquals(1, with.seeTopGenes().size)
+        val y = with.seeTopGenes().first().flatView()
+        assertTrue(y.any { it is IntegerGene })
+        assertTrue(y.any { it is ChoiceGene<*> })
+        assertTrue(y.any {it is EnumGene<*>})
 
-        //TODO
+        val certain = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseDefault = 1.0))
+            .values.first()
+            .seeTopGenes().first()
+        val output = certain.getValueAsRawString()
+        assertEquals("42", output)
+    }
+
+
+    @Test
+    fun testDefaultString(){
+        val path = "/swagger/artificial/defaultandexamples/default_string.yml"
+
+        val without = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseDefault = 0.0))
+            .values.first()
+        assertEquals(1, without.seeTopGenes().size)
+        val x = without.seeTopGenes().first().flatView()
+        assertTrue(x.any { it is StringGene })
+        assertTrue(x.none { it is ChoiceGene<*> })
+        assertTrue(x.none {it is EnumGene<*>})
+
+
+        val with = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseDefault = 0.5))
+            .values.first()
+        assertEquals(1, with.seeTopGenes().size)
+        val y = with.seeTopGenes().first().flatView()
+        assertTrue(y.any { it is StringGene })
+        assertTrue(y.any { it is ChoiceGene<*> })
+        assertTrue(y.any {it is EnumGene<*>})
+
+
+        val certain = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseDefault = 1.0))
+            .values.first()
+            .seeTopGenes().first()
+        val output = certain.getValueAsRawString()
+        assertEquals("Foo", output)
     }
 
 }
