@@ -22,7 +22,8 @@ public class AdvancedDistance {
             QueryDistanceCalculator queryDistanceCalculator = createQueryDistanceCalculator(query, sqlDriver);
             return queryDistanceCalculator.calculate();
         } catch (Exception e) {
-            SimpleLogger.error(format("Error occurred while calculating distance for query: %s", query), e);
+            SimpleLogger.error(format(
+                "Error occurred while calculating distance for query: %s and state: %s", query, sqlDriver.dump()), e);
             return INF_DISTANCE;
         }
     }

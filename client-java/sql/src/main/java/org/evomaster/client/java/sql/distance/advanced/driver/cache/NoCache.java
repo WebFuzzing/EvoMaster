@@ -20,4 +20,9 @@ public class NoCache implements Cache {
     public List<Row> get(String sql) {
         return null;
     }
+
+    @Override
+    public String dump() {
+        return "No dump is available";
+    }
 }

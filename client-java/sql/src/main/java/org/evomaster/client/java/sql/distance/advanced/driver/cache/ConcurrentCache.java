@@ -8,24 +8,29 @@ import java.util.concurrent.ConcurrentMap;
 
 public class ConcurrentCache implements Cache {
 
-    private ConcurrentMap<String, List<Row>> cache;
+    private ConcurrentMap<String, List<Row>> map;
 
     public ConcurrentCache() {
-        cache = new ConcurrentHashMap<>();
+        map = new ConcurrentHashMap<>();
     }
 
     @Override
     public Boolean isCached(String sql) {
-        return cache.containsKey(sql);
+        return map.containsKey(sql);
     }
 
     @Override
     public void cache(String sql, List<Row> result) {
-        cache.put(sql, result);
+        map.put(sql, result);
     }
 
     @Override
     public List<Row> get(String sql) {
-        return cache.get(sql);
+        return map.get(sql);
+    }
+
+    @Override
+    public String dump() {
+        return map.toString();
     }
 }

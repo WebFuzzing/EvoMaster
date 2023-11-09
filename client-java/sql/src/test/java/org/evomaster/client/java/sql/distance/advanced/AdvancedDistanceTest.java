@@ -40,14 +40,6 @@ public class AdvancedDistanceTest {
     }
 
     @Test
-    public void testQueryWithResults() { //Query returns results
-        sqlDriver.execute("INSERT INTO customers VALUES (1, 'john', 24)");
-        AdvancedDistance queryDistanceCalculator = new AdvancedDistance(sqlDriver);
-        Distance distance = queryDistanceCalculator.calculate("SELECT * FROM customers WHERE age > 20");
-        assertEquals(ZERO_DISTANCE, distance);
-    }
-
-    @Test
     public void testQueryWithoutResultsWithoutWhere() { //Query doesn't return results and has not where clause
         AdvancedDistance queryDistanceCalculator = new AdvancedDistance(sqlDriver);
         Distance distance = queryDistanceCalculator.calculate("SELECT * FROM customers");

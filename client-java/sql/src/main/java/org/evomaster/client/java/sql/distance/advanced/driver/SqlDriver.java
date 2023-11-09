@@ -63,4 +63,8 @@ public class SqlDriver {
             throw new RuntimeException(e);
         }
     }
+
+    public String dump(){
+        return cache.dump();
+    }
 }

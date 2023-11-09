@@ -11,4 +11,6 @@ public interface Cache {
     void cache(String sql, List<Row> result);
 
     List<Row> get(String sql);
+
+    String dump();
 }
