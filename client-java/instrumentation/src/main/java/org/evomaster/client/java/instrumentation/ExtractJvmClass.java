@@ -23,7 +23,7 @@ public class ExtractJvmClass {
                     continue;
                 }
                 clazz = Class.forName(dtoName);
-                schemas.putAll(ClassToSchema.getOrDeriveSchemaAndNestedClasses(clazz, false));
+                schemas.putAll(ClassToSchema.getOrDeriveSchemaAndNestedClasses(clazz, false, Collections.emptyList()));
             } catch (ClassNotFoundException e) {
                 SimpleLogger.uniqueWarn("Fail to extract Jvm DTO as schema:"+e.getMessage());
             }

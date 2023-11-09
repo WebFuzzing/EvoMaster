@@ -2,15 +2,13 @@ package org.evomaster.client.java.instrumentation.staticstate;
 
 import org.evomaster.client.java.instrumentation.*;
 import org.evomaster.client.java.instrumentation.heuristic.HeuristicsForJumps;
-import org.evomaster.client.java.instrumentation.heuristic.Truthness;
+import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.instrumentation.shared.*;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Methods of this class will be injected in the SUT to

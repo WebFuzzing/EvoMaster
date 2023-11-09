@@ -15,6 +15,10 @@
     <dependencies>
         <dependency>
             <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-client-java-distance-heuristics</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.evomaster</groupId>
             <artifactId>evomaster-client-java-util</artifactId>
         </dependency>
         <dependency>
