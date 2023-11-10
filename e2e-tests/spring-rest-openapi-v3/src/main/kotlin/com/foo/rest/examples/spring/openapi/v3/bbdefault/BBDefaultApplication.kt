@@ -5,11 +5,7 @@ import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.RequestHeader
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 
 
 @SpringBootApplication(exclude = [SecurityAutoConfiguration::class])
@@ -25,11 +21,23 @@ open class BBDefaultApplication {
     }
 
     @GetMapping
-    open fun get(@RequestParam data: String?) : ResponseEntity<String> {
+    open fun get(@RequestParam data: Int?) : ResponseEntity<String> {
 
-        if(data == "foo")
+        if(data == 42)
             return ResponseEntity.ok("OK")
 
         return ResponseEntity.status(400).build()
     }
+
+
+    @GetMapping(path = ["/{x}"])
+    open fun getX(@PathVariable x: String) : ResponseEntity<String> {
+
+        if(x == "foo")
+            return ResponseEntity.ok("OK")
+
+        return ResponseEntity.status(400).build()
+    }
+
+    //TODO default in objects?
 }

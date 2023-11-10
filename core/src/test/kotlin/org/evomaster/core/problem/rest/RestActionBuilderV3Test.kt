@@ -17,6 +17,7 @@ import org.evomaster.core.search.gene.optional.ChoiceGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
@@ -1314,8 +1315,8 @@ class RestActionBuilderV3Test{
 
 
     @Test
-    fun testDefaultString(){
-        val path = "/swagger/artificial/defaultandexamples/default_string.yml"
+    fun testDefaultStringQuery(){
+        val path = "/swagger/artificial/defaultandexamples/default_string_query.yml"
 
         val without = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseDefault = 0.0))
             .values.first()
@@ -1340,6 +1341,37 @@ class RestActionBuilderV3Test{
             .seeTopGenes().first()
         val output = certain.getValueAsRawString()
         assertEquals("Foo", output)
+    }
+
+    @Test
+    fun testDefaultStringPath(){
+        val path = "/swagger/artificial/defaultandexamples/default_string_path.yml"
+
+        val a = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseDefault = 0.1))
+            .values.first()
+
+        val rand = Randomness()
+        a.doInitialize(rand)
+
+        var isFoo = false
+        var isInvalid = false
+
+        for(i in 0..1000){
+            a.randomize(rand,false)
+            val s = a.seeTopGenes().first().getValueAsRawString()
+            if(s == "foo"){
+                isFoo = true
+            }
+            if(s.isEmpty() || s.contains("/")){
+                isInvalid = true
+            }
+            if(isFoo && isInvalid){
+                break
+            }
+        }
+
+        assertTrue(isFoo)
+        assertFalse(isInvalid)
     }
 
 }

@@ -47,6 +47,7 @@ class BBDefaultEMTest : SpringTestBase() {
 
             Assertions.assertTrue(solution.individuals.size >= 1)
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/bbdefault", "OK")
+            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/bbdefault/{x}", "OK")
         }
     }
 
@@ -79,6 +80,8 @@ class BBDefaultEMTest : SpringTestBase() {
             Assertions.assertTrue(solution.individuals.size >= 1)
             assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/bbdefault", null)
             assertNone(solution,HttpVerb.GET,200,"/api/bbdefault", "OK")
+            assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/bbdefault/{x}", null)
+            assertNone(solution,HttpVerb.GET,200,"/api/bbdefault/{x}", "OK")
         }
     }
 
