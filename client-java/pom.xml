@@ -25,6 +25,10 @@
         <module>distance-heuristics</module>
     </modules>
 
+    <properties>
+        <jsqlparser.version>4.7</jsqlparser.version>
+    </properties>
+
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -36,6 +40,11 @@
                 <groupId>javax.servlet</groupId>
                 <artifactId>javax.servlet-api</artifactId>
                 <version>3.1.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.jsqlparser</groupId>
+                <artifactId>jsqlparser</artifactId>
+                <version>${jsqlparser.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
