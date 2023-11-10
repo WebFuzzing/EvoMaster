@@ -16,13 +16,9 @@ public class ConversionsHelper {
         if(object instanceof Boolean) {
             return (Boolean) object;
         } else if(object instanceof Number) {
-            return convertToBoolean((Number) object);
+            return convertToDouble(object) != 0;
         } else {
             throw new AssertionError("Type must be boolean or number");
         }
-    }
-
-    public static Boolean convertToBoolean(Number number) {
-        return convertToDouble(number) != 0;
     }
 }

@@ -20,7 +20,7 @@ public class SelectQueryTest {
     }
 
     @Test
-    public void testUnrestrict() { //Simplest case (removes where)
+    public void testUnrestrict() { //Removes where
         SelectQuery query = createSelectQuery("SELECT * FROM customers WHERE age > 20");
         SelectQuery queryWithoutWhere = query.unrestrict();
         assertEquals("SELECT * FROM customers", queryWithoutWhere.toString());

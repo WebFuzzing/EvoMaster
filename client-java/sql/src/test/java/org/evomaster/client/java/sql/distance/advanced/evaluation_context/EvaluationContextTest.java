@@ -10,7 +10,7 @@ import static org.junit.Assert.*;
 public class EvaluationContextTest {
 
     @Test
-    public void testIncludedAndGetValue() {
+    public void testIncludesAndGetValue() {
         Row row = new Row();
         row.put("column", "value");
         EvaluationContext context = createEvaluationContext(row);
@@ -19,7 +19,7 @@ public class EvaluationContextTest {
     }
 
     @Test
-    public void testNotIncluded() {
+    public void testNotIncludes() {
         EvaluationContext context = createEvaluationContext(new Row());
         assertFalse(context.includes(createColumn("column")));
     }
