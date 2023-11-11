@@ -6,6 +6,9 @@ import net.sf.jsqlparser.statement.Statement;
 
 import static java.lang.String.format;
 
+/**
+ * Class used to perform common parsing operations.
+ */
 public class SqlParserHelper {
 
     public static Statement parseStatement(String statement) {

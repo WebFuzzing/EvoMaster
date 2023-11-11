@@ -5,6 +5,11 @@ import java.util.Objects;
 import static java.lang.String.format;
 import static org.evomaster.client.java.sql.distance.advanced.helpers.distance.BranchDistanceHelper.normalize;
 
+/**
+ * Abstraction over distance. It is defined in terms of the distance components. For now, only
+ * the branch distance component is present, but it will also contain the approach level when
+ * subqueries are supported.
+ */
 public class Distance implements Comparable<Distance> {
 
     public static final Distance INF_DISTANCE = new Distance(Double.MAX_VALUE);

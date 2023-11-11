@@ -6,6 +6,9 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+/**
+ * Concurrent cache implementation
+ */
 public class ConcurrentCache implements Cache {
 
     private ConcurrentMap<String, List<Row>> map;

@@ -6,6 +6,9 @@ import static org.evomaster.client.java.sql.distance.advanced.query_distance.Dis
 import static org.evomaster.client.java.sql.distance.advanced.query_distance.Distance.ZERO_DISTANCE;
 import static org.evomaster.client.java.sql.distance.advanced.helpers.ConversionsHelper.convertToBoolean;
 
+/**
+ * Item used by {@link WhereDistanceStack}.
+ */
 public class WhereDistanceStackItem {
 
     private Object expression;

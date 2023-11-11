@@ -6,6 +6,9 @@ import java.util.Stack;
 
 import static org.evomaster.client.java.sql.distance.advanced.query_distance.where_distance.WhereDistanceStackItem.createStackItem;
 
+/**
+ * Stack used by {@link WhereDistanceCalculator}.
+ */
 public class WhereDistanceStack {
 
     private Stack<WhereDistanceStackItem> stack;

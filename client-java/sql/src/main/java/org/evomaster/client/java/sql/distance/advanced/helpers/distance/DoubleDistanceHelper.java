@@ -2,6 +2,9 @@ package org.evomaster.client.java.sql.distance.advanced.helpers.distance;
 
 import java.util.function.Function;
 
+/**
+ * Class used to calculate the branch distance for doubles. Supports all comparison operators.
+ */
 public class DoubleDistanceHelper {
 
     public static double calculateDistanceForEquals(double left, double right) {

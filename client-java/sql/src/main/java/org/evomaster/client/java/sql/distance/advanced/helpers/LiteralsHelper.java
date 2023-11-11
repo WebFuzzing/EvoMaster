@@ -6,6 +6,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * Class used to handle boolean literals due to lack of JSQL parser support.
+ */
 public class LiteralsHelper {
 
     public static final Set<String> BOOLEAN_TRUE_LITERALS = new HashSet<>(

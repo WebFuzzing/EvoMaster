@@ -14,6 +14,9 @@ import java.util.List;
 
 import static java.lang.String.format;
 
+/**
+ * Class used to perform SQL queries and return the rows. Supports query caching and dumping.
+ */
 public class SqlDriver {
 
     private Connection connection;

@@ -3,6 +3,9 @@ package org.evomaster.client.java.sql.distance.advanced.driver.row;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Abstraction over a table row
+ */
 public class Row extends HashMap<String, Object> {
 
     public Row() {}

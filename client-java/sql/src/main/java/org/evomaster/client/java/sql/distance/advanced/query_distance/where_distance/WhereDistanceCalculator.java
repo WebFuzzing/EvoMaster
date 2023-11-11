@@ -28,6 +28,14 @@ import static org.evomaster.client.java.sql.distance.advanced.helpers.Conversion
 import static org.evomaster.client.java.sql.distance.advanced.helpers.LiteralsHelper.isBooleanLiteral;
 import static org.evomaster.client.java.sql.distance.advanced.helpers.LiteralsHelper.isTrueLiteral;
 
+/**
+ * Class used to calculate the distance between the WHERE clause and a row. Implementing the JSQL expression
+ * visitor we are making sure that we are considering all the cases, even though we have not yet implemented
+ * all of them. This class uses a stack that allows different interpretations of the same stacked expression
+ * depending on the context. For instance, if we are resolving an arithmetic operation, the two last expressions
+ * of the stack will be interpreted as numbers, but if we are resolving a logical operator, they will be
+ * interpreted as booleans.
+ */
 public class WhereDistanceCalculator implements ExpressionVisitor {
 
     public static final char MINUS_SIGN = '-';

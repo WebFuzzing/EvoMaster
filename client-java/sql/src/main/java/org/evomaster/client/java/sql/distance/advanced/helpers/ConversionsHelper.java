@@ -1,5 +1,8 @@
 package org.evomaster.client.java.sql.distance.advanced.helpers;
 
+/**
+ * Class used to convert a number to double or a number to boolean.
+ */
 public class ConversionsHelper {
 
     public static Double convertToDouble(Object object) {

@@ -3,6 +3,9 @@ package org.evomaster.client.java.sql.distance.advanced.query_distance.where_dis
 import net.sf.jsqlparser.expression.AnyType;
 import net.sf.jsqlparser.statement.select.Select;
 
+/**
+ * Abstraction over JSQL parser comparison expression.
+ */
 public class SelectComparisonExpression {
 
     private Select select;

@@ -4,6 +4,9 @@ import org.evomaster.client.java.sql.distance.advanced.driver.row.Row;
 
 import java.util.List;
 
+/**
+ * Class used when caching needs to be avoided (e.g. during tests)
+ */
 public class NoCache implements Cache {
 
     @Override

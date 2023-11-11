@@ -6,6 +6,10 @@ import static java.util.Objects.isNull;
 import static org.evomaster.client.java.sql.distance.advanced.helpers.ConversionsHelper.convertToBoolean;
 import static org.evomaster.client.java.sql.distance.advanced.helpers.ConversionsHelper.convertToDouble;
 
+/**
+ * Class used to calculate the branch distance given a comparison operator and
+ * two objects of any type. Supports null objects.
+ */
 public class BranchDistanceHelper {
 
     public static Double calculateDistanceForEquals(Object left, Object right) {
@@ -16,7 +20,7 @@ public class BranchDistanceHelper {
         }
     }
 
-    public static Double calculateDistanceForNonNullEquals(Object left, Object right) {
+    private static Double calculateDistanceForNonNullEquals(Object left, Object right) {
         if(left instanceof Number && right instanceof Number) {
             return DoubleDistanceHelper.calculateDistanceForEquals(convertToDouble(left), convertToDouble(right));
         } else if(left instanceof Boolean || right instanceof Boolean) {
@@ -36,7 +40,7 @@ public class BranchDistanceHelper {
         }
     }
 
-    public static Double calculateDistanceForNonNullNotEquals(Object left, Object right) {
+    private static Double calculateDistanceForNonNullNotEquals(Object left, Object right) {
         if(left instanceof Number && right instanceof Number) {
             return DoubleDistanceHelper.calculateDistanceForNotEquals(convertToDouble(left), convertToDouble(right));
         } else if(left instanceof Boolean || right instanceof Boolean) {
@@ -56,7 +60,7 @@ public class BranchDistanceHelper {
         }
     }
 
-    public static Double calculateDistanceForNonNullGreaterThan(Object left, Object right) {
+    private static Double calculateDistanceForNonNullGreaterThan(Object left, Object right) {
         if(left instanceof Number && right instanceof Number) {
             return DoubleDistanceHelper.calculateDistanceForGreaterThan(convertToDouble(left), convertToDouble(right));
         } else {
@@ -74,7 +78,7 @@ public class BranchDistanceHelper {
         }
     }
 
-    public static Double calculateDistanceForNonNullGreaterThanOrEquals(Object left, Object right) {
+    private static Double calculateDistanceForNonNullGreaterThanOrEquals(Object left, Object right) {
         if(left instanceof Number && right instanceof Number) {
             return DoubleDistanceHelper.calculateDistanceForGreaterThanOrEquals(convertToDouble(left), convertToDouble(right));
         } else {
@@ -92,7 +96,7 @@ public class BranchDistanceHelper {
         }
     }
 
-    public static Double calculateDistanceForNonNullMinorThan(Object left, Object right) {
+    private static Double calculateDistanceForNonNullMinorThan(Object left, Object right) {
         if(left instanceof Number && right instanceof Number) {
             return DoubleDistanceHelper.calculateDistanceForMinorThan(convertToDouble(left), convertToDouble(right));
         } else {
@@ -110,7 +114,7 @@ public class BranchDistanceHelper {
         }
     }
 
-    public static Double calculateDistanceForNonNullMinorThanOrEquals(Object left, Object right) {
+    private static Double calculateDistanceForNonNullMinorThanOrEquals(Object left, Object right) {
         if(left instanceof Number && right instanceof Number) {
             return DoubleDistanceHelper.calculateDistanceForMinorThanOrEquals(convertToDouble(left), convertToDouble(right));
         } else {

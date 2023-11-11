@@ -6,6 +6,9 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 
+/**
+ * Class used to map a result set into a row
+ */
 public class RowHandler extends AbstractListHandler<Row> {
 
     protected Row handleRow(ResultSet resultSet) throws SQLException {

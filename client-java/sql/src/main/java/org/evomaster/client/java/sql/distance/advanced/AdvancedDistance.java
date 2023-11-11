@@ -9,6 +9,9 @@ import static java.lang.String.format;
 import static org.evomaster.client.java.sql.distance.advanced.query_distance.Distance.INF_DISTANCE;
 import static org.evomaster.client.java.sql.distance.advanced.query_distance.QueryDistanceCalculator.createQueryDistanceCalculator;
 
+/**
+ * Class used to calculate the distance for a query, abstracting from calculation details.
+ */
 public class AdvancedDistance {
 
     private SqlDriver sqlDriver;

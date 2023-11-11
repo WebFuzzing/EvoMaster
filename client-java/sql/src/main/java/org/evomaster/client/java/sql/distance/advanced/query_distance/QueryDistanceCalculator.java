@@ -13,6 +13,9 @@ import static org.evomaster.client.java.sql.distance.advanced.query_distance.Dis
 import static org.evomaster.client.java.sql.distance.advanced.query_distance.where_distance.WhereDistanceCalculator.createWhereDistanceCalculator;
 import static org.evomaster.client.java.sql.distance.advanced.select_query.SelectQuery.createSelectQuery;
 
+/**
+ * Class used to calculate the distance for a query.
+ */
 public class QueryDistanceCalculator {
 
   private SelectQuery query;
