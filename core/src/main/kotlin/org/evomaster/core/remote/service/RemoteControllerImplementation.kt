@@ -225,12 +225,22 @@ class RemoteControllerImplementation() : RemoteController{
 
     private fun changeState(run: Boolean, reset: Boolean): Boolean {
 
+        val requestDto =  SutRunDto(
+            run,
+            reset,
+            config.enableCustomizedMethodForMockObjectHandling,
+            computeSqlHeuristics,
+            extractSqlExecutionInfo,
+            config.methodReplacementCategories()
+        )
+        requestDto.advancedHeuristics = config.heuristicsForSQLAdvanced
+
         val response = try {
             makeHttpCall {
                 getWebTarget()
                         .path(ControllerConstants.RUN_SUT_PATH)
                         .request()
-                        .put(Entity.json(SutRunDto(run, reset, config.enableCustomizedMethodForMockObjectHandling, computeSqlHeuristics, extractSqlExecutionInfo, config.methodReplacementCategories())))
+                        .put(Entity.json(requestDto))
             }
         } catch (e: Exception) {
             log.warn("Failed to connect to SUT: ${e.message}")
