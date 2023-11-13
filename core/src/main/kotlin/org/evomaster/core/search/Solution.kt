@@ -64,6 +64,6 @@ where T : Individual {
      * extract individual generated during seeding as a solution
      */
     fun extractSolutionDuringSeeding() : Solution<T>{
-        return Solution(individualsDuringSeeding.toMutableList(), "Seeding_$testSuiteNamePrefix", testSuiteNamePrefix, termination, listOf(), listOf())
+        return Solution(individualsDuringSeeding.toMutableList(), testSuiteNamePrefix, testSuiteNameSuffix, Termination.SEEDING, listOf(), listOf())
     }
 }
