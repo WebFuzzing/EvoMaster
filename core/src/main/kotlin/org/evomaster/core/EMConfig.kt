@@ -1677,8 +1677,8 @@ class EMConfig {
     }
 
     @Experimental
-    @Cfg("Whether to export all specified seeded test cases as a separate file")
-    var exportSeedTestCases = false
+    @Cfg("Whether to export test cases during seeding as a separate file")
+    var exportTestCasesDuringSeeding = false
 
     @Experimental
     @Cfg("Format of the test cases seeded to EvoMaster")
