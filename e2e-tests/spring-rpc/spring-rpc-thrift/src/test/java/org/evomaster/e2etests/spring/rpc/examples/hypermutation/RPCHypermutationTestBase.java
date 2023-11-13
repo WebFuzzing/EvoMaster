@@ -10,7 +10,7 @@ import java.util.Map;
 /**
  * created by manzhang on 2023/11/13
  */
-public class RPCHypermutationTestBase extends SpringRPCTestBase {
+public abstract class RPCHypermutationTestBase extends SpringRPCTestBase {
 
 
     public boolean check(EvaluatedIndividual<RPCIndividual> ind, String action, int max){

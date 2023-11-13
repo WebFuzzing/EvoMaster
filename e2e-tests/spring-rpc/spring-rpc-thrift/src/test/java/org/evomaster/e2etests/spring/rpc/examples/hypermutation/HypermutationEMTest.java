@@ -2,7 +2,6 @@ package org.evomaster.e2etests.spring.rpc.examples.hypermutation;
 
 import com.foo.rpc.examples.spring.hypermutation.HypermutationController;
 import com.foo.rpc.examples.spring.hypermutation.HypermutationService;
-import org.evomaster.core.problem.rpc.RPCCallResultCategory;
 import org.evomaster.core.problem.rpc.RPCIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.rpc.examples.SpringRPCTestBase;

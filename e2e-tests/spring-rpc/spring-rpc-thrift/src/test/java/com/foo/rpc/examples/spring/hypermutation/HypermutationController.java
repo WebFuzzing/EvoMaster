@@ -34,7 +34,7 @@ public class HypermutationController extends SpringController {
     public ProblemInfo getProblemInfo() {
         return new RPCProblem(
                 new HashMap<String, Object>(){{
-                    put(HypermutationService.Iface.class.getName(), HypermutationService.Iface.class);
+                    put(HypermutationService.Iface.class.getName(), client);
                 }},
                 skipped,
                 null,
