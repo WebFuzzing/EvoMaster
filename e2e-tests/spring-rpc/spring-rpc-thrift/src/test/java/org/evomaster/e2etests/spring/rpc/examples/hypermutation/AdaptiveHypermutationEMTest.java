@@ -16,7 +16,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class AdaptiveHypermutationEMTest extends SpringRPCTestBase {
+public class AdaptiveHypermutationEMTest extends RPCHypermutationTestBase {
 
 
     @BeforeAll
@@ -31,17 +31,32 @@ public class AdaptiveHypermutationEMTest extends SpringRPCTestBase {
         runTestHandlingFlakyAndCompilation(
                 "AdaptiveHypermutationEM",
                 "org.bar.AdaptiveHypermutationEM",
-                25_000,
+                500,
                 (args) -> {
-                    args.add("--baseTaintAnalysisProbability");
-                    args.add("0.9");
+
+                    args.add("--weightBasedMutationRate");
+                    args.add("true");
+
+                    args.add("--probOfArchiveMutation");
+                    args.add("1.0");
+                    args.add("--adaptiveGeneSelectionMethod");
+                    args.add("APPROACH_IMPACT");
+                    args.add("--archiveGeneMutation");
+                    args.add("SPECIFIED_WITH_SPECIFIC_TARGETS");
+                    args.add("--enableTrackEvaluatedIndividual");
+                    args.add("true");
+
+
+                    args.add("--probOfRandomSampling");
+                    args.add("0.0");
+                    //minimization loses impact info
+                    args.add("--minimize");
+                    args.add("false");
 
                     Solution<RPCIndividual> solution = initAndRun(args);
 
-                    assertTrue(solution.getIndividuals().size() >= 1);
-
-                    assertRPCEndpointResult(solution, HypermutationService.Iface.class.getName()+":lowWeightHighCoverage", RPCCallResultCategory.HANDLED.name());
-                    assertAllContentInResponseForEndpoint(solution,HypermutationService.Iface.class.getName()+":lowWeightHighCoverage" , Arrays.asList("x1","x2","x3","x4","x5", "y", "z"));
+                    boolean ok = solution.getIndividuals().stream().allMatch(s-> check(s, "lowWeightHighCoverage",1));
+                    assertTrue(ok);
                 });
     }
 }

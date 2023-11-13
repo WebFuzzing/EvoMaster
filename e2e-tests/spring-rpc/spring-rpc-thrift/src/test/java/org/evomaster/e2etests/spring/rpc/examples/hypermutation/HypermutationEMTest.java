@@ -16,7 +16,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class HypermutationEMTest extends SpringRPCTestBase {
+public class HypermutationEMTest extends RPCHypermutationTestBase {
 
 
     @BeforeAll
@@ -31,17 +31,34 @@ public class HypermutationEMTest extends SpringRPCTestBase {
         runTestHandlingFlakyAndCompilation(
                 "HypermutationEM",
                 "org.bar.HypermutationEM",
-                25_000,
+                500,
                 (args) -> {
-                    args.add("--baseTaintAnalysisProbability");
-                    args.add("0.9");
+                    args.add("--weightBasedMutationRate");
+                    args.add("true");
+
+                    args.add("--probOfArchiveMutation");
+                    args.add("0.0");
+                    args.add("--adaptiveGeneSelectionMethod");
+                    args.add("NONE");
+                    args.add("--archiveGeneMutation");
+                    args.add("NONE");
+                    args.add("--enableTrackEvaluatedIndividual");
+                    args.add("true");
+
+                    args.add("--doCollectImpact");
+                    args.add("true");
+
+                    args.add("--focusedSearchActivationTime");
+                    args.add("0.1");
+
+                    //minimization loses impact info
+                    args.add("--minimize");
+                    args.add("false");
 
                     Solution<RPCIndividual> solution = initAndRun(args);
 
-                    assertTrue(solution.getIndividuals().size() >= 1);
-
-                    assertRPCEndpointResult(solution, HypermutationService.Iface.class.getName()+":differentWeight", RPCCallResultCategory.HANDLED.name());
-                    assertAllContentInResponseForEndpoint(solution,HypermutationService.Iface.class.getName()+":differentWeight" , Arrays.asList("x", "y", "z"));
+                    boolean ok = solution.getIndividuals().stream().allMatch(s-> check(s, "differentWeight",0));
+                    assertTrue(ok);
                 });
     }
 }
