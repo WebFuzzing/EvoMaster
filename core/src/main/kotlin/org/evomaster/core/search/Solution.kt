@@ -7,11 +7,12 @@ import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceActi
 
 
 class Solution<T>(
-        val individuals: MutableList<EvaluatedIndividual<T>>,
-        val testSuiteNamePrefix: String,
-        val testSuiteNameSuffix: String,
-        val termination: Termination = Termination.NONE,
-        val targetsDuringSeeding : List<Int>
+    val individuals: MutableList<EvaluatedIndividual<T>>,
+    val testSuiteNamePrefix: String,
+    val testSuiteNameSuffix: String,
+    val termination: Termination = Termination.NONE,
+    val individualsDuringSeeding: List<EvaluatedIndividual<T>>,
+    val targetsDuringSeeding: List<Int>
 )
 where T : Individual {
 

@@ -100,7 +100,14 @@ class Archive<T> where T : Individual {
     fun extractSolution(): Solution<T> {
         val uniques = getUniquePopulation()
 
-        return Solution(uniques.toMutableList(), config.outputFilePrefix, config.outputFileSuffix, Termination.NONE, coveredStatisticsBySeededTests?.coveredTargets?: listOf())
+        return Solution(
+            uniques.toMutableList(),
+            config.outputFilePrefix,
+            config.outputFileSuffix,
+            Termination.NONE,
+            coveredStatisticsBySeededTests?.uniquePopulationsDuringSeeding?: listOf<EvaluatedIndividual<T>>(),
+            coveredStatisticsBySeededTests?.coveredTargets?: listOf()
+        )
     }
 
 
