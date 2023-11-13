@@ -58,7 +58,8 @@ public class WhereDistanceCalculator implements ExpressionVisitor {
     public Distance calculate() {
         where.accept(this);
         Distance distance = stack.popDistance();
-        SimpleLogger.debug(format("Distance between between WHERE: %s and row: %s was %s", where, evaluationContext, distance));
+        SimpleLogger.debug(
+            format("Distance between between WHERE: %s and row: %s was %s", where, evaluationContext, distance));
         return distance;
     }
 
@@ -186,7 +187,8 @@ public class WhereDistanceCalculator implements ExpressionVisitor {
 
     private Distance aggregateDistancesForAnd(Distance aDistance, Distance otherDistance) {
         return createDistance(
-            BranchDistanceHelper.aggregateDistancesForAnd(aDistance.getBranchDistance(), otherDistance.getBranchDistance()));
+            BranchDistanceHelper.aggregateDistancesForAnd(
+                aDistance.getBranchDistance(), otherDistance.getBranchDistance()));
     }
 
     @Override
@@ -198,7 +200,8 @@ public class WhereDistanceCalculator implements ExpressionVisitor {
 
     private Distance aggregateDistancesForOr(Distance aDistance, Distance otherDistance) {
         return createDistance(
-            BranchDistanceHelper.aggregateDistancesForOr(aDistance.getBranchDistance(), otherDistance.getBranchDistance()));
+            BranchDistanceHelper.aggregateDistancesForOr(
+                aDistance.getBranchDistance(), otherDistance.getBranchDistance()));
     }
 
     @Override
@@ -320,7 +323,8 @@ public class WhereDistanceCalculator implements ExpressionVisitor {
         } else if(isBooleanLiteral(column.getColumnName())) {
             stack.pushBoolean(isTrueLiteral(column.getColumnName()));
         } else {
-            throw new AssertionError(format("Column %s must be present in %s or be a boolean literal", column, evaluationContext));
+            throw new AssertionError(
+                format("Column %s must be present in %s or be a boolean literal", column, evaluationContext));
         }
     }
 

@@ -62,7 +62,8 @@ public class BranchDistanceHelper {
 
     private static Double calculateDistanceForNonNullGreaterThan(Object left, Object right) {
         if(left instanceof Number && right instanceof Number) {
-            return DoubleDistanceHelper.calculateDistanceForGreaterThan(convertToDouble(left), convertToDouble(right));
+            return DoubleDistanceHelper.calculateDistanceForGreaterThan(
+                convertToDouble(left), convertToDouble(right));
         } else {
             throw new UnsupportedOperationException(
                 format("Unsupported greater than calculation between values %s (%s) and %s (%s)",
@@ -80,7 +81,8 @@ public class BranchDistanceHelper {
 
     private static Double calculateDistanceForNonNullGreaterThanOrEquals(Object left, Object right) {
         if(left instanceof Number && right instanceof Number) {
-            return DoubleDistanceHelper.calculateDistanceForGreaterThanOrEquals(convertToDouble(left), convertToDouble(right));
+            return DoubleDistanceHelper.calculateDistanceForGreaterThanOrEquals(
+                convertToDouble(left), convertToDouble(right));
         } else {
             throw new UnsupportedOperationException(
                 format("Unsupported greater than equals calculation between values %s (%s) and %s (%s)",
@@ -98,7 +100,8 @@ public class BranchDistanceHelper {
 
     private static Double calculateDistanceForNonNullMinorThan(Object left, Object right) {
         if(left instanceof Number && right instanceof Number) {
-            return DoubleDistanceHelper.calculateDistanceForMinorThan(convertToDouble(left), convertToDouble(right));
+            return DoubleDistanceHelper.calculateDistanceForMinorThan(
+                convertToDouble(left), convertToDouble(right));
         } else {
             throw new UnsupportedOperationException(
                 format("Unsupported minor than calculation between values %s (%s) and %s (%s)",
@@ -116,7 +119,8 @@ public class BranchDistanceHelper {
 
     private static Double calculateDistanceForNonNullMinorThanOrEquals(Object left, Object right) {
         if(left instanceof Number && right instanceof Number) {
-            return DoubleDistanceHelper.calculateDistanceForMinorThanOrEquals(convertToDouble(left), convertToDouble(right));
+            return DoubleDistanceHelper.calculateDistanceForMinorThanOrEquals(
+                convertToDouble(left), convertToDouble(right));
         } else {
             throw new UnsupportedOperationException(
                 format("Unsupported minor than or equals calculation between values %s (%s) and %s (%s)",
