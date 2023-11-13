@@ -666,6 +666,9 @@ class Main {
                 }
             } else if (config.problemType == EMConfig.ProblemType.RPC){
 
+                // Man: only enable for RPC as it lacks of unit tests
+                writer.writeTestsDuringSeeding(solution, controllerInfoDto?.fullName, controllerInfoDto?.executableFullPath)
+
                 when(config.testSuiteSplitType){
                     EMConfig.TestSuiteSplitType.NONE -> writer.writeTests(solution, controllerInfoDto?.fullName, controllerInfoDto?.executableFullPath)
                     EMConfig.TestSuiteSplitType.CODE -> throw IllegalStateException("RPC problem does not support splitting tests by code")

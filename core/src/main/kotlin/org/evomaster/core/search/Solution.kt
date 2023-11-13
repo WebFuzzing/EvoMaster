@@ -59,4 +59,11 @@ where T : Individual {
     fun hasAnyMongoAction() : Boolean{
         return individuals.any { ind -> ind.individual.seeAllActions().any { a ->  a is MongoDbAction}}
     }
+
+    /**
+     * extract individual generated during seeding as a solution
+     */
+    fun extractSolutionDuringSeeding() : Solution<T>{
+        return Solution(individualsDuringSeeding.toMutableList(), "Seeding_$testSuiteNamePrefix", testSuiteNamePrefix, termination, listOf(), listOf())
+    }
 }
