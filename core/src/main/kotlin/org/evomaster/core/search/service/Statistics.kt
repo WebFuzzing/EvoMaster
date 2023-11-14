@@ -182,6 +182,8 @@ class Statistics : SearchListener {
         val linesInfo = solution.overall.unionWithBootTimeCoveredTargets(ObjectiveNaming.LINE, idMapper, bootTimeInfo)
         val branchesInfo = solution.overall.unionWithBootTimeCoveredTargets(ObjectiveNaming.BRANCH, idMapper, bootTimeInfo)
 
+        val rpcInfo = sutInfo?.rpcProblem
+
         val list: MutableList<Pair> = mutableListOf()
 
         list.apply {
@@ -215,6 +217,11 @@ class Statistics : SearchListener {
             //potential oracle we are going to introduce.
             //Note: that 500 (and 5xx in general) MUST not be counted in failedOracles
             add(Pair("potentialFaults", "" + solution.overall.potentialFoundFaults(idMapper).size))
+
+            // RPC statistics of sut and seeded tests
+            add(Pair("numberOfRPCInterfaces", "${rpcInfo?.schemas?.size?:0}"))
+            add(Pair("numberOfRPCFunctions", "${rpcInfo?.schemas?.sumOf { it.skippedEndpoints?.size ?: 0 }}"))
+            add(Pair("numberOfRPCSeededTests", "${rpcInfo?.seededTestDtos?.size?:0}" ))
 
             // RPC
             add(Pair("rpcUnexpectedException", "" + solution.overall.rpcUnexpectedException(idMapper).size))
