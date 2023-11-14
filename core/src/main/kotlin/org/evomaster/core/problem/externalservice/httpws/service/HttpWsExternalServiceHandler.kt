@@ -222,6 +222,12 @@ class HttpWsExternalServiceHandler {
         return output
     }
 
+    fun hasActiveMockServer(hostname: String): Boolean {
+        return externalServices
+            .filter { it.value.getRemoteHostName() == hostname && it.value.isActive() }
+            .isNotEmpty()
+    }
+
     /**
      * Will return the next available IP address from the last know IP address
      * used for external service.
