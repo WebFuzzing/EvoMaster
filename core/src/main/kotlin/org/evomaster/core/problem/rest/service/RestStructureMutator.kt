@@ -3,7 +3,6 @@ package org.evomaster.core.problem.rest.service
 import com.google.inject.Inject
 import org.evomaster.core.Lazy
 import org.evomaster.core.problem.api.ApiWsIndividual
-import org.evomaster.core.problem.api.service.ApiWsSampler
 import org.evomaster.core.sql.SqlInsertBuilder
 import org.evomaster.core.problem.api.service.ApiWsStructureMutator
 import org.evomaster.core.problem.enterprise.SampleType
@@ -31,34 +30,34 @@ class RestStructureMutator : ApiWsStructureMutator() {
 
     override fun addInitializingActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?) {
         addInitializingActions(individual, mutatedGenes, sampler)
-        addInitializingHostnameResolutionActions(individual, mutatedGenes)
+//        addInitializingHostnameResolutionActions(individual, mutatedGenes)
     }
 
-    private fun addInitializingHostnameResolutionActions(
-        individual: EvaluatedIndividual<*>,
-        mutatedGenes: MutatedGeneSpecification?
-    ) {
-
-        val ind = individual.individual as? ApiWsIndividual
-            ?: throw IllegalArgumentException("Invalid individual type")
-
-        val old = mutableListOf<Action>().plus(ind.seeInitializingActions().filterIsInstance<HostnameResolutionAction>())
-
-        val addedInsertions: MutableList<Action> = mutableListOf()
-        externalServiceHandler.getHostnameResolutionActions().forEach {
-            if ((old as HostnameResolutionAction).getRemoteHostname() != it.getRemoteHostname()) {
-                addedInsertions.add(it)
-            }
-        }
-            // update impact based on added genes
-        if (mutatedGenes != null && config.isEnabledArchiveGeneSelection()) {
-            individual.updateImpactGeneDueToAddedInitializationGenes(
-                mutatedGenes,
-                old,
-                listOf(addedInsertions)
-            )
-        }
-    }
+//    private fun addInitializingHostnameResolutionActions(
+//        individual: EvaluatedIndividual<*>,
+//        mutatedGenes: MutatedGeneSpecification?
+//    ) {
+//
+//        val ind = individual.individual as? ApiWsIndividual
+//            ?: throw IllegalArgumentException("Invalid individual type")
+//
+//        val old = mutableListOf<Action>().plus(ind.seeInitializingActions().filterIsInstance<HostnameResolutionAction>())
+//
+//        val addedInsertions: MutableList<Action> = mutableListOf()
+//        externalServiceHandler.getHostnameResolutionActions().forEach {
+//            if ((old as HostnameResolutionAction).getRemoteHostname() != it.getRemoteHostname()) {
+//                addedInsertions.add(it)
+//            }
+//        }
+//            // update impact based on added genes
+//        if (mutatedGenes != null && config.isEnabledArchiveGeneSelection()) {
+//            individual.updateImpactGeneDueToAddedInitializationGenes(
+//                mutatedGenes,
+//                old,
+//                listOf(addedInsertions)
+//            )
+//        }
+//    }
 
     override fun mutateStructure(individual: Individual, evaluatedIndividual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?, targets: Set<Int>) {
         if (individual !is RestIndividual) {
