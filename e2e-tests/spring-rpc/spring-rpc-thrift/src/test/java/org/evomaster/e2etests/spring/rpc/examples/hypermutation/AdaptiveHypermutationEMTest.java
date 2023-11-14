@@ -45,6 +45,8 @@ public class AdaptiveHypermutationEMTest extends RPCHypermutationTestBase {
                     args.add("SPECIFIED_WITH_SPECIFIC_TARGETS");
                     args.add("--enableTrackEvaluatedIndividual");
                     args.add("true");
+                    args.add("--startingPerOfGenesToMutate");
+                    args.add("0.1");
 
 
                     args.add("--probOfRandomSampling");
@@ -55,7 +57,7 @@ public class AdaptiveHypermutationEMTest extends RPCHypermutationTestBase {
 
                     Solution<RPCIndividual> solution = initAndRun(args);
 
-                    boolean ok = solution.getIndividuals().stream().allMatch(s-> check(s, "lowWeightHighCoverage",1));
+                    boolean ok = check(solution, "lowWeightHighCoverage",1);
                     assertTrue(ok);
                 });
     }

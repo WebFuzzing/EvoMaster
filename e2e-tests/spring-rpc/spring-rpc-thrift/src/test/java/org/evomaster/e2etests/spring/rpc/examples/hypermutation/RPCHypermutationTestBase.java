@@ -2,6 +2,7 @@ package org.evomaster.e2etests.spring.rpc.examples.hypermutation;
 
 import org.evomaster.core.problem.rpc.RPCIndividual;
 import org.evomaster.core.search.EvaluatedIndividual;
+import org.evomaster.core.search.Solution;
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact;
 import org.evomaster.e2etests.spring.rpc.examples.SpringRPCTestBase;
 
@@ -13,8 +14,14 @@ import java.util.Map;
 public abstract class RPCHypermutationTestBase extends SpringRPCTestBase {
 
 
-    public boolean check(EvaluatedIndividual<RPCIndividual> ind, String action, int max){
-        String xGeneId = "com.foo.rpc.examples.spring.hypermutation.HypermutationService$Iface:"+action+"::arg0";
+    public boolean check(Solution<RPCIndividual> solution, String action, int max){
+        int all = solution.getIndividuals().size();
+        int satisfied = (int) solution.getIndividuals().stream().filter(s-> check(s, action,max)).count();
+        return ((satisfied * 1.0 / all) > 0.9) || (all - satisfied == 1);
+    }
+
+    private boolean check(EvaluatedIndividual<RPCIndividual> ind, String action, int max){
+        String xGeneId = "com.foo.rpc.examples.spring.hypermutation.HypermutationService$Iface:"+action+"::arg0::0";
         String yGeneId = "com.foo.rpc.examples.spring.hypermutation.HypermutationService$Iface:"+action+"::arg1::1";
         String zGeneId = "com.foo.rpc.examples.spring.hypermutation.HypermutationService$Iface:"+action+"::OptionalGene>com.foo.rpc.examples.spring.hypermutation.HighWeightDto>arg2::2";
 

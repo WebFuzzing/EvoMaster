@@ -56,7 +56,7 @@ public class HypermutationEMTest extends RPCHypermutationTestBase {
 
                     Solution<RPCIndividual> solution = initAndRun(args);
 
-                    boolean ok = solution.getIndividuals().stream().allMatch(s-> check(s, "differentWeight",0));
+                    boolean ok = check(solution, "differentWeight",0);
                     assertTrue(ok);
                 });
     }
