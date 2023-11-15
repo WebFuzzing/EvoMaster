@@ -126,6 +126,7 @@
         <swagger.parser-v3.version>2.1.8</swagger.parser-v3.version>
         <swagger.annotations.version>2.2.7</swagger.annotations.version>
         <springboot.version>2.5.4</springboot.version>
+        <springboot3.version>3.1.5</springboot3.version>
         <springfox.version>3.0.0</springfox.version>
         <springdoc.version>1.6.9</springdoc.version>
         <jetty.version>9.4.29.v20200521</jetty.version>
@@ -158,12 +159,14 @@
         <okhttp.client.version>2.4.0</okhttp.client.version>
         <dns.cache.manipulator.version>1.8.0</dns.cache.manipulator.version>
         <jakarta.annotation.version>2.0.0</jakarta.annotation.version>
+        <jakarta.validation-api.version>3.0.2</jakarta.validation-api.version>
+        <jakarta.persistence-api.version>3.1.0</jakarta.persistence-api.version>
+        <jakarta.ws.rs-api.version>3.1.0</jakarta.ws.rs-api.version>
         <micronaut.version>3.2.7</micronaut.version>
         <micronaut.openapi.version>3.2.0</micronaut.openapi.version>
         <micronaut.test.version>3.0.5</micronaut.test.version>
         <org.mongodb.version>4.2.3</org.mongodb.version>
         <org.locationtech.jts.version>1.19.0</org.locationtech.jts.version>
-
     </properties>
 
 
