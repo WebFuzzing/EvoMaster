@@ -166,31 +166,16 @@ class Main {
             val config = injector.getInstance(EMConfig::class.java)
             val idMapper = injector.getInstance(IdMapper::class.java)
 
-            val solution = run(injector, controllerInfo)
-            val faults = solution.overall.potentialFoundFaults(idMapper)
-            val sampler : Sampler<*> = injector.getInstance(Key.get(object : TypeLiteral<Sampler<*>>(){}))
+            var solution = run(injector, controllerInfo)
 
-            resetExternalServiceHandler(injector)
-
+            //save data regarding the search phase
             writeOverallProcessData(injector)
-
             writeDependencies(injector)
-
             writeImpacts(injector, solution)
-
-            //writeStatistics(injector, solution)
-
-            writeCoveredTargets(injector, solution)
-
-            writeTests(injector, solution, controllerInfo)
-
-            writeStatistics(injector, solution)
-
             writeExecuteInfo(injector)
 
+
             val stc = injector.getInstance(SearchTimeController::class.java)
-            val statistics = injector.getInstance(Statistics::class.java)
-            val data = statistics.getData(solution)
 
             LoggingUtil.getInfoLogger().apply {
                 info("Evaluated tests: ${stc.evaluatedIndividuals}")
@@ -201,10 +186,41 @@ class Main {
                     info("Passed time (seconds): ${stc.getElapsedSeconds()}")
                     info("Execution time per test (ms): ${stc.averageTestTimeMs}")
                     info("Computation overhead between tests (ms): ${stc.averageOverheadMsBetweenTests}")
-                    val timeouts = data.find { p -> p.header == Statistics.TEST_TIMEOUTS }!!.element.toInt()
-                    if (timeouts > 0) {
-                        info("TCP timeouts: $timeouts")
+                }
+            }
+
+
+            if(config.security){
+                //apply security testing phase
+                LoggingUtil.getInfoLogger().info("Starting to apply security testing")
+
+                //TODO might need to reset stc, and print some updated info again
+
+                when(config.problemType){
+                    EMConfig.ProblemType.REST -> {
+                        val securityRest = injector.getInstance(SecurityRest::class.java)
+                        solution = securityRest.applySecurityPhase()
                     }
+                    else ->{
+                        LoggingUtil.getInfoLogger().warn("Security phase currently not handled for problem type: ${config.problemType}")
+                    }
+                }
+            }
+
+            writeCoveredTargets(injector, solution)
+            writeTests(injector, solution, controllerInfo)
+            writeStatistics(injector, solution) //FIXME if other phases after search, might get skewed data on 100% snapshots...
+
+            val statistics = injector.getInstance(Statistics::class.java)
+            val data = statistics.getData(solution)
+            val faults = solution.overall.potentialFoundFaults(idMapper)
+            val sampler : Sampler<*> = injector.getInstance(Key.get(object : TypeLiteral<Sampler<*>>(){}))
+
+            LoggingUtil.getInfoLogger().apply {
+
+                val timeouts = data.find { p -> p.header == Statistics.TEST_TIMEOUTS }!!.element.toInt()
+                if (timeouts > 0) {
+                    info("TCP timeouts: $timeouts")
                 }
 
                 if (!config.blackBox || config.bbExperiments) {
@@ -290,6 +306,9 @@ class Main {
                             " to run the search for longer"))
                 }
             }
+
+            resetExternalServiceHandler(injector)
+
             solution.statistics = data.toMutableList()
             return solution
         }
