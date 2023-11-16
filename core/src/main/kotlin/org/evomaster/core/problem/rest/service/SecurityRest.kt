@@ -13,6 +13,6 @@ class SecurityRest {
     fun applySecurityPhase() : Solution<RestIndividual>{
 
         //TODO
-        return Solution(mutableListOf(),"","",Termination.NONE, listOf())
+        return Solution(mutableListOf(),"","",Termination.NONE, listOf(), listOf())
     }
 }
