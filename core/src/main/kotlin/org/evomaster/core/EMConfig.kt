@@ -1682,6 +1682,10 @@ class EMConfig {
     }
 
     @Experimental
+    @Cfg("Whether to export test cases during seeding as a separate file")
+    var exportTestCasesDuringSeeding = false
+
+    @Experimental
     @Cfg("Format of the test cases seeded to EvoMaster")
     var seedTestCasesFormat = SeedTestCasesFormat.POSTMAN
 
@@ -1968,6 +1972,10 @@ class EMConfig {
     //TODO mark as deprecated once we support proper Robustness Testing
     @Cfg("When generating data, allow in some cases to use invalid values on purpose")
     var allowInvalidData: Boolean = true
+
+    @Experimental
+    @Cfg("Apply a security testing phase after functional test cases have been generated.")
+    var security = false
 
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
