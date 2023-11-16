@@ -195,8 +195,8 @@ public class UnitsInfoRecorder implements Serializable {
 
         /*
             Tricky, could not find a good way to intercept where classes are loaded...
-            when using transformation in Agent , we can intercept _before_ loading, but not _after_.
-            so, here we do it lazily, by forcing loading on get()
+            when using transformation in Agent, we can intercept _before_ loading, but not _after_.
+            So, here we do it lazily, by forcing loading on get()
          */
         if(!analyzedClasses){
             ClassAnalyzer.doAnalyze(unitNames);
