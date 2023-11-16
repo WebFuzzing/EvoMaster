@@ -416,8 +416,6 @@ object RestActionBuilderV3 {
             gene = OptionalGene(name, gene)
         }
 
-        //TODO could exploit "x-example" if available in OpenApi
-
         when (p.`in`) {
 
             "query" -> {
@@ -1102,14 +1100,33 @@ object RestActionBuilderV3 {
             else -> throw IllegalStateException("cannot create gene with constraints for gene:${geneClass.name}")
         }
 
-        //https://swagger.io/docs/specification/adding-examples/
+        /*
+            See:
+            https://swagger.io/docs/specification/adding-examples/
+            https://swagger.io/specification/
+
+            TODO This is not a full handling:
+            - example/examples can be defined at same level of "schema" object.
+              "example" behave the same, whereas "examples" is different (here inside "schema" as an array of values,
+              whereas there as an array of object definitions)
+            - technically there can be "x-example" as well (but that is mainly for older versions of the OpenAPI that
+                did not support example/examples keywords as widely as now?)
+         */
         val defaultValue = if(options.probUseDefault > 0) schema.default else null
         val exampleValue = if(options.probUseExamples > 0) schema.example else null
         val multiExampleValues = if(options.probUseExamples > 0) schema.examples else null
 
-        if(defaultValue != null){
+        val examples = mutableListOf<String>()
+        if(exampleValue != null) {
+            examples.add(exampleValue.toString())
+        }
+        if(multiExampleValues != null && multiExampleValues.isNotEmpty()){
+            examples.addAll(multiExampleValues.map { it.toString() })
+        }
 
-            val defaultGene = when{
+
+        val defaultGene = if(defaultValue != null){
+            when{
                 NumberGene::class.java.isAssignableFrom(geneClass)
                 -> EnumGene("default", listOf(defaultValue.toString()),0,true)
 
@@ -1121,14 +1138,48 @@ object RestActionBuilderV3 {
                 //TODO Arrays
                 else -> throw IllegalStateException("Not handling 'default' for gene: ${geneClass.name}")
             }
+        } else null
 
-            val pd = options.probUseDefault
-            val pm = 1 - pd
+        val exampleGene = if(examples.isNotEmpty()){
+            when{
+                NumberGene::class.java.isAssignableFrom(geneClass)
+                -> EnumGene("examples", examples,0,true)
 
-            return ChoiceGene(name, listOf(defaultGene,mainGene),0, listOf(pd,pm))
+                geneClass == StringGene::class.java
+                        || geneClass == Base64StringGene::class.java
+                        || geneClass == RegexGene::class.java
+                -> EnumGene<String>("examples", examples,0,false)
+
+                //TODO Arrays
+                else -> throw IllegalStateException("Not handling 'default' for gene: ${geneClass.name}")
+            }
+        } else null
+
+        if(exampleGene==null && defaultGene==null){
+            //no special handling
+            return mainGene
         }
 
-        return mainGene
+        if(exampleGene!=null && defaultGene!=null){
+            val pd = options.probUseDefault
+            val pe = options.probUseExamples
+            val pm = 1 - pd - pe
+            return ChoiceGene(name, listOf(defaultGene, exampleGene, mainGene),0, listOf(pd, pe, pm))
+        }
+
+        if(exampleGene!=null){
+            val pe = options.probUseExamples
+            val pm = 1 - pe
+            return ChoiceGene(name, listOf(exampleGene, mainGene),0, listOf(pe, pm))
+        }
+
+        if(defaultGene!=null){
+            val pd = options.probUseDefault
+            val pm = 1 - pd
+            return ChoiceGene(name, listOf(defaultGene, mainGene),0, listOf(pd, pm))
+        }
+
+        throw IllegalStateException("BUG: logic error, this code should never be reached")
     }
 
     private fun buildStringGene(
