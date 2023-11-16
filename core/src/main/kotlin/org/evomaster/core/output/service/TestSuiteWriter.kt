@@ -81,6 +81,21 @@ class TestSuiteWriter {
         saveToDisk(content, config, name)
     }
 
+    /**
+     * write tests during seeding
+     */
+    fun writeTestsDuringSeeding(solution: Solution<*>,
+                                controllerName: String?,
+                                controllerInput: String?,
+                                snapshotTimestamp: String = ""){
+
+        if (!config.exportTestCasesDuringSeeding || solution.individualsDuringSeeding.isEmpty()) return
+
+        val solutionDuringSeeding = solution.extractSolutionDuringSeeding()
+        writeTests(solutionDuringSeeding, controllerName, controllerInput, snapshotTimestamp)
+
+    }
+
 
     fun convertToCompilableTestCode(
         solution: Solution<*>,

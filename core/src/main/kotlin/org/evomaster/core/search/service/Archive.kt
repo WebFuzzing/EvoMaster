@@ -82,9 +82,10 @@ class Archive<T> where T : Individual {
      */
     private var lastChosen: Int? = null
 
-    data class CoveredStatisticsBySeededTests(val coveredTargets: List<Int>)
+    data class CoveredStatisticsBySeededTests<G> (val coveredTargets: List<Int>, val uniquePopulationsDuringSeeding : List<EvaluatedIndividual<G>>) where G: Individual
 
-    private var coveredStatisticsBySeededTests : CoveredStatisticsBySeededTests? = null
+    private var coveredStatisticsBySeededTests : CoveredStatisticsBySeededTests<T>? = null
+
 
     /**
      * Kill all populations.
@@ -99,9 +100,15 @@ class Archive<T> where T : Individual {
     fun extractSolution(): Solution<T> {
         val uniques = getUniquePopulation()
 
-        return Solution(uniques.toMutableList(), config.outputFilePrefix, config.outputFileSuffix, Termination.NONE, coveredStatisticsBySeededTests?.coveredTargets?: listOf())
+        return Solution(
+            uniques.toMutableList(),
+            config.outputFilePrefix,
+            config.outputFileSuffix,
+            Termination.NONE,
+            coveredStatisticsBySeededTests?.uniquePopulationsDuringSeeding?: listOf<EvaluatedIndividual<T>>(),
+            coveredStatisticsBySeededTests?.coveredTargets?: listOf()
+        )
     }
-
 
 
     fun archiveCoveredStatisticsBySeededTests(){
@@ -111,8 +118,10 @@ class Archive<T> where T : Individual {
 
         val current = extractSolution()
         coveredStatisticsBySeededTests = CoveredStatisticsBySeededTests(
-            coveredTargets = current.overall.getViewOfData().filter { it.value.distance == FitnessValue.MAX_VALUE }.keys.toList()
+            coveredTargets = current.overall.getViewOfData().filter { it.value.distance == FitnessValue.MAX_VALUE }.keys.toList(),
+            if (config.exportTestCasesDuringSeeding) current.individuals.map { it.copy() } else emptyList()
         )
+
     }
 
     fun anyTargetsCoveredSeededTests () = coveredStatisticsBySeededTests != null && coveredStatisticsBySeededTests!!.coveredTargets.isNotEmpty()

@@ -50,6 +50,8 @@ public class NumericStringWithSeedEMTest extends SpringRPCTestBase {
                     args.add("true");
                     args.add("--enableRPCCustomizedTestOutput");
                     args.add("true");
+                    args.add("--exportTestCasesDuringSeeding");
+                    args.add("true");
 
 
                     Solution<RPCIndividual> solution = initAndRun(args);
