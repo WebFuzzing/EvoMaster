@@ -1314,6 +1314,7 @@ class RestActionBuilderV3Test{
     }
 
 
+
     @Test
     fun testDefaultStringQuery(){
         val path = "/swagger/artificial/defaultandexamples/default_string_query.yml"
@@ -1374,4 +1375,66 @@ class RestActionBuilderV3Test{
         assertFalse(isInvalid)
     }
 
+
+    @Test
+    fun testExampleInt(){
+        val path = "/swagger/artificial/defaultandexamples/example_int.yml"
+
+        val without = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseExamples = 0.0))
+            .values.first()
+        assertEquals(1, without.seeTopGenes().size)
+        val x = without.seeTopGenes().first().flatView()
+        assertTrue(x.any { it is IntegerGene })
+        assertTrue(x.none { it is ChoiceGene<*> })
+        assertTrue(x.none {it is EnumGene<*>})
+
+        val with = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseExamples = 0.5))
+            .values.first()
+        assertEquals(1, with.seeTopGenes().size)
+        val y = with.seeTopGenes().first().flatView()
+        assertTrue(y.any { it is IntegerGene })
+        assertTrue(y.any { it is ChoiceGene<*> })
+        assertTrue(y.any {it is EnumGene<*>})
+
+        val certain = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseExamples = 1.0))
+            .values.first()
+            .seeTopGenes().first()
+        val output = certain.getValueAsRawString()
+        assertEquals("42", output)
+    }
+
+    @Disabled("weird parser behavior")
+    @Test
+    fun testExamplesString(){
+        val path = "/swagger/artificial/defaultandexamples/examples_string.yml"
+
+        val a = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseExamples = 0.5))
+            .values.first()
+
+        val rand = Randomness()
+        a.doInitialize(rand)
+
+        var isFoo = false
+        var isBar = false
+        var isHello = false
+
+        for(i in 0..1000){
+            a.randomize(rand,false)
+            val s = a.seeTopGenes().first().getValueAsRawString()
+            if(s == "Foo"){
+                isFoo = true
+            } else if(s == "Bar") {
+                isBar = true
+            } else if(s == "Hello"){
+                isHello = true
+            }
+            if(isFoo && isBar && isHello){
+                break
+            }
+        }
+
+        assertTrue(isFoo)
+        assertTrue(isBar)
+        assertTrue(isHello)
+    }
 }
