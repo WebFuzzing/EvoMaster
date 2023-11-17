@@ -1834,7 +1834,7 @@ class EMConfig {
          */
         NONE,
         /**
-         * Default will assign 127.0.0.2
+         * Default will assign 127.0.0.3
          */
         DEFAULT,
 
@@ -1856,7 +1856,9 @@ class EMConfig {
     @Cfg("User provided external service IP.")
     @Experimental
     @Regex("^127\\.((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){2}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\$")
-    var externalServiceIP : String = "127.0.0.2"
+    var externalServiceIP : String = "127.0.0.3"
+
+    TODO update regex, with default being min
 
     @Experimental
     @Cfg("Whether to apply customized method (i.e., implement 'customizeMockingRPCExternalService' for external services or 'customizeMockingDatabase' for database) to handle mock object.")

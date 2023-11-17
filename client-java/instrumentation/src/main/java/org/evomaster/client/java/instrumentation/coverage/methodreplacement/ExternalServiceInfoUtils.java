@@ -2,6 +2,7 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 
 import org.evomaster.client.java.instrumentation.ExternalServiceInfo;
 import org.evomaster.client.java.instrumentation.HostnameResolutionInfo;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes.InetAddressClassReplacement;
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
@@ -9,6 +10,27 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 public class ExternalServiceInfoUtils {
+
+
+    /**
+     * Check if string literal is a valid v4 or v6 IP address
+     */
+    public static boolean isIP(String s){
+
+        //return false; //TODO
+    }
+
+    /**
+     * Force collecting DNS info, without failing if errors
+     */
+    public static void analyzeDnsResolution(String host){
+        try{
+            InetAddressClassReplacement.getAllByName(host);
+        } catch (Exception e){
+            //do nothing
+        }
+    }
+
 
     /**
      * If there is a mock server assigned for the given hostname,
@@ -26,13 +48,6 @@ public class ExternalServiceInfoUtils {
         // data structure of the external service mapping inside ExecutionTracer
 
         // TODO: Experiment
-
-        try {
-            InetAddress address = InetAddress.getByName(remoteHostInfo.getHostname());
-            ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(remoteHostInfo.getHostname(), address.getHostAddress()));
-        } catch (UnknownHostException e) {
-            ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(remoteHostInfo.getHostname(), ""));
-        }
 
         ExecutionTracer.addExternalServiceHost(remoteHostInfo);
         String signature = remoteHostInfo.signature();
@@ -53,7 +68,11 @@ public class ExternalServiceInfoUtils {
     }
 
     /**
-     * skip method replacement for some hostname, eg,
+     * skip method replacement for some hostname.
+     * For example, we want to avoid skipping local addresses, because things like Databases and other
+     * services like Kafka could be running there.
+     * Further, those things could be running in Docker, so should skip Docker as well
+     *
      */
     public static boolean skipHostnameOrIp(String hostname) {
         // https://en.wikipedia.org/wiki/Reserved_IP_addresses
@@ -61,9 +80,11 @@ public class ExternalServiceInfoUtils {
         // necessary for the moment, following IP address ranges are skipped
         if (hostname.isEmpty()
                 || hostname.startsWith("localhost")
-                || hostname.startsWith("0.0.0")
+                || hostname.startsWith("0.")
                 || hostname.startsWith("10.")
+                || hostname.startsWith("192.168.")
                 || hostname.startsWith("docker.socket")
+                // in some cases, we do not skip this, because
                 || (hostname.startsWith("127.") && !ExecutionTracer.hasMappingForLocalAddress(hostname))) {
             return true;
         }

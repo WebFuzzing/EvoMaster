@@ -216,7 +216,7 @@ class HttpWsExternalServiceHandler {
     fun getHostnameResolutionActions(): List<HostnameResolutionAction> {
         val output: MutableList<HostnameResolutionAction> = mutableListOf()
         hostnameResolutionInfos.forEach {
-            val action = HostnameResolutionAction(it.remoteHostName, it.resolvedAddress, it.resolved)
+            val action = HostnameResolutionAction(it.remoteHostName, it.resolvedAddress)
             output.add(action)
         }
         return output

@@ -1,8 +1,13 @@
 package org.evomaster.client.java.instrumentation;
 
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ExternalServiceInfoUtils;
+
 import java.io.Serializable;
 import java.util.Objects;
 
+/**
+    Information about whether a hostname does resolve or not to an IP address.
+ */
 public class HostnameResolutionInfo implements Serializable {
     private final String remoteHostname;
 
@@ -10,6 +15,16 @@ public class HostnameResolutionInfo implements Serializable {
 
 
     public HostnameResolutionInfo(String remoteHostname, String resolvedAddress) {
+
+        if(remoteHostname == null || remoteHostname.isEmpty()){
+            throw new IllegalArgumentException("Empty remoteHostName");
+        }
+
+        if(resolvedAddress != null && !ExternalServiceInfoUtils.isIP(resolvedAddress)){
+            // IP address could null (ie not resolved). however, if specified, must be valid
+            throw new IllegalArgumentException("Invalid resolved IP address: " + resolvedAddress);
+        }
+
         this.remoteHostname = remoteHostname;
         this.resolvedAddress = resolvedAddress;
     }

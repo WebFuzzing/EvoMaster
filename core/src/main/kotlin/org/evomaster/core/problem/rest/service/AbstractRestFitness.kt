@@ -5,9 +5,11 @@ import org.evomaster.client.java.controller.api.EMTestUtils
 import org.evomaster.client.java.controller.api.dto.ActionDto
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
+import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils.getWMDefaultSignature
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.externalservice.HostnameResolutionInfo
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
@@ -26,6 +28,7 @@ import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.optional.OptionalGene
@@ -767,7 +770,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
             dto.additionalInfoList
         )
 
-        handleExternalServiceInfo(fv, dto.additionalInfoList)
+        handleExternalServiceInfo(individual, fv, dto.additionalInfoList)
 
         if(! allCovered) {
             if (config.expandRestIndividuals) {
@@ -791,8 +794,10 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
 
     /**
      * Based on info coming from SUT execution, register and start new WireMock instances.
+     *
+     * TODO push this thing up to hierarchy to EntepriseFitness
      */
-    private fun handleExternalServiceInfo(fv: FitnessValue, infoDto: List<AdditionalInfoDto>) {
+    private fun handleExternalServiceInfo(individual: RestIndividual, fv: FitnessValue, infoDto: List<AdditionalInfoDto>) {
 
         /*
             Note: this info here is based from what connections / hostname resolving done in the SUT,
@@ -804,11 +809,30 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
 
         infoDto.forEachIndexed { index, info ->
             info.hostnameResolutionInfoDtos.forEach { hn ->
-                externalServiceHandler.addHostname(HostnameResolutionInfo(
+
+                val dns = HostnameResolutionInfo(
                     hn.remoteHostname,
-                    hn.resolvedAddress,
-                    hn.resolved
-                ))
+                    hn.resolvedAddress
+                )
+                externalServiceHandler.addHostname(dns)
+
+                if(dns.isResolved()){
+                    /*
+                        We need to ask, are we in that special case in which a hostname was resolved but there is
+                        no action for it?
+                        that would represent a real website resolution, which we cannot allow in the generated tests.
+                        for this reason, in instrumentation, we redirect toward a RESERVED IP address.
+                        to guarantee such behavior in generated tests, where there is instrumentation, we need to modify
+                        the genotype of this evaluated individual (without modifying its phenotype)
+                     */
+                    val actions = individual.seeActions(ActionFilter.ONLY_DNS) as List<HostnameResolutionAction>
+                    if(actions.isEmpty() || actions.none{ it.hostname == hn.remoteHostname}){
+                        //ok, we are in that special case
+                        val hra = HostnameResolutionAction(hn.remoteHostname, ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP)
+
+                        add to current individual
+                    }
+                }
             }
 
             info.externalServices.forEach { es ->
