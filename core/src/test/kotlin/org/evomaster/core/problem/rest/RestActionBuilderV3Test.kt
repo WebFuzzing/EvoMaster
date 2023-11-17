@@ -1437,4 +1437,38 @@ class RestActionBuilderV3Test{
         assertTrue(isBar)
         assertTrue(isHello)
     }
+
+    @Test
+    fun testExampleDefault(){
+        val path = "/swagger/artificial/defaultandexamples/example_default.yml"
+
+        val without = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseExamples = 0.0, probUseDefault = 0.0))
+            .values.first()
+        assertEquals(1, without.seeTopGenes().size)
+        val x = without.seeTopGenes().first().flatView()
+        assertTrue(x.any { it is IntegerGene })
+        assertTrue(x.none { it is ChoiceGene<*> })
+        assertTrue(x.none {it is EnumGene<*>})
+
+        val with = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseExamples = 0.5, probUseDefault = 0.5))
+            .values.first()
+        assertEquals(1, with.seeTopGenes().size)
+        val y = with.seeTopGenes().first().flatView()
+        assertTrue(y.any { it is IntegerGene })
+        assertTrue(y.any { it is ChoiceGene<*> })
+        assertTrue(y.any {it is EnumGene<*>})
+
+        val certainExample = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseExamples = 1.0))
+            .values.first()
+            .seeTopGenes().first()
+            .getValueAsRawString()
+        assertEquals("42", certainExample)
+
+        val certainDefault = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseDefault = 1.0))
+            .values.first()
+            .seeTopGenes().first()
+            .getValueAsRawString()
+        assertEquals("13", certainDefault)
+    }
+
 }
