@@ -1403,7 +1403,7 @@ class RestActionBuilderV3Test{
         assertEquals("42", output)
     }
 
-    @Disabled("weird parser behavior")
+
     @Test
     fun testExamplesString(){
         val path = "/swagger/artificial/defaultandexamples/examples_string.yml"

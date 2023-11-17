@@ -1118,10 +1118,11 @@ object RestActionBuilderV3 {
 
         val examples = mutableListOf<String>()
         if(exampleValue != null) {
-            examples.add(exampleValue.toString())
+            examples.add(asRawString(exampleValue))
         }
         if(multiExampleValues != null && multiExampleValues.isNotEmpty()){
-            examples.addAll(multiExampleValues.map { it.toString() })
+            //possibly bug in parser, but it was reading strings values double-quoted in this case
+            examples.addAll(multiExampleValues.map { asRawString(it)})
         }
 
 
@@ -1133,7 +1134,7 @@ object RestActionBuilderV3 {
                 geneClass == StringGene::class.java
                         || geneClass == Base64StringGene::class.java
                         || geneClass == RegexGene::class.java
-                -> EnumGene<String>("default", listOf(defaultValue.toString()),0,false)
+                -> EnumGene<String>("default", listOf(asRawString(defaultValue)),0,false)
 
                 //TODO Arrays
                 else -> throw IllegalStateException("Not handling 'default' for gene: ${geneClass.name}")
@@ -1180,6 +1181,13 @@ object RestActionBuilderV3 {
         }
 
         throw IllegalStateException("BUG: logic error, this code should never be reached")
+    }
+
+    private fun asRawString(x : Any) : String {
+        val s = x.toString()
+        if(s.startsWith("\"") && s.endsWith("\""))
+            return s.substring(1, s.length - 1)
+        return s
     }
 
     private fun buildStringGene(
