@@ -13,37 +13,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static org.evomaster.client.java.instrumentation.JpaAnnotationName.MAX_ANNOTATION_NAME;
-import static org.evomaster.client.java.instrumentation.JpaAnnotationName.MIN_ANNOTATION_NAME;
-import static org.evomaster.client.java.instrumentation.JpaAnnotationName.DECIMAL_MIN_ANNOTATION_NAME;
-import static org.evomaster.client.java.instrumentation.JpaAnnotationName.DECIMAL_MAX_ANNOTATION_NAME;
-import static org.evomaster.client.java.instrumentation.JpaAnnotationName.PATTERN_ANNOTATION_NAME;
-import static org.evomaster.client.java.instrumentation.JpaAnnotationName.NOT_BLANK_ANNOTATION_NAME;
-import static org.evomaster.client.java.instrumentation.JpaAnnotationName.EMAIL_ANNOTATION_NAME;
-import static org.evomaster.client.java.instrumentation.JpaAnnotationName.NEGATIVE_ANNOTATION_NAME;
-import static org.evomaster.client.java.instrumentation.JpaAnnotationName.NEGATIVE_OR_ZERO_ANNOTATION_NAME;
-import static org.evomaster.client.java.instrumentation.JpaAnnotationName.POSITIVE_ANNOTATION_NAME;
-import static org.evomaster.client.java.instrumentation.JpaAnnotationName.POSITIVE_OR_ZERO_ANNOTATION_NAME;
-import static org.evomaster.client.java.instrumentation.JpaAnnotationName.PAST_ANNOTATION_NAME;
-import static org.evomaster.client.java.instrumentation.JpaAnnotationName.PAST_OR_PRESENT_ANNOTATION_NAME;
-import static org.evomaster.client.java.instrumentation.JpaAnnotationName.FUTURE_ANNOTATION_NAME;
-import static org.evomaster.client.java.instrumentation.JpaAnnotationName.FUTURE_OR_PRESENT_ANNOTATION_NAME;
-import static org.evomaster.client.java.instrumentation.JpaAnnotationName.NULL_ANNOTATION_NAME;
-import static org.evomaster.client.java.instrumentation.JpaAnnotationName.SIZE_ANNOTATION_NAME;
-import static org.evomaster.client.java.instrumentation.JpaAnnotationName.DIGITS_ANNOTATION_NAME;
-import static org.evomaster.client.java.instrumentation.JpaAnnotationName.ENTITY_ANNOTATION_NAME;
-import static org.evomaster.client.java.instrumentation.JpaAnnotationName.TABLE_ANNOTATION_NAME;
-import static org.evomaster.client.java.instrumentation.JpaAnnotationName.NOT_NULL_ANNOTATION_NAME;
-import static org.evomaster.client.java.instrumentation.JpaAnnotationName.COLUMN_ANNOTATION_NAME;
-import static org.evomaster.client.java.instrumentation.JpaAnnotationName.TRANSIENT_ANNOTATION_NAME;
-import static org.evomaster.client.java.instrumentation.JpaAnnotationName.ENUMERATED_ANNOTATION_NAME;
-import static org.evomaster.client.java.instrumentation.JpaAnnotationName.JAVAX_PREFIX;
-import static org.evomaster.client.java.instrumentation.JpaAnnotationName.JAKARTA_PREFIX;
+import static org.evomaster.client.java.instrumentation.JpaAnnotationName.*;
 
 public class ClassAnalyzer {
 
-    private static final List<String> JAKARTA_PERSISTENCE_LAYER_NAMES = Arrays.asList(JAKARTA_PREFIX + ENTITY_ANNOTATION_NAME, JAKARTA_PREFIX + NOT_NULL_ANNOTATION_NAME);
-    private static final List<String> JAVAX_NAMES = Arrays.asList(JAVAX_PREFIX + ENTITY_ANNOTATION_NAME, JAVAX_PREFIX + NOT_NULL_ANNOTATION_NAME);
+    private static final List<String> JAKARTA_PERSISTENCE_LAYER_NAMES = Arrays.asList(JAKARTA_ENTITY_ANNOTATION_NAME, JAKARTA_NOT_NULL_ANNOTATION_NAME);
+    private static final List<String> JAVAX_NAMES = Arrays.asList(JAVAX_ENTITY_ANNOTATION_NAME, JAVAX_NOT_NULL_ANNOTATION_NAME);
 
     /**
      * Try to load the given classes, and do different kind of analysis via reflection.
@@ -93,6 +68,7 @@ public class ClassAnalyzer {
                     } else {
                         namespace = NameSpace.JAKARTA;
                     }
+                    Objects.requireNonNull(namespace);
                     analyzeConstraints(klass, namespace);
                 }
             } catch (Exception e) {
@@ -271,22 +247,22 @@ public class ClassAnalyzer {
     }
 
     private static Annotation getColumnAnnotation(Field f, NameSpace namespace) {
-        final String columnAnnotationName = getAnnotationName(namespace, COLUMN_ANNOTATION_NAME);
+        final String columnAnnotationName = getAnnotationName(namespace, JAVAX_COLUMN_ANNOTATION_NAME, JAKARTA_COLUMN_ANNOTATION_NAME);
         return getAnnotationByName(f, columnAnnotationName);
     }
 
     private static Annotation getTransientAnnotation(Field f, NameSpace namespace) {
-        final String transientAnnotationName = getAnnotationName(namespace, TRANSIENT_ANNOTATION_NAME);
+        final String transientAnnotationName = getAnnotationName(namespace, JAVAX_TRANSIENT_ANNOTATION_NAME, JAKARTA_TRANSIENT_ANNOTATION_NAME);
         return getAnnotationByName(f, transientAnnotationName);
     }
 
     private static Annotation getTableAnnotation(Class<?> klass, NameSpace namespace) {
-        final String tableAnnotationName = getAnnotationName(namespace, TABLE_ANNOTATION_NAME);
+        final String tableAnnotationName = getAnnotationName(namespace, JAVAX_TABLE_ANNOTATION_NAME, JAKARTA_TABLE_ANNOTATION_NAME);
         return getAnnotationByName(klass, tableAnnotationName);
     }
 
     private static Annotation getEntityAnnotation(Class<?> klass, NameSpace namespace) {
-        final String entityAnnotationName = getAnnotationName(namespace, ENTITY_ANNOTATION_NAME);
+        final String entityAnnotationName = getAnnotationName(namespace, JAVAX_ENTITY_ANNOTATION_NAME, JAKARTA_ENTITY_ANNOTATION_NAME);
         return getAnnotationByName(klass, entityAnnotationName);
     }
 
@@ -297,7 +273,7 @@ public class ClassAnalyzer {
      * @return the Long with the specific maximum value (as a literal) if the annotation is present, otherwise returns null.
      */
     private static Long getMaxValue(Field f, NameSpace namespace) throws Exception {
-        final String maxAnnotationName = getAnnotationName(namespace, MAX_ANNOTATION_NAME);
+        final String maxAnnotationName = getAnnotationName(namespace, JAVAX_MAX_ANNOTATION_NAME, JAKARTA_MAX_ANNOTATION_NAME);
         return getLongElement(f, maxAnnotationName);
     }
 
@@ -308,38 +284,38 @@ public class ClassAnalyzer {
      * @return the Long with the specific minimum value (as a literal) if the annotation is present, otherwise returns null.
      */
     private static Long getMinValue(Field f, NameSpace namespace) throws Exception {
-        final String minAnnotationName = getAnnotationName(namespace, MIN_ANNOTATION_NAME);
+        final String minAnnotationName = getAnnotationName(namespace, JAVAX_MIN_ANNOTATION_NAME, JAKARTA_MIN_ANNOTATION_NAME);
         return getLongElement(f, minAnnotationName);
     }
 
     private static String getDecimalMinValue(Field f, NameSpace namespace) throws Exception {
-        final String decimalMinAnnotationName = getAnnotationName(namespace, DECIMAL_MIN_ANNOTATION_NAME);
+        final String decimalMinAnnotationName = getAnnotationName(namespace, JAVAX_DECIMAL_MIN_ANNOTATION_NAME, JAKARTA_DECIMAL_MIN_ANNOTATION_NAME);
         return getStringElement(f, decimalMinAnnotationName, "value");
     }
 
     private static String getDecimalMaxValue(Field f, NameSpace namespace) throws Exception {
-        final String decimalMaxAnnotationName = getAnnotationName(namespace, DECIMAL_MAX_ANNOTATION_NAME);
+        final String decimalMaxAnnotationName = getAnnotationName(namespace, JAVAX_DECIMAL_MAX_ANNOTATION_NAME, JAKARTA_DECIMAL_MAX_ANNOTATION_NAME);
         return getStringElement(f, decimalMaxAnnotationName, "value");
     }
 
     private static String getPatterRegExp(Field f, NameSpace namespace) throws Exception {
-        final String patternAnnotationName = getAnnotationName(namespace, PATTERN_ANNOTATION_NAME);
+        final String patternAnnotationName = getAnnotationName(namespace, JAVAX_PATTERN_ANNOTATION_NAME, JAKARTA_PATTERN_ANNOTATION_NAME);
         return getStringElement(f, patternAnnotationName, "regexp");
     }
-
     /**
      * Gets the correct annotation name depending on using Javax or Jakarta
-     * @param namespace
-     * @param annotationName
-     * @return
      */
-    private static String getAnnotationName(NameSpace namespace, String annotationName) {
+    private static String getAnnotationName(NameSpace namespace, String javaxAnnotationName, String jakartaAnnotationName) {
         switch (namespace) {
             case JAVAX: {
-                return JAVAX_PREFIX + annotationName;
+                Objects.requireNonNull(javaxAnnotationName);
+                assert (javaxAnnotationName.startsWith(JAVAX_PREFIX));
+                return javaxAnnotationName;
             }
             case JAKARTA: {
-                return JAKARTA_PREFIX + annotationName;
+                Objects.requireNonNull(jakartaAnnotationName);
+                assert (jakartaAnnotationName.startsWith(JAKARTA_PREFIX));
+                return jakartaAnnotationName;
             }
             default:
                 throw new IllegalArgumentException("Unsupported namespace " + namespace);
@@ -362,22 +338,22 @@ public class ClassAnalyzer {
     }
 
     private static Integer getSizeMin(Field f, NameSpace namespace) throws Exception {
-        final String sizeAnnotationName = getAnnotationName(namespace, SIZE_ANNOTATION_NAME);
+        final String sizeAnnotationName = getAnnotationName(namespace, JAVAX_SIZE_ANNOTATION_NAME, JAKARTA_SIZE_ANNOTATION_NAME);
         return getIntegerElement(f, sizeAnnotationName, "min");
     }
 
     private static Integer getSizeMax(Field f, NameSpace namespace) throws Exception {
-        final String sizeAnnotationName = getAnnotationName(namespace, SIZE_ANNOTATION_NAME);
+        final String sizeAnnotationName = getAnnotationName(namespace, JAVAX_SIZE_ANNOTATION_NAME, JAKARTA_SIZE_ANNOTATION_NAME);
         return getIntegerElement(f, sizeAnnotationName, "max");
     }
 
     private static Integer getDigitsInteger(Field f, NameSpace namespace) throws Exception {
-        final String digitsAnnotationName = getAnnotationName(namespace, DIGITS_ANNOTATION_NAME);
+        final String digitsAnnotationName = getAnnotationName(namespace, JAVAX_DIGITS_ANNOTATION_NAME, JAKARTA_DIGITS_ANNOTATION_NAME);
         return getIntegerElement(f, digitsAnnotationName, "integer");
     }
 
     private static Integer getDigitsFraction(Field f, NameSpace namespace) throws Exception {
-        final String digitsAnnotationName = getAnnotationName(namespace, DIGITS_ANNOTATION_NAME);
+        final String digitsAnnotationName = getAnnotationName(namespace, JAVAX_DIGITS_ANNOTATION_NAME, JAKARTA_DIGITS_ANNOTATION_NAME);
         return getIntegerElement(f, digitsAnnotationName, "fraction");
     }
 
@@ -398,7 +374,7 @@ public class ClassAnalyzer {
             //TODO probably for enum of ints could just use a min-max range
 
             //Enumerated enumerated = f.getAnnotation(Enumerated.class);
-            final String enumeratedAnnotationName = getAnnotationName(namespace, ENUMERATED_ANNOTATION_NAME);
+            final String enumeratedAnnotationName = getAnnotationName(namespace, JAVAX_ENUMERATED_ANNOTATION_NAME, JAKARTA_ENUMERATED_ANNOTATION_NAME);
             Object enumerated = getAnnotationByName(f, enumeratedAnnotationName);
             if (enumerated != null) {
                 Object enumeratedValue = enumerated.getClass().getMethod("value").invoke(enumerated);
@@ -421,7 +397,7 @@ public class ClassAnalyzer {
      * @return false if the field is annotated as NotNull, otherwise it returns null
      */
     private static Boolean isNullableAnnotation(Field f, NameSpace namespace) {
-        final String notNullAnnotationName = getAnnotationName(namespace, NOT_NULL_ANNOTATION_NAME);
+        final String notNullAnnotationName = getAnnotationName(namespace, JAVAX_NOT_NULL_ANNOTATION_NAME, JAKARTA_NOT_NULL_ANNOTATION_NAME);
         if (f.getType().isPrimitive()
                 || getAnnotationByName(f, notNullAnnotationName) != null) {
             return false;
@@ -431,57 +407,57 @@ public class ClassAnalyzer {
     }
 
     private static Boolean isNotBlank(Field f, NameSpace namespace) {
-        final String notBlankAnnotationName = getAnnotationName(namespace, NOT_BLANK_ANNOTATION_NAME);
+        final String notBlankAnnotationName = getAnnotationName(namespace, JAVAX_NOT_BLANK_ANNOTATION_NAME, JAKARTA_NOT_BLANK_ANNOTATION_NAME);
         return getIsAnnotationWith(f, notBlankAnnotationName);
     }
 
     private static Boolean isEmail(Field f, NameSpace namespace) {
-        final String emailAnnotationName = getAnnotationName(namespace, EMAIL_ANNOTATION_NAME);
+        final String emailAnnotationName = getAnnotationName(namespace, JAVAX_EMAIL_ANNOTATION_NAME, JAKARTA_EMAIL_ANNOTATION_NAME);
         return getIsAnnotationWith(f, emailAnnotationName);
     }
 
     private static Boolean isPositive(Field f, NameSpace namespace) {
-        final String positiveAnnotationName = getAnnotationName(namespace, POSITIVE_ANNOTATION_NAME);
+        final String positiveAnnotationName = getAnnotationName(namespace, JAVAX_POSITIVE_ANNOTATION_NAME, JAKARTA_POSITIVE_ANNOTATION_NAME);
         return getIsAnnotationWith(f, positiveAnnotationName);
     }
 
     private static Boolean isPositiveOrZero(Field f, NameSpace namespace) {
-        final String positiveOrZeroAnnotationName = getAnnotationName(namespace, POSITIVE_OR_ZERO_ANNOTATION_NAME);
+        final String positiveOrZeroAnnotationName = getAnnotationName(namespace, JAVAX_POSITIVE_OR_ZERO_ANNOTATION_NAME, JAKARTA_POSITIVE_OR_ZERO_ANNOTATION_NAME);
         return getIsAnnotationWith(f, positiveOrZeroAnnotationName);
     }
 
     private static Boolean isNegative(Field f, NameSpace namespace) {
-        final String negativeAnnotationName = getAnnotationName(namespace, NEGATIVE_ANNOTATION_NAME);
+        final String negativeAnnotationName = getAnnotationName(namespace, JAVAX_NEGATIVE_ANNOTATION_NAME, JAKARTA_NEGATIVE_ANNOTATION_NAME);
         return getIsAnnotationWith(f, negativeAnnotationName);
     }
 
     private static Boolean isNegativeOrZero(Field f, NameSpace namespace) {
-        final String negativeOrZeroAnnotationName = getAnnotationName(namespace, NEGATIVE_OR_ZERO_ANNOTATION_NAME);
+        final String negativeOrZeroAnnotationName = getAnnotationName(namespace, JAVAX_NEGATIVE_OR_ZERO_ANNOTATION_NAME, JAKARTA_NEGATIVE_OR_ZERO_ANNOTATION_NAME);
         return getIsAnnotationWith(f, negativeOrZeroAnnotationName);
     }
 
     private static Boolean isPast(Field f, NameSpace namespace) {
-        final String pastAnnotationName = getAnnotationName(namespace, PAST_ANNOTATION_NAME);
+        final String pastAnnotationName = getAnnotationName(namespace, JAVAX_PAST_ANNOTATION_NAME, JAKARTA_PAST_ANNOTATION_NAME);
         return getIsAnnotationWith(f, pastAnnotationName);
     }
 
     private static Boolean isPastOrPresent(Field f, NameSpace namespace) {
-        final String pastOrPresentAnnotationName = getAnnotationName(namespace, PAST_OR_PRESENT_ANNOTATION_NAME);
+        final String pastOrPresentAnnotationName = getAnnotationName(namespace, JAVAX_PAST_OR_PRESENT_ANNOTATION_NAME, JAKARTA_PAST_OR_PRESENT_ANNOTATION_NAME);
         return getIsAnnotationWith(f, pastOrPresentAnnotationName);
     }
 
     private static Boolean isFuture(Field f, NameSpace namespace) {
-        final String futureAnnotationName = getAnnotationName(namespace, FUTURE_ANNOTATION_NAME);
+        final String futureAnnotationName = getAnnotationName(namespace, JAVAX_FUTURE_ANNOTATION_NAME, JAKARTA_FUTURE_ANNOTATION_NAME);
         return getIsAnnotationWith(f, futureAnnotationName);
     }
 
     private static Boolean isFutureOrPresent(Field f, NameSpace namespace) {
-        final String futureOrPresentAnnotationName = getAnnotationName(namespace, FUTURE_OR_PRESENT_ANNOTATION_NAME);
+        final String futureOrPresentAnnotationName = getAnnotationName(namespace, JAVAX_FUTURE_OR_PRESENT_ANNOTATION_NAME, JAKARTA_FUTURE_OR_PRESENT_ANNOTATION_NAME);
         return getIsAnnotationWith(f, futureOrPresentAnnotationName);
     }
 
     private static Boolean isAlwaysNull(Field f, NameSpace namespace) {
-        final String nullAnnotationName = getAnnotationName(namespace, NULL_ANNOTATION_NAME);
+        final String nullAnnotationName = getAnnotationName(namespace, JAVAX_NULL_ANNOTATION_NAME, JAKARTA_NULL_ANNOTATION_NAME);
         return getIsAnnotationWith(f, nullAnnotationName);
     }
 
