@@ -7,11 +7,12 @@ import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceActi
 
 
 class Solution<T>(
-        val individuals: MutableList<EvaluatedIndividual<T>>,
-        val testSuiteNamePrefix: String,
-        val testSuiteNameSuffix: String,
-        val termination: Termination = Termination.NONE,
-        val targetsDuringSeeding : List<Int>
+    val individuals: MutableList<EvaluatedIndividual<T>>,
+    val testSuiteNamePrefix: String,
+    val testSuiteNameSuffix: String,
+    val termination: Termination = Termination.NONE,
+    val individualsDuringSeeding: List<EvaluatedIndividual<T>>,
+    val targetsDuringSeeding: List<Int>
 )
 where T : Individual {
 
@@ -57,5 +58,12 @@ where T : Individual {
 
     fun hasAnyMongoAction() : Boolean{
         return individuals.any { ind -> ind.individual.seeAllActions().any { a ->  a is MongoDbAction}}
+    }
+
+    /**
+     * extract individual generated during seeding as a solution
+     */
+    fun extractSolutionDuringSeeding() : Solution<T>{
+        return Solution(individualsDuringSeeding.toMutableList(), testSuiteNamePrefix, testSuiteNameSuffix, Termination.SEEDING, listOf(), listOf())
     }
 }

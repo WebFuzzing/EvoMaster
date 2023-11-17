@@ -105,5 +105,8 @@ class ResourceRestModule(private val bindRemote : Boolean = true) : AbstractModu
         bind(HarvestActualHttpWsResponseHandler::class.java)
             .asEagerSingleton()
 
+        bind(SecurityRest::class.java)
+            .asEagerSingleton()
+
     }
 }
