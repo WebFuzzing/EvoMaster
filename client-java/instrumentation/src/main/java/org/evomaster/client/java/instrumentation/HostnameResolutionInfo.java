@@ -8,15 +8,10 @@ public class HostnameResolutionInfo implements Serializable {
 
     private final String resolvedAddress;
 
-    /**
-     * Will be true if the hostname resolved, otherwise false;
-     */
-    private final Boolean resolved;
 
-    public HostnameResolutionInfo(String remoteHostname, String resolvedAddress, Boolean resolved) {
+    public HostnameResolutionInfo(String remoteHostname, String resolvedAddress) {
         this.remoteHostname = remoteHostname;
         this.resolvedAddress = resolvedAddress;
-        this.resolved = resolved;
     }
 
     public String getHostname() {
@@ -25,12 +20,15 @@ public class HostnameResolutionInfo implements Serializable {
 
     public String getResolvedAddress() { return resolvedAddress; }
 
+    /**
+     * Will be true if the hostname resolved, otherwise false;
+     */
     public Boolean getResolved() {
-        return resolved;
+        return !resolvedAddress.equals(null);
     }
 
     public HostnameResolutionInfo copy(){
-        return new HostnameResolutionInfo(remoteHostname, resolvedAddress, resolved);
+        return new HostnameResolutionInfo(remoteHostname, resolvedAddress);
     }
 
     @Override
@@ -38,12 +36,12 @@ public class HostnameResolutionInfo implements Serializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         HostnameResolutionInfo that = (HostnameResolutionInfo) o;
-        return Objects.equals(remoteHostname, that.remoteHostname) && Objects.equals(resolvedAddress, that.resolvedAddress) && Objects.equals(resolved, that.resolved);
+        return Objects.equals(remoteHostname, that.remoteHostname) && Objects.equals(resolvedAddress, that.resolvedAddress);
     }
 
     @Override
     public int hashCode() {
         // TODO: Excluded resolved from equals and hashCode, have to verify
-        return Objects.hash(remoteHostname, resolvedAddress, resolved);
+        return Objects.hash(remoteHostname, resolvedAddress);
     }
 }

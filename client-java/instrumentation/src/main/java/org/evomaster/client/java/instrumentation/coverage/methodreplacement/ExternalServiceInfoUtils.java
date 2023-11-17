@@ -29,9 +29,9 @@ public class ExternalServiceInfoUtils {
 
         try {
             InetAddress address = InetAddress.getByName(remoteHostInfo.getHostname());
-            ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(remoteHostInfo.getHostname(), address.getHostAddress(),true));
+            ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(remoteHostInfo.getHostname(), address.getHostAddress()));
         } catch (UnknownHostException e) {
-            ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(remoteHostInfo.getHostname(), "",false));
+            ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(remoteHostInfo.getHostname(), ""));
         }
 
         ExecutionTracer.addExternalServiceHost(remoteHostInfo);

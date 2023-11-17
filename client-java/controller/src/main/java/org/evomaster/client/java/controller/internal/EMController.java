@@ -530,8 +530,7 @@ public class EMController {
                         info.hostnameResolutionInfoDtos = a.getHostnameInfos().stream()
                                 .map(hn -> new HostnameResolutionInfoDto(
                                         hn.getHostname(),
-                                        hn.getResolvedAddress(),
-                                        hn.getResolved()
+                                        hn.getResolvedAddress()
                                 ))
                                 .collect(Collectors.toList());
                         info.externalServices = a.getExternalServices().stream()

@@ -42,10 +42,10 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
                 return InetAddress.getByName(ip);
             }
             InetAddress inetAddress = InetAddress.getByName(host);
-            ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(host, inetAddress.getHostAddress(), true));
+            ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(host, inetAddress.getHostAddress()));
             return inetAddress;
          } catch (UnknownHostException e) {
-            ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(host, "",false));
+            ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(host, null));
             throw e;
         }
     }
@@ -66,10 +66,10 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
                 return new InetAddress[]{InetAddress.getByName(ip)};
             }
             InetAddress[] inetAddresses = InetAddress.getAllByName(host);
-            ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(host, inetAddresses[0].getHostAddress(), true));
+            ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(host, inetAddresses[0].getHostAddress()));
             return inetAddresses;
         } catch (UnknownHostException e) {
-            ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(host, "", false));
+            ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(host, null));
             throw e;
         }
     }
