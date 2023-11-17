@@ -17,6 +17,7 @@ import org.evomaster.core.search.gene.optional.ChoiceGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
@@ -790,18 +791,22 @@ class RestActionBuilderV3Test{
 
     private fun loadAndAssertActions(resourcePath: String, expectedNumberOfActions: Int, enableConstraintHandling: Boolean)
             : MutableMap<String, Action> {
+        return loadAndAssertActions(resourcePath, expectedNumberOfActions, RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling))
+    }
 
+    private fun loadAndAssertActions(resourcePath: String, expectedNumberOfActions: Int, options: RestActionBuilderV3.Options)
+            : MutableMap<String, Action> {
 
         val schema = OpenAPIParser().readLocation(resourcePath, null, null).openAPI
 
         val actions: MutableMap<String, Action> = mutableMapOf()
 
-        RestActionBuilderV3.addActionsFromSwagger(schema, actions, enableConstraintHandling = enableConstraintHandling)
+        RestActionBuilderV3.addActionsFromSwagger(schema, actions, options=options)
 
         assertEquals(expectedNumberOfActions, actions.size)
 
         //should not crash
-        RestActionBuilderV3.getModelsFromSwagger(schema, mutableMapOf(), options = RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling))
+        RestActionBuilderV3.getModelsFromSwagger(schema, mutableMapOf(), options = options)
 
         return actions
     }
@@ -1279,4 +1284,94 @@ class RestActionBuilderV3Test{
 
         }
     }
+
+
+    @Test
+    fun testDefaultInt(){
+        val path = "/swagger/artificial/defaultandexamples/default_int.yml"
+
+        val without = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseDefault = 0.0))
+                        .values.first()
+        assertEquals(1, without.seeTopGenes().size)
+        val x = without.seeTopGenes().first().flatView()
+        assertTrue(x.any { it is IntegerGene })
+        assertTrue(x.none { it is ChoiceGene<*> })
+        assertTrue(x.none {it is EnumGene<*>})
+
+        val with = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseDefault = 0.5))
+                        .values.first()
+        assertEquals(1, with.seeTopGenes().size)
+        val y = with.seeTopGenes().first().flatView()
+        assertTrue(y.any { it is IntegerGene })
+        assertTrue(y.any { it is ChoiceGene<*> })
+        assertTrue(y.any {it is EnumGene<*>})
+
+        val certain = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseDefault = 1.0))
+            .values.first()
+            .seeTopGenes().first()
+        val output = certain.getValueAsRawString()
+        assertEquals("42", output)
+    }
+
+
+    @Test
+    fun testDefaultStringQuery(){
+        val path = "/swagger/artificial/defaultandexamples/default_string_query.yml"
+
+        val without = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseDefault = 0.0))
+            .values.first()
+        assertEquals(1, without.seeTopGenes().size)
+        val x = without.seeTopGenes().first().flatView()
+        assertTrue(x.any { it is StringGene })
+        assertTrue(x.none { it is ChoiceGene<*> })
+        assertTrue(x.none {it is EnumGene<*>})
+
+
+        val with = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseDefault = 0.5))
+            .values.first()
+        assertEquals(1, with.seeTopGenes().size)
+        val y = with.seeTopGenes().first().flatView()
+        assertTrue(y.any { it is StringGene })
+        assertTrue(y.any { it is ChoiceGene<*> })
+        assertTrue(y.any {it is EnumGene<*>})
+
+
+        val certain = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseDefault = 1.0))
+            .values.first()
+            .seeTopGenes().first()
+        val output = certain.getValueAsRawString()
+        assertEquals("Foo", output)
+    }
+
+    @Test
+    fun testDefaultStringPath(){
+        val path = "/swagger/artificial/defaultandexamples/default_string_path.yml"
+
+        val a = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseDefault = 0.1))
+            .values.first()
+
+        val rand = Randomness()
+        a.doInitialize(rand)
+
+        var isFoo = false
+        var isInvalid = false
+
+        for(i in 0..1000){
+            a.randomize(rand,false)
+            val s = a.seeTopGenes().first().getValueAsRawString()
+            if(s == "foo"){
+                isFoo = true
+            }
+            if(s.isEmpty() || s.contains("/")){
+                isInvalid = true
+            }
+            if(isFoo && isInvalid){
+                break
+            }
+        }
+
+        assertTrue(isFoo)
+        assertFalse(isInvalid)
+    }
+
 }
