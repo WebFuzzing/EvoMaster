@@ -304,7 +304,7 @@ public class ClassToSchema {
 
         if ((klass != null && (klass.isArray() || List.class.isAssignableFrom(klass) || Set.class.isAssignableFrom(klass)))
                 ||
-                (pType != null && (List.class.isAssignableFrom((Class) pType.getRawType()) || Set.class.isAssignableFrom((Class) pType.getRawType())))) {
+                (pType != null && (Collection.class.isAssignableFrom((Class) pType.getRawType()) ))) {
             return fieldArraySchema(klass, pType, nested, allNested, objectFieldsRequired, converters);
         }
 
