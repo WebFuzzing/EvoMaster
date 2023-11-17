@@ -8,8 +8,15 @@ public class ExternalServiceMappingDto {
 
     public String localIPAddress;
 
+    /**
+     * Signature of the local mock service replaced the external web
+     * service.
+     */
     public String signature;
 
+    /**
+     * Indicate the state of the mock server, whether it's active or not.
+     */
     public Boolean isActive;
 
     public ExternalServiceMappingDto(){};

@@ -2,13 +2,20 @@ package org.evomaster.client.java.instrumentation;
 
 public class ExternalServiceMapping {
 
-    private String remoteHostName;
+    private final String remoteHostName;
 
-    private String localIPAddress;
+    private final String localIPAddress;
 
-    private String signature;
+    /**
+     * Signature of the local mock service replaced the external web
+     * service.
+     */
+    private final String signature;
 
-    private Boolean isActive;
+    /**
+     * Indicate the state of the mock server, whether it's active or not.
+     */
+    private final Boolean isActive;
 
 
     public ExternalServiceMapping(String remoteHostName, String localIPAddress, String signature, Boolean isActive) {

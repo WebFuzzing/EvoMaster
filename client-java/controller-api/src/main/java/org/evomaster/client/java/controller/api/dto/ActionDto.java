@@ -38,8 +38,7 @@ public class ActionDto {
     public RPCActionDto rpcCall;
 
     /**
-     * Mapping of external service signature to internal WireMock
-     * instance addresses.
+     * This list of DTOs represents the external service mappings.
      */
     public List<ExternalServiceMappingDto> externalServiceMapping = new ArrayList<>();
 

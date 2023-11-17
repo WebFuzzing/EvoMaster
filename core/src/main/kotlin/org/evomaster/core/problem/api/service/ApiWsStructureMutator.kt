@@ -196,7 +196,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         val addedInsertions: MutableList<Action> = mutableListOf()
         externalServiceHandler.getHostnameResolutionActions().forEach {
             val hasActions =
-                old.any { ha -> (ha as HostnameResolutionAction).getRemoteHostname() != it.getRemoteHostname() }
+                old.any { ha -> (ha as HostnameResolutionAction).hostname != it.hostname }
             if (!hasActions) {
                 addedInsertions.add(it)
             }

@@ -11,8 +11,6 @@ class HostnameResolutionAction(
     val resolved: Boolean
 ) : EnvironmentAction(listOf()) {
 
-    fun getRemoteHostname(): String { return hostname }
-
     /**
      * Available will check for active Mock Server for the remote hostname
      */

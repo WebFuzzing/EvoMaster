@@ -20,7 +20,9 @@ public class Action implements Serializable {
     private final Set<String> inputVariables;
 
     /**
-     * A map of hostname and WireMock IP to mock external service calls.
+     * List of external services mapping. This contains information about
+     * mock servers including state of the mock server and signature along with
+     * external service information such as hostname and port.
      */
     private final List<ExternalServiceMapping> externalServiceMapping;
 
