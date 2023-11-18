@@ -1162,7 +1162,11 @@ object RestActionBuilderV3 {
                 -> EnumGene<String>("default", listOf(asRawString(defaultValue)),0,false)
 
                 //TODO Arrays
-                else -> throw IllegalStateException("Not handling 'default' for gene: ${geneClass.name}")
+                else -> {
+                    LoggingUtil.uniqueWarn(log,"Not handling 'default' for gene: ${geneClass.name}")
+                    LoggingUtil.getInfoLogger().warn("Unable to handle 'default': ${asRawString(defaultValue)}")
+                    null
+                }
             }
         } else null
 
@@ -1177,7 +1181,11 @@ object RestActionBuilderV3 {
                 -> EnumGene<String>("examples", examples,0,false)
 
                 //TODO Arrays
-                else -> throw IllegalStateException("Not handling 'default' for gene: ${geneClass.name}")
+                else -> {
+                    LoggingUtil.uniqueWarn(log,"Not handling 'examples' for gene: ${geneClass.name}")
+                    LoggingUtil.getInfoLogger().warn("Unable to handle 'examples': ${examples.joinToString(" , ")}")
+                    null
+                }
             }
         } else null
 
