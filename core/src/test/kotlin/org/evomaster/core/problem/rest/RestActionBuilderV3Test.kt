@@ -1376,9 +1376,11 @@ class RestActionBuilderV3Test{
     }
 
 
-    @Test
-    fun testExampleInt(){
-        val path = "/swagger/artificial/defaultandexamples/example_int.yml"
+
+    @ParameterizedTest
+    @ValueSource(strings = ["/swagger/artificial/defaultandexamples/example_int_in.yml",
+        "/swagger/artificial/defaultandexamples/example_int_out.yml"])
+    fun testExampleInt(path: String){
 
         val without = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseExamples = 0.0))
             .values.first()
@@ -1404,9 +1406,10 @@ class RestActionBuilderV3Test{
     }
 
 
-    @Test
-    fun testExamplesString(){
-        val path = "/swagger/artificial/defaultandexamples/examples_string.yml"
+    @ParameterizedTest
+    @ValueSource(strings = ["/swagger/artificial/defaultandexamples/examples_string_in.yml",
+        "/swagger/artificial/defaultandexamples/examples_string_out.yml"])
+    fun testExamplesString(path: String){
 
         val a = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseExamples = 0.5))
             .values.first()
@@ -1471,4 +1474,34 @@ class RestActionBuilderV3Test{
         assertEquals("13", certainDefault)
     }
 
+
+    @Test
+    fun testExamplesAll() {
+
+        val path = "/swagger/artificial/defaultandexamples/examples_string_all.yml"
+
+        val a = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseExamples = 1.0))
+            .values.first()
+
+        val rand = Randomness()
+        a.doInitialize(rand)
+
+        val found = mutableSetOf<String>()
+
+        for (i in 0..1000) {
+            a.randomize(rand, false)
+            val s = a.seeTopGenes().first().getValueAsRawString()
+            found.add(s)
+            if(found.size == 5){
+                break
+            }
+        }
+
+        assertEquals(5, found.size)
+        assertTrue(found.contains("A"))
+        assertTrue(found.contains("B"))
+        assertTrue(found.contains("D"))
+        assertTrue(found.contains("E"))
+        assertTrue(found.contains("F"))
+    }
 }
