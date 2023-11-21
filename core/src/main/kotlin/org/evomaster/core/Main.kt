@@ -199,7 +199,9 @@ class Main {
                 when(config.problemType){
                     EMConfig.ProblemType.REST -> {
                         val securityRest = injector.getInstance(SecurityRest::class.java)
-                        solution = securityRest.applySecurityPhase()
+                        val solutionSecurity = securityRest.applySecurityPhase(injector)
+
+
                     }
                     else ->{
                         LoggingUtil.getInfoLogger().warn("Security phase currently not handled for problem type: ${config.problemType}")
