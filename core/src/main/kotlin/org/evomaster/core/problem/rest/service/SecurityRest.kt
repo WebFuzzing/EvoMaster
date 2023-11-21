@@ -11,6 +11,7 @@ import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.RestPath
 import org.evomaster.core.remote.service.RemoteControllerImplementation
+import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.SearchGlobalState
 
@@ -38,13 +39,15 @@ class SecurityRest {
 
             // In the first test case, userA authenticates, creates a resource which only belongs to userA,
             // then reads that resource. userB tries to read the resource created by userA, which should fail
-            val testCaseReadDelete : RestIndividual = securityTestCreateAndRead(rc);
+            //val testCaseReadDelete : RestIndividual = securityTestCreateAndRead(rc);
+
+            var individuals = mutableListOf<EvaluatedIndividual<RestIndividual>>()
+
+            //individuals.add(testCaseReadDelete)
 
 
-
-
-
-
+            //return Solution(individuals,"","",Termination.NONE, listOf())
+            return Solution(mutableListOf(),"","",Termination.NONE, listOf())
         }
 
 
@@ -128,7 +131,8 @@ class SecurityRest {
         return Solution(mutableListOf(),"","",Termination.NONE, listOf())
     }
 
-    private fun securityTestCreateAndRead(rc : RemoteControllerImplementation) : RestIndividual {
+    /*
+    private fun securityTestCreateAndRead(rc : RemoteControllerImplementation) : EvaluatedIndividual<RestIndividual> {
 
         // get user authentication information
         val sutInfo :SutInfoDto? = rc.getSutInfo()
@@ -146,13 +150,19 @@ class SecurityRest {
         var resourceCalls = mutableListOf<RestCallAction>()
        // resourceCalls.add(0, )
 
-        val resultingIndividual = RestIndividual(resourceCalls, SampleType.PREDEFINED)
+        val action1 : RestCallAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
+        resourceCalls.add(action1)
 
+        //val resultingIndividual : EvaluatedIndividual<RestIndividual> = EvaluatedIndividual<RestIndividual>(resourceCalls, SampleType.PREDEFINED)
 
-        val sampleType = SampleType.RANDOM
-        val action = RestCallAction("1", HttpVerb.GET, RestPath(""), mutableListOf())
-        val restActions = listOf(action).toMutableList()
+        //return resultingIndividual
 
-        return RestIndividual(restActions, sampleType)
+        //val sampleType = SampleType.RANDOM
+        //val action = RestCallAction("1", HttpVerb.GET, RestPath(""), mutableListOf())
+        //val restActions = listOf(action).toMutableList()
+
+        //return RestIndividual(restActions, sampleType)
     }
+    */
+
 }
