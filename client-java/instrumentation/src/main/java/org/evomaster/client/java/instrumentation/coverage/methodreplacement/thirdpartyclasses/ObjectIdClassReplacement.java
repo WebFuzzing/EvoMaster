@@ -6,8 +6,6 @@ import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Usag
 import org.evomaster.client.java.instrumentation.shared.*;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLSocketFactory;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
@@ -39,7 +37,7 @@ public class ObjectIdClassReplacement extends ThirdPartyMethodReplacementClass {
                     new StringSpecializationInfo(StringSpecialization.REGEX_WHOLE, OBJECT_ID_REGEX));
         }
 
-        Constructor originalConstructor = getOriginalConstructor(singleton, "objectid_constructor");
+        Constructor<?> originalConstructor = getOriginalConstructor(singleton, "objectid_constructor");
 
         try {
             Object client = originalConstructor.newInstance(hexString);
@@ -56,7 +54,7 @@ public class ObjectIdClassReplacement extends ThirdPartyMethodReplacementClass {
      * method replacement infraestructure whenever a
      * constructor is replaced.
      *
-     * @return
+     * @return the freshly created instance
      */
     public static Object consumeInstance() {
         Object client = instance.get();

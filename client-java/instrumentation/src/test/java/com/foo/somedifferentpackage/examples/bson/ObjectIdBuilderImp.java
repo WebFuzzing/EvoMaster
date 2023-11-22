@@ -7,8 +7,7 @@ public class ObjectIdBuilderImp implements ObjectIdBuilder {
 
     @Override
     public ObjectId buildNewObjectId(String hexString) {
-        ObjectId newObjectId = new ObjectId(hexString);
-        return newObjectId;
+        return new ObjectId(hexString);
     }
 
 

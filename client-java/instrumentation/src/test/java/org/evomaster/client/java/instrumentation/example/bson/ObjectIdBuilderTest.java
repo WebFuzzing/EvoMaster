@@ -16,8 +16,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.lang.reflect.Method;
-import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -31,7 +29,7 @@ public class ObjectIdBuilderTest {
         InstrumentingClassLoader cl = new InstrumentingClassLoader("com.foo");
 
         return (ObjectIdBuilder)
-                cl.loadClass(ObjectIdBuilderImp.class.getName()).newInstance();
+                cl.loadClass(ObjectIdBuilderImp.class.getName()).getConstructor().newInstance();
     }
 
     @BeforeAll
@@ -73,9 +71,7 @@ public class ObjectIdBuilderTest {
         ObjectIdBuilder sut = getInstance();
 
         String hexString = "hi!";
-        assertThrows(IllegalArgumentException.class, () -> {
-            sut.buildNewObjectId(hexString);
-        });
+        assertThrows(IllegalArgumentException.class, () -> sut.buildNewObjectId(hexString));
 
         assertEquals(1, UnitsInfoRecorder.getInstance().getNumberOfTrackedMethods());
     }
@@ -100,15 +96,14 @@ public class ObjectIdBuilderTest {
 
         String taint = TaintInputName.getTaintName(0);
 
-        assertThrows(IllegalArgumentException.class, () -> {
-            sut.buildNewObjectId(taint);
-        });
+        assertThrows(IllegalArgumentException.class, () -> sut.buildNewObjectId(taint));
 
         // string specialization should have been recorded due to taint value
         assertFalse(ExecutionTracer.exposeAdditionalInfoList().get(0).getStringSpecializationsView().isEmpty());
         Set<StringSpecializationInfo> s = ExecutionTracer.exposeAdditionalInfoList().get(0).getStringSpecializationsView().get(taint);
 
         assertEquals(1, s.size());
+        assertTrue(s.stream().findFirst().isPresent());
         StringSpecializationInfo specializationInfo = s.stream().findFirst().get();
         assertEquals(StringSpecialization.REGEX_WHOLE, specializationInfo.getStringSpecialization());
         assertEquals(TaintType.FULL_MATCH, specializationInfo.getType());
