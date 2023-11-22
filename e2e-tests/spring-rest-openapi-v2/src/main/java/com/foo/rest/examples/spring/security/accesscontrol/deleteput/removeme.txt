@@ -1,0 +1,7 @@
+delete this file once added example
+
+each E2E will have its own subpackage here
+
+example, simple with only 2 endpoints: PUT and DELETE on
+
+/api/{x}
