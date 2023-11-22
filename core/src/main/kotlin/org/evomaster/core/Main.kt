@@ -199,7 +199,7 @@ class Main {
                 when(config.problemType){
                     EMConfig.ProblemType.REST -> {
                         val securityRest = injector.getInstance(SecurityRest::class.java)
-                        val solutionSecurity = securityRest.applySecurityPhase(injector)
+                        solution = securityRest.applySecurityPhase(injector)
 
 
                     }
