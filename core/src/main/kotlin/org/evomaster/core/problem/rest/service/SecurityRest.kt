@@ -2,18 +2,18 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Injector
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
-import org.evomaster.core.EMConfig
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.Termination
 import org.evomaster.core.problem.enterprise.SampleType
-import org.evomaster.core.problem.rest.HttpVerb
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.RestPath
+import org.evomaster.core.problem.httpws.auth.CookieLogin
+import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
+import org.evomaster.core.problem.rest.*
 import org.evomaster.core.remote.service.RemoteControllerImplementation
 import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Solution
-import org.evomaster.core.search.service.SearchGlobalState
+
+
 
 
 /**
@@ -41,13 +41,29 @@ class SecurityRest {
             // then reads that resource. userB tries to read the resource created by userA, which should fail
             //val testCaseReadDelete : RestIndividual = securityTestCreateAndRead(rc);
 
+            // create one EvaluatedIndividual with endpoints, REST method and expected result
+
+            // userA creates a resource and then deletes the same resource, tries to read it again
+            val ind1 = securityTestCreateReadAndDeleteSameUser(rc)
+
+            // userA creates a resource, user B tries to delete that resource
+            val ind2 = securityTestCreateReadDifferentUser(rc)
+
+
+            //val ind2 = securityTestCreateAndReadSecond(rc)
+
+
+
+
+
             var individuals = mutableListOf<EvaluatedIndividual<RestIndividual>>()
 
             //individuals.add(testCaseReadDelete)
-
+            individuals.add(ind1)
+            individuals.add(ind2)
 
             //return Solution(individuals,"","",Termination.NONE, listOf())
-            return Solution(mutableListOf(),"","",Termination.NONE, listOf())
+            return Solution(individuals,"securityTest","securityTest",Termination.NONE, listOf())
         }
 
 
@@ -131,38 +147,122 @@ class SecurityRest {
         return Solution(mutableListOf(),"","",Termination.NONE, listOf())
     }
 
-    /*
-    private fun securityTestCreateAndRead(rc : RemoteControllerImplementation) : EvaluatedIndividual<RestIndividual> {
+    private fun authenticateTwoDistinctUsers(rc: RemoteControllerImplementation) {
 
-        // get user authentication information
-        val sutInfo :SutInfoDto? = rc.getSutInfo()
 
-        // randomly choose a user
 
-        // create a resource with the randomly chosen user
+        return
 
-        // read the resource with the same user, which should succeed.
-
-        // read the resource with a different user (if there are more than 1 authenticated users), which should fail
-
-        // if more than 1 users, try reading the deleted resource, which should fail
-
-        var resourceCalls = mutableListOf<RestCallAction>()
-       // resourceCalls.add(0, )
-
-        val action1 : RestCallAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
-        resourceCalls.add(action1)
-
-        //val resultingIndividual : EvaluatedIndividual<RestIndividual> = EvaluatedIndividual<RestIndividual>(resourceCalls, SampleType.PREDEFINED)
-
-        //return resultingIndividual
-
-        //val sampleType = SampleType.RANDOM
-        //val action = RestCallAction("1", HttpVerb.GET, RestPath(""), mutableListOf())
-        //val restActions = listOf(action).toMutableList()
-
-        //return RestIndividual(restActions, sampleType)
     }
-    */
+
+
+    private fun securityTestCreateReadAndDeleteSameUser(rc : RemoteControllerImplementation) : EvaluatedIndividual<RestIndividual> {
+
+        // authenticate two distinct users
+        val cookieLogin1 = CookieLogin("UserA", "userA", "username", "password", "/login", HttpVerb.POST, ContentType.JSON)
+
+        val info1 = HttpWsAuthenticationInfo("userAauth", mutableListOf(), cookieLogin1, null)
+
+        val cookieLogin2 = CookieLogin("UserB", "userB", "username", "password", "/login", HttpVerb.POST, ContentType.JSON)
+
+        val info2 = HttpWsAuthenticationInfo("userBauth", mutableListOf(), cookieLogin2, null)
+
+        // fitness value 0.0
+        val fv = FitnessValue(0.0)
+
+        // rest actions
+        val restActions = emptyList<RestCallAction>().toMutableList()
+
+        val action1 = RestCallAction("1", HttpVerb.POST, RestPath("/userA"), mutableListOf(), info1)
+        val action2 = RestCallAction("2", HttpVerb.GET, RestPath("/userA"), mutableListOf(), info1)
+        val action3 = RestCallAction("3", HttpVerb.DELETE, RestPath("/userA"), mutableListOf(), info1)
+        val action4 = RestCallAction("4", HttpVerb.GET, RestPath("/userA"), mutableListOf(), info1)
+
+        restActions.add(action1)
+        restActions.add(action2)
+        restActions.add(action3)
+        restActions.add(action4)
+
+        // individual
+        val individual = RestIndividual(restActions, SampleType.PREDEFINED)
+
+        // results
+        val results: MutableList<RestCallResult> = mutableListOf()
+
+        val result1 = RestCallResult()
+        result1.setStatusCode(200)
+
+        val result2 = RestCallResult()
+        result2.setStatusCode(200)
+
+        val result3 = RestCallResult()
+        result3.setStatusCode(200)
+
+        val result4 = RestCallResult()
+        result4.setStatusCode(401)
+
+        results.add(result1)
+        results.add(result2)
+        results.add(result3)
+        results.add(result4)
+        //
+
+        //var ind1 = EvaluatedIndividual(fv, individual, results)
+
+        return EvaluatedIndividual(fv, individual, results)
+    }
+
+
+    private fun securityTestCreateReadDifferentUser(rc : RemoteControllerImplementation) : EvaluatedIndividual<RestIndividual> {
+
+        // authenticate two distinct users
+        val cookieLogin1 = CookieLogin("UserA", "userA", "username", "password", "/login", HttpVerb.POST, ContentType.JSON)
+
+        val info1 = HttpWsAuthenticationInfo("userAauth", mutableListOf(), cookieLogin1, null)
+
+        val cookieLogin2 = CookieLogin("UserB", "userB", "username", "password", "/login", HttpVerb.POST, ContentType.JSON)
+
+        val info2 = HttpWsAuthenticationInfo("userBauth", mutableListOf(), cookieLogin2, null)
+
+        // fitness value 0.0
+        val fv = FitnessValue(0.0)
+
+        // rest actions
+        val restActions = emptyList<RestCallAction>().toMutableList()
+
+        val action1 = RestCallAction("1", HttpVerb.POST, RestPath("/userA"), mutableListOf(), info1)
+        val action2 = RestCallAction("2", HttpVerb.DELETE, RestPath("/userA"), mutableListOf(), info2)
+        val action3 = RestCallAction("3", HttpVerb.DELETE, RestPath("/userA"), mutableListOf(), info1)
+
+        restActions.add(action1)
+        restActions.add(action2)
+        restActions.add(action3)
+
+        // individual
+        val individual = RestIndividual(restActions, SampleType.PREDEFINED)
+
+        // results
+        val results: MutableList<RestCallResult> = mutableListOf()
+
+        val result1 = RestCallResult()
+        result1.setStatusCode(200)
+
+        val result2 = RestCallResult()
+        result2.setStatusCode(401)
+
+        val result3 = RestCallResult()
+        result3.setStatusCode(200)
+
+
+        results.add(result1)
+        results.add(result2)
+        results.add(result3)
+        //
+
+        //var ind1 = EvaluatedIndividual(fv, individual, results)
+
+        return EvaluatedIndividual(fv, individual, results)
+    }
+
 
 }
