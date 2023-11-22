@@ -168,7 +168,6 @@ public class JpaConstraint implements Serializable {
                          Integer digitsFraction
     ) {
 
-
         this.tableName = Objects.requireNonNull(tableName);
         this.columnName = Objects.requireNonNull(columnName);
 
@@ -195,8 +194,6 @@ public class JpaConstraint implements Serializable {
         this.sizeMax = sizeMax;
         this.digitsInteger = digitsInteger;
         this.digitsFraction = digitsFraction;
-
-
     }
 
     public boolean isMeaningful() {
