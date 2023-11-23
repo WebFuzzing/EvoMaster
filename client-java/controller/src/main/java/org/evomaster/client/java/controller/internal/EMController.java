@@ -65,7 +65,7 @@ public class EMController {
 
     private static final String htmlWarning =
             //ah! the beauty and elegance of Java when one just wants read a text resource as a string...
-            new Scanner(EMController.class.getResourceAsStream("/warning.html"), "UTF-8").useDelimiter("\\A").next();
+            new Scanner(Objects.requireNonNull(EMController.class.getResourceAsStream("/warning.html")), "UTF-8").useDelimiter("\\A").next();
 
     public EMController(SutController sutController) {
         this.sutController = Objects.requireNonNull(sutController);
@@ -129,11 +129,11 @@ public class EMController {
 
     private void noKillSwitchForceCheck(Runnable lambda) {
         /*
-            Note: bit tricky for External. the calls on ExecutionTracer would have
-            no impact, only those on sutController. it is needed for when driver communicates
-            with SUT as part of driver operations, eg reset/seed state via an API call, which is
-            done for example in Proxyprint. But for all other cases, it can be just an unnecessary
-            overhead.
+            Note: a bit tricky for External.
+            The calls on ExecutionTracer would have no impact, only those on sutController.
+            It is needed for when the driver communicates with SUT as part of driver operations,
+            eg reset/seed state via an API call, which is done, for example, in Proxyprint.
+            But for all other cases, it can be just an unnecessary overhead.
          */
 
         boolean previous = ExecutionTracer.isKillSwitch();
@@ -158,7 +158,7 @@ public class EMController {
 
         assert trackRequestSource(httpServletRequest);
 
-        if (!noKillSwitch(() -> sutController.verifySqlConnection())) {
+        if (!noKillSwitch(sutController::verifySqlConnection)) {
             String msg = "SQL drivers are misconfigured. You must use a 'p6spy' wrapper when you " +
                     "run the SUT. For example, a database connection URL like 'jdbc:h2:mem:testdb' " +
                     "should be changed into 'jdbc:p6spy:h2:mem:testdb'. " +
@@ -171,12 +171,12 @@ public class EMController {
         ProblemInfo info;
 
         try {
-            dto.isSutRunning = noKillSwitch(() -> sutController.isSutRunning());
+            dto.isSutRunning = noKillSwitch(sutController::isSutRunning);
             dto.baseUrlOfSUT = baseUrlOfSUT;
-            dto.infoForAuthentication = noKillSwitch(() -> sutController.getInfoForAuthentication());
-            dto.sqlSchemaDto = noKillSwitch(() -> sutController.getSqlDatabaseSchema());
-            dto.defaultOutputFormat = noKillSwitch(() -> sutController.getPreferredOutputFormat());
-            info = noKillSwitch(() -> sutController.getProblemInfo());
+            dto.infoForAuthentication = noKillSwitch(sutController::getInfoForAuthentication);
+            dto.sqlSchemaDto = noKillSwitch(sutController::getSqlDatabaseSchema);
+            dto.defaultOutputFormat = noKillSwitch(sutController::getPreferredOutputFormat);
+            info = noKillSwitch(sutController::getProblemInfo);
             dto.bootTimeInfoDto = noKillSwitch(() -> sutController.getBootTimeInfoDto());
         } catch (RuntimeException e) {
             String msg = e.getMessage();

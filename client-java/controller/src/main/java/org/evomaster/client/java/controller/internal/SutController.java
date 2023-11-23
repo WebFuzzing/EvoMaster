@@ -73,7 +73,7 @@ import static org.evomaster.client.java.controller.problem.rpc.RPCEndpointsBuild
 /**
  * Abstract class used to connect to the EvoMaster process, and
  * that is responsible to start/stop/restart the tested application,
- * ie the system under test (SUT)
+ * i.e., the system under test (SUT)
  */
 public abstract class SutController implements SutHandler, CustomizationHandler {
 
@@ -87,7 +87,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     private Server controllerServer;
 
     /**
-     * If using a SQL Database, gather info about its schema
+     * If using an SQL Database, gather info about its schema
      */
     private DbSchemaDto schemaDto;
 
@@ -133,7 +133,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     private final Map<Integer, LocalAuthSetupSchema> localAuthSetupSchemaMap = new LinkedHashMap <>();
 
     /**
-     * handle parsing RPCActionDto based on json string.
+     * Handle parsing RPCActionDto based on json string.
      * Note that it is only used for RPC
      */
     private ObjectMapper objectMapper;
@@ -187,7 +187,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             throw new RuntimeException(msg,estart);
         }
 
-        //just make sure we start from a clean state
+        // make sure we start from a clean state
         newSearch();
 
         SimpleLogger.info("Started controller server on: " + controllerServer.getURI());
@@ -206,7 +206,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     /**
-     * @return the actual port in use (eg, if it was an ephemeral 0)
+     * @return the actual port in use (e.g., if it was an ephemeral 0)
      */
     public final int getControllerServerPort() {
         return ((AbstractNetworkConnector) controllerServer.getConnectors()[0]).getLocalPort();
@@ -296,7 +296,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     public final void initMongoHandler() {
-        // This is needed because the replacement use to get this info occurs during the start of the SUT.
+        // This is needed because the replacement used to get this info occurs during the start of the SUT.
 
         List<AdditionalInfo> list = getAdditionalInfoList();
         if(!list.isEmpty()) {
@@ -356,13 +356,13 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             List<AdditionalInfo> list = getAdditionalInfoList();
             if(!list.isEmpty()) {
                 AdditionalInfo last = list.get(list.size() - 1);
-                last.getSqlInfoData().stream().forEach(it -> {
-//                    String sql = it.getCommand();
+                last.getSqlInfoData().forEach(it -> {
+                    // String sql = it.getCommand();
                     try {
                         sqlHandler.handle(new SqlExecutionLogDto(it.getCommand(), it.getExecutionTime()));
                     } catch (Exception e){
                         SimpleLogger.error("FAILED TO HANDLE SQL COMMAND: " + it.getCommand());
-                        assert false; //we should try to handle all cases in our tests
+                        assert false; // we should try to handle all cases in our tests
                     }
                 });
             }
@@ -479,34 +479,41 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                     tableDataToInit = tablesToClean.stream().filter(a-> tableInitSqlMap.keySet().stream().anyMatch(t-> t.equalsIgnoreCase(a))).collect(Collectors.toSet());
                 }
             }
-            handleInitSqlInDbClean(tableDataToInit, emDbClean);
+            handleInitSqlInDbClean(tableDataToInit);
 
-        }catch (SQLException e) {
+        } catch (SQLException e) {
             throw new RuntimeException("SQL Init Execution Error: fail to execute "+e);
-        }finally {
+        } finally {
             setExecutingInitSql(false);
         }
     }
 
-    private void handleInitSqlInDbClean(Collection<String> tableDataToInit, DbSpecification spec) throws SQLException {
-        // init db script
-        //boolean initAll = registerInitSqlCommands(getConnectionIfExist(), spec);
-        if (tableDataToInit!= null &&!tableDataToInit.isEmpty()){
-            tableDataToInit.stream().sorted((s1, s2)-> tableFkCompartor(s1, s2)).forEach(a->{
-                tableInitSqlMap.keySet().stream().filter(t-> t.equalsIgnoreCase(a)).forEach(t->{
-                    tableInitSqlMap.get(t).forEach(c->{
-                        try {
-                            SqlScriptRunner.execCommand(getConnectionIfExist(), c);
-                        } catch (SQLException e) {
-                            throw new RuntimeException("SQL Init Execution Error: fail to execute "+ c + " with error "+e);
-                        }
-                    });
-                });
-            });
-        }
+    /**
+     * Init db script
+     * @param tableDataToInit table names to clean
+     * @throws SQLException if the command to clean at least one of the tables fails
+     */
+    private void handleInitSqlInDbClean(Collection<String> tableDataToInit) throws SQLException {
+        if (tableDataToInit == null) return;
+
+        tableDataToInit.stream()
+            .sorted(this::tableFkComparator)
+            .forEach(table->
+                tableInitSqlMap.entrySet().stream()
+                    .filter(entry -> entry.getKey().equalsIgnoreCase(table)) // contains ignore case
+                    .forEach(entry ->
+                        entry.getValue().forEach(command-> {
+                            try {
+                                SqlScriptRunner.execCommand(Objects.requireNonNull(getConnectionIfExist()), command);
+                            } catch (SQLException e) {
+                                throw new RuntimeException("SQL Init Execution Error: fail to execute " + command + " with error " + e);
+                            }
+                        })
+                    )
+            );
     }
 
-    private int tableFkCompartor(String tableA, String tableB){
+    private int tableFkComparator(String tableA, String tableB){
         return getFkDepth(tableA, new HashSet<>()) - getFkDepth(tableB, new HashSet<>());
     }
 
@@ -527,8 +534,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     /**
-     * collect info about what table are manipulated by evo in order to generate data directly into it
-     * @param tables a list of name of tables
+     * collect info about what table are manipulated by evo to generate data directly into it
+     * @param tables a list of table names
      */
     public void addTableToInserted(List<String> tables){
         accessedTables.addAll(tables);
@@ -560,8 +567,6 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     private Optional<? extends Map.Entry<String, ?>> findInMapIgnoreCase(String name, Map<String, ?> list){
         return list.entrySet().stream().filter(x-> x.getKey().equalsIgnoreCase(name)).findFirst();
     }
-
-
 
 
     /**
@@ -633,9 +638,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             schemaDto.tables.forEach(t->{
                 fkMap.putIfAbsent(t.name, new ArrayList<>());
                 if (t.foreignKeys!=null && !t.foreignKeys.isEmpty()){
-                    t.foreignKeys.forEach(f->{
-                        fkMap.get(t.name).add(f.targetTable.toUpperCase());
-                    });
+                    t.foreignKeys.forEach(f->
+                            fkMap.get(t.name).add(f.targetTable.toUpperCase()));
                 }
             });
         }
@@ -673,7 +677,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         extractRPCSchema();
 
         Map<String, InterfaceSchema> rpcSchemas = getRPCSchema();
-        if (rpcSchemas == null || rpcSchemas.isEmpty()){
+        if (rpcSchemas.isEmpty()){
             throw new RuntimeException("Fail to extract RPC interface schema");
         }
 
@@ -691,7 +695,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         rpcProblem.seededTestDtos = handleSeededTests(isSutRunning);
 
         // set the schemas at the end
-        rpcProblem.schemas = rpcSchemas.values().stream().map(s-> s.getDto()).collect(Collectors.toList());
+        rpcProblem.schemas = rpcSchemas.values().stream().map(InterfaceSchema::getDto).collect(Collectors.toList());
         return rpcProblem;
     }
 
@@ -858,11 +862,11 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     /**
-     * As some heuristics are based on which action (eg HTTP call, or click of button)
+     * As some heuristics are based on which action (e.g., HTTP call, or click of button)
      * in the test sequence is executed, and their order, we need to keep track of which
      * action does cover what.
      *
-     * @param dto the DTO with the information about the action (eg its index in the test)
+     * @param dto the DTO with the information about the action (e.g., its index in the test)
      */
     public final void newAction(ActionDto dto) {
 
@@ -888,7 +892,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     /**
-     * execute a RPC request based on the specified dto
+     * execute an RPC request based on the specified dto
      * @param dto is the action DTO to be executed
      */
     public final void executeAction(RPCActionDto dto, ActionResponseDto responseDto) {
@@ -968,7 +972,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                         }
                     }
                     /*
-                        ActionResponseDto.jsonResponse could be used to generate assertions in core side
+                        ActionResponseDto.jsonResponse could be used to generate assertions in core side,
                         however, as we do not support the test generate in core side yet and not all DTO can be converted into json,
                         we comment out this code
                      */
@@ -1049,7 +1053,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     /**
-     * execute a RPC request with specified client
+     * execute a RPC request with the specified client
      * @param client is the client to execute the endpoint
      * @param endpoint is the endpoint to be executed
      */
@@ -1197,7 +1201,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     /**
-     * If the system under test (SUT) uses a SQL database, we need to specify
+     * If the system under test (SUT) uses an SQL database, we need to specify
      * the driver used to connect, eg. {@code org.h2.Driver}.
      * This is needed for when we intercept SQL commands with P6Spy
      *
@@ -1280,9 +1284,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
 
     /**
-     * mock object might not be loaded when extracting schema with client library
-     * after the SUT is started, we attempt to expand mock objects if needed,
-     * eg, handle generic types, unidentified DTO class
+     * Mock object might not be loaded when extracting schema with the client library after the SUT is started.
+     * So, we attempt to expand mock objects if needed, e.g., handle generic types, unidentified DTO class
      */
     private void expandMockObjectIfNeeded(RPCActionDto dto, ActionResponseDto responseDto){
         AtomicBoolean anyUpdate = new AtomicBoolean(false);
@@ -1460,7 +1463,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                     spec.schemaNames.forEach(sp-> DbCleaner.clearDatabase(spec.connection, sp, null, tablesToClean, spec.dbType));
 
                 try {
-                    handleInitSqlInDbClean(tablesToClean, spec);
+                    handleInitSqlInDbClean(tablesToClean);
                 } catch (SQLException e) {
                     throw new RuntimeException("Fail to execute the specified initSqlScript "+e);
                 }
@@ -1534,7 +1537,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     /**
      *
-     * @param fileName the name of file which exist in the same directory of the class
+     * @param fileName the name of file which exists in the same directory of the class
      * @return content of file with the specified file
      */
     public final String readFileAsStringFromTestResource(String fileName){
