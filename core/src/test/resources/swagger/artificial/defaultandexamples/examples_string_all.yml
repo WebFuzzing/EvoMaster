@@ -1,0 +1,29 @@
+---
+openapi: 3.1.0
+info:
+  title: examples_string
+  version: 1.0.0
+servers:
+  - url: "/v2"
+paths:
+  "/examplesString":
+    post:
+      parameters:
+        - in: query
+          name: x
+          examples:
+              a:
+                value: A
+              b:
+                value: B
+          example: C   # will be ignored, as mutually exclusive with examples
+          required: true
+          schema:
+            type: string
+            example: D
+            examples:
+              - E
+              - F
+      responses:
+        '200':
+          description: OK

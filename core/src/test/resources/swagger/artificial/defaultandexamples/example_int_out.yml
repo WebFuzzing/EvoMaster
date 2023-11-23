@@ -1,8 +1,7 @@
 ---
 openapi: 3.0.3
 info:
-  title: default
-  description: default
+  title: example_param
   version: 1.0.0
 servers:
   - url: "/v2"
@@ -12,9 +11,9 @@ paths:
       parameters:
         - in: path
           name: x
+          example: 42
           schema:
-            type: string
-            default: foo
+            type: integer
       responses:
         '200':
           description: OK

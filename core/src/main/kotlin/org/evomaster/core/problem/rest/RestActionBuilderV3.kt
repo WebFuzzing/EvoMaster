@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.Operation
+import io.swagger.v3.oas.models.examples.Example
 import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.JsonSchema
 import io.swagger.v3.oas.models.media.MediaType
@@ -398,6 +399,18 @@ object RestActionBuilderV3 {
         return params
     }
 
+    private fun exampleObjects(example: Any?, examples: Map<String, Example>?) : List<Any>{
+
+        val data = mutableListOf<Any>()
+        if(example != null){
+            data.add(example)
+        }
+        if(!examples.isNullOrEmpty()){
+            examples.values.forEach { data.add(it.value) }
+        }
+        return data
+    }
+
     private fun handleParam(p: Parameter,
                             swagger: OpenAPI,
                             params: MutableList<Param>,
@@ -409,14 +422,21 @@ object RestActionBuilderV3 {
             return
         }
 
-        var gene = getGene(name, p.schema, swagger, referenceClassDef = null, options = options, isInPath = p.`in` == "path")
+        val examples = if(options.probUseExamples > 0) exampleObjects(p.example, p.examples) else listOf()
+
+        var gene = getGene(
+            name,
+            p.schema,
+            swagger,
+            referenceClassDef = null,
+            options = options,
+            isInPath = p.`in` == "path",
+            examples = examples)
 
         if (p.required != true && p.`in` != "path" && gene !is OptionalGene) {
             // As of V3, "path" parameters must be required
             gene = OptionalGene(name, gene)
         }
-
-        //TODO could exploit "x-example" if available in OpenApi
 
         when (p.`in`) {
 
@@ -543,7 +563,8 @@ object RestActionBuilderV3 {
             history: Deque<String> = ArrayDeque(),
             referenceClassDef: String?,
             options: Options,
-            isInPath: Boolean = false
+            isInPath: Boolean = false,
+            examples: List<Any> = listOf()
     ): Gene {
 
         if (!schema.`$ref`.isNullOrBlank()) {
@@ -618,13 +639,13 @@ object RestActionBuilderV3 {
 
         //first check for "optional" format
         when (format?.lowercase()) {
-            "int32" -> return createNonObjectGeneWithSchemaConstraints(schema, name, IntegerGene::class.java, options, null, isInPath)//IntegerGene(name)
-            "int64" -> return createNonObjectGeneWithSchemaConstraints(schema, name, LongGene::class.java, options, null, isInPath) //LongGene(name)
-            "double" -> return createNonObjectGeneWithSchemaConstraints(schema, name, DoubleGene::class.java, options, null, isInPath)//DoubleGene(name)
-            "float" -> return createNonObjectGeneWithSchemaConstraints(schema, name, FloatGene::class.java, options, null, isInPath)//FloatGene(name)
-            "password" -> return createNonObjectGeneWithSchemaConstraints(schema, name, StringGene::class.java, options, null, isInPath)//StringGene(name) //nothing special to do, it is just a hint
-            "binary" -> return createNonObjectGeneWithSchemaConstraints(schema, name, StringGene::class.java, options, null, isInPath)//StringGene(name) //does it need to be treated specially?
-            "byte" -> return createNonObjectGeneWithSchemaConstraints(schema, name, Base64StringGene::class.java, options, null, isInPath)//Base64StringGene(name)
+            "int32" -> return createNonObjectGeneWithSchemaConstraints(schema, name, IntegerGene::class.java, options, null, isInPath, examples)//IntegerGene(name)
+            "int64" -> return createNonObjectGeneWithSchemaConstraints(schema, name, LongGene::class.java, options, null, isInPath, examples) //LongGene(name)
+            "double" -> return createNonObjectGeneWithSchemaConstraints(schema, name, DoubleGene::class.java, options, null, isInPath, examples)//DoubleGene(name)
+            "float" -> return createNonObjectGeneWithSchemaConstraints(schema, name, FloatGene::class.java, options, null, isInPath, examples)//FloatGene(name)
+            "password" -> return createNonObjectGeneWithSchemaConstraints(schema, name, StringGene::class.java, options, null, isInPath, examples)//StringGene(name) //nothing special to do, it is just a hint
+            "binary" -> return createNonObjectGeneWithSchemaConstraints(schema, name, StringGene::class.java, options, null, isInPath, examples)//StringGene(name) //does it need to be treated specially?
+            "byte" -> return createNonObjectGeneWithSchemaConstraints(schema, name, Base64StringGene::class.java, options, null, isInPath, examples)//Base64StringGene(name)
             "date" -> return DateGene(name, onlyValidDates = !options.invalidData)
             "date-time" -> return DateTimeGene(name)
             else -> if (format != null) {
@@ -637,15 +658,15 @@ object RestActionBuilderV3 {
                 the JSON Schema definition
          */
         when (type?.lowercase()) {
-            "integer" -> return createNonObjectGeneWithSchemaConstraints(schema, name, IntegerGene::class.java, options, null, isInPath)//IntegerGene(name)
-            "number" -> return createNonObjectGeneWithSchemaConstraints(schema, name, DoubleGene::class.java, options, null, isInPath)//DoubleGene(name)
+            "integer" -> return createNonObjectGeneWithSchemaConstraints(schema, name, IntegerGene::class.java, options, null, isInPath, examples)//IntegerGene(name)
+            "number" -> return createNonObjectGeneWithSchemaConstraints(schema, name, DoubleGene::class.java, options, null, isInPath, examples)//DoubleGene(name)
             "boolean" -> return BooleanGene(name)
             "string" -> {
                 return if (schema.pattern == null) {
-                    createNonObjectGeneWithSchemaConstraints(schema, name, StringGene::class.java, options, null, isInPath) //StringGene(name)
+                    createNonObjectGeneWithSchemaConstraints(schema, name, StringGene::class.java, options, null, isInPath, examples) //StringGene(name)
                 } else {
                     try {
-                        createNonObjectGeneWithSchemaConstraints(schema, name, RegexGene::class.java, options, null, isInPath)
+                        createNonObjectGeneWithSchemaConstraints(schema, name, RegexGene::class.java, options, null, isInPath, examples)
                     } catch (e: Exception) {
                         /*
                             TODO: if the Regex is syntactically invalid, we should warn
@@ -655,7 +676,7 @@ object RestActionBuilderV3 {
                             When 100% support, then tell user that it is his/her fault
                          */
                         LoggingUtil.uniqueWarn(log, "Cannot handle regex: ${schema.pattern}")
-                        createNonObjectGeneWithSchemaConstraints(schema, name, StringGene::class.java, options, null, isInPath)//StringGene(name)
+                        createNonObjectGeneWithSchemaConstraints(schema, name, StringGene::class.java, options, null, isInPath, examples)//StringGene(name)
                     }
                 }
             }
@@ -675,7 +696,7 @@ object RestActionBuilderV3 {
 //                    if (template is CycleObjectGene) {
 //                        return CycleObjectGene("<array> ${template.name}")
 //                    }
-                    return createNonObjectGeneWithSchemaConstraints(schema, name, ArrayGene::class.java, options, template, isInPath)//ArrayGene(name, template)
+                    return createNonObjectGeneWithSchemaConstraints(schema, name, ArrayGene::class.java, options, template, isInPath, examples)//ArrayGene(name, template)
                 } else {
                     LoggingUtil.uniqueWarn(log, "Invalid 'array' definition for '$name'")
                 }
@@ -686,7 +707,7 @@ object RestActionBuilderV3 {
             }
             //TODO file is a hack. I want to find a more elegant way of dealing with it (BMR)
             //FIXME is this even a standard type???
-            "file" -> return createNonObjectGeneWithSchemaConstraints(schema, name, StringGene::class.java, options, null, isInPath) //StringGene(name)
+            "file" -> return createNonObjectGeneWithSchemaConstraints(schema, name, StringGene::class.java, options, null, isInPath, examples) //StringGene(name)
         }
 
         if ((name == "body" || referenceClassDef != null) && schema.properties?.isNotEmpty() == true) {
@@ -1001,7 +1022,7 @@ object RestActionBuilderV3 {
         }
 
         LoggingUtil.uniqueWarn(log, "No type/format information provided for '$name'. Defaulting to 'string'")
-        return createNonObjectGeneWithSchemaConstraints(schema, name, StringGene::class.java, options = options, collectionTemplate,isInPath)
+        return createNonObjectGeneWithSchemaConstraints(schema, name, StringGene::class.java, options = options, collectionTemplate,isInPath, listOf())
     }
 
     private fun containsAllAnyOneOfConstraints(schema: Schema<*>) = schema.oneOf != null || schema.anyOf != null || schema.allOf != null
@@ -1026,7 +1047,8 @@ object RestActionBuilderV3 {
         options: Options,
         collectionTemplate: Gene? = null,
         //might need to add extra constraints if in path
-        isInPath: Boolean
+        isInPath: Boolean,
+        exampleObjects: List<Any>
     ) : Gene{
 
 
@@ -1102,33 +1124,103 @@ object RestActionBuilderV3 {
             else -> throw IllegalStateException("cannot create gene with constraints for gene:${geneClass.name}")
         }
 
-        //https://swagger.io/docs/specification/adding-examples/
+        /*
+            See:
+            https://swagger.io/docs/specification/adding-examples/
+            https://swagger.io/specification/
+
+            TODO This is not a full handling:
+            - example/examples can be defined at same level of "schema" object.
+              "example" behave the same, whereas "examples" is different (here inside "schema" as an array of values,
+              whereas there as an array of object definitions)
+            - technically there can be "x-example" as well (but that is mainly for older versions of the OpenAPI that
+                did not support example/examples keywords as widely as now?)
+         */
         val defaultValue = if(options.probUseDefault > 0) schema.default else null
         val exampleValue = if(options.probUseExamples > 0) schema.example else null
         val multiExampleValues = if(options.probUseExamples > 0) schema.examples else null
 
-        if(defaultValue != null){
+        val examples = mutableListOf<String>()
+        if(exampleValue != null) {
+            examples.add(asRawString(exampleValue))
+        }
+        if(multiExampleValues != null && multiExampleValues.isNotEmpty()){
+            //possibly bug in parser, but it was reading strings values double-quoted in this case
+            examples.addAll(multiExampleValues.map { asRawString(it)})
+        }
+        examples.addAll( exampleObjects.map { asRawString(it) })
 
-            val defaultGene = when{
+
+        val defaultGene = if(defaultValue != null){
+            when{
                 NumberGene::class.java.isAssignableFrom(geneClass)
                 -> EnumGene("default", listOf(defaultValue.toString()),0,true)
 
                 geneClass == StringGene::class.java
                         || geneClass == Base64StringGene::class.java
                         || geneClass == RegexGene::class.java
-                -> EnumGene<String>("default", listOf(defaultValue.toString()),0,false)
+                -> EnumGene<String>("default", listOf(asRawString(defaultValue)),0,false)
 
                 //TODO Arrays
-                else -> throw IllegalStateException("Not handling 'default' for gene: ${geneClass.name}")
+                else -> {
+                    LoggingUtil.uniqueWarn(log,"Not handling 'default' for gene: ${geneClass.name}")
+                    LoggingUtil.getInfoLogger().warn("Unable to handle 'default': ${asRawString(defaultValue)}")
+                    null
+                }
             }
+        } else null
 
-            val pd = options.probUseDefault
-            val pm = 1 - pd
+        val exampleGene = if(examples.isNotEmpty()){
+            when{
+                NumberGene::class.java.isAssignableFrom(geneClass)
+                -> EnumGene("examples", examples,0,true)
 
-            return ChoiceGene(name, listOf(defaultGene,mainGene),0, listOf(pd,pm))
+                geneClass == StringGene::class.java
+                        || geneClass == Base64StringGene::class.java
+                        || geneClass == RegexGene::class.java
+                -> EnumGene<String>("examples", examples,0,false)
+
+                //TODO Arrays
+                else -> {
+                    LoggingUtil.uniqueWarn(log,"Not handling 'examples' for gene: ${geneClass.name}")
+                    LoggingUtil.getInfoLogger().warn("Unable to handle 'examples': ${examples.joinToString(" , ")}")
+                    null
+                }
+            }
+        } else null
+
+        if(exampleGene==null && defaultGene==null){
+            //no special handling
+            return mainGene
         }
 
-        return mainGene
+        if(exampleGene!=null && defaultGene!=null){
+            val pd = options.probUseDefault
+            val pe = options.probUseExamples
+            val pm = 1 - pd - pe
+            return ChoiceGene(name, listOf(defaultGene, exampleGene, mainGene),0, listOf(pd, pe, pm))
+        }
+
+        if(exampleGene!=null){
+            val pe = options.probUseExamples
+            val pm = 1 - pe
+            return ChoiceGene(name, listOf(exampleGene, mainGene),0, listOf(pe, pm))
+        }
+
+        if(defaultGene!=null){
+            val pd = options.probUseDefault
+            val pm = 1 - pd
+            return ChoiceGene(name, listOf(defaultGene, mainGene),0, listOf(pd, pm))
+        }
+
+        throw IllegalStateException("BUG: logic error, this code should never be reached")
+    }
+
+    private fun asRawString(x : Any) : String {
+        val s = x.toString()
+        if(s.startsWith("\"") && s.endsWith("\""))
+            return s.substring(1, s.length - 1)
+        return s
     }
 
     private fun buildStringGene(
