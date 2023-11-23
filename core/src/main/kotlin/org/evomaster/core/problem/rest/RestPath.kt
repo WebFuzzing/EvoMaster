@@ -55,6 +55,8 @@ class RestPath(path: String) {
     //memoized the value, as expensive to compute, called often, and this object is immutable anyway...
     private val computedToString: String
 
+    private val endsWithSlash : Boolean
+
     init {
         if (path.contains("?") || path.contains("#")) {
             throw IllegalArgumentException(
@@ -63,11 +65,13 @@ class RestPath(path: String) {
             )
         }
 
+        endsWithSlash = path.endsWith("/")
+
         elements = path.split("/")
-            .filter { !it.isBlank() }
+            .filter { it.isNotBlank() }
             .map { extractElement(it) }
 
-        computedToString = "/" + elements.joinToString("/")
+        computedToString = "/" + elements.joinToString("/") + if(endsWithSlash) "/" else ""
     }
 
 
@@ -327,6 +331,10 @@ class RestPath(path: String) {
            it seems unclear how to properly build it as a single string...
          */
 
+        if(endsWithSlash){
+            path.append("/")
+        }
+
         return URI(null, null, path.toString(), null, null).rawPath
     }
 
@@ -419,6 +427,9 @@ class RestPath(path: String) {
                 else
                     elementsToMatch.add(t.name)
             }
+        }
+        if(endsWithSlash){
+            elementsToMatch.add("/")
         }
 
         return "^" + elementsToMatch.joinToString("") + "$"
