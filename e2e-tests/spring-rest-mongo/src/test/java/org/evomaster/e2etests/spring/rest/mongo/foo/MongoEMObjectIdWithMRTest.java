@@ -9,6 +9,7 @@ import org.evomaster.e2etests.utils.RestTestBase;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MongoEMObjectIdWithMRTest extends RestTestBase {
@@ -40,7 +41,7 @@ public class MongoEMObjectIdWithMRTest extends RestTestBase {
 
                     Solution<RestIndividual> solution = initAndRun(args);
 
-                    assertTrue(!solution.getIndividuals().isEmpty());
+                    assertFalse(solution.getIndividuals().isEmpty());
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/objectid/createObjectId", null);
                     assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/objectid/createObjectId", null);
                 });
