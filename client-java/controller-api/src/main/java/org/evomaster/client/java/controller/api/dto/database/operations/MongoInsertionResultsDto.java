@@ -8,14 +8,21 @@ import java.util.regex.Pattern;
 
 public class MongoInsertionResultsDto {
     /**
-     * whether the insertion at the index of a sequence of Mongo insertions (i.e., {@link MongoDatabaseCommandDto#insertions})
+     * Whether the insertion at the index of a sequence of Mongo insertions (i.e., {@link MongoDatabaseCommandDto#insertions})
      * executed successfully
      */
     public List<Boolean> executionResults = new ArrayList<>();
+    /**
+     * The index of the insertion that failed if any
+     */
     public Integer failedInsertionIndex = -1;
+    /**
+     * Regex to extract index of failed insertion from the exception message thrown by the executeInsertion method in MongoScriptRunner
+     */
+    private static final Pattern pattern = Pattern.compile("index (\\d+)");
 
     public Boolean insertionFailed() {
-        return failedInsertionIndex != -1;
+        return failedInsertionIndex >= 0;
     }
 
     public void handleFailedInsertion(List<MongoInsertionDto> insertions, Exception e) {
@@ -33,7 +40,7 @@ public class MongoInsertionResultsDto {
     }
 
     private static int findFailedInsertion(Exception e) {
-        Matcher matcher = Pattern.compile("index (\\d+)").matcher(e.getMessage());
+        Matcher matcher = pattern.matcher(e.getMessage());
         return matcher.find() ? Integer.parseInt(matcher.group(1)) : -1;
     }
 }
