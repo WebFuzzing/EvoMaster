@@ -3,7 +3,6 @@ package org.evomaster.client.java.instrumentation;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.evomaster.client.java.utils.SimpleLogger;
 
-
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -14,68 +13,21 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static org.evomaster.client.java.instrumentation.JpaAnnotationName.*;
+
 public class ClassAnalyzer {
 
-    private static final String JAVAX_MAX_ANNOTATION_NAME = "javax.validation.constraints.Max";
-    private static final String JAKARTA_MAX_ANNOTATION_NAME = "jakarta.validation.constraints.Max";
-    private static final String JAVAX_MIN_ANNOTATION_NAME = "javax.validation.constraints.Min";
-    private static final String JAKARTA_MIN_ANNOTATION_NAME = "jakarta.validation.constraints.Min";
-    private static final String JAVAX_DECIMAL_MIN_ANNOTATION_NAME = "javax.validation.constraints.DecimalMin";
-    private static final String JAKARTA_DECIMAL_MIN_ANNOTATION_NAME = "jakarta.validation.constraints.DecimalMin";
-    private static final String JAVAX_DECIMAL_MAX_ANNOTATION_NAME = "javax.validation.constraints.DecimalMax";
-    private static final String JAKARTA_DECIMAL_MAX_ANNOTATION_NAME = "jakarta.validation.constraints.DecimalMax";
-    private static final String JAVAX_PATTERN_ANNOTATION_NAME = "javax.validation.constraints.Pattern";
-    private static final String JAKARTA_PATTERN_ANNOTATION_NAME = "jakarta.validation.constraints.Pattern";
-    private static final String JAVAX_NOT_BLANK_ANNOTATION_NAME = "javax.validation.constraints.NotBlank";
-    private static final String JAKARTA_NOT_BLANK_ANNOTATION_NAME = "jakarta.validation.constraints.NotBlank";
-    private static final String JAVAX_EMAIL_ANNOTATION_NAME = "javax.validation.constraints.Email";
-    private static final String JAKARTA_EMAIL_ANNOTATION_NAME = "jakarta.validation.constraints.Email";
-    private static final String JAVAX_NEGATIVE_ANNOTATION_NAME = "javax.validation.constraints.Negative";
-    private static final String JAKARTA_NEGATIVE_ANNOTATION_NAME = "jakarta.validation.constraints.Negative";
-    private static final String JAVAX_NEGATIVE_OR_ZERO_ANNOTATION_NAME = "javax.validation.constraints.NegativeOrZero";
-    private static final String JAKARTA_NEGATIVE_OR_ZERO_ANNOTATION_NAME = "jakarta.validation.constraints.NegativeOrZero";
-    private static final String JAVAX_POSITIVE_ANNOTATION_NAME = "javax.validation.constraints.Positive";
-    private static final String JAKARTA_POSITIVE_ANNOTATION_NAME = "jakarta.validation.constraints.Positive";
-    private static final String JAVAX_POSITIVE_OR_ZERO_ANNOTATION_NAME = "javax.validation.constraints.PositiveOrZero";
-    private static final String JAKARTA_POSITIVE_OR_ZERO_ANNOTATION_NAME = "jakarta.validation.constraints.PositiveOrZero";
-    private static final String JAVAX_PAST_ANNOTATION_NAME = "javax.validation.constraints.Past";
-    private static final String JAKARTA_PAST_ANNOTATION_NAME = "jakarta.validation.constraints.Past";
-    private static final String JAVAX_PAST_OR_PRESENT_ANNOTATION_NAME = "javax.validation.constraints.PastOrPresent";
-    private static final String JAKARTA_PAST_OR_PRESENT_ANNOTATION_NAME = "jakarta.validation.constraints.PastOrPresent";
-    private static final String JAVAX_FUTURE_ANNOTATION_NAME = "javax.validation.constraints.Future";
-    private static final String JAKARTA_FUTURE_ANNOTATION_NAME = "jakarta.validation.constraints.Future";
-    private static final String JAVAX_FUTURE_OR_PRESENT_ANNOTATION_NAME = "javax.validation.constraints.FutureOrPresent";
-    private static final String JAKARTA_FUTURE_OR_PRESENT_ANNOTATION_NAME = "jakarta.validation.constraints.FutureOrPresent";
-    private static final String JAVAX_NULL_ANNOTATION_NAME = "javax.validation.constraints.Null";
-    private static final String JAKARTA_NULL_ANNOTATION_NAME = "jakarta.validation.constraints.Null";
-    private static final String JAVAX_SIZE_ANNOTATION_NAME = "javax.validation.constraints.Size";
-    private static final String JAKARTA_SIZE_ANNOTATION_NAME = "jakarta.validation.constraints.Size";
-    private static final String JAVAX_DIGITS_ANNOTATION_NAME = "javax.validation.constraints.Digits";
-    private static final String JAKARTA_DIGITS_ANNOTATION_NAME = "jakarta.validation.constraints.Digits";
-    private static final String JAVAX_ENTITY_ANNOTATION_NAME = "javax.persistence.Entity";
-    private static final String JAKARTA_ENTITY_ANNOTATION_NAME = "jakarta.persistence.Entity";
-    private static final String JAVAX_TABLE_ANNOTATION_NAME = "javax.persistence.Table";
-    private static final String JAKARTA_TABLE_ANNOTATION_NAME = "jakarta.persistence.Table";
-
-    private static final String JAVAX_NOT_NULL_ANNOTATION_NAME = "javax.validation.constraints.NotNull";
-    private static final String JAKARTA_NOT_NULL_ANNOTATION_NAME = "jakarta.validation.constraints.NotNull";
-    private static final String JAVAX_COLUMN_ANNOTATION_NAME = "javax.persistence.Column";
-    private static final String JAKARTA_COLUMN_ANNOTATION_NAME = "jakarta.persistence.Column";
-    private static final String JAVAX_TRANSIENT_ANNOTATION_NAME = "javax.persistence.Transient";
-    private static final String JAKARTA_TRANSIENT_ANNOTATION_NAME = "jakarta.persistence.Transient";
-    private static final String JAVAX_ENUMERATED_ANNOTATION_NAME = "javax.persistence.Enumerated";
-    private static final String JAKARTA_ENUMERATED_ANNOTATION_NAME = "jakarta.persistence.Enumerated";
-    private static final String JAVAX_PREFIX = "javax.";
-    private static final String JAKARTA_PREFIX = "jakarta.";
+    private static final List<String> JAKARTA_PERSISTENCE_LAYER_NAMES = Arrays.asList(JAKARTA_ENTITY_ANNOTATION_NAME, JAKARTA_NOT_NULL_ANNOTATION_NAME);
+    private static final List<String> JAVAX_NAMES = Arrays.asList(JAVAX_ENTITY_ANNOTATION_NAME, JAVAX_NOT_NULL_ANNOTATION_NAME);
 
     /**
      * Try to load the given classes, and do different kind of analysis via reflection.
-     * This can be helpful when doing such analysis at bytecode level (eg when intercepting class loader
-     * with instrumentator) would be bit complex
+     * This can be helpful when doing such analysis at bytecode level (e.g., when intercepting class loader
+     * with instrumentator) would be a bit complex
      * <p>
-     * Note: this will have side-effects on static data-structures
+     * Note: this will have side effects on static data structures
      *
-     * @param classNames the list of names of classes to be analyzed
+     * @param classNames the list of classes names to be analyzed
      */
     public static void doAnalyze(Collection<String> classNames) {
 
@@ -116,6 +68,7 @@ public class ClassAnalyzer {
                     } else {
                         namespace = NameSpace.JAKARTA;
                     }
+                    Objects.requireNonNull(namespace);
                     analyzeConstraints(klass, namespace);
                 }
             } catch (Exception e) {
@@ -125,7 +78,7 @@ public class ClassAnalyzer {
     }
 
     private static boolean canUseJavaxJPA() {
-        boolean canUseJavaxJPA = classesCanBeLoaded(Arrays.asList(JAVAX_ENTITY_ANNOTATION_NAME, JAVAX_NOT_NULL_ANNOTATION_NAME));
+        boolean canUseJavaxJPA = classesCanBeLoaded(JAVAX_NAMES);
         if (!canUseJavaxJPA) {
             SimpleLogger.info("Not analyzing JPA using javax package");
         }
@@ -133,7 +86,7 @@ public class ClassAnalyzer {
     }
 
     private static boolean canUseJakartaPersistenceLayer() {
-        boolean canUseJakartaPersistenceLayer = classesCanBeLoaded(Arrays.asList(JAKARTA_ENTITY_ANNOTATION_NAME, JAKARTA_NOT_NULL_ANNOTATION_NAME));
+        boolean canUseJakartaPersistenceLayer = classesCanBeLoaded(JAKARTA_PERSISTENCE_LAYER_NAMES);
         if (!canUseJakartaPersistenceLayer) {
             SimpleLogger.info("Failed to load Jakarta Persistence Layer classes");
         }
@@ -144,7 +97,7 @@ public class ClassAnalyzer {
         try {
             ClassLoader loader = UnitsInfoRecorder.getInstance().getSutClassLoader();
             if (loader == null) {
-                //could happen in tests
+                // could happen in tests
                 SimpleLogger.warn("No identified ClassLoader for SUT");
                 loader = ClassAnalyzer.class.getClassLoader();
             }
@@ -157,7 +110,6 @@ public class ClassAnalyzer {
         }
     }
 
-
     private static Annotation getAnnotationByName(Class<?> klass, String name) {
         return getAnnotationByName(klass.getAnnotations(), name);
     }
@@ -166,13 +118,11 @@ public class ClassAnalyzer {
         return getAnnotationByName(field.getAnnotations(), name);
     }
 
-
     private static Annotation getAnnotationByName(Annotation[] annotations, String name) {
         return Arrays.stream(annotations)
                 .filter(a -> a.annotationType().getName().equals(name))
                 .findFirst().orElse(null);
     }
-
 
     private static String convertToSnakeCase(String s) {
         String regex = "([a-z])([A-Z]+)";
@@ -180,11 +130,6 @@ public class ClassAnalyzer {
         return s.replaceAll(regex, replacement).toLowerCase();
     }
 
-    /**
-     * Indicates if the Java Persistence API (jpa) is being used (with prefix javax.*) or
-     * the Jakarta Persistence Layer (with prefix jakarta.*) is being used.
-     */
-    enum NameSpace {JAVAX, JAKARTA}
 
     private static void analyzeConstraints(Class<?> klass, NameSpace namespace) throws Exception {
 
@@ -262,92 +207,61 @@ public class ClassAnalyzer {
                 columnName = f.getName();
             }
 
-            columnName = convertToSnakeCase(columnName);
+            JpaConstraint jpaConstraint = buildJpaConstraint(namespace, f, tableName, columnName);
 
-            final Boolean isNullable = getIsNullableAnnotation(f, namespace);
-            final List<String> enumValuesAsStrings = getEnumeratedAnnotation(f, namespace);
-            final Long minValue = getMinValue(f, namespace);
-            final Long maxValue = getMaxValue(f, namespace);
-
-            final Boolean isNotBlank = getIsNotBlank(f, namespace);
-            final Boolean isEmail = getEmail(f, namespace);
-            final Boolean isNegative = getNegative(f, namespace);
-            final Boolean isNegativeOrZero = getNegativeOrZero(f, namespace);
-            final Boolean isPositive = getPositive(f, namespace);
-            final Boolean isPositiveOrZero = getPositiveOrZero(f, namespace);
-
-            final Boolean isPast = getPast(f, namespace);
-            final Boolean isPastOrPresent = getPastOrPresent(f, namespace);
-            final Boolean isFuture = getFuture(f, namespace);
-            final Boolean isFutureOrPresent = getFutureOrPresent(f, namespace);
-            final Boolean isAlwaysNull = getNullAnnotation(f, namespace);
-            final String decimalMinValue = getDecimalMinValue(f, namespace);
-            final String decimalMaxValue = getDecimalMaxValue(f, namespace);
-            final String patternRegExp = getPatterRegExp(f, namespace);
-
-            //TODO
-            final Integer sizeMin = getSizeMin(f, namespace);
-            final Integer sizeMax = getSizeMax(f, namespace);
-            final Integer digitsInteger = getDigitsInteger(f, namespace);
-            final Integer digitsFraction = getDigitsFraction(f, namespace);
-
-            // ???
-            final Boolean isOptional = null;
-
-
-            JpaConstraint jpaConstraint = new JpaConstraint(
-                    tableName,
-                    columnName,
-                    isNullable,
-                    isOptional,
-                    minValue,
-                    maxValue,
-                    enumValuesAsStrings,
-                    decimalMinValue,
-                    decimalMaxValue,
-                    isNotBlank,
-                    isEmail,
-                    isNegative,
-                    isNegativeOrZero,
-                    isPositive,
-                    isPositiveOrZero,
-                    isFuture,
-                    isFutureOrPresent,
-                    isPast,
-                    isPastOrPresent,
-                    isAlwaysNull,
-                    patternRegExp,
-                    sizeMin,
-                    sizeMax,
-                    digitsInteger,
-                    digitsFraction
-            );
             if (jpaConstraint.isMeaningful()) {
                 UnitsInfoRecorder.registerNewJpaConstraint(jpaConstraint);
             }
         }
     }
 
-    private static Annotation getColumnAnnotation(Field f, NameSpace namespace) {
+    private static JpaConstraint buildJpaConstraint(NameSpace namespace, Field f, String tableName, String columnName)
+            throws Exception {
         Objects.requireNonNull(namespace);
+        return new JpaConstraintBuilder()
+                .withTableName(tableName)
+                .withColumnName(convertToSnakeCase(columnName))
+                .withIsNullable(isNullableAnnotation(f, namespace))
+                .withMinValue(getMinValue(f, namespace))
+                .withMaxValue(getMaxValue(f, namespace))
+                .withEnumValuesAsStrings(getEnumeratedAnnotation(f, namespace))
+                .withDecimalMinValue(getDecimalMinValue(f, namespace))
+                .withDecimalMaxValue(getDecimalMaxValue(f, namespace))
+                .withIsNotBlank(isNotBlank(f, namespace))
+                .withIsEmail(isEmail(f, namespace))
+                .withIsNegative(isNegative(f, namespace))
+                .withIsNegativeOrZero(isNegativeOrZero(f, namespace))
+                .withIsPositive(isPositive(f, namespace))
+                .withIsPositiveOrZero(isPositiveOrZero(f, namespace))
+                .withIsFuture(isFuture(f, namespace))
+                .withIsFutureOrPresent(isFutureOrPresent(f, namespace))
+                .withIsPast(isPast(f, namespace))
+                .withIsPastOrPresent(isPastOrPresent(f, namespace))
+                .withIsAlwaysNull(isAlwaysNull(f, namespace))
+                .withPatternRegExp(getPatterRegExp(f, namespace))
+                .withSizeMin(getSizeMin(f, namespace))
+                .withSizeMax(getSizeMax(f, namespace))
+                .withDigitsInteger(getDigitsInteger(f, namespace))
+                .withDigitsFraction(getDigitsFraction(f, namespace))
+                .createJpaConstraint();
+    }
+
+    private static Annotation getColumnAnnotation(Field f, NameSpace namespace) {
         final String columnAnnotationName = getAnnotationName(namespace, JAVAX_COLUMN_ANNOTATION_NAME, JAKARTA_COLUMN_ANNOTATION_NAME);
         return getAnnotationByName(f, columnAnnotationName);
     }
 
     private static Annotation getTransientAnnotation(Field f, NameSpace namespace) {
-        Objects.requireNonNull(namespace);
         final String transientAnnotationName = getAnnotationName(namespace, JAVAX_TRANSIENT_ANNOTATION_NAME, JAKARTA_TRANSIENT_ANNOTATION_NAME);
         return getAnnotationByName(f, transientAnnotationName);
     }
 
     private static Annotation getTableAnnotation(Class<?> klass, NameSpace namespace) {
-        Objects.requireNonNull(namespace);
         final String tableAnnotationName = getAnnotationName(namespace, JAVAX_TABLE_ANNOTATION_NAME, JAKARTA_TABLE_ANNOTATION_NAME);
         return getAnnotationByName(klass, tableAnnotationName);
     }
 
     private static Annotation getEntityAnnotation(Class<?> klass, NameSpace namespace) {
-        Objects.requireNonNull(namespace);
         final String entityAnnotationName = getAnnotationName(namespace, JAVAX_ENTITY_ANNOTATION_NAME, JAKARTA_ENTITY_ANNOTATION_NAME);
         return getAnnotationByName(klass, entityAnnotationName);
     }
@@ -359,9 +273,8 @@ public class ClassAnalyzer {
      * @return the Long with the specific maximum value (as a literal) if the annotation is present, otherwise returns null.
      */
     private static Long getMaxValue(Field f, NameSpace namespace) throws Exception {
-        Objects.requireNonNull(namespace);
         final String maxAnnotationName = getAnnotationName(namespace, JAVAX_MAX_ANNOTATION_NAME, JAKARTA_MAX_ANNOTATION_NAME);
-        return getLongElement(f, maxAnnotationName, "value");
+        return getLongElement(f, maxAnnotationName);
     }
 
     /**
@@ -371,29 +284,27 @@ public class ClassAnalyzer {
      * @return the Long with the specific minimum value (as a literal) if the annotation is present, otherwise returns null.
      */
     private static Long getMinValue(Field f, NameSpace namespace) throws Exception {
-        Objects.requireNonNull(namespace);
         final String minAnnotationName = getAnnotationName(namespace, JAVAX_MIN_ANNOTATION_NAME, JAKARTA_MIN_ANNOTATION_NAME);
-        return getLongElement(f, minAnnotationName, "value");
+        return getLongElement(f, minAnnotationName);
     }
 
     private static String getDecimalMinValue(Field f, NameSpace namespace) throws Exception {
-        Objects.requireNonNull(namespace);
         final String decimalMinAnnotationName = getAnnotationName(namespace, JAVAX_DECIMAL_MIN_ANNOTATION_NAME, JAKARTA_DECIMAL_MIN_ANNOTATION_NAME);
         return getStringElement(f, decimalMinAnnotationName, "value");
     }
 
     private static String getDecimalMaxValue(Field f, NameSpace namespace) throws Exception {
-        Objects.requireNonNull(namespace);
         final String decimalMaxAnnotationName = getAnnotationName(namespace, JAVAX_DECIMAL_MAX_ANNOTATION_NAME, JAKARTA_DECIMAL_MAX_ANNOTATION_NAME);
         return getStringElement(f, decimalMaxAnnotationName, "value");
     }
 
     private static String getPatterRegExp(Field f, NameSpace namespace) throws Exception {
-        Objects.requireNonNull(namespace);
         final String patternAnnotationName = getAnnotationName(namespace, JAVAX_PATTERN_ANNOTATION_NAME, JAKARTA_PATTERN_ANNOTATION_NAME);
         return getStringElement(f, patternAnnotationName, "regexp");
     }
-
+    /**
+     * Gets the correct annotation name depending on using Javax or Jakarta
+     */
     private static String getAnnotationName(NameSpace namespace, String javaxAnnotationName, String jakartaAnnotationName) {
         switch (namespace) {
             case JAVAX: {
@@ -411,46 +322,43 @@ public class ClassAnalyzer {
         }
     }
 
-    private static Long getLongElement(Field f, String annotationName, String elementName) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
-        return (Long) getElement(f, annotationName, elementName);
-
+    private static Long getLongElement(Field f, String annotationName)
+            throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+        return (Long) getElement(f, annotationName, "value");
     }
 
-    private static String getStringElement(Field f, String annotationName, String elementName) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+    private static String getStringElement(Field f, String annotationName, String elementName)
+            throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
         return (String) getElement(f, annotationName, elementName);
     }
 
-    private static Integer getIntegerElement(Field f, String annotationName, String elementName) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+    private static Integer getIntegerElement(Field f, String annotationName, String elementName)
+            throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
         return (Integer) getElement(f, annotationName, elementName);
     }
 
     private static Integer getSizeMin(Field f, NameSpace namespace) throws Exception {
-        Objects.requireNonNull(namespace);
         final String sizeAnnotationName = getAnnotationName(namespace, JAVAX_SIZE_ANNOTATION_NAME, JAKARTA_SIZE_ANNOTATION_NAME);
         return getIntegerElement(f, sizeAnnotationName, "min");
     }
 
     private static Integer getSizeMax(Field f, NameSpace namespace) throws Exception {
-        Objects.requireNonNull(namespace);
         final String sizeAnnotationName = getAnnotationName(namespace, JAVAX_SIZE_ANNOTATION_NAME, JAKARTA_SIZE_ANNOTATION_NAME);
         return getIntegerElement(f, sizeAnnotationName, "max");
     }
 
-
     private static Integer getDigitsInteger(Field f, NameSpace namespace) throws Exception {
-        Objects.requireNonNull(namespace);
         final String digitsAnnotationName = getAnnotationName(namespace, JAVAX_DIGITS_ANNOTATION_NAME, JAKARTA_DIGITS_ANNOTATION_NAME);
         return getIntegerElement(f, digitsAnnotationName, "integer");
     }
 
     private static Integer getDigitsFraction(Field f, NameSpace namespace) throws Exception {
-        Objects.requireNonNull(namespace);
         final String digitsAnnotationName = getAnnotationName(namespace, JAVAX_DIGITS_ANNOTATION_NAME, JAKARTA_DIGITS_ANNOTATION_NAME);
         return getIntegerElement(f, digitsAnnotationName, "fraction");
     }
 
-
-    private static Object getElement(Field f, String annotationName, String elementName) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+    private static Object getElement(Field f, String annotationName, String elementName)
+            throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
         Object annotation = getAnnotationByName(f, annotationName);
         if (annotation != null) {
             return annotation.getClass().getMethod(elementName).invoke(annotation);
@@ -458,10 +366,8 @@ public class ClassAnalyzer {
         return null;
     }
 
-
-    private static List<String> getEnumeratedAnnotation(Field f, NameSpace namespace) throws
-            IllegalAccessException, InvocationTargetException, NoSuchMethodException {
-        Objects.requireNonNull(namespace);
+    private static List<String> getEnumeratedAnnotation(Field f, NameSpace namespace)
+            throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
         List<String> enumValuesAsStrings = null;
         if (f.getType().isEnum()) {
 
@@ -487,84 +393,70 @@ public class ClassAnalyzer {
      * Returns a boolean if the <code>javax.validation.constraints.NotNull</code> annotation is present.
      *
      * @param f         the target field of the entity.
-     * @param namespace the namespace (e.g. javax.* or jakarta.*) for Java Persistence API (JPA) or Jakarta Persistence Layer (JPL)
+     * @param namespace the namespace (e.g., javax.* or jakarta.*) for Java Persistence API (JPA) or Jakarta Persistence Layer (JPL)
      * @return false if the field is annotated as NotNull, otherwise it returns null
      */
-    private static Boolean getIsNullableAnnotation(Field f, NameSpace namespace) {
-        Objects.requireNonNull(namespace);
+    private static Boolean isNullableAnnotation(Field f, NameSpace namespace) {
         final String notNullAnnotationName = getAnnotationName(namespace, JAVAX_NOT_NULL_ANNOTATION_NAME, JAKARTA_NOT_NULL_ANNOTATION_NAME);
-        final Boolean isNullable;
         if (f.getType().isPrimitive()
                 || getAnnotationByName(f, notNullAnnotationName) != null) {
-            isNullable = false;
+            return false;
         } else {
-            isNullable = null;
+            return null;
         }
-        return isNullable;
     }
 
-    private static Boolean getIsNotBlank(Field f, NameSpace namespace) {
-        Objects.requireNonNull(namespace);
+    private static Boolean isNotBlank(Field f, NameSpace namespace) {
         final String notBlankAnnotationName = getAnnotationName(namespace, JAVAX_NOT_BLANK_ANNOTATION_NAME, JAKARTA_NOT_BLANK_ANNOTATION_NAME);
         return getIsAnnotationWith(f, notBlankAnnotationName);
     }
 
-    private static Boolean getEmail(Field f, NameSpace namespace) {
-        Objects.requireNonNull(namespace);
+    private static Boolean isEmail(Field f, NameSpace namespace) {
         final String emailAnnotationName = getAnnotationName(namespace, JAVAX_EMAIL_ANNOTATION_NAME, JAKARTA_EMAIL_ANNOTATION_NAME);
         return getIsAnnotationWith(f, emailAnnotationName);
     }
 
-    private static Boolean getPositive(Field f, NameSpace namespace) {
-        Objects.requireNonNull(namespace);
+    private static Boolean isPositive(Field f, NameSpace namespace) {
         final String positiveAnnotationName = getAnnotationName(namespace, JAVAX_POSITIVE_ANNOTATION_NAME, JAKARTA_POSITIVE_ANNOTATION_NAME);
         return getIsAnnotationWith(f, positiveAnnotationName);
     }
 
-    private static Boolean getPositiveOrZero(Field f, NameSpace namespace) {
-        Objects.requireNonNull(namespace);
+    private static Boolean isPositiveOrZero(Field f, NameSpace namespace) {
         final String positiveOrZeroAnnotationName = getAnnotationName(namespace, JAVAX_POSITIVE_OR_ZERO_ANNOTATION_NAME, JAKARTA_POSITIVE_OR_ZERO_ANNOTATION_NAME);
         return getIsAnnotationWith(f, positiveOrZeroAnnotationName);
     }
 
-    private static Boolean getNegative(Field f, NameSpace namespace) {
-        Objects.requireNonNull(namespace);
+    private static Boolean isNegative(Field f, NameSpace namespace) {
         final String negativeAnnotationName = getAnnotationName(namespace, JAVAX_NEGATIVE_ANNOTATION_NAME, JAKARTA_NEGATIVE_ANNOTATION_NAME);
         return getIsAnnotationWith(f, negativeAnnotationName);
     }
 
-    private static Boolean getNegativeOrZero(Field f, NameSpace namespace) {
-        Objects.requireNonNull(namespace);
+    private static Boolean isNegativeOrZero(Field f, NameSpace namespace) {
         final String negativeOrZeroAnnotationName = getAnnotationName(namespace, JAVAX_NEGATIVE_OR_ZERO_ANNOTATION_NAME, JAKARTA_NEGATIVE_OR_ZERO_ANNOTATION_NAME);
         return getIsAnnotationWith(f, negativeOrZeroAnnotationName);
     }
 
-    private static Boolean getPast(Field f, NameSpace namespace) {
-        Objects.requireNonNull(namespace);
+    private static Boolean isPast(Field f, NameSpace namespace) {
         final String pastAnnotationName = getAnnotationName(namespace, JAVAX_PAST_ANNOTATION_NAME, JAKARTA_PAST_ANNOTATION_NAME);
         return getIsAnnotationWith(f, pastAnnotationName);
     }
 
-    private static Boolean getPastOrPresent(Field f, NameSpace namespace) {
-        Objects.requireNonNull(namespace);
+    private static Boolean isPastOrPresent(Field f, NameSpace namespace) {
         final String pastOrPresentAnnotationName = getAnnotationName(namespace, JAVAX_PAST_OR_PRESENT_ANNOTATION_NAME, JAKARTA_PAST_OR_PRESENT_ANNOTATION_NAME);
         return getIsAnnotationWith(f, pastOrPresentAnnotationName);
     }
 
-    private static Boolean getFuture(Field f, NameSpace namespace) {
-        Objects.requireNonNull(namespace);
+    private static Boolean isFuture(Field f, NameSpace namespace) {
         final String futureAnnotationName = getAnnotationName(namespace, JAVAX_FUTURE_ANNOTATION_NAME, JAKARTA_FUTURE_ANNOTATION_NAME);
         return getIsAnnotationWith(f, futureAnnotationName);
     }
 
-    private static Boolean getFutureOrPresent(Field f, NameSpace namespace) {
-        Objects.requireNonNull(namespace);
+    private static Boolean isFutureOrPresent(Field f, NameSpace namespace) {
         final String futureOrPresentAnnotationName = getAnnotationName(namespace, JAVAX_FUTURE_OR_PRESENT_ANNOTATION_NAME, JAKARTA_FUTURE_OR_PRESENT_ANNOTATION_NAME);
         return getIsAnnotationWith(f, futureOrPresentAnnotationName);
     }
 
-    private static Boolean getNullAnnotation(Field f, NameSpace namespace) {
-        Objects.requireNonNull(namespace);
+    private static Boolean isAlwaysNull(Field f, NameSpace namespace) {
         final String nullAnnotationName = getAnnotationName(namespace, JAVAX_NULL_ANNOTATION_NAME, JAKARTA_NULL_ANNOTATION_NAME);
         return getIsAnnotationWith(f, nullAnnotationName);
     }

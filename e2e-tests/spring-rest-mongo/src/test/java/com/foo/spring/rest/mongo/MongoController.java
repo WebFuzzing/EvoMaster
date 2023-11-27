@@ -11,6 +11,8 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.testcontainers.containers.GenericContainer;
 import org.evomaster.client.java.controller.problem.RestProblem;
+
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -20,6 +22,7 @@ public abstract class MongoController extends EmbeddedSutController {
     private MongoClient mongoClient;
 
     private final GenericContainer<?> mongodb = new GenericContainer<>("mongo:6.0")
+            .withTmpFs(Collections.singletonMap("/data/db", "rw"))
             .withExposedPorts(MONGODB_PORT);
     private ConfigurableApplicationContext ctx;
 

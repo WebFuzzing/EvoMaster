@@ -29,12 +29,13 @@ object MongoWriter {
         skipFailure: Boolean
     ) {
 
-        if (mongoDbInitialization.isEmpty()) return
+        if (mongoDbInitialization.isEmpty() || mongoDbInitialization.none {!skipFailure || it.result.getInsertExecutionResult()}) {
+            return
+        }
 
         val insertionVar = "insertions${groupIndex}"
         val insertionVarResult = "${insertionVar}result"
         val previousVar = insertionVars.joinToString(", ") { it.first }
-        val previousVarResults = insertionVars.joinToString(", ") { it.second }
         mongoDbInitialization
             .filter { !skipFailure || it.result.getInsertExecutionResult() }
             .forEachIndexed { index, evaluatedMongoDbAction ->
@@ -86,7 +87,7 @@ object MongoWriter {
                 format.isJava() -> "MongoInsertionResultsDto "
                 format.isKotlin() -> "val "
                 else -> throw IllegalStateException("Not support mongo insertions generation for $format")
-            } + "$insertionVarResult = controller.execInsertionsIntoMongoDatabase(${if (previousVarResults.isBlank()) insertionVar else "$insertionVar, $previousVarResults"})"
+            } + "$insertionVarResult = controller.execInsertionsIntoMongoDatabase($insertionVar)"
         )
         lines.appendSemicolon(format)
 

@@ -284,7 +284,8 @@ For example:
 
 ```
 private static final GenericContainer mongodb =  
-         new GenericContainer("mongo:3.2")
+         new GenericContainer("mongo:6.0")
+                .withTmpFs(Collections.singletonMap("/data/db", "rw"))
                 .withExposedPorts(27017);
 ```
 

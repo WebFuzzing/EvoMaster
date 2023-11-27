@@ -16,6 +16,50 @@ internal class RestPathTest{
 
 
     @Test
+    fun testGestaohospitalIssue(){
+
+        val original = "/v1/hospitais/"
+
+        val path = RestPath(original)
+
+        assertEquals(original, path.toString())
+    }
+
+    @Test
+    fun testResolvePathWithSlash(){
+
+        val id = 77
+        val pathParam = PathParam("id", CustomMutationRateGene("d_", IntegerGene("id", id), 1.0))
+
+        val path = "/api/foo/{id}/"
+        val restPath = RestPath(path)
+
+        val resolved = restPath.resolve(listOf(pathParam))
+        assertEquals("/api/foo/$id/", resolved)
+    }
+
+    @Test
+    fun testQueryIntWithSlash(){
+
+        val path = RestPath("/x/")
+
+        val a = QueryParam("a", IntegerGene("a", 5))
+
+        val uri = path.resolve(listOf(a))
+
+        assertEquals("/x/?a=5", uri)
+    }
+
+    @Test
+    fun testMatchResolvedPathWithSlash(){
+        val path = RestPath("/x/{y}/z/")
+
+        val resolvedPath = "/x/example/z/"
+
+        assertTrue(path.matches(resolvedPath))
+    }
+
+    @Test
     fun testResolveMultiVariableInterluded(){
 
         val x = 7
