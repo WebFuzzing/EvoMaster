@@ -827,7 +827,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                      */
                     val actions = individual.seeActions(ActionFilter.ONLY_DNS) as List<HostnameResolutionAction>
                     if(actions.isEmpty() || actions.none{ it.hostname == hn.remoteHostname}){
-                        //ok, we are in that special case
+                        // OK, we are in that special case
                         val hra = HostnameResolutionAction(hn.remoteHostname, ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP)
 
 //                        TODO: add to current individual

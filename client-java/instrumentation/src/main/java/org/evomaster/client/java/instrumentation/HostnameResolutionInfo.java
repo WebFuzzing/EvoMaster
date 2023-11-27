@@ -20,7 +20,7 @@ public class HostnameResolutionInfo implements Serializable {
             throw new IllegalArgumentException("Empty remoteHostName");
         }
 
-        if(resolvedAddress != null && !ExternalServiceInfoUtils.isIP(resolvedAddress)){
+        if(resolvedAddress != null && !ExternalServiceInfoUtils.isValidIP(resolvedAddress)){
             // IP address could null (ie not resolved). however, if specified, must be valid
             throw new IllegalArgumentException("Invalid resolved IP address: " + resolvedAddress);
         }
