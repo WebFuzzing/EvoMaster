@@ -1,4 +1,4 @@
-package org.evomaster.e2etests.spring.rest.mongo.foo;
+package org.evomaster.e2etests.spring.rest.mongo;
 
 import com.foo.spring.rest.mongo.MongoController;
 import com.foo.spring.rest.mongo.MongoStudentsAppController;

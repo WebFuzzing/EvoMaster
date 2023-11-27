@@ -806,7 +806,9 @@ public class EMController {
             } catch (Exception e) {
                 String msg = "Failed to execute database command: " + e.getMessage();
                 SimpleLogger.warn(msg);
-                return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
+                mongoInsertionResultsDto = new MongoInsertionResultsDto();
+                mongoInsertionResultsDto.handleFailedInsertion(dto.insertions, e);
+                return Response.status(400).entity(WrappedResponseDto.withData(mongoInsertionResultsDto)).build();
             }
 
             if (mongoInsertionResultsDto != null) {
