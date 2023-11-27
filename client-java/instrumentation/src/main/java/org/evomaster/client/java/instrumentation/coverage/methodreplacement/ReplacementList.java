@@ -57,6 +57,7 @@ public class ReplacementList {
                     new OkHttpClientClassReplacement(),
                     new OkUrlFactoryClassReplacement(),
                     new ObjectClassReplacement(),
+                    new ObjectIdClassReplacement(),
                     new ObjectsClassReplacement(),
                     new PatternClassReplacement(),
                     new PreparedStatementClassReplacement(),

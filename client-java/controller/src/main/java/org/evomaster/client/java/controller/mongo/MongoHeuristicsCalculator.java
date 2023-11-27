@@ -3,6 +3,7 @@ package org.evomaster.client.java.controller.mongo;
 import org.evomaster.client.java.controller.mongo.operations.*;
 import org.evomaster.client.java.controller.mongo.operations.synthetic.*;
 import org.evomaster.client.java.distance.heuristics.DistanceHelper;
+import org.evomaster.client.java.sql.internal.TaintHandler;
 
 import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.*;
 import static java.lang.Math.abs;
@@ -14,6 +15,16 @@ import java.util.stream.Collectors;
 public class MongoHeuristicsCalculator {
 
     public static final double MIN_DISTANCE_TO_TRUE_VALUE = 1.0;
+
+    private final TaintHandler taintHandler;
+
+    public MongoHeuristicsCalculator() {
+       this(null);
+    }
+
+    public MongoHeuristicsCalculator(TaintHandler taintHandler) {
+        this.taintHandler = taintHandler;
+    }
 
     /**
      * Compute a "branch" distance heuristics.
@@ -429,6 +440,11 @@ public class MongoHeuristicsCalculator {
         }
 
         if (val1 instanceof String && val2 instanceof String) {
+
+            if(taintHandler!=null){
+                taintHandler.handleTaintForStringEquals((String)val1,(String)val2, false);
+            }
+
             return (double) DistanceHelper.getLeftAlignmentDistance((String) val1, (String) val2);
         }
 
@@ -437,10 +453,16 @@ public class MongoHeuristicsCalculator {
         }
 
         if (val1 instanceof String && isObjectId(val2)) {
+            if(taintHandler!=null){
+                taintHandler.handleTaintForStringEquals((String)val1,val2.toString(),false);
+            }
             return (double) DistanceHelper.getLeftAlignmentDistance((String) val1, val2.toString());
         }
 
         if (val2 instanceof String && isObjectId(val1)) {
+            if(taintHandler!=null){
+                taintHandler.handleTaintForStringEquals(val1.toString(),val2.toString(),false);
+            }
             return (double) DistanceHelper.getLeftAlignmentDistance(val1.toString(), (String) val2);
         }
 
