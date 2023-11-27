@@ -2,6 +2,7 @@ package org.evomaster.client.java.controller.internal.db;
 
 import org.evomaster.client.java.controller.api.dto.database.execution.MongoFailedQuery;
 import org.evomaster.client.java.controller.api.dto.database.execution.MongoExecutionDto;
+import org.evomaster.client.java.controller.internal.TaintHandlerExecutionTracer;
 import org.evomaster.client.java.controller.mongo.MongoHeuristicsCalculator;
 import org.evomaster.client.java.controller.mongo.MongoOperation;
 import org.evomaster.client.java.instrumentation.MongoCollectionInfo;
@@ -48,6 +49,8 @@ public class MongoHandler {
      * Documents of the collection will be mapped to the Repository type
      */
     private final Map<String, String> collectionInfo;
+
+    private final MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator(new TaintHandlerExecutionTracer());
 
     public MongoHandler() {
         distances = new ArrayList<>();
@@ -117,8 +120,6 @@ public class MongoHandler {
 
         if (collectionIsEmpty)
             failedQueries.add(new MongoOperation(info.getCollectionName(), info.getQuery(), info.getDatabaseName(), info.getDocumentsType()));
-
-        MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator();
 
         double min = Double.MAX_VALUE;
 
