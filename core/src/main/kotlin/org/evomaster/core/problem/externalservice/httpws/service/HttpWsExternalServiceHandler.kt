@@ -103,7 +103,7 @@ class HttpWsExternalServiceHandler {
     private fun initDefaultWM() {
         if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
             if (!isDefaultInitialized) {
-                addHostname(HostnameResolutionInfo("no_host_name", "",false))
+                addHostname(HostnameResolutionInfo("no_host_name", ""))
                 registerHttpExternalServiceInfo(DefaultHttpExternalServiceInfo.createDefaultHttps())
                 registerHttpExternalServiceInfo(DefaultHttpExternalServiceInfo.createDefaultHttp())
                 isDefaultInitialized = true
@@ -216,7 +216,7 @@ class HttpWsExternalServiceHandler {
     fun getHostnameResolutionActions(): List<HostnameResolutionAction> {
         val output: MutableList<HostnameResolutionAction> = mutableListOf()
         hostnameResolutionInfos.forEach {
-            val action = HostnameResolutionAction(it.remoteHostName, it.resolvedAddress)
+            val action = HostnameResolutionAction(it.remoteHostName, it.resolvedAddress!!)
             output.add(action)
         }
         return output

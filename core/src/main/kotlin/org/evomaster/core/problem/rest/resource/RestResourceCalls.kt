@@ -13,6 +13,7 @@ import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
+import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.util.RestResourceTemplateHandler
 import org.evomaster.core.problem.util.BindingBuilder
@@ -85,6 +86,11 @@ class RestResourceCalls(
     private val mongoDbActions: List<MongoDbAction>
         get() {
             return children.flatMap { it.flatten() }.filterIsInstance<MongoDbAction>()
+        }
+
+    private val dnsActions: List<HostnameResolutionAction>
+        get() {
+            return children.flatMap { it.flatView() }.filterIsInstance<HostnameResolutionAction>()
         }
 
     private val externalServiceActions: List<ApiExternalServiceAction>
@@ -186,6 +192,7 @@ class RestResourceCalls(
             ActionFilter.ONLY_EXTERNAL_SERVICE -> externalServiceActions
             ActionFilter.NO_EXTERNAL_SERVICE -> sqlActions.plus(mainActions)
             ActionFilter.ONLY_MONGO -> mongoDbActions
+            ActionFilter.ONLY_DNS -> dnsActions
         }
     }
 

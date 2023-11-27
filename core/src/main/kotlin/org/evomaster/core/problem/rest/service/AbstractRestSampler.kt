@@ -334,8 +334,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
             info.bootTimeInfoDto.hostnameResolutionInfoDtos.forEach {
                 externalServiceHandler.addHostname(HostnameResolutionInfo(
                     it.remoteHostname,
-                    it.resolvedAddress,
-                    it.resolved
+                    it.resolvedAddress
                 ))
             }
         }

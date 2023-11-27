@@ -47,7 +47,7 @@ public class ExternalServiceMockingEMTest extends SpringTestBase {
                 "--outputFormat", "JAVA_JUNIT_5",
                 "--outputFolder", "target/em-tests/ExternalServiceEM",
                 "--externalServiceIPSelectionStrategy", "USER",
-                "--externalServiceIP", "127.0.0.2"
+                "--externalServiceIP", "127.0.0.3"
         };
 
         Injector injector = init(Arrays.asList(args));

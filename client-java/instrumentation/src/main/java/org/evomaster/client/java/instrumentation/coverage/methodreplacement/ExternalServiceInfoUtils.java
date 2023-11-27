@@ -1,23 +1,18 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 
 import org.evomaster.client.java.instrumentation.ExternalServiceInfo;
-import org.evomaster.client.java.instrumentation.HostnameResolutionInfo;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes.InetAddressClassReplacement;
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-
 public class ExternalServiceInfoUtils {
-
 
     /**
      * Check if string literal is a valid v4 or v6 IP address
      */
-    public static boolean isIP(String s){
+    public static boolean isIP(String s) {
 
-        //return false; //TODO
+        return false;
     }
 
     /**

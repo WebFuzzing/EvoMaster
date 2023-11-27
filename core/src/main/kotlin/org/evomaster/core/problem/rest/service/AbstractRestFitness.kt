@@ -830,7 +830,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                         //ok, we are in that special case
                         val hra = HostnameResolutionAction(hn.remoteHostname, ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP)
 
-                        add to current individual
+//                        TODO: add to current individual
                     }
                 }
             }
