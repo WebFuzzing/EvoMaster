@@ -147,13 +147,19 @@ class HttpWsExternalServiceHandler {
 //                x
 //            }
 
+        if (externalServices.containsKey(externalServiceInfo.signature())) {
+            return
+        }
+
         if (!hostnameLocalAddressMapping.containsKey(externalServiceInfo.remoteHostname)) {
             return
         }
 
+        // Note: If services running on a same IP but with different port, there is a conflict
+
         val ip: String = hostnameLocalAddressMapping[externalServiceInfo.remoteHostname]!!
 
-        if (externalServiceInfo.remoteHostname.equals("no_host_name")) {
+        if (externalServiceInfo.remoteHostname == "no_host_name") {
             defaultServiceIP = ip
         }
 
@@ -216,7 +222,8 @@ class HttpWsExternalServiceHandler {
     fun getHostnameResolutionActions(): List<HostnameResolutionAction> {
         val output: MutableList<HostnameResolutionAction> = mutableListOf()
         hostnameResolutionInfos.forEach {
-            val action = HostnameResolutionAction(it.remoteHostName, it.resolvedAddress!!)
+            // TODO: Seran - Check the toString conversion
+            val action = HostnameResolutionAction(it.remoteHostName, it.resolvedAddress.toString())
             output.add(action)
         }
         return output

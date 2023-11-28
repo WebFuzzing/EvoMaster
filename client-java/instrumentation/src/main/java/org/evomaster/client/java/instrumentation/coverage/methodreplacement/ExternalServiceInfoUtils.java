@@ -1,10 +1,13 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 
 import org.evomaster.client.java.instrumentation.ExternalServiceInfo;
+import org.evomaster.client.java.instrumentation.HostnameResolutionInfo;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes.InetAddressClassReplacement;
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils;
 import org.evomaster.client.java.instrumentation.shared.IPAddressValidator;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+
+import java.net.InetAddress;
 
 public class ExternalServiceInfoUtils {
 
@@ -23,10 +26,13 @@ public class ExternalServiceInfoUtils {
      * Force collecting DNS info, without failing if errors
      */
     public static void analyzeDnsResolution(String host){
-        try{
-            InetAddressClassReplacement.getAllByName(host);
+        try {
+            // TODO: Need to verify
+            InetAddress addresses = InetAddressClassReplacement.getByName(host);
+            ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(host, addresses.getHostAddress()));
         } catch (Exception e){
             //do nothing
+            ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(host, null));
         }
     }
 
