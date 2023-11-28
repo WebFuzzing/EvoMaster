@@ -24,6 +24,7 @@ public class IPAddressValidatorTest {
         assertTrue(IPAddressValidator.isValidInet6Address("2002:c0a8:101::42"));
         assertTrue(IPAddressValidator.isValidInet6Address("2000::"));
         assertTrue(IPAddressValidator.isValidInet6Address("::1234:5678"));
+        assertFalse(IPAddressValidator.isValidInet6Address(":1234:5678"));
         assertFalse(IPAddressValidator.isValidInet6Address("192.168.1.1"));
     }
 }
