@@ -6,9 +6,15 @@ package org.evomaster.core.problem.externalservice
  */
 class HostnameResolutionInfo (
     val remoteHostName: String,
-    val resolvedAddress: String?
+    /**
+     * Real IP address resolved in the SUT.
+     * Should NEVER be used directly in the test.
+     * It can be useful though for "harvesting", where the "core" will make direct calls
+     * to real service to fetch possible data for seeding
+     */
+    val realResolvedAddress: String?
 ) {
 
-    fun isResolved() = resolvedAddress != null
+    fun isResolved() = realResolvedAddress != null
 
 }

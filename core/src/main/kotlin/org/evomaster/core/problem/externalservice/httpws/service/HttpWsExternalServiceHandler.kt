@@ -223,7 +223,7 @@ class HttpWsExternalServiceHandler {
         val output: MutableList<HostnameResolutionAction> = mutableListOf()
         hostnameResolutionInfos.forEach {
             // TODO: Seran - Check the toString conversion
-            val action = HostnameResolutionAction(it.remoteHostName, it.resolvedAddress.toString())
+            val action = HostnameResolutionAction(it.remoteHostName, it.realResolvedAddress.toString())
             output.add(action)
         }
         return output
