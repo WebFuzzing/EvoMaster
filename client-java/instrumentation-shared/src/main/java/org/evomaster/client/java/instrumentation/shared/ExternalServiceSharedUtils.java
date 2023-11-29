@@ -9,6 +9,8 @@ public class ExternalServiceSharedUtils {
      */
     public static final String RESERVED_RESOLVED_LOCAL_IP = "127.0.0.2";
 
+    public static final String DEFAULT_WM_DUMMY_HOSTNAME = "no_host_name";
+
     /**
      * default WM signature for https
      */

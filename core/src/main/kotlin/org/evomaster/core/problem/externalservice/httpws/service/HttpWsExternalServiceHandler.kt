@@ -3,6 +3,7 @@ package org.evomaster.core.problem.externalservice.httpws.service
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.ExternalServiceMappingDto
 import org.evomaster.client.java.controller.api.dto.problem.ExternalServiceDto
+import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils.isDefaultSignature
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
@@ -56,12 +57,6 @@ class HttpWsExternalServiceHandler {
     private val externalServices: MutableMap<String, HttpWsExternalService> = mutableMapOf()
 
     /**
-     * Map from hostname (used in SUT for external services) and local ip addresses, that we resolve
-     * those hostname (ie like DNS)
-     */
-//    private val localAddressMapping: MutableMap<String, String> = mutableMapOf()
-
-    /**
      * Skipped external services information provided through the driver to skip from
      * handling.
      */
@@ -103,7 +98,7 @@ class HttpWsExternalServiceHandler {
     private fun initDefaultWM() {
         if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
             if (!isDefaultInitialized) {
-                addHostname(HostnameResolutionInfo("no_host_name", ""))
+                addHostname(HostnameResolutionInfo(ExternalServiceSharedUtils.DEFAULT_WM_DUMMY_HOSTNAME, ""))
                 registerHttpExternalServiceInfo(DefaultHttpExternalServiceInfo.createDefaultHttps())
                 registerHttpExternalServiceInfo(DefaultHttpExternalServiceInfo.createDefaultHttp())
                 isDefaultInitialized = true
@@ -126,7 +121,11 @@ class HttpWsExternalServiceHandler {
     fun addHostname(hostnameResolutionInfo: HostnameResolutionInfo) {
         if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
             if (!hostnameLocalAddressMapping.containsKey(hostnameResolutionInfo.remoteHostName)) {
-                val ip = getNewIP()
+                var ip = if (hostnameResolutionInfo.remoteHostName == ExternalServiceSharedUtils.DEFAULT_WM_DUMMY_HOSTNAME) {
+                    ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP
+                } else {
+                    getNewIP()
+                }
                 lastIPAddress = ip
                 hostnameLocalAddressMapping[hostnameResolutionInfo.remoteHostName] = ip
                 hostnameResolutionInfos.add(hostnameResolutionInfo)
@@ -159,7 +158,7 @@ class HttpWsExternalServiceHandler {
 
         val ip: String = hostnameLocalAddressMapping[externalServiceInfo.remoteHostname]!!
 
-        if (externalServiceInfo.remoteHostname == "no_host_name") {
+        if (externalServiceInfo.remoteHostname == ExternalServiceSharedUtils.DEFAULT_WM_DUMMY_HOSTNAME) {
             defaultServiceIP = ip
         }
 
@@ -222,8 +221,7 @@ class HttpWsExternalServiceHandler {
     fun getHostnameResolutionActions(): List<HostnameResolutionAction> {
         val output: MutableList<HostnameResolutionAction> = mutableListOf()
         hostnameResolutionInfos.forEach {
-            // TODO: Seran - Check the toString conversion
-            val action = HostnameResolutionAction(it.remoteHostName, it.realResolvedAddress.toString())
+            val action = HostnameResolutionAction(it.remoteHostName, hostnameLocalAddressMapping[it.remoteHostName]!!)
             output.add(action)
         }
         return output

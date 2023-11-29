@@ -7,7 +7,7 @@ import org.evomaster.core.search.gene.Gene
 
 class HostnameResolutionAction(
     val hostname: String,
-    val resolvedAddress: String
+    val localIPAddress: String
 ) : EnvironmentAction(listOf()) {
 
     /**
@@ -27,16 +27,9 @@ class HostnameResolutionAction(
         return ind.searchGlobalState!!.externalServiceHandler.hasActiveMockServer(hostname)
     }
 
-    /**
-     * Returns whether the remote hostname is resolved or not.
-     */
-    fun isResolved(): Boolean {
-        return resolvedAddress != null
-    }
-
 
     override fun getName(): String {
-        return "Hostname_${hostname}_${resolvedAddress}"
+        return "Hostname_${hostname}_${localIPAddress}"
     }
 
     override fun seeTopGenes(): List<out Gene> {
@@ -44,6 +37,6 @@ class HostnameResolutionAction(
     }
 
     override fun copyContent(): StructuralElement {
-        return HostnameResolutionAction(hostname, resolvedAddress)
+        return HostnameResolutionAction(hostname, localIPAddress)
     }
 }
