@@ -348,6 +348,16 @@ class EMConfig {
             throw IllegalArgumentException("Advanced SQL heuristics requires enabling base ones as well")
         }
 
+        if (shouldGenerateMongoData() && !heuristicsForMongo) {
+            throw IllegalArgumentException("Cannot generate Mongo data if you not enable " +
+                    "collecting heuristics with 'heuristicsForMongo'")
+        }
+
+        if (shouldGenerateMongoData() && !extractMongoExecutionInfo) {
+            throw IllegalArgumentException("Cannot generate Mongo data if you not enable " +
+                    "extracting Mongo execution info with 'extractMongoExecutionInfo'")
+        }
+
         if (enableTrackEvaluatedIndividual && enableTrackIndividual) {
             throw IllegalArgumentException("When tracking EvaluatedIndividual, it is not necessary to track individual")
         }

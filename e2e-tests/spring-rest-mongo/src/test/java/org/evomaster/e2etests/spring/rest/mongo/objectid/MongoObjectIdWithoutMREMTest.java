@@ -1,4 +1,4 @@
-package org.evomaster.e2etests.spring.rest.mongo.foo;
+package org.evomaster.e2etests.spring.rest.mongo.objectid;
 
 import com.foo.spring.rest.mongo.MongoObjectIdAppController;
 import org.evomaster.core.EMConfig;
@@ -11,19 +11,21 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
-public class MongoEMObjectIdWithMRTest extends RestTestBase {
+public class MongoObjectIdWithoutMREMTest extends RestTestBase {
 
     @BeforeAll
     public static void initClass() throws Exception {
         EMConfig config = new EMConfig();
-        config.setInstrumentMR_MONGO(true);
+        config.setInstrumentMR_MONGO(false);
         RestTestBase.initClass(new MongoObjectIdAppController(), config);
     }
 
+
     @Test
-    public void testRunEMWithMongoMethodReplacement() throws Throwable {
+    public void testRunEMWithoutMongoMethodReplacement() throws Throwable {
+
         runTestHandlingFlakyAndCompilation(
-                "MongoEMGeneration",
+                "MongoObjectIdWithoutMREM",
                 "org.foo.spring.rest.mongo.MongoEMGeneration",
                 1000,
                 (args) -> {
@@ -32,7 +34,7 @@ public class MongoEMObjectIdWithMRTest extends RestTestBase {
                     args.add("--heuristicsForMongo");
                     args.add("false");
                     args.add("--instrumentMR_MONGO");
-                    args.add("true");
+                    args.add("false");
                     args.add("--generateMongoData");
                     args.add("false");
                     args.add("--extractMongoExecutionInfo");
@@ -41,10 +43,8 @@ public class MongoEMObjectIdWithMRTest extends RestTestBase {
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertFalse(solution.getIndividuals().isEmpty());
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/objectid/createObjectId", null);
+                    assertNone(solution, HttpVerb.GET, 200, "/objectid/createObjectId", null);
                     assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/objectid/createObjectId", null);
                 });
     }
-
-
 }
