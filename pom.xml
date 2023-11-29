@@ -134,7 +134,15 @@
         <jetty.version>9.4.29.v20200521</jetty.version>
         <jersey.version>2.33</jersey.version>
         <javax.el.version>2.2.5</javax.el.version>
-        <jackson.version>2.16.0</jackson.version>
+        <!--
+            Using latest, eg 2.16.0, breaks build, as Maven Shade Plugin
+            still does not support multi-release JARs
+            https://github.com/apache/maven-shade-plugin/pull/202
+            recent versions of Jackson are multi-release.
+            More info at:
+            https://www.logicbig.com/tutorials/core-java-tutorial/java-9-changes/multi-release-jars.html
+        -->
+        <jackson.version>2.14.3</jackson.version>
         <asm.version>9.2</asm.version>
         <testcontainers.version>1.17.6</testcontainers.version>
         <testcontainers.mockerserver.version>1.17.2</testcontainers.mockerserver.version>
