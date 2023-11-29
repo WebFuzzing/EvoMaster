@@ -27,6 +27,7 @@ import org.evomaster.core.remote.TcpUtils
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.FitnessValue
+import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.*
@@ -829,8 +830,8 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                     if(actions.isEmpty() || actions.none{ it.hostname == hn.remoteHostname}){
                         // OK, we are in that special case
                         val hra = HostnameResolutionAction(hn.remoteHostname, ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP)
-
-                        // TODO: add to current individual...
+                        // TODO: Under development
+                        individual.addChildToGroup(hra, GroupsOfChildren.INITIALIZATION_DNS)
                     }
                 }
             }

@@ -38,8 +38,6 @@ class HttpWsExternalServiceHandler {
      * through AdditionalInfoDto and will be captured under
      * AbstractRestFitness and AbstractRestSample for further use.
      *
-     * TODO: This is not the final implementation need to refactor but
-     *  the concept is working.
      */
 
     @Inject
