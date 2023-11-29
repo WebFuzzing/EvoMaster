@@ -75,8 +75,6 @@ class HttpWsExternalServiceHandler {
      */
     private var lastIPAddress: String = ""
 
-    private var defaultServiceIP: String = ""
-
     private var counter: Long = 0
 
     /**
@@ -138,14 +136,6 @@ class HttpWsExternalServiceHandler {
             return
         }
 
-//        val ip: String = localAddressMapping[externalServiceInfo.remoteHostname]
-//            ?: run {
-//                val x = getNewIP()
-//                lastIPAddress = x
-//                localAddressMapping[externalServiceInfo.remoteHostname] = x
-//                x
-//            }
-
         if (externalServices.containsKey(externalServiceInfo.signature())) {
             return
         }
@@ -154,13 +144,7 @@ class HttpWsExternalServiceHandler {
             return
         }
 
-        // Note: If services running on a same IP but with different port, there is a conflict
-
         val ip: String = hostnameLocalAddressMapping[externalServiceInfo.remoteHostname]!!
-
-        if (externalServiceInfo.remoteHostname == ExternalServiceSharedUtils.DEFAULT_WM_DUMMY_HOSTNAME) {
-            defaultServiceIP = ip
-        }
 
         val registered = externalServices.filterValues {
             it.getRemoteHostName() == externalServiceInfo.remoteHostname &&

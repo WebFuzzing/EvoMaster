@@ -27,7 +27,6 @@ public class ExternalServiceInfoUtils {
      */
     public static void analyzeDnsResolution(String host){
         try {
-            // TODO: Need to verify
             InetAddress addresses = InetAddressClassReplacement.getByName(host);
             ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(host, addresses.getHostAddress()));
         } catch (Exception e){
@@ -51,8 +50,6 @@ public class ExternalServiceInfoUtils {
         // Note: Checking whether there is any active mapping or not will reduce the amount
         // of time the same info gets added again and again. To do this, have to change the
         // data structure of the external service mapping inside ExecutionTracer
-
-        // TODO: Experiment
 
         ExecutionTracer.addExternalServiceHost(remoteHostInfo);
         String signature = remoteHostInfo.signature();
