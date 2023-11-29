@@ -7,7 +7,7 @@ on:
     tags-ignore:
       - '**'
     # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#onpushpull_requestpull_request_targetpathspaths-ignore
-    # Avoid building if only modifying non-code files.branches-ignore.
+    # Avoid building if only modifying non-code files.
     # An exception is docs/options.md , as created from build
     paths:
       - "**"
