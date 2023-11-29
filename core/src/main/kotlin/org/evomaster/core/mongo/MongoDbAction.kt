@@ -6,6 +6,7 @@ import org.evomaster.core.search.EnvironmentAction
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
+import org.evomaster.core.search.gene.collection.MapGene
 import org.evomaster.core.search.gene.mongo.ObjectIdGene
 import java.util.*
 
@@ -32,11 +33,19 @@ class MongoDbAction(
         val gene = createObjectGenesForDTOs(
             documentsTypeName, documentsType, RestActionBuilderV3.Options(invalidData = false)
         )
-        gene as ObjectGene
-        return Collections.singletonList(
-            ObjectGene(
-                gene.name,
-                gene.fixedFields.filter { gene -> gene.name != "_id" } + (Collections.singletonList(ObjectIdGene("_id")))))
+        if (gene is ObjectGene) {
+            return Collections.singletonList(
+                ObjectGene(
+                    gene.name,
+                    gene.fixedFields.filter { gene -> gene.name != "_id" } + (Collections.singletonList(ObjectIdGene("_id")))))
+        } else if (gene is MapGene<*,*>) {
+            return Collections.singletonList(
+                ObjectGene(
+                    gene.name,
+                    gene.getAllElements().filter { pair -> pair.first.name != "_id" } + (Collections.singletonList(ObjectIdGene("_id")))))
+        } else {
+            throw IllegalArgumentException("Cannot compute gene ${gene.javaClass}");
+        }
     }
 
     override fun getName(): String {
