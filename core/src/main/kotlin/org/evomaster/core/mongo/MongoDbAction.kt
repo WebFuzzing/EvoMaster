@@ -33,19 +33,25 @@ class MongoDbAction(
         val gene = createObjectGenesForDTOs(
             documentsTypeName, documentsType, RestActionBuilderV3.Options(invalidData = false)
         )
-        if (gene is ObjectGene) {
-            return Collections.singletonList(
-                ObjectGene(
-                    gene.name,
-                    gene.fixedFields.filter { gene -> gene.name != "_id" } + (Collections.singletonList(ObjectIdGene("_id")))))
-        } else if (gene is MapGene<*,*>) {
-            return Collections.singletonList(
-                ObjectGene(
-                    gene.name,
-                    gene.getAllElements().filter { pair -> pair.first.name != "_id" } + (Collections.singletonList(ObjectIdGene("_id")))))
-        } else {
-            throw IllegalArgumentException("Cannot compute gene ${gene.javaClass}");
+        val fixedFields = when (gene) {
+            is ObjectGene -> {
+                        gene.fixedFields.filter { fixedFieldGene -> fixedFieldGene.name != "_id" }
+            }
+
+            is MapGene<*,*> -> {
+                        gene.getAllElements().filter { pairGene -> pairGene.first.name != "_id" }
+            }
+
+            else -> {
+                throw IllegalArgumentException("Cannot obtain fixed fields from gene ${gene.javaClass}")
+            }
         }
+
+        return Collections.singletonList(
+            ObjectGene(
+                gene.name,
+                fixedFields + (Collections.singletonList(ObjectIdGene("_id")))))
+
     }
 
     override fun getName(): String {
