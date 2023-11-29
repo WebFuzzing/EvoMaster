@@ -7,6 +7,7 @@ import joptsimple.OptionSet
 import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory
+import org.evomaster.core.config.ConfigUtil
 import org.evomaster.core.config.ConfigsFromFile
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
@@ -18,6 +19,8 @@ import java.net.URL
 import java.nio.file.Files
 import java.nio.file.InvalidPathException
 import java.nio.file.Paths
+import kotlin.io.path.Path
+import kotlin.io.path.exists
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.jvm.javaType
 
@@ -245,9 +248,22 @@ class EMConfig {
      */
     fun updateProperties(options: OptionSet) {
 
-        //TODO check cff settings here
+        val properties = getConfigurationProperties()
 
-        getConfigurationProperties().forEach { m ->
+        // command-line arguments are applied last (most important, overriding config file),
+        // but would need to check first for config path location...
+        val configPath = properties.first { it.name == "configPath" }
+        updateProperty(options, configPath)
+        checkPropertyConstraints(configPath)
+
+        // First apply all settings in config file, if any
+        val cff = loadConfigFile()
+        if(cff != null){
+            applyConfigFromFile(cff)
+        }
+
+        // the apply command-line arguments
+        properties.forEach { m ->
 
             updateProperty(options, m)
 
@@ -260,6 +276,16 @@ class EMConfig {
         checkMultiFieldConstraints()
 
         handleDeprecated()
+    }
+
+    private fun loadConfigFile(): ConfigsFromFile?{
+
+        //if specifying one manually, file MUST exist. otherwise might be missing
+
+        if(configPath == defaultConfigPath && !Path(configPath).exists()) {
+            return null
+        }
+        return ConfigUtil.readFromToml(configPath)
     }
 
     private fun applyConfigFromFile(cff: ConfigsFromFile) {
@@ -2039,10 +2065,12 @@ class EMConfig {
     @Cfg("Apply a security testing phase after functional test cases have been generated.")
     var security = false
 
+    val defaultConfigPath = "em.toml"
+
     @Experimental
     @Cfg("File path for file with configuration settings")
     @FilePath
-    var configPath: String = "em.toml"
+    var configPath: String = defaultConfigPath
 
     @Experimental
     @Cfg("If there is no configuration file, create a default template at given configPath location")

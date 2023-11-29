@@ -14,7 +14,11 @@ object ConfigUtil {
         }
 
         val mapper = TomlMapper()
-        val cff = mapper.readValue(path.toFile(), ConfigsFromFile::class.java)
+        val cff = try{
+            mapper.readValue(path.toFile(), ConfigsFromFile::class.java)
+        } catch (e: Exception){
+            throw IllegalArgumentException("Failed to parse TOML config file at: ${path.toAbsolutePath()}", e)
+        }
 
         //TODO validate here? in TOML there is no schema yet
 
