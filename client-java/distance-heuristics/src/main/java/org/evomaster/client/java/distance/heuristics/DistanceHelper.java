@@ -53,6 +53,23 @@ public class DistanceHelper {
     }
 
     /**
+     * Add the 2 distances together, taking into account possible overflows
+     *
+     * @param a
+     * @param b
+     * @return
+     */
+    public static double addDistances(double a, double b) {
+        double sum = a + b;
+        if (sum < Math.max(a, b)) {
+            //overflow
+            return Double.MAX_VALUE;
+        } else {
+            return sum;
+        }
+    }
+
+    /**
      * Return a h=[0,1] heuristics from a scaled distance, taking into account a starting base
      * @param base
      * @param distance
