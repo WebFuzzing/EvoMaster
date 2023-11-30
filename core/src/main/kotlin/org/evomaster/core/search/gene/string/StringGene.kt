@@ -614,7 +614,7 @@ class StringGene(
                         val schema = it.value
                         val t = schema.subSequence(0, schema.indexOf(":")).trim().toString()
                         val ref = t.subSequence(1,t.length-1).toString()
-                        val obj = RestActionBuilderV3.createObjectGenesForDTOs(ref, schema, RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling))
+                        val obj = RestActionBuilderV3.createGeneForDTO(ref, schema, RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling))
                         toAddGenes.add(obj)
                     }
             log.trace("JSON_OBJECT, added specification size: {}", toAddGenes.size)

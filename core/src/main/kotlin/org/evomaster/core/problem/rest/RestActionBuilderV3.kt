@@ -20,7 +20,6 @@ import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.rest.param.*
 import org.evomaster.core.problem.util.ActionBuilderUtil
-import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.ArrayGene
@@ -195,22 +194,30 @@ object RestActionBuilderV3 {
     }
 
     /**
-     * @param name of the Dto to parse
-     * @param allSchemas contains all schemas of dto and its ref classes in the form
-     *      "name: { "type name": "schema", "ref name": "schema", .... }"
-     * @return a gene of the dto
+     * Creates a Gene object for Data Transfer Objects (DTOs) based on the provided parameters.
+     *
+     * @param dtoSchemaName The name of the DTO schema to create a Gene for.
+     * @param allSchemas The string containing all DTO schemas, including the one specified by 'dtoSchemaName'.
+     *      The expected format is "name: { "type name": "schema", "ref name": "schema", .... }"
+     * @param options The options to customize the gene creation process.
+     * @return A Gene object representing the specified DTO schema.
+     * @throws IllegalArgumentException if the provided 'name' is not found at the beginning of 'allSchemas'.
+     * @throws IllegalStateException if the schema with the specified 'name' cannot be found in 'allSchemas'.
+     *
+     * @see Gene
+     * @see Options
      */
-    fun createObjectGenesForDTOs(name: String,
-                                 allSchemas: String,
-                                 options: Options) : Gene{
-        if(!allSchemas.startsWith("\"$name\"")){
-            throw IllegalArgumentException("Invalid name $name for schema $allSchemas")
+    fun createGeneForDTO(dtoSchemaName: String,
+                         allSchemas: String,
+                         options: Options) : Gene{
+        if(!allSchemas.startsWith("\"$dtoSchemaName\"")){
+            throw IllegalArgumentException("Invalid name $dtoSchemaName for schema $allSchemas")
         }
 
-        val allSchemasValue = allSchemas.substring(1 + name.length + 2)
+        val allSchemasValue = allSchemas.substring(1 + dtoSchemaName.length + 2)
 
         val schemas = getMapStringFromSchemas(allSchemasValue)
-        val dtoSchema = schemas[name] ?: throw IllegalStateException("cannot find the schema with $name from $allSchemas")
+        val dtoSchema = schemas[dtoSchemaName] ?: throw IllegalStateException("cannot find the schema with $dtoSchemaName from $allSchemas")
 
         if(dtoCache.containsKey(dtoSchema)){
             return dtoCache[dtoSchema]!!.copy()
