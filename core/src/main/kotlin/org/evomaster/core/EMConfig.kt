@@ -285,6 +285,9 @@ class EMConfig {
         if(configPath == defaultConfigPath && !Path(configPath).exists()) {
             return null
         }
+
+        LoggingUtil.getInfoLogger().info("Loading configuration file from: ${Path(configPath).toAbsolutePath()}")
+
         return ConfigUtil.readFromToml(configPath)
     }
 
@@ -298,6 +301,13 @@ class EMConfig {
         if (missing.isNotEmpty()) {
             throw IllegalArgumentException("Configuration file defines the following non-existing properties: ${missing.joinToString(", ")}")
         }
+
+        if(cff.configs.isEmpty()){
+            //nothing to do
+            return
+        }
+
+        LoggingUtil.getInfoLogger().info("Applying following ${cff.configs.size} configuration settings: [${cff.configs.keys.joinToString(", ")}]")
 
         properties.forEach {
             if (cff.configs.contains(it.name)) {
