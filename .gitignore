@@ -132,3 +132,4 @@ Migrations/
 /client-java/sql/target/
 /client-java/distance-heuristics/target/
 /e2e-tests/spring-rpc/spring-rpc-grpc/target/
+/em.toml

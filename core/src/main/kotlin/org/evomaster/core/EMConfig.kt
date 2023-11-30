@@ -9,6 +9,7 @@ import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory
 import org.evomaster.core.config.ConfigUtil
 import org.evomaster.core.config.ConfigsFromFile
+import org.evomaster.core.docs.ConfigToMarkdown
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.impact.impactinfocollection.GeneMutationSelectionMethod
@@ -276,6 +277,27 @@ class EMConfig {
         checkMultiFieldConstraints()
 
         handleDeprecated()
+
+        handleCreateConfigPathIfMissing(properties)
+    }
+
+    private fun handleCreateConfigPathIfMissing(properties: List<KMutableProperty<*>>) {
+        if (createConfigPathIfMissing && !Path(configPath).exists()) {
+
+            val cff = ConfigsFromFile()
+            val important = properties.filter { it.annotations.any { a -> a is Important } }
+            important.forEach {
+                var default = it.call(this).toString()
+                if (default.isBlank()) {
+                    default = "\"\""
+                }
+                cff.configs[it.name] = default
+            }
+
+            LoggingUtil.getInfoLogger()
+                .info("Going to create configuration file at: ${Path(configPath).toAbsolutePath()}")
+            ConfigUtil.createConfigFileTemplateToml(configPath, cff)
+        }
     }
 
     private fun loadConfigFile(): ConfigsFromFile?{
@@ -316,7 +338,6 @@ class EMConfig {
                 updateValue(value!!, it)
             }
         }
-
     }
 
     private fun handleDeprecated() {
