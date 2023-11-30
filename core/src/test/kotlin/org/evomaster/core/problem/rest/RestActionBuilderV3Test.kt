@@ -185,7 +185,7 @@ class RestActionBuilderV3Test{
             }
         """.trimIndent()
 
-        val gene = RestActionBuilderV3.createObjectGenesForDTOs(name, dtoSchema, RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling))
+        val gene = RestActionBuilderV3.createGeneForDTO(name, dtoSchema, RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling))
         assertEquals(name, gene.name)
         assertTrue(gene is ObjectGene)
         (gene as ObjectGene).apply {
@@ -571,7 +571,7 @@ class RestActionBuilderV3Test{
             }
         """.trimIndent()
 
-        val mapGene = RestActionBuilderV3.createObjectGenesForDTOs(mapDto, allSchema, RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling))
+        val mapGene = RestActionBuilderV3.createGeneForDTO(mapDto, allSchema, RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling))
         assertTrue(mapGene is ObjectGene)
         (mapGene as ObjectGene).apply {
             assertEquals(2, fields.size)
@@ -784,7 +784,7 @@ class RestActionBuilderV3Test{
                }
             }
         """
-        val ghGene = RestActionBuilderV3.createObjectGenesForDTOs(classToExtract, schema, RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling))
+        val ghGene = RestActionBuilderV3.createGeneForDTO(classToExtract, schema, RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling))
     }
 
     //---------------------------------
