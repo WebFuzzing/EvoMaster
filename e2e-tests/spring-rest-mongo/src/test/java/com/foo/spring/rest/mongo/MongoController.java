@@ -33,6 +33,7 @@ public abstract class MongoController extends EmbeddedSutController {
     protected MongoController(String databaseName, Class<?> mongoAppClass) {
         this.databaseName  = databaseName;
         this.mongoAppClass = mongoAppClass;
+        super.setControllerPort(0);
     }
 
     @Override
