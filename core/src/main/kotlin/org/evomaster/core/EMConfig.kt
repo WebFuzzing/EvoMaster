@@ -288,14 +288,17 @@ class EMConfig {
             val important = properties.filter { it.annotations.any { a -> a is Important } }
             important.forEach {
                 var default = it.call(this).toString()
+                val type = (it.returnType.javaType as Class<*>)
                 if (default.isBlank()) {
                     default = "\"\""
+                } else if(type.isEnum || String::class.java.isAssignableFrom(type)){
+                    default = "\"$default\""
                 }
+
                 cff.configs[it.name] = default
             }
 
-            LoggingUtil.getInfoLogger()
-                .info("Going to create configuration file at: ${Path(configPath).toAbsolutePath()}")
+            LoggingUtil.uniqueUserInfo("Going to create configuration file at: ${Path(configPath).toAbsolutePath()}")
             ConfigUtil.createConfigFileTemplateToml(configPath, cff)
         }
     }
@@ -308,7 +311,7 @@ class EMConfig {
             return null
         }
 
-        LoggingUtil.getInfoLogger().info("Loading configuration file from: ${Path(configPath).toAbsolutePath()}")
+        LoggingUtil.uniqueUserInfo("Loading configuration file from: ${Path(configPath).toAbsolutePath()}")
 
         return ConfigUtil.readFromToml(configPath)
     }
@@ -329,7 +332,7 @@ class EMConfig {
             return
         }
 
-        LoggingUtil.getInfoLogger().info("Applying following ${cff.configs.size} configuration settings: [${cff.configs.keys.joinToString(", ")}]")
+        LoggingUtil.uniqueUserInfo("Applying following ${cff.configs.size} configuration settings: [${cff.configs.keys.joinToString(", ")}]")
 
         properties.forEach {
             if (cff.configs.contains(it.name)) {
