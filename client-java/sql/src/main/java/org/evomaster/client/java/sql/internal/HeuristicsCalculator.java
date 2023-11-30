@@ -173,7 +173,7 @@ public class HeuristicsCalculator {
         double after = computeComparison(x, start, new GreaterThanEquals());
         double before = computeComparison(x, end, new MinorThanEquals());
 
-        return addDistances(after, before);
+        return DistanceHelper.addDistances(after, before);
     }
 
     private double computeInExpression(InExpression exp, DataRow data) {
