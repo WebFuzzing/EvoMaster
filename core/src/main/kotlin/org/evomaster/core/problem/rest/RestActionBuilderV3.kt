@@ -123,9 +123,10 @@ object RestActionBuilderV3 {
                               actionCluster: MutableMap<String, Action>,
                               endpointsToSkip: List<Endpoint> = listOf(),
                               doParseDescription: Boolean = false,
-                              enableConstraintHandling: Boolean
+                              enableConstraintHandling: Boolean,
+                              endpointForEnablementInfo: String?
     ){
-        addActionsFromSwagger(swagger, actionCluster, endpointsToSkip,
+        addActionsFromSwagger(swagger, actionCluster, endpointsToSkip, endpointForEnablementInfo,
             Options(doParseDescription = doParseDescription, enableConstraintHandling = enableConstraintHandling)
         )
     }
@@ -323,6 +324,9 @@ object RestActionBuilderV3 {
         return dtoSchemas.map { dtoCache[it]!!.copy() }
     }
 
+    private fun shouldSkip(endpoint : String, endpointsToSkip : List<String>) : Boolean {
+        return endpointsToSkip.stream().anyMatch { e -> endpoint.contains(e) }
+    }
 
     private fun handleOperation(
         actionCluster: MutableMap<String, Action>,
@@ -331,7 +335,8 @@ object RestActionBuilderV3 {
         operation: Operation,
         swagger: OpenAPI,
         options: Options,
-        errorEndpoints : MutableList<String> = mutableListOf()
+        errorEndpoints : MutableList<String> = mutableListOf(),
+        endpointForEnablementInfo: String?
     ) {
 
         try{
@@ -370,7 +375,11 @@ object RestActionBuilderV3 {
                 action.initTokens(info)
             }
 
-            actionCluster[action.getName()] = action
+            if (endpointForEnablementInfo.isNullOrEmpty()) {
+                actionCluster[action.getName()] = action
+            } else {
+
+            }
         }catch (e: Exception){
             log.warn("Fail to parse endpoint $verb$restPath due to "+e.message)
             errorEndpoints.add("$verb$restPath")

@@ -23,7 +23,7 @@ import javax.ws.rs.core.MediaType
 /**
  * The [SchemaOracle] class generates expectations and writes them to the code.
  *
- * A check is made to see if the structure of te response matches a structure in the schema.
+ * A check is made to see if the structure of the response matches a structure in the schema.
  * If a response is successful and returns an object.
  *
  * The [SchemaOracle]

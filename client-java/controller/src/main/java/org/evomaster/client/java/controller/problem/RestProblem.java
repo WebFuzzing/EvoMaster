@@ -13,10 +13,16 @@ public class RestProblem extends ProblemInfo{
 
     private final List<String> endpointsToSkip;
 
+    private final String endpointForEnablementInfo;
+
     private final String openApiSchema;
 
     public RestProblem(String openApiUrl, List<String> endpointsToSkip) {
         this(openApiUrl, endpointsToSkip, null);
+    }
+
+    public RestProblem(String openApiUrl, List<String> endpointsToSkip, String openApiSchema) {
+        this(openApiUrl, endpointsToSkip, openApiSchema, null);
     }
 
 
@@ -31,11 +37,15 @@ public class RestProblem extends ProblemInfo{
      * @param openApiSchema the actual schema, as a string. Note, if this specified, then
      *                       openApiUrl must be null
      */
-    public RestProblem(String openApiUrl, List<String> endpointsToSkip, String openApiSchema) {
+    public RestProblem(String openApiUrl, List<String> endpointsToSkip, String openApiSchema, String endpointForEnablementInfo) {
         this.openApiUrl = openApiUrl;
         this.endpointsToSkip = endpointsToSkip == null
                 ? new ArrayList<>()
                 : new ArrayList<>(endpointsToSkip);
+        this.endpointForEnablementInfo = endpointForEnablementInfo;
+        if (endpointForEnablementInfo != null && !endpointForEnablementInfo.isEmpty()) {
+            this.endpointsToSkip.add(endpointForEnablementInfo);
+        }
         this.openApiSchema = openApiSchema;
 
         boolean url = openApiUrl != null && !openApiUrl.isEmpty();
@@ -55,6 +65,10 @@ public class RestProblem extends ProblemInfo{
 
     public List<String> getEndpointsToSkip() {
         return Collections.unmodifiableList(endpointsToSkip);
+    }
+
+    public String getEndpointForEnablementInfo() {
+        return endpointForEnablementInfo;
     }
 
     public String getOpenApiSchema() {

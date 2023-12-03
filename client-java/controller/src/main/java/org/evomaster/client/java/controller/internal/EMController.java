@@ -202,6 +202,7 @@ public class EMController {
             dto.restProblem = new RestProblemDto();
             dto.restProblem.openApiUrl = rp.getOpenApiUrl();
             dto.restProblem.endpointsToSkip = rp.getEndpointsToSkip();
+            dto.restProblem.endpointForEnablementInfo = rp.getEndpointForEnablementInfo();
             dto.restProblem.openApiSchema = rp.getOpenApiSchema();
             dto.restProblem.servicesToNotMock = servicesToNotMock;
 

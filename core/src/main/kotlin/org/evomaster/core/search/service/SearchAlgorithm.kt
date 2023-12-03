@@ -78,7 +78,7 @@ abstract class SearchAlgorithm<T> where T : Individual {
                 writeTestsSnapshot(partialSolution, lastSnapshot.toString())
             }
         }
-
+//chiara aca
         handleAfterSearch()
 
         return archive.extractSolution()
