@@ -250,10 +250,10 @@ object RestActionBuilderV3 {
      * @param dtoSchema the schema of dto
      * @param referenceTypeName the name (eg, class name) of the reference type
      */
-    fun createObjectGeneForDTO(name: String,
-                               dtoSchema: String,
-                               referenceTypeName: String?,
-                               options: Options) : Gene{
+    fun createGeneForDTO(name: String,
+                         dtoSchema: String,
+                         referenceTypeName: String?,
+                         options: Options) : Gene{
 
         if(! dtoSchema.startsWith("\"$name\"")){
             throw IllegalArgumentException("Invalid name $name for schema $dtoSchema")
@@ -281,10 +281,10 @@ object RestActionBuilderV3 {
         return gene.copy()
     }
 
-    fun createObjectGeneForDTOs(names: List<String>,
-                                dtoSchemas: List<String>,
-                                referenceTypeNames: List<String?>,
-                                options: Options
+    fun createGenesForDTOs(names: List<String>,
+                           dtoSchemas: List<String>,
+                           referenceTypeNames: List<String?>,
+                           options: Options
     ) : List<Gene>{
 
         Lazy.assert { names.size == dtoSchemas.size }
