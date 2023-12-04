@@ -646,7 +646,7 @@ object RestActionBuilderV3 {
 
         //first check for "optional" format
         when (format?.lowercase()) {
-            "int32" -> return createNonObjectGeneWithSchemaConstraints(schema, name, IntegerGene::class.java, options, null, isInPath, examples)//IntegerGene(name)
+            "int8","int16","int32" -> return createNonObjectGeneWithSchemaConstraints(schema, name, IntegerGene::class.java, options, null, isInPath, examples,format)//IntegerGene(name)
             "int64" -> return createNonObjectGeneWithSchemaConstraints(schema, name, LongGene::class.java, options, null, isInPath, examples) //LongGene(name)
             "double" -> return createNonObjectGeneWithSchemaConstraints(schema, name, DoubleGene::class.java, options, null, isInPath, examples)//DoubleGene(name)
             "float" -> return createNonObjectGeneWithSchemaConstraints(schema, name, FloatGene::class.java, options, null, isInPath, examples)//FloatGene(name)
@@ -1055,7 +1055,8 @@ object RestActionBuilderV3 {
         collectionTemplate: Gene? = null,
         //might need to add extra constraints if in path
         isInPath: Boolean,
-        exampleObjects: List<Any>
+        exampleObjects: List<Any>,
+        format: String? = null
     ) : Gene{
 
 
@@ -1064,13 +1065,42 @@ object RestActionBuilderV3 {
 
         val mainGene = when(geneClass){
             // number gene
-            IntegerGene::class.java -> IntegerGene(
+            IntegerGene::class.java ->
+            {
+                val minRange: Int
+                val maxRange: Int
+                if (format == "int8") {
+                    minRange = Byte.MIN_VALUE.toInt()
+                    maxRange = Byte.MAX_VALUE.toInt()
+                } else if (format == "int16") {
+                    minRange = Short.MIN_VALUE.toInt()
+                    maxRange = Short.MAX_VALUE.toInt()
+                } else {
+                    minRange = Integer.MIN_VALUE
+                    maxRange = Integer.MAX_VALUE
+                }
+
+                val minConstraint: Int?
+                val maxConstraint: Int?
+                if (options.enableConstraintHandling) {
+                    minConstraint = schema.minimum?.intValueExact()
+                    maxConstraint = schema.maximum?.intValueExact()
+                } else {
+                    minConstraint = null
+                    maxConstraint = null
+                }
+
+                val minValue = if (minConstraint != null) maxOf(minConstraint, minRange) else minRange
+                val maxValue = if (maxConstraint != null) minOf(maxConstraint, maxRange) else maxRange
+
+                IntegerGene(
                     name,
-                    min = if (options.enableConstraintHandling) schema.minimum?.intValueExact() else null,
-                    max = if (options.enableConstraintHandling) schema.maximum?.intValueExact() else null,
+                    min = minValue,
+                    max = maxValue,
                     maxInclusive = maxInclusive,
                     minInclusive = minInclusive
-            )
+                )
+            }
             LongGene::class.java -> LongGene(
                     name,
                     min = if (options.enableConstraintHandling) schema.minimum?.longValueExact() else null,
