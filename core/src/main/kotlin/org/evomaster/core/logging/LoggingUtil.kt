@@ -47,6 +47,9 @@ class LoggingUtil {
             uniqueWarn(getInfoLogger(), AnsiColor.inRed("WARNING: $msg"))
         }
 
+        fun uniqueUserInfo(msg: String){
+            getInfoLogger().info(UniqueTurboFilter.UNIQUE_MARKER, msg)
+        }
 
         /**
          *   Only needed for testing/debugging

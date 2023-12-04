@@ -6,14 +6,20 @@ on:
       - "**"
     tags-ignore:
       - '**'
-    paths-ignore:
-      - 'scripts/**'
-      - 'docs/**'
-      - 'version.py'
-      - 'makeExecutable.sh'
-      - 'buildAll.sh'
-      - 'README.md'
-      - '.gitignore'
+    # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#onpushpull_requestpull_request_targetpathspaths-ignore
+    # Avoid building if only modifying non-code files.
+    # An exception is docs/options.md , as created from build
+    paths:
+      - "**"
+      - '!scripts/**'
+      - '!version.py'
+      - '!makeExecutable.sh'
+      - '!buildAll.sh'
+      - '!README.md'
+      - '!LICENSE'
+      - '!.gitignore'
+      - '!docs/**'
+      - 'docs/options.md'
 
 env:
   evomaster-version: 2.0.1
