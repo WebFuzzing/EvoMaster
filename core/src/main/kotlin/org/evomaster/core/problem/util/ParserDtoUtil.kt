@@ -48,7 +48,7 @@ object ParserDtoUtil {
         val names = infoDto.unitsInfoDto?.parsedDtos?.keys?.toList()?:return emptyMap()
         val schemas = names.map { infoDto.unitsInfoDto.parsedDtos[it]!! }
         //TODO need to check: referType is same with the name?
-        val genes = RestActionBuilderV3.createObjectGeneForDTOs(names, schemas, names, RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling))
+        val genes = RestActionBuilderV3.createGenesForDTOs(names, schemas, names, RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling))
         Lazy.assert { names.size == genes.size }
         return names.mapIndexed { index, s -> s to genes[index] }.toMap()
     }
