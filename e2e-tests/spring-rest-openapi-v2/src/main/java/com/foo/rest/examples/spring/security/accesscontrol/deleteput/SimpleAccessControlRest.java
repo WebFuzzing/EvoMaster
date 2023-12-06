@@ -64,7 +64,7 @@ public class SimpleAccessControlRest {
 
             } else {
                 return new ResponseEntity<>("Only users with the role CREATOR can create resources ",
-                        HttpStatus.UNAUTHORIZED);
+                        HttpStatus.FORBIDDEN);
             }
         }
         else {
