@@ -15,6 +15,7 @@ import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 @EnableWebSecurity
 public class SimpleAccessControlWebSecurityConfig extends WebSecurityConfigurerAdapter {
 
+    // security configuration
     protected void configure(HttpSecurity http) throws Exception {
         http.authorizeRequests()
                 .antMatchers("/v2/api-docs").permitAll()
@@ -28,7 +29,7 @@ public class SimpleAccessControlWebSecurityConfig extends WebSecurityConfigurerA
                 .csrf().disable();
     }
 
-
+    // user credentials.
     @Bean
     @Override
     public UserDetailsService userDetailsService() {
@@ -59,18 +60,4 @@ public class SimpleAccessControlWebSecurityConfig extends WebSecurityConfigurerA
         manager.createUser(user3);
         return manager;
     }
-
-    /*
-
-    @Override
-    public void configure(AuthenticationManagerBuilder auth)  throws Exception {
-
-        auth.inMemoryAuthentication()
-                .withUser("creator").password("creator_password").roles("CREATOR").and()
-                .withUser("consumer1").password("consumer1_password").roles("CONSUMER").and()
-                .withUser("consumer2").password("consumer2_password").roles("CONSUMER");
-    }
-
-    */
-
 }
