@@ -1504,4 +1504,130 @@ class RestActionBuilderV3Test{
         assertTrue(found.contains("E"))
         assertTrue(found.contains("F"))
     }
+
+    @Test
+    fun testInt8AndInt16Formats() {
+
+        val dtoSchemaName = "foo.com.BarDto"
+        val dtoSchema = """
+            "$dtoSchemaName":{
+                "type":"object",
+                "properties": {
+                    "short_primitive":{"type":"integer", "format":"int16"},
+                    "short_wrapped":{"type":"integer", "format":"int16"},
+                    "byte_primitive":{"type":"integer", "format":"int8"},
+                    "byte_wrapped":{"type":"integer", "format":"int8"}
+                },
+                "required": [
+                    "short_primitive",
+                    "byte_primitive"
+                ]
+            }
+            """.trimIndent()
+
+        val allSchemas = "\"${dtoSchemaName}\":{${dtoSchema}}"
+
+        val gene = RestActionBuilderV3.createGeneForDTO(
+            dtoSchemaName,
+            allSchemas,
+            RestActionBuilderV3.Options(enableConstraintHandling = true)
+        )
+
+        assertTrue(gene is ObjectGene)
+        (gene as ObjectGene).apply {
+            assertEquals(4, gene.fields.size)
+            assertEquals("short_primitive", gene.fields[0].name)
+            assertEquals("short_wrapped", gene.fields[1].name)
+            assertEquals("byte_primitive", gene.fields[2].name)
+            assertEquals("byte_wrapped", gene.fields[3].name)
+
+            assertTrue(gene.fields[0] is IntegerGene)
+            assertTrue(gene.fields[1] is OptionalGene)
+            assertTrue(gene.fields[2] is IntegerGene)
+            assertTrue(gene.fields[3] is OptionalGene)
+
+            val shortPrimitiveGene = (gene.fields[0] as IntegerGene)
+            assertEquals(Short.MIN_VALUE.toInt(), shortPrimitiveGene.min)
+            assertEquals(Short.MAX_VALUE.toInt(), shortPrimitiveGene.max)
+
+            val bytePrimitiveGene = (gene.fields[2] as IntegerGene)
+            assertEquals(Byte.MIN_VALUE.toInt(), bytePrimitiveGene.min)
+            assertEquals(Byte.MAX_VALUE.toInt(), bytePrimitiveGene.max)
+
+            val shortWrappedGene = (gene.fields[1] as OptionalGene).gene
+            assertTrue(shortWrappedGene is IntegerGene)
+            (shortWrappedGene as IntegerGene).apply {
+                assertEquals(Short.MIN_VALUE.toInt(), shortWrappedGene.min)
+                assertEquals(Short.MAX_VALUE.toInt(), shortWrappedGene.max)
+            }
+
+            val byteWrappedGene = (gene.fields[3] as OptionalGene).gene
+            assertTrue(byteWrappedGene is IntegerGene)
+            (byteWrappedGene as IntegerGene).apply {
+                assertEquals(Byte.MIN_VALUE.toInt(), byteWrappedGene.min)
+                assertEquals(Byte.MAX_VALUE.toInt(), byteWrappedGene.max)
+            }
+
+        }
+    }
+
+
+    @Test
+    fun testInt8AndInt16FormatsWithConstraints() {
+
+        val dtoSchemaName = "foo.com.BarDto"
+        val dtoSchema = """
+            "$dtoSchemaName":{
+                "type":"object",
+                "properties": {
+                    "short_primitive":{
+                        "type":"integer", 
+                        "format":"int16",
+                        "minimum": 0,
+                        "maximum": 16
+                    },
+                    "byte_primitive":{
+                        "type":"integer", 
+                        "format":"int8",
+                        "minimum": -1,
+                        "maximum": 5
+                    }
+                },
+                "required": [
+                    "short_primitive",
+                    "byte_primitive"
+                    
+                ]
+            }
+            """.trimIndent()
+
+        val allSchemas = "\"${dtoSchemaName}\":{${dtoSchema}}"
+
+        val gene = RestActionBuilderV3.createGeneForDTO(
+            dtoSchemaName,
+            allSchemas,
+            RestActionBuilderV3.Options(enableConstraintHandling = true)
+        )
+
+        assertTrue(gene is ObjectGene)
+        (gene as ObjectGene).apply {
+            assertEquals(2, gene.fields.size)
+            assertEquals("short_primitive", gene.fields[0].name)
+            assertEquals("byte_primitive", gene.fields[1].name)
+
+            assertTrue(gene.fields[0] is IntegerGene)
+            assertTrue(gene.fields[1] is IntegerGene)
+
+            val shortPrimitiveGene = (gene.fields[0] as IntegerGene)
+            assertEquals(0, shortPrimitiveGene.min)
+            assertEquals(16, shortPrimitiveGene.max)
+
+            val bytePrimitiveGene = (gene.fields[1] as IntegerGene)
+            assertEquals(-1, bytePrimitiveGene.min)
+            assertEquals(5, bytePrimitiveGene.max)
+
+
+        }
+    }
+
 }
