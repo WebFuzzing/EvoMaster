@@ -77,8 +77,11 @@ class SearchTimeController {
 
     val averageTestTimeMs = IncrementalAverage()
 
+    val averageActionTimeMs = IncrementalAverage()
+
     val averageOverheadMsBetweenTests = IncrementalAverage()
 
+    val averageResetSUTTimeMs = IncrementalAverage()
 
     /**
      * Make sure we do not make too many requests in a short amount of time, to avoid
@@ -144,6 +147,7 @@ class SearchTimeController {
 
         // for all tests evaluated so far
         averageTestTimeMs.addValue(ms)
+        averageActionTimeMs.addValue(ms.toDouble() / nActions.toDouble())
     }
 
 

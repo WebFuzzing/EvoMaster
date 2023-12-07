@@ -185,7 +185,11 @@ class Main {
                 if (!config.avoidNonDeterministicLogs) {
                     info("Passed time (seconds): ${stc.getElapsedSeconds()}")
                     info("Execution time per test (ms): ${stc.averageTestTimeMs}")
+                    info("Execution time per action (ms): ${stc.averageActionTimeMs}")
                     info("Computation overhead between tests (ms): ${stc.averageOverheadMsBetweenTests}")
+                    if(!config.blackBox){
+                        info("Computation overhead of resetting the SUT (ms): ${stc.averageResetSUTTimeMs}")
+                    }
                 }
             }
 

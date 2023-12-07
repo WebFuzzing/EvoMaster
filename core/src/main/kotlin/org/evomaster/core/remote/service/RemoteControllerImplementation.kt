@@ -10,6 +10,7 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.remote.NoRemoteConnectionException
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.TcpUtils
+import org.evomaster.core.search.service.SearchTimeController
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.annotation.PostConstruct
@@ -42,6 +43,9 @@ class RemoteControllerImplementation() : RemoteController{
 
     @Inject
     private lateinit var config: EMConfig
+
+    @Inject
+    private lateinit var stc: SearchTimeController
 
     private var client: Client = ClientBuilder.newClient()
 
@@ -263,7 +267,12 @@ class RemoteControllerImplementation() : RemoteController{
 
     override fun stopSUT() = changeState(false, false)
 
-    override fun resetSUT() = startSUT()
+    override fun resetSUT() : Boolean{
+        stc.averageResetSUTTimeMs.doStartTimer()
+        val res = startSUT()
+        stc.averageResetSUTTimeMs.addElapsedTime()
+        return res
+    }
 
     override fun checkConnection() {
 
