@@ -44,8 +44,9 @@ class RemoteControllerImplementation() : RemoteController{
     @Inject
     private lateinit var config: EMConfig
 
+    //TODO: should clean up. in few places we use RemoteController without injection
     @Inject
-    private lateinit var stc: SearchTimeController
+    private var stc: SearchTimeController? = null
 
     private var client: Client = ClientBuilder.newClient()
 
@@ -268,9 +269,9 @@ class RemoteControllerImplementation() : RemoteController{
     override fun stopSUT() = changeState(false, false)
 
     override fun resetSUT() : Boolean{
-        stc.averageResetSUTTimeMs.doStartTimer()
+        stc?.averageResetSUTTimeMs?.doStartTimer()
         val res = startSUT()
-        stc.averageResetSUTTimeMs.addElapsedTime()
+        stc?.averageResetSUTTimeMs?.addElapsedTime()
         return res
     }
 
