@@ -88,6 +88,8 @@ atom
  : quote
  | patternCharacter+
  | DOT
+ | ESCAPED_DOT
+ | ESCAPED_PLUS
  | AtomEscape
  | characterClass
  | PAREN_open disjunction PAREN_close
@@ -194,7 +196,8 @@ classAtomNoDash
  : BaseChar
  | DecimalDigit
  | COMMA | CARET | DOLLAR | SLASH | DOT | STAR | PLUS | QUESTION
- | PAREN_open | PAREN_close | BRACKET_open | BRACE_open | BRACE_close | OR | E | Q;
+ | PAREN_open | PAREN_close | BRACKET_open | BRACE_open | BRACE_close | OR | E | Q
+ | ESCAPED_DOT | ESCAPED_PLUS;
 
 
 //TODO
@@ -232,7 +235,8 @@ fragment CharacterClassEscape
  ;
 
 
-
+ESCAPED_PLUS               : '\\+'; // Recognize \+
+ESCAPED_DOT                : '\\.'; // Recognize \-
 CARET                      : '^';
 DOLLAR                     : '$';
 SLASH                      : '\\';

@@ -32,7 +32,7 @@ public class ValidatorHeuristics {
     private static final String PREFIX_HIBERNATE = "org.hibernate.validator.constraints.";
     private static final String PREFIX_JIRUKTA = "cz.jirutka.validator.collection.constraints.";
 
-    static final String EMAIL_REGEX_PATTERN = "^[A-Za-z\\+\\._-]{2,}@[A-Za-z]+(\\.[A-Za-z]{2,}+)+$";
+    public static final String EMAIL_REGEX_PATTERN = "^([A-Za-z_-]|\\.|\\+){2,}@[A-Za-z]+(\\.([A-Za-z]{2,})+)+$";
     /**
      *
      * @param validator  A Object reference to a javax.validation.Validator instance.
