@@ -149,7 +149,7 @@
         <mockserver.client.version>5.13.2</mockserver.client.version>
         <selenium.version>4.7.2</selenium.version>
         <jetbrains.annotations.version>20.1.0</jetbrains.annotations.version>
-        <antlr.version>4.13.1</antlr.version>
+        <antlr.version>4.9.2</antlr.version>
         <nlp.version>4.3.1</nlp.version>
         <dk.brics.automaton.version>1.11-8</dk.brics.automaton.version>
         <jgrapht.version>0.8.3</jgrapht.version>
