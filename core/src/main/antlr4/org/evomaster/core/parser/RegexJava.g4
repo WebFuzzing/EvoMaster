@@ -88,11 +88,15 @@ atom
  : quote
  | patternCharacter+
  | DOT
- | ESCAPED_DOT
- | ESCAPED_PLUS
  | AtomEscape
  | characterClass
  | PAREN_open disjunction PAREN_close
+ // These two rules are added to handle the . and + symbols in emails
+ // A more general solution is needed for escaped control symbols in Java
+ // regular expressions
+ | ESCAPED_DOT
+ | ESCAPED_PLUS
+
  //TODO
 // | '(' '?' ':' disjunction ')'
  ;

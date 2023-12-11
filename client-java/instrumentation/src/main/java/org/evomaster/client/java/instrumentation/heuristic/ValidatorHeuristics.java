@@ -32,6 +32,11 @@ public class ValidatorHeuristics {
     private static final String PREFIX_HIBERNATE = "org.hibernate.validator.constraints.";
     private static final String PREFIX_JIRUKTA = "cz.jirutka.validator.collection.constraints.";
 
+    /**
+     * The original pattern "^([A-Za-z_-\+\.]){2,}@[A-Za-z]+(\.([A-Za-z]{2,})+)+$"
+     * was not correctly handled by RegexHandler.createGeneForJVM().
+     * This version is identical in terms of the valid character sequences.
+     */
     public static final String EMAIL_REGEX_PATTERN = "^([A-Za-z_-]|\\.|\\+){2,}@[A-Za-z]+(\\.([A-Za-z]{2,})+)+$";
     /**
      *
