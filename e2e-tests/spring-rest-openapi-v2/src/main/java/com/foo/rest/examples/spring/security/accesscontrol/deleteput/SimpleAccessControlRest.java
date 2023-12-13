@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /*
 Vulnerable application in which only authorized users can create or delete resources but
@@ -27,10 +28,17 @@ An example application with 2 endpoints: PUT and DELETE on the same resource
 public class SimpleAccessControlRest {
 
     // owners of each resource
-    private final Map<String, String> resourceOwners= new HashMap<>();
+    private static final Map<String, String> resourceOwners= new ConcurrentHashMap<>();
 
     // set of resources
-    private final Map<String, ResourceDto> resources = new HashMap<>();
+    private static final Map<String, ResourceDto> resources = new ConcurrentHashMap<>();
+
+
+    public static void resetState(){
+        resourceOwners.clear();
+        resources.clear();
+    }
+
 
     @GetMapping(value = "/{x}")
     public ResponseEntity getResource(@PathVariable("x") String x) {
@@ -47,11 +55,13 @@ public class SimpleAccessControlRest {
     // put is to update an existing resource, this endpoint is vulnerable in the sense that
     // it does not check the owner of the resource before updating it
     @PutMapping(value = "/{x}")
-    public ResponseEntity modifyResource(@PathVariable("x") String x, @RequestBody ResourceDto newResource) {
+    public ResponseEntity modifyResource(
+            @PathVariable("x") String x,
+            @RequestBody ResourceDto newResource,
+            Authentication authentication) {
 
         // Authorization is not checked here, but if the resource does not exist,
         // the caller is assigned as the owner of the resource
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (!resources.containsKey(x)) {
 
@@ -79,9 +89,7 @@ public class SimpleAccessControlRest {
 
     // delete endpoint checks the owner of the resource to make sure the resource cannot be deleted
     @DeleteMapping(value = "/{x}")
-    public ResponseEntity deleteResource(@PathVariable("x") String x) {
-
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    public ResponseEntity deleteResource(@PathVariable("x") String x,Authentication authentication) {
 
         if (!resources.containsKey(x)) {
             return new ResponseEntity<>("The resource does not exist ", HttpStatus.NOT_FOUND);

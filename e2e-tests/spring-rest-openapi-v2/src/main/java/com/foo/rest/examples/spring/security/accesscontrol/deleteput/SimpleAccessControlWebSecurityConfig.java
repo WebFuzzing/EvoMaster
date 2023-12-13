@@ -33,31 +33,38 @@ public class SimpleAccessControlWebSecurityConfig extends WebSecurityConfigurerA
     @Bean
     @Override
     public UserDetailsService userDetailsService() {
-        UserDetails user =
+        UserDetails creator0 =
                 User.withDefaultPasswordEncoder()
-                        .username("creator")
+                        .username("creator0")
                         .password("creator_password")
                         .roles("CREATOR")
                         .build();
-        UserDetails user2 =
+        UserDetails creator1 =
                 User.withDefaultPasswordEncoder()
-                        .username("consumer1")
-                        .password("consumer1_password")
-                        .roles("CONSUMER")
+                        .username("creator1")
+                        .password("creator_password")
+                        .roles("CREATOR")
                         .build();
-
-        UserDetails user3 =
-                User.withDefaultPasswordEncoder()
-                        .username("consumer2")
-                        .password("consumer2_password")
-                        .roles("CONSUMER")
-                        .build();
+//        UserDetails user2 =
+//                User.withDefaultPasswordEncoder()
+//                        .username("consumer1")
+//                        .password("consumer1_password")
+//                        .roles("CONSUMER")
+//                        .build();
+//
+//        UserDetails user3 =
+//                User.withDefaultPasswordEncoder()
+//                        .username("consumer2")
+//                        .password("consumer2_password")
+//                        .roles("CONSUMER")
+//                        .build();
 
         InMemoryUserDetailsManager manager = new InMemoryUserDetailsManager();
 
-        manager.createUser(user);
-        manager.createUser(user2);
-        manager.createUser(user3);
+        manager.createUser(creator0);
+        manager.createUser(creator1);
+//        manager.createUser(user2);
+//        manager.createUser(user3);
         return manager;
     }
 }
