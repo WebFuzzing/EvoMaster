@@ -83,6 +83,12 @@ class SearchTimeController {
 
     val averageResetSUTTimeMs = IncrementalAverage()
 
+    val averageByteOverheadTestResultsAll = IncrementalAverage()
+
+    val averageByteOverheadTestResultsSubset = IncrementalAverage()
+
+    val averageOverheadMsTestResultsSubset = IncrementalAverage()
+
     /**
      * Make sure we do not make too many requests in a short amount of time, to avoid
      * possible DoS attacks.

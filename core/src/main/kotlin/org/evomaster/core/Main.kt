@@ -189,6 +189,10 @@ class Main {
                     info("Computation overhead between tests (ms): ${stc.averageOverheadMsBetweenTests}")
                     if(!config.blackBox){
                         info("Computation overhead of resetting the SUT (ms): ${stc.averageResetSUTTimeMs}")
+                        //This one might be confusing, as based only on minimization phase...
+                        //info("Data transfer overhead of test results, per test, all targets (bytes): ${stc.averageByteOverheadTestResultsAll}")
+                        debug("Data transfer overhead of fetching test results, per test, subset of targets (bytes): ${stc.averageByteOverheadTestResultsSubset}")
+                        info("Computation overhead of fetching test results, per test, subset of targets (ms): ${stc.averageOverheadMsTestResultsSubset}")
                     }
                 }
             }

@@ -311,6 +311,7 @@ class RemoteControllerImplementation() : RemoteController{
 
         val queryParam = ids.joinToString(",")
 
+        if(!allCovered) stc?.averageOverheadMsTestResultsSubset?.doStartTimer()
         val response = makeHttpCall {
             getWebTarget()
                     .path(ControllerConstants.TEST_RESULTS)
@@ -320,6 +321,20 @@ class RemoteControllerImplementation() : RemoteController{
                     .request(MediaType.APPLICATION_JSON_TYPE)
                     .get()
         }
+        if(!allCovered) stc?.averageOverheadMsTestResultsSubset?.addElapsedTime()
+
+        stc?.apply {
+            val len = try{ Integer.parseInt(response.getHeaderString("content-length"))}
+                        catch (e: Exception) {-1}
+            if(len >= 0) {
+                if(allCovered) {
+                    averageByteOverheadTestResultsAll.addValue(len)
+                } else {
+                    averageByteOverheadTestResultsSubset.addValue(len)
+                }
+            }
+        }
+
 
         val dto = getDtoFromResponse(response, object : GenericType<WrappedResponseDto<TestResultsDto>>() {})
 
