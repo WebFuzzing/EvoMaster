@@ -208,6 +208,18 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
             return ctx.characterClass().accept(this)
         }
 
+        if (ctx.ESCAPED_PLUS()!=null) {
+            val name = "blankBlock"
+            val char = ctx.ESCAPED_PLUS().text[1].toString()
+            return VisitResult(PatternCharacterBlockGene(name, char))
+        }
+
+        if (ctx.ESCAPED_DOT()!=null) {
+            val name = "blankBlock"
+            val char = ctx.ESCAPED_DOT().text[1].toString()
+            return VisitResult(PatternCharacterBlockGene(name, char))
+        }
+
         throw IllegalStateException("No valid atom resolver for: ${ctx.text}")
     }
 
@@ -243,14 +255,26 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
         val list = mutableListOf<Pair<Char,Char>>()
 
         val startText = ctx.classAtom()[0].text
-        assert(startText.length == 1) // single chars
-        val start : Char = startText[0]
+        assert(startText.length == 1 || startText.length==2) // single chars or \+ and \. escaped chars
 
-        val end = if(ctx.classAtom().size == 2){
-            ctx.classAtom()[1].text[0]
+        val start : Char
+        val end: Char
+
+        if (startText.length==1) {
+            start = startText[0]
+            end = if (ctx.classAtom().size == 2) {
+                ctx.classAtom()[1].text[0]
+            } else {
+                //single char, not an actual range
+                start
+            }
         } else {
-            //single char, not an actual range
-            start
+            // This case handles the \. and \+ cases
+            // wheren . and + should be treated as
+            // regular chars
+            assert(startText=="\\+" || startText=="\\.")
+            start = startText[1]
+            end = start
         }
 
         list.add(Pair(start, end))
