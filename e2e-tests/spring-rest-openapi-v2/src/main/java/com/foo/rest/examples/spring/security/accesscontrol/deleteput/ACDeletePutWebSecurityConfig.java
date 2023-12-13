@@ -13,7 +13,7 @@ import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 
 @Configuration
 @EnableWebSecurity
-public class SimpleAccessControlWebSecurityConfig extends WebSecurityConfigurerAdapter {
+public class ACDeletePutWebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     // security configuration
     protected void configure(HttpSecurity http) throws Exception {

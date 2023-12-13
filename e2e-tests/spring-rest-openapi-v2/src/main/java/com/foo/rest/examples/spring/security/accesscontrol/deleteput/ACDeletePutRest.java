@@ -4,10 +4,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -25,13 +23,13 @@ An example application with 2 endpoints: PUT and DELETE on the same resource
 
 @RestController
 @RequestMapping(path = "/api")
-public class SimpleAccessControlRest {
+public class ACDeletePutRest {
 
     // owners of each resource
     private static final Map<String, String> resourceOwners= new ConcurrentHashMap<>();
 
     // set of resources
-    private static final Map<String, ResourceDto> resources = new ConcurrentHashMap<>();
+    private static final Map<String, ACDeletePutDto> resources = new ConcurrentHashMap<>();
 
 
     public static void resetState(){
@@ -57,7 +55,7 @@ public class SimpleAccessControlRest {
     @PutMapping(value = "/{x}")
     public ResponseEntity modifyResource(
             @PathVariable("x") String x,
-            @RequestBody ResourceDto newResource,
+            @RequestBody ACDeletePutDto newResource,
             Authentication authentication) {
 
         // Authorization is not checked here, but if the resource does not exist,
@@ -69,8 +67,7 @@ public class SimpleAccessControlRest {
                 resourceOwners.put(x, authentication.getName());
                 resources.put(x, newResource);
 
-                return new ResponseEntity<>("Created the resource successfully ",
-                        HttpStatus.OK);
+                return new ResponseEntity<>("Created the resource successfully ", HttpStatus.CREATED);
 
             } else {
                 return new ResponseEntity<>("Only users with the role CREATOR can create resources ",

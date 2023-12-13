@@ -1,8 +1,6 @@
 package com.foo.rest.examples.spring.security.accesscontrol.deleteput;
 
 import com.foo.rest.examples.spring.SpringController;
-import com.foo.rest.examples.spring.db.SpringWithDbController;
-import com.foo.rest.examples.spring.db.directint.DbDirectIntApplication;
 import org.evomaster.client.java.controller.AuthUtils;
 import org.evomaster.client.java.controller.InstrumentedSutStarter;
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto;
@@ -10,15 +8,15 @@ import org.evomaster.client.java.controller.api.dto.AuthenticationDto;
 import java.util.Arrays;
 import java.util.List;
 
-public class SimpleAccessControlController extends SpringController {
+public class ACDeletePutController extends SpringController {
 
-    public SimpleAccessControlController() {
-        super(SimpleAccessControlApplication.class);
+    public ACDeletePutController() {
+        super(ACDeletePutApplication.class);
     }
 
 
     public static void main(String[] args){
-        com.foo.rest.examples.spring.security.accesscontrol.deleteput.SimpleAccessControlController controller = new com.foo.rest.examples.spring.security.accesscontrol.deleteput.SimpleAccessControlController();
+        ACDeletePutController controller = new ACDeletePutController();
         controller.setControllerPort(40100);
         InstrumentedSutStarter starter = new InstrumentedSutStarter(controller);
         starter.start();
@@ -26,7 +24,7 @@ public class SimpleAccessControlController extends SpringController {
 
     @Override
     public void resetStateOfSUT(){
-        SimpleAccessControlRest.resetState();
+        ACDeletePutRest.resetState();
     }
 
     @Override
