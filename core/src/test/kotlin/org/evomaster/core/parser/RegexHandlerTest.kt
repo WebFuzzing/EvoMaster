@@ -1,6 +1,7 @@
 package org.evomaster.core.parser
 
 import org.antlr.v4.runtime.misc.ParseCancellationException
+import org.evomaster.client.java.instrumentation.heuristic.ValidatorHeuristics
 import org.evomaster.client.java.instrumentation.shared.RegexSharedUtils
 import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -68,5 +69,56 @@ internal class RegexHandlerTest{
 
     }
 
+    @Test
+    fun testRegexEmail() {
+        val regex = ValidatorHeuristics.EMAIL_REGEX_PATTERN
+        val pattern = Pattern.compile(regex)
+        val gene = RegexHandler.createGeneForJVM(regex)
+        val rand = Randomness()
+        repeat (10000) {
+            gene.randomize(rand,true)
+            assertTrue(pattern.matcher(gene.getValueAsRawString()).find())
+        }
+
+    }
+
+
+    @Test
+    fun testRegexPlusSymbol() {
+        val regex = "(\\+)+"
+        val pattern = Pattern.compile(regex)
+        val gene = RegexHandler.createGeneForJVM(regex)
+        val rand = Randomness()
+        repeat (1000) {
+            gene.randomize(rand,true)
+            assertTrue(pattern.matcher(gene.getValueAsRawString()).find())
+        }
+    }
+
+    @Test
+    fun testRegexDotSymbol() {
+        val regex = "(\\.)+"
+        val pattern = Pattern.compile(regex)
+        val gene = RegexHandler.createGeneForJVM(regex)
+        val rand = Randomness()
+        repeat (1000) {
+            gene.randomize(rand,true)
+            assertTrue(pattern.matcher(gene.getValueAsRawString()).find())
+        }
+    }
+
+
+    @Test
+    fun testRegexCharacter() {
+        val regex = "(a)+"
+        val pattern = Pattern.compile(regex)
+        val gene = RegexHandler.createGeneForJVM(regex)
+        val rand = Randomness()
+        repeat (1000) {
+            gene.randomize(rand,true)
+            assertTrue(pattern.matcher(gene.getValueAsRawString()).find())
+        }
+
+    }
 
 }

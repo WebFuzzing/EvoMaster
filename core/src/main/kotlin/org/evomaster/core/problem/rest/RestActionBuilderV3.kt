@@ -20,7 +20,6 @@ import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.rest.param.*
 import org.evomaster.core.problem.util.ActionBuilderUtil
-import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.ArrayGene
@@ -195,22 +194,30 @@ object RestActionBuilderV3 {
     }
 
     /**
-     * @param name of the Dto to parse
-     * @param allSchemas contains all schemas of dto and its ref classes in the form
-     *      "name: { "type name": "schema", "ref name": "schema", .... }"
-     * @return a gene of the dto
+     * Creates a Gene object for Data Transfer Objects (DTOs) based on the provided parameters.
+     *
+     * @param dtoSchemaName The name of the DTO schema to create a Gene for.
+     * @param allSchemas The string containing all DTO schemas, including the one specified by 'dtoSchemaName'.
+     *      The expected format is "name: { "type name": "schema", "ref name": "schema", .... }"
+     * @param options The options to customize the gene creation process.
+     * @return A Gene object representing the specified DTO schema.
+     * @throws IllegalArgumentException if the provided 'name' is not found at the beginning of 'allSchemas'.
+     * @throws IllegalStateException if the schema with the specified 'name' cannot be found in 'allSchemas'.
+     *
+     * @see Gene
+     * @see Options
      */
-    fun createObjectGenesForDTOs(name: String,
-                                 allSchemas: String,
-                                 options: Options) : Gene{
-        if(!allSchemas.startsWith("\"$name\"")){
-            throw IllegalArgumentException("Invalid name $name for schema $allSchemas")
+    fun createGeneForDTO(dtoSchemaName: String,
+                         allSchemas: String,
+                         options: Options) : Gene{
+        if(!allSchemas.startsWith("\"$dtoSchemaName\"")){
+            throw IllegalArgumentException("Invalid name $dtoSchemaName for schema $allSchemas")
         }
 
-        val allSchemasValue = allSchemas.substring(1 + name.length + 2)
+        val allSchemasValue = allSchemas.substring(1 + dtoSchemaName.length + 2)
 
         val schemas = getMapStringFromSchemas(allSchemasValue)
-        val dtoSchema = schemas[name] ?: throw IllegalStateException("cannot find the schema with $name from $allSchemas")
+        val dtoSchema = schemas[dtoSchemaName] ?: throw IllegalStateException("cannot find the schema with $dtoSchemaName from $allSchemas")
 
         if(dtoCache.containsKey(dtoSchema)){
             return dtoCache[dtoSchema]!!.copy()
@@ -243,10 +250,10 @@ object RestActionBuilderV3 {
      * @param dtoSchema the schema of dto
      * @param referenceTypeName the name (eg, class name) of the reference type
      */
-    fun createObjectGeneForDTO(name: String,
-                               dtoSchema: String,
-                               referenceTypeName: String?,
-                               options: Options) : Gene{
+    fun createGeneForDTO(name: String,
+                         dtoSchema: String,
+                         referenceTypeName: String?,
+                         options: Options) : Gene{
 
         if(! dtoSchema.startsWith("\"$name\"")){
             throw IllegalArgumentException("Invalid name $name for schema $dtoSchema")
@@ -274,10 +281,10 @@ object RestActionBuilderV3 {
         return gene.copy()
     }
 
-    fun createObjectGeneForDTOs(names: List<String>,
-                                dtoSchemas: List<String>,
-                                referenceTypeNames: List<String?>,
-                                options: Options
+    fun createGenesForDTOs(names: List<String>,
+                           dtoSchemas: List<String>,
+                           referenceTypeNames: List<String?>,
+                           options: Options
     ) : List<Gene>{
 
         Lazy.assert { names.size == dtoSchemas.size }
@@ -639,7 +646,7 @@ object RestActionBuilderV3 {
 
         //first check for "optional" format
         when (format?.lowercase()) {
-            "int32" -> return createNonObjectGeneWithSchemaConstraints(schema, name, IntegerGene::class.java, options, null, isInPath, examples)//IntegerGene(name)
+            "int8","int16","int32" -> return createNonObjectGeneWithSchemaConstraints(schema, name, IntegerGene::class.java, options, null, isInPath, examples,format)//IntegerGene(name)
             "int64" -> return createNonObjectGeneWithSchemaConstraints(schema, name, LongGene::class.java, options, null, isInPath, examples) //LongGene(name)
             "double" -> return createNonObjectGeneWithSchemaConstraints(schema, name, DoubleGene::class.java, options, null, isInPath, examples)//DoubleGene(name)
             "float" -> return createNonObjectGeneWithSchemaConstraints(schema, name, FloatGene::class.java, options, null, isInPath, examples)//FloatGene(name)
@@ -1048,7 +1055,8 @@ object RestActionBuilderV3 {
         collectionTemplate: Gene? = null,
         //might need to add extra constraints if in path
         isInPath: Boolean,
-        exampleObjects: List<Any>
+        exampleObjects: List<Any>,
+        format: String? = null
     ) : Gene{
 
 
@@ -1057,13 +1065,42 @@ object RestActionBuilderV3 {
 
         val mainGene = when(geneClass){
             // number gene
-            IntegerGene::class.java -> IntegerGene(
+            IntegerGene::class.java ->
+            {
+                val minRange: Int
+                val maxRange: Int
+                if (format == "int8") {
+                    minRange = Byte.MIN_VALUE.toInt()
+                    maxRange = Byte.MAX_VALUE.toInt()
+                } else if (format == "int16") {
+                    minRange = Short.MIN_VALUE.toInt()
+                    maxRange = Short.MAX_VALUE.toInt()
+                } else {
+                    minRange = Integer.MIN_VALUE
+                    maxRange = Integer.MAX_VALUE
+                }
+
+                val minConstraint: Int?
+                val maxConstraint: Int?
+                if (options.enableConstraintHandling) {
+                    minConstraint = schema.minimum?.intValueExact()
+                    maxConstraint = schema.maximum?.intValueExact()
+                } else {
+                    minConstraint = null
+                    maxConstraint = null
+                }
+
+                val minValue = if (minConstraint != null) maxOf(minConstraint, minRange) else minRange
+                val maxValue = if (maxConstraint != null) minOf(maxConstraint, maxRange) else maxRange
+
+                IntegerGene(
                     name,
-                    min = if (options.enableConstraintHandling) schema.minimum?.intValueExact() else null,
-                    max = if (options.enableConstraintHandling) schema.maximum?.intValueExact() else null,
+                    min = minValue,
+                    max = maxValue,
                     maxInclusive = maxInclusive,
                     minInclusive = minInclusive
-            )
+                )
+            }
             LongGene::class.java -> LongGene(
                     name,
                     min = if (options.enableConstraintHandling) schema.minimum?.longValueExact() else null,

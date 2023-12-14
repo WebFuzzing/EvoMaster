@@ -748,7 +748,7 @@ def addJobBody(port, sut, seed, setting, configName):
     params += " --coveredTargetFile="+REPORT_DIR+"/covered_target_file" + identifier + ".txt"
     params += " --externalServiceIP=" + generate_ip()
     params += " --probOfHarvestingResponsesFromActualExternalServices=0"  # this adds way too much noise to results
-
+    params += " --createConfigPathIfMissing=false"
 
     JAVA = getJavaCommand(sut)
     command = JAVA + EVOMASTER_JAVA_OPTIONS + params + " >> " + em_log + " 2>&1"
