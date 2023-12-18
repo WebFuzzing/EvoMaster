@@ -39,7 +39,7 @@ public class HostnameResolutionInfo implements Serializable {
      * Will be true if the hostname resolved, otherwise false;
      */
     public Boolean getResolved() {
-        return !resolvedAddress.equals(null);
+        return resolvedAddress != null;
     }
 
     public HostnameResolutionInfo copy(){
@@ -56,7 +56,6 @@ public class HostnameResolutionInfo implements Serializable {
 
     @Override
     public int hashCode() {
-        // TODO: Excluded resolved from equals and hashCode, have to verify
         return Objects.hash(remoteHostname, resolvedAddress);
     }
 }

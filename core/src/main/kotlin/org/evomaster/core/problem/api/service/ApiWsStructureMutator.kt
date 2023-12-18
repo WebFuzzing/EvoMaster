@@ -191,7 +191,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         val ind = individual.individual as? T
             ?: throw IllegalArgumentException("Invalid individual type")
 
-        val old = mutableListOf<Action>().plus(ind.seeInitializingActions().filterIsInstance<HostnameResolutionAction>())
+        val old = ind.seeInitializingActions().filterIsInstance<HostnameResolutionAction>()
 
         val addedInsertions: MutableList<Action> = mutableListOf()
         externalServiceHandler.getHostnameResolutionActions().forEach {
