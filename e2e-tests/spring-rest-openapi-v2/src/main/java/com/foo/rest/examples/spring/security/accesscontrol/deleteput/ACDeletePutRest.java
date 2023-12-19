@@ -80,7 +80,7 @@ public class ACDeletePutRest {
             resources.put(x, newResource);
 
             return new ResponseEntity<>("Modified the existing resource successfully ",
-                    HttpStatus.OK);
+                    HttpStatus.NO_CONTENT);
         }
     }
 
