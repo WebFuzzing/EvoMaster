@@ -5,6 +5,10 @@ import org.testcontainers.containers.BindMode;
 
 import java.io.IOException;
 
+/**
+ * This class executes a Docker image with Z3 Solver
+ * It is used to solve constraints in SMT2 format reading them from a file
+ */
 public class ConstraintSolver implements AutoCloseable  {
 
     public static final String Z3_DOCKER_IMAGE = "ghcr.io/z3prover/z3:ubuntu-20.04-bare-z3-sha-ba8d8f0";
