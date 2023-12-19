@@ -90,6 +90,7 @@ public class ACDeletePutManualTest extends SpringTestBase {
                 .auth().basic(user1,"creator_password")
                 .put(baseUrlOfSut + "/api/"+resource)
                 .then()
-                .statusCode(201); // in theory should get 403, but we simulate bug in API
+                .statusCode(204); // in theory should get 403, but we simulate bug in API
+                // changed the expected status code to 204 which means successful but no content shown.
     }
 }
