@@ -11,6 +11,7 @@ public class ACDeletePutDto {
     public ACDeletePutDto(){}
 
     public ACDeletePutDto(String stringValue, Integer integerValue, Boolean booleanValue) {
+
         this.stringValue = stringValue;
         this.integerValue = integerValue;
         this.booleanValue = booleanValue;
