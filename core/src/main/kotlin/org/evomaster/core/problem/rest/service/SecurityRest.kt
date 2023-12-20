@@ -111,6 +111,23 @@ class SecurityRest {
             add to archive the new test
          */
 
+        /*
+            what needs to be done here:
+            - from archive, search if there is any test with a DELETE returning a 2xx
+            - do that for every different endpoint
+            - make a copy of the individual
+            - do a "slice" and remove all calls after the DELETE call (if any)
+            - append new REST Call action (see mutator classes) for PATCH/PUT with different auth, based
+              on action copies from action definitions. should be on same endpoint.
+            - need to resolve path element parameters to point to same resolved endpoint as DELETE
+            - as PUT/PATCH requires payloads and possible valid query parameters, search from archive an
+              existing action that returns 2xx, and copy it to use as starting point
+            - execute new test case with fitness function
+            - create new testing targets based on status code of new actions
+         */
+
+
+        //TODO call only once, and then pass as input
         val sutInfo : SutInfoDto? = remoteControllerImplementation.getSutInfo()
 
         // check that there are at least two users, using the method getInfoForAuthentication()
@@ -121,14 +138,15 @@ class SecurityRest {
                     "least 2 authenticated users")
             return
         }
-        else {
+        else { // TODO remove else
 
             // find post requests with authenticated user in the archive
             val archivedSolution : Solution<RestIndividual> = this.archive.extractSolution();
 
             val individualsInSolution : List<EvaluatedIndividual<RestIndividual>>  =  archivedSolution.individuals;
 
-            val restAuthenticatedCallsWithPost : MutableList<RestCallAction> = mutableListOf<RestCallAction>();
+            val restAuthenticatedCallsWithPost  = mutableListOf<RestCallAction>();
+            //TODO redundant : type declarations
             var restAuthenticatedResultsWithPost : MutableList<ActionResult> = mutableListOf<ActionResult>();
 
             var restAuthenticatedCallsWithPut : MutableList<RestCallAction> = mutableListOf<RestCallAction>();
