@@ -49,6 +49,10 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
 
     private var pickingUpLastSeed = false
 
+    fun getActionDefinitions() : List<Action> {
+        return actionCluster.values.map { it.copy() }
+    }
+
     /**
      * @return if the last seeded was picked up
      */
