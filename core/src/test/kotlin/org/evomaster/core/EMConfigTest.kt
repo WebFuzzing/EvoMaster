@@ -382,4 +382,37 @@ internal class EMConfigTest{
             }
         }
     }
+
+    @Test
+    fun testParamsInConfigFile(){
+        val parser = EMConfig.getOptionParser()
+        val config = EMConfig()
+
+        config.populationSize = 77
+        val options = parser.parse("--configPath", "src/test/resources/config/number.toml")
+        config.updateProperties(options)
+        assertEquals(42, config.populationSize)
+    }
+
+    @Test
+    fun testCLIOverrideParamsInConfigFile(){
+        val parser = EMConfig.getOptionParser()
+        val config = EMConfig()
+
+        val n = 1234
+        config.populationSize = 77
+        val options = parser.parse("--configPath", "src/test/resources/config/number.toml", "--populationSize","$n")
+        config.updateProperties(options)
+        assertEquals(n, config.populationSize)
+    }
+
+    @Test
+    fun testWrongParamInConfigFile(){
+        val parser = EMConfig.getOptionParser()
+        val config = EMConfig()
+
+        val options = parser.parse("--configPath", "src/test/resources/config/foo.toml")
+        val t = assertThrows(IllegalArgumentException::class.java) {config.updateProperties(options)}
+        assertTrue(t.message!!.contains("non-existing properties"), t.message)
+    }
 }

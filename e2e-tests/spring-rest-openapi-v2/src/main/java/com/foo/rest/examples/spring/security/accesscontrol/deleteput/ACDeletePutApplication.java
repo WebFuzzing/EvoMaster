@@ -6,9 +6,9 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 @EnableSwagger2
 @SpringBootApplication
-public class SimpleAccessControlApplication {
+public class ACDeletePutApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(SimpleAccessControlApplication.class, args);
+        SpringApplication.run(ACDeletePutApplication.class, args);
     }
 }

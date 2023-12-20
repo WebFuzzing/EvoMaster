@@ -32,12 +32,12 @@ Also, some of these papers provides full replication packages, which are linked 
 * S. Seran, M. Zhang, A. Arcuri.
   *Search-Based Mock Generation of External Web Service Interactions*.
   Symposium on Search-based Software Engineering (SSBSE).
-  (to appear)
+  [[PDF](publications/2023_ssbse_wm.pdf)]
 
 * A. Golmohammadi, M. Zhang, A. Arcuri.
   *On the Impact of Tool Evolution and Case Study Size on SBSE Experiments: A Replicated Study with EvoMaster*.
   Symposium on Search-based Software Engineering (SSBSE).
-  (to appear)
+  [[PDF](publications/2023_ssbse_tuning.pdf)]
 
 * A. Golmohammadi.
   *Enhancing White-Box Search-Based Testing of RESTful APIs*.
@@ -65,8 +65,9 @@ Also, some of these papers provides full replication packages, which are linked 
   *Open Problems in Fuzzing RESTful APIs: A Comparison of Tools*.
   ACM Transactions on Software Engineering and Methodology (TOSEM).
   [[PDF](publications/2023_tosem_comparisons.pdf)]
-  [[Script 0](exp/arxiv_open_problems_bb.py)]
-  [[Script 1](exp/arxiv_open_problems_wb.py)]
+  [[Script 0](exp/2023_tosem__open_problems_bb.py)]
+  [[Script 1](exp/2023_tosem_open_problems_wb.py)]
+  [[Script others](exp/2023_tosem_open_problems_others.zip)]
 
 * M. Zhang, A. Belhadi, A. Arcuri.
   *JavaScript SBST Heuristics To Enable Effective Fuzzing of NodeJS Web APIs*.

@@ -1,6 +1,6 @@
-package org.evomaster.e2etests.spring.rest.mongo.foo;
+package org.evomaster.e2etests.spring.rest.mongo.persons;
 
-import com.foo.spring.rest.mongo.MongoStudentsAppController;
+import com.foo.spring.rest.mongo.MongoPersonsAppController;
 import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
@@ -10,20 +10,20 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class MongoEMTest extends RestTestBase {
+public class MongoPersonsEMFTest extends RestTestBase {
 
     @BeforeAll
     public static void initClass() throws Exception {
-        RestTestBase.initClass(new MongoStudentsAppController());
+        RestTestBase.initClass(new MongoPersonsAppController());
     }
 
     @Test
     public void testRunEM() throws Throwable {
 
         runTestHandlingFlakyAndCompilation(
-                "MongoEM",
-                "org.foo.spring.rest.mongo.MongoEM",
-                200,
+                "MongoPersonsEM",
+                "org.foo.spring.rest.mongo.MongoEMFitness",
+                10000,
                 (args) -> {
                     args.add("--enableWeightBasedMutationRateSelectionForGene");
                     args.add("false");
@@ -35,9 +35,9 @@ public class MongoEMTest extends RestTestBase {
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertTrue(solution.getIndividuals().size() >= 1);
-                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/students/jorge", null);
-                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/students/addAndGetJorge", null);
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/students/{lastName}", null);
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/persons/{age}", null);
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/persons/list18", null);
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/persons/list18", null);
                 });
     }
 }

@@ -157,6 +157,7 @@ class TestSuiteWriter {
                             + "Exception: ${ex.localizedMessage} \n"
                             + "At ${ex.stackTrace.joinToString(separator = " \n -> ")}. "
                 )
+                assert(false) // in our tests, this should not happen... but should not crash in production
                 Lines()
             }
             lines.add(testLines)
