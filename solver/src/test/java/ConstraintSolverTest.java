@@ -18,7 +18,8 @@ public class ConstraintSolverTest {
 
     @BeforeAll
     static void setup() {
-        solver = new ConstraintSolver();
+        String resourcesFolder = System.getProperty("user.dir") + "/src/test/resources/";
+        solver = new ConstraintSolver(resourcesFolder);
     }
 
     @AfterAll

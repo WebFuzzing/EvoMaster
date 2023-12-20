@@ -15,9 +15,7 @@ public class ConstraintSolver implements AutoCloseable  {
     private final String containerPath = "/smt2-resources/";
     private final GenericContainer<?>  z3Prover;
 
-    public ConstraintSolver() {
-
-        String resourcesFolder = System.getProperty("user.dir") + "/src/test/resources/";
+    public ConstraintSolver(String resourcesFolder) {
 
         ImageFromDockerfile image = new ImageFromDockerfile()
                 .withDockerfileFromBuilder(builder -> builder
