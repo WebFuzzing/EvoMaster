@@ -124,7 +124,7 @@ object RestActionBuilderV3 {
                               endpointsToSkip: List<Endpoint> = listOf(),
                               doParseDescription: Boolean = false,
                               enableConstraintHandling: Boolean,
-                              endpointForEnablementInfo: String?
+                              endpointForEnablementInfo: String? = null
     ){
         addActionsFromSwagger(swagger, actionCluster, endpointsToSkip, endpointForEnablementInfo,
             Options(doParseDescription = doParseDescription, enableConstraintHandling = enableConstraintHandling)
@@ -375,11 +375,8 @@ object RestActionBuilderV3 {
                 action.initTokens(info)
             }
 
-            if (endpointForEnablementInfo.isNullOrEmpty()) {
-                actionCluster[action.getName()] = action
-            } else {
+            actionCluster[action.getName()] = action
 
-            }
         }catch (e: Exception){
             log.warn("Fail to parse endpoint $verb$restPath due to "+e.message)
             errorEndpoints.add("$verb$restPath")
@@ -1418,7 +1415,6 @@ object RestActionBuilderV3 {
 
         return selection
     }
-
 
     fun getModelsFromSwagger(swagger: OpenAPI,
                              modelCluster: MutableMap<String, ObjectGene>,

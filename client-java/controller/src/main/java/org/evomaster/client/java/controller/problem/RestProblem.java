@@ -43,9 +43,6 @@ public class RestProblem extends ProblemInfo{
                 ? new ArrayList<>()
                 : new ArrayList<>(endpointsToSkip);
         this.endpointForEnablementInfo = endpointForEnablementInfo;
-        if (endpointForEnablementInfo != null && !endpointForEnablementInfo.isEmpty()) {
-            this.endpointsToSkip.add(endpointForEnablementInfo);
-        }
         this.openApiSchema = openApiSchema;
 
         boolean url = openApiUrl != null && !openApiUrl.isEmpty();
