@@ -543,7 +543,7 @@ class Main {
 
             if (!config.blackBox || config.bbExperiments) {
                 val rc = injector.getInstance(RemoteController::class.java)
-                rc.startANewSearch() //solo informa que se hace una nueva busqueda
+                rc.startANewSearch()
             }
 
             val key = when (config.problemType) {
