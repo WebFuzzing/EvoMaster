@@ -23,15 +23,15 @@ object ActionBuilderUtil {
             throw SutProblemException("There are repeated, non-unique endpoint-to-skip declarations: " +
                 repeated.joinToString(" , "))
         }
-
-        if (skipped.size != endpointsToSkip.size) {
-            val msg = "${endpointsToSkip.size} were set to be skipped, but only ${skipped.size}" +
-                    " were found in the schema"
-            LoggingUtil.getInfoLogger().error(msg)
-            endpointsToSkip.filter { !skipped.contains(it) }
-                .forEach { LoggingUtil.getInfoLogger().warn("Missing endpoint: $it") }
-            throw SutProblemException(msg)
-        }
+// chiara: TODO skipped check
+//        if (skipped.size != endpointsToSkip.size) {
+//            val msg = "${endpointsToSkip.size} were set to be skipped, but only ${skipped.size}" +
+//                    " were found in the schema"
+//            LoggingUtil.getInfoLogger().error(msg)
+//            endpointsToSkip.filter { !skipped.contains(it) }
+//                .forEach { LoggingUtil.getInfoLogger().warn("Missing endpoint: $it") }
+//            throw SutProblemException(msg)
+//        }
     }
 
     fun printActionNumberInfo(type: String, n: Int, skipped: Int, errors: Int){
