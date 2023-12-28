@@ -62,5 +62,8 @@ class BlackBoxRestModule(
 
         bind(TestSuiteWriter::class.java)
                 .asEagerSingleton()
+
+        bind(SecurityRest::class.java)
+            .asEagerSingleton()
     }
 }

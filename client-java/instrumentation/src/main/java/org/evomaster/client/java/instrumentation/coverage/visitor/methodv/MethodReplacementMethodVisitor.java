@@ -193,6 +193,11 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
          */
         this.visitInsn(Opcodes.POP2); //pop NEW and DUP refs
 
+        if (!Arrays.stream(mrc.getDeclaredMethods())
+                .anyMatch(it -> it.getName().equals(MethodReplacementClass.CONSUME_INSTANCE_METHOD_NAME))) {
+            throw new RuntimeException("Class " + mrc.getName() + " must have a definition of method " + MethodReplacementClass.CONSUME_INSTANCE_METHOD_NAME);
+        }
+
         Method consumeInstance = Arrays.stream(mrc.getDeclaredMethods())
                         .filter(it -> it.getName().equals(MethodReplacementClass.CONSUME_INSTANCE_METHOD_NAME))
                                 .findFirst().get();

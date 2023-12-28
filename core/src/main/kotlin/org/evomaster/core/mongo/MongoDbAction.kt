@@ -1,11 +1,12 @@
 package org.evomaster.core.mongo
 
 import org.evomaster.core.problem.rest.RestActionBuilderV3
-import org.evomaster.core.problem.rest.RestActionBuilderV3.createObjectGenesForDTOs
+import org.evomaster.core.problem.rest.RestActionBuilderV3.createGeneForDTO
 import org.evomaster.core.search.EnvironmentAction
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
+import org.evomaster.core.search.gene.collection.MapGene
 import org.evomaster.core.search.gene.mongo.ObjectIdGene
 import java.util.*
 
@@ -29,14 +30,28 @@ class MongoDbAction(
 
     private fun computeGenes(): List<Gene> {
         val documentsTypeName = documentsType.substringBefore(":").drop(1).dropLast(1)
-        val gene = createObjectGenesForDTOs(
+        val gene = createGeneForDTO(
             documentsTypeName, documentsType, RestActionBuilderV3.Options(invalidData = false)
         )
-        gene as ObjectGene
+        val fixedFields = when (gene) {
+            is ObjectGene -> {
+                        gene.fixedFields.filter { fixedFieldGene -> fixedFieldGene.name != "_id" }
+            }
+
+            is MapGene<*,*> -> {
+                        gene.getAllElements().filter { pairGene -> pairGene.first.name != "_id" }
+            }
+
+            else -> {
+                throw IllegalArgumentException("Cannot obtain fixed fields from gene ${gene.javaClass}")
+            }
+        }
+
         return Collections.singletonList(
             ObjectGene(
                 gene.name,
-                gene.fixedFields.filter { gene -> gene.name != "_id" } + (Collections.singletonList(ObjectIdGene("_id")))))
+                fixedFields + (Collections.singletonList(ObjectIdGene("_id")))))
+
     }
 
     override fun getName(): String {

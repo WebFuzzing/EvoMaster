@@ -1,0 +1,20 @@
+---
+openapi: 3.0.3
+info:
+  title: example_default
+  version: 1.0.0
+servers:
+  - url: "/v2"
+paths:
+  "/foo/{x}":
+    post:
+      parameters:
+        - in: path
+          name: x
+          schema:
+            type: integer
+            example: 42
+            default: 13
+      responses:
+        '200':
+          description: OK

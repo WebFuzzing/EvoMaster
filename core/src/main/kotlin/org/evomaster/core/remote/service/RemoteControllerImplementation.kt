@@ -10,6 +10,7 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.remote.NoRemoteConnectionException
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.TcpUtils
+import org.evomaster.core.search.service.SearchTimeController
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.annotation.PostConstruct
@@ -42,6 +43,10 @@ class RemoteControllerImplementation() : RemoteController{
 
     @Inject
     private lateinit var config: EMConfig
+
+    //TODO: should clean up. in few places we use RemoteController without injection
+    @Inject
+    private var stc: SearchTimeController? = null
 
     private var client: Client = ClientBuilder.newClient()
 
@@ -263,7 +268,12 @@ class RemoteControllerImplementation() : RemoteController{
 
     override fun stopSUT() = changeState(false, false)
 
-    override fun resetSUT() = startSUT()
+    override fun resetSUT() : Boolean{
+        stc?.averageResetSUTTimeMs?.doStartTimer()
+        val res = startSUT()
+        stc?.averageResetSUTTimeMs?.addElapsedTime()
+        return res
+    }
 
     override fun checkConnection() {
 
@@ -301,6 +311,7 @@ class RemoteControllerImplementation() : RemoteController{
 
         val queryParam = ids.joinToString(",")
 
+        if(!allCovered) stc?.averageOverheadMsTestResultsSubset?.doStartTimer()
         val response = makeHttpCall {
             getWebTarget()
                     .path(ControllerConstants.TEST_RESULTS)
@@ -310,6 +321,20 @@ class RemoteControllerImplementation() : RemoteController{
                     .request(MediaType.APPLICATION_JSON_TYPE)
                     .get()
         }
+        if(!allCovered) stc?.averageOverheadMsTestResultsSubset?.addElapsedTime()
+
+        stc?.apply {
+            val len = try{ Integer.parseInt(response.getHeaderString("content-length"))}
+                        catch (e: Exception) {-1}
+            if(len >= 0) {
+                if(allCovered) {
+                    averageByteOverheadTestResultsAll.addValue(len)
+                } else {
+                    averageByteOverheadTestResultsSubset.addValue(len)
+                }
+            }
+        }
+
 
         val dto = getDtoFromResponse(response, object : GenericType<WrappedResponseDto<TestResultsDto>>() {})
 
@@ -465,10 +490,6 @@ class RemoteControllerImplementation() : RemoteController{
         }
 
         val dto = getDtoFromResponse(response, type)
-
-        if (!checkResponse(response, dto, "Failed to execute MongoDB insertion")) {
-            return null
-        }
 
         return dto?.data
     }

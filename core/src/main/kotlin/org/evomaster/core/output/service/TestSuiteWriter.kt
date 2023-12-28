@@ -81,6 +81,21 @@ class TestSuiteWriter {
         saveToDisk(content, config, name)
     }
 
+    /**
+     * write tests during seeding
+     */
+    fun writeTestsDuringSeeding(solution: Solution<*>,
+                                controllerName: String?,
+                                controllerInput: String?,
+                                snapshotTimestamp: String = ""){
+
+        if (!config.exportTestCasesDuringSeeding || solution.individualsDuringSeeding.isEmpty()) return
+
+        val solutionDuringSeeding = solution.extractSolutionDuringSeeding()
+        writeTests(solutionDuringSeeding, controllerName, controllerInput, snapshotTimestamp)
+
+    }
+
 
     fun convertToCompilableTestCode(
         solution: Solution<*>,
@@ -142,6 +157,7 @@ class TestSuiteWriter {
                             + "Exception: ${ex.localizedMessage} \n"
                             + "At ${ex.stackTrace.joinToString(separator = " \n -> ")}. "
                 )
+                assert(false) // in our tests, this should not happen... but should not crash in production
                 Lines()
             }
             lines.add(testLines)

@@ -166,31 +166,16 @@ class Main {
             val config = injector.getInstance(EMConfig::class.java)
             val idMapper = injector.getInstance(IdMapper::class.java)
 
-            val solution = run(injector, controllerInfo)
-            val faults = solution.overall.potentialFoundFaults(idMapper)
-            val sampler : Sampler<*> = injector.getInstance(Key.get(object : TypeLiteral<Sampler<*>>(){}))
+            var solution = run(injector, controllerInfo)
 
-            resetExternalServiceHandler(injector)
-
+            //save data regarding the search phase
             writeOverallProcessData(injector)
-
             writeDependencies(injector)
-
             writeImpacts(injector, solution)
-
-            //writeStatistics(injector, solution)
-
-            writeCoveredTargets(injector, solution)
-
-            writeTests(injector, solution, controllerInfo)
-
-            writeStatistics(injector, solution)
-
             writeExecuteInfo(injector)
 
+
             val stc = injector.getInstance(SearchTimeController::class.java)
-            val statistics = injector.getInstance(Statistics::class.java)
-            val data = statistics.getData(solution)
 
             LoggingUtil.getInfoLogger().apply {
                 info("Evaluated tests: ${stc.evaluatedIndividuals}")
@@ -200,11 +185,50 @@ class Main {
                 if (!config.avoidNonDeterministicLogs) {
                     info("Passed time (seconds): ${stc.getElapsedSeconds()}")
                     info("Execution time per test (ms): ${stc.averageTestTimeMs}")
+                    info("Execution time per action (ms): ${stc.averageActionTimeMs}")
                     info("Computation overhead between tests (ms): ${stc.averageOverheadMsBetweenTests}")
-                    val timeouts = data.find { p -> p.header == Statistics.TEST_TIMEOUTS }!!.element.toInt()
-                    if (timeouts > 0) {
-                        info("TCP timeouts: $timeouts")
+                    if(!config.blackBox){
+                        info("Computation overhead of resetting the SUT (ms): ${stc.averageResetSUTTimeMs}")
+                        //This one might be confusing, as based only on minimization phase...
+                        //info("Data transfer overhead of test results, per test, all targets (bytes): ${stc.averageByteOverheadTestResultsAll}")
+                        debug("Data transfer overhead of fetching test results, per test, subset of targets (bytes): ${stc.averageByteOverheadTestResultsSubset}")
+                        info("Computation overhead of fetching test results, per test, subset of targets (ms): ${stc.averageOverheadMsTestResultsSubset}")
                     }
+                }
+            }
+
+
+            if(config.security){
+                //apply security testing phase
+                LoggingUtil.getInfoLogger().info("Starting to apply security testing")
+
+                //TODO might need to reset stc, and print some updated info again
+
+                when(config.problemType){
+                    EMConfig.ProblemType.REST -> {
+                        val securityRest = injector.getInstance(SecurityRest::class.java)
+                        solution = securityRest.applySecurityPhase()
+                    }
+                    else ->{
+                        LoggingUtil.getInfoLogger().warn("Security phase currently not handled for problem type: ${config.problemType}")
+                    }
+                }
+            }
+
+            writeCoveredTargets(injector, solution)
+            writeTests(injector, solution, controllerInfo)
+            writeStatistics(injector, solution) //FIXME if other phases after search, might get skewed data on 100% snapshots...
+
+            val statistics = injector.getInstance(Statistics::class.java)
+            val data = statistics.getData(solution)
+            val faults = solution.overall.potentialFoundFaults(idMapper)
+            val sampler : Sampler<*> = injector.getInstance(Key.get(object : TypeLiteral<Sampler<*>>(){}))
+
+            LoggingUtil.getInfoLogger().apply {
+
+                val timeouts = data.find { p -> p.header == Statistics.TEST_TIMEOUTS }!!.element.toInt()
+                if (timeouts > 0) {
+                    info("TCP timeouts: $timeouts")
                 }
 
                 if (!config.blackBox || config.bbExperiments) {
@@ -290,6 +314,9 @@ class Main {
                             " to run the search for longer"))
                 }
             }
+
+            resetExternalServiceHandler(injector)
+
             solution.statistics = data.toMutableList()
             return solution
         }
@@ -665,6 +692,9 @@ class Main {
                     //writeExecutiveSummary(injector, solution, controllerInfoDto, partialOracles)
                 }
             } else if (config.problemType == EMConfig.ProblemType.RPC){
+
+                // Man: only enable for RPC as it lacks of unit tests
+                writer.writeTestsDuringSeeding(solution, controllerInfoDto?.fullName, controllerInfoDto?.executableFullPath)
 
                 when(config.testSuiteSplitType){
                     EMConfig.TestSuiteSplitType.NONE -> writer.writeTests(solution, controllerInfoDto?.fullName, controllerInfoDto?.executableFullPath)

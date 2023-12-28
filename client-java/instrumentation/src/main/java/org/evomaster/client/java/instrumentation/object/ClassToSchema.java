@@ -203,7 +203,7 @@ public class ClassToSchema {
     private static boolean isCollectionOrMap(Type type) {
         if (!(type instanceof Class)) return false;
         Class<?> kclazz = (Class<?>) type;
-        return kclazz.isArray() || List.class.isAssignableFrom(kclazz) || Set.class.isAssignableFrom(kclazz) || Map.class.isAssignableFrom(kclazz);
+        return kclazz.isArray() || Collection.class.isAssignableFrom(kclazz) || Map.class.isAssignableFrom(kclazz);
     }
 
 
@@ -302,9 +302,9 @@ public class ClassToSchema {
         //TODO date fields
 
 
-        if ((klass != null && (klass.isArray() || List.class.isAssignableFrom(klass) || Set.class.isAssignableFrom(klass)))
+        if ((klass != null && (klass.isArray() || Collection.class.isAssignableFrom(klass)))
                 ||
-                (pType != null && (List.class.isAssignableFrom((Class) pType.getRawType()) || Set.class.isAssignableFrom((Class) pType.getRawType())))) {
+                (pType != null && (Collection.class.isAssignableFrom((Class) pType.getRawType()) ))) {
             return fieldArraySchema(klass, pType, nested, allNested, objectFieldsRequired, converters);
         }
 

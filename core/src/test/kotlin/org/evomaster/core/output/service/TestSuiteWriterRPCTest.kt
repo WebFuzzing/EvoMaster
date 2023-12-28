@@ -59,21 +59,22 @@ class TestSuiteWriterRPCTest{
         val expectedJson = 5
 
         val solution = Solution(
-                mutableListOf(
-                    //build fake rpc individual in order to test its generated tests
-                    EvaluatedIndividualBuilder.buildEvaluatedRPCIndividual(
-                        actions = EvaluatedIndividualBuilder.buildFakeRPCAction(expectedJson),
-                        externalServicesActions = (0 until expectedJson).map {
-                            EvaluatedIndividualBuilder.buildFakeDbExternalServiceAction(1).plus(EvaluatedIndividualBuilder.buildFakeRPCExternalServiceAction(1))
-                        }.toMutableList(),
+            mutableListOf(
+                //build fake rpc individual in order to test its generated tests
+                EvaluatedIndividualBuilder.buildEvaluatedRPCIndividual(
+                    actions = EvaluatedIndividualBuilder.buildFakeRPCAction(expectedJson),
+                    externalServicesActions = (0 until expectedJson).map {
+                        EvaluatedIndividualBuilder.buildFakeDbExternalServiceAction(1).plus(EvaluatedIndividualBuilder.buildFakeRPCExternalServiceAction(1))
+                    }.toMutableList(),
 
-                        format = OutputFormat.KOTLIN_JUNIT_5
-                    )
-                ),
-                config.outputFilePrefix,
-                config.outputFileSuffix,
-                Termination.NONE,
-                listOf()
+                    format = OutputFormat.KOTLIN_JUNIT_5
+                )
+            ),
+            config.outputFilePrefix,
+            config.outputFileSuffix,
+            Termination.NONE,
+            listOf(),
+            listOf()
         )
 
 
@@ -144,6 +145,7 @@ class TestSuiteWriterRPCTest{
             config.outputFilePrefix,
             config.outputFileSuffix,
             Termination.NONE,
+            listOf(),
             listOf()
         )
 
@@ -197,6 +199,7 @@ class TestSuiteWriterRPCTest{
             config.outputFilePrefix,
             config.outputFileSuffix,
             Termination.NONE,
+            listOf(),
             listOf()
         )
 
