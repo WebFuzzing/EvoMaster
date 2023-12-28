@@ -484,11 +484,13 @@ class RemoteControllerImplementation() : RemoteController{
 
             val version = this.javaClass.`package`?.implementationVersion
                     ?: "(cannot determine, likely due to EvoMaster being run directly from IDE and not as a packaged uber jar)"
+            val exceptionMsg = exception.message?:"(there is no exception message)"
 
             throw SutProblemException("There is a mismatch between the DTO that EvoMaster Driver is " +
                     "sending and what the EvoMaster Core process (this process) is expecting to receive. " +
                     "Are you sure you are using the same matching versions? This EvoMaster Core " +
-                    "process version is: $version")
+                    "process version is: $version, and exception message is: $exceptionMsg."
+            )
         } else {
             log.warn("Failed to parse dto", exception)
         }
