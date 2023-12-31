@@ -182,8 +182,8 @@ class HttpWsExternalServiceHandler {
         }
     }
 
-    fun getExternalServiceMappings(): List<ExternalServiceMappingDto> {
-        val output: MutableList<ExternalServiceMappingDto> = mutableListOf()
+    fun getExternalServiceMappings(): Set<ExternalServiceMappingDto> {
+        val output: MutableSet<ExternalServiceMappingDto> = mutableSetOf()
 
         externalServices.forEach {
             val dto = ExternalServiceMappingDto()

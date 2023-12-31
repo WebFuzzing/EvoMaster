@@ -14,7 +14,7 @@ public class Action implements Serializable {
 
     /**
      * A list (possibly empty) of String values used in the action.
-     * This info can be used for different kinds of taint analysis, eg
+     * This info can be used for different kinds of taint analysis, e.g.
      * to check how such values are used in the SUT
      */
     private final Set<String> inputVariables;
@@ -24,7 +24,7 @@ public class Action implements Serializable {
      * mock servers including state of the mock server and signature along with
      * external service information such as hostname and port.
      */
-    private final List<ExternalServiceMapping> externalServiceMapping;
+    private final Set<ExternalServiceMapping> externalServiceMapping;
 
     /**
      * A map of external service domain name against to the local IP
@@ -37,11 +37,12 @@ public class Action implements Serializable {
      */
     private final List<ExternalService> skippedExternalServices;
 
-    public Action(int index, String name, Collection<String> inputVariables, List<ExternalServiceMapping> externalServiceMapping, Map<String, String> localAddressMapping, List<ExternalService> skippedExternalServices) {
+    public Action(int index, String name, Collection<String> inputVariables, Set<ExternalServiceMapping> externalServiceMapping, Map<String, String> localAddressMapping, List<ExternalService> skippedExternalServices) {
         this.index = index;
         this.name = name;
         this.inputVariables = Collections.unmodifiableSet(new HashSet<>(inputVariables));
-        this.externalServiceMapping = Collections.unmodifiableList(new ArrayList<>(externalServiceMapping));
+        this.externalServiceMapping = Collections.unmodifiableSet(new HashSet<>(externalServiceMapping));
+//        this.externalServiceMapping = Collections.unmodifiableList(new ArrayList<>(externalServiceMapping));
         this.localAddressMapping = Collections.unmodifiableMap(new HashMap<>(localAddressMapping));
         this.skippedExternalServices = Collections.unmodifiableList(new ArrayList<>(skippedExternalServices));
     }
@@ -54,7 +55,7 @@ public class Action implements Serializable {
         return inputVariables;
     }
 
-    public List<ExternalServiceMapping> getExternalServiceMapping() {
+    public Set<ExternalServiceMapping> getExternalServiceMapping() {
         return externalServiceMapping;
     }
 
