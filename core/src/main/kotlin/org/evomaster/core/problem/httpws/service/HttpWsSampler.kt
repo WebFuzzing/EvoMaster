@@ -69,12 +69,7 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
             val k = it.indexOf(":")
             val name = it.substring(0, k)
             val content = it.substring(k+1)
-            dto.headers.add(
-                HeaderDto(
-                    name,
-                    content
-                )
-            )
+            dto.headers.add(HeaderDto(name, content))
         }
 
         dto.name = "Fixed Headers"
