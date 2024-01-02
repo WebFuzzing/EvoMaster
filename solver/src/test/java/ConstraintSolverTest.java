@@ -14,12 +14,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ConstraintSolverTest {
 
-    private static ConstraintSolver solver;
+    private static ConstraintSolverZ3InDocker solver;
 
     @BeforeAll
     static void setup() {
         String resourcesFolder = System.getProperty("user.dir") + "/src/test/resources/";
-        solver = new ConstraintSolver(resourcesFolder);
+        solver = new ConstraintSolverZ3InDocker(resourcesFolder);
     }
 
     @AfterAll
@@ -31,7 +31,7 @@ public class ConstraintSolverTest {
      * Test satisfiability with a small example
      */
     @Test
-    public void satisfiabilityExample() throws IOException, InterruptedException {
+    public void satisfiabilityExample() {
 
         String response = solver.solve("example.smt2");
 
@@ -54,8 +54,6 @@ public class ConstraintSolverTest {
         String response;
         try {
             response = solver.solve("example2.smt2");
-        } catch (IOException | InterruptedException e) {
-            throw new RuntimeException(e);
         } finally {
             Files.delete(copied);
         }
@@ -67,7 +65,7 @@ public class ConstraintSolverTest {
      * Test solving a model with the example of returning two unique unsigned integers
      */
     @Test
-    public void unique_uint() throws IOException, InterruptedException {
+    public void unique_uint() {
         String response = solver.solve("unique_uint.smt2");
 
         assertTrue(response.contains("sat"));
