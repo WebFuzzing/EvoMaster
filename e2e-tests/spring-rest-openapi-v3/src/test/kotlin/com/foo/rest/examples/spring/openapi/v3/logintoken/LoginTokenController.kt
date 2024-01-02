@@ -1,8 +1,8 @@
 package com.foo.rest.examples.spring.openapi.v3.logintoken
 
 import com.foo.rest.examples.spring.openapi.v3.SpringController
-import org.evomaster.client.java.controller.api.dto.AuthenticationDto
-import org.evomaster.client.java.controller.api.dto.JsonTokenPostLoginDto
+import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
+import org.evomaster.client.java.controller.api.dto.auth.JsonTokenPostLoginDto
 import org.evomaster.client.java.controller.problem.ProblemInfo
 import org.evomaster.client.java.controller.problem.RestProblem
 
@@ -18,7 +18,9 @@ class LoginTokenController: SpringController(LoginTokenApplication::class.java){
 
     override fun getInfoForAuthentication(): List<AuthenticationDto> {
         return listOf(
-                AuthenticationDto("Foo").apply { jsonTokenPostLogin = JsonTokenPostLoginDto().apply {
+                AuthenticationDto("Foo")
+                    .apply { jsonTokenPostLogin = JsonTokenPostLoginDto()
+                    .apply {
                     userId = "foo"
                     endpoint = "/api/logintoken/login"
                     headerPrefix = "Bearer "

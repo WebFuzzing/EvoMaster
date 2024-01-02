@@ -3,7 +3,7 @@ package com.foo.spring.rest.mongo;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import org.evomaster.client.java.controller.EmbeddedSutController;
-import org.evomaster.client.java.controller.api.dto.AuthenticationDto;
+import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto;
 import org.evomaster.client.java.controller.api.dto.SutInfoDto;
 import org.evomaster.client.java.sql.DbSpecification;
 import org.evomaster.client.java.controller.problem.ProblemInfo;

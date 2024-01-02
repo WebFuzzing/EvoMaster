@@ -1,8 +1,8 @@
 package org.evomaster.client.java.controller;
 
-import org.evomaster.client.java.controller.api.dto.AuthenticationDto;
-import org.evomaster.client.java.controller.api.dto.CookieLoginDto;
-import org.evomaster.client.java.controller.api.dto.HeaderDto;
+import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto;
+import org.evomaster.client.java.controller.api.dto.auth.CookieLoginDto;
+import org.evomaster.client.java.controller.api.dto.auth.HeaderDto;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
