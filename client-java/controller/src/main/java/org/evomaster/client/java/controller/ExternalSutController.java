@@ -445,7 +445,7 @@ public abstract class ExternalSutController extends SutController {
                     dto.index,
                     dto.name,
                     dto.inputVariables,
-                    dto.externalServiceMapping.stream().map(e -> new ExternalServiceMapping(e.remoteHostname, e.localIPAddress, e.signature, e.isActive)).collect(Collectors.toSet()),
+                    dto.externalServiceMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> new ExternalServiceMapping(e.getValue().remoteHostname, e.getValue().localIPAddress, e.getValue().signature, e.getValue().isActive))),
                     dto.localAddressMapping,
                     dto.skippedExternalServices.stream().map(e -> new ExternalService(e.hostname, e.port)).collect(Collectors.toList())
             ));

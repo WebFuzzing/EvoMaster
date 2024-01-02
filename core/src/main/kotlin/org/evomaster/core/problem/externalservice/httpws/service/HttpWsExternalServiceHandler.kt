@@ -117,7 +117,7 @@ class HttpWsExternalServiceHandler {
     fun addHostname(hostnameResolutionInfo: HostnameResolutionInfo) {
         if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
             if (!hostnameLocalAddressMapping.containsKey(hostnameResolutionInfo.remoteHostName)) {
-                var ip = if (hostnameResolutionInfo.remoteHostName == ExternalServiceSharedUtils.DEFAULT_WM_DUMMY_HOSTNAME) {
+                val ip = if (hostnameResolutionInfo.remoteHostName == ExternalServiceSharedUtils.DEFAULT_WM_DUMMY_HOSTNAME) {
                     ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP
                 } else {
                     getNewIP()
@@ -182,18 +182,8 @@ class HttpWsExternalServiceHandler {
         }
     }
 
-    fun getExternalServiceMappings(): Set<ExternalServiceMappingDto> {
-        val output: MutableSet<ExternalServiceMappingDto> = mutableSetOf()
-
-        externalServices.forEach {
-            val dto = ExternalServiceMappingDto()
-            dto.remoteHostname = it.value.getRemoteHostName()
-            dto.localIPAddress = it.value.getIP()
-            dto.signature = it.value.getSignature()
-            dto.isActive = it.value.isActive()
-            output.add(dto)
-        }
-        return output
+    fun getExternalServiceMappings(): Map<String, ExternalServiceMappingDto> {
+        return externalServices.mapValues { (_, v) -> ExternalServiceMappingDto(v.getRemoteHostName(), v.getIP(), v.getSignature(), v.isActive()) }
     }
 
     fun getLocalDomainNameMapping(): Map<String, String> {

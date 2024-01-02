@@ -40,7 +40,7 @@ public class ActionDto {
     /**
      * This list of DTOs represents the external service mappings.
      */
-    public Set<ExternalServiceMappingDto> externalServiceMapping = new HashSet<>();
+    public Map<String, ExternalServiceMappingDto> externalServiceMapping = new HashMap<>();
 
     /**
      * Mapping of external service domain name and local address used

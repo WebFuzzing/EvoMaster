@@ -70,9 +70,12 @@ public class ExecutionTracer {
     private static Set<String> inputVariables = new HashSet<>();
 
     /**
-     * A list of external service hostname and WireMock IP mapping information
+     * Map of external services mapping. Key is the WireMock signature
+     * (use protocol, remote hostname, and port), and value contains information
+     * about remote hostname, mock server local IP address, state
+     * (active or inactive) and WireMock signature.
      */
-    private static Set<ExternalServiceMapping> externalServiceMapping = new HashSet<>();
+    private static Map<String, ExternalServiceMapping> externalServiceMapping = new HashMap<>();
 
     private static Map<String, String> localAddressMapping = new HashMap<>();
 
@@ -697,37 +700,23 @@ public class ExecutionTracer {
      * no mapping NULL will be returned
      */
     public static String getExternalMappingForSignature(String signature) {
-        List<ExternalServiceMapping> m = externalServiceMapping
-                .stream()
-                .filter(e -> e.getSignature().equals(signature))
-                .collect(Collectors.toList());
-
-        if (m.isEmpty()) {
-            return null;
-        }
-        return m.get(0).getLocalIPAddress();
+        return externalServiceMapping.get(signature).getLocalIPAddress();
     }
 
     public static String getExternalMappingForHostname(String hostname) {
         return externalServiceMapping
-                .stream()
-                .filter(e -> e.getRemoteHostname().equals(hostname))
-                .collect(Collectors.toList())
-                .get(0).getLocalIPAddress();
+                .entrySet().stream()
+                .filter(e -> e.getValue().getRemoteHostname().equals(hostname))
+                .findFirst().get().getValue().getLocalIPAddress();
     }
 
     public static boolean hasActiveExternalMappingForSignature(String signature) {
-        return externalServiceMapping
-                .stream()
-                .filter(e -> e.getSignature().equals(signature) && e.isActive())
-                .count() > 0;
+        return externalServiceMapping.containsKey(signature);
     }
 
     public static boolean hasMockServerForHostname(String hostname) {
         return externalServiceMapping
-                .stream()
-                .filter(e -> e.getRemoteHostname().equals(hostname))
-                .count() > 0;
+                .entrySet().stream().anyMatch(e -> e.getValue().getLocalIPAddress().equals(hostname));
     }
 
     /**
@@ -762,16 +751,12 @@ public class ExecutionTracer {
 
     public static boolean skipHostname(String hostname) {
         return skippedExternalServices
-                .stream()
-                .filter(e -> e.getHostname().equals(hostname.toLowerCase()))
-                .count() > 0;
+                .stream().anyMatch(e -> e.getHostname().equals(hostname.toLowerCase()));
     }
 
     public static boolean skipHostnameAndPort(String hostname, int port) {
         return skippedExternalServices
-                .stream()
-                .filter(e -> e.getHostname().equals(hostname.toLowerCase()) && e.getPort() == port)
-                .count() > 0;
+                .stream().anyMatch(e -> e.getHostname().equals(hostname.toLowerCase()) && e.getPort() == port);
     }
 
 }

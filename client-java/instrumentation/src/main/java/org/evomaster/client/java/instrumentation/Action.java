@@ -20,11 +20,12 @@ public class Action implements Serializable {
     private final Set<String> inputVariables;
 
     /**
-     * Set of external services mapping. This contains information about
-     * mock servers including state of the mock server and signature along with
-     * external service information such as hostname and port.
+     * Map of external services mapping. Key is the WireMock signature
+     * (use protocol, remote hostname, and port), and value contains information
+     * about remote hostname, mock server local IP address, state
+     * (active or inactive) and WireMock signature.
      */
-    private final Set<ExternalServiceMapping> externalServiceMapping;
+    private final Map<String, ExternalServiceMapping> externalServiceMapping;
 
     /**
      * A map of external service domain name against to the local IP
@@ -37,12 +38,11 @@ public class Action implements Serializable {
      */
     private final List<ExternalService> skippedExternalServices;
 
-    public Action(int index, String name, Collection<String> inputVariables, Set<ExternalServiceMapping> externalServiceMapping, Map<String, String> localAddressMapping, List<ExternalService> skippedExternalServices) {
+    public Action(int index, String name, Collection<String> inputVariables, Map<String, ExternalServiceMapping> externalServiceMapping, Map<String, String> localAddressMapping, List<ExternalService> skippedExternalServices) {
         this.index = index;
         this.name = name;
         this.inputVariables = Collections.unmodifiableSet(new HashSet<>(inputVariables));
-        this.externalServiceMapping = Collections.unmodifiableSet(new HashSet<>(externalServiceMapping));
-//        this.externalServiceMapping = Collections.unmodifiableList(new ArrayList<>(externalServiceMapping));
+        this.externalServiceMapping = Collections.unmodifiableMap(new HashMap<>(externalServiceMapping));
         this.localAddressMapping = Collections.unmodifiableMap(new HashMap<>(localAddressMapping));
         this.skippedExternalServices = Collections.unmodifiableList(new ArrayList<>(skippedExternalServices));
     }
@@ -55,7 +55,7 @@ public class Action implements Serializable {
         return inputVariables;
     }
 
-    public Set<ExternalServiceMapping> getExternalServiceMapping() {
+    public Map<String, ExternalServiceMapping> getExternalServiceMapping() {
         return externalServiceMapping;
     }
 
