@@ -10,7 +10,8 @@ public class ExternalServiceMappingDto {
 
     /**
      * Signature of the local mock service replaced the external web
-     * service.
+     * service. Signature is a unique identifier based on the [protocol],
+     * [remoteHostname], and [remotePort].
      */
     public String signature;
 
