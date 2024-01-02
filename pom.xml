@@ -133,6 +133,7 @@
         <springfox.version>3.0.0</springfox.version>
         <springdoc.version>1.6.9</springdoc.version>
         <jetty.version>9.4.29.v20200521</jetty.version>
+        <slf4j.version>1.7.24</slf4j.version>
         <jersey.version>2.33</jersey.version>
         <javax.el.version>2.2.5</javax.el.version>
         <!--
@@ -405,7 +406,12 @@
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
-                <version>1.7.24</version>
+                <version>${slf4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-simple</artifactId>
+                <version>${slf4j.version}</version>
             </dependency>
             <dependency>
                 <groupId>ch.qos.logback</groupId>
@@ -759,6 +765,12 @@
 
 
             <!-- test dependencies -->
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter</artifactId>
+                <version>${junit.jupiter.version}</version>
+                <scope>test</scope>
+            </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-engine</artifactId>
