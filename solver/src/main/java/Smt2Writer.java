@@ -11,9 +11,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Smt2Writer {
-    public static final String CHECK_INT_COMPARE_REGEX = "^CHECK\\(([a-zA-Z_][a-zA-Z0-9_]+)([<|>|=])(.+)\\)$";
-    // Const that need to be solved as a value
+    public static final String CHECK_INT_COMPARE_REGEX = "^CHECK\\(([a-zA-Z_][a-zA-Z0-9_]+)([<|>|=]=?)(.+)\\)$";
+
+    // The value that solves the constraint
     List<String> values = new ArrayList<>();
+
     // The assertions that those values need to satisfy
     List<String> constraints = new ArrayList<>();
 

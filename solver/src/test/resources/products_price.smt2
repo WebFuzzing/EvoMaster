@@ -7,14 +7,16 @@
 
 ; Variable declarations
 (declare-const price Int)
+(declare-const stock Int)
 
 ; Unsigned int
-(assert (> price 0))
+(assert (and (> price 1000) (> stock 5)))
 
 ; Constraints
 
 ; Solve
 (check-sat)
 (get-value (price))
+(get-value (stock))
 
 (pop)
