@@ -16,7 +16,9 @@ public class IPAddressValidator {
     private static final int BASE_16 = 16;
 
     private static final String IPV4_REGEX =
-            "^(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})$";
+            "^(([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(\\.(?!$)|$)){4}$";
+
+    private static final Pattern IPV4_PATTERN = Pattern.compile(IPV4_REGEX);
 
     // Max number of hex groups (separated by :) in an IPV6 address
     private static final int IPV6_MAX_HEX_GROUPS = 8;
@@ -24,45 +26,14 @@ public class IPAddressValidator {
     // Max hex digits in each IPv6 group
     private static final int IPV6_MAX_HEX_DIGITS_PER_GROUP = 4;
 
-    private static final IPAddressValidator VALIDATOR = new IPAddressValidator();
-
     private static final Pattern DIGITS_PATTERN = Pattern.compile("\\d{1,3}");
     private static final Pattern ID_CHECK_PATTERN = Pattern.compile("[^\\s/%]+");
 
     public static boolean isValidInet4Address(final String inet4Address) {
         // verify that address conforms to generic IPv4 format
-        Pattern pattern = Pattern.compile(IPV4_REGEX);
-        final Matcher matcher = pattern.matcher(inet4Address);
+        final Matcher matcher = IPV4_PATTERN.matcher(inet4Address);
 
-        if (matcher.matches()) {
-            final int count = matcher.groupCount();
-
-            if (count != 4) {
-                return false;
-            }
-
-            for (int i = 0; i < count; i++) {
-                String segment = matcher.group(i + 1);
-
-                int ipSegment = 0;
-                try {
-                    ipSegment = Integer.parseInt(segment);
-                } catch (final NumberFormatException e) {
-                    return false;
-                }
-
-                if (ipSegment > IPV4_MAX_OCTET_VALUE) {
-                    return false;
-                }
-
-                if (segment.length() > 1 && segment.startsWith("0")) {
-                    return false;
-                }
-            }
-
-        }
-
-        return true;
+        return matcher.matches();
     }
 
     public static boolean isValidInet6Address(String inet6Address) {

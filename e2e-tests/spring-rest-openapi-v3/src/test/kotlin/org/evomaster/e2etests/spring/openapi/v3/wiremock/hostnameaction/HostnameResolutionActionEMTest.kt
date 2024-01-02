@@ -7,7 +7,7 @@ import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Test
 
 class HostnameResolutionActionEMTest: SpringTestBase() {
 
@@ -21,7 +21,7 @@ class HostnameResolutionActionEMTest: SpringTestBase() {
         }
     }
 
-    @Disabled
+    @Test
     fun testRunEM() {
         runTestHandlingFlakyAndCompilation(
             "HostnameResolutionActionEMTest",
@@ -36,7 +36,7 @@ class HostnameResolutionActionEMTest: SpringTestBase() {
                 args.add("127.0.0.4")
                 // TODO: Need to remove, once the issue resolved
                 args.add("--minimize")
-                args.add("false")
+                args.add("true")
 
                 val solution = initAndRun(args)
 

@@ -20,7 +20,7 @@ public class Action implements Serializable {
     private final Set<String> inputVariables;
 
     /**
-     * List of external services mapping. This contains information about
+     * Set of external services mapping. This contains information about
      * mock servers including state of the mock server and signature along with
      * external service information such as hostname and port.
      */

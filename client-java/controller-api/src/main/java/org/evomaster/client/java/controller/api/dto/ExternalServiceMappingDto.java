@@ -15,7 +15,8 @@ public class ExternalServiceMappingDto {
     public String signature;
 
     /**
-     * Indicate the state of the mock server, whether it's active or not.
+     * Indicate the state of the mock server. Boolean True is when WireMock
+     * server is up and running.
      */
     public Boolean isActive;
 

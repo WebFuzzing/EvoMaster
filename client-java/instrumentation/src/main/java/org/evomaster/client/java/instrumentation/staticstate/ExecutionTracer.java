@@ -70,7 +70,7 @@ public class ExecutionTracer {
     private static Set<String> inputVariables = new HashSet<>();
 
     /**
-     * A map of external service hostname and WireMock IP mapping information
+     * A list of external service hostname and WireMock IP mapping information
      */
     private static Set<ExternalServiceMapping> externalServiceMapping = new HashSet<>();
 
