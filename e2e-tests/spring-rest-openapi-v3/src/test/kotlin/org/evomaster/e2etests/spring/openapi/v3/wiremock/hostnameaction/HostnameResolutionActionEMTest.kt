@@ -36,7 +36,7 @@ class HostnameResolutionActionEMTest: SpringTestBase() {
                 args.add("127.0.0.4")
                 // TODO: Need to remove, once the issue resolved
                 args.add("--minimize")
-                args.add("true")
+                args.add("false")
 
                 val solution = initAndRun(args)
 
