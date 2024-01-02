@@ -1,3 +1,5 @@
+import org.evomaster.client.java.sql.internal.constraint.DbTableCheckExpression;
+import org.evomaster.client.java.sql.internal.constraint.DbTableConstraint;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -7,6 +9,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.Collections;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -27,13 +31,18 @@ public class ConstraintSolverTest {
         solver.close();
     }
 
+
+    // ************************************************* //
+    // ********** Tests for solving from file ********** //
+    // ************************************************* //
+
     /**
      * Test satisfiability with a small example
      */
     @Test
     public void satisfiabilityExample() {
 
-        String response = solver.solve("example.smt2");
+        String response = solver.solveFromFile("example.smt2");
 
         assertEquals("sat", response.trim());
     }
@@ -53,7 +62,7 @@ public class ConstraintSolverTest {
 
         String response;
         try {
-            response = solver.solve("example2.smt2");
+            response = solver.solveFromFile("example2.smt2");
         } finally {
             Files.delete(copied);
         }
@@ -66,10 +75,27 @@ public class ConstraintSolverTest {
      */
     @Test
     public void unique_uint() {
-        String response = solver.solve("unique_uint.smt2");
+        String response = solver.solveFromFile("unique_uint.smt2");
 
         assertTrue(response.contains("sat"));
         assertTrue(response.contains("(id_1 2)"));
         assertTrue(response.contains("(id_2 3)"));
+    }
+
+    // **************************************************************** //
+    // ********** Tests for creating the file and then solve ********** //
+    // **************************************************************** //
+
+    @Test
+    public void fromConstraintList() {
+        List<DbTableConstraint> constraintList = Collections.singletonList(
+                new DbTableCheckExpression("products", "CHECK (price>100)"));
+
+        String response = solver.solve(constraintList);
+
+        String expected = "sat\n" +
+                "((price 101))\n";
+
+        assertEquals(expected, response);
     }
 }

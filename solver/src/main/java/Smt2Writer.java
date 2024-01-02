@@ -1,4 +1,5 @@
 import org.evomaster.client.java.sql.internal.constraint.DbTableCheckExpression;
+import org.evomaster.client.java.sql.internal.constraint.DbTableConstraint;
 import org.testcontainers.shaded.com.google.common.annotations.VisibleForTesting;
 
 import java.io.IOException;
@@ -10,7 +11,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class Smt2Writer {
+public class Smt2Writer  {
     public static final String CHECK_INT_COMPARE_REGEX = "^CHECK\\(([a-zA-Z_][a-zA-Z0-9_]+)([<|>|=]=?)(.+)\\)$";
 
     // The value that solves the constraint
@@ -22,16 +23,19 @@ public class Smt2Writer {
     /**
      * Tries to parse the constraint from the DBConstraint, if succeeds returns true
      */
-    public boolean addConstraint(DbTableCheckExpression constraint) {
+    public boolean addConstraint(DbTableConstraint constraint) {
         try {
-            String expression = constraint.getSqlCheckExpression().trim().replaceAll(" ", "");
+            if (constraint instanceof DbTableCheckExpression) {
+                String expression = ((DbTableCheckExpression) constraint).getSqlCheckExpression().trim().replaceAll(" ", "");
 
-            final Matcher matcher = getCheckMatcher(expression);
+                final Matcher matcher = getCheckMatcher(expression);
 
-            values.add(getValueFromExpression(matcher));
-            constraints.add(getConstraintFromExpressionAsText(matcher));
+                values.add(getValueFromExpression(matcher));
+                constraints.add(getConstraintFromExpressionAsText(matcher));
 
-            return true;
+                return true;
+            }
+            return false;
         } catch (Exception e) {
             return false;
         }
