@@ -264,8 +264,8 @@ class SecurityRest {
                 var newList = mutableListOf<RestCallAction>();
 
                 // for every action before the successfulPutRequest index, add a copy of the action to newList
-                for(i in 0..putIndexInEndpoint+1 ) {
-                    newList.add(i, (listOfActions.get(i).copy() as RestCallAction))
+                for(i in 0..putIndexInEndpoint ) {
+                    newList.add((listOfActions.get(i).copy() as RestCallAction))
                 }
 
                 var currentPutAction = listOfActions.get(putIndexInEndpoint)
