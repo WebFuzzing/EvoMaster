@@ -136,6 +136,7 @@ class SecurityRest {
               existing action that returns 2xx, and copy it to use as starting point
             - execute new test case with fitness function
             - create new testing targets based on status code of new actions
+            - add to archive (if needed)
          */
 
 
