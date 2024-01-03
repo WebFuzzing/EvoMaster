@@ -75,6 +75,8 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
         dto.name = "Fixed Headers"
 
         handleAuthInfo(dto)
+
+        config.authFromFile?.forEach { handleAuthInfo(it) }
     }
 
     protected fun setupAuthentication(infoDto: SutInfoDto) {
