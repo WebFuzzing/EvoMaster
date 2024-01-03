@@ -11,11 +11,17 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * A writer for SMT2 format.
+ * It is used to write the constraints in a file that can be read by any smt2 solver.
+ * The parsing and the writing of the constraints is done hardcoded here and not using a library.
+ * This is because for the purpose of the feature, it is not necessary to use an external library.
+ */
 public class Smt2Writer  {
     public static final String CHECK_INT_COMPARE_REGEX = "^CHECK\\(([a-zA-Z_][a-zA-Z0-9_]+)([<|>|=]=?)(.+)\\)$";
 
-    // The value that solves the constraint
-    List<String> values = new ArrayList<>();
+    // The variables that solve the constraint
+    List<String> variables = new ArrayList<>();
 
     // The assertions that those values need to satisfy
     List<String> constraints = new ArrayList<>();
@@ -26,11 +32,14 @@ public class Smt2Writer  {
     public boolean addConstraint(DbTableConstraint constraint) {
         try {
             if (constraint instanceof DbTableCheckExpression) {
-                String expression = ((DbTableCheckExpression) constraint).getSqlCheckExpression().trim().replaceAll(" ", "");
+                String expression = ((DbTableCheckExpression) constraint)
+                        .getSqlCheckExpression().trim()
+                        .replaceAll(" ", "");
 
+                // TODO: Add support for all other constraints here
                 final Matcher matcher = getCheckMatcher(expression);
 
-                values.add(getValueFromExpression(matcher));
+                variables.add(getVariableFromExpression(matcher));
                 constraints.add(getConstraintFromExpressionAsText(matcher));
 
                 return true;
@@ -41,16 +50,28 @@ public class Smt2Writer  {
         }
     }
 
-    private String getValueFromExpression(Matcher matcher) {
+    /**
+     * Returns the variable name of the parsed expression in matcher
+     * @param matcher the matcher that contains the parsed expression
+     * @return the variable name
+     */
+    private String getVariableFromExpression(Matcher matcher) {
         return matcher.group(1);
     }
 
+    /**
+     * Transforms a CHECK constraint into a constraint in smt2 format.
+     * For example: "(price>0)" to "(> price 0)".
+     * TODO: Add support for more than one value in the expression
+     * @param matcher the matcher that contains the parsed expression
+     * @return the constraint in smt2 format
+     */
     private String getConstraintFromExpressionAsText(Matcher matcher) {
-        String value = matcher.group(1);
+        String variable = matcher.group(1);
         String comparator = matcher.group(2);
         String compare = matcher.group(3);
 
-        return "(" + comparator + " " + value + " " + compare + ")";
+        return "(" + comparator + " " + variable + " " + compare + ")";
     }
 
     /**
@@ -69,6 +90,10 @@ public class Smt2Writer  {
         return matcher;
     }
 
+    /**
+     * Writes the content of the Smt2Writer in a file with the given filename
+     * @param filename the name of the file
+     */
     public void writeToFile(String filename) {
         String text = asText();
         try {
@@ -94,7 +119,7 @@ public class Smt2Writer  {
     }
 
     private void declareConstants(StringBuilder sb) {
-        for (String value: values) {
+        for (String value: variables) {
             sb.append("(declare-const ");
             sb.append(value);
             sb.append(" Int)\n");
@@ -110,7 +135,7 @@ public class Smt2Writer  {
     }
 
     private void getValues(StringBuilder sb) {
-        for (String value : values) {
+        for (String value : variables) {
             sb.append("(get-value (");
             sb.append(value);
             sb.append("))\n");

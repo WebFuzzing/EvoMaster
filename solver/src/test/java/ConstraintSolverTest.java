@@ -18,12 +18,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ConstraintSolverTest {
 
-    private static ConstraintSolverZ3InDocker solver;
+    private static DbConstraintSolverZ3InDocker solver;
 
     @BeforeAll
     static void setup() {
         String resourcesFolder = System.getProperty("user.dir") + "/src/test/resources/";
-        solver = new ConstraintSolverZ3InDocker(resourcesFolder);
+        solver = new DbConstraintSolverZ3InDocker(resourcesFolder);
     }
 
     @AfterAll

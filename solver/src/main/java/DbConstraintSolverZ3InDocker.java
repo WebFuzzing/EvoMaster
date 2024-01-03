@@ -1,6 +1,4 @@
 import org.evomaster.client.java.sql.internal.constraint.DbTableConstraint;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.Container;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.images.builder.ImageFromDockerfile;
@@ -15,7 +13,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-public class ConstraintSolverZ3InDocker implements ConstraintSolver {
+/**
+ * A smt2 solver implementation using Z3 in a Docker container.
+ */
+public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
 
     public static final String Z3_DOCKER_IMAGE = "ghcr.io/z3prover/z3:ubuntu-20.04-bare-z3-sha-ba8d8f0";
 
@@ -24,8 +25,8 @@ public class ConstraintSolverZ3InDocker implements ConstraintSolver {
 
     private final String containerPath = "/smt2-resources/";
     private final GenericContainer<?>  z3Prover;
-    private final String tmpFolder;
-    private static final org.slf4j.Logger _LOGGER = org.slf4j.LoggerFactory.getLogger(ConstraintSolverZ3InDocker.class.getName());
+    private final String tmpFolderPath;
+    private static final org.slf4j.Logger LOGGER = org.slf4j.LoggerFactory.getLogger(DbConstraintSolverZ3InDocker.class.getName());
 
     /**
      * The current implementation of the Z3 solver reads content either from STDIN or from a file.
@@ -35,9 +36,9 @@ public class ConstraintSolverZ3InDocker implements ConstraintSolver {
      * Then, the result is returned in STDOUT.
      * @param resourcesFolder the name of the folder in the file system that will be linked to the Docker volume
      */
-    public ConstraintSolverZ3InDocker(String resourcesFolder) {
+    public DbConstraintSolverZ3InDocker(String resourcesFolder) {
 
-        this.tmpFolder = resourcesFolder + "tmp/";
+        this.tmpFolderPath = resourcesFolder + "tmp/";
 
         ImageFromDockerfile image = new ImageFromDockerfile()
                 .withDockerfileFromBuilder(builder -> builder
@@ -51,12 +52,15 @@ public class ConstraintSolverZ3InDocker implements ConstraintSolver {
         z3Prover.start();
     }
 
+    /**
+     * Deletes the tmp folder with all its content and then stops the Z3 Docker container.
+     */
     @Override
     public void close() {
         try {
-            FileUtils.deleteDirectory(new File(this.tmpFolder));
+            FileUtils.deleteDirectory(new File(this.tmpFolderPath));
         } catch (IOException e) {
-            _LOGGER.error("Error deleting tmp folder", e);
+            LOGGER.error(String.format("Error deleting tmp folder '%s'. ", this.tmpFolderPath), e);
         }
         z3Prover.stop();
     }
@@ -65,7 +69,6 @@ public class ConstraintSolverZ3InDocker implements ConstraintSolver {
      * Reads from a file in the container 'filename' the smt2 problem, and runs z3 with it.
      * Returns the result as string.
      * The file must be in the containerPath defined in the constructor.
-     * Also, this is specific of this implementation: the interface should read a set of constraints instead.
      * @param fileName the name of the file to read
      * @return the result of the Z3 solver with the obtained model as string
      */
@@ -89,6 +92,12 @@ public class ConstraintSolverZ3InDocker implements ConstraintSolver {
         return solveFromFile("tmp/" + filename);
     }
 
+    /**
+     * Given the constraint list, creates a Smt2Writer with all of them, and then write them in a smt2 file.
+     * After that, run the Z3 Docker solver with the reference to the file and return the check model as string.
+     * @param constraintList list of database constraints
+     * @return a string with the model for the given constraints
+     */
     @Override
     public String solve(List<DbTableConstraint> constraintList) {
         Smt2Writer writer = new Smt2Writer();
@@ -105,31 +114,37 @@ public class ConstraintSolverZ3InDocker implements ConstraintSolver {
         String solution = solveFromTmp(fileName);
 
         try {
+            // TODO: Move this to another thread?
             deleteFile(fileName);
         }   catch (IOException e) {
-            //  If this fails, then all the tmp folder will be deleted on close
-            _LOGGER.error("Error deleting tmp file", e);
+            //  If this fails, then all the content from the tmp folder will be deleted on close
+            LOGGER.error(String.format("Error deleting tmp file '%s'. ", fileName), e);
         }
 
         return solution;
     }
 
+    /**
+     * Stores the content of the Smt2Writer in a file in the tmp folder.
+     * @param writer the Smt2Writer with the constraints
+     * @return the name of the file
+     */
     private String storeToTmpFile(Smt2Writer writer) {
         String fileName = "smt2_" + System.currentTimeMillis() + ".smt2";
         try {
-            Files.createDirectories(Paths.get(this.tmpFolder));
+            Files.createDirectories(Paths.get(this.tmpFolderPath));
         } catch (IOException e) {
-            _LOGGER.error("Error creating tmp folder", e);
-            throw new RuntimeException(e);
+            throw new RuntimeException(String.format("Error creating tmp folder '%s'. ", this.tmpFolderPath), e);
         }
 
-        Path fullPath = Paths.get( this.tmpFolder + fileName);
+        Path fullPath = Paths.get( this.tmpFolderPath + fileName);
         writer.writeToFile(fullPath.toString());
+
         return fileName;
     }
 
     private void deleteFile(String fileName) throws IOException {
-        Path fileToDelete = Paths.get( this.tmpFolder + fileName);
+        Path fileToDelete = Paths.get( this.tmpFolderPath + fileName);
 
         Files.delete(fileToDelete);
     }
