@@ -700,7 +700,10 @@ public class ExecutionTracer {
      * no mapping NULL will be returned
      */
     public static String getExternalMappingForSignature(String signature) {
-        return externalServiceMapping.get(signature).getLocalIPAddress();
+        if (externalServiceMapping.containsKey(signature)) {
+            return externalServiceMapping.get(signature).getLocalIPAddress();
+        }
+        return null;
     }
 
     public static String getExternalMappingForHostname(String hostname) {
