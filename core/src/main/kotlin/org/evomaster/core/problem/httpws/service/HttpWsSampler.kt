@@ -57,6 +57,10 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
 
     protected fun addAuthFromConfig(){
 
+        //first check if any configured in configuration file (if any)
+        config.authFromFile?.forEach { handleAuthInfo(it) }
+
+        //then check if any is passed on commandline
         val headers = listOf(config.header0, config.header1, config.header2)
                 .filter { it.isNotBlank() }
 
@@ -75,8 +79,6 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
         dto.name = "Fixed Headers"
 
         handleAuthInfo(dto)
-
-        config.authFromFile?.forEach { handleAuthInfo(it) }
     }
 
     protected fun setupAuthentication(infoDto: SutInfoDto) {
