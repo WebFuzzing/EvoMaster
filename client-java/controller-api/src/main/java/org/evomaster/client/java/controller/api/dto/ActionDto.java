@@ -39,6 +39,8 @@ public class ActionDto {
 
     /**
      * This list of DTOs represents the external service mappings.
+     * Key: WireMock signature which is a string of protocol, hostname, and port.
+     * Value: Contains [ExternalServiceMappingDto]
      */
     public Map<String, ExternalServiceMappingDto> externalServiceMapping = new HashMap<>();
 

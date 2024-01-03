@@ -23,10 +23,19 @@ public class IPAddressValidatorTest {
     public void testIPV6() {
         assertTrue(IPAddressValidator.isValidInet6Address("2001:db8:3333:4444:5555:6666:7777:8888"));
         assertTrue(IPAddressValidator.isValidInet6Address("2001:db8:3333:4444:cccc:dddd:eeee:ffff"));
+        assertTrue(IPAddressValidator.isValidInet6Address("2001:DBC8:3333:4444:AAAA:DDDD:BBBB:FFFF"));
         assertTrue(IPAddressValidator.isValidInet6Address("2002:c0a8:101::42"));
+        assertTrue(IPAddressValidator.isValidInet6Address("2001:db8::1234:5678"));
         assertTrue(IPAddressValidator.isValidInet6Address("2000::"));
         assertTrue(IPAddressValidator.isValidInet6Address("::1234:5678"));
         assertFalse(IPAddressValidator.isValidInet6Address(":1234:5678"));
         assertFalse(IPAddressValidator.isValidInet6Address("192.168.1.1"));
+
+//        The below checks, have address with IPV6 dual - IPV6 plus IPV4 formats.
+        assertTrue(IPAddressValidator.isValidInet6Address("::11.22.33.44"));
+        assertTrue(IPAddressValidator.isValidInet6Address("2001:db8::123.123.123.123"));
+        assertTrue(IPAddressValidator.isValidInet6Address("::1234:5678:91.123.4.56"));
+        assertTrue(IPAddressValidator.isValidInet6Address("::1234:5678:1.2.3.4"));
+        assertTrue(IPAddressValidator.isValidInet6Address("2001:db8::1234:5678:5.6.7.8"));
     }
 }
