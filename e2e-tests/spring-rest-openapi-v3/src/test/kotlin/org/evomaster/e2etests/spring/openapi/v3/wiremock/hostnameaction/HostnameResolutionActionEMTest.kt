@@ -22,7 +22,7 @@ class HostnameResolutionActionEMTest: SpringTestBase() {
         }
     }
 
-    @Disabled
+    @Test
     fun testRunEM() {
         runTestHandlingFlakyAndCompilation(
             "HostnameResolutionActionEMTest",

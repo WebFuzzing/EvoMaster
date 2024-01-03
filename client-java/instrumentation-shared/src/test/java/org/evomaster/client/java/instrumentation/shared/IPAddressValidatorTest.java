@@ -37,5 +37,9 @@ public class IPAddressValidatorTest {
         assertTrue(IPAddressValidator.isValidInet6Address("::1234:5678:91.123.4.56"));
         assertTrue(IPAddressValidator.isValidInet6Address("::1234:5678:1.2.3.4"));
         assertTrue(IPAddressValidator.isValidInet6Address("2001:db8::1234:5678:5.6.7.8"));
+        assertFalse(IPAddressValidator.isValidInet6Address("2001:db8::123.123.123.256"));
+
+//        TODO: Regex fails to detect IPV6 dual address where IPV4 component is wrong, should fix it
+//        assertFalse(IPAddressValidator.isValidInet6Address("::1234:5678:256.2.3.4"));
     }
 }
