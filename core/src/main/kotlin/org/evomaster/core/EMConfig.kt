@@ -1233,6 +1233,10 @@ class EMConfig {
     @Cfg("Tracking of Mongo commands to improve test generation")
     var heuristicsForMongo = false
 
+    @Experimental
+    @Cfg("Tracking of enabled endpoints")
+    var epaCalculation = false
+
     @Cfg("Enable extracting SQL execution info")
     var extractSqlExecutionInfo = true
 

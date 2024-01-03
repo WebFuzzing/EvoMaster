@@ -85,7 +85,7 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
             sampleAtRandom()
         } else if ( config.isEnabledSmartSampling() && (hasSpecialInitForSmartSampler() ||  randomness.nextBoolean(config.probOfSmartSampling))) {
             // If there is still special init set, sample from that, otherwise depend on probability
-            smartSample() //sampleo
+            smartSample()
         } else {
             sampleAtRandom()
         }

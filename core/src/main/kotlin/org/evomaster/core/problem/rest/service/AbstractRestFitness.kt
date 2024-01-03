@@ -13,9 +13,8 @@ import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.externalservice.HostnameResolutionInfo
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
-import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceInfo
-import org.evomaster.core.problem.httpws.service.HttpWsFitness
 import org.evomaster.core.problem.httpws.auth.NoAuth
+import org.evomaster.core.problem.httpws.service.HttpWsFitness
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
@@ -24,8 +23,6 @@ import org.evomaster.core.problem.rest.param.UpdateForBodyParam
 import org.evomaster.core.problem.util.ParserDtoUtil
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.TcpUtils
-import org.evomaster.core.search.action.Action
-import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.Individual
@@ -421,6 +418,10 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
         val rcr = RestCallResult()
         actionResults.add(rcr)
 
+        if(actionResults.size == 1) { //it's the first action
+            handleInitialEnabledEndpoints(rcr)
+        }
+
         val response = try {
             createInvocation(a, chainState, cookies, tokens).invoke()
         } catch (e: ProcessingException) {
@@ -505,7 +506,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                 else -> throw e
             }
         }
-
+        handleEnabledEndpoints(rcr, a)
         rcr.setStatusCode(response.status)
 
         handlePossibleConnectionClose(response)
@@ -597,17 +598,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
             null
         }
 
-        val fullUri = EMTestUtils.resolveLocation(locationHeader, baseUrl + path)!!
-            .let {
-                /*
-                    TODO this will be need to be done properly, and check if
-                    it is or not a valid char.
-                    Furthermore, likely needed to be done in resolveLocation,
-                    or at least check how RestAssured would behave
-                 */
-                //it.replace("\"", "")
-                GeneUtils.applyEscapes(it, GeneUtils.EscapeMode.URI, configuration.outputFormat)
-            }
+        val fullUri = getFullUri(locationHeader, baseUrl, path)
 
 
         val builder = if (a.produces.isEmpty()) {
@@ -685,6 +676,44 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
         return invocation
     }
 
+    private fun getFullUri(locationHeader: String?, baseUrl: String, path: String) : String {
+        return EMTestUtils.resolveLocation(locationHeader, baseUrl + path)!!
+            .let {
+                /*
+                    TODO this will be need to be done properly, and check if
+                    it is or not a valid char.
+                    Furthermore, likely needed to be done in resolveLocation,
+                    or at least check how RestAssured would behave
+                 */
+                //it.replace("\"", "")
+                GeneUtils.applyEscapes(it, GeneUtils.EscapeMode.URI, configuration.outputFormat)
+            }
+    }
+
+    protected fun handleInitialEnabledEndpoints(
+        rcr: RestCallResult
+    ) {
+        val restActions = getEnabledRestActions()
+        rcr.setInitialEnabledEndpoints(restActions)
+    }
+
+    private fun getEnabledRestActions(): EnabledRestActionsDto? {
+        val fullUri = getFullUri(null, getBaseUrl(), "/enabled")
+        val r: Response = client.target(fullUri)
+            .request(MediaType.APPLICATION_JSON_TYPE)
+            .get()
+        return if (Response.Status.Family.SUCCESSFUL.equals(r.statusInfo.family)) {
+            r.readEntity(EnabledRestActionsDto::class.java)
+        } else {
+            null
+        }
+    }
+
+    private fun handleEnabledEndpoints(rcr: RestCallResult, a: RestCallAction){
+        val restActions = getEnabledRestActions()
+        val enabledDto = EnabledDto(RestActionDto(a.verb.name, a.path.toString()), restActions)
+        rcr.setEnabledEndpointsAfterAction(enabledDto)
+    }
 
     private fun handleSaveLocation(
         a: RestCallAction,

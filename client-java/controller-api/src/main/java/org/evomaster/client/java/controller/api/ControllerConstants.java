@@ -28,5 +28,7 @@ public class ControllerConstants {
 
     public static final String MONGO_INSERTION = "/mongoInsertion";
 
+    public static final String ENABLED_ACTIONS = "/enabledActions";
+
     public static final String POST_SEARCH_ACTION = "/postSearchAction";
 }

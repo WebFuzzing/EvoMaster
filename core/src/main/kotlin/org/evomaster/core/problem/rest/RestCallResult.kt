@@ -1,8 +1,12 @@
 package org.evomaster.core.problem.rest
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.google.common.annotations.VisibleForTesting
 import com.google.gson.Gson
 import com.google.gson.JsonObject
+import org.evomaster.client.java.controller.api.dto.database.execution.epa.EnabledDto
+import org.evomaster.client.java.controller.api.dto.database.execution.epa.EnabledRestActionsDto
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
@@ -18,6 +22,9 @@ class RestCallResult : HttpWsCallResult {
 
     companion object {
         const val HEURISTICS_FOR_CHAINED_LOCATION = "HEURISTICS_FOR_CHAINED_LOCATION"
+        const val INITIAL_ENABLED_ENDPOINTS = "INITIAL_ENABLED_ENDPOINTS"
+        const val ENABLED_ENDPOINTS_AFTER_ACTION = "ENABLED_ENDPOINTS_AFTER_ACTION"
+        val mapper = jacksonObjectMapper()
     }
 
 
@@ -58,6 +65,15 @@ class RestCallResult : HttpWsCallResult {
      */
     fun setHeuristicsForChainedLocation(on: Boolean) = addResultValue(HEURISTICS_FOR_CHAINED_LOCATION, on.toString())
     fun getHeuristicsForChainedLocation(): Boolean = getResultValue(HEURISTICS_FOR_CHAINED_LOCATION)?.toBoolean() ?: false
+    fun setInitialEnabledEndpoints(enabledActions: EnabledRestActionsDto?) = addResultValue(INITIAL_ENABLED_ENDPOINTS, mapper.writeValueAsString(enabledActions))
+    fun getInitialEnabledEndpoints(): EnabledRestActionsDto? {
+        return getResultValue(INITIAL_ENABLED_ENDPOINTS)?.let { mapper.readValue<EnabledRestActionsDto?>(it) }
+    }
+
+    fun setEnabledEndpointsAfterAction(enabledActions: EnabledDto) = addResultValue(ENABLED_ENDPOINTS_AFTER_ACTION, mapper.writeValueAsString(enabledActions))
+    fun getEnabledEndpointsAfterAction(): EnabledDto? {
+        return getResultValue(ENABLED_ENDPOINTS_AFTER_ACTION)?.let { mapper.readValue<EnabledDto?>(it) }
+    }
 
     override fun matchedType(action: Action): Boolean {
         return action is RestCallAction
