@@ -1,4 +1,5 @@
 import org.evomaster.client.java.sql.internal.constraint.DbTableConstraint;
+import org.evomaster.core.search.gene.Gene;
 
 import java.util.List;
 
@@ -12,7 +13,6 @@ public interface DbConstraintSolver extends AutoCloseable {
      * Solves the given constraints and returns the Db Gene to insert in the database
      * @param constraintList list of database constraints
      * @return a string with the model for the given constraints
-     * TODO: Response should be a Gene and not a string
      */
-    String solve(List<DbTableConstraint> constraintList);
+    Gene solve(List<DbTableConstraint> constraintList);
 }

@@ -1,4 +1,6 @@
 import org.evomaster.client.java.sql.internal.constraint.DbTableConstraint;
+import org.evomaster.core.search.gene.Gene;
+import org.evomaster.core.search.gene.numeric.IntegerGene;
 import org.testcontainers.containers.Container;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.images.builder.ImageFromDockerfile;
@@ -88,8 +90,35 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
         }
     }
 
-    private String solveFromTmp(String filename) {
-        return solveFromFile("tmp/" + filename);
+    private Gene solveFromTmp(String filename) {
+        String model = solveFromFile("tmp/" + filename);
+        return toGene(model);
+    }
+
+    /**
+     * Parses the string from the smt2 format response and creates a Gene
+     * @param model the string with the model
+     * @return the Gene with the model
+     */
+    private Gene toGene(String model) {
+        String[] lines = model.split("\n");
+        String[] values = lines[1].substring(2, lines[1].length()-2).split(" ");
+        String name = values[0];
+        Integer value =  Integer.parseInt(values[1]);
+        Integer min = null;
+        Integer max = null;
+        Integer precision = null;
+        boolean minInclusive = false;
+        boolean maxInclusive = false;
+
+        return new IntegerGene(
+                name,
+                value,
+                min,
+                max,
+                precision,
+                minInclusive,
+                maxInclusive);
     }
 
     /**
@@ -99,7 +128,7 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
      * @return a string with the model for the given constraints
      */
     @Override
-    public String solve(List<DbTableConstraint> constraintList) {
+    public Gene solve(List<DbTableConstraint> constraintList) {
         Smt2Writer writer = new Smt2Writer();
 
         for (DbTableConstraint constraint : constraintList) {
@@ -111,7 +140,7 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
 
         String fileName = storeToTmpFile(writer);
 
-        String solution = solveFromTmp(fileName);
+        Gene solution = solveFromTmp(fileName);
 
         try {
             // TODO: Move this to another thread?

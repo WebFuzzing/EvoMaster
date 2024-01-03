@@ -1,5 +1,7 @@
 import org.evomaster.client.java.sql.internal.constraint.DbTableCheckExpression;
 import org.evomaster.client.java.sql.internal.constraint.DbTableConstraint;
+import org.evomaster.core.search.gene.Gene;
+import org.evomaster.core.search.gene.numeric.IntegerGene;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -12,8 +14,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 public class ConstraintSolverTest {
@@ -91,11 +92,19 @@ public class ConstraintSolverTest {
         List<DbTableConstraint> constraintList = Collections.singletonList(
                 new DbTableCheckExpression("products", "CHECK (price>100)"));
 
-        String response = solver.solve(constraintList);
+        Gene response = solver.solve(constraintList);
 
-        String expected = "sat\n" +
-                "((price 101))\n";
+        assertEquals("price", response.getName());
 
-        assertEquals(expected, response);
+        if (response instanceof IntegerGene) {
+            assertEquals(101, ((IntegerGene) response).getValue());
+//            assertEquals(101, ((IntegerGene) response).getMin());
+//            assertEquals(101, ((IntegerGene) response).getMaximum());
+//            assertEquals(101, ((IntegerGene) response).getMaximum());
+            assertFalse(((IntegerGene) response).getMinInclusive());
+            assertFalse(((IntegerGene) response).getMaxInclusive());
+        } else {
+            fail("The response is not an IntegerGene");
+        }
     }
 }
