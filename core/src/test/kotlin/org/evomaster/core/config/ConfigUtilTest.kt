@@ -9,11 +9,21 @@ class ConfigUtilTest{
 
     @Test
     fun testBase(){
-
         val path = "${basePath}/base.toml"
         val config = ConfigUtil.readFromToml(path)
 
         assertEquals(1, config.configs.size)
         assertTrue(config.configs.containsKey("blackBox"))
+    }
+
+
+    @Test
+    fun testAuthCookie(){
+        val path = "${basePath}/auth_cookie.toml"
+        val config = ConfigUtil.readFromToml(path)
+
+        assertEquals(2, config.auth.size)
+        assertTrue(config.auth.any { it.cookieLogin.username == "first" })
+        assertTrue(config.auth.any { it.cookieLogin.username == "second" })
     }
 }
