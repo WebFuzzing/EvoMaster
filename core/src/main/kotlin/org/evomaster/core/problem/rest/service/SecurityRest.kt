@@ -9,10 +9,7 @@ import org.evomaster.core.problem.api.auth.AuthenticationInfo
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.httpws.auth.AuthenticationHeader
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
-import org.evomaster.core.problem.rest.HttpVerb
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestCallResult
-import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.remote.service.RemoteControllerImplementation
 import org.evomaster.core.search.EvaluatedIndividual
@@ -61,18 +58,19 @@ class SecurityRest {
 
         //  call sutInfo Once here and pass it as a parameter for all cases.
         val sutInfo : SutInfoDto? = remoteControllerImplementation.getSutInfo()
+        //TODO in future will need to get it from EMConfig as well, to do Black-Box testing
 
+        val authInfo = mutableListOf<AuthenticationDto>()
+        sutInfo?.infoForAuthentication?.forEach { authInfo.add(it) }
 
         // we can see what is available from the schema, and then check if already existing a test for it in archive
 
-
-
-        addForAccessControl(sutInfo)
+        addForAccessControl(authInfo)
 
         return archive.extractSolution()
     }
 
-    private fun addForAccessControl(sutInfo : SutInfoDto?) {
+    private fun addForAccessControl(authInfo: List<AuthenticationDto>) {
 
         /*
             for black-box testing, we can only rely on REST-style guidelines to infer relations between operations
@@ -83,11 +81,7 @@ class SecurityRest {
             even in white-box testing we still want to consider REST-style
          */
 
-
-
-
-
-        accessControlBasedOnRESTGuidelines(sutInfo)
+        accessControlBasedOnRESTGuidelines(authInfo)
         //accessControlBasedOnDatabaseMonitoring() //TODO
     }
 
@@ -95,11 +89,11 @@ class SecurityRest {
         TODO("Not yet implemented")
     }
 
-    private fun accessControlBasedOnRESTGuidelines(sutInfo : SutInfoDto?) {
+    private fun accessControlBasedOnRESTGuidelines(authInfo: List<AuthenticationDto>) {
 
         // quite a few rules here that can be defined
 
-        handleForbiddenDeleteButOkPutOrPatch(sutInfo)
+        handleForbiddenDeleteButOkPutOrPatch(authInfo)
         //TODO other
     }
 
@@ -109,7 +103,133 @@ class SecurityRest {
      * - authenticated user B gets 403 on DELETE X
      * - authenticated user B gets 200 on PUT/PATCH on X
      */
-    private fun handleForbiddenDeleteButOkPutOrPatch(sutInfo : SutInfoDto?) {
+    private fun handleForbiddenDeleteButOkPutOrPatch(authInfo: List<AuthenticationDto>) {
+
+        /*
+            here, need to go through archive, for all successful create resources with authenticated user.
+            for each of them, do a DELETE with a new user.
+            verify if get 403.
+            if so, try a PUT and PATCH.
+            when doing this, check from archive for test already doing it, as payloads and params of PUT/PATCH
+            might have constraints.
+            if 2xx, create new fault definition.
+            add to archive the new test
+         */
+
+        /*
+            what needs to be done here:
+            - check if at least 2 users. if not, nothing to do
+            - from schema, check all DELETE operations
+            - from archive, search if there is any test with a DELETE returning a 403
+            - do that for every different endpoint. There are 2 options:
+            -- (1) there is such call,  then
+            ---     make a copy of the individual
+            ----    do a "slice" and remove all calls after the DELETE call (if any)
+            -- (2) there is not. need to create it based on successful create resources with authenticated user
+            ---    search for create resource for endpoint of DELETE
+            ---    do slice and remove calls after create resource endpoint call
+            ---    add a DELETE with different user (verify get a 403)
+            - append new REST Call action (see mutator classes) for PATCH/PUT with different auth, based
+              on action copies from action definitions. should be on same endpoint.
+            - need to resolve path element parameters to point to same resolved endpoint as DELETE
+            - as PUT/PATCH requires payloads and possible valid query parameters, search from archive an
+              existing action that returns 2xx, and copy it to use as starting point
+            - execute new test case with fitness function
+            - create new testing targets based on status code of new actions
+         */
+
+
+        // check that there are at least two users, using the method getInfoForAuthentication()
+        if (authInfo.size <= 1) {
+            // nothing to test if there are not at least 2 users
+
+            LoggingUtil.getInfoLogger().debug(
+                "Security test handleForbiddenDeleteButOkPutOrPatch requires at least 2 authenticated users")
+            return
+        }
+
+        val deleteOperations = getAllActionDefinitions(HttpVerb.DELETE)
+        //do we already have existing test cases returning 403 for it?
+
+        //TODO push up as input parameter, to extract only once
+        val archivedSolution : Solution<RestIndividual> = this.archive.extractSolution();
+        val individualsInSolution : List<EvaluatedIndividual<RestIndividual>>  =  archivedSolution.individuals;
+
+        deleteOperations.forEach { delete ->
+
+            //TODO check if there is either a PUT or PATCH on such endpoint
+
+            val existing403 = getIndividualsWithAction(individualsInSolution, HttpVerb.DELETE, delete.path, 403)
+
+            if(existing403.isEmpty()){
+                //we do not have such call in evolved tests. we need to create it by ourself
+                //TODO implement it
+                return
+            }
+
+            //there could be several test cases for that DELETE operation... we just take shortest test
+            val chosenExisting403 : EvaluatedIndividual<RestIndividual>  = existing403.minByOrNull { it.individual.size() }!!
+
+            val copy = chosenExisting403.individual.copy()
+            sliceIndividual(copy as RestIndividual, HttpVerb.DELETE, delete.path, 403)
+
+            //TODO add PUT/PATH with different auth
+        }
+
+
+        // get all endpoints used in tests
+        // for each endpoint
+        // check if there is a successful DELETE request
+        // if there is, make a clone of the individual and slice all parts before DELETE
+        // Place PUT / PATCH instead of DELETE with another user other than the authenticated user
+        // for this, first search for a successful PUT / PATCH from the archive since its payload may be needed
+        // if the command succeeds, that's a security issue.
+        // if there is no DELETE
+        // search for a successful PUT/PATCH which creates the resource,
+        // try to delete the resource with the owner, which should succeed.
+        // create the resource again with the owner
+        // try a DELETE request with another user which should fail
+        // try a PUT/ PATCH request with another user, if it succeeds, a security issue
+
+    }
+
+    /**
+     * Remove all calls AFTER the given call.
+     */
+    private fun sliceIndividual(individual: RestIndividual, verb: HttpVerb, path: RestPath, statusCode: Int) {
+
+        //TODO
+    }
+
+    private fun getIndividualsWithAction(
+        individuals: List<EvaluatedIndividual<RestIndividual>>,
+        verb: HttpVerb,
+        path: RestPath,
+        statusCode: Int
+    ): List<EvaluatedIndividual<RestIndividual>> {
+
+        return individuals.filter { ind ->
+            ind.evaluatedMainActions().any{ea ->
+                val a = ea.action as RestCallAction
+                val r = ea.result as RestCallResult
+
+                a.verb == verb && a.path.isEquivalent(path) && r.getStatusCode() == 403
+            }
+        }
+    }
+
+    private fun getAllActionDefinitions(verb: HttpVerb): List<RestCallAction> {
+        return actionDefinitions.filter { it.verb == verb }
+    }
+
+
+    /**
+     * Here we are considering this case:
+     * - authenticated user A creates a resource X (status 2xx)
+     * - authenticated user B gets 403 on DELETE X
+     * - authenticated user B gets 200 on PUT/PATCH on X
+     */
+    private fun old_handleForbiddenDeleteButOkPutOrPatch(authInfo: List<AuthenticationDto>) {
         //TODO("Not yet implemented")
 
         /*
@@ -140,11 +260,8 @@ class SecurityRest {
          */
 
 
-        //TODO call only once, and then pass as input
-        //val sutInfo : SutInfoDto? = remoteControllerImplementation.getSutInfo()
-
         // check that there are at least two users, using the method getInfoForAuthentication()
-        if (sutInfo?.infoForAuthentication?.size!! <= 1) {
+        if (authInfo.size <= 1) {
             // nothing to test if there are not at least 2 users
 
             LoggingUtil.getInfoLogger().debug("Security test handleForbiddenDeleteButOkPutOrPatch requires at" +

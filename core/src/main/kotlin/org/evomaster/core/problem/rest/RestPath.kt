@@ -150,7 +150,8 @@ class RestPath(path: String) {
         if (this.elements.size != other.elements.size) {
             return false
         }
-        return (0 until elements.size).none { this.elements[it] != other.elements[it] }
+        return (elements.indices.none { this.elements[it] != other.elements[it] })
+                && this.endsWithSlash == other.endsWithSlash
     }
 
     /**
