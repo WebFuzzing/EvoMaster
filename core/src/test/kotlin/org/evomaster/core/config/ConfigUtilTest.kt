@@ -2,10 +2,28 @@ package org.evomaster.core.config
 
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
 
 class ConfigUtilTest{
 
     private val basePath = "src/test/resources/config"
+
+    @Test
+    fun testWriteAndReadToml() {
+        val path = "./target/tmp/config.toml"
+        Files.deleteIfExists(Paths.get(path))
+
+        val cff = ConfigsFromFile()
+        cff.configs["foo"] = "x"
+        cff.configs["bar"] = "y"
+
+        ConfigUtil.createConfigFileTemplateToml(path,cff)
+
+        val back = ConfigUtil.readFromToml(path)
+        assertEquals(0, back.configs.size) // should be commented out
+    }
 
     @Test
     fun testBase(){
