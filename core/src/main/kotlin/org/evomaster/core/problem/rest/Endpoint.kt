@@ -49,6 +49,18 @@ class Endpoint(
                 HttpVerb.HEAD -> pathItem.head
             }
         }
+
+        fun validateTags(tagFilters: List<String>, schema: OpenAPI) {
+
+            val allTags = schema.paths
+                .flatMap { it.value.readOperations().flatMap { op -> op.tags } }
+                .toSet()
+
+            val missing = tagFilters.filter { !allTags.contains(it) }
+            if(missing.isNotEmpty()){
+                throw IllegalArgumentException("${missing.size} missing tag filters from schema: ${missing.joinToString(",")}")
+            }
+        }
     }
 
     fun getTags(schema: OpenAPI) : List<String>{

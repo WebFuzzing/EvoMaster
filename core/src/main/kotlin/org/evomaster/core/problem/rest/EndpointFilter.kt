@@ -13,6 +13,11 @@ object EndpointFilter {
             return listOf()
         }
 
+        if(! config.endpointTagFilter.isNullOrBlank()){
+            //this validation needs to be done here and not in EMConfig, as there we have no info on schema
+            Endpoint.validateTags(config.getTagFilters(), swagger)
+        }
+
         val all = Endpoint.fromOpenApi(swagger)
 
         val x =  if(config.endpointFocus != null) {
