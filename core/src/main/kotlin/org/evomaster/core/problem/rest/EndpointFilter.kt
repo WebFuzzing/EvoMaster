@@ -8,22 +8,32 @@ object EndpointFilter {
 
      fun getEndPointsToSkip(config: EMConfig, swagger: OpenAPI):List<Endpoint> {
         if(config.endpointFocus.isNullOrBlank()
-            && config.endpointPrefix.isNullOrBlank()){
+            && config.endpointPrefix.isNullOrBlank()
+            && config.endpointTagFilter.isNullOrBlank()){
             return listOf()
         }
 
         val all = Endpoint.fromOpenApi(swagger)
 
-        val selection =  if(config.endpointFocus != null) {
+        val x =  if(config.endpointFocus != null) {
             all.filter { it.path.toString() != config.endpointFocus }
         } else if(config.endpointPrefix != null){
             all.filter { ! it.path.toString().startsWith(config.endpointPrefix!!) }
         } else {
-            //should never happen
-            throw IllegalStateException("Invalid endpoint to skip configuration")
+           listOf()
         }
 
-        return selection
+        val tags = config.getTagFilters()
+        val y = if(tags.isNotEmpty()){
+            all.filter { e -> e.getTags(swagger).none { t -> tags.contains(t) }}
+        } else {
+            listOf()
+        }
+
+        return mutableSetOf<Endpoint>().apply {
+            addAll(x)
+            addAll(y)
+        }.toList()
     }
 
 

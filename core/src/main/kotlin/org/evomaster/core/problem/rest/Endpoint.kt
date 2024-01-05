@@ -1,6 +1,8 @@
 package org.evomaster.core.problem.rest
 
 import io.swagger.v3.oas.models.OpenAPI
+import io.swagger.v3.oas.models.Operation
+import io.swagger.v3.oas.models.PathItem
 import java.util.stream.Stream
 
 
@@ -34,7 +36,30 @@ class Endpoint(
                     list
                 }
         }
+
+        fun getOperation(verb: HttpVerb, pathItem: PathItem) : Operation{
+            return when(verb){
+                HttpVerb.GET -> pathItem.get
+                HttpVerb.POST -> pathItem.post
+                HttpVerb.PUT -> pathItem.put
+                HttpVerb.DELETE -> pathItem.delete
+                HttpVerb.OPTIONS -> pathItem.options
+                HttpVerb.PATCH -> pathItem.patch
+                HttpVerb.TRACE -> pathItem.trace
+                HttpVerb.HEAD -> pathItem.head
+            }
+        }
     }
+
+    fun getTags(schema: OpenAPI) : List<String>{
+
+        val pathDeclaration = schema.paths[this.path.toString()]
+            ?: throw IllegalArgumentException("Input schema has no endpoint declaration for: ${this.path}")
+        val op = getOperation(verb, pathDeclaration)
+
+        return op.tags
+    }
+
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

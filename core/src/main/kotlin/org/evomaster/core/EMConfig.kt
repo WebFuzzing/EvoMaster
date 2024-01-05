@@ -1790,6 +1790,12 @@ class EMConfig {
     @Cfg("Concentrate search on a set of REST endpoints defined by a common prefix")
     var endpointPrefix: String? = null
 
+    @Experimental
+    @Cfg("Comma-separated list of OpenAPI/Swagger 'tags' definition." +
+            " Only the REST endpoints having at least one of such tags will be fuzzed." +
+            " If no tag is specified here, then such filter is not applied.")
+    var endpointTagFilter: String? = null
+
     //TODO Andrea/Man. will need to discuss how this can be refactored for RPC as well
 
     @Experimental
@@ -2218,5 +2224,5 @@ class EMConfig {
 
     fun isEnabledResourceSizeHandling() = isMIO() && probOfHandlingLength > 0 && maxSizeOfHandlingResource > 0
 
-
+    fun getTagFilters() = endpointTagFilter?.split(",")?.map { it.trim() } ?: listOf()
 }
