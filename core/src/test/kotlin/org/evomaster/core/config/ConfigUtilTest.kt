@@ -43,5 +43,16 @@ class ConfigUtilTest{
         assertEquals(2, config.auth.size)
         assertTrue(config.auth.any { it.cookieLogin.username == "first" })
         assertTrue(config.auth.any { it.cookieLogin.username == "second" })
+
+        assertTrue(config.auth.any { it.cookieLogin.usernameField == "x" })
+        assertTrue(config.auth.any { it.cookieLogin.usernameField == null })
+    }
+
+    @Test
+    fun testWrong(){
+        val path = "${basePath}/wrong.toml"
+        assertThrows(Exception::class.java){
+            ConfigUtil.readFromToml(path)
+        }
     }
 }

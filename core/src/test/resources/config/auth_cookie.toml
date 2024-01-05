@@ -14,7 +14,7 @@ name="b"
 [auth.cookieLogin]
 username="second"
 password="bar"
-usernameField="x"
+#usernameField="x"
 passwordField="y"
 loginEndpointUrl="/login"
 
