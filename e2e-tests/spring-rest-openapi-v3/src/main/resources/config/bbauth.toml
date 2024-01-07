@@ -1,0 +1,12 @@
+[[auth]]
+name="bbauth"
+[[auth.headers]]
+name="X-FOO"
+value="foo"
+[[auth.headers]]
+name="X-BAR"
+value="42"
+[[auth.headers]]
+name="Authorization"
+value="token"
+

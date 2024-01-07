@@ -31,15 +31,10 @@ class BlackBoxRestFitness : RestFitness() {
                 memory leak
              */
             rc.resetSUT()
-
-            /*
-                currently, for bb, the auth can be only configured with the driver,
-                ie, bbExperiments is enabled.
-                TODO might support other manner to configure auth for bb
-             */
-            cookies.putAll(getCookies(individual))
-            tokens.putAll(getTokens(individual))
         }
+
+        cookies.putAll(getCookies(individual))
+        tokens.putAll(getTokens(individual))
 
         val fv = FitnessValue(individual.size().toDouble())
 

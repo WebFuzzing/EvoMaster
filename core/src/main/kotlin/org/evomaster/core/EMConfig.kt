@@ -5,6 +5,7 @@ import joptsimple.OptionDescriptor
 import joptsimple.OptionParser
 import joptsimple.OptionSet
 import org.evomaster.client.java.controller.api.ControllerConstants
+import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory
 import org.evomaster.core.config.ConfigUtil
@@ -261,6 +262,7 @@ class EMConfig {
         val cff = loadConfigFile()
         if(cff != null){
             applyConfigFromFile(cff)
+            authFromFile = cff.auth
         }
 
         // the apply command-line arguments
@@ -774,6 +776,14 @@ class EMConfig {
     @Target(AnnotationTarget.PROPERTY)
     @MustBeDocumented
     annotation class FilePath(val canBeBlank: Boolean = false)
+
+//------------------------------------------------------------------------
+
+    /**
+     * Info for authentication, read from configuration file, if any
+     */
+    var authFromFile: List<AuthenticationDto>? = null
+
 
 //------------------------------------------------------------------------
 //--- properties
