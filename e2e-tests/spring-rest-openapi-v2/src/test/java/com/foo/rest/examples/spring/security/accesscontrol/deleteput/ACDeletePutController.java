@@ -3,7 +3,7 @@ package com.foo.rest.examples.spring.security.accesscontrol.deleteput;
 import com.foo.rest.examples.spring.SpringController;
 import org.evomaster.client.java.controller.AuthUtils;
 import org.evomaster.client.java.controller.InstrumentedSutStarter;
-import org.evomaster.client.java.controller.api.dto.AuthenticationDto;
+import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto;
 
 import java.util.Arrays;
 import java.util.List;

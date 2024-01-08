@@ -1,4 +1,4 @@
-package org.evomaster.client.java.controller.api.dto;
+package org.evomaster.client.java.controller.api.dto.auth;
 
 /**
  * Information on how to do a login based on username/password,

@@ -2,8 +2,8 @@ package com.foo.rest.examples.spring.openapi.v3.cookielogin
 
 import com.foo.rest.examples.spring.openapi.v3.SpringController
 import com.foo.rest.examples.spring.openapi.v3.fakecookieLogin.CookieLoginCenterApplication
-import org.evomaster.client.java.controller.api.dto.AuthenticationDto
-import org.evomaster.client.java.controller.api.dto.CookieLoginDto
+import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
+import org.evomaster.client.java.controller.api.dto.auth.CookieLoginDto
 import org.evomaster.client.java.controller.problem.ProblemInfo
 import org.evomaster.client.java.controller.problem.RestProblem
 import org.springframework.boot.SpringApplication
@@ -38,7 +38,9 @@ class CookieLoginController: SpringController(CookieLoginApplication::class.java
 
     override fun getInfoForAuthentication(): List<AuthenticationDto> {
         return listOf(
-                AuthenticationDto("Foo").apply { cookieLogin = CookieLoginDto().apply {
+                AuthenticationDto("Foo")
+                    .apply { cookieLogin = CookieLoginDto()
+                    .apply {
                     username = "foo"
                     usernameField = "username"
                     password = "123"
@@ -47,7 +49,9 @@ class CookieLoginController: SpringController(CookieLoginApplication::class.java
                     httpVerb = CookieLoginDto.HttpVerb.POST
                     contentType = CookieLoginDto.ContentType.JSON
                 } },
-                AuthenticationDto("Bar").apply { cookieLogin = CookieLoginDto().apply {
+                AuthenticationDto("Bar")
+                    .apply { cookieLogin = CookieLoginDto()
+                    .apply {
                     username = "bar"
                     usernameField = "username"
                     password = "456"
