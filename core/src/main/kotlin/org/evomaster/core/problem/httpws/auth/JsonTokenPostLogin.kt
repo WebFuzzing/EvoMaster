@@ -1,6 +1,6 @@
 package org.evomaster.core.problem.httpws.auth
 
-import org.evomaster.client.java.controller.api.dto.JsonTokenPostLoginDto
+import org.evomaster.client.java.controller.api.dto.auth.JsonTokenPostLoginDto
 
 class JsonTokenPostLogin(
 

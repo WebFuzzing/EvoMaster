@@ -1,7 +1,7 @@
 package org.evomaster.core.problem.httpws.service
 
-import org.evomaster.client.java.controller.api.dto.AuthenticationDto
-import org.evomaster.client.java.controller.api.dto.HeaderDto
+import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
+import org.evomaster.client.java.controller.api.dto.auth.HeaderDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.problem.api.service.ApiWsSampler
 import org.evomaster.core.problem.httpws.HttpWsAction
@@ -57,6 +57,10 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
 
     protected fun addAuthFromConfig(){
 
+        //first check if any configured in configuration file (if any)
+        config.authFromFile?.forEach { handleAuthInfo(it) }
+
+        //then check if any is passed on commandline
         val headers = listOf(config.header0, config.header1, config.header2)
                 .filter { it.isNotBlank() }
 
