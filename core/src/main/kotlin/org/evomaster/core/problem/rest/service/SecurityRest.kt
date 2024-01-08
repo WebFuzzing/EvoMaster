@@ -12,6 +12,7 @@ import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.remote.service.RemoteControllerImplementation
 import org.evomaster.core.search.*
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.service.Archive
@@ -390,8 +391,13 @@ class SecurityRest {
 
             val finalTestCase = EvaluatedIndividual(fv, finalIndividual, finalResults)
 
+            // find all test targets used in archive so that we create a test target that does not exist
+            val testTargets = findAllTestTargetsVisited()
+
+            testTargets.min()
+
             // cover a fake test target, whose index is more than indices of
-            finalTestCase.fitness.coverTarget(-400)
+            finalTestCase.fitness.coverTarget(testTargets.max() + 10)
 
             archive.addIfNeeded(finalTestCase)
 
@@ -414,6 +420,22 @@ class SecurityRest {
         // create the resource again with the owner
         // try a DELETE request with another user which should fail
         // try a PUT/ PATCH request with another user, if it succeeds, a security issue
+
+    }
+
+    private fun findAllTestTargetsVisited() : List<Int> {
+
+        var listOfTargets = mutableListOf<Int>()
+
+        for (ind in this.individualsInSolution) {
+
+            for (t in ind.fitness.reachedTargets()) {
+                listOfTargets.add(t)
+            }
+
+        }
+
+        return listOfTargets
 
     }
 
@@ -686,7 +708,7 @@ class SecurityRest {
         //    }
         //}
 
-        println(headerDifferentFromPut)
+        //println(headerDifferentFromPut)
 
         // if there is a successful put, create an individual including the following for each endpoint
         // successful PUT request which creates the resource and the user
@@ -712,30 +734,32 @@ class SecurityRest {
                 var currentPutAction = listOfActions.get(putIndexInEndpoint)
 
                 // add a successful delete request
-                var deleteReqForPut = createCopyOfActionWithDifferentVerbOrUser(currentPutAction,
+                var deleteReqForPut = createCopyOfActionWithDifferentVerbOrUser("action1", currentPutAction,
                     HttpVerb.DELETE, currentPutAction.auth)
 
                 newList.add(deleteReqForPut)
 
                 // add a successful PUT request again
-                var secondPutRequest = createCopyOfActionWithDifferentVerbOrUser(currentPutAction,
+                var secondPutRequest = createCopyOfActionWithDifferentVerbOrUser("action2", currentPutAction,
                     currentPutAction.verb, currentPutAction.auth)
 
                 newList.add(secondPutRequest)
 
                 // add a Delete request with another user
-                var deleteRequestAnotherUser = createCopyOfActionWithDifferentVerbOrUser(deleteReqForPut,
+                var deleteRequestAnotherUser = createCopyOfActionWithDifferentVerbOrUser("action3" ,deleteReqForPut,
                     deleteReqForPut.verb, deleteReqForPut.auth)
-                // change the authentication header
-                deleteRequestAnotherUser.auth.headers.get(0).value = headerDifferentFromPut!!
+
+                //    mutableListOf<AuthenticationHeader>()
+
+
+                //    .get(0).value = headerDifferentFromPut!!
 
                 newList.add(deleteRequestAnotherUser)
 
                 // try PUt with another user
-                var putRequestAnotherUser = createCopyOfActionWithDifferentVerbOrUser(secondPutRequest,
+                var putRequestAnotherUser = createCopyOfActionWithDifferentVerbOrUser("action4", secondPutRequest,
                     secondPutRequest.verb, secondPutRequest.auth)
-                // change the authentication header
-                putRequestAnotherUser.auth.headers.get(0).value = headerDifferentFromPut!!
+
 
                 newList.add(putRequestAnotherUser)
 
@@ -777,20 +801,21 @@ class SecurityRest {
 
     }
 
-    private fun createCopyOfActionWithDifferentVerbOrUser (act: RestCallAction,
+
+    private fun createCopyOfActionWithDifferentVerbOrUser ( actionId : String,
+                                                            act: RestCallAction,
                                                            newVerb : HttpVerb,
                                                            newUser: HttpWsAuthenticationInfo) : RestCallAction{
 
-        // new action to create from the current action
-        var newAction : RestCallAction = act.copy() as RestCallAction
-        // change the verb of the new action
-        newAction.verb = newVerb
+        var a = RestCallAction(actionId, newVerb, act.path,
+            act.parameters.toMutableList(), newUser, act.saveLocation,
+            act.locationId, act.produces, act.responseRefs, act.skipOracleChecks)
 
         // change the authentication information
-        newAction.auth = newUser
-
-        return newAction
+        return a
     }
+
+
 
     private fun getPathParameter(act: RestCallAction) : String {
 
