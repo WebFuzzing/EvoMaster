@@ -35,4 +35,37 @@ class LoginTokenEMTest : SpringTestBase(){
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/logintoken/check", "OK")
         }
     }
+
+    @Test
+    fun testRunBlackBoxEM() {
+        runTestHandlingFlakyAndCompilation(
+            "LoginTokenEMBlackBox",
+            "org.foo.LoginTokenEMBlackBox",
+            20
+        ) { args: MutableList<String> ->
+
+            args.add("--blackBox")
+            args.add("true")
+            args.add("--bbTargetUrl")
+            args.add(baseUrlOfSut)
+            args.add("--bbSwaggerUrl")
+            args.add("$baseUrlOfSut/v3/api-docs")
+            args.add("--bbExperiments")
+            args.add("false")
+
+            args.add("--configPath")
+            args.add("src/main/resources/config/logintoken.toml")
+
+            args.add("--endpointFocus")
+            args.add("/api/logintoken/check")
+
+            val solution = initAndRun(args)
+
+            Assertions.assertTrue(solution.individuals.size >= 1)
+            assertNone(solution, HttpVerb.POST, 200)
+            assertNone(solution, HttpVerb.POST, 400)
+            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/logintoken/check", "OK")
+        }
+    }
+
 }

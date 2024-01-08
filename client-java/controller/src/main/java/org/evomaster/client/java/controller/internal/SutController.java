@@ -13,6 +13,8 @@ import org.evomaster.client.java.controller.DtoUtils;
 import org.evomaster.client.java.controller.SutHandler;
 import org.evomaster.client.java.controller.api.ControllerConstants;
 import org.evomaster.client.java.controller.api.dto.*;
+import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto;
+import org.evomaster.client.java.controller.api.dto.auth.CookieLoginDto;
 import org.evomaster.client.java.controller.api.dto.constraint.ElementConstraintsDto;
 import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto;
 import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionLogDto;
