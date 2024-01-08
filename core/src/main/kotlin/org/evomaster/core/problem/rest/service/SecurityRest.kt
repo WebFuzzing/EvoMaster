@@ -5,22 +5,16 @@ import org.apache.http.HttpStatus
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.problem.api.auth.AuthenticationInfo
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.httpws.auth.AuthenticationHeader
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.remote.service.RemoteControllerImplementation
-import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.FitnessValue
-import org.evomaster.core.search.Solution
-import org.evomaster.core.search.StructuralElement
-import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.*
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.service.Archive
-import org.evomaster.core.search.service.Minimizer
 import org.evomaster.core.search.service.Sampler
 import javax.annotation.PostConstruct
 
@@ -30,12 +24,21 @@ import javax.annotation.PostConstruct
  */
 class SecurityRest {
 
+    /*
+    archive including test cases
+     */
     @Inject
     private lateinit var archive: Archive<RestIndividual>
 
+    /*
+    sampler
+     */
     @Inject
     private lateinit var sampler: Sampler<RestIndividual>
 
+    /*
+    Remote controller which is used in white-box testing
+     */
     @Inject
     lateinit var remoteControllerImplementation: RemoteControllerImplementation
 
@@ -45,9 +48,23 @@ class SecurityRest {
     private lateinit var actionDefinitions : List<RestCallAction>
 
 
+    /**
+     * Individuals in the solution
+     */
+    private lateinit var individualsInSolution : List<EvaluatedIndividual<RestIndividual>>;
+
+    /**
+     * Authentication objects made as a HashMap for identifying authentication information used
+     * in an efficient manner
+     */
+    private var authenticationInfoMap = mutableMapOf<String,AuthenticationDto>()
+
     @PostConstruct
     private fun postInit(){
+
+        // get action definitions
         actionDefinitions = sampler.getActionDefinitions() as List<RestCallAction>
+
     }
 
     /**
@@ -56,12 +73,22 @@ class SecurityRest {
      */
     fun applySecurityPhase() : Solution<RestIndividual>{
 
+        // extract individuals from the archive
+        val archivedSolution : Solution<RestIndividual> = this.archive.extractSolution();
+        individualsInSolution =  archivedSolution.individuals;
+
+
         //  call sutInfo Once here and pass it as a parameter for all cases.
         val sutInfo : SutInfoDto? = remoteControllerImplementation.getSutInfo()
+
         //TODO in future will need to get it from EMConfig as well, to do Black-Box testing
 
         val authInfo = mutableListOf<AuthenticationDto>()
         sutInfo?.infoForAuthentication?.forEach { authInfo.add(it) }
+
+        for (authInformation : AuthenticationDto in authInfo) {
+            authenticationInfoMap[authInformation.toString()] = authInformation
+        }
 
         // we can see what is available from the schema, and then check if already existing a test for it in archive
 
@@ -95,6 +122,38 @@ class SecurityRest {
 
         handleForbiddenDeleteButOkPutOrPatch(authInfo)
         //TODO other
+    }
+
+    /*
+    This function searches for AuthenticationDto object in authInfo
+    which is not utilized in authenticationObjectsForPutOrPatch
+     */
+    private fun findAuthenticationDtoFromListNotUsedInCreation(authInfo: List<AuthenticationDto>,
+                                                               authenticationObjectsForPutOrPatch: List<HttpWsAuthenticationInfo>):
+            AuthenticationDto? {
+
+        var authenticationDtoNotUsed : AuthenticationDto? = null;
+
+        for (firstAuth : AuthenticationDto in authInfo) {
+
+            var notUsedInAny  = true
+
+            for (secondAuth : HttpWsAuthenticationInfo in authenticationObjectsForPutOrPatch) {
+
+                if ( firstAuth.headers.get(0).value == secondAuth.headers.get(0).value ) {
+                    notUsedInAny = false
+                }
+
+            }
+
+            if (notUsedInAny) {
+                authenticationDtoNotUsed = firstAuth
+            }
+
+        }
+
+        return authenticationDtoNotUsed;
+
     }
 
     /**
@@ -143,39 +202,203 @@ class SecurityRest {
         // check that there are at least two users, using the method getInfoForAuthentication()
         if (authInfo.size <= 1) {
             // nothing to test if there are not at least 2 users
-
             LoggingUtil.getInfoLogger().debug(
                 "Security test handleForbiddenDeleteButOkPutOrPatch requires at least 2 authenticated users")
             return
         }
 
+        // obtain DELETE operations in the SUT according to the swagger
         val deleteOperations = getAllActionDefinitions(HttpVerb.DELETE)
+
         //do we already have existing test cases returning 403 for it?
+        // check if there is a DELETE operation with the status code 403 - which means forbidden
+        lateinit var existing403 : List<EvaluatedIndividual<RestIndividual>>;
+        lateinit var individualsWithSuccessfulPut : List<EvaluatedIndividual<RestIndividual>>;
+        lateinit var individualsWithSuccessfulPatch : List<EvaluatedIndividual<RestIndividual>>;
 
-        //TODO push up as input parameter, to extract only once
-        val archivedSolution : Solution<RestIndividual> = this.archive.extractSolution();
-        val individualsInSolution : List<EvaluatedIndividual<RestIndividual>>  =  archivedSolution.individuals;
+        lateinit var authenticationObjectsForPutOrPatch : List<HttpWsAuthenticationInfo>;
 
+        var authenticationNotUsedInCreation : AuthenticationDto? = null;
+        var existingPutAction : RestCallAction? = null;
+        var newAuth : HttpWsAuthenticationInfo? = null;
+
+        // check delete operations for to see if there is an existing 403
         deleteOperations.forEach { delete ->
 
             //TODO check if there is either a PUT or PATCH on such endpoint
+            individualsWithSuccessfulPut = getIndividualsWithActionAndStatus(individualsInSolution, HttpVerb.PUT, delete.path, HttpStatus.SC_CREATED)
+            individualsWithSuccessfulPatch = getIndividualsWithAction(individualsInSolution, HttpVerb.PATCH, delete.path)
 
-            val existing403 = getIndividualsWithAction(individualsInSolution, HttpVerb.DELETE, delete.path, 403)
+            // if there is an existing PUT, find the AuthenticationDto object used for the existing PUT.
+            if (individualsWithSuccessfulPut.isNotEmpty()) {
+                authenticationObjectsForPutOrPatch = identifyAuthenticationInformationUsedForIndividuals(individualsWithSuccessfulPut)
+            }
+            // if there is not a PUT request with the same endpoint, check for PATCH request
+            else if (individualsWithSuccessfulPatch.isNotEmpty()) {
+                authenticationObjectsForPutOrPatch = identifyAuthenticationInformationUsedForIndividuals(individualsWithSuccessfulPatch)
+            }
+            // if there is no PUT or PATCH for the endpoint, this is a special case.
+            else {
+                //TODO we could not find PUT or PATCH for the endpoint, this case should be handled as a special case
+            }
+
+            // So far, we found an existing PUT or PATCH along with its authentication information.
+            // create an individual containing a DELETE request and whose authentication information is created
+            // from a different AuthenticationDto than the existing PUT
+
+            existing403 = getIndividualsWithActionAndStatus(individualsInSolution, HttpVerb.DELETE, delete.path, 403)
 
             if(existing403.isEmpty()){
+
                 //we do not have such call in evolved tests. we need to create it by ourself
                 //TODO implement it
-                return
+
+
+
+                // create copy of the delete call
+                var restActionForbiddenDelete = delete.copy() as RestCallAction
+
+
+                authenticationNotUsedInCreation =
+                    findAuthenticationDtoFromListNotUsedInCreation (authInfo, authenticationObjectsForPutOrPatch)
+
+
+
+                // Create a new HttpWsAuthentication based on authenticationDto not used by PUT
+                var newHeaders = mutableListOf<AuthenticationHeader>()
+
+                newHeaders.add(AuthenticationHeader("Authorization",
+                        authenticationNotUsedInCreation?.headers?.get(0)?.value.toString()
+                ))
+
+                newAuth = HttpWsAuthenticationInfo("newInfo",newHeaders, null, null)
+
+
+                // changing the authentication information of the forbidden
+                restActionForbiddenDelete.auth = newAuth as HttpWsAuthenticationInfo
+
+
+
+                // this individual contains two actions which are successful PUT to create the resource
+                // and a forbidden delete to
+                val actionList = emptyList<RestCallAction>().toMutableList()
+
+                existingPutAction = findActionFromIndividuals(individualsWithSuccessfulPut, HttpVerb.PUT, delete.path)
+
+                // also change the object to be deleted to make sure all operations are done on the same object
+                changePathParameter(restActionForbiddenDelete, getPathParameter(existingPutAction as RestCallAction))
+
+                // add the successful PUT
+                existingPutAction?.let { actionList.add(it) }
+
+
+                // add the forbidden DELETE
+                actionList.add(restActionForbiddenDelete)
+
+                // create an individual based on those actions
+                val createdIndividual = RestIndividual(actionList, SampleType.PREDEFINED)
+
+
+
+                // create results for the new individual
+                val results: MutableList<RestCallResult> = mutableListOf()
+
+                val resultOfPut = RestCallResult()
+                resultOfPut.setStatusCode(HttpStatus.SC_CREATED)
+
+                val resultOfDelete = RestCallResult()
+                resultOfDelete.setStatusCode(HttpStatus.SC_FORBIDDEN)
+
+                // add results of PUT and DELETE
+                results.add(resultOfPut)
+                results.add(resultOfDelete)
+
+                // Based on action and results, create EvaluatedIndividual(fv, individual, results)
+                // fitness value
+                val fv = FitnessValue(0.0)
+
+                // ensure all genes are initialized before
+                createdIndividual.seeGenes().forEach { if (it.initialized == false) {it.doInitialize()} }
+
+                val newEvaluatedIndividual = EvaluatedIndividual(fv, createdIndividual, results)
+
+                // add the newly created individual to existing 403
+                val newList = mutableListOf<EvaluatedIndividual<RestIndividual>>();
+                newList.add(newEvaluatedIndividual)
+
+                existing403 = newList
+
+
+                // change the authentication information of the delete call to an authentication object
+                // which is not included in authenticationObjectsForPutOrPatch
+
+
+                // change the call result of delete to 403 Forbidden
+
+
+                //restIndividualForbiddenDelete.auth = HttpWsAuthenticationInfo()
+
+                //authInfo[0].
+
+                //replaceAuthenticationInformationOfRestAction(restIndividualForbiddenDelete, )
+
+                //return
             }
 
             //there could be several test cases for that DELETE operation... we just take shortest test
             val chosenExisting403 : EvaluatedIndividual<RestIndividual>  = existing403.minByOrNull { it.individual.size() }!!
 
+            // create a copy of the individual
             val copy = chosenExisting403.individual.copy()
+
+            // slice all restCallAction and RestCallResults before forbidden DELETE
             sliceIndividual(copy as RestIndividual, HttpVerb.DELETE, delete.path, 403)
 
             //TODO add PUT/PATH with different auth
+
+            // final actions of the REST call
+            val finalActionList = emptyList<RestCallAction>().toMutableList()
+            // final results of the rest call
+            val finalResults: MutableList<RestCallResult> = mutableListOf()
+
+            // resultIndex is needed since some actions may be sliced, which means their results should be sliced too
+            var resultIndex = 0
+
+            for( act : RestCallAction in copy.seeMainExecutableActions()) {
+                finalActionList.add(act)
+                finalResults.add(chosenExisting403.seeResults().get(resultIndex) as RestCallResult)
+                resultIndex = resultIndex + 1
+            }
+
+            // add PUT or PATCH with different user to final action list
+            val unauthorizedPut : RestCallAction = existingPutAction?.copy() as RestCallAction
+            unauthorizedPut.auth = newAuth as HttpWsAuthenticationInfo
+
+            val unauthorizedPutResult = RestCallResult()
+            unauthorizedPutResult.setStatusCode(HttpStatus.SC_NO_CONTENT)
+
+            finalActionList.add(unauthorizedPut)
+            finalResults.add(unauthorizedPutResult)
+
+            // create individual and evaluatedIndividual
+            val finalIndividual = RestIndividual(finalActionList, SampleType.PREDEFINED)
+
+            val fv = FitnessValue(0.0)
+
+            // ensure all genes are initialized before
+            finalIndividual.seeGenes().forEach { if (it.initialized == false) {it.doInitialize()} }
+
+            val finalTestCase = EvaluatedIndividual(fv, finalIndividual, finalResults)
+
+            // cover a fake test target, whose index is more than indices of
+            finalTestCase.fitness.coverTarget(-400)
+
+            archive.addIfNeeded(finalTestCase)
+
         }
+
+
+
 
 
         // get all endpoints used in tests
@@ -194,15 +417,99 @@ class SecurityRest {
 
     }
 
+    private fun findActionFromIndividuals(individualList: List<EvaluatedIndividual<RestIndividual>>, verb: HttpVerb, path: RestPath): RestCallAction? {
+
+        var foundRestAction : RestCallAction? = null
+
+        for (ind : EvaluatedIndividual<RestIndividual> in individualList) {
+
+            for (act : RestCallAction in ind.individual.seeMainExecutableActions()) {
+
+                if (act.verb == verb && act.path == path) {
+                    foundRestAction = act
+                }
+
+            }
+
+        }
+
+        return foundRestAction
+
+    }
+
+
+
+    /*
+    This method obtains HttpWsAuthenticationInfo objects from list of individuals.
+     */
+    private fun identifyAuthenticationInformationUsedForIndividuals(listOfIndividuals: List<EvaluatedIndividual<RestIndividual>>)
+    : List<HttpWsAuthenticationInfo>{
+
+        // var listOfUsedAuthenticationDtos =
+        var listOfAuthenticationInfoUsedInIndividuals = mutableListOf<HttpWsAuthenticationInfo>();
+        var listOfResults = mutableListOf<Any>()
+
+        // for each individual
+        for (ind : EvaluatedIndividual<RestIndividual> in listOfIndividuals) {
+
+            for (child : StructuralElement in ind.individual.getViewOfChildren() ){
+
+                listOfResults.clear()
+
+                // identify HttpWsAuthenticationInfo objects used in the individual
+                recursiveTreeTraversalForFindingInformationForItem(child,
+                    "org.evomaster.core.problem.rest.RestCallAction",
+                    listOfResults
+                )
+
+                // for each item in listOfResults which is a list of RestCallAction objects, identify authentication
+                for( item : Any in listOfResults) {
+
+                    listOfAuthenticationInfoUsedInIndividuals.add((item as RestCallAction).auth)
+                }
+            }
+        }
+
+        // return the list of AuthenticationInfo objects
+        return listOfAuthenticationInfoUsedInIndividuals;
+    }
+
     /**
      * Remove all calls AFTER the given call.
      */
     private fun sliceIndividual(individual: RestIndividual, verb: HttpVerb, path: RestPath, statusCode: Int) {
 
-        //TODO
+        // Find the index of the action
+        var index = 0
+        var found = false
+        val actions = individual.seeMainExecutableActions()
+
+        while (!found) {
+
+            if ( (actions.get(index) as RestCallAction).verb == verb &&
+                (actions.get(index) as RestCallAction).path == path) {
+                found = true
+            }
+            else {
+                index = index + 1
+            }
+        }
+
+        if (found) {
+            // delete all calls after the index
+            for (item in index + 1..actions.size - 1) {
+                individual.removeMainExecutableAction(index + 1)
+            }
+        }
+
+
     }
 
-    private fun getIndividualsWithAction(
+    private fun generateAuthenticationFromInfoFromDto() {
+
+    }
+
+    private fun getIndividualsWithActionAndStatus(
         individuals: List<EvaluatedIndividual<RestIndividual>>,
         verb: HttpVerb,
         path: RestPath,
@@ -214,7 +521,23 @@ class SecurityRest {
                 val a = ea.action as RestCallAction
                 val r = ea.result as RestCallResult
 
-                a.verb == verb && a.path.isEquivalent(path) && r.getStatusCode() == 403
+                a.verb == verb && a.path.isEquivalent(path) && r.getStatusCode() == statusCode
+            }
+        }
+    }
+
+    private fun getIndividualsWithAction(
+        individuals: List<EvaluatedIndividual<RestIndividual>>,
+        verb: HttpVerb,
+        path: RestPath,
+    ): List<EvaluatedIndividual<RestIndividual>> {
+
+        return individuals.filter { ind ->
+            ind.evaluatedMainActions().any{ea ->
+                val a = ea.action as RestCallAction
+                val r = ea.result as RestCallResult
+
+                a.verb == verb && a.path.isEquivalent(path)
             }
         }
     }
@@ -355,13 +678,13 @@ class SecurityRest {
         var headerDifferentFromPut : String? = null;
 
         // another loop to find an endpoint with different authentication information
-        for (authHead : AuthenticationDto in sutInfo.infoForAuthentication) {
+       // for (authHead : AuthenticationDto in sutInfo.infoForAuthentication) {
 
-            if (authHead.headers.get(0).value !=
-                actionsContainingPut!!.get(putIndexInEndpoint).auth.headers.get(0).value) {
-                headerDifferentFromPut = authHead.headers.get(0).value
-            }
-        }
+       //     if (authHead.headers.get(0).value !=
+       //         actionsContainingPut!!.get(putIndexInEndpoint).auth.headers.get(0).value) {
+       //         headerDifferentFromPut = authHead.headers.get(0).value
+        //    }
+        //}
 
         println(headerDifferentFromPut)
 
@@ -469,6 +792,71 @@ class SecurityRest {
         return newAction
     }
 
+    private fun getPathParameter(act: RestCallAction) : String {
+
+        var listOfPathParams = ArrayList<Any>()
+
+        // find the path parameter
+        recursiveTreeTraversalForFindingInformationForItem(act, "org.evomaster.core.problem.rest.param.PathParam", listOfPathParams)
+
+        if (listOfPathParams.size > 0 ) {
+
+            // starting from the path parameter, find the endpoint
+            val pathParameterObject = listOfPathParams.get(0)
+
+            var listOfStringGenes = ArrayList<Any>()
+
+            recursiveTreeTraversalForFindingInformationForItem(
+                pathParameterObject,
+                "org.evomaster.core.search.gene.string.StringGene",
+                listOfStringGenes
+            )
+
+            if (listOfStringGenes.size > 0) {
+
+                val stringGeneValue = (listOfStringGenes.get(0) as StringGene).value
+
+                // find the child of type RestResourceCalls
+                //print(stringGeneValue)
+
+                return stringGeneValue
+
+            }
+        }
+
+        // if path parameter is not found, just return null
+        return ""
+
+    }
+
+    private fun changePathParameter(act: RestCallAction, newParam : String) {
+
+        var listOfPathParams = ArrayList<Any>()
+
+        // find the path parameter
+        recursiveTreeTraversalForFindingInformationForItem(act, "org.evomaster.core.problem.rest.param.PathParam", listOfPathParams)
+
+        if (listOfPathParams.size > 0 ) {
+
+            // starting from the path parameter, find the endpoint
+            val pathParameterObject = listOfPathParams.get(0)
+
+            var listOfStringGenes = ArrayList<Any>()
+
+            recursiveTreeTraversalForFindingInformationForItem(
+                pathParameterObject,
+                "org.evomaster.core.search.gene.string.StringGene",
+                listOfStringGenes
+            )
+
+            if (listOfStringGenes.size > 0) {
+
+                (listOfStringGenes.get(0) as StringGene).value = newParam
+
+            }
+        }
+
+    }
 
     private fun getEndPointFromAction(act: RestCallAction) : String? {
 
