@@ -32,8 +32,6 @@ public class ACDeletePutController extends SpringController {
         return Arrays.asList(
                 AuthUtils.getForBasic("creator", "creator0", "creator_password"),
                 AuthUtils.getForBasic("creator", "creator1", "creator_password")
-//                AuthUtils.getForBasic("consumer1", "consumer1", "consumer1_password"),
-//                AuthUtils.getForBasic("consumer2", "consumer2", "consumer2_password")
         );
     }
 }
