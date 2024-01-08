@@ -1,9 +1,13 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
+import javax.annotation.PostConstruct
+
 import org.apache.http.HttpStatus
-import org.evomaster.client.java.controller.api.dto.AuthenticationDto
+
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
+import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
+
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.httpws.auth.AuthenticationHeader
@@ -11,13 +15,13 @@ import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.remote.service.RemoteControllerImplementation
+
 import org.evomaster.core.search.*
-import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.Sampler
-import javax.annotation.PostConstruct
+
 
 
 /**
@@ -52,13 +56,13 @@ class SecurityRest {
     /**
      * Individuals in the solution
      */
-    private lateinit var individualsInSolution : List<EvaluatedIndividual<RestIndividual>>;
+    private lateinit var individualsInSolution : List<EvaluatedIndividual<RestIndividual>>
 
     /**
      * Authentication objects made as a HashMap for identifying authentication information used
      * in an efficient manner
      */
-    private var authenticationInfoMap = mutableMapOf<String,AuthenticationDto>()
+    private var authenticationInfoMap = mutableMapOf<String, AuthenticationDto>()
 
     @PostConstruct
     private fun postInit(){
@@ -75,8 +79,8 @@ class SecurityRest {
     fun applySecurityPhase() : Solution<RestIndividual>{
 
         // extract individuals from the archive
-        val archivedSolution : Solution<RestIndividual> = this.archive.extractSolution();
-        individualsInSolution =  archivedSolution.individuals;
+        val archivedSolution : Solution<RestIndividual> = this.archive.extractSolution()
+        individualsInSolution =  archivedSolution.individuals
 
 
         //  call sutInfo Once here and pass it as a parameter for all cases.
@@ -133,7 +137,7 @@ class SecurityRest {
                                                                authenticationObjectsForPutOrPatch: List<HttpWsAuthenticationInfo>):
             AuthenticationDto? {
 
-        var authenticationDtoNotUsed : AuthenticationDto? = null;
+        var authenticationDtoNotUsed : AuthenticationDto? = null
 
         for (firstAuth : AuthenticationDto in authInfo) {
 
@@ -153,7 +157,7 @@ class SecurityRest {
 
         }
 
-        return authenticationDtoNotUsed;
+        return authenticationDtoNotUsed
 
     }
 
@@ -213,15 +217,15 @@ class SecurityRest {
 
         //do we already have existing test cases returning 403 for it?
         // check if there is a DELETE operation with the status code 403 - which means forbidden
-        lateinit var existing403 : List<EvaluatedIndividual<RestIndividual>>;
-        lateinit var individualsWithSuccessfulPut : List<EvaluatedIndividual<RestIndividual>>;
-        lateinit var individualsWithSuccessfulPatch : List<EvaluatedIndividual<RestIndividual>>;
+        lateinit var existing403 : List<EvaluatedIndividual<RestIndividual>>
+        lateinit var individualsWithSuccessfulPut : List<EvaluatedIndividual<RestIndividual>>
+        lateinit var individualsWithSuccessfulPatch : List<EvaluatedIndividual<RestIndividual>>
 
-        lateinit var authenticationObjectsForPutOrPatch : List<HttpWsAuthenticationInfo>;
+        lateinit var authenticationObjectsForPutOrPatch : List<HttpWsAuthenticationInfo>
 
-        var authenticationNotUsedInCreation : AuthenticationDto? = null;
-        var existingPutAction : RestCallAction? = null;
-        var newAuth : HttpWsAuthenticationInfo? = null;
+        var authenticationNotUsedInCreation : AuthenticationDto?
+        var existingPutAction : RestCallAction? = null
+        var newAuth : HttpWsAuthenticationInfo? = null
 
         // check delete operations for to see if there is an existing 403
         deleteOperations.forEach { delete ->
@@ -257,7 +261,7 @@ class SecurityRest {
 
 
                 // create copy of the delete call
-                var restActionForbiddenDelete = delete.copy() as RestCallAction
+                val restActionForbiddenDelete = delete.copy() as RestCallAction
 
 
                 authenticationNotUsedInCreation =
@@ -266,7 +270,7 @@ class SecurityRest {
 
 
                 // Create a new HttpWsAuthentication based on authenticationDto not used by PUT
-                var newHeaders = mutableListOf<AuthenticationHeader>()
+                val newHeaders = mutableListOf<AuthenticationHeader>()
 
                 newHeaders.add(AuthenticationHeader("Authorization",
                         authenticationNotUsedInCreation?.headers?.get(0)?.value.toString()
@@ -324,7 +328,7 @@ class SecurityRest {
                 val newEvaluatedIndividual = EvaluatedIndividual(fv, createdIndividual, results)
 
                 // add the newly created individual to existing 403
-                val newList = mutableListOf<EvaluatedIndividual<RestIndividual>>();
+                val newList = mutableListOf<EvaluatedIndividual<RestIndividual>>()
                 newList.add(newEvaluatedIndividual)
 
                 existing403 = newList
@@ -425,7 +429,7 @@ class SecurityRest {
 
     private fun findAllTestTargetsVisited() : List<Int> {
 
-        var listOfTargets = mutableListOf<Int>()
+        val listOfTargets = mutableListOf<Int>()
 
         for (ind in this.individualsInSolution) {
 
@@ -468,7 +472,7 @@ class SecurityRest {
     : List<HttpWsAuthenticationInfo>{
 
         // var listOfUsedAuthenticationDtos =
-        var listOfAuthenticationInfoUsedInIndividuals = mutableListOf<HttpWsAuthenticationInfo>();
+        val listOfAuthenticationInfoUsedInIndividuals = mutableListOf<HttpWsAuthenticationInfo>()
         var listOfResults = mutableListOf<Any>()
 
         // for each individual
@@ -493,7 +497,7 @@ class SecurityRest {
         }
 
         // return the list of AuthenticationInfo objects
-        return listOfAuthenticationInfoUsedInIndividuals;
+        return listOfAuthenticationInfoUsedInIndividuals
     }
 
     /**
@@ -508,8 +512,8 @@ class SecurityRest {
 
         while (!found) {
 
-            if ( (actions.get(index) as RestCallAction).verb == verb &&
-                (actions.get(index) as RestCallAction).path == path) {
+            if ( actions.get(index).verb == verb &&
+                actions.get(index).path == path) {
                 found = true
             }
             else {
