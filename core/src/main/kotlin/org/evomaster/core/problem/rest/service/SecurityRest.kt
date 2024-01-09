@@ -12,6 +12,7 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.httpws.auth.AuthenticationHeader
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
+import org.evomaster.core.problem.httpws.auth.NoAuth
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.remote.service.RemoteControllerImplementation
@@ -145,19 +146,99 @@ class SecurityRest {
     private fun handleResourceReadableAfterDelete(authInfo: List<AuthenticationDto>) {
 
         // find all delete operations
-        val deleteOperations = getIndividualsWithActionAndStatus(individualsInSolution, HttpVerb.DELETE,
-            HttpStatus.SC_OK)
+        val putOperations = getIndividualsWithActionAndStatus(individualsInSolution,HttpVerb.PUT, HttpStatus.SC_CREATED)
 
+        var existingPutAction : RestCallAction?
+        var deleteFromExistingPut : RestCallAction
+        var getFromExistingDelete : RestCallAction
+        var newIndividual : RestIndividual
+        
         // for each DELETE operation
-        deleteOperations.forEach { delete ->
+        putOperations.forEach { putOp ->
 
+            var newListOfActions = mutableListOf<RestCallAction>()
 
+            // get the successful delete action from the individual
+            existingPutAction = findActionFromIndividualsBasedOnVerbAndStatus(putOp, HttpVerb.PUT, HttpStatus.SC_CREATED)
 
+            if (existingPutAction != null) {
 
+                // create a GET request from the existing delete action with the same authentication and same path
+                deleteFromExistingPut = createCopyOfActionWithDifferentVerbOrUser(
+                    "deleteFromPut", existingPutAction!!,
+                    HttpVerb.DELETE, existingPutAction!!.auth
+                )
 
+                changePathParameter(deleteFromExistingPut, getPathParameter(existingPutAction!!))
+
+                // create also GET from existing PUT with no Authentication
+                getFromExistingDelete = createCopyOfActionWithDifferentVerbOrUser("getFromDelete",
+                    deleteFromExistingPut!!, HttpVerb.GET, NoAuth())
+                changePathParameter(getFromExistingDelete, getPathParameter(existingPutAction!!))
+
+                // list of actions
+                newListOfActions.add(existingPutAction!!)
+                newListOfActions.add(deleteFromExistingPut)
+                newListOfActions.add(getFromExistingDelete)
+
+                // individual from the list of actions
+                newIndividual = RestIndividual(newListOfActions, SampleType.PREDEFINED)
+
+                // results
+                val results: MutableList<RestCallResult> = mutableListOf()
+
+                // PUT action results in SC_CREATED
+                val resultOfPut = RestCallResult()
+                resultOfPut.setStatusCode(HttpStatus.SC_CREATED)
+
+                // DELETE action results in SC_OK
+                val resultOfDelete = RestCallResult()
+                resultOfDelete.setStatusCode(HttpStatus.SC_OK)
+
+                // GET Action
+                val resultOfGet = RestCallResult()
+                resultOfGet.setStatusCode(HttpStatus.SC_OK)
+
+                results.add(resultOfPut)
+                results.add(resultOfDelete)
+                results.add(resultOfGet)
+
+                // ensure all genes are initialized before
+                newIndividual.seeGenes().forEach { if (!it.initialized) {it.markAllAsInitialized()} }
+
+                // new evaluated individual based on results and the created individual
+                val newEvaluatedIndividual = EvaluatedIndividual(FitnessValue(0.0), newIndividual, results)
+
+                // find all test targets used in archive so that we create a test target that does not exist
+                val testTargets = findAllTestTargetsVisitedByIndividuals()
+
+                // cover a fake test target, whose index is more than indices of
+                newEvaluatedIndividual.fitness.coverTarget(testTargets.max() + 15)
+
+                // add the new test to archive. It should succeed since we added a testing target that does not exist.
+                archive.addIfNeeded(newEvaluatedIndividual)
+
+            }
         }
     }
 
+    private fun findActionFromIndividualsBasedOnVerbAndStatus(individual: EvaluatedIndividual<RestIndividual>, actionVerb: HttpVerb, actionStatus: Int): RestCallAction? {
+
+
+        individual.evaluatedMainActions().forEach { currentAct ->
+
+                val act = currentAct.action as RestCallAction
+                val res = currentAct.result as RestCallResult
+
+                if ( (res.getStatusCode() == actionStatus) && act.verb == actionVerb)  {
+
+                    return act
+
+                }
+        }
+
+        return null
+    }
 
 
     /**
@@ -380,7 +461,7 @@ class SecurityRest {
             val fv = FitnessValue(0.0)
 
             // ensure all genes are initialized before
-            finalIndividual.seeGenes().forEach { if (!it.initialized) {it.doInitialize()} }
+            finalIndividual.seeGenes().forEach { if (!it.initialized) {it.markAllAsInitialized()} }
 
             val finalTestCase = EvaluatedIndividual(fv, finalIndividual, finalResults)
 
