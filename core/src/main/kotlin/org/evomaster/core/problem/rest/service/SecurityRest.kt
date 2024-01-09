@@ -212,8 +212,8 @@ class SecurityRest {
                 // find all test targets used in archive so that we create a test target that does not exist
                 val testTargets = findAllTestTargetsVisitedByIndividuals()
 
-                // cover a fake test target, whose index is more than indices of
-                newEvaluatedIndividual.fitness.coverTarget(testTargets.max() + 15)
+                // cover a fake test target, whose index is more than indices of others and not the index of
+                newEvaluatedIndividual.fitness.coverTarget(testTargets.max() + 10)
 
                 // add the new test to archive. It should succeed since we added a testing target that does not exist.
                 archive.addIfNeeded(newEvaluatedIndividual)
@@ -570,7 +570,7 @@ class SecurityRest {
         val listOfTargets = mutableListOf<Int>()
 
         // for each individual in the solution
-        for (ind in this.individualsInSolution) {
+        for (ind in this.archive.extractSolution().individuals) {
 
             // find all reached targets
             for (t in ind.fitness.reachedTargets()) {
