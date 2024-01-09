@@ -212,7 +212,7 @@ class SecurityRest {
                 // find all test targets used in archive so that we create a test target that does not exist
                 val testTargets = findAllTestTargetsVisitedByIndividuals()
 
-                // cover a fake test target, whose index is more than indices of others and not the index of
+                // cover a fake test target, whose index is more than indices of
                 newEvaluatedIndividual.fitness.coverTarget(testTargets.max() + 10)
 
                 // add the new test to archive. It should succeed since we added a testing target that does not exist.
