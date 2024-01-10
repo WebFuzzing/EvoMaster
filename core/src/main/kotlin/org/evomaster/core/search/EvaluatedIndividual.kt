@@ -39,7 +39,7 @@ class EvaluatedIndividual<T>(
      * prematurely stopped, there might be less
      * results than actions
      */
-    private val results: List<out ActionResult>,
+    val results: List<out ActionResult>,
 
     // for tracking its history
     override var trackOperator: TrackOperator? = null,

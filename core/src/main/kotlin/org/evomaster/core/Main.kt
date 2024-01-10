@@ -5,6 +5,7 @@ import com.google.inject.Key
 import com.google.inject.TypeLiteral
 import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.client.java.controller.api.dto.ControllerInfoDto
+import org.evomaster.client.java.controller.api.dto.database.execution.epa.RestActions
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.AnsiColor.Companion.inBlue
 import org.evomaster.core.AnsiColor.Companion.inGreen
@@ -22,6 +23,7 @@ import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalS
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.graphql.service.GraphQLBlackBoxModule
 import org.evomaster.core.problem.graphql.service.GraphQLModule
+import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.service.*
 import org.evomaster.core.problem.rpc.RPCIndividual
@@ -225,6 +227,7 @@ class Main {
             writeCoveredTargets(injector, solution)
             writeTests(injector, solution, controllerInfo)
             writeStatistics(injector, solution) //FIXME if other phases after search, might get skewed data on 100% snapshots...
+            writeEPA(solution)
 
             val statistics = injector.getInstance(Statistics::class.java)
             val data = statistics.getData(solution)
@@ -779,6 +782,27 @@ class Main {
             if (config.snapshotInterval > 0) {
                 statistics.writeSnapshot()
             }
+        }
+
+
+        private fun writeEPA(solution: Solution<*>) {
+            val epa = EPA()
+            for (i in solution.individuals) {
+                var previousVertex = Vertex(false, 0, RestActions())
+                var currentVertex: Vertex
+                for (r in i.results) {
+                    val rcr : RestCallResult = r as RestCallResult
+                    rcr.getInitialEnabledEndpoints()?.let {
+                        previousVertex = epa.createOrGetVertex(it, true)
+                    }
+                    rcr.getEnabledEndpointsAfterAction()?.let {
+                        currentVertex = epa.createOrGetVertex(it.enabledRestActions)
+                        epa.addDirectedEdge(previousVertex, currentVertex, it.associatedRestAction)
+                        previousVertex = currentVertex
+                    }
+                }
+            }
+            epa.write()
         }
 
         private fun writeOverallProcessData(injector: Injector) {

@@ -697,13 +697,13 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
         rcr.setInitialEnabledEndpoints(restActions)
     }
 
-    private fun getEnabledRestActions(): EnabledRestActionsDto? {
+    private fun getEnabledRestActions(): RestActions? {
         val fullUri = getFullUri(null, getBaseUrl(), "/enabled")
         val r: Response = client.target(fullUri)
             .request(MediaType.APPLICATION_JSON_TYPE)
             .get()
         return if (Response.Status.Family.SUCCESSFUL.equals(r.statusInfo.family)) {
-            r.readEntity(EnabledRestActionsDto::class.java)
+            r.readEntity(RestActions::class.java)
         } else {
             null
         }
@@ -711,8 +711,13 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
 
     private fun handleEnabledEndpoints(rcr: RestCallResult, a: RestCallAction){
         val restActions = getEnabledRestActions()
-        val enabledDto = EnabledDto(RestActionDto(a.verb.name, a.path.toString()), restActions)
-        rcr.setEnabledEndpointsAfterAction(enabledDto)
+        val enabled = Enabled(
+            RestAction(
+                a.verb.name,
+                a.path.toString()
+            ), restActions
+        )
+        rcr.setEnabledEndpointsAfterAction(enabled)
     }
 
     private fun handleSaveLocation(

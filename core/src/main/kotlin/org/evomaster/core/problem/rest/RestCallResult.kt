@@ -5,8 +5,8 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.google.common.annotations.VisibleForTesting
 import com.google.gson.Gson
 import com.google.gson.JsonObject
-import org.evomaster.client.java.controller.api.dto.database.execution.epa.EnabledDto
-import org.evomaster.client.java.controller.api.dto.database.execution.epa.EnabledRestActionsDto
+import org.evomaster.client.java.controller.api.dto.database.execution.epa.Enabled
+import org.evomaster.client.java.controller.api.dto.database.execution.epa.RestActions
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
@@ -65,14 +65,13 @@ class RestCallResult : HttpWsCallResult {
      */
     fun setHeuristicsForChainedLocation(on: Boolean) = addResultValue(HEURISTICS_FOR_CHAINED_LOCATION, on.toString())
     fun getHeuristicsForChainedLocation(): Boolean = getResultValue(HEURISTICS_FOR_CHAINED_LOCATION)?.toBoolean() ?: false
-    fun setInitialEnabledEndpoints(enabledActions: EnabledRestActionsDto?) = addResultValue(INITIAL_ENABLED_ENDPOINTS, mapper.writeValueAsString(enabledActions))
-    fun getInitialEnabledEndpoints(): EnabledRestActionsDto? {
-        return getResultValue(INITIAL_ENABLED_ENDPOINTS)?.let { mapper.readValue<EnabledRestActionsDto?>(it) }
+    fun setInitialEnabledEndpoints(enabledActions: RestActions?) = addResultValue(INITIAL_ENABLED_ENDPOINTS, mapper.writeValueAsString(enabledActions))
+    fun getInitialEnabledEndpoints(): RestActions? {
+        return getResultValue(INITIAL_ENABLED_ENDPOINTS)?.let { mapper.readValue<RestActions?>(it) }
     }
-
-    fun setEnabledEndpointsAfterAction(enabledActions: EnabledDto) = addResultValue(ENABLED_ENDPOINTS_AFTER_ACTION, mapper.writeValueAsString(enabledActions))
-    fun getEnabledEndpointsAfterAction(): EnabledDto? {
-        return getResultValue(ENABLED_ENDPOINTS_AFTER_ACTION)?.let { mapper.readValue<EnabledDto?>(it) }
+    fun setEnabledEndpointsAfterAction(enabledActions: Enabled) = addResultValue(ENABLED_ENDPOINTS_AFTER_ACTION, mapper.writeValueAsString(enabledActions))
+    fun getEnabledEndpointsAfterAction(): Enabled? {
+        return getResultValue(ENABLED_ENDPOINTS_AFTER_ACTION)?.let { mapper.readValue<Enabled?>(it) }
     }
 
     override fun matchedType(action: Action): Boolean {

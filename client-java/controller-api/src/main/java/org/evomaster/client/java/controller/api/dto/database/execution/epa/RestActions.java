@@ -4,15 +4,15 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.HashSet;
 
-public class EnabledRestActionsDto {
+public class RestActions {
     @JsonProperty("enabledRestActions")
-    public HashSet<RestActionDto> enabledRestActions;
+    public HashSet<RestAction> enabledRestActions;
 
-    public EnabledRestActionsDto() {
+    public RestActions() {
         this.enabledRestActions = new HashSet<>();
     }
 
-    public EnabledRestActionsDto(@JsonProperty("enabledRestActions") HashSet<RestActionDto> enabledRestActions) {
+    public RestActions(@JsonProperty("enabledRestActions") HashSet<RestAction> enabledRestActions) {
         this.enabledRestActions = enabledRestActions;
     }
 }
