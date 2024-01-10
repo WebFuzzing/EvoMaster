@@ -789,7 +789,7 @@ class Main {
             val epa = EPA()
             var notComplete = 0
             for (i in solution.individuals) {
-                var previousVertex = Vertex(false, 0, RestActions())
+                var previousVertex = Vertex(false, 0, "")
                 var currentVertex: Vertex
                 for (r in i.results) {
                     if (r is RestCallResult) {

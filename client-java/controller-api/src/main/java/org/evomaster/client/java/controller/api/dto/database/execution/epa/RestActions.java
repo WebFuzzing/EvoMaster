@@ -3,6 +3,7 @@ package org.evomaster.client.java.controller.api.dto.database.execution.epa;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.HashSet;
+import java.util.Objects;
 
 public class RestActions {
     @JsonProperty("enabledRestActions")
@@ -16,13 +17,8 @@ public class RestActions {
         this.enabledRestActions = enabledRestActions;
     }
 
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        for (RestAction a : enabledRestActions) {
-            sb.append(String.format("%s\n", a.toString()));
-        }
-        return sb.toString();
+    public String toStringForEPA() {
+        return enabledRestActions.stream().map(RestAction::toString).sorted().reduce((s, a) ->
+                String.format("%s, \\n%s", s, a)).orElse("");
     }
-
 }

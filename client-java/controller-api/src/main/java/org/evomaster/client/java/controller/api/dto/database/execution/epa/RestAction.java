@@ -17,6 +17,6 @@ public class RestAction {
 
     @Override
     public String toString() {
-        return String.format("%s::%s", verb, path);
+        return String.format("%s::%s", path, verb);
     }
 }
