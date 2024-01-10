@@ -787,18 +787,25 @@ class Main {
 
         private fun writeEPA(solution: Solution<*>) {
             val epa = EPA()
+            var notComplete = 0
             for (i in solution.individuals) {
                 var previousVertex = Vertex(false, 0, RestActions())
                 var currentVertex: Vertex
                 for (r in i.results) {
-                    val rcr : RestCallResult = r as RestCallResult
-                    rcr.getInitialEnabledEndpoints()?.let {
-                        previousVertex = epa.createOrGetVertex(it, true)
-                    }
-                    rcr.getEnabledEndpointsAfterAction()?.let {
-                        currentVertex = epa.createOrGetVertex(it.enabledRestActions)
-                        epa.addDirectedEdge(previousVertex, currentVertex, it.associatedRestAction)
-                        previousVertex = currentVertex
+                    if (r is RestCallResult) {
+                        val rcr: RestCallResult = r
+                        rcr.getInitialEnabledEndpoints()?.let {
+                            previousVertex = epa.createOrGetVertex(it, true)
+                        }
+                        rcr.getEnabledEndpointsAfterAction()?.let {
+                            if (it.enabledRestActions != null && it.associatedRestAction != null) {
+                                currentVertex = epa.createOrGetVertex(it.enabledRestActions)
+                                epa.addDirectedEdge(previousVertex, currentVertex, it.associatedRestAction)
+                                previousVertex = currentVertex
+                            } else {
+                                notComplete++
+                            }
+                        }
                     }
                 }
             }

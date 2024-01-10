@@ -1,15 +1,12 @@
 package org.evomaster.core.epa
 
-import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.database.execution.epa.RestAction
 import org.evomaster.client.java.controller.api.dto.database.execution.epa.RestActions
-import org.evomaster.core.EMConfig
+import java.lang.StringBuilder
 import java.nio.file.Files
 import java.nio.file.Paths
 
 class EPA {
-    @Inject
-    private lateinit var config: EMConfig
 
     private val adjacencyMap = mutableMapOf<Vertex, ArrayList<Edge>>()
 
@@ -23,7 +20,13 @@ class EPA {
     }
 
     fun addDirectedEdge(source: Vertex, destination: Vertex, restAction: RestAction) {
-        val edge = Edge(source, destination, restAction)
+        var edge: Edge? = adjacencyMap[source]?.filter { e -> e.destination == destination}?.getOrNull(0)
+        if (edge == null) {
+            edge = Edge(source, destination)
+        }
+        if (!edge.restActions.contains(restAction)) {
+            edge.restActions.plus(restAction)
+        }
         adjacencyMap[source]?.add(edge)
     }
 
@@ -35,18 +38,34 @@ class EPA {
             }
         }
     }
+    private fun toDOT(): String {
+        val sb = StringBuilder()
+        sb.append("digraph { \n")
+        adjacencyMap.forEach { (vertex, edges) ->
+            if (vertex.isInitial) {
+                sb.append("init [shape=box]\n")
+                sb.append(String.format("init -> %d\n", vertex.index))
+            }
+            sb.append(String.format("%d [xlabel=\"%s\"]\n", vertex.index, vertex.enabledEndpoints))
+            edges.forEach {
+                sb.append(String.format("%d -> %d [xlabel=\"%s\"]\n", vertex.index, it.destination.index, it.restActions))
+            }
+        }
+        sb.append("}")
+        return sb.toString()
+    }
 
     private fun getVertex(enabledEndpoints: RestActions): Vertex? {
         return adjacencyMap.keys.filter { v -> v.enabledEndpoints == enabledEndpoints }.getOrNull(0)
     }
 
     fun write() {
-        val path = Paths.get(config.outputFolder,"epa.txt").toAbsolutePath()
+        val path = Paths.get("epa.txt").toAbsolutePath()
 
         Files.createDirectories(path.parent)
         Files.deleteIfExists(path)
         Files.createFile(path)
 
-        path.toFile().appendText(toString())
+        path.toFile().appendText(toDOT())
     }
 }

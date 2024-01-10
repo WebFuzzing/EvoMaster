@@ -15,4 +15,14 @@ public class RestActions {
     public RestActions(@JsonProperty("enabledRestActions") HashSet<RestAction> enabledRestActions) {
         this.enabledRestActions = enabledRestActions;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        for (RestAction a : enabledRestActions) {
+            sb.append(String.format("%s\n", a.toString()));
+        }
+        return sb.toString();
+    }
+
 }
