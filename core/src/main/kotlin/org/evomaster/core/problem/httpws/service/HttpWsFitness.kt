@@ -308,7 +308,7 @@ abstract class HttpWsFitness<T>: ApiWsFitness<T>() where T : Individual {
 
         if (a.auth.cookieLogin != null) {
             val list = cookies[a.auth.cookieLogin!!.username]
-            if (list == null || list.isEmpty()) {
+            if (list.isNullOrEmpty()) {
                 log.warn("No cookies for ${a.auth.cookieLogin!!.username}")
             } else {
                 list.forEach {
@@ -319,7 +319,7 @@ abstract class HttpWsFitness<T>: ApiWsFitness<T>() where T : Individual {
 
         if (a.auth.jsonTokenPostLogin != null) {
             val token = tokens[a.auth.jsonTokenPostLogin!!.userId]
-            if (token == null || token.isEmpty()) {
+            if (token.isNullOrEmpty()) {
                 log.warn("No auth token for ${a.auth.jsonTokenPostLogin!!.userId}")
             } else {
                 builder.header("Authorization", token)
