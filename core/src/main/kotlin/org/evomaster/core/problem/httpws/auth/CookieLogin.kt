@@ -1,6 +1,6 @@
 package org.evomaster.core.problem.httpws.auth
 
-import org.evomaster.client.java.controller.api.dto.CookieLoginDto
+import org.evomaster.client.java.controller.api.dto.auth.CookieLoginDto
 import org.evomaster.core.problem.rest.ContentType
 import org.evomaster.core.problem.rest.HttpVerb
 import java.net.URLEncoder

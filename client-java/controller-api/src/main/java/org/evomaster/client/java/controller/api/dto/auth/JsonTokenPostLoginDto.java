@@ -1,4 +1,4 @@
-package org.evomaster.client.java.controller.api.dto;
+package org.evomaster.client.java.controller.api.dto.auth;
 
 /**
  * If login is based on a POST endpoint with input a JSON payload, and return
