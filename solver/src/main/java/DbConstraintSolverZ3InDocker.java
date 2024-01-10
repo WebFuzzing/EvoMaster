@@ -1,6 +1,7 @@
 import org.evomaster.client.java.sql.internal.constraint.DbTableConstraint;
 import org.evomaster.core.search.gene.Gene;
 import org.evomaster.core.search.gene.numeric.IntegerGene;
+import org.evomaster.core.sql.SqlAction;
 import org.testcontainers.containers.Container;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.images.builder.ImageFromDockerfile;
@@ -12,6 +13,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -88,9 +90,9 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
         }
     }
 
-    private Gene solveFromTmp(String filename) {
+    private List<SqlAction> solveFromTmp(String filename) {
         String model = solveFromFile("tmp/" + filename);
-        return toGene(model);
+        return toSqlAction(model);
     }
 
     /**
@@ -98,7 +100,7 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
      * @param model the string with the model
      * @return the Gene with the model
      */
-    private Gene toGene(String model) {
+    private List<SqlAction> toSqlAction(String model) {
         String[] lines = model.split("\n");
         String[] values = lines[1].substring(2, lines[1].length()-2).split(" ");
         String name = values[0];
@@ -109,7 +111,7 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
         boolean minInclusive = false;
         boolean maxInclusive = false;
 
-        return new IntegerGene(
+        Gene gene = new IntegerGene(
                 name,
                 value,
                 min,
@@ -117,6 +119,8 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
                 precision,
                 minInclusive,
                 maxInclusive);
+
+        return new ArrayList<>();
     }
 
     /**
@@ -126,7 +130,7 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
      * @return a string with the model for the given constraints
      */
     @Override
-    public Gene solve(List<DbTableConstraint> constraintList) {
+    public List<SqlAction> solve(List<DbTableConstraint> constraintList) {
         Smt2Writer writer = new Smt2Writer();
 
         for (DbTableConstraint constraint : constraintList) {
@@ -138,7 +142,7 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
 
         String fileName = storeToTmpFile(writer);
 
-        Gene solution = solveFromTmp(fileName);
+        List<SqlAction> solution = solveFromTmp(fileName);
 
         try {
             // TODO: Move this to another thread?
