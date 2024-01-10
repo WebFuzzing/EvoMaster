@@ -12,7 +12,7 @@ public interface DbConstraintSolver extends AutoCloseable {
      * Solves the given constraints and returns the Db Gene to insert in the database
      * @param constraintList list of database constraints
      * @return a string with the model for the given constraints
-     * TODO: Response should be a Gene and not a string
+     * TODO: Response should be a list of SqlAction and not a string
      */
     String solve(List<DbTableConstraint> constraintList);
 }

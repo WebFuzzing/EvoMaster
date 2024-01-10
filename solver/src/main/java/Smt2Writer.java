@@ -1,6 +1,5 @@
 import org.evomaster.client.java.sql.internal.constraint.DbTableCheckExpression;
 import org.evomaster.client.java.sql.internal.constraint.DbTableConstraint;
-import org.testcontainers.shaded.com.google.common.annotations.VisibleForTesting;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -18,13 +17,15 @@ import java.util.regex.Pattern;
  * This is because for the purpose of the feature, it is not necessary to use an external library.
  */
 public class Smt2Writer  {
+
+    private static final org.slf4j.Logger LOGGER = org.slf4j.LoggerFactory.getLogger(Smt2Writer.class.getName());
     public static final String CHECK_INT_COMPARE_REGEX = "^CHECK\\(([a-zA-Z_][a-zA-Z0-9_]+)([<|>|=]=?)(.+)\\)$";
 
     // The variables that solve the constraint
-    List<String> variables = new ArrayList<>();
+    private final List<String> variables = new ArrayList<>();
 
     // The assertions that those values need to satisfy
-    List<String> constraints = new ArrayList<>();
+    private final List<String> constraints = new ArrayList<>();
 
     /**
      * Tries to parse the constraint from the DBConstraint, if succeeds returns true
@@ -39,13 +40,16 @@ public class Smt2Writer  {
                 // TODO: Add support for all other constraints here
                 final Matcher matcher = getCheckMatcher(expression);
 
-                variables.add(getVariableFromExpression(matcher));
-                constraints.add(getConstraintFromExpressionAsText(matcher));
+                this.variables.add(getVariableFromExpression(matcher));
+                this.constraints.add(getConstraintFromExpressionAsText(matcher));
 
                 return true;
             }
             return false;
         } catch (Exception e) {
+            LOGGER.error(
+                    String.format("There was an error parsing the constraint, it may not be a DbTableCheckExpression %s",
+                    e.getMessage()));
             return false;
         }
     }
@@ -103,7 +107,6 @@ public class Smt2Writer  {
         }
     }
 
-    @VisibleForTesting
     String asText() {
         StringBuilder sb = new StringBuilder();
 
@@ -119,7 +122,7 @@ public class Smt2Writer  {
     }
 
     private void declareConstants(StringBuilder sb) {
-        for (String value: variables) {
+        for (String value: this.variables) {
             sb.append("(declare-const ");
             sb.append(value);
             sb.append(" Int)\n");
@@ -127,7 +130,7 @@ public class Smt2Writer  {
     }
 
     private void assertConstraints(StringBuilder sb) {
-        for (String constraint : constraints) {
+        for (String constraint : this.constraints) {
             sb.append("(assert ");
             sb.append(constraint);
             sb.append(")\n");
@@ -135,7 +138,7 @@ public class Smt2Writer  {
     }
 
     private void getValues(StringBuilder sb) {
-        for (String value : variables) {
+        for (String value : this.variables) {
             sb.append("(get-value (");
             sb.append(value);
             sb.append("))\n");

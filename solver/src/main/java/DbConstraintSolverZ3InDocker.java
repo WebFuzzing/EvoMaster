@@ -3,7 +3,6 @@ import org.testcontainers.containers.Container;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.images.builder.ImageFromDockerfile;
 import org.testcontainers.containers.BindMode;
-import org.testcontainers.shaded.com.google.common.annotations.VisibleForTesting;
 import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
 
 import java.io.File;
@@ -72,7 +71,6 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
      * @param fileName the name of the file to read
      * @return the result of the Z3 solver with the obtained model as string
      */
-    @VisibleForTesting
     String solveFromFile(String fileName) {
         try {
             Container.ExecResult result = z3Prover.execInContainer("z3", containerPath + fileName);
