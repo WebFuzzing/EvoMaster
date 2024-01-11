@@ -153,6 +153,8 @@ public class URLClassReplacement implements MethodReplacementClass {
                 && !ExecutionTracer.skipHostnameAndPort(caller.getHost(), port))
         {
 
+            ExternalServiceInfoUtils.analyzeDnsResolution(caller.getHost());
+
             if (caller.getProtocol().equalsIgnoreCase("https"))
                 PreDefinedSSLInfo.setTrustAllForHttpsURLConnection();
 

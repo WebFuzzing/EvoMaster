@@ -10,7 +10,6 @@ import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory
 import org.evomaster.core.config.ConfigUtil
 import org.evomaster.core.config.ConfigsFromFile
-import org.evomaster.core.docs.ConfigToMarkdown
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.impact.impactinfocollection.GeneMutationSelectionMethod
@@ -1971,7 +1970,7 @@ class EMConfig {
         NONE,
 
         /**
-         * Default will assign 127.0.0.2
+         * Default will assign 127.0.0.3
          */
         DEFAULT,
 
@@ -1992,8 +1991,8 @@ class EMConfig {
 
     @Cfg("User provided external service IP.")
     @Experimental
-    @Regex("^127\\.((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){2}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\$")
-    var externalServiceIP: String = "127.0.0.2"
+    @Regex("^127\\.((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){2}([3-9]|[0-9][0-9]|[0-2][0-5][0-5]?)\$")
+    var externalServiceIP : String = "127.0.0.3"
 
     @Experimental
     @Cfg("Whether to apply customized method (i.e., implement 'customizeMockingRPCExternalService' for external services or 'customizeMockingDatabase' for database) to handle mock object.")
