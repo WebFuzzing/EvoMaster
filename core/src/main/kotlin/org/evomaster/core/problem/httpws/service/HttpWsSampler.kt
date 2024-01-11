@@ -29,6 +29,7 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
     protected val authentications: MutableList<HttpWsAuthenticationInfo> = mutableListOf()
 
 
+    fun authentications() : List<HttpWsAuthenticationInfo> = authentications
 
     /**
      * Given the current schema definition, create a random action among the available ones.

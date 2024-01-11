@@ -40,7 +40,7 @@ class SecurityRest {
     sampler
      */
     @Inject
-    private lateinit var sampler: Sampler<RestIndividual>
+    private lateinit var sampler: RestSampler
 
     /*
     Remote controller which is used in white-box testing
@@ -71,6 +71,8 @@ class SecurityRest {
         // get action definitions
         actionDefinitions = sampler.getActionDefinitions() as List<RestCallAction>
 
+        //TODO init authenticationInfoMap
+        sampler.authentications()
     }
 
     /**
