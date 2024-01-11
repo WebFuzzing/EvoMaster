@@ -31,20 +31,18 @@ import org.evomaster.core.search.service.Sampler
  */
 class SecurityRest {
 
-    /*
-    archive including test cases
+    /**
+     * archive including test cases
      */
     @Inject
     private lateinit var archive: Archive<RestIndividual>
 
-    /*
-    sampler
-     */
+
     @Inject
     private lateinit var sampler: Sampler<RestIndividual>
 
-    /*
-    Remote controller which is used in white-box testing
+    /**
+     * Remote controller which is used in white-box testing
      */
     @Inject
     lateinit var remoteControllerImplementation: RemoteControllerImplementation
