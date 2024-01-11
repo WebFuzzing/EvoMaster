@@ -1,0 +1,10 @@
+[[auth]]
+name="logintoken"
+[auth.jsonTokenPostLogin]
+userId="foo"
+endpoint="/api/logintoken/login"
+headerPrefix="Bearer "
+jsonPayload= """
+{"userId": "foo", "password":"123"}
+"""
+extractTokenField = "/token/authToken"
