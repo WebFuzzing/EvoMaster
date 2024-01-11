@@ -18,7 +18,7 @@ import java.util.regex.Pattern;
  */
 public class Smt2Writer  {
 
-    private static final org.slf4j.Logger LOGGER = org.slf4j.LoggerFactory.getLogger(Smt2Writer.class.getName());
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(Smt2Writer.class.getName());
     public static final String CHECK_INT_COMPARE_REGEX = "^CHECK\\(([a-zA-Z_][a-zA-Z0-9_]+)([<|>|=]=?)(.+)\\)$";
 
     // The variables that solve the constraint
@@ -47,7 +47,7 @@ public class Smt2Writer  {
             }
             return false;
         } catch (Exception e) {
-            LOGGER.error(
+            log.error(
                     String.format("There was an error parsing the constraint, it may not be a DbTableCheckExpression %s",
                     e.getMessage()));
             return false;
