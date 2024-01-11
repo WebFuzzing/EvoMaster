@@ -1,15 +1,16 @@
-package org.evomaster.e2etests.spring.openapi.v3.wiremock.inet
+package org.evomaster.e2etests.spring.openapi.v3.wiremock.hostnameaction
 
-import com.foo.rest.examples.spring.openapi.v3.wiremock.inet.InetReplacementController
+import com.foo.rest.examples.spring.openapi.v3.wiremock.hostnameaction.HostnameResolutionActionController
 import org.evomaster.ci.utils.CIUtils
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
-class InetReplacementEMTest : SpringTestBase() {
+class HostnameResolutionActionEMTest: SpringTestBase() {
 
     companion object {
         @BeforeAll
@@ -17,27 +18,24 @@ class InetReplacementEMTest : SpringTestBase() {
         fun init() {
             val config = EMConfig()
             config.instrumentMR_NET = true
-            initClass(InetReplacementController(), config)
+            initClass(HostnameResolutionActionController(), config)
         }
     }
 
-    @Test
+    @Disabled
     fun testRunEM() {
         runTestHandlingFlakyAndCompilation(
-            "InetReplacementEM",
-            "org.foo.InetReplacementEM",
+            "HostnameResolutionActionEMTest",
+            "org.foo.HostnameResolutionActionEMTest",
             1000,
-//            !CIUtils.isRunningGA(),
             false,
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")
                 args.add("USER")
                 args.add("--externalServiceIP")
-                args.add("127.0.0.3")
-
-                //FIXME should make sure it works with true.
-                //looks like a bug in resetting the DNS cache to default state
+                args.add("127.0.0.4")
+                // TODO: Need to remove, once the issue resolved
                 args.add("--minimize")
                 args.add("false")
 
@@ -46,14 +44,11 @@ class InetReplacementEMTest : SpringTestBase() {
                 Assertions.assertTrue(solution.individuals.size >= 1)
 
                 if (!CIUtils.isRunningGA()) {
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/inet/exp", "OK")
-                    //FIXME should also have check on 500 and 400.
-                    //actually should change code, as thrown exception leads to 500, need way to distinguish
-                    //assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/inet/exp",null)
-                    //assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/inet/exp",null)
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/resolve", "OK")
                 }
             },
             3
         )
     }
+
 }

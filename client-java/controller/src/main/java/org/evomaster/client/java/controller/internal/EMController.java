@@ -527,6 +527,12 @@ public class EMController {
                         info.lastExecutedStatement = a.getLastExecutedStatement();
                         info.rawAccessOfHttpBodyPayload = a.isRawAccessOfHttpBodyPayload();
                         info.parsedDtoNames = new HashSet<>(a.getParsedDtoNamesView());
+                        info.hostnameResolutionInfoDtos = a.getHostnameInfos().stream()
+                                .map(hn -> new HostnameResolutionInfoDto(
+                                        hn.getHostname(),
+                                        hn.getResolvedAddress()
+                                ))
+                                .collect(Collectors.toList());
                         info.externalServices = a.getExternalServices().stream()
                                 .map(es -> new ExternalServiceInfoDto(
                                         es.getProtocol(),
