@@ -38,8 +38,8 @@ class EndpointFilterTest {
 
         val parser = EMConfig.getOptionParser()
         val options = parser.parse()
-        val endpointFocusVal = options.valueOf("endpointFocus")
-        val endpointPrefixVal = options.valueOf("endpointPrefix")
+        val endpointFocusVal = options.valueOf(endpointFocus)
+        val endpointPrefixVal = options.valueOf(endpointPrefix)
 
         // both endpointFocus and endpointPrefix are null
         assertEquals("null", endpointFocusVal)
@@ -54,9 +54,9 @@ class EndpointFilterTest {
 
         val sampleEndpointPrefix = "/endPointPrefixSample"
         val parser = EMConfig.getOptionParser()
-        val options = parser.parse("--endpointPrefix", sampleEndpointPrefix)
-        val endpointFocusVal = options.valueOf("endpointFocus")
-        val endpointPrefixVal = options.valueOf("endpointPrefix")
+        val options = parser.parse("--$endpointPrefix", sampleEndpointPrefix)
+        val endpointFocusVal = options.valueOf(endpointFocus)
+        val endpointPrefixVal = options.valueOf(endpointPrefix)
 
         // both endpointFocus and endpointPrefix are null
         assertEquals("null", endpointFocusVal)
@@ -71,9 +71,9 @@ class EndpointFilterTest {
 
         val parser = EMConfig.getOptionParser()
         val sampleEndpointFocus = "/endpointFocusSample"
-        val options = parser.parse("--endpointFocus", sampleEndpointFocus)
-        val endpointFocusVal = options.valueOf("endpointFocus")
-        val endpointPrefixVal = options.valueOf("endpointPrefix")
+        val options = parser.parse("--$endpointFocus", sampleEndpointFocus)
+        val endpointFocusVal = options.valueOf(endpointFocus)
+        val endpointPrefixVal = options.valueOf(endpointPrefix)
 
         // both endpointFocus and endpointPrefix are null
         assertEquals(sampleEndpointFocus, endpointFocusVal)
@@ -93,8 +93,8 @@ class EndpointFilterTest {
         assertThrows(
             IllegalArgumentException::class.java
         ) {
-            val params = arrayOf("--endpointFocus", sampleEndpointFocus,
-                "--endpointPrefix", sampleEndpointPrefix)
+            val params = arrayOf("--$endpointFocus", sampleEndpointFocus,
+                "--$endpointPrefix", sampleEndpointPrefix)
             EMConfig.validateOptions(params)
         }
     }
