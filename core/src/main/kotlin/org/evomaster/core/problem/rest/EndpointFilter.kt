@@ -6,7 +6,7 @@ import org.evomaster.core.EMConfig
 
 object EndpointFilter {
 
-     fun getEndPointsToSkip(config: EMConfig, swagger: OpenAPI):List<Endpoint> {
+     fun getEndpointsToSkip(config: EMConfig, swagger: OpenAPI):List<Endpoint> {
         if(config.endpointFocus.isNullOrBlank()
             && config.endpointPrefix.isNullOrBlank()
             && config.endpointTagFilter.isNullOrBlank()){
@@ -51,7 +51,7 @@ object EndpointFilter {
             Otherwise, if none, we look at what configured in the SUT EM Driver.
          */
 
-        val endpointsToSkip = getEndPointsToSkip(config, swagger)
+        val endpointsToSkip = getEndpointsToSkip(config, swagger)
         if(endpointsToSkip.isNotEmpty()){
             return endpointsToSkip
         }
