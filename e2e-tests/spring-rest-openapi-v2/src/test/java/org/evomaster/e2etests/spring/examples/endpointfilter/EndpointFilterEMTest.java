@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class EndpointFilterEMTest extends SpringTestBase {
@@ -29,12 +30,21 @@ public class EndpointFilterEMTest extends SpringTestBase {
                 50,
                 (args) -> {
 
+                    args.add("--endpointTagFilter");
+                    args.add("Foo");
+
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertTrue(solution.getIndividuals().size() >= 1);
 
-
-                    TODO
+                    /*
+                        6 endpoints + 1 of schema
+                        - 4 excluded due to controller settings
+                        - 1 excluded due to tag
+                     */
+                    assertEquals(2, solution.getIndividuals().size());
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/endpointfilter/y/z", null);
+                    assertNone(solution, HttpVerb.GET, 200, "/api/endpointfilter/y", null);
                 });
     }
 }

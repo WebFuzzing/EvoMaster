@@ -47,20 +47,20 @@ object EndpointFilter {
             : List<Endpoint>{
 
         /*
-            Check if we are manually configuring some endpoints to skip.
-            Otherwise, if none, we look at what configured in the SUT EM Driver.
+            Check if we are manually configuring some as well as what configured in the SUT EM Driver.
          */
 
-        val endpointsToSkip = getEndpointsToSkip(config, swagger)
-        if(endpointsToSkip.isNotEmpty()){
-            return endpointsToSkip
-        }
+        val fromConfig = getEndpointsToSkip(config, swagger)
 
         val all = Endpoint.fromOpenApi(swagger)
 
-        //this has less priority
-        return  infoDto.restProblem?.endpointsToSkip
+        val fromDriver =  infoDto.restProblem?.endpointsToSkip
             ?.flatMap {s ->  all.filter { e -> e.path.toString() == s } }
             ?: listOf()
+
+         return mutableSetOf<Endpoint>().apply {
+             addAll(fromConfig)
+             addAll(fromDriver)
+         }.toList()
     }
 }

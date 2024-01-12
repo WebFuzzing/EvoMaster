@@ -37,14 +37,14 @@ public class EndpointFilterRest {
     }
 
     @ApiOperation(value="", tags = {"Foo", "Bar"})
-    @RequestMapping(value = "/y/z", method = RequestMethod.PATCH)
-    ResponseEntity<?> patchZ() {
+    @RequestMapping(value = "/y/z", method = RequestMethod.GET)
+    ResponseEntity<?> getZ() {
         return ResponseEntity.ok().build();
     }
 
     @ApiOperation(value="", tags = {"Foo", "Bar"})
-    @RequestMapping(value = "/y/z/k", method = RequestMethod.PATCH)
-    ResponseEntity<?> patchK() {
+    @RequestMapping(value = "/y/z/k", method = RequestMethod.GET)
+    ResponseEntity<?> getK() {
         return ResponseEntity.ok().build();
     }
 }
