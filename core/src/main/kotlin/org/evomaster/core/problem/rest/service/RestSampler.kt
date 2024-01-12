@@ -395,7 +395,7 @@ class RestSampler : AbstractRestSampler(){
 
         createSingleCallOnEachEndpoint(NoAuth())
 
-        authentications.forEach { auth ->
+        authentications.getOfType(HttpWsAuthenticationInfo::class.java).forEach { auth ->
             createSingleCallOnEachEndpoint(auth)
         }
     }

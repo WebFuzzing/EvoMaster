@@ -11,6 +11,7 @@ import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.enterprise.SampleType
+import org.evomaster.core.problem.enterprise.auth.AuthSettings
 import org.evomaster.core.problem.httpws.auth.AuthenticationHeader
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.httpws.auth.NoAuth
@@ -41,11 +42,6 @@ class SecurityRest {
     @Inject
     private lateinit var sampler: RestSampler
 
-    /**
-     * Remote controller which is used in white-box testing
-     */
-    @Inject
-    lateinit var remoteControllerImplementation: RemoteControllerImplementation
 
     /**
      * All actions that can be defined from the OpenAPI schema
@@ -58,13 +54,7 @@ class SecurityRest {
      */
     private lateinit var individualsInSolution : List<EvaluatedIndividual<RestIndividual>>
 
-    /**
-     * Authentication objects made as a HashMap for identifying authentication information used
-     * in an efficient manner
-     */
-    private var authenticationInfoMap2 = mutableMapOf<String, HttpWsAuthenticationInfo>()
-
-    private var authenticationInfoMap = mutableMapOf<String, AuthenticationDto>()
+    private lateinit var authSettings: AuthSettings
 
     /**
      * Function called after init.
@@ -75,12 +65,7 @@ class SecurityRest {
         // get action definitions
         actionDefinitions = sampler.getActionDefinitions() as List<RestCallAction>
 
-        //TODO init authenticationInfoMap
-
-        // initialize authenticationInfoMap from the sampler
-        for (authenticationInfo in sampler.authentications()) {
-            authenticationInfoMap2[authenticationInfo.name] = authenticationInfo
-        }
+        authSettings = sampler.authentications
     }
 
     /**
@@ -94,25 +79,13 @@ class SecurityRest {
         individualsInSolution =  archivedSolution.individuals
 
 
-        //  call sutInfo Once here and pass it as a parameter for all cases.
-        val sutInfo : SutInfoDto? = remoteControllerImplementation.getSutInfo()
-
-        //TODO in future will need to get it from EMConfig as well, to do Black-Box testing
-
-        val authInfo = mutableListOf<AuthenticationDto>()
-        sutInfo?.infoForAuthentication?.forEach { authInfo.add(it) }
-
-        for (authInformation : AuthenticationDto in authInfo) {
-            authenticationInfoMap[authInformation.toString()] = authInformation
-        }
-
         // we can see what is available from the schema, and then check if already existing a test for it in archive
-        addForAccessControl(authInfo)
+        addForAccessControl()
 
         return archive.extractSolution()
     }
 
-    private fun addForAccessControl(authInfo: List<AuthenticationDto>) {
+    private fun addForAccessControl() {
 
         /*
             for black-box testing, we can only rely on REST-style guidelines to infer relations between operations
@@ -123,7 +96,7 @@ class SecurityRest {
             even in white-box testing we still want to consider REST-style
          */
 
-        accessControlBasedOnRESTGuidelines(authInfo)
+        accessControlBasedOnRESTGuidelines()
         //TODO implement access control based on database monitoring
         //accessControlBasedOnDatabaseMonitoring()
     }
@@ -132,10 +105,10 @@ class SecurityRest {
         TODO("Not yet implemented")
     }
 
-    private fun accessControlBasedOnRESTGuidelines(authInfo: List<AuthenticationDto>) {
+    private fun accessControlBasedOnRESTGuidelines() {
 
         // quite a few rules here that can be defined
-        handleForbiddenDeleteButOkPutOrPatch(authInfo)
+        handleForbiddenDeleteButOkPutOrPatch()
         //TODO other rules
     }
 
@@ -143,22 +116,11 @@ class SecurityRest {
 
     /**
      * Here we are considering this case:
-     * - authenticated user A creates a resource X (status 2xx)
+     * - authenticated user A creates a resource X (status 2xx) | or possibly via SQL insertions
      * - authenticated user B gets 403 on DELETE X
      * - authenticated user B gets 200 on PUT/PATCH on X
      */
-    private fun handleForbiddenDeleteButOkPutOrPatch(authInfo: List<AuthenticationDto>) {
-
-        /*
-            here, need to go through archive, for all successful create resources with authenticated user.
-            for each of them, do a DELETE with a new user.
-            verify if we get 403.
-            if so, try a PUT and PATCH.
-            when doing this, check from archive for test already doing it, as payloads and params of PUT/PATCH
-            might have constraints.
-            if 2xx, create new fault definition.
-            add to archive the new test
-         */
+    private fun handleForbiddenDeleteButOkPutOrPatch() {
 
         /*
             what needs to be done here:
@@ -184,7 +146,7 @@ class SecurityRest {
          */
 
         // Check if at least 2 users. if not, nothing to do
-        if (sampler.authentications().size <= 1) {
+        if (authSettings.size() <= 1) {
             // nothing to test if there are not at least 2 users
             LoggingUtil.getInfoLogger().debug(
                 "Security test handleForbiddenDeleteButOkPutOrPatch requires at least 2 authenticated users")
@@ -199,10 +161,8 @@ class SecurityRest {
         deleteOperations.forEach { delete ->
 
             // from archive, search if there is any test with a DELETE returning a 403
-            var existing403 : List<EvaluatedIndividual<RestIndividual>> =
+            val existing403 : List<EvaluatedIndividual<RestIndividual>> =
                 getIndividualsWithActionAndStatus(individualsInSolution, HttpVerb.DELETE, delete.path, 403)
-
-            var currentIndividualWith403 : EvaluatedIndividual<RestIndividual>
 
             var individualToChooseForTest : RestIndividual
 
@@ -211,7 +171,7 @@ class SecurityRest {
 
                 // current individual in the list of existing 403. Since the list is not empty,\
                 // we can just get the first item
-                currentIndividualWith403 = existing403[0]
+                val currentIndividualWith403 = existing403[0]
 
                 val deleteAction = getActionIndexFromIndividual(currentIndividualWith403, HttpVerb.DELETE,
                     delete.path)
@@ -220,18 +180,13 @@ class SecurityRest {
 
                 // slice the individual in a way that delete all calls after the DELETE request
                 individualToChooseForTest = sliceAllCallsInIndividualAfterAction(currentIndividualWith403, deleteActionIndex)
-
-
-
-            }
-            // there is not. need to create it based on successful create resources with authenticated user
-            else {
-
+            } else {
+                // there is not. need to create it based on successful create resources with authenticated user
                 var verbUsedForCreation : HttpVerb? = null;
                 // search for create resource for endpoint of DELETE using PUT
-                lateinit var existingEndpointForCreation : EvaluatedIndividual<RestIndividual>;
+                lateinit var existingEndpointForCreation : EvaluatedIndividual<RestIndividual>
 
-                var existingPutForEndpointOfDelete : List<EvaluatedIndividual<RestIndividual>> =
+                val existingPutForEndpointOfDelete : List<EvaluatedIndividual<RestIndividual>> =
                     getIndividualsWithActionAndStatusGroup(individualsInSolution, HttpVerb.PUT, delete.path,
                         "2xx")
 
@@ -309,7 +264,6 @@ class SecurityRest {
             if (evaluatedIndividual != null) {
                 archive.addIfNeeded(evaluatedIndividual)
             }
-
         }
 
         /*

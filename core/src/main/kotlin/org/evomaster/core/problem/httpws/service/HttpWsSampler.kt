@@ -4,6 +4,7 @@ import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
 import org.evomaster.client.java.controller.api.dto.auth.HeaderDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.problem.api.service.ApiWsSampler
+import org.evomaster.core.problem.enterprise.auth.AuthSettings
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.auth.AuthenticationHeader
 import org.evomaster.core.problem.httpws.auth.CookieLogin
@@ -25,11 +26,9 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
         private val log: Logger = LoggerFactory.getLogger(HttpWsSampler::class.java)
     }
 
+    //TODO move up to Enterprise
+    val authentications = AuthSettings()
 
-    protected val authentications: MutableList<HttpWsAuthenticationInfo> = mutableListOf()
-
-
-    fun authentications() : List<HttpWsAuthenticationInfo> = authentications
 
     /**
      * Given the current schema definition, create a random action among the available ones.
@@ -46,12 +45,15 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
     }
 
     fun getRandomAuth(noAuthP: Double): HttpWsAuthenticationInfo {
-        if (authentications.isEmpty() || randomness.nextBoolean(noAuthP)) {
+
+        val selection = authentications.getOfType(HttpWsAuthenticationInfo::class.java)
+
+        if (selection.isEmpty() || randomness.nextBoolean(noAuthP)) {
             return NoAuth()
         } else {
             //if there is auth, should have high probability of using one,
             //as without auth we would do little.
-            return randomness.choose(authentications)
+            return randomness.choose(selection)
         }
     }
 
@@ -123,7 +125,7 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
 
         val auth = HttpWsAuthenticationInfo(i.name.trim(), headers, cookieLogin, jsonTokenPostLogin)
 
-        authentications.add(auth)
+        authentications.addInfo(auth)
         return
     }
 

@@ -4,6 +4,7 @@ import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.sql.SqlInsertBuilder
 import org.evomaster.core.problem.enterprise.SampleType
+import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.httpws.auth.NoAuth
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
@@ -52,7 +53,7 @@ open class ResourceSampler : AbstractRestSampler() {
 
         rm.createAdHocIndividuals(NoAuth(),adHocInitialIndividuals, getMaxTestSizeDuringSampler())
 
-        authentications.forEach { auth ->
+        authentications.getOfType(HttpWsAuthenticationInfo::class.java).forEach { auth ->
             rm.createAdHocIndividuals(auth, adHocInitialIndividuals, getMaxTestSizeDuringSampler())
         }
     }
@@ -134,7 +135,6 @@ open class ResourceSampler : AbstractRestSampler() {
         //auth management
         val auth = if(authentications.isNotEmpty()){
             getRandomAuth(0.0)
-
         }else{
             NoAuth()
         }
