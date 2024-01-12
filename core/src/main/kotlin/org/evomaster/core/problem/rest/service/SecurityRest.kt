@@ -9,6 +9,7 @@ import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
 
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.httpws.auth.AuthenticationHeader
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
@@ -32,11 +33,10 @@ import org.evomaster.core.search.service.Sampler
 class SecurityRest {
 
     /**
-     * archive including test cases
+     * Archive including test cases
      */
     @Inject
     private lateinit var archive: Archive<RestIndividual>
-
 
     @Inject
     private lateinit var sampler: RestSampler
@@ -62,8 +62,13 @@ class SecurityRest {
      * Authentication objects made as a HashMap for identifying authentication information used
      * in an efficient manner
      */
+    private var authenticationInfoMap2 = mutableMapOf<String, HttpWsAuthenticationInfo>()
+
     private var authenticationInfoMap = mutableMapOf<String, AuthenticationDto>()
 
+    /**
+     * Function called after init.
+     */
     @PostConstruct
     private fun postInit(){
 
@@ -71,7 +76,11 @@ class SecurityRest {
         actionDefinitions = sampler.getActionDefinitions() as List<RestCallAction>
 
         //TODO init authenticationInfoMap
-        sampler.authentications()
+
+        // initialize authenticationInfoMap from the sampler
+        for (authenticationInfo in sampler.authentications()) {
+            authenticationInfoMap2[authenticationInfo.name] = authenticationInfo
+        }
     }
 
     /**
@@ -130,13 +139,7 @@ class SecurityRest {
         //TODO other rules
     }
 
-    private fun checkRESTSemantics(authInfo: List<AuthenticationDto>) {
 
-        // TODO add tests for checking REST semantics such as
-        // a resource should not be accessible after deletion.
-        handleResourceReadableAfterDelete(authInfo)
-
-    }
 
     /**
      * Here we are considering this case:
@@ -180,18 +183,137 @@ class SecurityRest {
             - add to archive (if needed)
          */
 
-
-        // check that there are at least two users, using the method getInfoForAuthentication()
-        if (authInfo.size <= 1) {
-
+        // Check if at least 2 users. if not, nothing to do
+        if (sampler.authentications().size <= 1) {
             // nothing to test if there are not at least 2 users
             LoggingUtil.getInfoLogger().debug(
                 "Security test handleForbiddenDeleteButOkPutOrPatch requires at least 2 authenticated users")
             return
         }
 
+        // From schema, check all DELETE operations, in order to do that
         // obtain DELETE operations in the SUT according to the swagger
         val deleteOperations = getAllActionDefinitions(HttpVerb.DELETE)
+
+        // for each endpoint for which there is a DELETE operation
+        deleteOperations.forEach { delete ->
+
+            // from archive, search if there is any test with a DELETE returning a 403
+            var existing403 : List<EvaluatedIndividual<RestIndividual>> =
+                getIndividualsWithActionAndStatus(individualsInSolution, HttpVerb.DELETE, delete.path, 403)
+
+            var currentIndividualWith403 : EvaluatedIndividual<RestIndividual>
+
+            var individualToChooseForTest : RestIndividual
+
+            // if there is such an individual
+            if (existing403.isNotEmpty()) {
+
+                // current individual in the list of existing 403. Since the list is not empty,\
+                // we can just get the first item
+                currentIndividualWith403 = existing403[0]
+
+                val deleteAction = getActionIndexFromIndividual(currentIndividualWith403, HttpVerb.DELETE,
+                    delete.path)
+
+                val deleteActionIndex = getActionWithIndex(currentIndividualWith403, deleteAction)
+
+                // slice the individual in a way that delete all calls after the DELETE request
+                individualToChooseForTest = sliceAllCallsInIndividualAfterAction(currentIndividualWith403, deleteActionIndex)
+
+
+
+            }
+            // there is not. need to create it based on successful create resources with authenticated user
+            else {
+
+                var verbUsedForCreation : HttpVerb? = null;
+                // search for create resource for endpoint of DELETE using PUT
+                lateinit var existingEndpointForCreation : EvaluatedIndividual<RestIndividual>;
+
+                var existingPutForEndpointOfDelete : List<EvaluatedIndividual<RestIndividual>> =
+                    getIndividualsWithActionAndStatusGroup(individualsInSolution, HttpVerb.PUT, delete.path,
+                        "2xx")
+
+                lateinit var existingPostReqForEndpointOfDelete : List<EvaluatedIndividual<RestIndividual>>
+
+                if (existingPutForEndpointOfDelete.isNotEmpty()) {
+                    existingEndpointForCreation = existingPutForEndpointOfDelete[0]
+                    verbUsedForCreation = HttpVerb.PUT
+                }
+                else {
+                    // if there is no such, search for an existing POST
+                    existingPostReqForEndpointOfDelete = getIndividualsWithActionAndStatusGroup(
+                        individualsInSolution,
+                        HttpVerb.POST, delete.path,
+                        "2xx"
+                    )
+
+                    if (existingPostReqForEndpointOfDelete.isNotEmpty()) {
+                        existingEndpointForCreation = existingPostReqForEndpointOfDelete[0]
+                        verbUsedForCreation = HttpVerb.DELETE
+                    }
+
+                }
+
+                // if neither POST not PUT exists for the endpoint, we need to handle that case specifically
+                if (existingEndpointForCreation == null) {
+                    // TODO
+                    LoggingUtil.getInfoLogger().debug(
+                        "The archive does not contain any successful PUT or POST requests, this case is not handled")
+                    return
+                }
+
+                var actionIndexForCreation = -1
+
+                if (verbUsedForCreation != null) {
+
+                    // so we found an individual with a successful PUT or POST,  we will slice all calls after PUT or POST
+                    actionIndexForCreation = getActionIndexFromIndividual(
+                        existingEndpointForCreation,
+                        verbUsedForCreation, delete.path
+                    )
+
+                }
+
+                // create a copy of the existingEndpointForCreation
+                val existingEndpointForCreationCopy = existingEndpointForCreation.copy()
+                val actionForCreation = getActionWithIndex(existingEndpointForCreation, actionIndexForCreation)
+
+                sliceAllCallsInIndividualAfterAction(existingEndpointForCreationCopy, actionForCreation)
+
+                // add a DELETE call with another user
+                individualToChooseForTest =
+                    createIndividualWithAnotherActionAddedDifferentAuth(existingEndpointForCreationCopy,
+                    actionForCreation, HttpVerb.DELETE )
+
+
+            }
+
+            // After having a set of requests in which the last one is a DELETE call with another user, add a PUT
+            // with another user
+            val deleteActionIndex = getActionIndexFromRestIndividual(individualToChooseForTest, HttpVerb.DELETE,
+                delete.path)
+
+            val deleteAction = getActionWithIndexRestIndividual(individualToChooseForTest, deleteActionIndex)
+
+            var individualToAddToSuite = createIndividualWithAnotherActionAddedDifferentAuthRest(individualToChooseForTest,
+                deleteAction, HttpVerb.PUT )
+
+            // Then evaluate the fitness function to create evaluatedIndividual
+            val fitness : FitnessFunction<RestIndividual> = RestFitness()
+
+            val evaluatedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(individualToAddToSuite)
+
+            // add the evaluated individual to the archive
+            if (evaluatedIndividual != null) {
+                archive.addIfNeeded(evaluatedIndividual)
+            }
+
+        }
+
+        /*
+
 
         //do we already have existing test cases returning 403 for it?
         // check if there is a DELETE operation with the status code 403 - which means forbidden
@@ -393,6 +515,10 @@ class SecurityRest {
 
         }
 
+
+         */
+
+
         // get all endpoints used in tests
         // for each endpoint
         // check if there is a successful DELETE request
@@ -409,96 +535,184 @@ class SecurityRest {
 
     }
 
-    /*
-    If a resource is DELETED successfully, it should not be accessible anymore even
-    by the same user who has created the resource. If it is, this is a security issue
+    private fun sliceAllCallsInIndividualAfterAction(individual: EvaluatedIndividual<RestIndividual>,
+                                                     action: RestCallAction) : RestIndividual {
 
-        What needs to be done:
-        (1) For each DELETE operations, find a successful DELETE
-        (2) Find a GET operation corresponding to the successful DELETE with
-        (3) Make sure GET has the same path parameter
-        (4) Call GET operation with the same authenticated user
-        (5) If this succeeds, there is a security issue
+        // find the index of the individual
+        val mainActions = individual.individual.seeMainExecutableActions()
+        val actIndex = individual.individual.seeMainExecutableActions().indexOf(action)
 
-     */
-    private fun handleResourceReadableAfterDelete(authInfo: List<AuthenticationDto>) {
+        var actionList = mutableListOf<RestCallAction>()
 
-        // find all delete operations
-        val putOperations = getIndividualsWithActionAndStatus(individualsInSolution,HttpVerb.PUT, HttpStatus.SC_CREATED)
-
-        var existingPutAction : RestCallAction?
-        var deleteFromExistingPut : RestCallAction
-        var getFromExistingDelete : RestCallAction
-        var newIndividual : RestIndividual
-
-        // for each DELETE operation
-        putOperations.forEach { putOp ->
-
-            var newListOfActions = mutableListOf<RestCallAction>()
-
-            // get the successful delete action from the individual
-            existingPutAction = findActionFromIndividualsBasedOnVerbAndStatus(putOp, HttpVerb.PUT, HttpStatus.SC_CREATED)
-
-            if (existingPutAction != null) {
-
-                // create a GET request from the existing delete action with the same authentication and same path
-                deleteFromExistingPut = createCopyOfActionWithDifferentVerbOrUser(
-                    "deleteFromPut", existingPutAction!!,
-                    HttpVerb.DELETE, existingPutAction!!.auth
-                )
-
-                changePathParameter(deleteFromExistingPut, getPathParameter(existingPutAction!!))
-
-                // create also GET from existing PUT with no Authentication
-                getFromExistingDelete = createCopyOfActionWithDifferentVerbOrUser("getFromDelete",
-                    deleteFromExistingPut!!, HttpVerb.GET, NoAuth())
-                changePathParameter(getFromExistingDelete, getPathParameter(existingPutAction!!))
-
-                // list of actions
-                newListOfActions.add(existingPutAction!!)
-                newListOfActions.add(deleteFromExistingPut)
-                newListOfActions.add(getFromExistingDelete)
-
-                // individual from the list of actions
-                newIndividual = RestIndividual(newListOfActions, SampleType.PREDEFINED)
-
-                // results
-                val results: MutableList<RestCallResult> = mutableListOf()
-
-                // PUT action results in SC_CREATED
-                val resultOfPut = RestCallResult()
-                resultOfPut.setStatusCode(HttpStatus.SC_CREATED)
-
-                // DELETE action results in SC_OK
-                val resultOfDelete = RestCallResult()
-                resultOfDelete.setStatusCode(HttpStatus.SC_OK)
-
-                // GET Action
-                val resultOfGet = RestCallResult()
-                resultOfGet.setStatusCode(HttpStatus.SC_OK)
-
-                results.add(resultOfPut)
-                results.add(resultOfDelete)
-                results.add(resultOfGet)
-
-                // ensure all genes are initialized before
-                newIndividual.seeGenes().forEach { if (!it.initialized) {it.markAllAsInitialized()} }
-
-                // new evaluated individual based on results and the created individual
-                val newEvaluatedIndividual = EvaluatedIndividual(FitnessValue(0.0), newIndividual, results)
-
-                // find all test targets used in archive so that we create a test target that does not exist
-                val testTargets = findAllTestTargetsVisitedByIndividuals()
-
-                // cover a fake test target, whose index is more than indices of
-                newEvaluatedIndividual.fitness.coverTarget(testTargets.max() + 10)
-
-                // add the new test to archive. It should succeed since we added a testing target that does not exist.
-                archive.addIfNeeded(newEvaluatedIndividual)
-
+        for (index in 0..mainActions.size) {
+            if (index <= actIndex) {
+                actionList.add(mainActions.get(index))
             }
         }
+
+        val newIndividual = RestIndividual(actionList, SampleType.SECURITY)
+
+        return newIndividual
+
     }
+
+    /**
+     * Finds the first index of an action with a given verb, path and status among actions in the individual.
+     */
+    private fun getActionIndexFromIndividual(individual: EvaluatedIndividual<RestIndividual>, actionVerb: HttpVerb,
+                                             path: RestPath) : Int {
+
+        val item = individual.individual.seeMainExecutableActions().firstOrNull { it ->
+            it.verb == actionVerb && it.path.toString() == path.toString()
+        }
+
+        if (item != null) {
+            return individual.individual.seeMainExecutableActions().indexOf(item)
+        }
+        else {
+            return -1
+        }
+
+    }
+
+    /**
+     * Finds action index for RestIndividual
+     */
+    private fun getActionIndexFromRestIndividual(individual: RestIndividual, actionVerb: HttpVerb,
+                                             path: RestPath) : Int {
+
+        val item = individual.seeMainExecutableActions().firstOrNull { it ->
+            it.verb.toString() == actionVerb.toString() && it.path.toString() == path.toString()
+        }
+
+        if (item != null) {
+            return individual.seeMainExecutableActions().indexOf(item)
+        }
+        else {
+            return -1
+        }
+
+    }
+
+    /**
+     * Just retrieve the action with a given index
+     * Precondition: 0 <= index <= number of actions
+     */
+    private fun getActionWithIndex(individual: EvaluatedIndividual<RestIndividual>, actionIndex : Int) : RestCallAction {
+
+        return individual.individual.seeMainExecutableActions()[actionIndex]
+
+    }
+
+    private fun getActionWithIndexRestIndividual(individual: RestIndividual, actionIndex : Int) : RestCallAction {
+
+        return individual.seeMainExecutableActions()[actionIndex]
+
+    }
+
+    /**
+     * Creates another call using by:
+     * First finding a
+     */
+    private fun createIndividualWithAnotherActionAddedDifferentAuth(individual: EvaluatedIndividual<RestIndividual>,
+                                                    currentAction : RestCallAction,
+                                                    newActionVerb : HttpVerb,
+                                                    ) : RestIndividual {
+
+        var actionList = mutableListOf<RestCallAction>()
+
+        for (act in individual.individual.seeMainExecutableActions()) {
+            actionList.add(act)
+        }
+
+        // create a new action with the authentication not used in current individual
+        val authenticationOfOther = sampler.authentications().firstOrNull {it ->
+            !checkEuqalityOfTwoAuthenticationObjects(it, currentAction.auth)
+
+        }
+
+        var newRestCallAction :RestCallAction? = null;
+
+        if (authenticationOfOther != null) {
+            newRestCallAction = RestCallAction("newDelete", newActionVerb, currentAction.path,
+                currentAction.parameters.toMutableList(), authenticationOfOther  )
+        }
+
+        if (newRestCallAction != null) {
+            actionList.add(newRestCallAction)
+        }
+
+
+        val newIndividual = RestIndividual(actionList, SampleType.SECURITY)
+
+        return newIndividual
+
+    }
+
+    private fun checkEuqalityOfTwoAuthenticationObjects(info1 : HttpWsAuthenticationInfo,
+                                                        info2 : HttpWsAuthenticationInfo) : Boolean {
+
+        // check if names of objects match
+        if (info1.name != info2.name) {
+            return false
+        }
+        else if (info1.cookieLogin != info2.cookieLogin) {
+            return false
+        }
+        else if (info1.jsonTokenPostLogin != info2.jsonTokenPostLogin) {
+            return false
+        }
+        else if (info1.headers.size != info2.headers.size) {
+            return false
+        }
+        else  {
+            for (index in 0..info1.headers.size - 1) {
+                if ( !(info1.headers[index].name == info2.headers[index].name
+                    && info1.headers[index].value == info2.headers[index].value) ) {
+                        return false
+                }
+            }
+        }
+
+        return true
+
+    }
+
+    private fun createIndividualWithAnotherActionAddedDifferentAuthRest(individual: RestIndividual,
+                                                                    currentAction : RestCallAction,
+                                                                    newActionVerb : HttpVerb,
+    ) : RestIndividual {
+
+        var actionList = mutableListOf<RestCallAction>()
+
+        for (act in individual.seeMainExecutableActions()) {
+            actionList.add(act)
+        }
+
+        // create a new action with the authentication not used in current individual
+        val authenticationOfOther = sampler.authentications().firstOrNull {it ->
+            it.headers != currentAction.auth.headers
+
+        }
+
+        var newRestCallAction :RestCallAction? = null;
+
+        if (authenticationOfOther != null) {
+            newRestCallAction = RestCallAction("newDelete", newActionVerb, currentAction.path,
+                currentAction.parameters.toMutableList(), authenticationOfOther  )
+        }
+
+        if (newRestCallAction != null) {
+            actionList.add(newRestCallAction)
+        }
+
+
+        val newIndividual = RestIndividual(actionList, SampleType.SECURITY)
+
+        return newIndividual
+
+    }
+
 
     private fun findActionFromIndividualsBasedOnVerbAndStatus(individual: EvaluatedIndividual<RestIndividual>, actionVerb: HttpVerb, actionStatus: Int): RestCallAction? {
 
@@ -518,12 +732,14 @@ class SecurityRest {
         return null
     }
 
+
+
     /*
     Find individuals containing a certain action and STATUS
      */
     private fun getIndividualsWithActionAndStatus(individualsInSolution: List<EvaluatedIndividual<RestIndividual>>,
-                                                  verb: HttpVerb, statusCode: Int):
-    List<EvaluatedIndividual<RestIndividual>> {
+                                                  verb: HttpVerb, statusCode: Int)
+    :List<EvaluatedIndividual<RestIndividual>> {
 
         val individualsList = mutableListOf<EvaluatedIndividual<RestIndividual>>()
 
@@ -544,6 +760,37 @@ class SecurityRest {
                         individualsList.add(ind)
                     }
                 }
+            }
+        }
+
+        return individualsList
+    }
+
+    fun getIndividualsWithActionAndStatusGroup(individualsInSolution: List<EvaluatedIndividual<RestIndividual>>,
+                                               verb: HttpVerb, statusGroup: String)
+    :List<EvaluatedIndividual<RestIndividual>> {
+
+        val individualsList = mutableListOf<EvaluatedIndividual<RestIndividual>>()
+
+        individualsInSolution.forEach { ind ->
+            val actions = ind.evaluatedMainActions()
+
+            val successfulDeleteContained = false
+
+            for (a in actions) {
+
+                val act = a.action as RestCallAction
+                val res = a.result as RestCallResult
+
+
+                if ( (res.getStatusCode().toString().first() == statusGroup.first())
+                    && act.verb == verb
+                    ) {
+                    if (!individualsList.contains(ind)) {
+                        individualsList.add(ind)
+                    }
+                }
+
             }
         }
 
@@ -721,6 +968,24 @@ class SecurityRest {
                 val r = ea.result as RestCallResult
 
                 a.verb == verb && a.path.isEquivalent(path) && r.getStatusCode() == statusCode
+            }
+        }
+    }
+
+    private fun getIndividualsWithActionAndStatusGroup(
+        individuals: List<EvaluatedIndividual<RestIndividual>>,
+        verb: HttpVerb,
+        path: RestPath,
+        statusGroup: String
+    ): List<EvaluatedIndividual<RestIndividual>> {
+
+        return individuals.filter { ind ->
+            ind.evaluatedMainActions().any{ea ->
+                val a = ea.action as RestCallAction
+                val r = ea.result as RestCallResult
+
+                a.verb == verb && a.path.isEquivalent(path) &&
+                        r.getStatusCode().toString().first() == statusGroup.first()
             }
         }
     }
