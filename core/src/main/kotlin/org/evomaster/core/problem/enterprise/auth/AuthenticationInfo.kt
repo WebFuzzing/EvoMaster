@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.api.auth
+package org.evomaster.core.problem.enterprise.auth
 
 /**
  * representing AuthenticationInfo
