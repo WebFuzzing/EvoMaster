@@ -899,13 +899,28 @@ class EMConfig {
     @Cfg("See documentation of _header0_.")
     var header2 = ""
 
+
     @Important(5.0)
+    @Cfg("Concentrate search on only one single REST endpoint")
+    var endpointFocus: String? = null
+
+    @Important(5.1)
+    @Cfg("Concentrate search on a set of REST endpoints defined by a common prefix")
+    var endpointPrefix: String? = null
+
+    @Important(5.2)
+    @Cfg("Comma-separated list of OpenAPI/Swagger 'tags' definitions." +
+            " Only the REST endpoints having at least one of such tags will be fuzzed." +
+            " If no tag is specified here, then such filter is not applied.")
+    var endpointTagFilter: String? = null
+
+
+    //-------- other options -------------
+
     @FilePath
     @Cfg("When generating tests in JavaScript, there is the need to know where the driver is located in respect to" +
             " the generated tests")
     var jsControllerPath = "./app-driver.js"
-
-    //-------- other options -------------
 
 
     @Cfg("At times, we need to run EvoMaster with printed logs that are deterministic." +
@@ -1784,17 +1799,6 @@ class EMConfig {
          */
     }
 
-    @Cfg("Concentrate search on only one single REST endpoint")
-    var endpointFocus: String? = null
-
-    @Cfg("Concentrate search on a set of REST endpoints defined by a common prefix")
-    var endpointPrefix: String? = null
-
-    @Experimental
-    @Cfg("Comma-separated list of OpenAPI/Swagger 'tags' definition." +
-            " Only the REST endpoints having at least one of such tags will be fuzzed." +
-            " If no tag is specified here, then such filter is not applied.")
-    var endpointTagFilter: String? = null
 
     //TODO Andrea/Man. will need to discuss how this can be refactored for RPC as well
 
