@@ -29,7 +29,7 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
     private final String containerPath = "/smt2-resources/";
     private final GenericContainer<?>  z3Prover;
     private final String tmpFolderPath;
-    private static final org.slf4j.Logger LOGGER = org.slf4j.LoggerFactory.getLogger(DbConstraintSolverZ3InDocker.class.getName());
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(DbConstraintSolverZ3InDocker.class.getName());
 
     /**
      * The current implementation of the Z3 solver reads content either from STDIN or from a file.
@@ -63,7 +63,7 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
         try {
             FileUtils.deleteDirectory(new File(this.tmpFolderPath));
         } catch (IOException e) {
-            LOGGER.error(String.format("Error deleting tmp folder '%s'. ", this.tmpFolderPath), e);
+            log.error(String.format("Error deleting tmp folder '%s'. ", this.tmpFolderPath), e);
         }
         z3Prover.stop();
     }
@@ -149,7 +149,7 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
             deleteFile(fileName);
         }   catch (IOException e) {
             //  If this fails, then all the content from the tmp folder will be deleted on close
-            LOGGER.error(String.format("Error deleting tmp file '%s'. ", fileName), e);
+            log.error(String.format("Error deleting tmp file '%s'. ", fileName), e);
         }
 
         return solution;

@@ -121,7 +121,7 @@ object RestActionBuilderV3 {
      */
     fun addActionsFromSwagger(swagger: OpenAPI,
                               actionCluster: MutableMap<String, Action>,
-                              endpointsToSkip: List<String> = listOf(),
+                              endpointsToSkip: List<Endpoint> = listOf(),
                               doParseDescription: Boolean = false,
                               enableConstraintHandling: Boolean
     ){
@@ -132,7 +132,7 @@ object RestActionBuilderV3 {
 
     fun addActionsFromSwagger(swagger: OpenAPI,
                               actionCluster: MutableMap<String, Action>,
-                              endpointsToSkip: List<String> = listOf(),
+                              endpointsToSkip: List<Endpoint> = listOf(),
                               options: Options
     ) {
 
@@ -140,20 +140,12 @@ object RestActionBuilderV3 {
         refCache.clear()
         dtoCache.clear()
 
-        val skipped = mutableListOf<String>()
+        val skipped = mutableListOf<Endpoint>()
         val errorEndpoints = mutableListOf<String>()
 
         val basePath = getBasePathFromURL(swagger)
 
         swagger.paths
-                .filter { e ->
-                    if (endpointsToSkip.contains(e.key)) {
-                        skipped.add(e.key)
-                        false
-                    } else {
-                        true
-                    }
-                }
                 .forEach { e ->
 
                     /*
@@ -162,8 +154,11 @@ object RestActionBuilderV3 {
                         The "paths" are then appended to such URLs, which works
                         like a "host+basePath"
                      */
-
                     val restPath = RestPath(if (basePath == "/") e.key else (basePath + e.key))
+
+                    //filtering is based on raw path declaration, without base
+                    //TODO might want to support both cases in the future
+                    val rawPath = RestPath(e.key)
 
                     if (e.value.`$ref` != null) {
                         //TODO
@@ -179,14 +174,22 @@ object RestActionBuilderV3 {
                         //TODO should we do something with it for doParseDescription?
                     }
 
-                    if (e.value.get != null) handleOperation(actionCluster, HttpVerb.GET, restPath, e.value.get, swagger, options,errorEndpoints)
-                    if (e.value.post != null) handleOperation(actionCluster, HttpVerb.POST, restPath, e.value.post, swagger, options, errorEndpoints)
-                    if (e.value.put != null) handleOperation(actionCluster, HttpVerb.PUT, restPath, e.value.put, swagger, options, errorEndpoints)
-                    if (e.value.patch != null) handleOperation(actionCluster, HttpVerb.PATCH, restPath, e.value.patch, swagger, options, errorEndpoints)
-                    if (e.value.options != null) handleOperation(actionCluster, HttpVerb.OPTIONS, restPath, e.value.options, swagger, options, errorEndpoints)
-                    if (e.value.delete != null) handleOperation(actionCluster, HttpVerb.DELETE, restPath, e.value.delete, swagger, options, errorEndpoints)
-                    if (e.value.trace != null) handleOperation(actionCluster, HttpVerb.TRACE, restPath, e.value.trace, swagger, options, errorEndpoints)
-                    if (e.value.head != null) handleOperation(actionCluster, HttpVerb.HEAD, restPath, e.value.head, swagger, options, errorEndpoints)
+                    val h = { verb: HttpVerb, operation: Operation ->
+                        if(endpointsToSkip.any { it.verb == verb && it.path.isEquivalent(rawPath) }){
+                            skipped.add(Endpoint(verb,restPath))
+                        } else {
+                            handleOperation(actionCluster, verb, restPath, operation, swagger, options, errorEndpoints)
+                        }
+                    }
+
+                    if (e.value.get != null)     h(HttpVerb.GET,     e.value.get)
+                    if (e.value.post != null)    h(HttpVerb.POST,    e.value.post)
+                    if (e.value.put != null)     h(HttpVerb.PUT,     e.value.put)
+                    if (e.value.patch != null)   h(HttpVerb.PATCH,   e.value.patch)
+                    if (e.value.options != null) h(HttpVerb.OPTIONS, e.value.options)
+                    if (e.value.delete != null)  h(HttpVerb.DELETE,  e.value.delete)
+                    if (e.value.trace != null)   h(HttpVerb.TRACE,   e.value.trace)
+                    if (e.value.head != null)    h(HttpVerb.HEAD,    e.value.head)
                 }
 
         ActionBuilderUtil.verifySkipped(skipped,endpointsToSkip)

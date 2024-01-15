@@ -38,10 +38,11 @@ public class ActionDto {
     public RPCActionDto rpcCall;
 
     /**
-     * Mapping of external service signature to internal WireMock
-     * instance addresses.
+     * This list of DTOs represents the external service mappings.
+     * Key: WireMock signature which is a string of protocol, hostname, and port.
+     * Value: Contains [ExternalServiceMappingDto]
      */
-    public Map<String, String> externalServiceMapping = new HashMap<>();
+    public Map<String, ExternalServiceMappingDto> externalServiceMapping = new HashMap<>();
 
     /**
      * Mapping of external service domain name and local address used

@@ -1,11 +1,15 @@
 package org.evomaster.core.problem.externalservice.httpws.service
 
 import com.google.inject.Inject
+import org.evomaster.client.java.controller.api.dto.ExternalServiceMappingDto
 import org.evomaster.client.java.controller.api.dto.problem.ExternalServiceDto
+import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils.isDefaultSignature
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.problem.externalservice.ExternalService
+import org.evomaster.core.problem.externalservice.HostnameResolutionAction
+import org.evomaster.core.problem.externalservice.HostnameResolutionInfo
 import org.evomaster.core.problem.externalservice.httpws.*
 import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalServiceUtils.generateRandomIPAddress
 import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalServiceUtils.isAddressAvailable
@@ -34,8 +38,6 @@ class HttpWsExternalServiceHandler {
      * through AdditionalInfoDto and will be captured under
      * AbstractRestFitness and AbstractRestSample for further use.
      *
-     * TODO: This is not the final implementation need to refactor but
-     *  the concept is working.
      */
 
     @Inject
@@ -53,16 +55,17 @@ class HttpWsExternalServiceHandler {
     private val externalServices: MutableMap<String, HttpWsExternalService> = mutableMapOf()
 
     /**
-     * Map from hostname (used in SUT for external services) and local ip addresses, that we resolve
-     * those hostname (ie like DNS)
-     */
-    private val localAddressMapping: MutableMap<String, String> = mutableMapOf()
-
-    /**
      * Skipped external services information provided through the driver to skip from
      * handling.
      */
     private val skippedExternalServices: MutableList<ExternalService> = mutableListOf()
+
+    /**
+     * Map of remote hostname vs local DNS replacement
+     */
+    private val hostnameLocalAddressMapping: MutableMap<String, String> = mutableMapOf()
+
+    private val hostnameResolutionInfos: MutableList<HostnameResolutionInfo> = mutableListOf()
 
     /**
      * Contains last used loopback address for reference when creating
@@ -91,6 +94,7 @@ class HttpWsExternalServiceHandler {
     private fun initDefaultWM() {
         if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
             if (!isDefaultInitialized) {
+                addHostname(HostnameResolutionInfo(ExternalServiceSharedUtils.DEFAULT_WM_DUMMY_HOSTNAME, ""))
                 registerHttpExternalServiceInfo(DefaultHttpExternalServiceInfo.createDefaultHttps())
                 registerHttpExternalServiceInfo(DefaultHttpExternalServiceInfo.createDefaultHttp())
                 isDefaultInitialized = true
@@ -110,18 +114,35 @@ class HttpWsExternalServiceHandler {
         }
     }
 
+    fun addHostname(hostnameResolutionInfo: HostnameResolutionInfo) {
+        if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
+            if (!hostnameLocalAddressMapping.containsKey(hostnameResolutionInfo.remoteHostName)) {
+                val ip = if (hostnameResolutionInfo.remoteHostName == ExternalServiceSharedUtils.DEFAULT_WM_DUMMY_HOSTNAME) {
+                    ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP
+                } else {
+                    getNewIP()
+                }
+                lastIPAddress = ip
+                hostnameLocalAddressMapping[hostnameResolutionInfo.remoteHostName] = ip
+                hostnameResolutionInfos.add(hostnameResolutionInfo)
+            }
+        }
+    }
+
     private fun registerHttpExternalServiceInfo(externalServiceInfo: HttpExternalServiceInfo) {
         if (skippedExternalServices.contains(externalServiceInfo.toExternalService())) {
             return
         }
 
-        val ip: String = localAddressMapping[externalServiceInfo.remoteHostname]
-            ?: run {
-                val x = getNewIP()
-                lastIPAddress = x
-                localAddressMapping[externalServiceInfo.remoteHostname] = x
-                x
-            }
+        if (externalServices.containsKey(externalServiceInfo.signature())) {
+            return
+        }
+
+        if (!hostnameLocalAddressMapping.containsKey(externalServiceInfo.remoteHostname)) {
+            return
+        }
+
+        val ip: String = hostnameLocalAddressMapping[externalServiceInfo.remoteHostname]!!
 
         val registered = externalServices.filterValues {
             it.getRemoteHostName() == externalServiceInfo.remoteHostname &&
@@ -161,12 +182,27 @@ class HttpWsExternalServiceHandler {
         }
     }
 
-    fun getExternalServiceMappings(): Map<String, String> {
-        return externalServices.mapValues { it.value.getIP() }
+    fun getExternalServiceMappings(): Map<String, ExternalServiceMappingDto> {
+        return externalServices.mapValues { (_, v) -> ExternalServiceMappingDto(v.getRemoteHostName(), v.getIP(), v.getSignature(), v.isActive()) }
     }
 
-    fun getLocalAddressMapping(): Map<String, String> {
-        return localAddressMapping
+    fun getLocalDomainNameMapping(): Map<String, String> {
+        return hostnameLocalAddressMapping.toMap()
+    }
+
+    fun getHostnameResolutionActions(): List<HostnameResolutionAction> {
+        val output: MutableList<HostnameResolutionAction> = mutableListOf()
+        hostnameResolutionInfos.forEach {
+            val action = HostnameResolutionAction(it.remoteHostName, hostnameLocalAddressMapping[it.remoteHostName]!!)
+            output.add(action)
+        }
+        return output
+    }
+
+    fun hasActiveMockServer(hostname: String): Boolean {
+        return externalServices
+            .filter { it.value.getRemoteHostName() == hostname && it.value.isActive() }
+            .isNotEmpty()
     }
 
     /**

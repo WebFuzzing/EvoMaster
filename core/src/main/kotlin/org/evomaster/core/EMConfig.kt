@@ -10,7 +10,6 @@ import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory
 import org.evomaster.core.config.ConfigUtil
 import org.evomaster.core.config.ConfigsFromFile
-import org.evomaster.core.docs.ConfigToMarkdown
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.impact.impactinfocollection.GeneMutationSelectionMethod
@@ -909,13 +908,28 @@ class EMConfig {
     @Cfg("See documentation of _header0_.")
     var header2 = ""
 
+
     @Important(5.0)
+    @Cfg("Concentrate search on only one single REST endpoint")
+    var endpointFocus: String? = null
+
+    @Important(5.1)
+    @Cfg("Concentrate search on a set of REST endpoints defined by a common prefix")
+    var endpointPrefix: String? = null
+
+    @Important(5.2)
+    @Cfg("Comma-separated list of OpenAPI/Swagger 'tags' definitions." +
+            " Only the REST endpoints having at least one of such tags will be fuzzed." +
+            " If no tag is specified here, then such filter is not applied.")
+    var endpointTagFilter: String? = null
+
+
+    //-------- other options -------------
+
     @FilePath
     @Cfg("When generating tests in JavaScript, there is the need to know where the driver is located in respect to" +
             " the generated tests")
     var jsControllerPath = "./app-driver.js"
-
-    //-------- other options -------------
 
 
     @Cfg("At times, we need to run EvoMaster with printed logs that are deterministic." +
@@ -1794,11 +1808,6 @@ class EMConfig {
          */
     }
 
-    @Cfg("Concentrate search on only one single REST endpoint")
-    var endpointFocus: String? = null
-
-    @Cfg("Concentrate search on a set of REST endpoints defined by a common prefix")
-    var endpointPrefix: String? = null
 
     //TODO Andrea/Man. will need to discuss how this can be refactored for RPC as well
 
@@ -1971,7 +1980,7 @@ class EMConfig {
         NONE,
 
         /**
-         * Default will assign 127.0.0.2
+         * Default will assign 127.0.0.3
          */
         DEFAULT,
 
@@ -1992,8 +2001,8 @@ class EMConfig {
 
     @Cfg("User provided external service IP.")
     @Experimental
-    @Regex("^127\\.((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){2}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\$")
-    var externalServiceIP: String = "127.0.0.2"
+    @Regex("^127\\.((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){2}([3-9]|[0-9][0-9]|[0-2][0-5][0-5]?)\$")
+    var externalServiceIP : String = "127.0.0.3"
 
     @Experimental
     @Cfg("Whether to apply customized method (i.e., implement 'customizeMockingRPCExternalService' for external services or 'customizeMockingDatabase' for database) to handle mock object.")
@@ -2228,5 +2237,5 @@ class EMConfig {
 
     fun isEnabledResourceSizeHandling() = isMIO() && probOfHandlingLength > 0 && maxSizeOfHandlingResource > 0
 
-
+    fun getTagFilters() = endpointTagFilter?.split(",")?.map { it.trim() } ?: listOf()
 }

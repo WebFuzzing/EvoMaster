@@ -1,10 +1,40 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 
 import org.evomaster.client.java.instrumentation.ExternalServiceInfo;
+import org.evomaster.client.java.instrumentation.HostnameResolutionInfo;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes.InetAddressClassReplacement;
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils;
+import org.evomaster.client.java.instrumentation.shared.IPAddressValidator;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
+import java.net.InetAddress;
+
 public class ExternalServiceInfoUtils {
+
+    /**
+     * Check if string literal is a valid v4 or v6 IP address
+     */
+    public static boolean isValidIP(String s) {
+        if (IPAddressValidator.isValidInet4Address(s)) {
+            return true;
+        }
+
+        return IPAddressValidator.isValidInet6Address(s);
+    }
+
+    /**
+     * Force collecting DNS info, without failing if errors
+     */
+    public static void analyzeDnsResolution(String host){
+        try {
+            InetAddress addresses = InetAddressClassReplacement.getByName(host);
+            ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(host, addresses.getHostAddress()));
+        } catch (Exception e){
+            //do nothing
+            ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(host, null));
+        }
+    }
+
 
     /**
      * If there is a mock server assigned for the given hostname,
@@ -20,26 +50,31 @@ public class ExternalServiceInfoUtils {
         // Note: Checking whether there is any active mapping or not will reduce the amount
         // of time the same info gets added again and again. To do this, have to change the
         // data structure of the external service mapping inside ExecutionTracer
-        ExecutionTracer.addExternalServiceHost(remoteHostInfo);
 
-        if (!ExecutionTracer.hasMockServer(remoteHostInfo.getHostname())) {
-            String signature = remoteHostInfo.signature();
+        ExecutionTracer.addExternalServiceHost(remoteHostInfo);
+        String signature = remoteHostInfo.signature();
+
+        if (!ExecutionTracer.hasMockServerForHostname(remoteHostInfo.getHostname())) {
             int connectPort = remotePort;
 
-            if (!ExecutionTracer.hasExternalMapping(remoteHostInfo.signature())) {
+            if (!ExecutionTracer.hasActiveExternalMappingForSignature(signature)) {
                 ExecutionTracer.addEmployedDefaultWMHost(remoteHostInfo);
                 signature = ExternalServiceSharedUtils.getWMDefaultSignature(remoteHostInfo.getProtocol(), remotePort);
                 connectPort = ExternalServiceSharedUtils.getDefaultWMPort(signature);
             }
 
-            return new String[]{ExecutionTracer.getExternalMapping(signature), "" + connectPort};
+            return new String[]{ExecutionTracer.getExternalMappingForSignature(signature), "" + connectPort};
         } else {
-            return new String[]{remoteHostInfo.getHostname(), "" + remotePort};
+            return new String[]{ExecutionTracer.getExternalMappingForHostname(remoteHostInfo.getHostname()), "" + remotePort};
         }
     }
 
     /**
-     * skip method replacement for some hostname, eg,
+     * skip method replacement for some hostname.
+     * For example, we want to avoid skipping local addresses, because things like Databases and other
+     * services like Kafka could be running there.
+     * Further, those things could be running in Docker, so should skip Docker as well
+     *
      */
     public static boolean skipHostnameOrIp(String hostname) {
         // https://en.wikipedia.org/wiki/Reserved_IP_addresses
@@ -47,10 +82,12 @@ public class ExternalServiceInfoUtils {
         // necessary for the moment, following IP address ranges are skipped
         if (hostname.isEmpty()
                 || hostname.startsWith("localhost")
-                || hostname.startsWith("0.0.0")
+                || hostname.startsWith("0.")
                 || hostname.startsWith("10.")
+                || hostname.startsWith("192.168.")
                 || hostname.startsWith("docker.socket")
-                || (hostname.startsWith("127.") && !ExecutionTracer.hasLocalAddressReplacement(hostname))) {
+                // in some cases, we do not skip this, because
+                || (hostname.startsWith("127.") && !ExecutionTracer.hasMappingForLocalAddress(hostname))) {
             return true;
         }
 

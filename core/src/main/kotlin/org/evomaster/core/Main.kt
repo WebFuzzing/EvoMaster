@@ -310,8 +310,11 @@ class Main {
 
                 if (config.stoppingCriterion == EMConfig.StoppingCriterion.TIME &&
                         config.maxTime == config.defaultMaxTime) {
-                    info(inGreen("To obtain better results, use the '--maxTime' option" +
-                            " to run the search for longer"))
+                    warn(inGreen("You are using the default time budget '${config.defaultMaxTime}'." +
+                            " This is only for demo purposes. " +
+                            " You should increase such test budget." +
+                            " To obtain better results, use the '--maxTime' option" +
+                            " to run the search for longer, like for example something between '1h' and '24h' hours."))
                 }
             }
 
