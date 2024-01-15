@@ -568,13 +568,28 @@ class EMConfig {
                 throw IllegalArgumentException("Parameter '${m.name}' is not a valid FS path: ${e.message}")
             }
 
+            // here, it first checks if the path exists,since the path does not exist it does not check
+            // if it is writable
             if (Files.exists(path) && !Files.isWritable(path)) {
                 throw IllegalArgumentException("Parameter '${m.name}' refers to a folder that already" +
                         " exists, but that cannot be written to: $path")
             }
+
             if (Files.exists(path) && !Files.isDirectory(path)) {
                 throw IllegalArgumentException("Parameter '${m.name}' refers to a file that already" +
                         " exists, but that it is not a folder: $path")
+            }
+
+            // if the path does not exist and if the directory structure cannot be created, inform the user
+            if(!Files.exists(path)) {
+                try {
+                    Files.createDirectories(path)
+                }
+                catch(e : Exception) {
+                    throw IllegalArgumentException("Parameter '${m.name}' refers to a file that does not exist" +
+                            ", but the provided file path cannot be used to create a directory: $path" +
+                            "\nPlease check file permissions of parent directories")
+                }
             }
         }
 
