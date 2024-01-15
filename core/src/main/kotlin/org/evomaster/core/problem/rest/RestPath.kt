@@ -434,4 +434,19 @@ class RestPath(path: String) {
 
         return "^" + elementsToMatch.joinToString("") + "$"
     }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as RestPath
+
+        return computedToString == other.computedToString
+    }
+
+    override fun hashCode(): Int {
+        return computedToString.hashCode()
+    }
+
+
 }
