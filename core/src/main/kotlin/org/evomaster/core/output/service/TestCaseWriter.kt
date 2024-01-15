@@ -6,6 +6,7 @@ import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestCase
 import org.evomaster.core.output.service.TestWriterUtils.Companion.getWireMockVariableName
+import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.param.HttpWsResponseParam
@@ -133,6 +134,21 @@ abstract class TestCaseWriter {
                     lines.appendSemicolon(format)
                     any = true
                 }
+        return any
+    }
+
+    protected fun handleHostnameResolutionActions(
+        lines: Lines,
+        actions: List<HostnameResolutionAction>
+    ): Boolean {
+        var any = false
+
+        actions.forEach { action ->
+            lines.add("DnsCacheManipulator.setDnsCache(\"${action.hostname}\", \"${action.localIPAddress}\")")
+            lines.appendSemicolon(format)
+            any = true
+        }
+
         return any
     }
 

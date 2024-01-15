@@ -7,6 +7,7 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TokenWriter
 import org.evomaster.core.output.service.TestWriterUtils.Companion.formatJsonWithEscapes
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
+import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.HttpWsCallResult
@@ -229,9 +230,14 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             exActions.addAll(
                 group.getExternalServiceActions().filterIsInstance<HttpExternalServiceAction>()
                     .filter { it.active })
+
+            val hostnameResolutionActions = group.getHostnameResolutionActions()
+
             if (format.isJavaOrKotlin())
-                anyDnsCache = handleDnsForExternalServiceActions(
-                    lines, exActions, fv.getViewExternalRequestToDefaultWMByAction(index))
+                anyDnsCache = handleHostnameResolutionActions(lines, hostnameResolutionActions)
+//                anyDnsCache = handleDnsForExternalServiceActions(
+//                    lines, exActions, fv.getViewExternalRequestToDefaultWMByAction(index))
+
 
             if (exActions.isNotEmpty()) {
                 if (format.isJavaOrKotlin()) {

@@ -373,7 +373,8 @@ class TestSuiteWriter {
                 )
             }
 
-            if(config.isEnabledExternalServiceMocking() && solution.needsMockedDns() ){
+            if(config.isEnabledExternalServiceMocking() && solution.needHostnameReplacement() ){
+//            if(config.isEnabledExternalServiceMocking() && solution.needsMockedDns() ){
                 addImport("com.alibaba.dcm.DnsCacheManipulator", lines)
             }
 

@@ -1,8 +1,10 @@
 package org.evomaster.core.search
 
+import org.apache.xpath.operations.Bool
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.output.Termination
+import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 
 
@@ -44,12 +46,20 @@ where T : Individual {
         return individuals.any { ind -> ind.individual.seeAllActions().any { a ->  a is HttpExternalServiceAction && a.active } }
     }
 
+    fun hasAnyHostnameResolutionAction(): Boolean {
+        return individuals.any { ind -> ind.individual.seeAllActions().any() { a -> a is HostnameResolutionAction } }
+    }
+
     fun hasAnyUsageOfDefaultExternalService() : Boolean{
         return individuals.any{ind -> ind.fitness.getViewEmployedDefaultWM().isNotEmpty()}
     }
 
     fun needsMockedDns() : Boolean{
         return hasAnyActiveHttpExternalServiceAction() || hasAnyUsageOfDefaultExternalService()
+    }
+
+    fun needHostnameReplacement(): Boolean {
+        return hasAnyHostnameResolutionAction()
     }
 
     fun hasAnySqlAction() : Boolean{
