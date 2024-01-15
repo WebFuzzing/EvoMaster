@@ -2,6 +2,7 @@ import org.evomaster.client.java.sql.internal.constraint.DbTableConstraint;
 import org.evomaster.core.search.gene.Gene;
 import org.evomaster.core.search.gene.numeric.IntegerGene;
 import org.evomaster.core.sql.SqlAction;
+import org.evomaster.core.sql.schema.Table;
 import org.testcontainers.containers.Container;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.images.builder.ImageFromDockerfile;
@@ -14,6 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -29,6 +31,7 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
     private final String containerPath = "/smt2-resources/";
     private final GenericContainer<?>  z3Prover;
     private final String tmpFolderPath;
+    private int counter = 0;
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(DbConstraintSolverZ3InDocker.class.getName());
 
     /**
@@ -90,9 +93,9 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
         }
     }
 
-    private List<SqlAction> solveFromTmp(String filename) {
+    private List<SqlAction> solveFromTmp(Table table, String filename) {
         String model = solveFromFile("tmp/" + filename);
-        return toSqlAction(model);
+        return toSqlAction(table, model);
     }
 
     /**
@@ -100,7 +103,7 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
      * @param model the string with the model
      * @return the Gene with the model
      */
-    private List<SqlAction> toSqlAction(String model) {
+    private List<SqlAction> toSqlAction(Table table, String model) {
         String[] lines = model.split("\n");
         String[] values = lines[1].substring(2, lines[1].length()-2).split(" ");
         String name = values[0];
@@ -120,17 +123,18 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
                 minInclusive,
                 maxInclusive);
 
-        return new ArrayList<>();
+        SqlAction action = new SqlAction(table, table.getColumns(), counter++, Collections.singletonList(gene), false);
+        return Collections.singletonList(action);
     }
 
     /**
      * Given the constraint list, creates a Smt2Writer with all of them, and then write them in a smt2 file.
      * After that, run the Z3 Docker solver with the reference to the file and return the check model as string.
      * @param constraintList list of database constraints
-     * @return a string with the model for the given constraints
+     * @return a list of Sql with the necessary inserts according to the constraints
      */
     @Override
-    public List<SqlAction> solve(List<DbTableConstraint> constraintList) {
+    public List<SqlAction> solve(Table table, List<DbTableConstraint> constraintList) {
         Smt2Writer writer = new Smt2Writer();
 
         for (DbTableConstraint constraint : constraintList) {
@@ -142,7 +146,7 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
 
         String fileName = storeToTmpFile(writer);
 
-        List<SqlAction> solution = solveFromTmp(fileName);
+        List<SqlAction> solution = solveFromTmp(table, fileName);
 
         try {
             // TODO: Move this to another thread?
