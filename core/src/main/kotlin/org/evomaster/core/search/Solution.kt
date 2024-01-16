@@ -1,6 +1,5 @@
 package org.evomaster.core.search
 
-import org.apache.xpath.operations.Bool
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.output.Termination
@@ -47,6 +46,7 @@ where T : Individual {
     }
 
     fun hasAnyHostnameResolutionAction(): Boolean {
+        val x = individuals.flatMap { i -> i.individual.seeAllActions().filterIsInstance<HostnameResolutionAction>() }
         return individuals.any { ind -> ind.individual.seeAllActions().any() { a -> a is HostnameResolutionAction } }
     }
 

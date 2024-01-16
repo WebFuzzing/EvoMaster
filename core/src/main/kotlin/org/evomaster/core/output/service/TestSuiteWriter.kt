@@ -761,7 +761,8 @@ class TestSuiteWriter {
                         addStatement("$controller.stopSut()", lines)
                         if (format.isJavaOrKotlin()
                             && config.isEnabledExternalServiceMocking()
-                            && solution.needsMockedDns()
+                            && solution.needHostnameReplacement()
+//                            && solution.needsMockedDns()
                         ) {
                             getWireMockServerActions(solution)
                                 .forEach { action ->
@@ -840,7 +841,8 @@ class TestSuiteWriter {
 
             if (format.isJavaOrKotlin()
                 && config.isEnabledExternalServiceMocking()
-                && solution.needsMockedDns()
+                && solution.needHostnameReplacement()
+//                && solution.needsMockedDns()
             ) {
                 addStatement("DnsCacheManipulator.clearDnsCache()", lines)
             }

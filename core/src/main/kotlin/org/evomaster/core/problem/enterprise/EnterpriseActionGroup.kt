@@ -3,9 +3,7 @@ package org.evomaster.core.problem.enterprise
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionDependentGroup
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
-import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.search.*
-import wiremock.org.apache.hc.core5.net.Host
 
 
 /**
@@ -47,10 +45,6 @@ class EnterpriseActionGroup(
      */
     fun getExternalServiceActions() : List<ApiExternalServiceAction>{
         return groupsView()!!.getAllInGroup(GroupsOfChildren.EXTERNAL_SERVICES) as List<ApiExternalServiceAction>
-    }
-
-    fun getHostnameResolutionActions() : List<HostnameResolutionAction> {
-        return groupsView()!!.getAllInGroup(GroupsOfChildren.INITIALIZATION_DNS) as List<HostnameResolutionAction>
     }
 
 

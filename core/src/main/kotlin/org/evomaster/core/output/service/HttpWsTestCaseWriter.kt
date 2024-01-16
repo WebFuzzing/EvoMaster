@@ -15,7 +15,9 @@ import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedAction
+import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
+import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.slf4j.LoggerFactory
 import java.nio.file.Path
@@ -217,7 +219,8 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             lines: Lines,
             testCaseName: String,
             testSuitePath: Path?,
-            baseUrlOfSut: String
+            baseUrlOfSut: String,
+            hostnameResolutionActions: List<HostnameResolutionAction>
     ) {
 
         val exActions = mutableListOf<HttpExternalServiceAction>()
@@ -231,7 +234,6 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 group.getExternalServiceActions().filterIsInstance<HttpExternalServiceAction>()
                     .filter { it.active })
 
-            val hostnameResolutionActions = group.getHostnameResolutionActions()
 
             if (format.isJavaOrKotlin())
                 anyDnsCache = handleHostnameResolutionActions(lines, hostnameResolutionActions)

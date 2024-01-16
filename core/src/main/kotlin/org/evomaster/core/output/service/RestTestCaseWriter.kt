@@ -4,6 +4,7 @@ import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.SqlWriter
+import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.RestCallAction
@@ -118,7 +119,8 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                 //actions
                 c.second.forEach { a ->
                     val exeuctionIndex = ind.individual.seeMainExecutableActions().indexOf(a.action)
-                    handleSingleCall(a, exeuctionIndex, ind.fitness, lines, testCaseName, testSuitePath, baseUrlOfSut)
+                    val hostnameResolutionActions = ind.individual.seeInitializingActions().filterIsInstance<HostnameResolutionAction>()
+                    handleSingleCall(a, exeuctionIndex, ind.fitness, lines, testCaseName, testSuitePath, baseUrlOfSut, hostnameResolutionActions)
                 }
             }
         }
