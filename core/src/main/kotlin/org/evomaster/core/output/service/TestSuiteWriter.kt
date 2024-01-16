@@ -374,7 +374,6 @@ class TestSuiteWriter {
             }
 
             if(config.isEnabledExternalServiceMocking() && solution.needHostnameReplacement() ){
-//            if(config.isEnabledExternalServiceMocking() && solution.needsMockedDns() ){
                 addImport("com.alibaba.dcm.DnsCacheManipulator", lines)
             }
 
@@ -762,7 +761,6 @@ class TestSuiteWriter {
                         if (format.isJavaOrKotlin()
                             && config.isEnabledExternalServiceMocking()
                             && solution.needHostnameReplacement()
-//                            && solution.needsMockedDns()
                         ) {
                             getWireMockServerActions(solution)
                                 .forEach { action ->
@@ -842,7 +840,6 @@ class TestSuiteWriter {
             if (format.isJavaOrKotlin()
                 && config.isEnabledExternalServiceMocking()
                 && solution.needHostnameReplacement()
-//                && solution.needsMockedDns()
             ) {
                 addStatement("DnsCacheManipulator.clearDnsCache()", lines)
             }

@@ -46,7 +46,6 @@ where T : Individual {
     }
 
     fun hasAnyHostnameResolutionAction(): Boolean {
-        val x = individuals.flatMap { i -> i.individual.seeAllActions().filterIsInstance<HostnameResolutionAction>() }
         return individuals.any { ind -> ind.individual.seeAllActions().any() { a -> a is HostnameResolutionAction } }
     }
 
