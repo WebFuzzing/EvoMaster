@@ -46,7 +46,9 @@ There are 3 types of options:
 |`header0`| __String__. In black-box testing, we still need to deal with authentication of the HTTP requests. With this parameter it is possible to specify a HTTP header that is going to be added to most requests. This should be provided in the form _name:value_. If more than 1 header is needed, use as well the other options _header1_ and _header2_. *Constraints*: `regex (.+:.+)\|(^$)`. *Default value*: `""`.|
 |`header1`| __String__. See documentation of _header0_. *Constraints*: `regex (.+:.+)\|(^$)`. *Default value*: `""`.|
 |`header2`| __String__. See documentation of _header0_. *Constraints*: `regex (.+:.+)\|(^$)`. *Default value*: `""`.|
-|`jsControllerPath`| __String__. When generating tests in JavaScript, there is the need to know where the driver is located in respect to the generated tests. *Default value*: `./app-driver.js`.|
+|`endpointFocus`| __String__. Concentrate search on only one single REST endpoint. *Default value*: `null`.|
+|`endpointPrefix`| __String__. Concentrate search on a set of REST endpoints defined by a common prefix. *Default value*: `null`.|
+|`endpointTagFilter`| __String__. Comma-separated list of OpenAPI/Swagger 'tags' definitions. Only the REST endpoints having at least one of such tags will be fuzzed. If no tag is specified here, then such filter is not applied. *Default value*: `null`.|
 
 ## Internal Command-Line Options
 
@@ -91,8 +93,6 @@ There are 3 types of options:
 |`enableTrackIndividual`| __Boolean__. Whether to enable tracking the history of modifications of the individuals during the search. *Default value*: `false`.|
 |`enableWeightBasedMutationRateSelectionForGene`| __Boolean__. Specify whether to enable weight-based mutation selection for selecting genes to mutate for a gene. *Default value*: `true`.|
 |`endNumberOfMutations`| __Int__. Number of applied mutations on sampled individuals, by the end of the search. *Constraints*: `min=0.0`. *Default value*: `10`.|
-|`endpointFocus`| __String__. Concentrate search on only one single REST endpoint. *Default value*: `null`.|
-|`endpointPrefix`| __String__. Concentrate search on a set of REST endpoints defined by a common prefix. *Default value*: `null`.|
 |`errorTextEpsilon`| __Double__. The Distance Metric Error Text may use several values for epsilon.During experimentation, it may be useful to adjust these values. Epsilon describes the size of the neighbourhood used for clustering, so may result in different clustering results.Epsilon should be between 0.0 and 1.0. If the value is outside of that range, epsilon will use the default of 0.8. *Constraints*: `min=0.0, max=1.0`. *Default value*: `0.8`.|
 |`exceedTargetsFile`| __String__. Specify a path to save all not covered targets when the number is more than 100. *DEBUG option*. *Default value*: `exceedTargets.txt`.|
 |`excludeTargetsForImpactCollection`| __String__. Specify prefixes of targets (e.g., MethodReplacement, Success_Call, Local) which will exclude in impact collection. Multiple exclusions should be separated with semicolon (i.e., ;). *Constraints*: `regex ^(\b(None\|NONE\|none)\b\|(\b(Class\|CLASS\|class\|Line\|LINE\|line\|Branch\|BRANCH\|branch\|MethodReplacement\|METHODREPLACEMENT\|method[r\|R]eplacement\|Success_Call\|SUCCESS_CALL\|success_[c\|C]all\|Local\|LOCAL\|local\|PotentialFault\|POTENTIALFAULT\|potential[f\|F]ault)\b(;\b(Class\|CLASS\|class\|Line\|LINE\|line\|Branch\|BRANCH\|branch\|MethodReplacement\|METHODREPLACEMENT\|method[r\|R]eplacement\|Success_Call\|SUCCESS_CALL\|success_[c\|C]all\|Local\|LOCAL\|local\|PotentialFault\|POTENTIALFAULT\|potential[f\|F]ault)\b)*))$`. *Default value*: `Local;MethodReplacement`.|
@@ -123,6 +123,7 @@ There are 3 types of options:
 |`jaCoCoOutputFile`| __String__. Destination file for JaCoCo. Option meaningful only for External Drivers for JVM. If left empty, it is not used. Note that this only impact the generated output test cases. *Default value*: `""`.|
 |`jaCoCoPort`| __Int__. Port used by JaCoCo to export coverage reports. *Constraints*: `min=0.0, max=65535.0`. *Default value*: `8899`.|
 |`javaCommand`| __String__. Command for 'java' used in the External Drivers. Useful for when there are different JDK installed on same machine without the need to update JAVA_HOME. Note that this only impact the generated output test cases. *Default value*: `java`.|
+|`jsControllerPath`| __String__. When generating tests in JavaScript, there is the need to know where the driver is located in respect to the generated tests. *Default value*: `./app-driver.js`.|
 |`killSwitch`| __Boolean__. Try to enforce the stopping of SUT business-level code. This is needed when TCP connections timeouts, to avoid thread executions from previous HTTP calls affecting the current one. *Default value*: `true`.|
 |`labelForExperimentConfigs`| __String__. Further label to represent the names of CONFIGS sets in experiment scripts, e.g., exp.py. *Default value*: `-`.|
 |`labelForExperiments`| __String__. When running experiments and statistic files are generated, all configs are saved. So, this one can be used as extra label for classifying the experiment. *Default value*: `-`.|
