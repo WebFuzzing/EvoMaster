@@ -9,6 +9,16 @@ class EPA {
 
     private val adjacencyMap = mutableMapOf<Vertex, MutableList<Edge>>()
 
+    private val graphHeader = "digraph {\n" +
+            "splines=spline\n" +
+            "splines=true\n" +
+            "layout=\"sfdp\"\n" +
+            "beautify=true\n" +
+            "graph [pad=\"1\", nodesep=\"3\", ranksep=\"4\"]\n" +
+            "node [ margin=0.4 fontname=Helvetica ]\n" +
+            "edge [fontname=Courier fontsize=14]\n" +
+            "init [shape=box]"
+
     fun createOrGetVertex(enabledEndpoints: RestActions, isInitial: Boolean = false): Vertex {
         val enabledEndpointsString = enabledEndpoints.toStringForEPA()
         var vertex: Vertex? = getVertex(enabledEndpointsString)
@@ -22,11 +32,10 @@ class EPA {
     fun addDirectedEdge(source: Vertex, destination: Vertex, restAction: RestAction) {
         var edge: Edge? = adjacencyMap[source]?.filter { e -> e.destination == destination}?.getOrNull(0)
         if (edge == null) {
-            edge = Edge(source, destination, restAction)
+            edge = Edge(source, destination)
             adjacencyMap[source]?.add(edge)
-        } else if (!edge.restActions.contains(restAction)) {
-            edge.restActions.plus(restAction)
         }
+        edge.addRestActionIfNecessary(restAction)
     }
 
     override fun toString(): String {
@@ -39,8 +48,7 @@ class EPA {
     }
     private fun toDOT(): String {
         val sb = StringBuilder()
-        sb.append("digraph { \n")
-        sb.append("init [shape=box]\n")
+        sb.append(graphHeader)
         adjacencyMap.forEach { (vertex, edges) ->
             if (vertex.isInitial) {
                 sb.append(String.format("init -> \"%s\"\n", vertex.enabledEndpoints))
@@ -52,17 +60,17 @@ class EPA {
                 if (edgeLabel.isPresent) {
                     sb.append(
                         String.format(
-                            "\"%s\" -> \"%s\" [xlabel=\"%s\"]\n",
-                            vertex.enabledEndpoints,
+                            "\"%s\" -> \"%s\" [labeldistance=\"0.5\" label=\"%s\"]\n",
+                            it.source.enabledEndpoints,
                             it.destination.enabledEndpoints,
-                            edgeLabel
+                            edgeLabel.get()
                         )
                     )
                 } else {
                     sb.append(
                         String.format(
                             "\"%s\" -> \"%s\" \n",
-                            vertex.enabledEndpoints,
+                            it.source.enabledEndpoints,
                             it.destination.enabledEndpoints
                         )
                     )
@@ -78,7 +86,7 @@ class EPA {
     }
 
     fun write() {
-        val path = Paths.get("epa.txt").toAbsolutePath()
+        val path = Paths.get("epa.dot").toAbsolutePath()
 
         Files.createDirectories(path.parent)
         Files.deleteIfExists(path)

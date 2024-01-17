@@ -702,7 +702,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
         val r: Response = client.target(fullUri)
             .request(MediaType.APPLICATION_JSON_TYPE)
             .get()
-        return if (Response.Status.Family.SUCCESSFUL.equals(r.statusInfo.family)) {
+        return if (Response.Status.Family.SUCCESSFUL == r.statusInfo.family) {
             r.readEntity(RestActions::class.java)
         } else {
             null
