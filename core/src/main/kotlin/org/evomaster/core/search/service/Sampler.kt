@@ -40,8 +40,6 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
      *
      * Value -> an action
      */
-    //acciones que se pueden hacer en el punto que estoy
-
     protected val actionCluster: MutableMap<String, Action> = mutableMapOf()
 
     /**

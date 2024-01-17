@@ -324,10 +324,6 @@ object RestActionBuilderV3 {
         return dtoSchemas.map { dtoCache[it]!!.copy() }
     }
 
-    private fun shouldSkip(endpoint : String, endpointsToSkip : List<String>) : Boolean {
-        return endpointsToSkip.stream().anyMatch { e -> endpoint.contains(e) }
-    }
-
     private fun handleOperation(
         actionCluster: MutableMap<String, Action>,
         verb: HttpVerb,
@@ -376,7 +372,6 @@ object RestActionBuilderV3 {
             }
 
             actionCluster[action.getName()] = action
-
         }catch (e: Exception){
             log.warn("Fail to parse endpoint $verb$restPath due to "+e.message)
             errorEndpoints.add("$verb$restPath")
@@ -1415,6 +1410,7 @@ object RestActionBuilderV3 {
 
         return selection
     }
+
 
     fun getModelsFromSwagger(swagger: OpenAPI,
                              modelCluster: MutableMap<String, ObjectGene>,
