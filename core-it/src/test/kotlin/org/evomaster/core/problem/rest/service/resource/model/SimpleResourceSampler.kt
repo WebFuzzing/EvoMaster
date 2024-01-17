@@ -14,7 +14,7 @@ class SimpleResourceSampler : ResourceSampler() {
     fun initialize(swaggerPath : String, config: EMConfig, skipAction: List<Endpoint> = listOf(), sqlInsertBuilder: SqlInsertBuilder?) {
         val swagger = OpenAPIParser().readLocation(swaggerPath, null, null).openAPI
         actionCluster.clear()
-        RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, skipAction, config.doesApplyNameMatching, config.enableSchemaConstraintHandling, null)
+        RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, skipAction, config.doesApplyNameMatching, config.enableSchemaConstraintHandling)
 
 
         if (sqlInsertBuilder != null){
