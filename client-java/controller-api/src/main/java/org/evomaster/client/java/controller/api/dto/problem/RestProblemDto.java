@@ -25,5 +25,4 @@ public class RestProblemDto extends ProblemInfoDto{
      * should not be set
      */
     public String openApiSchema;
-    public String endpointForEnablementInfo;
 }

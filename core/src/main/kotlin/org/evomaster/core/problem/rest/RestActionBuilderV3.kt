@@ -123,10 +123,9 @@ object RestActionBuilderV3 {
                               actionCluster: MutableMap<String, Action>,
                               endpointsToSkip: List<Endpoint> = listOf(),
                               doParseDescription: Boolean = false,
-                              enableConstraintHandling: Boolean,
-                              endpointForEnablementInfo: String? = null
+                              enableConstraintHandling: Boolean
     ){
-        addActionsFromSwagger(swagger, actionCluster, endpointsToSkip, endpointForEnablementInfo,
+        addActionsFromSwagger(swagger, actionCluster, endpointsToSkip,
             Options(doParseDescription = doParseDescription, enableConstraintHandling = enableConstraintHandling)
         )
     }
@@ -331,8 +330,7 @@ object RestActionBuilderV3 {
         operation: Operation,
         swagger: OpenAPI,
         options: Options,
-        errorEndpoints : MutableList<String> = mutableListOf(),
-        endpointForEnablementInfo: String?
+        errorEndpoints : MutableList<String> = mutableListOf()
     ) {
 
         try{

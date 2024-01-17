@@ -698,7 +698,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
     }
 
     private fun getEnabledRestActions(): RestActions? {
-        val fullUri = getFullUri(null, getBaseUrl(), "/enabled")
+        val fullUri = getFullUri(null, getBaseUrl(), "/enabledEndpoints")
         val r: Response = client.target(fullUri)
             .request(MediaType.APPLICATION_JSON_TYPE)
             .get()

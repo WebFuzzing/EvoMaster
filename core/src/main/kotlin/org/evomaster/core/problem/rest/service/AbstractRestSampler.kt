@@ -53,8 +53,6 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
     @Inject
     protected lateinit var externalServiceHandler: HttpWsExternalServiceHandler
 
-    protected lateinit var endpointForEnablementInfo: String
-
     @PostConstruct
     open fun initialize() {
 
@@ -80,7 +78,6 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
         val openApiURL = problem.openApiUrl
         val openApiSchema = problem.openApiSchema
-        endpointForEnablementInfo = problem.endpointForEnablementInfo
 
         if(!openApiURL.isNullOrBlank()) {
             swagger = OpenApiAccess.getOpenAPIFromURL(openApiURL)
@@ -97,7 +94,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         actionCluster.clear()
 
         val skip = EndpointFilter.getEndpointsToSkip(config, swagger, infoDto)
-        RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, skip, endpointForEnablementInfo = endpointForEnablementInfo, RestActionBuilderV3.Options(config))
+        RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, skip, RestActionBuilderV3.Options(config))
 
         if(config.extraQueryParam){
             addExtraQueryParam(actionCluster)
@@ -272,7 +269,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         actionCluster.clear()
 
         // ONUR: Rather than an empty list, give the list of endpoints to skip.
-        RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, endpointsToSkip, endpointForEnablementInfo = endpointForEnablementInfo, RestActionBuilderV3.Options(config))
+        RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, endpointsToSkip, RestActionBuilderV3.Options(config))
 
         initAdHocInitialIndividuals()
         if (config.seedTestCases)
