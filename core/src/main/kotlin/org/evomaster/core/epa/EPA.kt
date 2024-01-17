@@ -46,7 +46,7 @@ class EPA {
             }
         }
     }
-    private fun toDOT(): String {
+    fun toDOT(): String {
         val sb = StringBuilder()
         sb.append(graphHeader)
         adjacencyMap.forEach { (vertex, edges) ->
@@ -83,15 +83,5 @@ class EPA {
 
     private fun getVertex(enabledEndpoints: String): Vertex? {
         return adjacencyMap.keys.filter { v -> v.enabledEndpoints == enabledEndpoints }.getOrNull(0)
-    }
-
-    fun write() {
-        val path = Paths.get("epa.dot").toAbsolutePath()
-
-        Files.createDirectories(path.parent)
-        Files.deleteIfExists(path)
-        Files.createFile(path)
-
-        path.toFile().appendText(toDOT())
     }
 }

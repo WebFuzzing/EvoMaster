@@ -5,8 +5,6 @@ import com.google.inject.Key
 import com.google.inject.TypeLiteral
 import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.client.java.controller.api.dto.ControllerInfoDto
-import org.evomaster.client.java.controller.api.dto.database.execution.epa.Enabled
-import org.evomaster.client.java.controller.api.dto.database.execution.epa.RestActions
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.AnsiColor.Companion.inBlue
 import org.evomaster.core.AnsiColor.Companion.inGreen
@@ -17,6 +15,7 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestSuiteSplitter
 import org.evomaster.core.output.clustering.SplitResult
+import org.evomaster.core.output.service.EpaWriter
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
@@ -24,8 +23,6 @@ import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalS
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.graphql.service.GraphQLBlackBoxModule
 import org.evomaster.core.problem.graphql.service.GraphQLModule
-import org.evomaster.core.problem.httpws.HttpWsCallResult
-import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.service.*
 import org.evomaster.core.problem.rpc.RPCIndividual
@@ -788,32 +785,7 @@ class Main {
 
 
         private fun writeEPA(solution: Solution<*>) {
-            val epa = EPA()
-            for (i in solution.individuals) {
-                var previousVertex = Vertex(false, 0, "")
-                var currentVertex: Vertex
-                for (r in i.results) {
-                    if (r is RestCallResult) {
-                        val rcr: RestCallResult = r
-                        rcr.getInitialEnabledEndpoints()?.let {
-                            previousVertex = epa.createOrGetVertex(it, true)
-                        }
-                        val code = rcr.getStatusCode()
-                        if (code != null && code < 400) { // we only want what happens after the action if it is a valid action
-                            //we could also add a check if the action just executed is enabled
-                            val enabled = rcr.getEnabledEndpointsAfterAction()
-                            if (enabled?.enabledRestActions != null && enabled.associatedRestAction != null) {
-                                currentVertex = epa.createOrGetVertex(enabled.enabledRestActions)
-                                epa.addDirectedEdge(previousVertex, currentVertex, enabled.associatedRestAction)
-                                previousVertex = currentVertex
-                            } else {
-                                break //for some reason we are missing one or more necessary elements to build the epa
-                            }
-                        }
-                    }
-                }
-            }
-            epa.write()
+            EpaWriter().writeEPA(solution)
         }
 
         private fun writeOverallProcessData(injector: Injector) {
