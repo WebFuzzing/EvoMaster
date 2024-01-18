@@ -3,6 +3,7 @@ package org.evomaster.core.problem.rest
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.Operation
 import io.swagger.v3.oas.models.PathItem
+import org.evomaster.core.config.ConfigProblemException
 import java.util.stream.Stream
 
 
@@ -62,7 +63,9 @@ class Endpoint(
 
             val missing = tagFilters.filter { !allTags.contains(it) }
             if(missing.isNotEmpty()){
-                throw IllegalArgumentException("${missing.size} missing tag filters from schema: ${missing.joinToString(",")}")
+                throw ConfigProblemException(
+                    "${missing.size} missing tag filters from schema: ${missing.joinToString(",")}." +
+                            " Existing tags in the schema are: [${allTags.joinToString(",")}]")
             }
         }
     }
