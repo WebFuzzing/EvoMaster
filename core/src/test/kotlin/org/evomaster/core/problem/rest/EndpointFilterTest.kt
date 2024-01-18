@@ -12,11 +12,12 @@ class EndpointFilterTest {
 
         private val schema = OpenAPIParser().readLocation("/swagger/artificial/filters.yaml", null, null).openAPI
 
+        @JvmStatic
         @BeforeAll
         fun checkInit(){
             assertNotNull(schema)
             assertNotNull(schema.paths)
-            assertEquals(3, schema.paths.size)
+            assertEquals(4, schema.paths.size)
         }
     }
 
