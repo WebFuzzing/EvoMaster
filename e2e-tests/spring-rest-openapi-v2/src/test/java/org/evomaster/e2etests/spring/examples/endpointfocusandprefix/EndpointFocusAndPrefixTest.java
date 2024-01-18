@@ -376,7 +376,7 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
 
         String outputFolder = "BlackboxNonExistingFocusNonExistingPrefix";
 
-        assertThrows(IllegalArgumentException.class, () ->
+        assertThrows(ConfigProblemException.class, () ->
 
                 runTestHandlingFlakyAndCompilation(
                         outputFolder,
@@ -410,7 +410,7 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
 
         String outputFolder = "BlackboxPrefixNonExistingPrefix";
 
-        assertThrows(IllegalArgumentException.class, () ->
+        assertThrows(ConfigProblemException.class, () ->
 
                 runTestHandlingFlakyAndCompilation(
                         outputFolder,
@@ -445,7 +445,7 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
 
         String outputFolder = "BlackboxBothFocusAndPrefix";
 
-        assertThrows(IllegalArgumentException.class, () ->
+        assertThrows(ConfigProblemException.class, () ->
 
                 runTestHandlingFlakyAndCompilation(
                         outputFolder,
