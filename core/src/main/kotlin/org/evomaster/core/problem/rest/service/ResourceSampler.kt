@@ -6,7 +6,7 @@ import org.evomaster.core.sql.SqlInsertBuilder
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.rest.*
-import org.evomaster.core.problem.httpws.auth.NoAuth
+import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.SamplerSpecification
 import org.evomaster.core.search.action.ActionFilter
@@ -51,7 +51,7 @@ open class ResourceSampler : AbstractRestSampler() {
 
         adHocInitialIndividuals.clear()
 
-        rm.createAdHocIndividuals(NoAuth(),adHocInitialIndividuals, getMaxTestSizeDuringSampler())
+        rm.createAdHocIndividuals(HttpWsNoAuth(),adHocInitialIndividuals, getMaxTestSizeDuringSampler())
 
         authentications.getOfType(HttpWsAuthenticationInfo::class.java).forEach { auth ->
             rm.createAdHocIndividuals(auth, adHocInitialIndividuals, getMaxTestSizeDuringSampler())
@@ -136,7 +136,7 @@ open class ResourceSampler : AbstractRestSampler() {
         val auth = if(authentications.isNotEmpty()){
             getRandomAuth(0.0)
         }else{
-            NoAuth()
+            HttpWsNoAuth()
         }
         restCalls.flatMap { it.seeActions(ActionFilter.MAIN_EXECUTABLE) }.forEach {
             (it as RestCallAction).auth = auth

@@ -10,7 +10,7 @@ import org.evomaster.core.problem.httpws.auth.AuthenticationHeader
 import org.evomaster.core.problem.httpws.auth.CookieLogin
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.httpws.auth.JsonTokenPostLogin
-import org.evomaster.core.problem.httpws.auth.NoAuth
+import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.Individual
 import org.slf4j.Logger
@@ -48,12 +48,12 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
 
         val selection = authentications.getOfType(HttpWsAuthenticationInfo::class.java)
 
-        if (selection.isEmpty() || randomness.nextBoolean(noAuthP)) {
-            return NoAuth()
+        return if (selection.isEmpty() || randomness.nextBoolean(noAuthP)) {
+            HttpWsNoAuth()
         } else {
             //if there is auth, should have high probability of using one,
             //as without auth we would do little.
-            return randomness.choose(selection)
+            randomness.choose(selection)
         }
     }
 

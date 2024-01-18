@@ -9,23 +9,18 @@ import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
 
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.enterprise.auth.AuthSettings
-import org.evomaster.core.problem.httpws.auth.AuthenticationHeader
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
-import org.evomaster.core.problem.httpws.auth.NoAuth
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.PathParam
-import org.evomaster.core.remote.service.RemoteControllerImplementation
 
 import org.evomaster.core.search.*
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FitnessFunction
-import org.evomaster.core.search.service.Sampler
-
+import org.evomaster.core.search.service.Randomness
 
 
 /**
@@ -42,6 +37,8 @@ class SecurityRest {
     @Inject
     private lateinit var sampler: RestSampler
 
+    @Inject
+    private lateinit var randomness: Randomness
 
     /**
      * All actions that can be defined from the OpenAPI schema
@@ -580,11 +577,7 @@ class SecurityRest {
         }
 
         // create a new action with the authentication not used in current individual
-        val authenticationOfOther = sampler.authentications().firstOrNull {it ->
-            !checkEuqalityOfTwoAuthenticationObjects(it, currentAction.auth)
-
-        }
-
+        val authenticationOfOther = sampler.authentications.getDifferentOne(currentAction.auth.name, HttpWsAuthenticationInfo::class.java, randomness)
         var newRestCallAction :RestCallAction? = null;
 
         if (authenticationOfOther != null) {
@@ -644,10 +637,7 @@ class SecurityRest {
         }
 
         // create a new action with the authentication not used in current individual
-        val authenticationOfOther = sampler.authentications().firstOrNull {it ->
-            it.headers != currentAction.auth.headers
-
-        }
+        val authenticationOfOther = sampler.authentications.getDifferentOne(currentAction.auth.name, HttpWsAuthenticationInfo::class.java, randomness)
 
         var newRestCallAction :RestCallAction? = null;
 
