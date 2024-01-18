@@ -32,7 +32,7 @@ class EndpointFilterTest {
         val config = EMConfig()
         config.endpointFocus = "/api/x"
         val selection = EndpointFilter.getEndpointsToSkip(config, schema)
-        assertEquals(2, selection.size)
+        assertEquals(3, selection.size)
     }
 
     @Test
@@ -40,7 +40,7 @@ class EndpointFilterTest {
         val config = EMConfig()
         config.endpointPrefix = "/api/y"
         val selection = EndpointFilter.getEndpointsToSkip(config, schema)
-        assertEquals(3, selection.size)
+        assertEquals(4, selection.size)
     }
 
     @Test
@@ -55,7 +55,7 @@ class EndpointFilterTest {
         val config = EMConfig()
         config.endpointTagFilter = "X"
         val selection = EndpointFilter.getEndpointsToSkip(config, schema)
-        assertEquals(2, selection.size)
+        assertEquals(3, selection.size)
     }
 
     @Test
@@ -63,7 +63,7 @@ class EndpointFilterTest {
         val config = EMConfig()
         config.endpointTagFilter = "Y"
         val selection = EndpointFilter.getEndpointsToSkip(config, schema)
-        assertEquals(2, selection.size)
+        assertEquals(3, selection.size)
     }
 
     @Test
@@ -71,7 +71,7 @@ class EndpointFilterTest {
         val config = EMConfig()
         config.endpointTagFilter = "Z"
         val selection = EndpointFilter.getEndpointsToSkip(config, schema)
-        assertEquals(4, selection.size)
+        assertEquals(5, selection.size)
     }
 
     @Test
@@ -79,7 +79,7 @@ class EndpointFilterTest {
         val config = EMConfig()
         config.endpointTagFilter = "X ,   Y"
         val selection = EndpointFilter.getEndpointsToSkip(config, schema)
-        assertEquals(0, selection.size)
+        assertEquals(1, selection.size)
     }
 
     @Test
@@ -87,7 +87,7 @@ class EndpointFilterTest {
         val config = EMConfig()
         config.endpointTagFilter = "   Z ,   Y"
         val selection = EndpointFilter.getEndpointsToSkip(config, schema)
-        assertEquals(2, selection.size)
+        assertEquals(3, selection.size)
     }
 
 
@@ -96,7 +96,7 @@ class EndpointFilterTest {
         val config = EMConfig()
         config.endpointTagFilter = "   Z ,   X   "
         val selection = EndpointFilter.getEndpointsToSkip(config, schema)
-        assertEquals(1, selection.size)
+        assertEquals(2, selection.size)
     }
 
     @Test
@@ -104,7 +104,7 @@ class EndpointFilterTest {
         val config = EMConfig()
         config.endpointTagFilter = "   Z ,   X ,Y  "
         val selection = EndpointFilter.getEndpointsToSkip(config, schema)
-        assertEquals(0, selection.size)
+        assertEquals(1, selection.size)
     }
 
     @Test
@@ -113,6 +113,6 @@ class EndpointFilterTest {
         config.endpointTagFilter = "X"
         config.endpointPrefix = "/api/y"
         val selection = EndpointFilter.getEndpointsToSkip(config, schema)
-        assertEquals(4, selection.size)
+        assertEquals(5, selection.size)
     }
 }

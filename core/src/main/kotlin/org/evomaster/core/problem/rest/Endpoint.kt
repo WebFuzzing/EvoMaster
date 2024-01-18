@@ -53,7 +53,11 @@ class Endpoint(
         fun validateTags(tagFilters: List<String>, schema: OpenAPI) {
 
             val allTags = schema.paths
-                .flatMap { it.value.readOperations().flatMap { op -> op.tags } }
+                .flatMap {
+                    it.value.readOperations()
+                            .filter { op -> op.tags != null}
+                            .flatMap { op -> op.tags }
+                }
                 .toSet()
 
             val missing = tagFilters.filter { !allTags.contains(it) }
@@ -69,7 +73,7 @@ class Endpoint(
             ?: throw IllegalArgumentException("Input schema has no endpoint declaration for: ${this.path}")
         val op = getOperation(verb, pathDeclaration)
 
-        return op.tags
+        return op.tags ?: listOf()
     }
 
 
