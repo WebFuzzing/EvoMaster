@@ -12,6 +12,9 @@ import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.collection.FixedMapGene
+import org.evomaster.core.search.gene.datetime.DateGene
+import org.evomaster.core.search.gene.datetime.DateTimeGene
+import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.optional.ChoiceGene
 import org.evomaster.core.search.gene.optional.OptionalGene
@@ -1630,4 +1633,184 @@ class RestActionBuilderV3Test{
         }
     }
 
+
+    @Test
+    fun testDateField() {
+
+        val dtoSchemaName = "foo.com.BarDto"
+        val dtoSchema = """
+            "$dtoSchemaName":{
+                "type":"object",
+                "properties": {
+                    "date_field":{
+                        "type":"string", 
+                        "format":"date"
+                    }
+                },
+                "required": [
+                    "date_field"
+                    
+                ]
+            }
+            """.trimIndent()
+
+        val allSchemas = "\"${dtoSchemaName}\":{${dtoSchema}}"
+
+        val gene = RestActionBuilderV3.createGeneForDTO(
+            dtoSchemaName,
+            allSchemas,
+            RestActionBuilderV3.Options(enableConstraintHandling = true)
+        )
+
+        assertTrue(gene is ObjectGene)
+        (gene as ObjectGene).apply {
+            assertEquals(1, gene.fields.size)
+            assertEquals("date_field", gene.fields[0].name)
+            assertTrue(gene.fields[0] is DateGene)
+        }
+    }
+
+    @Test
+    fun testDateTimeField() {
+
+        val dtoSchemaName = "foo.com.BarDto"
+        val dtoSchema = """
+            "$dtoSchemaName":{
+                "type":"object",
+                "properties": {
+                    "date_time_field":{
+                        "type":"string", 
+                        "format":"date-time"
+                    }
+                },
+                "required": [
+                    "date_time_field"
+                    
+                ]
+            }
+            """.trimIndent()
+
+        val allSchemas = "\"${dtoSchemaName}\":{${dtoSchema}}"
+
+        val gene = RestActionBuilderV3.createGeneForDTO(
+            dtoSchemaName,
+            allSchemas,
+            RestActionBuilderV3.Options(enableConstraintHandling = true)
+        )
+
+        assertTrue(gene is ObjectGene)
+        (gene as ObjectGene).apply {
+            assertEquals(1, gene.fields.size)
+            assertEquals("date_time_field", gene.fields[0].name)
+            assertTrue(gene.fields[0] is DateTimeGene)
+        }
+    }
+
+    @Test
+    fun testLocalDateField() {
+
+        val dtoSchemaName = "foo.com.BarDto"
+        val dtoSchema = """
+            "$dtoSchemaName":{
+                "type":"object",
+                "properties": {
+                    "local_date_field":{
+                        "type":"string", 
+                        "format":"local-date"
+                    }
+                },
+                "required": [
+                    "local_date_field"
+                    
+                ]
+            }
+            """.trimIndent()
+
+        val allSchemas = "\"${dtoSchemaName}\":{${dtoSchema}}"
+
+        val gene = RestActionBuilderV3.createGeneForDTO(
+            dtoSchemaName,
+            allSchemas,
+            RestActionBuilderV3.Options(enableConstraintHandling = true)
+        )
+
+        assertTrue(gene is ObjectGene)
+        (gene as ObjectGene).apply {
+            assertEquals(1, gene.fields.size)
+            assertEquals("local_date_field", gene.fields[0].name)
+            assertTrue(gene.fields[0] is DateGene)
+        }
+    }
+
+    @Test
+    fun testLocalDateTimeField() {
+
+        val dtoSchemaName = "foo.com.BarDto"
+        val dtoSchema = """
+            "$dtoSchemaName":{
+                "type":"object",
+                "properties": {
+                    "local_date_time_field":{
+                        "type":"string", 
+                        "format":"local-date-time"
+                    }
+                },
+                "required": [
+                    "local_date_time_field"
+                    
+                ]
+            }
+            """.trimIndent()
+
+        val allSchemas = "\"${dtoSchemaName}\":{${dtoSchema}}"
+
+        val gene = RestActionBuilderV3.createGeneForDTO(
+            dtoSchemaName,
+            allSchemas,
+            RestActionBuilderV3.Options(enableConstraintHandling = true)
+        )
+
+        assertTrue(gene is ObjectGene)
+        (gene as ObjectGene).apply {
+            assertEquals(1, gene.fields.size)
+            assertEquals("local_date_time_field", gene.fields[0].name)
+            assertTrue(gene.fields[0] is DateTimeGene)
+        }
+    }
+
+    @Test
+    fun testLocalTimeField() {
+
+        val dtoSchemaName = "foo.com.BarDto"
+        val dtoSchema = """
+            "$dtoSchemaName":{
+                "type":"object",
+                "properties": {
+                    "local_time_field":{
+                        "type":"string", 
+                        "format":"local-time"
+                    }
+                },
+                "required": [
+                    "local_time_field"
+                    
+                ]
+            }
+            """.trimIndent()
+
+        val allSchemas = "\"${dtoSchemaName}\":{${dtoSchema}}"
+
+        val gene = RestActionBuilderV3.createGeneForDTO(
+            dtoSchemaName,
+            allSchemas,
+            RestActionBuilderV3.Options(enableConstraintHandling = true)
+        )
+
+        assertTrue(gene is ObjectGene)
+        (gene as ObjectGene).apply {
+            assertEquals(1, gene.fields.size)
+            assertEquals("local_time_field", gene.fields[0].name)
+            assertTrue(gene.fields[0] is TimeGene)
+        }
+    }
 }

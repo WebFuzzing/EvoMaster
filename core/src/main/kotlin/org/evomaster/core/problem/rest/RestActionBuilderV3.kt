@@ -28,6 +28,7 @@ import org.evomaster.core.search.gene.collection.FixedMapGene
 import org.evomaster.core.search.gene.collection.PairGene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
+import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.gene.numeric.*
 import org.evomaster.core.search.gene.optional.ChoiceGene
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
@@ -658,6 +659,9 @@ object RestActionBuilderV3 {
             "byte" -> return createNonObjectGeneWithSchemaConstraints(schema, name, Base64StringGene::class.java, options, null, isInPath, examples)//Base64StringGene(name)
             "date" -> return DateGene(name, onlyValidDates = !options.invalidData)
             "date-time" -> return DateTimeGene(name)
+            "local-date" -> return DateGene(name)
+            "local-date-time" -> return DateTimeGene(name)
+            "local-time" -> return TimeGene(name)
             else -> if (format != null) {
                 LoggingUtil.uniqueWarn(log, "Unhandled format '$format'")
             }
