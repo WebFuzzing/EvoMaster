@@ -219,8 +219,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             lines: Lines,
             testCaseName: String,
             testSuitePath: Path?,
-            baseUrlOfSut: String,
-            hostnameResolutionActions: List<HostnameResolutionAction>
+            baseUrlOfSut: String
     ) {
 
         val exActions = mutableListOf<HttpExternalServiceAction>()
@@ -235,8 +234,8 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                     .filter { it.active })
 
 
-            if (format.isJavaOrKotlin())
-                anyDnsCache = handleHostnameResolutionActions(lines, hostnameResolutionActions)
+//            if (format.isJavaOrKotlin())
+//                anyDnsCache = handleHostnameResolutionActions(lines, hostnameResolutionActions)
 
 
             if (exActions.isNotEmpty()) {

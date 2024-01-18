@@ -258,11 +258,17 @@ abstract class EnterpriseIndividual(
     private fun getLastIndexOfMongoDbActionToAdd(): Int =
         groupsView()!!.endIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_MONGO)
 
+    private fun getLastIndexOfHostnameResolutionActionToAdd(): Int =
+        groupsView()!!.endIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_DNS)
+
     private fun getFirstIndexOfDbActionToAdd(): Int =
         groupsView()!!.startIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_SQL)
 
     private fun getFirstIndexOfMongoDbActionToAdd(): Int =
         groupsView()!!.startIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_MONGO)
+
+    private fun getFirstIndexOfHostnameResolutionActionToAdd(): Int =
+        groupsView()!!.startIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_DNS)
 
     /**
      * add [actions] at [relativePosition]
@@ -281,6 +287,14 @@ abstract class EnterpriseIndividual(
             addChildrenToGroup(getLastIndexOfMongoDbActionToAdd(), actions, GroupsOfChildren.INITIALIZATION_MONGO)
         } else{
             addChildrenToGroup(getFirstIndexOfMongoDbActionToAdd()+relativePosition, actions, GroupsOfChildren.INITIALIZATION_MONGO)
+        }
+    }
+
+    fun addInitializingHostnameResolutionActions(relativePosition: Int=-1, actions: List<Action>) {
+        if (relativePosition < 0) {
+            addChildrenToGroup(getLastIndexOfHostnameResolutionActionToAdd(), actions, GroupsOfChildren.INITIALIZATION_DNS)
+        } else {
+            addChildrenToGroup(getFirstIndexOfHostnameResolutionActionToAdd()+relativePosition, actions, GroupsOfChildren.INITIALIZATION_DNS)
         }
     }
 

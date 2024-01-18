@@ -41,6 +41,8 @@ class WmJsonArrayEMTest : SpringTestBase() {
                 args.add("USER")
                 args.add("--externalServiceIP")
                 args.add("127.0.0.46")
+                args.add("--minimize")
+                args.add("false")
 
                 val solution = initAndRun(args)
 

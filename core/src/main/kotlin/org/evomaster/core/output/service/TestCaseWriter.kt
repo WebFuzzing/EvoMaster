@@ -137,7 +137,7 @@ abstract class TestCaseWriter {
         return any
     }
 
-    protected fun handleHostnameResolutionActions(
+    fun handleHostnameResolutionActions(
         lines: Lines,
         actions: List<HostnameResolutionAction>
     ): Boolean {
