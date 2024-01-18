@@ -14,15 +14,18 @@ public class Action implements Serializable {
 
     /**
      * A list (possibly empty) of String values used in the action.
-     * This info can be used for different kinds of taint analysis, eg
+     * This info can be used for different kinds of taint analysis, e.g.
      * to check how such values are used in the SUT
      */
     private final Set<String> inputVariables;
 
     /**
-     * A map of hostname and WireMock IP to mock external service calls.
+     * Map of external services mapping. Key is the WireMock signature
+     * (use protocol, remote hostname, and port), and value contains information
+     * about remote hostname, mock server local IP address, state
+     * (active or inactive) and WireMock signature.
      */
-    private final Map<String, String> externalServiceMapping;
+    private final Map<String, ExternalServiceMapping> externalServiceMapping;
 
     /**
      * A map of external service domain name against to the local IP
@@ -35,7 +38,7 @@ public class Action implements Serializable {
      */
     private final List<ExternalService> skippedExternalServices;
 
-    public Action(int index, String name, Collection<String> inputVariables, Map<String, String> externalServiceMapping, Map<String, String> localAddressMapping, List<ExternalService> skippedExternalServices) {
+    public Action(int index, String name, Collection<String> inputVariables, Map<String, ExternalServiceMapping> externalServiceMapping, Map<String, String> localAddressMapping, List<ExternalService> skippedExternalServices) {
         this.index = index;
         this.name = name;
         this.inputVariables = Collections.unmodifiableSet(new HashSet<>(inputVariables));
@@ -52,7 +55,7 @@ public class Action implements Serializable {
         return inputVariables;
     }
 
-    public Map<String, String> getExternalServiceMapping() {
+    public Map<String, ExternalServiceMapping> getExternalServiceMapping() {
         return externalServiceMapping;
     }
 

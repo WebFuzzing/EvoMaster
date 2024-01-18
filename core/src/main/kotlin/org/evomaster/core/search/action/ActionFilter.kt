@@ -45,4 +45,9 @@ enum class ActionFilter {
      * actions which are not external service actions
      */
     NO_EXTERNAL_SERVICE,
+
+    /**
+     * Actions related to setup hostname DNS resolutions
+     */
+    ONLY_DNS
 }

@@ -35,7 +35,7 @@ public class ExternalServiceMockingFlakyEMTest extends SpringTestBase {
         runTestHandlingFlakyAndCompilation(
                 "ExternalServiceMockingEMGeneratedTest",
                 "org.bar.ExternalServiceMockingEMGeneratedTest",
-                1000,
+                1500,
                 !CIUtils.isRunningGA(),
                 (args) -> {
 

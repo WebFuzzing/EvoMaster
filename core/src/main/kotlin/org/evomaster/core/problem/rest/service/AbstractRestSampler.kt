@@ -9,6 +9,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.externalservice.ExternalService
+import org.evomaster.core.problem.externalservice.HostnameResolutionInfo
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceInfo
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.httpws.service.HttpWsSampler
@@ -103,6 +104,8 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
         setupAuthentication(infoDto)
         initSqlInfo(infoDto)
+
+        initHostnameInfo(infoDto)
 
         initExternalServiceInfo(infoDto)
 
@@ -260,7 +263,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         }
 
         // ONUR: Add all paths to list of paths to ignore except endpointFocus
-        val endpointsToSkip = EndpointFilter.getEndPointsToSkip(config,swagger);
+        val endpointsToSkip = EndpointFilter.getEndpointsToSkip(config,swagger);
 
         actionCluster.clear()
 
@@ -320,6 +323,20 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
     private fun getParser(): Parser {
         return when(config.seedTestCasesFormat) {
             EMConfig.SeedTestCasesFormat.POSTMAN -> PostmanParser(seeAvailableActions().filterIsInstance<RestCallAction>(), swagger)
+        }
+    }
+
+    /**
+     * To collect external service info through SutInfoDto
+     */
+    private fun initHostnameInfo(info: SutInfoDto) {
+        if (info.bootTimeInfoDto?.hostnameResolutionInfoDtos != null) {
+            info.bootTimeInfoDto.hostnameResolutionInfoDtos.forEach {
+                externalServiceHandler.addHostname(HostnameResolutionInfo(
+                    it.remoteHostname,
+                    it.resolvedAddress
+                ))
+            }
         }
     }
 

@@ -10,6 +10,7 @@ import org.evomaster.core.sql.SqlInsertBuilder
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
+import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
@@ -146,6 +147,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
     ) {
         addInitializingDbActions(individual, mutatedGenes, sampler)
         addInitializingMongoDbActions(individual, mutatedGenes, sampler)
+        addInitializingHostnameResolutionActions(individual, mutatedGenes, sampler)
     }
 
     private fun <T: ApiWsIndividual> addInitializingMongoDbActions(
@@ -176,6 +178,36 @@ abstract class ApiWsStructureMutator : StructureMutator() {
                 mutatedGenes,
                 old,
                 addedInsertions
+            )
+        }
+    }
+
+    private fun <T : ApiWsIndividual> addInitializingHostnameResolutionActions(
+        individual: EvaluatedIndividual<*>,
+        mutatedGenes: MutatedGeneSpecification?,
+        sampler: ApiWsSampler<T>
+    ) {
+
+        val ind = individual.individual as? T
+            ?: throw IllegalArgumentException("Invalid individual type")
+
+        val old = ind.seeInitializingActions().filterIsInstance<HostnameResolutionAction>()
+
+        val addedInsertions: MutableList<Action> = mutableListOf()
+        externalServiceHandler.getHostnameResolutionActions().forEach {
+            val hasActions =
+                old.any { ha -> (ha as HostnameResolutionAction).hostname != it.hostname }
+            if (!hasActions) {
+                addedInsertions.add(it)
+            }
+        }
+
+        // update impact based on added genes
+        if (mutatedGenes != null && config.isEnabledArchiveGeneSelection()) {
+            individual.updateImpactGeneDueToAddedInitializationGenes(
+                mutatedGenes,
+                old,
+                listOf(addedInsertions)
             )
         }
     }
