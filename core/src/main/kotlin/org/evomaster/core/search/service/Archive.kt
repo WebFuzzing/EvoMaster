@@ -541,6 +541,7 @@ class Archive<T> where T : Individual {
             In case of same, then look at the extra heuristics.
             If all the same, then do prefer shorter tests.
          */
+
         list.sortWith(compareBy<EvaluatedIndividual<T>>
         { it.fitness.getHeuristic(target) }
                 .thenComparator { a, b -> a.fitness.compareExtraToMinimize(target, b.fitness, config.secondaryObjectiveStrategy) }

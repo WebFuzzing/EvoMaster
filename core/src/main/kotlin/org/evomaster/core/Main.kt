@@ -226,7 +226,9 @@ class Main {
             writeCoveredTargets(injector, solution)
             writeTests(injector, solution, controllerInfo)
             writeStatistics(injector, solution) //FIXME if other phases after search, might get skewed data on 100% snapshots...
-            writeEPA(solution)
+            if (config.epaCalculation) {
+                writeEPA(solution)
+            }
 
             val statistics = injector.getInstance(Statistics::class.java)
             val data = statistics.getData(solution)

@@ -418,7 +418,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
         val rcr = RestCallResult()
         actionResults.add(rcr)
 
-        if(actionResults.size == 1) { //it's the first action
+        if(config.epaCalculation && actionResults.size == 1) { //it's the first action
             handleInitialEnabledEndpoints(rcr)
         }
 
@@ -506,8 +506,10 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                 else -> throw e
             }
         }
-        handleEnabledEndpoints(rcr, a)
-        rcr.setStatusCode(response.status)
+        if (config.epaCalculation) {
+            handleEnabledEndpoints(rcr, a)
+            rcr.setStatusCode(response.status)
+        }
 
         handlePossibleConnectionClose(response)
 

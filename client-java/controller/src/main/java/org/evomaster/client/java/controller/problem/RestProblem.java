@@ -19,6 +19,7 @@ public class RestProblem extends ProblemInfo{
         this(openApiUrl, endpointsToSkip, null);
     }
 
+
     /**
      *
      * @param openApiUrl Provide the URL of where the OpenAPI schema can be found.
