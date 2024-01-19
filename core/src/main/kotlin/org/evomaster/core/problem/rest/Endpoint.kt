@@ -70,13 +70,13 @@ class Endpoint(
         }
 
         fun validatePrefix(prefix: String, schema: OpenAPI){
-            if(schema.paths.none { it.toString().startsWith(prefix) }){
+            if(schema.paths.none { it.key.startsWith(prefix) }){
                 throw ConfigProblemException("The prefix '$prefix' does not match any endpoint in the schema")
             }
         }
 
         fun validateFocus(focus: String, schema: OpenAPI){
-            if(schema.paths.none { it.toString() == focus }){
+            if(schema.paths.none { it.key == focus }){
                 throw ConfigProblemException("The focus endpoint '$focus' does not match any endpoint in the schema")
             }
         }

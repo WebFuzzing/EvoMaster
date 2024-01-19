@@ -19,7 +19,7 @@ object EndpointFilter {
         }
 
         if(! config.endpointFocus.isNullOrBlank()){
-             Endpoint.validateFocus(config.endpointFocus!!, swagger)
+            Endpoint.validateFocus(config.endpointFocus!!, swagger)
         }
 
         if(! config.endpointPrefix.isNullOrBlank()){
