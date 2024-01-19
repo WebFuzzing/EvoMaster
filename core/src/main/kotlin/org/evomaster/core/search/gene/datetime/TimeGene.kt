@@ -242,8 +242,4 @@ class TimeGene(
         return false
     }
 
-    override fun mutationCheck(): Boolean {
-        return !onlyValidTimes || isValidTime()
-    }
-
 }
