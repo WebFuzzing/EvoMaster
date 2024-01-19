@@ -68,6 +68,18 @@ class Endpoint(
                             " Existing tags in the schema are: [${allTags.joinToString(",")}]")
             }
         }
+
+        fun validatePrefix(prefix: String, schema: OpenAPI){
+            if(schema.paths.none { it.toString().startsWith(prefix) }){
+                throw ConfigProblemException("The prefix '$prefix' does not match any endpoint in the schema")
+            }
+        }
+
+        fun validateFocus(focus: String, schema: OpenAPI){
+            if(schema.paths.none { it.toString() == focus }){
+                throw ConfigProblemException("The focus endpoint '$focus' does not match any endpoint in the schema")
+            }
+        }
     }
 
     fun getTags(schema: OpenAPI) : List<String>{

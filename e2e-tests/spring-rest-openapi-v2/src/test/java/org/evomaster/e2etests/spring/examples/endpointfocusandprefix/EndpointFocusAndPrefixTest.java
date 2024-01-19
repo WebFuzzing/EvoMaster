@@ -2,6 +2,7 @@ package org.evomaster.e2etests.spring.examples.endpointfocusandprefix;
 
 import com.foo.rest.examples.spring.endpointfocusandprefix.EndpointFocusAndPrefixController;
 
+import org.evomaster.ci.utils.JUnitExtra;
 import org.evomaster.core.config.ConfigProblemException;
 import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.OpenApiAccess;
@@ -342,7 +343,7 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
 
         String outputFolder = "BlackboxFocusNonExistingFocusValidPrefix";
 
-        assertThrows(ConfigProblemException.class, () ->
+        JUnitExtra.assertThrowsInnermost(ConfigProblemException.class, () ->
 
                 runTestHandlingFlakyAndCompilation(
                         outputFolder,
@@ -376,7 +377,7 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
 
         String outputFolder = "BlackboxNonExistingFocusNonExistingPrefix";
 
-        assertThrows(ConfigProblemException.class, () ->
+        JUnitExtra.assertThrowsInnermost(ConfigProblemException.class, () ->
 
                 runTestHandlingFlakyAndCompilation(
                         outputFolder,
@@ -410,7 +411,7 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
 
         String outputFolder = "BlackboxPrefixNonExistingPrefix";
 
-        assertThrows(ConfigProblemException.class, () ->
+        JUnitExtra.assertThrowsInnermost(ConfigProblemException.class, () ->
 
                 runTestHandlingFlakyAndCompilation(
                         outputFolder,
