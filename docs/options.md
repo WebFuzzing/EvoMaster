@@ -211,6 +211,7 @@ There are 3 types of options:
 |`enableCustomizedMethodForMockObjectHandling`| __Boolean__. Whether to apply customized method (i.e., implement 'customizeMockingRPCExternalService' for external services or 'customizeMockingDatabase' for database) to handle mock object. *Default value*: `false`.|
 |`enableRPCCustomizedTestOutput`| __Boolean__. Whether to enable customized RPC Test output if 'customizeRPCTestOutput' is implemented. *Default value*: `false`.|
 |`enableWriteSnapshotTests`| __Boolean__. Enable to print snapshots of the generated tests during the search in an interval defined in snapshotsInterval. *Default value*: `false`.|
+|`epaCalculation`| __Boolean__. Creates an EPA for the tested app. Requires the implementation of the endpoint /enabledEndpoints. *Default value*: `false`.|
 |`exportTestCasesDuringSeeding`| __Boolean__. Whether to export test cases during seeding as a separate file. *Default value*: `false`.|
 |`externalRequestHarvesterNumberOfThreads`| __Int__. Number of threads for external request harvester. No more threads than numbers of processors will be used. *Constraints*: `min=1.0`. *Default value*: `2`.|
 |`externalRequestResponseSelectionStrategy`| __Enum__. Harvested external request response selection strategy. *Valid values*: `EXACT, CLOSEST_SAME_DOMAIN, CLOSEST_SAME_PATH, RANDOM`. *Default value*: `EXACT`.|
@@ -219,6 +220,7 @@ There are 3 types of options:
 |`extractMongoExecutionInfo`| __Boolean__. Enable extracting Mongo execution info. *Default value*: `false`.|
 |`generateMongoData`| __Boolean__. Enable EvoMaster to generate Mongo data with direct accesses to the database. *Default value*: `false`.|
 |`generateSqlDataWithDSE`| __Boolean__. Enable EvoMaster to generate SQL data with direct accesses to the database. Use Dynamic Symbolic Execution. *Default value*: `false`.|
+|`heuristicsForEpa`| __Boolean__. Tracking of EPA edges to improve test generation. Requires epaCalculation config. *Default value*: `false`.|
 |`heuristicsForMongo`| __Boolean__. Tracking of Mongo commands to improve test generation. *Default value*: `false`.|
 |`heuristicsForSQLAdvanced`| __Boolean__. If using SQL heuristics, enable more advanced version. *Default value*: `false`.|
 |`initStructureMutationProbability`| __Double__. Probability of applying a mutation that can change the structure of test's initialization if it has. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|

@@ -1234,8 +1234,12 @@ class EMConfig {
     var heuristicsForMongo = false
 
     @Experimental
-    @Cfg("Tracking of enabled endpoints")
+    @Cfg("Creates an EPA for the tested app. Requires the implementation of the endpoint /enabledEndpoints.")
     var epaCalculation = false
+
+    @Experimental
+    @Cfg("Tracking of EPA edges to improve test generation. Requires epaCalculation config.")
+    var heuristicsForEpa = false
 
     @Cfg("Enable extracting SQL execution info")
     var extractSqlExecutionInfo = true
