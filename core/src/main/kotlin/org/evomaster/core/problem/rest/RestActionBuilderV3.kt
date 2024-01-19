@@ -657,11 +657,11 @@ object RestActionBuilderV3 {
             "password" -> return createNonObjectGeneWithSchemaConstraints(schema, name, StringGene::class.java, options, null, isInPath, examples)//StringGene(name) //nothing special to do, it is just a hint
             "binary" -> return createNonObjectGeneWithSchemaConstraints(schema, name, StringGene::class.java, options, null, isInPath, examples)//StringGene(name) //does it need to be treated specially?
             "byte" -> return createNonObjectGeneWithSchemaConstraints(schema, name, Base64StringGene::class.java, options, null, isInPath, examples)//Base64StringGene(name)
-            "date" -> return DateGene(name, onlyValidDates = !options.invalidData)
-            "date-time" -> return DateTimeGene(name)
-            "local-date" -> return DateGene(name)
-            "local-date-time" -> return DateTimeGene(name)
-            "local-time" -> return TimeGene(name)
+            "date", "local-date" -> return DateGene(name, onlyValidDates = !options.invalidData)
+            "date-time", "local-date-time" -> return DateTimeGene(name,
+                date = DateGene("date", onlyValidDates = !options.invalidData),
+                time =  TimeGene("time", onlyValidTimes = !options.invalidData))
+            "local-time" -> return TimeGene(name, onlyValidTimes = !options.invalidData)
             else -> if (format != null) {
                 LoggingUtil.uniqueWarn(log, "Unhandled format '$format'")
             }

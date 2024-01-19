@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+import java.time.format.DateTimeFormatter
 
 class RestActionBuilderV3Test{
 
@@ -1776,6 +1777,15 @@ class RestActionBuilderV3Test{
             assertEquals("local_date_time_field", gene.fields[0].name)
             assertTrue(gene.fields[0] is DateTimeGene)
         }
+
+        val rand = Randomness()
+
+        gene.doInitialize(rand)
+
+        val dateTimeString = gene.fields[0].getValueAsRawString()
+        DateTimeFormatter.ISO_LOCAL_DATE_TIME.parse(dateTimeString)
+
+
     }
 
     @Test
