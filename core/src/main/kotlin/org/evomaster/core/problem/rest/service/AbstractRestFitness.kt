@@ -331,6 +331,28 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
             }
     }
 
+    private fun handleEPATargets(
+        fv: FitnessValue,
+        actions: List<RestCallAction>,
+        actionResults: List<ActionResult>
+    ) {
+        (0 until actionResults.size)
+            .filter { actionResults[it] is RestCallResult }
+            .forEach {
+                val result = actionResults[it] as RestCallResult
+                val status = result.getStatusCode() ?: -1
+                val actionName = actions[it].getName()
+                var previousEnabled = result.getInitialEnabledEndpoints()
+                if (previousEnabled == null && it > 0) {
+                    previousEnabled = (actionResults[it - 1] as RestCallResult).getEnabledEndpointsAfterAction()?.enabledRestActions
+                }
+                val currentEnabled = result.getEnabledEndpointsAfterAction()?.enabledRestActions
+                val statusId = idMapper.handleLocalTarget("$previousEnabled:$actionName:$currentEnabled")
+                if (status < 400 && previousEnabled != null && currentEnabled != null) {
+                    fv.updateTarget(statusId, 1.0, it)
+                }
+            }
+    }
 
     fun handleAdditionalOracleTargetDescription(
         fv: FitnessValue,
@@ -806,6 +828,14 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
             actionResults,
             dto.additionalInfoList
         )
+
+        if (config.heuristicsForEpa) {
+            handleEPATargets(
+                fv,
+                individual.seeAllActions().filterIsInstance<RestCallAction>(),
+                actionResults
+            )
+        }
 
         handleExternalServiceInfo(individual, fv, dto.additionalInfoList)
 
