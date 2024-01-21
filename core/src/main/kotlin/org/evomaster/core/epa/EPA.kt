@@ -10,11 +10,8 @@ class EPA {
     private val adjacencyMap = mutableMapOf<Vertex, MutableList<Edge>>()
 
     private val graphHeader = "digraph {\n" +
-            "splines=spline\n" +
-            "splines=true\n" +
-            "layout=\"sfdp\"\n" +
             "beautify=true\n" +
-            "graph [pad=\"1\", nodesep=\"3\", ranksep=\"4\"]\n" +
+            "graph [pad=\"3\", nodesep=\"4\", ranksep=\"5\"]\n" +
             "node [ margin=0.4 fontname=Helvetica ]\n" +
             "edge [fontname=Courier fontsize=14]\n" +
             "init [shape=box]"
