@@ -46,7 +46,7 @@ abstract class EnterpriseIndividual(
      * a list of children of the individual
      */
     children: MutableList<out ActionComponent>,
-    childTypeVerifier: (Class<*>) -> Boolean,
+    childTypeVerifier: EnterpriseChildTypeVerifier,
     /**
      * if no group definition is specified, then it is assumed that all action are for the MAIN group
      */

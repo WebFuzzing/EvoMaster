@@ -7,6 +7,7 @@ import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.SqlActionUtils
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.api.ApiWsIndividual
+import org.evomaster.core.problem.enterprise.EnterpriseChildTypeVerifier
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
@@ -38,10 +39,8 @@ class RestIndividual(
     dnsSize: Int = 0,
     groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(allActions,mainSize,sqlSize,mongoSize,dnsSize)
 ): ApiWsIndividual(sampleType, trackOperator, index, allActions,
-    childTypeVerifier = {
-        RestResourceCalls::class.java.isAssignableFrom(it)
-                || SqlAction::class.java.isAssignableFrom(it) || MongoDbAction::class.java.isAssignableFrom(it)
-    }, groups) {
+    childTypeVerifier = EnterpriseChildTypeVerifier(RestCallAction::class.java,RestResourceCalls::class.java),
+    groups) {
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(RestIndividual::class.java)

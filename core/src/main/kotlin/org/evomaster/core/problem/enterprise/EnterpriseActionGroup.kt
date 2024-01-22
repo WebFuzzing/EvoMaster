@@ -12,9 +12,9 @@ import org.evomaster.core.search.*
  * The dependent actions are related ONLY to the MAIN action.
  * Deleting the MAIN action would imply it is 100% safe to remove the dependent ones.
  */
-class EnterpriseActionGroup(
+class EnterpriseActionGroup<T: Action>(
     children: MutableList<out Action>,
-    private val mainClass : Class<*>,
+    private val mainClass : Class<T>,
     //Kotlin does not like a reference of input val in the lambda, resulting in null when call super constructor
     //childTypeVerifier: (Class<*>) -> Boolean = {k -> ExternalServiceAction::class.java.isAssignableFrom(k) || mainClass.isAssignableFrom(k.javaClass)},
     groups: GroupsOfChildren<out Action> = GroupsOfChildren(
@@ -30,7 +30,7 @@ class EnterpriseActionGroup(
     groups = groups
 ) {
 
-     constructor(action: Action): this(mutableListOf(action), action.javaClass)
+     constructor(action: T): this(mutableListOf(action), action.javaClass)
 
     /**
      * @return the main action toward the SUT. the can be only 1 in this group
@@ -48,7 +48,7 @@ class EnterpriseActionGroup(
     }
 
 
-    override fun copyContent(): EnterpriseActionGroup {
+    override fun copyContent(): EnterpriseActionGroup<T> {
 
         val k = children.map { it.copy() } as MutableList<out Action>
 
