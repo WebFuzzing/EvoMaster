@@ -13,7 +13,7 @@ class EpaWriter {
         for (i in solution.individuals) {
             var previousVertex = Vertex(false, 0, "")
             var currentVertex: Vertex
-            val restCallResults = i.results.filterIsInstance<RestCallResult>()
+            val restCallResults = i.getRestCallResults()
             for (rcr in restCallResults) {
                 rcr.getInitialEnabledEndpoints()?.let {
                     previousVertex = epa.createOrGetVertex(it, true)
