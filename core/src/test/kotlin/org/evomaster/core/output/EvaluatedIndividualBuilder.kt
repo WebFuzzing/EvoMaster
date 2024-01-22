@@ -134,7 +134,7 @@ class EvaluatedIndividualBuilder {
                 throw IllegalArgumentException("do not support to generate faked evaluated RPC individual for testing test writer")
             val individual = RPCIndividual(SampleType.RANDOM, actions = actions, externalServicesActions = externalServicesActions)
 
-            individual.doInitialize()
+            TestUtils.doInitializeIndividualForTesting(individual)
 
             val fitnessVal = FitnessValue(0.0)
 
