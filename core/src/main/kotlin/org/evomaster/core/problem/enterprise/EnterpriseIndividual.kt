@@ -133,6 +133,33 @@ abstract class EnterpriseIndividual(
                 .map { it as SqlAction }
         }
 
+
+    /**
+     * Make sure that no secondary type is used in the main actions, and that only [EnterpriseActionGroup]
+     * are used
+     */
+    fun ensureFlattenedStructure(){
+
+        val before = seeAllActions().size
+
+        doFlattenStructure()
+
+        //make sure the flattening worked
+        Lazy.assert { isFlattenedStructure() }
+        //no base action should have been lost
+        Lazy.assert { seeAllActions().size == before }
+    }
+
+    protected open fun doFlattenStructure(){
+        //for most types, there is nothing to do.
+        //can be overridden if needed
+    }
+
+    private fun isFlattenedStructure() : Boolean{
+        return groupsView()!!.getAllInGroup(GroupsOfChildren.MAIN).all { it is EnterpriseActionGroup<*> }
+    }
+
+
     final override fun seeActions(filter: ActionFilter) : List<Action>{
         return when (filter) {
             ActionFilter.ALL -> seeAllActions()
