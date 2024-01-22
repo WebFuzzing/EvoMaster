@@ -52,13 +52,6 @@ class EvaluatedIndividualBuilder {
         fun buildResourceEvaluatedIndividual(
             dbInitialization: MutableList<SqlAction>,
             groups: MutableList<Pair<MutableList<SqlAction>, MutableList<RestCallAction>>>,
-            results: List<ActionResult> =
-                dbInitialization.map { SqlActionResult(it.getLocalId()).also { it.setInsertExecutionResult(true) } }
-                    .plus(groups.flatMap { g->
-                        g.first.map { SqlActionResult(it.getLocalId()).also { it.setInsertExecutionResult(true) } }
-                            .plus(g.second.map { RestCallResult(it.getLocalId()).also { it.setTimedout(true) } })
-                }
-            ),
             format: OutputFormat = OutputFormat.JAVA_JUNIT_4
         ): Triple<OutputFormat, String, EvaluatedIndividual<RestIndividual>> {
 
@@ -72,9 +65,16 @@ class EvaluatedIndividualBuilder {
             val individual = RestIndividual(calls, sampleType, null, dbInitialization)
             TestUtils.doInitializeIndividualForTesting(individual)
 
+            val res = dbInitialization.map { SqlActionResult(it.getLocalId()).also { it.setInsertExecutionResult(true) } }
+                    .plus(groups.flatMap { g->
+                        g.first.map { SqlActionResult(it.getLocalId()).also { it.setInsertExecutionResult(true) } }
+                            .plus(g.second.map { RestCallResult(it.getLocalId()).also { it.setTimedout(true) } })
+                    }
+                    )
+
             val fitnessVal = FitnessValue(0.0)
 
-            val ei = EvaluatedIndividual(fitnessVal, individual, results)
+            val ei = EvaluatedIndividual(fitnessVal, individual, res)
             return Triple(format, baseUrlOfSut, ei)
         }
 

@@ -1,5 +1,7 @@
 package org.evomaster.core.search.action
 
+import org.evomaster.core.search.StructuralElement
+
 open class ActionResult(
         /**
         *   Must provide the localId of the source action that generated this result
@@ -8,6 +10,12 @@ open class ActionResult(
         /** Specify whether the result of this action led to stop the evaluation
          * of the following actions*/
         var stopping: Boolean = false) {
+
+    init{
+        if(sourceLocalId == StructuralElement.NONE_LOCAL_ID){
+            throw IllegalArgumentException("Action results must have a valid id of the source action")
+        }
+    }
 
     companion object{
         const val ERROR_MESSAGE = "ERROR_MESSAGE"
