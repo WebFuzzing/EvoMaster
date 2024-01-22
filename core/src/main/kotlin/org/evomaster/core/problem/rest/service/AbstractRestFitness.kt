@@ -534,9 +534,11 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                 else -> throw e
             }
         }
+
+        rcr.setStatusCode(response.status)
+
         if (config.epaCalculation) {
             handleEnabledEndpoints(rcr, a)
-            rcr.setStatusCode(response.status)
         }
 
         handlePossibleConnectionClose(response)
