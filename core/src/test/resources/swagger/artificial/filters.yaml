@@ -41,3 +41,8 @@ paths:
       responses:
         '200':
           description: OK
+  "/api/t":
+    get:
+      responses:
+        '200':
+          description: OK

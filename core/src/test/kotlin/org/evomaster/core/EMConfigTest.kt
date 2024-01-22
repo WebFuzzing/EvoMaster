@@ -1,6 +1,7 @@
 package org.evomaster.core
 
 import org.evomaster.client.java.controller.api.ControllerConstants
+import org.evomaster.core.config.ConfigProblemException
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.service.IdMapper
 import org.junit.jupiter.api.Assertions.*
@@ -414,7 +415,7 @@ internal class EMConfigTest{
         val config = EMConfig()
 
         val options = parser.parse("--configPath", "src/test/resources/config/foo.toml")
-        val t = assertThrows(IllegalArgumentException::class.java) {config.updateProperties(options)}
+        val t = assertThrows(ConfigProblemException::class.java) {config.updateProperties(options)}
         assertTrue(t.message!!.contains("non-existing properties"), t.message)
     }
 
@@ -500,7 +501,7 @@ internal class EMConfigTest{
         val sampleEndpointPrefix = "/endPointPrefixSample"
 
         assertThrows(
-            IllegalArgumentException::class.java
+            ConfigProblemException::class.java
         ) {
             val params = arrayOf("--$endpointFocus", sampleEndpointFocus,
                 "--$endpointPrefix", sampleEndpointPrefix)
