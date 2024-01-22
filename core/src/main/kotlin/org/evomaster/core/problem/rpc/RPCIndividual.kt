@@ -81,9 +81,6 @@ class RPCIndividual(
         }
     }
 
-    override fun size(): Int {
-        return seeMainExecutableActions().size
-    }
 
     override fun canMutateStructure(): Boolean = true
 
