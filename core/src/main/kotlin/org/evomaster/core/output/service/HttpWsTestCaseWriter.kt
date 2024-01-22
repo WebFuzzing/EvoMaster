@@ -223,9 +223,9 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         var anyDnsCache = false
         // add all used external service actions for the action
         if (config.isEnabledExternalServiceMocking()) {
-            if (evaluatedAction.action.parent !is EnterpriseActionGroup)
+            if (evaluatedAction.action.parent !is EnterpriseActionGroup<*>)
                 throw IllegalStateException("invalid parent of the RestAction, it is expected to be EnterpriseActionGroup, but it is ${evaluatedAction.action.parent!!::class.java.simpleName}")
-            val group = evaluatedAction.action.parent as EnterpriseActionGroup
+            val group = evaluatedAction.action.parent as EnterpriseActionGroup<*>
             exActions.addAll(
                 group.getExternalServiceActions().filterIsInstance<HttpExternalServiceAction>()
                     .filter { it.active })

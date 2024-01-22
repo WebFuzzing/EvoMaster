@@ -92,7 +92,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
 
             var terminated = false
 
-            for (a in call.getViewOfChildren().filterIsInstance<EnterpriseActionGroup>()) {
+            for (a in call.getViewOfChildren().filterIsInstance<EnterpriseActionGroup<*>>()) {
                 // Note: [indexOfAction] is used to register the action in RemoteController
                 //  to map it to the ActionDto.
 

@@ -71,7 +71,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 
         ind.seeMainExecutableActions().forEachIndexed { index, action ->
             val parent = action.parent
-            if (parent !is EnterpriseActionGroup) {
+            if (parent !is EnterpriseActionGroup<*>) {
                 //TODO this should not really happen
                 val msg = "Action is not inside an EnterpriseActionGroup"
                 log.error(msg)

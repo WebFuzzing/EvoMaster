@@ -756,7 +756,7 @@ class RPCEndpointsHandler {
         var eactions : List<StructuralElement>? = externalActions
         // get external action if not specified
         if (externalActions.isNullOrEmpty()){
-            eactions = (action.parent as EnterpriseActionGroup)
+            eactions = (action.parent as EnterpriseActionGroup<*>)
                 .groupsView()!!.getAllInGroup(GroupsOfChildren.EXTERNAL_SERVICES)
         }
 
