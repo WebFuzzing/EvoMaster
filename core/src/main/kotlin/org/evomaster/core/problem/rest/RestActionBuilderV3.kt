@@ -661,7 +661,6 @@ object RestActionBuilderV3 {
             "date-time", "local-date-time" -> return DateTimeGene(name,
                 date = DateGene("date", onlyValidDates = !options.invalidData),
                 time =  TimeGene("time", onlyValidTimes = !options.invalidData))
-            "local-time" -> return TimeGene(name, onlyValidTimes = !options.invalidData)
             else -> if (format != null) {
                 LoggingUtil.uniqueWarn(log, "Unhandled format '$format'")
             }

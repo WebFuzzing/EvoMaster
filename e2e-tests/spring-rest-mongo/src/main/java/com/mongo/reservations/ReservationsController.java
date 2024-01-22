@@ -13,8 +13,13 @@ public class ReservationsController {
 
     @GetMapping("findAll")
     public ResponseEntity<Void> findAll() {
-        int status = (reservations.findAll().isEmpty()) ? 400 : 200 ;
-        return ResponseEntity.status(status).build();
+        if (!reservations.findAll().isEmpty()) {
+            Reservation reservation = reservations.findAll().iterator().next();
+            if (reservation.getCheckInDateTime() != null && reservation.getCheckOutDate() != null) {
+                return ResponseEntity.status(200).build();
+            }
+        }
+        return ResponseEntity.status(400).build();
     }
 }
 

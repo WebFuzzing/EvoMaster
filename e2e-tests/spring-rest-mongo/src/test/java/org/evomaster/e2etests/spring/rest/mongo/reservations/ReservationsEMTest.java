@@ -30,8 +30,6 @@ public class ReservationsEMTest extends RestTestBase {
                 "org.foo.spring.rest.mongo.MongoEMFitness",
                 10000,
                 (args) -> {
-                    args.add("--enableWeightBasedMutationRateSelectionForGene");
-                    args.add("false");
                     args.add("--heuristicsForMongo");
                     args.add("true");
                     args.add("--instrumentMR_MONGO");
@@ -46,6 +44,8 @@ public class ReservationsEMTest extends RestTestBase {
                     assertTrue(solution.getIndividuals().size() >= 1);
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/reservations/findAll", null);
                     assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/reservations/findAll", null);
+
+
                 });
     }
 }
