@@ -30,7 +30,13 @@ where T : Individual {
 
     fun getFileName() : String{
 
-        val name = testSuiteNamePrefix + termination.suffix
+        // I have fixed at this level since I could not change the termination of Solution to
+        // Summary easily. I guess a better solution would be changing Termination of Solution to
+        // Summary. If termination suffix is NONE, I just replace it with executiveSummary
+        val name: String = if(termination.suffix != "")  testSuiteNamePrefix + termination.suffix
+        else testSuiteNamePrefix + "_executiveSummary"
+
+        //val name = testSuiteNamePrefix + termination.suffix as it was before.
         if(testSuiteNameSuffix.isBlank()){
             return name
         }
