@@ -122,7 +122,7 @@ class TestCaseWriterTest {
 
         val fitnessVal = FitnessValue(0.0)
 
-        val results = dbInitialization.map { SqlActionResult().also { it.setInsertExecutionResult(true) } }
+        val results = dbInitialization.map { SqlActionResult(it.getLocalId()).also { it.setInsertExecutionResult(true) } }
 
         val ei = EvaluatedIndividual(fitnessVal, individual, results)
         return Triple(format, baseUrlOfSut, ei)
@@ -953,7 +953,7 @@ class TestCaseWriterTest {
         TestUtils.doInitializeIndividualForTesting(individual)
 
         val fitnessVal = FitnessValue(0.0)
-        val result = RestCallResult()
+        val result = RestCallResult(action.getLocalId())
         result.setTimedout(timedout = true)
         val results = listOf(result)
         val ei = EvaluatedIndividual<RestIndividual>(fitnessVal, individual, results)
@@ -1210,7 +1210,7 @@ public void test() throws Exception {
     @Test
     fun testTestWithObjectAssertion(){
         val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
-        val fooResult = RestCallResult()
+        val fooResult = RestCallResult(fooAction.getLocalId())
 
         fooResult.setStatusCode(200)
         fooResult.setBody("""
@@ -1283,7 +1283,7 @@ public void test() throws Exception {
     @Test
     fun testTestWithObjectLengthAssertion(){
         val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
-        val fooResult = RestCallResult()
+        val fooResult = RestCallResult(fooAction.getLocalId())
 
         fooResult.setStatusCode(200)
         fooResult.setBody("""
@@ -1354,7 +1354,7 @@ public void test() throws Exception {
     @Test
     fun testApplyAssertionEscapes(){
         val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
-        val fooResult = RestCallResult()
+        val fooResult = RestCallResult(fooAction.getLocalId())
 
         val email = "foo@foo.foo"
         fooResult.setStatusCode(200)

@@ -1,6 +1,10 @@
 package org.evomaster.core.search.action
 
-open class ActionResult constructor(
+open class ActionResult(
+        /**
+        *   Must provide the localId of the source action that generated this result
+        */
+        val sourceLocalId: String,
         /** Specify whether the result of this action led to stop the evaluation
          * of the following actions*/
         var stopping: Boolean = false) {
@@ -11,7 +15,7 @@ open class ActionResult constructor(
 
     private val results : MutableMap<String, String> = mutableMapOf()
 
-    protected constructor(other: ActionResult) : this(other.stopping){
+    protected constructor(other: ActionResult) : this(other.sourceLocalId, other.stopping){
         results.putAll(other.results)
     }
 

@@ -11,7 +11,7 @@ class GraphQlCallResult : HttpWsCallResult {
         const val LAST_STATEMENT_WHEN_GQL_ERRORS = "LAST_STATEMENT_WHEN_GQL_ERRORS"
     }
 
-    constructor(stopping: Boolean = false) : super(stopping)
+    constructor(sourceLocalId: String, stopping: Boolean = false) : super(sourceLocalId, stopping)
 
     @VisibleForTesting
     internal constructor(other: ActionResult) : super(other)

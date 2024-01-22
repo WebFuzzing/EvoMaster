@@ -8,7 +8,15 @@ import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.mongo.MongoDbActionResult
 
 
-open class EvaluatedAction(open val action: Action, open val result: ActionResult)
+open class EvaluatedAction(open val action: Action, open val result: ActionResult){
+    init{
+        if(action.getLocalId() != result.sourceLocalId){
+            throw IllegalArgumentException("Mismatch between action local id ${action.getLocalId()} and" +
+                    " the source id ${result.sourceLocalId} in the associated result")
+        }
+    }
+}
+
 
 /**
  * specialized evaluated db action
