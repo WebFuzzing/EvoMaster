@@ -3,6 +3,7 @@ package org.evomaster.core.problem.rest
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.Operation
 import io.swagger.v3.oas.models.PathItem
+import org.evomaster.core.config.ConfigProblemException
 import java.util.stream.Stream
 
 
@@ -53,12 +54,30 @@ class Endpoint(
         fun validateTags(tagFilters: List<String>, schema: OpenAPI) {
 
             val allTags = schema.paths
-                .flatMap { it.value.readOperations().flatMap { op -> op.tags } }
+                .flatMap {
+                    it.value.readOperations()
+                            .filter { op -> op.tags != null}
+                            .flatMap { op -> op.tags }
+                }
                 .toSet()
 
             val missing = tagFilters.filter { !allTags.contains(it) }
             if(missing.isNotEmpty()){
-                throw IllegalArgumentException("${missing.size} missing tag filters from schema: ${missing.joinToString(",")}")
+                throw ConfigProblemException(
+                    "${missing.size} missing tag filters from schema: ${missing.joinToString(",")}." +
+                            " Existing tags in the schema are: [${allTags.joinToString(",")}]")
+            }
+        }
+
+        fun validatePrefix(prefix: String, schema: OpenAPI){
+            if(schema.paths.none { it.key.startsWith(prefix) }){
+                throw ConfigProblemException("The prefix '$prefix' does not match any endpoint in the schema")
+            }
+        }
+
+        fun validateFocus(focus: String, schema: OpenAPI){
+            if(schema.paths.none { it.key == focus }){
+                throw ConfigProblemException("The focus endpoint '$focus' does not match any endpoint in the schema")
             }
         }
     }
@@ -69,7 +88,7 @@ class Endpoint(
             ?: throw IllegalArgumentException("Input schema has no endpoint declaration for: ${this.path}")
         val op = getOperation(verb, pathDeclaration)
 
-        return op.tags
+        return op.tags ?: listOf()
     }
 
 
