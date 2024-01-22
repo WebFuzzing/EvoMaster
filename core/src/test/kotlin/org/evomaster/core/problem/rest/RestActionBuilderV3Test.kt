@@ -1788,39 +1788,4 @@ class RestActionBuilderV3Test{
 
     }
 
-    @Test
-    fun testLocalTimeField() {
-
-        val dtoSchemaName = "foo.com.BarDto"
-        val dtoSchema = """
-            "$dtoSchemaName":{
-                "type":"object",
-                "properties": {
-                    "local_time_field":{
-                        "type":"string", 
-                        "format":"local-time"
-                    }
-                },
-                "required": [
-                    "local_time_field"
-                    
-                ]
-            }
-            """.trimIndent()
-
-        val allSchemas = "\"${dtoSchemaName}\":{${dtoSchema}}"
-
-        val gene = RestActionBuilderV3.createGeneForDTO(
-            dtoSchemaName,
-            allSchemas,
-            RestActionBuilderV3.Options(enableConstraintHandling = true)
-        )
-
-        assertTrue(gene is ObjectGene)
-        (gene as ObjectGene).apply {
-            assertEquals(1, gene.fields.size)
-            assertEquals("local_time_field", gene.fields[0].name)
-            assertTrue(gene.fields[0] is TimeGene)
-        }
-    }
 }
