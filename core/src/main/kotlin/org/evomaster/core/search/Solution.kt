@@ -45,19 +45,11 @@ where T : Individual {
         return individuals.any { ind -> ind.individual.seeAllActions().any { a ->  a is HttpExternalServiceAction && a.active } }
     }
 
-    fun hasAnyHostnameResolutionAction(): Boolean {
+    private fun hasAnyHostnameResolutionAction(): Boolean {
         return individuals.any { ind -> ind.individual.seeAllActions().any() { a -> a is HostnameResolutionAction } }
     }
 
-    fun hasAnyUsageOfDefaultExternalService() : Boolean{
-        return individuals.any{ind -> ind.fitness.getViewEmployedDefaultWM().isNotEmpty()}
-    }
-
-    fun needsMockedDns() : Boolean{
-        return hasAnyActiveHttpExternalServiceAction() || hasAnyUsageOfDefaultExternalService()
-    }
-
-    fun needHostnameReplacement(): Boolean {
+    fun needsHostnameReplacement(): Boolean {
         return hasAnyHostnameResolutionAction()
     }
 
