@@ -512,6 +512,10 @@ class EMConfig {
             throw ConfigProblemException("Invalid combination of probabilities for probRestDefault and probRestExamples. " +
                     "Their sum should be lower or equal to 1.")
         }
+
+        if (heuristicsForEpa && !epaCalculation) {
+            throw ConfigProblemException("Cannot collect heuristics for EPAs if 'epaCalculation' is not enabled.")
+        }
     }
 
     private fun checkPropertyConstraints(m: KMutableProperty<*>) {
