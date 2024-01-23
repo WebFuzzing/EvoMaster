@@ -13,7 +13,8 @@ class Solution<T>(
     val termination: Termination = Termination.NONE,
     val individualsDuringSeeding: List<EvaluatedIndividual<T>>,
     val targetsDuringSeeding: List<Int>
-) where T : Individual {
+)
+where T : Individual {
 
     val overall: FitnessValue = FitnessValue(0.0)
     var clusteringTime = 0
