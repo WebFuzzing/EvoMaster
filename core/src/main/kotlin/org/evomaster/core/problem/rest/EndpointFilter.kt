@@ -18,6 +18,14 @@ object EndpointFilter {
             Endpoint.validateTags(config.getTagFilters(), swagger)
         }
 
+        if(! config.endpointFocus.isNullOrBlank()){
+            Endpoint.validateFocus(config.endpointFocus!!, swagger)
+        }
+
+        if(! config.endpointPrefix.isNullOrBlank()){
+            Endpoint.validatePrefix(config.endpointPrefix!!, swagger)
+        }
+
         val all = Endpoint.fromOpenApi(swagger)
 
         val x =  if(config.endpointFocus != null) {
