@@ -14,7 +14,7 @@ class Solution<T>(
     val individualsDuringSeeding: List<EvaluatedIndividual<T>>,
     val targetsDuringSeeding: List<Int>
 )
-where T : Individual {
+        where T : Individual {
 
     val overall: FitnessValue = FitnessValue(0.0)
     var clusteringTime = 0
@@ -30,13 +30,7 @@ where T : Individual {
 
     fun getFileName() : String{
 
-        // I have fixed at this level since I could not change the termination of Solution to
-        // Summary easily. I guess a better solution would be changing Termination of Solution to
-        // Summary. If termination suffix is NONE, I just replace it with executiveSummary
-        val name: String = if(termination.suffix != "")  testSuiteNamePrefix + termination.suffix
-        else testSuiteNamePrefix + "_executiveSummary"
-
-        //val name = testSuiteNamePrefix + termination.suffix as it was before.
+        val name = testSuiteNamePrefix + termination.suffix
         if(testSuiteNameSuffix.isBlank()){
             return name
         }

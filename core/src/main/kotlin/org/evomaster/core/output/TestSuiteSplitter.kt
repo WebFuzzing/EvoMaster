@@ -88,20 +88,6 @@ object TestSuiteSplitter {
 
         val type = config.testSuiteSplitType
 
-
-        /*
-        return Solution(
-            uniques.toMutableList(),
-            config.outputFilePrefix,
-            config.outputFileSuffix,
-            Termination.SUMMARY,
-            coveredStatisticsBySeededTests?.uniquePopulationsDuringSeeding?: listOf<EvaluatedIndividual<T>>(),
-            coveredStatisticsBySeededTests?.coveredTargets?: listOf()
-        )
-         */
-
-
-
         // BMR: Splitting support for new problems
         val sol = if(config.problemType == EMConfig.ProblemType.GRAPHQL){
             //solution as Solution<GraphQLIndividual> removed this line
