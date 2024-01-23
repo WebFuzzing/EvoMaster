@@ -36,7 +36,7 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
             usageFilter = UsageFilter.ANY
     )
     public static InetAddress getByName(String host) throws UnknownHostException {
-        return getAllByName(host)[0];
+        return InetAddressClassReplacement.getAllByName(host)[0];
     }
 
     @Replacement(
@@ -59,15 +59,15 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
             return InetAddress.getAllByName(host);
         }
 
-        try{
-            InetAddress[] inetAddress = InetAddress.getAllByName(host);
-            // hostname is resolved
-            ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(host, inetAddress[0].getHostAddress()));
-
+        try {
             if (ExecutionTracer.hasLocalAddressForHost(host)) {
                 String ip = ExecutionTracer.getLocalAddress(host);
                 return InetAddress.getAllByName(ip);
             }
+
+            InetAddress[] inetAddress = InetAddress.getAllByName(host);
+            // hostname is resolved
+            ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(host, inetAddress[0].getHostAddress()));
 
            /*
               if the real hostname does resolve, we cannot simulate it not resolving, because that will not work
