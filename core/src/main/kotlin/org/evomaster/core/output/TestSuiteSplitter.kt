@@ -88,11 +88,36 @@ object TestSuiteSplitter {
 
         val type = config.testSuiteSplitType
 
+
+        /*
+        return Solution(
+            uniques.toMutableList(),
+            config.outputFilePrefix,
+            config.outputFileSuffix,
+            Termination.SUMMARY,
+            coveredStatisticsBySeededTests?.uniquePopulationsDuringSeeding?: listOf<EvaluatedIndividual<T>>(),
+            coveredStatisticsBySeededTests?.coveredTargets?: listOf()
+        )
+         */
+
+
+
         // BMR: Splitting support for new problems
         val sol = if(config.problemType == EMConfig.ProblemType.GRAPHQL){
-            solution as Solution<GraphQLIndividual>
+            //solution as Solution<GraphQLIndividual> removed this line
+            Solution(solution.individuals as MutableList<EvaluatedIndividual<GraphQLIndividual>>,
+                solution.testSuiteNamePrefix,
+                solution.testSuiteNameSuffix, Termination.SUMMARY,
+                solution.individualsDuringSeeding as List<EvaluatedIndividual<GraphQLIndividual>>,
+                solution.targetsDuringSeeding)
+
         } else {
-            solution as Solution<RestIndividual>
+            //solution as Solution<RestIndividual> removed this line
+            Solution(solution.individuals as MutableList<EvaluatedIndividual<RestIndividual>>,
+                solution.testSuiteNamePrefix,
+                solution.testSuiteNameSuffix, Termination.SUMMARY,
+                solution.individualsDuringSeeding as List<EvaluatedIndividual<RestIndividual>>,
+                solution.targetsDuringSeeding)
         }
         val metrics = mutableListOf(DistanceMetricErrorText(config.errorTextEpsilon), DistanceMetricLastLine(config.lastLineEpsilon))
         val errs = sol.individuals.filter {ind ->
