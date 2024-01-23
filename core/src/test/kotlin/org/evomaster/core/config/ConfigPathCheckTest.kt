@@ -1,10 +1,11 @@
 package org.evomaster.core.config
 
 import org.evomaster.core.EMConfig
-
+import org.evomaster.ci.utils.CIUtils
 import org.jetbrains.kotlin.incremental.createDirectory
 
-import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
 import java.io.File
@@ -16,9 +17,23 @@ import java.nio.file.Paths
 
 class ConfigPathCheckTest {
 
-    // the path to write tests
-    private val pathToWriteTests = "path1/path2/path3"
     private val rootPath = "path1"
+    // the path to write tests
+    private val pathToWriteTests = "$rootPath/path2/path3"
+
+    companion object{
+
+        @BeforeAll
+        @JvmStatic
+        fun initTests(){
+            /*
+                setReadOnly() does not work on folders in Windows...
+                https://bugs.openjdk.org/browse/JDK-6728842
+             */
+            CIUtils.skipIfOnWindows();
+        }
+    }
+
 
     /**
      * The full path does not exist and the currently working directory is read-only so the necessary folders
@@ -47,20 +62,18 @@ class ConfigPathCheckTest {
             filePathRoot.createDirectory()
 
             // set the file to read only
-            filePathRoot.setReadOnly()
+            val readOnly = filePathRoot.setReadOnly()
+            assertTrue(readOnly)
 
-            val exception = Assertions.assertThrows(
-                IllegalArgumentException::class.java
-            ) {
+            val exception = assertThrows(ConfigProblemException::class.java) {
                 EMConfig.validateOptions(args)
             }
 
-            Assertions.assertEquals(exception.message, "Parameter 'outputFolder' refers to a file that does not exist, " +
+            assertEquals(exception.message, "Parameter 'outputFolder' refers to a file that does not exist, " +
                     "but the provided file path cannot be used to create a directory: $absoluteFilePath\n" +
                     "Please check file permissions of parent directories")
         }
         catch (e : Exception) {
-
             System.err.println("Exception occurred during the test case: checkNonExistingDirectoryCannotBeCreated")
             e.printStackTrace()
         }
@@ -94,20 +107,18 @@ class ConfigPathCheckTest {
 
             // create directory and set it read only
             file.createDirectory()
-            file.setReadOnly()
+            val readOnly = file.setReadOnly()
+            assertTrue(readOnly)
 
-            val exception = Assertions.assertThrows(
-                IllegalArgumentException::class.java
-            ) {
+            val exception = assertThrows(ConfigProblemException::class.java) {
                 EMConfig.validateOptions(args)
             }
 
-            Assertions.assertEquals(
+            assertEquals(
                 exception.message, "Parameter 'outputFolder' refers to a folder that already " +
                         "exists, but that cannot be written to: $absolutePath"
             )
         } catch (e : Exception) {
-
             System.err.println("Exception occurred during the test case: checkExistingDirectoryReadOnly")
             e.printStackTrace()
         }
@@ -143,19 +154,16 @@ class ConfigPathCheckTest {
             // create path3 as a new file
             file.createNewFile()
 
-            val exception = Assertions.assertThrows(
-                IllegalArgumentException::class.java
-            ) {
+            val exception = assertThrows(ConfigProblemException::class.java) {
                 EMConfig.validateOptions(args)
             }
 
-            Assertions.assertEquals(
+            assertEquals(
                 exception.message, "Parameter 'outputFolder' refers to a file that already" +
                         " exists, but that it is not a folder: $absolutePath"
             )
         }
         catch (e : Exception) {
-
             System.err.println("Exception occurred during the test case: checkExistingFileNotDirectoryReadOnly")
             e.printStackTrace()
         }
@@ -170,13 +178,11 @@ class ConfigPathCheckTest {
 
         val args = arrayOf("--outputFolder", "\u0000")
 
-        val exception = Assertions.assertThrows(
-            IllegalArgumentException::class.java
-        ) {
+        val exception = assertThrows(ConfigProblemException::class.java) {
             EMConfig.validateOptions(args)
         }
 
-        Assertions.assertEquals(exception.message, "Parameter 'outputFolder' is not a valid FS path: " +
-                "Nul character not allowed: \u0000")
+        assertNotNull(exception.message)
+        assertTrue(exception.message!!.contains("Parameter 'outputFolder' is not a valid FS path"))
     }
 }
