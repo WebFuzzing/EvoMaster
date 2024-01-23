@@ -453,8 +453,8 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
 
     private fun generateIndividualResults(individual: Individual) : List<ActionResult> = individual.seeActions(
         ActionFilter.ALL).map {
-        if (it is SqlAction) SqlActionResult().also { it.setInsertExecutionResult(true) }
-        else ActionResult()
+        if (it is SqlAction) SqlActionResult(it.getLocalId()).also { it.setInsertExecutionResult(true) }
+        else ActionResult(it.getLocalId())
     }
 }
 
