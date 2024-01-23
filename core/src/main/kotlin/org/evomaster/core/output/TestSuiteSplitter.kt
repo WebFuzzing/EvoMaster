@@ -90,28 +90,9 @@ object TestSuiteSplitter {
 
         // BMR: Splitting support for new problems
         val sol = if(config.problemType == EMConfig.ProblemType.GRAPHQL){
-            //solution as Solution<GraphQLIndividual>
-
-            Solution(
-                solution.individuals as MutableList<EvaluatedIndividual<GraphQLIndividual>>,
-                solution.testSuiteNamePrefix,
-                solution.testSuiteNameSuffix,
-                Termination.SUMMARY,
-                solution.individualsDuringSeeding as List<EvaluatedIndividual<GraphQLIndividual>>,
-                solution.targetsDuringSeeding
-            )
-
+            solution as Solution<GraphQLIndividual>
         } else {
-            //solution as Solution<RestIndividual>
-
-            Solution(
-                solution.individuals as MutableList<EvaluatedIndividual<RestIndividual>>,
-                solution.testSuiteNamePrefix,
-                solution.testSuiteNameSuffix,
-                Termination.SUMMARY,
-                solution.individualsDuringSeeding as List<EvaluatedIndividual<RestIndividual>>,
-                solution.targetsDuringSeeding
-            )
+            solution as Solution<RestIndividual>
         }
         val metrics = mutableListOf(DistanceMetricErrorText(config.errorTextEpsilon), DistanceMetricLastLine(config.lastLineEpsilon))
         val errs = sol.individuals.filter {ind ->
@@ -132,7 +113,7 @@ object TestSuiteSplitter {
                 if(errs.size <= 1){
                     splitResult.splitOutcome = splitByCode(sol, config)
                     // TODO: BMR - what is the executive summary behaviour for 1 or fewer errors?
-                    splitResult.executiveSummary = sol
+                    splitResult.executiveSummary = sol.convertSolutionToExecutiveSummary()
                 } else {
                     val clusters = conductClustering(sol as Solution<ApiWsIndividual>, oracles, config, metrics, splitResult)
                     splitByCluster(clusters, sol, oracles, splitResult, config)
