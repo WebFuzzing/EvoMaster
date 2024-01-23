@@ -17,6 +17,7 @@ import static org.evomaster.client.java.instrumentation.coverage.methodreplaceme
 public class InetSocketAddressReplacement implements MethodReplacementClass {
 
     private static ThreadLocal<InetSocketAddress> instance = new ThreadLocal<>();
+
     @Override
     public Class<?> getTargetClass() {
         return InetSocketAddress.class;
@@ -47,32 +48,31 @@ public class InetSocketAddressReplacement implements MethodReplacementClass {
             category = ReplacementCategory.EXT_0,
             replacingConstructor = true
     )
-    public static void InetSocketAddress(InetAddress addr, int port, String idTemplate) {
+    public static void InetSocketAddress(InetAddress addr, int port) {
         InetSocketAddress inetSocketAddress;
 
-        String s = addr.getHostAddress();
-
-        if (ExternalServiceInfoUtils.skipHostnameOrIp(addr.getHostName())
-                || ExecutionTracer.skipHostnameAndPort(addr.getHostName(), port)
-        ) {
+        if (addr == null) {
             inetSocketAddress = new java.net.InetSocketAddress(addr, port);
         } else {
-            ExternalServiceInfoUtils.analyzeDnsResolution(addr.getHostName());
-
-
-            if (idTemplate != null && ExecutionTracer.hasMappingForLocalAddress(addr.getHostAddress())) {
-                String newHostname = ExecutionTracer.getRemoteHostname(addr.getHostAddress());
-                ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(
-                        ExternalServiceSharedUtils.DEFAULT_SOCKET_CONNECT_PROTOCOL,
-                        newHostname,
-                        port
-                );
-                String[] ipAndPort = collectExternalServiceInfo(remoteHostInfo, port);
-
-                inetSocketAddress = new InetSocketAddress(ipAndPort[0], Integer.parseInt(ipAndPort[1]));
-
-            } else {
+            if ((ExternalServiceInfoUtils.skipHostnameOrIp(addr.getHostName())
+                    || ExecutionTracer.skipHostnameAndPort(addr.getHostName(), port))) {
                 inetSocketAddress = new java.net.InetSocketAddress(addr, port);
+            } else {
+                ExternalServiceInfoUtils.analyzeDnsResolution(addr.getHostName());
+
+                if (ExecutionTracer.hasMappingForLocalAddress(addr.getHostName())) {
+                    String newHostname = ExecutionTracer.getRemoteHostname(addr.getHostName());
+                    ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(
+                            ExternalServiceSharedUtils.DEFAULT_SOCKET_CONNECT_PROTOCOL,
+                            newHostname,
+                            port
+                    );
+                    String[] ipAndPort = collectExternalServiceInfo(remoteHostInfo, port);
+
+                    inetSocketAddress = new InetSocketAddress(ipAndPort[0], Integer.parseInt(ipAndPort[1]));
+                } else {
+                    inetSocketAddress = new java.net.InetSocketAddress(addr, port);
+                }
             }
         }
 

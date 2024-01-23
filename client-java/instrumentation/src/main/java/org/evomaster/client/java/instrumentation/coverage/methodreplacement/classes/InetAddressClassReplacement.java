@@ -36,7 +36,7 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
             usageFilter = UsageFilter.ANY
     )
     public static InetAddress getByName(String host) throws UnknownHostException {
-        return InetAddressClassReplacement.getAllByName(host)[0];
+        return getAllByName(host)[0];
     }
 
     @Replacement(
