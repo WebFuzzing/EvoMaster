@@ -43,9 +43,9 @@ class HostnameResolutionActionEMTest: SpringTestBase() {
 
                 Assertions.assertTrue(solution.individuals.size >= 1)
 
-//                if (!CIUtils.isRunningGA()) {
+                if (!CIUtils.isRunningGA()) {
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/resolve", "OK")
-//                }
+                }
             },
             3
         )
