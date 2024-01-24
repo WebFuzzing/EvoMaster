@@ -151,6 +151,10 @@ class EvaluatedIndividual<T>(
         }
     }
 
+    fun seeResult(id: String) : ActionResult?{
+        return results.find { it.sourceLocalId == id }
+    }
+
     /**
      * Note: if a test execution was prematurely stopped,
      * the number of evaluated actions would be lower than

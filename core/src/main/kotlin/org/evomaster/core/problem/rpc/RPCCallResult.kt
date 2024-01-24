@@ -39,7 +39,7 @@ class RPCCallResult : ActionResult {
         const val RESPONSE_ASSERTION_SCRIPT = "RESPONSE_ASSERTION_SCRIPT"
     }
 
-    constructor(stopping: Boolean = false) : super(stopping)
+    constructor(sourceLocalId: String, stopping: Boolean = false) : super(sourceLocalId, stopping)
 
     @VisibleForTesting
     internal constructor(other: ActionResult) : super(other)
