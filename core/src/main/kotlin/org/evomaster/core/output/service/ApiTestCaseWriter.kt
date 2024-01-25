@@ -46,7 +46,6 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
             throw IllegalStateException("the type of results are expected as MongoDbActionResults")
 
         val initializingHostnameResolutionActions = ind.individual.seeInitializingActions().filterIsInstance<HostnameResolutionAction>()
-        val x = ind.individual.seeInitializingActions()
 
         if (initializingSqlActions.isNotEmpty()) {
             SqlWriter.handleDbInitialization(
