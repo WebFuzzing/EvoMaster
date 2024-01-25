@@ -14,6 +14,7 @@ import org.evomaster.core.sql.SqlActionResult
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
+import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
@@ -783,6 +784,11 @@ class EvaluatedIndividual<T>(
         }
         mutatedGenes.addedInitializationGenes.addAll(diff.flatMap { it.seeTopGenes() })
 
+        if (addedInsertions!!.flatten().isEmpty()) {
+            // no added insertions to process for impact
+            return
+        }
+
         // update impact due to newly added initialization actions
         val modified = if (addedInsertions!!.flatten().size == diff.size)
             addedInsertions
@@ -792,6 +798,7 @@ class EvaluatedIndividual<T>(
                 if (m.isEmpty()) null else m
             }
         } else {
+            // addedInsertions.flatten().size < diff.size
             log.warn("unexpected handling on Initialization Action after repair")
             return
         }

@@ -168,16 +168,16 @@ abstract class ApiWsStructureMutator : StructureMutator() {
             return
         }
 
-        val old = mutableListOf<Action>().plus(ind.seeInitializingActions().filterIsInstance<MongoDbAction>())
+        val oldMongoDbActions = mutableListOf<Action>().plus(ind.seeInitializingActions().filterIsInstance<MongoDbAction>())
 
-        val addedInsertions = handleFailedFind(ind, fw, mutatedGenes, sampler)
+        val addedMongoDbInsertions = handleFailedFind(ind, fw, mutatedGenes, sampler)
 
         // update impact based on added genes
         if (mutatedGenes != null && config.isEnabledArchiveGeneSelection()) {
             individual.updateImpactGeneDueToAddedInitializationGenes(
                 mutatedGenes,
-                old,
-                addedInsertions
+                oldMongoDbActions,
+                addedMongoDbInsertions
             )
         }
     }
@@ -191,14 +191,14 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         val ind = individual.individual as? T
             ?: throw IllegalArgumentException("Invalid individual type")
 
-        val old = ind.seeInitializingActions().filterIsInstance<HostnameResolutionAction>()
+        val oldHostnameResolutionActions = ind.seeInitializingActions().filterIsInstance<HostnameResolutionAction>()
 
-        val addedInsertions: MutableList<Action> = mutableListOf()
+        val addedHostnameResolutionInsertions: MutableList<HostnameResolutionAction> = mutableListOf()
         externalServiceHandler.getHostnameResolutionActions().forEach {
             val hasActions =
-                old.any { ha -> (ha as HostnameResolutionAction).hostname != it.hostname }
+                oldHostnameResolutionActions.any { ha -> (ha as HostnameResolutionAction).hostname != it.hostname }
             if (!hasActions) {
-                addedInsertions.add(it)
+                addedHostnameResolutionInsertions.add(it)
             }
         }
 
@@ -206,8 +206,8 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         if (mutatedGenes != null && config.isEnabledArchiveGeneSelection()) {
             individual.updateImpactGeneDueToAddedInitializationGenes(
                 mutatedGenes,
-                old,
-                listOf(addedInsertions)
+                oldHostnameResolutionActions,
+                listOf(addedHostnameResolutionInsertions)
             )
         }
     }
@@ -243,17 +243,17 @@ abstract class ApiWsStructureMutator : StructureMutator() {
             return
         }
 
-        val old = mutableListOf<Action>().plus(ind.seeInitializingActions().filterIsInstance<SqlAction>())
+        val oldSqlActions = mutableListOf<Action>().plus(ind.seeInitializingActions().filterIsInstance<SqlAction>())
 
-        val addedInsertions = handleFailedWhereSQL(ind, fw, mutatedGenes, sampler)
+        val addedSqlInsertions = handleFailedWhereSQL(ind, fw, mutatedGenes, sampler)
 
         ind.repairInitializationActions(randomness)
         // update impact based on added genes
         if (mutatedGenes != null && config.isEnabledArchiveGeneSelection()) {
             individual.updateImpactGeneDueToAddedInitializationGenes(
                 mutatedGenes,
-                old,
-                addedInsertions
+                oldSqlActions,
+                addedSqlInsertions
             )
         }
     }
@@ -265,7 +265,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
          */
         fw: Map<String, Set<String>>,
         mutatedGenes: MutatedGeneSpecification?, sampler: ApiWsSampler<T>
-    ): MutableList<List<Action>>? {
+    ): MutableList<List<SqlAction>>? {
 
         /*
             because there might exist representExistingData in db actions which are in between rest actions,
@@ -306,7 +306,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 
         var missing = findMissing(fw, initializingActions)
 
-        val addedInsertions = if (mutatedGenes != null) mutableListOf<List<Action>>() else null
+        val addedSqlInsertions = if (mutatedGenes != null) mutableListOf<List<SqlAction>>() else null
 
         while (!missing.isEmpty()) {
 
@@ -326,7 +326,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
                     log.trace("{} insertions are added", insertions.size)
 
                 //record newly added insertions
-                addedInsertions?.add(insertions)
+                addedSqlInsertions?.add(insertions)
             }
 
             /*
@@ -343,24 +343,24 @@ abstract class ApiWsStructureMutator : StructureMutator() {
             //TODO DSE could be plugged in here
         }
 
-        return addedInsertions
+        return addedSqlInsertions
     }
 
     private fun <T : ApiWsIndividual> handleFailedFind(
         ind: T,
         ff: List<MongoFailedQuery>,
         mutatedGenes: MutatedGeneSpecification?, sampler: ApiWsSampler<T>
-    ): MutableList<List<Action>>? {
+    ): MutableList<List<MongoDbAction>>? {
 
-        val addedInsertions = if (mutatedGenes != null) mutableListOf<List<Action>>() else null
+        val addedMongoDbInsertions = if (mutatedGenes != null) mutableListOf<List<MongoDbAction>>() else null
 
         ff.forEach {
             val insertion = listOf(sampler.sampleMongoInsertion(it.database, it.collection, it.documentsType))
             ind.addInitializingMongoDbActions(actions = insertion)
-            addedInsertions?.add(insertion)
+            addedMongoDbInsertions?.add(insertion)
         }
 
-        return addedInsertions
+        return addedMongoDbInsertions
     }
 
     private fun findMissing(fw: Map<String, Set<String>>, dbactions: List<SqlAction>): Map<String, Set<String>> {
