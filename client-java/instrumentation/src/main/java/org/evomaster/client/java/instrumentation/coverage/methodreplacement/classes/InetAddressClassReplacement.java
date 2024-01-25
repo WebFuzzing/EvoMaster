@@ -59,12 +59,12 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
             return InetAddress.getAllByName(host);
         }
 
-        try {
-            if (ExecutionTracer.hasLocalAddressForHost(host)) {
-                String ip = ExecutionTracer.getLocalAddress(host);
-                return InetAddress.getAllByName(ip);
-            }
+        if (ExecutionTracer.hasLocalAddressForHost(host)) {
+            String ip = ExecutionTracer.getLocalAddress(host);
+            return InetAddress.getAllByName(ip);
+        }
 
+        try {
             InetAddress[] inetAddress = InetAddress.getAllByName(host);
             // hostname is resolved
             ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(host, inetAddress[0].getHostAddress()));
