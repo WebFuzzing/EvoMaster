@@ -1,0 +1,11 @@
+digraph {
+beautify=true
+graph [pad="3", nodesep="4", ranksep="5"]
+node [ margin=0.4 fontname=Helvetica ]
+edge [fontname=Courier fontsize=14]
+init [shape=box]init -> "/employees::delete, \n/employees::get, \n/employees::post"
+"/employees::delete, \n/employees::get, \n/employees::post" -> "/employees/{id}::delete, \n/employees/{id}::get, \n/employees/{id}::put, \n/employees::delete, \n/employees::get, \n/employees::post" [labeldistance="0.5" label="/employees::POST"]
+"/employees::delete, \n/employees::get, \n/employees::post" -> "/employees::delete, \n/employees::get, \n/employees::post" [labeldistance="0.5" label="/employees::GET, \n/employees::DELETE, \n/error::OPTIONS, \n/v2/api-docs::GET"]
+"/employees/{id}::delete, \n/employees/{id}::get, \n/employees/{id}::put, \n/employees::delete, \n/employees::get, \n/employees::post" -> "/employees/{id}::delete, \n/employees/{id}::get, \n/employees/{id}::put, \n/employees::delete, \n/employees::get, \n/employees::post" [labeldistance="0.5" label="/employees/{id}::GET, \n/employees/{id}::PUT, \n/employees::POST, \n/employees::GET, \n/employees/{id}::DELETE"]
+"/employees/{id}::delete, \n/employees/{id}::get, \n/employees/{id}::put, \n/employees::delete, \n/employees::get, \n/employees::post" -> "/employees::delete, \n/employees::get, \n/employees::post" [labeldistance="0.5" label="/employees/{id}::DELETE, \n/employees::DELETE"]
+}

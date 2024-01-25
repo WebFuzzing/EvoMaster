@@ -1,0 +1,6 @@
+digraph {
+beautify=true
+graph [pad="3", nodesep="4", ranksep="5"]
+node [ margin=0.4 fontname=Helvetica ]
+edge [fontname=Courier fontsize=14]
+init [shape=box]}
