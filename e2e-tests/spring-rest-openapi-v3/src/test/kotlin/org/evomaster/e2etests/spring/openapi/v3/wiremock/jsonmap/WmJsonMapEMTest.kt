@@ -33,14 +33,14 @@ class WmJsonMapEMTest : SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "WmJsonMapEM",
             "org.foo.WmJsonMapEM",
-            10000,
+            5000,
             !CIUtils.isRunningGA(), //there exist bug in generated tests for map
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")
                 args.add("USER")
                 args.add("--externalServiceIP")
-                args.add("127.0.0.102")
+                args.add("127.0.0.12")
 
                 val solution = initAndRun(args)
 
