@@ -1,6 +1,7 @@
 package org.evomaster.core.output.service
 
 import com.google.inject.Inject
+import org.apache.xpath.operations.Bool
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.SqlWriter
@@ -18,6 +19,7 @@ import org.evomaster.core.search.gene.utils.GeneUtils
 import org.slf4j.LoggerFactory
 import java.nio.file.Path
 import java.util.*
+import javax.swing.text.StyledEditorKit.BoldAction
 
 class RestTestCaseWriter : HttpWsTestCaseWriter {
 
@@ -55,8 +57,8 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         baseUrlOfSut: String,
         ind: EvaluatedIndividual<*>,
         insertionVars: MutableList<Pair<String, String>>
-    ) {
-        super.handleFieldDeclarations(lines, baseUrlOfSut, ind, insertionVars)
+    ) : Boolean {
+        val anyHostnameResolutionAction = super.handleFieldDeclarations(lines, baseUrlOfSut, ind, insertionVars)
 
         if (shouldCheckExpectations()) {
             addDeclarationsForExpectations(lines, ind as EvaluatedIndividual<RestIndividual>)
@@ -92,6 +94,8 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                     }
                 }
         }
+
+        return anyHostnameResolutionAction
     }
 
     override fun handleActionCalls(

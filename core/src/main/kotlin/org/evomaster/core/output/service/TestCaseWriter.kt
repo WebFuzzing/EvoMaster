@@ -98,11 +98,18 @@ abstract class TestCaseWriter {
             format.isCsharp() -> lines.add("public async Task ${test.name}() {")
         }
 
+        var anyHostnameResolutionActions = false
+
         lines.indented {
             val ind = test.test
             val insertionVars = mutableListOf<Pair<String, String>>()
-            handleFieldDeclarations(lines, baseUrlOfSut, ind, insertionVars)
+            anyHostnameResolutionActions = handleFieldDeclarations(lines, baseUrlOfSut, ind, insertionVars)
             handleActionCalls(lines, baseUrlOfSut, ind, insertionVars, testCaseName = test.name, testSuitePath)
+        }
+
+        if (anyHostnameResolutionActions) {
+            lines.add("DnsCacheManipulator.clearDnsCache()")
+            lines.appendSemicolon(format)
         }
 
         lines.add("}")
@@ -197,7 +204,7 @@ abstract class TestCaseWriter {
         baseUrlOfSut: String,
         ind: EvaluatedIndividual<*>,
         insertionVars: MutableList<Pair<String, String>>
-    )
+    ): Boolean
 
     /**
      * handle action call generation

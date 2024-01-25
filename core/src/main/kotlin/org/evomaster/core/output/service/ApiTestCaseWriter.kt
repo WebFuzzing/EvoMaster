@@ -27,7 +27,7 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         return name
     }
 
-    override fun handleFieldDeclarations(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>) {
+    override fun handleFieldDeclarations(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>) : Boolean {
 
         //FIXME this is getting auth, not field declaration
         CookieWriter.handleGettingCookies(format, ind, lines, baseUrlOfSut, this)
@@ -68,9 +68,12 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                 lines, insertionVars = insertionVars, skipFailure = config.skipFailureSQLInTestFile)
         }
 
+        var anyHostnameResolutionAction = false
         if (initializingHostnameResolutionActions.isNotEmpty()) {
-            handleHostnameResolutionActions(lines, initializingHostnameResolutionActions)
+            anyHostnameResolutionAction = handleHostnameResolutionActions(lines, initializingHostnameResolutionActions)
         }
+
+        return anyHostnameResolutionAction
     }
 
     /**

@@ -273,8 +273,10 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             }
         }
         if (anyDnsCache){
-            lines.add("DnsCacheManipulator.clearDnsCache()")
-            lines.appendSemicolon(format)
+            lines.indented {
+                lines.add("DnsCacheManipulator.clearDnsCache()")
+                lines.appendSemicolon(format)
+            }
         }
     }
 
