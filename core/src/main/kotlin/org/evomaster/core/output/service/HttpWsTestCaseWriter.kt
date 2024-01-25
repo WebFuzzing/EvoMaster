@@ -223,7 +223,6 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
     ) {
 
         val exActions = mutableListOf<HttpExternalServiceAction>()
-        var anyDnsCache = false
         // add all used external service actions for the action
         if (config.isEnabledExternalServiceMocking()) {
             if (evaluatedAction.action.parent !is EnterpriseActionGroup)
@@ -232,11 +231,6 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             exActions.addAll(
                 group.getExternalServiceActions().filterIsInstance<HttpExternalServiceAction>()
                     .filter { it.active })
-
-
-//            if (format.isJavaOrKotlin())
-//                anyDnsCache = handleHostnameResolutionActions(lines, hostnameResolutionActions)
-
 
             if (exActions.isNotEmpty()) {
                 if (format.isJavaOrKotlin()) {
@@ -270,12 +264,6 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                         lines.add("${TestWriterUtils.getWireMockVariableName(action.externalService)}.resetAll()")
                         lines.appendSemicolon(format)
                     }
-            }
-        }
-        if (anyDnsCache){
-            lines.indented {
-                lines.add("DnsCacheManipulator.clearDnsCache()")
-                lines.appendSemicolon(format)
             }
         }
     }
