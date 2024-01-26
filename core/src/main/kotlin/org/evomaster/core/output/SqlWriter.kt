@@ -31,12 +31,12 @@ object SqlWriter {
         format: OutputFormat,
         dbInitialization: List<EvaluatedDbAction>,
         lines: Lines,
-        allDbInitialization: List<SqlAction> = dbInitialization.map { it.action },
+        allDbInitialization: List<SqlAction> = dbInitialization.map { it.sqlAction },
         groupIndex: String ="",
         insertionVars: MutableList<Pair<String, String>>,
         skipFailure: Boolean) {
 
-        if (dbInitialization.isEmpty() || dbInitialization.none { !it.action.representExistingData && (!skipFailure || it.result.getInsertExecutionResult())}) {
+        if (dbInitialization.isEmpty() || dbInitialization.none { !it.sqlAction.representExistingData && (!skipFailure || it.sqlResult.getInsertExecutionResult())}) {
             return
         }
 
@@ -45,14 +45,14 @@ object SqlWriter {
         val previousVar = insertionVars.joinToString(", ") { it.first }
         val previousVarResults = insertionVars.joinToString(", ") { it.second }
         dbInitialization
-                .filter { !it.action.representExistingData && (!skipFailure || it.result.getInsertExecutionResult())}
+                .filter { !it.sqlAction.representExistingData && (!skipFailure || it.sqlResult.getInsertExecutionResult())}
                 .forEachIndexed { index, evaluatedDbAction ->
 
                     lines.add(when {
                         index == 0 && format.isJava() -> "List<InsertionDto> $insertionVar = sql($previousVar)"
                         index == 0 && format.isKotlin() -> "val $insertionVar = sql($previousVar)"
                         else -> ".and()"
-                    } + ".insertInto(\"${evaluatedDbAction.action.table.name}\", ${evaluatedDbAction.action.geInsertionId()}L)")
+                    } + ".insertInto(\"${evaluatedDbAction.sqlAction.table.name}\", ${evaluatedDbAction.sqlAction.geInsertionId()}L)")
 
                     if (index == 0) {
                         lines.indent()
@@ -64,7 +64,7 @@ object SqlWriter {
                                 .forEach { g ->
                                     when {
                                         g is SqlWrapperGene && g.getForeignKey() != null -> {
-                                            val line = handleFK(format, g.getForeignKey()!!, evaluatedDbAction.action, allDbInitialization)
+                                            val line = handleFK(format, g.getForeignKey()!!, evaluatedDbAction.sqlAction, allDbInitialization)
                                             lines.add(line)
                                         }
                                         g is ObjectGene -> {

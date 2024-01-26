@@ -29,7 +29,7 @@ object MongoWriter {
         skipFailure: Boolean
     ) {
 
-        if (mongoDbInitialization.isEmpty() || mongoDbInitialization.none {!skipFailure || it.result.getInsertExecutionResult()}) {
+        if (mongoDbInitialization.isEmpty() || mongoDbInitialization.none {!skipFailure || it.mongoResult.getInsertExecutionResult()}) {
             return
         }
 
@@ -37,7 +37,7 @@ object MongoWriter {
         val insertionVarResult = "${insertionVar}result"
         val previousVar = insertionVars.joinToString(", ") { it.first }
         mongoDbInitialization
-            .filter { !skipFailure || it.result.getInsertExecutionResult() }
+            .filter { !skipFailure || it.mongoResult.getInsertExecutionResult() }
             .forEachIndexed { index, evaluatedMongoDbAction ->
 
                 lines.add(
@@ -45,7 +45,7 @@ object MongoWriter {
                         index == 0 && format.isJava() -> "List<MongoInsertionDto> $insertionVar = mongo($previousVar)"
                         index == 0 && format.isKotlin() -> "val $insertionVar = mongo($previousVar)"
                         else -> ".and()"
-                    } + ".insertInto(\"${evaluatedMongoDbAction.action.database}\"" + ", " + "\"${evaluatedMongoDbAction.action.collection}\")"
+                    } + ".insertInto(\"${evaluatedMongoDbAction.mongoAction.database}\"" + ", " + "\"${evaluatedMongoDbAction.mongoAction.collection}\")"
                 )
 
                 if (index == 0) {

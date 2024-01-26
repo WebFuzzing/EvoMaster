@@ -443,7 +443,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
 
         searchTimeController.waitForRateLimiter()
 
-        val rcr = RestCallResult()
+        val rcr = RestCallResult(a.getLocalId())
         actionResults.add(rcr)
 
         if(config.epaCalculation && actionResults.size == 1) { //it's the first action

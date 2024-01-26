@@ -19,7 +19,7 @@ class WebResult : ActionResult {
         const val VALID_HTML = "VALID_HTML"
     }
 
-    constructor(stopping: Boolean = false) : super(stopping)
+    constructor(sourceLocalId: String, stopping: Boolean = false) : super(sourceLocalId, stopping)
 
     internal constructor(other: ActionResult) : super(other)
 
