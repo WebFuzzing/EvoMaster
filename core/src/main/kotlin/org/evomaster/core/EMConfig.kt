@@ -1245,7 +1245,7 @@ class EMConfig {
     @Cfg("Tracking of EPA edges to improve test generation. Requires epaCalculation config.")
     var heuristicsForEpa = false
 
-    @Cfg("Specify a path to save the EPA. Requires epaCalculation config.")
+    @Cfg("Specify a path to save the EPA. Needs to end in a .dot file. Requires epaCalculation config.")
     @FilePath
     var epaFile = "epa.dot"
 
