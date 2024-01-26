@@ -2,13 +2,12 @@ package org.evomaster.core.output.service
 
 import org.evomaster.core.epa.EPA
 import org.evomaster.core.epa.Vertex
-import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.search.Solution
 import java.nio.file.Files
 import java.nio.file.Paths
 
 class EpaWriter {
-    fun writeEPA(solution: Solution<*>) {
+    fun writeEPA(solution: Solution<*>, epaFile: String) {
         val epa = EPA()
         for (i in solution.individuals) {
             var previousVertex = Vertex(false, 0, "")
@@ -32,11 +31,11 @@ class EpaWriter {
                 }
             }
         }
-        writeToFile(epa)
+        writeToFile(epa, epaFile)
     }
 
-    private fun writeToFile(epa: EPA) {
-        val path = Paths.get("epa.dot").toAbsolutePath()
+    private fun writeToFile(epa: EPA, epaFile: String) {
+        val path = Paths.get(epaFile).toAbsolutePath()
 
         Files.createDirectories(path.parent)
         Files.deleteIfExists(path)

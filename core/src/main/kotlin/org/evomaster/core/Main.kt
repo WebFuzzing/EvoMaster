@@ -228,7 +228,7 @@ class Main {
             writeStatistics(injector, solution) //FIXME if other phases after search, might get skewed data on 100% snapshots...
             if (config.epaCalculation) {
                 LoggingUtil.getInfoLogger().info("Going to write epa.")
-                writeEPA(solution)
+                writeEPA(solution, config.epaFile)
             }
 
             val statistics = injector.getInstance(Statistics::class.java)
@@ -787,8 +787,8 @@ class Main {
         }
 
 
-        private fun writeEPA(solution: Solution<*>) {
-            EpaWriter().writeEPA(solution)
+        private fun writeEPA(solution: Solution<*>, epaFile: String) {
+            EpaWriter().writeEPA(solution, epaFile)
         }
 
         private fun writeOverallProcessData(injector: Injector) {

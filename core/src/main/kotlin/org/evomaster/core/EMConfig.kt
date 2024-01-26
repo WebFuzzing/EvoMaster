@@ -1238,12 +1238,16 @@ class EMConfig {
     var heuristicsForMongo = false
 
     @Experimental
-    @Cfg("Creates an EPA for the tested app. Requires the implementation of the endpoint /enabledEndpoints.")
+    @Cfg("Creates an EPA for the tested *REST API*. Requires the implementation of the endpoint /enabledEndpoints.")
     var epaCalculation = false
 
     @Experimental
     @Cfg("Tracking of EPA edges to improve test generation. Requires epaCalculation config.")
     var heuristicsForEpa = false
+
+    @Cfg("Specify a path to save the EPA. Requires epaCalculation config.")
+    @FilePath
+    var epaFile = "epa.dot"
 
     @Cfg("Enable extracting SQL execution info")
     var extractSqlExecutionInfo = true
