@@ -2017,7 +2017,7 @@ class EMConfig {
 
     @Cfg("User provided external service IP.")
     @Experimental
-    @Regex("^127(\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}\$")
+    @Regex("^127\\.((0\\.){2}([3-9]|[1-9]\\d|[12]\\d\\d)|0\\.([1-9]|[1-9]\\d|[12]\\d\\d)\\.([1-9]?\\d|[12]\\d\\d)|([1-9]|[1-9]\\d|[12]\\d\\d)(\\.([1-9]?\\d|[12]\\d\\d)){2})\$")
     var externalServiceIP : String = "127.0.0.3"
 
     @Experimental
