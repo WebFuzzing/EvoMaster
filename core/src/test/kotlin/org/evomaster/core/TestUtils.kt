@@ -92,6 +92,8 @@ object TestUtils {
         val fooAction = generateFakeRestAction("1")
         val barAction = RestCallAction("2", HttpVerb.GET, RestPath("/bar"), mutableListOf(queryIdParam.copy()))
 
-        return RestIndividual(mutableListOf(fooAction, barAction), SampleType.RANDOM, mutableListOf(fooInsertion, barInsertion))
+        val ind =  RestIndividual(mutableListOf(fooAction, barAction), SampleType.RANDOM, mutableListOf(fooInsertion, barInsertion))
+        doInitializeIndividualForTesting(ind)
+        return ind
     }
 }
