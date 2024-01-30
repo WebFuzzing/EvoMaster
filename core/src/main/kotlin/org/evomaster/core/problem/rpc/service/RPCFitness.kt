@@ -118,7 +118,7 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
         // need for RPC as well
         searchTimeController.waitForRateLimiter()
 
-        val actionResult = RPCCallResult()
+        val actionResult = RPCCallResult(action.getLocalId())
         actionResults.add(actionResult)
         val dto = getActionDto(action, index)
         val externalActions = if (action.parent is EnterpriseActionGroup){

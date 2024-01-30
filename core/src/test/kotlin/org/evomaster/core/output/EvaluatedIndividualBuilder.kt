@@ -43,19 +43,15 @@ class EvaluatedIndividualBuilder {
             return Triple(format, baseUrlOfSut, ei)
         }
 
-        fun generateIndividualResults(individual: Individual) : List<ActionResult> = individual.seeActions(ActionFilter.ALL).map {
-            if (it is SqlAction) SqlActionResult().also { it.setInsertExecutionResult(true) }
-            else ActionResult()
+        fun generateIndividualResults(individual: Individual) : List<ActionResult> =
+            individual.seeActions(ActionFilter.ALL).map {
+                if (it is SqlAction) SqlActionResult(it.getLocalId()).also { it.setInsertExecutionResult(true) }
+                else ActionResult(it.getLocalId())
         }
 
         fun buildResourceEvaluatedIndividual(
             dbInitialization: MutableList<SqlAction>,
             groups: MutableList<Pair<MutableList<SqlAction>, MutableList<RestCallAction>>>,
-            results: List<ActionResult> = dbInitialization.map { SqlActionResult().also { it.setInsertExecutionResult(true) } }.plus(
-                groups.flatMap { g->
-                    g.first.map { SqlActionResult().also { it.setInsertExecutionResult(true) } }.plus(g.second.map { RestCallResult().also { it.setTimedout(true) } })
-                }
-            ),
             format: OutputFormat = OutputFormat.JAVA_JUNIT_4
         ): Triple<OutputFormat, String, EvaluatedIndividual<RestIndividual>> {
 
@@ -69,9 +65,16 @@ class EvaluatedIndividualBuilder {
             val individual = RestIndividual(calls, sampleType, null, dbInitialization)
             TestUtils.doInitializeIndividualForTesting(individual)
 
+            val res = dbInitialization.map { SqlActionResult(it.getLocalId()).also { it.setInsertExecutionResult(true) } }
+                    .plus(groups.flatMap { g->
+                        g.first.map { SqlActionResult(it.getLocalId()).also { it.setInsertExecutionResult(true) } }
+                            .plus(g.second.map { RestCallResult(it.getLocalId()).also { it.setTimedout(true) } })
+                    }
+                    )
+
             val fitnessVal = FitnessValue(0.0)
 
-            val ei = EvaluatedIndividual(fitnessVal, individual, results)
+            val ei = EvaluatedIndividual(fitnessVal, individual, res)
             return Triple(format, baseUrlOfSut, ei)
         }
 
@@ -131,12 +134,12 @@ class EvaluatedIndividualBuilder {
                 throw IllegalArgumentException("do not support to generate faked evaluated RPC individual for testing test writer")
             val individual = RPCIndividual(SampleType.RANDOM, actions = actions, externalServicesActions = externalServicesActions)
 
-            individual.doInitialize()
+            TestUtils.doInitializeIndividualForTesting(individual)
 
             val fitnessVal = FitnessValue(0.0)
 
-            return EvaluatedIndividual(fitnessVal, individual, (0 until actions.size).map {i->
-                RPCCallResult().also {
+            return EvaluatedIndividual(fitnessVal, individual, actions.mapIndexed{i,a->
+                RPCCallResult(a.getLocalId()).also {
                     it.setSuccess()
                     it.setHandledResponse(true)
                     it.setTestScript(listOf(if (format.isJava()) "int res_$i = 42;" else "val res_$i = 42"))
