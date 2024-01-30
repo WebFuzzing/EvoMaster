@@ -228,7 +228,7 @@ class Main {
 
             val statistics = injector.getInstance(Statistics::class.java)
             val data = statistics.getData(solution)
-            //val faults = solution.overall.potentialFoundFaults(idMapper)
+            val faults = solution.overall.potentialFoundFaults(idMapper)
             val sampler : Sampler<*> = injector.getInstance(Key.get(object : TypeLiteral<Sampler<*>>(){}))
 
             LoggingUtil.getInfoLogger().apply {
@@ -238,34 +238,14 @@ class Main {
                     info("TCP timeouts: $timeouts")
                 }
 
-                // The number of covered targets and the number of potential faults will be shown in both
-                // blackbox and whitebox
-                val elementsPair = data.find{it -> it.header == "coveredTargets"}
-
-                if (elementsPair != null) {
-                    info("Covered targets (lines, branches, faults, etc.): ${elementsPair.element}")
-                }
-                else {
-                    warn("coveredTargets not calculated in statistics")
-                }
-
-                // find the number of potential faults
-                val faultsPair = data.find{it -> it.header == "potentialFaults"}
-
-                if (faultsPair != null) {
-                    info("Potential faults: ${faultsPair.element}")
-                }
-                else {
-                    warn("potentialFaults not calculated in statistics")
-                }
-
+                info("Potential faults: ${faults.size}")
 
                 if (!config.blackBox || config.bbExperiments) {
                     val rc = injector.getInstance(RemoteController::class.java)
                     val unitsInfo = rc.getSutInfo()?.unitsInfoDto
                     val bootTimeInfo = rc.getSutInfo()?.bootTimeInfoDto
 
-                    //val targetsInfo = solution.overall.unionWithBootTimeCoveredTargets(null, idMapper, bootTimeInfo)
+                    val targetsInfo = solution.overall.unionWithBootTimeCoveredTargets(null, idMapper, bootTimeInfo)
                     val linesInfo = solution.overall.unionWithBootTimeCoveredTargets(ObjectiveNaming.LINE, idMapper, bootTimeInfo)
 
                     if (unitsInfo != null) {
@@ -296,8 +276,7 @@ class Main {
                          */
                         //assert(linesInfo.total <= totalLines){ "WRONG COVERAGE: ${linesInfo.total} > $totalLines"}
 
-                        //info("Covered targets (lines, branches, faults, etc.): ${targetsInfo.total}")
-                        //info("Potential faults: ${faults.size}")
+                        info("Covered targets (lines, branches, faults, etc.): ${targetsInfo.total}")
 
                         if(totalLines == 0 || units == 0){
                             logError("Detected $totalLines lines to cover, for a total of $units units/classes." +
