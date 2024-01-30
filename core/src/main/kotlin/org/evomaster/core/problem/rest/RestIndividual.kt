@@ -10,6 +10,7 @@ import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.enterprise.EnterpriseChildTypeVerifier
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
+import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.SamplerSpecification
 import org.evomaster.core.search.*
@@ -115,6 +116,35 @@ class RestIndividual(
             GeneFilter.ONLY_MONGO -> seeMongoDbActions().flatMap(MongoDbAction::seeTopGenes)
             GeneFilter.ONLY_EXTERNAL_SERVICE -> seeExternalServiceActions().flatMap(ApiExternalServiceAction::seeTopGenes)
         }
+    }
+
+    /**
+     * remove RestResourceCall structure and binding among genes
+     */
+    override fun doFlattenStructure() {
+
+        // check the top structure
+        val resources = groupsView()!!.getAllInGroup(GroupsOfChildren.MAIN).filterIsInstance<RestResourceCalls>()
+
+        if (resources.isEmpty()) return
+
+        // remove all bindings among genes
+        removeAllBindingAmongGenes()
+
+        val dnsActions = resources.flatMap { it.seeActions(ONLY_DNS)} as List<HostnameResolutionAction>
+        val sqlActions = resources.flatMap { it.seeActions(ONLY_SQL) } as List<SqlAction>
+        val mongoDbActions = resources.flatMap { it.seeActions(ONLY_MONGO) } as List<MongoDbAction>
+
+        val groups = resources.flatMap { it.seeEnterpriseActionGroup() }
+
+        removeResourceCall(resources)
+        addChildrenToGroup(groups, GroupsOfChildren.MAIN)
+
+        addChildrenToGroup(sqlActions, GroupsOfChildren.INITIALIZATION_SQL)
+        addChildrenToGroup(mongoDbActions, GroupsOfChildren.INITIALIZATION_MONGO)
+        addChildrenToGroup(dnsActions, GroupsOfChildren.INITIALIZATION_DNS)
+
+        resetLocalIdRecursively()
     }
 
     enum class ResourceFilter { ALL, NO_SQL, ONLY_SQL, ONLY_SQL_INSERTION, ONLY_SQL_EXISTING }
