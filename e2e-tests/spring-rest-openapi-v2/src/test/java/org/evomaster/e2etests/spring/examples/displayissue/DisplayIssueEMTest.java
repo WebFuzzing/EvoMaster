@@ -1,10 +1,11 @@
 package org.evomaster.e2etests.spring.examples.displayissue;
 
 import com.foo.rest.examples.spring.bodytypes.BodyTypesController;
+
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
-import org.junit.Assert;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
