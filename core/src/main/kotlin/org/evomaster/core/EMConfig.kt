@@ -68,11 +68,12 @@ class EMConfig {
         //should start with local 127
         private const val _eip_s = "^${lz}127"
         // other numbers could be anything between 0 and 255
-        private const val _eip_e = "\\.${lz}((25[0-5]|2[0-4][0-9]|[01]?[0-9]?[0-9])){3}$"
+        private const val _eip_e = "(\\.${lz}(25[0-5]|2[0-4][0-9]|1?[0-9]?[0-9])){3}$"
+        // first numbers (127.0.0.0 to 127.0.0.2) are reserved
+        // this is done with a negated lookahead ?!
+        private const val _eip_n = "(?!${_eip_s}(\\.${lz}0){2}\\.${lz}[012]$)"
 
-        //TODO negation with ?! lookahead
-
-        private const val externalServiceIPRegex = "$_eip_s$_eip_e"
+        private const val externalServiceIPRegex = "$_eip_n$_eip_s$_eip_e"
 
         fun validateOptions(args: Array<String>): OptionParser {
 
