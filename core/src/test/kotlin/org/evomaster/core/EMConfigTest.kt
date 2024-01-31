@@ -8,6 +8,8 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+import java.net.InetAddress
+import java.net.URL
 
 internal class EMConfigTest{
 
@@ -512,9 +514,7 @@ internal class EMConfigTest{
     @Test
     fun testInvalidExternalServiceIP() {
         val params = arrayOf("--externalServiceIP", "128.0.0.0")
-        assertThrows(
-            ConfigProblemException::class.java
-        ) {
+        assertThrows(ConfigProblemException::class.java) {
             EMConfig.validateOptions(params)
         }
     }
@@ -532,8 +532,33 @@ internal class EMConfigTest{
     }
 
     @ParameterizedTest
+    @ValueSource(strings = ["127.0.000.5","000127.0.00.5"])
+    fun testLeadingZeros(ipAddress: String){
+        //leading zeros are accepted
+        //https://superuser.com/questions/857603/are-ip-addresses-with-and-without-leading-zeroes-the-same
+        //https://superuser.com/questions/929153/leading-zeros-in-ipv4-address-is-that-a-no-no-by-convention-or-standard
+        InetAddress.getByName(ipAddress) // should throw no exception
+        val params = arrayOf("--externalServiceIP", ipAddress)
+        EMConfig.validateOptions(params)
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["127.0.0.1","127.0.0.2","0127.0.00.1","127.0.0.002"])
+    fun testTooLowValues(ipAddress: String){
+        InetAddress.getByName(ipAddress) // should throw no exception
+
+        val params = arrayOf("--externalServiceIP", ipAddress)
+        assertThrows(ConfigProblemException::class.java) {
+            EMConfig.validateOptions(params)
+        }
+    }
+
+
+
+    @ParameterizedTest
     @ValueSource(strings = [ "127.0.2.161","127.0.2.1","127.0.1.181","127.0.1.161","127.0.1.1","127.0.0.182","127.0.0.162","127.0.6.181","127.0.6.161","127.0.6.1","127.0.5.181","127.0.5.161","127.0.5.1","127.0.4.181","127.0.9.1","127.0.8.181","127.0.8.161","127.0.8.1","127.0.7.181","127.0.7.161","127.0.7.1","127.0.11.1","127.0.10.181","127.0.10.161","127.0.10.1","127.0.9.181","127.0.9.161","127.0.4.161","127.0.4.1","127.0.3.181","127.0.3.161","127.0.3.1","127.0.2.181","127.0.2.161"])
     fun testValidExternalServiceIPs(ipAddress: String) {
+        InetAddress.getByName(ipAddress) // should throw no exception
         val params = arrayOf("--externalServiceIP", ipAddress)
         EMConfig.validateOptions(params)
     }

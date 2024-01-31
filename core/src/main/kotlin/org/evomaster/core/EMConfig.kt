@@ -63,6 +63,17 @@ class EMConfig {
 
         private const val defaultExternalServiceIP = "127.0.0.3"
 
+        //leading zeros are allowed
+        private const val lz = "0*"
+        //should start with local 127
+        private const val _eip_s = "^${lz}127"
+        // other numbers could be anything between 0 and 255
+        private const val _eip_e = "\\.${lz}((25[0-5]|2[0-4][0-9]|[01]?[0-9]?[0-9])){3}$"
+
+        //TODO negation with ?! lookahead
+
+        private const val externalServiceIPRegex = "$_eip_s$_eip_e"
+
         fun validateOptions(args: Array<String>): OptionParser {
 
             val config = EMConfig() // tmp config object used only for validation.
@@ -2024,7 +2035,7 @@ class EMConfig {
             " Min value is ${defaultExternalServiceIP}." +
             " Lower values like ${ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP} are reserved.")
     @Experimental
-    @Regex("^127\\.((0\\.){2}([3-9]|[1-9]\\d|[12]\\d\\d)|0\\.([1-9]|[1-9]\\d|[12]\\d\\d)\\.([1-9]?\\d|[12]\\d\\d)|([1-9]|[1-9]\\d|[12]\\d\\d)(\\.([1-9]?\\d|[12]\\d\\d)){2})\$")
+    @Regex(externalServiceIPRegex)
     var externalServiceIP : String = defaultExternalServiceIP
 
     @Experimental
