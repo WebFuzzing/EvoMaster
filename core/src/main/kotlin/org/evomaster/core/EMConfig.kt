@@ -6,6 +6,7 @@ import joptsimple.OptionParser
 import joptsimple.OptionSet
 import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
+import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory
 import org.evomaster.core.config.ConfigProblemException
@@ -59,6 +60,8 @@ class EMConfig {
          * Really, having something longer would make little to no sense
          */
         const val stringLengthHardLimit = 20_000
+
+        private const val defaultExternalServiceIP = "127.0.0.3"
 
         fun validateOptions(args: Array<String>): OptionParser {
 
@@ -2015,10 +2018,14 @@ class EMConfig {
     @Experimental
     var externalServiceIPSelectionStrategy = ExternalServiceIPSelectionStrategy.NONE
 
-    @Cfg("User provided external service IP.")
+    @Cfg("User provided external service IP." +
+            " When EvoMaster mocks external services, mock server instances will run on local addresses starting from" +
+            " this provided address." +
+            " Min value is ${defaultExternalServiceIP}." +
+            " Lower values like ${ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP} are reserved.")
     @Experimental
     @Regex("^127\\.((0\\.){2}([3-9]|[1-9]\\d|[12]\\d\\d)|0\\.([1-9]|[1-9]\\d|[12]\\d\\d)\\.([1-9]?\\d|[12]\\d\\d)|([1-9]|[1-9]\\d|[12]\\d\\d)(\\.([1-9]?\\d|[12]\\d\\d)){2})\$")
-    var externalServiceIP : String = "127.0.0.3"
+    var externalServiceIP : String = defaultExternalServiceIP
 
     @Experimental
     @Cfg("Whether to apply customized method (i.e., implement 'customizeMockingRPCExternalService' for external services or 'customizeMockingDatabase' for database) to handle mock object.")
