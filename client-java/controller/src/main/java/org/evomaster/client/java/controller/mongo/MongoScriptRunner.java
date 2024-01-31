@@ -44,7 +44,15 @@ public class MongoScriptRunner {
                 mongoResults.set(i, true);
                 SimpleLogger.debug(insertionDto.data + " inserted into database: " + insertionDto.databaseName + " and collection: " + insertionDto.collectionName);
             } catch (Exception e) {
-                String msg = "Failed to execute insertion with index " + i + " with Mongo. Error: " + e.getMessage();
+                final String errorMessage;
+                if (e instanceof  InvocationTargetException) {
+                    InvocationTargetException  invocationTargetException = (InvocationTargetException)e;
+                    Throwable innerException = invocationTargetException.getTargetException();
+                    errorMessage = innerException.getMessage();
+                } else {
+                    errorMessage = e.getMessage();
+                }
+                String msg = "Failed to execute insertion with index " + i + " with Mongo. Error: " + errorMessage;
                 throw new RuntimeException(msg, e);
             }
         }
