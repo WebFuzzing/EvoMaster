@@ -120,13 +120,36 @@ __Known limitations__:
 
 * [Short presentation](https://youtu.be/iQSAlrr-PZo) (5 minutes) about version 2.0.0. 
 
+### Alternatives
+
+In the last few years, several few tools have been proposed in the academic literature and in the open-source community.
+You can read more details in this [2023 survey](docs/publications/2023_tosem_survey.pdf) on REST API testing.
+
+Existing open-source tools for REST API fuzzing are for example (in alphabetic order):
+[Dredd](https://github.com/apiaryio/dredd),
+[Fuzz-lightyear](https://github.com/Yelp/fuzz-lightyear),
+[ResTest](https://github.com/isa-group/RESTest),
+[RestCT](https://github.com/GIST-NJU/RestCT),
+[Restler](https://github.com/microsoft/restler-fuzzer),
+[RestTestGen](https://github.com/SeUniVr/RestTestGen),
+and
+[Schemathesis](https://github.com/schemathesis/schemathesis).
+
+All these tools are _black-box_, i.e., they do not analyze the source-code of the tested APIs to generate more effective test data.
+As we are the authors of EvoMaster, we are too biased to compare it properly with those other black-box tools.
+However, an [independent study (2022)](https://arxiv.org/abs/2204.08348) shows that EvoMaster is among the best performant.
+Furthermore, if your APIs are running on the JVM (e.g., written in Java or Kotlin), then EvoMaster has clearly an advantage, as it supports _white-box_ testing. 
+
+
 ### Hiring
 
 Depending on the year, we might have funding for _postdoc_ and _PhD student_ positions to work on this project (in Oslo, Norway).
 
-Current positions:
+Current open positions: none.
+<!---
 * 2023: PhD student positions. No new calls scheduled for the moment.
 * 2023: Postdoc positions. No new calls scheduled for the moment.
+--->
 
 For questions on these positions, please contact Prof. Andrea Arcuri.
 

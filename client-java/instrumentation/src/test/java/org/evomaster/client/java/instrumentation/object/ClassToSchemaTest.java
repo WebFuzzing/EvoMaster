@@ -219,6 +219,32 @@ public class ClassToSchemaTest {
     }
 
     @Test
+    public void testLocalDateTime(){
+        String schema = ClassToSchema.getOrDeriveNonNestedSchema(DtoLocalDateTime.class);
+        JsonObject json = parse(schema);
+        JsonObject obj = json.get(DtoLocalDateTime.class.getName()).getAsJsonObject();
+        assertEquals(1, obj.get("properties").getAsJsonObject().entrySet().size());
+        verifyTypeAndFormatOfFieldInProperties(obj, "string", "local-date-time", "foo");
+    }
+
+    @Test
+    public void testLocalDate(){
+        String schema = ClassToSchema.getOrDeriveNonNestedSchema(DtoLocalDate.class);
+        JsonObject json = parse(schema);
+        JsonObject obj = json.get(DtoLocalDate.class.getName()).getAsJsonObject();
+        assertEquals(1, obj.get("properties").getAsJsonObject().entrySet().size());
+        verifyTypeAndFormatOfFieldInProperties(obj, "string", "local-date", "foo");
+    }
+
+    public void testLocalTime(){
+        String schema = ClassToSchema.getOrDeriveNonNestedSchema(DtoLocalTime.class);
+        JsonObject json = parse(schema);
+        JsonObject obj = json.get(DtoLocalTime.class.getName()).getAsJsonObject();
+        assertEquals(1, obj.get("properties").getAsJsonObject().entrySet().size());
+        verifyTypeAndFormatOfFieldInProperties(obj, "string", "local-date", "foo");
+    }
+
+    @Test
     public void testObjectRequiredFields(){
 
         String schema = ClassToSchema.getOrDeriveNonNestedSchema(DtoObj.class, true, Collections.emptyList());
