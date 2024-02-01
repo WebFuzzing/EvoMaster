@@ -5,9 +5,10 @@ import org.evomaster.client.java.controller.api.EMTestUtils
 import org.evomaster.client.java.controller.api.dto.ActionDto
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
-import org.evomaster.client.java.controller.api.dto.database.execution.epa.Enabled
 import org.evomaster.client.java.controller.api.dto.database.execution.epa.RestAction
+import org.evomaster.core.problem.rest.epa.Enabled
 import org.evomaster.client.java.controller.api.dto.database.execution.epa.RestActions
+import org.evomaster.client.java.controller.api.dto.database.execution.epa.RestActionsDto
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils.getWMDefaultSignature
 import org.evomaster.core.Lazy
@@ -353,9 +354,9 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                     previousEnabled = (actionResults[it - 1] as RestCallResult).getEnabledEndpointsAfterAction()?.enabledRestActions
                 }
                 val currentEnabled = result.getEnabledEndpointsAfterAction()?.enabledRestActions
-                val statusId = idMapper.handleLocalTarget("$previousEnabled:$actionName:$currentEnabled")
+                val epaEdgeId = idMapper.handleLocalTarget("$previousEnabled:$actionName:$currentEnabled")
                 if (status < 400 && previousEnabled != null && currentEnabled != null) {
-                    fv.updateTarget(statusId, 1.0, it)
+                    fv.updateTarget(epaEdgeId, 1.0, it)
                 }
             }
     }
@@ -725,31 +726,39 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
     protected fun handleInitialEnabledEndpoints(
         rcr: RestCallResult
     ) {
-        val restActions = getEnabledRestActions()
-        rcr.setInitialEnabledEndpoints(restActions)
+        val restActions = getEnabledRestActions()?.let {
+            RestActions.from(it)
+        }
+        restActions.let {
+            rcr.setInitialEnabledEndpoints(it)
+        }
     }
 
-    private fun getEnabledRestActions(): RestActions? {
+    private fun getEnabledRestActions(): RestActionsDto? {
         val fullUri = getFullUri(null, getBaseUrl(), "/enabledEndpoints")
         val r: Response = client.target(fullUri)
             .request(MediaType.APPLICATION_JSON_TYPE)
             .get()
         return if (Response.Status.Family.SUCCESSFUL == r.statusInfo.family) {
-            r.readEntity(RestActions::class.java)
+            r.readEntity(RestActionsDto::class.java)
         } else {
             null
         }
     }
 
-    private fun handleEnabledEndpoints(rcr: RestCallResult, a: RestCallAction){
-        val restActions = getEnabledRestActions()
-        val enabled = Enabled(
-            RestAction(
-                a.verb.name,
-                a.path.toString()
-            ), restActions
-        )
-        rcr.setEnabledEndpointsAfterAction(enabled)
+    private fun handleEnabledEndpoints(rcr: RestCallResult, a: RestCallAction) {
+        val restActions = getEnabledRestActions()?.let {
+            RestActions.from(it)
+        }
+        val enabled = restActions?.let {
+            Enabled(
+                RestAction(
+                    a.verb.name,
+                    a.path.toString()
+                ), it
+            )
+        }
+        enabled?.let { rcr.setEnabledEndpointsAfterAction(it) }
     }
 
     private fun handleSaveLocation(

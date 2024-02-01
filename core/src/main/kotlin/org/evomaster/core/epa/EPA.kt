@@ -2,8 +2,6 @@ package org.evomaster.core.epa
 
 import org.evomaster.client.java.controller.api.dto.database.execution.epa.RestAction
 import org.evomaster.client.java.controller.api.dto.database.execution.epa.RestActions
-import java.nio.file.Files
-import java.nio.file.Paths
 
 class EPA {
 

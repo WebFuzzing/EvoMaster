@@ -3,14 +3,14 @@ package org.evomaster.client.java.controller.api.dto.database.execution.epa;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 
-public class RestAction {
+public class RestActionDto {
     @JsonProperty("verb")
     public String verb;
 
     @JsonProperty("path")
     public String path;
 
-    public RestAction(@JsonProperty("verb") String verb, @JsonProperty("path")String path) {
+    public RestActionDto(@JsonProperty("verb") String verb, @JsonProperty("path")String path) {
         this.verb = verb;
         this.path = path;
     }

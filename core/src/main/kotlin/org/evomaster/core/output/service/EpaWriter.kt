@@ -21,7 +21,7 @@ class EpaWriter {
                 if (code != null && code < 400) { // we only want what happens after the action if it is a valid action
                     //we could also add a check if the action just executed is enabled?
                     val enabled = rcr.getEnabledEndpointsAfterAction()
-                    if (enabled?.enabledRestActions != null && enabled.associatedRestAction != null) {
+                    if (enabled?.enabledRestActions != null) {
                         currentVertex = epa.createOrGetVertex(enabled.enabledRestActions)
                         epa.addDirectedEdge(previousVertex, currentVertex, enabled.associatedRestAction)
                         previousVertex = currentVertex

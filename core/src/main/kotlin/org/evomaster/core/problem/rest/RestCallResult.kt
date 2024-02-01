@@ -5,7 +5,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.google.common.annotations.VisibleForTesting
 import com.google.gson.Gson
 import com.google.gson.JsonObject
-import org.evomaster.client.java.controller.api.dto.database.execution.epa.Enabled
+import org.evomaster.core.problem.rest.epa.Enabled
 import org.evomaster.client.java.controller.api.dto.database.execution.epa.RestActions
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.search.action.Action
