@@ -783,6 +783,7 @@ class StringGene(
                 (mode == GeneUtils.EscapeMode.GQL_INPUT_MODE)-> "\"${rawValue.replace("\\", "\\\\\\\\")}\""
                 // TODO this code should be refactored with other getValueAsPrintableString() methods
                 // JP: It makes no sense to me if we enclose with quotes, we need to escape them
+                (mode == GeneUtils.EscapeMode.EJSON) -> "\"${rawValue.replace("\\","\\\\").replace("\"", "\\\"")}\""
                 (targetFormat == null) -> "\"${rawValue.replace("\"", "\\\"")}\""
                 //"\"${rawValue.replace("\"", "\\\"")}\""
                 (mode != null) -> "\"${GeneUtils.applyEscapes(rawValue, mode, targetFormat)}\""
