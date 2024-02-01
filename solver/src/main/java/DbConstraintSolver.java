@@ -15,5 +15,5 @@ public interface DbConstraintSolver extends AutoCloseable {
      * @param constraintList list of database constraints
      * @return a list of SQLAction with the inserts in the db for the given constraints
      */
-    List<SqlAction> solve(Table table, List<DbTableConstraint> constraintList);
+    List<SqlAction> solve(List<DbTableConstraint> constraintList);
 }

@@ -1,4 +1,7 @@
+import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
+import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.evomaster.client.java.sql.internal.constraint.DbTableCheckExpression;
+import org.evomaster.client.java.sql.SchemaExtractor;
 import org.evomaster.client.java.sql.internal.constraint.DbTableConstraint;
 import org.evomaster.core.search.gene.Gene;
 import org.evomaster.core.search.gene.numeric.IntegerGene;
@@ -13,6 +16,9 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
 
@@ -25,9 +31,19 @@ public class ConstraintSolverTest {
     private static DbConstraintSolverZ3InDocker solver;
 
     @BeforeAll
-    static void setup() {
+    static void setup() throws Exception {
         String resourcesFolder = System.getProperty("user.dir") + "/src/test/resources/";
-        solver = new DbConstraintSolverZ3InDocker(resourcesFolder);
+
+        Connection connection = DriverManager.getConnection("jdbc:h2:mem:db_test", "sa", "");
+
+        SqlScriptRunner.execCommand(connection,
+            "CREATE TABLE products(price int not null);\n" +
+            "ALTER TABLE products add CHECK (price>100);"
+        );
+
+        DbSchemaDto schemaDto = SchemaExtractor.extract(connection);
+
+        solver = new DbConstraintSolverZ3InDocker(schemaDto, resourcesFolder);
     }
 
     @AfterAll
@@ -92,23 +108,21 @@ public class ConstraintSolverTest {
 
     @Test
     public void fromConstraintList() {
-        Table table = new Table("products", emptySet(), emptySet(), emptySet());
         List<DbTableConstraint> constraintList = Collections.singletonList(
                 new DbTableCheckExpression("products", "CHECK (price>100)"));
 
-        List<SqlAction> response = solver.solve(table, constraintList);
+        List<SqlAction> response = solver.solve(constraintList);
 
         SqlAction action = response.get(0);
-        assertEquals("price", action.getName());
+        assertEquals("SQL_Insert_PRODUCTS_PRICE", action.getName());
         Gene gene = action.seeTopGenes().get(0);
 
         if (gene instanceof IntegerGene) {
             assertEquals(101, ((IntegerGene) gene).getValue());
-//            assertEquals(101, ((IntegerGene) response).getMin());
-//            assertEquals(101, ((IntegerGene) response).getMaximum());
-//            assertEquals(101, ((IntegerGene) response).getMaximum());
-            assertFalse(((IntegerGene) gene).getMinInclusive());
-            assertFalse(((IntegerGene) gene).getMaxInclusive());
+            assertEquals(101, ((IntegerGene) gene).getMin());
+            assertEquals(2147483647, ((IntegerGene) gene).getMaximum());
+            assertTrue(((IntegerGene) gene).getMinInclusive());
+            assertTrue(((IntegerGene) gene).getMaxInclusive());
         } else {
             fail("The response is not an IntegerGene");
         }
