@@ -122,7 +122,7 @@ class TestCaseWriterTest {
 
         val fitnessVal = FitnessValue(0.0)
 
-        val results = dbInitialization.map { SqlActionResult().also { it.setInsertExecutionResult(true) } }
+        val results = dbInitialization.map { SqlActionResult(it.getLocalId()).also { it.setInsertExecutionResult(true) } }
 
         val ei = EvaluatedIndividual(fitnessVal, individual, results)
         return Triple(format, baseUrlOfSut, ei)
@@ -953,7 +953,7 @@ class TestCaseWriterTest {
         TestUtils.doInitializeIndividualForTesting(individual)
 
         val fitnessVal = FitnessValue(0.0)
-        val result = RestCallResult()
+        val result = RestCallResult(action.getLocalId())
         result.setTimedout(timedout = true)
         val results = listOf(result)
         val ei = EvaluatedIndividual<RestIndividual>(fitnessVal, individual, results)
@@ -1210,8 +1210,17 @@ public void test() throws Exception {
     @Test
     fun testTestWithObjectAssertion(){
         val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
-        val fooResult = RestCallResult()
 
+        val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
+            dbInitialization = mutableListOf(),
+            groups = mutableListOf(
+                (mutableListOf<SqlAction>() to mutableListOf(fooAction))
+            ),
+            format = OutputFormat.JS_JEST
+        )
+
+        val fooResult = ei.seeResult(fooAction.getLocalId()) as RestCallResult
+        fooResult.setTimedout(false)
         fooResult.setStatusCode(200)
         fooResult.setBody("""
            [
@@ -1236,14 +1245,6 @@ public void test() throws Exception {
         """.trimIndent())
         fooResult.setBodyType(MediaType.APPLICATION_JSON_TYPE)
 
-        val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
-            dbInitialization = mutableListOf(),
-            groups = mutableListOf(
-                (mutableListOf<SqlAction>() to mutableListOf(fooAction))
-            ),
-            results = mutableListOf(fooResult),
-            format = OutputFormat.JS_JEST
-        )
 
         val config = getConfig(format)
 
@@ -1283,8 +1284,17 @@ public void test() throws Exception {
     @Test
     fun testTestWithObjectLengthAssertion(){
         val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
-        val fooResult = RestCallResult()
 
+        val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
+            dbInitialization = mutableListOf(),
+            groups = mutableListOf(
+                (mutableListOf<SqlAction>() to mutableListOf(fooAction))
+            ),
+            format = OutputFormat.JS_JEST
+        )
+
+        val fooResult = ei.seeResult(fooAction.getLocalId()) as RestCallResult
+        fooResult.setTimedout(false)
         fooResult.setStatusCode(200)
         fooResult.setBody("""
            {
@@ -1308,15 +1318,6 @@ public void test() throws Exception {
            }
         """.trimIndent())
         fooResult.setBodyType(MediaType.APPLICATION_JSON_TYPE)
-
-        val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
-            dbInitialization = mutableListOf(),
-            groups = mutableListOf(
-                (mutableListOf<SqlAction>() to mutableListOf(fooAction))
-            ),
-            results = mutableListOf(fooResult),
-            format = OutputFormat.JS_JEST
-        )
 
         val config = getConfig(format)
 
@@ -1354,9 +1355,18 @@ public void test() throws Exception {
     @Test
     fun testApplyAssertionEscapes(){
         val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
-        val fooResult = RestCallResult()
 
+        val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
+            dbInitialization = mutableListOf(),
+            groups = mutableListOf(
+                (mutableListOf<SqlAction>() to mutableListOf(fooAction))
+            ),
+            format = OutputFormat.JS_JEST
+        )
+
+        val fooResult = ei.seeResult(fooAction.getLocalId()) as RestCallResult
         val email = "foo@foo.foo"
+        fooResult.setTimedout(false)
         fooResult.setStatusCode(200)
         fooResult.setBody("""
            {
@@ -1365,14 +1375,7 @@ public void test() throws Exception {
         """.trimIndent())
         fooResult.setBodyType(MediaType.APPLICATION_JSON_TYPE)
 
-        val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
-            dbInitialization = mutableListOf(),
-            groups = mutableListOf(
-                (mutableListOf<SqlAction>() to mutableListOf(fooAction))
-            ),
-            results = mutableListOf(fooResult),
-            format = OutputFormat.JS_JEST
-        )
+
 
         val config = getConfig(format)
 

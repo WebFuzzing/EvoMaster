@@ -49,7 +49,7 @@ public class UnitsInfoRecorder implements Serializable {
 
     private List<JpaConstraint> jpaConstraints;
 
-    private volatile boolean analyzedClasses = false;
+    private volatile boolean analyzedClasses;
 
     /*
         Key -> DTO full name
@@ -115,9 +115,11 @@ public class UnitsInfoRecorder implements Serializable {
     }
 
     public static void markNewUnit(String name){
-        singleton.unitNames.add(name);
-        singleton.analyzedClasses = false;
-        singleton.jpaConstraints.clear();
+        synchronized (singleton) {
+            singleton.unitNames.add(name);
+            singleton.analyzedClasses = false;
+            singleton.jpaConstraints.clear();
+        }
     }
 
     public static void markNewLine(){
@@ -198,12 +200,18 @@ public class UnitsInfoRecorder implements Serializable {
             when using transformation in Agent, we can intercept _before_ loading, but not _after_.
             So, here we do it lazily, by forcing loading on get()
          */
-        if(!analyzedClasses){
-            ClassAnalyzer.doAnalyze(unitNames);
-            analyzedClasses = true;
-        }
+        synchronized (singleton) {
+            if (!analyzedClasses) {
+                ClassAnalyzer.doAnalyze(unitNames);
+                analyzedClasses = true;
+            }
 
-        return Collections.unmodifiableList(jpaConstraints);
+            return Collections.unmodifiableList(jpaConstraints);
+        }
+    }
+
+    public boolean areClassesAnalyzed(){
+        return analyzedClasses;
     }
 
     public  int getNumberOfUnits() {
