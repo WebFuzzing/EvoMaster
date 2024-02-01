@@ -16,10 +16,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -116,35 +113,26 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
         String[] values = lines[1].substring(2, lines[1].length()-2).split(" ");
         String name = values[0];
         Integer value =  Integer.parseInt(values[1]);
-        Integer min = null;
-        Integer max = null;
-        Integer precision = null;
-        boolean minInclusive = false;
-        boolean maxInclusive = false;
 
         Gene gene = new IntegerGene(
                 name,
                 value,
-                min,
-                max,
-                precision,
-                minInclusive,
-                maxInclusive);
+                null,
+                null,
+                null,
+                false,
+                false);
 
         String tableName = dbTableConstraint.getTableName();
         List<String> history = new LinkedList<>();
+        Set<String> columnNames = new HashSet<>(Collections.singletonList("*"));
 
-        Set<String> columnNames = this.sqlInsertBuilder.getTable(tableName, false).getColumns().stream().map(Column::getName).collect(Collectors.toSet());
         List<SqlAction> actions = sqlInsertBuilder.createSqlInsertionAction(tableName,
                 columnNames, history, false, false, false);
 
         actions.forEach(a -> a.seeTopGenes().forEach(g -> g.copyValueFrom(gene)));
 
         return actions;
-
-
-//        SqlAction action = new SqlAction(table, table.getColumns(), 0, Collections.singletonList(gene), false);
-//        return Collections.singletonList(action);
     }
 
     /**
