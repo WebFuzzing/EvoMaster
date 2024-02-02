@@ -12,7 +12,7 @@ class EPA {
             "graph [pad=\"3\", nodesep=\"4\", ranksep=\"5\"]\n" +
             "node [ margin=0.4 fontname=Helvetica ]\n" +
             "edge [fontname=Courier fontsize=14]\n" +
-            "init [shape=box]"
+            "init [shape=box]\n"
 
     fun createOrGetVertex(enabledEndpoints: RestActions, isInitial: Boolean = false): Vertex {
         val enabledEndpointsString = enabledEndpoints.toStringForEPA()
