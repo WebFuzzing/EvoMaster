@@ -7,6 +7,7 @@ import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.SqlActionUtils
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.api.ApiWsIndividual
+import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.enterprise.EnterpriseChildTypeVerifier
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
@@ -209,6 +210,17 @@ class RestIndividual(
      * @return all groups of actions for resource handling
      */
     fun getResourceCalls() : List<RestResourceCalls> = children.filterIsInstance<RestResourceCalls>()
+
+
+    /**
+     * @return a list of EnterpriseActionGroups under GroupsOfChildren.MAIN
+     * if the list is empty, it indicates that `doFlattenStructure` has been processed yet then return null
+     */
+    fun getFlattenMainEnterpriseActionGroup() : List<EnterpriseActionGroup<RestCallAction>>?{
+        val groups = groupsView()!!.getAllInGroup(GroupsOfChildren.MAIN).filterIsInstance<EnterpriseActionGroup<*>>()
+        if (groups.isEmpty()) return null
+        return groups as List<EnterpriseActionGroup<RestCallAction>>
+    }
 
     /**
      * return all the resource calls in this individual, with their index in the children list
