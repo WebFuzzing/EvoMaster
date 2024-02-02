@@ -146,8 +146,8 @@ class RestIndividual(
         addChildrenToGroup(dnsActions, GroupsOfChildren.INITIALIZATION_DNS)
 
         // re-generate local id
-        resetLocalIdRecursively()
-        doInitializeLocalId()
+//        resetLocalIdRecursively()
+//        doInitializeLocalId()
     }
 
     enum class ResourceFilter { ALL, NO_SQL, ONLY_SQL, ONLY_SQL_INSERTION, ONLY_SQL_EXISTING }
