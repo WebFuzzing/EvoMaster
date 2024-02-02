@@ -8,6 +8,17 @@ import org.evomaster.core.search.gene.Gene
 /**
  * created by manzh on 2019-09-10
  *
+ * Class used to collect what mutations have been applied to the genes in an individual.
+ *
+ * Based on their possible impact on fitness, based on MAIN actions or DB actions, we treat them separately.
+ * Eg, could have different mutation rates based on type.
+ *
+ * TODO how to handle new types? and how to make sure to crash here if new type is introduced but this class
+ * is not updated?
+ * FIXME for example, now we have actions for MongoDB and ExternalService, and in future might have Kafka as well, plus
+ * who knows in  some years...
+ * likely issue a warning and have some default behavior
+ *
  * @property mutatedGenes records what genes are mutated
  * @property mutatedDbGenes records what db genes are mutated
  * @property addedGenes (structure mutation) records what genes are added using structure mutator

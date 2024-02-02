@@ -764,13 +764,31 @@ class EvaluatedIndividual<T>(
 
     }
 
-    //TODO check this when integrating with SQL resource handling
+    /**
+     *  When we add or remove actions in the initialization of an individual, then we need to make sure
+     *  that all data structures regarding impact gene collection would be updated.
+     *
+     *  This would apply to all initialization actions with genes, like for example SQL and MongoDB.
+     */
     fun updateImpactGeneDueToAddedInitializationGenes(
+        /**
+         * Information about what genes have been mutated
+         */
         mutatedGenes: MutatedGeneSpecification,
-        old: List<Action>,
-        addedInsertions: List<List<Action>>?
+        /**
+         * all original initialization actions (that have genes), in specific order, before the new ones get added
+         */
+        old: List<EnvironmentAction>,
+        addedInsertions: List<List<EnvironmentAction>>?
     ) {
         impactInfo ?: throw IllegalStateException("there is no any impact initialized")
+
+        /*
+            note that [old] + [addedInsertions] might not fully match environment actions inside this evaluated individual.
+            this is due to the repair phase, that might have removed some actions.
+            at this point, we don't know if repair just delete or also add new actions... so could be superset or
+            subset of current environment actions...
+         */
 
         val allExistingData = individual.seeInitializingActions().filter { it is SqlAction && it.representExistingData }
         val diff = individual.seeInitializingActions()

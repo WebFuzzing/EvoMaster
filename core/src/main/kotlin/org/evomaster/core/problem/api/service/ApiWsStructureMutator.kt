@@ -15,6 +15,7 @@ import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHt
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.param.HttpWsResponseParam
+import org.evomaster.core.search.EnvironmentAction
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.GroupsOfChildren
@@ -168,7 +169,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
             return
         }
 
-        val oldMongoDbActions = mutableListOf<Action>().plus(ind.seeInitializingActions().filterIsInstance<MongoDbAction>())
+        val oldMongoDbActions = mutableListOf<EnvironmentAction>().plus(ind.seeInitializingActions())
 
         val addedMongoDbInsertions = handleFailedFind(ind, fw, mutatedGenes, sampler)
 
@@ -202,18 +203,19 @@ abstract class ApiWsStructureMutator : StructureMutator() {
             }
         }
 
+        //as HostnameResolutionAction have no genes, we skip it
         // update impact based on added genes
-        if (mutatedGenes != null && config.isEnabledArchiveGeneSelection()) {
-            individual.updateImpactGeneDueToAddedInitializationGenes(
-                mutatedGenes,
-                oldHostnameResolutionActions,
-                listOf(addedHostnameResolutionInsertions)
-            )
-        }
+//        if (mutatedGenes != null && config.isEnabledArchiveGeneSelection()) {
+//            individual.updateImpactGeneDueToAddedInitializationGenes(
+//                mutatedGenes,
+//                oldHostnameResolutionActions,
+//                listOf(addedHostnameResolutionInsertions)
+//            )
+//        }
     }
 
     private fun <T : ApiWsIndividual> addInitializingDbActions(
-        individual: EvaluatedIndividual<*>,
+        evaluatedIndividual: EvaluatedIndividual<*>,
         mutatedGenes: MutatedGeneSpecification?,
         sampler: ApiWsSampler<T>
     ) {
@@ -221,7 +223,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
             return
         }
 
-        val ind = individual.individual as? T
+        val ind = evaluatedIndividual.individual as? T
             ?: throw IllegalArgumentException("Invalid individual type")
 
         /**
@@ -235,7 +237,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
          * its phenotype (otherwise the fitness value would be meaningless).
          */
 
-        val fw = individual.fitness.getViewOfAggregatedFailedWhere()
+        val fw = evaluatedIndividual.fitness.getViewOfAggregatedFailedWhere()
             //TODO likely to remove/change once we ll support VIEWs
             .filter { sampler.canInsertInto(it.key) }
 
@@ -243,14 +245,14 @@ abstract class ApiWsStructureMutator : StructureMutator() {
             return
         }
 
-        val oldSqlActions = mutableListOf<Action>().plus(ind.seeInitializingActions().filterIsInstance<SqlAction>())
+        val oldSqlActions = mutableListOf<Action>().plus(ind.seeInitializingActions())
 
         val addedSqlInsertions = handleFailedWhereSQL(ind, fw, mutatedGenes, sampler)
 
         ind.repairInitializationActions(randomness)
         // update impact based on added genes
         if (mutatedGenes != null && config.isEnabledArchiveGeneSelection()) {
-            individual.updateImpactGeneDueToAddedInitializationGenes(
+            evaluatedIndividual.updateImpactGeneDueToAddedInitializationGenes(
                 mutatedGenes,
                 oldSqlActions,
                 addedSqlInsertions
