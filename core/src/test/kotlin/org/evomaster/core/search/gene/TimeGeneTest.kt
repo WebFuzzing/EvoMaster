@@ -1,6 +1,7 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.search.gene.datetime.TimeGene
+import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -20,6 +21,10 @@ class TimeGeneTest {
                 "03:04:05.000Z",
                 gene.getValueAsRawString()
         )
+        assertEquals(
+            true,
+            gene.isValidTime()
+        )
     }
 
     @Test
@@ -36,6 +41,10 @@ class TimeGeneTest {
                 "03:04:05.000Z",
                 gene.getValueAsRawString()
         )
+        assertEquals(
+            true,
+            gene.isValidTime()
+        )
     }
 
     @Test
@@ -51,6 +60,10 @@ class TimeGeneTest {
         assertEquals(
                 "03:04:05",
                 gene.getValueAsRawString()
+        )
+        assertEquals(
+            true,
+            gene.isValidTime()
         )
     }
 
@@ -73,6 +86,7 @@ class TimeGeneTest {
             assertEquals(4, minute.value)
             assertEquals(5, second.value)
             assertEquals(TimeGene.TimeGeneFormat.ISO_LOCAL_DATE_FORMAT, timeGeneFormat)
+            assertEquals(false, onlyValidTimes)
         }
     }
 
@@ -95,6 +109,7 @@ class TimeGeneTest {
             assertEquals(4, minute.value)
             assertEquals(5, second.value)
             assertEquals(TimeGene.TimeGeneFormat.TIME_WITH_MILLISECONDS, timeGeneFormat)
+            assertEquals(false, onlyValidTimes)
         }
     }
     @Test
@@ -117,9 +132,34 @@ class TimeGeneTest {
             assertEquals(4, minute.value)
             assertEquals(5, second.value)
             assertEquals(TimeGene.TimeGeneFormat.ISO_LOCAL_DATE_FORMAT, timeGeneFormat)
+            assertEquals(false, onlyValidTimes)
         }
     }
 
+    @Test
+    fun testInvalidTime() {
+        val gene = TimeGene("time")
+
+        gene.apply {
+            hour.value = -1
+            minute.value = 4
+            second.value = 5
+        }
+        assertEquals(
+    false,
+            gene.isValidTime()
+        )
+    }
+
+    @Test
+    fun testValidTime() {
+        val gene = TimeGene("time", onlyValidTimes = true)
+        val rand = Randomness()
+        repeat (1000) {
+            gene.randomize(rand, tryToForceNewValue = true)
+            assertEquals(true, gene.isValidTime())
+        }
+    }
 
 
 }

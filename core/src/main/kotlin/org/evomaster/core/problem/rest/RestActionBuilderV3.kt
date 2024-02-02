@@ -28,6 +28,7 @@ import org.evomaster.core.search.gene.collection.FixedMapGene
 import org.evomaster.core.search.gene.collection.PairGene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
+import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.gene.numeric.*
 import org.evomaster.core.search.gene.optional.ChoiceGene
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
@@ -656,8 +657,10 @@ object RestActionBuilderV3 {
             "password" -> return createNonObjectGeneWithSchemaConstraints(schema, name, StringGene::class.java, options, null, isInPath, examples)//StringGene(name) //nothing special to do, it is just a hint
             "binary" -> return createNonObjectGeneWithSchemaConstraints(schema, name, StringGene::class.java, options, null, isInPath, examples)//StringGene(name) //does it need to be treated specially?
             "byte" -> return createNonObjectGeneWithSchemaConstraints(schema, name, Base64StringGene::class.java, options, null, isInPath, examples)//Base64StringGene(name)
-            "date" -> return DateGene(name, onlyValidDates = !options.invalidData)
-            "date-time" -> return DateTimeGene(name)
+            "date", "local-date" -> return DateGene(name, onlyValidDates = !options.invalidData)
+            "date-time", "local-date-time" -> return DateTimeGene(name,
+                date = DateGene("date", onlyValidDates = !options.invalidData),
+                time =  TimeGene("time", onlyValidTimes = !options.invalidData))
             else -> if (format != null) {
                 LoggingUtil.uniqueWarn(log, "Unhandled format '$format'")
             }

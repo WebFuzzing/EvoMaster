@@ -11,7 +11,7 @@ import javax.ws.rs.core.MediaType
 
 class RestCallResult : HttpWsCallResult {
 
-    constructor(stopping: Boolean = false) : super(stopping)
+    constructor(sourceLocalId: String, stopping: Boolean = false) : super(sourceLocalId, stopping)
 
     @VisibleForTesting
     internal constructor(other: ActionResult) : super(other)

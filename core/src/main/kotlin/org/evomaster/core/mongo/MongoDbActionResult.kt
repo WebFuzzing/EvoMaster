@@ -8,7 +8,7 @@ import org.evomaster.core.search.action.ActionResult
  */
 class MongoDbActionResult : ActionResult {
 
-    constructor(stopping: Boolean = false) : super(stopping)
+    constructor(sourceLocalId: String, stopping: Boolean = false) : super(sourceLocalId, stopping)
     constructor(other: MongoDbActionResult) : super(other)
 
     companion object {
