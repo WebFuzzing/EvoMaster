@@ -28,10 +28,13 @@ class SearchTimeController {
                                          function: () -> T): T {
 
             val startTime = System.currentTimeMillis()
-            val result: T = function.invoke()
-            loggingFunction.invoke(System.currentTimeMillis() - startTime, result)
-
-            return result
+            try {
+                val result: T = function.invoke()
+                loggingFunction.invoke(System.currentTimeMillis() - startTime, result)
+                return result
+            } catch(e: Exception) {
+                throw e
+            }
         }
     }
 
