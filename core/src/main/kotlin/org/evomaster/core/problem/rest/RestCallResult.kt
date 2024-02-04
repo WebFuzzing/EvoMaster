@@ -22,8 +22,9 @@ class RestCallResult : HttpWsCallResult {
 
     companion object {
         const val HEURISTICS_FOR_CHAINED_LOCATION = "HEURISTICS_FOR_CHAINED_LOCATION"
-        const val INITIAL_ENABLED_ENDPOINTS = "INITIAL_ENABLED_ENDPOINTS"
+        const val PREVIOUS_ENABLED_ENDPOINTS = "PREVIOUS_ENABLED_ENDPOINTS"
         const val ENABLED_ENDPOINTS_AFTER_ACTION = "ENABLED_ENDPOINTS_AFTER_ACTION"
+        const val IS_INITIAL_ACTION = "IS_INITIAL_ACTION"
         val mapper = jacksonObjectMapper()
     }
 
@@ -65,11 +66,13 @@ class RestCallResult : HttpWsCallResult {
      */
     fun setHeuristicsForChainedLocation(on: Boolean) = addResultValue(HEURISTICS_FOR_CHAINED_LOCATION, on.toString())
     fun getHeuristicsForChainedLocation(): Boolean = getResultValue(HEURISTICS_FOR_CHAINED_LOCATION)?.toBoolean() ?: false
-    fun setInitialEnabledEndpoints(enabledActions: RestActions?) = addResultValue(INITIAL_ENABLED_ENDPOINTS, mapper.writeValueAsString(enabledActions))
-    fun getInitialEnabledEndpoints(): RestActions? {
-        return getResultValue(INITIAL_ENABLED_ENDPOINTS)?.let { mapper.readValue<RestActions?>(it) }
+    fun setIsInitialAction(on: Boolean?) = addResultValue(IS_INITIAL_ACTION, on.toString())
+    fun getIsInitialAction(): Boolean = getResultValue(IS_INITIAL_ACTION)?.toBoolean() ?: false
+    fun setPreviousEnabledEndpoints(enabledActions: RestActions?) = addResultValue(PREVIOUS_ENABLED_ENDPOINTS, mapper.writeValueAsString(enabledActions))
+    fun getPreviousEnabledEndpoints(): RestActions? {
+        return getResultValue(PREVIOUS_ENABLED_ENDPOINTS)?.let { mapper.readValue<RestActions?>(it) }
     }
-    fun setEnabledEndpointsAfterAction(enabledActions: Enabled) = addResultValue(ENABLED_ENDPOINTS_AFTER_ACTION, mapper.writeValueAsString(enabledActions))
+    fun setEnabledEndpointsAfterAction(enabledActions: Enabled?) = addResultValue(ENABLED_ENDPOINTS_AFTER_ACTION, mapper.writeValueAsString(enabledActions))
     fun getEnabledEndpointsAfterAction(): Enabled? {
         return getResultValue(ENABLED_ENDPOINTS_AFTER_ACTION)?.let { mapper.readValue<Enabled?>(it) }
     }

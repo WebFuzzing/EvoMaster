@@ -348,14 +348,16 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
             .forEach {
                 val result = actionResults[it] as RestCallResult
                 val status = result.getStatusCode() ?: -1
+                if (status >= 400) return //if the request failed we won't have new coverage of the EPA.
+
                 val actionName = actions[it].getName()
-                var previousEnabled = result.getInitialEnabledEndpoints()
+                var previousEnabled = result.getPreviousEnabledEndpoints()
                 if (previousEnabled == null && it > 0) {
                     previousEnabled = (actionResults[it - 1] as RestCallResult).getEnabledEndpointsAfterAction()?.enabledRestActions
                 }
                 val currentEnabled = result.getEnabledEndpointsAfterAction()?.enabledRestActions
                 val epaEdgeId = idMapper.handleLocalTarget("$previousEnabled:$actionName:$currentEnabled")
-                if (status < 400 && previousEnabled != null && currentEnabled != null) {
+                if (previousEnabled != null && currentEnabled != null) {
                     fv.updateTarget(epaEdgeId, 1.0, it)
                 }
             }
@@ -447,8 +449,11 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
         val rcr = RestCallResult(a.getLocalId())
         actionResults.add(rcr)
 
-        if(config.epaCalculation && actionResults.size == 1) { //it's the first action
-            handleInitialEnabledEndpoints(rcr)
+        if(config.epaCalculation && actionResults.filterIsInstance<RestCallResult>().size == 1) { //it's the first rest call action
+            handlePreviousEnabledEndpoints(rcr)
+            if (actionResults.size == 1) { //it's the first action (no db handling previously)
+                rcr.setIsInitialAction(true);
+            }
         }
 
         val response = try {
@@ -538,7 +543,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
 
         rcr.setStatusCode(response.status)
 
-        if (config.epaCalculation) {
+        if (config.epaCalculation && response.status < 400) {// we only want what happens after the action if it is a valid action
             handleEnabledEndpoints(rcr, a)
         }
 
@@ -723,14 +728,14 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
             }
     }
 
-    protected fun handleInitialEnabledEndpoints(
+    protected fun handlePreviousEnabledEndpoints(
         rcr: RestCallResult
     ) {
         val restActions = getEnabledRestActions()?.let {
             RestActions.from(it)
         }
         restActions.let {
-            rcr.setInitialEnabledEndpoints(it)
+            rcr.setPreviousEnabledEndpoints(it)
         }
     }
 

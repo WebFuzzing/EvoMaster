@@ -5,7 +5,7 @@ import org.evomaster.client.java.controller.api.dto.database.execution.epa.RestA
 
 class EPA {
 
-    private val adjacencyMap = mutableMapOf<Vertex, MutableList<Edge>>()
+    val adjacencyMap = mutableMapOf<Vertex, MutableList<Edge>>()
 
     private val graphHeader = "digraph {\n" +
             "beautify=true\n" +
@@ -33,14 +33,6 @@ class EPA {
         edge.addRestActionIfNecessary(restAction)
     }
 
-    override fun toString(): String {
-        return buildString {
-            adjacencyMap.forEach { (vertex, edges) ->
-                val edgeString = edges.joinToString { it.destination.enabledEndpoints }
-                append("${vertex.enabledEndpoints} -> [$edgeString]\n")
-            }
-        }
-    }
     fun toDOT(): String {
         val sb = StringBuilder()
         sb.append(graphHeader)

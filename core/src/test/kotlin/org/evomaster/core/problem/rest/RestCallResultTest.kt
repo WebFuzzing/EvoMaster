@@ -38,9 +38,9 @@ internal class RestCallResultTest {
     @Test
     fun setAndGetInitialEnabledEndpoints() {
         val rc = RestCallResult("",false)
-        rc.setInitialEnabledEndpoints(restActions)
+        rc.setPreviousEnabledEndpoints(restActions)
 
-        val res = rc.getInitialEnabledEndpoints()
+        val res = rc.getPreviousEnabledEndpoints()
 
         Assertions.assertEquals(restActions.toStringForEPA(), res?.toStringForEPA())
     }
