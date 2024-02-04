@@ -27,7 +27,7 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         return name
     }
 
-    override fun handleFieldDeclarations(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>) : Boolean {
+    override fun handleFieldDeclarations(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>) {
 
         //FIXME this is getting auth, not field declaration
         CookieWriter.handleGettingCookies(format, ind, lines, baseUrlOfSut, this)
@@ -45,10 +45,10 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         if (initializingMongoResults.any { (it as? MongoDbActionResult) == null })
             throw IllegalStateException("the type of results are expected as MongoDbActionResults")
 
+        //FIXME this doing initializations, not field declaration
         val initializingHostnameResolutionActions = ind.individual
             .seeInitializingActions()
             .filterIsInstance<HostnameResolutionAction>()
-            .distinct()
 
         if (initializingSqlActions.isNotEmpty()) {
             SqlWriter.handleDbInitialization(
@@ -68,12 +68,9 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                 lines, insertionVars = insertionVars, skipFailure = config.skipFailureSQLInTestFile)
         }
 
-        var anyHostnameResolutionAction = false
         if (initializingHostnameResolutionActions.isNotEmpty()) {
-            anyHostnameResolutionAction = handleHostnameResolutionActions(lines, initializingHostnameResolutionActions)
+            handleHostnameResolutionActions(lines, initializingHostnameResolutionActions)
         }
-
-        return anyHostnameResolutionAction
     }
 
     /**

@@ -198,7 +198,7 @@ class HttpWsExternalServiceHandler {
             val action = HostnameResolutionAction(it.remoteHostName, hostnameLocalAddressMapping[it.remoteHostName]!!)
             output.add(action)
         }
-        return output.distinct()
+        return output
     }
 
     fun hasActiveMockServer(hostname: String): Boolean {

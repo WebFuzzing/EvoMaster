@@ -57,8 +57,8 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         baseUrlOfSut: String,
         ind: EvaluatedIndividual<*>,
         insertionVars: MutableList<Pair<String, String>>
-    ) : Boolean {
-        val anyHostnameResolutionAction = super.handleFieldDeclarations(lines, baseUrlOfSut, ind, insertionVars)
+    ) {
+        super.handleFieldDeclarations(lines, baseUrlOfSut, ind, insertionVars)
 
         if (shouldCheckExpectations()) {
             addDeclarationsForExpectations(lines, ind as EvaluatedIndividual<RestIndividual>)
@@ -94,8 +94,6 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                     }
                 }
         }
-
-        return anyHostnameResolutionAction
     }
 
     override fun handleActionCalls(

@@ -7,9 +7,8 @@ import org.evomaster.core.search.EvaluatedIndividual
 import java.nio.file.Path
 
 class NoTestCaseWriter : TestCaseWriter() {
-    override fun handleFieldDeclarations(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>) : Boolean {
-        // Note: changed it after handling DNS actions
-        return false
+    override fun handleFieldDeclarations(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>) {
+        // empty
     }
 
     override fun handleActionCalls(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>, testCaseName: String, testSuitePath: Path?) {

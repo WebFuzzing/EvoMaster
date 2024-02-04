@@ -17,10 +17,8 @@ class WebTestCaseWriter : TestCaseWriter() {
         baseUrlOfSut: String,
         ind: EvaluatedIndividual<*>,
         insertionVars: MutableList<Pair<String, String>>
-    ) : Boolean {
+    ) {
         //nothing to do? at least for now...
-        // Note: changed the return type after DNS action
-        return false
     }
 
     override fun handleActionCalls(
