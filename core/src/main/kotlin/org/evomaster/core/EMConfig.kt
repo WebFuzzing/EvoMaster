@@ -6,6 +6,7 @@ import joptsimple.OptionParser
 import joptsimple.OptionSet
 import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
+import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory
 import org.evomaster.core.config.ConfigProblemException
@@ -59,6 +60,20 @@ class EMConfig {
          * Really, having something longer would make little to no sense
          */
         const val stringLengthHardLimit = 20_000
+
+        private const val defaultExternalServiceIP = "127.0.0.3"
+
+        //leading zeros are allowed
+        private const val lz = "0*"
+        //should start with local 127
+        private const val _eip_s = "^${lz}127"
+        // other numbers could be anything between 0 and 255
+        private const val _eip_e = "(\\.${lz}(25[0-5]|2[0-4][0-9]|1?[0-9]?[0-9])){3}$"
+        // first numbers (127.0.0.0 to 127.0.0.2) are reserved
+        // this is done with a negated lookahead ?!
+        private const val _eip_n = "(?!${_eip_s}(\\.${lz}0){2}\\.${lz}[012]$)"
+
+        private const val externalServiceIPRegex = "$_eip_n$_eip_s$_eip_e"
 
         fun validateOptions(args: Array<String>): OptionParser {
 
@@ -2031,10 +2046,14 @@ class EMConfig {
     @Experimental
     var externalServiceIPSelectionStrategy = ExternalServiceIPSelectionStrategy.NONE
 
-    @Cfg("User provided external service IP.")
+    @Cfg("User provided external service IP." +
+            " When EvoMaster mocks external services, mock server instances will run on local addresses starting from" +
+            " this provided address." +
+            " Min value is ${defaultExternalServiceIP}." +
+            " Lower values like ${ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP} are reserved.")
     @Experimental
-    @Regex("^127\\.((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){2}([3-9]|[0-9][0-9]|[0-2][0-5][0-5]?)\$")
-    var externalServiceIP : String = "127.0.0.3"
+    @Regex(externalServiceIPRegex)
+    var externalServiceIP : String = defaultExternalServiceIP
 
     @Experimental
     @Cfg("Whether to apply customized method (i.e., implement 'customizeMockingRPCExternalService' for external services or 'customizeMockingDatabase' for database) to handle mock object.")
