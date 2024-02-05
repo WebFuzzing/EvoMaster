@@ -899,5 +899,4 @@ class EvaluatedIndividual<T>(
     private fun initializingActionClasses(): List<KClass<*>> {
         return listOf(MongoDbAction::class, SqlAction::class)
     }
-
 }
