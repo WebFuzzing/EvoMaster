@@ -50,7 +50,7 @@ public class FileCreationIssueNoFaultEMTest extends SpringTestBase {
             args.add("--executiveSummary");
             args.add("true");
             args.add("--maxTime");
-            args.add("10s");
+            args.add("5s");
 
             // run evomaster
             Solution sol = initAndRun(args);
@@ -110,7 +110,7 @@ public class FileCreationIssueNoFaultEMTest extends SpringTestBase {
             args.add("--executiveSummary");
             args.add("false");
             args.add("--maxTime");
-            args.add("10s");
+            args.add("5s");
 
             // run evomaster
             Solution sol = initAndRun(args);
