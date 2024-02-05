@@ -20,6 +20,9 @@ on:
       - '!.gitignore'
       - '!docs/**'
       - 'docs/options.md'
+  pull_request:
+    branches:
+      - "**"
 
 env:
   evomaster-version: 2.0.1
