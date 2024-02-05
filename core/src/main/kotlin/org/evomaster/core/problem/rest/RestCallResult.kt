@@ -66,8 +66,6 @@ class RestCallResult : HttpWsCallResult {
      */
     fun setHeuristicsForChainedLocation(on: Boolean) = addResultValue(HEURISTICS_FOR_CHAINED_LOCATION, on.toString())
     fun getHeuristicsForChainedLocation(): Boolean = getResultValue(HEURISTICS_FOR_CHAINED_LOCATION)?.toBoolean() ?: false
-    fun setIsInitialAction(on: Boolean?) = addResultValue(IS_INITIAL_ACTION, on.toString())
-    fun getIsInitialAction(): Boolean = getResultValue(IS_INITIAL_ACTION)?.toBoolean() ?: false
     fun setPreviousEnabledEndpoints(enabledActions: RestActions?) = addResultValue(PREVIOUS_ENABLED_ENDPOINTS, mapper.writeValueAsString(enabledActions))
     fun getPreviousEnabledEndpoints(): RestActions? {
         return getResultValue(PREVIOUS_ENABLED_ENDPOINTS)?.let { mapper.readValue<RestActions?>(it) }

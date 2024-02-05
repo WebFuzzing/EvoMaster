@@ -900,7 +900,4 @@ class EvaluatedIndividual<T>(
         return listOf(MongoDbAction::class, SqlAction::class)
     }
 
-    fun getRestCallResults(): List<RestCallResult> {
-        return results.filterIsInstance<RestCallResult>()
-    }
 }

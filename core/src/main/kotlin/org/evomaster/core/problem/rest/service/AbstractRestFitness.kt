@@ -451,9 +451,6 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
 
         if(config.epaCalculation && actionResults.filterIsInstance<RestCallResult>().size == 1) { //it's the first rest call action
             handlePreviousEnabledEndpoints(rcr)
-            if (actionResults.size == 1) { //it's the first action (no db handling previously)
-                rcr.setIsInitialAction(true);
-            }
         }
 
         val response = try {

@@ -2,7 +2,9 @@ package org.evomaster.core.output.service
 
 import org.evomaster.core.epa.EPA
 import org.evomaster.core.epa.Vertex
+import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.search.Solution
+import org.evomaster.core.search.action.ActionFilter
 import java.nio.file.Files
 import java.nio.file.Paths
 
@@ -12,10 +14,12 @@ class EpaWriter {
         for (i in solution.individuals) {
             var previousVertex: Vertex? = null
             var currentVertex: Vertex
-            val restCallResults = i.getRestCallResults()
+            // notInitialized = it's the first action (no db handling previously)
+            val notInitialized = i.individual.seeInitializingActions().isEmpty() && i.individual.seeActions(ActionFilter.ONLY_SQL).isEmpty()
+            val restCallResults = i.seeResults(i.individual.seeMainExecutableActions()).filterIsInstance<RestCallResult>()
             for (rcr in restCallResults) {
                 rcr.getPreviousEnabledEndpoints()?.let {
-                    previousVertex = epa.createOrGetVertex(it, rcr.getIsInitialAction())
+                    previousVertex = epa.createOrGetVertex(it, notInitialized)
                 }
                 val enabled = rcr.getEnabledEndpointsAfterAction()
                 if (enabled?.enabledRestActions != null) {
