@@ -20,6 +20,8 @@ class EPA {
         if (vertex == null) {
             vertex = Vertex(isInitial, adjacencyMap.count(), enabledEndpointsString)
             adjacencyMap[vertex] = mutableListOf()
+        } else if (isInitial && !vertex.isInitial) {
+            vertex.isInitial = true
         }
         return vertex
     }
