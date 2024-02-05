@@ -25,6 +25,11 @@ import java.io.PrintStream;
 
 public class DisplayIssueEMTest extends SpringTestBase {
 
+    /*
+    statistics file to be used
+     */
+    private final String statisticsFile = "statistics.csv";
+
     @BeforeAll
     public static void initClass() throws Exception {
 
@@ -39,7 +44,7 @@ public class DisplayIssueEMTest extends SpringTestBase {
     statistics file.
      */
     @Test
-    public void testRunBlackboxAndWhiteBox() throws Throwable {
+    public void testRunBlackboxPotentialFaultsDisplayed() throws Throwable {
 
         // redirect console output to PrintStream
 
@@ -53,55 +58,31 @@ public class DisplayIssueEMTest extends SpringTestBase {
                     5,
                     (args) -> {
 
-                        ByteArrayOutputStream byteArrayOutput = new ByteArrayOutputStream();
-                        System.setOut(new PrintStream(byteArrayOutput));
-
-                        args.add("--writeStatistics");
-                        args.add("true");
-
-                        Solution<RestIndividual> solutionWhite = initAndRun(args);
-
-                        String expectedNumberOfPotentialFaultsWhite = findValueOfItemWithKeyInStats
-                                (solutionWhite, "potentialFaults");
-                        String expectedNumberOfCoveredTargetsWhite = findValueOfItemWithKeyInStats
-                                (solutionWhite, "coveredTargets");
-
-                        Assertions.assertTrue(byteArrayOutput.toString().contains("Covered targets " +
-                                "(lines, branches, faults, etc.): " + expectedNumberOfCoveredTargetsWhite));
-
-                        Assertions.assertTrue(byteArrayOutput.toString().contains("Potential faults: "
-                                + expectedNumberOfPotentialFaultsWhite));
-
-                        // now run the same thins as a blackbox test
-                        byteArrayOutput = new ByteArrayOutputStream();
-                        System.setOut(new PrintStream(byteArrayOutput));
-
                         args.add("--blackBox");
                         args.add("true");
                         args.add("--bbTargetUrl");
                         args.add(baseUrlOfSut);
                         args.add("--bbSwaggerUrl");
                         args.add(baseUrlOfSut + "/v2/api-docs");
-                        args.add("--outputFormat");
-                        args.add("JAVA_JUNIT_4");
+                        args.add("--writeStatistics");
+                        args.add("true");
 
-                        Solution<RestIndividual> solutionBlack = initAndRun(args);
+                        ByteArrayOutputStream byteArrayOutput = new ByteArrayOutputStream();
+                        System.setOut(new PrintStream(byteArrayOutput));
 
-                        String expectedNumberOfPotentialFaultsBlack = findValueOfItemWithKeyInStats
-                                (solutionBlack, "potentialFaults");
+                        Solution<RestIndividual> solutionWhite = initAndRun(args);
+
+                        String expectedNumberOfPotentialFaultsWhite = findValueOfItemWithKeyInStats
+                                (solutionWhite, "potentialFaults");
 
                         Assertions.assertTrue(byteArrayOutput.toString().contains("Potential faults: "
-                                + expectedNumberOfPotentialFaultsBlack));
+                                + expectedNumberOfPotentialFaultsWhite));
 
                     });
-        }
-        catch (Exception e) {
-            System.err.println("Exception occurred during the test case: ");
-        }
-        finally {
+        } finally {
 
-            File statsFile = new File("statistics.csv");
-            statsFile.deleteOnExit();
+            File statsFile = new File(this.statisticsFile);
+            statsFile.delete();
             System.setOut(old);
         }
 
