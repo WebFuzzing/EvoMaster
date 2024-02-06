@@ -21,20 +21,28 @@ class EpaWriter {
         for (i in solution.individuals) {
             var previousVertex: Vertex? = null
             var currentVertex: Vertex
-            // notInitialized = it's the first action (no db handling previously)
-            val notInitialized = i.individual.seeInitializingActions().isEmpty() && i.individual.seeActions(ActionFilter.ONLY_SQL).isEmpty()
-            val restCallResults = i.seeResults(i.individual.seeMainExecutableActions()).filterIsInstance<RestCallResult>()
+            val restCallResults = i.seeResults(i.individual.seeMainExecutableActions())
+                .filterIsInstance<RestCallResult>()
             for (rcr in restCallResults) {
                 rcr.getPreviousEnabledEndpoints()?.let {
+                    // notInitialized = it's the first action (no db handling previously)
+                    val notInitialized = i.individual.seeInitializingActions().isEmpty()
+                            && i.individual.seeActions(ActionFilter.ONLY_SQL).isEmpty()
                     previousVertex = epa.createOrGetVertex(it, notInitialized)
                 }
                 val enabled = rcr.getEnabledEndpointsAfterAction()
                 if (enabled?.enabledRestActions != null) {
                     currentVertex = epa.createOrGetVertex(enabled.enabledRestActions)
-                    previousVertex?.let { epa.addDirectedEdge(it, currentVertex, enabled.associatedRestAction)}
+                    previousVertex?.let {
+                        epa.addDirectedEdge(it, currentVertex, enabled.associatedRestAction)
+                    }
                     previousVertex = currentVertex
                 } else {
-                    break // because of failed http requests we are missing one or more necessary elements to build the epa
+                    /*
+                    * because of failed HTTP requests we are missing necessary
+                    * data to build the EPA for the rest of the individual.
+                    * */
+                    break
                 }
             }
         }
