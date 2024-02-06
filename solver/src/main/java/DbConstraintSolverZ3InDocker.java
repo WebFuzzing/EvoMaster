@@ -96,19 +96,20 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
         }
     }
 
-    private List<SqlAction> solveFromTmp(String filename, DbTableConstraint dbTableConstraint) {
+    private List<SqlAction> solveFromTmp(String filename, List<DbTableConstraint> dbTableConstraints) {
         String model = solveFromFile("tmp/" + filename);
-        return toSqlAction(model, dbTableConstraint);
+        return toSqlAction(model, dbTableConstraints);
     }
 
     /**
-     * Parses the string from the smt2 format response and creates a Gene
+     * Given the list of constraints takes the first one and solve the model for that
      *
      * @param model             the string with the model
-     * @param dbTableConstraint
+     * @param dbTableConstraints
      * @return the Gene with the model
      */
-    private List<SqlAction> toSqlAction(String model, DbTableConstraint dbTableConstraint) {
+    private List<SqlAction> toSqlAction(String model, List<DbTableConstraint> dbTableConstraints) {
+        // Create the insert based on the first constraint
         String[] lines = model.split("\n");
         String[] values = lines[1].substring(2, lines[1].length()-2).split(" ");
         String name = values[0];
@@ -123,15 +124,14 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
                 false,
                 false);
 
-        String tableName = dbTableConstraint.getTableName();
+        String tableName = dbTableConstraints.get(0).getTableName();
         List<String> history = new LinkedList<>();
         Set<String> columnNames = new HashSet<>(Collections.singletonList("*"));
 
         List<SqlAction> actions = sqlInsertBuilder.createSqlInsertionAction(tableName,
                 columnNames, history, false, false, false);
 
-        actions.forEach(a -> a.seeTopGenes().forEach(g -> g.copyValueFrom(gene)));
-
+        actions.get(0).seeTopGenes().forEach(g -> g.copyValueFrom(gene));
         return actions;
     }
 
@@ -154,8 +154,7 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
 
         String fileName = storeToTmpFile(writer);
 
-        // test if this works
-        List<SqlAction> solution = solveFromTmp(fileName, constraintList.get(0));
+        List<SqlAction> solution = solveFromTmp(fileName, constraintList);
 
         try {
             // TODO: Move this to another thread?
