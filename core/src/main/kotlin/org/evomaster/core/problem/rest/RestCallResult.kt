@@ -22,9 +22,8 @@ class RestCallResult : HttpWsCallResult {
 
     companion object {
         const val HEURISTICS_FOR_CHAINED_LOCATION = "HEURISTICS_FOR_CHAINED_LOCATION"
-        const val PREVIOUS_ENABLED_ENDPOINTS = "PREVIOUS_ENABLED_ENDPOINTS"
+        const val ENABLED_ENDPOINTS_BEFORE_ACTION = "ENABLED_ENDPOINTS_BEFORE_ACTION"
         const val ENABLED_ENDPOINTS_AFTER_ACTION = "ENABLED_ENDPOINTS_AFTER_ACTION"
-        const val IS_INITIAL_ACTION = "IS_INITIAL_ACTION"
         val mapper = jacksonObjectMapper()
     }
 
@@ -66,9 +65,9 @@ class RestCallResult : HttpWsCallResult {
      */
     fun setHeuristicsForChainedLocation(on: Boolean) = addResultValue(HEURISTICS_FOR_CHAINED_LOCATION, on.toString())
     fun getHeuristicsForChainedLocation(): Boolean = getResultValue(HEURISTICS_FOR_CHAINED_LOCATION)?.toBoolean() ?: false
-    fun setPreviousEnabledEndpoints(enabledActions: RestActions?) = addResultValue(PREVIOUS_ENABLED_ENDPOINTS, mapper.writeValueAsString(enabledActions))
-    fun getPreviousEnabledEndpoints(): RestActions? {
-        return getResultValue(PREVIOUS_ENABLED_ENDPOINTS)?.let { mapper.readValue<RestActions?>(it) }
+    fun setEnabledEndpointsBeforeAction(enabledActions: RestActions?) = addResultValue(ENABLED_ENDPOINTS_BEFORE_ACTION, mapper.writeValueAsString(enabledActions))
+    fun getEnabledEndpointsBeforeAction(): RestActions? {
+        return getResultValue(ENABLED_ENDPOINTS_BEFORE_ACTION)?.let { mapper.readValue<RestActions?>(it) }
     }
     fun setEnabledEndpointsAfterAction(enabledActions: Enabled?) = addResultValue(ENABLED_ENDPOINTS_AFTER_ACTION, mapper.writeValueAsString(enabledActions))
     fun getEnabledEndpointsAfterAction(): Enabled? {

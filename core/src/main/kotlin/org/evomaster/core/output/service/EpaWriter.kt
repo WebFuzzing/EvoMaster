@@ -24,7 +24,7 @@ class EpaWriter {
             val restCallResults = i.seeResults(i.individual.seeMainExecutableActions())
                 .filterIsInstance<RestCallResult>()
             for (rcr in restCallResults) {
-                rcr.getPreviousEnabledEndpoints()?.let {
+                rcr.getEnabledEndpointsBeforeAction()?.let {
                     // notInitialized = it's the first action (no db handling previously)
                     val notInitialized = i.individual.seeInitializingActions().isEmpty()
                             && i.individual.seeActions(ActionFilter.ONLY_SQL).isEmpty()

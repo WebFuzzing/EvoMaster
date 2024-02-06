@@ -351,7 +351,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                 if (status >= 400) return //if the request failed we won't have new coverage of the EPA.
 
                 val actionName = actions[it].getName()
-                var previousEnabled = result.getPreviousEnabledEndpoints()
+                var previousEnabled = result.getEnabledEndpointsBeforeAction()
                 if (previousEnabled == null && it > 0) {
                     previousEnabled = (actionResults[it - 1] as RestCallResult).getEnabledEndpointsAfterAction()?.enabledRestActions
                 }
@@ -732,7 +732,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
             RestActions.from(it)
         }
         restActions.let {
-            rcr.setPreviousEnabledEndpoints(it)
+            rcr.setEnabledEndpointsBeforeAction(it)
         }
     }
 
