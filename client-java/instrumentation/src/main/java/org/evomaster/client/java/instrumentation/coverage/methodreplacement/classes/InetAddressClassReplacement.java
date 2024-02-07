@@ -64,7 +64,7 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
             return InetAddress.getAllByName(ip);
         }
 
-        try {
+        try{
             InetAddress[] inetAddress = InetAddress.getAllByName(host);
             // hostname is resolved
             ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(host, inetAddress[0].getHostAddress()));

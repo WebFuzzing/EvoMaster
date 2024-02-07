@@ -67,4 +67,12 @@ where T : Individual {
     fun extractSolutionDuringSeeding() : Solution<T>{
         return Solution(individualsDuringSeeding.toMutableList(), testSuiteNamePrefix, testSuiteNameSuffix, Termination.SEEDING, listOf(), listOf())
     }
+
+    /**
+     * Add a function which sets the termination criteria
+     */
+    fun convertSolutionToExecutiveSummary() : Solution<T> {
+        return Solution(individuals, testSuiteNamePrefix, testSuiteNameSuffix, Termination.SUMMARY,
+            individualsDuringSeeding, targetsDuringSeeding)
+    }
 }
