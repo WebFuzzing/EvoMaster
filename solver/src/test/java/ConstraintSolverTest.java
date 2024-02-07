@@ -108,10 +108,7 @@ public class ConstraintSolverTest {
 
     @Test
     public void fromConstraintList() {
-        List<DbTableConstraint> constraintList = Collections.singletonList(
-                new DbTableCheckExpression("products", "CHECK (price>100)"));
-
-        List<SqlAction> response = solver.solve(constraintList);
+        List<SqlAction> response = solver.solve();
 
         SqlAction action = response.get(0);
         assertEquals("SQL_Insert_PRODUCTS_PRICE", action.getName());

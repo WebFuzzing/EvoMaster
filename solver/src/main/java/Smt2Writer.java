@@ -1,3 +1,4 @@
+import org.evomaster.client.java.controller.api.dto.database.schema.TableCheckExpressionDto;
 import org.evomaster.client.java.sql.internal.constraint.DbTableCheckExpression;
 import org.evomaster.client.java.sql.internal.constraint.DbTableConstraint;
 
@@ -19,7 +20,7 @@ import java.util.regex.Pattern;
 public class Smt2Writer  {
 
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(Smt2Writer.class.getName());
-    public static final String CHECK_INT_COMPARE_REGEX = "^CHECK\\(([a-zA-Z_][a-zA-Z0-9_]+)([<|>|=]=?)(.+)\\)$";
+    public static final String CHECK_INT_COMPARE_REGEX = "^\\(\"([a-zA-Z_][a-zA-Z0-9_]+)\"([<|>|=]=?)(.+)\\)$";
 
     // The variables that solve the constraint
     private final List<String> variables = new ArrayList<>();
@@ -27,32 +28,6 @@ public class Smt2Writer  {
     // The assertions that those values need to satisfy
     private final List<String> constraints = new ArrayList<>();
 
-    /**
-     * Tries to parse the constraint from the DBConstraint, if succeeds returns true
-     */
-    public boolean addConstraint(DbTableConstraint constraint) {
-        try {
-            if (constraint instanceof DbTableCheckExpression) {
-                String expression = ((DbTableCheckExpression) constraint)
-                        .getSqlCheckExpression().trim()
-                        .replaceAll(" ", "");
-
-                // TODO: Add support for all other constraints here
-                final Matcher matcher = getCheckMatcher(expression);
-
-                this.variables.add(getVariableFromExpression(matcher));
-                this.constraints.add(getConstraintFromExpressionAsText(matcher));
-
-                return true;
-            }
-            return false;
-        } catch (Exception e) {
-            log.error(
-                    String.format("There was an error parsing the constraint, it may not be a DbTableCheckExpression %s",
-                    e.getMessage()));
-            return false;
-        }
-    }
 
     /**
      * Returns the variable name of the parsed expression in matcher
@@ -145,4 +120,27 @@ public class Smt2Writer  {
         }
     }
 
+    public boolean addTableCheckExpression(TableCheckExpressionDto checkConstraint) {
+        try {
+            String expression = checkConstraint.sqlCheckExpression.trim()
+                    .replaceAll(" ", "");
+
+            /** TODO: Add support for:
+                - More than one value in the expression
+                - Strings
+             **/
+            final Matcher matcher = getCheckMatcher(expression);
+
+            this.variables.add(getVariableFromExpression(matcher));
+            this.constraints.add(getConstraintFromExpressionAsText(matcher));
+
+            return true;
+
+        } catch (Exception e) {
+            log.error(
+                    String.format("There was an error parsing the constraint, it may not be a TableCheckExpressionDto %s",
+                            e.getMessage()));
+            return false;
+        }
+    }
 }
