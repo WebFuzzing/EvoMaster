@@ -28,7 +28,7 @@ public class DisplayIssueEMTest extends SpringTestBase {
     /*
     statistics file to be used
      */
-    private final String statisticsFile = "statistics.csv";
+    private final String statisticsFile = "stats.csv";
 
     @BeforeAll
     public static void initClass() throws Exception {
@@ -66,6 +66,8 @@ public class DisplayIssueEMTest extends SpringTestBase {
                         args.add(baseUrlOfSut + "/v2/api-docs");
                         args.add("--writeStatistics");
                         args.add("true");
+                        args.add("--statisticsFile");
+                        args.add(statisticsFile);
 
                         ByteArrayOutputStream byteArrayOutput = new ByteArrayOutputStream();
                         System.setOut(new PrintStream(byteArrayOutput));
