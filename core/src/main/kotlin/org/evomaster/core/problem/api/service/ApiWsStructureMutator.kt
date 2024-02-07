@@ -202,14 +202,17 @@ abstract class ApiWsStructureMutator : StructureMutator() {
             }
         }
 
+        individual.individual.addInitializingHostnameResolutionActions(actions = addedInsertions)
+
+        // FIXME: Commented out now, since no Genes in the action
         // update impact based on added genes
-        if (mutatedGenes != null && config.isEnabledArchiveGeneSelection()) {
-            individual.updateImpactGeneDueToAddedInitializationGenes(
-                mutatedGenes,
-                old,
-                listOf(addedInsertions)
-            )
-        }
+//        if (mutatedGenes != null && config.isEnabledArchiveGeneSelection()) {
+//            individual.updateImpactGeneDueToAddedInitializationGenes(
+//                mutatedGenes,
+//                old,
+//                listOf(addedInsertions)
+//            )
+//        }
     }
 
     private fun <T : ApiWsIndividual> addInitializingDbActions(

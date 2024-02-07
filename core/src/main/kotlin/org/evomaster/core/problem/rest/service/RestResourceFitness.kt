@@ -206,6 +206,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
         if (config.extractSqlExecutionInfo && config.probOfEnablingResourceDependencyHeuristics > 0.0)
             dm.updateResourceTables(individual, dto)
 
+        // FIXME: Inclusion of HostnameResolutionAction will have any impact?
         if (actionResults.size > individual.seeActions(ActionFilter.NO_EXTERNAL_SERVICE).size)
             log.warn("Mismatch in action results: ${actionResults.size} > ${individual.seeActions(ActionFilter.NO_EXTERNAL_SERVICE).size}")
 

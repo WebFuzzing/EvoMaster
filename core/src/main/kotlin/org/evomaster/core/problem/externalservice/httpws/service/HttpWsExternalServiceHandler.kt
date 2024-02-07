@@ -116,7 +116,9 @@ class HttpWsExternalServiceHandler {
 
     fun addHostname(hostnameResolutionInfo: HostnameResolutionInfo) {
         if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
-            if (!hostnameLocalAddressMapping.containsKey(hostnameResolutionInfo.remoteHostName)) {
+            // Additional validation to prevent local IP as a DNS entry
+            if (!hostnameLocalAddressMapping.containsKey(hostnameResolutionInfo.remoteHostName)
+                && !hostnameLocalAddressMapping.containsValue(hostnameResolutionInfo.remoteHostName)) {
                 val ip = if (hostnameResolutionInfo.remoteHostName == ExternalServiceSharedUtils.DEFAULT_WM_DUMMY_HOSTNAME) {
                     ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP
                 } else {
