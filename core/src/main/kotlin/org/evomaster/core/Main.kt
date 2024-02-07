@@ -13,6 +13,7 @@ import org.evomaster.core.AnsiColor.Companion.inYellow
 import org.evomaster.core.config.ConfigProblemException
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.output.Termination
 import org.evomaster.core.output.TestSuiteSplitter
 import org.evomaster.core.output.clustering.SplitResult
 import org.evomaster.core.output.service.TestSuiteWriter
@@ -699,7 +700,14 @@ class Main {
                     .forEach { writer.writeTests(it, controllerInfoDto?.fullName,controllerInfoDto?.executableFullPath, snapshot) }
 
                 if (config.executiveSummary) {
-                    writeExecSummary(injector, controllerInfoDto, splitResult)
+
+                    // Onur - if there are fault cases, executive summary makes sense
+                    if ( splitResult.splitOutcome.any{ it.individuals.isNotEmpty()
+                                && it.termination != Termination.SUCCESSES}) {
+                        writeExecSummary(injector, controllerInfoDto, splitResult)
+                    }
+
+                    //writeExecSummary(injector, controllerInfoDto, splitResult)
                     //writeExecutiveSummary(injector, solution, controllerInfoDto, partialOracles)
                 }
             } else if (config.problemType == EMConfig.ProblemType.RPC){
