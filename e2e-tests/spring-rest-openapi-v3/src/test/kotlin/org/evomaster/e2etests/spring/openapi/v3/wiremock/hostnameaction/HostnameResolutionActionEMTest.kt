@@ -22,13 +22,13 @@ class HostnameResolutionActionEMTest: SpringTestBase() {
         }
     }
 
-    @Disabled
+    @Test
     fun testRunEM() {
         runTestHandlingFlakyAndCompilation(
             "HostnameResolutionActionEMTest",
             "org.foo.HostnameResolutionActionEMTest",
             1000,
-            false,
+            true,
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")
@@ -43,9 +43,9 @@ class HostnameResolutionActionEMTest: SpringTestBase() {
 
                 Assertions.assertTrue(solution.individuals.size >= 1)
 
-                if (!CIUtils.isRunningGA()) {
+                //if (!CIUtils.isRunningGA()) {
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/resolve", "OK")
-                }
+                //}
             },
             3
         )

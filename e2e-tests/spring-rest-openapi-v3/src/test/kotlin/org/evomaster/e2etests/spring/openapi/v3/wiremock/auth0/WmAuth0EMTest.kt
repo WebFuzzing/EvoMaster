@@ -27,7 +27,7 @@ class WmAuth0EMTest : SpringTestBase() {
 
             if updating WM to 2.34.0, the test fails on local windows as well (TO CHECK)
             */
-            CIUtils.skipIfOnGA()
+           // CIUtils.skipIfOnGA()
         }
     }
 
@@ -39,7 +39,7 @@ class WmAuth0EMTest : SpringTestBase() {
             "WmAuth0EM",
             "org.foo.WmAuth0EM",
             500,
-            false,
+            true,
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")

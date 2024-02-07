@@ -21,7 +21,7 @@ class WmHarvestResponseEMTest : SpringTestBase() {
             config.instrumentMR_NET = true
             initClass(WmHarvestResponseController(), config)
 
-            CIUtils.skipIfOnGA()
+            //CIUtils.skipIfOnGA()
         }
     }
 
@@ -33,7 +33,7 @@ class WmHarvestResponseEMTest : SpringTestBase() {
             "WmHarvestResponseEM",
             "org.foo.WmHarvestResponseEM",
             1500,
-            !CIUtils.isRunningGA(),
+                true,//!CIUtils.isRunningGA(),
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")

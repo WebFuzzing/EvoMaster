@@ -17,7 +17,7 @@ class AuthZeroJacksonEMTest: SpringTestBase() {
         @JvmStatic
         fun init() {
             initClass(AuthZeroJacksonController())
-            CIUtils.skipIfOnGA()
+            //CIUtils.skipIfOnGA()
         }
     }
 
@@ -31,7 +31,7 @@ class AuthZeroJacksonEMTest: SpringTestBase() {
             "GeneratedAuthZeroJacksonEMTest",
             "org.foo.GeneratedAuthZeroJacksonEMTest",
             500,
-            !CIUtils.isRunningGA(),
+                true,//!CIUtils.isRunningGA(),
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")

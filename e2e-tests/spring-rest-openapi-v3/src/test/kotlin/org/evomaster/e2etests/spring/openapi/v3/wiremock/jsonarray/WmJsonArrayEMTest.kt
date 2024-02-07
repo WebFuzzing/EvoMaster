@@ -46,11 +46,11 @@ class WmJsonArrayEMTest : SpringTestBase() {
 
                 assertTrue(solution.individuals.size >= 1)
 
-                if (!CIUtils.isRunningGA()) {
+                //if (!CIUtils.isRunningGA()) {
                     //FIXME same issue as other WM tests... pass locally. Maybe should try again on CircleCI
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/jsonarray", "OK X")
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/jsonarray", "OK X and Y")
-                }
+                //}
             },
             3
         )
