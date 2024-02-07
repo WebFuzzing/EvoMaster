@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.datetime
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
@@ -28,7 +27,8 @@ class TimeGene(
     val hour: IntegerGene = IntegerGene("hour", 0, MIN_HOUR, MAX_HOUR),
     val minute: IntegerGene = IntegerGene("minute", 0, MIN_MINUTE, MAX_MINUTE),
     val second: IntegerGene = IntegerGene("second", 0, MIN_SECOND, MAX_SECOND),
-    val timeGeneFormat: TimeGeneFormat = TimeGeneFormat.TIME_WITH_MILLISECONDS
+    val timeGeneFormat: TimeGeneFormat = TimeGeneFormat.TIME_WITH_MILLISECONDS,
+    val onlyValidTimes: Boolean = false //TODO refactor once dealing with Robustness Testing
 ) : Comparable<TimeGene>, CompositeFixedGene(name, listOf(hour, minute, second)) {
 
     companion object {
@@ -69,17 +69,21 @@ class TimeGene(
         hour.copy() as IntegerGene,
         minute.copy() as IntegerGene,
         second.copy() as IntegerGene,
-        timeGeneFormat = this.timeGeneFormat
+        timeGeneFormat = this.timeGeneFormat,
+        onlyValidTimes = this.onlyValidTimes
     )
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
-
-        hour.randomize(randomness, tryToForceNewValue)
-        minute.randomize(randomness, tryToForceNewValue)
-        second.randomize(randomness, tryToForceNewValue)
+        do {
+            hour.randomize(randomness, tryToForceNewValue)
+            minute.randomize(randomness, tryToForceNewValue)
+            second.randomize(randomness, tryToForceNewValue)
+        } while (onlyValidTimes && !isValidTime())
     }
 
-
+    fun isValidTime()= hour.value in 0..23
+            && minute.value in 0..59
+            && second.value in 0..59
 
     override fun adaptiveSelectSubsetToMutate(
         randomness: Randomness,
@@ -236,6 +240,10 @@ class TimeGene(
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): Boolean {
         return false
+    }
+
+    override fun mutationCheck(): Boolean {
+        return !onlyValidTimes || isValidTime()
     }
 
 }

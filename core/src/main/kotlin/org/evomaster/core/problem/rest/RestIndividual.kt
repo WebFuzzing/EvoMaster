@@ -9,6 +9,7 @@ import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
+import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.SamplerSpecification
 import org.evomaster.core.search.*
@@ -41,6 +42,7 @@ class RestIndividual(
     childTypeVerifier = {
         RestResourceCalls::class.java.isAssignableFrom(it)
                 || SqlAction::class.java.isAssignableFrom(it) || MongoDbAction::class.java.isAssignableFrom(it)
+                || HostnameResolutionAction::class.java.isAssignableFrom(it)
     }, groups) {
 
     companion object{

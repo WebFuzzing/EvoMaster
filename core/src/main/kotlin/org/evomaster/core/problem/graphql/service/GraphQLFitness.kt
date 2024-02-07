@@ -273,7 +273,7 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
         searchTimeController.waitForRateLimiter()
 
-        val gqlcr = GraphQlCallResult()
+        val gqlcr = GraphQlCallResult(action.getLocalId())
         actionResults.add(gqlcr)
 
         /*

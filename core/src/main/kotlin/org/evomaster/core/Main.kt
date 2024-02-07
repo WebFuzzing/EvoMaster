@@ -10,8 +10,10 @@ import org.evomaster.core.AnsiColor.Companion.inBlue
 import org.evomaster.core.AnsiColor.Companion.inGreen
 import org.evomaster.core.AnsiColor.Companion.inRed
 import org.evomaster.core.AnsiColor.Companion.inYellow
+import org.evomaster.core.config.ConfigProblemException
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.output.Termination
 import org.evomaster.core.output.TestSuiteSplitter
 import org.evomaster.core.output.clustering.SplitResult
 import org.evomaster.core.output.service.TestSuiteWriter
@@ -66,11 +68,13 @@ class Main {
 
                 /*
                     Before running anything, check if the input
-                    configurations are valid
+                    configurations are valid.
+                    Note: some setting might be evaluated later, eg, if they require
+                    to analyze the API schema.
                  */
                 val parser = try {
                     EMConfig.validateOptions(args)
-                } catch (e: Exception) {
+                } catch (e: ConfigProblemException) {
                     logError("Invalid parameter settings: " + e.message +
                             "\nUse --help to see the available options")
                     return
@@ -104,6 +108,10 @@ class Main {
                     is SutProblemException ->
                         logError("ERROR related to the system under test: ${cause.message}" +
                                 "\n  For white-box testing, look at the logs of the EvoMaster Driver to help debugging this problem.")
+
+                    is ConfigProblemException ->
+                        logError("Invalid parameter settings: ${cause.message}" +
+                                "\nUse --help to see the available options")
 
                     else ->
                         LoggingUtil.getInfoLogger().error(inRed("[ERROR] ") +
@@ -691,7 +699,14 @@ class Main {
                     .forEach { writer.writeTests(it, controllerInfoDto?.fullName,controllerInfoDto?.executableFullPath, snapshot) }
 
                 if (config.executiveSummary) {
-                    writeExecSummary(injector, controllerInfoDto, splitResult)
+
+                    // Onur - if there are fault cases, executive summary makes sense
+                    if ( splitResult.splitOutcome.any{ it.individuals.isNotEmpty()
+                                && it.termination != Termination.SUCCESSES}) {
+                        writeExecSummary(injector, controllerInfoDto, splitResult)
+                    }
+
+                    //writeExecSummary(injector, controllerInfoDto, splitResult)
                     //writeExecutiveSummary(injector, solution, controllerInfoDto, partialOracles)
                 }
             } else if (config.problemType == EMConfig.ProblemType.RPC){

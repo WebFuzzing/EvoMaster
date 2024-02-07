@@ -14,6 +14,8 @@ import org.evomaster.core.sql.SqlActionResult
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
+import org.evomaster.core.problem.externalservice.HostnameResolutionAction
+import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
@@ -147,6 +149,10 @@ class EvaluatedIndividual<T>(
                 results[index]
             else null
         }
+    }
+
+    fun seeResult(id: String) : ActionResult?{
+        return results.find { it.sourceLocalId == id }
     }
 
     /**
@@ -769,7 +775,7 @@ class EvaluatedIndividual<T>(
 
         val allExistingData = individual.seeInitializingActions().filter { it is SqlAction && it.representExistingData }
         val diff = individual.seeInitializingActions()
-            .filter { !old.contains(it) && ((it is SqlAction && !it.representExistingData) || it is MongoDbAction) }
+            .filter { !old.contains(it) && ((it is SqlAction && !it.representExistingData) || it is MongoDbAction || it is HostnameResolutionAction) }
 
         if (allExistingData.isNotEmpty())
             impactInfo.updateExistingSQLData(allExistingData.size)
@@ -807,7 +813,7 @@ class EvaluatedIndividual<T>(
 
         Lazy.assert {
             individual.seeInitializingActions()
-                .filter { (it is SqlAction && !it.representExistingData) || it is MongoDbAction }.size == impactInfo.getSizeOfActionImpacts(true)
+                .filter { (it is SqlAction && !it.representExistingData) || it is MongoDbAction || it is HostnameResolutionAction }.size == impactInfo.getSizeOfActionImpacts(true)
         }
     }
 

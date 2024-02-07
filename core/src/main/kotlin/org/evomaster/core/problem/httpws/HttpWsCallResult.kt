@@ -8,7 +8,7 @@ import javax.ws.rs.core.MediaType
 
 abstract class HttpWsCallResult : ActionResult {
 
-    constructor(stopping: Boolean = false) : super(stopping)
+    constructor(sourceLocalId: String, stopping: Boolean = false) : super(sourceLocalId,stopping)
 
     @VisibleForTesting
     internal constructor(other: ActionResult) : super(other)
