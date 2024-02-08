@@ -173,6 +173,15 @@ class RestIndividual(
         }
     }
 
+    /**
+     * remove location id among actions used for minimization phase
+     */
+    fun removeLocationId(){
+        seeMainExecutableActions().forEach { a->
+            a.locationId = null
+            a.saveLocation = false
+        }
+    }
 
     //FIXME refactor
     override fun verifyInitializationActions(): Boolean {

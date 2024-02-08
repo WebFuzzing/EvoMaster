@@ -5,6 +5,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.enterprise.EnterpriseIndividual
 import org.evomaster.core.problem.gui.GuiIndividual
+import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.mutator.StructureMutator
@@ -185,6 +186,10 @@ class Minimizer<T: Individual> {
         if (!ind.verifyBindingGenes()){
             ind.cleanBrokenBindingReference()
             ind.computeTransitiveBindingGenes()
+        }
+
+        if(ind is RestIndividual){
+            ind.removeLocationId()
         }
     }
 
