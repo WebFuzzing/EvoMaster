@@ -22,6 +22,7 @@ import org.evomaster.core.problem.api.ApiWsIndividual;
 import org.evomaster.core.remote.service.RemoteController;
 import org.evomaster.core.remote.service.RemoteControllerImplementation;
 import org.evomaster.core.search.Solution;
+import org.evomaster.core.search.service.Statistics;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -501,4 +502,23 @@ public abstract class EnterpriseTestBase {
         }
 
     }
+
+    /**
+     * This function is used to retrieve the item with the identifier "key" in the Solution "sol"
+     * from Statistics. Returns the value of the element if the element exists, otherwise returns null.
+     * @param sol
+     * @param key
+     * @return
+     */
+    protected String findValueOfItemWithKeyInStats(Solution sol, String key) {
+
+        for(Statistics.Pair el : (List<Statistics.Pair>)sol.getStatistics()) {
+            if (el.getHeader().equals(key)) {
+                return el.getElement();
+            }
+        }
+
+        return null;
+    }
+
 }
