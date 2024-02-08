@@ -125,10 +125,7 @@ public class Smt2Writer  {
             String expression = checkConstraint.sqlCheckExpression.trim()
                     .replaceAll(" ", "");
 
-            /** TODO: Add support for:
-                - More than one value in the expression
-                - Strings
-             **/
+            // TODO: Add support for expressions of strings and other numeric types
             final Matcher matcher = getCheckMatcher(expression);
 
             this.variables.add(getVariableFromExpression(matcher));
