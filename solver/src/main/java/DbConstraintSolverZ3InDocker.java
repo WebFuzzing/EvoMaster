@@ -108,24 +108,29 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
     /**
      * Given the list of constraints takes the first one and solve the model for that
      *
-     * @param model             the string with the model
+     * @param model the string with the model
      * @return the Gene with the model
      */
     private List<SqlAction> toSqlAction(String model) {
         // Create the insert based on the first constraint
         String[] lines = model.split("\n");
-        String[] values = lines[1].substring(2, lines[1].length()-2).split(" ");
-        String name = values[0];
-        Integer value =  Integer.parseInt(values[1]);
+        Map<String, Gene> genes = new HashMap<>();
 
-        Gene gene = new IntegerGene(
-                name,
-                value,
-                null,
-                null,
-                null,
-                false,
-                false);
+        for (int i = 1; i < lines.length; i++) {
+            String[] values = lines[i].substring(2, lines[i].length()-2).split(" ");
+            String name = values[0];
+            Integer value =  Integer.parseInt(values[1]);
+
+            Gene gene = new IntegerGene(
+                    name,
+                    value,
+                    null,
+                    null,
+                    null,
+                    false,
+                    false);
+            genes.put(name, gene);
+        }
 
         // TODO: Handle more than 1 table
         String tableName = this.schemaDto.tables.get(0).name;
@@ -135,14 +140,20 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
         List<SqlAction> actions = sqlInsertBuilder.createSqlInsertionAction(tableName,
                 columnNames, history, false, false, false);
 
-        actions.get(0).seeTopGenes().forEach(g -> g.copyValueFrom(gene));
+        actions.get(0).seeTopGenes().forEach(g -> {
+            if (genes.containsKey(g.getName())) {
+                g.copyValueFrom(genes.get(g.getName()));
+            } else {
+                log.warn("Gene not found in the model: " + g.getName());
+            }
+        });
+
         return actions;
     }
 
     /**
      * Given the constraint list, creates a Smt2Writer with all of them, and then write them in a smt2 file.
      * After that, run the Z3 Docker solver with the reference to the file and return the check model as string.
-     * @param constraintList list of database constraints
      * @return a list of Sql with the necessary inserts according to the constraints
      */
     @Override
