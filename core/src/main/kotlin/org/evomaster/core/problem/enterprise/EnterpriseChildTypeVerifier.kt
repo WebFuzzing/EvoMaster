@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.enterprise
 
 import org.evomaster.core.mongo.MongoDbAction
+import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionComponent
 import org.evomaster.core.sql.SqlAction
@@ -19,6 +20,7 @@ import org.evomaster.core.sql.SqlAction
      private fun isInitializingAction(t: Class<*>) :  Boolean{
          return SqlAction::class.java.isAssignableFrom(t)
                  || MongoDbAction::class.java.isAssignableFrom(t)
+                 || HostnameResolutionAction::class.java.isAssignableFrom(t)
      }
 
      override fun invoke(t: Class<*>): Boolean {
