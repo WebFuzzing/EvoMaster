@@ -177,7 +177,7 @@ abstract class EnterpriseIndividual(
             ActionFilter.ONLY_MONGO -> seeAllActions().filterIsInstance<MongoDbAction>()
             ActionFilter.NO_SQL -> seeAllActions().filter { it !is SqlAction }
             ActionFilter.ONLY_EXTERNAL_SERVICE -> seeAllActions().filterIsInstance<ApiExternalServiceAction>()
-            ActionFilter.NO_EXTERNAL_SERVICE -> seeAllActions().filter { it !is ApiExternalServiceAction }
+            ActionFilter.NO_EXTERNAL_SERVICE -> seeAllActions().filter { it !is ApiExternalServiceAction }.filter { it !is HostnameResolutionAction }
             ActionFilter.ONLY_DNS -> groupsView()!!.getAllInGroup(GroupsOfChildren.INITIALIZATION_DNS).flatMap { (it as ActionComponent).flatten()}
         }
     }
@@ -285,11 +285,17 @@ abstract class EnterpriseIndividual(
     private fun getLastIndexOfMongoDbActionToAdd(): Int =
         groupsView()!!.endIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_MONGO)
 
+    private fun getLastIndexOfHostnameResolutionActionToAdd(): Int =
+        groupsView()!!.endIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_DNS)
+
     private fun getFirstIndexOfDbActionToAdd(): Int =
         groupsView()!!.startIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_SQL)
 
     private fun getFirstIndexOfMongoDbActionToAdd(): Int =
         groupsView()!!.startIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_MONGO)
+
+    private fun getFirstIndexOfHostnameResolutionActionToAdd(): Int =
+        groupsView()!!.startIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_DNS)
 
     /**
      * add [actions] at [relativePosition]
@@ -308,6 +314,14 @@ abstract class EnterpriseIndividual(
             addChildrenToGroup(getLastIndexOfMongoDbActionToAdd(), actions, GroupsOfChildren.INITIALIZATION_MONGO)
         } else{
             addChildrenToGroup(getFirstIndexOfMongoDbActionToAdd()+relativePosition, actions, GroupsOfChildren.INITIALIZATION_MONGO)
+        }
+    }
+
+    fun addInitializingHostnameResolutionActions(relativePosition: Int=-1, actions: List<Action>) {
+        if (relativePosition < 0) {
+            addChildrenToGroup(getLastIndexOfHostnameResolutionActionToAdd(), actions, GroupsOfChildren.INITIALIZATION_DNS)
+        } else {
+            addChildrenToGroup(getFirstIndexOfHostnameResolutionActionToAdd()+relativePosition, actions, GroupsOfChildren.INITIALIZATION_DNS)
         }
     }
 
