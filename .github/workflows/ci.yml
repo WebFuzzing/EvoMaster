@@ -20,9 +20,13 @@ on:
       - '!.gitignore'
       - '!docs/**'
       - 'docs/options.md'
-  pull_request:
-    branches:
-      - "**"
+### Unfortunately, had to disable this. Originally added to be able to run CI from PRs from forks (eg from external people).
+### But this leads to run CI 2 twice on each push on an open PR, regardless of fork.
+### It seems there is no solution for this:
+### https://github.com/orgs/community/discussions/26276
+#  pull_request:
+#    branches:
+#      - "**"
 
 env:
   evomaster-version: 2.0.1
