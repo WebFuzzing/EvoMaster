@@ -299,44 +299,6 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
                     }
                 }
             }
-
-
         }
 
-        val allRestResults = actionResults.filterIsInstance<RestCallResult>()
-        val dto = restActionResultHandling(individual, targets, allCovered, allRestResults, fv) ?: return null
-
-        /*
-            harvest actual requests once all actions are executed
-         */
-        harvestResponseHandler.addHttpRequests(allServedHttpRequests)
-
-        /*
-            TODO: Man shall we update the action cluster based on expanded action?
-         */
-        individual.seeMainExecutableActions().forEach {
-            val node = rm.getResourceNodeFromCluster(it.path.toString())
-            node.updateActionsWithAdditionalParams(it)
-        }
-
-        /*
-         update dependency regarding executed dto
-         */
-        if (config.extractSqlExecutionInfo && config.probOfEnablingResourceDependencyHeuristics > 0.0)
-            dm.updateResourceTables(individual, dto)
-
-        // FIXME: Inclusion of HostnameResolutionAction will have any impact?
-        if (actionResults.size > individual.seeActions(ActionFilter.NO_EXTERNAL_SERVICE).size)
-            log.warn("Mismatch in action results: ${actionResults.size} > ${individual.seeActions(ActionFilter.NO_EXTERNAL_SERVICE).size}")
-
-        return EvaluatedIndividual(
-            fv,
-            individual.copy() as RestIndividual,
-            actionResults,
-            config = config,
-            trackOperator = individual.trackOperator,
-            index = time.evaluatedIndividuals
-        )
-
-    }
 }
