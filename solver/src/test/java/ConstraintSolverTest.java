@@ -1,28 +1,22 @@
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
-import org.evomaster.client.java.sql.SqlScriptRunner;
-import org.evomaster.client.java.sql.internal.constraint.DbTableCheckExpression;
 import org.evomaster.client.java.sql.SchemaExtractor;
-import org.evomaster.client.java.sql.internal.constraint.DbTableConstraint;
+import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.evomaster.core.search.gene.Gene;
 import org.evomaster.core.search.gene.numeric.IntegerGene;
 import org.evomaster.core.sql.SqlAction;
-import org.evomaster.core.sql.schema.Table;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.util.Collections;
 import java.util.List;
 
-import static java.util.Collections.emptySet;
 import static org.junit.jupiter.api.Assertions.*;
 
 
@@ -37,8 +31,9 @@ public class ConstraintSolverTest {
         Connection connection = DriverManager.getConnection("jdbc:h2:mem:db_test", "sa", "");
 
         SqlScriptRunner.execCommand(connection,
-            "CREATE TABLE products(price int not null);\n" +
-            "ALTER TABLE products add CHECK (price>100);"
+            "CREATE TABLE products(price int not null, stock int not null);\n" +
+            "ALTER TABLE products add CHECK (price>100);\n" +
+            "ALTER TABLE products add CHECK (stock>=5);"
         );
 
         DbSchemaDto schemaDto = SchemaExtractor.extract(connection);
@@ -108,23 +103,28 @@ public class ConstraintSolverTest {
 
     @Test
     public void fromConstraintList() {
-        List<DbTableConstraint> constraintList = Collections.singletonList(
-                new DbTableCheckExpression("products", "CHECK (price>100)"));
-
-        List<SqlAction> response = solver.solve(constraintList);
+        List<SqlAction> response = solver.solve();
 
         SqlAction action = response.get(0);
-        assertEquals("SQL_Insert_PRODUCTS_PRICE", action.getName());
-        Gene gene = action.seeTopGenes().get(0);
+        assertEquals("SQL_Insert_PRODUCTS_PRICE_STOCK", action.getName());
 
-        if (gene instanceof IntegerGene) {
-            assertEquals(101, ((IntegerGene) gene).getValue());
-            assertEquals(101, ((IntegerGene) gene).getMin());
-            assertEquals(2147483647, ((IntegerGene) gene).getMaximum());
-            assertTrue(((IntegerGene) gene).getMinInclusive());
-            assertTrue(((IntegerGene) gene).getMaxInclusive());
-        } else {
-            fail("The response is not an IntegerGene");
+        for (Gene gene : action.seeTopGenes()) {
+            if (gene.getName().equals("PRICE") && gene instanceof IntegerGene) {
+                assertEquals(101, ((IntegerGene) gene).getValue());
+                assertEquals(101, ((IntegerGene) gene).getMin());
+                assertEquals(2147483647, ((IntegerGene) gene).getMaximum());
+                assertTrue(((IntegerGene) gene).getMinInclusive());
+                assertTrue(((IntegerGene) gene).getMaxInclusive());
+            } else if (gene.getName().equals("STOCK") && gene instanceof IntegerGene) {
+                assertEquals(5, ((IntegerGene) gene).getValue());
+                assertEquals(5, ((IntegerGene) gene).getMin());
+                assertEquals(2147483647, ((IntegerGene) gene).getMaximum());
+                assertTrue(((IntegerGene) gene).getMinInclusive());
+                assertTrue(((IntegerGene) gene).getMaxInclusive());
+            } else {
+                fail("The response is not an IntegerGene");
+            }
         }
+
     }
 }

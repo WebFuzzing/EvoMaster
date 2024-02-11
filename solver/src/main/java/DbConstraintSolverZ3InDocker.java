@@ -1,10 +1,12 @@
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
 import org.evomaster.client.java.sql.internal.constraint.DbTableConstraint;
 import org.evomaster.core.search.gene.Gene;
 import org.evomaster.core.search.gene.numeric.IntegerGene;
 import org.evomaster.core.sql.SqlAction;
 import org.evomaster.core.sql.SqlInsertBuilder;
 import org.evomaster.core.sql.schema.Column;
+import org.evomaster.core.sql.schema.Table;
 import org.testcontainers.containers.Container;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.images.builder.ImageFromDockerfile;
@@ -34,6 +36,7 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
     private final String tmpFolderPath;
     private final SqlInsertBuilder sqlInsertBuilder;
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(DbConstraintSolverZ3InDocker.class.getName());
+    private final DbSchemaDto schemaDto;
 
     /**
      * The current implementation of the Z3 solver reads content either from STDIN or from a file.
@@ -46,6 +49,7 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
     public DbConstraintSolverZ3InDocker(DbSchemaDto schemaDto, String resourcesFolder) {
 
         this.tmpFolderPath = resourcesFolder + "tmp/";
+        this.schemaDto = schemaDto;
 
         ImageFromDockerfile image = new ImageFromDockerfile()
                 .withDockerfileFromBuilder(builder -> builder
@@ -96,65 +100,78 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
         }
     }
 
-    private List<SqlAction> solveFromTmp(String filename, List<DbTableConstraint> dbTableConstraints) {
+    private List<SqlAction> solveFromTmp(String filename) {
         String model = solveFromFile("tmp/" + filename);
-        return toSqlAction(model, dbTableConstraints);
+        return toSqlAction(model);
     }
 
     /**
      * Given the list of constraints takes the first one and solve the model for that
      *
-     * @param model             the string with the model
-     * @param dbTableConstraints
+     * @param model the string with the model
      * @return the Gene with the model
      */
-    private List<SqlAction> toSqlAction(String model, List<DbTableConstraint> dbTableConstraints) {
+    private List<SqlAction> toSqlAction(String model) {
         // Create the insert based on the first constraint
         String[] lines = model.split("\n");
-        String[] values = lines[1].substring(2, lines[1].length()-2).split(" ");
-        String name = values[0];
-        Integer value =  Integer.parseInt(values[1]);
+        Map<String, Gene> genes = new HashMap<>();
 
-        Gene gene = new IntegerGene(
-                name,
-                value,
-                null,
-                null,
-                null,
-                false,
-                false);
+        for (int i = 1; i < lines.length; i++) {
+            String[] values = lines[i].substring(2, lines[i].length()-2).split(" ");
+            String name = values[0];
+            Integer value =  Integer.parseInt(values[1]);
 
-        String tableName = dbTableConstraints.get(0).getTableName();
+            Gene gene = new IntegerGene(
+                    name,
+                    value,
+                    null,
+                    null,
+                    null,
+                    false,
+                    false);
+            genes.put(name, gene);
+        }
+
+        // TODO: Handle more than 1 table
+        String tableName = this.schemaDto.tables.get(0).name;
         List<String> history = new LinkedList<>();
         Set<String> columnNames = new HashSet<>(Collections.singletonList("*"));
 
         List<SqlAction> actions = sqlInsertBuilder.createSqlInsertionAction(tableName,
                 columnNames, history, false, false, false);
 
-        actions.get(0).seeTopGenes().forEach(g -> g.copyValueFrom(gene));
+        actions.get(0).seeTopGenes().forEach(g -> {
+            if (genes.containsKey(g.getName())) {
+                g.copyValueFrom(genes.get(g.getName()));
+            } else {
+                log.warn("Gene not found in the model: " + g.getName());
+            }
+        });
+
         return actions;
     }
 
     /**
      * Given the constraint list, creates a Smt2Writer with all of them, and then write them in a smt2 file.
      * After that, run the Z3 Docker solver with the reference to the file and return the check model as string.
-     * @param constraintList list of database constraints
      * @return a list of Sql with the necessary inserts according to the constraints
      */
     @Override
-    public List<SqlAction> solve(List<DbTableConstraint> constraintList) {
+    public List<SqlAction> solve() {
         Smt2Writer writer = new Smt2Writer();
 
-        for (DbTableConstraint constraint : constraintList) {
-            boolean succeed = writer.addConstraint(constraint);
-            if (!succeed) {
-                throw new RuntimeException("Constraint not supported: " + constraint);
-            }
+        for (TableDto table : this.schemaDto.tables) {
+            table.tableCheckExpressions.forEach(constraint -> {
+                boolean succeed = writer.addTableCheckExpression(constraint);
+                if (!succeed) {
+                    throw new RuntimeException("Constraint not supported: " + constraint);
+                }
+            });
         }
 
         String fileName = storeToTmpFile(writer);
 
-        List<SqlAction> solution = solveFromTmp(fileName, constraintList);
+        List<SqlAction> solution = solveFromTmp(fileName);
 
         try {
             // TODO: Move this to another thread?
