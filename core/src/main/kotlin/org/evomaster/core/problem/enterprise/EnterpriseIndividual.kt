@@ -136,7 +136,12 @@ abstract class EnterpriseIndividual(
 
     /**
      * Make sure that no secondary type is used in the main actions, and that only [EnterpriseActionGroup]
-     * are used
+     * are used.
+     *
+     * Ideally, a flattening should not impact fitness, but, in few cases, it might :(
+     * This happens eg in Rest Resource, if a middle SQL action is moved into initialization group and impact
+     * state of previous REST actions (an example of this did happen for example for CrossFkEMTest...).
+     * This means that, after a flattening, to be on safe side should recompute fitness
      */
     fun ensureFlattenedStructure(){
 

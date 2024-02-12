@@ -128,7 +128,7 @@ class Archive<T> where T : Individual {
 
 
     fun getCopyOfUniqueCoveringIndividuals() : List<T>{
-        return getUniquePopulation().map { it.individual }
+        return getUniquePopulation().map { it.individual.copy() as T }
     }
 
     private fun getUniquePopulation(): MutableSet<EvaluatedIndividual<T>> {

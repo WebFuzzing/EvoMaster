@@ -96,7 +96,6 @@ class Minimizer<T: Individual> {
         recomputeArchiveWithFullCoverageInfo()
 
         val current = archive.getCopyOfUniqueCoveringIndividuals()
-            .onEach { if(it is EnterpriseIndividual) it.ensureFlattenedStructure()  }
             .filter {
                 it.size() > 1
             } //can't minimize below 1
@@ -206,6 +205,7 @@ class Minimizer<T: Individual> {
 
     private fun recomputeArchiveWithFullCoverageInfo(){
         val current = archive.getCopyOfUniqueCoveringIndividuals()
+            .onEach { if(it is EnterpriseIndividual) it.ensureFlattenedStructure()  }
 
         LoggingUtil.getInfoLogger().info("Recomputing full coverage for ${current.size} tests")
 
