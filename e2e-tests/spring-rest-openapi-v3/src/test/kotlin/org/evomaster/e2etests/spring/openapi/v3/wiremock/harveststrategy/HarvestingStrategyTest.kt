@@ -111,10 +111,10 @@ class HarvestingStrategyTest: SpringTestBase() {
                 args.add("127.0.0.4")
                 args.add("--probOfHarvestingResponsesFromActualExternalServices")
                 args.add("0.9")
-                args.add("--probOfMutatingResponsesBasedOnActualResponse")
+                args.add("--dns-onse")
                 args.add("0.1")
                 args.add("--externalRequestResponseSelectionStrategy")
-                args.add("CLOSEST")
+                args.add("CLOSEST_SAME_DOMAIN")
 
                 val solution = initAndRun(args)
 
