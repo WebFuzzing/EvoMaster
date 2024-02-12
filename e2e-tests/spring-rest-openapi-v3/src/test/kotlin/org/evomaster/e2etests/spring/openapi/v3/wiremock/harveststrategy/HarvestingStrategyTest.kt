@@ -30,7 +30,7 @@ class HarvestingStrategyTest: SpringTestBase() {
     @Test
     fun testExactResponse() {
         val wmConfig = WireMockConfiguration()
-            .bindAddress("127.0.0.1")
+            .bindAddress("127.0.0.10")
             .port(13579)
             .extensions(ResponseTemplateTransformer(false))
 
@@ -43,12 +43,12 @@ class HarvestingStrategyTest: SpringTestBase() {
                 .willReturn(WireMock.aResponse().withStatus(200).withBody("{\"message\" : \"Working\"}"))
         )
 
-        DnsCacheManipulator.setDnsCache("mock.int", "127.0.0.1")
+        DnsCacheManipulator.setDnsCache("mock.int", "127.0.0.10")
 
         runTestHandlingFlakyAndCompilation(
             "HarvestStrategyExactEMTest",
             "org.foo.HarvestStrategyExactEMTest",
-            1000,
+            3000,
             !CIUtils.isRunningGA(),
             { args: MutableList<String> ->
 
@@ -80,7 +80,7 @@ class HarvestingStrategyTest: SpringTestBase() {
         // For /api/harvest/strategy/closest/second WireMock will response with 500
         // so the core will select the nearest with the response status code 200.
         val wmConfig = WireMockConfiguration()
-            .bindAddress("127.0.0.3")
+            .bindAddress("127.0.0.13")
             .port(13578)
             .extensions(ResponseTemplateTransformer(false))
 
@@ -96,12 +96,12 @@ class HarvestingStrategyTest: SpringTestBase() {
             .atPriority(2)
             .willReturn(WireMock.aResponse().withStatus(500).withBody("Internal Server Error")))
 
-        DnsCacheManipulator.setDnsCache("mock.int", "127.0.0.3")
+        DnsCacheManipulator.setDnsCache("mock.int", "127.0.0.13")
 
         runTestHandlingFlakyAndCompilation(
             "HarvestStrategyClosestEMTest",
             "org.foo.HarvestStrategyClosestEMTest",
-            1000,
+            100,
             !CIUtils.isRunningGA(),
             { args: MutableList<String> ->
 
@@ -111,7 +111,7 @@ class HarvestingStrategyTest: SpringTestBase() {
                 args.add("127.0.0.4")
                 args.add("--probOfHarvestingResponsesFromActualExternalServices")
                 args.add("0.9")
-                args.add("--dns-onse")
+                args.add("--probOfMutatingResponsesBasedOnActualResponse")
                 args.add("0.1")
                 args.add("--externalRequestResponseSelectionStrategy")
                 args.add("CLOSEST_SAME_DOMAIN")
