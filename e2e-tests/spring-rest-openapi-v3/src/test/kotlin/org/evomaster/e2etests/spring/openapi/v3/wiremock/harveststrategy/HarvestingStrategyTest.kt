@@ -48,7 +48,7 @@ class HarvestingStrategyTest: SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "HarvestStrategyExactEMTest",
             "org.foo.HarvestStrategyExactEMTest",
-            3000,
+            1000,
             !CIUtils.isRunningGA(),
             { args: MutableList<String> ->
 
