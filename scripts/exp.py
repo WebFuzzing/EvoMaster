@@ -275,6 +275,7 @@ SUTS = [
     Sut("cwa-verification", 1, JDK_11),
     Sut("genome-nexus", 1, JDK_8),
     Sut("market", 1, JDK_11),
+    Sut("session-service",1,JDK_8),
     # GRAPHQL JVM
     Sut("petclinic-graphql", 1, JDK_8),
     Sut("patio-api", 1, JDK_11),
