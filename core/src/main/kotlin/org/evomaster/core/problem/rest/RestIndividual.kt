@@ -7,6 +7,8 @@ import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.SqlActionUtils
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.api.ApiWsIndividual
+import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
+import org.evomaster.core.problem.enterprise.EnterpriseChildTypeVerifier
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
@@ -39,11 +41,8 @@ class RestIndividual(
     dnsSize: Int = 0,
     groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(allActions,mainSize,sqlSize,mongoSize,dnsSize)
 ): ApiWsIndividual(sampleType, trackOperator, index, allActions,
-    childTypeVerifier = {
-        RestResourceCalls::class.java.isAssignableFrom(it)
-                || SqlAction::class.java.isAssignableFrom(it) || MongoDbAction::class.java.isAssignableFrom(it)
-                || HostnameResolutionAction::class.java.isAssignableFrom(it)
-    }, groups) {
+    childTypeVerifier = EnterpriseChildTypeVerifier(RestCallAction::class.java,RestResourceCalls::class.java),
+    groups) {
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(RestIndividual::class.java)
@@ -120,6 +119,37 @@ class RestIndividual(
         }
     }
 
+    /**
+     * remove RestResourceCall structure and binding among genes
+     */
+    override fun doFlattenStructure() {
+
+        // check the top structure
+        val resources = groupsView()!!.getAllInGroup(GroupsOfChildren.MAIN).filterIsInstance<RestResourceCalls>()
+
+        if (resources.isEmpty()) return
+
+        // remove all bindings among genes
+        removeAllBindingAmongGenes()
+
+        val dnsActions = resources.flatMap { it.seeActions(ONLY_DNS)} as List<HostnameResolutionAction>
+        val sqlActions = resources.flatMap { it.seeActions(ONLY_SQL) } as List<SqlAction>
+        val mongoDbActions = resources.flatMap { it.seeActions(ONLY_MONGO) } as List<MongoDbAction>
+
+        val groups = resources.flatMap { it.seeEnterpriseActionGroup() }
+
+        removeResourceCall(resources)
+        addChildrenToGroup(groups, GroupsOfChildren.MAIN)
+
+        addChildrenToGroup(sqlActions, GroupsOfChildren.INITIALIZATION_SQL)
+        addChildrenToGroup(mongoDbActions, GroupsOfChildren.INITIALIZATION_MONGO)
+        addChildrenToGroup(dnsActions, GroupsOfChildren.INITIALIZATION_DNS)
+
+        // re-generate local id
+//        resetLocalIdRecursively()
+//        doInitializeLocalId()
+    }
+
     enum class ResourceFilter { ALL, NO_SQL, ONLY_SQL, ONLY_SQL_INSERTION, ONLY_SQL_EXISTING }
 
     /**
@@ -143,6 +173,15 @@ class RestIndividual(
         }
     }
 
+    /**
+     * remove location id among actions used for minimization phase
+     */
+    fun removeLocationId(){
+        seeMainExecutableActions().forEach { a->
+            a.locationId = null
+            a.saveLocation = false
+        }
+    }
 
     //FIXME refactor
     override fun verifyInitializationActions(): Boolean {
@@ -182,6 +221,17 @@ class RestIndividual(
      * @return all groups of actions for resource handling
      */
     fun getResourceCalls() : List<RestResourceCalls> = children.filterIsInstance<RestResourceCalls>()
+
+
+    /**
+     * @return a list of EnterpriseActionGroups under GroupsOfChildren.MAIN
+     * if the list is empty, it indicates that `doFlattenStructure` has been processed yet then return null
+     */
+    fun getFlattenMainEnterpriseActionGroup() : List<EnterpriseActionGroup<RestCallAction>>?{
+        val groups = groupsView()!!.getAllInGroup(GroupsOfChildren.MAIN).filterIsInstance<EnterpriseActionGroup<*>>()
+        if (groups.isEmpty()) return null
+        return groups as List<EnterpriseActionGroup<RestCallAction>>
+    }
 
     /**
      * return all the resource calls in this individual, with their index in the children list

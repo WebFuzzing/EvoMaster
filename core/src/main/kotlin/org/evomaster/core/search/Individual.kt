@@ -352,6 +352,15 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
         }
     }
 
+    /**
+     * remove all binding all genes in this individual
+     */
+    fun removeAllBindingAmongGenes(){
+        seeGenes(GeneFilter.ALL).forEach { s->
+            s.flatView().forEach { it.cleanBinding() }
+        }
+    }
+
 
     /**
      * @return a gene in [this] based on the [gene] in [individual]

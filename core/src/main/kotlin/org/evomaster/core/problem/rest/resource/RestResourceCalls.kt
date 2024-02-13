@@ -180,6 +180,13 @@ class RestResourceCalls(
     }
 
     /**
+     * @return EnterpriseActionGroup in the top structure of ActionTree
+     */
+    fun seeEnterpriseActionGroup() : List<EnterpriseActionGroup<RestCallAction>>{
+        return children.filterIsInstance<EnterpriseActionGroup<*>>() as List<EnterpriseActionGroup<RestCallAction>>
+    }
+
+    /**
      * @return actions with specified action [filter]
      */
     fun seeActions(filter: ActionFilter): List<out Action> {
@@ -195,6 +202,8 @@ class RestResourceCalls(
             ActionFilter.ONLY_DNS -> dnsActions
         }
     }
+
+
 
     /**
      * @return size of action with specified action [filter]
