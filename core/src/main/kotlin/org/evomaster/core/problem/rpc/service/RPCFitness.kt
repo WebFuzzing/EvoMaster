@@ -121,8 +121,8 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
         val actionResult = RPCCallResult(action.getLocalId())
         actionResults.add(actionResult)
         val dto = getActionDto(action, index)
-        val externalActions = if (action.parent is EnterpriseActionGroup){
-            (action.parent as EnterpriseActionGroup)
+        val externalActions = if (action.parent is EnterpriseActionGroup<*>){
+            (action.parent as EnterpriseActionGroup<*>)
                 .groupsView()!!.getAllInGroup(GroupsOfChildren.EXTERNAL_SERVICES)
         }else null
 
