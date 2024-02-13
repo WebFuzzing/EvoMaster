@@ -46,7 +46,7 @@ abstract class EnterpriseIndividual(
      * a list of children of the individual
      */
     children: MutableList<out ActionComponent>,
-    childTypeVerifier: (Class<*>) -> Boolean,
+    childTypeVerifier: EnterpriseChildTypeVerifier,
     /**
      * if no group definition is specified, then it is assumed that all action are for the MAIN group
      */
@@ -132,6 +132,38 @@ abstract class EnterpriseIndividual(
                 .flatMap { (it as ActionComponent).flatten() }
                 .map { it as SqlAction }
         }
+
+
+    /**
+     * Make sure that no secondary type is used in the main actions, and that only [EnterpriseActionGroup]
+     * are used.
+     *
+     * Ideally, a flattening should not impact fitness, but, in few cases, it might :(
+     * This happens eg in Rest Resource, if a middle SQL action is moved into initialization group and impact
+     * state of previous REST actions (an example of this did happen for example for CrossFkEMTest...).
+     * This means that, after a flattening, to be on safe side should recompute fitness
+     */
+    fun ensureFlattenedStructure(){
+
+        val before = seeAllActions().size
+
+        doFlattenStructure()
+
+        //make sure the flattening worked
+        Lazy.assert { isFlattenedStructure() }
+        //no base action should have been lost
+        Lazy.assert { seeAllActions().size == before }
+    }
+
+    protected open fun doFlattenStructure(){
+        //for most types, there is nothing to do.
+        //can be overridden if needed
+    }
+
+    private fun isFlattenedStructure() : Boolean{
+        return groupsView()!!.getAllInGroup(GroupsOfChildren.MAIN).all { it is EnterpriseActionGroup<*> }
+    }
+
 
     final override fun seeActions(filter: ActionFilter) : List<Action>{
         return when (filter) {

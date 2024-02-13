@@ -48,7 +48,7 @@ class WebStructureMutator: EnterpriseStructureMutator() {
     }
 
     private fun mutateStructureAtRandom(ind: WebIndividual, mutatedGenes: MutatedGeneSpecification?) {
-        val main = ind.seeMainActionComponents() as List<EnterpriseActionGroup>
+        val main = ind.seeMainActionComponents() as List<EnterpriseActionGroup<*>>
 
         if (main.size == 1) {
             val sampledAction = sampler.sampleUndefinedAction()

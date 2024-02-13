@@ -106,24 +106,31 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
     ) {
         //SQL actions are generated in between
         if (ind.individual is RestIndividual) {
-            ind.evaluatedResourceActions().forEachIndexed { index, c ->
-                // db
-                if (c.first.isNotEmpty())
-                    SqlWriter.handleDbInitialization(
-                        format,
-                        c.first,
-                        lines,
-                        ind.individual.seeDbActions(),
-                        groupIndex = index.toString(),
-                        insertionVars = insertionVars,
-                        skipFailure = config.skipFailureSQLInTestFile
-                    )
-                //actions
-                c.second.forEach { a ->
-                    val exeuctionIndex = ind.individual.seeMainExecutableActions().indexOf(a.action)
-                    handleSingleCall(a, exeuctionIndex, ind.fitness, lines, testCaseName, testSuitePath, baseUrlOfSut)
+            if((ind.individual as RestIndividual).getResourceCalls().isNotEmpty()){
+                ind.evaluatedResourceActions().forEachIndexed { index, c ->
+                    // db
+                    if (c.first.isNotEmpty())
+                        SqlWriter.handleDbInitialization(
+                            format,
+                            c.first,
+                            lines,
+                            ind.individual.seeDbActions(),
+                            groupIndex = index.toString(),
+                            insertionVars = insertionVars,
+                            skipFailure = config.skipFailureSQLInTestFile
+                        )
+                    //actions
+                    c.second.forEach { a ->
+                        val exeuctionIndex = ind.individual.seeMainExecutableActions().indexOf(a.action)
+                        handleSingleCall(a, exeuctionIndex, ind.fitness, lines, testCaseName, testSuitePath, baseUrlOfSut)
+                    }
+                }
+            }else{
+                ind.evaluatedMainActions().forEachIndexed { index, evaluatedAction ->
+                    handleSingleCall(evaluatedAction, index, ind.fitness, lines, testCaseName, testSuitePath, baseUrlOfSut)
                 }
             }
+
         }
     }
 

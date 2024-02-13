@@ -936,6 +936,13 @@ abstract class Gene(
     }
 
     /**
+     * clean bindingGenes
+     */
+    fun cleanBinding(){
+        bindingGenes.clear()
+    }
+
+    /**
      *  A is bound with C
      *  B is bound with C
      *
