@@ -283,7 +283,7 @@ SUTS = [
     Sut("graphql-ncs", 1, JDK_8),
     Sut("graphql-scs", 1, JDK_8),
     # RPC
-    Sut("signal-registration",1,JDK_17)
+    Sut("signal-registration",1,JDK_17),
     Sut("rpc-thrift-ncs", 1, JDK_8),
     Sut("rpc-thrift-scs", 1, JDK_8),
     # REST NodeJS
