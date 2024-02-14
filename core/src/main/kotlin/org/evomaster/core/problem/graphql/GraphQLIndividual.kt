@@ -7,6 +7,7 @@ import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
+import org.evomaster.core.problem.enterprise.EnterpriseChildTypeVerifier
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.search.*
@@ -23,10 +24,7 @@ class GraphQLIndividual(
 ) : ApiWsIndividual(
     sampleType = sampleType,
     children = allActions,
-    childTypeVerifier = {
-        EnterpriseActionGroup::class.java.isAssignableFrom(it)
-                || SqlAction::class.java.isAssignableFrom(it)
-    },
+    childTypeVerifier = EnterpriseChildTypeVerifier(GraphQLAction::class.java),
     groups = groups
 ) {
 

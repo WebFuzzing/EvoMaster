@@ -527,6 +527,10 @@ class EMConfig {
             throw ConfigProblemException("Invalid combination of probabilities for probRestDefault and probRestExamples. " +
                     "Their sum should be lower or equal to 1.")
         }
+
+        if(security && !minimize){
+            throw ConfigProblemException("The use of 'security' requires 'minimize'")
+        }
     }
 
     private fun checkPropertyConstraints(m: KMutableProperty<*>) {

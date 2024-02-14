@@ -137,17 +137,17 @@ class EvaluatedIndividual<T>(
      *      Note that if [actions] is null, then we employ individual.seeActions() as default
      */
     fun seeResults(actions: List<Action>? = null): List<ActionResult> {
-        if (results.isEmpty()) {
-            return listOf()
-        }
         val list = actions ?: individual.seeActions(NO_EXTERNAL_SERVICE)
-        val all = individual.seeActions(NO_EXTERNAL_SERVICE)
-        val last = results.indexOfFirst { it.stopping }
+        var stopped = false
         return list.mapNotNull {
-            val index = all.indexOf(it)
-            if (last == -1 || index <= last)
-                results[index]
-            else null
+            val res = seeResult(it.getLocalId())
+            if(!stopped && res == null){
+                throw IllegalStateException("Cannot find action result with id: ${it.getLocalId()}")
+            }
+            if(!stopped && res!=null){
+                stopped = res.stopping
+            }
+            res
         }
     }
 
@@ -163,16 +163,15 @@ class EvaluatedIndividual<T>(
     fun evaluatedMainActions(): List<EvaluatedAction> {
 
         val list: MutableList<EvaluatedAction> = mutableListOf()
-
-        /*
-            TODO unclear whether here we just need main actions, are all (eg for DB)
-         */
-
         val actions = individual.seeMainExecutableActions()
-        val actionResults = seeResults(actions)
 
-        (0 until actionResults.size).forEach { i ->
-            list.add(EvaluatedAction(actions[i], actionResults[i]))
+        for(a in actions){
+            val result = seeResult(a.getLocalId())
+                ?: throw IllegalStateException("Missing action result with id: ${a.getLocalId()}")
+            list.add(EvaluatedAction(a,result))
+            if(result.stopping){
+                break
+            }
         }
 
         return list
