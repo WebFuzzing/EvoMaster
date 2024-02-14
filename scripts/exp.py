@@ -275,6 +275,7 @@ SUTS = [
     Sut("cwa-verification", 1, JDK_11),
     Sut("genome-nexus", 1, JDK_8),
     Sut("market", 1, JDK_11),
+    Sut("session-service",1,JDK_8),
     # GRAPHQL JVM
     Sut("petclinic-graphql", 1, JDK_8),
     Sut("patio-api", 1, JDK_11),
@@ -282,7 +283,7 @@ SUTS = [
     Sut("graphql-ncs", 1, JDK_8),
     Sut("graphql-scs", 1, JDK_8),
     # RPC
-    Sut("signal-registration",1,JDK_17)
+    Sut("signal-registration",1,JDK_17),
     Sut("rpc-thrift-ncs", 1, JDK_8),
     Sut("rpc-thrift-scs", 1, JDK_8),
     # REST NodeJS

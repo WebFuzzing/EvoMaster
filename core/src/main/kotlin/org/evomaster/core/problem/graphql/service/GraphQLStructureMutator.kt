@@ -57,7 +57,7 @@ class GraphQLStructureMutator : ApiWsStructureMutator() {
 
     private fun mutateForRandomType(ind: GraphQLIndividual, mutatedGenes: MutatedGeneSpecification?) {
 
-        val main = ind.seeMainActionComponents() as List<EnterpriseActionGroup>
+        val main = ind.seeMainActionComponents() as List<EnterpriseActionGroup<*>>
 
         if (main.size == 1) {
             val sampledAction = sampler.sampleRandomAction(0.05) as GraphQLAction
