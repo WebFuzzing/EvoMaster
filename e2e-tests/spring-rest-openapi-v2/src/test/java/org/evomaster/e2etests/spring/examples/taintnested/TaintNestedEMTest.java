@@ -28,6 +28,8 @@ public class TaintNestedEMTest extends SpringTestBase {
                 "org.bar.TaintNestedEM",
                 5_000,
                 (args) -> {
+                    args.add("--taintForceSelectionOfGenesWithSpecialization");
+                    args.add("true");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 

@@ -93,6 +93,7 @@ class StringGene(
     var selectedSpecialization = -1
 
     var selectionUpdatedSinceLastMutation = false
+        private set
 
     /**
      * Check if we already tried to use this string for taint analysis

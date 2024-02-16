@@ -25,6 +25,7 @@ import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.TaintedArrayGene
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
@@ -161,7 +162,14 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         }
 
         if(config.taintForceSelectionOfGenesWithSpecialization){
-            //TODO
+            individual.seeGenes()
+                .filterIsInstance<StringGene>()
+                .filter { it.selectionUpdatedSinceLastMutation }
+                .forEach {
+                    if(!toMutate.contains(it)){
+                        toMutate.add(it)
+                    }
+                }
         }
 
         return toMutate
