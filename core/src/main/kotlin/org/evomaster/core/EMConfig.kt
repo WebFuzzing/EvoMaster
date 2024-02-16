@@ -1801,6 +1801,23 @@ class EMConfig {
     var useGlobalTaintInfoProbability = 0.0
 
 
+    @Experimental
+    @Cfg("During mutation, force the mutation of genes that have newly discovered specialization from previous fitness evaluations," +
+            " based on taint analysis.")
+    var taintForceSelectionOfGenesWithSpecialization = false
+
+    @Probability
+    @Cfg("Probability of removing a tainted value during mutation")
+    var taintRemoveProbability = 0.5
+
+    @Probability
+    @Cfg("Probability of applying a discovered specialization for a tainted value")
+    var taintApplySpecializationProbability = 0.5
+
+    @Probability
+    @Cfg("Probability of changing specialization for a resolved taint during mutation")
+    var taintChangeSpecializationProbability = 0.1
+
     @Min(0.0)
     @Max(stringLengthHardLimit.toDouble())
     @Cfg("The maximum length allowed for evolved strings. Without this limit, strings could in theory be" +

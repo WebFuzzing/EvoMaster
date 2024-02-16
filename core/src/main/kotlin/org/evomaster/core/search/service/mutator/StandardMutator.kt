@@ -93,32 +93,34 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         targets: Set<Int>,
         mutatedGenes: MutatedGeneSpecification?
     ): List<Gene> {
-        val genesToMutate = genesToMutation(individual, evi, targets)
-        if (genesToMutate.isEmpty()) return mutableListOf()
+        // the genes that could be possibly chosen for mutation
+        val geneCandidates = genesToMutation(individual, evi, targets)
+        if (geneCandidates.isEmpty()) return mutableListOf()
 
         val filterN = when (config.geneMutationStrategy) {
             ONE_OVER_N -> ALL
             ONE_OVER_N_BIASED_SQL -> NO_SQL
         }
-        val mutated = mutableListOf<Gene>()
+        // the actual chosen genes, that will be mutated
+        val toMutate = mutableListOf<Gene>()
 
         if (!config.isEnabledWeightBasedMutation()) {
-            val p = 1.0 / max(1, individual.seeGenes(filterN).filter { genesToMutate.contains(it) }.size)
-            while (mutated.isEmpty()) {
-                genesToMutate.forEach { g ->
+            val p = 1.0 / max(1, individual.seeGenes(filterN).filter { geneCandidates.contains(it) }.size)
+            while (toMutate.isEmpty()) {
+                geneCandidates.forEach { g ->
                     if (randomness.nextBoolean(p))
-                        mutated.add(g)
+                        toMutate.add(g)
                 }
             }
         } else {
             val enableAPC = config.isEnabledWeightBasedMutation()
                     && archiveGeneSelector.applyArchiveSelection()
 
-            val noSQLGenes = individual.seeGenes(NO_SQL).filter { genesToMutate.contains(it) }
-            val sqlGenes = genesToMutate.filterNot { noSQLGenes.contains(it) }
-            while (mutated.isEmpty()) {
+            val noSQLGenes = individual.seeGenes(NO_SQL).filter { geneCandidates.contains(it) }
+            val sqlGenes = geneCandidates.filterNot { noSQLGenes.contains(it) }
+            while (toMutate.isEmpty()) {
                 if (config.specializeSQLGeneSelection && noSQLGenes.isNotEmpty() && sqlGenes.isNotEmpty()) {
-                    mutated.addAll(
+                    toMutate.addAll(
                         mwc.selectSubGene(
                             noSQLGenes,
                             enableAPC,
@@ -130,7 +132,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                             numOfGroup = 2
                         )
                     )
-                    mutated.addAll(
+                    toMutate.addAll(
                         mwc.selectSubGene(
                             sqlGenes,
                             enableAPC,
@@ -143,9 +145,9 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                         )
                     )
                 } else {
-                    mutated.addAll(
+                    toMutate.addAll(
                         mwc.selectSubGene(
-                            genesToMutate,
+                            geneCandidates,
                             enableAPC,
                             targets,
                             null,
@@ -157,7 +159,12 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                 }
             }
         }
-        return mutated
+
+        if(config.taintForceSelectionOfGenesWithSpecialization){
+            //TODO
+        }
+
+        return toMutate
     }
 
     private fun mutationPreProcessing(individual: T) {
