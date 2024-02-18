@@ -30,22 +30,24 @@ public class TaintNestedEMTest extends SpringTestBase {
                 (args) -> {
                     args.add("--taintForceSelectionOfGenesWithSpecialization");
                     args.add("true");
+                    args.add("--discoveredInfoRewardedInFitness");
+                    args.add("true");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertTrue(solution.getIndividuals().size() >= 1);
 
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/taintnested", "A");
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/taintnested", "B");
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/taintnested", "C");
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/taintnested", "D");
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/taintnested", "E");
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/taintnested", "F");
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/taintnested", "G");
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/taintnested", "H");
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/taintnested", "I");
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/taintnested", "L");
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/taintnested", "GOT IT!!!");
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/taintnested", "A");
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/taintnested", "B");
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/taintnested", "C");
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/taintnested", "D");
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/taintnested", "E");
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/taintnested", "F");
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/taintnested", "G");
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/taintnested", "H");
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/taintnested", "I");
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/taintnested", "L");
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/taintnested", "GOT IT!!!");
                 });
     }
 }

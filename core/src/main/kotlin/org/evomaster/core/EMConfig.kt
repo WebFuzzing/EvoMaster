@@ -1802,6 +1802,10 @@ class EMConfig {
 
 
     @Experimental
+    @Cfg("If there is new discovered information from a test execution, reward it in the fitness function")
+    var discoveredInfoRewardedInFitness = false
+
+    @Experimental
     @Cfg("During mutation, force the mutation of genes that have newly discovered specialization from previous fitness evaluations," +
             " based on taint analysis.")
     var taintForceSelectionOfGenesWithSpecialization = false
