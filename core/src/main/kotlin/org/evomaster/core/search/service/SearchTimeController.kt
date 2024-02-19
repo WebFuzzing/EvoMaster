@@ -67,6 +67,13 @@ class SearchTimeController {
     private var startTime = 0L
 
     /**
+     * Once the search is finished, we do not want to keep recording new events.
+     * The problem is with phases after the search, like minimization and security, which
+     * might end up calling methods here through the archive
+     */
+    private var recording = true
+
+    /**
      * Keeping track of the latest N test executions.
      * Time expressed in ms (Long).
      * Also keeping track of number of actions (Int)
@@ -88,6 +95,11 @@ class SearchTimeController {
     val averageByteOverheadTestResultsSubset = IncrementalAverage()
 
     val averageOverheadMsTestResultsSubset = IncrementalAverage()
+
+
+    fun doStopRecording(){
+        recording = false
+    }
 
     /**
      * Make sure we do not make too many requests in a short amount of time, to avoid
@@ -116,6 +128,7 @@ class SearchTimeController {
     }
 
     fun startSearch(){
+        recording = true
         searchStarted = true
         startTime = System.currentTimeMillis()
     }
@@ -125,6 +138,8 @@ class SearchTimeController {
     }
 
     fun reportConnectionCloseRequest(httpStatus: Int){
+
+        if(!recording) return
 
         connectionCloseRequest++
         //evaluatedActions is updated at the end of test case
@@ -144,6 +159,8 @@ class SearchTimeController {
     }
 
     fun reportExecutedIndividualTime(ms: Long, nActions: Int){
+
+        if(!recording) return
 
         //this is for last 100 tests, displayed live during the search in the console
         executedIndividualTime.add(Pair(ms, nActions))
@@ -170,23 +187,28 @@ class SearchTimeController {
     }
 
     fun newIndividualEvaluation() {
+        if(!recording) return
         evaluatedIndividuals++
     }
 
     fun newIndividualsWithSqlFailedWhere(){
+        if(!recording) return
         individualsWithSqlFailedWhere++
     }
 
     fun newActionEvaluation(n: Int = 1) {
+        if(!recording) return
         evaluatedActions += n
         listeners.forEach{it.newActionEvaluated()}
     }
 
     fun newCoveredTarget(){
+        if(!recording) return
         newActionImprovement()
     }
 
     fun newActionImprovement(){
+        if(!recording) return
         lastActionImprovement = evaluatedActions
     }
 
