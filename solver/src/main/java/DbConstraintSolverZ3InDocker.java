@@ -120,7 +120,7 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
             Gene gene = new IntegerGene(
                     name,
                     value,
-                    null, // TODO: Update min and max based on constraints
+                    null,
                     null,
                     null,
                     false,
