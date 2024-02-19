@@ -2,6 +2,7 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
 import org.evomaster.core.search.gene.Gene;
 import org.evomaster.core.search.gene.numeric.IntegerGene;
+import org.evomaster.core.search.gene.optional.NullableGene;
 import org.evomaster.core.sql.SqlAction;
 import org.evomaster.core.sql.SqlInsertBuilder;
 import org.testcontainers.containers.BindMode;
@@ -96,54 +97,67 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
         }
     }
 
-    private List<SqlAction> solveFromTmp(String filename) {
+    private List<SqlAction> solveFromTmp(Smt2Writer writer, String filename) {
         String model = solveFromFile("tmp/" + filename);
-        return toSqlAction(model);
+        Map<String, String> solvedConstraints = toSolvedConstraintsMap(model);
+        return toSqlAction(writer, solvedConstraints);
     }
 
-    /**
-     * Given the list of constraints takes the first one and solve the model for that
-     *
-     * @param model the string with the model
-     * @return the Gene with the model
-     */
-    private List<SqlAction> toSqlAction(String model) {
-        // Create the insert based on the first constraint
+    private Map<String, String> toSolvedConstraintsMap(String model) {
         String[] lines = model.split("\n");
-        Map<String, Gene> genes = new HashMap<>();
+        Map<String, String> solved = new HashMap<>();
 
         for (int i = 1; i < lines.length; i++) {
             String[] values = lines[i].substring(2, lines[i].length()-2).split(" ");
-            String name = values[0];
-            Integer value =  Integer.parseInt(values[1]);
 
-            Gene gene = new IntegerGene(
-                    name,
-                    value,
-                    null,
-                    null,
-                    null,
-                    false,
-                    false);
-            genes.put(name, gene);
+            solved.put(values[0], values[1]);
         }
+        return solved;
+    }
 
-        // TODO: Handle more than 1 table
-        String tableName = this.schemaDto.tables.get(0).name;
-        List<String> history = new LinkedList<>();
-        Set<String> columnNames = new HashSet<>(Collections.singletonList("*"));
+    private List<SqlAction> toSqlAction(Smt2Writer writer, Map<String, String> solvedConstraints) {
 
-        List<SqlAction> actions = sqlInsertBuilder.createSqlInsertionAction(tableName,
-                columnNames, history, false, false, false);
+        List<SqlAction> actions = new LinkedList<>();
+        for (TableDto table : this.schemaDto.tables) {
 
-        actions.get(0).seeTopGenes().forEach(g -> {
-            if (genes.containsKey(g.getName())) {
-                g.copyValueFrom(genes.get(g.getName()));
-            } else {
-                log.warn("Gene not found in the model: " + g.getName());
-            }
-        });
+            String tableName = table.name;
+            List<String> history = new LinkedList<>();
+            Set<String> columnNames = new HashSet<>(Collections.singletonList("*"));
 
+            List<SqlAction> newActions = sqlInsertBuilder.createSqlInsertionAction(tableName,
+                    columnNames, history, false, false, false);
+
+            newActions.forEach(action -> action.seeTopGenes().forEach(currentGene -> {
+                String tableVariableKey = writer.asTableVariableKey(table.name, currentGene.getName());
+                if (solvedConstraints.containsKey(tableVariableKey)) {
+
+                    // TODO: Support other than Int type
+                    String solvedValue = solvedConstraints.get(tableVariableKey);
+                    Integer value =  Integer.parseInt(solvedValue);
+                    Gene geneWithSolvedValue = new IntegerGene(
+                            currentGene.getName(),
+                            value,
+                            null,
+                            null,
+                            null,
+                            false,
+                            false);
+
+                    if (currentGene instanceof IntegerGene) {
+                        currentGene.copyValueFrom(geneWithSolvedValue);
+                    } else if (currentGene instanceof NullableGene) {
+                        Gene parent = ((NullableGene) currentGene).getGene();
+                        if (parent instanceof IntegerGene) {
+                            parent.copyValueFrom(geneWithSolvedValue);
+                        }
+                    }
+                } else {
+                    log.warn("Gene not found in the model: " + currentGene.getName());
+                }
+            }));
+
+            actions.addAll(newActions);
+        }
         return actions;
     }
 
@@ -158,7 +172,7 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
 
         for (TableDto table : this.schemaDto.tables) {
             table.tableCheckExpressions.forEach(constraint -> {
-                boolean succeed = writer.addTableCheckExpression(constraint);
+                boolean succeed = writer.addTableCheckExpression(table.name, constraint);
                 if (!succeed) {
                     throw new RuntimeException("Constraint not supported: " + constraint);
                 }
@@ -167,7 +181,7 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
 
         String fileName = storeToTmpFile(writer);
 
-        List<SqlAction> solution = solveFromTmp(fileName);
+        List<SqlAction> solution = solveFromTmp(writer, fileName);
 
         try {
             // TODO: Move this to another thread?

@@ -91,11 +91,10 @@ public class Smt2Writer  {
         }
     }
 
-    public boolean addTableCheckExpression(TableCheckExpressionDto checkConstraint) {
+    public boolean addTableCheckExpression(String tableName, TableCheckExpressionDto checkConstraint) {
         try {
-
             SqlCondition condition = parser.parse(checkConstraint.sqlCheckExpression, this.dbType);
-            Pair<Set<String>, String> response = parseCheckExpression(condition);
+            Pair<Set<String>, String> response = parseCheckExpression(tableName, condition);
             this.variables.addAll(response.getFirst());
             this.constraints.add(response.getSecond());
             return true;
@@ -104,12 +103,12 @@ public class Smt2Writer  {
             return false;
         }
     }
-    private Pair<Set<String>, String> parseCheckExpression(SqlCondition condition) {
+    private Pair<Set<String>, String> parseCheckExpression(String tableName, SqlCondition condition) {
 
             if (condition instanceof SqlAndCondition) {
                 SqlAndCondition andCondition = (SqlAndCondition) condition;
-                Pair<Set<String>, String> leftResponse = parseCheckExpression(andCondition.getLeftExpr());
-                Pair<Set<String>, String> rightResponse = parseCheckExpression(andCondition.getRightExpr());
+                Pair<Set<String>, String> leftResponse = parseCheckExpression(tableName, andCondition.getLeftExpr());
+                Pair<Set<String>, String> rightResponse = parseCheckExpression(tableName, andCondition.getRightExpr());
 
                 Set<String> variables = new HashSet<>();
                 variables.addAll(leftResponse.getFirst());
@@ -125,7 +124,7 @@ public class Smt2Writer  {
                 List<SqlCondition> conditions = orCondition.getOrConditions();
                 List<String> orMembers = new ArrayList<>();
                 for (SqlCondition c : conditions) {
-                    Pair<Set<String>, String> response = parseCheckExpression(c);
+                    Pair<Set<String>, String> response = parseCheckExpression(tableName, c);
                     variables.addAll(response.getFirst());
                     orMembers.add(response.getSecond());
                 }
@@ -139,7 +138,7 @@ public class Smt2Writer  {
             }
             SqlComparisonCondition comparisonCondition = (SqlComparisonCondition) condition;
 
-            String variable = comparisonCondition.getLeftOperand().toString();
+            String variable = asTableVariableKey(tableName, comparisonCondition.getLeftOperand().toString());
             String compare = comparisonCondition.getRightOperand().toString();
             String comparator = comparisonCondition.getSqlComparisonOperator().toString();
 
@@ -160,5 +159,9 @@ public class Smt2Writer  {
             return "(or " + orMembers.get(0) + " " + orMembers.get(1) + ")";
 
         return "(or " + orMembers.get(orMembers.size() - 1) + " " + toOr(orMembers.subList(0, orMembers.size() - 1)) + ")";
+    }
+
+     String asTableVariableKey(String tableName, String variable) {
+        return tableName + "_" + variable;
     }
 }

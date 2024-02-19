@@ -14,17 +14,17 @@ public class Smt2WriterTest {
     @Test
     public void productGreaterPriceAsParsed() {
         Smt2Writer writer = new Smt2Writer(DatabaseType.H2);
-        boolean succeed = writer.addTableCheckExpression(CheckExpressionFrom("(\"PRICE\" > 100)"));
+        boolean succeed = writer.addTableCheckExpression("products", CheckExpressionFrom("(\"PRICE\" > 100)"));
 
         assertTrue(succeed);
 
         String text = writer.asText();
 
         String expected = "(set-logic QF_SLIA)\n" +
-                "(declare-const PRICE Int)\n" +
-                "(assert (> PRICE 100))\n" +
+                "(declare-const products_PRICE Int)\n" +
+                "(assert (> products_PRICE 100))\n" +
                 "(check-sat)\n" +
-                "(get-value (PRICE))\n";
+                "(get-value (products_PRICE))\n";
 
         assertEquals(expected, text);
     }
@@ -32,34 +32,34 @@ public class Smt2WriterTest {
     @Test
     public void productGreaterAndLowerPriceAsParsed() {
         Smt2Writer writer = new Smt2Writer(DatabaseType.H2);
-        boolean succeed = writer.addTableCheckExpression(CheckExpressionFrom("(\"PRICE\" > 100 AND \"PRICE\" < 9999)"));
+        boolean succeed = writer.addTableCheckExpression("products", CheckExpressionFrom("(\"PRICE\" > 100 AND \"PRICE\" < 9999)"));
 
         assertTrue(succeed);
 
         String text = writer.asText();
 
         String expected = "(set-logic QF_SLIA)\n" +
-                "(declare-const PRICE Int)\n" +
-                "(assert (and (> PRICE 100) (< PRICE 9999)))\n" +
+                "(declare-const products_PRICE Int)\n" +
+                "(assert (and (> products_PRICE 100) (< products_PRICE 9999)))\n" +
                 "(check-sat)\n" +
-                "(get-value (PRICE))\n";
+                "(get-value (products_PRICE))\n";
 
         assertEquals(expected, text);
     }
     @Test
     public void productOrPriceParsed() {
         Smt2Writer writer = new Smt2Writer(DatabaseType.H2);
-        boolean succeed = writer.addTableCheckExpression(CheckExpressionFrom("(\"STOCK\" >= 5 OR \"STOCK\" = 100)"));
+        boolean succeed = writer.addTableCheckExpression("products", CheckExpressionFrom("(\"STOCK\" >= 5 OR \"STOCK\" = 100)"));
 
         assertTrue(succeed);
 
         String text = writer.asText();
 
         String expected = "(set-logic QF_SLIA)\n" +
-                "(declare-const STOCK Int)\n" +
-                "(assert (or (>= STOCK 5) (= STOCK 100)))\n" +
+                "(declare-const products_STOCK Int)\n" +
+                "(assert (or (>= products_STOCK 5) (= products_STOCK 100)))\n" +
                 "(check-sat)\n" +
-                "(get-value (STOCK))\n";
+                "(get-value (products_STOCK))\n";
 
         assertEquals(expected, text);
     }
@@ -68,21 +68,21 @@ public class Smt2WriterTest {
     @Test
     public void productGreaterPriceAndStock() {
         Smt2Writer writer = new Smt2Writer(DatabaseType.H2);
-        boolean succeed = writer.addTableCheckExpression(CheckExpressionFrom("(\"PRICE\">1000)"));
-        succeed = succeed && writer.addTableCheckExpression(CheckExpressionFrom("(\"STOCK\">=5)"));
+        boolean succeed = writer.addTableCheckExpression("products", CheckExpressionFrom("(\"PRICE\">1000)"));
+        succeed = succeed && writer.addTableCheckExpression("products", CheckExpressionFrom("(\"STOCK\">=5)"));
 
         assertTrue(succeed);
 
         String text = writer.asText();
 
         String expected = "(set-logic QF_SLIA)\n" +
-                "(declare-const PRICE Int)\n" +
-                "(declare-const STOCK Int)\n" +
-                "(assert (> PRICE 1000))\n" +
-                "(assert (>= STOCK 5))\n" +
+                "(declare-const products_STOCK Int)\n" +
+                "(declare-const products_PRICE Int)\n" +
+                "(assert (> products_PRICE 1000))\n" +
+                "(assert (>= products_STOCK 5))\n" +
                 "(check-sat)\n" +
-                "(get-value (PRICE))\n" +
-                "(get-value (STOCK))\n";
+                "(get-value (products_STOCK))\n" +
+                "(get-value (products_PRICE))\n";
 
         assertEquals(expected, text);
     }
