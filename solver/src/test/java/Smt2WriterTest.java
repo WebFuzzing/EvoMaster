@@ -20,7 +20,31 @@ public class Smt2WriterTest {
 
         String text = writer.asText();
 
-        assertEquals(expectedSmt2(">", "100"), text);
+        String expected = "(set-logic QF_SLIA)\n" +
+                "(declare-const PRICE Int)\n" +
+                "(assert (> PRICE 100))\n" +
+                "(check-sat)\n" +
+                "(get-value (PRICE))\n";
+
+        assertEquals(expected, text);
+    }
+
+    @Test
+    public void productGreaterAndLowerPriceAsParsed() {
+        Smt2Writer writer = new Smt2Writer(DatabaseType.H2);
+        boolean succeed = writer.addTableCheckExpression(CheckExpressionFrom("(\"PRICE\" > 100 AND \"PRICE\" < 9999)"));
+
+        assertTrue(succeed);
+
+        String text = writer.asText();
+
+        String expected = "(set-logic QF_SLIA)\n" +
+                "(declare-const PRICE Int)\n" +
+                "(assert (and (> PRICE 100) (< PRICE 9999)))\n" +
+                "(check-sat)\n" +
+                "(get-value (PRICE))\n";
+
+        assertEquals(expected, text);
     }
 
     @Test
@@ -43,14 +67,6 @@ public class Smt2WriterTest {
                 "(get-value (STOCK))\n";
 
         assertEquals(expected, text);
-    }
-
-    private String expectedSmt2(String cmp, String val) {
-        return "(set-logic QF_SLIA)\n" +
-                "(declare-const PRICE Int)\n" +
-                "(assert (" + cmp + " PRICE " + val + "))\n" +
-                "(check-sat)\n" +
-                "(get-value (PRICE))\n";
     }
 
     @NotNull
