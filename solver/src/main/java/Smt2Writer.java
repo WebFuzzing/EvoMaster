@@ -5,6 +5,7 @@ import org.evomaster.dbconstraint.ConstraintDatabaseType;
 import org.evomaster.dbconstraint.ast.SqlAndCondition;
 import org.evomaster.dbconstraint.ast.SqlComparisonCondition;
 import org.evomaster.dbconstraint.ast.SqlCondition;
+import org.evomaster.dbconstraint.ast.SqlOrCondition;
 import org.evomaster.dbconstraint.parser.jsql.JSqlConditionParser;
 
 import java.io.IOException;
@@ -119,6 +120,19 @@ public class Smt2Writer  {
                 return new Pair<>(variables, comparison);
             }
 
+            if (condition instanceof SqlOrCondition) {
+                SqlOrCondition orCondition = (SqlOrCondition) condition;
+                List<SqlCondition> conditions = orCondition.getOrConditions();
+                List<String> orMembers = new ArrayList<>();
+                for (SqlCondition c : conditions) {
+                    Pair<Set<String>, String> response = parseCheckExpression(c);
+                    variables.addAll(response.getFirst());
+                    orMembers.add(response.getSecond());
+                }
+
+                return new Pair<>(variables, toOr(orMembers));
+            }
+
             if (!(condition instanceof SqlComparisonCondition)) {
                 // TODO: Support other check expressions
                 throw new RuntimeException("The condition is not a comparison condition");
@@ -133,5 +147,18 @@ public class Smt2Writer  {
             variables.add(variable);
 
             return new Pair<>(variables, "(" + comparator + " " + variable + " " + compare + ")");
+    }
+
+    private String toOr(List<String> orMembers) {
+        if (orMembers.isEmpty())
+            throw new RuntimeException("The or condition is empty");
+
+        if (orMembers.size() == 1)
+            return orMembers.get(0);
+
+        if (orMembers.size() == 2)
+            return "(or " + orMembers.get(0) + " " + orMembers.get(1) + ")";
+
+        return "(or " + orMembers.get(orMembers.size() - 1) + " " + toOr(orMembers.subList(0, orMembers.size() - 1)) + ")";
     }
 }

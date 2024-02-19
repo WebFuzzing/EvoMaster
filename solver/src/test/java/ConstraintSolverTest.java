@@ -34,7 +34,7 @@ public class ConstraintSolverTest {
             "CREATE TABLE products(price int not null, min_price int not null, stock int not null);\n" +
             "ALTER TABLE products add CHECK (price>100 AND price<9999);\n" +
             "ALTER TABLE products add CHECK (min_price>1);\n" +
-            "ALTER TABLE products add CHECK (stock>=5);"
+            "ALTER TABLE products add CHECK (stock>=5 OR stock = 100);"
         );
 
         DbSchemaDto schemaDto = SchemaExtractor.extract(connection);
@@ -111,7 +111,7 @@ public class ConstraintSolverTest {
 
         for (Gene gene : action.seeTopGenes()) {
             if (gene.getName().equals("PRICE") && gene instanceof IntegerGene) {
-                assertEquals(5561, ((IntegerGene) gene).getValue());
+                assertEquals(101, ((IntegerGene) gene).getValue());
                 // When using two constraints, the min for the gene is not parsed correctly
                 assertEquals(-2147483648, ((IntegerGene) gene).getMin());
                 assertEquals(2147483647, ((IntegerGene) gene).getMaximum());
@@ -119,7 +119,7 @@ public class ConstraintSolverTest {
                 assertTrue(((IntegerGene) gene).getMaxInclusive());
             } else if (gene.getName().equals("STOCK") && gene instanceof IntegerGene) {
                 assertEquals(5, ((IntegerGene) gene).getValue());
-                assertEquals(5, ((IntegerGene) gene).getMin());
+                assertEquals(-2147483648, ((IntegerGene) gene).getMin());
                 assertEquals(2147483647, ((IntegerGene) gene).getMaximum());
                 assertTrue(((IntegerGene) gene).getMinInclusive());
                 assertTrue(((IntegerGene) gene).getMaxInclusive());

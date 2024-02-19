@@ -46,6 +46,24 @@ public class Smt2WriterTest {
 
         assertEquals(expected, text);
     }
+    @Test
+    public void productOrPriceParsed() {
+        Smt2Writer writer = new Smt2Writer(DatabaseType.H2);
+        boolean succeed = writer.addTableCheckExpression(CheckExpressionFrom("(\"STOCK\" >= 5 OR \"STOCK\" = 100)"));
+
+        assertTrue(succeed);
+
+        String text = writer.asText();
+
+        String expected = "(set-logic QF_SLIA)\n" +
+                "(declare-const STOCK Int)\n" +
+                "(assert (or (>= STOCK 5) (= STOCK 100)))\n" +
+                "(check-sat)\n" +
+                "(get-value (STOCK))\n";
+
+        assertEquals(expected, text);
+    }
+
 
     @Test
     public void productGreaterPriceAndStock() {
