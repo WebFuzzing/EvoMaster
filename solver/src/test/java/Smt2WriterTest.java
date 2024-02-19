@@ -1,3 +1,4 @@
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableCheckExpressionDto;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -12,7 +13,7 @@ public class Smt2WriterTest {
     // ************************************** //
     @Test
     public void productGreaterPriceAsParsed() {
-        Smt2Writer writer = new Smt2Writer();
+        Smt2Writer writer = new Smt2Writer(DatabaseType.H2);
         boolean succeed = writer.addTableCheckExpression(CheckExpressionFrom("(\"PRICE\" > 100)"));
 
         assertTrue(succeed);
@@ -24,7 +25,7 @@ public class Smt2WriterTest {
 
     @Test
     public void productGreaterPriceAndStock() {
-        Smt2Writer writer = new Smt2Writer();
+        Smt2Writer writer = new Smt2Writer(DatabaseType.H2);
         boolean succeed = writer.addTableCheckExpression(CheckExpressionFrom("(\"PRICE\">1000)"));
         succeed = succeed && writer.addTableCheckExpression(CheckExpressionFrom("(\"STOCK\">=5)"));
 
@@ -32,7 +33,7 @@ public class Smt2WriterTest {
 
         String text = writer.asText();
 
-        String expected = "(set-logic QF_LIA)\n" +
+        String expected = "(set-logic QF_SLIA)\n" +
                 "(declare-const PRICE Int)\n" +
                 "(declare-const STOCK Int)\n" +
                 "(assert (> PRICE 1000))\n" +
@@ -45,7 +46,7 @@ public class Smt2WriterTest {
     }
 
     private String expectedSmt2(String cmp, String val) {
-        return "(set-logic QF_LIA)\n" +
+        return "(set-logic QF_SLIA)\n" +
                 "(declare-const PRICE Int)\n" +
                 "(assert (" + cmp + " PRICE " + val + "))\n" +
                 "(check-sat)\n" +

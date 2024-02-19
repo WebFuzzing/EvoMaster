@@ -1,7 +1,4 @@
-import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
-import org.evomaster.client.java.sql.internal.constraint.DbTableConstraint;
 import org.evomaster.core.sql.SqlAction;
-import org.evomaster.core.sql.schema.Table;
 
 import java.util.List;
 

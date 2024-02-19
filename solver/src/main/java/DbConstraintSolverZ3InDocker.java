@@ -1,16 +1,13 @@
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
-import org.evomaster.client.java.sql.internal.constraint.DbTableConstraint;
 import org.evomaster.core.search.gene.Gene;
 import org.evomaster.core.search.gene.numeric.IntegerGene;
 import org.evomaster.core.sql.SqlAction;
 import org.evomaster.core.sql.SqlInsertBuilder;
-import org.evomaster.core.sql.schema.Column;
-import org.evomaster.core.sql.schema.Table;
+import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.Container;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.images.builder.ImageFromDockerfile;
-import org.testcontainers.containers.BindMode;
 import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
 
 import java.io.File;
@@ -19,7 +16,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * A smt2 solver implementation using Z3 in a Docker container.
@@ -158,7 +154,7 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
      */
     @Override
     public List<SqlAction> solve() {
-        Smt2Writer writer = new Smt2Writer();
+        Smt2Writer writer = new Smt2Writer(this.schemaDto.databaseType);
 
         for (TableDto table : this.schemaDto.tables) {
             table.tableCheckExpressions.forEach(constraint -> {
