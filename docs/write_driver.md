@@ -193,12 +193,11 @@ public List<DbSpecification> getDbSpecifications() {
 Here, you can specify how to connect to 1 or more SQL databases.
 You need to specify the type of database, and a `Connection` object for it.
 
-In _SpringBoot_, you can extract a connection object in the `startSut()` method (and save it in a variable),
+You can extract a connection object in the `startSut()` method (and save it in a variable),
 by simply using:
 
 ```
-JdbcTemplate jdbc = ctx.getBean(JdbcTemplate.class);
-connection = jdbc.getDataSource().getConnection();
+connection =  java.sql.DriverManager.getConnection(url,user,password);
 ```
 
 Note that, since version `1.5.0`, the methods `getConnection()` and  `getDatabaseDriverName()` have been removed.

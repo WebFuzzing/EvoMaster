@@ -2,10 +2,7 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement.thi
 
 
 import org.evomaster.client.java.instrumentation.ExternalServiceInfo;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyCast;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyMethodReplacementClass;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.*;
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
@@ -103,6 +100,9 @@ public class OkHttpClient3ClassReplacement extends ThirdPartyMethodReplacementCl
                 && !skipHostnameOrIp(urlHost)
                 && !ExecutionTracer.skipHostname(urlHost)
         ){
+            // To fetch DNS information
+            ExternalServiceInfoUtils.analyzeDnsResolution(urlHost);
+
             ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(urlScheme, urlHost, urlPort);
             String[] ipAndPort = collectExternalServiceInfo(remoteHostInfo, urlPort);
 

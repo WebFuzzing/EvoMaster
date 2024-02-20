@@ -830,8 +830,9 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                     if(actions.isEmpty() || actions.none{ it.hostname == hn.remoteHostname}){
                         // OK, we are in that special case
                         val hra = HostnameResolutionAction(hn.remoteHostname, ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP)
-                        // TODO: Under development
                         individual.addChildToGroup(hra, GroupsOfChildren.INITIALIZATION_DNS)
+//                        TODO: Above line adds unnecessary tests at the end, which is
+//                          causing the created tests to fail
                     }
                 }
             }

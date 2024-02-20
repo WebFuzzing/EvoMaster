@@ -96,6 +96,13 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 
                     val actions: MutableList<HttpExternalServiceAction> = mutableListOf()
 
+                    // FIXME: We are not considering the requests served by the Default WireMock server.
+                    //  However, since we add a dummy [HostnameResolution] action
+                    //  (org/evomaster/core/problem/rest/service/AbstractRestFitness.kt:833), at the end
+                    //  there is a test looking to connect to the service and expecting a response when external
+                    //  service is available.
+                    //  Which is causing few tests to fails under [HarvestingStrategyTest]
+
                     requests
                         .groupBy { it.absoluteURL }
                         .forEach { (url, grequests) ->
@@ -194,11 +201,10 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         val old = ind.seeInitializingActions().filterIsInstance<HostnameResolutionAction>()
 
         val addedInsertions: MutableList<Action> = mutableListOf()
-        externalServiceHandler.getHostnameResolutionActions().forEach {
-            val hasActions =
-                old.any { ha -> (ha as HostnameResolutionAction).hostname != it.hostname }
+        externalServiceHandler.getHostnameResolutionActions().forEach { a ->
+            val hasActions = old.any { it.hostname == a.hostname && it.localIPAddress == a.localIPAddress }
             if (!hasActions) {
-                addedInsertions.add(it)
+                addedInsertions.add(a)
             }
         }
 
