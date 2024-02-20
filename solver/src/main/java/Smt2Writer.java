@@ -69,9 +69,9 @@ public class Smt2Writer  {
 
     private void declareConstants(StringBuilder sb) {
         for (String value: this.variables) {
-            sb.append("(declare-const ");
+            sb.append("(declare-fun ");
             sb.append(value);
-            sb.append(" Int)\n");
+            sb.append(" () Int)\n");
         }
     }
 
