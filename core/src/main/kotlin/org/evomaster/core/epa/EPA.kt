@@ -28,6 +28,15 @@ class EPA {
         edge.addRestActionIfNecessary(restAction)
     }
 
+    fun getVertexCount() : Int {
+        return adjacencyMap.size
+    }
+
+    fun getEdgeCount() : Int {
+        val edgeCount = adjacencyMap.map{ it.value.size }
+        return edgeCount.sum()
+    }
+
     private fun getVertex(enabledEndpoints: String): Vertex? {
         return adjacencyMap.keys.filter { v -> v.enabledEndpoints == enabledEndpoints }.getOrNull(0)
     }

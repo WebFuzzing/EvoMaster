@@ -1,7 +1,9 @@
 package org.evomaster.core.output.service
 
+import org.evomaster.client.java.controller.api.dto.database.execution.epa.RestAction
 import org.evomaster.core.epa.EPA
 import org.evomaster.core.epa.Vertex
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.action.ActionFilter
@@ -57,6 +59,8 @@ class EpaWriter {
         Files.createFile(path)
 
         path.toFile().appendText(toDOT(epa))
+        
+        LoggingUtil.getInfoLogger().info("EPA contains ${epa.getVertexCount()} vertexes and ${epa.getEdgeCount()} edges.")
     }
 
     private fun toDOT(epa: EPA): String {
@@ -66,9 +70,11 @@ class EpaWriter {
             if (vertex.isInitial) {
                 sb.append(String.format("init -> \"%s\"\n", vertex.enabledEndpoints))
             }
+            
             edges.forEach {
                 val edgeLabel = it.restActions.stream()
                     .map { a -> a.toString() }
+                    .sorted()
                     .reduce { s: String, a: String -> String.format("%s, \\n%s", s, a) }
                 if (edgeLabel.isPresent) {
                     sb.append(
