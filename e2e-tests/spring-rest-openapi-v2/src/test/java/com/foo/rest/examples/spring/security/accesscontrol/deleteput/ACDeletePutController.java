@@ -30,8 +30,8 @@ public class ACDeletePutController extends SpringController {
     @Override
     public List<AuthenticationDto> getInfoForAuthentication() {
         return Arrays.asList(
-                AuthUtils.getForBasic("creator", "creator0", "creator_password"),
-                AuthUtils.getForBasic("creator", "creator1", "creator_password")
+                AuthUtils.getForBasic("creator0", "creator0", "creator_password"),
+                AuthUtils.getForBasic("creator1", "creator1", "creator_password")
         );
     }
 }

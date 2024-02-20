@@ -14,6 +14,8 @@ import org.evomaster.core.problem.enterprise.auth.AuthSettings
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.PathParam
+import org.evomaster.core.remote.service.RemoteController
+import org.evomaster.core.remote.service.RemoteControllerImplementation
 
 import org.evomaster.core.search.*
 import org.evomaster.core.search.action.ActionResult
@@ -41,6 +43,7 @@ class SecurityRest {
     @Inject
     private lateinit var randomness: Randomness
 
+
     /**
      * All actions that can be defined from the OpenAPI schema
      */
@@ -55,7 +58,8 @@ class SecurityRest {
     private lateinit var authSettings: AuthSettings
 
     /**
-     * Function called after init.
+     * Function called after init. This function initializes REST sampler definitions
+     * and authentication settings.
      */
     @PostConstruct
     private fun postInit(){
@@ -80,6 +84,7 @@ class SecurityRest {
         // we can see what is available from the schema, and then check if already existing a test for it in archive
         addForAccessControl()
 
+        // just return the archive for solutions including the security test.
         return archive.extractSolution()
     }
 
@@ -174,10 +179,10 @@ class SecurityRest {
                 val deleteAction = RestIndividualSelectorUtils.getActionIndexFromIndividual(currentIndividualWith403.individual, HttpVerb.DELETE,
                     delete.path)
 
-                val deleteActionIndex = getActionWithIndex(currentIndividualWith403, deleteAction)
+                val deleteActionIndex = RestIndividualSelectorUtils.getActionWithIndex(currentIndividualWith403, deleteAction)
 
                 // slice the individual in a way that delete all calls after the DELETE request
-                individualToChooseForTest = sliceAllCallsInIndividualAfterAction(currentIndividualWith403, deleteActionIndex)
+                individualToChooseForTest = RestIndividualSelectorUtils.sliceAllCallsInIndividualAfterAction(currentIndividualWith403, deleteActionIndex)
             } else {
                 // there is not. need to create it based on successful create resources with authenticated user
                 var verbUsedForCreation : HttpVerb? = null;
@@ -232,13 +237,13 @@ class SecurityRest {
 
                 // create a copy of the existingEndpointForCreation
                 val existingEndpointForCreationCopy = existingEndpointForCreation.copy()
-                val actionForCreation = getActionWithIndex(existingEndpointForCreation, actionIndexForCreation)
+                val actionForCreation = RestIndividualSelectorUtils.getActionWithIndex(existingEndpointForCreation, actionIndexForCreation)
 
-                sliceAllCallsInIndividualAfterAction(existingEndpointForCreationCopy, actionForCreation)
+                RestIndividualSelectorUtils.sliceAllCallsInIndividualAfterAction(existingEndpointForCreationCopy, actionForCreation)
 
                 // add a DELETE call with another user
                 individualToChooseForTest =
-                    createIndividualWithAnotherActionAddedDifferentAuth(existingEndpointForCreationCopy,
+                    createIndividualWithAnotherActionAddedDifferentAuthRest(existingEndpointForCreationCopy.individual,
                     actionForCreation, HttpVerb.DELETE )
 
 
@@ -249,7 +254,7 @@ class SecurityRest {
             val deleteActionIndex = RestIndividualSelectorUtils.getActionIndexFromIndividual(individualToChooseForTest, HttpVerb.DELETE,
                 delete.path)
 
-            val deleteAction = getActionWithIndexRestIndividual(individualToChooseForTest, deleteActionIndex)
+            val deleteAction = RestIndividualSelectorUtils.getActionWithIndexRestIndividual(individualToChooseForTest, deleteActionIndex)
 
             var individualToAddToSuite = createIndividualWithAnotherActionAddedDifferentAuthRest(individualToChooseForTest,
                 deleteAction, HttpVerb.PUT )
@@ -267,81 +272,13 @@ class SecurityRest {
 
     }
 
-    private fun sliceAllCallsInIndividualAfterAction(individual: EvaluatedIndividual<RestIndividual>,
-                                                     action: RestCallAction) : RestIndividual {
-
-        // find the index of the individual
-        val mainActions = individual.individual.seeMainExecutableActions()
-        val actIndex = individual.individual.seeMainExecutableActions().indexOf(action)
-
-        var actionList = mutableListOf<RestCallAction>()
-
-        for (index in 0..mainActions.size) {
-            if (index <= actIndex) {
-                actionList.add(mainActions.get(index))
-            }
-        }
-
-        val newIndividual = RestIndividual(actionList, SampleType.SECURITY)
-
-        return newIndividual
-
-    }
-
-
     /**
-     * Just retrieve the action with a given index
-     * Precondition: 0 <= index <= number of actions
+     * Create another individual from the individual by adding a new action with a new verb and with a different
+     * authentication.
+     * @param individual - REST indovidual which is the starting point
+     * @param currentAction - REST action for the new individual
+     * @param newActionVerb - verb for the new action, such as GET, POST
      */
-    private fun getActionWithIndex(individual: EvaluatedIndividual<RestIndividual>, actionIndex : Int) : RestCallAction {
-
-        return getActionWithIndexRestIndividual(individual.individual, actionIndex)
-
-    }
-
-    private fun getActionWithIndexRestIndividual(individual: RestIndividual, actionIndex : Int) : RestCallAction {
-
-        return individual.seeMainExecutableActions()[actionIndex]
-
-    }
-
-    /**
-     * Creates another call using by:
-     * First finding a
-     */
-    private fun createIndividualWithAnotherActionAddedDifferentAuth(individual: EvaluatedIndividual<RestIndividual>,
-                                                    currentAction : RestCallAction,
-                                                    newActionVerb : HttpVerb,
-                                                    ) : RestIndividual {
-
-        var actionList = mutableListOf<RestCallAction>()
-
-        for (act in individual.individual.seeMainExecutableActions()) {
-            actionList.add(act)
-        }
-
-        // create a new action with the authentication not used in current individual
-        val authenticationOfOther = sampler.authentications.getDifferentOne(currentAction.auth.name, HttpWsAuthenticationInfo::class.java, randomness)
-        var newRestCallAction :RestCallAction? = null;
-
-        if (authenticationOfOther != null) {
-            newRestCallAction = RestCallAction("newDelete", newActionVerb, currentAction.path,
-                currentAction.parameters.toMutableList(), authenticationOfOther  )
-        }
-
-        if (newRestCallAction != null) {
-            actionList.add(newRestCallAction)
-        }
-
-
-        val newIndividual = RestIndividual(actionList, SampleType.SECURITY)
-
-        return newIndividual
-
-    }
-
-
-
     private fun createIndividualWithAnotherActionAddedDifferentAuthRest(individual: RestIndividual,
                                                                     currentAction : RestCallAction,
                                                                     newActionVerb : HttpVerb,
@@ -374,392 +311,8 @@ class SecurityRest {
 
     }
 
-
-
-    /*
-    This function searches for AuthenticationDto object in authInfo
-    which is not utilized in authenticationObjectsForPutOrPatch
-     */
-    private fun findAuthenticationDtoDifferentFromUsedAuthenticationObjects(authInfo: List<AuthenticationDto>,
-                                                                            authenticationObjectsForPutOrPatch: List<HttpWsAuthenticationInfo>):
-            AuthenticationDto? {
-
-        // the AuthenticationDto object which has not been used
-        var authenticationDtoNotUsed : AuthenticationDto? = null
-
-        for (firstAuth : AuthenticationDto in authInfo) {
-
-            var notUsedInAny  = true
-
-            // compare AuthenticationDto with HttpWsAuthenticationInfo
-            for (secondAuth : HttpWsAuthenticationInfo in authenticationObjectsForPutOrPatch) {
-
-                if ( firstAuth.headers[0].value == secondAuth.headers[0].value ) {
-                    notUsedInAny = false
-                }
-
-            }
-
-            // if it is not used in any HttpWsAuthenticationInfo, then the authentication header
-            // which has not been used has been found.
-            if (notUsedInAny) {
-                authenticationDtoNotUsed = firstAuth
-            }
-
-        }
-
-        return authenticationDtoNotUsed
-
-    }
-
-
-
-
-
-    /**
-    This method obtains HttpWsAuthenticationInfo objects from list of individuals.
-     */
-    private fun identifyAuthenticationInformationUsedForIndividuals(listOfIndividuals: List<EvaluatedIndividual<RestIndividual>>)
-    : List<HttpWsAuthenticationInfo>{
-
-        val listOfAuthenticationInfoUsedInIndividuals = mutableListOf<HttpWsAuthenticationInfo>()
-        val listOfResults = mutableListOf<Any>()
-
-        // for each individual
-        for (ind : EvaluatedIndividual<RestIndividual> in listOfIndividuals) {
-
-            for (child : StructuralElement in ind.individual.getViewOfChildren() ){
-
-                listOfResults.clear()
-
-                // identify HttpWsAuthenticationInfo objects used in the individual
-                recursiveTreeTraversalForFindingInformationForItem(child,
-                    "org.evomaster.core.problem.rest.RestCallAction",
-                    listOfResults
-                )
-
-                // for each item in listOfResults which is a list of RestCallAction objects, identify authentication
-                for( item : Any in listOfResults) {
-
-                    listOfAuthenticationInfoUsedInIndividuals.add((item as RestCallAction).auth)
-                }
-            }
-        }
-
-        // return the list of AuthenticationInfo objects
-        return listOfAuthenticationInfoUsedInIndividuals
-    }
-
-    /*
-     * Remove all calls AFTER the given call.
-     */
-    // TODO add checking status code as well
-    private fun sliceIndividual(individual: RestIndividual, verb: HttpVerb, path: RestPath, statusCode: Int) {
-
-        // Find the index of the action
-        var index = 0
-        var found = false
-        val actions = individual.seeMainExecutableActions()
-        var currentAction : RestCallAction
-
-        while (!found) {
-
-            currentAction = actions[index]
-
-            if ( currentAction.verb == verb &&
-                currentAction.path == path ) {
-                found = true
-            }
-            else {
-                index += 1
-            }
-        }
-
-        if (found) {
-            // delete all calls after the index
-            for (item in index + 1 until actions.size) {
-                individual.removeMainExecutableAction(index + 1)
-            }
-        }
-
-
-    }
-
-
     private fun getAllActionDefinitions(verb: HttpVerb): List<RestCallAction> {
         return actionDefinitions.filter { it.verb == verb }
     }
 
-
-
-
-    private fun createCopyOfActionWithDifferentVerbOrUser ( actionId : String,
-                                                            act: RestCallAction,
-                                                           newVerb : HttpVerb,
-                                                           newUser: HttpWsAuthenticationInfo) : RestCallAction{
-
-        val a = RestCallAction(actionId, newVerb, act.path,
-            act.parameters.toMutableList(), newUser, act.saveLocation,
-            act.locationId, act.produces, act.responseRefs, act.skipOracleChecks)
-
-        // change the authentication information
-        return a
-    }
-
-
-
-    private fun getPathParameter(act: RestCallAction) : String {
-
-        val listOfPathParameters = mutableListOf<Any>()
-
-        // find the path parameter
-        this.recursiveTreeTraversalForFindingInformationForItem(act,
-            "org.evomaster.core.problem.rest.param.PathParam", listOfPathParameters)
-
-        if (listOfPathParameters.isNotEmpty()) {
-
-            // starting from the path parameter, find the endpoint
-            val pathParameterObject = listOfPathParameters[0]
-
-            val listOfStringGenes = ArrayList<Any>()
-
-            recursiveTreeTraversalForFindingInformationForItem(
-                pathParameterObject,
-                "org.evomaster.core.search.gene.string.StringGene",
-                listOfStringGenes
-            )
-
-            if (listOfStringGenes.size > 0) {
-
-                val stringGeneValue = (listOfStringGenes[0] as StringGene).value
-
-                return stringGeneValue
-
-            }
-        }
-
-        // if path parameter is not found, just return empty String
-        return ""
-
-    }
-
-    /*
-    This method is used to change the value of a given path parameter.
-     */
-    private fun changePathParameter(act: RestCallAction, newParam : String) {
-
-        val listOfPathParams = ArrayList<Any>()
-
-        // find the path parameter
-        recursiveTreeTraversalForFindingInformationForItem(act,
-            "org.evomaster.core.problem.rest.param.PathParam", listOfPathParams)
-
-        if (listOfPathParams.size > 0 ) {
-
-            // starting from the path parameter, find the endpoint
-            val pathParameterObject = listOfPathParams[0]
-
-            val listOfStringGenes = ArrayList<Any>()
-
-            recursiveTreeTraversalForFindingInformationForItem(
-                pathParameterObject,
-                "org.evomaster.core.search.gene.string.StringGene",
-                listOfStringGenes
-            )
-
-            if (listOfStringGenes.size > 0) {
-
-                (listOfStringGenes[0] as StringGene).value = newParam
-
-            }
-        }
-
-    }
-
-    /*
-     * This method is used to get the endpoint for a given action.
-     */
-    private fun getEndPointFromAction(act: RestCallAction) : String? {
-
-        val listOfPathParams = ArrayList<Any>()
-
-        // find the path parameter
-        recursiveTreeTraversalForFindingInformationForItem(act, "org.evomaster.core.problem.rest.param.PathParam", listOfPathParams)
-
-        if (listOfPathParams.size > 0 ) {
-
-            // starting from the path parameter, find the endpoint
-            val pathParameterObject = listOfPathParams[0]
-
-            val listOfStringGenes = ArrayList<Any>()
-
-            recursiveTreeTraversalForFindingInformationForItem(
-                pathParameterObject,
-                "org.evomaster.core.search.gene.string.StringGene",
-                listOfStringGenes
-            )
-
-            if (listOfStringGenes.size > 0) {
-
-                val stringGeneValue = (listOfStringGenes[0] as StringGene).value
-
-                // find the child of type RestResourceCalls
-                return stringGeneValue
-
-            }
-        }
-
-        // if path parameter is not found, just return null
-        return null
-
-    }
-
-
-    /*
-    This method conducts a recursive tree traversal for finding objects of given types in the tree
-    For each item which is of the type we are looking for, adds them into an ArrayList
-    This method is used in many places.
-    It does not have any return types, but it adds to the finalListOfItems.
-     */
-    private fun recursiveTreeTraversalForFindingInformationForItem(startingPoint: Any, typeOfItem : String, finalListOfItems: MutableList<Any> )  {
-
-        if (startingPoint.javaClass.name.equals(typeOfItem)) {
-            finalListOfItems.add(startingPoint)
-        }
-
-        // for each child, recursively call the function too
-        for( child : Any in (startingPoint as StructuralElement).getViewOfChildren()) {
-            recursiveTreeTraversalForFindingInformationForItem(child, typeOfItem, finalListOfItems)
-        }
-
-    }
-
-    /*
-    Function to extract actions and results based on properties. It is not used for now but may be used later.
-     */
-    private fun extractActionsAndResultsBasedOnProperties (
-        restIndividuals : List<EvaluatedIndividual<RestIndividual>>,
-        actionVerb : HttpVerb,
-        authenticated : Boolean,
-        statusCode : Int,
-        actionList : MutableList<RestCallAction>,
-        resultList : MutableList<ActionResult>
-    ) {
-
-        var actions: List<RestCallAction>
-        var results: List<ActionResult>
-
-        var currentAction : RestCallAction?
-        var currentResult : ActionResult?
-
-        for (restIndividual : EvaluatedIndividual<RestIndividual>  in restIndividuals) {
-
-            actions = restIndividual.individual.seeMainExecutableActions()
-            results = restIndividual.seeResults(actions)
-
-
-            for (i in actions.indices) {
-
-                currentAction = actions[i]
-                currentResult = results[i]
-
-                // to retrieve authenticated calls to POST
-                if (currentAction.verb == actionVerb && currentAction.auth.name == "NoAuth" && !authenticated) {
-
-                    val resultStatus = Integer.parseInt(currentResult.getResultValue("STATUS_CODE"))
-
-                    if (resultStatus == statusCode) {
-                        actionList.add(currentAction)
-                        resultList.add(currentResult)
-                    }
-                }
-            }
-        }
-    }
-
-    /*
-    Function to extract actions and results based on the same resource. It is not used for now but it can be
-    used in the future.
-     */
-    private fun extractActionsAndResultsBasedOnSameResource (
-        actionListPost : MutableList<RestCallAction>,
-        actionListDelete : MutableList<RestCallAction>
-    ) : MutableMap<RestCallAction, RestCallAction> {
-
-        val result = mutableMapOf<RestCallAction, RestCallAction>()
-
-        for( actionPost : RestCallAction in actionListPost) {
-
-            for( actionDelete : RestCallAction in actionListDelete) {
-
-                if (actionPost.path == actionDelete.path) {
-
-
-                    // now check for same values
-                    var actionPostStr : String = actionPost.toString()
-                    var actionDeleteStr : String = actionDelete.toString()
-
-                    actionPostStr = actionPostStr.substring(actionPostStr.indexOf(' '))
-
-                    if (actionPostStr.contains('?')) {
-                        actionPostStr = actionPostStr.substring(0,actionPostStr.indexOf('?') )
-                    }
-
-                    actionDeleteStr = actionDeleteStr.substring(actionDeleteStr.indexOf(' '))
-
-                    if (actionDeleteStr.contains('?')) {
-                        actionDeleteStr = actionDeleteStr.substring(0,actionDeleteStr.indexOf('?') )
-                    }
-
-                    if (actionPostStr == actionDeleteStr) {
-                        result[actionPost] = actionDelete
-                    }
-                }
-            }
-        }
-        return result
-    }
-
-    /*
-    Function to get parameter values of an endpoint. It is not used for now but it can be used in the future.
-     */
-    private fun getPathParameterValuesOfEndpoint (action : RestCallAction): List<PathParam> {
-
-        val pathParams  = mutableListOf<PathParam>()
-
-        for( item: StructuralElement in action.getViewOfChildren()) {
-
-            if (item::class == PathParam::class) {
-                pathParams.add(item as PathParam)
-            }
-
-        }
-
-        return pathParams
-
-    }
-
-    /*
-    Function to change authentication in a given endpoint. It is not used for now but it can be useful in the future.
-     */
-    private fun changeAuthenticationInEndpoint(action : RestCallAction, sutInfo : SutInfoDto) {
-
-
-        // choose an authentication Info randomly among authentication information in sutInfo
-        var authenticationChanged = false
-        var currentAuthenticationInfo : AuthenticationDto
-        var currentIndex = 0
-
-        while (!authenticationChanged) {
-
-            currentAuthenticationInfo = sutInfo.infoForAuthentication[currentIndex]
-
-            if (action.auth != currentAuthenticationInfo) {
-                authenticationChanged = true
-            }
-            currentIndex += 1
-
-        }
-
-    }
 }
