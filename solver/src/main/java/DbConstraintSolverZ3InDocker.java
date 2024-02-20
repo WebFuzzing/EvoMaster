@@ -1,9 +1,7 @@
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
 import org.evomaster.core.search.gene.Gene;
-import org.evomaster.core.search.gene.numeric.BigIntegerGene;
-import org.evomaster.core.search.gene.numeric.IntegerGene;
-import org.evomaster.core.search.gene.numeric.LongGene;
+import org.evomaster.core.search.gene.numeric.*;
 import org.evomaster.core.search.gene.optional.NullableGene;
 import org.evomaster.core.sql.SqlAction;
 import org.evomaster.core.sql.SqlInsertBuilder;
@@ -178,6 +176,31 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
                                 false,
                                 false);
                         currentGene.copyValueFrom(geneWithSolvedValue);
+                    } else if (currentGene instanceof DoubleGene) {
+                        Double value =  Double.parseDouble(solvedValue);
+                        Gene geneWithSolvedValue = new DoubleGene(
+                                currentGene.getName(),
+                                value,
+                                null,
+                                null,
+                                false,
+                                false,
+                                null,
+                                null);
+                        currentGene.copyValueFrom(geneWithSolvedValue);
+                    } else if (currentGene instanceof FloatGene) {
+                        Float value =  Float.parseFloat(solvedValue);
+                        Gene geneWithSolvedValue = new FloatGene(
+                                currentGene.getName(),
+                                value,
+                                null,
+                                null,
+                                false,
+                                false,
+                                null,
+                                null);
+                        currentGene.copyValueFrom(geneWithSolvedValue);
+
                     } else {
                         log.warn("There was a solved value for the gene, but it was not parsed: " + currentGene.getName());
                     }

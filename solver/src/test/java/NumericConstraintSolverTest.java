@@ -2,6 +2,8 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.sql.SchemaExtractor;
 import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.evomaster.core.search.gene.Gene;
+import org.evomaster.core.search.gene.numeric.DoubleGene;
+import org.evomaster.core.search.gene.numeric.FloatGene;
 import org.evomaster.core.search.gene.numeric.IntegerGene;
 import org.evomaster.core.search.gene.numeric.LongGene;
 import org.evomaster.core.sql.SqlAction;
@@ -28,9 +30,10 @@ public class NumericConstraintSolverTest {
         Connection connection = DriverManager.getConnection("jdbc:h2:mem:numeric_test", "sa", "");
 
         SqlScriptRunner.execCommand(connection,
-            "CREATE TABLE products(price int not null, min_price bigint not null, stock long not null);\n" +
-            "ALTER TABLE products add CHECK (price>100);\n" +
+            "CREATE TABLE products(price float not null, max_historical_price double not null, min_price bigint not null, stock long not null);\n" +
+//            "ALTER TABLE products add CHECK (price>100);\n" +
             "ALTER TABLE products add CHECK (min_price>1);\n" +
+//            "ALTER TABLE products add CHECK (max_historical_price>101);\n" +
             "ALTER TABLE products add CHECK (stock>=5);"
         );
 
@@ -61,18 +64,18 @@ public class NumericConstraintSolverTest {
         assertEquals(1, response.size());
 
         SqlAction productAction = response.get(0);
-        assertEquals("SQL_Insert_PRODUCTS_MIN_PRICE_PRICE_STOCK", productAction.getName());
-        assertEquals(3, productAction.seeTopGenes().size());
+        assertEquals("SQL_Insert_PRODUCTS_MAX_HISTORICAL_PRICE_MIN_PRICE_PRICE_STOCK", productAction.getName());
+        assertEquals(4, productAction.seeTopGenes().size());
 
         for (Gene gene : productAction.seeTopGenes()) {
             if (gene.getName().equals("PRICE")) {
-                assertTrue(gene instanceof IntegerGene);
-                assertEquals(101, ((IntegerGene) gene).getValue());
+                assertTrue(gene instanceof DoubleGene);
+                assertEquals(0.0, ((DoubleGene) gene).getValue());
                 // When using two constraints, the min for the gene is not parsed correctly
-                assertEquals(101, ((IntegerGene) gene).getMin());
-                assertEquals(2147483647, ((IntegerGene) gene).getMaximum());
-                assertTrue(((IntegerGene) gene).getMinInclusive());
-                assertTrue(((IntegerGene) gene).getMaxInclusive());
+                assertEquals(null, ((DoubleGene) gene).getMin());
+                assertEquals(1.7976931348623157E308, ((DoubleGene) gene).getMaximum());
+                assertTrue(((DoubleGene) gene).getMinInclusive());
+                assertTrue(((DoubleGene) gene).getMaxInclusive());
             } else if (gene.getName().equals("STOCK")) {
                 assertTrue(gene instanceof LongGene);
                 assertEquals(5, ((LongGene) gene).getValue());
@@ -87,6 +90,13 @@ public class NumericConstraintSolverTest {
                 assertEquals(9223372036854775807L, ((LongGene) gene).getMaximum());
                 assertTrue(((LongGene) gene).getMinInclusive());
                 assertTrue(((LongGene) gene).getMaxInclusive());
+            } else if (gene.getName().equals("MAX_HISTORICAL_PRICE")) {
+                assertTrue(gene instanceof DoubleGene);
+                assertEquals(0.0, ((DoubleGene) gene).getValue());
+                assertEquals(null, ((DoubleGene) gene).getMin());
+                assertEquals(1.7976931348623157E308, ((DoubleGene) gene).getMaximum());
+                assertTrue(((DoubleGene) gene).getMinInclusive());
+                assertTrue(((DoubleGene) gene).getMaxInclusive());
             }
         }
     }
