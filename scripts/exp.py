@@ -85,12 +85,19 @@ import sys
 
 EXP_ID = "evomaster"
 
+### Named optional parameters
+LABEL_cluster = "cluster"
+LABEL_seed = "seed"
+LABEL_timeout = "timeout"
+LABEL_njobs = "njobs"
+LABEL_configfilter = "configfilter"
+LABEL_sutfilter = "sutfilter"
+LABELS = [LABEL_cluster,LABEL_seed,LABEL_timeout,LABEL_njobs,LABEL_configfilter,LABEL_sutfilter]
 
 
 if len(sys.argv) < 5:
-    print(
-        # old "Usage:\n<nameOfScript>.py <cluster> <baseSeed> <dir> <minSeed> <maxSeed> <budget> <timeoutMinutes> <nJobs> <configFilter?> <sutFilter?>")
-        "Usage:\n<nameOfScript>.py <dir> <minSeed> <maxSeed> <budget> named_param=? ... named_param=?")
+    print("Usage:\n<nameOfScript>.py <dir> <minSeed> <maxSeed> <budget> named_param=? ... named_param=?")
+    print("Available named parameters: " + str(LABELS))
     exit(1)
 
 
@@ -166,7 +173,6 @@ SUTFILTER = None
 
 
 ### Derived named variables ###
-
 if len(sys.argv) > 5:
     # There might be better ways to build such map in Python...
     options = sys.argv[5:len(sys.argv)]
@@ -174,13 +180,6 @@ if len(sys.argv) > 5:
     values = list(map(lambda z: z.split("=")[1], options))
     kv = dict(zip(keys,values))
 
-    LABEL_cluster = "cluster"
-    LABEL_seed = "seed"
-    LABEL_timeout = "timeout"
-    LABEL_njobs = "njobs"
-    LABEL_configfilter = "configfilter"
-    LABEL_sutfilter = "sutfilter"
-    LABELS = [LABEL_cluster,LABEL_seed,LABEL_timeout,LABEL_njobs,LABEL_configfilter,LABEL_sutfilter]
 
     if LABEL_cluster in kv:
         CLUSTER = kv[LABEL_cluster].lower() in ("yes", "true", "t")
