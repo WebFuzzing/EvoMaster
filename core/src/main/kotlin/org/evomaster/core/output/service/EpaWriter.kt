@@ -52,15 +52,22 @@ class EpaWriter {
     }
 
     private fun writeToFile(epa: EPA, epaFile: String) {
-        val path = Paths.get(epaFile).toAbsolutePath()
+        var path = Paths.get(epaFile).toAbsolutePath()
 
         Files.createDirectories(path.parent)
         Files.deleteIfExists(path)
         Files.createFile(path)
 
         path.toFile().appendText(toDOT(epa))
-        
-        LoggingUtil.getInfoLogger().info("EPA contains ${epa.getVertexCount()} vertexes and ${epa.getEdgeCount()} edges.")
+
+        path = Paths.get("$epaFile.txt").toAbsolutePath()
+        Files.createDirectories(path.parent)
+        Files.deleteIfExists(path)
+        Files.createFile(path)
+
+        val s = "EPA contains ${epa.getVertexCount()} vertexes and ${epa.getEdgeCount()} edges."
+        path.toFile().appendText(s)
+        LoggingUtil.getInfoLogger().info(s)
     }
 
     private fun toDOT(epa: EPA): String {

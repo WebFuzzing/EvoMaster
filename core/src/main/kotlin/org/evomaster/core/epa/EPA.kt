@@ -33,8 +33,11 @@ class EPA {
     }
 
     fun getEdgeCount() : Int {
-        val edgeCount = adjacencyMap.map{ it.value.size }
-        return edgeCount.sum()
+        return adjacencyMap.map{ entry ->
+            entry.value.sumOf {
+                it.restActions.size
+            }
+        }.sum()
     }
 
     private fun getVertex(enabledEndpoints: String): Vertex? {
