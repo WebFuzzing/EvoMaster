@@ -13,9 +13,6 @@ Also, some of these papers provides full replication packages, which are linked 
 
 ## Recent arXiv Technical Reports, not Peer-Reviewed (Yet)
 
-* A. Arcuri, M. Zhang, J.P. Galeotti.
-  *Advanced White-Box Heuristics for Search-Based Fuzzing of REST APIs*.
-  [[arXiv](https://arxiv.org/abs/2309.08360)][[Scripts](exp/arxiv_advanced_heuristics.py)]
   
 * M. Zhang, A. Arcuri, Y. Li, K Xue, Z Wang, J. Huo, W Huang.
   *Fuzzing Microservices In Industry: Experience of Applying EvoMaster at Meituan*.
@@ -25,6 +22,13 @@ Also, some of these papers provides full replication packages, which are linked 
 
 
 ## Peer-Reviewed Publications
+
+### 2024
+
+* A. Arcuri, M. Zhang, J.P. Galeotti.
+  *Advanced White-Box Heuristics for Search-Based Fuzzing of REST APIs*.
+  ACM Transactions on Software Engineering and Methodology (TOSEM).
+  [to appear][[Scripts](exp/2024_tosem_advanced_heuristics.py)]
 
 
 ### 2023
@@ -58,8 +62,8 @@ Also, some of these papers provides full replication packages, which are linked 
   *Random Testing and Evolutionary Testing for Fuzzing GraphQL APIs*.
   ACM Transactions on the Web (TWEB). 
   [[PDF](publications/2023_tweb.pdf)]
-  [[Script 0](exp/arxiv_gql_bb.py)]
-  [[Script 1](exp/arxiv_gql_wb.py)]
+  [[Script 0](exp/2023_tweb_gql_bb.py)]
+  [[Script 1](exp/2023_tweb_gql_wb.py)]
 
 * M. Zhang, A. Arcuri.
   *Open Problems in Fuzzing RESTful APIs: A Comparison of Tools*.
