@@ -3,8 +3,6 @@ import org.evomaster.client.java.sql.SchemaExtractor;
 import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.evomaster.core.search.gene.Gene;
 import org.evomaster.core.search.gene.numeric.DoubleGene;
-import org.evomaster.core.search.gene.numeric.FloatGene;
-import org.evomaster.core.search.gene.numeric.IntegerGene;
 import org.evomaster.core.search.gene.numeric.LongGene;
 import org.evomaster.core.sql.SqlAction;
 import org.junit.jupiter.api.AfterAll;
@@ -15,8 +13,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 public class NumericConstraintSolverTest {
@@ -31,9 +28,7 @@ public class NumericConstraintSolverTest {
 
         SqlScriptRunner.execCommand(connection,
             "CREATE TABLE products(price float not null, max_historical_price double not null, min_price bigint not null, stock long not null);\n" +
-//            "ALTER TABLE products add CHECK (price>100);\n" +
             "ALTER TABLE products add CHECK (min_price>1);\n" +
-//            "ALTER TABLE products add CHECK (max_historical_price>101);\n" +
             "ALTER TABLE products add CHECK (stock>=5);"
         );
 
@@ -72,28 +67,28 @@ public class NumericConstraintSolverTest {
                 assertTrue(gene instanceof DoubleGene);
                 assertEquals(0.0, ((DoubleGene) gene).getValue());
                 // When using two constraints, the min for the gene is not parsed correctly
-                assertEquals(null, ((DoubleGene) gene).getMin());
+                assertNull(((DoubleGene) gene).getMin());
                 assertEquals(1.7976931348623157E308, ((DoubleGene) gene).getMaximum());
                 assertTrue(((DoubleGene) gene).getMinInclusive());
                 assertTrue(((DoubleGene) gene).getMaxInclusive());
             } else if (gene.getName().equals("STOCK")) {
                 assertTrue(gene instanceof LongGene);
                 assertEquals(5, ((LongGene) gene).getValue());
-                assertEquals(null, ((LongGene) gene).getMin());
+                assertNull(((LongGene) gene).getMin());
                 assertEquals(9223372036854775807L, ((LongGene) gene).getMaximum());
                 assertTrue(((LongGene) gene).getMinInclusive());
                 assertTrue(((LongGene) gene).getMaxInclusive());
             } else if (gene.getName().equals("MIN_PRICE")) {
                 assertTrue(gene instanceof LongGene);
                 assertEquals(2, ((LongGene) gene).getValue());
-                assertEquals(null, ((LongGene) gene).getMin());
+                assertNull(((LongGene) gene).getMin());
                 assertEquals(9223372036854775807L, ((LongGene) gene).getMaximum());
                 assertTrue(((LongGene) gene).getMinInclusive());
                 assertTrue(((LongGene) gene).getMaxInclusive());
             } else if (gene.getName().equals("MAX_HISTORICAL_PRICE")) {
                 assertTrue(gene instanceof DoubleGene);
                 assertEquals(0.0, ((DoubleGene) gene).getValue());
-                assertEquals(null, ((DoubleGene) gene).getMin());
+                assertNull(((DoubleGene) gene).getMin());
                 assertEquals(1.7976931348623157E308, ((DoubleGene) gene).getMaximum());
                 assertTrue(((DoubleGene) gene).getMinInclusive());
                 assertTrue(((DoubleGene) gene).getMaxInclusive());
