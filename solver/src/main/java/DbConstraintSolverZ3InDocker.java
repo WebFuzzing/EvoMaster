@@ -1,7 +1,7 @@
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
 import org.evomaster.core.search.gene.Gene;
-import org.evomaster.core.search.gene.numeric.IntegerGene;
+import org.evomaster.core.search.gene.numeric.*;
 import org.evomaster.core.search.gene.optional.NullableGene;
 import org.evomaster.core.sql.SqlAction;
 import org.evomaster.core.sql.SqlInsertBuilder;
@@ -13,9 +13,11 @@ import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.*;
 
 /**
@@ -30,6 +32,8 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
 
     private final String containerPath = "/smt2-resources/";
     private final GenericContainer<?>  z3Prover;
+
+    private final String resourcesFolder;
     private final String tmpFolderPath;
     private final SqlInsertBuilder sqlInsertBuilder;
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(DbConstraintSolverZ3InDocker.class.getName());
@@ -45,7 +49,9 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
      */
     public DbConstraintSolverZ3InDocker(DbSchemaDto schemaDto, String resourcesFolder) {
 
-        this.tmpFolderPath = resourcesFolder + "tmp/";
+        this.resourcesFolder = resourcesFolder;
+        String instant = Long.toString(Instant.now().getEpochSecond());
+        this.tmpFolderPath = "tmp_" + instant + "/";
         this.schemaDto = schemaDto;
 
         ImageFromDockerfile image = new ImageFromDockerfile()
@@ -68,7 +74,7 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
     @Override
     public void close() {
         try {
-            FileUtils.deleteDirectory(new File(this.tmpFolderPath));
+            FileUtils.deleteDirectory(new File(this.resourcesFolder + this.tmpFolderPath));
         } catch (IOException e) {
             log.error(String.format("Error deleting tmp folder '%s'. ", this.tmpFolderPath), e);
         }
@@ -98,7 +104,7 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
     }
 
     private List<SqlAction> solveFromTmp(Smt2Writer writer, String filename) {
-        String model = solveFromFile("tmp/" + filename);
+        String model = solveFromFile(this.tmpFolderPath + filename);
         Map<String, String> solvedConstraints = toSolvedConstraintsMap(model);
         return toSqlAction(writer, solvedConstraints);
     }
@@ -131,25 +137,72 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
                 String tableVariableKey = writer.asTableVariableKey(table.name, currentGene.getName());
                 if (solvedConstraints.containsKey(tableVariableKey)) {
 
-                    // TODO: Support other than Int type
+                    if (currentGene instanceof NullableGene) {
+                        currentGene = ((NullableGene) currentGene).getGene();
+                    }
+
                     String solvedValue = solvedConstraints.get(tableVariableKey);
-                    Integer value =  Integer.parseInt(solvedValue);
-                    Gene geneWithSolvedValue = new IntegerGene(
-                            currentGene.getName(),
-                            value,
-                            null,
-                            null,
-                            null,
-                            false,
-                            false);
 
                     if (currentGene instanceof IntegerGene) {
+                        Integer value =  Integer.parseInt(solvedValue);
+                        Gene geneWithSolvedValue = new IntegerGene(
+                                currentGene.getName(),
+                                value,
+                                null,
+                                null,
+                                null,
+                                false,
+                                false);
                         currentGene.copyValueFrom(geneWithSolvedValue);
-                    } else if (currentGene instanceof NullableGene) {
-                        Gene parent = ((NullableGene) currentGene).getGene();
-                        if (parent instanceof IntegerGene) {
-                            parent.copyValueFrom(geneWithSolvedValue);
-                        }
+                    } else if (currentGene instanceof LongGene) {
+                        Long value =  Long.parseLong(solvedValue);
+                        Gene geneWithSolvedValue = new LongGene(
+                                currentGene.getName(),
+                                value,
+                                null,
+                                null,
+                                null,
+                                false,
+                                false);
+                        currentGene.copyValueFrom(geneWithSolvedValue);
+                    } else if (currentGene instanceof BigIntegerGene) {
+                        BigInteger value = new BigInteger(solvedValue);
+                        Gene geneWithSolvedValue = new BigIntegerGene(
+                                currentGene.getName(),
+                                value,
+                                null,
+                                null,
+                                null,
+                                false,
+                                false);
+                        currentGene.copyValueFrom(geneWithSolvedValue);
+                    } else if (currentGene instanceof DoubleGene) {
+                        Double value =  Double.parseDouble(solvedValue);
+                        Gene geneWithSolvedValue = new DoubleGene(
+                                currentGene.getName(),
+                                value,
+                                null,
+                                null,
+                                false,
+                                false,
+                                null,
+                                null);
+                        currentGene.copyValueFrom(geneWithSolvedValue);
+                    } else if (currentGene instanceof FloatGene) {
+                        Float value =  Float.parseFloat(solvedValue);
+                        Gene geneWithSolvedValue = new FloatGene(
+                                currentGene.getName(),
+                                value,
+                                null,
+                                null,
+                                false,
+                                false,
+                                null,
+                                null);
+                        currentGene.copyValueFrom(geneWithSolvedValue);
+
+                    } else {
+                        log.warn("There was a solved value for the gene, but it was not parsed: " + currentGene.getName());
                     }
                 } else {
                     log.warn("Gene not found in the model: " + currentGene.getName());
@@ -202,19 +255,19 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
     private String storeToTmpFile(Smt2Writer writer) {
         String fileName = "smt2_" + System.currentTimeMillis() + ".smt2";
         try {
-            Files.createDirectories(Paths.get(this.tmpFolderPath));
+            Files.createDirectories(Paths.get(this.resourcesFolder + this.tmpFolderPath));
         } catch (IOException e) {
             throw new RuntimeException(String.format("Error creating tmp folder '%s'. ", this.tmpFolderPath), e);
         }
 
-        Path fullPath = Paths.get( this.tmpFolderPath + fileName);
+        Path fullPath = Paths.get(  this.resourcesFolder + this.tmpFolderPath + fileName);
         writer.writeToFile(fullPath.toString());
 
         return fileName;
     }
 
     private void deleteFile(String fileName) throws IOException {
-        Path fileToDelete = Paths.get( this.tmpFolderPath + fileName);
+        Path fileToDelete = Paths.get(this.resourcesFolder + this.tmpFolderPath + fileName);
 
         Files.delete(fileToDelete);
     }

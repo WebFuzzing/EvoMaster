@@ -21,7 +21,7 @@ public class Smt2WriterTest {
         String text = writer.asText();
 
         String expected = "(set-logic QF_SLIA)\n" +
-                "(declare-const products_PRICE Int)\n" +
+                "(declare-fun products_PRICE () Int)\n" +
                 "(assert (> products_PRICE 100))\n" +
                 "(check-sat)\n" +
                 "(get-value (products_PRICE))\n";
@@ -39,7 +39,7 @@ public class Smt2WriterTest {
         String text = writer.asText();
 
         String expected = "(set-logic QF_SLIA)\n" +
-                "(declare-const products_PRICE Int)\n" +
+                "(declare-fun products_PRICE () Int)\n" +
                 "(assert (and (> products_PRICE 100) (< products_PRICE 9999)))\n" +
                 "(check-sat)\n" +
                 "(get-value (products_PRICE))\n";
@@ -56,7 +56,7 @@ public class Smt2WriterTest {
         String text = writer.asText();
 
         String expected = "(set-logic QF_SLIA)\n" +
-                "(declare-const products_STOCK Int)\n" +
+                "(declare-fun products_STOCK () Int)\n" +
                 "(assert (or (>= products_STOCK 5) (= products_STOCK 100)))\n" +
                 "(check-sat)\n" +
                 "(get-value (products_STOCK))\n";
@@ -76,8 +76,8 @@ public class Smt2WriterTest {
         String text = writer.asText();
 
         String expected = "(set-logic QF_SLIA)\n" +
-                "(declare-const products_STOCK Int)\n" +
-                "(declare-const products_PRICE Int)\n" +
+                "(declare-fun products_STOCK () Int)\n" +
+                "(declare-fun products_PRICE () Int)\n" +
                 "(assert (> products_PRICE 1000))\n" +
                 "(assert (>= products_STOCK 5))\n" +
                 "(check-sat)\n" +

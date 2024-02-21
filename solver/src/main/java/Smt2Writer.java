@@ -12,10 +12,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * A writer for SMT2 format.
@@ -28,7 +25,7 @@ public class Smt2Writer  {
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(Smt2Writer.class.getName());
 
     // The variables that solve the constraint
-    private final Set<String> variables = new HashSet<>();
+    private final Map<String, String> variables = new HashMap<>();
 
     // The assertions that those values need to satisfy
     private final List<String> constraints = new ArrayList<>();
@@ -68,10 +65,12 @@ public class Smt2Writer  {
     }
 
     private void declareConstants(StringBuilder sb) {
-        for (String value: this.variables) {
-            sb.append("(declare-const ");
-            sb.append(value);
-            sb.append(" Int)\n");
+        for (String value: this.variables.keySet()) {
+            sb.append("(declare-fun ");
+            sb.append(value); // variable name
+            sb.append(" () ");
+            sb.append(this.variables.get(value)); // type
+            sb.append(")\n");
         }
     }
 
@@ -84,7 +83,7 @@ public class Smt2Writer  {
     }
 
     private void getValues(StringBuilder sb) {
-        for (String value : this.variables) {
+        for (String value : this.variables.keySet()) {
             sb.append("(get-value (");
             sb.append(value);
             sb.append("))\n");
@@ -94,8 +93,8 @@ public class Smt2Writer  {
     public boolean addTableCheckExpression(String tableName, TableCheckExpressionDto checkConstraint) {
         try {
             SqlCondition condition = parser.parse(checkConstraint.sqlCheckExpression, this.dbType);
-            Pair<Set<String>, String> response = parseCheckExpression(tableName, condition);
-            this.variables.addAll(response.getFirst());
+            Pair<Map<String, String>, String> response = parseCheckExpression(tableName, condition);
+            this.variables.putAll(response.getFirst());
             this.constraints.add(response.getSecond());
             return true;
         } catch (Exception e) {
@@ -103,16 +102,16 @@ public class Smt2Writer  {
             return false;
         }
     }
-    private Pair<Set<String>, String> parseCheckExpression(String tableName, SqlCondition condition) {
+    private Pair<Map<String, String>, String> parseCheckExpression(String tableName, SqlCondition condition) {
 
             if (condition instanceof SqlAndCondition) {
                 SqlAndCondition andCondition = (SqlAndCondition) condition;
-                Pair<Set<String>, String> leftResponse = parseCheckExpression(tableName, andCondition.getLeftExpr());
-                Pair<Set<String>, String> rightResponse = parseCheckExpression(tableName, andCondition.getRightExpr());
+                Pair<Map<String, String>, String> leftResponse = parseCheckExpression(tableName, andCondition.getLeftExpr());
+                Pair<Map<String, String>, String> rightResponse = parseCheckExpression(tableName, andCondition.getRightExpr());
 
-                Set<String> variables = new HashSet<>();
-                variables.addAll(leftResponse.getFirst());
-                variables.addAll(rightResponse.getFirst());
+                Map<String, String> variables = new HashMap<>();
+                variables.putAll(leftResponse.getFirst());
+                variables.putAll(rightResponse.getFirst());
 
                 String comparison = "(and " + leftResponse.getSecond() + " " + rightResponse.getSecond() + ")";
 
@@ -124,8 +123,8 @@ public class Smt2Writer  {
                 List<SqlCondition> conditions = orCondition.getOrConditions();
                 List<String> orMembers = new ArrayList<>();
                 for (SqlCondition c : conditions) {
-                    Pair<Set<String>, String> response = parseCheckExpression(tableName, c);
-                    variables.addAll(response.getFirst());
+                    Pair<Map<String, String>, String> response = parseCheckExpression(tableName, c);
+                    variables.putAll(response.getFirst());
                     orMembers.add(response.getSecond());
                 }
 
@@ -142,8 +141,8 @@ public class Smt2Writer  {
             String compare = comparisonCondition.getRightOperand().toString();
             String comparator = comparisonCondition.getSqlComparisonOperator().toString();
 
-            Set<String> variables = new HashSet<>();
-            variables.add(variable);
+            Map<String, String> variables = new HashMap<>();
+            variables.put(variable, "Int"); // TODO: Support other types
 
             return new Pair<>(variables, "(" + comparator + " " + variable + " " + compare + ")");
     }
