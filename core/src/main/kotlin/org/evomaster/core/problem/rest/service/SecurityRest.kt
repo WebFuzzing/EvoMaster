@@ -259,6 +259,11 @@ class SecurityRest {
             var individualToAddToSuite = createIndividualWithAnotherActionAddedDifferentAuthRest(individualToChooseForTest,
                 deleteAction, HttpVerb.PUT )
 
+            /*
+                FIXME fitness bean must be injected, and not instantiated directly.
+                note, issue we have 2 different implementation, need to double-check
+             */
+
             // Then evaluate the fitness function to create evaluatedIndividual
             val fitness : FitnessFunction<RestIndividual> = RestFitness()
 
