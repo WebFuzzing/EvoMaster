@@ -527,6 +527,10 @@ class EMConfig {
             throw ConfigProblemException("Invalid combination of probabilities for probRestDefault and probRestExamples. " +
                     "Their sum should be lower or equal to 1.")
         }
+
+        if(security && !minimize){
+            throw ConfigProblemException("The use of 'security' requires 'minimize'")
+        }
     }
 
     private fun checkPropertyConstraints(m: KMutableProperty<*>) {
@@ -1796,6 +1800,27 @@ class EMConfig {
     @Cfg("When sampling new individual, check whether to use already existing info on tainted values")
     var useGlobalTaintInfoProbability = 0.0
 
+
+    @Experimental
+    @Cfg("If there is new discovered information from a test execution, reward it in the fitness function")
+    var discoveredInfoRewardedInFitness = false
+
+    @Experimental
+    @Cfg("During mutation, force the mutation of genes that have newly discovered specialization from previous fitness evaluations," +
+            " based on taint analysis.")
+    var taintForceSelectionOfGenesWithSpecialization = false
+
+    @Probability
+    @Cfg("Probability of removing a tainted value during mutation")
+    var taintRemoveProbability = 0.5
+
+    @Probability
+    @Cfg("Probability of applying a discovered specialization for a tainted value")
+    var taintApplySpecializationProbability = 0.5
+
+    @Probability
+    @Cfg("Probability of changing specialization for a resolved taint during mutation")
+    var taintChangeSpecializationProbability = 0.1
 
     @Min(0.0)
     @Max(stringLengthHardLimit.toDouble())

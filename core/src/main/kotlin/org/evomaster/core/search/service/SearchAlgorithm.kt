@@ -86,6 +86,8 @@ abstract class SearchAlgorithm<T> where T : Individual {
 
     private fun handleAfterSearch() {
 
+        time.doStopRecording()
+
         ssu.enabled = false
 
         if(config.minimize){

@@ -72,7 +72,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 
         ind.seeMainExecutableActions().forEachIndexed { index, action ->
             val parent = action.parent
-            if (parent !is EnterpriseActionGroup) {
+            if (parent !is EnterpriseActionGroup<*>) {
                 //TODO this should not really happen
                 val msg = "Action is not inside an EnterpriseActionGroup"
                 log.error(msg)
@@ -96,6 +96,13 @@ abstract class ApiWsStructureMutator : StructureMutator() {
                     val existingActions = parent.getExternalServiceActions()
 
                     val actions: MutableList<HttpExternalServiceAction> = mutableListOf()
+
+                    // FIXME: We are not considering the requests served by the Default WireMock server.
+                    //  However, since we add a dummy [HostnameResolution] action
+                    //  (org/evomaster/core/problem/rest/service/AbstractRestFitness.kt:833), at the end
+                    //  there is a test looking to connect to the service and expecting a response when external
+                    //  service is available.
+                    //  Which is causing few tests to fails under [HarvestingStrategyTest]
 
                     requests
                         .groupBy { it.absoluteURL }
@@ -192,24 +199,25 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         val ind = individual.individual as? T
             ?: throw IllegalArgumentException("Invalid individual type")
 
-        val oldHostnameResolutionActions = ind.seeInitializingActions().filterIsInstance<HostnameResolutionAction>()
+        val old = ind.seeInitializingActions().filterIsInstance<HostnameResolutionAction>()
 
-        val addedHostnameResolutionInsertions: MutableList<HostnameResolutionAction> = mutableListOf()
-        externalServiceHandler.getHostnameResolutionActions().forEach {
-            val hasActions =
-                oldHostnameResolutionActions.any { ha -> (ha as HostnameResolutionAction).hostname != it.hostname }
+        val addedInsertions: MutableList<Action> = mutableListOf()
+        externalServiceHandler.getHostnameResolutionActions().forEach { a ->
+            val hasActions = old.any { it.hostname == a.hostname && it.localIPAddress == a.localIPAddress }
             if (!hasActions) {
-                addedHostnameResolutionInsertions.add(it)
+                addedInsertions.add(a)
             }
         }
 
-        //as HostnameResolutionAction have no genes, we skip it
+        individual.individual.addInitializingHostnameResolutionActions(actions = addedInsertions)
+
+        // FIXME: Commented out now, since no Genes in the action
         // update impact based on added genes
 //        if (mutatedGenes != null && config.isEnabledArchiveGeneSelection()) {
 //            individual.updateImpactGeneDueToAddedInitializationGenes(
 //                mutatedGenes,
-//                oldHostnameResolutionActions,
-//                listOf(addedHostnameResolutionInsertions)
+//                old,
+//                listOf(addedInsertions)
 //            )
 //        }
     }

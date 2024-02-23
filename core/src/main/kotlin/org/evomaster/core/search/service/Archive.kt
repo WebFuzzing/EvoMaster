@@ -128,7 +128,7 @@ class Archive<T> where T : Individual {
 
 
     fun getCopyOfUniqueCoveringIndividuals() : List<T>{
-        return getUniquePopulation().map { it.individual }
+        return getUniquePopulation().map { it.individual.copy() as T }
     }
 
     private fun getUniquePopulation(): MutableSet<EvaluatedIndividual<T>> {
@@ -481,6 +481,7 @@ class Archive<T> where T : Individual {
                 With at least 2 actions, we can have a WRITE followed by a READ
             */
             val better = copy.fitness.betterThan(k, curr.fitness, config.secondaryObjectiveStrategy, config.bloatControlForSecondaryObjective, config.minimumSizeControl)
+
             anyBetter = anyBetter || better
 
             if (better) {
@@ -504,6 +505,21 @@ class Archive<T> where T : Individual {
             }
 
             val equivalent = copy.fitness.equivalent(k, curr.fitness, config.secondaryObjectiveStrategy)
+
+            if(config.discoveredInfoRewardedInFitness){
+
+                val worst = current[0]
+                val x = copy.individual.numberOfDiscoveredInfoFromTestExecution()
+                val y = worst.individual.numberOfDiscoveredInfoFromTestExecution()
+
+                if(!better && equivalent &&  x < y){
+                    /*
+                        Do not replace if it is "equivalent" but has fewer discoveries
+                     */
+                    continue
+                }
+            }
+
 
             if (better || equivalent) {
                 /*

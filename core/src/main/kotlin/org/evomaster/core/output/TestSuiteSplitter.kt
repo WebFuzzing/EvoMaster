@@ -112,8 +112,11 @@ object TestSuiteSplitter {
             EMConfig.TestSuiteSplitType.CLUSTER -> {
                 if(errs.size <= 1){
                     splitResult.splitOutcome = splitByCode(sol, config)
+
                     // TODO: BMR - what is the executive summary behaviour for 1 or fewer errors?
-                    splitResult.executiveSummary = sol
+                    // Onur - Executive summary gets all success cases in case there are no faults.
+                    // So if the executive summary gets all success cases, it should not be shown.
+                    splitResult.executiveSummary = sol.convertSolutionToExecutiveSummary()
                 } else {
                     val clusters = conductClustering(sol as Solution<ApiWsIndividual>, oracles, config, metrics, splitResult)
                     splitByCluster(clusters, sol, oracles, splitResult, config)

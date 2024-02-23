@@ -11,6 +11,7 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.SearchGlobalState
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
@@ -352,6 +353,15 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
         }
     }
 
+    /**
+     * remove all binding all genes in this individual
+     */
+    fun removeAllBindingAmongGenes(){
+        seeGenes(GeneFilter.ALL).forEach { s->
+            s.flatView().forEach { it.cleanBinding() }
+        }
+    }
+
 
     /**
      * @return a gene in [this] based on the [gene] in [individual]
@@ -557,5 +567,17 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
      */
     fun computeTransitiveBindingGenes(){
         seeGenes().forEach(Gene::computeAllTransitiveBindingGenes)
+    }
+
+    /**
+     * When a test case is executed, we might discover few things, like new query parameters or
+     * string specializations due to taint analysis.
+     *
+     * @return counter of new discovered info
+     */
+    fun numberOfDiscoveredInfoFromTestExecution() : Int {
+        return seeGenes().filterIsInstance<StringGene>()
+            .count { it.selectionUpdatedSinceLastMutation }
+        //TODO other info like discovered query-parameters/headers
     }
 }

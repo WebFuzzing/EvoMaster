@@ -49,8 +49,8 @@ class InetReplacementEMTest : SpringTestBase() {
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/inet/exp", "OK")
                     //FIXME should also have check on 500 and 400.
                     //actually should change code, as thrown exception leads to 500, need way to distinguish
-                    //assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/inet/exp",null)
-                    //assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/inet/exp",null)
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/inet/exp",null)
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/inet/exp",null)
                 }
             },
             3

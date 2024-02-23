@@ -13,6 +13,7 @@ import org.evomaster.core.AnsiColor.Companion.inYellow
 import org.evomaster.core.config.ConfigProblemException
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.output.Termination
 import org.evomaster.core.output.TestSuiteSplitter
 import org.evomaster.core.output.clustering.SplitResult
 import org.evomaster.core.output.service.TestSuiteWriter
@@ -238,6 +239,8 @@ class Main {
                     info("TCP timeouts: $timeouts")
                 }
 
+                info("Potential faults: ${faults.size}")
+
                 if (!config.blackBox || config.bbExperiments) {
                     val rc = injector.getInstance(RemoteController::class.java)
                     val unitsInfo = rc.getSutInfo()?.unitsInfoDto
@@ -275,7 +278,6 @@ class Main {
                         //assert(linesInfo.total <= totalLines){ "WRONG COVERAGE: ${linesInfo.total} > $totalLines"}
 
                         info("Covered targets (lines, branches, faults, etc.): ${targetsInfo.total}")
-                        info("Potential faults: ${faults.size}")
 
                         if(totalLines == 0 || units == 0){
                             logError("Detected $totalLines lines to cover, for a total of $units units/classes." +
@@ -698,7 +700,14 @@ class Main {
                     .forEach { writer.writeTests(it, controllerInfoDto?.fullName,controllerInfoDto?.executableFullPath, snapshot) }
 
                 if (config.executiveSummary) {
-                    writeExecSummary(injector, controllerInfoDto, splitResult)
+
+                    // Onur - if there are fault cases, executive summary makes sense
+                    if ( splitResult.splitOutcome.any{ it.individuals.isNotEmpty()
+                                && it.termination != Termination.SUCCESSES}) {
+                        writeExecSummary(injector, controllerInfoDto, splitResult)
+                    }
+
+                    //writeExecSummary(injector, controllerInfoDto, splitResult)
                     //writeExecutiveSummary(injector, solution, controllerInfoDto, partialOracles)
                 }
             } else if (config.problemType == EMConfig.ProblemType.RPC){
