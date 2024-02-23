@@ -176,6 +176,10 @@ class Main {
 
             var solution = run(injector, controllerInfo)
 
+            if (config.epaCalculation) {
+                LoggingUtil.getInfoLogger().info("Going to write EPA to ${config.epaFile}.")
+                writeEPA(solution, config.epaFile)
+            }
             //save data regarding the search phase
             writeOverallProcessData(injector)
             writeDependencies(injector)
@@ -226,10 +230,6 @@ class Main {
             writeCoveredTargets(injector, solution)
             writeTests(injector, solution, controllerInfo)
             writeStatistics(injector, solution) //FIXME if other phases after search, might get skewed data on 100% snapshots...
-            if (config.epaCalculation) {
-                LoggingUtil.getInfoLogger().info("Going to write EPA to ${config.epaFile}.")
-                writeEPA(solution, config.epaFile)
-            }
 
             val statistics = injector.getInstance(Statistics::class.java)
             val data = statistics.getData(solution)
