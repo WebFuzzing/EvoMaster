@@ -27,7 +27,7 @@ class IndividualGeneImpactTest {
         val evi_ind1 = simulatedMutator.getFakeEvaluatedIndividualWithInitialization(initActionSize = 0)
         val addedInit = IndAction.getSeqIndInitAction(templates = arrayOf(2,3), repeat = arrayOf(1,3))
 
-        evi_ind1.initAddedInitializationGenes(addedInit,0)
+        evi_ind1.initAddedSqlInitializationGenes(addedInit,0)
         assertNotNull(evi_ind1.impactInfo)
         assertEquals(2*(1+1) + 3*(3+1), evi_ind1.getInitializationGeneImpact().size)
     }
@@ -39,7 +39,7 @@ class IndividualGeneImpactTest {
         val evi_ind1 = simulatedMutator.getFakeEvaluatedIndividualWithInitialization(initActionSize = 0)
         val addedInit = IndAction.getSeqIndInitAction(templates = arrayOf(2,3), repeat = arrayOf(1,3))
 
-        evi_ind1.initAddedInitializationGenes(addedInit,0)
+        evi_ind1.initAddedSqlInitializationGenes(addedInit,0)
         assertNotNull(evi_ind1.impactInfo)
         assertEquals(5, evi_ind1.getInitializationGeneImpact().size)
     }

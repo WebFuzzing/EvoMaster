@@ -153,7 +153,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         mutatedGenes: MutatedGeneSpecification?,
         sampler: ApiWsSampler<T>
     ) {
-        addInitializingDbActions(individual, mutatedGenes, sampler)
+        addInitializingSqlActions(individual, mutatedGenes, sampler)
         addInitializingMongoDbActions(individual, mutatedGenes, sampler)
         addInitializingHostnameResolutionActions(individual, mutatedGenes, sampler)
     }
@@ -180,14 +180,18 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 
         val addedMongoDbInsertions = handleFailedFind(ind, fw, mutatedGenes, sampler)
 
+
+        /*
+            Man: disable impacts for MongoDbGenes for the moment
+         */
         // update impact based on added genes
-        if (mutatedGenes != null && config.isEnabledArchiveGeneSelection()) {
-            individual.updateImpactGeneDueToAddedInitializationGenes(
-                mutatedGenes,
-                oldMongoDbActions,
-                addedMongoDbInsertions
-            )
-        }
+//        if (mutatedGenes != null && config.isEnabledArchiveGeneSelection()) {
+//            individual.updateImpactGeneDueToAddedInitializationGenes(
+//                mutatedGenes,
+//                oldMongoDbActions,
+//                addedMongoDbInsertions
+//            )
+//        }
     }
 
     private fun <T : ApiWsIndividual> addInitializingHostnameResolutionActions(
@@ -222,7 +226,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 //        }
     }
 
-    private fun <T : ApiWsIndividual> addInitializingDbActions(
+    private fun <T : ApiWsIndividual> addInitializingSqlActions(
         evaluatedIndividual: EvaluatedIndividual<*>,
         mutatedGenes: MutatedGeneSpecification?,
         sampler: ApiWsSampler<T>
@@ -304,7 +308,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
             ind.addInitializingDbActions(0, existing)
 
             //record newly added existing sql data
-            mutatedGenes?.addedExistingDataInitialization?.addAll(0, existing)
+            mutatedGenes?.addedSqlExistingDataInitialization?.addAll(0, existing)
 
             if (log.isTraceEnabled)
                 log.trace("{} existingSqlData are added", existing)

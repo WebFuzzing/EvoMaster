@@ -14,8 +14,6 @@ import org.evomaster.core.sql.SqlActionResult
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
-import org.evomaster.core.problem.externalservice.HostnameResolutionAction
-import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
@@ -368,7 +366,7 @@ class EvaluatedIndividual<T>(
 
         impactInfo!!.syncBasedOnIndividual(individual)
 
-        if (mutatedGenes.addedInitializationGenes.isNotEmpty()) {
+        if (mutatedGenes.addedSqlInitializationGenes.isNotEmpty()) {
             //TODO there is no any impact with added initialization, we may record this case.
             return
         }
@@ -790,9 +788,11 @@ class EvaluatedIndividual<T>(
             subset of current environment actions...
          */
 
-        val allExistingData = individual.seeInitializingActions().filter { it is SqlAction && it.representExistingData }
-        val diff = individual.seeInitializingActions()
-            .filter { !old.contains(it) && ((it is SqlAction && !it.representExistingData) || it is MongoDbAction || it is HostnameResolutionAction) }
+        val sqlActions = individual.seeInitializingActions().filterIsInstance<SqlAction>()
+
+        val allExistingData = sqlActions.filter {  it.representExistingData }
+        val diff = sqlActions
+            .filter { !old.contains(it) && ( !it.representExistingData) }
 
         if (allExistingData.isNotEmpty())
             impactInfo.updateExistingSQLData(allExistingData.size)
@@ -800,7 +800,7 @@ class EvaluatedIndividual<T>(
         if (diff.isEmpty()) {
             return
         }
-        mutatedGenes.addedInitializationGenes.addAll(diff.flatMap { it.seeTopGenes() })
+        mutatedGenes.addedSqlInitializationGenes.addAll(diff.flatMap { it.seeTopGenes() })
 
         if (addedInsertions!!.flatten().isEmpty()) {
             // no added insertions to process for impact
@@ -827,21 +827,21 @@ class EvaluatedIndividual<T>(
         }
 
         if (old.isEmpty()) {
-            initAddedInitializationGenes(modified, allExistingData.size)
+            initAddedSqlInitializationGenes(modified, allExistingData.size)
         } else {
             impactInfo.updateInitializationImpactsAtEnd(modified, allExistingData.size)
         }
 
-        mutatedGenes.addedInitializationGroup.addAll(modified)
+        mutatedGenes.addedSqlInitializationGroup.addAll(modified)
 
         Lazy.assert {
-            individual.seeInitializingActions()
-                .filter { (it is SqlAction && !it.representExistingData) || it is MongoDbAction || it is HostnameResolutionAction }.size == impactInfo.getSizeOfActionImpacts(true)
+            sqlActions
+                .filter { (!it.representExistingData)}.size == impactInfo.getSizeOfActionImpacts(true)
         }
     }
 
 
-    fun initAddedInitializationGenes(group: List<List<Action>>, existingSize: Int) {
+    fun initAddedSqlInitializationGenes(group: List<List<Action>>, existingSize: Int) {
         impactInfo!!.initInitializationImpacts(group, existingSize)
     }
 
@@ -862,12 +862,13 @@ class EvaluatedIndividual<T>(
 
     fun getImpactOfFixedAction(actionIndex: Int, fromInitialization: Boolean): MutableMap<String, GeneImpact>? {
         impactInfo ?: return null
+        val sqlActions = individual.seeInitializingActions().filterIsInstance<SqlAction>()
         return impactInfo.findImpactsByAction(
             localId = null,
             fixedIndexedAction = true,
             actionIndex = actionIndex,
             actionName = if (fromInitialization)
-                individual.seeInitializingActions()[actionIndex].getName()
+                sqlActions[actionIndex].getName()
             else individual.seeFixedMainActions()[actionIndex].getName(),
             fromInitialization = fromInitialization
         )

@@ -34,9 +34,9 @@ data class MutatedGeneSpecification (
     val mutatedInitGenes : MutableList<MutatedGene> = mutableListOf(),
 
         //SQL handling
-    val addedInitializationGenes : MutableList<Gene> = mutableListOf(),
-    val addedExistingDataInitialization: MutableList<Action> = mutableListOf(),
-    val addedInitializationGroup: MutableList<List<Action>> = mutableListOf(),
+    val addedSqlInitializationGenes : MutableList<Gene> = mutableListOf(),
+    val addedSqlExistingDataInitialization: MutableList<Action> = mutableListOf(),
+    val addedSqlInitializationGroup: MutableList<List<Action>> = mutableListOf(),
 
         //SQL resource handling
     val addedSqlActions : MutableList<List<SqlAction>> = mutableListOf(),
@@ -115,7 +115,7 @@ data class MutatedGeneSpecification (
 
     fun numOfMutatedGeneInfo() = mutatedGenes.size + mutatedDbGenes.size+ mutatedInitGenes.size
 
-    fun didAddInitializationGenes() = addedInitializationGenes.isNotEmpty() || addedExistingDataInitialization.isNotEmpty()
+    fun didAddInitializationGenes() = addedSqlInitializationGenes.isNotEmpty() || addedSqlExistingDataInitialization.isNotEmpty()
 
     data class MutatedGene(
         /**
