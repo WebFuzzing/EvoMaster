@@ -240,7 +240,7 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
      * calls toward the SUT.
      * A test does not require to have initializing actions.
      */
-    fun seeInitializingActions(): List<Action> = seeActions(ActionFilter.INIT)
+    fun seeInitializingActions(): List<EnvironmentAction> = seeActions(ActionFilter.INIT) as List<EnvironmentAction>
 
 
 

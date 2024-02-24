@@ -253,7 +253,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
             return
         }
 
-        val oldSqlActions = mutableListOf<Action>().plus(ind.seeInitializingActions())
+        val oldSqlActions = mutableListOf<EnvironmentAction>().plus(ind.seeInitializingActions())
 
         val addedSqlInsertions = handleFailedWhereSQL(ind, fw, mutatedGenes, sampler)
 
