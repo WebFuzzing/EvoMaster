@@ -6,7 +6,7 @@ import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.impact.impactinfocollection.ActionStructureImpact
 import org.evomaster.core.search.impact.impactinfocollection.ImpactsOfAction
 import org.evomaster.core.search.impact.impactinfocollection.ImpactsOfIndividual
-import org.evomaster.core.search.impact.impactinfocollection.InitializationActionImpacts
+import org.evomaster.core.search.impact.impactinfocollection.InitializationGroupedActionsImpacts
 import org.evomaster.core.search.impact.impactinfocollection.value.numeric.IntegerGeneImpact
 
 /**
@@ -40,7 +40,7 @@ class ResourceImpactOfIndividual : ImpactsOfIndividual {
     val anySqlTableSizeImpact : IntegerGeneImpact
 
     constructor(
-        initActionImpacts: InitializationActionImpacts,
+        initActionImpacts: InitializationGroupedActionsImpacts,
         fixedMainActionImpacts: MutableList<ImpactsOfAction>,
         dynamicMainActionImpacts: MutableList<ImpactsOfAction>,
         impactsOfStructure: ActionStructureImpact = ActionStructureImpact("StructureSize"),

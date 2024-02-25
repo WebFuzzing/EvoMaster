@@ -26,7 +26,7 @@ open class ImpactsOfIndividual(
     /**
      * list of impacts in initialization based on [Individual.seeInitializingActions]
      */
-    val initActionImpacts: InitializationActionImpacts,
+    val initActionImpacts: InitializationGroupedActionsImpacts,
 
     /**
      * list of impacts for actions based on [Individual.seeFixedMainActions]
@@ -45,7 +45,7 @@ open class ImpactsOfIndividual(
 ) {
 
     constructor(individual: Individual, abstractInitializationGeneToMutate: Boolean,  fitnessValue: FitnessValue?) : this(
-            initActionImpacts = InitializationActionImpacts(abstractInitializationGeneToMutate),
+            initActionImpacts = InitializationGroupedActionsImpacts(abstractInitializationGeneToMutate),
             fixedMainActionImpacts = individual.seeFixedMainActions().map { a -> ImpactsOfAction(a) }.toMutableList(),
             dynamicMainActionImpacts = individual.seeDynamicMainActions().map { a-> ImpactsOfAction(a) }.toMutableList()
     ) {
