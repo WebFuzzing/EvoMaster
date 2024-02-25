@@ -570,11 +570,12 @@ class EvaluatedIndividual<T>(
 
             mutatedGenesWithContext.forEach { gc ->
                 val impact = impactInfo!!.getGene(
+                    actionName = gc.action,
+                    initActionClassName = gc.action::class.java.name,
+                    geneId = ImpactUtils.generateGeneId(mutatedGenes.mutatedIndividual!!, gc.current),
+                    actionIndex = gc.position,
                     localId = gc.actionLocalId,
                     fixedIndexedAction = !gc.isDynamicAction,
-                    actionName = gc.action,
-                    actionIndex = gc.position,
-                    geneId = ImpactUtils.generateGeneId(mutatedGenes.mutatedIndividual!!, gc.current),
                     fromInitialization = isInit
                 ) ?: throw IllegalArgumentException("mismatched impact info")
 
@@ -604,12 +605,13 @@ class EvaluatedIndividual<T>(
                 }
                 if (p != null){
                     impactInfo!!.getGene(
+                        actionName = action.getName(),
+                        initActionClassName = action::class.java.name,
+                        geneId = rootGeneId,
+                        actionIndex = index,
                         localId = action.getLocalId(),
                         fixedIndexedAction = false,
-                        actionName = action.getName(),
-                        actionIndex = index,
-                        fromInitialization = true,
-                        geneId = rootGeneId
+                        fromInitialization = true
                     )?.syncImpact(p, sg)
                 }
             }
@@ -624,12 +626,13 @@ class EvaluatedIndividual<T>(
                     rootGeneId == ImpactUtils.generateGeneId(previous, it)
                 }
                 val impact = impactInfo!!.getGene(
+                    actionName = action.getName(),
+                    initActionClassName = action::class.java.name,
+                    geneId = rootGeneId,
+                    actionIndex = index,
                     localId = action.getLocalId(),
                     fixedIndexedAction = true,
-                    actionName = action.getName(),
-                    actionIndex = index,
-                    fromInitialization = false,
-                    geneId = rootGeneId
+                    fromInitialization = false
                 )
                     ?: throw IllegalArgumentException("fail to identify impact info for the gene $rootGeneId at $index of actions")
                 impact.syncImpact(p, sg)
@@ -647,12 +650,13 @@ class EvaluatedIndividual<T>(
                         rootGeneId == ImpactUtils.generateGeneId(previous, it)
                     }
                     val impact = impactInfo!!.getGene(
+                        actionName = daction.getName(),
+                        initActionClassName = daction::class.java.name,
+                        geneId = rootGeneId,
+                        actionIndex = null,
                         localId = daction.getLocalId(),
                         fixedIndexedAction = false,
-                        actionName = daction.getName(),
-                        actionIndex = null,
-                        fromInitialization = false,
-                        geneId = rootGeneId
+                        fromInitialization = false
                     ) ?: throw IllegalArgumentException("fail to identify impact info for the gene $rootGeneId with localid ${daction.getLocalId()}")
                     impact.syncImpact(p, sg)
                 }
@@ -707,11 +711,12 @@ class EvaluatedIndividual<T>(
 
         if (action != null) {
             return impactInfo.getGene(
+                actionName = action.getName(),
+                initActionClassName = action::class.java.name,
+                geneId = id,
+                actionIndex = index,
                 localId = action.getName(),
                 fixedIndexedAction = index > 0,
-                actionName = action.getName(),
-                actionIndex = index,
-                geneId = id,
                 fromInitialization = false
             )
         }
@@ -723,22 +728,24 @@ class EvaluatedIndividual<T>(
             if (action != null) {
                 action as Action
                 return impactInfo.getGene(
+                    actionName = action!!.getName(),
+                    initActionClassName = action!!::class.java.name,
+                    geneId = id,
+                    actionIndex = individual.seeInitializingActions().indexOf(action),
                     localId = null,
                     fixedIndexedAction = true,
-                    actionName = action!!.getName(),
-                    actionIndex = individual.seeInitializingActions().indexOf(action),
-                    geneId = id,
                     fromInitialization = true
                 )
             }
         }
 
         return impactInfo.getGene(
+            actionName = null,
+            initActionClassName = null,
+            geneId = id,
+            actionIndex = null,
             localId = null,
             fixedIndexedAction = false,
-            actionName = null,
-            actionIndex = null,
-            geneId = id,
             fromInitialization = individual.seeGenes(GeneFilter.ONLY_SQL).contains(gene)
         )
     }

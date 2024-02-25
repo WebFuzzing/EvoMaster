@@ -2,6 +2,8 @@ package org.evomaster.core.search.impact.impactinfocollection
 
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.mongo.MongoDbAction
+import org.evomaster.core.problem.externalservice.HostnameResolutionAction
+import org.evomaster.core.search.EnvironmentAction
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
@@ -65,6 +67,12 @@ open class ImpactsOfIndividual(
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(ImpactsOfIndividual::class.java)
+
+        val SQL_ACTION_KEY = SqlAction::class.java.name
+
+        val MONGODB_ACTION_KEY = MongoDbAction::class.java.name
+
+        val HOSTNAME_RESOLUTION_KEY = HostnameResolutionAction::class.java.name
     }
 
     /**
@@ -139,7 +147,7 @@ open class ImpactsOfIndividual(
     /**
      * @return size of existingData in the initialization
      */
-    fun getSQLExistingData() = initActionImpacts.getExistingData()
+    fun getSQLExistingData() = initActionImpacts[SQL_ACTION_KEY]?.getExistingData()?:0
 
 
     /**
@@ -147,12 +155,21 @@ open class ImpactsOfIndividual(
      * @param fromInitialization specifies whether the actions are in the initialization or not
      */
     fun getSizeOfActionImpacts(fromInitialization: Boolean) =
-        if (fromInitialization) initActionImpacts.getSize() else (fixedMainActionImpacts.size + dynamicMainActionImpacts.size)
+        if (fromInitialization) initActionImpacts.map { it.value.getSize() }.sum() else (fixedMainActionImpacts.size + dynamicMainActionImpacts.size)
 
     /**
-     * @param actionIndex is null when there is no action in the individual, then return the first GeneImpact
+     * @param actionIndex is null when there is no action in the individual, then return the first GeneImpact.
+     * Note that the index refers the relative index at actions grouped by the type
      */
-    fun getGene(actionName: String?, geneId: String, actionIndex: Int?, localId: String?, fixedIndexedAction: Boolean, fromInitialization: Boolean): GeneImpact? {
+    fun getGene(
+        actionName: String?,
+        initActionClassName: String?,
+        geneId: String,
+        actionIndex: Int?,
+        localId: String?,
+        fixedIndexedAction: Boolean,
+        fromInitialization: Boolean
+    ): GeneImpact? {
         // all individual should have at leadt one action, then remove this condition
         //if (actionIndex == null || (actionIndex == -1 && noneActionIndividual())) return fixedMainActionImpacts.first().geneImpacts[geneId]
 
@@ -163,7 +180,15 @@ open class ImpactsOfIndividual(
             throw IllegalArgumentException("local id must be specified in order to get the gene")
 
         val impactsOfAction =
-                if (fromInitialization) initActionImpacts.getImpactOfAction(actionName, actionIndex!!)
+                if (fromInitialization) {
+                    if (initActionClassName != null) initActionImpacts[initActionClassName]?.getImpactOfAction(actionName, actionIndex!!)
+                    else initActionImpacts.values.firstNotNullOfOrNull {
+                        it.getImpactOfAction(
+                            actionName,
+                            actionIndex!!
+                        )
+                    }
+                }
                 else if (fixedIndexedAction) findImpactOfFixedAction(actionName, actionIndex!!)
                 else findDynamicImpactActionByLocalId(localId!!)
         impactsOfAction ?: return null
@@ -192,16 +217,23 @@ open class ImpactsOfIndividual(
      *      eg, repair Db actions, new genes for the rest action with additional info, new external service actions
      * thus, we need to synchronize the action impacts based on the [individual]
      */
-    fun syncBasedOnIndividual(individual: Individual) {
-        val initActions = individual.seeInitializingActions().filter { it is SqlAction || it is MongoDbAction }
+    private fun syncBasedOnIndividual(individual: Individual) {
+        individual.seeInitializingActions().groupBy { it::class.java.name }.forEach {g->
+            syncBasedOnIndividual(individual, g.key, g.value)
+        }
+    }
+
+    private fun syncBasedOnIndividual(individual: Individual, initActionClassName: String, initActions : List<EnvironmentAction>) {
+
+        val impactsForInitActionType = initActionImpacts[initActionClassName]?: throw IllegalArgumentException("cannot find impacts for initialization action typed with $initActionClassName")
         //for initialization due to db action fixing
-        val diff = initActions.size - initActionImpacts.getOriginalSize()
+        val diff = initActions.size - impactsForInitActionType.getOriginalSize()
         if (diff < 0) { //truncation
-            initActionImpacts.truncation(individual.seeInitializingActions())
+            impactsForInitActionType.truncation(individual.seeInitializingActions())
         }else if (diff > 0){
             throw IllegalArgumentException("impact is out of sync")
         }
-        if (initActionImpacts.getOriginalSize() != initActions.size){
+        if (impactsForInitActionType.getOriginalSize() != initActions.size){
             throw IllegalStateException("inconsistent impact for SQL genes")
         }
 
@@ -217,7 +249,7 @@ open class ImpactsOfIndividual(
             //root genes might be changed e.g., additionalInfo, so sync impacts of all genes
             action.seeTopGenes().forEach { g ->
                 val id = ImpactUtils.generateGeneId(action, g)
-                if (getGene(actionName, id, index, localId = null, fixedIndexedAction = true, false) == null) {
+                if (getGene(actionName,action::class.java.name, id, index, localId = null, fixedIndexedAction = true, false) == null) {
                     val impact = ImpactUtils.createGeneImpact(g, id)
                     fixedMainActionImpacts[index].addGeneImpact(actionName, impact)
                 }
@@ -235,7 +267,7 @@ open class ImpactsOfIndividual(
                  */
                 c.seeTopGenes().forEach { g ->
                     val id = ImpactUtils.generateGeneId(c, g)
-                    if (getGene(c.getName(), id, null, localId = c.getLocalId(), fixedIndexedAction = false, false) == null) {
+                    if (getGene(c.getName(), null, id, null, localId = c.getLocalId(), fixedIndexedAction = false, false) == null) {
                         val gimpact = ImpactUtils.createGeneImpact(g, id)
                         impact.addGeneImpact(c.getName(), gimpact)
                     }
