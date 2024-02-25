@@ -24,9 +24,11 @@ import org.slf4j.LoggerFactory
  */
 open class ImpactsOfIndividual(
     /**
-     * list of impacts in initialization based on [Individual.seeInitializingActions]
+     * map of impacts in initialization based on [Individual.seeInitializingActions]
+     * - key is the type of the action, eg SqlAction, MongoDbAction
+     * - value is impacts for the actions
      */
-    val initActionImpacts: InitializationGroupedActionsImpacts,
+    val initActionImpacts: Map<String, InitializationGroupedActionsImpacts>,
 
     /**
      * list of impacts for actions based on [Individual.seeFixedMainActions]
@@ -44,8 +46,12 @@ open class ImpactsOfIndividual(
     val impactsOfStructure: ActionStructureImpact = ActionStructureImpact("StructureSize")
 ) {
 
-    constructor(individual: Individual, abstractInitializationGeneToMutate: Boolean,  fitnessValue: FitnessValue?) : this(
-            initActionImpacts = InitializationGroupedActionsImpacts(abstractInitializationGeneToMutate),
+    constructor(individual: Individual, initActionTypes: List<String>, abstractInitializationGeneToMutate: Boolean,  fitnessValue: FitnessValue?) : this(
+            initActionImpacts = initActionTypes.associateWith {
+                InitializationGroupedActionsImpacts(
+                    abstractInitializationGeneToMutate
+                )
+            }.toMutableMap(),
             fixedMainActionImpacts = individual.seeFixedMainActions().map { a -> ImpactsOfAction(a) }.toMutableList(),
             dynamicMainActionImpacts = individual.seeDynamicMainActions().map { a-> ImpactsOfAction(a) }.toMutableList()
     ) {
@@ -66,7 +72,7 @@ open class ImpactsOfIndividual(
      */
     open fun copy(): ImpactsOfIndividual {
         return ImpactsOfIndividual(
-                initActionImpacts.copy(),
+                initActionImpacts.map { it.key to it.value.copy() }.toMap(),
                 fixedMainActionImpacts.map { it.copy() }.toMutableList(),
                 dynamicMainActionImpacts.map { it.copy() }.toMutableList(),
                 impactsOfStructure.copy()
@@ -80,7 +86,7 @@ open class ImpactsOfIndividual(
      */
     open fun clone(): ImpactsOfIndividual {
         return ImpactsOfIndividual(
-                initActionImpacts.clone(),
+                initActionImpacts.map { it.key to it.value.clone() }.toMap(),
                 fixedMainActionImpacts.map { it.clone() }.toMutableList(),
                 dynamicMainActionImpacts.map { it.clone() }.toMutableList(),
                 impactsOfStructure.clone()
@@ -170,7 +176,7 @@ open class ImpactsOfIndividual(
     fun getGeneImpact(geneId: String): List<GeneImpact> {
         val list = mutableListOf<GeneImpact>()
 
-        initActionImpacts.getAll().plus(fixedMainActionImpacts).plus(dynamicMainActionImpacts).forEach {
+        initActionImpacts.values.flatMap { it.getAll() }.plus(fixedMainActionImpacts).plus(dynamicMainActionImpacts).forEach {
             if (it.geneImpacts.containsKey(geneId))
                 list.add(it.geneImpacts[geneId]!!)
         }
