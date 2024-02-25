@@ -21,7 +21,6 @@ import org.evomaster.core.problem.rest.resource.ResourceImpactOfIndividual
 import org.evomaster.core.search.Individual.GeneFilter
 import org.evomaster.core.search.action.ActionFilter.*
 import org.evomaster.core.search.action.ActionResult
-import org.evomaster.core.search.service.mutator.EmptyStructureMutator
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.tracer.TrackingHistory
 import org.slf4j.Logger
@@ -579,7 +578,7 @@ class EvaluatedIndividual<T>(
             mutatedGenesWithContext.forEach { gc ->
                 val impact = impactInfo!!.getGene(
                     actionName = gc.action,
-                    initActionClassName = gc.action::class.java.name,
+                    initActionClassName = if(isInit) gc.action::class.java.name else null,
                     geneId = ImpactUtils.generateGeneId(mutatedGenes.mutatedIndividual!!, gc.current),
                     actionIndex = gc.position,
                     localId = gc.actionLocalId,
@@ -605,25 +604,31 @@ class EvaluatedIndividual<T>(
      */
     private fun syncImpact(previous: Individual, mutated: Individual) {
         // db action
-        mutated.seeInitializingActions().forEachIndexed { index, action ->
-            action.seeTopGenes().filter { it.isMutable() }.forEach { sg ->
-                val rootGeneId = ImpactUtils.generateGeneId(mutated, sg)
-                val p = previous.seeInitializingActions().getOrNull(index)?.seeTopGenes()?.find {
-                    rootGeneId == ImpactUtils.generateGeneId(previous, it)
-                }
-                if (p != null){
-                    impactInfo!!.getGene(
-                        actionName = action.getName(),
-                        initActionClassName = action::class.java.name,
-                        geneId = rootGeneId,
-                        actionIndex = index,
-                        localId = action.getLocalId(),
-                        fixedIndexedAction = false,
-                        fromInitialization = true
-                    )?.syncImpact(p, sg)
+        initializingActionClasses().forEach { kclazz ->
+            val actionList = mutated.seeInitializingActions().filter { kclazz.isInstance(it) }
+            val previousList = previous.seeInitializingActions().filter { kclazz.isInstance(it) }
+            actionList.forEachIndexed { index, action ->
+                action.seeTopGenes().filter { it.isMutable() }.forEach { sg ->
+                    val rootGeneId = ImpactUtils.generateGeneId(mutated, sg)
+                    val p = previousList.getOrNull(index)?.seeTopGenes()?.find {
+                        rootGeneId == ImpactUtils.generateGeneId(previous, it)
+                    }
+                    if (p != null){
+                        impactInfo!!.getGene(
+                            actionName = action.getName(),
+                            initActionClassName = action::class.java.name,
+                            geneId = rootGeneId,
+                            actionIndex = index,
+                            localId = action.getLocalId(),
+                            fixedIndexedAction = false,
+                            fromInitialization = true
+                        )?.syncImpact(p, sg)
+                    }
                 }
             }
         }
+
+
 
         // fixed action
         mutated.seeFixedMainActions().forEachIndexed { index, action ->
@@ -635,7 +640,7 @@ class EvaluatedIndividual<T>(
                 }
                 val impact = impactInfo!!.getGene(
                     actionName = action.getName(),
-                    initActionClassName = action::class.java.name,
+                    initActionClassName = null,
                     geneId = rootGeneId,
                     actionIndex = index,
                     localId = action.getLocalId(),
@@ -659,7 +664,7 @@ class EvaluatedIndividual<T>(
                     }
                     val impact = impactInfo!!.getGene(
                         actionName = daction.getName(),
-                        initActionClassName = daction::class.java.name,
+                        initActionClassName = null,
                         geneId = rootGeneId,
                         actionIndex = null,
                         localId = daction.getLocalId(),
@@ -720,7 +725,7 @@ class EvaluatedIndividual<T>(
         if (action != null) {
             return impactInfo.getGene(
                 actionName = action.getName(),
-                initActionClassName = action::class.java.name,
+                initActionClassName = null,
                 geneId = id,
                 actionIndex = index,
                 localId = action.getName(),
@@ -730,8 +735,8 @@ class EvaluatedIndividual<T>(
         }
 
         initializingActionClasses().forEach { initializingActionClass ->
-            action = individual.seeInitializingActions().filter { initializingActionClass.isInstance(it)}
-                .find { it.seeTopGenes().contains(gene) }
+            val actionList = individual.seeInitializingActions().filter { initializingActionClass.isInstance(it)}
+            action = actionList.find { it.seeTopGenes().contains(gene) }
 
             if (action != null) {
                 action as Action
@@ -739,7 +744,7 @@ class EvaluatedIndividual<T>(
                     actionName = action!!.getName(),
                     initActionClassName = action!!::class.java.name,
                     geneId = id,
-                    actionIndex = individual.seeInitializingActions().indexOf(action),
+                    actionIndex = actionList.indexOf(action),
                     localId = null,
                     fixedIndexedAction = true,
                     fromInitialization = true
@@ -879,15 +884,26 @@ class EvaluatedIndividual<T>(
 
     fun getImpactOfFixedAction(actionIndex: Int, fromInitialization: Boolean): MutableMap<String, GeneImpact>? {
         impactInfo ?: return null
-        val sqlActions = individual.seeInitializingActions().filterIsInstance<SqlAction>()
+        if(fromInitialization){
+            val initAction = individual.seeInitializingActions()[actionIndex]
+            val relativeIndex = individual.seeInitializingActions().filter { it::class.java.name == initAction::class.java.name }.indexOf(initAction)
+            return impactInfo.findImpactsByAction(
+                actionName = initAction.getName(),
+                actionIndex = relativeIndex,
+                localId = null,
+                fixedIndexedAction = true,
+                fromInitialization = fromInitialization,
+                initActionClass = initAction::class.java.name
+            )
+        }
+
         return impactInfo.findImpactsByAction(
+            actionName = individual.seeFixedMainActions()[actionIndex].getName(),
+            actionIndex = actionIndex,
             localId = null,
             fixedIndexedAction = true,
-            actionIndex = actionIndex,
-            actionName = if (fromInitialization)
-                sqlActions[actionIndex].getName()
-            else individual.seeFixedMainActions()[actionIndex].getName(),
-            fromInitialization = fromInitialization
+            fromInitialization = fromInitialization,
+            initActionClass = null
         )
     }
 

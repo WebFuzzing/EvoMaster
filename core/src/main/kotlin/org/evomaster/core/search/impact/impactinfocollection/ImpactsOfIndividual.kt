@@ -235,7 +235,7 @@ open class ImpactsOfIndividual(
             //root genes might be changed e.g., additionalInfo, so sync impacts of all genes
             action.seeTopGenes().forEach { g ->
                 val id = ImpactUtils.generateGeneId(action, g)
-                if (getGene(actionName,action::class.java.name, id, index, localId = null, fixedIndexedAction = true, false) == null) {
+                if (getGene(actionName,null, id, index, localId = null, fixedIndexedAction = true, false) == null) {
                     val impact = ImpactUtils.createGeneImpact(g, id)
                     fixedMainActionImpacts[index].addGeneImpact(actionName, impact)
                 }
@@ -414,7 +414,7 @@ open class ImpactsOfIndividual(
      *     e.g., time of manipulation is more than one for any gene/action
      */
     fun anyImpactfulInfo(): Boolean {
-        for (a in initActionImpacts.getAll().plus(fixedMainActionImpacts).plus(dynamicMainActionImpacts)) {
+        for (a in initActionImpacts.values.flatMap { it.getAll() }.plus(fixedMainActionImpacts).plus(dynamicMainActionImpacts)) {
             if (a.anyImpactfulInfo()) return true
         }
         return false
@@ -424,7 +424,7 @@ open class ImpactsOfIndividual(
      * @return all flatten gene impacts for the individual
      */
     fun flattenAllGeneImpact(): List<GeneImpact> {
-        return initActionImpacts.getAll().plus(fixedMainActionImpacts).plus(dynamicMainActionImpacts).flatMap { it.geneImpacts.values }
+        return initActionImpacts.values.flatMap { it.getAll() }.plus(fixedMainActionImpacts).plus(dynamicMainActionImpacts).flatMap { it.geneImpacts.values }
     }
 
     /**
@@ -434,7 +434,7 @@ open class ImpactsOfIndividual(
      *      - the value of the map is the gene impacts
      */
     fun getInitializationGeneImpact(): List<MutableMap<String, GeneImpact>> {
-        return initActionImpacts.getAll().map { it.geneImpacts }
+        return initActionImpacts.values.flatMap { it.getAll() }.map { it.geneImpacts }
     }
 
     /**
@@ -465,7 +465,7 @@ open class ImpactsOfIndividual(
     /**
      * @return whether there exist any impact
      */
-    fun anyImpactInfo(): Boolean = initActionImpacts.getSize() > 0 || fixedMainActionImpacts.isNotEmpty() || dynamicMainActionImpacts.isNotEmpty()
+    fun anyImpactInfo(): Boolean = initActionImpacts.values.map{ it.getSize() }.sum() > 0 || fixedMainActionImpacts.isNotEmpty() || dynamicMainActionImpacts.isNotEmpty()
 
     /**
      * @return an impact of action which is from dynamic action group of the individual
@@ -494,15 +494,33 @@ open class ImpactsOfIndividual(
      * @param fixedIndexedAction specifies whether the action is from fixed action group of the individual
      * @param fromInitialization specifies whether the actions are in the initialization
      */
-    fun findImpactsByAction(actionName: String, actionIndex: Int, localId: String?, fixedIndexedAction: Boolean, fromInitialization: Boolean): MutableMap<String, GeneImpact>? {
-        val found = findImpactsAction(actionName, actionIndex, localId, fixedIndexedAction, fromInitialization) ?: return null
+    fun findImpactsByAction(
+        actionName: String,
+        actionIndex: Int,
+        localId: String?,
+        fixedIndexedAction: Boolean,
+        fromInitialization: Boolean,
+        initActionClass: String?
+    ): MutableMap<String, GeneImpact>? {
+        val found = findImpactsAction(actionName, actionIndex, localId, fixedIndexedAction, fromInitialization, initActionClass) ?: return null
         return found.geneImpacts
     }
 
-    private fun findImpactsAction(actionName: String, actionIndex: Int, localId: String?, fixedIndexedAction: Boolean, fromInitialization: Boolean): ImpactsOfAction? {
+    private fun findImpactsAction(
+        actionName: String,
+        actionIndex: Int,
+        localId: String?,
+        fixedIndexedAction: Boolean,
+        fromInitialization: Boolean,
+        initActionClass: String?
+    ): ImpactsOfAction? {
         return try {
-            if (fromInitialization)
-                initActionImpacts.getImpactOfAction(actionName, actionIndex)
+            if (fromInitialization){
+                if(initActionClass == null)
+                    null
+                else
+                    initActionImpacts[initActionClass]?.getImpactOfAction(actionName, actionIndex)
+            }
             else if (fixedIndexedAction)
                 findImpactOfFixedAction(actionName, actionIndex)
             else {
