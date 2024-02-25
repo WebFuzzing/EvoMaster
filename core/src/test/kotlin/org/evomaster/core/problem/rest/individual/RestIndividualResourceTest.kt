@@ -125,20 +125,22 @@ class RestIndividualResourceTest : RestIndividualTestBase() {
                             val actionIndex = if (fromInit) index else (index - mutatedInit.size)
                             val fixed = mutated.individual.seeFixedMainActions().contains(action)
                             val ogeneImpact = copyOfImpact!!.getGene(
-                                localId = action.getLocalId(),
-                                fixedIndexedAction = fixed,
                                 actionName = action.getName(),
+                                initActionClassName = action::class.java.name,
                                 geneId = impactId,
                                 actionIndex = actionIndex,
+                                localId = action.getLocalId(),
+                                fixedIndexedAction = fixed,
                                 fromInitialization = fromInit
                             )
                             assertNotNull(ogeneImpact)
                             val mgeneImpact = mutatedImpact.getGene(
-                                localId = action.getLocalId(),
-                                fixedIndexedAction = fixed,
                                 actionName = action.getName(),
+                                initActionClassName = action::class.java.name,
                                 geneId = impactId,
                                 actionIndex = actionIndex,
+                                localId = action.getLocalId(),
+                                fixedIndexedAction = fixed,
                                 fromInitialization = fromInit
                             )
                             assertNotNull(impactId)

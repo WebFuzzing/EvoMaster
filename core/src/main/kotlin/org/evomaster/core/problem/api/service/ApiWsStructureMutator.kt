@@ -16,12 +16,12 @@ import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalS
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.param.HttpWsResponseParam
 import org.evomaster.core.search.EnvironmentAction
-import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
+import org.evomaster.core.search.impact.impactinfocollection.ImpactsOfIndividual
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.mutator.StructureMutator
 import org.slf4j.Logger
@@ -181,17 +181,17 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         val addedMongoDbInsertions = handleFailedFind(ind, fw, mutatedGenes, sampler)
 
 
-        /*
-            Man: disable impacts for MongoDbGenes for the moment
-         */
+        ind.repairInitializationActions(randomness)
         // update impact based on added genes
-//        if (mutatedGenes != null && config.isEnabledArchiveGeneSelection()) {
-//            individual.updateImpactGeneDueToAddedInitializationGenes(
-//                mutatedGenes,
-//                oldMongoDbActions,
-//                addedMongoDbInsertions
-//            )
-//        }
+        if (mutatedGenes != null && config.isEnabledArchiveGeneSelection()) {
+            individual.updateImpactGeneDueToAddedInitializationGenes(
+                mutatedGenes,
+                oldMongoDbActions,
+                addedMongoDbInsertions,
+                ImpactsOfIndividual.MONGODB_ACTION_KEY,
+                config
+            )
+        }
     }
 
     private fun <T : ApiWsIndividual> addInitializingHostnameResolutionActions(
@@ -205,7 +205,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 
         val old = ind.seeInitializingActions().filterIsInstance<HostnameResolutionAction>()
 
-        val addedInsertions: MutableList<Action> = mutableListOf()
+        val addedInsertions: MutableList<EnvironmentAction> = mutableListOf()
         externalServiceHandler.getHostnameResolutionActions().forEach { a ->
             val hasActions = old.any { it.hostname == a.hostname && it.localIPAddress == a.localIPAddress }
             if (!hasActions) {
@@ -217,13 +217,15 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 
         // FIXME: Commented out now, since no Genes in the action
         // update impact based on added genes
-//        if (mutatedGenes != null && config.isEnabledArchiveGeneSelection()) {
-//            individual.updateImpactGeneDueToAddedInitializationGenes(
-//                mutatedGenes,
-//                old,
-//                listOf(addedInsertions)
-//            )
-//        }
+        if (mutatedGenes != null && config.isEnabledArchiveGeneSelection()) {
+            individual.updateImpactGeneDueToAddedInitializationGenes(
+                mutatedGenes,
+                old,
+                listOf(addedInsertions),
+                ImpactsOfIndividual.HOSTNAME_RESOLUTION_KEY,
+                config
+            )
+        }
     }
 
     private fun <T : ApiWsIndividual> addInitializingSqlActions(
@@ -267,7 +269,9 @@ abstract class ApiWsStructureMutator : StructureMutator() {
             evaluatedIndividual.updateImpactGeneDueToAddedInitializationGenes(
                 mutatedGenes,
                 oldSqlActions,
-                addedSqlInsertions
+                addedSqlInsertions,
+                ImpactsOfIndividual.SQL_ACTION_KEY,
+                config
             )
         }
     }
@@ -302,13 +306,13 @@ abstract class ApiWsStructureMutator : StructureMutator() {
                 randomness.choose(sampler.existingSqlData, config.maximumExistingDataToSampleInDb)
             } else {
                 sampler.existingSqlData
-            }.map { it.copy() }
+            }.map { it.copy() } as List<EnvironmentAction>
 
             //add existing data only once
             ind.addInitializingDbActions(0, existing)
 
             //record newly added existing sql data
-            mutatedGenes?.addedSqlExistingDataInitialization?.addAll(0, existing)
+            mutatedGenes?.addedExistingDataInInitialization?.getOrPut(ImpactsOfIndividual.SQL_ACTION_KEY, { mutableListOf() })?.addAll(0, existing)
 
             if (log.isTraceEnabled)
                 log.trace("{} existingSqlData are added", existing)

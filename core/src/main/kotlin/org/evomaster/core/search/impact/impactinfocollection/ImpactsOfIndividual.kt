@@ -30,7 +30,7 @@ open class ImpactsOfIndividual(
      * - key is the type of the action, eg SqlAction, MongoDbAction
      * - value is impacts for the actions
      */
-    val initActionImpacts: Map<String, InitializationGroupedActionsImpacts>,
+    val initActionImpacts: MutableMap<String, InitializationGroupedActionsImpacts>,
 
     /**
      * list of impacts for actions based on [Individual.seeFixedMainActions]
@@ -70,6 +70,7 @@ open class ImpactsOfIndividual(
 
         val SQL_ACTION_KEY = SqlAction::class.java.name
 
+
         val MONGODB_ACTION_KEY = MongoDbAction::class.java.name
 
         val HOSTNAME_RESOLUTION_KEY = HostnameResolutionAction::class.java.name
@@ -80,7 +81,7 @@ open class ImpactsOfIndividual(
      */
     open fun copy(): ImpactsOfIndividual {
         return ImpactsOfIndividual(
-                initActionImpacts.map { it.key to it.value.copy() }.toMap(),
+                initActionImpacts.map { it.key to it.value.copy() }.toMap().toMutableMap(),
                 fixedMainActionImpacts.map { it.copy() }.toMutableList(),
                 dynamicMainActionImpacts.map { it.copy() }.toMutableList(),
                 impactsOfStructure.copy()
@@ -94,7 +95,7 @@ open class ImpactsOfIndividual(
      */
     open fun clone(): ImpactsOfIndividual {
         return ImpactsOfIndividual(
-                initActionImpacts.map { it.key to it.value.clone() }.toMap(),
+                initActionImpacts.map { it.key to it.value.clone() }.toMap().toMutableMap(),
                 fixedMainActionImpacts.map { it.clone() }.toMutableList(),
                 dynamicMainActionImpacts.map { it.clone() }.toMutableList(),
                 impactsOfStructure.clone()
@@ -217,30 +218,15 @@ open class ImpactsOfIndividual(
      *      eg, repair Db actions, new genes for the rest action with additional info, new external service actions
      * thus, we need to synchronize the action impacts based on the [individual]
      */
-    private fun syncBasedOnIndividual(individual: Individual) {
+    fun syncBasedOnIndividual(individual: Individual) {
         individual.seeInitializingActions().groupBy { it::class.java.name }.forEach {g->
-            syncBasedOnIndividual(individual, g.key, g.value)
-        }
-    }
-
-    private fun syncBasedOnIndividual(individual: Individual, initActionClassName: String, initActions : List<EnvironmentAction>) {
-
-        val impactsForInitActionType = initActionImpacts[initActionClassName]?: throw IllegalArgumentException("cannot find impacts for initialization action typed with $initActionClassName")
-        //for initialization due to db action fixing
-        val diff = initActions.size - impactsForInitActionType.getOriginalSize()
-        if (diff < 0) { //truncation
-            impactsForInitActionType.truncation(individual.seeInitializingActions())
-        }else if (diff > 0){
-            throw IllegalArgumentException("impact is out of sync")
-        }
-        if (impactsForInitActionType.getOriginalSize() != initActions.size){
-            throw IllegalStateException("inconsistent impact for SQL genes")
+            syncInitActionsBasedOnIndividual(individual, g.key, g.value)
         }
 
         //for fixed action
         val fixed = individual.seeFixedMainActions()
         if ((fixed.isNotEmpty() && fixed.size != fixedMainActionImpacts.size) ||
-                (fixed.isEmpty() && !noneActionIndividual()))
+            (fixed.isEmpty() && !noneActionIndividual()))
             throw IllegalArgumentException("inconsistent size of actions and impacts")
 
         fixed.forEach { action ->
@@ -274,6 +260,22 @@ open class ImpactsOfIndividual(
                 }
             }
         }
+    }
+
+    private fun syncInitActionsBasedOnIndividual(individual: Individual, initActionClassName: String, initActions : List<EnvironmentAction>) {
+
+        val impactsForInitActionType = initActionImpacts[initActionClassName]?: throw IllegalArgumentException("cannot find impacts for initialization action typed with $initActionClassName")
+        //for initialization due to db action fixing
+        val diff = initActions.size - impactsForInitActionType.getOriginalSize()
+        if (diff < 0) { //truncation
+            impactsForInitActionType.truncation(initActions)
+        }else if (diff > 0){
+            throw IllegalArgumentException("impact is out of sync")
+        }
+        if (impactsForInitActionType.getOriginalSize() != initActions.size){
+            throw IllegalStateException("inconsistent impact for SQL genes")
+        }
+
     }
 
     /**
@@ -332,44 +334,45 @@ open class ImpactsOfIndividual(
     /**
      * update impacts for initialization
      */
-    fun updateInitializationImpactsAtEnd(groupedActions: List<List<Action>>, existingDataSize: Int) {
-        initActionImpacts.updateInitializationImpactsAtEnd(groupedActions, existingDataSize)
+    fun updateInitializationImpactsAtEnd(groupedActions: List<List<Action>>, existingDataSize: Int, initActionClassName: String, initAbstrat: Boolean) {
+        initActionImpacts.getOrPut(initActionClassName, {InitializationGroupedActionsImpacts(initAbstrat)}).updateInitializationImpactsAtEnd(groupedActions, existingDataSize)
     }
 
     /**
      * init impacts for initialization
      */
-    fun initInitializationImpacts(groupedActions: List<List<Action>>, existingDataSize: Int) {
-        initActionImpacts.initInitializationActions(groupedActions, existingDataSize)
+    fun initInitializationImpacts(groupedActions: List<List<Action>>, existingDataSize: Int, initActionClassName: String, initAbstrat: Boolean) {
+        initActionImpacts.getOrPut(initActionClassName, {InitializationGroupedActionsImpacts(initAbstrat)}).initInitializationActions(groupedActions, existingDataSize)
     }
 
     /**
      * append impacts for initialization
      */
-    fun appendInitializationImpacts(groupedActions: List<List<Action>>) {
-        initActionImpacts.appendInitialization(groupedActions)
+    fun appendInitializationImpacts(groupedActions: List<List<Action>>, initActionClassName: String, initAbstrat: Boolean) {
+        initActionImpacts.getOrPut(initActionClassName, {InitializationGroupedActionsImpacts(initAbstrat)}).appendInitialization(groupedActions)
     }
 
     /**
      * remove impacts for initialization
      */
-    fun removeInitializationImpacts(removed : List<Pair<SqlAction, Int>>, existingDataSize: Int){
-        initActionImpacts.updateSizeOfExistingData(existingDataSize)
-        initActionImpacts.removeInitialization(removed)
+    fun removeInitializationImpacts(removed : List<Pair<SqlAction, Int>>, existingDataSize: Int, initActionClassName: String, initAbstrat: Boolean){
+        initActionImpacts.getOrPut(initActionClassName, {InitializationGroupedActionsImpacts(initAbstrat)}).updateSizeOfExistingData(existingDataSize)
+        initActionImpacts[initActionClassName]!!.removeInitialization(removed)
     }
 
     /**
      * update impacts for initialization based on the given impacts of individual [other]
      */
-    fun updateInitializationGeneImpacts(other: ImpactsOfIndividual) {
-        initActionImpacts.initInitializationActions(other.initActionImpacts)
+    fun updateInitializationGeneImpacts(other: ImpactsOfIndividual, initActionClassName: String, initAbstrat: Boolean) {
+        other.initActionImpacts[initActionClassName]?: throw IllegalArgumentException("cannot find `other`'s impacts for action typed with $initActionClassName")
+        initActionImpacts.getOrPut(initActionClassName, {InitializationGroupedActionsImpacts(initAbstrat)}).initInitializationActions(other.initActionImpacts[initActionClassName]!!)
     }
 
     /**
      * update the size of existing data
      */
-    fun updateExistingSQLData(size: Int) {
-        initActionImpacts.updateSizeOfExistingData(size)
+    fun updateExistingSQLData(size: Int, initActionClassName: String, initAbstrat: Boolean) {
+        initActionImpacts.getOrPut(initActionClassName, {InitializationGroupedActionsImpacts(initAbstrat)}).updateSizeOfExistingData(size)
     }
 
     /**

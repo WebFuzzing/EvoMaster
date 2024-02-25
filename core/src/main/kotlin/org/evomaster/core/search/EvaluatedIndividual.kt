@@ -21,6 +21,7 @@ import org.evomaster.core.problem.rest.resource.ResourceImpactOfIndividual
 import org.evomaster.core.search.Individual.GeneFilter
 import org.evomaster.core.search.action.ActionFilter.*
 import org.evomaster.core.search.action.ActionResult
+import org.evomaster.core.search.service.mutator.EmptyStructureMutator
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.tracer.TrackingHistory
 import org.slf4j.Logger
@@ -106,10 +107,11 @@ class EvaluatedIndividual<T>(
                 trackOperator = trackOperator,
                 index = index,
                 impactInfo = if ((config.isEnabledImpactCollection())) {
+                    val initActionTypes = individual.seeInitializingActions().groupBy { it::class.java.name }.keys.toList()
                     if (individual is RestIndividual && config.isEnabledResourceDependency())
-                        ResourceImpactOfIndividual(individual, config.abstractInitializationGeneToMutate, fitness)
+                        ResourceImpactOfIndividual(individual, initActionTypes, config.abstractInitializationGeneToMutate, fitness)
                     else
-                        ImpactsOfIndividual(individual, config.abstractInitializationGeneToMutate, fitness)
+                        ImpactsOfIndividual(individual, initActionTypes , config.abstractInitializationGeneToMutate, fitness)
                 } else
                     null
             )
@@ -321,7 +323,8 @@ class EvaluatedIndividual<T>(
         previous: EvaluatedIndividual<T>,
         mutated: EvaluatedIndividual<T>,
         mutatedGenes: MutatedGeneSpecification,
-        targetsInfo: Map<Int, EvaluatedMutation>
+        targetsInfo: Map<Int, EvaluatedMutation>,
+        config: EMConfig
     ) {
 
         Lazy.assert {
@@ -332,7 +335,7 @@ class EvaluatedIndividual<T>(
             LoggingUtil.uniqueWarn(log, "impacts should be same before updating")
         }
 
-        compareWithLatest(next = mutated, previous = previous, targetsInfo = targetsInfo, mutatedGenes = mutatedGenes)
+        compareWithLatest(next = mutated, previous = previous, targetsInfo = targetsInfo, mutatedGenes = mutatedGenes, config)
     }
 
     private fun verifyImpacts() {
@@ -343,7 +346,8 @@ class EvaluatedIndividual<T>(
         next: EvaluatedIndividual<T>,
         previous: EvaluatedIndividual<T>,
         targetsInfo: Map<Int, EvaluatedMutation>,
-        mutatedGenes: MutatedGeneSpecification
+        mutatedGenes: MutatedGeneSpecification,
+        config: EMConfig
     ) {
 
         val noImpactTargets = targetsInfo.filterValues { !it.isImpactful() }.keys
@@ -358,7 +362,8 @@ class EvaluatedIndividual<T>(
                 mutatedGenes,
                 noImpactTargets,
                 impactTargets,
-                improvedTargets
+                improvedTargets,
+                config
             )
             verifyImpacts()
             return
@@ -366,7 +371,7 @@ class EvaluatedIndividual<T>(
 
         impactInfo!!.syncBasedOnIndividual(individual)
 
-        if (mutatedGenes.addedSqlInitializationGenes.isNotEmpty()) {
+        if (mutatedGenes.addedActionsInInitializationGenes.isNotEmpty()) {
             //TODO there is no any impact with added initialization, we may record this case.
             return
         }
@@ -389,7 +394,8 @@ class EvaluatedIndividual<T>(
         mutatedGenes: MutatedGeneSpecification,
         noImpactTargets: Set<Int>,
         impactTargets: Set<Int>,
-        improvedTargets: Set<Int>
+        improvedTargets: Set<Int>,
+        config: EMConfig
     ) {
         Lazy.assert { impactInfo != null }
         val sizeChanged =
@@ -402,11 +408,13 @@ class EvaluatedIndividual<T>(
             if (mutatedGenes.removedSqlActions.isNotEmpty()) {
                 impactInfo!!.removeInitializationImpacts(
                     mutatedGenes.removedSqlActions,
-                    individual.seeInitializingActions().count { it is SqlAction && it.representExistingData })
+                    individual.seeInitializingActions().count { it is SqlAction && it.representExistingData },
+                    ImpactsOfIndividual.SQL_ACTION_KEY,
+                    config.abstractInitializationGeneToMutate)
             }
 
             if (mutatedGenes.addedSqlActions.isNotEmpty()) {
-                impactInfo!!.appendInitializationImpacts(mutatedGenes.addedSqlActions)
+                impactInfo!!.appendInitializationImpacts(mutatedGenes.addedSqlActions, ImpactsOfIndividual.SQL_ACTION_KEY, config.abstractInitializationGeneToMutate)
             }
 
             /*
@@ -784,7 +792,9 @@ class EvaluatedIndividual<T>(
          * all original initialization actions (that have genes), in specific order, before the new ones get added
          */
         old: List<EnvironmentAction>,
-        addedInsertions: List<List<EnvironmentAction>>?
+        addedInsertions: List<List<EnvironmentAction>>?,
+        initActionClass: String,
+        config: EMConfig
     ) {
         impactInfo ?: throw IllegalStateException("there is no any impact initialized")
 
@@ -795,19 +805,20 @@ class EvaluatedIndividual<T>(
             subset of current environment actions...
          */
 
-        val sqlActions = individual.seeInitializingActions().filterIsInstance<SqlAction>()
+        val sqlActions = individual.seeInitializingActions().filter { Class.forName(initActionClass).isInstance(it) }
 
-        val allExistingData = sqlActions.filter {  it.representExistingData }
-        val diff = sqlActions
-            .filter { !old.contains(it) && ( !it.representExistingData) }
+        val allExistingData = sqlActions.filter { it is SqlAction &&  it.representExistingData }
+        val nonExistingData = sqlActions.filter { !allExistingData.contains(it) }
+        val diff = nonExistingData
+            .filter { !old.contains(it)}
 
         if (allExistingData.isNotEmpty())
-            impactInfo.updateExistingSQLData(allExistingData.size)
+            impactInfo.updateExistingSQLData(allExistingData.size, initActionClass, config.abstractInitializationGeneToMutate)
 
         if (diff.isEmpty()) {
             return
         }
-        mutatedGenes.addedSqlInitializationGenes.addAll(diff.flatMap { it.seeTopGenes() })
+        mutatedGenes.addedActionsInInitializationGenes.getOrPut(initActionClass, { mutableListOf() }).addAll(diff.flatMap { it.seeTopGenes() })
 
         if (addedInsertions!!.flatten().isEmpty()) {
             // no added insertions to process for impact
@@ -834,22 +845,21 @@ class EvaluatedIndividual<T>(
         }
 
         if (old.isEmpty()) {
-            initAddedSqlInitializationGenes(modified, allExistingData.size)
+            initAddedSqlInitializationGenes(modified, allExistingData.size, initActionClass, config.abstractInitializationGeneToMutate)
         } else {
-            impactInfo.updateInitializationImpactsAtEnd(modified, allExistingData.size)
+            impactInfo.updateInitializationImpactsAtEnd(modified, allExistingData.size, initActionClass, config.abstractInitializationGeneToMutate)
         }
 
-        mutatedGenes.addedSqlInitializationGroup.addAll(modified)
+        mutatedGenes.addedGroupedActionsInInitialization.getOrPut(initActionClass, { mutableListOf() }).addAll(modified)
 
         Lazy.assert {
-            sqlActions
-                .filter { (!it.representExistingData)}.size == impactInfo.getSizeOfActionImpacts(true)
+            nonExistingData.size == impactInfo.getSizeOfActionImpacts(true)
         }
     }
 
 
-    fun initAddedSqlInitializationGenes(group: List<List<Action>>, existingSize: Int) {
-        impactInfo!!.initInitializationImpacts(group, existingSize)
+    fun initAddedSqlInitializationGenes(group: List<List<Action>>, existingSize: Int, initActionClass: String, initAbstract: Boolean) {
+        impactInfo!!.initInitializationImpacts(group, existingSize, initActionClass, initAbstract)
     }
 
     fun anyImpactInfo(): Boolean {

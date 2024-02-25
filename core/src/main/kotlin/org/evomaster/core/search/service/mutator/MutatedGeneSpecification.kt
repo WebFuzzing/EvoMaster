@@ -1,5 +1,6 @@
 package org.evomaster.core.search.service.mutator
 
+import org.evomaster.core.search.EnvironmentAction
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.Individual
@@ -33,16 +34,16 @@ data class MutatedGeneSpecification (
     val mutatedDbGenes : MutableList<MutatedGene> = mutableListOf(),
     val mutatedInitGenes : MutableList<MutatedGene> = mutableListOf(),
 
-        //SQL handling
-    val addedSqlInitializationGenes : MutableList<Gene> = mutableListOf(),
-    val addedSqlExistingDataInitialization: MutableList<Action> = mutableListOf(),
-    val addedSqlInitializationGroup: MutableList<List<Action>> = mutableListOf(),
+    //init action handling
+    val addedActionsInInitializationGenes : MutableMap<String, MutableList<Gene>> = mutableMapOf(),
+    val addedExistingDataInInitialization: MutableMap<String, MutableList<EnvironmentAction>> = mutableMapOf(),
+    val addedGroupedActionsInInitialization: MutableMap<String, MutableList<List<EnvironmentAction>>> = mutableMapOf(),
 
-        //SQL resource handling
+    //SQL resource handling
     val addedSqlActions : MutableList<List<SqlAction>> = mutableListOf(),
     val removedSqlActions : MutableList<Pair<SqlAction, Int>> = mutableListOf(),
 
-        // external service actions
+    // external service actions
     val addedExternalServiceActions : MutableList<Action> = mutableListOf()
 ){
 
@@ -115,7 +116,7 @@ data class MutatedGeneSpecification (
 
     fun numOfMutatedGeneInfo() = mutatedGenes.size + mutatedDbGenes.size+ mutatedInitGenes.size
 
-    fun didAddInitializationGenes() = addedSqlInitializationGenes.isNotEmpty() || addedSqlExistingDataInitialization.isNotEmpty()
+    fun didAddInitializationGenes() = addedActionsInInitializationGenes.isNotEmpty() || addedExistingDataInInitialization.isNotEmpty()
 
     data class MutatedGene(
         /**

@@ -40,7 +40,7 @@ class ResourceImpactOfIndividual : ImpactsOfIndividual {
     val anySqlTableSizeImpact : IntegerGeneImpact
 
     constructor(
-        initActionImpacts: InitializationGroupedActionsImpacts,
+        initActionImpacts: MutableMap<String, InitializationGroupedActionsImpacts>,
         fixedMainActionImpacts: MutableList<ImpactsOfAction>,
         dynamicMainActionImpacts: MutableList<ImpactsOfAction>,
         impactsOfStructure: ActionStructureImpact = ActionStructureImpact("StructureSize"),
@@ -56,8 +56,8 @@ class ResourceImpactOfIndividual : ImpactsOfIndividual {
         this.anySqlTableSizeImpact = anySqlTableSizeImpact
     }
 
-    constructor(individual: RestIndividual, abstractInitializationGeneToMutate: Boolean, fitnessValue: FitnessValue?)
-            : super(individual, abstractInitializationGeneToMutate, fitnessValue) {
+    constructor(individual: RestIndividual, initActionTypes: List<String>, abstractInitializationGeneToMutate: Boolean, fitnessValue: FitnessValue?)
+            : super(individual, initActionTypes, abstractInitializationGeneToMutate, fitnessValue) {
         resourceSizeImpact = mutableMapOf<String, IntegerGeneImpact>().apply {
             individual.seeResource(RestIndividual.ResourceFilter.ALL).forEach { r->
                 putIfAbsent(r, IntegerGeneImpact("size"))
@@ -77,7 +77,7 @@ class ResourceImpactOfIndividual : ImpactsOfIndividual {
      */
     override fun copy(): ResourceImpactOfIndividual {
         return ResourceImpactOfIndividual(
-                initActionImpacts.copy(),
+                initActionImpacts.map { it.key to it.value.copy() }.toMap().toMutableMap(),
                 fixedMainActionImpacts.map { it.copy() }.toMutableList(),
                 dynamicMainActionImpacts.map { it.copy() }.toMutableList(),
                 impactsOfStructure.copy(),
@@ -97,7 +97,7 @@ class ResourceImpactOfIndividual : ImpactsOfIndividual {
      */
     override fun clone(): ResourceImpactOfIndividual {
         return ResourceImpactOfIndividual(
-                initActionImpacts.clone(),
+                initActionImpacts.map { it.key to it.value.clone() }.toMap().toMutableMap(),
                 fixedMainActionImpacts.map { it.clone() }.toMutableList(),
                 dynamicMainActionImpacts.map { it.clone() }.toMutableList(),
                 impactsOfStructure.clone(),
