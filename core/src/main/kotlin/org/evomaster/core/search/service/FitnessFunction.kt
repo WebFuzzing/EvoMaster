@@ -44,9 +44,12 @@ abstract class FitnessFunction<T>  where T : Individual {
     }
 
     /**
+     * @param modifiedSpec uses to collect modified info, e.g., HostnameResolutionAction might be added during this evaluation phase
      * @return null if there were problems in calculating the coverage
      */
     fun calculateCoverage(individual: T, targets: Set<Int> = setOf(), modifiedSpec: MutatedGeneSpecification?) : EvaluatedIndividual<T>?{
+
+        val mutatedBefore = individual.copy()
 
         val a = individual.seeMainExecutableActions().count()
 
@@ -85,6 +88,10 @@ abstract class FitnessFunction<T>  where T : Individual {
         time.newActionEvaluation(maxOf(1, a))
         time.newIndividualEvaluation()
 
+        if (config.isEnabledImpactCollection()){
+            ei?.updateInitImpactAfterDoCalculateCoverage(mutatedBefore, modifiedSpec, config)
+        }
+
         return ei
     }
 
@@ -97,7 +104,11 @@ abstract class FitnessFunction<T>  where T : Individual {
      *
      * @return null if there were problems in calculating the coverage
      */
-    protected abstract fun doCalculateCoverage(individual: T, targets: Set<Int>, allCovered: Boolean) : EvaluatedIndividual<T>?
+    protected abstract fun doCalculateCoverage(
+        individual: T,
+        targets: Set<Int>,
+        allCovered: Boolean
+    ) : EvaluatedIndividual<T>?
 
     /**
      * Compute the fitness function, but only for the covered targets (ie partial heuristics are ignored),
@@ -111,7 +122,11 @@ abstract class FitnessFunction<T>  where T : Individual {
         return doCalculateCoverage(individual, setOf(), true)
     }
 
-    private fun calculateIndividualCoverageWithStats(individual: T, targets: Set<Int>, actionsSize: Int) : EvaluatedIndividual<T>?{
+    private fun calculateIndividualCoverageWithStats(
+        individual: T,
+        targets: Set<Int>,
+        actionsSize: Int
+    ) : EvaluatedIndividual<T>?{
 
         val ei = SearchTimeController.measureTimeMillis(
                 { t, ind ->

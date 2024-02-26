@@ -160,6 +160,8 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
             //FIXME: why setOf()??? are we skipping coverage collection here???
             // or always added non-covered from archive? if so, name "targets" is confusing
             //Shall we prioritize the targets based on mutation sampling strategy eg, feedbackDirectedSampling?
+
+            val mutatedBefore = mutatedInd.copy()
             val mutated = ff.calculateCoverage(mutatedInd, setOf(), mutatedGenes)
                     ?: continue
 

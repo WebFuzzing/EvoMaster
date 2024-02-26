@@ -785,6 +785,27 @@ class EvaluatedIndividual<T>(
     }
 
     /**
+     * init actions might be added during `doCalculateCoverage`, eg HostnameResolution
+     * thus, impacts info needs to be updated accordingly
+     */
+    fun updateInitImpactAfterDoCalculateCoverage(evalIndBefore : Individual, mutatedGeneSpecification: MutatedGeneSpecification?, config: EMConfig){
+        impactInfo ?: throw IllegalStateException("there is no any impact initialized")
+
+        initializingActionClasses().forEach { c->
+            val old = evalIndBefore.seeInitializingActions().filter { c.isInstance(it) }
+            val after = individual.seeInitializingActions().filter { c.isInstance(it) }
+            if (after.size > old.size){
+                val oldInNew = after.filter {a -> old.any { it.getLocalId() == a.getLocalId()} }
+                val newActions = after.filter {a -> old.none { it.getLocalId() == a.getLocalId()} }
+                updateImpactGeneDueToAddedInitializationGenes(mutatedGeneSpecification, oldInNew, listOf(newActions), c.java.name, config)
+            }else if(after.size < old.size){
+                throw IllegalStateException("a size of init actions typed with ${c::class.java.name} decreases after `doCalculateCoverage()`")
+            }
+        }
+
+    }
+
+    /**
      *  When we add or remove actions in the initialization of an individual, then we need to make sure
      *  that all data structures regarding impact gene collection would be updated.
      *
@@ -794,7 +815,7 @@ class EvaluatedIndividual<T>(
         /**
          * Information about what genes have been mutated
          */
-        mutatedGenes: MutatedGeneSpecification,
+        mutatedGenes: MutatedGeneSpecification?,
         /**
          * all original initialization actions (that have genes), in specific order, before the new ones get added
          */
@@ -825,7 +846,7 @@ class EvaluatedIndividual<T>(
         if (diff.isEmpty()) {
             return
         }
-        mutatedGenes.addedActionsInInitializationGenes.getOrPut(initActionClass, { mutableListOf() }).addAll(diff.flatMap { it.seeTopGenes() })
+        mutatedGenes?.addedActionsInInitializationGenes?.getOrPut(initActionClass, { mutableListOf() })?.addAll(diff.flatMap { it.seeTopGenes() })
 
         if (addedInsertions!!.flatten().isEmpty()) {
             // no added insertions to process for impact
@@ -857,7 +878,7 @@ class EvaluatedIndividual<T>(
             impactInfo.updateInitializationImpactsAtEnd(modified, allExistingData.size, initActionClass, config.abstractInitializationGeneToMutate)
         }
 
-        mutatedGenes.addedGroupedActionsInInitialization.getOrPut(initActionClass, { mutableListOf() }).addAll(modified)
+        mutatedGenes?.addedGroupedActionsInInitialization?.getOrPut(initActionClass, { mutableListOf() })?.addAll(modified)
 
         Lazy.assert {
             nonExistingData.size == impactInfo.getSizeOfActionImpacts(true, initActionClass)

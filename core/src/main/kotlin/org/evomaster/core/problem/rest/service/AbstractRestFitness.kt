@@ -743,7 +743,11 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
     }
 
     protected fun restActionResultHandling(
-        individual: RestIndividual, targets: Set<Int>, allCovered: Boolean, actionResults: List<ActionResult>, fv: FitnessValue
+        individual: RestIndividual,
+        targets: Set<Int>,
+        allCovered: Boolean,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
     ): TestResultsDto? {
 
         if (actionResults.any { it is RestCallResult && it.getTcpProblem() }) {
@@ -798,7 +802,11 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
      *
      * TODO push this thing up to hierarchy to EntepriseFitness
      */
-    private fun handleExternalServiceInfo(individual: RestIndividual, fv: FitnessValue, infoDto: List<AdditionalInfoDto>) {
+    private fun handleExternalServiceInfo(
+        individual: RestIndividual,
+        fv: FitnessValue,
+        infoDto: List<AdditionalInfoDto>
+    ) {
 
         /*
             Note: this info here is based from what connections / hostname resolving done in the SUT,
