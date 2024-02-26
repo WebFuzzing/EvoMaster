@@ -98,8 +98,7 @@ data class MutatedGeneSpecification (
             return mutatedInitGenes.any { it.type == MutatedType.MODIFY && it.actionPosition == actionIndex }
 
         return (mutatedGenes.plus(mutatedDbGenes)).any { it.type == MutatedType.MODIFY && (
-                it.actionPosition == actionIndex || it.localId == actionLocalId
-                ) }
+                it.actionPosition == actionIndex || it.localId == actionLocalId) }
     }
 
     fun getRemoved(isRest : Boolean) =

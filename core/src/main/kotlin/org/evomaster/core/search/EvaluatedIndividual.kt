@@ -577,14 +577,15 @@ class EvaluatedIndividual<T>(
 
             mutatedGenesWithContext.forEach { gc ->
                 val impact = impactInfo!!.getGene(
-                    actionName = gc.action,
-                    initActionClassName = if(isInit) gc.action::class.java.name else null,
+                    actionName = gc.actionName,
+                    initActionClassName = if(isInit) gc.actionTypeClass else null,
                     geneId = ImpactUtils.generateGeneId(mutatedGenes.mutatedIndividual!!, gc.current),
                     actionIndex = gc.position,
                     localId = gc.actionLocalId,
                     fixedIndexedAction = !gc.isDynamicAction,
                     fromInitialization = isInit
-                ) ?: throw IllegalArgumentException("mismatched impact info")
+                )
+                    ?: throw IllegalArgumentException("mismatched impact info")
 
                 impact.countImpactWithMutatedGeneWithContext(
                     gc,
