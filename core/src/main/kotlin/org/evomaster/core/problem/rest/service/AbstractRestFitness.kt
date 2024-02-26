@@ -831,8 +831,10 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                         // OK, we are in that special case
                         val hra = HostnameResolutionAction(hn.remoteHostname, ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP)
                         individual.addChildToGroup(hra, GroupsOfChildren.INITIALIZATION_DNS)
-//                        TODO: Above line adds unnecessary tests at the end, which is
-//                          causing the created tests to fail
+                        // TODO: Above line adds unnecessary tests at the end, which is
+                        //  causing the created tests to fail.
+                        //  Now handling in Mutator, removing existing actions with default IP address for the same hostname.
+
                     }
                 }
             }

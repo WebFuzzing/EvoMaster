@@ -343,6 +343,13 @@ abstract class EnterpriseIndividual(
         killChildren { it is SqlAction && actions.contains(it)}
     }
 
+    /***
+     * remove specified list of [HostnameResolutionAction] from the initializing actions.
+     */
+    fun removeHostnameResolutionAction(actions: List<HostnameResolutionAction>) {
+        killChildren {  it is HostnameResolutionAction && actions.contains(it) }
+    }
+
     /**
      * @return a list table names which are used to insert data directly
      */
