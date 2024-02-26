@@ -1,11 +1,10 @@
 import kotlin.Pair;
+import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableCheckExpressionDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
 import org.evomaster.dbconstraint.ConstraintDatabaseType;
-import org.evomaster.dbconstraint.ast.SqlAndCondition;
-import org.evomaster.dbconstraint.ast.SqlComparisonCondition;
-import org.evomaster.dbconstraint.ast.SqlCondition;
-import org.evomaster.dbconstraint.ast.SqlOrCondition;
+import org.evomaster.dbconstraint.ast.*;
 import org.evomaster.dbconstraint.parser.jsql.JSqlConditionParser;
 
 import java.io.IOException;
@@ -90,10 +89,10 @@ public class Smt2Writer  {
         }
     }
 
-    public boolean addTableCheckExpression(String tableName, TableCheckExpressionDto checkConstraint) {
+    public boolean addTableCheckExpression(TableDto table, TableCheckExpressionDto checkConstraint) {
         try {
             SqlCondition condition = parser.parse(checkConstraint.sqlCheckExpression, this.dbType);
-            Pair<Map<String, String>, String> response = parseCheckExpression(tableName, condition);
+            Pair<Map<String, String>, String> response = parseCheckExpression(table, condition);
             this.variables.putAll(response.getFirst());
             this.constraints.add(response.getSecond());
             return true;
@@ -102,12 +101,12 @@ public class Smt2Writer  {
             return false;
         }
     }
-    private Pair<Map<String, String>, String> parseCheckExpression(String tableName, SqlCondition condition) {
+    private Pair<Map<String, String>, String> parseCheckExpression(TableDto table, SqlCondition condition) {
 
             if (condition instanceof SqlAndCondition) {
                 SqlAndCondition andCondition = (SqlAndCondition) condition;
-                Pair<Map<String, String>, String> leftResponse = parseCheckExpression(tableName, andCondition.getLeftExpr());
-                Pair<Map<String, String>, String> rightResponse = parseCheckExpression(tableName, andCondition.getRightExpr());
+                Pair<Map<String, String>, String> leftResponse = parseCheckExpression(table, andCondition.getLeftExpr());
+                Pair<Map<String, String>, String> rightResponse = parseCheckExpression(table, andCondition.getRightExpr());
 
                 Map<String, String> variables = new HashMap<>();
                 variables.putAll(leftResponse.getFirst());
@@ -123,12 +122,27 @@ public class Smt2Writer  {
                 List<SqlCondition> conditions = orCondition.getOrConditions();
                 List<String> orMembers = new ArrayList<>();
                 for (SqlCondition c : conditions) {
-                    Pair<Map<String, String>, String> response = parseCheckExpression(tableName, c);
+                    Pair<Map<String, String>, String> response = parseCheckExpression(table, c);
                     variables.putAll(response.getFirst());
                     orMembers.add(response.getSecond());
                 }
 
                 return new Pair<>(variables, toOr(orMembers));
+            }
+
+            if (condition instanceof SqlInCondition) {
+                SqlInCondition inCondition = (SqlInCondition) condition;
+
+                String columnName = inCondition.getSqlColumn().getColumnName();
+                String variable = asTableVariableKey(table, columnName);
+                Map<String, String> variables = new HashMap<>();
+                String variableType = getSmtTypeFromDto(table, columnName);
+                variables.put(variable, toSmtType(variableType));
+
+                List<SqlCondition> expressions = inCondition.getLiteralList().getSqlConditionExpressions();
+                String assertion = inArrayExpressionToOrAssert(variable, expressions);
+
+                return new Pair<>(variables, assertion);
             }
 
             if (!(condition instanceof SqlComparisonCondition)) {
@@ -137,14 +151,50 @@ public class Smt2Writer  {
             }
             SqlComparisonCondition comparisonCondition = (SqlComparisonCondition) condition;
 
-            String variable = asTableVariableKey(tableName, comparisonCondition.getLeftOperand().toString());
+            String columnName = comparisonCondition.getLeftOperand().toString();
+            String variable = asTableVariableKey(table, columnName);
             String compare = comparisonCondition.getRightOperand().toString();
             String comparator = comparisonCondition.getSqlComparisonOperator().toString();
 
             Map<String, String> variables = new HashMap<>();
-            variables.put(variable, "Int"); // TODO: Support other types
+            String variableType = getSmtTypeFromDto(table, columnName);
+            variables.put(variable, toSmtType(variableType));
 
             return new Pair<>(variables, "(" + comparator + " " + variable + " " + compare + ")");
+    }
+
+    private static String getSmtTypeFromDto(TableDto table, String columnName) {
+        Optional<String> variableType = table.columns.stream().filter(c -> c.name.equals(columnName)).findFirst().map(c -> c.type);
+        if (!variableType.isPresent()) {
+            throw new RuntimeException("The condition contains a column not defined in table");
+        }
+        return variableType.get();
+    }
+
+    private String toSmtType(String sqlType) {
+        switch (sqlType)   {
+            case "INTEGER":
+            case "BIGINT":
+            case "LONG":
+                return "Int";
+            case "FLOAT":
+            case "DOUBLE":
+                return "Real";
+        }
+
+        throw new RuntimeException("The sql type is not supported by smt solver");
+    }
+
+    private String inArrayExpressionToOrAssert(String variable, List<SqlCondition> expressions) {
+        if (expressions.isEmpty()) return "";
+        if (expressions.size() == 1) {
+            return "(= " + variable + " " + expressions.get(0).toString() + ")";
+        }
+        return "(or " +
+                inArrayExpressionToOrAssert(variable, Collections.singletonList(expressions.get(expressions.size() - 1))) +
+                " " +
+                inArrayExpressionToOrAssert(variable, expressions.subList(0, expressions.size() - 1)) +
+                ")";
     }
 
     private String toOr(List<String> orMembers) {
@@ -160,7 +210,7 @@ public class Smt2Writer  {
         return "(or " + orMembers.get(orMembers.size() - 1) + " " + toOr(orMembers.subList(0, orMembers.size() - 1)) + ")";
     }
 
-     String asTableVariableKey(String tableName, String variable) {
-        return tableName + "_" + variable;
+     String asTableVariableKey(TableDto table, String variable) {
+        return table.name + "_" + variable;
     }
 }

@@ -5,25 +5,19 @@ import org.evomaster.core.search.gene.Gene;
 import org.evomaster.core.search.gene.numeric.DoubleGene;
 import org.evomaster.core.search.gene.numeric.IntegerGene;
 import org.evomaster.core.search.gene.numeric.LongGene;
-import org.evomaster.core.search.gene.optional.NullableGene;
-import org.evomaster.core.search.gene.sql.SqlForeignKeyGene;
-import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene;
 import org.evomaster.core.sql.SqlAction;
 import org.evomaster.core.sql.SqlInsertBuilder;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
