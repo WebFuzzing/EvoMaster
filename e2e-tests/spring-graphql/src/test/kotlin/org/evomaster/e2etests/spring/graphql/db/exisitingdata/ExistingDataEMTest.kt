@@ -24,7 +24,7 @@ class ExistingDataEMTest : SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "GQL_DbExistingDataEM",
             "org.foo.graphql.DbExistingDataEM",
-            50
+            500
         ) { args: MutableList<String> ->
 
             args.add("--problemType")
