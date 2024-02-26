@@ -135,7 +135,7 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
                     columnNames, history, false, false, false);
 
             newActions.forEach(action -> action.seeTopGenes().forEach(currentGene -> {
-                String tableVariableKey = writer.asTableVariableKey(table.name, currentGene.getName());
+                String tableVariableKey = writer.asTableVariableKey(table, currentGene.getName());
                 if (solvedConstraints.containsKey(tableVariableKey)) {
 
                     if (currentGene instanceof NullableGene) {
@@ -231,7 +231,7 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
 
         for (TableDto table : this.schemaDto.tables) {
             table.tableCheckExpressions.forEach(constraint -> {
-                boolean succeed = writer.addTableCheckExpression(table.name, constraint);
+                boolean succeed = writer.addTableCheckExpression(table, constraint);
                 if (!succeed) {
                     throw new RuntimeException("Constraint not supported: " + constraint);
                 }
