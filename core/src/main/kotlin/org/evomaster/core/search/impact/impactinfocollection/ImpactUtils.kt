@@ -192,7 +192,7 @@ class ImpactUtils {
                            index for db gene might be changed if new insertions are added.
                            then there is a need to update the index in previous based on the number of added
                          */
-                        val indexInPrevious = if (index == null) null else index - (if (isInit && !mutatedGeneSpecification.addedExistingDataInInitialization.contains(a)) mutatedGeneSpecification.addedExistingDataInInitialization.size else 0)
+                        val indexInPrevious = if (index == null) null else index - (if (isInit && !mutatedGeneSpecification.addedExistingDataInInitialization[a::class.java.name]!!.contains(a)) mutatedGeneSpecification.addedExistingDataInInitialization[a::class.java.name]!!.size else 0)
                         val previous = findGeneById(
                                 individual=previousIndividual,
                                 id = id,
