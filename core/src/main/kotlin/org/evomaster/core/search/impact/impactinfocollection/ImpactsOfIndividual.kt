@@ -154,9 +154,15 @@ open class ImpactsOfIndividual(
     /**
      * @return size of action impacts
      * @param fromInitialization specifies whether the actions are in the initialization or not
+     * @param initActionClass specifies if the size for a specific type of init action (name of the class of the init action) or all types of init actions (i.e., null)
      */
-    fun getSizeOfActionImpacts(fromInitialization: Boolean) =
-        if (fromInitialization) initActionImpacts.map { it.value.getSize() }.sum() else (fixedMainActionImpacts.size + dynamicMainActionImpacts.size)
+    fun getSizeOfActionImpacts(fromInitialization: Boolean, initActionClass : String? = null) =
+        if (fromInitialization) {
+            if(initActionClass != null)
+                initActionImpacts[initActionClass]?.getSize()?:0
+            else
+                initActionImpacts.map { it.value.getSize() }.sum()
+        } else (fixedMainActionImpacts.size + dynamicMainActionImpacts.size)
 
     /**
      * @param actionIndex is null when there is no action in the individual, then return the first GeneImpact.
