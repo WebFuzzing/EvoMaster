@@ -2,10 +2,7 @@ import kotlin.Pair;
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableCheckExpressionDto;
 import org.evomaster.dbconstraint.ConstraintDatabaseType;
-import org.evomaster.dbconstraint.ast.SqlAndCondition;
-import org.evomaster.dbconstraint.ast.SqlComparisonCondition;
-import org.evomaster.dbconstraint.ast.SqlCondition;
-import org.evomaster.dbconstraint.ast.SqlOrCondition;
+import org.evomaster.dbconstraint.ast.*;
 import org.evomaster.dbconstraint.parser.jsql.JSqlConditionParser;
 
 import java.io.IOException;
@@ -131,6 +128,19 @@ public class Smt2Writer  {
                 return new Pair<>(variables, toOr(orMembers));
             }
 
+            if (condition instanceof SqlInCondition) {
+                SqlInCondition inCondition = (SqlInCondition) condition;
+
+                String variable = asTableVariableKey(tableName, inCondition.getSqlColumn().getColumnName());
+                Map<String, String> variables = new HashMap<>();
+                variables.put(variable, "Int"); // TODO: Support other types
+
+                List<SqlCondition> expressions = inCondition.getLiteralList().getSqlConditionExpressions();
+                String assertion = inArrayExpressionToOrAssert(variable, expressions);
+
+                return new Pair<>(variables, assertion);
+            }
+
             if (!(condition instanceof SqlComparisonCondition)) {
                 // TODO: Support other check expressions
                 throw new RuntimeException("The condition is not a comparison condition");
@@ -145,6 +155,18 @@ public class Smt2Writer  {
             variables.put(variable, "Int"); // TODO: Support other types
 
             return new Pair<>(variables, "(" + comparator + " " + variable + " " + compare + ")");
+    }
+
+    private String inArrayExpressionToOrAssert(String variable, List<SqlCondition> expressions) {
+        if (expressions.isEmpty()) return "";
+        if (expressions.size() == 1) {
+            return "(= " + variable + " " + expressions.get(0).toString() + ")";
+        }
+        return "(or " +
+                inArrayExpressionToOrAssert(variable, Collections.singletonList(expressions.get(expressions.size() - 1))) +
+                " " +
+                inArrayExpressionToOrAssert(variable, expressions.subList(0, expressions.size() - 1)) +
+                ")";
     }
 
     private String toOr(List<String> orMembers) {

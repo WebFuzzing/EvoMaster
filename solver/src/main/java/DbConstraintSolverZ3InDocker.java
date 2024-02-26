@@ -1,6 +1,7 @@
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
 import org.evomaster.core.search.gene.Gene;
+import org.evomaster.core.search.gene.collection.EnumGene;
 import org.evomaster.core.search.gene.numeric.*;
 import org.evomaster.core.search.gene.optional.NullableGene;
 import org.evomaster.core.sql.SqlAction;
@@ -142,6 +143,11 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
                     }
 
                     String solvedValue = solvedConstraints.get(tableVariableKey);
+
+                    if (currentGene instanceof EnumGene) {
+                        // There is nothing to do, as the enum has the values already parsed
+                        return;
+                    }
 
                     if (currentGene instanceof IntegerGene) {
                         Integer value =  Integer.parseInt(solvedValue);

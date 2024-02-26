@@ -87,6 +87,24 @@ public class Smt2WriterTest {
         assertEquals(expected, text);
     }
 
+    @Test
+    public void productPriceEnum() {
+        Smt2Writer writer = new Smt2Writer(DatabaseType.H2);
+        boolean succeed = writer.addTableCheckExpression("products", CheckExpressionFrom("(\"PRICE\" IN (12, 13, 14))"));
+
+        assertTrue(succeed);
+
+        String text = writer.asText();
+
+        String expected = "(set-logic QF_SLIA)\n" +
+                "(declare-fun products_PRICE () Int)\n" +
+                "(assert (or (= products_PRICE 14) (or (= products_PRICE 13) (= products_PRICE 12))))\n" +
+                "(check-sat)\n" +
+                "(get-value (products_PRICE))\n";
+
+        assertEquals(expected, text);
+    }
+
     @NotNull
     private TableCheckExpressionDto CheckExpressionFrom(String checkPriceString) {
         TableCheckExpressionDto checkExpression = new TableCheckExpressionDto();
