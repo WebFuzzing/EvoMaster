@@ -57,7 +57,7 @@ public class ResourceDbMIOAndAdaptiveHMBasicTest extends ResourceMIOHWTestBase {
 
         RestIndividual twoCalls = new RestIndividual(calls, SampleType.SMART_RESOURCE, null, Collections.emptyList(), null, 1);
         twoCalls.doInitializeLocalId();
-        EvaluatedIndividual<RestIndividual> twoCallsEval = ff.calculateCoverage(twoCalls, Collections.emptySet());
+        EvaluatedIndividual<RestIndividual> twoCallsEval = ff.calculateCoverage(twoCalls, Collections.emptySet(), null);
 
         assertNotNull(twoCallsEval);
         ImpactsOfIndividual impactInd = twoCallsEval.getImpactInfo();

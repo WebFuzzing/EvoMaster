@@ -14,6 +14,7 @@ import org.evomaster.core.sql.SqlActionResult
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
+import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
@@ -859,7 +860,7 @@ class EvaluatedIndividual<T>(
         mutatedGenes.addedGroupedActionsInInitialization.getOrPut(initActionClass, { mutableListOf() }).addAll(modified)
 
         Lazy.assert {
-            nonExistingData.size == impactInfo.getSizeOfActionImpacts(true)
+            nonExistingData.size == impactInfo.getSizeOfActionImpacts(true, initActionClass)
         }
     }
 
@@ -957,6 +958,6 @@ class EvaluatedIndividual<T>(
         return !invalid
     }
     private fun initializingActionClasses(): List<KClass<*>> {
-        return listOf(MongoDbAction::class, SqlAction::class)
+        return listOf(MongoDbAction::class, SqlAction::class, HostnameResolutionAction::class)
     }
 }

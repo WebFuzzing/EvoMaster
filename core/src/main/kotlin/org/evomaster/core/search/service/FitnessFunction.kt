@@ -5,6 +5,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
+import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -45,7 +46,7 @@ abstract class FitnessFunction<T>  where T : Individual {
     /**
      * @return null if there were problems in calculating the coverage
      */
-    fun calculateCoverage(individual: T, targets: Set<Int> = setOf()) : EvaluatedIndividual<T>?{
+    fun calculateCoverage(individual: T, targets: Set<Int> = setOf(), modifiedSpec: MutatedGeneSpecification?) : EvaluatedIndividual<T>?{
 
         val a = individual.seeMainExecutableActions().count()
 
