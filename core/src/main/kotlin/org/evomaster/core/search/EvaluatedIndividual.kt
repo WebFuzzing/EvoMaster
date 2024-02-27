@@ -979,6 +979,6 @@ class EvaluatedIndividual<T>(
         return !invalid
     }
     private fun initializingActionClasses(): List<KClass<*>> {
-        return listOf(MongoDbAction::class, SqlAction::class, HostnameResolutionAction::class)
+        return listOf(MongoDbAction::class, SqlAction::class)
     }
 }

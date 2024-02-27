@@ -88,7 +88,7 @@ abstract class FitnessFunction<T>  where T : Individual {
         time.newActionEvaluation(maxOf(1, a))
         time.newIndividualEvaluation()
 
-        if (config.isEnabledImpactCollection() && modifiedSpec == null){
+        if (config.isEnabledImpactCollection()){
             ei?.updateInitImpactAfterDoCalculateCoverage(calculatedBefore, null, config)
         }
 
