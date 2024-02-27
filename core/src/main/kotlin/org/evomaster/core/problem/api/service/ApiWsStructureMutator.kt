@@ -293,8 +293,8 @@ abstract class ApiWsStructureMutator : StructureMutator() {
             Man: with config.maximumExistingDataToSampleInD,
                 we might remove the condition check on representExistingData.
          */
-        if (ind.seeDbActions().isEmpty()
-            || !ind.seeDbActions().any { it is SqlAction && it.representExistingData }
+        if (ind.seeSqlDbActions().isEmpty()
+            || !ind.seeSqlDbActions().any { it is SqlAction && it.representExistingData }
         ) {
 
             /*

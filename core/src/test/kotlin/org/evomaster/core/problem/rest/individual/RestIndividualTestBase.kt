@@ -185,7 +185,7 @@ abstract class RestIndividualTestBase {
             val ind = getSampler().sample()
 
             assertEquals(0, ind.seeInitializingActions().size)
-            if (ind.seeDbActions().isNotEmpty()){
+            if (ind.seeSqlDbActions().isNotEmpty()){
                 // all db actions should be before rest actions
                 ind.getResourceCalls().forEach { r->
                     val dbIndexes = r.getIndexedChildren(SqlAction::class.java).keys
