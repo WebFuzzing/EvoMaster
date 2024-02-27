@@ -49,9 +49,9 @@ abstract class FitnessFunction<T>  where T : Individual {
      */
     fun calculateCoverage(individual: T, targets: Set<Int> = setOf(), modifiedSpec: MutatedGeneSpecification?) : EvaluatedIndividual<T>?{
 
-        val mutatedBefore = individual.copy()
-
         val a = individual.seeMainExecutableActions().count()
+
+        val calculatedBefore = individual.copy()
 
         if(time.averageOverheadMsBetweenTests.isRecordingTimer()){
             val computation = time.averageOverheadMsBetweenTests.addElapsedTime()
@@ -88,8 +88,8 @@ abstract class FitnessFunction<T>  where T : Individual {
         time.newActionEvaluation(maxOf(1, a))
         time.newIndividualEvaluation()
 
-        if (config.isEnabledImpactCollection()){
-            ei?.updateInitImpactAfterDoCalculateCoverage(mutatedBefore, modifiedSpec, config)
+        if (config.isEnabledImpactCollection() && modifiedSpec == null){
+            ei?.updateInitImpactAfterDoCalculateCoverage(calculatedBefore, null, config)
         }
 
         return ei
