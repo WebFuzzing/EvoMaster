@@ -18,9 +18,8 @@ import org.evomaster.core.problem.rest.param.UpdateForBodyParam
 import org.evomaster.core.problem.rest.resource.ResourceImpactOfIndividual
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.Individual.GeneFilter.*
 import org.evomaster.core.search.action.ActionFilter
-import org.evomaster.core.search.Individual.GeneFilter.ALL
-import org.evomaster.core.search.Individual.GeneFilter.NO_SQL
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.TaintedArrayGene
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
@@ -100,7 +99,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
         val filterN = when (config.geneMutationStrategy) {
             ONE_OVER_N -> ALL
-            ONE_OVER_N_BIASED_SQL -> NO_SQL
+            ONE_OVER_N_BIASED_SQL -> NO_SQL // might change it to NO_DB
         }
         // the actual chosen genes, that will be mutated
         val toMutate = mutableListOf<Gene>()
@@ -117,13 +116,14 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             val enableAPC = config.isEnabledWeightBasedMutation()
                     && archiveGeneSelector.applyArchiveSelection()
 
-            val noSQLGenes = individual.seeGenes(NO_SQL).filter { geneCandidates.contains(it) }
-            val sqlGenes = geneCandidates.filterNot { noSQLGenes.contains(it) }
+            val noDbGenes = individual.seeGenes(NO_DB).filter { geneCandidates.contains(it) }
+            val dbGenes = geneCandidates.filterNot { noDbGenes.contains(it) }
             while (toMutate.isEmpty()) {
-                if (config.specializeSQLGeneSelection && noSQLGenes.isNotEmpty() && sqlGenes.isNotEmpty()) {
+                // Man: do we need to change SQL to Db?
+                if (config.specializeSQLGeneSelection && noDbGenes.isNotEmpty() && dbGenes.isNotEmpty()) {
                     toMutate.addAll(
                         mwc.selectSubGene(
-                            noSQLGenes,
+                            noDbGenes,
                             enableAPC,
                             targets,
                             null,
@@ -135,7 +135,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                     )
                     toMutate.addAll(
                         mwc.selectSubGene(
-                            sqlGenes,
+                            dbGenes,
                             enableAPC,
                             targets,
                             null,
