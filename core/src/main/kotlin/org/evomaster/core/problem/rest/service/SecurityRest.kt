@@ -37,7 +37,7 @@ class SecurityRest {
     @Inject
     private lateinit var archive: Archive<RestIndividual>
 
-    @Inject
+    //@Inject
     private lateinit var sampler: AbstractRestSampler
 
     @Inject
@@ -63,6 +63,8 @@ class SecurityRest {
      */
     @PostConstruct
     private fun postInit(){
+
+        sampler = RestSampler()
 
         // get action definitions
         actionDefinitions = sampler.getActionDefinitions() as List<RestCallAction>
