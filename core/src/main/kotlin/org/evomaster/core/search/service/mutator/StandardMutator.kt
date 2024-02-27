@@ -3,6 +3,7 @@ package org.evomaster.core.search.service.mutator
 import org.evomaster.core.EMConfig
 import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N
 import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N_BIASED_SQL
+import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N_BIASED_DB
 import org.evomaster.core.Lazy
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.SqlActionUtils
@@ -99,7 +100,8 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
         val filterN = when (config.geneMutationStrategy) {
             ONE_OVER_N -> ALL
-            ONE_OVER_N_BIASED_SQL -> NO_SQL // might change it to NO_DB
+            ONE_OVER_N_BIASED_SQL -> NO_SQL
+            ONE_OVER_N_BIASED_DB -> NO_DB
         }
         // the actual chosen genes, that will be mutated
         val toMutate = mutableListOf<Gene>()

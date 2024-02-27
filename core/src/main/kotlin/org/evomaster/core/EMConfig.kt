@@ -1189,7 +1189,8 @@ class EMConfig {
 
     enum class GeneMutationStrategy {
         ONE_OVER_N,
-        ONE_OVER_N_BIASED_SQL
+        ONE_OVER_N_BIASED_SQL,
+        ONE_OVER_N_BIASED_DB
     }
 
     @Cfg("Strategy used to define the mutation probability")
