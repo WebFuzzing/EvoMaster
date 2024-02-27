@@ -38,7 +38,7 @@ class SecurityRest {
     private lateinit var archive: Archive<RestIndividual>
 
     @Inject
-    private lateinit var sampler: RestSampler
+    private lateinit var sampler: AbstractRestSampler
 
     @Inject
     private lateinit var randomness: Randomness
