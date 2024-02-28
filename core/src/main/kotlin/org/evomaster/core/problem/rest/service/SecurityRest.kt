@@ -64,12 +64,12 @@ class SecurityRest {
     @PostConstruct
     private fun postInit(){
 
-        sampler = RestSampler()
+        //sampler = RestSampler()
 
         // get action definitions
-        actionDefinitions = sampler.getActionDefinitions() as List<RestCallAction>
+        //actionDefinitions = sampler.getActionDefinitions() as List<RestCallAction>
 
-        authSettings = sampler.authentications
+        //authSettings = sampler.authentications
     }
 
     /**
