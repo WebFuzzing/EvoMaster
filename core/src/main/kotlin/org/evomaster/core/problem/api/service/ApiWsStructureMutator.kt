@@ -217,15 +217,15 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 
         // FIXME: Commented out now, since no Genes in the action
         // update impact based on added genes
-        if (mutatedGenes != null && config.isEnabledArchiveGeneSelection()) {
-            individual.updateImpactGeneDueToAddedInitializationGenes(
-                mutatedGenes,
-                old,
-                listOf(addedInsertions),
-                ImpactsOfIndividual.HOSTNAME_RESOLUTION_KEY,
-                config
-            )
-        }
+//        if (mutatedGenes != null && config.isEnabledArchiveGeneSelection()) {
+//            individual.updateImpactGeneDueToAddedInitializationGenes(
+//                mutatedGenes,
+//                old,
+//                listOf(addedInsertions),
+//                ImpactsOfIndividual.HOSTNAME_RESOLUTION_KEY,
+//                config
+//            )
+//        }
     }
 
     private fun <T : ApiWsIndividual> addInitializingSqlActions(
