@@ -34,13 +34,13 @@ class SecurityRest {
     /**
      * Archive including test cases
      */
-    @Inject
+    //@Inject
     private lateinit var archive: Archive<RestIndividual>
 
     //@Inject
     private lateinit var sampler: AbstractRestSampler
 
-    @Inject
+    //@Inject
     private lateinit var randomness: Randomness
 
 
