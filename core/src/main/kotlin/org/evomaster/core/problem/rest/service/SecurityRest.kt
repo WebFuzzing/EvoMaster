@@ -34,13 +34,13 @@ class SecurityRest {
     /**
      * Archive including test cases
      */
-    //@Inject
+    @Inject
     private lateinit var archive: Archive<RestIndividual>
 
-    //@Inject
+    @Inject
     private lateinit var sampler: AbstractRestSampler
 
-    //@Inject
+    @Inject
     private lateinit var randomness: Randomness
 
 
@@ -64,12 +64,11 @@ class SecurityRest {
     @PostConstruct
     private fun postInit(){
 
-        //sampler = RestSampler()
 
         // get action definitions
-        //actionDefinitions = sampler.getActionDefinitions() as List<RestCallAction>
+        actionDefinitions = sampler.getActionDefinitions() as List<RestCallAction>
 
-        //authSettings = sampler.authentications
+        authSettings = sampler.authentications
     }
 
     /**
