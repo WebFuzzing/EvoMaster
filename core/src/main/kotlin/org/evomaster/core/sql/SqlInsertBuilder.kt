@@ -604,7 +604,7 @@ class SqlInsertBuilder(
      * Create a SQL insertion operation into the table called [tableName].
      * Use columns only from [columnNames], to avoid wasting resources in setting
      * non-used data.
-     * Note: due to constraints (eg non-null), we might create data also for non-specified columns.
+     * Note: due to constraints (e.g. non-null), we might create data also for non-specified columns.
      *
      * If the table has non-null foreign keys to other tables, then create an insertion for those
      * as well. This means that more than one action can be returned here.
@@ -658,37 +658,17 @@ class SqlInsertBuilder(
         enableSingleInsertionForTable: Boolean = false
     ): List<SqlAction> {
 
+        // visit current tableName
         history.add(tableName)
 
         val table = getTable(tableName, useExtraSqlDbConstraints)
-
         val takeAll = columnNames.contains("*")
+        validateColumnNamesInput(takeAll, columnNames, table, tableName)
 
-        if (takeAll && columnNames.size > 1) {
-            throw IllegalArgumentException("Invalid column description: more than one entry when using '*'")
-        }
-
-        for (cn in columnNames) {
-            if (cn != "*" && !table.columns.any { it.name.equals(cn, ignoreCase = true) }) {
-                throw IllegalArgumentException("No column called $cn in table $tableName")
-            }
-        }
-
-        val selectedColumns = mutableSetOf<Column>()
-
-        for (c in table.columns) {
-            /*
-                we need to take primaryKey even if autoIncrement.
-                Point is, even if value will be set by DB, and so could skip it,
-                we would still need a non-modifiable, non-printable Gene to
-                store it, as we can have other Foreign Key genes pointing to it
-             */
-
-            if (takeAll || columnNames.any { it.equals(c.name, ignoreCase = true) } || !c.nullable || c.primaryKey) {
-                //TODO are there also other constraints to consider?
-                selectedColumns.add(c)
-            }
-        }
+        // filter only columns that will generate value for
+        val selectedColumns = table.columns
+            .filter { takeAll || shouldConsiderColumn(columnNames, it) }
+            .toSet()
 
         val insertion = SqlAction(table, selectedColumns, counter++)
         if (log.isTraceEnabled) {
@@ -699,33 +679,26 @@ class SqlInsertBuilder(
 
         for (fk in table.foreignKeys) {
 
-            val target = fk.targetTable
-            val n = history.filter { it.equals(target, ignoreCase = true) }.count()
-            if (n >= 3 && fk.sourceColumns.all { it.nullable }) {
-                //TODO as a configurable parameter in EMConfig?
+            val targetTable = fk.targetTable
+
+            // if we have already generated the sql inserts for the target table more than 3 times and all columns are nullable, then skip it
+            val maxIter = 3 // TODO: as a configurable parameter in EMConfig?
+            val visitedTableCount = history.count { it.equals(targetTable, ignoreCase = true) }
+            if (visitedTableCount >= maxIter && fk.sourceColumns.all { it.nullable }) {
                 continue
             }
+            val targetColumns = if (forceAll) setOf("*") else setOf()
 
-            val pre = if (forceAll) {
-                createSqlInsertionAction(
-                    target,
-                    setOf("*"),
-                    history,
-                    true,
-                    useExtraSqlDbConstraints,
-                    enableSingleInsertionForTable
-                )
-            } else {
-                createSqlInsertionAction(
-                    target,
-                    setOf(),
-                    history,
-                    false,
-                    useExtraSqlDbConstraints,
-                    enableSingleInsertionForTable
-                )
-            }
-            actions.addAll(0, pre)
+            val targetInsertions = createSqlInsertionAction(
+                        targetTable,
+                        targetColumns,
+                        history,
+                        forceAll,
+                        useExtraSqlDbConstraints,
+                        enableSingleInsertionForTable
+                    )
+
+            actions.addAll(0, targetInsertions)
         }
         if (log.isTraceEnabled) {
             log.trace("create insertions and current size is {}", actions.size)
@@ -733,7 +706,9 @@ class SqlInsertBuilder(
 
         if (enableSingleInsertionForTable && actions.size > 1) {
             val removed = actions.filterIndexed { index, dbAction ->
-                (index > 0 && (index < actions.size - 1 || actions.size == 2)) && actions.subList(0, index - 1)
+                (index > 0 && (index < actions.size - 1 || actions.size == 2)) &&
+                actions
+                    .subList(0, index - 1)
                     .any { a -> a.table.name.equals(dbAction.table.name, ignoreCase = true) }
             }
             if (removed.isNotEmpty())
@@ -743,6 +718,35 @@ class SqlInsertBuilder(
         return actions
     }
 
+    /**
+        we need to take primaryKey even if autoIncrement.
+        Point is, even if value will be set by DB, and so could skip it,
+        we would still need a non-modifiable, non-printable Gene to
+        store it, as we can have other Foreign Key genes pointing to it
+
+        // TODO: are there also other constraints to consider?
+     **/
+    private fun shouldConsiderColumn(
+        allColumns: Set<String>,
+        column: Column
+    ) = (allColumns.any { it.equals(column.name, ignoreCase = true) } || !column.nullable || column.primaryKey)
+
+    private fun validateColumnNamesInput(
+        takeAll: Boolean,
+        columnNames: Set<String>,
+        table: Table,
+        tableName: String
+    ) {
+        if (takeAll && columnNames.size > 1) {
+            throw IllegalArgumentException("Invalid column description: more than one entry when using '*'")
+        }
+
+        for (cn in columnNames) {
+            if (cn != "*" && !table.columns.any { it.name.equals(cn, ignoreCase = true) }) {
+                throw IllegalArgumentException("No column called $cn in table $tableName")
+            }
+        }
+    }
 
     /**
      * Check current state of database.
@@ -784,7 +788,7 @@ class SqlInsertBuilder(
 
                 val genes = mutableListOf<Gene>()
 
-                for (i in 0 until pks.size) {
+                for (i in pks.indices) {
                     val pkName = pks[i].name
                     val inQuotes = pks[i].type.shouldBePrintedInQuotes || pks[i].dimension > 0
                     val data = ImmutableDataHolderGene(pkName, r.columnData[i], inQuotes)
@@ -863,7 +867,7 @@ class SqlInsertBuilder(
 
         val genes = mutableListOf<Gene>()
 
-        for (i in 0 until cols.size) {
+        for (i in cols.indices) {
 
             if (row!!.columnData[i] != "NULL") {
 
