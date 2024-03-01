@@ -13,8 +13,11 @@ public class Constants {
     public static final String INIT_METHOD = "<init>";
 
 
+    public static boolean isMethodBridge(int methodAccess){
+        return (methodAccess & Opcodes.ACC_BRIDGE) > 0 ;
+    }
     public static boolean isMethodSyntheticOrBridge(int methodAccess){
         return (methodAccess & Opcodes.ACC_SYNTHETIC) > 0
-                || (methodAccess & Opcodes.ACC_BRIDGE) > 0 ;
+                || isMethodBridge(methodAccess) ;
     }
 }

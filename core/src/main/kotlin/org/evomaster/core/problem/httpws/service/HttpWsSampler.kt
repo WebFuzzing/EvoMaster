@@ -4,12 +4,13 @@ import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
 import org.evomaster.client.java.controller.api.dto.auth.HeaderDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.problem.api.service.ApiWsSampler
+import org.evomaster.core.problem.enterprise.auth.AuthSettings
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.auth.AuthenticationHeader
 import org.evomaster.core.problem.httpws.auth.CookieLogin
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.httpws.auth.JsonTokenPostLogin
-import org.evomaster.core.problem.httpws.auth.NoAuth
+import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.Individual
 import org.slf4j.Logger
@@ -25,9 +26,8 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
         private val log: Logger = LoggerFactory.getLogger(HttpWsSampler::class.java)
     }
 
-
-    protected val authentications: MutableList<HttpWsAuthenticationInfo> = mutableListOf()
-
+    //TODO move up to Enterprise
+    val authentications = AuthSettings()
 
 
     /**
@@ -45,12 +45,15 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
     }
 
     fun getRandomAuth(noAuthP: Double): HttpWsAuthenticationInfo {
-        if (authentications.isEmpty() || randomness.nextBoolean(noAuthP)) {
-            return NoAuth()
+
+        val selection = authentications.getOfType(HttpWsAuthenticationInfo::class.java)
+
+        return if (selection.isEmpty() || randomness.nextBoolean(noAuthP)) {
+            HttpWsNoAuth()
         } else {
             //if there is auth, should have high probability of using one,
             //as without auth we would do little.
-            return randomness.choose(authentications)
+            randomness.choose(selection)
         }
     }
 
@@ -122,7 +125,7 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
 
         val auth = HttpWsAuthenticationInfo(i.name.trim(), headers, cookieLogin, jsonTokenPostLogin)
 
-        authentications.add(auth)
+        authentications.addInfo(auth)
         return
     }
 
