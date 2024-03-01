@@ -218,6 +218,13 @@ public abstract class EnterpriseTestBase {
         });
     }
 
+    protected void runTestHandlingFlakyAndCompilation(
+            String label,
+            int iterations,
+            Consumer<List<String>> lambda) throws Throwable {
+
+        runTestHandlingFlakyAndCompilation(label, "org.bar."+label, iterations, lambda);
+    }
 
 
     protected void runTestHandlingFlakyAndCompilation(
