@@ -1,18 +1,22 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
+import org.evomaster.client.java.distance.heuristics.DistanceHelper;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.*;
-import org.evomaster.client.java.instrumentation.heuristic.Truthness;
-import org.evomaster.client.java.instrumentation.heuristic.TruthnessUtils;
+import org.evomaster.client.java.distance.heuristics.Truthness;
+import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class MapClassReplacement implements MethodReplacementClass {
 
     private static final Method linearCostContainsKey;
+
+    private static final Map<Class<? extends Map>, Boolean> cacheIsLinearCost = new ConcurrentHashMap<>();
 
     static {
         try {
@@ -21,6 +25,32 @@ public class MapClassReplacement implements MethodReplacementClass {
             //should never happen...
             throw new RuntimeException(e);
         }
+    }
+
+    /*
+        Note, if for any reason in a method X we need to call another method Y (eg for isEmpty() we call size()) to
+        compute any heuristics, then we MUST do so in a try/catch...
+        There are abominations like
+
+        org.thymeleaf.spring6.expression.SPELContextMapWrapper
+
+        where implements some methods, and throw exception on all others...
+     */
+
+
+    private static boolean hasLinearCost(Class<? extends Map> klass){
+        Boolean isLinear = cacheIsLinearCost.get(klass);
+        if(isLinear == null){
+            try {
+                Method m = klass.getMethod("containsKey",Object.class);
+                isLinear = m.equals(linearCostContainsKey);
+            } catch (NoSuchMethodException e) {
+                isLinear = false;
+            }
+            cacheIsLinearCost.put(klass, isLinear);
+            return isLinear;
+        }
+        return isLinear;
     }
 
     @Override
@@ -42,7 +72,12 @@ public class MapClassReplacement implements MethodReplacementClass {
             return result;
         }
 
-        int len = caller.size();
+        int len;
+        try {
+            len = caller.size();
+        } catch (Exception e){
+            return result;
+        }
         Truthness t = TruthnessUtils.getTruthnessToEmpty(len);
 
         ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
@@ -72,14 +107,39 @@ public class MapClassReplacement implements MethodReplacementClass {
             expensive...
 
             NOTE: due to changes in ReplacementList, this does not seem a problem
-            anymore. See comments in that class.
+            anymore, due to how we handle subclasses. See comments in that class.
          */
         //Collection keyCollection = new HashSet(c.keySet());
-        Collection keyCollection = c.keySet();
+        Collection keyCollection;
+        try {
+            keyCollection = c.keySet();
+        } catch (Exception e){
+            return c.containsKey(o);
+        }
 
         CollectionsDistanceUtils.evaluateTaint(keyCollection, o);
 
-        boolean result = keyCollection.contains(o);
+        /*
+            Even if we skip instrumenting subclass calls, we still have issues.
+            For example, in Guava Maps, contains() is implemented as
+            map().containsKey()
+            which still leads to infinite recursion, due to map() returning
+            a reference to Map, and also due to the keyset be a non-JDK subclass as well.
+            So, we still need to look at the actual concrete class, and not just the ref.
+
+            Skipping it is not so great, but is there any alternative?
+            However, if still can evaluate taint, then should not be a big problem
+         */
+        if(!keyCollection.getClass().getName().startsWith("java.util")){
+            return c.containsKey(o);
+        }
+
+        boolean result;
+        try {
+            result = keyCollection.contains(o);
+        } catch (Exception e){
+            return c.containsKey(o);
+        }
 
         if (idTemplate == null) {
             return result;
@@ -102,9 +162,8 @@ public class MapClassReplacement implements MethodReplacementClass {
 
         if(! (map instanceof IdentityHashMap)) {
             try {
-                Method m = map.getClass().getMethod("containsKey",Object.class);
-                if(! m.equals(linearCostContainsKey)) {
-                    //check Map.containsKey is not from AbstractMap, which is O(n). Case for Kotlin's ZipEntryMap
+                //check Map.containsKey is not from AbstractMap, which is O(n). Case for Kotlin's ZipEntryMap
+                if(! hasLinearCost(map.getClass())) {
                     containsKey(map, key, idTemplate);
                 }
             } catch (Exception e) {
@@ -132,11 +191,21 @@ public class MapClassReplacement implements MethodReplacementClass {
             return c.containsValue(o);
         }
 
-        Collection data = c.values();
+        Collection data;
+        try {
+            data = c.values();
+        }catch (Exception e){
+            return c.containsValue(o);
+        }
 
         CollectionsDistanceUtils.evaluateTaint(data, o);
 
-        boolean result = data.contains(o);
+        boolean result;
+        try {
+            result = data.contains(o);
+        } catch (Exception e){
+            return c.containsValue(o);
+        }
 
         if (idTemplate == null) {
             return result;
@@ -169,8 +238,19 @@ public class MapClassReplacement implements MethodReplacementClass {
         return true;
          */
 
+        try{
+            map.keySet();
+        }catch (Exception e){
+            return map.remove(key, value);
+        }
+
         CollectionsDistanceUtils.evaluateTaint(map.keySet(), key);
-        Object curValue = map.get(key);
+        Object curValue;
+        try {
+                curValue =map.get(key);
+        } catch (Exception e){
+            return map.remove(key, value);
+        }
         if(curValue != null) {
             CollectionsDistanceUtils.evaluateTaint(Arrays.asList(curValue), value);
         }
@@ -211,11 +291,15 @@ public class MapClassReplacement implements MethodReplacementClass {
         return true;
          */
 
-        boolean removed = remove(map, key, oldValue,idTemplate);
-        if(removed){
-            map.put(key, newValue);
+        try {
+            boolean removed = remove(map, key, oldValue, idTemplate);
+            if (removed) {
+                map.put(key, newValue);
+            }
+            return removed;
+        } catch (Exception e){
+            return map.replace(key,oldValue, newValue);
         }
-        return removed;
     }
 
 }

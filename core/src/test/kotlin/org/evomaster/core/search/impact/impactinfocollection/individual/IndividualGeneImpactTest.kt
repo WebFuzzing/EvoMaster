@@ -1,13 +1,12 @@
 package org.evomaster.core.search.impact.impactinfocollection.individual
 
 import org.evomaster.core.EMConfig
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.DbActionResult
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.output.EvaluatedIndividualBuilder.Companion.generateIndividualResults
 import org.evomaster.core.search.*
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.IntegerGene
-import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
@@ -26,7 +25,7 @@ class IndividualGeneImpactTest {
         val simulatedMutator = SimulatedMutator()
         simulatedMutator.config.abstractInitializationGeneToMutate = false
         val evi_ind1 = simulatedMutator.getFakeEvaluatedIndividualWithInitialization(initActionSize = 0)
-        val addedInit = IndAction.getSeqIndAction(templates = arrayOf(2,3), repeat = arrayOf(1,3))
+        val addedInit = IndAction.getSeqIndInitAction(templates = arrayOf(2,3), repeat = arrayOf(1,3))
 
         evi_ind1.initAddedInitializationGenes(addedInit,0)
         assertNotNull(evi_ind1.impactInfo)
@@ -38,7 +37,7 @@ class IndividualGeneImpactTest {
         val simulatedMutator = SimulatedMutator()
         simulatedMutator.config.abstractInitializationGeneToMutate = true
         val evi_ind1 = simulatedMutator.getFakeEvaluatedIndividualWithInitialization(initActionSize = 0)
-        val addedInit = IndAction.getSeqIndAction(templates = arrayOf(2,3), repeat = arrayOf(1,3))
+        val addedInit = IndAction.getSeqIndInitAction(templates = arrayOf(2,3), repeat = arrayOf(1,3))
 
         evi_ind1.initAddedInitializationGenes(addedInit,0)
         assertNotNull(evi_ind1.impactInfo)
@@ -99,7 +98,7 @@ class IndividualGeneImpactTest {
         )
 
         assert(tracked_evi_ind2.getSizeOfImpact(false) == 2)
-        val evi_ind1impactInfo = evi_ind1.getImpactByAction(mutatedIndex, false)
+        val evi_ind1impactInfo = evi_ind1.getImpactOfFixedAction(mutatedIndex, false)
         assert(evi_ind1impactInfo!= null)
         val ind1impact = evi_ind1impactInfo!![mutatedGeneId]
         assert(ind1impact != null)
@@ -107,11 +106,11 @@ class IndividualGeneImpactTest {
         assert(ind1impact!!.getTimesOfImpacts().containsKey(2))
         assert(ind1impact.getTimesOfImpacts().containsKey(3))
 
-        val tracked_evi_ind2impactInfo = tracked_evi_ind2.getImpactByAction(mutatedIndex, false)
+        val tracked_evi_ind2impactInfo = tracked_evi_ind2.getImpactOfFixedAction(mutatedIndex, false)
         assert(tracked_evi_ind2impactInfo!=null)
         val ind2impact = tracked_evi_ind2impactInfo!![mutatedGeneId]
 
-        val tracked_evi_ind2impactInfo_otheer = tracked_evi_ind2.getImpactByAction(0, false)
+        val tracked_evi_ind2impactInfo_otheer = tracked_evi_ind2.getImpactOfFixedAction(0, false)
         assert(tracked_evi_ind2impactInfo_otheer!=null)
         val ind2impactdifAction = tracked_evi_ind2impactInfo_otheer!![mutatedGeneId]
 
@@ -190,12 +189,13 @@ class IndividualGeneImpactTest {
         fun fakeMutator(evaluatedIndividual: EvaluatedIndividual<Ind>, mutatedIndex : Int, mutatedGeneSpecification: MutatedGeneSpecification, index: Int) : EvaluatedIndividual<Ind>{
             val ind2 = evaluatedIndividual.individual.copy() as Ind
 
-            val mutatedGene = (ind2.seeActions()[mutatedIndex].seeGenes()[1] as StringGene)
+            val mutatedGene = (ind2.seeFixedMainActions()[mutatedIndex].seeTopGenes()[1] as StringGene)
 
             mutatedGeneSpecification.addMutatedGene(
                     isDb = false,
                     isInit = false,
                     position = mutatedIndex,
+                    localId = null,
                     valueBeforeMutation = mutatedGene.value,
                     gene = mutatedGene
             )
@@ -212,28 +212,33 @@ class IndividualGeneImpactTest {
 
         fun fakeStructureMutator(evaluatedIndividual: EvaluatedIndividual<Ind>, mutatedIndex : Int, remove: Boolean, mutatedGeneSpecification: MutatedGeneSpecification, index : Int) : EvaluatedIndividual<Ind>{
             val ind2 = evaluatedIndividual.individual.copy() as Ind
-            if (ind2.seeActions().size == 1 && remove)
+            if (ind2.seeFixedMainActions().size == 1 && remove)
                 throw IllegalArgumentException("action cannot be removed since there is only one action")
             if (remove){
-                val removedAction = ind2.seeActions()[mutatedIndex]
+                val removedAction = ind2.seeFixedMainActions()[mutatedIndex]
 
                 mutatedGeneSpecification.addRemovedOrAddedByAction(
                     removedAction,
                     mutatedIndex,
+                    localId = null,
                     true,mutatedIndex
                 )
-                ind2.actions.removeAt(mutatedIndex)
+
+                //ind2.actions.removeAt(mutatedIndex)
+                ind2.killChildByIndex(mutatedIndex)
 
             }else{
-                val action = IndAction.getIndAction(1).first()
+                val action = IndAction.getIndMainAction(1).first()
 
                 mutatedGeneSpecification.addRemovedOrAddedByAction(
                     action,
                     mutatedIndex,
+                    localId = null,
                     false,mutatedIndex
                 )
 
-                ind2.actions.add(mutatedIndex, action)
+                //ind2.actions.add(mutatedIndex, action)
+                ind2.addChild(mutatedIndex, action)
             }
 
             mutatedGeneSpecification.setMutatedIndividual(ind2)
@@ -264,7 +269,7 @@ class IndividualGeneImpactTest {
         fun getFakeEvaluatedIndividual() : EvaluatedIndividual<Ind>{
             val ind1 = Ind.getInd()
 
-            val fv1 = FitnessValue(ind1.seeActions().size.toDouble())
+            val fv1 = FitnessValue(ind1.seeAllActions().size.toDouble())
 
             fv1.updateTarget(id = 1, value = 0.1, actionIndex = 0)
             fv1.updateTarget(id = 2, value = 0.1, actionIndex = 1)
@@ -290,40 +295,33 @@ class IndividualGeneImpactTest {
 
     }
 
-    class Ind(val actions : MutableList<IndAction>, val initialization : MutableList<IndAction> = mutableListOf()) : Individual(children = initialization.plus(actions)){
+    class Ind(actions : MutableList<IndMainAction>, initialization : MutableList<IndInitAction> = mutableListOf()) : Individual(children = initialization.plus(actions).toMutableList()){
         companion object{
             fun getInd() : Ind{
-                return Ind(IndAction.getIndAction(2).toMutableList())
+                return Ind(IndAction.getIndMainAction(2).toMutableList()).apply { this.doInitializeLocalId() }
             }
 
             fun getIndWithInitialization(actionSize: Int, initializationSize: Int) : Ind{
-                return Ind(IndAction.getIndAction(2).toMutableList(), IndAction.getSeqIndAction(initializationSize).toMutableList())
+                return Ind(IndAction.getIndMainAction(actionSize).toMutableList(), IndAction.getSeqIndInitAction(initializationSize).toMutableList())
+                    .apply { this.doInitializeLocalId() }
             }
         }
         override fun copyContent(): Individual {
-            return Ind(actions.map { it.copyContent() as IndAction }.toMutableList())
+            return Ind(children.filterIsInstance<IndMainAction>().map { it.copy() as IndMainAction }.toMutableList(),
+                    children.filterIsInstance<IndInitAction>().map { it.copy() as IndInitAction }.toMutableList())
         }
-
-        override fun getChildren(): List<Action> = initialization.plus(actions)
 
         override fun seeGenes(filter: GeneFilter): List<out Gene> {
            return when(filter){
-               GeneFilter.ONLY_SQL -> seeInitializingActions().flatMap(Action::seeGenes)
-               GeneFilter.NO_SQL -> seeActions().flatMap(Action::seeGenes)
-               GeneFilter.ALL -> seeInitializingActions().plus(seeActions()).flatMap(Action::seeGenes)
+               GeneFilter.ONLY_SQL -> seeInitializingActions().flatMap(Action::seeTopGenes)
+               GeneFilter.NO_SQL -> seeAllActions().flatMap(Action::seeTopGenes)
+               GeneFilter.ALL -> seeInitializingActions().plus(seeAllActions()).flatMap(Action::seeTopGenes)
                else -> throw IllegalArgumentException("$filter is not supported by ImpactTest Individual")
            }
         }
 
-        override fun size(): Int = seeActions().size
+        override fun size(): Int = seeAllActions().size
 
-        override fun seeActions(): List<out Action> {
-            return actions
-        }
-
-        override fun seeInitializingActions(): List<Action> {
-            return initialization
-        }
 
         override fun verifyInitializationActions(): Boolean {
             return true
@@ -332,37 +330,46 @@ class IndividualGeneImpactTest {
         override fun repairInitializationActions(randomness: Randomness) {}
     }
 
-    class IndAction(private val genes : List<out Gene>) : Action(genes){
+   abstract class IndAction(genes : List<out Gene>) : Action(genes){
 
-        override fun getChildren(): List<Gene> = genes
+
 
         companion object{
-            fun getIndAction(size: Int = 1): List<IndAction>{
+            fun getIndMainAction(size: Int = 1): List<IndMainAction>{
                 if(size < 1) throw IllegalArgumentException("size should be at least 1, but $size")
-                return (0 until size).map { IndAction(listOf(StringGene("index1","index1"), StringGene("index2", "index2")))}
+                return (0 until size).map {
+                    IndMainAction(listOf(
+                        StringGene("index1","index1"),
+                            StringGene("index2", "index2")
+                    ))
+                            .apply { doInitialize(Randomness().apply { updateSeed(42) }) }}
             }
 
-            fun getSeqIndAction(size : Int) : List<IndAction>{
+            fun getSeqIndInitAction(size : Int) : List<IndInitAction>{
                 if(size < 0) throw IllegalArgumentException("size should not be less than 0, but $size")
                 if (size == 0) return  listOf()
-                return (0 until size).map { IndAction(listOf(IntegerGene(
+                return (0 until size).map { IndInitAction(listOf(
+                    IntegerGene(
                         name = "index$it",
                         value = it
-                ))) }
+                )
+                )) }
             }
 
-            fun getSeqIndAction(templates : Array<Int>, repeat : Array<Int>) : List<List<IndAction>>{
+            fun getSeqIndInitAction(templates : Array<Int>, repeat : Array<Int>) : List<List<IndInitAction>>{
                 if(templates.any { it < 1 }) throw IllegalArgumentException("size of template should be at least 1")
                 if (repeat.any { it < 0 }) throw IllegalArgumentException("repeat times should not be less than 0")
                 if (templates.size != repeat.size) throw IllegalArgumentException("size of the configuration for template and repeat should be same")
-                val actions = mutableListOf<List<IndAction>>()
+                val actions = mutableListOf<List<IndInitAction>>()
                 templates.forEachIndexed { t, i ->
                     (0..repeat[t]).forEach { _->
                         actions.add((0 until i).map {
-                            IndAction(listOf(IntegerGene(
+                            IndInitAction(listOf(
+                                IntegerGene(
                                     name = "index$t$it",
                                     value = it
-                            )))
+                            )
+                            ))
                         })
                     }
                 }
@@ -371,22 +378,31 @@ class IndividualGeneImpactTest {
         }
 
         override fun getName(): String {
-            return genes.joinToString(",") { it.name }
+            return seeTopGenes().joinToString(",") { it.name }
         }
 
-        override fun seeGenes(): List<out Gene> {
-            return genes
+        override fun seeTopGenes(): List<out Gene> {
+            return children.filterIsInstance<Gene>()
         }
 
-        override fun copyContent(): Action {
-            return IndAction(genes.map { it.copyContent() })
-        }
+//        override fun copyContent(): Action {
+//            return IndAction(genes.map { it.copy() })
+//        }
 
         override fun shouldCountForFitnessEvaluations(): Boolean = true
 
-        override fun randomize(randomness: Randomness, forceNewValue: Boolean, all: List<Action>) {
-            seeGenes().forEach { it.randomize(randomness, forceNewValue) }
-        }
+    }
 
+
+    class IndMainAction(genes: List<out Gene>) : IndAction(genes){
+        override fun copyContent(): Action {
+            return IndMainAction(seeTopGenes().map { it.copy() })
+        }
+    }
+
+    class IndInitAction(genes: List<out Gene>) : IndAction(genes){
+        override fun copyContent(): Action {
+            return IndInitAction(seeTopGenes().map { it.copy() })
+        }
     }
 }

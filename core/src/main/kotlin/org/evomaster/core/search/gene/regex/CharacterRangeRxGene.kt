@@ -2,14 +2,14 @@ package org.evomaster.core.search.gene.regex
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.GeneUtils
+import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.gene.root.SimpleGene
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.LoggerFactory
 import kotlin.math.max
 import kotlin.math.min
@@ -18,7 +18,7 @@ import kotlin.math.min
 class CharacterRangeRxGene(
         val negated: Boolean,
         ranges: List<Pair<Char,Char>>
-) : RxAtom(".", listOf()){
+) : RxAtom, SimpleGene("."){
 
     companion object{
         private val log = LoggerFactory.getLogger(CharacterRangeRxGene::class.java)
@@ -48,7 +48,10 @@ class CharacterRangeRxGene(
      */
     val ranges = ranges.map { Pair(min(it.first.code,it.second.code).toChar(), max(it.first.code, it.second.code).toChar()) }
 
-    override fun getChildren(): List<Gene> = listOf()
+    override fun isLocallyValid() : Boolean{
+        //TODO negated
+        return ranges.any { value.code >= it.first.code && value.code <= it.second.code }
+    }
 
     override fun isMutable(): Boolean {
         return ranges.size > 1 || ranges[0].let { it.first != it.second }
@@ -60,7 +63,14 @@ class CharacterRangeRxGene(
         return copy
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun setValueWithRawString(value: String) {
+        // need to check
+        val c = value.toCharArray().firstOrNull()
+        if (c!= null)
+            this.value = c
+    }
+
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
 
         /*
             TODO current is very simple, biased implementation.
@@ -71,7 +81,7 @@ class CharacterRangeRxGene(
         value = randomness.nextChar(range.first, range.second)
     }
 
-    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
+    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, selectionStrategy: SubsetGeneMutationSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
 
         var t = 0
         for(i in 0 until ranges.size){
@@ -112,11 +122,18 @@ class CharacterRangeRxGene(
         return value.toString()
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if(other !is CharacterRangeRxGene){
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
+        val current = this.value
         this.value = other.value
+        if (!isLocallyValid()){
+            this.value = current
+            return false
+        }
+
+        return true
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -126,7 +143,6 @@ class CharacterRangeRxGene(
         return this.value == other.value
     }
 
-    override fun innerGene(): List<Gene> = listOf()
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         if(gene is CharacterRangeRxGene){

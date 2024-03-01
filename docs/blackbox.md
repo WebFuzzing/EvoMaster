@@ -1,5 +1,7 @@
 # Black-Box Testing
 
+## RESTful APIs
+
 Informally, in *Black-Box Testing* of a RESTful API, we generate test cases without
 knowing the internal details of the API.
 Still, we need to know the schema of the API to determine which endpoints can be called,
@@ -84,10 +86,31 @@ public class EvoMasterTest {
 }
 ```
 
+## GraphQL APIs
+
+Black-box fuzzing of GraphQL APIs uses the same options as for RESTful APIs.
+One difference is that `--bbTargetUrl` is used to specify the entry point of the GraphQL API.
+Another difference is that we must specify the `--problemType` to be `GRAPHQL`, as the default is `REST`.
+An example on GitLab's API is:
+
+```
+evomaster.exe  --problemType GRAPHQL --bbTargetUrl https://gitlab.com/api/graphql --blackBox true --outputFormat JAVA_JUNIT_4 --maxTime 30s --ratePerMinute 60
+```
+
 
 ## AUTH
 
 Since version `1.3.0`, it is possible to specify custom HTTP headers (e.g., to pass auth tokens), using the options from `--header0` to `--header2` (in case more than one HTTP header is needed). 
+
+However, in contrast to white-box mode, in black-box mode there is 
+currently no configuration to automatically setup the fetching of
+dynamic tokens.
+For example, if an auth token needs to be fetched from a login endpoint
+(e.g., a POST on a `/login` with username and password),
+then such call has to be done manually (and then the token can be passed
+to EvoMaster with `--header0` option, e.g., `--header0 "cookie: <token>"`).
+Such call can be done with other tools like Postman and cURL.
+
 
 ## WARNING
 

@@ -1,12 +1,11 @@
 package org.evomaster.core.output
 
 import org.evomaster.core.output.service.HttpWsTestCaseWriter
-import org.evomaster.core.output.service.WebTestCaseWriter
-import org.evomaster.core.problem.httpws.service.HttpWsAction
-import org.evomaster.core.problem.httpws.service.auth.JsonTokenPostLogin
+import org.evomaster.core.output.service.ApiTestCaseWriter
+import org.evomaster.core.problem.httpws.HttpWsAction
+import org.evomaster.core.problem.httpws.auth.JsonTokenPostLogin
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.gene.GeneUtils
 
 object TokenWriter {
 
@@ -16,7 +15,7 @@ object TokenWriter {
      *  Return the distinct auth info on token-based login in all actions
      *  of this individual
      */
-    fun getTokenLoginAuth(ind: Individual) =  ind.seeActions()
+    fun getTokenLoginAuth(ind: Individual) =  ind.seeAllActions()
             .filterIsInstance<HttpWsAction>()
             .filter { it.auth.jsonTokenPostLogin != null }
             .map { it.auth.jsonTokenPostLogin!! }
@@ -27,7 +26,7 @@ object TokenWriter {
                             ind: EvaluatedIndividual<*>,
                             lines: Lines,
                             baseUrlOfSut: String,
-                            testCaseWriter: WebTestCaseWriter
+                            testCaseWriter: ApiTestCaseWriter
     ) {
 
         val tokensInfo = getTokenLoginAuth(ind.individual)

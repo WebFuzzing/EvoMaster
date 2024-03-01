@@ -1,14 +1,15 @@
 package org.evomaster.core.utils
 
 import io.swagger.parser.OpenAPIParser
+import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.util.BindingBuilder
-import org.evomaster.core.search.Action
-import org.evomaster.core.search.gene.DisruptiveGene
-import org.evomaster.core.search.gene.LongGene
+import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.gene.optional.CustomMutationRateGene
+import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
@@ -21,13 +22,14 @@ class BindingBuilderTest {
 
         val actionCluster: MutableMap<String, Action> = mutableMapOf()
         val randomness = Randomness()
+        val config = EMConfig()
 
         @BeforeAll
         @JvmStatic
         fun init(){
 
             val schema = OpenAPIParser().readLocation("/swagger/artificial/resource_test.json", null, null).openAPI
-            RestActionBuilderV3.addActionsFromSwagger(schema, actionCluster)
+            RestActionBuilderV3.addActionsFromSwagger(schema, actionCluster, enableConstraintHandling = config.enableSchemaConstraintHandling)
         }
     }
 
@@ -38,19 +40,19 @@ class BindingBuilderTest {
         assertNotNull(action)
         action!!.randomize(randomness, false)
 
-        val pairs = BindingBuilder.buildBindingPairsInRestAction(action)
+        val pairs = BindingBuilder.buildBindingPairsInRestAction(action, randomness)
         assertEquals(1, pairs.size)
         assertEquals(setOf("id","rfooId"), setOf(pairs.first().first.name, pairs.first().second.name))
 
-        BindingBuilder.bindParamsInRestAction(action, true)
-        val patchRfooId = ((action.parameters.find { it is PathParam } as? PathParam)?.gene as? DisruptiveGene<*>)?.gene as? LongGene
+        BindingBuilder.bindParamsInRestAction(action, true, randomness)
+        val patchRfooId = ((action.parameters.find { it is PathParam } as? PathParam)?.gene as? CustomMutationRateGene<*>)?.gene as? LongGene
         assertNotNull(patchRfooId)
         val patchBody = (action.parameters.find { it is BodyParam } as? BodyParam)?.gene as? ObjectGene
         assertNotNull(patchBody)
         val patchBodyId = patchBody!!.fields.find { it.name == "id" } as? LongGene
         assertNotNull(patchBodyId)
-        assertTrue(patchBodyId!!.isBoundWith(patchRfooId!!))
-        assertTrue(patchRfooId.isBoundWith(patchBodyId))
+        assertTrue(patchBodyId!!.isDirectBoundWith(patchRfooId!!))
+        assertTrue(patchRfooId.isDirectBoundWith(patchBodyId))
         assertEquals(patchBodyId.value, patchRfooId.value)
     }
 
@@ -59,33 +61,33 @@ class BindingBuilderTest {
         val getXyz = (actionCluster.getValue("GET:/v3/api/rfoo/{rfooId}/rbar/{rbarId}/rxyz/{rxyzId}") as? RestCallAction)?.copy() as? RestCallAction
         assertNotNull(getXyz)
         getXyz!!.randomize(randomness, false)
-        val getXyzId = ((getXyz.parameters.find { it is PathParam && it.name == "rxyzId"} as? PathParam)?.gene as? DisruptiveGene<*>)?.gene as? LongGene
+        val getXyzId = ((getXyz.parameters.find { it is PathParam && it.name == "rxyzId"} as? PathParam)?.gene as? CustomMutationRateGene<*>)?.gene as? LongGene
         assertNotNull(getXyzId)
-        val getXyzBarId = ((getXyz.parameters.find { it is PathParam && it.name == "rbarId"} as? PathParam)?.gene as? DisruptiveGene<*>)?.gene as? LongGene
+        val getXyzBarId = ((getXyz.parameters.find { it is PathParam && it.name == "rbarId"} as? PathParam)?.gene as? CustomMutationRateGene<*>)?.gene as? LongGene
         assertNotNull(getXyzBarId)
-        val getXyzFooId = ((getXyz.parameters.find { it is PathParam && it.name == "rfooId"} as? PathParam)?.gene as? DisruptiveGene<*>)?.gene as? LongGene
+        val getXyzFooId = ((getXyz.parameters.find { it is PathParam && it.name == "rfooId"} as? PathParam)?.gene as? CustomMutationRateGene<*>)?.gene as? LongGene
         assertNotNull(getXyzFooId)
 
         val postXyz = (actionCluster.getValue("POST:/v3/api/rfoo/{rfooId}/rbar/{rbarId}/rxyz") as? RestCallAction)?.copy() as? RestCallAction
         assertNotNull(postXyz)
         postXyz!!.randomize(randomness, false)
         // build binding
-        postXyz.bindBasedOn(getXyz)
+        postXyz.bindBasedOn(getXyz, randomness)
         val postBodyXyzId = ((postXyz.parameters.find { it is BodyParam } as? BodyParam)?.gene as? ObjectGene)?.fields?.find { it.name == "id" } as LongGene
         assertNotNull(postBodyXyzId)
-        assertTrue(postBodyXyzId.isBoundWith(getXyzId!!))
-        assertTrue(getXyzId.isBoundWith(postBodyXyzId))
+        assertTrue(postBodyXyzId.isDirectBoundWith(getXyzId!!))
+        assertTrue(getXyzId.isDirectBoundWith(postBodyXyzId))
 
-        val postXyzBarId = ((postXyz.parameters.find { it is PathParam && it.name == "rbarId"} as? PathParam)?.gene as? DisruptiveGene<*>)?.gene as? LongGene
+        val postXyzBarId = ((postXyz.parameters.find { it is PathParam && it.name == "rbarId"} as? PathParam)?.gene as? CustomMutationRateGene<*>)?.gene as? LongGene
         assertNotNull(postXyzBarId)
-        assertTrue(postXyzBarId!!.isBoundWith(getXyzBarId!!))
-        assertTrue(getXyzBarId.isBoundWith(postXyzBarId))
+        assertTrue(postXyzBarId!!.isDirectBoundWith(getXyzBarId!!))
+        assertTrue(getXyzBarId.isDirectBoundWith(postXyzBarId))
         assertTrue(getXyzBarId.isSameBinding(setOf(postXyzBarId)))
 
-        val postXyzFooId = ((postXyz.parameters.find { it is PathParam && it.name == "rfooId"} as? PathParam)?.gene as? DisruptiveGene<*>)?.gene as? LongGene
+        val postXyzFooId = ((postXyz.parameters.find { it is PathParam && it.name == "rfooId"} as? PathParam)?.gene as? CustomMutationRateGene<*>)?.gene as? LongGene
         assertNotNull(postXyzFooId)
-        assertTrue(postXyzFooId!!.isBoundWith(getXyzFooId!!))
-        assertTrue(getXyzFooId.isBoundWith(postXyzFooId))
+        assertTrue(postXyzFooId!!.isDirectBoundWith(getXyzFooId!!))
+        assertTrue(getXyzFooId.isDirectBoundWith(postXyzFooId))
         assertTrue(getXyzFooId.isSameBinding(setOf(postXyzFooId)))
 
         assertTrue(getXyzId.isSameBinding(setOf(postBodyXyzId)))
@@ -95,16 +97,16 @@ class BindingBuilderTest {
         val postBar = (actionCluster.getValue("POST:/v3/api/rfoo/{rfooId}/rbar") as? RestCallAction)?.copy() as? RestCallAction
         assertNotNull(postBar)
         postBar!!.randomize(randomness, false)
-        postBar.bindBasedOn(getXyz)
+        postBar.bindBasedOn(getXyz, randomness)
         val postBodyBarId = ((postBar.parameters.find { it is BodyParam } as? BodyParam)?.gene as? ObjectGene)?.fields?.find { it.name == "id" } as? LongGene
         assertNotNull(postBodyBarId)
-        assertTrue(postBodyBarId!!.isBoundWith(getXyzBarId))
-        assertTrue(getXyzBarId.isBoundWith(postBodyBarId))
+        assertTrue(postBodyBarId!!.isDirectBoundWith(getXyzBarId))
+        assertTrue(getXyzBarId.isDirectBoundWith(postBodyBarId))
 
-        val postBarFooId = ((postBar.parameters.find { it is PathParam && it.name == "rfooId"} as? PathParam)?.gene as? DisruptiveGene<*>)?.gene as? LongGene
+        val postBarFooId = ((postBar.parameters.find { it is PathParam && it.name == "rfooId"} as? PathParam)?.gene as? CustomMutationRateGene<*>)?.gene as? LongGene
         assertNotNull(postBarFooId)
-        assertTrue(postBarFooId!!.isBoundWith(getXyzFooId))
-        assertTrue(getXyzFooId.isBoundWith(postBarFooId))
+        assertTrue(postBarFooId!!.isDirectBoundWith(getXyzFooId))
+        assertTrue(getXyzFooId.isDirectBoundWith(postBarFooId))
 
         assertTrue(getXyzBarId.isSameBinding(setOf(postXyzBarId, postBodyBarId)))
         assertTrue(getXyzFooId.isSameBinding(setOf(postXyzFooId, postBarFooId)))
@@ -113,12 +115,12 @@ class BindingBuilderTest {
         val postFoo = (actionCluster.getValue("POST:/v3/api/rfoo") as? RestCallAction)?.copy() as? RestCallAction
         assertNotNull(postFoo)
         postFoo!!.randomize(randomness, false)
-        postFoo.bindBasedOn(getXyz)
+        postFoo.bindBasedOn(getXyz, randomness)
 
         val postBodyFooId = ((postFoo.parameters.find { it is BodyParam } as? BodyParam)?.gene as? ObjectGene)?.fields?.find { it.name == "id" } as? LongGene
         assertNotNull(postBodyFooId)
-        assertTrue(postBodyFooId!!.isBoundWith(getXyzFooId))
-        assertTrue(getXyzFooId.isBoundWith(postBodyFooId))
+        assertTrue(postBodyFooId!!.isDirectBoundWith(getXyzFooId))
+        assertTrue(getXyzFooId.isDirectBoundWith(postBodyFooId))
 
 
         assertTrue(getXyzFooId.isSameBinding(setOf(postXyzFooId, postBarFooId, postBodyFooId)))
@@ -162,11 +164,11 @@ class BindingBuilderTest {
         val getXyz = (actionCluster.getValue("GET:/v3/api/rfoo/{rfooId}/rbar/{rbarId}/rxyz/{rxyzId}") as? RestCallAction)?.copy() as? RestCallAction
         assertNotNull(getXyz)
         getXyz!!.randomize(randomness, false)
-        val getXyzId = ((getXyz.parameters.find { it is PathParam && it.name == "rxyzId"} as? PathParam)?.gene as? DisruptiveGene<*>)?.gene as? LongGene
+        val getXyzId = ((getXyz.parameters.find { it is PathParam && it.name == "rxyzId"} as? PathParam)?.gene as? CustomMutationRateGene<*>)?.gene as? LongGene
         assertNotNull(getXyzId)
-        val getXyzBarId = ((getXyz.parameters.find { it is PathParam && it.name == "rbarId"} as? PathParam)?.gene as? DisruptiveGene<*>)?.gene as? LongGene
+        val getXyzBarId = ((getXyz.parameters.find { it is PathParam && it.name == "rbarId"} as? PathParam)?.gene as? CustomMutationRateGene<*>)?.gene as? LongGene
         assertNotNull(getXyzBarId)
-        val getXyzFooId = ((getXyz.parameters.find { it is PathParam && it.name == "rfooId"} as? PathParam)?.gene as? DisruptiveGene<*>)?.gene as? LongGene
+        val getXyzFooId = ((getXyz.parameters.find { it is PathParam && it.name == "rfooId"} as? PathParam)?.gene as? CustomMutationRateGene<*>)?.gene as? LongGene
         assertNotNull(getXyzFooId)
 
     }

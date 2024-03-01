@@ -1,5 +1,6 @@
 package org.evomaster.core.search.service
 
+import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import java.util.concurrent.atomic.AtomicInteger
 
 
@@ -16,7 +17,22 @@ class IdMapper {
 
     companion object {
 
-        private const val FAULT_DESCRIPTIVE_ID_PREFIX = "PotentialFault_"
+        private const val FAULT_OBJECTIVE_PREFIX = "PotentialFault"
+
+        /**
+         * local objective prefix might depend on problems, eg, HTTP_SUCCESS and HTTP_FAULT for REST
+         * it can be identified with its numeric id, ie, less than 0
+         * however we need this key to specify whether to consider such objectives in impact collections
+         */
+        const val LOCAL_OBJECTIVE_KEY = "Local"
+
+        private const val FAULT_DESCRIPTIVE_ID_PREFIX = "${FAULT_OBJECTIVE_PREFIX}_"
+
+        /**
+         * all prefixes used for defining testing objectives
+         */
+        val ALL_ACCEPTED_OBJECTIVE_PREFIXES : List<String> = ObjectiveNaming.getAllObjectivePrefixes().plus(LOCAL_OBJECTIVE_KEY).plus(
+            FAULT_OBJECTIVE_PREFIX)
 
         private const val FAULT_500 = "500_"
 
@@ -49,7 +65,18 @@ class IdMapper {
 
         private const val GQL_NO_ERRORS = "GQL_NO_ERRORS"
 
-        fun isFault(descriptiveId: String) = descriptiveId.startsWith(FAULT_DESCRIPTIVE_ID_PREFIX) || isGQLErrors(descriptiveId, true)
+        private const val WEB_FAULT = "WebFault_"
+
+        private const val MALFORMED_HTML_ERROR = "MALFORMED_HTML_ERROR_"
+
+        private const val MALFORMED_URI = "MALFORMED_URI_"
+
+        private const val BROKEN_LINK = "BROKEN_LINK_"
+
+        fun isFault(descriptiveId: String) =
+            descriptiveId.startsWith(FAULT_DESCRIPTIVE_ID_PREFIX)
+                    || isGQLErrors(descriptiveId, true)
+                    || descriptiveId.startsWith(WEB_FAULT)
 
         fun isFault500(descriptiveId: String) = descriptiveId.startsWith(FAULT_DESCRIPTIVE_ID_PREFIX+ FAULT_500)
 
@@ -109,6 +136,8 @@ class IdMapper {
         }
 
         fun isLocal(id: Int): Boolean = id < 0
+
+        fun isMethodReplacementTarget(descriptiveId: String) = descriptiveId.startsWith(ObjectiveNaming.METHOD_REPLACEMENT)
     }
 
     private val mapping: MutableMap<Int, String> = mutableMapOf()
@@ -137,6 +166,18 @@ class IdMapper {
             mapping[k] = descriptiveId
             k
         })
+    }
+
+    fun getFaultDescriptiveIdForMalformedHtml(postfix: String): String{
+        return WEB_FAULT + MALFORMED_HTML_ERROR + postfix
+    }
+
+    fun getFaultDescriptiveIdForMalformedURI(postfix: String) : String {
+        return WEB_FAULT + MALFORMED_URI + postfix
+    }
+
+    fun getFaultDescriptiveIdForBrokenLink(postfix: String) : String {
+        return WEB_FAULT + BROKEN_LINK + postfix
     }
 
     fun getFaultDescriptiveIdFor500(postfix: String): String {

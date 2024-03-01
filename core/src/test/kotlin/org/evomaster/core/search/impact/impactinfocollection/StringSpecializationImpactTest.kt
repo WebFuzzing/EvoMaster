@@ -2,7 +2,7 @@ package org.evomaster.core.search.impact.impactinfocollection
 
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.impact.impactinfocollection.value.StringGeneImpact
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.*
@@ -27,12 +27,12 @@ class StringSpecializationImpactTest : GeneImpactTest() {
     override fun simulateMutation(original: Gene, geneToMutate: Gene, mutationTag: Int): MutatedGeneWithContext {
         geneToMutate as StringGene
         if (mutationTag == 0){
-            geneToMutate.specializationGenes.add(DateGene("s"))
+            geneToMutate.addChild(DateGene("s").apply { doInitialize() })
             geneToMutate.selectedSpecialization = geneToMutate.specializationGenes.lastIndex
         }else{
             val selected = if (mutationTag > 0) mutationTag - 1 else mutationTag
             if (selected >= geneToMutate.specializationGenes.size){
-                geneToMutate.specializationGenes.add(DateGene("s"))
+                geneToMutate.addChild(DateGene("s"))
                 geneToMutate.selectedSpecialization = geneToMutate.specializationGenes.lastIndex
             }else{
                 if(geneToMutate.selectedSpecialization == selected){

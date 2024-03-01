@@ -1,7 +1,7 @@
 package com.foo.spring.rest.mysql.exisitingdata
 
 import com.foo.spring.rest.mysql.SpringRestMySqlController
-import org.evomaster.client.java.controller.internal.db.DbSpecification
+import org.evomaster.client.java.sql.DbSpecification
 
 class ExistingDataController : SpringRestMySqlController(ExistingDataApp::class.java) {
 
@@ -17,7 +17,7 @@ class ExistingDataController : SpringRestMySqlController(ExistingDataApp::class.
     override fun getDbSpecifications(): MutableList<DbSpecification>? {
         val spec = super.getDbSpecifications()
         if (spec != null && spec.isNotEmpty())
-            spec[0].initSqlScript = "INSERT INTO X (id) VALUES (42);"
+            return mutableListOf(spec[0].withInitSqlScript("INSERT INTO X (id) VALUES (42);"))
         return spec
     }
 }

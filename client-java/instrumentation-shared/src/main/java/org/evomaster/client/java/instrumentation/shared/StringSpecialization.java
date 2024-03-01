@@ -57,9 +57,17 @@ public enum StringSpecialization implements Serializable {
 
 
     /**
-     * String constrained by a regular expression
+     * String constrained by a regular expression.
+     * Should match whole text
      */
-    REGEX,
+    REGEX_WHOLE,
+
+    /**
+     * String constrained by a regular expression.
+     * Should match a part of the text, and not necessarely all of it
+     */
+    REGEX_PARTIAL,
+
 
     /**
      * String parsed to double
@@ -86,5 +94,49 @@ public enum StringSpecialization implements Serializable {
      *  ie 2 (or more) different variables should be keep their
      *  value in sync
      */
-    EQUAL
+    EQUAL,
+
+    /**
+     * A 128-bit Universal Unique Identifier (UUID)
+     */
+    UUID,
+
+    /**
+     *  String should be a valid URL.
+     *  All valid URLs are valid URIs, but vice-versa is not true
+     */
+    URL,
+
+    /**
+     *  String should be a valid URI
+     */
+    URI,
+
+    /**
+     * The string should represent the content of a valid JSON Object, ie {key:value,...}.
+     * Note that strings are valid JSON Elements, but not Objects
+     */
+    JSON_OBJECT,
+
+    /**
+     * The string is representing a valid JSON array, ie [...,...,...]
+     * Note that, at this point, we might have no info on the internal structure of its elements,
+     * which are handled as generic maps.
+     * Those might be marshalled later, in a so called 2-phase parsing, eg see Jackson convertValue()
+     */
+    JSON_ARRAY,
+
+    /**
+     * The string is representing a valid JSON Map, ie {}
+     *
+     * JSON has no concept of Map. It has Object, where fields can be dynamically changed.
+     * Its "keys" are always strings (you cannot have a Map of integers in JSON for example)
+     */
+    JSON_MAP
+
+    ;
+
+    public boolean isRegex(){
+        return this == REGEX_PARTIAL || this == REGEX_WHOLE;
+    }
 }

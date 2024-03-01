@@ -66,6 +66,14 @@ abstract class StructureMutator : TrackOperator {
      */
     abstract fun addInitializingActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?)
 
+    /**
+     * Before each main "action" (e.g, HTTP calls for web services and
+     * clicks on browsers), there can be a series of external actions
+     * to mock responses of external services regarding that main action
+     *
+     * @return whether any harvest response is added
+     */
+    abstract fun addAndHarvestExternalServiceActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?) : Boolean
 
     fun canApplyStructureMutator(individual: Individual) : Boolean = canApplyInitStructureMutator() || canApplyActionStructureMutator(individual)
 

@@ -1,14 +1,18 @@
 package org.evomaster.core.search.gene.sql.textsearch
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.gene.GeneUtils.SINGLE_APOSTROPHE_PLACEHOLDER
-import org.evomaster.core.search.gene.GeneUtils.removeEnclosedQuotationMarks
-import org.evomaster.core.search.service.AdaptiveParameterControl
+import org.evomaster.core.search.gene.collection.ArrayGene
+import org.evomaster.core.search.gene.root.CompositeFixedGene
+import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.gene.utils.GeneUtils.SINGLE_APOSTROPHE_PLACEHOLDER
+import org.evomaster.core.search.gene.utils.GeneUtils.removeEnclosedQuotationMarks
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -31,13 +35,13 @@ import org.slf4j.LoggerFactory
  *  are NOT valid ts_query values
  */
 class SqlTextSearchQueryGene(
-        /*
-         * The name of this gene
-         */
+    /*
+     * The name of this gene
+     */
         name: String,
-        /*
-         * TS queries are lists of lexemes.
-         */
+    /*
+     * TS queries are lists of lexemes.
+     */
         val queryLexemes: ArrayGene<StringGene> = ArrayGene(name = "lexemes",
                 template = StringGene("lexeme template",
                         // lexemes are non empty strings
@@ -48,7 +52,7 @@ class SqlTextSearchQueryGene(
                 minSize = 0
                 ),
 
-) : Gene(name, mutableListOf(queryLexemes)) {
+    ) : CompositeFixedGene(name, mutableListOf(queryLexemes)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlTextSearchQueryGene::class.java)
@@ -59,45 +63,37 @@ class SqlTextSearchQueryGene(
         const val BLANK_CHAR = ' '
     }
 
-
-    override fun getChildren(): MutableList<Gene> = mutableListOf(queryLexemes)
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
 
     override fun copyContent(): Gene = SqlTextSearchQueryGene(
             name,
-            queryLexemes.copyContent() as ArrayGene<StringGene>
+            queryLexemes.copy() as ArrayGene<StringGene>
     )
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-        queryLexemes.randomize(randomness, forceNewValue, allGenes)
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
+        queryLexemes.randomize(randomness, tryToForceNewValue)
         /*
          *  A geometric polygon must be always a non-empty list
          */
-        if (queryLexemes.getAllElements().isEmpty()) {
+        if (queryLexemes.getViewOfElements().isEmpty()) {
             val stringGene = StringGene("lexeme")
-            stringGene.randomize(randomness, forceNewValue, allGenes)
+            stringGene.randomize(randomness, tryToForceNewValue)
             queryLexemes.addElement(stringGene)
         }
     }
 
-    override fun candidatesInternalGenes(
-            randomness: Randomness,
-            apc: AdaptiveParameterControl,
-            allGenes: List<Gene>,
-            selectionStrategy: SubsetGeneSelectionStrategy,
-            enableAdaptiveGeneMutation: Boolean,
-            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene> {
-        return listOf(queryLexemes)
-    }
+
 
     override fun getValueAsPrintableString(
-            previousGenes: List<Gene>,
-            mode: GeneUtils.EscapeMode?,
-            targetFormat: OutputFormat?,
-            extraCheck: Boolean
+        previousGenes: List<Gene>,
+        mode: GeneUtils.EscapeMode?,
+        targetFormat: OutputFormat?,
+        extraCheck: Boolean
     ): String {
         val queryStr =
-                queryLexemes.getAllElements()
+                queryLexemes.getViewOfElements()
                         .map {
                             removeEnclosedQuotationMarks(
                                     it.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck))
@@ -107,17 +103,19 @@ class SqlTextSearchQueryGene(
     }
 
     override fun getValueAsRawString(): String {
-        return queryLexemes.getAllElements()
+        return queryLexemes.getViewOfElements()
                 .map { it.getValueAsRawString() }
                 .joinToString(" $AMPERSAND_CHAR ")
 
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is SqlTextSearchQueryGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        this.queryLexemes.copyValueFrom(other.queryLexemes)
+        return updateValueOnlyIfValid(
+            {this.queryLexemes.copyValueFrom(other.queryLexemes)}, false
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -127,12 +125,6 @@ class SqlTextSearchQueryGene(
         return this.queryLexemes.containsSameValueAs(other.queryLexemes)
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this) else
-            listOf(this).plus(queryLexemes.flatView(excludePredicate))
-    }
-
-    override fun innerGene(): List<Gene> = listOf(queryLexemes)
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return when {
@@ -146,5 +138,13 @@ class SqlTextSearchQueryGene(
         }
     }
 
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneMutationSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): Boolean {
+        return false
+    }
 
 }

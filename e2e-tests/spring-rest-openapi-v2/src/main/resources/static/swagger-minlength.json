@@ -1,0 +1,74 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "Some description",
+    "version": "1.0",
+    "title": "API"
+  },
+  "host": "localhost:8080",
+  "basePath": "/",
+  "tags": [
+    {
+      "name": "string-min-length-rest",
+      "description": "String Min Length Rest"
+    }
+  ],
+  "paths": {
+    "/api/minlength/{s}": {
+      "get": {
+        "tags": [
+          "string-min-length-rest"
+        ],
+        "summary": "min20",
+        "operationId": "min20UsingGET",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "s",
+            "in": "path",
+            "description": "s",
+            "required": true,
+            "type": "string",
+            "minLength" : 20
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "responsesObject": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,19 +1,25 @@
 package org.evomaster.core.search.matchproblem
 
-import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.numeric.DoubleGene
+import org.evomaster.core.search.gene.numeric.FloatGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.numeric.LongGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.service.Randomness
 
 /**
  * created by manzh on 2020-06-16
  */
-open class PrimitiveTypeMatchIndividual (
-        val gene : Gene) :  Individual(children = listOf(gene)){
+open class PrimitiveTypeMatchIndividual (action: PrimitiveTypeMatchAction) :  Individual(children = mutableListOf(action)){
 
     constructor(value : Any, name : String): this(
-            instance(value, name)
+            PrimitiveTypeMatchAction(instance(value, name))
+    )
+
+    constructor(gene: Gene): this(
+        PrimitiveTypeMatchAction(gene)
     )
 
     companion object{
@@ -37,7 +43,7 @@ open class PrimitiveTypeMatchIndividual (
         fun stringTemplate() = PrimitiveTypeMatchIndividual(StringGene(name()))
     }
 
-    override fun seeActions(): List<out Action> = listOf()
+    val gene : Gene = (children[0] as PrimitiveTypeMatchAction).seeTopGenes()[0]
 
     override fun verifyInitializationActions(): Boolean {
         //do nothing
@@ -50,11 +56,12 @@ open class PrimitiveTypeMatchIndividual (
 
     override fun size(): Int = 1
 
-    override fun seeGenes(filter: GeneFilter): List<out Gene> = listOf(gene)
-
-    override fun copyContent(): Individual {
-        return PrimitiveTypeMatchIndividual(gene.copyContent())
+    override fun seeGenes(filter: GeneFilter): List<out Gene> {
+        return (children[0] as PrimitiveTypeMatchAction).seeTopGenes()
     }
 
-    override fun getChildren(): List<Gene> = listOf(gene)
+    override fun copyContent(): Individual {
+        return PrimitiveTypeMatchIndividual(children[0].copy() as PrimitiveTypeMatchAction)
+    }
+
 }

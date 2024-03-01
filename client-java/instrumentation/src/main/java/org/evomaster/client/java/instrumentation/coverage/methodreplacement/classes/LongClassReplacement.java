@@ -1,11 +1,11 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
 
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
+import org.evomaster.client.java.distance.heuristics.DistanceHelper;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
-import org.evomaster.client.java.instrumentation.heuristic.Truthness;
+import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
@@ -75,7 +75,7 @@ public class LongClassReplacement implements MethodReplacementClass {
     }
 
     @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true, category = ReplacementCategory.BASE)
-    public static long valueOf(String input, String idTemplate) {
+    public static Long valueOf(String input, String idTemplate) {
         return parseLong(input, idTemplate);
     }
 }

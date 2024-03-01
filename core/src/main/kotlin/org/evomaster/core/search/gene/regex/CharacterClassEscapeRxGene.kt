@@ -3,12 +3,13 @@ package org.evomaster.core.search.gene.regex
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.GeneUtils
+import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.gene.root.SimpleGene
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.LoggerFactory
 
 /*
@@ -21,7 +22,7 @@ import org.slf4j.LoggerFactory
  */
 class CharacterClassEscapeRxGene(
         val type: String
-) : RxAtom("\\$type", listOf()) {
+) : RxAtom, SimpleGene("\\$type") {
 
     companion object{
         private val log = LoggerFactory.getLogger(CharacterRangeRxGene::class.java)
@@ -35,7 +36,9 @@ class CharacterClassEscapeRxGene(
         }
     }
 
-    override fun getChildren(): List<Gene> = listOf()
+    override fun isLocallyValid() : Boolean{
+        return value.matches(Regex("\\$type"))
+    }
 
     override fun copyContent(): Gene {
         val copy = CharacterClassEscapeRxGene(type)
@@ -43,7 +46,11 @@ class CharacterClassEscapeRxGene(
         return copy
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun setValueWithRawString(value: String) {
+        this.value = value
+    }
+
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
 
         val previous = value
 
@@ -59,12 +66,12 @@ class CharacterClassEscapeRxGene(
                 throw IllegalStateException("Type '\\$type' not supported yet")
         }.toString()
 
-        if(forceNewValue && previous == value){
-            randomize(randomness, forceNewValue, allGenes)
+        if(tryToForceNewValue && previous == value){
+            randomize(randomness, tryToForceNewValue)
         }
     }
 
-    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
+    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, selectionStrategy: SubsetGeneMutationSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
         if (value=="") {
             // if standardMutation was invoked before calling to randomize
             // then we signal an exception
@@ -84,11 +91,18 @@ class CharacterClassEscapeRxGene(
        return value
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if(other !is CharacterClassEscapeRxGene){
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
+        val current = this.value
         this.value = other.value
+        if (!isLocallyValid()){
+            this.value = current
+            return false
+        }
+
+        return true
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -98,7 +112,6 @@ class CharacterClassEscapeRxGene(
         return this.value == other.value
     }
 
-    override fun innerGene(): List<Gene> = listOf()
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         if (gene is CharacterClassEscapeRxGene){

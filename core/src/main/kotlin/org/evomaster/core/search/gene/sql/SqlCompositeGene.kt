@@ -1,16 +1,15 @@
 package org.evomaster.core.search.gene.sql
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.StructuralElement
+import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.GeneUtils
-import org.evomaster.core.search.gene.GeneUtils.replaceEnclosedQuotationMarksWithSingleApostrophePlaceHolder
-import org.evomaster.core.search.service.AdaptiveParameterControl
+import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.gene.utils.GeneUtils.replaceEnclosedQuotationMarksWithSingleApostrophePlaceHolder
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -21,33 +20,65 @@ class SqlCompositeGene(
         val fields: List<out Gene>,
         // the name of the composite type
         val compositeTypeName: String? = null
-) : Gene(name, mutableListOf<StructuralElement>().apply { addAll(fields) }) {
+) : CompositeFixedGene(name, fields.toMutableList()) {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(SqlCompositeGene::class.java)
 
+        const val SINGLE_APOSTROPHE_PLACEHOLDER = "SINGLE_APOSTROPHE_PLACEHOLDER"
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
+
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         fields.filter { it.isMutable() }
-                .forEach { it.randomize(randomness, forceNewValue, allGenes) }
+                .forEach { it.randomize(randomness, tryToForceNewValue) }
+    }
+
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneMutationSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): Boolean {
+        return false
+    }
+
+
+    private val QUOTATION_MARK = "\""
+
+    private fun replaceEnclosedQuotationMarks(str: String): String {
+        if (str.startsWith(QUOTATION_MARK) && str.endsWith(QUOTATION_MARK)) {
+            return SINGLE_APOSTROPHE_PLACEHOLDER + str.subSequence(1, str.length - 1) + SINGLE_APOSTROPHE_PLACEHOLDER
+        } else {
+            return str
+        }
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
         return "ROW(${
-            fields
+            fields.filter { it.isPrintable() }
                     .map { it.getValueAsPrintableString(previousGenes, mode, targetFormat) }
                     .joinToString { replaceEnclosedQuotationMarksWithSingleApostrophePlaceHolder(it) }
         })"
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is SqlCompositeGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        for (i in fields.indices) {
-            this.fields[i].copyValueFrom(other.fields[i])
-        }
+
+        return updateValueOnlyIfValid(
+            {
+                var ok = true
+                for (i in fields.indices) {
+                    ok = ok && this.fields[i].copyValueFrom(other.fields[i])
+                }
+                ok
+            }, true
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -60,8 +91,6 @@ class SqlCompositeGene(
             thisField.containsSameValueAs(otherField)
         }.all { it })
     }
-
-    override fun innerGene(): List<Gene> = fields
 
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
@@ -82,23 +111,7 @@ class SqlCompositeGene(
         return false
     }
 
-    override fun getChildren() = fields
+    override fun copyContent() = SqlCompositeGene(this.name, fields.map { it.copy() }.toList(), this.compositeTypeName)
 
-    override fun copyContent() = SqlCompositeGene(this.name, fields.map { it.copyContent() }.toList(), this.compositeTypeName)
 
-    /**
-     * Dummy mutation for composite genes
-     */
-    override fun mutate(
-            randomness: Randomness,
-            apc: AdaptiveParameterControl,
-            mwc: MutationWeightControl,
-            allGenes: List<Gene>,
-            selectionStrategy: SubsetGeneSelectionStrategy,
-            enableAdaptiveGeneMutation: Boolean,
-            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): Boolean {
-        this.randomize(randomness, true, allGenes)
-        return true
-    }
 }

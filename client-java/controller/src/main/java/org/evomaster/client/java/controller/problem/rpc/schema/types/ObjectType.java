@@ -2,7 +2,7 @@ package org.evomaster.client.java.controller.problem.rpc.schema.types;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.TypeDto;
-import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
+import org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
 
 import java.util.ArrayList;
@@ -23,8 +23,8 @@ public class ObjectType extends TypeSchema {
     private final List<String> genericTypes;
 
 
-    public ObjectType(String type, String fullTypeName, List<NamedTypedValue> fields, Class<?> clazz, List<String> genericTypes) {
-        super(type, fullTypeName, clazz);
+    public ObjectType(String type, String fullTypeName, List<NamedTypedValue> fields, Class<?> clazz, List<String> genericTypes, JavaDtoSpec spec) {
+        super(type, fullTypeName, clazz, spec);
         this.fields = fields;
         this.genericTypes = genericTypes;
     }
@@ -49,9 +49,13 @@ public class ObjectType extends TypeSchema {
             }
         }
         List<String> genericTypes = this.genericTypes != null? new ArrayList<>(this.genericTypes): null;
-        ObjectType objectType = new ObjectType(getType(), getFullTypeName(), cfields ,getClazz(), genericTypes);
+        ObjectType objectType = new ObjectType(getSimpleTypeName(), getFullTypeName(), cfields ,getClazz(), genericTypes, spec);
         objectType.depth = depth;
         return objectType;
+    }
+
+    public List<String> getGenericTypes() {
+        return genericTypes;
     }
 
     @Override
@@ -59,6 +63,6 @@ public class ObjectType extends TypeSchema {
         if (genericTypes == null || genericTypes.isEmpty())
             return getFullTypeName();
         else
-            return CodeJavaGenerator.handleClassNameWithGeneric(getFullTypeName(),genericTypes);
+            return CodeJavaOrKotlinGenerator.handleClassNameWithGeneric(getFullTypeName(),genericTypes);
     }
 }

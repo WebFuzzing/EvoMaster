@@ -11,8 +11,8 @@ public class BigDecimalType extends TypeSchema {
     private final static String FULL_BIGDECIMAL_TYPE_NAME = BigDecimal.class.getName();
 
 
-    public BigDecimalType() {
-        super(BIGDECIMAL_TYPE_NAME, FULL_BIGDECIMAL_TYPE_NAME, BigDecimal.class);
+    public BigDecimalType(JavaDtoSpec spec) {
+        super(BIGDECIMAL_TYPE_NAME, FULL_BIGDECIMAL_TYPE_NAME, BigDecimal.class, spec);
     }
 
     @Override
@@ -24,6 +24,6 @@ public class BigDecimalType extends TypeSchema {
 
     @Override
     public BigDecimalType copy() {
-        return new BigDecimalType();
+        return new BigDecimalType(spec);
     }
 }

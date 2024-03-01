@@ -1,23 +1,26 @@
 package org.evomaster.core.search.gene.regex
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.StructuralElement
+import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.GeneUtils
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.regex.DisjunctionListRxGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 
 class DisjunctionListRxGene(
         val disjunctions: List<DisjunctionRxGene>
-) : RxAtom("disjunction_list", disjunctions) {
+) : RxAtom, CompositeFixedGene("disjunction_list", disjunctions) {
+
+    //FIXME refactor with ChoiceGene
 
     var activeDisjunction: Int = 0
 
@@ -26,10 +29,12 @@ class DisjunctionListRxGene(
         private val log: Logger = LoggerFactory.getLogger(DisjunctionListRxGene::class.java)
     }
 
-    override fun getChildren(): List<DisjunctionRxGene> = disjunctions
-
+    override fun isLocallyValid() : Boolean{
+        return activeDisjunction >= 0 && activeDisjunction < disjunctions.size
+                && getViewOfChildren().all { it.isLocallyValid() }
+    }
     override fun copyContent(): Gene {
-        val copy = DisjunctionListRxGene(disjunctions.map { it.copyContent() as DisjunctionRxGene })
+        val copy = DisjunctionListRxGene(disjunctions.map { it.copy() as DisjunctionRxGene })
         copy.activeDisjunction = this.activeDisjunction
         return copy
     }
@@ -38,13 +43,13 @@ class DisjunctionListRxGene(
         return disjunctions.size > 1 || disjunctions.any { it.isMutable() }
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
 
         /*
             randomize content of all disjunctions
             (since standardMutation can be invoked on another term)
          */
-        disjunctions.forEach {  it.randomize(randomness,forceNewValue,allGenes) }
+        disjunctions.forEach {  it.randomize(randomness,tryToForceNewValue) }
 
         /**
          * randomly choose a new disjunction term
@@ -55,17 +60,26 @@ class DisjunctionListRxGene(
         }
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneMutationSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): Boolean {
+
         if(disjunctions.size > 1
-                && (!disjunctions[activeDisjunction].isMutable() || randomness.nextBoolean(PROB_NEXT))){
+            && (!disjunctions[activeDisjunction].isMutable() || randomness.nextBoolean(PROB_NEXT))){
             //activate the next disjunction
-            return emptyList()
-        } else {
-            return listOf(disjunctions[activeDisjunction])
+            return true
         }
+        return false
     }
 
-    override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
+    override fun mutablePhenotypeChildren(): List<Gene> {
+        return listOf(disjunctions[activeDisjunction]).filter { it.isMutable() }
+    }
+
+    override fun adaptiveSelectSubsetToMutate(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
         if (additionalGeneMutationInfo.impact == null || additionalGeneMutationInfo.impact !is DisjunctionListRxGeneImpact)
             throw IllegalArgumentException("mismatched gene impact")
 
@@ -86,9 +100,9 @@ class DisjunctionListRxGene(
         return selected.map { it to additionalGeneMutationInfo.copyFoInnerGene(additionalGeneMutationInfo.impact.disjunctions[disjunctions.indexOf(it)], it) }.toList()
     }
 
-    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
+    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, selectionStrategy: SubsetGeneMutationSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
         // select another disjunction based on impact
-        if (enableAdaptiveGeneMutation || selectionStrategy == SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT){
+        if (enableAdaptiveGeneMutation || selectionStrategy == SubsetGeneMutationSelectionStrategy.ADAPTIVE_WEIGHT){
             additionalGeneMutationInfo?:throw IllegalStateException("")
             if (additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is DisjunctionListRxGeneImpact){
                 val candidates = disjunctions.filterIndexed { index, _ -> index != activeDisjunction  }
@@ -122,17 +136,24 @@ class DisjunctionListRxGene(
                 .getValueAsPrintableString(previousGenes, mode, targetFormat)
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is DisjunctionListRxGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
 
         //TODO: Man, shall we check the size of [disjunctions]
 
-        this.activeDisjunction = other.activeDisjunction
-        for (i in 0 until disjunctions.size) {
-            this.disjunctions[i].copyValueFrom(other.disjunctions[i])
-        }
+        return updateValueOnlyIfValid({
+            var ok = true
+            for (i in 0 until disjunctions.size) {
+                ok = ok && this.disjunctions[i].copyValueFrom(other.disjunctions[i])
+            }
+            if (ok){
+                this.activeDisjunction = other.activeDisjunction
+            }
+            ok
+        }, true)
+
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -148,14 +169,10 @@ class DisjunctionListRxGene(
                 .containsSameValueAs(other.disjunctions[activeDisjunction])
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this)
-        else listOf(this).plus(disjunctions.flatMap { it.flatView(excludePredicate) })
-    }
+
 
     override fun mutationWeight(): Double = disjunctions.map { it.mutationWeight() }.sum() + 1
 
-    override fun innerGene(): List<Gene> = disjunctions
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         if (gene is DisjunctionListRxGene && gene.disjunctions.size == disjunctions.size){

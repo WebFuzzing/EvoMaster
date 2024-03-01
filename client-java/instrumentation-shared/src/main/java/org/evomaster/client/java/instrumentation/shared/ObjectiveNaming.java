@@ -1,6 +1,8 @@
 package org.evomaster.client.java.instrumentation.shared;
 
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -62,6 +64,14 @@ public class ObjectiveNaming {
      */
 
     private static final Map<String, String> cacheClass = new ConcurrentHashMap<>(10_000);
+
+    /**
+     *
+     * @return prefixes of objectives
+     */
+    public static List<String> getAllObjectivePrefixes(){
+        return Arrays.asList(BRANCH, LINE, CLASS, METHOD_REPLACEMENT, SUCCESS_CALL);
+    }
 
     public static String classObjectiveName(String className){
         return cacheClass.computeIfAbsent(className, c -> CLASS + "_" + ClassName.get(c).getFullNameWithDots());

@@ -1,17 +1,17 @@
 package org.evomaster.core.search.gene.sql
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.GeneUtils
-import org.evomaster.core.search.gene.ObjectGene
-import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.root.CompositeFixedGene
+import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.sql.SqlJsonGeneImpact
-import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -27,41 +27,34 @@ import org.slf4j.LoggerFactory
  *
  * The jsonpath type implements support for the SQL/JSON path language in PostgreSQL to
  * efficiently query JSON data.
+ *
+ * TODO this feels like a string following a specific RegEx
  */
 class SqlJSONPathGene(
     name: String,
     val pathExpression: StringGene = StringGene(name)
-) : Gene(name, mutableListOf(pathExpression)) {
+) : CompositeFixedGene(name, mutableListOf(pathExpression)) {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(SqlJSONPathGene::class.java)
     }
 
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
+
     override fun copyContent(): Gene = SqlJSONPathGene(
         name,
-        pathExpression = this.pathExpression.copyContent() as StringGene
+        pathExpression = this.pathExpression.copy() as StringGene
     )
 
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf(pathExpression)
-
-
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-        pathExpression.randomize(randomness, forceNewValue, allGenes)
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
+        pathExpression.randomize(randomness, tryToForceNewValue)
     }
 
-    override fun candidatesInternalGenes(
-        randomness: Randomness,
-        apc: AdaptiveParameterControl,
-        allGenes: List<Gene>,
-        selectionStrategy: SubsetGeneSelectionStrategy,
-        enableAdaptiveGeneMutation: Boolean,
-        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene> {
-        return if (pathExpression.isMutable()) listOf(pathExpression) else emptyList()
-    }
 
-    override fun adaptiveSelectSubset(
+    override fun adaptiveSelectSubsetToMutate(
         randomness: Randomness,
         internalGenes: List<Gene>,
         mwc: MutationWeightControl,
@@ -80,18 +73,6 @@ class SqlJSONPathGene(
         throw IllegalArgumentException("impact is null or not SqlJsonGeneImpact")
     }
 
-    override fun mutate(
-        randomness: Randomness,
-        apc: AdaptiveParameterControl,
-        mwc: MutationWeightControl,
-        allGenes: List<Gene>,
-        selectionStrategy: SubsetGeneSelectionStrategy,
-        enableAdaptiveGeneMutation: Boolean,
-        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): Boolean {
-        // do nothing since the objectGene is not mutable
-        return true
-    }
 
     override fun getValueAsPrintableString(
         previousGenes: List<Gene>,
@@ -112,11 +93,13 @@ class SqlJSONPathGene(
         }
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is SqlJSONPathGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        this.pathExpression.copyValueFrom(other.pathExpression)
+        return updateValueOnlyIfValid(
+            {this.pathExpression.copyValueFrom(other.pathExpression)}, false
+        )
     }
 
     /**
@@ -130,16 +113,11 @@ class SqlJSONPathGene(
         return this.pathExpression.containsSameValueAs(other.pathExpression)
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this) else
-            listOf(this).plus(pathExpression.flatView(excludePredicate))
-    }
+
 
     override fun mutationWeight(): Double {
         return pathExpression.mutationWeight()
     }
-
-    override fun innerGene(): List<Gene> = listOf(pathExpression)
 
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
@@ -150,6 +128,15 @@ class SqlJSONPathGene(
                 false
             }
         }
+    }
+
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneMutationSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): Boolean {
+        return false
     }
 
 }

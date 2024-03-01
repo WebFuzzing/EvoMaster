@@ -1,13 +1,17 @@
 package org.evomaster.core.search.gene.sql
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.gene.GeneUtils.removeEnclosedQuotationMarks
-import org.evomaster.core.search.service.AdaptiveParameterControl
+import org.evomaster.core.search.gene.collection.ArrayGene
+import org.evomaster.core.search.gene.interfaces.ComparableGene
+import org.evomaster.core.search.gene.root.CompositeFixedGene
+import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.gene.utils.GeneUtils.removeEnclosedQuotationMarks
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -28,16 +32,18 @@ class SqlMultiRangeGene<T>(
         name: String,
         val template: SqlRangeGene<T>,
         val rangeGenes: ArrayGene<SqlRangeGene<T>> = ArrayGene(name, template)
-) : Gene(name, mutableListOf(rangeGenes)) where T : ComparableGene {
+) : CompositeFixedGene(name, mutableListOf(rangeGenes)) where T : ComparableGene, T: Gene {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlMultiRangeGene::class.java)
     }
 
-    override fun getChildren(): List<Gene> = listOf(rangeGenes)
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
 
     override fun copyContent(): Gene {
-        val copyOfRangeGenes = rangeGenes.copyContent() as ArrayGene<SqlRangeGene<T>>
+        val copyOfRangeGenes = rangeGenes.copy() as ArrayGene<SqlRangeGene<T>>
         return SqlMultiRangeGene(
                 name,
                 template = copyOfRangeGenes.template,
@@ -45,34 +51,26 @@ class SqlMultiRangeGene<T>(
         )
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-        rangeGenes.randomize(randomness, forceNewValue, allGenes)
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
+        rangeGenes.randomize(randomness, tryToForceNewValue)
     }
 
-    override fun candidatesInternalGenes(
-            randomness: Randomness,
-            apc: AdaptiveParameterControl,
-            allGenes: List<Gene>,
-            selectionStrategy: SubsetGeneSelectionStrategy,
-            enableAdaptiveGeneMutation: Boolean,
-            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene> {
-        return listOf(rangeGenes)
-    }
 
     override fun getValueAsRawString(): String {
         return "{ ${
-            rangeGenes.getAllElements()
+            rangeGenes.getViewOfElements()
                     .map { it.getValueAsRawString() }
                     .joinToString(" , ")
         } } "
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is SqlMultiRangeGene<*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        this.rangeGenes.copyValueFrom(other.rangeGenes)
+        return updateValueOnlyIfValid(
+            {this.rangeGenes.copyValueFrom(other.rangeGenes)}, false
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -82,12 +80,7 @@ class SqlMultiRangeGene<T>(
         return this.rangeGenes.containsSameValueAs(other.rangeGenes)
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this) else
-            listOf(this).plus(rangeGenes.flatView(excludePredicate))
-    }
 
-    override fun innerGene(): List<Gene> = listOf(rangeGenes)
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return when {
@@ -103,10 +96,19 @@ class SqlMultiRangeGene<T>(
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
         return "\"{" +
-                rangeGenes.elements.map { g ->
+                rangeGenes.getViewOfElements().map { g ->
                     removeEnclosedQuotationMarks(g.getValueAsPrintableString(previousGenes, mode, targetFormat))
                 }.joinToString(", ") +
                 "}\""
+    }
+
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneMutationSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): Boolean {
+        return false
     }
 
 }

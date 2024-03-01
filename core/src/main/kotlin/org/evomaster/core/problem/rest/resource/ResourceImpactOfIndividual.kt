@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.rest.resource
 
+import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.impact.impactinfocollection.ActionStructureImpact
@@ -39,15 +40,16 @@ class ResourceImpactOfIndividual : ImpactsOfIndividual {
     val anySqlTableSizeImpact : IntegerGeneImpact
 
     constructor(
-            initializationGeneImpacts: InitializationActionImpacts,
-            actionGeneImpacts: MutableList<ImpactsOfAction>,
-            impactsOfStructure: ActionStructureImpact = ActionStructureImpact("StructureSize"),
-            resourceSizeImpact: MutableMap<String, IntegerGeneImpact>,
-            sqlTableImpact: MutableMap<String, IntegerGeneImpact>,
-            anyResourceSizeImpact: IntegerGeneImpact,
-            anySqlTableSizeImpact: IntegerGeneImpact
+        initActionImpacts: InitializationActionImpacts,
+        fixedMainActionImpacts: MutableList<ImpactsOfAction>,
+        dynamicMainActionImpacts: MutableList<ImpactsOfAction>,
+        impactsOfStructure: ActionStructureImpact = ActionStructureImpact("StructureSize"),
+        resourceSizeImpact: MutableMap<String, IntegerGeneImpact>,
+        sqlTableImpact: MutableMap<String, IntegerGeneImpact>,
+        anyResourceSizeImpact: IntegerGeneImpact,
+        anySqlTableSizeImpact: IntegerGeneImpact
 
-    ) : super(initializationGeneImpacts, actionGeneImpacts, impactsOfStructure) {
+    ) : super(initActionImpacts, fixedMainActionImpacts, dynamicMainActionImpacts, impactsOfStructure) {
         this.resourceSizeImpact = resourceSizeImpact
         this.sqlTableSizeImpact = sqlTableImpact
         this.anyResourceSizeImpact = anyResourceSizeImpact
@@ -62,7 +64,7 @@ class ResourceImpactOfIndividual : ImpactsOfIndividual {
             }
         }
         sqlTableSizeImpact = mutableMapOf<String, IntegerGeneImpact>().apply {
-            individual.seeInitializingActions().filterNot { it.representExistingData }.forEach { d->
+            individual.seeInitializingActions().filterIsInstance<SqlAction>().filterNot { it.representExistingData }.forEach { d->
                 putIfAbsent(d.table.name, IntegerGeneImpact("size"))
             }
         }
@@ -75,8 +77,9 @@ class ResourceImpactOfIndividual : ImpactsOfIndividual {
      */
     override fun copy(): ResourceImpactOfIndividual {
         return ResourceImpactOfIndividual(
-                initializationGeneImpacts.copy(),
-                actionGeneImpacts.map { it.copy() }.toMutableList(),
+                initActionImpacts.copy(),
+                fixedMainActionImpacts.map { it.copy() }.toMutableList(),
+                dynamicMainActionImpacts.map { it.copy() }.toMutableList(),
                 impactsOfStructure.copy(),
                 mutableMapOf<String, IntegerGeneImpact>().apply {
                     putAll(resourceSizeImpact.map { it.key to it.value.copy() })
@@ -94,8 +97,9 @@ class ResourceImpactOfIndividual : ImpactsOfIndividual {
      */
     override fun clone(): ResourceImpactOfIndividual {
         return ResourceImpactOfIndividual(
-                initializationGeneImpacts.clone(),
-                actionGeneImpacts.map { it.clone() }.toMutableList(),
+                initActionImpacts.clone(),
+                fixedMainActionImpacts.map { it.clone() }.toMutableList(),
+                dynamicMainActionImpacts.map { it.clone() }.toMutableList(),
                 impactsOfStructure.clone(),
                 mutableMapOf<String, IntegerGeneImpact>().apply {
                     putAll(resourceSizeImpact.map { it.key to it.value.clone() })
@@ -126,8 +130,8 @@ class ResourceImpactOfIndividual : ImpactsOfIndividual {
             }
         }
 
-        val currentTs = current.seeInitializingActions().filterNot { it.representExistingData }.map { it.table.name }
-        val previousTs = previous.seeInitializingActions().filterNot { it.representExistingData }.map { it.table.name }
+        val currentTs = current.seeInitializingActions().filterIsInstance<SqlAction>().filterNot { it.representExistingData }.map { it.table.name }
+        val previousTs = previous.seeInitializingActions().filterIsInstance<SqlAction>().filterNot { it.representExistingData }.map { it.table.name }
         var anySqlChange = false
         currentTs.toSet().forEach { cr ->
             val tImpact = sqlTableSizeImpact.getOrPut(cr){IntegerGeneImpact("size")}

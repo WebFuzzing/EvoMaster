@@ -3,7 +3,10 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
+import org.evomaster.client.java.controller.problem.rpc.schema.types.JavaDtoSpec;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.PrimitiveOrWrapperType;
+
+import static org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator.methodInvocation;
 
 /**
  * byte param
@@ -13,8 +16,11 @@ public class ByteParam extends PrimitiveOrWrapperParam<Byte> {
     public final static String TYPE_NAME = byte.class.getSimpleName();
     public final static String FULL_TYPE_NAME = byte.class.getName();
 
-    public ByteParam(String name, String type, String fullTypeName, Class<?> clazz, AccessibleSchema accessibleSchema) {
-        super(name, type, fullTypeName, clazz, accessibleSchema);
+    private final static String JAVA_PR_METHOD  = "byteValue";
+    private final static String KOTLIN_PR_METHOD = "toByte";
+
+    public ByteParam(String name, String type, String fullTypeName, Class<?> clazz, AccessibleSchema accessibleSchema, JavaDtoSpec spec) {
+        super(name, type, fullTypeName, clazz, accessibleSchema, spec);
     }
 
     public ByteParam(String name, PrimitiveOrWrapperType type, AccessibleSchema accessibleSchema) {
@@ -22,10 +28,10 @@ public class ByteParam extends PrimitiveOrWrapperParam<Byte> {
     }
 
     @Override
-    public String getValueAsJavaString() {
+    public String getValueAsJavaString(boolean isJava) {
         if (getValue() == null)
             return null;
-        return ""+getValue();
+        return String.valueOf(getValue());
     }
 
     @Override
@@ -66,15 +72,28 @@ public class ByteParam extends PrimitiveOrWrapperParam<Byte> {
         return instance instanceof Byte;
     }
 
-    @Override
-    public String getPrimitiveValue(String responseVarName) {
-        if (getType().isWrapper)
-            return responseVarName+".byteValue()";
-        return responseVarName;
-    }
 
     @Override
     public String getCastType() {
         return byte.class.getName();
+    }
+
+    @Override
+    public boolean castValueWithSpecificMethod(boolean isJava) {
+        return !isJava;
+    }
+
+    @Override
+    public String castValueInTestGenerationIfNeeded(String stringValue, boolean isJava) {
+        if (isJava)
+            return super.castValueInTestGenerationIfNeeded(stringValue, true);
+        return methodInvocation(String.format("(%s)", stringValue), primitiveValueMethod(false), "", false, isNullable(), true);
+    }
+
+    @Override
+    public String primitiveValueMethod(boolean isJava) {
+        if (isJava)
+            return JAVA_PR_METHOD;
+        return KOTLIN_PR_METHOD;
     }
 }

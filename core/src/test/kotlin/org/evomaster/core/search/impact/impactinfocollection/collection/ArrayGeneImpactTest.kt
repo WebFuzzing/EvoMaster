@@ -1,8 +1,8 @@
 package org.evomaster.core.search.impact.impactinfocollection.collection
 
-import org.evomaster.core.search.gene.ArrayGene
+import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.IntegerGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpactTest
 import org.evomaster.core.search.impact.impactinfocollection.ImpactOptions
@@ -38,17 +38,17 @@ class ArrayGeneImpactTest : GeneImpactTest(){
 
         when{
             mutationTag == 1 || (mutationTag == 0 && p)->{
-                val index = Random.nextInt(0, geneToMutate.getAllElements().size)
-                geneToMutate.getAllElements()[index].apply {
+                val index = Random.nextInt(0, geneToMutate.getViewOfElements().size)
+                geneToMutate.getViewOfElements()[index].apply {
                     value += if (value + 1> getMaximum()) -1 else 1
                 }
             }
             mutationTag == 2 || (mutationTag == 0 && !p)->{
-                if (geneToMutate.getAllElements().size + 1 > (geneToMutate.getMaxSizeOrDefault()))
-                    geneToMutate.getAllElements().removeAt(0)
-                else{
+                if (geneToMutate.getViewOfElements().size + 1 > (geneToMutate.getMaxSizeOrDefault())){
+                    geneToMutate.removeExistingElement(geneToMutate.getViewOfElements()[0])
+                }else{
                     val key = generateKey()
-                    geneToMutate.getAllElements().add(IntegerGene(key.toString(), key))
+                    geneToMutate.addElement(IntegerGene(key.toString(), key).apply { doInitialize() })
                 }
             }
         }

@@ -1,9 +1,9 @@
 package org.evomaster.core.search.impact.impactinfocollection
 
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.IntegerGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.ObjectGene
-import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.impact.impactinfocollection.value.ObjectGeneImpact
 import org.junit.jupiter.api.Test
 
@@ -65,8 +65,8 @@ class ObjectGeneImpactTest : GeneImpactTest() {
         var updateImpact = pairf1.second as ObjectGeneImpact
 
         assertImpact(impact, updateImpact, ImpactOptions.IMPACT_IMPROVEMENT)
-        assertImpact(impact.fields.getValue(f1), updateImpact.fields.getValue(f1), ImpactOptions.IMPACT_IMPROVEMENT)
-        assertImpact(impact.fields.getValue(f2), updateImpact.fields.getValue(f2), ImpactOptions.NONE)
+        assertImpact(impact.fixedFields.getValue(f1), updateImpact.fixedFields.getValue(f1), ImpactOptions.IMPACT_IMPROVEMENT)
+        assertImpact(impact.fixedFields.getValue(f2), updateImpact.fixedFields.getValue(f2), ImpactOptions.NONE)
 
         impact = updateImpact
 
@@ -74,8 +74,8 @@ class ObjectGeneImpactTest : GeneImpactTest() {
         updateImpact = pairf2.second as ObjectGeneImpact
 
         assertImpact(impact, updateImpact, ImpactOptions.NO_IMPACT)
-        assertImpact(impact.fields.getValue(f1), updateImpact.fields.getValue(f1), ImpactOptions.NONE)
-        assertImpact(impact.fields.getValue(f2), updateImpact.fields.getValue(f2), ImpactOptions.NO_IMPACT)
+        assertImpact(impact.fixedFields.getValue(f1), updateImpact.fixedFields.getValue(f1), ImpactOptions.NONE)
+        assertImpact(impact.fixedFields.getValue(f2), updateImpact.fixedFields.getValue(f2), ImpactOptions.NO_IMPACT)
 
     }
 }

@@ -13,6 +13,7 @@ import org.evomaster.core.search.algorithms.onemax.OneMaxIndividual
 import org.evomaster.core.search.algorithms.onemax.OneMaxModule
 import org.evomaster.core.search.algorithms.onemax.OneMaxSampler
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.mutator.StandardMutator
 import org.evomaster.core.search.tracer.ArchiveMutationTrackService
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
@@ -36,6 +37,7 @@ class MioAlgorithmOnTrackOneMaxTest {
                 object : TypeLiteral<MioAlgorithm<OneMaxIndividual>>() {}))
 
         config = injector.getInstance(EMConfig::class.java)
+        config.minimize = false
 
         tracker = injector.getInstance(ArchiveMutationTrackService::class.java)
 
@@ -69,21 +71,23 @@ class MioAlgorithmOnTrackOneMaxTest {
                 "false"
         )
         init(args)
-        assert(tracker.exists(TraceableElementCopyFilter.NONE.name))
-        assert(tracker.exists(TraceableElementCopyFilter.WITH_TRACK.name))
-        assert(tracker.exists(TraceableElementCopyFilter.DEEP_TRACK.name))
+        assertTrue(tracker.exists(TraceableElementCopyFilter.NONE.name))
+        assertTrue(tracker.exists(TraceableElementCopyFilter.WITH_TRACK.name))
+        assertTrue(tracker.exists(TraceableElementCopyFilter.DEEP_TRACK.name))
 
         val solution = mio.search()
 
         solution.individuals.forEach { s->
             assertNull(s.tracking)
-            assertNotNull(s.individual.tracking)
+            assertNotNull(s.individual.trackOperator)
+            if (s.individual.trackOperator !is Sampler<*>)
+                assertNotNull(s.individual.tracking)
             s.individual.tracking?.history?.apply {
                 forEachIndexed { index, t ->
                     if(index == 0)
-                        assert(t.trackOperator!!.operatorTag().contains(OneMaxSampler::class.java.simpleName))
+                        assertTrue(t.trackOperator!!.operatorTag().contains(OneMaxSampler::class.java.simpleName))
                     else
-                        assert(t.trackOperator!!.operatorTag().contains("Mutator"))
+                        assertTrue(t.trackOperator!!.operatorTag().contains("Mutator"))
                 }
             }
         }
@@ -106,10 +110,10 @@ class MioAlgorithmOnTrackOneMaxTest {
         )
         init(args)
 
-        assert(tracker.exists(TraceableElementCopyFilter.NONE.name))
-        assert(tracker.exists(TraceableElementCopyFilter.WITH_TRACK.name))
-        assert(tracker.exists(TraceableElementCopyFilter.DEEP_TRACK.name))
-        assert(tracker.exists(EvaluatedIndividual.ONLY_TRACKING_INDIVIDUAL_OF_EVALUATED))
+        assertTrue(tracker.exists(TraceableElementCopyFilter.NONE.name))
+        assertTrue(tracker.exists(TraceableElementCopyFilter.WITH_TRACK.name))
+        assertTrue(tracker.exists(TraceableElementCopyFilter.DEEP_TRACK.name))
+        assertTrue(tracker.exists(EvaluatedIndividual.ONLY_TRACKING_INDIVIDUAL_OF_EVALUATED))
 
         val solution = mio.search()
 
@@ -120,12 +124,12 @@ class MioAlgorithmOnTrackOneMaxTest {
              */
             if(s.tracking == null){
                 assertNotNull(s.individual.trackOperator != null)
-                assert(s.individual.trackOperator!!.operatorTag().contains(OneMaxSampler::class.java.simpleName))
+                assertTrue(s.individual.trackOperator!!.operatorTag().contains(OneMaxSampler::class.java.simpleName))
             }
             s.tracking?.history?.forEachIndexed{ index, t->
                 assertNotNull(t.trackOperator)
                 if(index == 0)
-                    assert(t.trackOperator!!.operatorTag().contains(OneMaxSampler::class.java.simpleName))
+                    assertTrue(t.trackOperator!!.operatorTag().contains(OneMaxSampler::class.java.simpleName))
                 else
                     assertEquals(StandardMutator::class.java.simpleName, t.trackOperator!!.operatorTag())
             }
@@ -147,14 +151,14 @@ class MioAlgorithmOnTrackOneMaxTest {
         )
         init(args)
 
-        assert(tracker.exists(TraceableElementCopyFilter.NONE.name))
-        assert(tracker.exists(TraceableElementCopyFilter.WITH_TRACK.name))
-        assert(tracker.exists(TraceableElementCopyFilter.DEEP_TRACK.name))
-        assert(tracker.exists(EvaluatedIndividual.ONLY_TRACKING_INDIVIDUAL_OF_EVALUATED))
+        assertTrue(tracker.exists(TraceableElementCopyFilter.NONE.name))
+        assertTrue(tracker.exists(TraceableElementCopyFilter.WITH_TRACK.name))
+        assertTrue(tracker.exists(TraceableElementCopyFilter.DEEP_TRACK.name))
+        assertTrue(tracker.exists(EvaluatedIndividual.ONLY_TRACKING_INDIVIDUAL_OF_EVALUATED))
 
         val solution = mio.search()
 
-        assert(solution.individuals.count { it.tracking != null } > 0)
+        assertTrue(solution.individuals.count { it.tracking != null } > 0)
 
         solution.individuals.forEach {  s->
 
@@ -164,13 +168,15 @@ class MioAlgorithmOnTrackOneMaxTest {
              */
             if(s.tracking == null){
                 assertNotNull(s.individual.trackOperator != null)
-                assert(s.individual.trackOperator!!.operatorTag().contains(OneMaxSampler::class.java.simpleName))
+                assertTrue(s.individual.trackOperator!!.operatorTag().contains(OneMaxSampler::class.java.simpleName))
             }
 
             s.tracking?.history?.forEachIndexed{ index, t->
                 assertNotNull(t.trackOperator)
-                assert(index < maxLengthOfTraces)
-                assertEquals(StandardMutator::class.java.simpleName, t.trackOperator!!.operatorTag())
+                assertTrue(index < maxLengthOfTraces)
+                //the first one might be sampler
+                if(index > 0)
+                    assertEquals(StandardMutator::class.java.simpleName, t.trackOperator!!.operatorTag())
             }
         }
     }
@@ -192,14 +198,14 @@ class MioAlgorithmOnTrackOneMaxTest {
         )
         init(args)
 
-        assert(tracker.exists(TraceableElementCopyFilter.NONE.name))
-        assert(tracker.exists(TraceableElementCopyFilter.WITH_TRACK.name))
-        assert(tracker.exists(TraceableElementCopyFilter.DEEP_TRACK.name))
-        assert(tracker.exists(EvaluatedIndividual.ONLY_TRACKING_INDIVIDUAL_OF_EVALUATED))
-        assert(tracker.exists(EvaluatedIndividual.WITH_TRACK_WITH_CLONE_IMPACT))
-        assert(tracker.exists(EvaluatedIndividual.WITH_TRACK_WITH_COPY_IMPACT))
-        assert(tracker.exists(EvaluatedIndividual.ONLY_WITH_CLONE_IMPACT))
-        assert(tracker.exists(EvaluatedIndividual.ONLY_WITH_COPY_IMPACT))
+        assertTrue(tracker.exists(TraceableElementCopyFilter.NONE.name))
+        assertTrue(tracker.exists(TraceableElementCopyFilter.WITH_TRACK.name))
+        assertTrue(tracker.exists(TraceableElementCopyFilter.DEEP_TRACK.name))
+        assertTrue(tracker.exists(EvaluatedIndividual.ONLY_TRACKING_INDIVIDUAL_OF_EVALUATED))
+        assertTrue(tracker.exists(EvaluatedIndividual.WITH_TRACK_WITH_CLONE_IMPACT))
+        assertTrue(tracker.exists(EvaluatedIndividual.WITH_TRACK_WITH_COPY_IMPACT))
+        assertTrue(tracker.exists(EvaluatedIndividual.ONLY_WITH_CLONE_IMPACT))
+        assertTrue(tracker.exists(EvaluatedIndividual.ONLY_WITH_COPY_IMPACT))
 
         val solution = mio.search()
 
@@ -225,9 +231,9 @@ class MioAlgorithmOnTrackOneMaxTest {
                 "false"
         )
         init(args)
-        assert(tracker.exists(TraceableElementCopyFilter.NONE.name))
-        assert(tracker.exists(TraceableElementCopyFilter.WITH_TRACK.name))
-        assert(tracker.exists(TraceableElementCopyFilter.DEEP_TRACK.name))
+        assertTrue(tracker.exists(TraceableElementCopyFilter.NONE.name))
+        assertTrue(tracker.exists(TraceableElementCopyFilter.WITH_TRACK.name))
+        assertTrue(tracker.exists(TraceableElementCopyFilter.DEEP_TRACK.name))
 
         val solution = mio.search()
 

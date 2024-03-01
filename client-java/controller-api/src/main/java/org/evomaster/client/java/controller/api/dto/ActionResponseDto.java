@@ -1,9 +1,12 @@
 package org.evomaster.client.java.controller.api.dto;
 
+import org.evomaster.client.java.controller.api.dto.problem.rpc.ExpandRPCInfoDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCExceptionInfoDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCInterfaceSchemaDto;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * handling response of actions which are executed in driver side
@@ -70,5 +73,9 @@ public class ActionResponseDto {
      */
     public String error500Msg;
 
+    /**
+     * for RPC problem, its schema or mock object might be expanded during the search
+     */
+    public ExpandRPCInfoDto expandInfo;
 
 }

@@ -34,13 +34,13 @@ public class RestMutatorIndividualStructureTest extends ResourceMIOHWTestBase {
 
         for (int i = 0; i < 50; i++){
 
-            RestIndividual ind = sampler.sample();
+            RestIndividual ind = sampler.sample(false);
             EvaluatedIndividual<RestIndividual> eind = ff.calculateCoverage(ind, new HashSet<>());
-            assertFalse(ind.getChildren().isEmpty());
+            assertFalse(ind.getViewOfChildren().isEmpty());
 
 
             RestIndividual mind = mutator.mutate(eind, new HashSet<>(), null);
-            assertFalse(mind.getChildren().isEmpty());
+            assertFalse(mind.getViewOfChildren().isEmpty());
         }
 
     }

@@ -12,8 +12,10 @@ import org.evomaster.core.search.algorithms.onemax.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Disabled
 import java.nio.file.Files
 import java.nio.file.Paths
+
 
 class MutatorWithOneMaxTest {
 
@@ -25,7 +27,7 @@ class MutatorWithOneMaxTest {
     fun init(){
 
         injector = LifecycleInjector.builder()
-                .withModules(ManipulatedOneMaxModule(), BaseModule())
+                .withModules(ManipulatedOneMaxModule(), BaseModule(arrayOf("--seed=42")))
                 .build().createInjector()
 
         manager = injector.getInstance(LifecycleManager::class.java)

@@ -1,24 +1,72 @@
 package org.evomaster.core.problem.rest
 
+import io.swagger.v3.oas.models.parameters.Parameter
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.param.QueryParam
-import org.evomaster.core.search.gene.DisruptiveGene
-import org.evomaster.core.search.gene.IntegerGene
-import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.search.gene.collection.ArrayGene
+import org.evomaster.core.search.gene.optional.CustomMutationRateGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 
 internal class RestPathTest{
 
 
     @Test
+    fun testGestaohospitalIssue(){
+
+        val original = "/v1/hospitais/"
+
+        val path = RestPath(original)
+
+        assertEquals(original, path.toString())
+    }
+
+    @Test
+    fun testResolvePathWithSlash(){
+
+        val id = 77
+        val pathParam = PathParam("id", CustomMutationRateGene("d_", IntegerGene("id", id), 1.0))
+
+        val path = "/api/foo/{id}/"
+        val restPath = RestPath(path)
+
+        val resolved = restPath.resolve(listOf(pathParam))
+        assertEquals("/api/foo/$id/", resolved)
+    }
+
+    @Test
+    fun testQueryIntWithSlash(){
+
+        val path = RestPath("/x/")
+
+        val a = QueryParam("a", IntegerGene("a", 5))
+
+        val uri = path.resolve(listOf(a))
+
+        assertEquals("/x/?a=5", uri)
+    }
+
+    @Test
+    fun testMatchResolvedPathWithSlash(){
+        val path = RestPath("/x/{y}/z/")
+
+        val resolvedPath = "/x/example/z/"
+
+        assertTrue(path.matches(resolvedPath))
+    }
+
+    @Test
     fun testResolveMultiVariableInterluded(){
 
         val x = 7
-        val xParam = PathParam("x", DisruptiveGene("d_", IntegerGene("x", x), 1.0))
+        val xParam = PathParam("x", CustomMutationRateGene("d_", IntegerGene("x", x), 1.0))
 
         val y = 42
-        val yParam = PathParam("y", DisruptiveGene("d_", IntegerGene("y", y), 1.0))
+        val yParam = PathParam("y", CustomMutationRateGene("d_", IntegerGene("y", y), 1.0))
 
         val path = "/api/foo/{x}/{y}/x-{x}/{y}-y/a{x}b{y}c"
         val restPath = RestPath(path)
@@ -30,10 +78,10 @@ internal class RestPathTest{
     @Test
     fun testResolveMultiVariable(){
         val x = 7
-        val xParam = PathParam("x", DisruptiveGene("d_", IntegerGene("x", x), 1.0))
+        val xParam = PathParam("x", CustomMutationRateGene("d_", IntegerGene("x", x), 1.0))
 
         val y = 42
-        val yParam = PathParam("y", DisruptiveGene("d_", IntegerGene("y", y), 1.0))
+        val yParam = PathParam("y", CustomMutationRateGene("d_", IntegerGene("y", y), 1.0))
 
         val path = "/api/foo/{x}{y}"
         val restPath = RestPath(path)
@@ -46,7 +94,7 @@ internal class RestPathTest{
     fun testResolvePathWithVariable(){
 
         val id = 5
-        val pathParam = PathParam("id", DisruptiveGene("d_", IntegerGene("id", id), 1.0))
+        val pathParam = PathParam("id", CustomMutationRateGene("d_", IntegerGene("id", id), 1.0))
 
         val path = "/api/foo/{id}"
         val restPath = RestPath(path)
@@ -348,4 +396,117 @@ internal class RestPathTest{
         assertEquals("2", keyValues?.get("anotherParam"))
         assertEquals("z", keyValues?.get("thirdParam"))
     }
+
+    @ParameterizedTest
+    @ValueSource(strings = [
+        "/v2/api-docs?group=1ocDashboardsApi&foo=42",
+        "/v2/api-docs?group="
+    ])
+    fun testGivenUrl(path: String){
+        val base = "http://localhost:12625"
+        val action = RestActionBuilderV3.buildActionBasedOnUrl(base,"call to swagger", HttpVerb.GET, "$base$path", true)
+
+        assertNotNull(action)
+        assertEquals(path, action!!.resolvedPath())
+
+    }
+
+    @Test
+    fun testFragmentInURL(){
+        val base = "http://localhost:12625"
+        val path = "/v3/foo"
+        val fragment = "#hello"
+        val action = RestActionBuilderV3.buildActionBasedOnUrl(base,"call to swagger", HttpVerb.GET, "$base$path$fragment", true)
+        assertNotNull(action)
+        assertEquals(path, action!!.resolvedPath())
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = [
+        "/v2/api-docs?group",
+        "/v2/api-docs?group=1ocDashboardsApi&=42#sec"
+    ])
+    fun testNotFullySupportUrl(path: String){
+        val base = "http://localhost:12625"
+        val action = RestActionBuilderV3.buildActionBasedOnUrl(base,"call to swagger", HttpVerb.GET, "$base$path", true)
+
+        assertNull(action)
+    }
+
+    @Test
+    fun testArrayExplode(){
+
+        val path = RestPath("/x")
+
+        val array = ArrayGene("a", IntegerGene("template"),
+            elements = mutableListOf(IntegerGene("a", 1), IntegerGene("a", 2)))
+
+        val a = QueryParam("a", array, explode = true)
+
+        val uri = path.resolve(listOf(a))
+
+        assertEquals("/x?a=1&a=2", uri)
+    }
+
+    @Test
+    fun testArrayNotExplode(){
+
+        val path = RestPath("/x")
+
+        val array = ArrayGene("a", IntegerGene("template"),
+            elements = mutableListOf(IntegerGene("a", 1), IntegerGene("a", 2)))
+
+        val a = QueryParam("a", array, explode = false)
+
+        val uri = path.resolve(listOf(a))
+
+        assertEquals("/x?a=1%2C2", uri)
+    }
+
+    @Test
+    fun testArrayNotExplodeSpace(){
+
+        val path = RestPath("/x")
+
+        val array = ArrayGene("a", IntegerGene("template"),
+            elements = mutableListOf(IntegerGene("a", 1), IntegerGene("a", 2)))
+
+        val a = QueryParam("a", array, explode = false, style = Parameter.StyleEnum.SPACEDELIMITED)
+
+        val uri = path.resolve(listOf(a))
+
+        /*
+            spaces could be encoded with %20 or + (depending on context)
+            TODO double-check if here should really be + and not %20
+         */
+        assertEquals("/x?a=1+2", uri)
+    }
+
+
+    @Test
+    fun testisPossibleAncestorOf(){
+        val rootFooBarPath = RestPath("/root/{rootName}/foo/{fooName}/bar/{barName}")
+        val rootBarPath = RestPath("/root/{rootName}/bar/{barName}")
+        val rootFooPath = RestPath("/root/{rootName}/foo/{fooName}")
+        val rootPath = RestPath("/root/{rootName}")
+
+        assertTrue(rootPath.isDirectOrPossibleAncestorOf(rootBarPath))
+        assertTrue(rootPath.isDirectOrPossibleAncestorOf(rootFooPath))
+        assertTrue(rootPath.isDirectOrPossibleAncestorOf(rootFooBarPath))
+
+        assertTrue(rootBarPath.isDirectOrPossibleAncestorOf(rootFooBarPath))
+        assertTrue(rootFooPath.isDirectOrPossibleAncestorOf(rootFooBarPath))
+
+        assertFalse(rootFooPath.isDirectOrPossibleAncestorOf(rootBarPath))
+        assertFalse(rootBarPath.isDirectOrPossibleAncestorOf(rootFooPath))
+    }
+
+    @Test
+    fun testIsSibling(){
+        val rootFooBarPath = RestPath("/root/{rootName}/foo/{fooName}/bar/{barName}")
+        val rootFooBar = RestPath("/root/{rootName}/foo/{fooName}/bar")
+        assertTrue(rootFooBarPath.isSiblingForPreparingResource(rootFooBar))
+        assertTrue(rootFooBar.isSiblingForPreparingResource(rootFooBarPath))
+    }
+
 }

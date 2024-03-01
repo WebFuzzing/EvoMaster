@@ -1,6 +1,6 @@
 package org.evomaster.core.problem.rpc.param
 
-import org.evomaster.core.problem.api.service.param.Param
+import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.search.gene.Gene
 
 /**
@@ -9,6 +9,6 @@ import org.evomaster.core.search.gene.Gene
 class RPCParam (name: String, gene: Gene): Param(name, gene){
 
     override fun copyContent(): RPCParam {
-        return RPCParam(name, gene.copyContent())
+        return RPCParam(name, gene.copy())
     }
 }

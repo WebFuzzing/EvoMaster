@@ -8,12 +8,10 @@ import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.TestSuiteFileName
 import org.evomaster.core.output.service.TestSuiteWriter
+import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.api.service.param.Param
 import org.evomaster.core.remote.service.RemoteController
-import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.Individual
-import org.evomaster.core.search.Solution
+import org.evomaster.core.search.*
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.*
 import org.evomaster.core.utils.ReportWriter.writeByChannel
@@ -83,14 +81,23 @@ class SearchProcessMonitor: SearchListener {
 
         private var gson : Gson? = null
 
+        private val skippedClasses = listOf(
+            StructuralElement::class.java.name,
+            /*
+                https://github.com/JetBrains/kotlin/blob/master/spec-docs/function-types.md
+             */
+            "kotlin.jvm.functions.Function1"
+        )
+
         private val strategy: ExclusionStrategy = object : ExclusionStrategy {
             //TODO systematic way to configure the skipped field
             override fun shouldSkipField(field: FieldAttributes): Boolean {
                 return field.name == "parent" || field.name == "bindingGenes"
             }
 
+            //skip abstract StructuralElement element
             override fun shouldSkipClass(clazz: Class<*>?): Boolean {
-                return false
+                return clazz!= null && skippedClasses.contains(clazz.name)
             }
         }
 
@@ -177,6 +184,7 @@ class SearchProcessMonitor: SearchListener {
                         Paths.get(getOverallProcessAsPath()),
                         getGsonBuilder()?.toJson(this.overall)?:throw IllegalStateException("gson builder is null"))
             }
+            else ->{}
         }
 
     }
@@ -196,7 +204,13 @@ class SearchProcessMonitor: SearchListener {
     private fun <T:Individual> saveStepAsTest(index: Int, evalInd: EvaluatedIndividual<T>, doesIncludeTarget : Boolean){
         val name = getStepName(index, false)
         val testFile = TestSuiteFileName(name)
-        val solution = Solution(individuals = mutableListOf(evalInd), testSuiteNamePrefix = name, testSuiteNameSuffix = "")
+        val solution = Solution(
+            individuals = mutableListOf(evalInd),
+            testSuiteNamePrefix = name,
+            testSuiteNameSuffix = "",
+            individualsDuringSeeding = listOf(),
+            targetsDuringSeeding = listOf()
+        )
         val content = writer.convertToCompilableTestCode(
                 solution = solution,
                 testSuiteFileName = testFile, controllerName = controllerName, controllerInput = null)

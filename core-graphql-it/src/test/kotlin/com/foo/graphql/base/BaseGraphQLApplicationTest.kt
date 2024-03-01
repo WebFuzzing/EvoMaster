@@ -4,7 +4,7 @@ import org.evomaster.client.java.controller.problem.GraphQlProblem
 import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.builder.GraphQLActionBuilder
 import org.evomaster.core.problem.graphql.IntrospectiveQuery
-import org.evomaster.core.search.Action
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -25,11 +25,15 @@ class BaseGraphQLApplicationTest{
             val urlGraphql = sutServer + info.endpoint
 
             val iq = IntrospectiveQuery()
-            val schema = iq.fetchSchema(urlGraphql)
+            val headers= listOf<String>()
+                .filter { it.isNotBlank() }
+            val schema = iq.fetchSchema(urlGraphql,headers)
 
             val actionCluster = mutableMapOf<String, Action>()
 
-            GraphQLActionBuilder.addActionsFromSchema(schema, actionCluster)
+            if (schema != null) {
+                GraphQLActionBuilder.addActionsFromSchema(schema, actionCluster)
+            }
 
             assertEquals(1, actionCluster.size)
             val all = actionCluster.get("all")  as GraphQLAction

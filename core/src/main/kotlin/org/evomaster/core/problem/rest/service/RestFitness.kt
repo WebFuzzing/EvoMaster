@@ -1,17 +1,14 @@
 package org.evomaster.core.problem.rest.service
 
-import com.google.inject.Inject
-import org.evomaster.core.StaticCounter
-import org.evomaster.core.database.DbActionTransformer
-import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.search.ActionFilter
-import org.evomaster.core.search.ActionResult
+import org.evomaster.core.search.action.ActionFilter
+import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
-import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -22,7 +19,7 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
     }
 
 
-    override fun doCalculateCoverage(individual: RestIndividual, targets: Set<Int>): EvaluatedIndividual<RestIndividual>? {
+    override fun doCalculateCoverage(individual: RestIndividual, targets: Set<Int>, allCovered: Boolean): EvaluatedIndividual<RestIndividual>? {
 
         rc.resetSUT()
 
@@ -32,12 +29,13 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
         if (log.isTraceEnabled){
             log.trace("do evaluate the individual, which contains {} dbactions and {} rest actions",
                 individual.seeInitializingActions().size,
-                individual.seeActions().size)
+                individual.seeAllActions().size)
         }
 
         val actionResults: MutableList<ActionResult> = mutableListOf()
 
-        doDbCalls(individual.seeInitializingActions(), actionResults = actionResults)
+        doDbCalls(individual.seeInitializingActions().filterIsInstance<SqlAction>(), actionResults = actionResults)
+        doMongoDbCalls(individual.seeInitializingActions().filterIsInstance<MongoDbAction>(), actionResults = actionResults)
 
 
         val fv = FitnessValue(individual.size().toDouble())
@@ -47,15 +45,15 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
         val chainState = mutableMapOf<String, String>()
 
         //run the test, one action at a time
-        for (i in 0 until individual.seeActions().size) {
+        for (i in 0 until individual.seeMainExecutableActions().size) {
 
-            val a = individual.seeActions()[i]
+            val a = individual.seeMainExecutableActions()[i] as RestCallAction
 
             if (log.isTraceEnabled){
                 log.trace("handle rest action at index {}, and the action is {}, and the genes are",
                     i,
                     "${a.verb}:${a.resolvedPath()}",
-                    a.seeGenes().joinToString(","){
+                    a.seeTopGenes().joinToString(","){
                         "${it::class.java.simpleName}:${
                             try {
                                 it.getValueAsRawString()
@@ -93,7 +91,7 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
         }
 
         val restActionResults = actionResults.filterIsInstance<RestCallResult>()
-        restActionResultHandling(individual, targets, restActionResults, fv)?:return null
+        restActionResultHandling(individual, targets, allCovered,restActionResults, fv)?:return null
 
         if (log.isTraceEnabled){
             log.trace("restActionResult are handled")

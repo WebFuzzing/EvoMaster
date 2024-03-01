@@ -1,9 +1,9 @@
 package org.evomaster.core.search.impact.impactinfocollection.sql
 
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.IntegerGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.ObjectGene
-import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.sql.SqlXMLGene
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpactTest
@@ -74,8 +74,8 @@ class SqlXmlGeneImpactTest : GeneImpactTest() {
         assertImpact(impact, updateImpact, ImpactOptions.IMPACT_IMPROVEMENT)
         assertImpact(impact.geneImpact, updateImpact.geneImpact, ImpactOptions.IMPACT_IMPROVEMENT)
 
-        assertImpact(impact.geneImpact.fields.getValue(f1), updateImpact.geneImpact.fields.getValue(f1), ImpactOptions.IMPACT_IMPROVEMENT)
-        assertImpact(impact.geneImpact.fields.getValue(f2), updateImpact.geneImpact.fields.getValue(f2), ImpactOptions.NONE)
+        assertImpact(impact.geneImpact.fixedFields.getValue(f1), updateImpact.geneImpact.fixedFields.getValue(f1), ImpactOptions.IMPACT_IMPROVEMENT)
+        assertImpact(impact.geneImpact.fixedFields.getValue(f2), updateImpact.geneImpact.fixedFields.getValue(f2), ImpactOptions.NONE)
 
         impact = updateImpact
 
@@ -84,8 +84,8 @@ class SqlXmlGeneImpactTest : GeneImpactTest() {
 
         assertImpact(impact, updateImpact, ImpactOptions.NO_IMPACT)
         assertImpact(impact.geneImpact, updateImpact.geneImpact, ImpactOptions.NO_IMPACT)
-        assertImpact(impact.geneImpact.fields.getValue(f1), updateImpact.geneImpact.fields.getValue(f1), ImpactOptions.NONE)
-        assertImpact(impact.geneImpact.fields.getValue(f2), updateImpact.geneImpact.fields.getValue(f2), ImpactOptions.NO_IMPACT)
+        assertImpact(impact.geneImpact.fixedFields.getValue(f1), updateImpact.geneImpact.fixedFields.getValue(f1), ImpactOptions.NONE)
+        assertImpact(impact.geneImpact.fixedFields.getValue(f2), updateImpact.geneImpact.fixedFields.getValue(f2), ImpactOptions.NO_IMPACT)
 
     }
 }

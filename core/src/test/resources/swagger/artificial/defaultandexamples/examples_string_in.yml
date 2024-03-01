@@ -1,0 +1,23 @@
+---
+openapi: 3.1.0
+info:
+  title: examples_string
+  version: 1.0.0
+servers:
+  - url: "/v2"
+paths:
+  "/examplesString":
+    post:
+      parameters:
+        - in: query
+          name: x
+          schema:
+            required: true
+            type: string
+            examples:
+              - Foo
+              - Bar
+              - Hello
+      responses:
+        '200':
+          description: OK

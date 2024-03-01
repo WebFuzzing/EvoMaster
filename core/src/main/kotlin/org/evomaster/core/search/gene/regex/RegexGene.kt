@@ -1,43 +1,57 @@
 package org.evomaster.core.search.gene.regex
 
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.StructuralElement
+import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.GeneUtils
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.regex.RegexGeneImpact
-import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 
 /**
  * A gene representing a regular expression (regex).
  */
 class RegexGene(
         name: String,
-        val disjunctions: DisjunctionListRxGene
-) : Gene(name, listOf(disjunctions)) {
+        val disjunctions: DisjunctionListRxGene,
+        val sourceRegex : String
+) : CompositeFixedGene(name, disjunctions) {
 
-    override fun getChildren(): List<DisjunctionListRxGene> = listOf(disjunctions)
-
-    override fun copyContent(): Gene {
-        return RegexGene(name, disjunctions.copyContent() as DisjunctionListRxGene)
+    companion object{
+        const val JAVA_REGEX_PREFIX = "Java:"
+        const val DATABASE_REGEX_PREFIX = "Database:"
+        const val DATABASE_REGEX_SEPARATOR = "||"
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-        disjunctions.randomize(randomness, forceNewValue, allGenes)
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
+
+    override fun copyContent(): Gene {
+        return RegexGene(name, disjunctions.copy() as DisjunctionListRxGene, sourceRegex = sourceRegex)
+    }
+
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
+        disjunctions.randomize(randomness, tryToForceNewValue)
+    }
+
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneMutationSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): Boolean {
+        return false
     }
 
     override fun isMutable(): Boolean {
         return disjunctions.isMutable()
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
-        return if (!isMutable()) emptyList() else listOf(disjunctions)
-    }
 
-    override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
+    override fun adaptiveSelectSubsetToMutate(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
         if (additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is RegexGeneImpact){
             if (internalGenes.size != 1 || !internalGenes.contains(disjunctions))
                 throw IllegalArgumentException("mismatched internal gene")
@@ -46,10 +60,6 @@ class RegexGene(
         throw IllegalArgumentException("mismatched gene impact")
     }
 
-    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
-        // do nothing since disjunctions is not mutable
-        return true
-    }
 
     override fun getValueAsRawString(): String {
         return disjunctions.getValueAsPrintableString(targetFormat = null)
@@ -74,11 +84,13 @@ class RegexGene(
     }
 
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if(other !is RegexGene){
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        this.disjunctions.copyValueFrom(other.disjunctions)
+        return updateValueOnlyIfValid(
+            {this.disjunctions.copyValueFrom(other.disjunctions)}, false
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -88,17 +100,13 @@ class RegexGene(
         return this.disjunctions.containsSameValueAs(other.disjunctions)
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this)
-        else listOf(this).plus(disjunctions.flatView(excludePredicate))
-    }
+
 
     /**
      * use mutationweight of [disjunctions]
      */
     override fun mutationWeight(): Double = disjunctions.mutationWeight()
 
-    override fun innerGene(): List<Gene> = listOf(disjunctions)
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         if (gene is RegexGene){

@@ -7,11 +7,13 @@ import com.google.inject.TypeLiteral
 import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
+import org.evomaster.core.TestUtils
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.algorithms.MioAlgorithm
-import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.matchproblem.*
 import org.evomaster.core.search.service.Archive
+import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.mutator.StandardMutator
@@ -108,6 +110,7 @@ class StringGeneMutationUpdateTest {
         val history = mutableListOf<EvaluatedIndividual<PrimitiveTypeMatchIndividual>>()
         specified.forEach {
             val ind = template.copy() as PrimitiveTypeMatchIndividual
+            TestUtils.doInitializeIndividualForTesting(ind, Randomness().apply { updateSeed(42) })
             (ind.gene as StringGene).value = it
             val eval = ff.calculateCoverage(ind, archive.notCoveredTargets())
             assertNotNull(eval)

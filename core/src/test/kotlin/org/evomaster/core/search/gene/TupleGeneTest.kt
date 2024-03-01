@@ -1,5 +1,10 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.search.gene.collection.ArrayGene
+import org.evomaster.core.search.gene.collection.TupleGene
+import org.evomaster.core.search.gene.numeric.FloatGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -38,7 +43,7 @@ class TupleGeneTest {
         assertFalse(originalGene.containsSameValueAs(gene))
 
         originalGene.copyValueFrom(gene)
-        assertEquals(1, (originalGene.elements[2] as ArrayGene<*>).getAllElements().size)
+        assertEquals(1, (originalGene.elements[2] as ArrayGene<*>).getViewOfElements().size)
         assertTrue(originalGene.containsSameValueAs(gene))
     }
 
@@ -79,7 +84,7 @@ class TupleGeneTest {
             assertTrue((this[1] as ObjectGene).fields[0] is IntegerGene)
             assertEquals(42, ((this[1] as ObjectGene).fields[0] as IntegerGene).value)
             assertTrue(this[2] is ArrayGene<*>)
-            assertEquals(1, (this[2] as ArrayGene<*>).getAllElements().size)
+            assertEquals(1, (this[2] as ArrayGene<*>).getViewOfElements().size)
         }
     }
 

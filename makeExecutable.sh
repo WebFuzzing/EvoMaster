@@ -19,7 +19,7 @@ else
     exit 1
 fi
 
-VERSION=1.4.1
+VERSION=2.0.1
 
 RELEASE=release
 BUILD=build
@@ -39,4 +39,5 @@ VENDOR="EvoMaster Team"
 
 $JPACKAGE --main-jar $JAR --input $BUILD --dest $RELEASE --name evomaster \
   --copyright "$COPYRIGHT" --license-file ./LICENSE --vendor "$VENDOR" --app-version $VERSION $OS \
-  --java-options "--add-opens java.base/java.net=ALL-UNNAMED"
+  --java-options "--add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED"
+# needs to be kept in sync with JdkIssue

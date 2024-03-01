@@ -1,11 +1,10 @@
 package org.evomaster.core.problem.rest.service
 
-import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.Lazy
-import org.evomaster.core.database.SqlInsertBuilder
+import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.*
-import org.evomaster.core.problem.httpws.service.auth.HttpWsAuthenticationInfo
-import org.evomaster.core.problem.httpws.service.auth.NoAuth
+import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
+import org.evomaster.core.problem.httpws.auth.NoAuth
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.search.tracer.Traceable
 import org.slf4j.Logger
@@ -18,13 +17,7 @@ class RestSampler : AbstractRestSampler(){
         private val log: Logger = LoggerFactory.getLogger(RestSampler::class.java)
     }
 
-    override fun initSqlInfo(infoDto: SutInfoDto) {
-        if (infoDto.sqlSchemaDto != null && configuration.shouldGenerateSqlData()) {
 
-            sqlInsertBuilder = SqlInsertBuilder(infoDto.sqlSchemaDto, rc)
-            existingSqlData = sqlInsertBuilder!!.extractExistingPKs()
-        }
-    }
 
     override fun sampleAtRandom(): RestIndividual {
 
@@ -34,7 +27,10 @@ class RestSampler : AbstractRestSampler(){
         (0 until n).forEach {
             actions.add(sampleRandomAction(0.05) as RestCallAction)
         }
-        return RestIndividual(actions, SampleType.RANDOM, mutableListOf(), this, time.evaluatedIndividuals)
+        val ind = RestIndividual(actions, SampleType.RANDOM, mutableListOf(), this, time.evaluatedIndividuals)
+        ind.doGlobalInitialize(searchGlobalState)
+//        ind.computeTransitiveBindingGenes()
+        return ind
     }
 
 
@@ -46,9 +42,8 @@ class RestSampler : AbstractRestSampler(){
 
     private fun sampleRandomCallAction(noAuthP: Double): RestCallAction {
         val action = randomness.choose(actionCluster.filter { a -> a.value is RestCallAction }).copy() as RestCallAction
-        randomizeActionGenes(action)
+        action.doInitialize(randomness)
         action.auth = getRandomAuth(noAuthP)
-
         return action
     }
 
@@ -58,7 +53,7 @@ class RestSampler : AbstractRestSampler(){
         /*
             At the beginning, sample from this set, until it is empty
          */
-        if (!adHocInitialIndividuals.isEmpty()) {
+        if (adHocInitialIndividuals.isNotEmpty()) {
             return adHocInitialIndividuals.removeAt(adHocInitialIndividuals.size - 1)
         }
 
@@ -100,7 +95,8 @@ class RestSampler : AbstractRestSampler(){
             val objInd = RestIndividual(test, sampleType, mutableListOf()//, usedObjects.copy()
                     ,trackOperator = if (config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else Traceable.DEFAULT_INDEX)
 
-            //usedObjects.clear()
+            objInd.doGlobalInitialize(searchGlobalState)
+//            objInd.computeTransitiveBindingGenes()
             return objInd
         }
         //usedObjects.clear()
@@ -258,7 +254,7 @@ class RestSampler : AbstractRestSampler(){
                     test.add(test.size - 1, create)
                 }
 
-                return SampleType.SMART_GET_COLLECTION
+                return SampleType.REST_SMART_GET_COLLECTION
             }
         }
 
@@ -330,8 +326,13 @@ class RestSampler : AbstractRestSampler(){
     }
 
     fun createActionFor(template: RestCallAction, target: RestCallAction): RestCallAction {
+
         val res = template.copy() as RestCallAction
-        randomizeActionGenes(res)
+        if(res.isInitialized()){
+            res.seeTopGenes().forEach { it.randomize(randomness, false) }
+        } else {
+            res.doInitialize(randomness)
+        }
         res.auth = target.auth
         res.bindToSamePathResolution(target)
 
@@ -405,8 +406,9 @@ class RestSampler : AbstractRestSampler(){
                 .forEach { a ->
                     val copy = a.value.copy() as RestCallAction
                     copy.auth = auth
-                    randomizeActionGenes(copy)
-                    val ind = createIndividual(mutableListOf(copy))
+                    copy.doInitialize(randomness)
+                    val ind = createIndividual(SampleType.SMART, mutableListOf(copy))
+                    ind.doGlobalInitialize(searchGlobalState)
                     adHocInitialIndividuals.add(ind)
                 }
     }

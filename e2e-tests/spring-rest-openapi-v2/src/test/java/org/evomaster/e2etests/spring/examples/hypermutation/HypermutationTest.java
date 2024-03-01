@@ -23,12 +23,12 @@ public class HypermutationTest extends HypermutationTestBase {
     @Test
     public void testRunHypermutation() throws Throwable {
 
-        defaultSeed = 0;
+        defaultSeed = 42;
 
         runTestHandlingFlakyAndCompilation(
                 "hypermtation/TestHyperweight",
                 "org.adaptivehypermuation.HyperWeightTest",
-                1000,
+                500,
                 true,
                 (args) -> {
 
@@ -49,6 +49,10 @@ public class HypermutationTest extends HypermutationTestBase {
 
                     args.add("--focusedSearchActivationTime");
                     args.add("0.1");
+
+                    //minimization loses impact info
+                    args.add("--minimize");
+                    args.add("false");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 

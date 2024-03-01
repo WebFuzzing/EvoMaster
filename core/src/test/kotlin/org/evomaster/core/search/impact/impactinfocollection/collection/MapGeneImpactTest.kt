@@ -1,6 +1,10 @@
 package org.evomaster.core.search.impact.impactinfocollection.collection
 
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.collection.FixedMapGene
+import org.evomaster.core.search.gene.collection.PairGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpactTest
 import org.evomaster.core.search.impact.impactinfocollection.ImpactOptions
@@ -21,7 +25,7 @@ class MapGeneImpactTest : GeneImpactTest(){
         return counter
     }
     override fun getGene(): Gene {
-        return MapGene("map", template = map.first() , elements = map)
+        return FixedMapGene("map", template = map.first() , elements = map)
     }
 
     override fun checkImpactType(impact: GeneImpact) {
@@ -29,7 +33,7 @@ class MapGeneImpactTest : GeneImpactTest(){
     }
 
     override fun simulateMutation(original: Gene, geneToMutate: Gene, mutationTag: Int): MutatedGeneWithContext {
-        geneToMutate as MapGene<StringGene, IntegerGene>
+        geneToMutate as FixedMapGene<StringGene, IntegerGene>
 
         val p = Random.nextBoolean()
 
@@ -42,10 +46,11 @@ class MapGeneImpactTest : GeneImpactTest(){
             }
             mutationTag == 2 || (mutationTag == 0 && !p)->{
                 if (geneToMutate.getAllElements().size + 1 > geneToMutate.getMaxSizeOrDefault())
-                    geneToMutate.getAllElements().removeAt(0)
+                    geneToMutate.killChildByIndex(0)
                 else{
                     val key = generateKey()
-                    geneToMutate.getAllElements().add(PairGene.createStringPairGene(IntegerGene(key.toString(), key)))
+                    geneToMutate.addElement(
+                        PairGene.createStringPairGene(IntegerGene(key.toString(), key)).apply { doInitialize() })
                 }
             }
         }

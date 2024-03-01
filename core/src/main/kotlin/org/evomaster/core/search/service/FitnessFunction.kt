@@ -43,17 +43,18 @@ abstract class FitnessFunction<T>  where T : Individual {
     }
 
     /**
-     * @return [null] if there were problems in calculating the coverage
+     * @return null if there were problems in calculating the coverage
      */
     fun calculateCoverage(individual: T, targets: Set<Int> = setOf()) : EvaluatedIndividual<T>?{
 
-        val a = individual.seeActions().filter { a -> a.shouldCountForFitnessEvaluations() }.count()
+        val a = individual.seeMainExecutableActions().count()
 
         if(time.averageOverheadMsBetweenTests.isRecordingTimer()){
-            time.averageOverheadMsBetweenTests.addElapsedTime()
+            val computation = time.averageOverheadMsBetweenTests.addElapsedTime()
+            executionInfoReporter.addLatestComputationOverhead(computation, time.evaluatedIndividuals)
         }
 
-        var ei = calculateIndividualWithPostHandling(individual, targets, a)
+        var ei = calculateIndividualCoverageWithStats(individual, targets, a)
 
         if(ei == null){
             /*
@@ -66,7 +67,7 @@ abstract class FitnessFunction<T>  where T : Individual {
             //let's wait a little, just in case...
             Thread.sleep(5_000)
 
-            ei = calculateIndividualWithPostHandling(individual, targets, a)
+            ei = calculateIndividualCoverageWithStats(individual, targets, a)
 
 
             if(ei == null){
@@ -88,20 +89,35 @@ abstract class FitnessFunction<T>  where T : Individual {
 
 
     /**
-     * calculated coverage with specified targets
+     * calculated coverage with specified targets.
      *
-     * @return [null] if there were problems in calculating the coverage
+     * if [allCovered] is true, then ids are ignored, and info on all fully-covered targets
+     * are returned. Also, in such case, we do not compute any extra info needed for the search
+     *
+     * @return null if there were problems in calculating the coverage
      */
-    protected abstract fun doCalculateCoverage(individual: T, targets: Set<Int>) : EvaluatedIndividual<T>?
+    protected abstract fun doCalculateCoverage(individual: T, targets: Set<Int>, allCovered: Boolean) : EvaluatedIndividual<T>?
 
-    private fun calculateIndividualWithPostHandling(individual: T, targets: Set<Int>, actionsSize: Int) : EvaluatedIndividual<T>?{
+    /**
+     * Compute the fitness function, but only for the covered targets (ie partial heuristics are ignored),
+     * and without collecting any general stats.
+     *
+     * This is an expensive operations, used for post-processing phases, eg test case minimization.
+     * Note that during the search we use heuristics to minimize the number of data to retrieve,
+     * so there the fitness value is just partial
+     */
+    fun computeWholeAchievedCoverageForPostProcessing(individual: T) : EvaluatedIndividual<T>?{
+        return doCalculateCoverage(individual, setOf(), true)
+    }
 
-        val ei = time.measureTimeMillis(
+    private fun calculateIndividualCoverageWithStats(individual: T, targets: Set<Int>, actionsSize: Int) : EvaluatedIndividual<T>?{
+
+        val ei = SearchTimeController.measureTimeMillis(
                 { t, ind ->
                     time.reportExecutedIndividualTime(t, actionsSize)
                     ind?.executionTimeMs = t
                 },
-                {doCalculateCoverage(individual, targets)}
+                {doCalculateCoverage(individual, targets, false)}
         )
         // plugin execution info reporter here, to avoid the time spent by execution reporter
         handleExecutionInfo(ei)
@@ -123,6 +139,7 @@ abstract class FitnessFunction<T>  where T : Individual {
 
     private fun handleExecutionInfo(ei: EvaluatedIndividual<T>?) {
         ei?:return
-        executionInfoReporter.sqlExecutionInfo(ei.individual.seeActions(), ei.fitness.databaseExecutions)
+        executionInfoReporter.sqlExecutionInfo(ei.individual.seeAllActions(), ei.fitness.databaseExecutions)
+        executionInfoReporter.actionExecutionInfo(ei.individual, ei.executionTimeMs, time.evaluatedIndividuals)
     }
 }

@@ -1,8 +1,9 @@
 package org.evomaster.core.search.impact.impactinfocollection
 
 import org.evomaster.core.Lazy
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.search.Action
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.mongo.MongoDbAction
+import org.evomaster.core.search.action.Action
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -98,7 +99,7 @@ class InitializationActionImpacts(val abstract: Boolean, val enableImpactOnDupli
      * remove impacts of actions in initialization of the individual
      * @param removed to be removed, a list of Dbaction to its index
      */
-    fun removeInitialization(removed: List<Pair<DbAction, Int>>){
+    fun removeInitialization(removed: List<Pair<SqlAction, Int>>){
         val removedIndex = removed.map { it.second - existingSQLData}.sorted()
         val removedImpacts = removedIndex.map { completeSequence[it] }
 
@@ -146,9 +147,9 @@ class InitializationActionImpacts(val abstract: Boolean, val enableImpactOnDupli
     }
 
     private fun addedInitialization(
-            insertions: List<Action>,
-            completeSequence : MutableList<ImpactsOfAction>,
-            indexMap: MutableList<Pair<String, Int>>
+        insertions: List<Action>,
+        completeSequence : MutableList<ImpactsOfAction>,
+        indexMap: MutableList<Pair<String, Int>>
     ){
         val group = insertions.map { a-> ImpactsOfAction(a) }
         val key = generateTemplateKey(group.map { i-> i.actionName!! })
@@ -164,7 +165,7 @@ class InitializationActionImpacts(val abstract: Boolean, val enableImpactOnDupli
     /**
      * add impacts of newly added insertions at the beginning of the initalization (ie index is 0)
      */
-    fun updateInitializationImpactsAtBeginning(addedInsertions: List<List<Action>>, existingDataSize : Int){
+    fun updateInitializationImpactsAtEnd(addedInsertions: List<List<Action>>, existingDataSize : Int){
         updateSizeOfExistingData(existingDataSize)
 
         val newCompleteSequence =  mutableListOf<ImpactsOfAction>()
@@ -172,8 +173,8 @@ class InitializationActionImpacts(val abstract: Boolean, val enableImpactOnDupli
         addedInsertions.forEach { t->
             addedInitialization(t, newCompleteSequence, newIndex)
         }
-        indexMap.addAll(0, newIndex)
-        completeSequence.addAll(0, newCompleteSequence)
+        indexMap.addAll(newIndex)
+        completeSequence.addAll(newCompleteSequence)
     }
 
     /**
@@ -188,13 +189,13 @@ class InitializationActionImpacts(val abstract: Boolean, val enableImpactOnDupli
      * @param list actions after truncation
      */
     fun truncation(list: List<Action>) {
-        val ignoreExisting = list.filterIsInstance<DbAction>().count{it.representExistingData }
+        val ignoreExisting = list.filterIsInstance<SqlAction>().count{it.representExistingData }
         if (ignoreExisting != getExistingData()){
             log.warn("mismatched existing data")
         }
 
         val original = completeSequence.size
-        val seq = list.filterIsInstance<DbAction>().filter{ !it.representExistingData }
+        val seq = list.filter{(it is SqlAction && !it.representExistingData) || it is MongoDbAction }
         if (seq.size > original) {
             log.warn("there are more db actions after the truncation")
             return

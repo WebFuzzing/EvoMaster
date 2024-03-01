@@ -1,10 +1,10 @@
 package org.evomaster.core.output
 
 import org.evomaster.core.output.service.HttpWsTestCaseWriter
-import org.evomaster.core.output.service.WebTestCaseWriter
-import org.evomaster.core.problem.httpws.service.HttpWsAction
+import org.evomaster.core.output.service.ApiTestCaseWriter
+import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.rest.ContentType
-import org.evomaster.core.problem.httpws.service.auth.CookieLogin
+import org.evomaster.core.problem.httpws.auth.CookieLogin
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 
@@ -23,7 +23,7 @@ object CookieWriter {
      *  Return the distinct auth info on cookie-based login in all actions
      *  of this individual
      */
-    fun getCookieLoginAuth(ind: Individual) =  ind.seeActions()
+    fun getCookieLoginAuth(ind: Individual) =  ind.seeAllActions()
             .filterIsInstance<HttpWsAction>()
             .filter { it.auth.cookieLogin != null }
             .map { it.auth.cookieLogin!! }
@@ -34,7 +34,7 @@ object CookieWriter {
                              ind: EvaluatedIndividual<*>,
                              lines: Lines,
                              baseUrlOfSut: String,
-                             testCaseWriter: WebTestCaseWriter
+                             testCaseWriter: ApiTestCaseWriter
     ) {
 
         val cookiesInfo =  getCookieLoginAuth(ind.individual)

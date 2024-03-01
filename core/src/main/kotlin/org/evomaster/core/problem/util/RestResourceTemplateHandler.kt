@@ -4,7 +4,7 @@ import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.resource.CallsTemplate
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
-import org.evomaster.core.search.ActionFilter
+import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.service.Randomness
 
 
@@ -16,7 +16,15 @@ class RestResourceTemplateHandler{
     companion object {
 
 
-        private val arrayHttpVerbs : Array<HttpVerb> = arrayOf(HttpVerb.POST, HttpVerb.GET, HttpVerb.PUT, HttpVerb.PATCH,HttpVerb.DELETE, HttpVerb.OPTIONS, HttpVerb.HEAD)
+        private val arrayHttpVerbs : Array<HttpVerb> =
+                arrayOf(HttpVerb.POST,
+                        HttpVerb.GET,
+                        HttpVerb.PUT,
+                        HttpVerb.PATCH,
+                        HttpVerb.DELETE,
+                        HttpVerb.OPTIONS,
+                        HttpVerb.HEAD,
+                        HttpVerb.TRACE)
         private const val SeparatorTemplate = "-"
 
 

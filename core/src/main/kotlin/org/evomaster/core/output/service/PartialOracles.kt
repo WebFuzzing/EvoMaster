@@ -10,12 +10,12 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.oracles.ImplementedOracle
 import org.evomaster.core.output.oracles.SchemaOracle
 import org.evomaster.core.output.oracles.SupportedCodeOracle
+import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.httpws.service.HttpWsCallResult
+import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.EvaluatedIndividual
-import javax.annotation.PostConstruct
 
 /**
  * [PartialOracles] are meant to be a way to handle different types of soft assertions/expectations (name may change in future)
@@ -45,7 +45,7 @@ class PartialOracles {
     private val oracles = mutableListOf<ImplementedOracle>()
     private val expectationsMasterSwitch = "ems"
 
-    fun setupForRest(schema: OpenAPI){
+    fun setupForRest(schema: OpenAPI, config: EMConfig){
 
         oracles.add(SupportedCodeOracle())
         oracles.add(SchemaOracle())
@@ -54,7 +54,7 @@ class PartialOracles {
             it.setObjectGenerator(objectGenerator)
         }
 
-        objectGenerator.setSwagger(schema)
+        objectGenerator.setSwagger(schema, config.enableSchemaConstraintHandling)
     }
 
     /**
@@ -106,7 +106,7 @@ class PartialOracles {
 
     fun generatesExpectation(individual: EvaluatedIndividual<RestIndividual>): Boolean{
         return oracles.any { oracle ->
-            individual.evaluatedActions().any {
+            individual.evaluatedMainActions().any {
                 oracle.generatesExpectation(
                         (it.action as RestCallAction),
                         (it.result as HttpWsCallResult)
@@ -142,13 +142,13 @@ class PartialOracles {
      * changes are made to the [EvaluatedIndividual] objects themselves.
      *
      */
-    fun failByOracle(individuals: List<EvaluatedIndividual<RestIndividual>>): MutableMap<String, MutableList<EvaluatedIndividual<RestIndividual>>>{
-        val oracleInds = mutableMapOf<String, MutableList<EvaluatedIndividual<RestIndividual>>>()
+    fun failByOracle(individuals: List<EvaluatedIndividual<ApiWsIndividual>>): MutableMap<String, MutableList<EvaluatedIndividual<ApiWsIndividual>>>{
+        val oracleInds = mutableMapOf<String, MutableList<EvaluatedIndividual<ApiWsIndividual>>>()
         oracles.forEach { oracle ->
             val failindInds = individuals.filter {
-                it.evaluatedActions().any { oracle.selectForClustering(it) }
+                it.evaluatedMainActions().any { oracle.selectForClustering(it) }
             }.toMutableList()
-            failindInds.sortBy { it.evaluatedActions().size }
+            failindInds.sortBy { it.evaluatedMainActions().size }
             oracleInds.put(oracle.getName(), failindInds)
         }
         return oracleInds
@@ -158,7 +158,7 @@ class PartialOracles {
         val active = mutableMapOf<String, Boolean>()
         oracles.forEach { oracle ->
             active.put(oracle.getName(), individuals.any { individual ->
-                individual.evaluatedActions().any {
+                individual.evaluatedMainActions().any {
                     it.action is RestCallAction && oracle.generatesExpectation(
                             (it.action as RestCallAction),
                             (it.result as HttpWsCallResult)

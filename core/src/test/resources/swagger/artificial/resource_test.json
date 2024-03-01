@@ -28,6 +28,17 @@
           "Foo"
         ],
         "description": "Create a foo",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "fooName",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "name of the foo to create"
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -173,6 +184,15 @@
               "format": "double"
             },
             "required": false
+          },
+          {
+            "in": "query",
+            "name": "fooName",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "name of the foo to get"
           }
         ],
         "responses": {

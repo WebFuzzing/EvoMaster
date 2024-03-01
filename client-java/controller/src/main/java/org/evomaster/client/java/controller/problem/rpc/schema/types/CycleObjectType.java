@@ -12,8 +12,8 @@ import java.util.List;
  */
 public class CycleObjectType extends ObjectType{
 
-    public CycleObjectType(String type, String fullTypeName, Class<?> clazz, List<String> genericTypes) {
-        super(type, fullTypeName, new ArrayList<>(), clazz, genericTypes);
+    public CycleObjectType(String type, String fullTypeName, Class<?> clazz, List<String> genericTypes, JavaDtoSpec spec) {
+        super(type, fullTypeName, new ArrayList<>(), clazz, genericTypes, spec);
     }
 
     @Override

@@ -3,6 +3,7 @@ package org.evomaster.core.search.impact.impactinfocollection
 import junit.framework.Assert.assertEquals
 import junit.framework.Assert.assertNotNull
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Test
 
 /**
@@ -19,31 +20,32 @@ abstract class GeneImpactTest {
     @Test
     fun testWithoutImpact(){
         arrayOf(false, true).forEach {
-            template(getGene(), initImpact(), listOf(ImpactOptions.NO_IMPACT), doesDeepCopy = it)
+            template(getInitializedGene(), initImpact(), listOf(ImpactOptions.NO_IMPACT), doesDeepCopy = it)
         }
     }
 
     @Test
     fun testWithImpact(){
         arrayOf(false, true).forEach {
-            template(getGene(), initImpact(), listOf(ImpactOptions.ONLY_IMPACT), doesDeepCopy = it)
+            template(getInitializedGene(), initImpact(), listOf(ImpactOptions.ONLY_IMPACT), doesDeepCopy = it)
         }
     }
 
     @Test
     fun testWithImpactImprovement(){
         arrayOf(false, true).forEach {
-            template(getGene(), initImpact(), listOf(ImpactOptions.IMPACT_IMPROVEMENT), doesDeepCopy = it)
+            template(getInitializedGene(), initImpact(), listOf(ImpactOptions.IMPACT_IMPROVEMENT), doesDeepCopy = it)
         }
     }
 
     @Test
     fun test(){
         arrayOf(false, true).forEach {
-            template(getGene(), initImpact(), listOf(ImpactOptions.IMPACT_IMPROVEMENT, ImpactOptions.IMPACT_IMPROVEMENT, ImpactOptions.ONLY_IMPACT, ImpactOptions.NO_IMPACT), doesDeepCopy = it)
+            template(getInitializedGene(), initImpact(), listOf(ImpactOptions.IMPACT_IMPROVEMENT, ImpactOptions.IMPACT_IMPROVEMENT, ImpactOptions.ONLY_IMPACT, ImpactOptions.NO_IMPACT), doesDeepCopy = it)
         }
     }
 
+    private fun getInitializedGene() = getGene().apply { doInitialize(Randomness().apply { updateSeed(42) }) }
     abstract fun getGene() : Gene
 
     abstract fun checkImpactType(impact: GeneImpact)
@@ -76,7 +78,7 @@ abstract class GeneImpactTest {
     }
 
     fun initImpact(g : Gene? = null): GeneImpact{
-        val gene = g?:getGene()
+        val gene = g?:getInitializedGene()
         val id = ImpactUtils.generateGeneId(gene)
         val impact = ImpactUtils.createGeneImpact(gene, id)
         checkImpactType(impact)
@@ -88,6 +90,7 @@ abstract class GeneImpactTest {
             ImpactOptions.NO_IMPACT -> impact.countImpactWithMutatedGeneWithContext(gc, noImpactTargets = getNoImpactTarget(setOf()), impactTargets = setOf(), improvedTargets =  setOf(), onlyManipulation = false)
             ImpactOptions.ONLY_IMPACT -> impact.countImpactWithMutatedGeneWithContext(gc, noImpactTargets = getNoImpactTarget(fakeImpactTargets), impactTargets = fakeImpactTargets, improvedTargets = setOf(), onlyManipulation = false)
             ImpactOptions.IMPACT_IMPROVEMENT-> impact.countImpactWithMutatedGeneWithContext(gc, noImpactTargets = getNoImpactTarget(fakeImpactTargets), impactTargets = fakeImpactTargets, improvedTargets = fakeImprovedTarget, onlyManipulation = false)
+            else ->{}
         }
     }
 

@@ -5,15 +5,16 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.core.Lazy
+import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.graphql.*
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
-import org.evomaster.core.problem.httpws.service.auth.NoAuth
+import org.evomaster.core.problem.httpws.auth.NoAuth
 import org.evomaster.core.remote.TcpUtils
-import org.evomaster.core.search.ActionResult
+import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
-import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -33,7 +34,8 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
     override fun doCalculateCoverage(
         individual: GraphQLIndividual,
-        targets: Set<Int>
+        targets: Set<Int>,
+        allCovered: Boolean
     ): EvaluatedIndividual<GraphQLIndividual>? {
         rc.resetSUT()
 
@@ -42,26 +44,21 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
         val actionResults: MutableList<ActionResult> = mutableListOf()
 
-        doDbCalls(individual.seeInitializingActions(), actionResults = actionResults)
+        doDbCalls(individual.seeInitializingActions().filterIsInstance<SqlAction>(), actionResults = actionResults)
 
         val fv = FitnessValue(individual.size().toDouble())
 
+        val actions = individual.seeMainExecutableActions()
 
         //run the test, one action at a time
-        for (i in 0 until individual.seeActions().size) {
+        for (i in actions.indices) {
 
-            val a = individual.seeActions()[i]
+            val a = actions[i]
 
             registerNewAction(a, i)
 
-            var ok = false
-
-            if (a is GraphQLAction) {
-                ok = handleGraphQLCall(a, actionResults, cookies, tokens)
-                actionResults.filterIsInstance<GraphQlCallResult>()[i].stopping = !ok
-            } else {
-                throw IllegalStateException("Cannot handle: ${a.javaClass}")
-            }
+            val ok = handleGraphQLCall(a, actionResults, cookies, tokens)
+            actionResults.filterIsInstance<GraphQlCallResult>()[i].stopping = !ok
 
             if (!ok) {
                 break
@@ -82,18 +79,19 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 //            return null
 //        }
 
-        val dto = updateFitnessAfterEvaluation(targets, individual, fv)
+        val dto = updateFitnessAfterEvaluation(targets, allCovered, individual, fv)
             ?: return null
 
         handleExtra(dto, fv)
 
         val graphQLActionResults = actionResults.filterIsInstance<GraphQlCallResult>()
-        handleResponseTargets(fv, individual.seeActions(), graphQLActionResults, dto.additionalInfoList)
+        handleResponseTargets(fv, actions, graphQLActionResults, dto.additionalInfoList)
 
-
-        if (config.baseTaintAnalysisProbability > 0) {
-            assert(graphQLActionResults.size == dto.additionalInfoList.size)
-            TaintAnalysis.doTaintAnalysis(individual, dto.additionalInfoList, randomness)
+        if(!allCovered) {
+            if (config.isEnabledTaintAnalysis()) {
+                Lazy.assert { graphQLActionResults.size == dto.additionalInfoList.size }
+                TaintAnalysis.doTaintAnalysis(individual, dto.additionalInfoList, randomness, config.enableSchemaConstraintHandling)
+            }
         }
 
         return EvaluatedIndividual(
@@ -113,7 +111,7 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
         additionalInfoList: List<AdditionalInfoDto>
     ) {
 
-        (0 until actionResults.size)
+        (actionResults.indices)
             .filter { actions[it] is GraphQLAction }
             .filter { actionResults[it] is GraphQlCallResult }
             .forEach {
@@ -274,7 +272,7 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
         searchTimeController.waitForRateLimiter()
 
-        val gqlcr = GraphQlCallResult()
+        val gqlcr = GraphQlCallResult(action.getLocalId())
         actionResults.add(gqlcr)
 
         /*
@@ -400,7 +398,7 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
         val builder = client.target(fullUri).request("application/json")
 
-        handleAuth(a, builder, cookies, tokens)
+        handleHeaders(a, builder, cookies, tokens)
 
         val bodyEntity = GraphQLUtils.generateGQLBodyEntity(a, config.outputFormat) ?: Entity.json(" ")
         val invocation = builder.buildPost(bodyEntity)

@@ -1,6 +1,12 @@
 package org.evomaster.core.problem.graphql
 
+
+import com.fasterxml.jackson.core.JsonProcessingException
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.remote.SutProblemException
+import org.evomaster.core.search.service.SearchTimeController
 import org.glassfish.jersey.client.ClientConfig
 import org.glassfish.jersey.client.ClientProperties
 import org.glassfish.jersey.client.HttpUrlConnectorProvider
@@ -9,18 +15,22 @@ import java.io.IOException
 import java.io.InputStream
 import javax.ws.rs.client.*
 import javax.ws.rs.core.MediaType
+
 import javax.ws.rs.core.Response
+
+import kotlin.time.measureTimedValue
+
 
 
 class IntrospectiveQuery {
 
-    companion object{
+    companion object {
         private val log = LoggerFactory.getLogger(IntrospectiveQuery::class.java)
     }
 
     private val clientConfiguration = ClientConfig()
-            .property(ClientProperties.CONNECT_TIMEOUT, 30_000)
-            .property(ClientProperties.READ_TIMEOUT, 30_000)
+            .property(ClientProperties.CONNECT_TIMEOUT, 60_000)
+            .property(ClientProperties.READ_TIMEOUT, 60_000)
             //workaround bug in Jersey client
             .property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true)
             .property(ClientProperties.FOLLOW_REDIRECTS, true)
@@ -38,7 +48,16 @@ class IntrospectiveQuery {
             /**
              * The endpoint URL of where we can query the GraphQL SUT
              */
-            graphQlEndpoint: String) : String{
+            graphQlEndpoint: String,
+            headers: List<String>
+    ): String? {
+
+        val list = headers.map {
+            val k = it.indexOf(":")
+            val name = it.substring(0, k)
+            val content = it.substring(k + 1)
+            Pair(name, content)
+        }
 
         /*
             Body payload for the introspective query
@@ -50,26 +69,53 @@ class IntrospectiveQuery {
                 """.trimIndent(), MediaType.APPLICATION_JSON_TYPE)
 
         //TODO check if TCP problems
-        val response = try {
-            client.target(graphQlEndpoint)
+        val response = SearchTimeController.measureTimeMillis({ ms, res ->
+                LoggingUtil.getInfoLogger().info("Fetched GraphQL schema in ${ms}ms")
+        }, {
+            try {
+                var request = client.target(graphQlEndpoint)
                     .request("application/json")
-                    .buildPost(query)
+
+                for (h in list) {
+                    request = request.header(h.first, h.second)
+                }
+                request.buildPost(query)
                     .invoke()
-        } catch (e: Exception){
-            log.error("Failed query to '$graphQlEndpoint' :  $query")
-            throw e
-        }
+            } catch (e: Exception) {
+                log.error("Failed query to '$graphQlEndpoint' :  $query")
+                throw e
+            }
+        })
 
-        //TODO check status code, and any other problem inside GraphQL response
 
-        if(response.status != 200){
-            throw SutProblemException("Failed to retrieve GraphQL schema. Status code: ${response.status}")
-        }
+
 
         /*
-            Extract the body from response as a string
-         */
+           Extract the body from response as a string
+        */
         val body = response.readEntity(String::class.java)
+
+        if (response.status != 200) {
+            throw SutProblemException("Failed to retrieve GraphQL schema." +
+                    " Status code: ${response.status}." +
+                    " Response: $body")
+        }
+
+        val jackson = ObjectMapper()
+
+        val node: JsonNode = try {
+            jackson.readTree(body)
+        } catch (e: JsonProcessingException) {
+            throw SutProblemException("Failed to parse GraphQL schema as a JSON object: ${e.message}")
+        }
+
+        val withErrors= node.findPath("errors")
+
+       if (!withErrors.isEmpty){
+            throw SutProblemException("Failed to retrieve GraphQL schema." +
+                    " Are introspective queries enabled on the tested application?" +
+                    " Response contains error: $body .")
+       }
 
         return body
     }

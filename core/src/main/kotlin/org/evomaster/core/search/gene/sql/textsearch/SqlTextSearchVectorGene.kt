@@ -1,13 +1,16 @@
 package org.evomaster.core.search.gene.sql.textsearch
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.gene.GeneUtils.replaceEnclosedQuotationMarksWithSingleApostrophePlaceHolder
-import org.evomaster.core.search.service.AdaptiveParameterControl
+import org.evomaster.core.search.gene.root.CompositeFixedGene
+import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.gene.utils.GeneUtils.replaceEnclosedQuotationMarksWithSingleApostrophePlaceHolder
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -23,7 +26,7 @@ import org.slf4j.LoggerFactory
 class SqlTextSearchVectorGene(
         name: String,
         private val textLexeme: StringGene = StringGene(name = "textLexemes")
-) : Gene(name, mutableListOf(textLexeme)) {
+) : CompositeFixedGene(name, mutableListOf(textLexeme)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlTextSearchVectorGene::class.java)
@@ -31,34 +34,27 @@ class SqlTextSearchVectorGene(
         const val TO_TSVECTOR = "to_tsvector"
     }
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf(textLexeme)
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
 
     override fun copyContent(): Gene = SqlTextSearchVectorGene(
             name,
-            textLexeme.copyContent() as StringGene
+            textLexeme.copy() as StringGene
     )
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-        textLexeme.randomize(randomness, forceNewValue, allGenes)
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
+        textLexeme.randomize(randomness, tryToForceNewValue)
     }
 
-    override fun candidatesInternalGenes(
-            randomness: Randomness,
-            apc: AdaptiveParameterControl,
-            allGenes: List<Gene>,
-            selectionStrategy: SubsetGeneSelectionStrategy,
-            enableAdaptiveGeneMutation: Boolean,
-            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene> {
-        return listOf(textLexeme)
-    }
+
 
 
     override fun getValueAsPrintableString(
-            previousGenes: List<Gene>,
-            mode: GeneUtils.EscapeMode?,
-            targetFormat: OutputFormat?,
-            extraCheck: Boolean
+        previousGenes: List<Gene>,
+        mode: GeneUtils.EscapeMode?,
+        targetFormat: OutputFormat?,
+        extraCheck: Boolean
     ): String {
         val str = replaceEnclosedQuotationMarksWithSingleApostrophePlaceHolder(
                 textLexeme.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck))
@@ -69,11 +65,13 @@ class SqlTextSearchVectorGene(
         return textLexeme.getValueAsRawString()
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is SqlTextSearchVectorGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        this.textLexeme.copyValueFrom(other.textLexeme)
+        return updateValueOnlyIfValid(
+            {this.textLexeme.copyValueFrom(other.textLexeme)}, false
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -83,12 +81,6 @@ class SqlTextSearchVectorGene(
         return this.textLexeme.containsSameValueAs(other.textLexeme)
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this) else
-            listOf(this).plus(textLexeme.flatView(excludePredicate))
-    }
-
-    override fun innerGene(): List<Gene> = listOf(textLexeme)
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return when {
@@ -102,5 +94,13 @@ class SqlTextSearchVectorGene(
         }
     }
 
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneMutationSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): Boolean {
+        return false
+    }
 
 }

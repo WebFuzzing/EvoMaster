@@ -1,52 +1,53 @@
 package org.evomaster.core.problem.rest
 
-import org.evomaster.core.problem.httpws.service.HttpWsAction
-import org.evomaster.core.problem.httpws.service.auth.HttpWsAuthenticationInfo
-import org.evomaster.core.problem.httpws.service.auth.NoAuth
+import org.evomaster.core.problem.httpws.HttpWsAction
+import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
+import org.evomaster.core.problem.httpws.auth.NoAuth
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.FormParam
-import org.evomaster.core.problem.api.service.param.Param
+import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.resource.ActionRToken
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.rest.util.ParserUtil
 import org.evomaster.core.problem.util.BindingBuilder
-import org.evomaster.core.search.Action
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.OptionalGene
+import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.service.Randomness
 import java.net.URLEncoder
 
 
 class RestCallAction(
     /**
-         * Identifier unique within the individual
-         * **/
-        val id:String,
+     * Identifier unique within the individual
+     * **/
+    val id:String,
     val verb: HttpVerb,
     val path: RestPath,
     parameters: MutableList<Param>,
     auth: HttpWsAuthenticationInfo = NoAuth(),
     /**
-         * If true, it means that it will
-         * instruct to save the "location" header of the HTTP response for future
-         * use by following calls. Typical case is to save the location of
-         * a resource generated with a POST
-         */
-        var saveLocation: Boolean = false,
+     * If true, it means that it will
+     * instruct to save the "location" header of the HTTP response for future
+     * use by following calls. Typical case is to save the location of
+     * a resource generated with a POST
+     */
+    var saveLocation: Boolean = false,
     /**
-         * Specify to use the "location" header of a
-         * previous POST as path. As there might be different
-         * POSTs creating different resources in the same test,
-         * need to specify an id.
-         *
-         * Note: it might well be that we save the location returned
-         * by a POST, where the POST itself might use a location for
-         * path coming from a previous POST
-         */
-        var locationId: String? = null,
+     * Specify to use the "location" header of a
+     * previous POST as path. As there might be different
+     * POSTs creating different resources in the same test,
+     * need to specify an id.
+     *
+     * Note: it might well be that we save the location returned
+     * by a POST, where the POST itself might use a location for
+     * path coming from a previous POST
+     */
+    var locationId: String? = null,
     val produces: List<String> = listOf(),
-    val responseRefs : MutableMap<String, String> = mutableMapOf()
+    val responseRefs : MutableMap<String, String> = mutableMapOf(),
+    val skipOracleChecks : Boolean = false
 ) : HttpWsAction(auth, parameters) {
 
     /**
@@ -67,15 +68,15 @@ class RestCallAction(
     fun isLocationChained() = saveLocation || locationId?.isNotBlank() ?: false
 
     override fun copyContent(): Action {
-        val p = parameters.asSequence().map(Param::copyContent).toMutableList()
-        return RestCallAction(id, verb, path, p, auth, saveLocation, locationId, produces, responseRefs)
+        val p = parameters.asSequence().map(Param::copy).toMutableList()
+        return RestCallAction(id, verb, path, p, auth, saveLocation, locationId, produces, responseRefs, skipOracleChecks)
     }
 
     override fun getName(): String {
         return "$verb:$path"
     }
 
-    override fun seeGenes(): List<out Gene> {
+    override fun seeTopGenes(): List<out Gene> {
         return parameters.flatMap { it.seeGenes() }
     }
 
@@ -159,18 +160,22 @@ class RestCallAction(
      * bind [parameters] based on [other]
      * @return whether any of param is bound with [other]
      */
-    fun bindBasedOn(other: RestCallAction) : Boolean{
+    fun bindBasedOn(other: RestCallAction, randomness: Randomness?) : Boolean{
         var dependent = false
         parameters.forEach { p->
-            dependent = BindingBuilder.bindRestAction(p, path, other.path, other.parameters, doBuildBindingGene = true) || dependent
+            dependent = BindingBuilder.bindRestAction(p, path, other.path, other.parameters, doBuildBindingGene = true, randomness = randomness) || dependent
         }
         return dependent
     }
 
     /**
      * it is used to bind [this] action regarding values of [params]
+     * @param otherPath is the path of the [params]
+     * @param params to bind
+     * @param randomness is the randomness used in binding,
+     *              if the randomness is null, all params are completely bound, ie, all fields of two ObjectGene will be completely bound
      */
-    fun bindBasedOn(otherPath : RestPath, params : List<Param>) {
+    fun bindBasedOn(otherPath : RestPath, params : List<Param>, randomness: Randomness?) {
 
         if(params.isEmpty()){
             //no param is required to bind
@@ -183,16 +188,28 @@ class RestCallAction(
          */
         if(!ParamUtil.isAllBodyParam(parameters)){
             parameters.filterNot { param -> param is BodyParam }.forEach { param->
-                BindingBuilder.bindRestAction(param, this.path, otherPath, params)
+                BindingBuilder.bindRestAction(param, this.path, otherPath, params, randomness = randomness)
             }
         }else{
             parameters.forEach {param->
-                BindingBuilder.bindRestAction(param, this.path, otherPath, params)
+                BindingBuilder.bindRestAction(param, this.path, otherPath, params, randomness = randomness)
             }
         }
     }
 
+    /**
+     * reset [saveLocation], [locationId] and [responseRefs] properties of [this] RestCallAction
+     */
+    fun resetProperties(){
+        saveLocation = false
+        locationId = null
+        resetLocalId()
+        seeTopGenes().flatMap { it.flatView() }.forEach { it.resetLocalId() }
+        clearRefs()
+    }
+
     fun getDescription() : String? = description
+
     fun clearRefs(){
         responseRefs.clear()
     }
@@ -201,11 +218,8 @@ class RestCallAction(
     }
 
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, all: List<Action>) {
-        // random genes
-        super.randomize(randomness, forceNewValue, all)
+    override fun postRandomizedChecks(randomness: Randomness?) {
         // binding params in this action, e.g., path param with body param if there exists
-        BindingBuilder.bindParamsInRestAction(this)
-
+        BindingBuilder.bindParamsInRestAction(this, randomness = randomness)
     }
 }

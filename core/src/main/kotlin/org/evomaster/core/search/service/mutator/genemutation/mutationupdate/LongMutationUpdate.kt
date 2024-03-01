@@ -1,6 +1,6 @@
 package org.evomaster.core.search.service.mutator.genemutation.mutationupdate
 
-import org.evomaster.core.search.gene.GeneUtils
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
@@ -64,7 +64,10 @@ class LongMutationUpdate(direction: Boolean, min: Long, max: Long, updateTimes :
 
     override fun candidatesBoundary(): Long {
         val range = try {
-            Math.subtractExact(preferMax, preferMin)
+            if (preferMin != preferMax)
+                Math.subtractExact(preferMax, preferMin)
+            else
+                Math.subtractExact(max, min)
         }catch (e : ArithmeticException){
             return  Long.MAX_VALUE
         }

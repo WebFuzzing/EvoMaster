@@ -1,11 +1,15 @@
 package org.evomaster.core.problem.httpws.service
 
-import org.evomaster.client.java.controller.api.dto.AuthenticationDto
-import org.evomaster.client.java.controller.api.dto.HeaderDto
+import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
+import org.evomaster.client.java.controller.api.dto.auth.HeaderDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.problem.api.service.ApiWsSampler
-import org.evomaster.core.problem.httpws.service.auth.NoAuth
-import org.evomaster.core.problem.httpws.service.auth.*
+import org.evomaster.core.problem.httpws.HttpWsAction
+import org.evomaster.core.problem.httpws.auth.AuthenticationHeader
+import org.evomaster.core.problem.httpws.auth.CookieLogin
+import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
+import org.evomaster.core.problem.httpws.auth.JsonTokenPostLogin
+import org.evomaster.core.problem.httpws.auth.NoAuth
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.Individual
 import org.slf4j.Logger
@@ -35,7 +39,7 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
      */
     fun sampleRandomAction(noAuthP: Double): HttpWsAction {
         val action = randomness.choose(actionCluster).copy() as HttpWsAction
-        randomizeActionGenes(action)
+        action.doInitialize(randomness)
         action.auth = getRandomAuth(noAuthP)
         return action
     }
@@ -53,6 +57,10 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
 
     protected fun addAuthFromConfig(){
 
+        //first check if any configured in configuration file (if any)
+        config.authFromFile?.forEach { handleAuthInfo(it) }
+
+        //then check if any is passed on commandline
         val headers = listOf(config.header0, config.header1, config.header2)
                 .filter { it.isNotBlank() }
 

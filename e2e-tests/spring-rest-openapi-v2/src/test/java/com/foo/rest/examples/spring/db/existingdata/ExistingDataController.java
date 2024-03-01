@@ -1,8 +1,9 @@
 package com.foo.rest.examples.spring.db.existingdata;
 
 import com.foo.rest.examples.spring.db.SpringWithDbController;
-import org.evomaster.client.java.controller.internal.db.DbSpecification;
+import org.evomaster.client.java.sql.DbSpecification;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -30,7 +31,8 @@ public class ExistingDataController extends SpringWithDbController {
     public List<DbSpecification> getDbSpecifications() {
         List<DbSpecification> spec =  super.getDbSpecifications();
         if (spec != null && !spec.isEmpty())
-            spec.get(0).initSqlScript= "INSERT INTO EXISTING_DATA_ENTITYX (ID, NAME) VALUES (42, 'Foo')";
+            return Arrays.asList(spec.get(0)
+                    .withInitSqlScript("INSERT INTO EXISTING_DATA_ENTITYX (ID, NAME) VALUES (42, 'Foo')"));
         return spec;
     }
 }

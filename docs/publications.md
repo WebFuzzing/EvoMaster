@@ -13,13 +13,88 @@ Also, some of these papers provides full replication packages, which are linked 
 
 ## Recent arXiv Technical Reports, not Peer-Reviewed (Yet)
 
-* M. Zhang, A. Arcuri.
-  *Open Problems in Fuzzing RESTful APIs: A Comparison of Tools*.
-  [[arXiv](https://arxiv.org/abs/2205.05325)]
-  [[Scripts](exp/arxiv_open_problems.py)]
+  
+* M. Zhang, A. Arcuri, Y. Li, K Xue, Z Wang, J. Huo, W Huang.
+  *Fuzzing Microservices In Industry: Experience of Applying EvoMaster at Meituan*.
+  [[arXiv](https://arxiv.org/abs/2208.03988)]
+
+
+
 
 ## Peer-Reviewed Publications
 
+### 2024
+
+* A. Arcuri, M. Zhang, J.P. Galeotti.
+  *Advanced White-Box Heuristics for Search-Based Fuzzing of REST APIs*.
+  ACM Transactions on Software Engineering and Methodology (TOSEM).
+  [to appear][[Scripts](exp/2024_tosem_advanced_heuristics.py)]
+
+
+### 2023
+
+* S. Seran, M. Zhang, A. Arcuri.
+  *Search-Based Mock Generation of External Web Service Interactions*.
+  Symposium on Search-based Software Engineering (SSBSE).
+  [[PDF](publications/2023_ssbse_wm.pdf)]
+
+* A. Golmohammadi, M. Zhang, A. Arcuri.
+  *On the Impact of Tool Evolution and Case Study Size on SBSE Experiments: A Replicated Study with EvoMaster*.
+  Symposium on Search-based Software Engineering (SSBSE).
+  [[PDF](publications/2023_ssbse_tuning.pdf)]
+
+* A. Golmohammadi.
+  *Enhancing White-Box Search-Based Testing of RESTful APIs*.
+  IEEE International Symposium on Software Reliability Engineering (ISSRE).
+  [[PDF](publications/2023-issre-ds.pdf)]
+
+* A. Golmohammadi, M. Zhang, A. Arcuri.
+  *Testing RESTful APIs: A Survey*.
+  ACM Transactions on Software Engineering and Methodology (TOSEM). 
+  [[PDF](publications/2023_tosem_survey.pdf)]
+
+* A. Golmohammadi, M. Zhang, A. Arcuri
+  *.NET/C# Instrumentation for Search-Based Software Testing*.
+  Software Quality Journal (SQJ). 
+  [[PDF](publications/2023_sqj_dotnet.pdf)]
+
+* A. Belhadi, M. Zhang, A. Arcuri.
+  *Random Testing and Evolutionary Testing for Fuzzing GraphQL APIs*.
+  ACM Transactions on the Web (TWEB). 
+  [[PDF](publications/2023_tweb.pdf)]
+  [[Script 0](exp/2023_tweb_gql_bb.py)]
+  [[Script 1](exp/2023_tweb_gql_wb.py)]
+
+* M. Zhang, A. Arcuri.
+  *Open Problems in Fuzzing RESTful APIs: A Comparison of Tools*.
+  ACM Transactions on Software Engineering and Methodology (TOSEM).
+  [[PDF](publications/2023_tosem_comparisons.pdf)]
+  [[Script 0](exp/2023_tosem__open_problems_bb.py)]
+  [[Script 1](exp/2023_tosem_open_problems_wb.py)]
+  [[Script others](exp/2023_tosem_open_problems_others.zip)]
+
+* M. Zhang, A. Belhadi, A. Arcuri.
+  *JavaScript SBST Heuristics To Enable Effective Fuzzing of NodeJS Web APIs*.
+  ACM Transactions on Software Engineering and Methodology (TOSEM).
+  [[PDF](publications/2023_tosem_js.pdf)]
+
+* A. Arcuri, M Zhang, A. Belhadi, B. Marculescu, A. Golmohammadi, J. P. Galeotti, S. Seran.
+  *Building An Open-Source System Test Generation Tool: Lessons Learned And Empirical Analyses with EvoMaster*.
+  Software Quality Journal (SQJ).
+  [[PDF](publications/2023_sqj_tool.pdf)]
+
+* M. Zhang, A. Arcuri, Y. Li, Y. Liu, K. Xue.
+  *White-box Fuzzing RPC-based APIs with EvoMaster: An Industrial Case Study*.
+  ACM Transactions on Software Engineering and Methodology (TOSEM). 
+  [[PDF](publications/2023_tosem_rpc.pdf)]
+
+
+* A. Arcuri, M. Zhang, A. Golmohammadi, A. Belhadi, J. P. Galeotti, B. Marculescu, S. Seran.
+ *EMB: A Curated Corpus of Web/Enterprise
+  Applications And Library Support for Software
+  Testing Research*.
+  IEEE International Conference on Software Testing, Validation and Verification (ICST).
+  [[PDF](publications/2023_icst_emb.pdf)]
 
 ### 2022
 

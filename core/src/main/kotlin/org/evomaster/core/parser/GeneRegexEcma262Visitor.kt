@@ -12,9 +12,11 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
 
         val res = ctx.disjunction().accept(this)
 
+        val text = RegexUtils.getRegexExpByParserRuleContext(ctx)
+
         val disjList = DisjunctionListRxGene(res.genes.map { it as DisjunctionRxGene })
 
-        val gene = RegexGene("regex", disjList)
+        val gene = RegexGene("regex", disjList,"${RegexGene.JAVA_REGEX_PREFIX}$text")
 
         return VisitResult(gene)
     }
@@ -27,7 +29,7 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
         val matchStart = assertionMatches.first
         val matchEnd = assertionMatches.second
 
-        val disj = DisjunctionRxGene("disj", altRes.genes.map { it as RxTerm }, matchStart, matchEnd)
+        val disj = DisjunctionRxGene("disj", altRes.genes.map { it }, matchStart, matchEnd)
 
         val res = VisitResult(disj)
 
@@ -86,7 +88,7 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
         }
 
         val resAtom = ctx.atom().accept(this)
-        val atom = resAtom.genes.firstOrNull() as RxAtom?
+        val atom = resAtom.genes.firstOrNull()
                 ?: return res
 
         if(ctx.quantifier() != null){
@@ -159,7 +161,7 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
             val block = ctx.patternCharacter().map { it.text }
                     .joinToString("")
 
-            val gene = PatternCharacterBlock("block", block)
+            val gene = PatternCharacterBlockGene("block", block)
 
             return VisitResult(gene)
         }

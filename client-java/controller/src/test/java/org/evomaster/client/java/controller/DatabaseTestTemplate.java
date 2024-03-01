@@ -25,6 +25,7 @@ public interface DatabaseTestTemplate {
 
         int port = starter.getControllerServerPort();
 
+
         startSut(port);
 
         return "http://localhost:" + port;
@@ -32,7 +33,7 @@ public interface DatabaseTestTemplate {
 
     default void startSut(int port) {
         given().contentType(ContentType.JSON)
-                .body(new SutRunDto(true, false, true, "BASE,SQL"))
+                .body(new SutRunDto(true, false,false, true, "BASE,SQL"))
                 .put("http://localhost:" + port + BASE_PATH + RUN_SUT_PATH)
                 .then()
                 .statusCode(204);
@@ -52,7 +53,7 @@ public interface DatabaseTestTemplate {
 
         given().accept(ContentType.ANY)
                 .contentType(ContentType.JSON)
-                .body(new SutRunDto(true, true, true, "BASE,SQL"))
+                .body(new SutRunDto(true, true, false, true, "BASE,SQL"))
                 .put(url + RUN_SUT_PATH)
                 .then()
                 .statusCode(204);

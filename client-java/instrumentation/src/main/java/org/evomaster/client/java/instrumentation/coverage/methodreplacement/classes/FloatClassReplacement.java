@@ -1,8 +1,9 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
 
+import org.evomaster.client.java.distance.heuristics.DistanceHelper;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.*;
-import org.evomaster.client.java.instrumentation.heuristic.Truthness;
+import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
@@ -72,7 +73,7 @@ public class FloatClassReplacement implements MethodReplacementClass {
     }
 
     @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true, category = ReplacementCategory.BASE)
-    public static float valueOf(String input, String idTemplate) {
+    public static Float valueOf(String input, String idTemplate) {
         return parseFloat(input, idTemplate);
     }
 }

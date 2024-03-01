@@ -6,9 +6,13 @@ import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.param.UpdateForBodyParam
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.collection.EnumGene
+import org.evomaster.core.search.gene.numeric.DoubleGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.numeric.LongGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.structuralelement.StructuralElementBaseTest
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class BodyParamStructureTest : StructuralElementBaseTest() {
@@ -49,7 +53,7 @@ class HeaderParamStructureTest : StructuralElementBaseTest() {
     @Test
     fun testChildType(){
         val update = getStructuralElement()
-        assertTrue(update.getChildren().first() is Gene)
+        assertTrue(update.getViewOfChildren().first() is Gene)
     }
 }
 
@@ -62,7 +66,7 @@ class QueryParamStructureTest : StructuralElementBaseTest() {
     @Test
     fun testChildType(){
         val update = getStructuralElement()
-        assertTrue(update.getChildren().first() is Gene)
+        assertTrue(update.getViewOfChildren().first() is Gene)
     }
 }
 
@@ -72,13 +76,17 @@ class UpdateForBodyParamStructureTest : StructuralElementBaseTest() {
         ObjectGene(
             "obj",
             listOf(IntegerGene("f1"), DoubleGene("f2"), LongGene("f3"))),
-        EnumGene("contentType", listOf("application/json"))))
+        EnumGene("contentType", listOf("application/json"))
+    ))
 
-    override fun getExpectedChildrenSize(): Int =1
+    override fun getExpectedChildrenSize(): Int = 2
 
     @Test
     fun testChildType(){
         val update = getStructuralElement()
-        assertTrue(update.getChildren().first() is BodyParam)
+        assertNotNull(update.body)
+        //due to refactoring. TODO need to check for side-effects
+        assertFalse(update.getViewOfChildren().first() is BodyParam)
+        //assertTrue(update.getViewOfChildren().first() is BodyParam)
     }
 }

@@ -1,5 +1,7 @@
 package org.evomaster.client.java.controller.api.dto.problem.rpc;
 
+import org.evomaster.client.java.controller.api.dto.MockDatabaseDto;
+
 import java.util.List;
 
 /**
@@ -18,6 +20,16 @@ public class SeededRPCActionDto {
     public String functionName;
 
     /**
+     * a list of info to set up responses of external services with mocking if exists
+     */
+    public List<MockRPCExternalServiceDto> mockRPCExternalServiceDtos;
+
+    /**
+     * a list of info to set up mock objects for databases
+     */
+    public List<MockDatabaseDto> mockDatabaseDtos;
+
+    /**
      * input parameters with json format
      * note the length of [inputParamTypes] must be same as [inputParams]
      */
@@ -29,6 +41,20 @@ public class SeededRPCActionDto {
      */
     public List<String> inputParamTypes;
 
-    // assertion, excepted results ?
+    /**
+     * expected response if has
+     *
+     * currently, we only support json format
+     */
+    public String expectedResponse;
+
+    /**
+     *
+     * @return descriptive info for the action, ie, interface::actionName
+     */
+    public String descriptiveInfo(){
+        return ((interfaceName!=null)?interfaceName:"SEED_TEST_NULL_INTERFACE")+
+                "::"+((functionName!=null)?functionName:"SEED_TEST_NULL_ACTION_NAME");
+    }
 
 }

@@ -1,6 +1,13 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.gene.collection.EnumGene
+import org.evomaster.core.search.gene.collection.FixedMapGene
+import org.evomaster.core.search.gene.collection.FlexibleMapGene
+import org.evomaster.core.search.gene.collection.PairGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.optional.FlexibleGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -12,7 +19,7 @@ internal class MapGeneTest{
         val s2 = PairGene.createStringPairGene(StringGene("string_2"))
         val targetFormat = OutputFormat.KOTLIN_JUNIT_5
 
-        val map = MapGene("PrintableMap", PairGene.createStringPairGene(StringGene("map")), 7, null, mutableListOf(s1, s2))
+        val map = FixedMapGene("PrintableMap", PairGene.createStringPairGene(StringGene("map")), 7, null, mutableListOf(s1, s2))
         val mapstring = map.getValueAsPrintableString(targetFormat = targetFormat)
 
         assertTrue(mapstring.contains(s1.getValueAsPrintableString(targetFormat = targetFormat), ignoreCase = true))
@@ -24,11 +31,11 @@ internal class MapGeneTest{
         val intKey1 = IntegerGene("key_1", 1)
         val strValue1 = StringGene("key_1", "foo")
         val intKey2 = IntegerGene("key_2", 2)
-        val strValue2 = strValue1.copyContent() as StringGene
+        val strValue2 = strValue1.copy() as StringGene
 
         val targetFormat = OutputFormat.KOTLIN_JUNIT_5
 
-        val map = MapGene("PrintableMap", intKey1.copy() as IntegerGene, strValue1.copy() as StringGene, 7)
+        val map = FixedMapGene("PrintableMap", intKey1.copy() as IntegerGene, strValue1.copy() as StringGene, 7)
         val s1 = PairGene("key_1",intKey1, strValue1)
         map.addElement(s1)
         val s2 = PairGene("key_2", intKey2, strValue2)
@@ -42,14 +49,14 @@ internal class MapGeneTest{
         assertTrue(mapstring.contains("\"2\":\"foo\"", ignoreCase = true))
 
         val intKey3 = IntegerGene("key_3", 2)
-        val strValue3 = strValue1.copyContent() as StringGene
+        val strValue3 = strValue1.copy() as StringGene
         val s3 = PairGene("key_3", intKey3, strValue3)
         assertTrue(map.containsKey(s3))
         intKey3.value = 3
         assertFalse(map.containsKey(s3))
 
         val intKey4 = IntegerGene("key_4", 1)
-        val strValue4 = strValue1.copyContent() as StringGene
+        val strValue4 = strValue1.copy() as StringGene
         strValue4.value = "bar"
         val s4 = PairGene("key_4", intKey4, strValue4)
         assertTrue(map.containsKey(s4))
@@ -71,7 +78,7 @@ internal class MapGeneTest{
         val strValue1 = StringGene("key_2", "foo")
 
 
-        val map = MapGene("PrintableMap", enumKey0.copy() as EnumGene<*>, strValue0.copy() as StringGene, 7)
+        val map = FixedMapGene("PrintableMap", enumKey0.copy() as EnumGene<*>, strValue0.copy() as StringGene, 7)
         val s1 = PairGene("key_1",enumKey0, strValue0)
         map.addElement(s1)
         val s2 = PairGene("key_2", enumKey1, strValue1)
@@ -97,5 +104,20 @@ internal class MapGeneTest{
         //replace the existing pair with s2New
         assertTrue(map.getValueAsPrintableString(targetFormat = targetFormat).contains("\"TWO\":\"bar\"", ignoreCase = true))
         assertEquals(2, map.getAllElements().size)
+    }
+
+    @Test
+    fun testFlexibleGeneReplace(){
+        val integerGene = IntegerGene("int", 1)
+        val fMap = FlexibleMapGene("intMap", StringGene("key"), integerGene, null)
+
+        val stringGene = StringGene("string", "bar")
+        val element = fMap.template.copy() as PairGene<*, FlexibleGene>
+        element.second.replaceGeneTo(stringGene)
+        assertEquals(element.second.gene, stringGene)
+        fMap.addChild(element)
+
+        assertEquals(1, fMap.getAllElements().size)
+        assertEquals(element, fMap.getViewOfChildren().first() as PairGene<*,*>)
     }
 }

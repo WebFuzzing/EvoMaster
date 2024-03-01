@@ -1,6 +1,9 @@
 package com.thrift.example.artificial;
 
+import org.apache.thrift.TException;
+
 import javax.validation.constraints.NotNull;
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +34,8 @@ public interface RPCInterfaceExample {
     CycleBObj objCycleB();
 
     String dateToString(Date date);
+
+    String localDateToString(LocalDate date);
 
     String constraintInputs(ConstrainedRequest arg0, @NotNull String arg1);
 
@@ -92,5 +97,9 @@ public interface RPCInterfaceExample {
     float pFloatResponse();
 
     double pDoubleResponse();
+
+    String seedcheck(List<Long> longList, List<Integer> integerList, List<BigNumberObj> objList, Map<Integer, String> integerStringMap, BigNumberObj obj);
+
+    boolean throwTException(int type) throws Exception;
 
 }

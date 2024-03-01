@@ -6,10 +6,12 @@ import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCType;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RPCProblem;
 
 import java.util.HashMap;
+import java.util.Map;
 
 public class ThriftExceptionRPCController extends SpringController {
 
@@ -21,9 +23,7 @@ public class ThriftExceptionRPCController extends SpringController {
 
     @Override
     public ProblemInfo getProblemInfo() {
-        return new RPCProblem(new HashMap<String, Object>() {{
-            put(ThriftExceptionService.Iface.class.getName(), client);
-        }});
+        return new RPCProblem(ThriftExceptionService.Iface.class, client, RPCType.GENERAL);
     }
 
     @Override
@@ -39,5 +39,13 @@ public class ThriftExceptionRPCController extends SpringController {
         }
 
         return url;
+    }
+
+    @Override
+    public Map<Class, Integer> getExceptionImportanceLevels() {
+        return new HashMap<Class, Integer>(){{
+            put(BadResponse.class, 1);
+            put(ErrorResponse.class, 0);
+        }};
     }
 }

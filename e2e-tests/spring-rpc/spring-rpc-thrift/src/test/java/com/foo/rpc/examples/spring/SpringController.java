@@ -1,9 +1,9 @@
 package com.foo.rpc.examples.spring;
 
 import org.evomaster.client.java.controller.EmbeddedSutController;
-import org.evomaster.client.java.controller.api.dto.AuthenticationDto;
+import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto;
 import org.evomaster.client.java.controller.api.dto.SutInfoDto;
-import org.evomaster.client.java.controller.internal.db.DbSpecification;
+import org.evomaster.client.java.sql.DbSpecification;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 

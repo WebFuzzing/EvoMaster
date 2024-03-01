@@ -4,9 +4,12 @@ import com.google.inject.Inject
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
-import org.evomaster.core.search.Action
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.numeric.*
+import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.Impact
 import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
@@ -70,6 +73,8 @@ class ArchiveGeneMutator{
         when (gene) {
             is StringGene -> {
                 val applied = deriveMutatorForStringValue(history, gene, allGenes)
+                // repair invalid char for string gene
+                gene.repair()
                 if (!applied) gene.standardValueMutation(randomness, allGenes, apc)
             }
             is IntegerGene -> gene.value = sampleValue(
@@ -218,15 +223,6 @@ class ArchiveGeneMutator{
 
         val p = randomness.nextDouble()
         val pOfLen = apc.getExploratoryValue(0.6, 0.2)
-        val pLength = lenMutationUpdate.random(
-                apc = apc,
-                randomness = randomness,
-                current = gene.value.length.toLong(),
-                probOfMiddle = probOfMiddle(lenMutationUpdate),
-                start = 6,
-                end = 3,
-                minimalTimeForUpdate = 2
-        )
 
         val anyCharToMutate = charsMutationUpdate.filterIndexed {
             index, longMutationUpdate -> !longMutationUpdate.isReached(gene.value[index].toLong()) }.isNotEmpty() && charsMutationUpdate.isNotEmpty()
@@ -237,9 +233,20 @@ class ArchiveGeneMutator{
             return true
         }
 
-        if (lenMutationUpdate.isReached(gene.value.length.toLong()) || (p < (1.0 - pOfLen) && anyCharToMutate && gene.value.isNotBlank())){
+        if (lenMutationUpdate.isReached(gene.value.length.toLong()) || !lenMutationUpdate.isUpdatable() || (p < (1.0 - pOfLen) && anyCharToMutate && gene.value.isNotBlank())){
             return mutateChars(charsMutationUpdate, gene)
         }
+
+        val pLength = lenMutationUpdate.random(
+            apc = apc,
+            randomness = randomness,
+            current = gene.value.length.toLong(),
+            probOfMiddle = probOfMiddle(lenMutationUpdate),
+            start = 6,
+            end = 3,
+            minimalTimeForUpdate = 2
+        )
+
         val append = pLength.toInt() > gene.value.length || (pLength.toInt() == gene.value.length && p < 1.0 - pOfLen/2.0)
         if (append){
             gene.value += randomness.nextWordChar() //(0 until (pLength.toInt() - gene.value.length)).map {randomness.nextWordChar()}.joinToString("")
@@ -289,8 +296,8 @@ class ArchiveGeneMutator{
      * @param additionalGeneMutationInfo contains addtional info for applying archive-based gene mutation, e.g., impact, history of the gene
      */
     fun mutateStringGene(
-            gene: StringGene, targets: Set<Int>,
-            allGenes : List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, additionalGeneMutationInfo: AdditionalGeneMutationInfo){
+        gene: StringGene, targets: Set<Int>,
+        allGenes : List<Gene>, selectionStrategy: SubsetGeneMutationSelectionStrategy, additionalGeneMutationInfo: AdditionalGeneMutationInfo, changeSpecSetting: Double){
         var employBinding = true
         if (additionalGeneMutationInfo.impact == null){
             val ds = gene.standardSpecializationMutation(
@@ -320,13 +327,19 @@ class ArchiveGeneMutator{
                 if (specializationGene == null){
                     gene.selectedSpecialization = randomness.nextInt(0, gene.specializationGenes.size - 1)
                 }else {
-                    val selected = selectSpec(gene, impact, targets)
+                    var selected = selectSpec(gene, impact, targets)
                     val currentImpact = impact.getSpecializationImpacts().getOrNull(gene.selectedSpecialization)
-                    if (selected == gene.selectedSpecialization || currentImpact?.recentImprovement() == true){
+
+                    val selectCurrent = gene.selectedSpecialization == selected || (currentImpact?.recentImprovement() == true && randomness.nextBoolean(1.0-changeSpecSetting))
+
+                    if (selectCurrent && specializationGene.isMutable()){
                         specializationGene.standardMutation(
-                                randomness, apc, mwc, allGenes,selectionStrategy, true, additionalGeneMutationInfo.copyFoInnerGene(currentImpact as? GeneImpact)
+                            randomness, apc, mwc,selectionStrategy, true, additionalGeneMutationInfo.copyFoInnerGene(currentImpact as? GeneImpact)
                         )
-                    }else{
+                    }else if (gene.selectedSpecialization == selected){
+                        selected = (selected + 1) % gene.specializationGenes.size
+                        gene.selectedSpecialization = selected
+                    } else{
                         gene.selectedSpecialization = selected
                     }
                 }
@@ -338,7 +351,7 @@ class ArchiveGeneMutator{
                 return
             }
         }
-        if (gene.redoTaint(apc, randomness, allGenes)) return
+        if (gene.redoTaint(apc, randomness)) return
 
         if(additionalGeneMutationInfo.hasHistory())
             historyBasedValueMutation(additionalGeneMutationInfo, gene, allGenes)
@@ -434,7 +447,7 @@ class ArchiveGeneMutator{
      * extract mutated info only for standard mutation
      */
     private fun mutatedGenePairForIndividualWithActions(
-            originalActions: List<Action>, mutatedActions : List<Action>, mutatedGenes: List<Gene>, genesAtActionIndex: List<Int>
+        originalActions: List<Action>, mutatedActions : List<Action>, mutatedGenes: List<Gene>, genesAtActionIndex: List<Int>
     ) : MutableList<Pair<Gene, Gene>>{
         Lazy.assert {
             mutatedActions.isEmpty()  || mutatedActions.size > genesAtActionIndex.maxOrNull()!!
@@ -456,7 +469,7 @@ class ArchiveGeneMutator{
         val ipairs = mutableListOf<Pair<Gene, Gene>>()
         originalActions.forEachIndexed { index, action ->
             val maction = mutatedActions.elementAt(index)
-            action.seeGenes().filter { it.isMutable()}.forEach {g->
+            action.seeTopGenes().filter { it.isMutable()}.forEach { g->
                 val m = ImpactUtils.findMutatedGene(maction, g)
                 if (m != null)
                     ipairs.add(g to m)

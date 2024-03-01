@@ -35,6 +35,8 @@ public class TaintInvalidEMTest extends SpringTestBase {
                 (args) -> {
                     args.add("--baseTaintAnalysisProbability");
                     args.add("0.9");
+                    args.add("--addPreDefinedTests");
+                    args.add("false");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 

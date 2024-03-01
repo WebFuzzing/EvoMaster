@@ -52,10 +52,12 @@ class TestSuiteWriterTest{
         config.outputFileSuffix = ""
 
         val solution = Solution<RestIndividual>(
-                mutableListOf(),
-                config.outputFilePrefix,
-                config.outputFileSuffix,
-                Termination.NONE
+            mutableListOf(),
+            config.outputFilePrefix,
+            config.outputFileSuffix,
+            Termination.NONE,
+            listOf(),
+            listOf()
         )
 
 

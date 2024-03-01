@@ -1,14 +1,17 @@
 package org.evomaster.core.problem.rest
 
-import org.evomaster.core.problem.api.service.param.Param
+import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.param.QueryParam
-import org.evomaster.core.search.gene.OptionalGene
+import org.evomaster.core.search.gene.collection.ArrayGene
+import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.URI
 import java.net.URLEncoder
 import java.util.regex.Pattern
+import kotlin.math.abs
 
 /**
  * Represent a path template for a REST endpoint.
@@ -49,15 +52,26 @@ class RestPath(path: String) {
 
     private val elements: List<Element>
 
+    //memoized the value, as expensive to compute, called often, and this object is immutable anyway...
+    private val computedToString: String
+
+    private val endsWithSlash : Boolean
+
     init {
         if (path.contains("?") || path.contains("#")) {
-            throw IllegalArgumentException("The path contains invalid characters. " +
-                    "Are you sure you didn't pass a full URI?\n$path")
+            throw IllegalArgumentException(
+                "The path contains invalid characters. " +
+                        "Are you sure you didn't pass a full URI?\n$path"
+            )
         }
 
+        endsWithSlash = path.endsWith("/")
+
         elements = path.split("/")
-                .filter { !it.isBlank() }
-                .map { extractElement(it) }
+            .filter { it.isNotBlank() }
+            .map { extractElement(it) }
+
+        computedToString = "/" + elements.joinToString("/") + if(endsWithSlash) "/" else ""
     }
 
 
@@ -76,7 +90,7 @@ class RestPath(path: String) {
             val current = next
             if (s[next] == '{') {
                 next = handleVariable(s, current)
-                tokens.add(Token(s.substring(current + 1, next-1), true))
+                tokens.add(Token(s.substring(current + 1, next - 1), true))
             } else {
                 next = handleBase(s, current)
                 tokens.add(Token(s.substring(current, next), false))
@@ -109,7 +123,7 @@ class RestPath(path: String) {
     }
 
     override fun toString(): String {
-        return "/" + elements.joinToString("/")
+        return computedToString
     }
 
     /**
@@ -124,8 +138,8 @@ class RestPath(path: String) {
      */
     fun getVariableNames(): List<String> {
         return elements.flatMap { it.tokens }
-                .filter { it.isParameter }
-                .map { it.name }
+            .filter { it.isParameter }
+            .map { it.name }
     }
 
     fun hasVariablePathParameters(): Boolean {
@@ -137,6 +151,31 @@ class RestPath(path: String) {
             return false
         }
         return (0 until elements.size).none { this.elements[it] != other.elements[it] }
+    }
+
+    /**
+     * @return whether this is sibling of the [other]
+     *
+     * eg, we consider
+     * /root/{rootName}/foo/{fooName}/bar/{barName}
+     * /root/{rootName}/foo/{fooName}/bar are sibling
+     *
+     * for instance, two examples might be valid for preparing resources for each other.
+     * POST /root/{rootName}/foo/{fooName}/bar/{barName}
+     * GET /root/{rootName}/foo/{fooName}/bar
+     *
+     * POST /root/{rootName}/foo/{fooName}/bar
+     * GET /root/{rootName}/foo/{fooName}/bar/{barName}
+     */
+    fun isSiblingForPreparingResource(other: RestPath): Boolean {
+        val sizeDif = abs(this.elements.size - other.elements.size)
+        if (sizeDif != 1) {
+            return false
+        }
+
+        val moreSize = if (this.elements.size > other.elements.size) this else other
+
+        return (0 until (moreSize.elements.size - 1)).none { this.elements[it] != other.elements[it] } && moreSize.isLastElementAParameter()
     }
 
 
@@ -174,6 +213,26 @@ class RestPath(path: String) {
         return (0 until this.elements.size).none { other.elements[it] != this.elements[it] }
     }
 
+
+    /**
+     * @return whether this is direct or possible ancestor of [other]
+     *
+     * this is to handle the case eg.
+     * /root/{rootName}/bar/{barName} might be the potential
+     * ancestor of /root/{rootName}/foo/{fooName}/bar/{barName}
+     *
+     */
+    fun isDirectOrPossibleAncestorOf(other: RestPath): Boolean {
+        if (this.elements.size > other.elements.size) {
+            return false
+        }
+
+        return (0 until this.elements.size).all {
+            val index = other.elements.indexOfFirst { e-> e == this.elements[it] }
+            index >= 0 && index >= it
+        }
+    }
+
     /**
      * Return a resolved path (starting with "/") based on input parameters.
      * For example:
@@ -201,7 +260,7 @@ class RestPath(path: String) {
     }
 
     private fun usableQueryParamsFunction(): (Param) -> Boolean {
-        return { it is QueryParam && (it.gene !is OptionalGene || it.gene.isActive) }
+        return { it is QueryParam && (it.gene.getWrappedGene(OptionalGene::class.java)?.isActive ?: true) }
     }
 
     fun numberOfUsableQueryParams(params: List<Param>): Int {
@@ -211,13 +270,20 @@ class RestPath(path: String) {
     fun resolveOnlyQuery(params: List<Param>): List<String> {
 
         return params
-                .filter(usableQueryParamsFunction())
-                .map {
-                    val name = encode(it.name)
-                    val gene = it.gene
-                    val value = encode(gene.getValueAsRawString())
+            .filter(usableQueryParamsFunction())
+            .filterIsInstance<QueryParam>()
+            .map { q ->
+                val name = encode(q.name)
+
+                val gene = GeneUtils.getWrappedValueGene(q.getGeneForQuery(), true)
+                if(gene is ArrayGene<*> && q.explode && gene.getViewOfElements().isNotEmpty()){
+                    gene.getViewOfElements()
+                        .joinToString("&") { "$name=${encode(it.getValueAsRawString())}" }
+                } else {
+                    val value = encode(gene!!.getValueAsRawString())
                     "$name=$value"
                 }
+            }
     }
 
     /**
@@ -237,7 +303,7 @@ class RestPath(path: String) {
                     path.append(t.name)
                 } else {
                     val p = params.find { p -> p is PathParam && p.name == t.name }
-                            ?: throw IllegalArgumentException("Cannot resolve path parameter '${t.name}'")
+                        ?: throw IllegalArgumentException("Cannot resolve path parameter '${t.name}'")
 
                     var value = p.gene.getValueAsRawString()
 
@@ -265,6 +331,10 @@ class RestPath(path: String) {
            it seems unclear how to properly build it as a single string...
          */
 
+        if(endsWithSlash){
+            path.append("/")
+        }
+
         return URI(null, null, path.toString(), null, null).rawPath
     }
 
@@ -282,7 +352,7 @@ class RestPath(path: String) {
         return URLEncoder.encode(s, "UTF-8")
     }
 
-    fun copy() : RestPath{
+    fun copy(): RestPath {
         return RestPath(this.toString())
     }
 
@@ -300,8 +370,8 @@ class RestPath(path: String) {
         return elements.flatMap { it.tokens.filter { t -> t.isParameter }.map { t -> t.name } }
     }
 
-    fun getElements() :List<Map<String, Boolean>>{
-        return elements.map { it.tokens.map { t->Pair(t.name, t.isParameter) }.toMap() }
+    fun getElements(): List<Map<String, Boolean>> {
+        return elements.map { it.tokens.map { t -> Pair(t.name, t.isParameter) }.toMap() }
     }
 
     /**
@@ -332,12 +402,12 @@ class RestPath(path: String) {
 
         if (resolvedPath.matches(Regex(regexToMatch))) {
             val matcher = Pattern
-                    .compile(regexToMatch)
-                    .matcher(resolvedPath)
+                .compile(regexToMatch)
+                .matcher(resolvedPath)
 
             if (matcher.find()) {
                 for (i in 1..matcher.groupCount())
-                    keyValues[keys[i-1]] = matcher.group(i)
+                    keyValues[keys[i - 1]] = matcher.group(i)
             }
 
             return keyValues
@@ -358,7 +428,25 @@ class RestPath(path: String) {
                     elementsToMatch.add(t.name)
             }
         }
+        if(endsWithSlash){
+            elementsToMatch.add("/")
+        }
 
         return "^" + elementsToMatch.joinToString("") + "$"
     }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as RestPath
+
+        return computedToString == other.computedToString
+    }
+
+    override fun hashCode(): Int {
+        return computedToString.hashCode()
+    }
+
+
 }

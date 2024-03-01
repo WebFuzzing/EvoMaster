@@ -1,6 +1,7 @@
 package org.evomaster.core.output.oracles
 
 import com.google.gson.Gson
+import com.google.gson.JsonSyntaxException
 import io.swagger.v3.oas.models.media.*
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.Lines
@@ -8,16 +9,14 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.ObjectGenerator
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.httpws.service.HttpWsCallResult
+import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.ObjectGene
-import org.evomaster.core.search.gene.OptionalGene
+import org.evomaster.core.search.gene.optional.OptionalGene
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.lang.IllegalArgumentException
-import java.security.InvalidParameterException
 import javax.ws.rs.core.MediaType
 
 
@@ -344,7 +343,12 @@ class SchemaOracle : ImplementedOracle() {
         var supported = true
 
         if (res.getBodyType()?.isCompatible(MediaType.APPLICATION_JSON_TYPE) == true){
-            val actualObject = Gson().fromJson(res.getBody(), Object::class.java)
+            val actualObject = try {
+                Gson().fromJson(res.getBody(), Object::class.java)
+            } catch (e: JsonSyntaxException) {
+                return false
+            }
+
             if  (actualObject is Map<*,*>)
                 supported = supportedObject(actualObject, call)
             else if (actualObject is List<*>
@@ -367,7 +371,7 @@ class SchemaOracle : ImplementedOracle() {
 
         if(!::objectGenerator.isInitialized) return false
 
-        return individual.evaluatedActions().any {
+        return individual.evaluatedMainActions().any {
             val call = it.action as RestCallAction
             val res = it.result as HttpWsCallResult
             generatesExpectation(call, res)
@@ -380,7 +384,9 @@ class SchemaOracle : ImplementedOracle() {
     }
 
     override fun selectForClustering(action: EvaluatedAction): Boolean {
-        if (action.action is RestCallAction && action.result is HttpWsCallResult){
+        if (action.action is RestCallAction
+                && action.result is HttpWsCallResult
+                && !(action.action as RestCallAction).skipOracleChecks){
             return generatesExpectation(action.action as RestCallAction, action.result as HttpWsCallResult)
         }
         else return false

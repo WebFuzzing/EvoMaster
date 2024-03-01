@@ -23,9 +23,9 @@ public class WebRequestClassReplacement extends ThirdPartyMethodReplacementClass
     @Replacement(replacingStatic = false,
             type = ReplacementType.TRACKER,
             id = "getParameter",
-            usageFilter = UsageFilter.ONLY_SUT,
+            usageFilter = UsageFilter.ANY,
             category = ReplacementCategory.BASE)
-    public static String getParameter(Object caller, String param){
+    public static String getParameter(Object caller, String param) throws Exception{
 
         if(caller == null){
             throw new NullPointerException();
@@ -40,17 +40,17 @@ public class WebRequestClassReplacement extends ThirdPartyMethodReplacementClass
         } catch (IllegalAccessException e){
             throw new RuntimeException(e);// ah, the beauty of Java...
         } catch (InvocationTargetException e){
-            throw (RuntimeException) e.getCause();
+            throw (Exception) e.getCause();
         }
     }
 
     @Replacement(replacingStatic = false,
             type = ReplacementType.TRACKER,
             id = "getParameterValues",
-            usageFilter = UsageFilter.ONLY_SUT,
+            usageFilter = UsageFilter.ANY,
             category = ReplacementCategory.BASE
     )
-    public static String[] getParameterValues(Object caller, String param){
+    public static String[] getParameterValues(Object caller, String param) throws Exception{
 
         if(caller == null){
             throw new NullPointerException();
@@ -65,7 +65,7 @@ public class WebRequestClassReplacement extends ThirdPartyMethodReplacementClass
         } catch (IllegalAccessException e){
             throw new RuntimeException(e);// ah, the beauty of Java...
         } catch (InvocationTargetException e){
-            throw (RuntimeException) e.getCause();
+            throw (Exception) e.getCause();
         }
     }
 
@@ -73,10 +73,10 @@ public class WebRequestClassReplacement extends ThirdPartyMethodReplacementClass
     @Replacement(replacingStatic = false,
             type = ReplacementType.TRACKER,
             id = "getHeader",
-            usageFilter = UsageFilter.ONLY_SUT,
+            usageFilter = UsageFilter.ANY,
             category = ReplacementCategory.BASE
     )
-    public static String getHeader(Object caller, String header){
+    public static String getHeader(Object caller, String header) throws Exception{
 
         if(caller == null){
             throw new NullPointerException();
@@ -91,17 +91,17 @@ public class WebRequestClassReplacement extends ThirdPartyMethodReplacementClass
         } catch (IllegalAccessException e){
             throw new RuntimeException(e);// ah, the beauty of Java...
         } catch (InvocationTargetException e){
-            throw (RuntimeException) e.getCause();
+            throw (Exception) e.getCause();
         }
     }
 
     @Replacement(replacingStatic = false,
             type = ReplacementType.TRACKER,
             id = "getHeaderValues",
-            usageFilter = UsageFilter.ONLY_SUT,
+            usageFilter = UsageFilter.ANY,
             category = ReplacementCategory.BASE
     )
-    public static String[] getHeaderValues(Object caller, String header){
+    public static String[] getHeaderValues(Object caller, String header) throws Exception{
 
         if(caller == null){
             throw new NullPointerException();
@@ -116,7 +116,7 @@ public class WebRequestClassReplacement extends ThirdPartyMethodReplacementClass
         } catch (IllegalAccessException e){
             throw new RuntimeException(e);// ah, the beauty of Java...
         } catch (InvocationTargetException e){
-            throw (RuntimeException) e.getCause();
+            throw (Exception) e.getCause();
         }
     }
 }

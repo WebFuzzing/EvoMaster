@@ -16,7 +16,6 @@ public class JSqlConditionParserTest {
         JSqlConditionParser parser = new JSqlConditionParser();
         parser.parse("c >= 100", ConstraintDatabaseType.H2);
     }
-
     @Test
     public void testIn() throws SqlConditionParserException {
         JSqlConditionParser parser = new JSqlConditionParser();
@@ -88,4 +87,21 @@ public class JSqlConditionParserTest {
         SqlCondition actual = parser.parse("(status enum ('A', 'B'))", ConstraintDatabaseType.MYSQL);
         assertEquals(expected, actual);
     }
+
+    @Test
+    public void testParseCastAsVarchar() throws SqlConditionParserException {
+        JSqlConditionParser parser = new JSqlConditionParser();
+        SqlCondition expected = parser.parse("(status IN ( 'hi', 'low'  ) )", ConstraintDatabaseType.H2);
+        SqlCondition actual = parser.parse("(status IN ( CAST('hi' AS VARCHAR(2)), CAST('low' AS VARCHAR(3) ) ) )", ConstraintDatabaseType.H2);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testParseCastAsCharacterLargeObject() throws SqlConditionParserException {
+        JSqlConditionParser parser = new JSqlConditionParser();
+        SqlCondition expected = parser.parse("(status IN ( CAST('hi' AS VARCHAR(2)), CAST('low' AS VARCHAR(3) ) ) )", ConstraintDatabaseType.H2);
+        SqlCondition actual = parser.parse("(status IN ( CAST('hi' AS CHARACTER LARGE OBJECT(2)), CAST('low' AS CHARACTER LARGE OBJECT(3) ) ) )", ConstraintDatabaseType.H2);
+        assertEquals(expected, actual);
+    }
+
 }

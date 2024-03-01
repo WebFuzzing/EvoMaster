@@ -3,13 +3,16 @@ package org.evomaster.core.search.gene.datetime
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.root.CompositeFixedGene
+import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.date.TimeGeneImpact
-import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -24,8 +27,9 @@ class TimeGene(
     val hour: IntegerGene = IntegerGene("hour", 0, MIN_HOUR, MAX_HOUR),
     val minute: IntegerGene = IntegerGene("minute", 0, MIN_MINUTE, MAX_MINUTE),
     val second: IntegerGene = IntegerGene("second", 0, MIN_SECOND, MAX_SECOND),
-    val timeGeneFormat: TimeGeneFormat = TimeGeneFormat.TIME_WITH_MILLISECONDS
-) : Comparable<TimeGene>, Gene(name, mutableListOf<Gene>(hour, minute, second)) {
+    val timeGeneFormat: TimeGeneFormat = TimeGeneFormat.TIME_WITH_MILLISECONDS,
+    val onlyValidTimes: Boolean = false //TODO refactor once dealing with Robustness Testing
+) : Comparable<TimeGene>, CompositeFixedGene(name, listOf(hour, minute, second)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(TimeGene::class.java)
@@ -51,7 +55,9 @@ class TimeGene(
         TIME_WITH_MILLISECONDS
     }
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf(hour, minute, second)
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
 
     /*
         Note: would need to handle timezone and second fractions,
@@ -60,31 +66,26 @@ class TimeGene(
 
     override fun copyContent(): Gene = TimeGene(
         name,
-        hour.copyContent() as IntegerGene,
-        minute.copyContent() as IntegerGene,
-        second.copyContent() as IntegerGene,
-        timeGeneFormat = this.timeGeneFormat
+        hour.copy() as IntegerGene,
+        minute.copy() as IntegerGene,
+        second.copy() as IntegerGene,
+        timeGeneFormat = this.timeGeneFormat,
+        onlyValidTimes = this.onlyValidTimes
     )
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-
-        hour.randomize(randomness, forceNewValue, allGenes)
-        minute.randomize(randomness, forceNewValue, allGenes)
-        second.randomize(randomness, forceNewValue, allGenes)
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
+        do {
+            hour.randomize(randomness, tryToForceNewValue)
+            minute.randomize(randomness, tryToForceNewValue)
+            second.randomize(randomness, tryToForceNewValue)
+        } while (onlyValidTimes && !isValidTime())
     }
 
-    override fun candidatesInternalGenes(
-        randomness: Randomness,
-        apc: AdaptiveParameterControl,
-        allGenes: List<Gene>,
-        selectionStrategy: SubsetGeneSelectionStrategy,
-        enableAdaptiveGeneMutation: Boolean,
-        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene> {
-        return listOf(hour, minute, second)
-    }
+    fun isValidTime()= hour.value in 0..23
+            && minute.value in 0..59
+            && second.value in 0..59
 
-    override fun adaptiveSelectSubset(
+    override fun adaptiveSelectSubsetToMutate(
         randomness: Randomness,
         internalGenes: List<Gene>,
         mwc: MutationWeightControl,
@@ -143,13 +144,16 @@ class TimeGene(
         }
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is TimeGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        this.hour.copyValueFrom(other.hour)
-        this.minute.copyValueFrom(other.minute)
-        this.second.copyValueFrom(other.second)
+
+        return updateValueOnlyIfValid(
+            {this.hour.copyValueFrom(other.hour)
+                    && this.minute.copyValueFrom(other.minute)
+                    && this.second.copyValueFrom(other.second)}, true
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -162,12 +166,6 @@ class TimeGene(
     }
 
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this)
-        else listOf(this).plus(hour.flatView(excludePredicate))
-            .plus(minute.flatView(excludePredicate))
-            .plus(second.flatView(excludePredicate))
-    }
 
     private fun isValidHourRange(gene: IntegerGene): Boolean {
         return gene.min == 0 && gene.max == 23
@@ -191,12 +189,7 @@ class TimeGene(
                 && isValidSecondRange(this.second)
 
 
-    /*
-     override fun mutationWeight(): Int
-     weight for time gene might be 1 as default since it is simple to solve
-    */
 
-    override fun innerGene(): List<Gene> = listOf(hour, minute, second)
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return when {
@@ -207,7 +200,7 @@ class TimeGene(
             }
             gene is DateTimeGene -> bindValueBasedOn(gene.time)
             gene is StringGene && gene.getSpecializationGene() != null -> bindValueBasedOn(gene.getSpecializationGene()!!)
-            gene is SeededGene<*> -> this.bindValueBasedOn(gene.getPhenotype())
+            gene is SeededGene<*> -> this.bindValueBasedOn(gene.getPhenotype()  as Gene)
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind TimeGene with ${gene::class.java.simpleName}")
                 false
@@ -237,6 +230,20 @@ class TimeGene(
 
     override fun compareTo(other: TimeGene): Int {
         return TIME_GENE_COMPARATOR.compare(this, other)
+    }
+
+
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneMutationSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): Boolean {
+        return false
+    }
+
+    override fun mutationCheck(): Boolean {
+        return !onlyValidTimes || isValidTime()
     }
 
 }

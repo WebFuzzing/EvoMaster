@@ -217,6 +217,9 @@ class Randomness {
     }
 
     fun randomizeBoundedIntAndLong(value: Long, min: Long, max: Long, forceNewValue: Boolean) : Long{
+
+        if (min == max) return min
+
         val z = 1000L
         val range = calculateIncrement(min, max, 1L)
 
@@ -239,6 +242,7 @@ class Randomness {
             a = min
             b = max
         }
+
 
         return if (forceNewValue) {
             nextLong(a, b, value)
@@ -329,7 +333,7 @@ class Randomness {
     }
 
     /**
-     * Choose a value from the [map] based on the associated probabilities.
+     * Choose a key from the [map] based on the associated probabilities.
      * The highest the associated probability, the *more* chances to be selected.
      * If an element [K] is not present in the map, then
      * its probability is 0.
@@ -337,10 +341,10 @@ class Randomness {
      * Note: as [K] is used as a key, make sure that [equals] and [hashCode]
      * are well defined for it (eg, no problem if it is a [Int] or a [String])
      */
-    fun <K> chooseByProbability(map: Map<K, Float>): K {
+    fun <K> chooseByProbability(map: Map<K, Double>): K {
 
-        val randFl = random.nextFloat() * map.values.sum()
-        var temp = 0.toFloat()
+        val randFl = random.nextDouble() * map.values.sum()
+        var temp = 0.0
         var found = map.keys.first()
 
         for ((k, v) in map) {
@@ -380,6 +384,11 @@ class Randomness {
 
         val index = random.nextInt(index)
         return list[index]
+    }
+
+
+    fun choose(range: IntRange) : Int{
+        return nextInt(range.first, range.last)
     }
 
     fun <T> choose(list: List<T>): T {
@@ -450,6 +459,12 @@ class Randomness {
         val k = iter.next()
         log.trace("Chosen: {}", k)
 
+        return k
+    }
+
+    fun randomIPBit() : Int {
+        val k = random.nextInt( 255)
+        log.trace("Random IP bit: {}", k)
         return k
     }
 }

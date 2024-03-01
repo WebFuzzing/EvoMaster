@@ -4,7 +4,7 @@ import {StringSpecializationInfo} from "../../shared/StringSpecializationInfo";
 import {StringSpecialization} from "../../shared/StringSpecialization";
 import ExecutionTracer from "../../staticstate/ExecutionTracer";
 import Truthness from "../../heuristic/Truthness";
-import DistanceHelper from "../../heuristic/DistanceHelper";
+import DistanceHelper, {EqualityAlgorithm} from "../../heuristic/DistanceHelper";
 import CollectionsDistanceUtils from "../CollectionsDistanceUtils";
 import {ReplacementType} from "../ReplacementType";
 
@@ -26,6 +26,7 @@ export default class ArrayClassReplacement extends MethodReplacementClass{
         }
 
         if (ArrayClassReplacement.isNumberOrString(searchElement) && ExecutionTracer.isTaintInput(searchElement)){
+            // TODO shall we add all or fromIndex?
             for (let e of caller){
                 if (ArrayClassReplacement.isNumberOrString(e)){
                     ExecutionTracer.addStringSpecialization(searchElement,
@@ -39,11 +40,14 @@ export default class ArrayClassReplacement extends MethodReplacementClass{
         if (idTemplate == null)
             return result;
 
+        const candidates = caller.slice(fromIndex)
+
         let t : Truthness;
         if (result){
             t = new Truthness(1, DistanceHelper.H_NOT_NULL);
         } else {
-            let d = CollectionsDistanceUtils.getHeuristicToIncludes(caller, searchElement);
+            // array.includes employs sameValueZero algorithm
+            let d = CollectionsDistanceUtils.getHeuristicToIncludes(candidates, searchElement, EqualityAlgorithm.SameValueZero);
             t = new Truthness(d, 1);
         }
 

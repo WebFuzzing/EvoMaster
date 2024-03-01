@@ -31,6 +31,7 @@ data class AdditionalGeneMutationInfo (
         val targets: Set<Int>,
         val fromInitialization : Boolean = false,
         val position : Int = -1,
+        val localId : String?,
         val rootGene : Gene,
         val effectiveHistory: MutableList<Gene> = mutableListOf(),
         val history: MutableList<Pair<Gene, EvaluatedInfo>> = mutableListOf()
@@ -39,7 +40,7 @@ data class AdditionalGeneMutationInfo (
 
         return AdditionalGeneMutationInfo(
                 selection,
-                impact, geneReference, archiveGeneSelector, archiveGeneMutator, evi, targets, rootGene = rootGene,
+                impact, geneReference, archiveGeneSelector, archiveGeneMutator, evi, targets, rootGene = rootGene, localId = localId,
                 effectiveHistory = effectiveHistory, history = history
         )
     }
@@ -51,11 +52,11 @@ data class AdditionalGeneMutationInfo (
         }
         return AdditionalGeneMutationInfo(
                 selection,
-                impact, geneReference, archiveGeneSelector, archiveGeneMutator, evi, targets, rootGene = rootGene,
+                impact, geneReference, archiveGeneSelector, archiveGeneMutator, evi, targets, rootGene = rootGene, localId = localId,
                 effectiveHistory = effectiveHistory.mapNotNull {
-                   it.innerGene().find { g-> g.possiblySame(gene) } }.toMutableList(),
-                history = history.filter { it.first.innerGene().any { g-> g.possiblySame(gene) }}.map {
-                    it.first.innerGene().find { g-> g.possiblySame(gene) }!! to it.second
+                   it.getViewOfChildren().find { g-> g.possiblySame(gene) } }.toMutableList(),
+                history = history.filter { it.first.getViewOfChildren().any { g-> g.possiblySame(gene) }}.map {
+                    it.first.getViewOfChildren().find { g-> g.possiblySame(gene) }!! to it.second
                 }.toMutableList()
         )
     }

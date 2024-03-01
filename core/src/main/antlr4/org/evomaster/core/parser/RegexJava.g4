@@ -91,6 +91,12 @@ atom
  | AtomEscape
  | characterClass
  | PAREN_open disjunction PAREN_close
+ // These two rules are added to handle the . and + symbols in emails
+ // A more general solution is needed for escaped control symbols in Java
+ // regular expressions
+ | ESCAPED_DOT
+ | ESCAPED_PLUS
+
  //TODO
 // | '(' '?' ':' disjunction ')'
  ;
@@ -194,7 +200,8 @@ classAtomNoDash
  : BaseChar
  | DecimalDigit
  | COMMA | CARET | DOLLAR | SLASH | DOT | STAR | PLUS | QUESTION
- | PAREN_open | PAREN_close | BRACKET_open | BRACE_open | BRACE_close | OR | E | Q;
+ | PAREN_open | PAREN_close | BRACKET_open | BRACE_open | BRACE_close | OR | E | Q
+ | ESCAPED_DOT | ESCAPED_PLUS;
 
 
 //TODO
@@ -232,7 +239,8 @@ fragment CharacterClassEscape
  ;
 
 
-
+ESCAPED_PLUS               : '\\+'; // Recognize \+
+ESCAPED_DOT                : '\\.'; // Recognize \-
 CARET                      : '^';
 DOLLAR                     : '$';
 SLASH                      : '\\';

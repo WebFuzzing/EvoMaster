@@ -1,17 +1,15 @@
 package org.evomaster.core.search.gene.sql
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.StructuralElement
+import org.evomaster.core.search.gene.root.CompositeGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.impactinfocollection.sql.SqlPrimaryKeyGeneImpact
-import org.evomaster.core.search.gene.GeneUtils
-import org.evomaster.core.search.service.AdaptiveParameterControl
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneMutator
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -28,7 +26,7 @@ class SqlPrimaryKeyGene(name: String,
                          * Cannot be negative
                          */
                         val uniqueId: Long
-) : SqlWrapperGene(name, mutableListOf(gene)) {
+) : SqlWrapperGene, CompositeGene(name, mutableListOf(gene)) {
 
 
     init {
@@ -41,6 +39,10 @@ class SqlPrimaryKeyGene(name: String,
         private val log: Logger = LoggerFactory.getLogger(SqlPrimaryKeyGene::class.java)
     }
 
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
+
     override fun getForeignKey(): SqlForeignKeyGene? {
         if(gene is SqlWrapperGene){
             return gene.getForeignKey()
@@ -48,19 +50,15 @@ class SqlPrimaryKeyGene(name: String,
         return null
     }
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf(gene)
+    override fun copyContent() = SqlPrimaryKeyGene(name, tableName, gene.copy(), uniqueId)
 
-    override fun copyContent() = SqlPrimaryKeyGene(name, tableName, gene.copyContent(), uniqueId)
-
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-        gene.randomize(randomness, false, allGenes)
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
+        if(gene.isMutable())
+            gene.randomize(randomness, false)
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
-        return if (isMutable()) listOf(gene) else emptyList()
-    }
 
-    override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
+    override fun adaptiveSelectSubsetToMutate(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
         if (additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is SqlPrimaryKeyGeneImpact){
             if (internalGenes.size != 1 || !internalGenes.contains(gene))
                 throw IllegalStateException("mismatched input: the internalGenes should only contain gene")
@@ -70,16 +68,14 @@ class SqlPrimaryKeyGene(name: String,
 
     }
 
-    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
-        //do nothing since the gene is not mutable
-        return true
-    }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is SqlPrimaryKeyGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        this.gene.copyValueFrom(other.gene)
+        return updateValueOnlyIfValid(
+            {this.gene.copyValueFrom(other.gene)}, false
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -100,10 +96,7 @@ class SqlPrimaryKeyGene(name: String,
 
     override fun getVariableName() = gene.getVariableName()
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this) else
-            listOf(this).plus(gene.flatView(excludePredicate))
-    }
+
 
     override fun isMutable() = gene.isMutable()
 
@@ -118,11 +111,19 @@ class SqlPrimaryKeyGene(name: String,
         return gene.isReferenceToNonPrintable(previousGenes)
     }
 
-    override fun innerGene(): List<Gene> = listOf(gene)
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         // do nothing
         return true
+    }
+
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneMutationSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): Boolean {
+        return false
     }
 
 }

@@ -3,7 +3,7 @@ package org.evomaster.core.search.structuralelement.action
 import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.builder.GraphQLActionBuilder
 import org.evomaster.core.problem.graphql.param.GQReturnParam
-import org.evomaster.core.search.Action
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.structuralelement.StructuralElementBaseTest
@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test
 object GQLActionCluster{
     val cluster : MutableMap<String, Action> = mutableMapOf()
     init {
-        val schema = this::class.java.getResource("/graphql/PetsClinic.json")?.readText()?:throw IllegalStateException("fail to get the resource")
+        val schema = this::class.java.getResource("/graphql/online/PetsClinic.json")?.readText()?:throw IllegalStateException("fail to get the resource")
         GraphQLActionBuilder.addActionsFromSchema(schema, cluster)
     }
 }

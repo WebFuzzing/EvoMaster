@@ -1,13 +1,15 @@
 package org.evomaster.core.search.gene.sql
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.service.AdaptiveParameterControl
+import org.evomaster.core.search.gene.interfaces.ComparableGene
+import org.evomaster.core.search.gene.root.CompositeFixedGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -26,14 +28,14 @@ class SqlRangeGene<T>(
 
         private val isLeftClosed: BooleanGene = BooleanGene("isLeftClosed"),
 
-        private val left: T = template.copyContent() as T,
+        private val left: T = template.copy() as T,
 
-        private val right: T = template.copyContent() as T,
+        private val right: T = template.copy() as T,
 
         private val isRightClosed: BooleanGene = BooleanGene("isRightClosed")
 
-) : Gene(name, mutableListOf(isLeftClosed, left, right, isRightClosed))
-        where T : ComparableGene {
+) : CompositeFixedGene(name, mutableListOf(isLeftClosed, left, right, isRightClosed))
+        where T : ComparableGene, T: Gene {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlRangeGene::class.java)
@@ -45,6 +47,10 @@ class SqlRangeGene<T>(
         repairGeneIfNeeded()
     }
 
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+                && left <= right
+    }
 
     private fun swapLeftRightValues() {
         val copyOfLeftGene = left.copy()
@@ -63,29 +69,36 @@ class SqlRangeGene<T>(
         assert(left <= right)
     }
 
-    override fun getChildren(): MutableList<Gene> =
-            mutableListOf(isLeftClosed, left, right, isRightClosed)
+    override fun mutationCheck(): Boolean {
+        return isLocallyValid()
+    }
+
+    override fun repair() {
+        repairGeneIfNeeded()
+    }
 
     override fun copyContent(): Gene {
         return SqlRangeGene<T>(
                 name = name,
-                template = template.copyContent() as T,
-                isLeftClosed = isLeftClosed.copyContent() as BooleanGene,
-                left = left.copyContent() as T,
-                right = right.copyContent() as T,
-                isRightClosed = isRightClosed.copyContent() as BooleanGene
+                template = template.copy() as T,
+                isLeftClosed = isLeftClosed.copy() as BooleanGene,
+                left = left.copy() as T,
+                right = right.copy() as T,
+                isRightClosed = isRightClosed.copy() as BooleanGene
         )
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is SqlRangeGene<*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
 
-        isLeftClosed.copyValueFrom(other.isLeftClosed)
-        left.copyValueFrom(other.left)
-        right.copyValueFrom(other.right)
-        isRightClosed.copyValueFrom(other.isRightClosed)
+        return updateValueOnlyIfValid(
+            {isLeftClosed.copyValueFrom(other.isLeftClosed) &&
+                    left.copyValueFrom(other.left as Gene) &&
+                    right.copyValueFrom(other.right as Gene) &&
+                    isRightClosed.copyValueFrom(other.isRightClosed)}, true
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -93,33 +106,20 @@ class SqlRangeGene<T>(
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return isLeftClosed.containsSameValueAs(other.isRightClosed)
-                && left.containsSameValueAs(other.left)
-                && right.containsSameValueAs(other.right)
+                && left.containsSameValueAs(other.left as Gene)
+                && right.containsSameValueAs(other.right as Gene)
                 && isRightClosed.containsSameValueAs(other.isRightClosed)
     }
 
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         log.trace("Randomizing SqlRangeGene")
         listOf(isRightClosed, left, right, isRightClosed)
-                .forEach { it.randomize(randomness, forceNewValue, allGenes) }
+                .forEach { it.randomize(randomness, tryToForceNewValue) }
         repairGeneIfNeeded()
     }
 
-    /**
-     * Forbid explicitly individual mutation
-     * of these genes
-     */
-    override fun candidatesInternalGenes(
-            randomness: Randomness,
-            apc: AdaptiveParameterControl,
-            allGenes: List<Gene>,
-            selectionStrategy: SubsetGeneSelectionStrategy,
-            enableAdaptiveGeneMutation: Boolean,
-            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene> {
-        return listOf()
-    }
+
 
     private fun isLeftOpen(): Boolean {
         return !isLeftClosed.value
@@ -135,10 +135,10 @@ class SqlRangeGene<T>(
     }
 
     override fun getValueAsPrintableString(
-            previousGenes: List<Gene>,
-            mode: GeneUtils.EscapeMode?,
-            targetFormat: OutputFormat?,
-            extraCheck: Boolean
+        previousGenes: List<Gene>,
+        mode: GeneUtils.EscapeMode?,
+        targetFormat: OutputFormat?,
+        extraCheck: Boolean
     ): String {
         if (isEmpty())
             return "\"empty\""
@@ -153,23 +153,11 @@ class SqlRangeGene<T>(
     }
 
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this) else
-            listOf(this).plus(isLeftClosed)
-                    .plus(left)
-                    .plus(right)
-                    .plus(isRightClosed)
-    }
-
-
-    override fun innerGene(): List<Gene> =
-            listOf(isLeftClosed, left, right, isRightClosed)
-
     override fun bindValueBasedOn(gene: Gene): Boolean {
         if (gene is SqlRangeGene<*> && gene.template::class.java.simpleName == template::class.java.simpleName) {
             this.isLeftClosed.bindValueBasedOn(gene.isLeftClosed)
-            this.left.bindValueBasedOn(gene.left)
-            this.right.bindValueBasedOn(gene.right)
+            this.left.bindValueBasedOn(gene.left as Gene)
+            this.right.bindValueBasedOn(gene.right as Gene)
             this.isRightClosed.bindValueBasedOn(gene.isRightClosed)
         }
         LoggingUtil.uniqueWarn(
@@ -179,18 +167,14 @@ class SqlRangeGene<T>(
         return false
     }
 
-
-    override fun mutate(
-            randomness: Randomness,
-            apc: AdaptiveParameterControl,
-            mwc: MutationWeightControl,
-            allGenes: List<Gene>,
-            selectionStrategy: SubsetGeneSelectionStrategy,
-            enableAdaptiveGeneMutation: Boolean,
-            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneMutationSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): Boolean {
-        this.randomize(randomness, true, allGenes)
-        return true
+        return false
     }
+
 
 }

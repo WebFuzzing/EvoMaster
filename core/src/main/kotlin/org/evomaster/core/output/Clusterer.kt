@@ -5,7 +5,8 @@ import org.evomaster.core.output.clustering.DBSCANClusterer
 import org.evomaster.core.output.clustering.metrics.DistanceMetric
 import org.evomaster.core.output.clustering.metrics.DistanceMetricErrorText
 import org.evomaster.core.output.service.PartialOracles
-import org.evomaster.core.problem.httpws.service.HttpWsCallResult
+import org.evomaster.core.problem.api.ApiWsIndividual
+import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.Solution
 
@@ -24,7 +25,7 @@ import org.evomaster.core.search.Solution
  * TODO: Refactor the method to show if the action reveals a fault in other ways.
  */
 object Clusterer {
-    fun cluster(solution: Solution<RestIndividual>,
+    fun cluster(solution: Solution<ApiWsIndividual>,
                 config: EMConfig,
                 epsilon: Double = 0.6,
                 oracles: PartialOracles = PartialOracles(),
@@ -34,7 +35,7 @@ object Clusterer {
         In order to be clustered, an individual must have at least one failed result.
          */
         val sol1 = solution.individuals.filter{
-            it.evaluatedActions().any{ ac ->
+            it.evaluatedMainActions().any{ ac ->
                 TestSuiteSplitter.assessFailed(ac, oracles, config)
             }
         }
@@ -45,7 +46,7 @@ object Clusterer {
          */
 
         val clusterableActions = sol1.flatMap {
-            it.evaluatedActions().filter { ac ->
+            it.evaluatedMainActions().filter { ac ->
                 TestSuiteSplitter.assessFailed(ac, oracles, config)
             }
         }.map { ac -> ac.result }
@@ -67,7 +68,7 @@ object Clusterer {
         val clusters = clu.performCLustering()
         clusters.forEachIndexed { index, clu ->
             val inds = solution.individuals.filter { ind ->
-                ind.evaluatedActions().any { ac ->
+                ind.evaluatedMainActions().any { ac ->
                     clu.contains(ac.result as HttpWsCallResult)
                 }
             }.map {

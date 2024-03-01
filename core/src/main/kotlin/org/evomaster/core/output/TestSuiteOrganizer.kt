@@ -2,7 +2,7 @@ package org.evomaster.core.output
 
 import org.evomaster.core.Lazy
 import org.evomaster.core.output.service.PartialOracles
-import org.evomaster.core.problem.httpws.service.HttpWsCallResult
+import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
@@ -53,7 +53,7 @@ class NamingHelper {
     }
 
     private fun criterion2_hasPost (individual: EvaluatedIndividual<*>): String{
-        if(individual.individual.seeActions().filterIsInstance<RestCallAction>().any{it.verb == HttpVerb.POST} ){
+        if(individual.individual.seeAllActions().filterIsInstance<RestCallAction>().any{it.verb == HttpVerb.POST} ){
             return "_hasPost"
         }
 
@@ -155,19 +155,19 @@ class SortingHelper {
         val min = ind.seeResults().filterIsInstance<HttpWsCallResult>().minByOrNull {
             it.getStatusCode()?.rem(500) ?: 0
         }
-        ((min as HttpWsCallResult).getStatusCode())?.rem(500) ?: 0
+        (min?.getStatusCode())?.rem(500) ?: 0
     }
 
     /** [maxActions] sorts Evaluated individuals based on the number of actions (most actions first).
      */
     private val maxActions: Comparator<EvaluatedIndividual<*>> = compareBy<EvaluatedIndividual<*>>{ ind ->
-        ind.individual.seeActions().size
+        ind.individual.seeAllActions().size
     }.reversed()
 
     /** [minActions] sorts Evaluated individuals based on the number of actions (most actions first).
      */
     private val minActions: Comparator<EvaluatedIndividual<*>> = compareBy { ind ->
-        ind.individual.seeActions().size
+        ind.individual.seeAllActions().size
     }
 
     /**

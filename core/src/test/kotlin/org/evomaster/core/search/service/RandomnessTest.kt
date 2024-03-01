@@ -48,12 +48,12 @@ class RandomnessTest{
     @Test
     fun testChooseByProbability(){
 
-        val m = mutableMapOf<String, Float>()
-        m["a"] = 1f
-        m["b"] = 2f
-        m["c"] = 1f
-        m["d"] = 1f
-        m["e"] = 2f
+        val m = mutableMapOf<String, Double>()
+        m["a"] = 1.0
+        m["b"] = 2.0
+        m["c"] = 1.0
+        m["d"] = 1.0
+        m["e"] = 2.0
 
 
         rand.updateSeed(seed)
@@ -153,5 +153,20 @@ class RandomnessTest{
         }
 
         assertEquals(a, b)
+    }
+
+    @Test
+    fun chooseIntRange(){
+
+        val a = listOf(3,4,5,6)
+
+        val seen = a.map { false }.toMutableList()
+
+        for(i in 0 until 100){
+            val k = rand.choose(a.indices)
+            assertTrue(k in 0..3, "Wrong value: $k")
+            seen[k] = true
+        }
+        assertTrue(seen.all { it })
     }
 }

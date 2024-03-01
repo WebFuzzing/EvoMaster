@@ -3,16 +3,18 @@ package org.evomaster.core.problem.httpws.service
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.evomaster.client.java.controller.api.dto.*
 import org.evomaster.core.StaticCounter
-import org.evomaster.core.database.DbActionTransformer
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.sql.SqlActionTransformer
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.CookieWriter
 import org.evomaster.core.output.TokenWriter
 import org.evomaster.core.problem.api.service.ApiWsFitness
-import org.evomaster.core.problem.api.service.ApiWsIndividual
+import org.evomaster.core.problem.api.ApiWsIndividual
+import org.evomaster.core.problem.httpws.HttpWsAction
+import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.remote.SutProblemException
-import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
 import org.glassfish.jersey.client.ClientConfig
 import org.glassfish.jersey.client.ClientProperties
@@ -248,9 +250,7 @@ abstract class HttpWsFitness<T>: ApiWsFitness<T>() where T : Individual {
     }
 
 
-    protected fun registerNewAction(action: Action, index: Int){
-        rc.registerNewAction(getActionDto(action, index))
-    }
+
 
 
     @Deprecated("replaced by doDbCalls()")
@@ -258,12 +258,12 @@ abstract class HttpWsFitness<T>: ApiWsFitness<T>() where T : Individual {
 
         if (log.isTraceEnabled){
             log.trace("do {} InitializingActions: {}", ind.seeInitializingActions().size,
-                ind.seeInitializingActions().joinToString(","){
+                ind.seeInitializingActions().filterIsInstance<SqlAction>().joinToString(","){
                     it.getResolvedName()
                 })
         }
 
-        if (ind.seeInitializingActions().none { !it.representExistingData }) {
+        if (ind.seeInitializingActions().filterIsInstance<SqlAction>().none { !it.representExistingData }) {
             /*
                 We are going to do an initialization of database only if there
                 is data to add.
@@ -273,7 +273,7 @@ abstract class HttpWsFitness<T>: ApiWsFitness<T>() where T : Individual {
             return
         }
 
-        val dto = DbActionTransformer.transform(ind.seeInitializingActions())
+        val dto = SqlActionTransformer.transform(ind.seeInitializingActions().filterIsInstance<SqlAction>())
         dto.idCounter = StaticCounter.getAndIncrease()
 
         val ok = rc.executeDatabaseCommand(dto)
@@ -285,7 +285,7 @@ abstract class HttpWsFitness<T>: ApiWsFitness<T>() where T : Individual {
 
 
 
-    protected fun handleAuth(a: HttpWsAction, builder: Invocation.Builder, cookies: Map<String, List<NewCookie>>, tokens: Map<String, String>) {
+    protected fun handleHeaders(a: HttpWsAction, builder: Invocation.Builder, cookies: Map<String, List<NewCookie>>, tokens: Map<String, String>) {
         a.auth.headers.forEach {
             builder.header(it.name, it.value)
         }
@@ -301,13 +301,14 @@ abstract class HttpWsFitness<T>: ApiWsFitness<T>() where T : Individual {
                 //TODO those should be skipped directly in the search, ie, right now they are useless genes
                 .filter { !prechosenAuthHeaders.contains(it.name) }
                 .filter { !(a.auth.jsonTokenPostLogin != null && it.name.equals("Authorization", true)) }
+                .filter{ it.isInUse()}
                 .forEach {
-                    builder.header(it.name, it.gene.getValueAsRawString())
+                    builder.header(it.name, it.getRawValue())
                 }
 
         if (a.auth.cookieLogin != null) {
             val list = cookies[a.auth.cookieLogin!!.username]
-            if (list == null || list.isEmpty()) {
+            if (list.isNullOrEmpty()) {
                 log.warn("No cookies for ${a.auth.cookieLogin!!.username}")
             } else {
                 list.forEach {
@@ -318,7 +319,7 @@ abstract class HttpWsFitness<T>: ApiWsFitness<T>() where T : Individual {
 
         if (a.auth.jsonTokenPostLogin != null) {
             val token = tokens[a.auth.jsonTokenPostLogin!!.userId]
-            if (token == null || token.isEmpty()) {
+            if (token.isNullOrEmpty()) {
                 log.warn("No auth token for ${a.auth.jsonTokenPostLogin!!.userId}")
             } else {
                 builder.header("Authorization", token)

@@ -1,29 +1,35 @@
 package org.evomaster.core.search.gene.regex
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.StructuralElement
+import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.GeneUtils
-import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.regex.DisjunctionRxGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 
 class DisjunctionRxGene(
         name: String,
-        val terms: List<RxTerm>,
+        val terms: List<Gene>,
         /**  does this disjunction match the beginning of the string, or could it be at any position? */
         var matchStart: Boolean,
         /** does this disjunction match the end of the string, or could it be at any position? */
         var matchEnd: Boolean
-) : RxAtom(name, terms.toMutableList()) {
+) : RxAtom, CompositeFixedGene(name, terms) {
+
+    init{
+        if(terms.any { it !is RxTerm }){
+            throw IllegalArgumentException("All terms must be RxTerm")
+        }
+    }
 
     /**
      * whether we should append a prefix.
@@ -42,18 +48,26 @@ class DisjunctionRxGene(
         private val log : Logger = LoggerFactory.getLogger(DisjunctionRxGene::class.java)
     }
 
-    override fun getChildren(): List<RxTerm> = terms
+
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
+
+    /**
+     *  to handle "term*", as * can be empty, representing an empty string ""
+     */
+    override fun canBeChildless() = true
 
     override fun copyContent(): Gene {
-        val copy = DisjunctionRxGene(name, terms.map { it.copyContent() as RxTerm }, matchStart, matchEnd)
+        val copy = DisjunctionRxGene(name, terms.map { it.copy() }, matchStart, matchEnd)
         copy.extraPrefix = this.extraPrefix
         copy.extraPostfix = this.extraPostfix
         return copy
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         terms.filter { it.isMutable() }
-                .forEach { it.randomize(randomness, forceNewValue, allGenes) }
+                .forEach { it.randomize(randomness, tryToForceNewValue) }
 
         if (!matchStart) {
             extraPrefix = randomness.nextBoolean()
@@ -68,17 +82,21 @@ class DisjunctionRxGene(
         return !matchStart || !matchEnd || terms.any { it.isMutable() }
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
-        return if(!matchStart && randomness.nextBoolean(APPEND)){
-            emptyList()
-        } else if(!matchEnd && randomness.nextBoolean(APPEND)){
-            emptyList()
-        } else {
-            terms.filter { it.isMutable() }
+    override fun customShouldApplyShallowMutation(randomness: Randomness,
+                                                  selectionStrategy: SubsetGeneMutationSelectionStrategy,
+                                                  enableAdaptiveGeneMutation: Boolean,
+                                                  additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ) : Boolean {
+        if(!matchStart && randomness.nextBoolean(APPEND)){
+            return true
         }
+        if(!matchEnd && randomness.nextBoolean(APPEND)){
+            return true
+        }
+        return false
     }
 
-    override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
+    override fun adaptiveSelectSubsetToMutate(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
         if (additionalGeneMutationInfo.impact == null || additionalGeneMutationInfo.impact !is DisjunctionRxGeneImpact)
             throw IllegalArgumentException("mismatched gene impact")
 
@@ -99,7 +117,7 @@ class DisjunctionRxGene(
         return selected.map { it to additionalGeneMutationInfo.copyFoInnerGene(impacts[internalGenes.indexOf(it)], it) }.toList()
     }
 
-    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
+    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, selectionStrategy: SubsetGeneMutationSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
         if(!matchStart){
             extraPrefix = ! extraPrefix
         } else {
@@ -119,15 +137,25 @@ class DisjunctionRxGene(
                 postfix
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is DisjunctionRxGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        for (i in 0 until terms.size) {
-            this.terms[i].copyValueFrom(other.terms[i])
-        }
-        this.extraPrefix = other.extraPrefix
-        this.extraPostfix = other.extraPostfix
+        val current = this.copy()
+        return updateValueOnlyIfValid(
+            {
+                var ok = true
+                for (i in 0 until terms.size) {
+                    ok = ok && this.terms[i].copyValueFrom(other.terms[i])
+                }
+                if (ok){
+                    this.extraPrefix = other.extraPrefix
+                    this.extraPostfix = other.extraPostfix
+                }
+                ok
+
+            }, true
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -151,17 +179,11 @@ class DisjunctionRxGene(
                 this.extraPostfix == other.extraPostfix
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this)
-        else listOf(this).plus(terms.flatMap { it.flatView(excludePredicate) })
-    }
+
 
     override fun mutationWeight(): Double {
         return terms.filter { isMutable() }.map { it.mutationWeight() }.sum()
     }
-
-    override fun innerGene(): List<Gene> = terms
-
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         if (gene is DisjunctionRxGene && terms.size == gene.terms.size){

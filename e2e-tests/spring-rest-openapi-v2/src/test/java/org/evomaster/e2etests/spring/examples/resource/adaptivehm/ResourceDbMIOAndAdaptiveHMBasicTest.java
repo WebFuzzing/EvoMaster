@@ -4,12 +4,12 @@ import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 import org.evomaster.core.problem.rest.RestIndividual;
-import org.evomaster.core.problem.rest.SampleType;
+import org.evomaster.core.problem.enterprise.SampleType;
 import org.evomaster.core.problem.rest.resource.RestResourceCalls;
 import org.evomaster.core.problem.rest.service.ResourceManageService;
 import org.evomaster.core.problem.rest.service.ResourceRestMutator;
 import org.evomaster.core.problem.rest.service.RestResourceFitness;
-import org.evomaster.core.search.ActionFilter;
+import org.evomaster.core.search.action.ActionFilter;
 import org.evomaster.core.search.EvaluatedIndividual;
 import org.evomaster.core.search.impact.impactinfocollection.ImpactsOfIndividual;
 import org.evomaster.core.search.service.Archive;
@@ -56,6 +56,7 @@ public class ResourceDbMIOAndAdaptiveHMBasicTest extends ResourceMIOHWTestBase {
 
 
         RestIndividual twoCalls = new RestIndividual(calls, SampleType.SMART_RESOURCE, null, Collections.emptyList(), null, 1);
+        twoCalls.doInitializeLocalId();
         EvaluatedIndividual<RestIndividual> twoCallsEval = ff.calculateCoverage(twoCalls, Collections.emptySet());
 
         ImpactsOfIndividual impactInd = twoCallsEval.getImpactInfo();

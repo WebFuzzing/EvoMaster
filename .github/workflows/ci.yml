@@ -1,9 +1,35 @@
 name: CI
 
-on: [push]
+on:
+  push:
+    branches:
+      - "**"
+    tags-ignore:
+      - '**'
+    # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#onpushpull_requestpull_request_targetpathspaths-ignore
+    # Avoid building if only modifying non-code files.
+    # An exception is docs/options.md , as created from build
+    paths:
+      - "**"
+      - '!scripts/**'
+      - '!version.py'
+      - '!makeExecutable.sh'
+      - '!buildAll.sh'
+      - '!README.md'
+      - '!LICENSE'
+      - '!.gitignore'
+      - '!docs/**'
+      - 'docs/options.md'
+### Unfortunately, had to disable this. Originally added to be able to run CI from PRs from forks (eg from external people).
+### But this leads to run CI 2 twice on each push on an open PR, regardless of fork.
+### It seems there is no solution for this:
+### https://github.com/orgs/community/discussions/26276
+#  pull_request:
+#    branches:
+#      - "**"
 
 env:
-  evomaster-version: 1.4.1
+  evomaster-version: 2.0.1
   # Unfortunately, to use JPackage we need JDK 17 or above :(
   # Which is really bad due to the madness of --add-opens.
   # Even if hunt down all cases of reflections in EM, there is still the problem of
@@ -11,32 +37,30 @@ env:
   # For some "hilarious" case, see:
   # https://github.com/EMResearch/EvoMaster/issues/447
   release-jdk: 17
+  latest-jdk: 17
   build-jdk: 1.8
-  retention-days: 3
+  retention-days: 5
 
 
-# This build is quite expensive (1ish hour), so we run it whole only on 1 JVM version, and 1 OS.
-# Recall that we also build on CircleCI, with different configurations.
-# For the moment, we need to support JVM 8 and 11, with 17 when it comes out.
+# This build is quite expensive (some hours), so we run it whole only on some JVM versions and OSs.
+# For the moment, we need to support JVM 8 and all following LTS versions (e.g, 11 and  17).
 # EM should run an all OSs. As our main development machines are Windows and Mac, just
 # testing whole build with all E2E only on Linux should be fine.
 
 jobs:
 
-  base:
+  full-build-base:
     runs-on: ubuntu-latest
-
     steps:
       # Checkout code
-      - uses: actions/checkout@v2
-
+      - uses: actions/checkout@v4
       # Build/test for JDK
       - name: Setup JDK ${{env.build-jdk}}
         uses: actions/setup-java@v1
         with:
           java-version: ${{env.build-jdk}}
       - name: Cache Maven packages
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
@@ -46,12 +70,18 @@ jobs:
         env:
           CI_env: GithubAction
       - name: Upload evomaster.jar
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: evomaster.jar
           path: core/target/evomaster.jar
           retention-days: ${{env.retention-days}}
           if-no-files-found: error
+      # Make test report accessible from GitHub Actions (as Maven logs are long)
+      - name: Publish Test Report
+        if: success() || failure()
+        uses: mikepenz/action-junit-report@v4
+        with:
+          report_paths: '**/target/surefire-reports/TEST-*.xml'
       # Upload coverage results
       - name: Upload coverage to CodeCov
         run: curl -s https://codecov.io/bash | bash
@@ -63,9 +93,54 @@ jobs:
           java-version: 11
       - name: Compile with JDK 11
         run: mvn clean verify -DskipTests
+      - name: Setup JDK 17
+        uses: actions/setup-java@v1
+        with:
+          java-version: 17
+      - name: Compile with JDK 17
+        run: mvn clean verify -DskipTests
 
 
-  latest-LTS:
+  base-build-mac:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup JDK ${{env.latest-jdk}}
+        uses: actions/setup-java@v1
+        with:
+          java-version: ${{env.latest-jdk}}
+      - name: Cache Maven packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: Build with Maven
+        run: mvn clean verify -DskipTests
+        env:
+          CI_env: GithubAction
+
+  base-build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup JDK ${{env.latest-jdk}}
+        uses: actions/setup-java@v1
+        with:
+          java-version: ${{env.latest-jdk}}
+      - name: Cache Maven packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: Build with Maven
+        run: mvn clean verify -DskipTests
+        env:
+          CI_env: GithubAction
+
+
+  full-build-LTS:
     # run on a different OS from main build.
     # It would had been good, but does not work due to Docker support :(  see:
     # https://stackoverflow.com/questions/66077884/testcontainers-in-windows-environment-on-github-actions-could-not-find-a-valid
@@ -73,13 +148,13 @@ jobs:
     # runs-on: windows-latest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Setup JDK 17
+      - uses: actions/checkout@v4
+      - name: Setup JDK ${{env.latest-jdk}}
         uses: actions/setup-java@v1
         with:
-          java-version: 17
+          java-version: ${{env.latest-jdk}}
       - name: Cache Maven packages
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
@@ -88,13 +163,14 @@ jobs:
         run: mvn clean verify --fae
         env:
           CI_env: GithubAction
+          MAVEN_OPTS: "--add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED"
 
 
   nodejs:
-    needs: base
+    needs: full-build-base
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       # Build/test for JavaScript
       - name: Use Node.js
         uses: actions/setup-node@v1
@@ -117,13 +193,16 @@ jobs:
         with:
             java-version: ${{env.build-jdk}}
       - name: Download fat jar
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: evomaster.jar
           path: core/target
+      ### NOTE: we no longer run this, as NodeJS for backend no longer supported.
+      ### This started to fail once introduced first version of "minimization", as JS driver would need
+      ### to be updated with new features to support it
       # E2E for JS. Must be run AFTER the JS and Core builds
-      - name: E2E for JavaScript
-        run:  bash ./client-js/e2e-tests/e2e.sh
+#      - name: E2E for JavaScript
+#        run:  bash ./client-js/e2e-tests/e2e.sh
 
 ### TODO currently disabled, as it takes forever on CI (1-2 hours...), compared to few minutes on local machine.
 ### Need to find out why
@@ -159,16 +238,16 @@ jobs:
 
 
   installer-for-windows:
-    needs: base
+    needs: full-build-base
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Setup JDK ${{env.release-jdk}}
         uses: actions/setup-java@v1
         with:
           java-version: ${{env.release-jdk}}
       - name: Download fat jar
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: evomaster.jar
           path: core/target
@@ -176,7 +255,7 @@ jobs:
         shell: bash
         run: bash makeExecutable.sh WINDOWS
       - name: Upload installation file
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: evomaster.msi
           path: release/evomaster-${{env.evomaster-version}}.msi
@@ -184,16 +263,16 @@ jobs:
           if-no-files-found: error
 
   installer-for-osx:
-    needs: base
+    needs: full-build-base
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Setup JDK ${{env.release-jdk}}
         uses: actions/setup-java@v1
         with:
           java-version: ${{env.release-jdk}}
       - name: Download fat jar
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: evomaster.jar
           path: core/target
@@ -201,7 +280,7 @@ jobs:
         shell: bash
         run: bash makeExecutable.sh OSX
       - name: Upload installation file
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: evomaster.dmg
           path: release/evomaster-${{env.evomaster-version}}.dmg
@@ -209,16 +288,16 @@ jobs:
           if-no-files-found: error
 
   installer-for-debian:
-    needs: base
+    needs: full-build-base
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Setup JDK ${{env.release-jdk}}
         uses: actions/setup-java@v1
         with:
           java-version: ${{env.release-jdk}}
       - name: Download fat jar
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: evomaster.jar
           path: core/target
@@ -226,7 +305,7 @@ jobs:
         shell: bash
         run: bash makeExecutable.sh DEBIAN
       - name: Upload installation file
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: evomaster.deb
           path: release/evomaster_${{env.evomaster-version}}-1_amd64.deb

@@ -1,7 +1,10 @@
 package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
+import org.evomaster.client.java.controller.problem.rpc.schema.types.PrimitiveOrWrapperType;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.TypeSchema;
 
 import java.util.ArrayList;
@@ -14,7 +17,9 @@ import java.util.stream.Collectors;
  */
 public abstract class NamedTypedValue<T extends TypeSchema, V> {
 
-    public final static String NOT_NULL_MARK_OBJ_DATE = "{}";
+
+
+    protected final static ObjectMapper objectMaper = new ObjectMapper();
 
     /**
      * name of the instance, eg param name
@@ -103,7 +108,7 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
     }
 
     public String getName() {
-        return name;
+        return (name != null)? name:"Untitled";
     }
 
     public T getType() {
@@ -115,6 +120,8 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
     }
 
     public abstract Object newInstance() throws ClassNotFoundException;
+
+    public abstract List<String> referenceTypes();
 
     public void setValue(V value) {
         this.value = value;
@@ -198,6 +205,30 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
     }
 
     /**
+     * set value based on json
+     * @param json contains value info with json format
+     */
+    public void setValueBasedOnInstanceOrJson(Object json) throws JsonProcessingException{
+        Object instance = null;
+        if (!isValidInstance(json)){
+            if (json instanceof String)
+                instance = parseValueWithJson((String) json);
+            else if (PrimitiveOrWrapperType.isPrimitiveOrTypes(json.getClass())){
+                instance = ((PrimitiveOrWrapperParam)this).convertValueTo(json);
+            } else
+                throw new RuntimeException("Fail to extract value from json for "+ getType().getFullTypeName());
+        }else
+            instance = json;
+
+
+        setValueBasedOnInstance(instance);
+    }
+
+    public Object parseValueWithJson(String json) throws JsonProcessingException {
+        return objectMaper.readValue(json, getType().getClazz());
+    }
+
+    /**
      * set the value of the param based on instance
      * compared with [setValueBasedOnInstance], the type of the instance here is evaluated as valid
      * @param instance is the instance
@@ -216,42 +247,49 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
 
     /**
      * create instances with Java
-     * @param isDeclaration specifies whether it is used to declare the instance (ie, with type name).
-     * @param doesIncludeName specifies whether it is required to have the variable name
-     *                        eg, if true, var = new instance(); if yes, new instance();
-     * @param variableName specifies the name of variable
-     * @param indent specifies the indent of this block of the code
+     *
+     * @param isDeclaration      specifies whether it is used to declare the instance (ie, with type name).
+     * @param doesIncludeName    specifies whether it is required to have the variable name
+     *                           eg, if true, var = new instance(); if yes, new instance();
+     * @param variableName       specifies the name of variable
+     * @param indent             specifies the indent of this block of the code
+     * @param isJava
+     * @param isVariableNullable
      * @return a list of string which could create instance with java
      */
-    public abstract List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent);
+    public abstract List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava, boolean isVariableNullable);
 
 
     /**
      * create instances with Java
      *
-     * @param indent specifies the current indent of the code
+     * @param indent             specifies the current indent of the code
+     * @param isJava
+     * @param isVariableNullable
      * @return a list of string which could create instance with java
      */
-    public List<String> newInstanceWithJava(int indent){
-        return newInstanceWithJava(true, true, getName(), indent);
+    public List<String> newInstanceWithJavaOrKotlin(int indent, boolean isJava, boolean isVariableNullable){
+        return newInstanceWithJavaOrKotlin(true, true, getName(), indent, isJava, isVariableNullable);
     }
 
     /**
      * create assertions with java for response
-     * @param indent specifies the current indent of the code
-     * @param responseVarName a variable name for responses
+     *
+     * @param indent                          specifies the current indent of the code
+     * @param responseVarName                 a variable name for responses
      * @param maxAssertionForDataInCollection
+     * @param isJava
      * @return a list of string for assertions
      */
-    public abstract List<String> newAssertionWithJava(int indent, String responseVarName, int maxAssertionForDataInCollection);
+    public abstract List<String> newAssertionWithJavaOrKotlin(int indent, String responseVarName, int maxAssertionForDataInCollection, boolean isJava);
 
     /**
-     *
      * @param responseVarName is the variable name of the response
+     * @param isJava
      * @return a list of assertions based on this which could be a response
      */
-    public List<String> newAssertionWithJava(String responseVarName, int maxAssertionForDataInCollection){
-        return newAssertionWithJava(0, responseVarName, maxAssertionForDataInCollection);
+    public List<String> newAssertionWithJavaOrKotlin(String responseVarName, int maxAssertionForDataInCollection, boolean isJava){
+        return newAssertionWithJavaOrKotlin(0, responseVarName, maxAssertionForDataInCollection, isJava);
     }
 
     /**
@@ -259,7 +297,7 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
      * @return a string which could representing the value of the param with java
      * eg, float 4.2 could be 4.2f
      */
-    public abstract String getValueAsJavaString();
+    public abstract String getValueAsJavaString(boolean isJava);
 
     public boolean isMutable() {
         return isMutable;
@@ -276,4 +314,5 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
     public void setDefaultValue(NamedTypedValue defaultValue) {
         this.defaultValue = defaultValue;
     }
+
 }

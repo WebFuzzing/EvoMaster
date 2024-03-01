@@ -1,0 +1,48 @@
+---
+openapi: 3.1.0
+info:
+  title: filters
+  version: 1.0.0
+servers:
+  - url: "/v2"
+paths:
+  "/api/x":
+    get:
+      tags:
+        - X
+      responses:
+        '200':
+          description: OK
+    post:
+      tags:
+        - X
+      responses:
+        '200':
+          description: OK
+    put:
+      tags:
+        - Y
+      responses:
+        '200':
+          description: OK
+  "/api/y":
+    get:
+      tags:
+        - X
+        - Y
+      responses:
+        '200':
+          description: OK
+  "/api/y/z":
+    patch:
+      tags:
+        - Y
+        - Z
+      responses:
+        '200':
+          description: OK
+  "/api/t":
+    get:
+      responses:
+        '200':
+          description: OK

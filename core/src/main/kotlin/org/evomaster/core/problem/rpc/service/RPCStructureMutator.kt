@@ -1,8 +1,8 @@
 package org.evomaster.core.problem.rpc.service
 
 import com.google.inject.Inject
-import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.problem.httpws.service.ApiWsStructureMutator
+import org.evomaster.core.sql.SqlInsertBuilder
+import org.evomaster.core.problem.api.service.ApiWsStructureMutator
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
@@ -32,20 +32,22 @@ class RPCStructureMutator : ApiWsStructureMutator() {
     }
 
     private fun mutateForRandomType(individual: RPCIndividual, mutatedGenes: MutatedGeneSpecification?) {
-        val size = individual.seeActions().size
+
+        val size = individual.seeMainExecutableActions().size
         if ((size + 1 < config.maxTestSize) && (size == 1 || randomness.nextBoolean())){
             // add
             val sampledAction = sampler.sampleRandomAction()
 
             //save mutated genes
-            mutatedGenes?.addRemovedOrAddedByAction(sampledAction, size, false, size)
             individual.addAction(action = sampledAction)
+            mutatedGenes?.addRemovedOrAddedByAction(sampledAction, individual.seeFixedMainActions().indexOf(sampledAction), null, false, size)
+
         }else{
             // remove
-            val chosen = randomness.nextInt(size)
-            val removed = individual.seeActions()[chosen]
+            val chosen = randomness.choose(individual.seeMainActionComponents().indices)
+            val removed = individual.seeMainExecutableActions()[chosen]
             //save mutated genes
-            mutatedGenes?.addRemovedOrAddedByAction(removed, size, true, size)
+            mutatedGenes?.addRemovedOrAddedByAction(removed, individual.seeFixedMainActions().indexOf(removed), null, true, size)
             individual.removeAction(chosen)
         }
     }

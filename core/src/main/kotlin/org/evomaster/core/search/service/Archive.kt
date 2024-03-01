@@ -6,11 +6,11 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.EMConfig.FeedbackDirectedSampling.FOCUSED_QUICKEST
 import org.evomaster.core.EMConfig.FeedbackDirectedSampling.LAST
 import org.evomaster.core.Lazy
-import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.Termination
-import org.evomaster.core.problem.httpws.service.HttpWsCallResult
+import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.search.*
 import org.evomaster.core.search.impact.impactinfocollection.ImpactsOfIndividual
+import org.evomaster.core.search.service.IdMapper.Companion.LOCAL_OBJECTIVE_KEY
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.tracer.ArchiveMutationTrackService
@@ -82,13 +82,54 @@ class Archive<T> where T : Individual {
      */
     private var lastChosen: Int? = null
 
+    data class CoveredStatisticsBySeededTests<G> (val coveredTargets: List<Int>, val uniquePopulationsDuringSeeding : List<EvaluatedIndividual<G>>) where G: Individual
+
+    private var coveredStatisticsBySeededTests : CoveredStatisticsBySeededTests<T>? = null
+
+
+    /**
+     * Kill all populations.
+     * This is meanly needed for minimization phase, in which archive needs to be cleared and
+     * tests re-added to it
+     */
+    fun clearPopulations(){
+        populations.clear()
+    }
+
 
     fun extractSolution(): Solution<T> {
         val uniques = getUniquePopulation()
 
-        return Solution(uniques.toMutableList(), config.outputFilePrefix, config.outputFileSuffix, Termination.NONE)
+        return Solution(
+            uniques.toMutableList(),
+            config.outputFilePrefix,
+            config.outputFileSuffix,
+            Termination.NONE,
+            coveredStatisticsBySeededTests?.uniquePopulationsDuringSeeding?: listOf<EvaluatedIndividual<T>>(),
+            coveredStatisticsBySeededTests?.coveredTargets?: listOf()
+        )
     }
 
+
+    fun archiveCoveredStatisticsBySeededTests(){
+        if (coveredStatisticsBySeededTests != null){
+            throw IllegalStateException("`archiveCoveredStatisticsBySeededTests` can only be performed once")
+        }
+
+        val current = extractSolution()
+        coveredStatisticsBySeededTests = CoveredStatisticsBySeededTests(
+            coveredTargets = current.overall.getViewOfData().filter { it.value.distance == FitnessValue.MAX_VALUE }.keys.toList(),
+            if (config.exportTestCasesDuringSeeding) current.individuals.map { it.copy() } else emptyList()
+        )
+
+    }
+
+    fun anyTargetsCoveredSeededTests () = coveredStatisticsBySeededTests != null && coveredStatisticsBySeededTests!!.coveredTargets.isNotEmpty()
+
+
+    fun getCopyOfUniqueCoveringIndividuals() : List<T>{
+        return getUniquePopulation().map { it.individual.copy() as T }
+    }
 
     private fun getUniquePopulation(): MutableSet<EvaluatedIndividual<T>> {
 
@@ -98,7 +139,7 @@ class Archive<T> where T : Individual {
             This is not an issue, as each individual is copied
             when sampled.
             Here, as an individual can go to many populations,
-            we want to avoiding it counting it several times.
+            we want to avoid counting it several times.
          */
         val uniques = mutableSetOf<EvaluatedIndividual<T>>()
 
@@ -165,6 +206,10 @@ class Archive<T> where T : Individual {
     }
 
     private fun chooseTarget(toChooseFrom: Set<Int>): Int {
+
+        if(!config.isMIO()){
+            return  randomness.choose(toChooseFrom)
+        }
 
         return when (config.feedbackDirectedSampling) {
             LAST -> toChooseFrom.minByOrNull {
@@ -309,6 +354,15 @@ class Archive<T> where T : Individual {
         return populations.keys.filter { !isCovered(it) }.toSet()
     }
 
+    /**
+     * Get all known targets that are fully covered
+     *
+     * @return a list of ids
+     */
+    fun coveredTargets(): Set<Int> {
+        return populations.keys.filter { isCovered(it) }.toSet()
+    }
+
 
     fun wouldReachNewTarget(ei: EvaluatedIndividual<T>): Boolean {
 
@@ -427,6 +481,7 @@ class Archive<T> where T : Individual {
                 With at least 2 actions, we can have a WRITE followed by a READ
             */
             val better = copy.fitness.betterThan(k, curr.fitness, config.secondaryObjectiveStrategy, config.bloatControlForSecondaryObjective, config.minimumSizeControl)
+
             anyBetter = anyBetter || better
 
             if (better) {
@@ -450,6 +505,21 @@ class Archive<T> where T : Individual {
             }
 
             val equivalent = copy.fitness.equivalent(k, curr.fitness, config.secondaryObjectiveStrategy)
+
+            if(config.discoveredInfoRewardedInFitness){
+
+                val worst = current[0]
+                val x = copy.individual.numberOfDiscoveredInfoFromTestExecution()
+                val y = worst.individual.numberOfDiscoveredInfoFromTestExecution()
+
+                if(!better && equivalent &&  x < y){
+                    /*
+                        Do not replace if it is "equivalent" but has fewer discoveries
+                     */
+                    continue
+                }
+            }
+
 
             if (better || equivalent) {
                 /*
@@ -536,11 +606,15 @@ class Archive<T> where T : Individual {
     /**
      * @return a list of pairs which is composed of target id (first) and corresponding tests (second)
      */
-    fun exportCoveredTargetsAsPair(solution: Solution<*>) : List<Pair<String, List<Int>>>{
+    fun exportCoveredTargetsAsPair(solution: Solution<*>, includeTargetsCoveredBySeededTests: Boolean? = null) : List<Pair<String, List<Int>>>{
 
         return populations.keys
                 .asSequence()
-                .filter { isCovered(it) }
+                .filter {
+                    isCovered(it) && (includeTargetsCoveredBySeededTests == null
+                            || (coveredStatisticsBySeededTests==null)
+                            || (if (includeTargetsCoveredBySeededTests) coveredStatisticsBySeededTests!!.coveredTargets.contains(it) else !coveredStatisticsBySeededTests!!.coveredTargets.contains(it)))
+                }
                 .map { t->
                     Pair(idMapper.getDescriptiveId(t), solution.individuals.mapIndexed { index, f-> if (f.fitness.doesCover(t)) index else -1 }.filter { it != -1 })
                 }.toList()
@@ -558,6 +632,21 @@ class Archive<T> where T : Individual {
             else
                 find{i -> i.individual.sameActions(other)}!!.impactInfo?.clone()
         }
+    }
+
+    /**
+     * @return whether to skip targets for impact collections
+     */
+    fun skipTargetForImpactCollection(id : Int): Boolean{
+        if (config.excludedTargetsForImpactCollection.isEmpty()) return false
+
+        val local = IdMapper.isLocal(id)
+
+        if (local){
+            return config.excludedTargetsForImpactCollection.contains(LOCAL_OBJECTIVE_KEY)
+        }
+
+        return config.excludedTargetsForImpactCollection.any { idMapper.getDescriptiveId(id).startsWith(it) }
     }
 
 
@@ -587,5 +676,16 @@ class Archive<T> where T : Individual {
 //    }
 //
 //    fun chooseImproveTargetsAfter(index : Int) : Set<Int> = latestImprovement.filterValues { it >= index }.keys
+
+    /**
+     * this is only used for debugging purpose
+     *
+     * @return whether all genes in current populations are all locally valid
+     */
+    fun areAllPopulationGeneLocallyValid() : Boolean{
+        return populations.values.flatten().all {
+            it.individual.seeGenes().all { g-> g.isLocallyValid() }
+        }
+    }
 
 }

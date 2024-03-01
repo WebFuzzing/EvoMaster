@@ -1,5 +1,8 @@
 package org.evomaster.client.java.controller.api.dto.problem.rpc;
 
+import org.evomaster.client.java.controller.api.dto.MockDatabaseDto;
+import org.evomaster.client.java.controller.api.dto.SutInfoDto;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -23,9 +26,41 @@ public class RPCActionDto {
     public String clientInfo;
 
     /**
+     * a variable referring to client instance
+     *
+     * this info would be used in static init declaration referring
+     * to an actual client instance in the generated test
+     * then later, the variable could be used to process rpc function call
+     *
+     * eg, the variable is foo
+     * public class Test{
+     *     private static Client foo;
+     *     ...
+     *     pubic void test(){
+     *         response = foo.bar(request)
+     *     }
+     * }
+     *
+     * TODO
+     * Note that the current test generation is proceeded in the driver
+     * if we move it to core, this info could be removed
+     */
+    public String clientVariable;
+
+    /**
      * name of the action
      */
     public String actionName;
+
+    /**
+     * a list of actions for performing mocking external services
+     */
+    public List<MockRPCExternalServiceDto> mockRPCExternalServiceDtos;
+
+    /**
+     * a list of mock objects for database sql commands
+     */
+    public List<MockDatabaseDto> mockDatabaseDtos;
 
     /**
      * request params
@@ -80,10 +115,23 @@ public class RPCActionDto {
     public boolean doGenerateTestScript;
 
     /**
+     * the output format
+     * if doGenerateTestScript is true, outputFormat cannot be null
+     * Note that the info is kept in sync with what the user specifies in driver or EMConfig
+     */
+    public SutInfoDto.OutputFormat outputFormat;
+
+    /**
      * the maximum number of assertions to be generated for data in collections
      * zero or negative number means that assertions would be generated for all data in collection
      */
     public int maxAssertionForDataInCollection;
+
+    /**
+     * a list of DTOs which need to be extracted at the driver side
+     * they can be eg, response of external services
+     */
+    public List<String> missingDto;
 
     /**
      *
@@ -94,8 +142,10 @@ public class RPCActionDto {
         RPCActionDto copy = new RPCActionDto();
         copy.interfaceId = interfaceId;
         copy.clientInfo = clientInfo;
+        copy.clientVariable = clientVariable;
         copy.actionName = actionName;
-        copy.responseParam = responseParam;
+        if (responseParam != null)
+            copy.responseParam = responseParam.copy();
         if (requestParams != null)
             copy.requestParams = requestParams.stream().map(ParamDto::copy).collect(Collectors.toList());
         copy.responseVariable = responseVariable;
@@ -104,6 +154,12 @@ public class RPCActionDto {
         copy.doGenerateTestScript = doGenerateTestScript;
         copy.maxAssertionForDataInCollection = maxAssertionForDataInCollection;
         copy.isAuthorized = isAuthorized;
+        if (mockRPCExternalServiceDtos != null)
+            copy.mockRPCExternalServiceDtos = mockRPCExternalServiceDtos.stream().map(MockRPCExternalServiceDto::copy).collect(Collectors.toList());
+        if (mockDatabaseDtos != null)
+            copy.mockDatabaseDtos = mockDatabaseDtos.stream().map(MockDatabaseDto::copy).collect(Collectors.toList());
+        if (missingDto != null)
+            copy.missingDto = new ArrayList<>(missingDto);
         return copy;
     }
 
@@ -119,6 +175,16 @@ public class RPCActionDto {
         if (copy.relatedCustomization != null)
             copy.relatedCustomization = new HashSet<>(relatedCustomization);
         return copy;
+    }
+
+    /**
+     *
+     * @return descriptive info for the action, ie, interface::actionName
+     */
+    public String descriptiveInfo(){
+        return ((interfaceId!=null)?interfaceId:"NULL_INTERFACE")+
+                "::"+((actionName!=null)?actionName:"NULL_ACTION_NAME")+
+                "("+ requestParams.stream().map(s-> s.type.type.toString()).collect(Collectors.joining(",")) +")";
     }
 
 }

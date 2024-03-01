@@ -1,13 +1,12 @@
 package org.evomaster.core.output.oracles
 
-import io.swagger.v3.oas.models.PathItem
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.ObjectGenerator
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.httpws.service.HttpWsCallResult
+import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.EvaluatedIndividual
@@ -109,7 +108,7 @@ class SupportedCodeOracle : ImplementedOracle() {
     override fun generatesExpectation(individual: EvaluatedIndividual<*>): Boolean {
         if(individual.individual !is RestIndividual) return false
         if(!this::objectGenerator.isInitialized) return false
-        val gens = individual.evaluatedActions().any {
+        val gens = individual.evaluatedMainActions().any {
             !supportedCode(it.action as RestCallAction, it.result as HttpWsCallResult)
         }
         return gens
@@ -118,7 +117,9 @@ class SupportedCodeOracle : ImplementedOracle() {
     override fun selectForClustering(action: EvaluatedAction): Boolean {
         return if (action.result is HttpWsCallResult
                 && action.action is RestCallAction
-                &&this::objectGenerator.isInitialized)
+                &&this::objectGenerator.isInitialized
+                && !(action.action as RestCallAction).skipOracleChecks
+        )
             !supportedCode(action.action as RestCallAction, action.result as HttpWsCallResult)
         else false
     }

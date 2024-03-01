@@ -4,14 +4,16 @@ import com.foo.rest.examples.spring.testability.TestabilityController;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
+import org.evomaster.core.problem.rest.RestCallAction;
 import org.evomaster.core.problem.rest.RestIndividual;
+import org.evomaster.core.problem.rest.service.AbstractRestSampler;
 import org.evomaster.core.problem.rest.service.RestFitness;
 import org.evomaster.core.problem.rest.service.RestSampler;
 import org.evomaster.core.problem.util.ParamUtil;
 import org.evomaster.core.search.EvaluatedIndividual;
 import org.evomaster.core.search.Individual;
 import org.evomaster.core.search.gene.Gene;
-import org.evomaster.core.search.gene.StringGene;
+import org.evomaster.core.search.gene.string.StringGene;
 import org.evomaster.core.search.service.Archive;
 import org.evomaster.core.search.service.mutator.EvaluatedMutation;
 import org.evomaster.core.search.service.mutator.StandardMutator;
@@ -67,7 +69,14 @@ public class MutatorWithTestabilityRestTest extends SpringTestBase {
                     RestFitness ff = injector.getInstance(RestFitness.class);
 
                     RestSampler sampler = injector.getInstance(RestSampler.class);
-                    RestIndividual ind = sampler.sample();
+                    RestIndividual ind = sampler.sample(false);
+                    int count = 0;
+                    while (ind.seeMainExecutableActions().stream().anyMatch(a-> anyExcludedAction(sampler, a)) && count < 3){
+                        ind = sampler.sample(false);
+                        count++;
+                    }
+                    if (ind.seeMainExecutableActions().stream().anyMatch(a-> anyExcludedAction(sampler, a)))
+                        fail("cannot find any valid individual");
                     archive.addIfNeeded(ff.calculateCoverage(ind, Collections.emptySet()));
 
                     assertNotNull(ind);
@@ -103,6 +112,10 @@ public class MutatorWithTestabilityRestTest extends SpringTestBase {
 
                 },
                 3);
+    }
+
+    private boolean anyExcludedAction(AbstractRestSampler sampler, RestCallAction action){
+        return sampler.getExcludedActions().stream().anyMatch(s-> action.getName().equals(s.getName()));
     }
 
     private RestIndividual mutate(String date, String number, String setting, RestIndividual individual) {

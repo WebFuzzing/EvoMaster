@@ -5,12 +5,14 @@ import org.evomaster.client.java.controller.api.dto.BootTimeInfoDto;
 import org.evomaster.client.java.controller.api.dto.UnitsInfoDto;
 import org.evomaster.client.java.controller.internal.SutController;
 import org.evomaster.client.java.instrumentation.*;
+import org.evomaster.client.java.instrumentation.object.ClassToSchema;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
-import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -55,13 +57,25 @@ public abstract class EmbeddedSutController extends SutController {
     }
 
     @Override
+    public final List<TargetInfo> getAllCoveredTargetInfos(){
+        return InstrumentationController.getAllCoveredTargetInfos();
+    }
+
+    @Override
     public final List<AdditionalInfo> getAdditionalInfoList(){
         return InstrumentationController.getAdditionalInfoList();
     }
 
     @Override
     public final void newActionSpecificHandler(ActionDto dto){
-        ExecutionTracer.setAction(new Action(dto.index, dto.inputVariables));
+        ExecutionTracer.setAction(new Action(
+                dto.index,
+                dto.name,
+                dto.inputVariables,
+                dto.externalServiceMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> new ExternalServiceMapping(e.getValue().remoteHostname, e.getValue().localIPAddress, e.getValue().signature, e.getValue().isActive))),
+                dto.localAddressMapping,
+                dto.skippedExternalServices.stream().map(e -> new ExternalService(e.hostname, e.port)).collect(Collectors.toList())
+        ));
     }
 
     @Override
@@ -80,6 +94,11 @@ public abstract class EmbeddedSutController extends SutController {
     }
 
     @Override
+    public final void setExecutingInitMongo(boolean executingInitMongo) {
+        ExecutionTracer.setExecutingInitMongo(executingInitMongo);
+    }
+
+    @Override
     public final void setExecutingAction(boolean executingAction){
         ExecutionTracer.setExecutingAction(executingAction);
     }
@@ -92,5 +111,10 @@ public abstract class EmbeddedSutController extends SutController {
     @Override
     public final String getExecutableFullPath(){
         return null; //not needed for embedded
+    }
+
+    @Override
+    public final void getJvmDtoSchema(List<String> dtoNames) {
+        UnitsInfoRecorder.registerSpecifiedDtoSchema(ExtractJvmClass.extractAsSchema(dtoNames));
     }
 }

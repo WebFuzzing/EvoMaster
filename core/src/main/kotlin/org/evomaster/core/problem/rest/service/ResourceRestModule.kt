@@ -5,20 +5,34 @@ import com.google.inject.TypeLiteral
 import org.evomaster.core.output.service.RestTestCaseWriter
 import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.output.service.TestSuiteWriter
-import org.evomaster.core.problem.external.service.ExternalServices
+import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
+import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.remote.service.RemoteController
+import org.evomaster.core.remote.service.RemoteControllerImplementation
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FitnessFunction
+import org.evomaster.core.search.service.Minimizer
 import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.mutator.Mutator
 import org.evomaster.core.search.service.mutator.StandardMutator
 import org.evomaster.core.search.service.mutator.StructureMutator
 
 
-class ResourceRestModule : AbstractModule(){
+class ResourceRestModule(private val bindRemote : Boolean = true) : AbstractModule(){
 
     override fun configure() {
+
+        if(bindRemote){
+            /*
+                Governator does not seem to have a way to override bindings for testing :(
+                so we do it manually
+             */
+            bind(RemoteController::class.java)
+                    .to(RemoteControllerImplementation::class.java)
+                    .asEagerSingleton()
+        }
+
         bind(object : TypeLiteral<Sampler<RestIndividual>>() {})
                 .to(ResourceSampler::class.java)
                 .asEagerSingleton()
@@ -37,8 +51,18 @@ class ResourceRestModule : AbstractModule(){
                 .to(RestResourceFitness::class.java)
                 .asEagerSingleton()
 
+        bind(object : TypeLiteral<FitnessFunction<*>>() {})
+                .to(RestResourceFitness::class.java)
+                .asEagerSingleton()
+
         bind(object : TypeLiteral<AbstractRestFitness<RestIndividual>>() {})
                 .to(RestResourceFitness::class.java)
+                .asEagerSingleton()
+
+        bind(object : TypeLiteral<Minimizer<RestIndividual>>(){})
+                .asEagerSingleton()
+
+        bind(object : TypeLiteral<Minimizer<*>>(){})
                 .asEagerSingleton()
 
         bind(object : TypeLiteral<Archive<RestIndividual>>() {})
@@ -46,9 +70,6 @@ class ResourceRestModule : AbstractModule(){
 
         bind(object : TypeLiteral<Archive<*>>() {})
                 .to(object : TypeLiteral<Archive<RestIndividual>>() {})
-
-        bind(RemoteController::class.java)
-                .asEagerSingleton()
 
         bind(object : TypeLiteral<Mutator<RestIndividual>>() {})
                 .to(ResourceRestMutator::class.java)
@@ -78,8 +99,14 @@ class ResourceRestModule : AbstractModule(){
         bind(TestSuiteWriter::class.java)
                 .asEagerSingleton()
 
-        bind(ExternalServices::class.java)
+        bind(HttpWsExternalServiceHandler::class.java)
                 .asEagerSingleton()
+
+        bind(HarvestActualHttpWsResponseHandler::class.java)
+            .asEagerSingleton()
+
+        bind(SecurityRest::class.java)
+            .asEagerSingleton()
 
     }
 }

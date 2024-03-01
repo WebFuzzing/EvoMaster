@@ -15,7 +15,7 @@ import java.math.BigInteger;
  *         https://javaee.github.io/javaee-spec/javadocs/javax/validation/constraints/package-summary.html
  */
 public class JavaXConstraintHandler {
-
+    
     /**
      * set constraints of the param based on the given annotation
      * @param namedTypedValue is the extracted param
@@ -26,7 +26,7 @@ public class JavaXConstraintHandler {
 
         JavaXConstraintSupportType supportType = JavaXConstraintSupportType.getSupportType(cons.getSimpleName());
         if (supportType == null){
-            SimpleLogger.error("ERROR: Not handle constraints with a specified annotation:"+ cons.getName());
+            SimpleLogger.recordErrorMessage("Warning: Not handle constraints with a specified annotation:"+ cons.getName());
             return;
         }
 
@@ -52,11 +52,11 @@ public class JavaXConstraintHandler {
             case NULL:
                 solved = handleNull(namedTypedValue); break;
             default:
-                SimpleLogger.error("ERROR: Not handle "+ supportType.annotation);
+                SimpleLogger.recordErrorMessage("Warning: Not handle "+ supportType.annotation);
         }
 
         if (!solved){
-            SimpleLogger.error("ERROR: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its constraint "+ cons.getName());
+            SimpleLogger.recordErrorMessage("Warning: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its constraint "+ cons.getName());
 //            throw new RuntimeException("ERROR: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its constraint "+ cons.getName());
         }
     }
@@ -81,7 +81,7 @@ public class JavaXConstraintHandler {
             ((StringParam) namedTypedValue).setMinSize(1);
         }else {
             // TODO such schema error would send to core later
-            SimpleLogger.uniqueWarn("ERROR: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its NotEmpty");
+            SimpleLogger.recordErrorMessage("Warning: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its NotEmpty");
             return false;
         }
 
@@ -97,9 +97,11 @@ public class JavaXConstraintHandler {
          */
         if (namedTypedValue instanceof StringParam){
             ((StringParam)namedTypedValue).setMinSize(1);
-        } else {
+        } if (namedTypedValue instanceof PrimitiveOrWrapperParam){
+            namedTypedValue.setNullable(false);
+        }else {
             // TODO such schema error would send to core later
-            SimpleLogger.uniqueWarn("ERROR: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its NotBlank");
+            SimpleLogger.recordErrorMessage("Warning: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its NotBlank");
             return false;
         }
         return true;
@@ -120,12 +122,12 @@ public class JavaXConstraintHandler {
         }
 
         if (size[0] == null){
-            SimpleLogger.error("ERROR: Size min is null");
+            SimpleLogger.recordErrorMessage("Warning: Size min is null");
             return false;
         }
 
         if (size[1] == null){
-            SimpleLogger.error("ERROR: Size max is null");
+            SimpleLogger.recordErrorMessage("Warning: Size max is null");
             return false;
         }
 
@@ -141,7 +143,7 @@ public class JavaXConstraintHandler {
             ((StringParam)namedTypedValue).setMaxSize(size[1]);
         } else {
             // TODO such schema error would send to core later
-            SimpleLogger.uniqueWarn("ERROR: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its Size");
+            SimpleLogger.recordErrorMessage("Warning: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its Size");
             return false;
         }
 
@@ -163,7 +165,7 @@ public class JavaXConstraintHandler {
 
         if (pattern == null){
             // TODO such schema error would send to core later
-            SimpleLogger.uniqueWarn("ERROR: Pattern regexp is null for the param:"+namedTypedValue.getName());
+            SimpleLogger.recordErrorMessage("Warning: Pattern regexp is null for the param:"+namedTypedValue.getName());
             return false;
         }
 
@@ -171,7 +173,7 @@ public class JavaXConstraintHandler {
             ((StringParam)namedTypedValue).setPattern(pattern);
         }  else {
             // TODO such schema error would send to core later
-            SimpleLogger.uniqueWarn("ERROR: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its Size");
+            SimpleLogger.recordErrorMessage("Warning: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its Size");
             return false;
         }
         return true;
@@ -200,7 +202,7 @@ public class JavaXConstraintHandler {
         }
 
         if (maxStr == null){
-            SimpleLogger.error("ERROR: Max value is null");
+            SimpleLogger.recordErrorMessage("Warning: Max value is null");
             return false;
         }
 
@@ -224,7 +226,7 @@ public class JavaXConstraintHandler {
         }
 
         if (minStr == null){
-            SimpleLogger.error("ERROR: Min value is null");
+            SimpleLogger.recordErrorMessage("Warning: Min value is null");
             return false;
         }
 
@@ -234,10 +236,10 @@ public class JavaXConstraintHandler {
 
     private static boolean setMin(NamedTypedValue namedTypedValue, String min, boolean inclusive){
         if (!(namedTypedValue instanceof NumericConstraintBase))
-            SimpleLogger.error("ERROR: Can not set MinValue for the class "+ namedTypedValue.getType().getFullTypeName());
+            SimpleLogger.recordErrorMessage("Warning: Can not set MinValue for the class "+ namedTypedValue.getType().getFullTypeName());
 
         if (namedTypedValue instanceof PrimitiveOrWrapperParam){
-            ((PrimitiveOrWrapperParam)namedTypedValue).setMin(Long.parseLong(min));
+            ((PrimitiveOrWrapperParam)namedTypedValue).setMin(new BigDecimal(min));
             ((PrimitiveOrWrapperParam<?>) namedTypedValue).setMinInclusive(inclusive);
         } else if (namedTypedValue instanceof StringParam){
             ((StringParam)namedTypedValue).setMin(new BigDecimal(min));
@@ -250,7 +252,7 @@ public class JavaXConstraintHandler {
             ((BigDecimalParam) namedTypedValue).setMinInclusive(inclusive);
         }else {
             // TODO such schema error would send to core later
-            SimpleLogger.uniqueWarn("ERROR: Can not solve constraints by setting Min value for the class "+ namedTypedValue.getType().getFullTypeName());
+            SimpleLogger.recordErrorMessage("Warning: Can not solve constraints by setting Min value for the class "+ namedTypedValue.getType().getFullTypeName());
             return false;
         }
 
@@ -259,10 +261,10 @@ public class JavaXConstraintHandler {
 
     private static boolean setMax(NamedTypedValue namedTypedValue, String max, boolean inclusive){
         if (!(namedTypedValue instanceof NumericConstraintBase))
-            SimpleLogger.error("ERROR: Can not set MaxValue for the class "+ namedTypedValue.getType().getFullTypeName());
+            SimpleLogger.recordErrorMessage("Warning: Can not set MaxValue for the class "+ namedTypedValue.getType().getFullTypeName());
 
         if (namedTypedValue instanceof PrimitiveOrWrapperParam){
-            ((PrimitiveOrWrapperParam)namedTypedValue).setMax(Long.parseLong(max));
+            ((PrimitiveOrWrapperParam)namedTypedValue).setMax(new BigDecimal(max));
             ((PrimitiveOrWrapperParam<?>) namedTypedValue).setMaxInclusive(inclusive);
         } else if (namedTypedValue instanceof StringParam){
             ((StringParam)namedTypedValue).setMax(new BigDecimal(max));
@@ -275,7 +277,7 @@ public class JavaXConstraintHandler {
             ((BigDecimalParam) namedTypedValue).setMaxInclusive(inclusive);
         }else {
             // TODO such schema error would send to core later
-            SimpleLogger.uniqueWarn("ERROR: Can not solve constraints by setting Max value for the class "+ namedTypedValue.getType().getFullTypeName());
+            SimpleLogger.recordErrorMessage("Warning: Can not solve constraints by setting Max value for the class "+ namedTypedValue.getType().getFullTypeName());
             return false;
         }
 
@@ -305,7 +307,7 @@ public class JavaXConstraintHandler {
             if (namedTypedValue instanceof  BigIntegerParam || namedTypedValue instanceof PrimitiveOrWrapperParam) {
                 if (dFraction > 0){
                     // TODO such schema error would send to core later
-                    SimpleLogger.uniqueWarn("ERROR: fraction should be 0 for integral number, param name: "+namedTypedValue.getName());
+                    SimpleLogger.recordErrorMessage("Warning: fraction should be 0 for integral number, param name: "+namedTypedValue.getName());
                     dFraction = 0;
                 }
             }
@@ -319,7 +321,7 @@ public class JavaXConstraintHandler {
 
         } else {
             // TODO such schema error would send to core later
-            SimpleLogger.uniqueWarn("ERROR: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with Digits constraints");
+            SimpleLogger.recordErrorMessage("Warning: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with Digits constraints");
             return false;
         }
 
@@ -349,7 +351,7 @@ public class JavaXConstraintHandler {
             }
         } else {
             // TODO such schema error would send to core later
-            SimpleLogger.uniqueWarn("ERROR: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its Digits");
+            SimpleLogger.recordErrorMessage("Warning: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its Digits");
             return false;
         }
 
@@ -378,7 +380,7 @@ public class JavaXConstraintHandler {
             return true;
         }else {
             // TODO such schema error would send to core later
-            SimpleLogger.uniqueWarn("ERROR: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its AssertFalse or AssertTrue");
+            SimpleLogger.recordErrorMessage("Warning: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its AssertFalse or AssertTrue");
             return false;
         }
     }
@@ -388,5 +390,4 @@ public class JavaXConstraintHandler {
         namedTypedValue.setDefaultValue(null);
         return true;
     }
-
 }

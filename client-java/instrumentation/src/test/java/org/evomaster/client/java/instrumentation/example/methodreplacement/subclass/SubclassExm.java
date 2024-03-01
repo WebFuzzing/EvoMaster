@@ -6,4 +6,6 @@ package org.evomaster.client.java.instrumentation.example.methodreplacement.subc
 public interface SubclassExm {
 
     String exe();
+
+    String guavaMap();
 }

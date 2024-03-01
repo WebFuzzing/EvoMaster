@@ -1,8 +1,7 @@
 package org.evomaster.core.problem.rpc
 
-import org.evomaster.core.problem.api.service.ApiWsAction
-import org.evomaster.core.problem.api.service.auth.AuthenticationInfo
-import org.evomaster.core.problem.api.service.param.Param
+import org.evomaster.core.problem.api.ApiWsAction
+import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.rpc.auth.RPCAuthenticationInfo
 import org.evomaster.core.problem.rpc.auth.RPCNoAuth
 import org.evomaster.core.problem.rpc.param.RPCParam
@@ -12,6 +11,11 @@ import org.evomaster.core.search.gene.Gene
  * a RPC call
  */
 open class RPCCallAction(
+    /**
+     * class name of the interface which defines this rpc function
+     */
+    val interfaceId: String,
+
     /**
      * id of the RPCCallAction
      */
@@ -39,7 +43,7 @@ open class RPCCallAction(
         return id
     }
 
-    override fun seeGenes(): List<out Gene> {
+    override fun seeTopGenes(): List<out Gene> {
         // ignore genes in response here
         return parameters.flatMap { it.seeGenes() }
     }
@@ -49,8 +53,8 @@ open class RPCCallAction(
     }
 
     override fun copyContent(): RPCCallAction {
-        val p = parameters.asSequence().map(Param::copyContent).toMutableList()
-        return RPCCallAction(id, p, responseTemplate?.copyContent(), response?.copyContent(), auth)
+        val p = parameters.asSequence().map(Param::copy).toMutableList()
+        return RPCCallAction(interfaceId, id, p, responseTemplate?.copy() as RPCParam?, response?.copy() as RPCParam?, auth)
     }
 
     /**
@@ -65,5 +69,10 @@ open class RPCCallAction(
      */
     open fun setNoAuth(){
         auth = RPCNoAuth()
+    }
+
+    override fun toString(): String {
+        // might add values of parameters later
+        return "$id , auth=${auth.name}"
     }
 }

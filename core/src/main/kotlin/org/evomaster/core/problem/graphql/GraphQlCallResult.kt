@@ -1,9 +1,9 @@
 package org.evomaster.core.problem.graphql
 
 import com.google.common.annotations.VisibleForTesting
-import org.evomaster.core.problem.httpws.service.HttpWsCallResult
-import org.evomaster.core.search.Action
-import org.evomaster.core.search.ActionResult
+import org.evomaster.core.problem.httpws.HttpWsCallResult
+import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.action.ActionResult
 
 class GraphQlCallResult : HttpWsCallResult {
 
@@ -11,7 +11,7 @@ class GraphQlCallResult : HttpWsCallResult {
         const val LAST_STATEMENT_WHEN_GQL_ERRORS = "LAST_STATEMENT_WHEN_GQL_ERRORS"
     }
 
-    constructor(stopping: Boolean = false) : super(stopping)
+    constructor(sourceLocalId: String, stopping: Boolean = false) : super(sourceLocalId, stopping)
 
     @VisibleForTesting
     internal constructor(other: ActionResult) : super(other)

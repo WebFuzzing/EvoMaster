@@ -7,6 +7,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.lang.reflect.Array;
 
 /**
  * Mark a static method as a replacement one for a method in the Java API.
@@ -34,10 +35,26 @@ import java.lang.annotation.Target;
 @Target({ElementType.METHOD})
 public @interface Replacement {
 
+
+
     /**
      * Specify if the target replaced method was static
      */
     boolean replacingStatic() default false;
+
+    /**
+     *  Specify if the target to replace is a constructor call, ie, using "new".
+     *  Note that constructors are handled very specially.
+     *  Replacement must return void, and rather save the newly create instance locally.
+     *  To avoid concurrency issue, should save it in a ThreadLocal.
+     *  Such instance must then be returned in a static method with name same
+     *  as what currently stored in MethodReplacementClass.CONSUME_INSTANCE_METHOD_NAME
+     *  See further documentation there.
+     *  Also, recall that most of these constraints are checked in ReplacementListTest
+     *
+     *  For an explanation of why we do this, look at the comments in MethodReplacementMethodVisitor
+     */
+    boolean replacingConstructor() default false;
 
     /**
      * There might be different reasons to replace a methods,
@@ -66,4 +83,22 @@ public @interface Replacement {
     boolean isPure() default true;
 
     ReplacementCategory category();
+
+    /**
+     * Name of the class for which the return value of this method should be cast to.
+     * This is necessary for 3rd-party replacements only.
+     */
+    String castTo() default "";
+
+    /**
+     * Method replacement will not be applied to classes in given prefix package.
+     * If it starts with a '.', then it is not treated as prefix (ie match anywhere in the package full name).
+     * This latter is useful when dealing with packages that are shaded
+     */
+    String[] packagesToSkip() default {};
+
+    /**
+     * Only applicable if UsageFilter is ONLY_SUT
+     */
+    String[] extraPackagesToConsider() default {};
 }

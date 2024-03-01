@@ -7,8 +7,8 @@ import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
-import org.evomaster.client.java.controller.api.dto.AuthenticationDto;
-import org.evomaster.client.java.controller.api.dto.JsonAuthRPCEndpointDto;
+import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto;
+import org.evomaster.client.java.controller.api.dto.auth.JsonAuthRPCEndpointDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCType;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RPCProblem;
@@ -31,7 +31,7 @@ public class AuthSetupController extends SpringController {
             put(AuthSetupService.Iface.class.getName(), client);
         }}, new HashMap<String, List<String>>(){{
             put(AuthSetupService.Iface.class.getName(), Arrays.asList("login", "logout"));
-        }}, null, null, null, RPCType.THRIFT);
+        }}, null, null, null, RPCType.GENERAL);
     }
 
     @Override

@@ -1,11 +1,10 @@
 package org.evomaster.core.problem.rest.service
 
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
-import org.evomaster.core.problem.httpws.service.HttpWsCallResult
+import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.search.ActionResult
+import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.slf4j.Logger
@@ -19,7 +18,7 @@ class BlackBoxRestFitness : RestFitness() {
         private val log: Logger = LoggerFactory.getLogger(BlackBoxRestFitness::class.java)
     }
 
-    override fun doCalculateCoverage(individual: RestIndividual, targets: Set<Int>): EvaluatedIndividual<RestIndividual>? {
+    override fun doCalculateCoverage(individual: RestIndividual, targets: Set<Int>, allCovered: Boolean): EvaluatedIndividual<RestIndividual>? {
 
         val cookies = mutableMapOf<String, List<NewCookie>>()
         val tokens = mutableMapOf<String, String>()
@@ -32,15 +31,10 @@ class BlackBoxRestFitness : RestFitness() {
                 memory leak
              */
             rc.resetSUT()
-
-            /*
-                currently, for bb, the auth can be only configured with the driver,
-                ie, bbExperiments is enabled.
-                TODO might support other manner to configure auth for bb
-             */
-            cookies.putAll(getCookies(individual))
-            tokens.putAll(getTokens(individual))
         }
+
+        cookies.putAll(getCookies(individual))
+        tokens.putAll(getTokens(individual))
 
         val fv = FitnessValue(individual.size().toDouble())
 
@@ -50,9 +44,9 @@ class BlackBoxRestFitness : RestFitness() {
         val chainState = mutableMapOf<String, String>()
 
         //run the test, one action at a time
-        for (i in 0 until individual.seeActions().size) {
+        for (i in 0 until individual.seeAllActions().size) {
 
-            val a = individual.seeActions()[i]
+            val a = individual.seeAllActions()[i]
 
             var ok = false
 
@@ -68,7 +62,7 @@ class BlackBoxRestFitness : RestFitness() {
             }
         }
 
-        handleResponseTargets(fv, individual.seeActions(), actionResults, listOf())
+        handleResponseTargets(fv, individual.seeAllActions().filterIsInstance<RestCallAction>(), actionResults, listOf())
 
         return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults, trackOperator = individual.trackOperator, index = time.evaluatedIndividuals, config = config)
     }

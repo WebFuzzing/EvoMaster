@@ -1,0 +1,17 @@
+type Query {
+
+    flowersById(id: [Int]): Flower
+}
+
+type Flower {
+
+    id: Int
+
+    name: String
+
+    type: String
+
+    color: String
+
+    price: Int
+}

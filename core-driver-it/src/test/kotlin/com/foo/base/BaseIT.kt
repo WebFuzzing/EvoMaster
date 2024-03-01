@@ -4,6 +4,7 @@ import org.evomaster.client.java.controller.InstrumentedSutStarter
 import org.evomaster.client.java.controller.api.dto.ActionDto
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.ci.utils.CIUtils
+import org.evomaster.core.remote.service.RemoteControllerImplementation
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
 import java.io.File
@@ -40,7 +41,7 @@ class BaseIT {
             setupJarAgent()
             driver.controllerPort = 0
             starter.start()
-            remote = RemoteController("localhost", driver.controllerServerPort, false, false)
+            remote = RemoteControllerImplementation("localhost", driver.controllerServerPort, false, false)
         }
 
         @JvmStatic

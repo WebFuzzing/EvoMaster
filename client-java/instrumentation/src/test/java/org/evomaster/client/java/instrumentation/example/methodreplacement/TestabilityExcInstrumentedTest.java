@@ -3,7 +3,7 @@ package org.evomaster.client.java.instrumentation.example.methodreplacement;
 import com.foo.somedifferentpackage.examples.methodreplacement.TestabilityExcImp;
 import org.evomaster.client.java.instrumentation.InputProperties;
 import org.evomaster.client.java.instrumentation.InstrumentingClassLoader;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
+import org.evomaster.client.java.distance.heuristics.DistanceHelper;
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
@@ -19,7 +19,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper.H_REACHED_BUT_NULL;
+import static org.evomaster.client.java.distance.heuristics.DistanceHelper.H_REACHED_BUT_NULL;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -51,7 +51,7 @@ public class TestabilityExcInstrumentedTest {
 
 
     @Test
-    public void testUnitsInfo() throws Exception{
+    public void testUnitsInfo() throws Exception {
 
         UnitsInfoRecorder.reset();
         UnitsInfoRecorder info = UnitsInfoRecorder.getInstance();
@@ -62,7 +62,7 @@ public class TestabilityExcInstrumentedTest {
 
         info = UnitsInfoRecorder.getInstance();
         assertEquals(1, info.getNumberOfUnits());
-        assertEquals(26, info.getNumberOfReplacedMethodsInSut());
+        assertEquals(27, info.getNumberOfReplacedMethodsInSut());
     }
 
 
@@ -1278,4 +1278,31 @@ public class TestabilityExcInstrumentedTest {
         assertTrue(Pattern.compile(pattern).matcher("*.class").find());
         assertTrue(Pattern.compile("(.*)((" + pattern + "))(.*)").matcher("*.class").matches());
     }
+
+    @Test
+    public void testBase64Decode() throws Exception {
+        TestabilityExc te = getInstance();
+
+        try {
+            te.decode(Base64.getDecoder(), "$");
+            fail();
+        } catch (IllegalArgumentException ex) {
+            assertEquals(2, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+
+            String targetId = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT)
+                    .iterator().next();  // normal branch
+            double h0 = ExecutionTracer.getValue(targetId);
+            assertTrue(h0 > 0); // reached
+            assertTrue(h0 < 1); // but not covered
+
+            te.decode(Base64.getDecoder(), "Hell");
+
+            double h1 = ExecutionTracer.getValue(targetId);
+            assertEquals(1, h1);// covered
+
+
+        }
+
+    }
+
 }
