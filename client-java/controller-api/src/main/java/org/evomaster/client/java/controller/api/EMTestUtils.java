@@ -142,7 +142,10 @@ public class EMTestUtils {
             // Create a trust manager that does not validate certificate chains
             TrustManager[] trustAllCerts = new TrustManager[] {new X509TrustManager() {
                 public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-                    return null;
+                    //return null;
+                    //based on:
+                    //https://stackoverflow.com/questions/6047996/ignore-self-signed-ssl-cert-using-jersey-client
+                    return new X509Certificate[0];
                 }
                 public void checkClientTrusted(X509Certificate[] certs, String authType) {
                 }
