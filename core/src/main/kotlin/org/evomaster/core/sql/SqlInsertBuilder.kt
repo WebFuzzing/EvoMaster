@@ -3,11 +3,7 @@ package org.evomaster.core.sql
 import org.evomaster.client.java.controller.api.dto.database.operations.DataRowDto
 import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto
 import org.evomaster.client.java.controller.api.dto.database.operations.QueryResultDto
-import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto
-import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
-import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto
-import org.evomaster.client.java.controller.api.dto.database.schema.ExtraConstraintsDto
-import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
+import org.evomaster.client.java.controller.api.dto.database.schema.*
 import org.evomaster.core.sql.schema.*
 import org.evomaster.core.sql.schema.ColumnFactory.createColumnFromDto
 import org.evomaster.core.search.gene.Gene
@@ -79,10 +75,206 @@ class SqlInsertBuilder(
 
 
     init {
-        /*
-            Here, we need to transform (and validate) the input DTO
-            into immutable domain objects
-         */
+        validateInputDTO(schemaDto)
+
+        databaseType = schemaDto.databaseType
+        name = schemaDto.name
+
+        // First load all composite types
+        for (compositeTypeDto in schemaDto.compositeTypes) {
+            val columns = compositeTypeFrom(compositeTypeDto, schemaDto)
+            compositeTypes[compositeTypeDto.name] = CompositeType(compositeTypeDto.name, columns)
+        }
+
+        val tableToColumns = mutableMapOf<String, MutableSet<Column>>()
+        val tableToForeignKeys = mutableMapOf<String, MutableSet<ForeignKey>>()
+        val tableToConstraints = mutableMapOf<String, Set<TableConstraint>>()
+
+        // Then load all constraints and columns
+        for (tableDto in schemaDto.tables) {
+
+            val tableConstraints = parseTableConstraints(tableDto).toMutableList()
+            val columns = generateColumnsFrom(tableDto, tableConstraints, schemaDto)
+
+            tableToConstraints[tableDto.name] = tableConstraints.toSet()
+            tableToColumns[tableDto.name] = columns
+        }
+
+        // After all columns are loaded, we can load foreign keys
+        for (tableDto in schemaDto.tables) {
+            tableToForeignKeys[tableDto.name] = calculateForeignKeysFrom(tableDto, tableToColumns)
+        }
+
+        // Now we can create the tables
+        for (tableDto in schemaDto.tables) {
+            val table = Table(
+                tableDto.name,
+                tableToColumns[tableDto.name]!!,
+                tableToForeignKeys[tableDto.name]!!,
+                tableToConstraints[tableDto.name]!!
+            )
+            tables[tableDto.name] = table
+        }
+
+        // Setup extended tables
+        tables.forEach { (tableName, table) ->
+            extendedTables[tableName] = newTableWithExtraConstraints(schemaDto, table)
+        }
+
+        validateExtraConstraintsHandle(schemaDto)
+    }
+
+    private fun validateExtraConstraintsHandle(schemaDto: DbSchemaDto) {
+        schemaDto.extraConstraintDtos.forEach { extraConstraintsDto ->
+            val table = tables.values.find { matchJpaName(it.name, extraConstraintsDto.tableName) }
+            if (table == null) {
+                LoggingUtil.uniqueWarn(
+                    log, "Handling of extra constraints failed." +
+                            " There is no SQL table called ${extraConstraintsDto.tableName}"
+                )
+                assert(false)
+            } else {
+                val k = table.columns.find { matchJpaName(it.name, extraConstraintsDto.columnName) }
+                if (k == null) {
+                    LoggingUtil.uniqueWarn(
+                        log, "Handling of extra constraints failed." +
+                                " There is no column called ${extraConstraintsDto.columnName} in SQL table ${table.name}"
+                    )
+
+                    //FIXME put back once dealt with ClassAnalyzer
+                    //assert(false)
+                }
+            }
+        }
+    }
+
+    private fun newTableWithExtraConstraints(
+        schemaDto: DbSchemaDto,
+        table: Table
+    ): Table {
+        val extrasForTable = schemaDto.extraConstraintDtos
+            .filter { matchJpaName(it.tableName, table.name) }
+
+        val columns = table.columns
+            .map { column ->
+                val extra = extrasForTable.find { matchJpaName(it.columnName, column.name) }
+                if (extra == null) {
+                    column // recall immutable
+                } else {
+                    mergeConstraints(column, extra)
+                }
+            }.toSet()
+
+        return table.copy(columns = columns)
+    }
+
+    private fun calculateForeignKeysFrom(
+        tableDto: TableDto,
+        tableToColumns: MutableMap<String, MutableSet<Column>>
+    ): MutableSet<ForeignKey> {
+        val fks = mutableSetOf<ForeignKey>()
+
+        for (fk in tableDto.foreignKeys) {
+
+            tableToColumns[fk.targetTable]
+                ?: throw IllegalArgumentException("Foreign key for non-existent table ${fk.targetTable}")
+
+            val sourceColumns = mutableSetOf<Column>()
+
+            for (cname in fk.sourceColumns) {
+                // TODO: wrong check, as should be based on targetColumns, when we ll introduce them
+                // val c = targetTable.find { it.name.equals(cname, ignoreCase = true) }
+                //        ?: throw IllegalArgumentException("Issue in foreign key: table ${f.targetTable} does not have a column called $cname")
+
+                val c = tableToColumns[tableDto.name]!!.find { it.name.equals(cname, ignoreCase = true) }
+                    ?: throw IllegalArgumentException("Issue in foreign key: table ${tableDto.name} does not have a column called $cname")
+
+                sourceColumns.add(c)
+            }
+
+            fks.add(ForeignKey(sourceColumns, fk.targetTable))
+        }
+        return fks
+    }
+
+    private fun generateColumnsFrom(
+        tableDto: TableDto,
+        tableConstraints: MutableList<TableConstraint>,
+        schemaDto: DbSchemaDto
+    ): MutableSet<Column> {
+        val columns = mutableSetOf<Column>()
+
+        for (column in tableDto.columns) {
+
+            if (!column.table.equals(tableDto.name, ignoreCase = true)) {
+                throw IllegalArgumentException("Column in different table: ${column.table}!=${tableDto.name}")
+            }
+
+            val newColumn = createColumnFrom(column, tableConstraints, schemaDto)
+
+            columns.add(newColumn)
+        }
+        return columns
+    }
+
+    private fun createColumnFrom(
+        column: ColumnDto,
+        tableConstraints: MutableList<TableConstraint>,
+        schemaDto: DbSchemaDto
+    ): Column {
+        val (lowerBoundForColumn: Long?, upperBoundForColumn: Long?) = calculateBounds(tableConstraints, column)
+        val enumValuesForColumn: List<String>? = findEnumValuesForColumn(tableConstraints, column, schemaDto)
+        val similarToPatternsForColumn: List<String>? = findSimilarToPatternsForColumn(tableConstraints, column)
+        val likePatternsForColumn = findLikePatternsForColumn(tableConstraints, column)
+
+        return createColumnFromDto(
+            column, lowerBoundForColumn, upperBoundForColumn, enumValuesForColumn,
+            similarToPatternsForColumn, likePatternsForColumn, compositeTypes, databaseType
+        )
+    }
+
+    private fun calculateBounds(
+        tableConstraints: MutableList<TableConstraint>,
+        column: ColumnDto
+    ): Pair<Long?, Long?> {
+        var lowerBoundForColumn: Long? = findLowerBound(tableConstraints, column)
+        var upperBoundForColumn: Long? = findUpperBound(tableConstraints, column)
+        // rangeConstraints can be combined with lower/upper bound constraints
+        val pair = findUpperLowerBoundOfRangeConstraints(tableConstraints, column)
+        val minRangeValue: Long? = pair.first?.toLong()
+        val maxRangeValue: Long? = pair.second?.toLong()
+
+        if (minRangeValue != null) {
+            lowerBoundForColumn = maxOf(minRangeValue, lowerBoundForColumn!!)
+        }
+        if (maxRangeValue != null) {
+            upperBoundForColumn = minOf(maxRangeValue, upperBoundForColumn!!)
+        }
+        return Pair(lowerBoundForColumn, upperBoundForColumn)
+    }
+
+    private fun compositeTypeFrom(
+        compositeTypeDto: CompositeTypeDto,
+        schemaDto: DbSchemaDto
+    ): MutableList<Column> {
+        val columns = mutableListOf<Column>()
+        for (columnDto in compositeTypeDto.columns) {
+            val column = ColumnFactory.createColumnFromCompositeTypeDto(
+                columnDto = columnDto,
+                compositeTypes = schemaDto.compositeTypes,
+                databaseType = databaseType
+            )
+            columns.add(column)
+        }
+        return columns
+    }
+
+    /**
+        Here, we need to transform (and validate) the input DTO
+        into immutable domain objects
+     **/
+    private fun validateInputDTO(schemaDto: DbSchemaDto) {
+
         if (counter < 0) {
             throw IllegalArgumentException("Invalid negative counter: $counter")
         }
@@ -93,114 +285,6 @@ class SqlInsertBuilder(
         if (schemaDto.name == null) {
             throw IllegalArgumentException("Undefined schema name")
         }
-
-        databaseType = schemaDto.databaseType
-        name = schemaDto.name
-
-        for (t in schemaDto.compositeTypes) {
-            val columns = mutableListOf<Column>()
-            for (c in t.columns) {
-                val column = ColumnFactory.createColumnFromCompositeTypeDto(
-                    columnDto = c,
-                    compositeTypes = schemaDto.compositeTypes,
-                    databaseType = databaseType
-                )
-                columns.add(column)
-            }
-            compositeTypes[t.name] = CompositeType(t.name, columns)
-        }
-
-        val tableToColumns = mutableMapOf<String, MutableSet<Column>>()
-        val tableToForeignKeys = mutableMapOf<String, MutableSet<ForeignKey>>()
-        val tableToConstraints = mutableMapOf<String, Set<TableConstraint>>()
-
-        for (t in schemaDto.tables) {
-
-            val tableConstraints = parseTableConstraints(t).toMutableList()
-
-            val columns = mutableSetOf<Column>()
-
-            for (c in t.columns) {
-
-                if (!c.table.equals(t.name, ignoreCase = true)) {
-                    throw IllegalArgumentException("Column in different table: ${c.table}!=${t.name}")
-                }
-
-                var lowerBoundForColumn: Long? = findLowerBound(tableConstraints, c)
-
-                var upperBoundForColumn: Long? = findUpperBound(tableConstraints, c)
-
-                val enumValuesForColumn: List<String>? = findEnumValuesForColumn(tableConstraints, c, schemaDto)
-
-                val similarToPatternsForColumn: List<String>? = findSimilarToPatternsForColumn(tableConstraints, c)
-
-
-                // rangeConstraints can be combined with lower/upper bound constraints
-                val pair = findUpperLoweBoundOfRangeConstraints(tableConstraints, c)
-                val minRangeValue: Long? = pair.first?.toLong()
-                val maxRangeValue: Long? = pair.second?.toLong()
-                if (minRangeValue != null) {
-                    lowerBoundForColumn = maxOf(minRangeValue, lowerBoundForColumn!!)
-                }
-
-                if (maxRangeValue != null) {
-                    upperBoundForColumn = minOf(maxRangeValue, upperBoundForColumn!!)
-                }
-
-                val likePatternsForColumn = findLikePatternsForColumn(tableConstraints, c)
-
-                val column = createColumnFromDto(
-                    c, lowerBoundForColumn, upperBoundForColumn, enumValuesForColumn,
-                    similarToPatternsForColumn, likePatternsForColumn, compositeTypes, databaseType
-                )
-
-                columns.add(column)
-            }
-
-
-            tableToConstraints[t.name] = tableConstraints.toSet()
-            tableToColumns[t.name] = columns
-        }
-
-        for (t in schemaDto.tables) {
-
-            val fks = mutableSetOf<ForeignKey>()
-
-            for (f in t.foreignKeys) {
-
-                tableToColumns[f.targetTable]
-                    ?: throw IllegalArgumentException("Foreign key for non-existent table ${f.targetTable}")
-
-                val sourceColumns = mutableSetOf<Column>()
-
-
-                for (cname in f.sourceColumns) {
-                    //TODO wrong check, as should be based on targetColumns, when we ll introduce them
-                    //val c = targetTable.find { it.name.equals(cname, ignoreCase = true) }
-                    //        ?: throw IllegalArgumentException("Issue in foreign key: table ${f.targetTable} does not have a column called $cname")
-
-                    val c = tableToColumns[t.name]!!.find { it.name.equals(cname, ignoreCase = true) }
-                        ?: throw IllegalArgumentException("Issue in foreign key: table ${t.name} does not have a column called $cname")
-                    sourceColumns.add(c)
-                }
-
-                fks.add(ForeignKey(sourceColumns, f.targetTable))
-            }
-
-            tableToForeignKeys[t.name] = fks
-        }
-
-        for (t in schemaDto.tables) {
-            val table = Table(
-                t.name,
-                tableToColumns[t.name]!!,
-                tableToForeignKeys[t.name]!!,
-                tableToConstraints[t.name]!!
-            )
-            tables[t.name] = table
-        }
-
-        setUpExtendedTables(schemaDto)
     }
 
     /**
@@ -218,52 +302,6 @@ class SqlInsertBuilder(
             return true
         }
         return original.replace("_", "").equals(jpaDefaultMadness.replace("_", ""), true)
-    }
-
-    private fun setUpExtendedTables(schemaDto: DbSchemaDto) {
-
-        tables.forEach { e ->
-            val t = e.value
-
-            val extrasForTable = schemaDto.extraConstraintDtos
-                .filter { matchJpaName(it.tableName, t.name) }
-
-            val columns = t.columns
-                .map { c ->
-                    val extra = extrasForTable.find { matchJpaName(it.columnName, c.name) }
-                    if (extra == null) {
-                        c // recall immutable
-                    } else {
-                        mergeConstraints(c, extra)
-                    }
-                }.toSet()
-
-            val copy = t.copy(columns = columns)
-
-            extendedTables[e.key] = copy
-        }
-
-        schemaDto.extraConstraintDtos.forEach { c ->
-            val t = tables.values.find { matchJpaName(it.name, c.tableName) }
-            if (t == null) {
-                LoggingUtil.uniqueWarn(
-                    log, "Handling of extra constraints failed." +
-                            " There is no SQL table called ${c.tableName}"
-                )
-                assert(false)
-            } else {
-                val k = t.columns.find { matchJpaName(it.name, c.columnName) }
-                if (k == null) {
-                    LoggingUtil.uniqueWarn(
-                        log, "Handling of extra constraints failed." +
-                                " There is no column called ${c.columnName} in SQL table ${t.name}"
-                    )
-
-                    //FIXME put back once dealt with ClassAnalyzer
-                    //assert(false)
-                }
-            }
-        }
     }
 
     private fun mergeConstraints(column: Column, extra: ExtraConstraintsDto): Column {
@@ -348,7 +386,7 @@ class SqlInsertBuilder(
     }
 
 
-    private fun findUpperLoweBoundOfRangeConstraints(
+    private fun findUpperLowerBoundOfRangeConstraints(
         tableConstraints: MutableList<TableConstraint>,
         c: ColumnDto
     ): Pair<Int?, Int?> {
@@ -566,7 +604,7 @@ class SqlInsertBuilder(
      * Create a SQL insertion operation into the table called [tableName].
      * Use columns only from [columnNames], to avoid wasting resources in setting
      * non-used data.
-     * Note: due to constraints (eg non-null), we might create data also for non-specified columns.
+     * Note: due to constraints (e.g. non-null), we might create data also for non-specified columns.
      *
      * If the table has non-null foreign keys to other tables, then create an insertion for those
      * as well. This means that more than one action can be returned here.
@@ -620,37 +658,17 @@ class SqlInsertBuilder(
         enableSingleInsertionForTable: Boolean = false
     ): List<SqlAction> {
 
+        // visit current tableName
         history.add(tableName)
 
         val table = getTable(tableName, useExtraSqlDbConstraints)
-
         val takeAll = columnNames.contains("*")
+        validateColumnNamesInput(takeAll, columnNames, table, tableName)
 
-        if (takeAll && columnNames.size > 1) {
-            throw IllegalArgumentException("Invalid column description: more than one entry when using '*'")
-        }
-
-        for (cn in columnNames) {
-            if (cn != "*" && !table.columns.any { it.name.equals(cn, ignoreCase = true) }) {
-                throw IllegalArgumentException("No column called $cn in table $tableName")
-            }
-        }
-
-        val selectedColumns = mutableSetOf<Column>()
-
-        for (c in table.columns) {
-            /*
-                we need to take primaryKey even if autoIncrement.
-                Point is, even if value will be set by DB, and so could skip it,
-                we would still need a non-modifiable, non-printable Gene to
-                store it, as we can have other Foreign Key genes pointing to it
-             */
-
-            if (takeAll || columnNames.any { it.equals(c.name, ignoreCase = true) } || !c.nullable || c.primaryKey) {
-                //TODO are there also other constraints to consider?
-                selectedColumns.add(c)
-            }
-        }
+        // filter only columns that will generate value for
+        val selectedColumns = table.columns
+            .filter { takeAll || shouldConsiderColumn(columnNames, it) }
+            .toSet()
 
         val insertion = SqlAction(table, selectedColumns, counter++)
         if (log.isTraceEnabled) {
@@ -661,33 +679,26 @@ class SqlInsertBuilder(
 
         for (fk in table.foreignKeys) {
 
-            val target = fk.targetTable
-            val n = history.filter { it.equals(target, ignoreCase = true) }.count()
-            if (n >= 3 && fk.sourceColumns.all { it.nullable }) {
-                //TODO as a configurable parameter in EMConfig?
+            val targetTable = fk.targetTable
+
+            // if we have already generated the sql inserts for the target table more than 3 times and all columns are nullable, then skip it
+            val maxIter = 3 // TODO: as a configurable parameter in EMConfig?
+            val visitedTableCount = history.count { it.equals(targetTable, ignoreCase = true) }
+            if (visitedTableCount >= maxIter && fk.sourceColumns.all { it.nullable }) {
                 continue
             }
+            val targetColumns = if (forceAll) setOf("*") else setOf()
 
-            val pre = if (forceAll) {
-                createSqlInsertionAction(
-                    target,
-                    setOf("*"),
-                    history,
-                    true,
-                    useExtraSqlDbConstraints,
-                    enableSingleInsertionForTable
-                )
-            } else {
-                createSqlInsertionAction(
-                    target,
-                    setOf(),
-                    history,
-                    false,
-                    useExtraSqlDbConstraints,
-                    enableSingleInsertionForTable
-                )
-            }
-            actions.addAll(0, pre)
+            val targetInsertions = createSqlInsertionAction(
+                        targetTable,
+                        targetColumns,
+                        history,
+                        forceAll,
+                        useExtraSqlDbConstraints,
+                        enableSingleInsertionForTable
+                    )
+
+            actions.addAll(0, targetInsertions)
         }
         if (log.isTraceEnabled) {
             log.trace("create insertions and current size is {}", actions.size)
@@ -695,7 +706,9 @@ class SqlInsertBuilder(
 
         if (enableSingleInsertionForTable && actions.size > 1) {
             val removed = actions.filterIndexed { index, dbAction ->
-                (index > 0 && (index < actions.size - 1 || actions.size == 2)) && actions.subList(0, index - 1)
+                (index > 0 && (index < actions.size - 1 || actions.size == 2)) &&
+                actions
+                    .subList(0, index - 1)
                     .any { a -> a.table.name.equals(dbAction.table.name, ignoreCase = true) }
             }
             if (removed.isNotEmpty())
@@ -705,6 +718,35 @@ class SqlInsertBuilder(
         return actions
     }
 
+    /**
+        we need to take primaryKey even if autoIncrement.
+        Point is, even if value will be set by DB, and so could skip it,
+        we would still need a non-modifiable, non-printable Gene to
+        store it, as we can have other Foreign Key genes pointing to it
+
+        // TODO: are there also other constraints to consider?
+     **/
+    private fun shouldConsiderColumn(
+        allColumns: Set<String>,
+        column: Column
+    ) = (allColumns.any { it.equals(column.name, ignoreCase = true) } || !column.nullable || column.primaryKey)
+
+    private fun validateColumnNamesInput(
+        takeAll: Boolean,
+        columnNames: Set<String>,
+        table: Table,
+        tableName: String
+    ) {
+        if (takeAll && columnNames.size > 1) {
+            throw IllegalArgumentException("Invalid column description: more than one entry when using '*'")
+        }
+
+        for (cn in columnNames) {
+            if (cn != "*" && !table.columns.any { it.name.equals(cn, ignoreCase = true) }) {
+                throw IllegalArgumentException("No column called $cn in table $tableName")
+            }
+        }
+    }
 
     /**
      * Check current state of database.
@@ -746,7 +788,7 @@ class SqlInsertBuilder(
 
                 val genes = mutableListOf<Gene>()
 
-                for (i in 0 until pks.size) {
+                for (i in pks.indices) {
                     val pkName = pks[i].name
                     val inQuotes = pks[i].type.shouldBePrintedInQuotes || pks[i].dimension > 0
                     val data = ImmutableDataHolderGene(pkName, r.columnData[i], inQuotes)
@@ -825,7 +867,7 @@ class SqlInsertBuilder(
 
         val genes = mutableListOf<Gene>()
 
-        for (i in 0 until cols.size) {
+        for (i in cols.indices) {
 
             if (row!!.columnData[i] != "NULL") {
 
