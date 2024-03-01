@@ -2,7 +2,7 @@ package org.evomaster.core.problem.rest
 
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
-import org.evomaster.core.problem.httpws.auth.NoAuth
+import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.FormParam
 import org.evomaster.core.problem.api.param.Param
@@ -26,7 +26,7 @@ class RestCallAction(
     val verb: HttpVerb,
     val path: RestPath,
     parameters: MutableList<Param>,
-    auth: HttpWsAuthenticationInfo = NoAuth(),
+    auth: HttpWsAuthenticationInfo = HttpWsNoAuth(),
     /**
      * If true, it means that it will
      * instruct to save the "location" header of the HTTP response for future
