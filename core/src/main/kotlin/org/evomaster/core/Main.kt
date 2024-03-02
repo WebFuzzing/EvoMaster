@@ -58,12 +58,6 @@ class Main {
         @JvmStatic
         fun main(args: Array<String>) {
 
-            /*
-                We should make sure we can run EM even on APIs on which certificates
-                are expired / misconfigured
-             */
-            EMTestUtils.disableSslVerification()
-
             try {
 
                 printLogo()

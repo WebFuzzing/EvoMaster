@@ -5,21 +5,18 @@ import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.remote.HttpClientFactory
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.service.SearchTimeController
 import org.glassfish.jersey.client.ClientConfig
 import org.glassfish.jersey.client.ClientProperties
 import org.glassfish.jersey.client.HttpUrlConnectorProvider
 import org.slf4j.LoggerFactory
-import java.io.IOException
-import java.io.InputStream
-import javax.ws.rs.client.*
+import javax.net.ssl.SSLContext
+import javax.ws.rs.client.Client
+import javax.ws.rs.client.ClientBuilder
+import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
-
-import javax.ws.rs.core.Response
-
-import kotlin.time.measureTimedValue
-
 
 
 class IntrospectiveQuery {
@@ -28,20 +25,12 @@ class IntrospectiveQuery {
         private val log = LoggerFactory.getLogger(IntrospectiveQuery::class.java)
     }
 
-    private val clientConfiguration = ClientConfig()
-            .property(ClientProperties.CONNECT_TIMEOUT, 60_000)
-            .property(ClientProperties.READ_TIMEOUT, 60_000)
-            //workaround bug in Jersey client
-            .property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true)
-            .property(ClientProperties.FOLLOW_REDIRECTS, true)
-
-
 
     /**
      * Client library to make HTTP calls. To get the schema from a GraphQL API, we need to make
      * an HTTP call that has, as body payload, and introspective query
      */
-    private var client: Client = ClientBuilder.newClient(clientConfiguration)
+    private var client: Client = HttpClientFactory.createTrustingJerseyClient(true, 60_000)
 
 
     fun fetchSchema(

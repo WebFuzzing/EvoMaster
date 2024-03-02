@@ -129,48 +129,4 @@ public class EMTestUtils {
             return false;
         }
     }
-
-    /*
-        The idea here is that, even if SSL certificates are expired, we should still be able to fuzz a web application
-
-        This code is taken and adapted from
-        https://stackoverflow.com/questions/19540289/how-to-fix-the-java-security-cert-certificateexception-no-subject-alternative
-     */
-    public static void disableSslVerification() {
-        try
-        {
-            // Create a trust manager that does not validate certificate chains
-            TrustManager[] trustAllCerts = new TrustManager[] {new X509TrustManager() {
-                public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-                    //return null;
-                    //based on:
-                    //https://stackoverflow.com/questions/6047996/ignore-self-signed-ssl-cert-using-jersey-client
-                    return new X509Certificate[0];
-                }
-                public void checkClientTrusted(X509Certificate[] certs, String authType) {
-                }
-                public void checkServerTrusted(X509Certificate[] certs, String authType) {
-                }
-            }
-            };
-
-            // Install the all-trusting trust manager
-            SSLContext sc = SSLContext.getInstance("SSL");
-            sc.init(null, trustAllCerts, new java.security.SecureRandom());
-            HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
-
-            // Create all-trusting host name verifier
-            HostnameVerifier allHostsValid = new HostnameVerifier() {
-                public boolean verify(String hostname, SSLSession session) {
-                    return true;
-                }
-            };
-
-            // Install the all-trusting host verifier
-            HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);
-        } catch (Exception e) {
-            //this is not so important if it fails
-            System.out.println("Failed to disable SSL");
-        }
-    }
 }

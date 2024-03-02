@@ -14,6 +14,7 @@ import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.HeaderParam
+import org.evomaster.core.remote.HttpClientFactory
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.Individual
 import org.glassfish.jersey.client.ClientConfig
@@ -50,14 +51,7 @@ abstract class HttpWsFitness<T>: ApiWsFitness<T>() where T : Individual {
 
         log.debug("Initializing {}", HttpWsFitness::class.simpleName)
 
-        val clientConfiguration = ClientConfig()
-                .property(ClientProperties.CONNECT_TIMEOUT, 10_000)
-                .property(ClientProperties.READ_TIMEOUT, config.tcpTimeoutMs)
-                //workaround bug in Jersey client
-                .property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true)
-                .property(ClientProperties.FOLLOW_REDIRECTS, false)
-
-        client = ClientBuilder.newClient(clientConfiguration)
+        client = HttpClientFactory.createTrustingJerseyClient(false, config.tcpTimeoutMs)
 
         if (!config.blackBox || config.bbExperiments) {
             rc.checkConnection()
