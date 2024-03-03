@@ -104,12 +104,23 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
         }
     }
 
+    /**
+     * Executes the solver with the content of the Smt2Writer in a file in the tmp folder, and then returns the result as string.
+     * @param writer the Smt2Writer with the constraints
+     * @param filename the name of the file
+     * @return the result of the Z3 solver with the obtained model as string
+     */
     private List<SqlAction> solveFromTmp(Smt2Writer writer, String filename) {
         String model = solveFromFile(this.tmpFolderPath + filename);
         Map<String, String> solvedConstraints = toSolvedConstraintsMap(model);
         return toSqlAction(writer, solvedConstraints);
     }
 
+    /**
+     * Parses the model from Z3 response and returns a map with the solved variables from the constraints
+     * @param model the model as string
+     * @return a map with the solved variables and their values as string
+     */
     private Map<String, String> toSolvedConstraintsMap(String model) {
         String[] lines = model.split("\n");
         Map<String, String> solved = new HashMap<>();
@@ -122,6 +133,13 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
         return solved;
     }
 
+    /**
+     * Given the solved constraints, it returns a list of SqlAction with the necessary inserts according to the constraints
+     * The SqlAction are generated with the SqlInsertBuilder, and then the values are overwritten with the ones obtained with the Z3 execution
+     * @param writer used to get the variable genes the same format that the Z3 solver uses (a prefix for the table and the gene name)
+     * @param solvedConstraints a map with the variables and their values
+     * @return a list of Sql with the necessary inserts according to the constraints
+     */
     private List<SqlAction> toSqlAction(Smt2Writer writer, Map<String, String> solvedConstraints) {
 
         List<SqlAction> actions = new LinkedList<>();

@@ -1,5 +1,4 @@
 import kotlin.Pair;
-import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableCheckExpressionDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
