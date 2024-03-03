@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.text.MessageFormat;
 import java.util.*;
 
 /**
@@ -23,10 +24,10 @@ public class Smt2Writer  {
 
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(Smt2Writer.class.getName());
 
-    // The variables that solve the constraint
+    // The variables that solve the constraint, the key is the variable name and the value is the type in smt format (e.g. "x" -> "Int")
     private final Map<String, String> variables = new HashMap<>();
 
-    // The assertions that those values need to satisfy
+    // The assertions that those variables need to satisfy in smt format (e.g. "(> x 5)")
     private final List<String> constraints = new ArrayList<>();
     private final JSqlConditionParser parser;
     private final ConstraintDatabaseType dbType;
@@ -101,20 +102,29 @@ public class Smt2Writer  {
             return false;
         }
     }
-    private Pair<Map<String, String>, String> parseCheckExpression(TableDto table, SqlCondition condition) {
+
+    /**
+     * Parses a check expression and returns a pair with the variables and the comparison
+     * The first part of the pair is a map with the variables names as key and their types (in smt) as value (e.g. "x" -> "Int")
+     * The second part of the pair is the expression to assert in smt format (e.g. "(> x 5)")
+     * @param tableDto the table where the variable is a column of
+     * @param condition the condition to parse and translate
+     * @return a pair with the variables and the expression
+     */
+    private Pair<Map<String, String>, String> parseCheckExpression(TableDto tableDto, SqlCondition condition) {
 
             if (condition instanceof SqlAndCondition) {
                 SqlAndCondition andCondition = (SqlAndCondition) condition;
-                Pair<Map<String, String>, String> leftResponse = parseCheckExpression(table, andCondition.getLeftExpr());
-                Pair<Map<String, String>, String> rightResponse = parseCheckExpression(table, andCondition.getRightExpr());
+                Pair<Map<String, String>, String> leftResponse = parseCheckExpression(tableDto, andCondition.getLeftExpr());
+                Pair<Map<String, String>, String> rightResponse = parseCheckExpression(tableDto, andCondition.getRightExpr());
 
-                Map<String, String> variables = new HashMap<>();
-                variables.putAll(leftResponse.getFirst());
-                variables.putAll(rightResponse.getFirst());
+                Map<String, String> variablesAndType = new HashMap<>();
+                variablesAndType.putAll(leftResponse.getFirst());
+                variablesAndType.putAll(rightResponse.getFirst());
 
                 String comparison = "(and " + leftResponse.getSecond() + " " + rightResponse.getSecond() + ")";
 
-                return new Pair<>(variables, comparison);
+                return new Pair<>(variablesAndType, comparison);
             }
 
             if (condition instanceof SqlOrCondition) {
@@ -122,7 +132,7 @@ public class Smt2Writer  {
                 List<SqlCondition> conditions = orCondition.getOrConditions();
                 List<String> orMembers = new ArrayList<>();
                 for (SqlCondition c : conditions) {
-                    Pair<Map<String, String>, String> response = parseCheckExpression(table, c);
+                    Pair<Map<String, String>, String> response = parseCheckExpression(tableDto, c);
                     variables.putAll(response.getFirst());
                     orMembers.add(response.getSecond());
                 }
@@ -134,9 +144,9 @@ public class Smt2Writer  {
                 SqlInCondition inCondition = (SqlInCondition) condition;
 
                 String columnName = inCondition.getSqlColumn().getColumnName();
-                String variable = asTableVariableKey(table, columnName);
+                String variable = asTableVariableKey(tableDto, columnName);
                 Map<String, String> variables = new HashMap<>();
-                String variableType = getSmtTypeFromDto(table, columnName);
+                String variableType = getSmtTypeFromDto(tableDto, columnName);
                 variables.put(variable, toSmtType(variableType));
 
                 List<SqlCondition> expressions = inCondition.getLiteralList().getSqlConditionExpressions();
@@ -152,12 +162,12 @@ public class Smt2Writer  {
             SqlComparisonCondition comparisonCondition = (SqlComparisonCondition) condition;
 
             String columnName = comparisonCondition.getLeftOperand().toString();
-            String variable = asTableVariableKey(table, columnName);
+            String variable = asTableVariableKey(tableDto, columnName);
             String compare = comparisonCondition.getRightOperand().toString();
             String comparator = comparisonCondition.getSqlComparisonOperator().toString();
 
             Map<String, String> variables = new HashMap<>();
-            String variableType = getSmtTypeFromDto(table, columnName);
+            String variableType = getSmtTypeFromDto(tableDto, columnName);
             variables.put(variable, toSmtType(variableType));
 
             return new Pair<>(variables, "(" + comparator + " " + variable + " " + compare + ")");
@@ -182,7 +192,7 @@ public class Smt2Writer  {
                 return "Real";
         }
 
-        throw new RuntimeException("The sql type is not supported by smt solver");
+        throw new RuntimeException(MessageFormat.format("The sql type ''{0}'' is not supported", sqlType));
     }
 
     private String inArrayExpressionToOrAssert(String variable, List<SqlCondition> expressions) {

@@ -8,6 +8,7 @@ import org.evomaster.core.search.gene.numeric.LongGene;
 import org.evomaster.core.sql.SqlAction;
 import org.evomaster.core.sql.SqlInsertBuilder;
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -29,6 +30,11 @@ public class SqlBuilderFromSchemaTest {
     @BeforeAll
     static void setup() throws Exception {
          connection = DriverManager.getConnection("jdbc:h2:mem:constraint_test", "sa", "");
+    }
+
+    @AfterAll
+    static void tearDown() throws Exception {
+        connection.close();
     }
 
     /**
@@ -212,7 +218,7 @@ public class SqlBuilderFromSchemaTest {
     }
 
     @AfterEach
-    void tearDown() throws Exception {
+    void dropTable() throws Exception {
         SqlScriptRunner.execCommand(connection, "DROP TABLE products;");
     }
 

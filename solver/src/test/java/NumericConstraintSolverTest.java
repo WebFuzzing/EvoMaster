@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -19,12 +20,13 @@ import static org.junit.jupiter.api.Assertions.*;
 public class NumericConstraintSolverTest {
 
     private static DbConstraintSolverZ3InDocker solver;
+    private static Connection connection;
 
     @BeforeAll
     static void setup() throws Exception {
         String resourcesFolder = System.getProperty("user.dir") + "/src/test/resources/";
 
-        Connection connection = DriverManager.getConnection("jdbc:h2:mem:numeric_test", "sa", "");
+        connection = DriverManager.getConnection("jdbc:h2:mem:numeric_test", "sa", "");
 
         SqlScriptRunner.execCommand(connection,
             "CREATE TABLE products(price float not null, max_historical_price double not null, min_price bigint not null, stock long not null);\n" +
@@ -38,8 +40,9 @@ public class NumericConstraintSolverTest {
     }
 
     @AfterAll
-    static void tearDown() {
+    static void tearDown() throws SQLException {
         solver.close();
+        connection.close();
     }
 
 
