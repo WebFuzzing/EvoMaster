@@ -63,9 +63,8 @@ class IntrospectiveQuery {
                         "query": "fragment FullType on __Type {  kind  name  fields(includeDeprecated: true) {    name    args {      ...InputValue    }   type {      ...TypeRef    }    isDeprecated    deprecationReason  }  inputFields {    ...InputValue  }  interfaces {    ...TypeRef  }  enumValues(includeDeprecated: true) {    name    isDeprecated    deprecationReason  }  possibleTypes {    ...TypeRef  }} fragment InputValue on __InputValue {  name type {   ...TypeRef  }  defaultValue}fragment TypeRef on __Type {  kind  name  ofType {    kind    name   ofType {      kind      name      ofType {        kind       name       ofType {          kind          name         ofType {            kind            name            ofType {             kind             name              ofType {                kind                name              }            }         }        }      }    }  }}query IntrospectionQuery {  __schema {    queryType {     name   }    mutationType {      name    }    types {      ...FullType   }    directives {      name      locations      args {        ...InputValue     }    } }}","variables":null,"operationName":"IntrospectionQuery"
                     }
                 """.trimIndent(), MediaType.APPLICATION_JSON_TYPE)
-        val response: Response?
-        try {
-            response = SearchTimeController.measureTimeMillis({ ms, res ->
+        val response : Response = try {
+            SearchTimeController.measureTimeMillis({ ms, _ ->
                 LoggingUtil.getInfoLogger().info("Fetched GraphQL schema in ${ms}ms")
             }, {
                 try {
@@ -78,12 +77,11 @@ class IntrospectiveQuery {
                     request.buildPost(query)
                             .invoke()
                 } catch (e: Exception) {
-                    log.error("Failed query to '$graphQlEndpoint' :  $query")
-                    throw e
+                    throw SutProblemException("Failed introspection query to '$graphQlEndpoint', please check connection and URL format. Error: ${e.message}")
                 }
             })
         } catch (e: Exception) {
-            throw SutProblemException("Failed introspection query to '$graphQlEndpoint', please check connection and URL format")
+            throw SutProblemException("${e.message}")
         }
 
 
@@ -92,9 +90,9 @@ class IntrospectiveQuery {
         /*
            Extract the body from response as a string
         */
-        val body = response?.readEntity(String::class.java)
+        val body = response.readEntity(String::class.java)
 
-        if (response?.status != 200) {
+        if (response.status != 200) {
             throw SutProblemException("Failed to retrieve GraphQL schema." +
                     " Status code: ${response.status}." +
                     " Response: $body")
