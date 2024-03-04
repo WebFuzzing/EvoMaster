@@ -56,9 +56,10 @@ public class ExternalServiceMockingFlakyEMTest extends SpringTestBase {
                     // manually.
                     List<Action> actions = new ArrayList<>();
                     for (EvaluatedIndividual<RestIndividual> individual : solution.getIndividuals()) {
-                        for (RestResourceCalls call : individual.getIndividual().getResourceCalls()) {
-                            actions.addAll(call.seeActions(ActionFilter.ONLY_EXTERNAL_SERVICE));
-                        }
+//                        for (RestResourceCalls call : individual.getIndividual().getResourceCalls()) {
+//                            actions.addAll(call.seeActions(ActionFilter.ONLY_EXTERNAL_SERVICE));
+//                        }
+                        actions.addAll(individual.getIndividual().seeExternalServiceActions());
                     }
                     //assertEquals(actions.size(), 13);
                     //Andrea: there should be clear reason for hardcoded numbers like 13. otherwise, when we get a new

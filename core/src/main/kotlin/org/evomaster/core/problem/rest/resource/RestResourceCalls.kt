@@ -180,12 +180,19 @@ class RestResourceCalls(
     }
 
     /**
+     * @return EnterpriseActionGroup in the top structure of ActionTree
+     */
+    fun seeEnterpriseActionGroup() : List<EnterpriseActionGroup<RestCallAction>>{
+        return children.filterIsInstance<EnterpriseActionGroup<*>>() as List<EnterpriseActionGroup<RestCallAction>>
+    }
+
+    /**
      * @return actions with specified action [filter]
      */
     fun seeActions(filter: ActionFilter): List<out Action> {
         return when (filter) {
-            ActionFilter.ALL -> sqlActions.plus(externalServiceActions).plus(mainActions)
-            ActionFilter.INIT -> sqlActions.plus(mongoDbActions)
+            ActionFilter.ALL -> sqlActions.plus(externalServiceActions).plus(mainActions) // FIXME: Is this correct?
+            ActionFilter.INIT -> sqlActions.plus(mongoDbActions).plus(dnsActions)
             ActionFilter.ONLY_SQL -> sqlActions
             ActionFilter.NO_INIT, ActionFilter.NO_SQL -> externalServiceActions.plus(mainActions)
             ActionFilter.MAIN_EXECUTABLE -> mainActions
@@ -195,6 +202,8 @@ class RestResourceCalls(
             ActionFilter.ONLY_DNS -> dnsActions
         }
     }
+
+
 
     /**
      * @return size of action with specified action [filter]

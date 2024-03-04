@@ -1,9 +1,11 @@
 package org.evomaster.core.output.service
 
 import com.google.inject.Inject
+import org.apache.xpath.operations.Bool
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.SqlWriter
+import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.RestCallAction
@@ -17,6 +19,7 @@ import org.evomaster.core.search.gene.utils.GeneUtils
 import org.slf4j.LoggerFactory
 import java.nio.file.Path
 import java.util.*
+import javax.swing.text.StyledEditorKit.BoldAction
 
 class RestTestCaseWriter : HttpWsTestCaseWriter {
 
@@ -103,24 +106,31 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
     ) {
         //SQL actions are generated in between
         if (ind.individual is RestIndividual) {
-            ind.evaluatedResourceActions().forEachIndexed { index, c ->
-                // db
-                if (c.first.isNotEmpty())
-                    SqlWriter.handleDbInitialization(
-                        format,
-                        c.first,
-                        lines,
-                        ind.individual.seeDbActions(),
-                        groupIndex = index.toString(),
-                        insertionVars = insertionVars,
-                        skipFailure = config.skipFailureSQLInTestFile
-                    )
-                //actions
-                c.second.forEach { a ->
-                    val exeuctionIndex = ind.individual.seeMainExecutableActions().indexOf(a.action)
-                    handleSingleCall(a, exeuctionIndex, ind.fitness, lines, testCaseName, testSuitePath, baseUrlOfSut)
+            if((ind.individual as RestIndividual).getResourceCalls().isNotEmpty()){
+                ind.evaluatedResourceActions().forEachIndexed { index, c ->
+                    // db
+                    if (c.first.isNotEmpty())
+                        SqlWriter.handleDbInitialization(
+                            format,
+                            c.first,
+                            lines,
+                            ind.individual.seeDbActions(),
+                            groupIndex = index.toString(),
+                            insertionVars = insertionVars,
+                            skipFailure = config.skipFailureSQLInTestFile
+                        )
+                    //actions
+                    c.second.forEach { a ->
+                        val exeuctionIndex = ind.individual.seeMainExecutableActions().indexOf(a.action)
+                        handleSingleCall(a, exeuctionIndex, ind.fitness, lines, testCaseName, testSuitePath, baseUrlOfSut)
+                    }
+                }
+            }else{
+                ind.evaluatedMainActions().forEachIndexed { index, evaluatedAction ->
+                    handleSingleCall(evaluatedAction, index, ind.fitness, lines, testCaseName, testSuitePath, baseUrlOfSut)
                 }
             }
+
         }
     }
 

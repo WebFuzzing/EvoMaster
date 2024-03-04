@@ -5,6 +5,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.enterprise.EnterpriseIndividual
 import org.evomaster.core.problem.gui.GuiIndividual
+import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.mutator.StructureMutator
@@ -96,7 +97,7 @@ class Minimizer<T: Individual> {
 
         val current = archive.getCopyOfUniqueCoveringIndividuals()
             .filter {
-                getSize(it) > 1
+                it.size() > 1
             } //can't minimize below 1
 
         if(current.isEmpty()){
@@ -144,29 +145,11 @@ class Minimizer<T: Individual> {
         }
     }
 
-    private fun getSize(ind: T) : Int{
-        /*
-          FIXME: we currently have a rather major limitation, has in REST we have group of calls
-          related to same resources, and cannot currently delete single calls with messing up lot of things...
-          We need to do some major refactoring.
 
-          Man comments:
-          there might be two options:
-          1) re-construct  RestResourceCalls , e.g., three actions, A-B-C, remove B, then construct the resources with A and C,
-          2) remove the resource only if all actions are reductant
-          there might be a problematic regarding value binding, then you can remove all binding before the minimization phase, since it is last one
-          see replaceResourceCall  in RestIndividual , it can use for option 1.  removeResourceCall  can be used to remove resource, eg, option 2
-          replaceResourceCall  and removeResourceCall  have handled the binding, should be fine.
-
-          TODO a further problem is that, for some custom tests, we have no group definitions
-      */
-        return ind.groupsView()?.sizeOfGroup(GroupsOfChildren.MAIN)
-                ?: ind.size()
-    }
 
     private fun splitIntoSingleCalls(ind: T) : List<T>{
 
-        val n = getSize(ind)
+        val n = ind.size()
 
         if(n <= 1){
             throw IllegalArgumentException("Need at least 2 actions to apply split")
@@ -184,7 +167,7 @@ class Minimizer<T: Individual> {
 
     private fun removeAllMainActionsButIndex(ind: T, index: Int){
 
-        val n = getSize(ind)
+        val n = ind.size()
 
         val sqlActions = if (ind is EnterpriseIndividual) ind.seeSQLActionBeforeIndex(index).map { it.copy() as SqlAction} else null
 
@@ -203,6 +186,10 @@ class Minimizer<T: Individual> {
             ind.cleanBrokenBindingReference()
             ind.computeTransitiveBindingGenes()
         }
+
+        if(ind is RestIndividual){
+            ind.removeLocationId()
+        }
     }
 
     private fun printProgress(k: Int, n: Int){
@@ -218,6 +205,7 @@ class Minimizer<T: Individual> {
 
     private fun recomputeArchiveWithFullCoverageInfo(){
         val current = archive.getCopyOfUniqueCoveringIndividuals()
+            .onEach { if(it is EnterpriseIndividual) it.ensureFlattenedStructure()  }
 
         LoggingUtil.getInfoLogger().info("Recomputing full coverage for ${current.size} tests")
 

@@ -1,19 +1,23 @@
-import org.evomaster.client.java.sql.internal.constraint.DbTableCheckExpression;
-import org.evomaster.client.java.sql.internal.constraint.DbTableConstraint;
-import org.junit.jupiter.api.Test;
+import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
+import org.evomaster.client.java.sql.SchemaExtractor;
+import org.evomaster.client.java.sql.SqlScriptRunner;
+import org.evomaster.core.search.gene.Gene;
+import org.evomaster.core.search.gene.numeric.IntegerGene;
+import org.evomaster.core.sql.SqlAction;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.Collections;
+import java.sql.Connection;
+import java.sql.DriverManager;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 public class ConstraintSolverTest {
@@ -21,9 +25,21 @@ public class ConstraintSolverTest {
     private static DbConstraintSolverZ3InDocker solver;
 
     @BeforeAll
-    static void setup() {
+    static void setup() throws Exception {
         String resourcesFolder = System.getProperty("user.dir") + "/src/test/resources/";
-        solver = new DbConstraintSolverZ3InDocker(resourcesFolder);
+
+        Connection connection = DriverManager.getConnection("jdbc:h2:mem:db_test", "sa", "");
+
+        SqlScriptRunner.execCommand(connection,
+            "CREATE TABLE products(price int not null, min_price int not null, stock int not null);\n" +
+            "ALTER TABLE products add CHECK (price>100 AND price<9999);\n" +
+            "ALTER TABLE products add CHECK (min_price>1);\n" +
+            "ALTER TABLE products add CHECK (stock>=5 OR stock = 100);"
+        );
+
+        DbSchemaDto schemaDto = SchemaExtractor.extract(connection);
+
+        solver = new DbConstraintSolverZ3InDocker(schemaDto, resourcesFolder);
     }
 
     @AfterAll
@@ -88,14 +104,35 @@ public class ConstraintSolverTest {
 
     @Test
     public void fromConstraintList() {
-        List<DbTableConstraint> constraintList = Collections.singletonList(
-                new DbTableCheckExpression("products", "CHECK (price>100)"));
+        List<SqlAction> response = solver.solve();
 
-        String response = solver.solve(constraintList);
+        SqlAction action = response.get(0);
+        assertEquals("SQL_Insert_PRODUCTS_MIN_PRICE_PRICE_STOCK", action.getName());
 
-        String expected = "sat\n" +
-                "((price 101))\n";
+        for (Gene gene : action.seeTopGenes()) {
+            if (gene.getName().equals("PRICE") && gene instanceof IntegerGene) {
+                assertEquals(101, ((IntegerGene) gene).getValue());
+                // When using two constraints, the min for the gene is not parsed correctly
+                assertEquals(-2147483648, ((IntegerGene) gene).getMin());
+                assertEquals(2147483647, ((IntegerGene) gene).getMaximum());
+                assertTrue(((IntegerGene) gene).getMinInclusive());
+                assertTrue(((IntegerGene) gene).getMaxInclusive());
+            } else if (gene.getName().equals("STOCK") && gene instanceof IntegerGene) {
+                assertEquals(5, ((IntegerGene) gene).getValue());
+                assertEquals(-2147483648, ((IntegerGene) gene).getMin());
+                assertEquals(2147483647, ((IntegerGene) gene).getMaximum());
+                assertTrue(((IntegerGene) gene).getMinInclusive());
+                assertTrue(((IntegerGene) gene).getMaxInclusive());
+            } else if (gene.getName().equals("MIN_PRICE") && gene instanceof IntegerGene) {
+                assertEquals(2, ((IntegerGene) gene).getValue());
+                assertEquals(2, ((IntegerGene) gene).getMin());
+                assertEquals(2147483647, ((IntegerGene) gene).getMaximum());
+                assertTrue(((IntegerGene) gene).getMinInclusive());
+                assertTrue(((IntegerGene) gene).getMaxInclusive());
+            } else {
+                fail("The response is not an IntegerGene");
+            }
+        }
 
-        assertEquals(expected, response);
     }
 }

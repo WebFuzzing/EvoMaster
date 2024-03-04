@@ -119,12 +119,12 @@ class WtsAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
         val nx = x.suite.size
         val ny = y.suite.size
 
-        val i = randomness.nextInt(Math.min(nx, ny))
+        val splitPoint = randomness.nextInt(Math.min(nx, ny))
 
-        (0..i).forEach {
-            val k = x.suite[i]
-            x.suite[i] = y.suite[i]
-            y.suite[i] = k
+        (0..splitPoint).forEach {
+            val k = x.suite[it]
+            x.suite[it] = y.suite[it]
+            y.suite[it] = k
         }
     }
 
