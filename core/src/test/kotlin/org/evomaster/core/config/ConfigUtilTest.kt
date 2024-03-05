@@ -11,9 +11,10 @@ class ConfigUtilTest{
 
     private val basePath = "src/test/resources/config"
 
-    @Test
-    fun testWriteAndReadToml() {
-        val path = "./target/tmp/config.toml"
+    @ParameterizedTest
+    @ValueSource(strings = ["config.toml","config.yaml"])
+    fun testWriteAndReadConfigFile(fileName: String) {
+        val path = "./target/tmp/$fileName"
         Files.deleteIfExists(Paths.get(path))
 
         val cff = ConfigsFromFile()

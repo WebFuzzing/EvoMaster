@@ -80,7 +80,7 @@ object ConfigUtil {
                     }
         }
         if(isYaml(stringPath)){
-            file.appendText("configs:")
+            file.appendText("configs:  {} # remove this {} when specifying properties\n")
             template.configs
                     .toSortedMap()
                     .forEach {
