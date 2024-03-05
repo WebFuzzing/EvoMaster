@@ -5,14 +5,15 @@ import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
 import java.io.File
 import java.lang.reflect.Field
 import java.lang.reflect.ParameterizedType
-import java.nio.file.Files
 import kotlin.io.path.Path
-import kotlin.io.path.createFile
 import kotlin.io.path.exists
 
 object ConfigUtil {
 
-    fun readFromToml(stringPath: String) : ConfigsFromFile{
+    /**
+     * Either in TOML or YAML format
+     */
+    fun readFromFile(stringPath: String) : ConfigsFromFile{
 
         val path = Path(stringPath)
         if(!path.exists()){

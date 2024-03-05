@@ -330,7 +330,7 @@ class EMConfig {
 
         LoggingUtil.uniqueUserInfo("Loading configuration file from: ${Path(configPath).toAbsolutePath()}")
 
-        return ConfigUtil.readFromToml(configPath)
+        return ConfigUtil.readFromFile(configPath)
     }
 
     private fun applyConfigFromFile(cff: ConfigsFromFile) {
