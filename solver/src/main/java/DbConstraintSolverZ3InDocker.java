@@ -169,62 +169,19 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
 
                     if (currentGene instanceof IntegerGene) {
                         Integer value =  Integer.parseInt(solvedValue);
-                        Gene geneWithSolvedValue = new IntegerGene(
-                                currentGene.getName(),
-                                value,
-                                null,
-                                null,
-                                null,
-                                false,
-                                false);
-                        currentGene.copyValueFrom(geneWithSolvedValue);
+                        ((IntegerGene) currentGene).setValue(value);
                     } else if (currentGene instanceof LongGene) {
                         Long value =  Long.parseLong(solvedValue);
-                        Gene geneWithSolvedValue = new LongGene(
-                                currentGene.getName(),
-                                value,
-                                null,
-                                null,
-                                null,
-                                false,
-                                false);
-                        currentGene.copyValueFrom(geneWithSolvedValue);
+                        ((LongGene) currentGene).setValue(value);
                     } else if (currentGene instanceof BigIntegerGene) {
                         BigInteger value = new BigInteger(solvedValue);
-                        Gene geneWithSolvedValue = new BigIntegerGene(
-                                currentGene.getName(),
-                                value,
-                                null,
-                                null,
-                                null,
-                                false,
-                                false);
-                        currentGene.copyValueFrom(geneWithSolvedValue);
+                        ((BigIntegerGene) currentGene).setValue(value);
                     } else if (currentGene instanceof DoubleGene) {
                         Double value =  Double.parseDouble(solvedValue);
-                        Gene geneWithSolvedValue = new DoubleGene(
-                                currentGene.getName(),
-                                value,
-                                null,
-                                null,
-                                false,
-                                false,
-                                null,
-                                null);
-                        currentGene.copyValueFrom(geneWithSolvedValue);
+                        ((DoubleGene) currentGene).setValue(value);
                     } else if (currentGene instanceof FloatGene) {
                         Float value =  Float.parseFloat(solvedValue);
-                        Gene geneWithSolvedValue = new FloatGene(
-                                currentGene.getName(),
-                                value,
-                                null,
-                                null,
-                                false,
-                                false,
-                                null,
-                                null);
-                        currentGene.copyValueFrom(geneWithSolvedValue);
-
+                        ((FloatGene) currentGene).setValue(value);
                     } else {
                         log.warn("There was a solved value for the gene, but it was not parsed: " + currentGene.getName());
                     }
