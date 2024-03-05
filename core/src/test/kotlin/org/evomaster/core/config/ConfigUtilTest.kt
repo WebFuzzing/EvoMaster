@@ -2,6 +2,8 @@ package org.evomaster.core.config
 
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import java.nio.file.Files
 import java.nio.file.Paths
 
@@ -24,9 +26,11 @@ class ConfigUtilTest{
         assertEquals(0, back.configs.size) // should be commented out
     }
 
-    @Test
-    fun testBase(){
-        val path = "${basePath}/base.toml"
+
+    @ParameterizedTest
+    @ValueSource(strings = ["base.toml","base.yaml"])
+    fun testBase(fileName: String){
+        val path = "$basePath/$fileName"
         val config = ConfigUtil.readFromFile(path)
 
         assertEquals(1, config.configs.size)
