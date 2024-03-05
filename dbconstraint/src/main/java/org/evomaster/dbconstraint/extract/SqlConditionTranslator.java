@@ -86,8 +86,6 @@ public class SqlConditionTranslator implements SqlConditionVisitor<TableConstrai
         }
         // TODO This translation should be implemented
         throw new SqlCannotBeTranslatedException(e.toSql() + " cannot be translated yet");
-
-
     }
 
     private TableConstraint visit(SqlColumn leftColumn, SqlComparisonCondition e, SqlLiteralValue rightLiteral) {
@@ -97,6 +95,7 @@ public class SqlConditionTranslator implements SqlConditionVisitor<TableConstrai
             long value = ((SqlBigIntegerLiteralValue) rightLiteral).getBigInteger().longValue();
             return getTableConstraint(e, tableName, columnName, value);
         } else if (rightLiteral instanceof SqlBigDecimalLiteralValue) {
+            // TODO: Handle this as a float
             long value = ((SqlBigDecimalLiteralValue) rightLiteral).getBigDecimal().longValue();
             return getTableConstraint(e, tableName, columnName, value);
         } else if (rightLiteral instanceof SqlStringLiteralValue) {

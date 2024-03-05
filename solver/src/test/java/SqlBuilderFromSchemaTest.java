@@ -103,7 +103,7 @@ public class SqlBuilderFromSchemaTest {
 
     /**
      * When having a check constraint that contains an upper and lower bound,
-     * then the SqlInsertBuilder doesn't take them as min/max
+     * then the SqlInsertBuilder takes them as min/max
      */
     @Test
     public void minAndMaxIntInTheSameCheck() throws Exception {
@@ -118,8 +118,8 @@ public class SqlBuilderFromSchemaTest {
         assertEquals(1, genes.size());
 
         assertTrue(genes.get(0) instanceof IntegerGene);
-        assertEquals(-2147483648, ((IntegerGene) genes.get(0)).getMin());
-        assertEquals(2147483647, ((IntegerGene) genes.get(0)).getMaximum());
+        assertEquals(101, ((IntegerGene) genes.get(0)).getMin());
+        assertEquals(9998, ((IntegerGene) genes.get(0)).getMaximum());
     }
 
     /**

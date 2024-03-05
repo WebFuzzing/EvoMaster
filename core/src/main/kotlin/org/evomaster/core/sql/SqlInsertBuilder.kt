@@ -491,11 +491,41 @@ class SqlInsertBuilder(
         tableConstraints: List<TableConstraint>,
         columnName: String
     ): List<LowerBoundConstraint> {
-        return tableConstraints
-            .asSequence()
+
+         var lowerBounds = tableConstraints
+                .asSequence()
             .filterIsInstance<LowerBoundConstraint>()
             .filter { c -> c.columnName.equals(columnName, ignoreCase = true) }
+            .toList();
+
+        // Add lowerBounds inside the tableConstraints that are AndConstraints
+        val andConstraints = tableConstraints.filterIsInstance<AndConstraint>();
+        for (andConstraint in andConstraints) {
+            val lowerBoundsInAndConstraint = findLowerBounds(andConstraint.constraintList, columnName);
+            lowerBounds = lowerBounds + lowerBoundsInAndConstraint
+        }
+
+        return lowerBounds;
+    }
+
+    private fun filterUpperBoundConstraints(
+        tableConstraints: List<TableConstraint>,
+        columnName: String
+    ): List<UpperBoundConstraint> {
+        var upperBounds = tableConstraints
+            .asSequence()
+            .filterIsInstance<UpperBoundConstraint>()
+            .filter { c -> c.columnName.equals(columnName, ignoreCase = true) }
             .toList()
+
+        // Add upperBounds inside the tableConstraints that are AndConstraints
+        val andConstraints = tableConstraints.filterIsInstance<AndConstraint>();
+        for (andConstraint in andConstraints) {
+            val upperBoundsInAndConstraint = filterUpperBoundConstraints(andConstraint.constraintList, columnName);
+            upperBounds = upperBounds + upperBoundsInAndConstraint
+        }
+
+        return upperBounds
     }
 
     private fun filterSimilarToConstraints(
@@ -521,17 +551,7 @@ class SqlInsertBuilder(
     }
 
 
-    private fun filterUpperBoundConstraints(
-        tableConstraints: List<TableConstraint>,
-        columnName: String
-    ): List<UpperBoundConstraint> {
-        return tableConstraints
-            .asSequence()
-            .filterIsInstance<UpperBoundConstraint>()
-            .filter { c -> c.columnName.equals(columnName, ignoreCase = true) }
-            .toList()
 
-    }
 
     private fun filterRangeConstraints(
         tableConstraints: List<TableConstraint>,
