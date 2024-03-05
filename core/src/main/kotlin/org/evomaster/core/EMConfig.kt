@@ -316,7 +316,7 @@ class EMConfig {
             }
 
             LoggingUtil.uniqueUserInfo("Going to create configuration file at: ${Path(configPath).toAbsolutePath()}")
-            ConfigUtil.createConfigFileTemplateToml(configPath, cff)
+            ConfigUtil.createConfigFileTemplate(configPath, cff)
         }
     }
 
@@ -2176,10 +2176,11 @@ class EMConfig {
     @Cfg("Apply a security testing phase after functional test cases have been generated.")
     var security = false
 
-    val defaultConfigPath = "em.toml"
+    val defaultConfigPath = "em.yaml"
 
     @Experimental
     @Cfg("File path for file with configuration settings")
+    @Regex(".*\\.(yml|yaml|toml)")
     @FilePath
     var configPath: String = defaultConfigPath
 

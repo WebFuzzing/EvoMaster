@@ -1,6 +1,7 @@
 package org.evomaster.core.config
 
 import com.fasterxml.jackson.dataformat.toml.TomlMapper
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
 import java.io.File
 import java.lang.reflect.Field
@@ -20,26 +21,41 @@ object ConfigUtil {
             throw IllegalArgumentException("Config file does not exist: $path")
         }
 
-        val mapper = TomlMapper()
+        val mapper = if(isToml(stringPath)) {
+            TomlMapper()
+        } else if(isYaml(stringPath)){
+            YAMLMapper()
+        } else {
+            throw IllegalArgumentException("Specified configuration file path is not of valid type." +
+                    " Supported types are YAML and TOML. Wrong path: $stringPath")
+        }
+
         val cff = try{
             mapper.readValue(path.toFile(), ConfigsFromFile::class.java)
         } catch (e: Exception){
-            throw IllegalArgumentException("Failed to parse TOML config file at: ${path.toAbsolutePath()}", e)
+            throw IllegalArgumentException("Failed to parse config file at: ${path.toAbsolutePath()}", e)
         }
 
-        //TODO validate here? in TOML there is no schema yet
+        //TODO verify entries in EMConfig
 
         return cff;
     }
 
-    fun createConfigFileTemplateToml(stringPath: String, template: ConfigsFromFile) {
+    private fun isYaml(stringPath: String) = stringPath.endsWith(".yml", true) || stringPath.endsWith(".yaml", true)
+
+    private fun isToml(stringPath: String) = stringPath.endsWith(".toml", true)
+
+    /**
+     * The type of config file will depend on the [stringPath] extension, eg, .yaml or .toml
+     */
+    fun createConfigFileTemplate(stringPath: String, template: ConfigsFromFile) {
 
         val path = Path(stringPath)
         if(path.exists()){
             throw IllegalArgumentException("Config file already exists at: ${path.toAbsolutePath()}")
         }
-        if(!stringPath.endsWith(".toml")){
-            throw IllegalArgumentException("Configuration file name does not end in '.toml': $stringPath")
+        if(!isToml(stringPath) && !isYaml(stringPath)){
+            throw IllegalArgumentException("Configuration file name does not end in a supported type, ie, .yaml or .toml: $stringPath")
         }
 
         val file = path.toFile()
@@ -53,12 +69,25 @@ object ConfigUtil {
         file.appendText("### or check them with the --help option.\n")
         file.appendText("\n")
         file.appendText("\n")
-        file.appendText("[configs]\n")
-        template.configs
-            .toSortedMap()
-            .forEach {
-            file.appendText("# ${it.key}=${it.value}\n")
+
+
+        if(isToml(stringPath)) {
+            file.appendText("[configs]\n")
+            template.configs
+                    .toSortedMap()
+                    .forEach {
+                        file.appendText("# ${it.key}=${it.value}\n")
+                    }
         }
+        if(isYaml(stringPath)){
+            file.appendText("configs:")
+            template.configs
+                    .toSortedMap()
+                    .forEach {
+                        file.appendText("#   ${it.key}: ${it.value}\n")
+                    }
+        }
+
 
         file.appendText("\n\n\n")
         file.appendText("### Authentication configurations.\n")
@@ -70,15 +99,17 @@ object ConfigUtil {
 
         val auth = "auth"
 
-        AuthenticationDto::class.java.fields
-            .filter { it.name != "name" }
-            .forEach {
-                file.appendText("# [[$auth]]\n")
-                file.appendText("# name=?\n")
-                printObjectDefinitionToml(file,auth,it)
-                file.appendText("\n")
-            }
-
+        if(isToml(stringPath)) {
+            AuthenticationDto::class.java.fields
+                    .filter { it.name != "name" }
+                    .forEach {
+                        file.appendText("# [[$auth]]\n")
+                        file.appendText("# name=?\n")
+                        printObjectDefinitionToml(file, auth, it)
+                        file.appendText("\n")
+                    }
+        }
+        //TODO yaml after refactoring
 
         file.appendText("\n")
     }

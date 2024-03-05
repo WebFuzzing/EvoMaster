@@ -18,7 +18,7 @@ class ConfigUtilTest{
         cff.configs["foo"] = "x"
         cff.configs["bar"] = "y"
 
-        ConfigUtil.createConfigFileTemplateToml(path,cff)
+        ConfigUtil.createConfigFileTemplate(path,cff)
 
         val back = ConfigUtil.readFromFile(path)
         assertEquals(0, back.configs.size) // should be commented out
