@@ -199,22 +199,24 @@ public class SqlBuilderFromSchemaTest {
 
     /**
      * When setting lower and upper bounds in a Double Column,
-     * then the parser in create insert SQL Builder Action fails
+     * Then they are not considered as min/max in the Gene
      */
     @Test
-    public void setMinMaxInDoubleGene() {
+    public void setMinMaxInDoubleGene() throws Exception {
 
         String schemaQuery = "CREATE TABLE products(price double not null);\n" +
                 "ALTER TABLE products add CHECK (price > 100);" +
                 "ALTER TABLE products add CHECK (price < 9999);";
 
-        try {
-            getSqlActionsFromSchema(schemaQuery);
-        } catch (Exception e) {
-            // An exception is thrown when parsing the check with a lower or upper bound
-            return;
-        }
-        fail();
+        List<SqlAction> newActions = getSqlActionsFromSchema(schemaQuery);
+
+        assertEquals(1, newActions.size());
+        List<Gene> genes = newActions.get(0).seeTopGenes();
+        assertEquals(1, genes.size());
+
+        assertTrue(genes.get(0) instanceof DoubleGene);
+        assertNull(((DoubleGene) genes.get(0)).getMin());
+        assertEquals(1.7976931348623157E308, ((DoubleGene) genes.get(0)).getMaximum());
     }
 
     @AfterEach
