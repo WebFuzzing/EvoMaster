@@ -459,7 +459,7 @@ class SqlInsertBuilder(
     }
 
     private fun findLowerBound(tableConstraints: MutableList<TableConstraint>, c: ColumnDto): Long? {
-        val lowerBounds = findLowerBounds(tableConstraints, c.name)
+        val lowerBounds = filterLowerBoundConstraints(tableConstraints, c.name)
 
         val lowerBound = if (lowerBounds.isNotEmpty())
             lowerBounds.map { constr -> constr.lowerBound }.maxOrNull()
@@ -487,7 +487,7 @@ class SqlInsertBuilder(
         return likePatterns
     }
 
-    private fun findLowerBounds(
+    private fun filterLowerBoundConstraints(
         tableConstraints: List<TableConstraint>,
         columnName: String
     ): List<LowerBoundConstraint> {
@@ -499,9 +499,10 @@ class SqlInsertBuilder(
             .toList();
 
         // Add lowerBounds inside the tableConstraints that are AndConstraints
+        // Only do the recursion in AndConstraint, as the OR may not be a bound
         val andConstraints = tableConstraints.filterIsInstance<AndConstraint>();
         for (andConstraint in andConstraints) {
-            val lowerBoundsInAndConstraint = findLowerBounds(andConstraint.constraintList, columnName);
+            val lowerBoundsInAndConstraint = filterLowerBoundConstraints(andConstraint.constraintList, columnName);
             lowerBounds = lowerBounds + lowerBoundsInAndConstraint
         }
 
@@ -519,6 +520,7 @@ class SqlInsertBuilder(
             .toList()
 
         // Add upperBounds inside the tableConstraints that are AndConstraints
+        // Only do the recursion in AndConstraint, as the OR may not be a bound
         val andConstraints = tableConstraints.filterIsInstance<AndConstraint>();
         for (andConstraint in andConstraints) {
             val upperBoundsInAndConstraint = filterUpperBoundConstraints(andConstraint.constraintList, columnName);
