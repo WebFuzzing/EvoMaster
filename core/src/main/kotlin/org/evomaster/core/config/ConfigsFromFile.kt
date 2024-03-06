@@ -7,4 +7,11 @@ class ConfigsFromFile {
     var configs = mutableMapOf<String,String>()
 
     var auth = mutableListOf<AuthenticationDto>()
+
+    var authTemplate: AuthenticationDto? = null
+
+    fun validateAndNormalizeAuth(){
+
+        //TODO
+    }
 }

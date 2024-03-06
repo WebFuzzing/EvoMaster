@@ -11,7 +11,7 @@ public class AuthenticationDto {
 
     /**
      * The name given to this authentication info.
-     * Just needed for display/debugging reasons
+     * Names must be unique.
      */
     public String name;
 
