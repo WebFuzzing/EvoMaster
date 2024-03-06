@@ -316,7 +316,7 @@ class EMConfig {
             }
 
             LoggingUtil.uniqueUserInfo("Going to create configuration file at: ${Path(configPath).toAbsolutePath()}")
-            ConfigUtil.createConfigFileTemplateToml(configPath, cff)
+            ConfigUtil.createConfigFileTemplate(configPath, cff)
         }
     }
 
@@ -330,7 +330,7 @@ class EMConfig {
 
         LoggingUtil.uniqueUserInfo("Loading configuration file from: ${Path(configPath).toAbsolutePath()}")
 
-        return ConfigUtil.readFromToml(configPath)
+        return ConfigUtil.readFromFile(configPath)
     }
 
     private fun applyConfigFromFile(cff: ConfigsFromFile) {
@@ -2159,15 +2159,13 @@ class EMConfig {
         private set
 
 
-    @Experimental
     @Cfg("In REST, specify probability of using 'default' values, if any is specified in the schema")
     @Probability(true)
-    var probRestDefault = 0.0
+    var probRestDefault = 0.20
 
-    @Experimental
     @Cfg("In REST, specify probability of using 'example(s)' values, if any is specified in the schema")
     @Probability(true)
-    var probRestExamples = 0.0
+    var probRestExamples = 0.05
 
 
     //TODO mark as deprecated once we support proper Robustness Testing
@@ -2178,10 +2176,11 @@ class EMConfig {
     @Cfg("Apply a security testing phase after functional test cases have been generated.")
     var security = false
 
-    val defaultConfigPath = "em.toml"
+    val defaultConfigPath = "em.yaml"
 
     @Experimental
     @Cfg("File path for file with configuration settings")
+    @Regex(".*\\.(yml|yaml|toml)")
     @FilePath
     var configPath: String = defaultConfigPath
 

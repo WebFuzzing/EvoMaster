@@ -144,7 +144,7 @@ class ProcessMonitorTest{
 //            assertEquals(individual.seeGenes().size, evalIndividual.individual.seeGenes().size)
             assertEquals(evalIndividual.fitness.coveredTargets(), evalIndividual.fitness.coveredTargets())
             evalIndividual.fitness.getViewOfData().forEach { (t, u) ->
-                assertEquals(evalIndividual.fitness.getHeuristic(t) , u.distance)
+                assertEquals(evalIndividual.fitness.getHeuristic(t) , u.score)
             }
         }
     }

@@ -16,9 +16,17 @@ object RegexUtils {
      */
     private val meaninglessRegex = setOf(".*","(.*)","^(.*)","(.*)$","^(.*)$","^((.*))","((.*))$","^((.*))$")
 
+    /**
+     * Coming from widely known framework, eg favicon.ico in Spring on controller matching
+     */
+    private val knownUselessRegex = setOf("\\Qfavicon.ico\\E")
 
     fun isMeaningfulRegex(regex: String):  Boolean {
         return ! meaninglessRegex.contains(regex)
+    }
+
+    fun isNotUselessRegex(regex: String) : Boolean{
+        return !knownUselessRegex.contains(regex)
     }
 
     fun ignoreCaseRegex(input: String) : String {
