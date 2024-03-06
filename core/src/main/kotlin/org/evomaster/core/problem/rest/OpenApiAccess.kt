@@ -3,6 +3,8 @@ package org.evomaster.core.problem.rest
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.parser.OpenAPIV3Parser
 import io.swagger.v3.parser.core.models.SwaggerParseResult
+import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
+import org.evomaster.core.problem.httpws.auth.NoAuth
 import org.evomaster.core.remote.SutProblemException
 import java.net.ConnectException
 import java.net.URI
@@ -16,6 +18,8 @@ import javax.ws.rs.core.Response
  * Created by arcuri82 on 22-Jan-20.
  */
 object OpenApiAccess {
+
+    val unauthorizedSchemaAccess : String = "UNAUTHORIZED_SCHEMA_ACCESS"
 
     fun getOpenApi(schemaText: String): OpenAPI {
 
@@ -36,23 +40,33 @@ object OpenApiAccess {
                 ?: throw SutProblemException("Failed to parse OpenApi schema: " + parseResults.messages.joinToString("\n"))
     }
 
-    fun getOpenAPIFromURL(openApiUrl: String): OpenAPI {
+    fun getOpenAPIFromURL(openApiUrl: String, authentication : HttpWsAuthenticationInfo = NoAuth() ): OpenAPI {
 
         //could be either JSON or YAML
        val data = if(openApiUrl.startsWith("http", true)){
-           readFromRemoteServer(openApiUrl)
+           readFromRemoteServer(openApiUrl, authentication)
        } else {
            readFromDisk(openApiUrl)
        }
 
+        // if the swagger could not be retrieved because of unauthorized access, return an empty OpanAPI
+        if (data == unauthorizedSchemaAccess) {
+            return OpenAPI()
+        }
+
         return getOpenApi(data)
     }
 
-    private fun readFromRemoteServer(openApiUrl: String) : String{
-        val response = connectToServer(openApiUrl, 10)
+    private fun readFromRemoteServer(openApiUrl: String, authentication : HttpWsAuthenticationInfo) : String{
+        val response = connectToServer(openApiUrl, authentication, 10)
 
         val body = response.readEntity(String::class.java)
 
+        // this is returned if the swagger could not be accessed due to unauthorized request.
+        if (response.toString().contains("Unauthorized") && response.toString().contains("401")) {
+            return unauthorizedSchemaAccess
+        }
+        // Otherwise, just throw an exception
         if (response.statusInfo.family != Response.Status.Family.SUCCESSFUL) {
             throw SutProblemException("Cannot retrieve OpenAPI schema from $openApiUrl ," +
                     " status=${response.status} , body: $body")
@@ -91,14 +105,28 @@ object OpenApiAccess {
         return path.toFile().readText()
     }
 
-    private fun connectToServer(openApiUrl: String, attempts: Int): Response {
+    private fun connectToServer(openApiUrl: String, authentication : HttpWsAuthenticationInfo, attempts: Int): Response {
 
         for (i in 0 until attempts) {
             try {
-                return ClientBuilder.newClient()
-                        .target(openApiUrl)
-                        .request(MediaType.APPLICATION_JSON_TYPE)
-                        .get()
+
+                var currentReq = ClientBuilder.newClient()
+                                              .target(openApiUrl)
+                                              .request(MediaType.APPLICATION_JSON_TYPE)
+
+                for(head in authentication.headers) {
+                    currentReq = currentReq.header(head.name, head.value)
+                }
+
+                //currentReq = currentReq.get()
+
+                return currentReq.get()
+
+                //return ClientBuilder.newClient()
+                //        .target(openApiUrl)
+                //        .request(MediaType.APPLICATION_JSON_TYPE)
+                //        .header(authentication.headers[0].name, authentication.headers[0].value)
+                //        .get()
             } catch (e: Exception) {
 
                 if (e.cause is ConnectException) {

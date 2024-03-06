@@ -3,6 +3,7 @@ package org.evomaster.core.problem.rest.service
 import com.google.inject.Inject
 import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
+import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
 import org.evomaster.client.java.controller.api.dto.problem.ExternalServiceDto
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.EMConfig
@@ -12,6 +13,9 @@ import org.evomaster.core.problem.externalservice.ExternalService
 import org.evomaster.core.problem.externalservice.HostnameResolutionInfo
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceInfo
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
+import org.evomaster.core.problem.httpws.auth.AuthenticationHeader
+import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
+import org.evomaster.core.problem.httpws.auth.NoAuth
 import org.evomaster.core.problem.httpws.service.HttpWsSampler
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.RestActionBuilderV3.buildActionBasedOnUrl
@@ -80,12 +84,42 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         val openApiSchema = problem.openApiSchema
 
         if(!openApiURL.isNullOrBlank()) {
-            swagger = OpenApiAccess.getOpenAPIFromURL(openApiURL)
+
+            // first try to retrieve the OpenAPI without authentication
+            swagger = OpenApiAccess.getOpenAPIFromURL(openApiURL, NoAuth())
+
+            // if it fails, try to get swagger using each authentication information.
+            // if swagger failed due to unauthorized access, then an empty swagger is retrieved
+            if(swagger.paths == null) {
+
+                var currentAuthenticationIndex = 0;
+                val authenticationList:List<AuthenticationDto> = infoDto.infoForAuthentication
+
+                while(currentAuthenticationIndex < authenticationList.size && swagger.paths == null) {
+
+                        val currentAuthDto = authenticationList.get(currentAuthenticationIndex)
+                        val currentHttpWsObject: HttpWsAuthenticationInfo =
+                            generateHttpWsAuthInfoFromAuthDto(currentAuthDto)
+                        swagger = OpenApiAccess.getOpenAPIFromURL(openApiURL, currentHttpWsObject)
+
+                    currentAuthenticationIndex = currentAuthenticationIndex + 1
+                }
+            }
+
+            // if we still could not retrieve the swagger, then throw an exception
+            if (swagger.paths == null) {
+                throw SutProblemException("Cannot retrieve OpenAPI schema from $openApiURL," +
+                        " after trying both authenticated and unauthenticated calls.")
+            }
+
+
         } else if(! openApiSchema.isNullOrBlank()){
             swagger = OpenApiAccess.getOpenApi(openApiSchema)
         } else {
             throw SutProblemException("No info on the OpenAPI schema was provided")
         }
+
+        // if the swagger could not be
 
         if (swagger.paths == null) {
             throw SutProblemException("There is no endpoint definition in the retrieved Swagger file")
@@ -129,6 +163,25 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         partialOracles.setupForRest(swagger, config)
 
         log.debug("Done initializing {}", AbstractRestSampler::class.simpleName)
+    }
+
+    private fun generateHttpWsAuthInfoFromAuthDto(authDto: AuthenticationDto) : HttpWsAuthenticationInfo {
+
+        // headers for the authenticationDto
+        val headers: MutableList<AuthenticationHeader> = mutableListOf()
+
+        authDto.headers.forEach loop@{ h ->
+            val name = h.name?.trim()
+            val value = h.value?.trim()
+            if (name == null || value == null) {
+                throw SutProblemException("Invalid header in ${authDto.name}, $name:$value")
+            }
+
+            headers.add(AuthenticationHeader(name, value))
+        }
+
+        return HttpWsAuthenticationInfo(authDto.name, headers, null, null)
+
     }
 
     private fun addExtraQueryParam(actionCluster: Map<String, Action>){
