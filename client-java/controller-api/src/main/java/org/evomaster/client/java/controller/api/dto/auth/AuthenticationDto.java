@@ -16,9 +16,12 @@ public class AuthenticationDto {
     public String name;
 
     /**
-     * The headers needed for authentication
+     * The headers needed for authentication.
+     * This is used to represent cases in which auth info is static/fixed,
+     * eg when passing an id or username/password through a HTTP header (and not
+     * using for example a dynamically generated token from a login endpoint first).
      */
-    public List<HeaderDto> headers = new ArrayList<>();
+    public List<HeaderDto> fixedHeaders = new ArrayList<>();
 
     /**
      * If the login is based on cookies, need to provide info on

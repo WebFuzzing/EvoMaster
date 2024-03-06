@@ -73,7 +73,7 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
             val k = it.indexOf(":")
             val name = it.substring(0, k)
             val content = it.substring(k+1)
-            dto.headers.add(HeaderDto(name, content))
+            dto.fixedHeaders.add(HeaderDto(name, content))
         }
 
         dto.name = "Fixed Headers"
@@ -97,7 +97,7 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
 
         val headers: MutableList<AuthenticationHeader> = mutableListOf()
 
-        i.headers.forEach loop@{ h ->
+        i.fixedHeaders.forEach loop@{ h ->
             val name = h.name?.trim()
             val value = h.value?.trim()
             if (name == null || value == null) {

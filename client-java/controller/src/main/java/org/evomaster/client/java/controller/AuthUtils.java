@@ -48,7 +48,7 @@ public class AuthUtils {
     public static AuthenticationDto getForAuthorizationHeader(String dtoName, String authorizationValue){
 
         AuthenticationDto dto = new AuthenticationDto(dtoName);
-        dto.headers.add(new HeaderDto("Authorization", authorizationValue));
+        dto.fixedHeaders.add(new HeaderDto("Authorization", authorizationValue));
 
         return dto;
     }
