@@ -388,25 +388,27 @@ internal class EMConfigTest{
         }
     }
 
-    @Test
-    fun testParamsInConfigFile(){
+    @ParameterizedTest
+    @ValueSource(strings = ["number.toml","number.yml"])
+    fun testParamsInConfigFile(fileName: String){
         val parser = EMConfig.getOptionParser()
         val config = EMConfig()
 
         config.populationSize = 77
-        val options = parser.parse("--configPath", "src/test/resources/config/number.toml")
+        val options = parser.parse("--configPath", "src/test/resources/config/$fileName")
         config.updateProperties(options)
         assertEquals(42, config.populationSize)
     }
 
-    @Test
-    fun testCLIOverrideParamsInConfigFile(){
+    @ParameterizedTest
+    @ValueSource(strings = ["number.toml","number.yml"])
+    fun testCLIOverrideParamsInConfigFile(fileName: String){
         val parser = EMConfig.getOptionParser()
         val config = EMConfig()
 
         val n = 1234
         config.populationSize = 77
-        val options = parser.parse("--configPath", "src/test/resources/config/number.toml", "--populationSize","$n")
+        val options = parser.parse("--configPath", "src/test/resources/config/$fileName", "--populationSize","$n")
         config.updateProperties(options)
         assertEquals(n, config.populationSize)
     }
