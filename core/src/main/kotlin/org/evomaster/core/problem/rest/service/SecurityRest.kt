@@ -23,6 +23,7 @@ import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.Sampler
 
 //FIXME this needs to be cleaned-up
 
@@ -38,7 +39,7 @@ class SecurityRest {
     private lateinit var archive: Archive<RestIndividual>
 
     @Inject
-    private lateinit var sampler: RestSampler
+    private lateinit var sampler: AbstractRestSampler
 
     @Inject
     private lateinit var randomness: Randomness
