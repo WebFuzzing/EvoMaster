@@ -72,7 +72,8 @@ class IntrospectiveQuery {
                     .invoke()
             } catch (e: Exception) {
                 log.error("Failed query to '$graphQlEndpoint' :  $query")
-                throw e
+                throw SutProblemException("Failed introspection query to '$graphQlEndpoint'." +
+                        " Please check connection and URL format. Error: ${e.message}")
             }
         })
 
