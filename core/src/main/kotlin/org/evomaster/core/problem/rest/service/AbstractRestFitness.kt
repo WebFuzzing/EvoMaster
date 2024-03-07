@@ -827,12 +827,17 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                         the genotype of this evaluated individual (without modifying its phenotype)
                      */
                     val actions = individual.seeActions(ActionFilter.ONLY_DNS) as List<HostnameResolutionAction>
-                    if(actions.isEmpty() || actions.none{ it.hostname == hn.remoteHostname}){
+                    if ((actions.isEmpty() || actions.none{ it.hostname == hn.remoteHostname}) &&
+                        // To avoid adding action for the local WM address in case of InetAddress used
+                        // in the case study.
+                        !externalServiceHandler.isWireMockAddress(hn.remoteHostname)){
                         // OK, we are in that special case
                         val hra = HostnameResolutionAction(hn.remoteHostname, ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP)
                         individual.addChildToGroup(hra, GroupsOfChildren.INITIALIZATION_DNS)
-//                        TODO: Above line adds unnecessary tests at the end, which is
-//                          causing the created tests to fail
+                        // TODO: Above line adds unnecessary tests at the end, which is
+                        //  causing the created tests to fail.
+                        //  Now handling in Mutator, removing existing actions with default IP address for the same hostname.
+
                     }
                 }
             }
