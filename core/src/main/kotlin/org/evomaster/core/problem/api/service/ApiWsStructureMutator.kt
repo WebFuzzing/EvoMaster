@@ -2,6 +2,7 @@ package org.evomaster.core.problem.api.service
 
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.database.execution.MongoFailedQuery
+import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.sql.SqlAction
@@ -205,6 +206,12 @@ abstract class ApiWsStructureMutator : StructureMutator() {
             val hasActions = old.any { it.hostname == a.hostname && it.localIPAddress == a.localIPAddress }
             if (!hasActions) {
                 addedInsertions.add(a)
+            }
+
+            // Removing the existing action added with the default WireMock address
+            val defaultActions = old.filter { it.hostname == a.hostname && it.localIPAddress == ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP };
+            if (defaultActions.isNotEmpty()) {
+                ind.removeHostnameResolutionAction(defaultActions)
             }
         }
 
