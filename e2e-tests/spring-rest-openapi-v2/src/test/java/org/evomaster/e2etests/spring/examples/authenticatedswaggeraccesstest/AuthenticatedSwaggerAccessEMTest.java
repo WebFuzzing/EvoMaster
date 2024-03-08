@@ -11,19 +11,16 @@ import org.junit.jupiter.api.Test;
 
 public class AuthenticatedSwaggerAccessEMTest extends SpringTestBase {
 
-    private static AuthenticatedSwaggerAccessController controller;
-
     @BeforeAll
     public static void initClass() throws Exception {
 
-        controller = new AuthenticatedSwaggerAccessController();
+        AuthenticatedSwaggerAccessController controller = new AuthenticatedSwaggerAccessController();
         SpringTestBase.initClass(controller);
     }
 
 
     /**
      * Since the swagger endpoint is authenticated, it can be retrieved using authentication object.
-     * @throws Throwable
      */
     @Test
     public void testRunEM() throws Throwable {
@@ -34,7 +31,7 @@ public class AuthenticatedSwaggerAccessEMTest extends SpringTestBase {
                 100,
                 (args) -> {
 
-                    Solution<RestIndividual> solution = initAndRun(args);
+                    initAndRun(args);
 
                 });
     }

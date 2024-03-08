@@ -2,7 +2,6 @@ package org.evomaster.e2etests.spring.examples.authenticatedswaggeraccesstest;
 
 import com.foo.rest.examples.spring.unauthenticatedswaggeraccesscontroller.UnauthenticatedSwaggerAccessController;
 import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.Paths;
 import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth;
 import org.evomaster.core.problem.rest.OpenApiAccess;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;

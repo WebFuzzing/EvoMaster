@@ -32,10 +32,9 @@ public class AuthenticatedSwaggerAccessManualTest extends SpringTestBase {
 
     /**
      * Since the swagger endpoint is authenticated, it cannot be retrieved using no authentication object
-     * @throws Throwable
      */
     @Test
-    public void accessSwaggerUnauthenticated() throws Throwable {
+    public void accessSwaggerUnauthenticated() {
 
         // get all paths from the swagger
         OpenAPI swagger = OpenApiAccess.INSTANCE.getOpenAPIFromURL(baseUrlOfSut + "/v2/api-docs", new HttpWsNoAuth());
@@ -49,10 +48,9 @@ public class AuthenticatedSwaggerAccessManualTest extends SpringTestBase {
 
     /**
      * Since the swagger endpoint is authenticated, it can be retrieved using authentication object.
-     * @throws Throwable
      */
     @Test
-    public void accessSwaggerTryAuthenticated() throws Throwable {
+    public void accessSwaggerTryAuthenticated() {
 
         boolean authenticatedRequestSuccessful = false;
 
@@ -84,10 +82,9 @@ public class AuthenticatedSwaggerAccessManualTest extends SpringTestBase {
 
     /**
      * Remove the successfulm authentication object to cause failed authentication
-     * @throws Throwable
      */
     @Test
-    public void accessSwaggerFailedAuthenticated() throws Throwable {
+    public void accessSwaggerFailedAuthenticated() {
 
         boolean authenticatedRequestSuccessful = false;
         HttpWsAuthenticationInfo unsuccessfulInfo = null;

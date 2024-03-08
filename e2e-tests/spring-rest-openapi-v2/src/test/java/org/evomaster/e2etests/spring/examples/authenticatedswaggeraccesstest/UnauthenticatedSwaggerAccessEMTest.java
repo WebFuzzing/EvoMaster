@@ -9,18 +9,15 @@ import org.junit.jupiter.api.Test;
 
 public class UnauthenticatedSwaggerAccessEMTest extends SpringTestBase {
 
-    private static UnauthenticatedSwaggerAccessController controller;
-
     @BeforeAll
     public static void initClass() throws Exception {
 
-        controller = new UnauthenticatedSwaggerAccessController();
+        UnauthenticatedSwaggerAccessController controller = new UnauthenticatedSwaggerAccessController();
         SpringTestBase.initClass(controller);
     }
 
     /**
      * Since the swagger endpoint is authenticated, it can be retrieved using authentication object.
-     * @throws Throwable
      */
     @Test
     public void testRunEM() throws Throwable {
@@ -31,7 +28,7 @@ public class UnauthenticatedSwaggerAccessEMTest extends SpringTestBase {
                 100,
                 (args) -> {
 
-                    Solution<RestIndividual> solution = initAndRun(args);
+                    initAndRun(args);
 
                 });
     }

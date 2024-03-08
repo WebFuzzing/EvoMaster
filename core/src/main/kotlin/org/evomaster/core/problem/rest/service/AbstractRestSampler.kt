@@ -92,7 +92,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
             // if swagger failed due to unauthorized access, then an empty swagger is retrieved
             if(swagger.paths == null) {
 
-                var currentAuthenticationIndex = 0;
+                var currentAuthenticationIndex = 0
                 val authenticationList:List<AuthenticationDto> = infoDto.infoForAuthentication
 
                 while(currentAuthenticationIndex < authenticationList.size && swagger.paths == null) {
@@ -316,7 +316,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         }
 
         // ONUR: Add all paths to list of paths to ignore except endpointFocus
-        val endpointsToSkip = EndpointFilter.getEndpointsToSkip(config,swagger);
+        val endpointsToSkip = EndpointFilter.getEndpointsToSkip(config,swagger)
 
         actionCluster.clear()
 
