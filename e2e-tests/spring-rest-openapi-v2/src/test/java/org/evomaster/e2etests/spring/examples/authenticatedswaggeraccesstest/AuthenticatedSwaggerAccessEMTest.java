@@ -2,8 +2,6 @@ package org.evomaster.e2etests.spring.examples.authenticatedswaggeraccesstest;
 
 import com.foo.rest.examples.spring.authenticatedswaggeraccess.AuthenticatedSwaggerAccessController;
 
-import org.evomaster.core.problem.rest.RestIndividual;
-import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -29,14 +27,7 @@ public class AuthenticatedSwaggerAccessEMTest extends SpringTestBase {
                 "AuthenticatedSwaggerAccessEM",
                 "org.bar.AuthenticatedSwaggerAccessEM",
                 100,
-                (args) -> {
-
-                    initAndRun(args);
-
-                });
+                (args) -> initAndRun(args) );
     }
-
-
-
 
 }

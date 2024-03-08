@@ -12,6 +12,7 @@ import org.evomaster.core.problem.rest.OpenApiAccess;
 import org.evomaster.core.remote.SutProblemException;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -42,7 +43,7 @@ public class AuthenticatedSwaggerAccessManualTest extends SpringTestBase {
         // api paths
         Paths apiPaths = swagger.getPaths();
 
-        Assert.assertNull(apiPaths);
+        Assertions.assertNull(apiPaths);
 
     }
 
@@ -77,7 +78,7 @@ public class AuthenticatedSwaggerAccessManualTest extends SpringTestBase {
 
         }
 
-        Assert.assertTrue(authenticatedRequestSuccessful);
+        Assertions.assertTrue(authenticatedRequestSuccessful);
     }
 
     /**
