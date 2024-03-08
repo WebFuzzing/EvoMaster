@@ -1,23 +1,19 @@
 package org.evomaster.e2etests.spring.examples.authenticatedswaggeraccesstest;
 
 import com.foo.rest.examples.spring.authenticatedswaggeraccess.AuthenticatedSwaggerAccessController;
-import com.foo.rest.examples.spring.security.accesscontrol.deleteput.ACDeletePutController;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Paths;
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto;
 import org.evomaster.core.problem.httpws.auth.AuthenticationHeader;
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo;
-import org.evomaster.core.problem.httpws.auth.NoAuth;
-import org.evomaster.core.problem.rest.HttpVerb;
+
+import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth;
 import org.evomaster.core.problem.rest.OpenApiAccess;
-import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.remote.SutProblemException;
-import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.Assert;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.springframework.http.HttpStatus;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,12 +38,12 @@ public class AuthenticatedSwaggerAccessManualTest extends SpringTestBase {
     public void accessSwaggerUnauthenticated() throws Throwable {
 
         // get all paths from the swagger
-        OpenAPI swagger = OpenApiAccess.INSTANCE.getOpenAPIFromURL(baseUrlOfSut + "/v2/api-docs", new NoAuth());
+        OpenAPI swagger = OpenApiAccess.INSTANCE.getOpenAPIFromURL(baseUrlOfSut + "/v2/api-docs", new HttpWsNoAuth());
 
         // api paths
         Paths apiPaths = swagger.getPaths();
 
-        Assert.assertNull(swagger.getPaths());
+        Assert.assertNull(apiPaths);
 
     }
 

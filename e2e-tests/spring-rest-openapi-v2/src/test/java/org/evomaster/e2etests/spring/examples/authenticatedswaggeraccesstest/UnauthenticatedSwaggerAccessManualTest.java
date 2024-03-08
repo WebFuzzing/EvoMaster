@@ -6,7 +6,7 @@ import io.swagger.v3.oas.models.Paths;
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto;
 import org.evomaster.core.problem.httpws.auth.AuthenticationHeader;
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo;
-import org.evomaster.core.problem.httpws.auth.NoAuth;
+import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth;
 import org.evomaster.core.problem.rest.OpenApiAccess;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.Assert;
@@ -35,7 +35,7 @@ public class UnauthenticatedSwaggerAccessManualTest extends SpringTestBase {
     public void accessSwaggerUnauthenticatedShouldSucceed() throws Throwable {
 
         // get all paths from the swagger
-        OpenAPI swagger = OpenApiAccess.INSTANCE.getOpenAPIFromURL(baseUrlOfSut + "/v2/api-docs", new NoAuth());
+        OpenAPI swagger = OpenApiAccess.INSTANCE.getOpenAPIFromURL(baseUrlOfSut + "/v2/api-docs", new HttpWsNoAuth());
 
         // api paths
         Paths apiPaths = swagger.getPaths();

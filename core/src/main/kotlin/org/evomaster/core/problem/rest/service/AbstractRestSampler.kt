@@ -15,7 +15,7 @@ import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceInfo
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.httpws.auth.AuthenticationHeader
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
-import org.evomaster.core.problem.httpws.auth.NoAuth
+import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
 import org.evomaster.core.problem.httpws.service.HttpWsSampler
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.RestActionBuilderV3.buildActionBasedOnUrl
@@ -86,7 +86,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         if(!openApiURL.isNullOrBlank()) {
 
             // first try to retrieve the OpenAPI without authentication
-            swagger = OpenApiAccess.getOpenAPIFromURL(openApiURL, NoAuth())
+            swagger = OpenApiAccess.getOpenAPIFromURL(openApiURL, HttpWsNoAuth())
 
             // if it fails, try to get swagger using each authentication information.
             // if swagger failed due to unauthorized access, then an empty swagger is retrieved

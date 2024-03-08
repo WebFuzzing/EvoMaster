@@ -4,7 +4,7 @@ import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.parser.OpenAPIV3Parser
 import io.swagger.v3.parser.core.models.SwaggerParseResult
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
-import org.evomaster.core.problem.httpws.auth.NoAuth
+import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
 import org.evomaster.core.remote.SutProblemException
 import java.net.ConnectException
 import java.net.URI
@@ -40,7 +40,7 @@ object OpenApiAccess {
                 ?: throw SutProblemException("Failed to parse OpenApi schema: " + parseResults.messages.joinToString("\n"))
     }
 
-    fun getOpenAPIFromURL(openApiUrl: String, authentication : HttpWsAuthenticationInfo = NoAuth() ): OpenAPI {
+    fun getOpenAPIFromURL(openApiUrl: String, authentication : HttpWsAuthenticationInfo = HttpWsNoAuth() ): OpenAPI {
 
         //could be either JSON or YAML
        val data = if(openApiUrl.startsWith("http", true)){
