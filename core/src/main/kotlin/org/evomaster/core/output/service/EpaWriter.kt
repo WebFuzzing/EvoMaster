@@ -65,7 +65,7 @@ class EpaWriter {
         Files.deleteIfExists(path)
         Files.createFile(path)
 
-        val s = "EPA contains ${epa.getVertexCount()} vertexes and ${epa.getEdgeCount()} edges."
+        val s = "EPA contains ${epa.getVertexCount()} vertex(es) and ${epa.getEdgeCount()} edge(s)."
         path.toFile().appendText(s)
         LoggingUtil.getInfoLogger().info(s)
     }
