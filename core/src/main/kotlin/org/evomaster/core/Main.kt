@@ -226,6 +226,10 @@ class Main {
             writeCoveredTargets(injector, solution)
             writeTests(injector, solution, controllerInfo)
             writeStatistics(injector, solution) //FIXME if other phases after search, might get skewed data on 100% snapshots...
+            if (config.epaCalculation) {
+                LoggingUtil.getInfoLogger().info("Going to write EPA to ${config.epaFile}.")
+                writeEPA(solution, config.epaFile)
+            }
 
             if (config.epaCalculation) {
                 LoggingUtil.getInfoLogger().info("Going to write EPA to ${config.epaFile}.")
