@@ -5,6 +5,7 @@ import org.evomaster.core.Main;
 import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
+import org.evomaster.core.search.service.Statistics;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -33,6 +34,11 @@ public class EnumsEMTest extends SpringTestBase {
 
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/enums/{target}", "0");
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/enums/{target}", "1");
+
+                    int last = Integer.parseInt(findValueOfItemWithKeyInStats(solution, Statistics.LAST_ACTION_IMPROVEMENT));
+                    int total = Integer.parseInt(findValueOfItemWithKeyInStats(solution, Statistics.EVALUATED_ACTIONS));
+
+                    assertTrue(last < total);
                 });
     }
 }

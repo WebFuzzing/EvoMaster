@@ -2,6 +2,7 @@ package org.evomaster.core.problem.api.service
 
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.database.execution.MongoFailedQuery
+import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.sql.SqlAction
@@ -71,7 +72,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 
         ind.seeMainExecutableActions().forEachIndexed { index, action ->
             val parent = action.parent
-            if (parent !is EnterpriseActionGroup) {
+            if (parent !is EnterpriseActionGroup<*>) {
                 //TODO this should not really happen
                 val msg = "Action is not inside an EnterpriseActionGroup"
                 log.error(msg)
@@ -95,6 +96,13 @@ abstract class ApiWsStructureMutator : StructureMutator() {
                     val existingActions = parent.getExternalServiceActions()
 
                     val actions: MutableList<HttpExternalServiceAction> = mutableListOf()
+
+                    // FIXME: We are not considering the requests served by the Default WireMock server.
+                    //  However, since we add a dummy [HostnameResolution] action
+                    //  (org/evomaster/core/problem/rest/service/AbstractRestFitness.kt:833), at the end
+                    //  there is a test looking to connect to the service and expecting a response when external
+                    //  service is available.
+                    //  Which is causing few tests to fails under [HarvestingStrategyTest]
 
                     requests
                         .groupBy { it.absoluteURL }
@@ -194,11 +202,16 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         val old = ind.seeInitializingActions().filterIsInstance<HostnameResolutionAction>()
 
         val addedInsertions: MutableList<Action> = mutableListOf()
-        externalServiceHandler.getHostnameResolutionActions().forEach {
-            val hasActions =
-                old.any { ha -> (ha as HostnameResolutionAction).hostname != it.hostname }
+        externalServiceHandler.getHostnameResolutionActions().forEach { a ->
+            val hasActions = old.any { it.hostname == a.hostname && it.localIPAddress == a.localIPAddress }
             if (!hasActions) {
-                addedInsertions.add(it)
+                addedInsertions.add(a)
+            }
+
+            // Removing the existing action added with the default WireMock address
+            val defaultActions = old.filter { it.hostname == a.hostname && it.localIPAddress == ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP };
+            if (defaultActions.isNotEmpty()) {
+                ind.removeHostnameResolutionAction(defaultActions)
             }
         }
 

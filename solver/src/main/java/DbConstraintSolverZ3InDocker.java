@@ -1,8 +1,13 @@
-import org.evomaster.client.java.sql.internal.constraint.DbTableConstraint;
+import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
+import org.evomaster.core.search.gene.Gene;
+import org.evomaster.core.search.gene.numeric.IntegerGene;
+import org.evomaster.core.sql.SqlAction;
+import org.evomaster.core.sql.SqlInsertBuilder;
+import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.Container;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.images.builder.ImageFromDockerfile;
-import org.testcontainers.containers.BindMode;
 import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
 
 import java.io.File;
@@ -10,7 +15,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
+import java.util.*;
 
 /**
  * A smt2 solver implementation using Z3 in a Docker container.
@@ -25,7 +30,9 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
     private final String containerPath = "/smt2-resources/";
     private final GenericContainer<?>  z3Prover;
     private final String tmpFolderPath;
+    private final SqlInsertBuilder sqlInsertBuilder;
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(DbConstraintSolverZ3InDocker.class.getName());
+    private final DbSchemaDto schemaDto;
 
     /**
      * The current implementation of the Z3 solver reads content either from STDIN or from a file.
@@ -35,9 +42,10 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
      * Then, the result is returned in STDOUT.
      * @param resourcesFolder the name of the folder in the file system that will be linked to the Docker volume
      */
-    public DbConstraintSolverZ3InDocker(String resourcesFolder) {
+    public DbConstraintSolverZ3InDocker(DbSchemaDto schemaDto, String resourcesFolder) {
 
         this.tmpFolderPath = resourcesFolder + "tmp/";
+        this.schemaDto = schemaDto;
 
         ImageFromDockerfile image = new ImageFromDockerfile()
                 .withDockerfileFromBuilder(builder -> builder
@@ -49,6 +57,8 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
                         .withFileSystemBind(resourcesFolder, containerPath, BindMode.READ_WRITE);
 
         z3Prover.start();
+
+        this.sqlInsertBuilder = new SqlInsertBuilder(schemaDto, null);
     }
 
     /**
@@ -86,30 +96,78 @@ public class DbConstraintSolverZ3InDocker implements DbConstraintSolver {
         }
     }
 
-    private String solveFromTmp(String filename) {
-        return solveFromFile("tmp/" + filename);
+    private List<SqlAction> solveFromTmp(String filename) {
+        String model = solveFromFile("tmp/" + filename);
+        return toSqlAction(model);
+    }
+
+    /**
+     * Given the list of constraints takes the first one and solve the model for that
+     *
+     * @param model the string with the model
+     * @return the Gene with the model
+     */
+    private List<SqlAction> toSqlAction(String model) {
+        // Create the insert based on the first constraint
+        String[] lines = model.split("\n");
+        Map<String, Gene> genes = new HashMap<>();
+
+        for (int i = 1; i < lines.length; i++) {
+            String[] values = lines[i].substring(2, lines[i].length()-2).split(" ");
+            String name = values[0];
+            Integer value =  Integer.parseInt(values[1]);
+
+            Gene gene = new IntegerGene(
+                    name,
+                    value,
+                    null,
+                    null,
+                    null,
+                    false,
+                    false);
+            genes.put(name, gene);
+        }
+
+        // TODO: Handle more than 1 table
+        String tableName = this.schemaDto.tables.get(0).name;
+        List<String> history = new LinkedList<>();
+        Set<String> columnNames = new HashSet<>(Collections.singletonList("*"));
+
+        List<SqlAction> actions = sqlInsertBuilder.createSqlInsertionAction(tableName,
+                columnNames, history, false, false, false);
+
+        actions.get(0).seeTopGenes().forEach(g -> {
+            if (genes.containsKey(g.getName())) {
+                g.copyValueFrom(genes.get(g.getName()));
+            } else {
+                log.warn("Gene not found in the model: " + g.getName());
+            }
+        });
+
+        return actions;
     }
 
     /**
      * Given the constraint list, creates a Smt2Writer with all of them, and then write them in a smt2 file.
      * After that, run the Z3 Docker solver with the reference to the file and return the check model as string.
-     * @param constraintList list of database constraints
-     * @return a string with the model for the given constraints
+     * @return a list of Sql with the necessary inserts according to the constraints
      */
     @Override
-    public String solve(List<DbTableConstraint> constraintList) {
-        Smt2Writer writer = new Smt2Writer();
+    public List<SqlAction> solve() {
+        Smt2Writer writer = new Smt2Writer(this.schemaDto.databaseType);
 
-        for (DbTableConstraint constraint : constraintList) {
-            boolean succeed = writer.addConstraint(constraint);
-            if (!succeed) {
-                throw new RuntimeException("Constraint not supported: " + constraint);
-            }
+        for (TableDto table : this.schemaDto.tables) {
+            table.tableCheckExpressions.forEach(constraint -> {
+                boolean succeed = writer.addTableCheckExpression(constraint);
+                if (!succeed) {
+                    throw new RuntimeException("Constraint not supported: " + constraint);
+                }
+            });
         }
 
         String fileName = storeToTmpFile(writer);
 
-        String solution = solveFromTmp(fileName);
+        List<SqlAction> solution = solveFromTmp(fileName);
 
         try {
             // TODO: Move this to another thread?

@@ -12,7 +12,11 @@ package org.evomaster.client.java.controller.api;
     languages, eg, Java, JavaScript and C#.
  */
 
+import javax.net.ssl.*;
 import java.net.URI;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.X509Certificate;
 
 /**
  * Class containing utility functions that can be used in the

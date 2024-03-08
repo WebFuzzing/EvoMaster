@@ -26,6 +26,8 @@ public class ExternalServiceInfoUtils {
      * Force collecting DNS info, without failing if errors
      */
     public static void analyzeDnsResolution(String host){
+        // TODO: If we skip Inet resolution at this point, incase if it is already exists, would
+        //  it improve the speed?
         try {
             InetAddress addresses = InetAddressClassReplacement.getByName(host);
             ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(host, addresses.getHostAddress()));

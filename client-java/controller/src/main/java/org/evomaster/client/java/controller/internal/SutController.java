@@ -508,6 +508,20 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         }
     }
 
+    private void reAddAllInitSql() throws SQLException{
+        if(tableInitSqlMap != null){
+            tableInitSqlMap.keySet().stream().forEach(t->{
+                tableInitSqlMap.get(t).forEach(c->{
+                    try {
+                        SqlScriptRunner.execCommand(getConnectionIfExist(), c);
+                    } catch (SQLException e) {
+                        throw new RuntimeException("SQL Init Execution Error: fail to execute "+ c + " with error "+e);
+                    }
+                });
+            });
+        }
+    }
+
     private int tableFkCompartor(String tableA, String tableB){
         return getFkDepth(tableA, new HashSet<>()) - getFkDepth(tableB, new HashSet<>());
     }
@@ -1458,6 +1472,20 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                 if (spec==null || spec.connection == null || !spec.employSmartDbClean){
                     return;
                 }
+
+                if(tablesToClean == null){
+                    // all data will be reset
+                    DbCleaner.clearDatabase(spec.connection, null, null, null, spec.dbType);
+                    try {
+                        reAddAllInitSql();
+                    } catch (SQLException e) {
+                        throw new RuntimeException("Fail to process all specified initSqlScript "+e);
+                    }
+                    return;
+                }
+
+                if (tablesToClean.isEmpty()) return;
+
                 if (spec.schemaNames == null || spec.schemaNames.isEmpty())
                     DbCleaner.clearDatabase(spec.connection, null, null, tablesToClean, spec.dbType);
                 else

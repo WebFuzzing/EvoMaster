@@ -316,7 +316,7 @@ class EMConfig {
             }
 
             LoggingUtil.uniqueUserInfo("Going to create configuration file at: ${Path(configPath).toAbsolutePath()}")
-            ConfigUtil.createConfigFileTemplateToml(configPath, cff)
+            ConfigUtil.createConfigFileTemplate(configPath, cff)
         }
     }
 
@@ -330,7 +330,7 @@ class EMConfig {
 
         LoggingUtil.uniqueUserInfo("Loading configuration file from: ${Path(configPath).toAbsolutePath()}")
 
-        return ConfigUtil.readFromToml(configPath)
+        return ConfigUtil.readFromFile(configPath)
     }
 
     private fun applyConfigFromFile(cff: ConfigsFromFile) {
@@ -526,6 +526,10 @@ class EMConfig {
         if (probRestDefault + probRestExamples > 1) {
             throw ConfigProblemException("Invalid combination of probabilities for probRestDefault and probRestExamples. " +
                     "Their sum should be lower or equal to 1.")
+        }
+
+        if(security && !minimize){
+            throw ConfigProblemException("The use of 'security' requires 'minimize'")
         }
     }
 
@@ -1797,6 +1801,27 @@ class EMConfig {
     var useGlobalTaintInfoProbability = 0.0
 
 
+    @Experimental
+    @Cfg("If there is new discovered information from a test execution, reward it in the fitness function")
+    var discoveredInfoRewardedInFitness = false
+
+    @Experimental
+    @Cfg("During mutation, force the mutation of genes that have newly discovered specialization from previous fitness evaluations," +
+            " based on taint analysis.")
+    var taintForceSelectionOfGenesWithSpecialization = false
+
+    @Probability
+    @Cfg("Probability of removing a tainted value during mutation")
+    var taintRemoveProbability = 0.5
+
+    @Probability
+    @Cfg("Probability of applying a discovered specialization for a tainted value")
+    var taintApplySpecializationProbability = 0.5
+
+    @Probability
+    @Cfg("Probability of changing specialization for a resolved taint during mutation")
+    var taintChangeSpecializationProbability = 0.1
+
     @Min(0.0)
     @Max(stringLengthHardLimit.toDouble())
     @Cfg("The maximum length allowed for evolved strings. Without this limit, strings could in theory be" +
@@ -2134,15 +2159,13 @@ class EMConfig {
         private set
 
 
-    @Experimental
     @Cfg("In REST, specify probability of using 'default' values, if any is specified in the schema")
     @Probability(true)
-    var probRestDefault = 0.0
+    var probRestDefault = 0.20
 
-    @Experimental
     @Cfg("In REST, specify probability of using 'example(s)' values, if any is specified in the schema")
     @Probability(true)
-    var probRestExamples = 0.0
+    var probRestExamples = 0.05
 
 
     //TODO mark as deprecated once we support proper Robustness Testing
@@ -2153,10 +2176,11 @@ class EMConfig {
     @Cfg("Apply a security testing phase after functional test cases have been generated.")
     var security = false
 
-    val defaultConfigPath = "em.toml"
+    val defaultConfigPath = "em.yaml"
 
     @Experimental
     @Cfg("File path for file with configuration settings")
+    @Regex(".*\\.(yml|yaml|toml)")
     @FilePath
     var configPath: String = defaultConfigPath
 

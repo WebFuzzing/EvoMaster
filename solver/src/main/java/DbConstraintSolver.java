@@ -1,4 +1,4 @@
-import org.evomaster.client.java.sql.internal.constraint.DbTableConstraint;
+import org.evomaster.core.sql.SqlAction;
 
 import java.util.List;
 
@@ -10,9 +10,7 @@ public interface DbConstraintSolver extends AutoCloseable {
 
     /**
      * Solves the given constraints and returns the Db Gene to insert in the database
-     * @param constraintList list of database constraints
-     * @return a string with the model for the given constraints
-     * TODO: Response should be a list of SqlAction and not a string
+     * @return a list of SQLAction with the inserts in the db for the given constraints
      */
-    String solve(List<DbTableConstraint> constraintList);
+    List<SqlAction> solve();
 }

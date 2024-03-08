@@ -20,6 +20,7 @@ import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.annotation.PostConstruct
+import javax.mail.Address
 
 /**
  * To manage the external service related activities
@@ -118,12 +119,14 @@ class HttpWsExternalServiceHandler {
         if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
             // Additional validation to prevent local IP as a DNS entry
             if (!hostnameLocalAddressMapping.containsKey(hostnameResolutionInfo.remoteHostName)
-                && !hostnameLocalAddressMapping.containsValue(hostnameResolutionInfo.remoteHostName)) {
-                val ip = if (hostnameResolutionInfo.remoteHostName == ExternalServiceSharedUtils.DEFAULT_WM_DUMMY_HOSTNAME) {
-                    ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP
-                } else {
-                    getNewIP()
-                }
+                && !hostnameLocalAddressMapping.containsValue(hostnameResolutionInfo.remoteHostName)
+            ) {
+                val ip =
+                    if (hostnameResolutionInfo.remoteHostName == ExternalServiceSharedUtils.DEFAULT_WM_DUMMY_HOSTNAME) {
+                        ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP
+                    } else {
+                        getNewIP()
+                    }
                 lastIPAddress = ip
                 hostnameLocalAddressMapping[hostnameResolutionInfo.remoteHostName] = ip
                 hostnameResolutionInfos.add(hostnameResolutionInfo)
@@ -185,18 +188,37 @@ class HttpWsExternalServiceHandler {
     }
 
     fun getExternalServiceMappings(): Map<String, ExternalServiceMappingDto> {
-        return externalServices.mapValues { (_, v) -> ExternalServiceMappingDto(v.getRemoteHostName(), v.getIP(), v.getSignature(), v.isActive()) }
+        return externalServices.mapValues { (_, v) ->
+            ExternalServiceMappingDto(
+                v.getRemoteHostName(),
+                v.getIP(),
+                v.getSignature(),
+                v.isActive()
+            )
+        }
     }
 
     fun getLocalDomainNameMapping(): Map<String, String> {
         return hostnameLocalAddressMapping.toMap()
     }
 
+    fun isWireMockAddress(address: String) : Boolean {
+        return hostnameLocalAddressMapping.containsValue(address)
+    }
+
+    /**
+     * Returns a list of [HostnameResolutionAction].
+     * Excluding Default WireMock entries.
+     */
     fun getHostnameResolutionActions(): List<HostnameResolutionAction> {
         val output: MutableList<HostnameResolutionAction> = mutableListOf()
-        hostnameResolutionInfos.forEach {
-            val action = HostnameResolutionAction(it.remoteHostName, hostnameLocalAddressMapping[it.remoteHostName]!!)
+        hostnameLocalAddressMapping
+            .filter { it.key != ExternalServiceSharedUtils.DEFAULT_WM_DUMMY_HOSTNAME }
+            .filter { it.value != ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP }
+            .forEach {
+            val action = HostnameResolutionAction(it.key, it.value)
             output.add(action)
+
         }
         return output
     }

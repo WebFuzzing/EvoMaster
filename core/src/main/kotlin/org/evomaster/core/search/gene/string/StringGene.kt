@@ -93,6 +93,7 @@ class StringGene(
     var selectedSpecialization = -1
 
     var selectionUpdatedSinceLastMutation = false
+        private set
 
     /**
      * Check if we already tried to use this string for taint analysis
@@ -302,7 +303,13 @@ class StringGene(
     ) : Boolean {
         val specializationGene = getSpecializationGene()
 
-        if (specializationGene == null && specializationGenes.isNotEmpty() && randomness.nextBoolean(0.5)) {
+        val taintApplySpecializationProbability = getSearchGlobalState()?.config?.taintApplySpecializationProbability ?: 0.5
+        val taintChangeSpecializationProbability = getSearchGlobalState()?.config?.taintChangeSpecializationProbability ?: 0.1
+
+        if (specializationGene == null && specializationGenes.isNotEmpty() && randomness.nextBoolean(taintApplySpecializationProbability)) {
+            /*
+                Shouldn't be done with 100% probability, because some specializations might be useless
+             */
             log.trace("random a specializationGene of String at StandardMutation with string: {}; size: {}; content: {}", name, specializationGenes.size,
                 specializationGenes.joinToString(",") { s -> s.getValueAsRawString() })
             selectedSpecialization = randomness.nextInt(0, specializationGenes.size - 1)
@@ -311,17 +318,21 @@ class StringGene(
             return true
 
         } else if (specializationGene != null) {
-            if (selectionUpdatedSinceLastMutation && randomness.nextBoolean(0.5)) {
+            if (selectionUpdatedSinceLastMutation && randomness.nextBoolean(0.67)) {
                 /*
                     selection of most recent added gene, but only with a given
                     probability, albeit high.
                     point is, switching is not always going to be beneficial
+
+                    is this branch possible? to get here, would need a specialization gene that still counts
+                    as a tainted value...
+                    YES! that applies for Regex, as those are handled specially (with values sent at each Action evaluation)
                  */
                 selectedSpecialization = specializationGenes.lastIndex
-            } else if (specializationGenes.size > 1 && (!specializationGene.isMutable() ||randomness.nextBoolean(PROB_CHANGE_SPEC))) {
+            } else if (specializationGenes.size > 1 && (!specializationGene.isMutable() ||randomness.nextBoolean(taintChangeSpecializationProbability))) {
                 //choose another specialization, but with low probability
                 selectedSpecialization = randomness.nextInt(0, specializationGenes.size - 1, selectedSpecialization)
-            } else if(!specializationGene.isMutable() || randomness.nextBoolean(PROB_CHANGE_SPEC)){
+            } else if(!specializationGene.isMutable() || randomness.nextBoolean(taintChangeSpecializationProbability)){
                 //not all specializations are useful
                 selectedSpecialization = -1
             } else {
@@ -421,11 +432,10 @@ class StringGene(
         val minPforTaint = 0.1
         val tp = apc.getBaseTaintAnalysisProbability(minPforTaint)
 
-        if (
-                !apc.doesFocusSearch() &&
-                (
-                        (!tainted && randomness.nextBoolean(tp))
-                                ||
+        if (!apc.doesFocusSearch()
+            && (
+                    (!tainted && randomness.nextBoolean(tp))
+                    ||
                                 /*
                                     if this has already be tainted, but that lead to no specialization,
                                     we do not want to reset with a new taint value, and so skipping all
@@ -434,14 +444,16 @@ class StringGene(
                                     specialization depends on code paths executed depending on other inputs
                                     in the test case
                                  */
-                                (tainted && randomness.nextBoolean(Math.max(tp/2, minPforTaint)))
-                        )
+                    (tainted && randomness.nextBoolean(Math.max(tp/2, minPforTaint)))
+                )
         ) {
             forceTaintedValue()
             return true
         }
 
-        if (tainted && randomness.nextBoolean(0.5) && TaintInputName.isTaintInput(value)) {
+        val taintRemoveProbability = getSearchGlobalState()?.config?.taintRemoveProbability ?: 0.5
+
+        if (tainted && randomness.nextBoolean(taintRemoveProbability) && TaintInputName.isTaintInput(value)) {
             randomize(randomness, true)
             return true
         }
@@ -640,7 +652,6 @@ class StringGene(
             log.trace("JSON_MAP, added specification size: {}", toAddGenes.size)
         }
 
-        //all regex are combined with disjunction in a single gene
         handleRegex(key, toAddSpecs, toAddGenes)
 
         /*
@@ -686,9 +697,17 @@ class StringGene(
         val partialPredicate = { s: StringSpecializationInfo -> s.stringSpecialization.isRegex && s.type.isPartialMatch }
 
         if (toAddSpecs.any(fullPredicate)) {
-            val regex = toAddSpecs
+
+            /*
+                originally, all regex with combined with disjunction in a single gene...
+                but likely was not a good idea...
+             */
+
+            //val regex =
+                  toAddSpecs
                     .filter(fullPredicate)
                     .filter{RegexUtils.isMeaningfulRegex(it.value)}
+                    .filter{RegexUtils.isNotUselessRegex(it.value) }
                     .map {
                         if(it.stringSpecialization == StringSpecialization.REGEX_WHOLE) {
                             RegexSharedUtils.forceFullMatch(it.value)
@@ -696,15 +715,24 @@ class StringGene(
                             RegexSharedUtils.handlePartialMatch(it.value)
                         }
                     }
-                    .joinToString("|")
+                    //.joinToString("|")
+                    .forEach {regex ->
+                      try {
+                              toAddGenes.add(RegexHandler.createGeneForJVM(regex))
+                              log.trace("Regex, added specification for: {}", regex)
 
-            try {
-                toAddGenes.add(RegexHandler.createGeneForJVM(regex))
-                log.trace("Regex, added specification size: {}", toAddGenes.size)
+                          } catch (e: Exception) {
+                              LoggingUtil.uniqueWarn(log, "Failed to handle regex: $regex")
+                          }
+                      }
 
-            } catch (e: Exception) {
-                LoggingUtil.uniqueWarn(log, "Failed to handle regex: $regex")
-            }
+//            try {
+//                toAddGenes.add(RegexHandler.createGeneForJVM(regex))
+//                log.trace("Regex, added specification size: {}", toAddGenes.size)
+//
+//            } catch (e: Exception) {
+//                LoggingUtil.uniqueWarn(log, "Failed to handle regex: $regex")
+//            }
         }
 
 /*
