@@ -357,8 +357,8 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                         .getEnabledEndpointsAfterAction()?.enabledRestActions
                 }
                 val endpointsAfterAction = result.getEnabledEndpointsAfterAction()?.enabledRestActions
-                val epaEdgeId = idMapper.handleLocalTarget("$endpointsBeforeAction:$actionName:$endpointsAfterAction")
                 if (endpointsBeforeAction != null && endpointsAfterAction != null) {
+                    val epaEdgeId = idMapper.handleLocalTarget("${endpointsBeforeAction.toStringForEPA()}:$actionName:${endpointsAfterAction.toStringForEPA()}")
                     fv.updateTarget(epaEdgeId, 1.0, it)
                 }
             }
