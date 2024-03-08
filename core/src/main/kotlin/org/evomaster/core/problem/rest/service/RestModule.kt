@@ -37,6 +37,10 @@ class RestModule(private val bindRemote : Boolean = true) : AbstractModule(){
                 .to(RestSampler::class.java)
                 .asEagerSingleton()
 
+        bind(AbstractRestSampler::class.java)
+                .to(RestSampler::class.java)
+                .asEagerSingleton()
+
         bind(RestSampler::class.java)
                 .asEagerSingleton()
 
