@@ -787,7 +787,6 @@ class Main {
             }
         }
 
-
         private fun writeEPA(solution: Solution<*>, epaFile: String) {
             EpaWriter().writeEPA(solution, epaFile)
         }
