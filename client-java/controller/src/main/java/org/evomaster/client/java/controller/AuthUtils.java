@@ -1,9 +1,9 @@
 package org.evomaster.client.java.controller;
 
-import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto;
-import org.evomaster.client.java.controller.api.dto.auth.CookieLoginDto;
-import org.evomaster.client.java.controller.api.dto.auth.HeaderDto;
+import org.evomaster.client.java.controller.api.dto.auth.*;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Objects;
@@ -68,17 +68,25 @@ public class AuthUtils {
      */
     public static AuthenticationDto getForDefaultSpringFormLogin(String dtoName, String username, String password){
 
-        CookieLoginDto cookie = new CookieLoginDto();
-        cookie.httpVerb = CookieLoginDto.HttpVerb.POST;
-        cookie.contentType = CookieLoginDto.ContentType.X_WWW_FORM_URLENCODED;
-        cookie.usernameField = "username";
-        cookie.passwordField = "password";
-        cookie.loginEndpointUrl = "/login";
-        cookie.username = username;
-        cookie.password = password;
+        LoginEndpointDto cookie = new LoginEndpointDto();
 
+        cookie.endpoint = "/login";
+        cookie.verb = HttpVerb.POST;
+        cookie.contentType = "application/x-www-form-urlencoded";
+        cookie.expectCookies = true;
+        try {
+            String payload;
+            String usernameField = URLEncoder.encode("username", "UTF-8");
+            String passwordField = URLEncoder.encode("password", "UTF-8");
+            payload = usernameField + "=" + URLEncoder.encode(username, "UTF-8");
+            payload += "&";
+            payload += passwordField + "="+ URLEncoder.encode(password, "UTF-8");
+            cookie.payload = payload;
+        }catch (UnsupportedEncodingException e){
+            throw new RuntimeException(e); //ah, the joys of Java...
+        }
         AuthenticationDto dto = new AuthenticationDto(dtoName);
-        dto.cookieLogin = cookie;
+        dto.loginEndpointAuth = cookie;
 
         return dto;
     }

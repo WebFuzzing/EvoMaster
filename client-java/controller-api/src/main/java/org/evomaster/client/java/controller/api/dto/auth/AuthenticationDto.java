@@ -23,17 +23,14 @@ public class AuthenticationDto {
      */
     public List<HeaderDto> fixedHeaders = new ArrayList<>();
 
-    /**
-     * If the login is based on cookies, need to provide info on
-     * how to get such a cookie
-     */
-    public CookieLoginDto cookieLogin;
 
     /**
-     * If the login is based on tokens, retrieved via JSON messages,
-     * specify how to do it
+     * Used to represent the case in which a login endpoint is used to obtain the auth credentials.
+     * These can be cookies, or a token extracted from the login endpoint's response.
+     * This token can then be added to an HTTP header in the following requests.
      */
-    public JsonTokenPostLoginDto jsonTokenPostLogin;
+    public LoginEndpointDto loginEndpointAuth;
+
 
     /**
      * if the auth is processed based on RPC endpoints,

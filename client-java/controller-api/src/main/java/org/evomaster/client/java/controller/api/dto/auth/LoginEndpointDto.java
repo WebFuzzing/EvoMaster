@@ -20,9 +20,15 @@ public class LoginEndpointDto {
     public String externalEndpointURL;
 
     /**
-     * The payload to send, as a string
+     * The raw payload to send, as a string
      */
-    public String payload;
+    public String payloadRaw;
+
+    /**
+     * Payload with username and password information.
+     * It will be automatically formatted in a proper payload based on content type.
+     */
+    public PayloadUsernamePasswordDto payloadUserPwd;
 
     /**
      * The verb used to connect to the login endpoint.
@@ -37,17 +43,10 @@ public class LoginEndpointDto {
     public String contentType;
 
     /**
-     *  How to extract the token from a JSON response, as such
-     *  JSON could have few fields, possibly nested.
-     *  It is expressed as a JSON Pointer
+     * Specify how to extract token from response, and how to use it for auth in following requests.
+     * Not needed if rather expect to get back a cookie.
      */
-    public String extractTokenFromJSONField;
-
-    /**
-     * When sending out the obtained token in a HTTP header,
-     * specify if there should be any prefix (e.g., "Bearer " or "JWT ")
-     */
-    public String headerPrefix;
+    public TokenHandlingDto token;
 
     /**
      * Specify if we are expecting to get cookies from the login endpoint.
