@@ -4,7 +4,7 @@ import org.evomaster.core.output.service.HttpWsTestCaseWriter
 import org.evomaster.core.output.service.ApiTestCaseWriter
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.rest.ContentType
-import org.evomaster.core.problem.httpws.auth.CookieLogin
+import org.evomaster.core.problem.httpws.auth.EndpointCallLogin
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 
@@ -16,7 +16,7 @@ import org.evomaster.core.search.Individual
  */
 object CookieWriter {
 
-    fun cookiesName(info: CookieLogin): String = "cookies_${info.username}"
+    fun cookiesName(info: EndpointCallLogin): String = "cookies_${info.username}"
 
 
     /**
@@ -25,9 +25,9 @@ object CookieWriter {
      */
     fun getCookieLoginAuth(ind: Individual) =  ind.seeAllActions()
             .filterIsInstance<HttpWsAction>()
-            .filter { it.auth.cookieLogin != null }
-            .map { it.auth.cookieLogin!! }
-            .distinctBy { it.username }
+            .filter { it.auth.endpointCallLogin != null && it.auth.endpointCallLogin!!.expectsCookie()}
+            .distinctBy { it.auth.name }
+            .map { it.auth.endpointCallLogin!! }
 
 
     fun handleGettingCookies(format: OutputFormat,

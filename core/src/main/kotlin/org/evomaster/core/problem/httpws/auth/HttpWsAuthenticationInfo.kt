@@ -30,8 +30,8 @@ open class HttpWsAuthenticationInfo(
      * @return whether to exclude auth check (401 status code in the response) for the [action]
      */
     fun excludeAuthCheck(action: Action) : Boolean{
-        if (action is RestCallAction && jsonTokenPostLogin != null){
-            return action.getName() == "POST:${jsonTokenPostLogin.endpoint}"
+        if (action is RestCallAction && endpointCallLogin != null){
+            return action.getName() == "POST:${endpointCallLogin.endpoint}"
         }
         return false
     }

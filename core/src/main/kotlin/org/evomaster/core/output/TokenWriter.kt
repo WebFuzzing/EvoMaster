@@ -3,13 +3,14 @@ package org.evomaster.core.output
 import org.evomaster.core.output.service.HttpWsTestCaseWriter
 import org.evomaster.core.output.service.ApiTestCaseWriter
 import org.evomaster.core.problem.httpws.HttpWsAction
+import org.evomaster.core.problem.httpws.auth.EndpointCallLogin
 import org.evomaster.core.problem.httpws.auth.JsonTokenPostLogin
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 
 object TokenWriter {
 
-    fun tokenName(info: JsonTokenPostLogin) = "token_${info.userId}"
+    fun tokenName(info: EndpointCallLogin) = "token_${info.userId}"
 
     /**
      *  Return the distinct auth info on token-based login in all actions
@@ -17,9 +18,9 @@ object TokenWriter {
      */
     fun getTokenLoginAuth(ind: Individual) =  ind.seeAllActions()
             .filterIsInstance<HttpWsAction>()
-            .filter { it.auth.jsonTokenPostLogin != null }
-            .map { it.auth.jsonTokenPostLogin!! }
-            .distinctBy { it.userId }
+            .filter { it.auth.endpointCallLogin != null && it.auth.endpointCallLogin!!.token!=null}
+            .distinctBy { it.auth.name }
+            .map { it.auth.endpointCallLogin!! }
 
 
     fun handleGettingTokens(format: OutputFormat,
@@ -43,11 +44,8 @@ object TokenWriter {
                 format.isJavaScript() -> lines.add("let ${tokenName(k)} = ")
             }
 
-
-            // TODO C#
-
-            if(k.headerPrefix.isNotEmpty()) {
-                lines.append("\"${k.headerPrefix}\"")
+            if(k.token!!.headerPrefix.isNotEmpty()) {
+                lines.append("\"${k.token!!.headerPrefix}\"")
             }else{
                 if (format.isJavaScript())
                     lines.append("\"\"")
