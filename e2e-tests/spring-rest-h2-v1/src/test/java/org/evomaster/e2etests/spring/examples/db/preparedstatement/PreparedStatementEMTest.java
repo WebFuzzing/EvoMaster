@@ -27,7 +27,7 @@ public class PreparedStatementEMTest extends PreparedStatementTestBase {
 
                     assertTrue(solution.getIndividuals().size() >= 1);
                     assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/db/preparedStatement/{integerValue}/{stringValue}/{booleanValue}", null);
-                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/db/preparedStatement/", null);
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/db/preparedStatement", null);
 
                 });
     }
