@@ -1,6 +1,6 @@
 package org.evomaster.core.problem.httpws.auth
 
-import org.evomaster.core.problem.api.auth.AuthenticationInfo
+import org.evomaster.core.problem.enterprise.auth.AuthenticationInfo
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.search.action.Action
 
@@ -20,7 +20,7 @@ open class HttpWsAuthenticationInfo(
         if(name.isBlank()){
             throw IllegalArgumentException("Blank name")
         }
-        //FIXME "NoAuth"
+        //FIXME "NoAuth" constant
         if(headers.isEmpty() && name != "NoAuth" && endpointCallLogin==null){
             throw IllegalArgumentException("Empty headers")
         }
