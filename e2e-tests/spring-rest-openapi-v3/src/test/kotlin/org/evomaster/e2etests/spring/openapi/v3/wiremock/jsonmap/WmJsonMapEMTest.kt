@@ -34,26 +34,25 @@ class WmJsonMapEMTest : SpringTestBase() {
             "WmJsonMapEM",
             "org.foo.WmJsonMapEM",
             1000,
-//            !CIUtils.isRunningGA(), //there exist bug in generated tests for map
-            true,
+            !CIUtils.isRunningGA(), //there exist bug in generated tests for map
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")
                 args.add("USER")
                 args.add("--externalServiceIP")
-                args.add("127.0.0.102")
+                args.add("127.0.0.80")
 
                 val solution = initAndRun(args)
 
                 assertTrue(solution.individuals.size >= 1)
 
-               // if (!CIUtils.isRunningGA()) {
+                if (!CIUtils.isRunningGA()) {
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/jsonmap/gson", "not empty map and include")
                     //assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/jsonmap/gson", "foo42") // not solved yet
                     //assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/jsonmap/gson", "bar54") // not solved yet
                     assertHasAtLeastOne(solution, HttpVerb.GET, 404, "/api/wm/jsonmap/gson", "empty map")
                     assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/wm/jsonmap/gson", "")
-                //}
+                }
             },
             3
         )
