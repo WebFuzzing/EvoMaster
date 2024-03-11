@@ -1,13 +1,14 @@
-package org.evomaster.core.output
+package org.evomaster.core.output.auth
 
-import org.evomaster.core.output.service.HttpWsTestCaseWriter
+import org.evomaster.core.output.Lines
+import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.service.ApiTestCaseWriter
+import org.evomaster.core.output.service.HttpWsTestCaseWriter
 import org.evomaster.core.problem.httpws.HttpWsAction
-import org.evomaster.core.problem.rest.ContentType
 import org.evomaster.core.problem.httpws.auth.EndpointCallLogin
+import org.evomaster.core.problem.rest.ContentType
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
-
 
 /**
  * A test case might need to get cookies to do authenticated requests.
@@ -16,7 +17,7 @@ import org.evomaster.core.search.Individual
  */
 object CookieWriter {
 
-    fun cookiesName(info: EndpointCallLogin): String = "cookies_${info.username}"
+    fun cookiesName(info: EndpointCallLogin): String = "cookies_${info.name}"
 
 
     /**
@@ -54,42 +55,48 @@ object CookieWriter {
 
             lines.append("given()")
             lines.indented {
-
-                if (k.contentType == ContentType.X_WWW_FORM_URLENCODED) {
-                    lines.add(".formParam(\"${k.usernameField}\", \"${k.username}\")")
-                    lines.add(".formParam(\"${k.passwordField}\", \"${k.password}\")")
-                } else if(k.contentType == ContentType.JSON) {
-                    val json = """
-                        {
-                            "${k.usernameField}":"${k.username}",
-                            "${k.passwordField}":"${k.password}"
-                        }
-                    """.trimIndent()
-                    lines.add(".contentType(\"application/json\")")
-                    if (testCaseWriter is HttpWsTestCaseWriter){
-                        testCaseWriter.printSendJsonBody(json, lines)
-                    }
-                }else {
-                    throw IllegalStateException("Currently not supporting yet ${k.contentType} in login")
-                }
-
-                lines.add(".post(")
-                if (k.isFullUrlSpecified()){
-                    lines.append("\"${k.loginEndpointUrl}\")")
-                }else{
-                    if (format.isJava()) {
-                        lines.append("$baseUrlOfSut + \"")
-                    } else {
-                        lines.append("\"\${$baseUrlOfSut}")
-                    }
-                    lines.append("${k.loginEndpointUrl}\")")
-                }
-
-
+                addCallCommand(lines, k, testCaseWriter, format, baseUrlOfSut)
                 lines.add(".then().extract().cookies()") //TODO check response status and cookie headers?
                 lines.appendSemicolon(format)
                 lines.addEmpty()
             }
+        }
+    }
+
+     fun addCallCommand(
+        lines: Lines,
+        k: EndpointCallLogin,
+        testCaseWriter: ApiTestCaseWriter,
+        format: OutputFormat,
+        baseUrlOfSut: String
+    ) {
+        //TODO check if payload is specified
+        lines.add(".contentType(\"${k.contentType.defaultValue}\")")
+        if (k.contentType == ContentType.X_WWW_FORM_URLENCODED) {
+            if (testCaseWriter is HttpWsTestCaseWriter) { //FIXME
+                val send = testCaseWriter.sendBodyCommand()
+                lines.add(".$send(${k.payload})")
+            }
+        } else if (k.contentType == ContentType.JSON) {
+            if (testCaseWriter is HttpWsTestCaseWriter) { //FIXME
+                testCaseWriter.printSendJsonBody(k.payload, lines)
+            }
+        } else {
+            throw IllegalStateException("Currently not supporting yet ${k.contentType} in login")
+        }
+
+         //TODO should check specified verb
+        lines.add(".post(")
+        if (k.externalEndpointURL != null) {
+            lines.append("\"${k.externalEndpointURL}\")")
+        } else {
+            if (format.isJava()) {
+                lines.append("$baseUrlOfSut + \"")
+            } else {
+                lines.append("\"\${$baseUrlOfSut}")
+            }
+            //TODO should check or guarantee that base does not end with a / ?
+            lines.append("${k.endpoint}\")")
         }
     }
 }

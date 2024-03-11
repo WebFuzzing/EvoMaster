@@ -107,7 +107,7 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
         }
 
         val endpointCallLogin = if(i.loginEndpointAuth != null){
-            EndpointCallLogin.fromDto(i.loginEndpointAuth)
+            EndpointCallLogin.fromDto(i.name, i.loginEndpointAuth)
         } else {
             null
         }

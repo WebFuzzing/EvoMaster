@@ -13,6 +13,11 @@ import java.net.URLEncoder
 class EndpointCallLogin(
 
     /**
+     * Unique identifier for this auth setting definition
+     */
+    val name: String,
+
+    /**
      * The endpoint path (eg "/login") where to execute the login.
      * It assumes it is on same server of API.
      * If not, rather use externalEndpointURL
@@ -26,6 +31,8 @@ class EndpointCallLogin(
 
     /**
      * The raw payload to send, as a string
+     *
+     * TODO should this be nullable? eg, what about case of login based on GET with query params?
      */
     val payload: String,
 
@@ -45,6 +52,9 @@ class EndpointCallLogin(
 ) {
 
     init {
+        if(name.isBlank()){
+            throw IllegalArgumentException("Empty name")
+        }
         if (endpoint == null && externalEndpointURL == null) {
             throw IllegalArgumentException("Either 'endpoint' or 'externalEndpointURL' should be specified")
         }
@@ -70,7 +80,8 @@ class EndpointCallLogin(
     }
 
     companion object {
-        fun fromDto(dto: LoginEndpointDto) = EndpointCallLogin(
+        fun fromDto(name: String, dto: LoginEndpointDto) = EndpointCallLogin(
+            name = name,
             endpoint = dto.endpoint,
             externalEndpointURL = dto.externalEndpointURL,
             payload = dto.payloadRaw ?: computePayload(

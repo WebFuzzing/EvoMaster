@@ -17,12 +17,10 @@ open class HttpWsAuthenticationInfo(
 ): AuthenticationInfo(name) {
 
     init {
-        if(name.isBlank()){
-            throw IllegalArgumentException("Blank name")
-        }
+
         //FIXME "NoAuth" constant
         if(headers.isEmpty() && name != "NoAuth" && endpointCallLogin==null){
-            throw IllegalArgumentException("Empty headers")
+            throw IllegalArgumentException("Missing info")
         }
     }
 

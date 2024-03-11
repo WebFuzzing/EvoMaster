@@ -3,10 +3,14 @@ package org.evomaster.core.problem.rest
 /**
  * Created by arcuri82 on 24-Oct-19.
  */
-enum class ContentType {
+enum class ContentType(
+    val defaultValue : String
+) {
 
-    JSON,
-    X_WWW_FORM_URLENCODED;
+    JSON("application/json"),
+    X_WWW_FORM_URLENCODED("application/x-www-form-urlencoded");
+
+
 
     companion object {
 

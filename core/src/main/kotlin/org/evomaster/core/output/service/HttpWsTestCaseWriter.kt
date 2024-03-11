@@ -1,13 +1,12 @@
 package org.evomaster.core.output.service
 
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.output.CookieWriter
+import org.evomaster.core.output.auth.CookieWriter
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.output.TokenWriter
+import org.evomaster.core.output.auth.TokenWriter
 import org.evomaster.core.output.service.TestWriterUtils.Companion.formatJsonWithEscapes
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
-import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.HttpWsCallResult
@@ -15,9 +14,7 @@ import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedAction
-import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
-import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.slf4j.LoggerFactory
 import java.nio.file.Path
@@ -307,7 +304,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
     abstract fun handleVerbEndpoint(baseUrlOfSut: String, _call: HttpWsAction, lines: Lines)
 
-    protected fun sendBodyCommand(): String {
+    fun sendBodyCommand(): String {
         return when {
             format.isJavaOrKotlin() -> "body"
             format.isJavaScript() -> "send"
