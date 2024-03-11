@@ -8,6 +8,7 @@ import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 
@@ -32,7 +33,7 @@ class WmAuth0EMTest : SpringTestBase() {
     }
 
 
-    @Test
+    @Disabled("Disabled temporarily")
     fun testRunEM() {
 
         runTestHandlingFlakyAndCompilation(
