@@ -151,8 +151,9 @@ abstract class RestIndividualTestBase {
             return range.map {r-> budget.map { Arguments.of(it, r) } }.flatten().stream()
         }
 
+        @JvmStatic
         @AfterAll
-        fun clean(){
+        fun clean(): Unit {
             mockServer.close()
         }
     }

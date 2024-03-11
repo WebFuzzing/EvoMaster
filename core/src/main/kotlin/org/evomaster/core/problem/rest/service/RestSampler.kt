@@ -4,7 +4,7 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
-import org.evomaster.core.problem.httpws.auth.NoAuth
+import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.search.tracer.Traceable
 import org.slf4j.Logger
@@ -393,9 +393,9 @@ class RestSampler : AbstractRestSampler(){
 
         //init first sampling with 1-action call per endpoint, for all auths
 
-        createSingleCallOnEachEndpoint(NoAuth())
+        createSingleCallOnEachEndpoint(HttpWsNoAuth())
 
-        authentications.forEach { auth ->
+        authentications.getOfType(HttpWsAuthenticationInfo::class.java).forEach { auth ->
             createSingleCallOnEachEndpoint(auth)
         }
     }
