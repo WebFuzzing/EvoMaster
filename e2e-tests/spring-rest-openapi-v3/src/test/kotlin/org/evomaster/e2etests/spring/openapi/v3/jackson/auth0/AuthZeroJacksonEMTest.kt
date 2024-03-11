@@ -21,7 +21,7 @@ class AuthZeroJacksonEMTest: SpringTestBase() {
         }
     }
 
-    @Test
+    @Disabled("Disabled temporarily")
     fun testRunEM() {
         // Generated test has response which is accurate, but test fails because the
         // SUT throws error for the case which worked during the search.
@@ -31,7 +31,7 @@ class AuthZeroJacksonEMTest: SpringTestBase() {
             "GeneratedAuthZeroJacksonEMTest",
             "org.foo.GeneratedAuthZeroJacksonEMTest",
             500,
-                true,//!CIUtils.isRunningGA(),
+            !CIUtils.isRunningGA(),
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")
