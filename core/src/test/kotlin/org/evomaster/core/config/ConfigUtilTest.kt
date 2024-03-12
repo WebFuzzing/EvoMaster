@@ -1,5 +1,6 @@
 package org.evomaster.core.config
 
+import org.evomaster.client.java.controller.api.dto.auth.HttpVerb
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
@@ -58,5 +59,25 @@ class ConfigUtilTest{
         assertThrows(Exception::class.java){
             ConfigUtil.readFromFile(path)
         }
+    }
+
+    @Test
+    fun testAuthTemplate(){
+
+        val path = "${basePath}/auth_template.yaml"
+        val config = ConfigUtil.readFromFile(path)
+        config.validateAndNormalizeAuth()
+
+        assertEquals(2, config.auth.size)
+        for(a in config.auth){
+            assertEquals("/login", a.loginEndpointAuth.endpoint)
+            assertEquals(HttpVerb.POST, a.loginEndpointAuth.verb)
+            assertEquals( "application/json", a.loginEndpointAuth.contentType)
+            assertEquals(true, a.loginEndpointAuth.expectCookies)
+        }
+        assertTrue(config.auth.any { it.name == "foo" })
+        assertTrue(config.auth.any { it.name == "bar" })
+        assertTrue(config.auth.any { it.loginEndpointAuth.payloadUserPwd == null && it.loginEndpointAuth.payloadRaw != null})
+        assertTrue(config.auth.any { it.loginEndpointAuth.payloadUserPwd != null && it.loginEndpointAuth.payloadRaw == null})
     }
 }
