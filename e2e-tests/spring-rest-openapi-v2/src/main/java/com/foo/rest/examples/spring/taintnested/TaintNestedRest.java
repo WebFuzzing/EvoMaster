@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
 public class TaintNestedRest {
 
 
-    @PostMapping(path = "/")
+    @PostMapping
     public String post(
             @RequestBody TaintNestedDto dto
     ){
