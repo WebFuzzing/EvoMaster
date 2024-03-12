@@ -69,7 +69,7 @@ class EMConfig {
         private const val _eip_s = "^${lz}127"
         // other numbers could be anything between 0 and 255
         private const val _eip_e = "(\\.${lz}(25[0-5]|2[0-4][0-9]|1?[0-9]?[0-9])){3}$"
-        // first numbers (127.0.0.0 to 127.0.0.2) are reserved
+        // first four numbers (127.0.0.0 to 127.0.0.3) are reserved
         // this is done with a negated lookahead ?!
         private const val _eip_n = "(?!${_eip_s}(\\.${lz}0){2}\\.${lz}[012]$)"
 
@@ -2059,7 +2059,7 @@ class EMConfig {
             " When EvoMaster mocks external services, mock server instances will run on local addresses starting from" +
             " this provided address." +
             " Min value is ${defaultExternalServiceIP}." +
-            " Lower values like ${ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP} are reserved.")
+            " Lower values like ${ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP} and ${ExternalServiceSharedUtils.DEFAULT_WM_LOCAL_IP} are reserved.")
     @Experimental
     @Regex(externalServiceIPRegex)
     var externalServiceIP : String = defaultExternalServiceIP
