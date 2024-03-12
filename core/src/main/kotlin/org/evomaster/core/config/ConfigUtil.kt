@@ -36,8 +36,6 @@ object ConfigUtil {
             throw IllegalArgumentException("Failed to parse config file at: ${path.toAbsolutePath()}", e)
         }
 
-        //TODO verify entries in EMConfig
-
         return cff;
     }
 
@@ -58,7 +56,7 @@ object ConfigUtil {
             throw IllegalArgumentException("Configuration file name does not end in a supported type, ie, .yaml or .toml: $stringPath")
         }
 
-        val file = path.toFile()
+        val file = path.toFile().absoluteFile
         file.parentFile.mkdirs()
         file.createNewFile()
 
@@ -105,16 +103,22 @@ object ConfigUtil {
                     .forEach {
                         file.appendText("# [[$auth]]\n")
                         file.appendText("# name=?\n")
-                        printObjectDefinitionToml(file, auth, it)
+                        printObjectDefinition(false, file, auth, it)
                         file.appendText("\n")
                     }
         }
-        //TODO yaml after refactoring
+        if(isYaml(stringPath)){
+            file.appendText("#auth:\n")
+            val indent = "    "
+            file.appendText("#  - name: ?\n")
+            printObjectDefinition(true, file, indent, AuthenticationDto::class.java.getField("fixedHeaders"))
+            printObjectDefinition(true, file, indent, AuthenticationDto::class.java.getField("loginEndpointAuth"))
+        }
 
         file.appendText("\n")
     }
 
-    private fun printObjectDefinitionToml(file: File, prefix: String, field: Field){
+    private fun printObjectDefinition(isYaml: Boolean, file: File, prefix: String, field: Field){
 
         var isCollection = false
 
@@ -127,24 +131,45 @@ object ConfigUtil {
             field.type
         }
 
+        val sep = if(isYaml) ":" else "="
+
         if(java.lang.Boolean::class.java.isAssignableFrom(type) || java.lang.Boolean.TYPE == type){
-            file.appendText("# ${field.name}= true | false\n")
+            printIndentation(file, isYaml, prefix)
+            file.appendText("${field.name}$sep true | false\n")
         } else if(java.lang.String::class.java.isAssignableFrom(type)
             || java.lang.Number::class.java.isAssignableFrom(type)
             || type.isPrimitive){
-            file.appendText("# ${field.name}=?\n")
+            printIndentation(file, isYaml, prefix)
+            file.appendText("${field.name}$sep ?\n")
         } else if(type.isEnum){
-            file.appendText("# ${field.name}= ${type.enumConstants.joinToString(" | ")}\n")
+            printIndentation(file, isYaml, prefix)
+            file.appendText("${field.name}$sep ${type.enumConstants.joinToString(" | ")}\n")
         } else {
-            val tag = "$prefix.${field.name}"
-            if(isCollection){
-                file.appendText("# [[$tag]]\n")
+            if(!isYaml) {
+                val tag = "$prefix.${field.name}"
+                if (isCollection) {
+                    file.appendText("# [[$tag]]\n")
+                } else {
+                    file.appendText("# [$tag]\n")
+                }
+                type.fields.forEach {
+                    printObjectDefinition(false, file, tag, it)
+                }
             } else {
-                file.appendText("# [$tag]\n")
-            }
-            type.fields.forEach {
-                printObjectDefinitionToml(file, tag, it)
+                printIndentation(file, true, prefix)
+                file.appendText("${field.name}$sep\n")
+                type.fields.forEachIndexed { index, it ->
+                    val p = if(index == 0 && isCollection) "  - " else "    "
+                    printObjectDefinition(true, file, prefix+p, it)
+                }
             }
         }
+    }
+
+    private fun printIndentation(file: File, isYaml: Boolean, prefix: String){
+        if(isYaml)
+            file.appendText("#${prefix}")
+        else
+            file.appendText("# ")
     }
 }

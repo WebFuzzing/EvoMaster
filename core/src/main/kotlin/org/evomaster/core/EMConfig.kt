@@ -306,7 +306,9 @@ class EMConfig {
             important.forEach {
                 var default = it.call(this).toString()
                 val type = (it.returnType.javaType as Class<*>)
-                if (default.isBlank()) {
+                if(default == "null"){
+                    default = "null"
+                }else if (default.isBlank()) {
                     default = "\"\""
                 } else if(type.isEnum || String::class.java.isAssignableFrom(type)){
                     default = "\"$default\""
