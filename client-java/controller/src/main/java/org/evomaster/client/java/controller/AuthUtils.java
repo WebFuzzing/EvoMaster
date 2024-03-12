@@ -81,7 +81,7 @@ public class AuthUtils {
             payload = usernameField + "=" + URLEncoder.encode(username, "UTF-8");
             payload += "&";
             payload += passwordField + "="+ URLEncoder.encode(password, "UTF-8");
-            cookie.payload = payload;
+            cookie.payloadRaw = payload;
         }catch (UnsupportedEncodingException e){
             throw new RuntimeException(e); //ah, the joys of Java...
         }

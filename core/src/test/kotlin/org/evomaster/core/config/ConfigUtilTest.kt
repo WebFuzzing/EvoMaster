@@ -45,11 +45,11 @@ class ConfigUtilTest{
         val config = ConfigUtil.readFromFile(path)
 
         assertEquals(2, config.auth.size)
-        assertTrue(config.auth.any { it.cookieLogin.username == "first" })
-        assertTrue(config.auth.any { it.cookieLogin.username == "second" })
+        assertTrue(config.auth.any { it.loginEndpointAuth.payloadUserPwd.username == "first" })
+        assertTrue(config.auth.any { it.loginEndpointAuth.payloadUserPwd.username == "second" })
 
-        assertTrue(config.auth.any { it.cookieLogin.usernameField == "x" })
-        assertTrue(config.auth.any { it.cookieLogin.usernameField == null })
+        assertTrue(config.auth.any { it.loginEndpointAuth.payloadUserPwd.usernameField == "x" })
+        assertTrue(config.auth.any { it.loginEndpointAuth.payloadUserPwd.usernameField == null })
     }
 
     @Test
