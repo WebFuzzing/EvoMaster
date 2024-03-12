@@ -54,7 +54,16 @@ class HttpWsResponseParam (
     /**
      * @return HTTP status code
      */
-    fun getHttpStatusCode() : Int = status.values[status.index]
+    fun getHttpStatusCode() : Int {
+        if (hasBody()) {
+            return 200
+        }
+        return status.values[status.index]
+    }
+
+    fun hasBody() : Boolean {
+        return responseBody.getValueAsRawString().isEmpty()
+    }
 
     /**
      * @return whether the HTTP status code is part of success family
