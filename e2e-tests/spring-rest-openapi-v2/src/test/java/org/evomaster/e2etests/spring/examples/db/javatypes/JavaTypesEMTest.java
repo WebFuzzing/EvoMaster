@@ -28,9 +28,9 @@ public class JavaTypesEMTest extends JavaTypesTestBase {
 
                     assertTrue(solution.getIndividuals().size() >= 1);
 
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/db/javatypes/", null);
-                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/db/javatypes/", null);
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/db/javatypes/", null);
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/db/javatypes", null);
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/db/javatypes", null);
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/db/javatypes", null);
                 });
     }
 
@@ -53,9 +53,9 @@ public class JavaTypesEMTest extends JavaTypesTestBase {
 
             assertTrue(solution.getIndividuals().size() >= 1);
 
-            assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/db/javatypes/", null);
-            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/db/javatypes/", null);
-            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/db/javatypes/", null);
+            assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/db/javatypes", null);
+            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/db/javatypes", null);
+            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/db/javatypes", null);
         });
     }
 }
