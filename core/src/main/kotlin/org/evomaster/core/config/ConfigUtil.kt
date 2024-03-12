@@ -127,10 +127,10 @@ object ConfigUtil {
             field.type
         }
 
-        if(Boolean::class.java.isAssignableFrom(type) || java.lang.Boolean.TYPE == type){
+        if(java.lang.Boolean::class.java.isAssignableFrom(type) || java.lang.Boolean.TYPE == type){
             file.appendText("# ${field.name}= true | false\n")
-        } else if(String::class.java.isAssignableFrom(type)
-            || Number::class.java.isAssignableFrom(type)
+        } else if(java.lang.String::class.java.isAssignableFrom(type)
+            || java.lang.Number::class.java.isAssignableFrom(type)
             || type.isPrimitive){
             file.appendText("# ${field.name}=?\n")
         } else if(type.isEnum){

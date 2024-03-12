@@ -123,7 +123,7 @@ class EndpointCallLogin(
         val s = baseUrl.trim()
         if (externalEndpointURL != null) return externalEndpointURL
 
-        if (!s.startsWith("http://", true) || !s.startsWith("https://")) {
+        if (!s.startsWith("http://", true) && !s.startsWith("https://")) {
             throw IllegalArgumentException("baseUrl should use HTTP(S): $baseUrl")
         }
         Lazy.assert { endpoint != null && endpoint.startsWith("/") }
