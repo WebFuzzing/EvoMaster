@@ -2,8 +2,8 @@
 [[auth]]
 name="a"
 [auth.loginEndpointAuth]
-loginEndpointUrl="/login"
-[auth.loginEndpointAuth.token]
+endpoint="/login"
+[auth.loginEndpointAuth.payloadUserPwd]
 username="first"
 password="foo"
 usernameField="x"
@@ -13,8 +13,8 @@ passwordField="y"
 [[auth]]
 name="b"
 [auth.loginEndpointAuth]
-loginEndpointUrl="/login"
-[auth.loginEndpointAuth.token]
+endpoint="/login"
+[auth.loginEndpointAuth.payloadUserPwd]
 username="second"
 password="bar"
 #usernameField="x"
