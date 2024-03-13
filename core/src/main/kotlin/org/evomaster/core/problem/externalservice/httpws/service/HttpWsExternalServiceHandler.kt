@@ -139,9 +139,9 @@ class HttpWsExternalServiceHandler {
             return
         }
 
-        if (externalServices.containsKey(externalServiceInfo.signature())) {
-            return
-        }
+//        if (externalServices.containsKey(externalServiceInfo.signature())) {
+//            return
+//        }
 
         if (!hostnameLocalAddressMapping.containsKey(externalServiceInfo.remoteHostname)) {
             return
