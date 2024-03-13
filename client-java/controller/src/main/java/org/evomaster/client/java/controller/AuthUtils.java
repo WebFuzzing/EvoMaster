@@ -90,4 +90,31 @@ public class AuthUtils {
 
         return dto;
     }
+
+
+    public static AuthenticationDto getForJsonTokenBearer(
+            String dtoName,
+            String postEndpoint,
+            String payload,
+            String extractFromField
+    ){
+
+        LoginEndpointDto le = new LoginEndpointDto();
+
+        le.endpoint = postEndpoint;
+        le.verb = HttpVerb.POST;
+        le.contentType = "application/json";
+        le.expectCookies = false;
+        le.payloadRaw = payload;
+        le.token = new TokenHandlingDto();
+        le.token.extractFromField = extractFromField;
+        le.token.headerPrefix = "Bearer ";
+        le.token.httpHeaderName = "Authorization";
+
+        AuthenticationDto dto = new AuthenticationDto(dtoName);
+        dto.loginEndpointAuth = le;
+
+        return dto;
+
+    }
 }

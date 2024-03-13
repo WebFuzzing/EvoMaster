@@ -107,7 +107,11 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
         }
 
         val endpointCallLogin = if(i.loginEndpointAuth != null){
-            EndpointCallLogin.fromDto(i.name, i.loginEndpointAuth)
+            try {
+                EndpointCallLogin.fromDto(i.name, i.loginEndpointAuth)
+            } catch (e: Exception){
+                throw SutProblemException("Issue when parsing auth info for '${i.name}': ${e.message}")
+            }
         } else {
             null
         }
