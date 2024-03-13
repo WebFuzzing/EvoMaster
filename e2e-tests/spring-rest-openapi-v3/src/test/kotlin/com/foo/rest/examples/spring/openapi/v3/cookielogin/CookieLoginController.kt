@@ -53,6 +53,7 @@ class CookieLoginController : SpringController(CookieLoginApplication::class.jav
                             endpoint = "/api/logintoken/login"
                             verb = HttpVerb.POST
                             contentType = "application/json"
+                            expectCookies = true
                         }
                 },
             AuthenticationDto("Bar")
@@ -68,6 +69,7 @@ class CookieLoginController : SpringController(CookieLoginApplication::class.jav
                             externalEndpointURL = getFakeApplicationURL() + "/api/manager/login"
                             verb = HttpVerb.POST
                             contentType = "application/json"
+                            expectCookies = true
                         }
                 }
         )

@@ -117,7 +117,7 @@ class EndpointCallLogin(
         private fun encoded(s: String) = URLEncoder.encode(s, "UTF-8")
     }
 
-    fun expectsCookie() = token != null
+    fun expectsCookie() = token == null
 
     fun getUrl(baseUrl: String): String {
         val s = baseUrl.trim()
