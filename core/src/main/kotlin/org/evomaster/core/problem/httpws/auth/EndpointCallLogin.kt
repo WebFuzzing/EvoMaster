@@ -90,7 +90,7 @@ class EndpointCallLogin(
             ),
             verb = HttpVerb.valueOf(dto.verb.toString()),
             contentType = ContentType.from(dto.contentType),
-            token = if (dto.expectCookies) null else computeTokenHandling(dto.token)
+            token = if (dto.expectCookies!=null && dto.expectCookies) null else computeTokenHandling(dto.token)
         )
 
         private fun computeTokenHandling(dto: TokenHandlingDto) = TokenHandling(
