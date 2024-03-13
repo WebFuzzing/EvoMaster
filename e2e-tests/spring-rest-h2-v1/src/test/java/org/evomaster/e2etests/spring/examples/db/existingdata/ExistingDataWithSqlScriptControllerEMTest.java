@@ -37,9 +37,9 @@ public class ExistingDataWithSqlScriptControllerEMTest extends SpringTestBase {
                     assertTrue(solution.getIndividuals().size() >= 1);
 
                     //trivial
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/db/existingdata/", null);
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/db/existingdata", null);
                     //this should only happen if we can generate data with FK pointing to existing PK
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/db/existingdata/", null);
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/db/existingdata", null);
                 });
     }
 

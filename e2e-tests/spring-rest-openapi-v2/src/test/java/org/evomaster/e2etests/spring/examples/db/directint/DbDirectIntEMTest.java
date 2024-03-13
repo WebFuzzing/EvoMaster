@@ -55,7 +55,7 @@ public class DbDirectIntEMTest extends DbDirectIntTestBase {
                     assertTrue(solution.getIndividuals().size() >= 1);
 
                     assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/db/directint/{x}/{y}", null);
-                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/db/directint/", null);
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/db/directint", null);
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/db/directint/{x}/{y}", null);
 
                     assertTextInTests(outputFolder, outputTestName, "controller.resetDatabase(listOf(\"db_direct_int_entity\"))");
