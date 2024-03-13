@@ -299,7 +299,7 @@ class EMConfig {
     }
 
     private fun handleCreateConfigPathIfMissing(properties: List<KMutableProperty<*>>) {
-        if (createConfigPathIfMissing && !Path(configPath).exists()) {
+        if (createConfigPathIfMissing && !Path(configPath).exists() && configPath == defaultConfigPath) {
 
             val cff = ConfigsFromFile()
             val important = properties.filter { it.annotations.any { a -> a is Important } }
@@ -325,9 +325,12 @@ class EMConfig {
     private fun loadConfigFile(): ConfigsFromFile?{
 
         //if specifying one manually, file MUST exist. otherwise might be missing
-
-        if(configPath == defaultConfigPath && !Path(configPath).exists()) {
-            return null
+        if(!Path(configPath).exists()) {
+            if (configPath == defaultConfigPath) {
+                return null
+            } else {
+                throw ConfigProblemException("There is no configuration file at custom path: $configPath")
+            }
         }
 
         LoggingUtil.uniqueUserInfo("Loading configuration file from: ${Path(configPath).toAbsolutePath()}")
@@ -858,10 +861,20 @@ class EMConfig {
     @Regex("(\\s*)((?=(\\S+))(\\d+h)?(\\d+m)?(\\d+s)?)(\\s*)")
     var maxTime = defaultMaxTime
 
-    @Important(2.0)
+    @Important(1.1)
     @Cfg("The path directory of where the generated test classes should be saved to")
     @Folder
     var outputFolder = "src/em"
+
+
+    val defaultConfigPath = "em.yaml"
+
+    @Important(1.2)
+    @Cfg("File path for file with configuration settings. Supported formats are YAML and TOML." +
+            " When EvoMaster starts, it will read such file and import all configurations from it.")
+    @Regex(".*\\.(yml|yaml|toml)")
+    @FilePath
+    var configPath: String = defaultConfigPath
 
 
     @Important(2.0)
@@ -2180,16 +2193,10 @@ class EMConfig {
     @Cfg("Apply a security testing phase after functional test cases have been generated.")
     var security = false
 
-    val defaultConfigPath = "em.yaml"
 
-    @Experimental
-    @Cfg("File path for file with configuration settings")
-    @Regex(".*\\.(yml|yaml|toml)")
-    @FilePath
-    var configPath: String = defaultConfigPath
-
-    @Experimental
-    @Cfg("If there is no configuration file, create a default template at given configPath location")
+    @Cfg("If there is no configuration file, create a default template at given configPath location." +
+            " However this is done only on the 'default' location. If you change 'configPath', no new file will be" +
+            " created.")
     var createConfigPathIfMissing: Boolean = false
 
     fun timeLimitInSeconds(): Int {
