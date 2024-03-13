@@ -151,8 +151,7 @@ class RestPath(path: String) {
             return false
         }
         return (elements.indices.none { this.elements[it] != other.elements[it] })
-               //FIXME need to put this back... but would need to fix some E2E first, will be done in another branch
-               // && this.endsWithSlash == other.endsWithSlash
+                && this.endsWithSlash == other.endsWithSlash
     }
 
     /**
