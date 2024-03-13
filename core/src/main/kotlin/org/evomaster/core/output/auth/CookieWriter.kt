@@ -75,7 +75,7 @@ object CookieWriter {
         if (k.contentType == ContentType.X_WWW_FORM_URLENCODED) {
             if (testCaseWriter is HttpWsTestCaseWriter) { //FIXME
                 val send = testCaseWriter.sendBodyCommand()
-                lines.add(".$send(${k.payload})")
+                lines.add(".$send(\"${k.payload}\")")
             }
         } else if (k.contentType == ContentType.JSON) {
             if (testCaseWriter is HttpWsTestCaseWriter) { //FIXME
