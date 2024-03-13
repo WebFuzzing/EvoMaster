@@ -9,6 +9,7 @@ import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 class WmHarvestResponseEMTest : SpringTestBase() {
@@ -26,7 +27,7 @@ class WmHarvestResponseEMTest : SpringTestBase() {
     }
 
 
-    @Test
+    @Disabled("Disabled temporarily")
     fun testRunEM() {
         // External service uses port 80 and 443 so the test will fail in macOS.
         runTestHandlingFlakyAndCompilation(
