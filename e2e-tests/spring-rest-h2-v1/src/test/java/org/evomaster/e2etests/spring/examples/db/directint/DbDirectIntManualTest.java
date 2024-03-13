@@ -21,7 +21,7 @@ public class DbDirectIntManualTest extends DbDirectIntTestBase {
     public void testNonEmpty(){
 
         given().accept(ContentType.ANY)
-                .post(baseUrlOfSut + "/api/db/directint/")
+                .post(baseUrlOfSut + "/api/db/directint")
                 .then()
                 .statusCode(200);
 
