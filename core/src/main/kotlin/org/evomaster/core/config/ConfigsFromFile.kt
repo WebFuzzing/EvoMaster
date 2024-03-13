@@ -3,6 +3,7 @@ package org.evomaster.core.config
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
 import org.evomaster.client.java.controller.api.dto.auth.LoginEndpointDto
 import java.lang.reflect.Field
+import java.lang.reflect.Modifier
 
 class ConfigsFromFile {
 
@@ -47,6 +48,9 @@ class ConfigsFromFile {
     private fun applyMissingFields(template: Any, base: Any, klass: Class<*>){
 
         for(f in klass.declaredFields) {
+            if(Modifier.isStatic(f.modifiers) || Modifier.isTransient(f.modifiers)){
+                continue
+            }
             val t = f.get(template) ?: continue
             val b = f.get(base)
 

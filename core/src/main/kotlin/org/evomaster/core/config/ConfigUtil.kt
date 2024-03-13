@@ -115,6 +115,26 @@ object ConfigUtil {
             printObjectDefinition(true, file, indent, AuthenticationDto::class.java.getField("loginEndpointAuth"))
         }
 
+        file.appendText("\n\n")
+        file.appendText("### Authentication Template.\n")
+        file.appendText("### When defining auth info for several test users, lot of info might be replicated, e.g.:\n")
+        file.appendText("###   endpoint: /login\n")
+        file.appendText("###   verb: POST\n")
+        file.appendText("###   contentType: application/json\n")
+        file.appendText("###   expectCookies: true\n")
+        file.appendText("### To avoid replicating same setting over and over again, common settings can be put in a template.\n")
+        file.appendText("### When this configuration file is loaded, all fields from the template are applied to all\n")
+        file.appendText("### fields in the auth settings, unless those are not 'null' (i.e., they will not be overridden).\n")
+        file.appendText("### Note that, as names must be unique, 'name' field should not be specified in the template.\n")
+        file.appendText("\n\n")
+
+        if(isYaml(stringPath)){
+            file.appendText("#authTemplate:\n")
+            val indent = "    "
+            printObjectDefinition(true, file, indent, AuthenticationDto::class.java.getField("fixedHeaders"))
+            printObjectDefinition(true, file, indent, AuthenticationDto::class.java.getField("loginEndpointAuth"))
+        }
+
         file.appendText("\n")
     }
 
