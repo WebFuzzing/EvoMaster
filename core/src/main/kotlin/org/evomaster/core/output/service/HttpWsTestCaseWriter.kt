@@ -133,27 +133,28 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             else -> throw IllegalArgumentException("Not supported format: $format")
         }
 
+        //headers in specified auth info
         call.auth.headers.forEach {
             lines.add(".$set(\"${it.name}\", \"${it.value}\") // ${call.auth.name}")
         }
 
         val elc = call.auth.endpointCallLogin
 
+        //headers from schema
+        call.parameters.filterIsInstance<HeaderParam>()
+            .filter { !prechosenAuthHeaders.contains(it.name) }
+            .filter { elc?.token == null || !(it.name.equals(elc.token.httpHeaderName, true)) }
+            .filter { it.isInUse() }
+            .forEach {
+                val x = it.getRawValue()
+                lines.add(".$set(\"${it.name}\", \"${GeneUtils.applyEscapes(x, GeneUtils.EscapeMode.BODY, format)}\")")
+            }
+
         if (elc != null) {
 
             if (!elc.expectsCookie()) {
                 val tokenHeader = elc.token!!.httpHeaderName
-
-                call.parameters.filterIsInstance<HeaderParam>()
-                        .filter { !prechosenAuthHeaders.contains(it.name) }
-                        .filter { !(it.name.equals(tokenHeader, true)) }
-                        .filter { it.isInUse() }
-                        .forEach {
-                            val x = it.getRawValue()
-                            lines.add(".$set(\"${it.name}\", \"${GeneUtils.applyEscapes(x, GeneUtils.EscapeMode.BODY, format)}\")")
-                        }
                 lines.add(".$set(\"$tokenHeader\", ${TokenWriter.tokenName(elc)}) // ${call.auth.name}")
-
             } else {
                 when {
                     format.isJavaOrKotlin() -> lines.add(".cookies(${CookieWriter.cookiesName(elc)})")
