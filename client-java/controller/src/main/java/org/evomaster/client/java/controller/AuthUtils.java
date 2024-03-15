@@ -92,11 +92,31 @@ public class AuthUtils {
     }
 
 
+    public static AuthenticationDto getForJWT(
+            String dtoName,
+            String postEndpoint,
+            String payload,
+            String extractFromField){
+
+        return  getForJsonToken(dtoName, postEndpoint, payload, extractFromField, "JWT ");
+    }
+
+
     public static AuthenticationDto getForJsonTokenBearer(
             String dtoName,
             String postEndpoint,
             String payload,
-            String extractFromField
+            String extractFromField){
+
+        return  getForJsonToken(dtoName, postEndpoint, payload, extractFromField, "Bearer ");
+    }
+
+    public static AuthenticationDto getForJsonToken(
+            String dtoName,
+            String postEndpoint,
+            String payload,
+            String extractFromField,
+            String headerPrefix
     ){
 
         LoginEndpointDto le = new LoginEndpointDto();
@@ -108,13 +128,12 @@ public class AuthUtils {
         le.payloadRaw = payload;
         le.token = new TokenHandlingDto();
         le.token.extractFromField = extractFromField;
-        le.token.headerPrefix = "Bearer ";
+        le.token.headerPrefix = headerPrefix;
         le.token.httpHeaderName = "Authorization";
 
         AuthenticationDto dto = new AuthenticationDto(dtoName);
         dto.loginEndpointAuth = le;
 
         return dto;
-
     }
 }
