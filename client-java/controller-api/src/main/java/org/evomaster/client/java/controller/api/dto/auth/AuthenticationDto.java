@@ -16,21 +16,21 @@ public class AuthenticationDto {
     public String name;
 
     /**
-     * The headers needed for authentication
+     * The headers needed for authentication.
+     * This is used to represent cases in which auth info is static/fixed,
+     * eg when passing an id or username/password through a HTTP header (and not
+     * using for example a dynamically generated token from a login endpoint first).
      */
-    public List<HeaderDto> headers = new ArrayList<>();
+    public List<HeaderDto> fixedHeaders = new ArrayList<>();
+
 
     /**
-     * If the login is based on cookies, need to provide info on
-     * how to get such a cookie
+     * Used to represent the case in which a login endpoint is used to obtain the auth credentials.
+     * These can be cookies, or a token extracted from the login endpoint's response.
+     * This token can then be added to an HTTP header in the following requests.
      */
-    public CookieLoginDto cookieLogin;
+    public LoginEndpointDto loginEndpointAuth;
 
-    /**
-     * If the login is based on tokens, retrieved via JSON messages,
-     * specify how to do it
-     */
-    public JsonTokenPostLoginDto jsonTokenPostLogin;
 
     /**
      * if the auth is processed based on RPC endpoints,
