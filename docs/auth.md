@@ -1,4 +1,4 @@
-### Security: Authentication
+# Security: Authentication
 
 ### WARNING: this is work in progress documentation for current SNAPSHOT version
 
@@ -10,8 +10,11 @@ How to set them up will depen on whether you are doing _white_ or _black_ box te
 __NOTE:__ If the type of authentication you need is not currently supported, please open a new feature request on [our issue page](https://github.com/EMResearch/EvoMaster/issues).     
 
 
+The following documentation is divided on whether the tested API is a REST/GraphQL one, or RPC.
 
-## Black-Box Testing
+## REST/GraphQL APIs
+
+### Black-Box Testing
 
 Since version `1.3.0`, it is possible to specify custom HTTP headers (e.g., to pass auth tokens), using the options from `--header0` to `--header2` (in case more than one HTTP header is needed).
 
@@ -91,7 +94,7 @@ In such case, you could directly look at the documentation in the [Authenticatio
 
 
 
-## White-Box Testing
+### White-Box Testing
 
 The same type of auth configuration done for black-box testing does apply here as well for white-box testing.
 However, in white-box testing, there is a further option to configure auth info.
@@ -143,6 +146,8 @@ Note: at the moment _EvoMaster_ is not able to register new users on the fly wit
 and use such info to authenticate its following requests. 
 
 
+## RPC APIs
 
+<mark>Documentation under construction</mark>
 
 
