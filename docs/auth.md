@@ -5,7 +5,7 @@
 The API/SUT might require authenticated requests (e.g., when _Spring Security_ is used).
 And there are several different mechanism to do authentication.
 In _EvoMaster_, few mechanisms are supported, as discussed next.
-How to set them up will depen on whether you are doing _white_ or _black_ box testing. 
+How to set them up will depend on whether you are doing _white_ or _black_ box testing. 
 
 __NOTE:__ If the type of authentication you need is not currently supported, please open a new feature request on [our issue page](https://github.com/EMResearch/EvoMaster/issues).     
 
