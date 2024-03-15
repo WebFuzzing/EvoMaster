@@ -60,14 +60,15 @@ public class AuthenticatedSwaggerAccessManualTest extends SpringTestBase {
 
             List<AuthenticationHeader> headers = new ArrayList<>();
 
-            for(int j = 0; j < currentDto.headers.size(); j++)
+
+            for(int j = 0; j < currentDto.fixedHeaders.size(); j++)
             {
-                headers.add(new AuthenticationHeader(currentDto.headers.get(j).name.trim(),
-                        currentDto.headers.get(j).value.trim()));
+                headers.add(new AuthenticationHeader(currentDto.fixedHeaders.get(j).name.trim(),
+                        currentDto.fixedHeaders.get(j).value.trim()));
             }
 
             HttpWsAuthenticationInfo currentInfo = new HttpWsAuthenticationInfo(currentDto.name, headers,
-                    null, null);
+                    null);
 
             OpenAPI swagger = OpenApiAccess.INSTANCE.getOpenAPIFromURL(baseUrlOfSut + "/v2/api-docs", currentInfo);
 
@@ -99,13 +100,13 @@ public class AuthenticatedSwaggerAccessManualTest extends SpringTestBase {
 
             List<AuthenticationHeader> headers = new ArrayList<>();
 
-            for (int j = 0; j < currentDto.headers.size(); j++) {
-                headers.add(new AuthenticationHeader(currentDto.headers.get(j).name.trim(),
-                        currentDto.headers.get(j).value.trim()));
+            for (int j = 0; j < currentDto.fixedHeaders.size(); j++) {
+                headers.add(new AuthenticationHeader(currentDto.fixedHeaders.get(j).name.trim(),
+                        currentDto.fixedHeaders.get(j).value.trim()));
             }
 
             unsuccessfulInfo = new HttpWsAuthenticationInfo(currentDto.name, headers,
-                    null, null);
+                    null);
         }
 
         HttpWsAuthenticationInfo finalUnsuccessfulInfo = unsuccessfulInfo;

@@ -170,7 +170,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         // headers for the authenticationDto
         val headers: MutableList<AuthenticationHeader> = mutableListOf()
 
-        authDto.headers.forEach loop@{ h ->
+        authDto.fixedHeaders.forEach loop@{ h ->
             val name = h.name?.trim()
             val value = h.value?.trim()
             if (name == null || value == null) {
@@ -180,7 +180,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
             headers.add(AuthenticationHeader(name, value))
         }
 
-        return HttpWsAuthenticationInfo(authDto.name, headers, null, null)
+        return HttpWsAuthenticationInfo(authDto.name, headers, null)
 
     }
 
