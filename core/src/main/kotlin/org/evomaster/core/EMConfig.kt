@@ -2197,7 +2197,7 @@ class EMConfig {
     @Cfg("If there is no configuration file, create a default template at given configPath location." +
             " However this is done only on the 'default' location. If you change 'configPath', no new file will be" +
             " created.")
-    var createConfigPathIfMissing: Boolean = false
+    var createConfigPathIfMissing: Boolean = true
 
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
