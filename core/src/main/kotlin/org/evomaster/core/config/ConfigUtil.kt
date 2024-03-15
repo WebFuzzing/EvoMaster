@@ -36,8 +36,6 @@ object ConfigUtil {
             throw IllegalArgumentException("Failed to parse config file at: ${path.toAbsolutePath()}", e)
         }
 
-        //TODO verify entries in EMConfig
-
         return cff;
     }
 
@@ -58,7 +56,7 @@ object ConfigUtil {
             throw IllegalArgumentException("Configuration file name does not end in a supported type, ie, .yaml or .toml: $stringPath")
         }
 
-        val file = path.toFile()
+        val file = path.toFile().absoluteFile
         file.parentFile.mkdirs()
         file.createNewFile()
 
@@ -105,16 +103,42 @@ object ConfigUtil {
                     .forEach {
                         file.appendText("# [[$auth]]\n")
                         file.appendText("# name=?\n")
-                        printObjectDefinitionToml(file, auth, it)
+                        printObjectDefinition(false, file, auth, it)
                         file.appendText("\n")
                     }
         }
-        //TODO yaml after refactoring
+        if(isYaml(stringPath)){
+            file.appendText("#auth:\n")
+            val indent = "    "
+            file.appendText("#  - name: ?\n")
+            printObjectDefinition(true, file, indent, AuthenticationDto::class.java.getField("fixedHeaders"))
+            printObjectDefinition(true, file, indent, AuthenticationDto::class.java.getField("loginEndpointAuth"))
+        }
+
+        file.appendText("\n\n")
+        file.appendText("### Authentication Template.\n")
+        file.appendText("### When defining auth info for several test users, lot of info might be replicated, e.g.:\n")
+        file.appendText("###   endpoint: /login\n")
+        file.appendText("###   verb: POST\n")
+        file.appendText("###   contentType: application/json\n")
+        file.appendText("###   expectCookies: true\n")
+        file.appendText("### To avoid replicating same setting over and over again, common settings can be put in a template.\n")
+        file.appendText("### When this configuration file is loaded, all fields from the template are applied to all\n")
+        file.appendText("### fields in the auth settings, unless those are not 'null' (i.e., they will not be overridden).\n")
+        file.appendText("### Note that, as names must be unique, 'name' field should not be specified in the template.\n")
+        file.appendText("\n\n")
+
+        if(isYaml(stringPath)){
+            file.appendText("#authTemplate:\n")
+            val indent = "    "
+            printObjectDefinition(true, file, indent, AuthenticationDto::class.java.getField("fixedHeaders"))
+            printObjectDefinition(true, file, indent, AuthenticationDto::class.java.getField("loginEndpointAuth"))
+        }
 
         file.appendText("\n")
     }
 
-    private fun printObjectDefinitionToml(file: File, prefix: String, field: Field){
+    private fun printObjectDefinition(isYaml: Boolean, file: File, prefix: String, field: Field){
 
         var isCollection = false
 
@@ -127,24 +151,45 @@ object ConfigUtil {
             field.type
         }
 
-        if(Boolean::class.java.isAssignableFrom(type) || java.lang.Boolean.TYPE == type){
-            file.appendText("# ${field.name}= true | false\n")
-        } else if(String::class.java.isAssignableFrom(type)
-            || Number::class.java.isAssignableFrom(type)
+        val sep = if(isYaml) ":" else "="
+
+        if(java.lang.Boolean::class.java.isAssignableFrom(type) || java.lang.Boolean.TYPE == type){
+            printIndentation(file, isYaml, prefix)
+            file.appendText("${field.name}$sep true | false\n")
+        } else if(java.lang.String::class.java.isAssignableFrom(type)
+            || java.lang.Number::class.java.isAssignableFrom(type)
             || type.isPrimitive){
-            file.appendText("# ${field.name}=?\n")
+            printIndentation(file, isYaml, prefix)
+            file.appendText("${field.name}$sep ?\n")
         } else if(type.isEnum){
-            file.appendText("# ${field.name}= ${type.enumConstants.joinToString(" | ")}\n")
+            printIndentation(file, isYaml, prefix)
+            file.appendText("${field.name}$sep ${type.enumConstants.joinToString(" | ")}\n")
         } else {
-            val tag = "$prefix.${field.name}"
-            if(isCollection){
-                file.appendText("# [[$tag]]\n")
+            if(!isYaml) {
+                val tag = "$prefix.${field.name}"
+                if (isCollection) {
+                    file.appendText("# [[$tag]]\n")
+                } else {
+                    file.appendText("# [$tag]\n")
+                }
+                type.fields.forEach {
+                    printObjectDefinition(false, file, tag, it)
+                }
             } else {
-                file.appendText("# [$tag]\n")
-            }
-            type.fields.forEach {
-                printObjectDefinitionToml(file, tag, it)
+                printIndentation(file, true, prefix)
+                file.appendText("${field.name}$sep\n")
+                type.fields.forEachIndexed { index, it ->
+                    val p = if(index == 0 && isCollection) "  - " else "    "
+                    printObjectDefinition(true, file, prefix+p, it)
+                }
             }
         }
+    }
+
+    private fun printIndentation(file: File, isYaml: Boolean, prefix: String){
+        if(isYaml)
+            file.appendText("#${prefix}")
+        else
+            file.appendText("# ")
     }
 }
