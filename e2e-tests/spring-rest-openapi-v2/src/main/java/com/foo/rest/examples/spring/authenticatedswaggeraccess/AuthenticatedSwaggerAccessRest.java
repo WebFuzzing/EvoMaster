@@ -18,16 +18,16 @@ public class AuthenticatedSwaggerAccessRest {
 
 
     @GetMapping(value = "/endpoint1")
-    public ResponseEntity getResourceEnd1(@PathVariable("x") String x) {
+    public ResponseEntity getResourceEnd1() {
 
-        return new ResponseEntity<>(x, HttpStatus.OK);
+        return new ResponseEntity<>(HttpStatus.OK);
 
     }
 
     @GetMapping(value = "/endpoint2")
-    public ResponseEntity getResourceEnd2(@PathVariable("x") String x) {
+    public ResponseEntity getResourceEnd2() {
 
-        return new ResponseEntity<>(x + "endpoint2", HttpStatus.OK);
+        return new ResponseEntity<>(HttpStatus.OK);
 
     }
 }

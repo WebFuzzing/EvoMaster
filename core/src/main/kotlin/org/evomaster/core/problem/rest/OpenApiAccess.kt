@@ -19,7 +19,7 @@ import javax.ws.rs.core.Response
  */
 object OpenApiAccess {
 
-    val unauthorizedSchemaAccess : String = "UNAUTHORIZED_SCHEMA_ACCESS"
+    const val UNAUTHORIZED_SCHEMA_ACCESS : String = "UNAUTHORIZED_SCHEMA_ACCESS"
 
     fun getOpenApi(schemaText: String): OpenAPI {
 
@@ -50,7 +50,7 @@ object OpenApiAccess {
        }
 
         // if the swagger could not be retrieved because of unauthorized access, return an empty OpanAPI
-        if (data == unauthorizedSchemaAccess) {
+        if (data == UNAUTHORIZED_SCHEMA_ACCESS) {
             return OpenAPI()
         }
 
@@ -62,9 +62,9 @@ object OpenApiAccess {
 
         val body = response.readEntity(String::class.java)
 
-        // this is returned if the swagger could not be accessed due to unauthorized request.
-        if (response.toString().contains("Unauthorized") && response.toString().contains("401")) {
-            return unauthorizedSchemaAccess
+        // check for status code 401 or 403
+        if (response.status == 401 || response.status == 403) {
+            return UNAUTHORIZED_SCHEMA_ACCESS
         }
         // Otherwise, just throw an exception
         if (response.statusInfo.family != Response.Status.Family.SUCCESSFUL) {
@@ -114,19 +114,21 @@ object OpenApiAccess {
                                               .target(openApiUrl)
                                               .request(MediaType.APPLICATION_JSON_TYPE)
 
-                for(head in authentication.headers) {
-                    currentReq = currentReq.header(head.name, head.value)
+
+                // if there are authentication headers
+                if (authentication.headers.isNotEmpty()) {
+                    for (head in authentication.headers) {
+                        currentReq = currentReq.header(head.name, head.value)
+                    }
                 }
+
+                // add authentication token from endpointCallLogin
+
 
                 //currentReq = currentReq.get()
 
                 return currentReq.get()
 
-                //return ClientBuilder.newClient()
-                //        .target(openApiUrl)
-                //        .request(MediaType.APPLICATION_JSON_TYPE)
-                //        .header(authentication.headers[0].name, authentication.headers[0].value)
-                //        .get()
             } catch (e: Exception) {
 
                 if (e.cause is ConnectException) {

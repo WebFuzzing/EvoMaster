@@ -15,7 +15,7 @@ public class UnauthenticatedSwaggerApplicationWebSecurityConfig extends WebSecur
         http.authorizeRequests()
                 .antMatchers("/v2/api-docs").permitAll()
                 .antMatchers(HttpMethod.GET, "/endpoint1").permitAll()
-                .antMatchers(HttpMethod.PUT, "/endpoint2").hasAnyRole("AUTH_USER")
+                .antMatchers(HttpMethod.GET, "/endpoint2").hasAnyRole("AUTH_USER")
                 .anyRequest().authenticated()
                 .and()
                 .httpBasic()

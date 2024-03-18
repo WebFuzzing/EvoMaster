@@ -22,7 +22,7 @@ public class AuthenticatedSwaggerApplicationWebSecurityConfig extends WebSecurit
                 //  .antMatchers("/v2/api-docs").permitAll()
                 .antMatchers("/v2/api-docs").hasRole("AUTH_USER")
                 .antMatchers(HttpMethod.GET, "/endpoint1").permitAll()
-                .antMatchers(HttpMethod.PUT, "/endpoint2").hasAnyRole("AUTH_USER")
+                .antMatchers(HttpMethod.GET, "/endpoint2").hasAnyRole("AUTH_USER")
                 .anyRequest().authenticated()
                 .and()
                 .httpBasic()

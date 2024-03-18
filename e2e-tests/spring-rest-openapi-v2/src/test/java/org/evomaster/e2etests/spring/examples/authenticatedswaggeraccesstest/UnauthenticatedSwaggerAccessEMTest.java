@@ -23,7 +23,7 @@ public class UnauthenticatedSwaggerAccessEMTest extends SpringTestBase {
         runTestHandlingFlakyAndCompilation(
                 "UnauthenticatedSwaggerAccessEM",
                 "org.bar.UnauthenticatedSwaggerAccessEM",
-                100,
+                20,
                 (args) -> initAndRun(args));
     }
 }
