@@ -488,7 +488,6 @@ class SqlActionGeneBuilder {
     }
 
     private fun handleBigIntColumn(column: Column): Gene {
-        // check here why its not using the bounds
         return if (column.enumValuesAsStrings != null) {
             checkNotEmpty(column.enumValuesAsStrings)
             EnumGene(column.name, column.enumValuesAsStrings.map { it.toLong() })
