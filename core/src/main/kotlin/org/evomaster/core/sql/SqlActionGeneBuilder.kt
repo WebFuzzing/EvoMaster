@@ -488,6 +488,7 @@ class SqlActionGeneBuilder {
     }
 
     private fun handleBigIntColumn(column: Column): Gene {
+        // check here why its not using the bounds
         return if (column.enumValuesAsStrings != null) {
             checkNotEmpty(column.enumValuesAsStrings)
             EnumGene(column.name, column.enumValuesAsStrings.map { it.toLong() })
@@ -499,7 +500,10 @@ class SqlActionGeneBuilder {
                 Man: TODO need to check whether to update this with BigIntegerGene
              */
             val min: Long? = if (column.isUnsigned) 0 else null
-            LongGene(column.name, min = min)
+            val max: Long = Long.MAX_VALUE
+            LongGene(column.name,
+                min = column.lowerBound ?: min,
+                max = column.upperBound ?: max)
         }
     }
 

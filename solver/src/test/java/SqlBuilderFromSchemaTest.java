@@ -147,7 +147,8 @@ public class SqlBuilderFromSchemaTest {
     @Test
     public void bigIntToLongGene() throws Exception {
 
-        String schemaQuery = "CREATE TABLE products(price bigint not null);\n";
+        String schemaQuery = "CREATE TABLE products(price bigint not null);\n" +
+                "ALTER TABLE products add CHECK (price>100 AND price<9999);";
 
         List<SqlAction> newActions = getSqlActionsFromSchema(schemaQuery);
 
@@ -156,6 +157,8 @@ public class SqlBuilderFromSchemaTest {
         assertEquals(1, genes.size());
 
         assertTrue(genes.get(0) instanceof LongGene);
+        assertEquals(101, ((LongGene) genes.get(0)).getMin());
+        assertEquals(9998, ((LongGene) genes.get(0)).getMaximum());
     }
 
     /**
@@ -177,7 +180,7 @@ public class SqlBuilderFromSchemaTest {
 
     /**
      * When setting lower and upper bounds in a Long Column,
-     * Then they are not considered as min/max in the Gene
+     * Then they are considered as min/max in the gene
      */
     @Test
     public void setMinMaxInLongGene() throws Exception {
@@ -193,30 +196,28 @@ public class SqlBuilderFromSchemaTest {
         assertEquals(1, genes.size());
 
         assertTrue(genes.get(0) instanceof LongGene);
-        assertNull(((LongGene) genes.get(0)).getMin());
-        assertEquals(9223372036854775807L, ((LongGene) genes.get(0)).getMaximum());
+        assertEquals(101, ((LongGene) genes.get(0)).getMin());
+        assertEquals(9998, ((LongGene) genes.get(0)).getMaximum());
     }
 
     /**
      * When setting lower and upper bounds in a Double Column,
-     * Then they are not considered as min/max in the Gene
+     * then the parser in create insert SQL Builder Action fails
      */
     @Test
-    public void setMinMaxInDoubleGene() throws Exception {
+    public void setMinMaxInDoubleGene() {
 
         String schemaQuery = "CREATE TABLE products(price double not null);\n" +
                 "ALTER TABLE products add CHECK (price > 100);" +
                 "ALTER TABLE products add CHECK (price < 9999);";
 
-        List<SqlAction> newActions = getSqlActionsFromSchema(schemaQuery);
-
-        assertEquals(1, newActions.size());
-        List<Gene> genes = newActions.get(0).seeTopGenes();
-        assertEquals(1, genes.size());
-
-        assertTrue(genes.get(0) instanceof DoubleGene);
-        assertNull(((DoubleGene) genes.get(0)).getMin());
-        assertEquals(1.7976931348623157E308, ((DoubleGene) genes.get(0)).getMaximum());
+        try {
+            getSqlActionsFromSchema(schemaQuery);
+        } catch (Exception e) {
+            // An exception is thrown when parsing the check with a lower or upper bound
+            return;
+        }
+        fail();
     }
 
     @AfterEach

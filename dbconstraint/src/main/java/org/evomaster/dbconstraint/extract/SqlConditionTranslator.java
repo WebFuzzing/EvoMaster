@@ -96,8 +96,7 @@ public class SqlConditionTranslator implements SqlConditionVisitor<TableConstrai
             return getTableConstraint(e, tableName, columnName, value);
         } else if (rightLiteral instanceof SqlBigDecimalLiteralValue) {
             // TODO: Handle this as a float
-            long value = ((SqlBigDecimalLiteralValue) rightLiteral).getBigDecimal().longValue();
-            return getTableConstraint(e, tableName, columnName, value);
+            throw new UnsupportedOperationException("Unsupported Big Decimal literal " + rightLiteral);
         } else if (rightLiteral instanceof SqlStringLiteralValue) {
             SqlStringLiteralValue stringLiteralValue = (SqlStringLiteralValue) rightLiteral;
             if (e.getSqlComparisonOperator().equals(EQUALS_TO)) {
