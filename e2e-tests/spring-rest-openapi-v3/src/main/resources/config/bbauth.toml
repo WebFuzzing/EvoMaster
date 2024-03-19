@@ -1,12 +1,12 @@
 [[auth]]
 name="bbauth"
-[[auth.headers]]
+[[auth.fixedHeaders]]
 name="X-FOO"
 value="foo"
-[[auth.headers]]
+[[auth.fixedHeaders]]
 name="X-BAR"
 value="42"
-[[auth.headers]]
+[[auth.fixedHeaders]]
 name="Authorization"
 value="token"
 
