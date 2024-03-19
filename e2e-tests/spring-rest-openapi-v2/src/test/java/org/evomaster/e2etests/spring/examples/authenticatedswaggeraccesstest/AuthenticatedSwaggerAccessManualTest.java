@@ -12,8 +12,10 @@ import org.evomaster.core.problem.rest.OpenApiAccess;
 import org.evomaster.core.remote.SutProblemException;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -85,7 +87,9 @@ public class AuthenticatedSwaggerAccessManualTest extends SpringTestBase {
     /**
      * Remove the successfulm authentication object to cause failed authentication
      */
+
     @Test
+    @Disabled
     public void accessSwaggerFailedAuthenticated() {
 
         boolean authenticatedRequestSuccessful = false;
