@@ -86,6 +86,13 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-e2e-tests-utils</artifactId>
+            <type>test-jar</type>
+            <version>${project.version}</version>
+        </dependency>
+
     </dependencies>
 
 
