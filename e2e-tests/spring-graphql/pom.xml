@@ -15,6 +15,12 @@
 
     <dependencies>
 
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-yaml</artifactId>
+        </dependency>
+
+
         <!--
             Issue with Jersey (coming from client-java) using old version
         -->
