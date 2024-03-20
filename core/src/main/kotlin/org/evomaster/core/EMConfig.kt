@@ -81,7 +81,12 @@ class EMConfig {
                                     // actual singleton instance created with Guice
 
             val parser = getOptionParser()
-            val options = parser.parse(*args)
+
+            val options = try{
+                parser.parse(*args)
+            }catch (e: joptsimple.OptionException){
+                throw ConfigProblemException("Wrong input configuration parameters. ${e.message}")
+            }
 
             if (!options.has("help")) {
                 //actual validation is done here when updating
@@ -299,14 +304,16 @@ class EMConfig {
     }
 
     private fun handleCreateConfigPathIfMissing(properties: List<KMutableProperty<*>>) {
-        if (createConfigPathIfMissing && !Path(configPath).exists()) {
+        if (createConfigPathIfMissing && !Path(configPath).exists() && configPath == defaultConfigPath) {
 
             val cff = ConfigsFromFile()
             val important = properties.filter { it.annotations.any { a -> a is Important } }
             important.forEach {
                 var default = it.call(this).toString()
                 val type = (it.returnType.javaType as Class<*>)
-                if (default.isBlank()) {
+                if(default == "null"){
+                    default = "null"
+                }else if (default.isBlank()) {
                     default = "\"\""
                 } else if(type.isEnum || String::class.java.isAssignableFrom(type)){
                     default = "\"$default\""
@@ -323,14 +330,19 @@ class EMConfig {
     private fun loadConfigFile(): ConfigsFromFile?{
 
         //if specifying one manually, file MUST exist. otherwise might be missing
-
-        if(configPath == defaultConfigPath && !Path(configPath).exists()) {
-            return null
+        if(!Path(configPath).exists()) {
+            if (configPath == defaultConfigPath) {
+                return null
+            } else {
+                throw ConfigProblemException("There is no configuration file at custom path: $configPath")
+            }
         }
 
         LoggingUtil.uniqueUserInfo("Loading configuration file from: ${Path(configPath).toAbsolutePath()}")
 
-        return ConfigUtil.readFromFile(configPath)
+        val cf = ConfigUtil.readFromFile(configPath)
+        cf.validateAndNormalizeAuth()
+        return cf
     }
 
     private fun applyConfigFromFile(cff: ConfigsFromFile) {
@@ -668,7 +680,7 @@ class EMConfig {
                 m.setter.call(this, java.lang.Double.parseDouble(optionValue))
 
             } else if (java.lang.Boolean.TYPE.isAssignableFrom(returnType)) {
-                m.setter.call(this, java.lang.Boolean.parseBoolean(optionValue))
+                m.setter.call(this, parseBooleanStrict(optionValue))
 
             } else if (java.lang.String::class.java.isAssignableFrom(returnType)) {
                 m.setter.call(this, optionValue)
@@ -686,6 +698,14 @@ class EMConfig {
         }
     }
 
+    private fun parseBooleanStrict(s: String?) : Boolean{
+        if(s==null){
+            throw IllegalArgumentException("value is 'null'")
+        }
+        if(s.equals("true", true)) return true
+        if(s.equals("false", true)) return false
+        throw IllegalArgumentException("Invalid boolean value: $s")
+    }
 
     fun shouldGenerateSqlData() = isMIO() && (generateSqlDataWithDSE || generateSqlDataWithSearch)
 
@@ -854,10 +874,20 @@ class EMConfig {
     @Regex("(\\s*)((?=(\\S+))(\\d+h)?(\\d+m)?(\\d+s)?)(\\s*)")
     var maxTime = defaultMaxTime
 
-    @Important(2.0)
+    @Important(1.1)
     @Cfg("The path directory of where the generated test classes should be saved to")
     @Folder
     var outputFolder = "src/em"
+
+
+    val defaultConfigPath = "em.yaml"
+
+    @Important(1.2)
+    @Cfg("File path for file with configuration settings. Supported formats are YAML and TOML." +
+            " When EvoMaster starts, it will read such file and import all configurations from it.")
+    @Regex(".*\\.(yml|yaml|toml)")
+    @FilePath
+    var configPath: String = defaultConfigPath
 
 
     @Important(2.0)
@@ -2176,17 +2206,11 @@ class EMConfig {
     @Cfg("Apply a security testing phase after functional test cases have been generated.")
     var security = false
 
-    val defaultConfigPath = "em.yaml"
 
-    @Experimental
-    @Cfg("File path for file with configuration settings")
-    @Regex(".*\\.(yml|yaml|toml)")
-    @FilePath
-    var configPath: String = defaultConfigPath
-
-    @Experimental
-    @Cfg("If there is no configuration file, create a default template at given configPath location")
-    var createConfigPathIfMissing: Boolean = false
+    @Cfg("If there is no configuration file, create a default template at given configPath location." +
+            " However this is done only on the 'default' location. If you change 'configPath', no new file will be" +
+            " created.")
+    var createConfigPathIfMissing: Boolean = true
 
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
