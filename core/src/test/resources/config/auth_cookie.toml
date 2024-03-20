@@ -1,20 +1,22 @@
 
 [[auth]]
 name="a"
-[auth.cookieLogin]
+[auth.loginEndpointAuth]
+endpoint="/login"
+[auth.loginEndpointAuth.payloadUserPwd]
 username="first"
 password="foo"
 usernameField="x"
 passwordField="y"
-loginEndpointUrl="/login"
 
 
 [[auth]]
 name="b"
-[auth.cookieLogin]
+[auth.loginEndpointAuth]
+endpoint="/login"
+[auth.loginEndpointAuth.payloadUserPwd]
 username="second"
 password="bar"
 #usernameField="x"
 passwordField="y"
-loginEndpointUrl="/login"
 

@@ -1,10 +1,13 @@
 [[auth]]
 name="logintoken"
-[auth.jsonTokenPostLogin]
-userId="foo"
+[auth.loginEndpointAuth]
 endpoint="/api/logintoken/login"
-headerPrefix="Bearer "
-jsonPayload= """
+payloadRaw= """
 {"userId": "foo", "password":"123"}
 """
-extractTokenField = "/token/authToken"
+verb="POST"
+contentType="application/json"
+[auth.loginEndpointAuth.token]
+headerPrefix="Bearer "
+extractFromField = "/token/authToken"
+httpHeaderName="Authorization"

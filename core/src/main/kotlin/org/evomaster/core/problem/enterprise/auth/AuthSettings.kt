@@ -10,7 +10,13 @@ class AuthSettings(authInfos: List<AuthenticationInfo> = listOf()) {
 
     private val auths = mutableListOf<AuthenticationInfo>()
     init {
-        //TODO check unique names
+        val n  = authInfos.size
+        val unique = authInfos.map { it.name }.toSet()
+        val k = unique.size
+        if(k != n){
+            throw IllegalArgumentException("There are repeated names in the auth definitions:" +
+                    " [${unique.joinToString(",")}]")
+        }
 
         auths.addAll(authInfos)
     }

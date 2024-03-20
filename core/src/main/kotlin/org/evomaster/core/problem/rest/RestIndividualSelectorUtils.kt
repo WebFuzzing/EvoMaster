@@ -536,9 +536,9 @@ object RestIndividualSelectorUtils {
             // compare AuthenticationDto with HttpWsAuthenticationInfo
             for (secondAuth : HttpWsAuthenticationInfo in authenticationObjectsForPutOrPatch) {
 
-                if ( firstAuth.headers[0].value == secondAuth.headers[0].value ) {
-                    notUsedInAny = false
-                }
+                //if ( firstAuth.headers[0].value == secondAuth.headers[0].value ) {
+                //    notUsedInAny = false
+               // }
 
             }
 
