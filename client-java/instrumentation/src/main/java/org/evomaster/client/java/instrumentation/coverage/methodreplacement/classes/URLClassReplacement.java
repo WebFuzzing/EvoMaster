@@ -145,7 +145,7 @@ public class URLClassReplacement implements MethodReplacementClass {
 
     private static URL getReplacedURL(URL caller) throws java.io.IOException {
         if (MethodReplacementPreserveSemantics.shouldPreserveSemantics) {
-            return caller;
+            return null;
         }
         String protocol = caller.getProtocol();
 
