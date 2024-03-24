@@ -81,7 +81,12 @@ class EMConfig {
                                     // actual singleton instance created with Guice
 
             val parser = getOptionParser()
-            val options = parser.parse(*args)
+
+            val options = try{
+                parser.parse(*args)
+            }catch (e: joptsimple.OptionException){
+                throw ConfigProblemException("Wrong input configuration parameters. ${e.message}")
+            }
 
             if (!options.has("help")) {
                 //actual validation is done here when updating
@@ -675,7 +680,7 @@ class EMConfig {
                 m.setter.call(this, java.lang.Double.parseDouble(optionValue))
 
             } else if (java.lang.Boolean.TYPE.isAssignableFrom(returnType)) {
-                m.setter.call(this, java.lang.Boolean.parseBoolean(optionValue))
+                m.setter.call(this, parseBooleanStrict(optionValue))
 
             } else if (java.lang.String::class.java.isAssignableFrom(returnType)) {
                 m.setter.call(this, optionValue)
@@ -693,6 +698,14 @@ class EMConfig {
         }
     }
 
+    private fun parseBooleanStrict(s: String?) : Boolean{
+        if(s==null){
+            throw IllegalArgumentException("value is 'null'")
+        }
+        if(s.equals("true", true)) return true
+        if(s.equals("false", true)) return false
+        throw IllegalArgumentException("Invalid boolean value: $s")
+    }
 
     fun shouldGenerateSqlData() = isMIO() && (generateSqlDataWithDSE || generateSqlDataWithSearch)
 
@@ -2197,7 +2210,7 @@ class EMConfig {
     @Cfg("If there is no configuration file, create a default template at given configPath location." +
             " However this is done only on the 'default' location. If you change 'configPath', no new file will be" +
             " created.")
-    var createConfigPathIfMissing: Boolean = false
+    var createConfigPathIfMissing: Boolean = true
 
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
