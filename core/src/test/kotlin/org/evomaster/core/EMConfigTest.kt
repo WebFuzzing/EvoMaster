@@ -545,7 +545,7 @@ internal class EMConfigTest{
     }
 
     @ParameterizedTest
-    @ValueSource(strings = ["127.0.0.1","127.0.0.2","0127.0.00.1","127.0.0.002","127.0.0.0"])
+    @ValueSource(strings = ["127.0.0.1","127.0.0.2","0127.0.00.1","127.0.0.002","127.0.0.0","127.0.0.3"])
     fun testTooLowValues(ipAddress: String){
         InetAddress.getByName(ipAddress) // should throw no exception
 
