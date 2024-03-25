@@ -270,6 +270,9 @@ public abstract class EnterpriseTestBase {
         if (terminations == null) terminations = Arrays.asList("");
         //BMR: this is where I should handle multiples???
         if (createTests){
+            // TODO: Verify
+            MethodReplacementPreserveSemantics.shouldPreserveSemantics = true;
+
             for (String termination : terminations) {
                 assertTimeoutPreemptively(Duration.ofMinutes(2), () -> {
                     ClassName className = new ClassName(fullClassName + termination);
