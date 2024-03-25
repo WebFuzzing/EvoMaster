@@ -193,7 +193,7 @@ public abstract class EnterpriseTestBase {
             int timeoutMinutes) throws Throwable{
 
 
-        MethodReplacementPreserveSemantics.shouldPreserveSemantics = true;
+//        MethodReplacementPreserveSemantics.shouldPreserveSemantics = true;
 
         List<ClassName> classNames = new ArrayList<>();
 
