@@ -6,11 +6,7 @@ import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.problem.api.service.ApiWsSampler
 import org.evomaster.core.problem.enterprise.auth.AuthSettings
 import org.evomaster.core.problem.httpws.HttpWsAction
-import org.evomaster.core.problem.httpws.auth.AuthenticationHeader
-import org.evomaster.core.problem.httpws.auth.CookieLogin
-import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
-import org.evomaster.core.problem.httpws.auth.JsonTokenPostLogin
-import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
+import org.evomaster.core.problem.httpws.auth.*
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.Individual
 import org.slf4j.Logger
@@ -76,7 +72,7 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
             val k = it.indexOf(":")
             val name = it.substring(0, k)
             val content = it.substring(k+1)
-            dto.headers.add(HeaderDto(name, content))
+            dto.fixedHeaders.add(HeaderDto(name, content))
         }
 
         dto.name = "Fixed Headers"
@@ -100,7 +96,7 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
 
         val headers: MutableList<AuthenticationHeader> = mutableListOf()
 
-        i.headers.forEach loop@{ h ->
+        i.fixedHeaders.forEach loop@{ h ->
             val name = h.name?.trim()
             val value = h.value?.trim()
             if (name == null || value == null) {
@@ -110,20 +106,17 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
             headers.add(AuthenticationHeader(name, value))
         }
 
-        val cookieLogin = if (i.cookieLogin != null) {
-            CookieLogin.fromDto(i.cookieLogin)
+        val endpointCallLogin = if(i.loginEndpointAuth != null){
+            try {
+                EndpointCallLogin.fromDto(i.name, i.loginEndpointAuth)
+            } catch (e: Exception){
+                throw SutProblemException("Issue when parsing auth info for '${i.name}': ${e.message}")
+            }
         } else {
             null
         }
 
-        val jsonTokenPostLogin = if (i.jsonTokenPostLogin != null) {
-            JsonTokenPostLogin.fromDto(i.jsonTokenPostLogin)
-        } else {
-            null
-        }
-
-
-        val auth = HttpWsAuthenticationInfo(i.name.trim(), headers, cookieLogin, jsonTokenPostLogin)
+        val auth = HttpWsAuthenticationInfo(i.name.trim(), headers, endpointCallLogin)
 
         authentications.addInfo(auth)
         return
