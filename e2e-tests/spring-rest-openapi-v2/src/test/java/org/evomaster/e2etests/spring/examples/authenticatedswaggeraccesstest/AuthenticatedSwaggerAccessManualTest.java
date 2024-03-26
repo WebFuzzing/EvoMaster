@@ -2,7 +2,7 @@ package org.evomaster.e2etests.spring.examples.authenticatedswaggeraccesstest;
 
 import com.foo.rest.examples.spring.authenticatedswaggeraccess.AuthenticatedSwaggerAccessController;
 import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.Paths;
+import org.evomaster.ci.utils.JUnitExtra;
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto;
 import org.evomaster.core.problem.httpws.auth.AuthenticationHeader;
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo;
@@ -12,10 +12,8 @@ import org.evomaster.core.problem.rest.OpenApiAccess;
 import org.evomaster.core.remote.SutProblemException;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -35,17 +33,19 @@ public class AuthenticatedSwaggerAccessManualTest extends SpringTestBase {
 
     /**
      * Since the swagger endpoint is authenticated, it cannot be retrieved using no authentication object
+     * In this case, OpenAPIAccess should throw SutException.
      */
     @Test
     public void accessSwaggerUnauthenticated() {
 
         // get all paths from the swagger
-        OpenAPI swagger = OpenApiAccess.INSTANCE.getOpenAPIFromURL(baseUrlOfSut + "/v2/api-docs", new HttpWsNoAuth());
 
-        // api paths
-        Paths apiPaths = swagger.getPaths();
 
-        Assertions.assertNull(apiPaths);
+        JUnitExtra.assertThrowsInnermost(SutProblemException.class, () ->
+
+                OpenApiAccess.INSTANCE.getOpenAPIFromURL(baseUrlOfSut + "/v2/api-docs", new HttpWsNoAuth())
+        );
+
 
     }
 
@@ -85,11 +85,11 @@ public class AuthenticatedSwaggerAccessManualTest extends SpringTestBase {
     }
 
     /**
-     * Remove the successfulm authentication object to cause failed authentication
+     * Remove the successful authentication object to cause failed authentication
      */
 
     @Test
-    @Disabled
+    //@Disabled
     public void accessSwaggerFailedAuthenticated() {
 
         boolean authenticatedRequestSuccessful = false;
