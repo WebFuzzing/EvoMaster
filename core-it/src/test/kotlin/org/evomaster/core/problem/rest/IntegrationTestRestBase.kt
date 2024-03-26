@@ -16,7 +16,11 @@ abstract class IntegrationTestRestBase : RestTestBase() {
 
     @BeforeEach
     fun initInjector(){
-        injector = init(listOf())
+        val args = listOf(
+            "--sutControllerPort", "" + controllerPort,
+            "--createConfigPathIfMissing", "false"
+        )
+        injector = init(args)
     }
 
     fun getPirToRest() = injector.getInstance(PirToRest::class.java)

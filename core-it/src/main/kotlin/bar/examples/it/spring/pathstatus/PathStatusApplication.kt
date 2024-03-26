@@ -29,9 +29,9 @@ open class PathStatusApplication {
     }
 
     @GetMapping("/others/{x}")
-    open fun getOthers(@PathVariable status: Int) : ResponseEntity<String> {
+    open fun getOthers(@PathVariable x: Int) : ResponseEntity<String> {
 
-        return ResponseEntity.status(200).body("$status")
+        return ResponseEntity.status(200).body("$x")
     }
 
 

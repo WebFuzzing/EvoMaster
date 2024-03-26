@@ -40,7 +40,7 @@ class PirToRest: PirToIndividual(){
 
     fun fromVerbPath(verb: String, path: String) : RestCallAction?{
 
-        val v = try{HttpVerb.valueOf(verb)}
+        val v = try{HttpVerb.valueOf(verb.uppercase())}
         catch (e: IllegalArgumentException){
             log.warn("Unrecognized http verb: $verb")
             return null
@@ -66,7 +66,7 @@ class PirToRest: PirToIndividual(){
                 is PathParam -> {
                     val toSeed = x.path.getKeyValues(path)?.get(p.name)!!
                     val isSet = p.gene.setFromStringValue(toSeed)
-                    if(isSet){
+                    if(!isSet){
                         log.warn("Failed to update path parameter ${p.name} with value: $toSeed")
                         return null
                     }
