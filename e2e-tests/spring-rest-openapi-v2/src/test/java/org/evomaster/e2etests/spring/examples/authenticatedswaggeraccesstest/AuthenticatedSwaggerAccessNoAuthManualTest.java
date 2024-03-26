@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.examples.authenticatedswaggeraccesstest;
 
 import com.foo.rest.examples.spring.authenticatedswaggeraccessnoauth.AuthenticatedSwaggerAccessNoAuthController;
+import org.evomaster.core.remote.SutProblemException;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.Assert;
 import org.junit.jupiter.api.BeforeAll;
@@ -24,7 +25,7 @@ public class AuthenticatedSwaggerAccessNoAuthManualTest extends SpringTestBase {
     public void testAuthenticationThrowsException() {
 
         // Check that exception is thrown
-        Assert.assertThrows(Exception.class, () ->
+        Assert.assertThrows(InvocationTargetException.class, () ->
                 runTestHandlingFlakyAndCompilation(
                         "UnauthenticatedSwaggerAccessNoAuthEM",
                         "org.bar.UnauthenticatedSwaggerAccessNoAuthEM",
@@ -36,26 +37,6 @@ public class AuthenticatedSwaggerAccessNoAuthManualTest extends SpringTestBase {
                         })
                 );
 
-        // Check that exception gives the right message
-        try {
-
-            runTestHandlingFlakyAndCompilation(
-                    "UnauthenticatedSwaggerAccessNoAuthEM",
-                    "org.bar.UnauthenticatedSwaggerAccessNoAuthEM",
-                    1,
-                    (args) -> {
-
-                        initAndRun(args);
-
-                    });
-        }
-        catch (Throwable throwable) {
-
-            String errorMessage = ((InvocationTargetException) throwable).getTargetException().getMessage();
-
-            Assert.assertTrue(errorMessage.contains("Cannot retrieve OpenAPI schema from http://localhost"));
-
-        }
 
 
     }

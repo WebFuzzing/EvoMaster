@@ -57,6 +57,7 @@ public class AuthenticatedSwaggerAccessManualTest extends SpringTestBase {
 
         boolean authenticatedRequestSuccessful = false;
 
+
         for(int i = 0; i < controller.getInfoForAuthentication().size() && !authenticatedRequestSuccessful; i++) {
             AuthenticationDto currentDto = controller.getInfoForAuthentication().get(i);
 
