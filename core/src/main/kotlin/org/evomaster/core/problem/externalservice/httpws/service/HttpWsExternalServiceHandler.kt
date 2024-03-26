@@ -123,7 +123,7 @@ class HttpWsExternalServiceHandler {
             ) {
                 val ip =
                     if (hostnameResolutionInfo.remoteHostName == ExternalServiceSharedUtils.DEFAULT_WM_DUMMY_HOSTNAME) {
-                        ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP
+                        ExternalServiceSharedUtils.DEFAULT_WM_LOCAL_IP
                     } else {
                         getNewIP()
                     }
@@ -214,7 +214,7 @@ class HttpWsExternalServiceHandler {
         val output: MutableList<HostnameResolutionAction> = mutableListOf()
         hostnameLocalAddressMapping
             .filter { it.key != ExternalServiceSharedUtils.DEFAULT_WM_DUMMY_HOSTNAME }
-            .filter { it.value != ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP }
+            .filter { it.value != ExternalServiceSharedUtils.DEFAULT_WM_LOCAL_IP }
             .forEach {
             val action = HostnameResolutionAction(it.key, it.value)
             output.add(action)
