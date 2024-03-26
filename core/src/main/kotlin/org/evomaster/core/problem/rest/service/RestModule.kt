@@ -14,6 +14,7 @@ import org.evomaster.core.search.service.mutator.StandardMutator
 import org.evomaster.core.search.service.*
 import org.evomaster.core.search.service.mutator.Mutator
 import org.evomaster.core.search.service.mutator.StructureMutator
+import org.evomaster.core.seeding.service.rest.PirToRest
 
 
 class RestModule(private val bindRemote : Boolean = true) : AbstractModule(){
@@ -88,5 +89,7 @@ class RestModule(private val bindRemote : Boolean = true) : AbstractModule(){
         bind(SecurityRest::class.java)
             .asEagerSingleton()
 
+        bind(PirToRest::class.java)
+            .asEagerSingleton()
     }
 }

@@ -1,21 +1,40 @@
-package org.evomaster.core.seeding.rest
+package org.evomaster.core.seeding.service.rest
 
+import com.google.inject.Inject
+import org.evomaster.core.problem.enterprise.auth.AuthSettings
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.param.PathParam
+import org.evomaster.core.problem.rest.service.AbstractRestSampler
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.seeding.PirToIndividual
+import org.evomaster.core.seeding.service.PirToIndividual
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class PirToRest(
-    private val schema : List<RestCallAction>,
-    private val randomness: Randomness
-) : PirToIndividual(){
+class PirToRest: PirToIndividual(){
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(PirToRest::class.java)
     }
+
+    @Inject
+    private lateinit var sampler: AbstractRestSampler
+
+
+    //TODO move up, once doing refactoring
+    private lateinit var authSettings: AuthSettings
+
+
+    /**
+     * All actions that can be defined from the OpenAPI schema
+     */
+    private lateinit var actionDefinitions : List<RestCallAction>
+
+    init {
+        actionDefinitions = sampler.getActionDefinitions() as List<RestCallAction>
+        authSettings = sampler.authentications
+    }
+
 
     fun fromVerbPath(verb: String, path: String) : RestCallAction?{
 
@@ -25,7 +44,7 @@ class PirToRest(
             return null
         }
 
-        val candidates = schema.filter { it.verb == v }
+        val candidates = actionDefinitions.filter { it.verb == v }
             .filter { it.path.matches(path) }
 
         if(candidates.isEmpty()){

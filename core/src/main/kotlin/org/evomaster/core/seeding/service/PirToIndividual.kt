@@ -1,4 +1,8 @@
-package org.evomaster.core.seeding
+package org.evomaster.core.seeding.service
+
+import com.google.inject.Inject
+import org.evomaster.core.problem.rest.service.AbstractRestSampler
+import org.evomaster.core.search.service.Randomness
 
 /**
  * From Pojo Internal Representation (PIR), possibly derived from a textual representation (eg in JSON) of a test case,
@@ -14,4 +18,8 @@ package org.evomaster.core.seeding
  * but for now we just need something basic to enable integration tests
  */
 abstract class PirToIndividual {
+
+    @Inject
+    protected lateinit var randomness: Randomness
+
 }
