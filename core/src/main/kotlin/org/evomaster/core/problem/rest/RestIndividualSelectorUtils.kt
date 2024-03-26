@@ -52,7 +52,7 @@ object RestIndividualSelectorUtils {
         return null
     }
 
-    fun findIndividuals(
+    fun old_findIndividuals(
         individuals: List<EvaluatedIndividual<RestIndividual>>,
         verb: HttpVerb,
         statusGroup: String
@@ -88,9 +88,11 @@ object RestIndividualSelectorUtils {
     /*
         Find individuals containing a certain action and STATUS
     */
-    fun getIndividualsWithActionAndStatus(individualsInSolution: List<EvaluatedIndividual<RestIndividual>>,
-                                                  verb: HttpVerb, statusCode: Int)
-            :List<EvaluatedIndividual<RestIndividual>> {
+    fun getIndividualsWithActionAndStatus(
+        individualsInSolution: List<EvaluatedIndividual<RestIndividual>>,
+        verb: HttpVerb,
+        statusCode: Int
+    ):List<EvaluatedIndividual<RestIndividual>> {
 
         val individualsList = mutableListOf<EvaluatedIndividual<RestIndividual>>()
 
@@ -143,7 +145,7 @@ object RestIndividualSelectorUtils {
         return foundRestAction
     }
 
-    fun getIndividualsWithActionAndStatus(
+    fun findIndividuals(
         individuals: List<EvaluatedIndividual<RestIndividual>>,
         verb: HttpVerb,
         path: RestPath,
