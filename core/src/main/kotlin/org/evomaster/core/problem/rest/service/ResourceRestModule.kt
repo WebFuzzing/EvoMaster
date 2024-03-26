@@ -60,7 +60,7 @@ class ResourceRestModule(private val bindRemote : Boolean = true) : AbstractModu
                 .to(RestResourceFitness::class.java)
                 .asEagerSingleton()
 
-        bind(object : TypeLiteral<AbstractRestFitness<RestIndividual>>() {})
+        bind(object : TypeLiteral<AbstractRestFitness>() {})
                 .to(RestResourceFitness::class.java)
                 .asEagerSingleton()
 

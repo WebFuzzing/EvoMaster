@@ -1,6 +1,10 @@
 package org.evomaster.core.problem.rest
 
 import com.google.inject.Injector
+import org.evomaster.core.problem.enterprise.SampleType
+import org.evomaster.core.problem.rest.service.AbstractRestFitness
+import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.service.SearchGlobalState
 import org.evomaster.core.seeding.service.rest.PirToRest
 import org.evomaster.e2etests.utils.RestTestBase
 import org.junit.jupiter.api.BeforeEach
@@ -16,4 +20,18 @@ abstract class IntegrationTestRestBase : RestTestBase() {
     }
 
     fun getPirToRest() = injector.getInstance(PirToRest::class.java)
+
+
+    fun createIndividual(actions: List<RestCallAction>): EvaluatedIndividual<RestIndividual> {
+
+        val searchGlobalState = injector.getInstance(SearchGlobalState::class.java)
+
+        val ind = RestIndividual(actions.toMutableList(), SampleType.SEEDED)
+        ind.doGlobalInitialize(searchGlobalState)
+
+        val ff = injector.getInstance(AbstractRestFitness::class.java)
+        val ei = ff.calculateCoverage(ind)!!
+
+        return ei
+    }
 }
