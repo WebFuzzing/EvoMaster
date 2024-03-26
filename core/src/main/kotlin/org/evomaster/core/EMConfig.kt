@@ -61,7 +61,7 @@ class EMConfig {
          */
         const val stringLengthHardLimit = 20_000
 
-        private const val defaultExternalServiceIP = "127.0.0.4"
+        private const val defaultExternalServiceIP = "127.0.0.5"
 
         //leading zeros are allowed
         private const val lz = "0*"
