@@ -10,6 +10,7 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.seeding.service.PirToIndividual
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import javax.annotation.PostConstruct
 
 class PirToRest: PirToIndividual(){
 
@@ -30,7 +31,8 @@ class PirToRest: PirToIndividual(){
      */
     private lateinit var actionDefinitions : List<RestCallAction>
 
-    init {
+    @PostConstruct
+    fun initialize() {
         actionDefinitions = sampler.getActionDefinitions() as List<RestCallAction>
         authSettings = sampler.authentications
     }
