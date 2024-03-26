@@ -62,7 +62,7 @@ class HttpWsResponseParam (
     }
 
     fun hasBody() : Boolean {
-        return responseBody.getValueAsRawString().isEmpty()
+        return responseBody.getValueAsRawString().isNotEmpty()
     }
 
     /**

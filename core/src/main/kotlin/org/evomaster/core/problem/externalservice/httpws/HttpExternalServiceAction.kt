@@ -190,7 +190,6 @@ class HttpExternalServiceAction(
 
     private fun viewStatus(): Int {
         return (response as HttpWsResponseParam).getHttpStatusCode()
-//        return (response as HttpWsResponseParam).status.getValueAsRawString().toInt()
     }
 
     private fun viewResponse(): String {
