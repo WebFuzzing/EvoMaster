@@ -2,6 +2,8 @@ package org.evomaster.core.problem.rest.seeding
 
 import org.evomaster.core.problem.rest.RestCallAction
 
+
+@Deprecated("Code here will be replaced with intermediate representation. See new 'seeding' package")
 interface Parser {
 
     /**

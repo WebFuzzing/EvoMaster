@@ -175,7 +175,7 @@ abstract class RestIndividualTestBase {
 
     abstract fun getSampler() : AbstractRestSampler
     abstract fun getMutator() : StandardMutator<RestIndividual>
-    abstract fun getFitnessFunction() : AbstractRestFitness<RestIndividual>
+    abstract fun getFitnessFunction() : AbstractRestFitness
 
     @ParameterizedTest
     @MethodSource("getBudgetAndNumOfResourceForSampler")
