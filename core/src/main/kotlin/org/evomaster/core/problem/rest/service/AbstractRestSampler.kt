@@ -34,6 +34,8 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(AbstractRestSampler::class.java)
+
+        const val CALL_TO_SWAGGER_ID =  "Call to Swagger"
     }
 
     @Inject
@@ -209,11 +211,9 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
      */
     private fun addCallToSwagger() : RestCallAction?{
 
-        val id =  "Call to Swagger"
-
         if (configuration.blackBox && !configuration.bbExperiments) {
             return if (configuration.bbSwaggerUrl.startsWith("http", true)){
-                buildActionBasedOnUrl(BlackBoxUtils.targetUrl(config,this), id, HttpVerb.GET, configuration.bbSwaggerUrl, true)
+                buildActionBasedOnUrl(BlackBoxUtils.targetUrl(config,this), CALL_TO_SWAGGER_ID, HttpVerb.GET, configuration.bbSwaggerUrl, true)
             } else
                 null
         }
@@ -229,7 +229,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
             return null
         }
 
-        return buildActionBasedOnUrl(base, id, HttpVerb.GET, openapi, true)
+        return buildActionBasedOnUrl(base, CALL_TO_SWAGGER_ID, HttpVerb.GET, openapi, true)
     }
 
     /**
