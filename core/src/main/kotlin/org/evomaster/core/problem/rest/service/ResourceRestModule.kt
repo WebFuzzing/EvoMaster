@@ -17,6 +17,7 @@ import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.mutator.Mutator
 import org.evomaster.core.search.service.mutator.StandardMutator
 import org.evomaster.core.search.service.mutator.StructureMutator
+import org.evomaster.core.seeding.service.rest.PirToRest
 
 
 class ResourceRestModule(private val bindRemote : Boolean = true) : AbstractModule(){
@@ -59,7 +60,7 @@ class ResourceRestModule(private val bindRemote : Boolean = true) : AbstractModu
                 .to(RestResourceFitness::class.java)
                 .asEagerSingleton()
 
-        bind(object : TypeLiteral<AbstractRestFitness<RestIndividual>>() {})
+        bind(object : TypeLiteral<AbstractRestFitness>() {})
                 .to(RestResourceFitness::class.java)
                 .asEagerSingleton()
 
@@ -110,6 +111,9 @@ class ResourceRestModule(private val bindRemote : Boolean = true) : AbstractModu
             .asEagerSingleton()
 
         bind(SecurityRest::class.java)
+            .asEagerSingleton()
+
+        bind(PirToRest::class.java)
             .asEagerSingleton()
 
     }

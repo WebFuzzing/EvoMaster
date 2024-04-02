@@ -69,7 +69,7 @@ class StringGene(
 
     init {
         if (minLength>maxLength) {
-            throw IllegalArgumentException("Cannot create string gene ${this.name} with mininum length ${this.minLength} and maximum length ${this.maxLength}")
+            throw IllegalArgumentException("Cannot create string gene ${this.name} with minimum length ${this.minLength} and maximum length ${this.maxLength}")
         }
     }
 
@@ -983,4 +983,20 @@ class StringGene(
         return otherelements.none { it is Gene && it.flatView().any { g-> g is StringGene && g.getPossiblyTaintedValue().equals(getPossiblyTaintedValue(), ignoreCase = true) } }
     }
 
+
+    override fun setFromStringValue(value: String): Boolean {
+
+        val previousSpecialization = selectedSpecialization
+        val previousValue = value
+
+        this.value = value
+        selectedSpecialization = -1
+        if(!isLocallyValid() || !checkForGloballyValid()){
+            this.value = previousValue
+            this.selectedSpecialization = previousSpecialization
+            return false
+        }
+
+        return true
+    }
 }

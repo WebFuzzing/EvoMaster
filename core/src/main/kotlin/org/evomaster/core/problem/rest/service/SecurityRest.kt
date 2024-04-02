@@ -3,27 +3,16 @@ package org.evomaster.core.problem.rest.service
 import com.google.inject.Inject
 import javax.annotation.PostConstruct
 
-import org.apache.http.HttpStatus
-
-import org.evomaster.client.java.controller.api.dto.SutInfoDto
-import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
-
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.enterprise.auth.AuthSettings
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.rest.*
-import org.evomaster.core.problem.rest.param.PathParam
-import org.evomaster.core.remote.service.RemoteController
-import org.evomaster.core.remote.service.RemoteControllerImplementation
 
 import org.evomaster.core.search.*
-import org.evomaster.core.search.action.ActionResult
-import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.Sampler
 
 //FIXME this needs to be cleaned-up
 
@@ -167,7 +156,7 @@ class SecurityRest {
 
             // from archive, search if there is any test with a DELETE returning a 403
             val existing403 : List<EvaluatedIndividual<RestIndividual>> =
-                RestIndividualSelectorUtils.getIndividualsWithActionAndStatus(individualsInSolution, HttpVerb.DELETE, delete.path, 403)
+                RestIndividualSelectorUtils.findIndividuals(individualsInSolution, HttpVerb.DELETE, delete.path, 403)
 
             var individualToChooseForTest : RestIndividual
 
