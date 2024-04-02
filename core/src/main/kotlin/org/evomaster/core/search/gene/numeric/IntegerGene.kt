@@ -52,6 +52,15 @@ class IntegerGene(
         private val log: Logger = LoggerFactory.getLogger(IntegerGene::class.java)
     }
 
+    override fun setFromStringValue(value: String) : Boolean{
+        try{
+            this.value = value.toInt()
+            return true
+        }catch (e: NumberFormatException){
+            return false
+        }
+    }
+
     override fun copyContent(): Gene {
         return IntegerGene(
             name,

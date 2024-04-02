@@ -8,6 +8,7 @@ import org.evomaster.core.problem.rest.param.FormParam
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.resource.ActionRToken
+import org.evomaster.core.problem.rest.service.AbstractRestSampler
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.rest.util.ParserUtil
 import org.evomaster.core.problem.util.BindingBuilder
@@ -221,5 +222,9 @@ class RestCallAction(
     override fun postRandomizedChecks(randomness: Randomness?) {
         // binding params in this action, e.g., path param with body param if there exists
         BindingBuilder.bindParamsInRestAction(this, randomness = randomness)
+    }
+
+    override fun shouldSkipAssertionsOnResponseBody(): Boolean {
+        return id == AbstractRestSampler.CALL_TO_SWAGGER_ID
     }
 }

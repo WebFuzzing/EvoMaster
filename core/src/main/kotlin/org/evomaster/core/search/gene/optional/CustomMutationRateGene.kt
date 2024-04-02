@@ -52,6 +52,10 @@ class CustomMutationRateGene<out T>(
     }
 
 
+    override fun setFromStringValue(value: String) : Boolean{
+        return gene.setFromStringValue(value)
+    }
+
     override fun <T> getWrappedGene(klass: Class<T>) : T?  where T : Gene{
         if(this.javaClass == klass){
             return this as T
