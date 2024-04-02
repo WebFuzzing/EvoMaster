@@ -40,7 +40,7 @@ class RestIndividualDisabledHMTest : RestIndividualTestBase(){
 
     override fun getMutator(): StandardMutator<RestIndividual> = mutator
 
-    override fun getFitnessFunction(): AbstractRestFitness<RestIndividual> = ff
+    override fun getFitnessFunction(): AbstractRestFitness = ff
 
 
 }

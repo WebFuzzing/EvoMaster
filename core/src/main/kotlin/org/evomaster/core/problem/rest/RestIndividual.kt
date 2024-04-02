@@ -28,6 +28,9 @@ import kotlin.math.max
  *
  * @property trackOperator indicates which operator create this individual.
  * @property index indicates when the individual is created, ie, using num of evaluated individual.
+ *
+ *
+ * FIXME: why having to use AbstractRestSampler.createIndividual() instead of having such code here in constructor???
  */
 class RestIndividual(
     sampleType: SampleType,

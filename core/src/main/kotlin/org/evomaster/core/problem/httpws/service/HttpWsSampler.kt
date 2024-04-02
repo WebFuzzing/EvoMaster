@@ -90,33 +90,12 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
     }
 
     private fun handleAuthInfo(i: AuthenticationDto) {
-        if (i.name == null || i.name.isBlank()) {
-            throw SutProblemException("Missing name in authentication info")
+
+        val auth = try{
+            HttpWsAuthenticationInfo.fromDto(i)
+        }catch (e: Exception){
+            throw SutProblemException("Failed to parse auth info: " + e.message!!)
         }
-
-        val headers: MutableList<AuthenticationHeader> = mutableListOf()
-
-        i.fixedHeaders.forEach loop@{ h ->
-            val name = h.name?.trim()
-            val value = h.value?.trim()
-            if (name == null || value == null) {
-                throw SutProblemException("Invalid header in ${i.name}, $name:$value")
-            }
-
-            headers.add(AuthenticationHeader(name, value))
-        }
-
-        val endpointCallLogin = if(i.loginEndpointAuth != null){
-            try {
-                EndpointCallLogin.fromDto(i.name, i.loginEndpointAuth)
-            } catch (e: Exception){
-                throw SutProblemException("Issue when parsing auth info for '${i.name}': ${e.message}")
-            }
-        } else {
-            null
-        }
-
-        val auth = HttpWsAuthenticationInfo(i.name.trim(), headers, endpointCallLogin)
 
         authentications.addInfo(auth)
         return
