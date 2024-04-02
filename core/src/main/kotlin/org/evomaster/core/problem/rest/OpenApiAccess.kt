@@ -3,21 +3,18 @@ package org.evomaster.core.problem.rest
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.parser.OpenAPIV3Parser
 import io.swagger.v3.parser.core.models.SwaggerParseResult
-import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.enterprise.auth.AuthenticationInfo
-import org.evomaster.core.problem.enterprise.auth.NoAuth
 import org.evomaster.core.problem.httpws.auth.AuthUtils
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
-import org.evomaster.core.problem.rest.service.RestActionUtils
 import org.evomaster.core.remote.AuthenticationRequiredException
 import org.evomaster.core.remote.SutProblemException
 import java.net.ConnectException
 import java.net.URI
+import java.net.URL
 import java.nio.file.Files
 import java.nio.file.Paths
 import javax.ws.rs.client.ClientBuilder
-import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 
 /**
@@ -117,10 +114,18 @@ object OpenApiAccess {
 
                  if(authentication is HttpWsAuthenticationInfo){
                      val ecl = authentication.endpointCallLogin
-                     val url = openApiUrl //FIXME
-                     val cookies = if(ecl != null && ecl.expectsCookie()) AuthUtils.getCookies(client, url, listOf(ecl))
+                     val url = URL(openApiUrl)
+                     /*
+                        FIXME better to pass it from SUT info / configs.
+                        A case that would fail here is if auth server is on same of SUT, with endpoint declaration
+                        instead of full URL, but somehow OpenAPI is from a third-server... the call here would be
+                        wrongly done on such third-server
+                      */
+                     val baseUrl = "${url.protocol}://${url.host}:${url.port}"
+
+                     val cookies = if(ecl != null && ecl.expectsCookie()) AuthUtils.getCookies(client, baseUrl, listOf(ecl))
                         else mapOf()
-                     val tokens = if(ecl != null && !ecl.expectsCookie()) AuthUtils.getTokens(client, url, listOf(ecl))
+                     val tokens = if(ecl != null && !ecl.expectsCookie()) AuthUtils.getTokens(client, baseUrl, listOf(ecl))
                         else mapOf()
 
                      AuthUtils.addAuthHeaders(authentication,builder, cookies, tokens)
