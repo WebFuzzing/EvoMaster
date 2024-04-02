@@ -60,9 +60,9 @@ class HttpWsResponseParam(
      * @return HTTP status code
      */
     fun getHttpStatusCode(): Int {
-        if (hasBody()) {
-            return getStatusCodeBasedOnBody()
-        }
+//        if (hasBody()) {
+//            return getStatusCodeBasedOnBody()
+//        }
         return status.values[status.index]
     }
 
