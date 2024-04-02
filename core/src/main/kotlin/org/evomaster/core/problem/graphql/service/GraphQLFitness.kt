@@ -9,6 +9,7 @@ import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.enterprise.auth.NoAuth
 import org.evomaster.core.problem.graphql.*
+import org.evomaster.core.problem.httpws.auth.AuthUtils
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
 import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
 import org.evomaster.core.remote.TcpUtils
@@ -40,8 +41,10 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
     ): EvaluatedIndividual<GraphQLIndividual>? {
         rc.resetSUT()
 
-        val cookies = getCookies(individual)
-        val tokens = getTokens(individual)
+        // val cookies = getCookies(individual)
+        // val tokens = getTokens(individual)
+        val cookies = AuthUtils.getCookies(client, getBaseUrl(), individual)
+        val tokens = AuthUtils.getTokens(client, getBaseUrl(), individual)
 
         val actionResults: MutableList<ActionResult> = mutableListOf()
 
