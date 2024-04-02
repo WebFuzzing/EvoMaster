@@ -20,6 +20,7 @@ import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.seeding.Parser
 import org.evomaster.core.problem.rest.seeding.postman.PostmanParser
+import org.evomaster.core.remote.AuthenticationRequiredException
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
@@ -149,7 +150,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         try {
             swagger = OpenApiAccess.getOpenAPIFromURL(openApiURL, HttpWsNoAuth())
         }
-        catch (sutException : SutProblemException) {
+        catch (sutException : AuthenticationRequiredException) {
             log.warn(sutException.message)
 
             // First check if we have authentication information available inside infoDto.infoForAuthentication
@@ -168,8 +169,6 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
             throw SutProblemException("Cannot retrieve OpenAPI schema from $openApiURL," +
                     "\n after trying both authenticated and unauthenticated calls.")
         }
-
-
     }
 
     private fun addExtraQueryParam(actionCluster: Map<String, Action>){

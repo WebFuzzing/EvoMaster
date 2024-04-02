@@ -5,22 +5,25 @@ import io.swagger.v3.parser.OpenAPIV3Parser
 import io.swagger.v3.parser.core.models.SwaggerParseResult
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.enterprise.auth.AuthenticationInfo
+import org.evomaster.core.problem.enterprise.auth.NoAuth
+import org.evomaster.core.problem.httpws.auth.AuthUtils
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
 import org.evomaster.core.problem.rest.service.RestActionUtils
+import org.evomaster.core.remote.AuthenticationRequiredException
 import org.evomaster.core.remote.SutProblemException
 import java.net.ConnectException
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Paths
+import javax.ws.rs.client.ClientBuilder
+import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 
 /**
  * Created by arcuri82 on 22-Jan-20.
  */
 object OpenApiAccess {
-
-    private const val UNAUTHORIZED_SCHEMA_ACCESS : String = "UNAUTHORIZED_SCHEMA_ACCESS"
 
     fun getOpenApi(schemaText: String): OpenAPI {
 
@@ -30,7 +33,7 @@ object OpenApiAccess {
             parseResults = try {
                 extension.readContents(schemaText, null, null)
             } catch (e: Exception) {
-                throw SutProblemException("Failed to parse OpenApi schema: $e")
+                throw SutProblemException("Failed to parse OpenApi schema: ${e.message}")
             }
             if (parseResults != null && parseResults.openAPI != null) {
                 break
@@ -50,13 +53,6 @@ object OpenApiAccess {
            readFromDisk(openApiUrl)
        }
 
-        // if the swagger could not be retrieved, throw SutException
-        if (data == UNAUTHORIZED_SCHEMA_ACCESS) {
-            throw SutProblemException("Swagger could not be accessed because access to the swagger with " +
-                    "the authentication information: " + authentication.toString() + " was denied.")
-
-        }
-
         return getOpenApi(data)
     }
 
@@ -67,8 +63,8 @@ object OpenApiAccess {
 
         // check for status code 401 or 403
         if (response.status == 401 || response.status == 403) {
-            throw SutProblemException("Swagger could not be accessed because access to the swagger with " +
-                    "the authentication information: " + authentication.toString() + " was denied.")
+            throw AuthenticationRequiredException("OpenAPI could not be accessed because access to the schema with " +
+                    "the authentication information '" + authentication.toString() + "' was denied.")
         }
         // if the problem is not due to not being able to access to an authenticated swagger,
         // just throw an exception and show the status and body
@@ -115,12 +111,22 @@ object OpenApiAccess {
         for (i in 0 until attempts) {
             try {
 
-                val swaggerCallAction = RestCallAction("swaggerRetrieve", HttpVerb.GET, RestPath("/v2/api-docs"),
-                    mutableListOf<Param>())
+                 val client =  ClientBuilder.newClient()
+                 val builder = client.target(openApiUrl)
+                     .request("*/*") //cannot assume it is in JSON... could be YAML as well
 
-                swaggerCallAction.auth = authentication as HttpWsAuthenticationInfo
+                 if(authentication is HttpWsAuthenticationInfo){
+                     val ecl = authentication.endpointCallLogin
+                     val url = openApiUrl //FIXME
+                     val cookies = if(ecl != null && ecl.expectsCookie()) AuthUtils.getCookies(client, url, listOf(ecl))
+                        else mapOf()
+                     val tokens = if(ecl != null && !ecl.expectsCookie()) AuthUtils.getTokens(client, url, listOf(ecl))
+                        else mapOf()
 
-                return RestActionUtils.handleSimpleRestCallForSwagger(swaggerCallAction, openApiUrl)
+                     AuthUtils.addAuthHeaders(authentication,builder, cookies, tokens)
+                 }
+
+                return builder.get()
 
             } catch (e: Exception) {
 
