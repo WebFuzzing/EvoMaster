@@ -20,7 +20,7 @@ import javax.ws.rs.core.Response
  */
 object OpenApiAccess {
 
-    const val UNAUTHORIZED_SCHEMA_ACCESS : String = "UNAUTHORIZED_SCHEMA_ACCESS"
+    private const val UNAUTHORIZED_SCHEMA_ACCESS : String = "UNAUTHORIZED_SCHEMA_ACCESS"
 
     fun getOpenApi(schemaText: String): OpenAPI {
 

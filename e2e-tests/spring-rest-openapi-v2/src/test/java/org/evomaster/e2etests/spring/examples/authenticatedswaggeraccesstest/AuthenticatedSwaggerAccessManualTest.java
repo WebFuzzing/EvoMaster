@@ -4,7 +4,6 @@ import com.foo.rest.examples.spring.authenticatedswaggeraccess.AuthenticatedSwag
 import io.swagger.v3.oas.models.OpenAPI;
 import org.evomaster.ci.utils.JUnitExtra;
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto;
-import org.evomaster.core.problem.httpws.auth.AuthenticationHeader;
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo;
 
 import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth;
@@ -15,9 +14,6 @@ import org.junit.Assert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class AuthenticatedSwaggerAccessManualTest extends SpringTestBase {
 
@@ -61,21 +57,11 @@ public class AuthenticatedSwaggerAccessManualTest extends SpringTestBase {
         for(int i = 0; i < controller.getInfoForAuthentication().size() && !authenticatedRequestSuccessful; i++) {
             AuthenticationDto currentDto = controller.getInfoForAuthentication().get(i);
 
-            List<AuthenticationHeader> headers = new ArrayList<>();
-
-
-            for(int j = 0; j < currentDto.fixedHeaders.size(); j++)
-            {
-                headers.add(new AuthenticationHeader(currentDto.fixedHeaders.get(j).name.trim(),
-                        currentDto.fixedHeaders.get(j).value.trim()));
-            }
-
-            HttpWsAuthenticationInfo currentInfo = new HttpWsAuthenticationInfo(currentDto.name, headers,
-                    null);
+            HttpWsAuthenticationInfo currentInfo = HttpWsAuthenticationInfo.Companion.fromDto(currentDto);
 
             OpenAPI swagger = OpenApiAccess.INSTANCE.getOpenAPIFromURL(baseUrlOfSut + "/v2/api-docs", currentInfo);
 
-            if (swagger.getPaths() != null) {
+            if (swagger != null) {
                 successfulAuthenticationObject = currentDto;
                 authenticatedRequestSuccessful = true;
             }
@@ -103,15 +89,7 @@ public class AuthenticatedSwaggerAccessManualTest extends SpringTestBase {
                 continue;
             }
 
-            List<AuthenticationHeader> headers = new ArrayList<>();
-
-            for (int j = 0; j < currentDto.fixedHeaders.size(); j++) {
-                headers.add(new AuthenticationHeader(currentDto.fixedHeaders.get(j).name.trim(),
-                        currentDto.fixedHeaders.get(j).value.trim()));
-            }
-
-            unsuccessfulInfo = new HttpWsAuthenticationInfo(currentDto.name, headers,
-                    null);
+            unsuccessfulInfo = HttpWsAuthenticationInfo.Companion.fromDto(currentDto);
         }
 
         HttpWsAuthenticationInfo finalUnsuccessfulInfo = unsuccessfulInfo;
