@@ -37,7 +37,7 @@ class HttpWsResponseParam(
         const val RESPONSE_GENE_NAME = "WireMockResponseGene"
         const val DEFAULT_HEADER_CONNECTION: String = "close"
 
-        fun getDefaultStatusEnumGene() = EnumGene("status", listOf(201, 400, 401, 403, 500))
+        fun getDefaultStatusEnumGene() = EnumGene("status", listOf(200, 201, 204, 400, 401, 403, 500))
     }
 
     override fun copyContent(): Param {
@@ -61,7 +61,10 @@ class HttpWsResponseParam(
      */
     fun getHttpStatusCode(): Int {
         if (hasBody()) {
-            return getStatusCodeBasedOnBody()
+            val statusCode = getStatusCodeBasedOnBody()
+            status.index = status.values.indexOf(statusCode)
+
+            return statusCode
         }
         return status.values[status.index]
     }
