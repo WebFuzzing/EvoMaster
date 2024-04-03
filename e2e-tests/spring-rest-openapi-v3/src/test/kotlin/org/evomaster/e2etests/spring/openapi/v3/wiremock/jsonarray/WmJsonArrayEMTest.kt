@@ -34,7 +34,7 @@ class WmJsonArrayEMTest : SpringTestBase() {
             "WmJsonArrayEM",
             "org.foo.WmJsonArrayEM",
             1000,
-            true,
+            false,
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")

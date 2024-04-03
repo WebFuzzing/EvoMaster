@@ -37,7 +37,7 @@ class HttpWsResponseParam(
         const val RESPONSE_GENE_NAME = "WireMockResponseGene"
         const val DEFAULT_HEADER_CONNECTION: String = "close"
 
-        fun getDefaultStatusEnumGene() = EnumGene("status", listOf(200, 201, 204, 400, 401, 403, 500))
+        fun getDefaultStatusEnumGene() = EnumGene("status", listOf(201, 400, 401, 403, 500))
     }
 
     override fun copyContent(): Param {
@@ -78,7 +78,7 @@ class HttpWsResponseParam(
     }
 
     /**
-     * @return Boolean based on the condition, [responseBody] is empty or not.
+     * @return true if [responseBody] is not empty, otherwise false.
      */
     private fun hasBody(): Boolean {
         return responseBody.getValueAsRawString().isNotEmpty()
