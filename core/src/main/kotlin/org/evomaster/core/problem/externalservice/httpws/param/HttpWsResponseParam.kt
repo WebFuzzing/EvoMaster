@@ -60,22 +60,28 @@ class HttpWsResponseParam(
      * @return HTTP status code
      */
     fun getHttpStatusCode(): Int {
-//        if (hasBody()) {
-//            return getStatusCodeBasedOnBody()
-//        }
+        if (hasBody()) {
+            return getStatusCodeBasedOnBody()
+        }
         return status.values[status.index]
     }
 
+    /**
+     * @return HTTP 200 if the [responseBody] has value.
+     * @return HTTP 204 if the body is blank
+     */
     private fun getStatusCodeBasedOnBody(): Int {
-        val body = responseBody.getValueAsRawString()
-        if (body.isBlank()) {
+        if (responseBody.getValueAsRawString().isBlank()) {
             return 204
         }
         return 200
     }
 
+    /**
+     * @return Boolean based on the condition, [responseBody] is empty or not.
+     */
     private fun hasBody(): Boolean {
-        return !responseBody.getValueAsRawString().isNullOrBlank()
+        return responseBody.getValueAsRawString().isNotEmpty()
     }
 
     /**
