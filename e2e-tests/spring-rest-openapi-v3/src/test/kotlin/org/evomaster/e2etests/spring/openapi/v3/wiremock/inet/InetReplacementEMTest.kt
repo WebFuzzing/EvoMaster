@@ -34,7 +34,7 @@ class InetReplacementEMTest : SpringTestBase() {
                 args.add("--externalServiceIPSelectionStrategy")
                 args.add("USER")
                 args.add("--externalServiceIP")
-                args.add("127.0.0.3")
+                args.add("127.0.0.4")
 
                 //FIXME should make sure it works with true.
                 //looks like a bug in resetting the DNS cache to default state

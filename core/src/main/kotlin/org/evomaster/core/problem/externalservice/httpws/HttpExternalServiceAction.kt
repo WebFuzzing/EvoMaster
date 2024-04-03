@@ -104,7 +104,7 @@ class HttpExternalServiceAction(
      * If the action is inactive ([active] is false) this will make changed to
      * the WireMock for the respective [HttpExternalServiceRequest]
      *
-     * TODO: This has to moved separetly to have extensive features
+     * TODO: This has to moved separately to have extensive features
      *  in future.
      */
     fun buildResponse() {
@@ -189,7 +189,7 @@ class HttpExternalServiceAction(
     }
 
     private fun viewStatus(): Int {
-        return (response as HttpWsResponseParam).status.getValueAsRawString().toInt()
+        return (response as HttpWsResponseParam).getHttpStatusCode()
     }
 
     private fun viewResponse(): String {

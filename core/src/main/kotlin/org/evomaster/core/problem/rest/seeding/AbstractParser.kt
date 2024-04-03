@@ -28,6 +28,7 @@ import java.util.regex.Pattern
  * the set of default actions (i.e., actions representing single calls to each API
  * operation) and the Swagger specification.
  */
+@Deprecated("Code here will be replaced with intermediate representation. See new 'seeding' package")
 abstract class AbstractParser(
         protected val defaultRestCallActions: List<RestCallAction>,
         protected val swagger: OpenAPI

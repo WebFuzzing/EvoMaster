@@ -34,7 +34,7 @@ class WmJsonArrayEMTest : SpringTestBase() {
             "WmJsonArrayEM",
             "org.foo.WmJsonArrayEM",
             1000,
-            true,
+            false,
             { args: MutableList<String> ->
 
                 // Note: Test works on local machine without any problems.
