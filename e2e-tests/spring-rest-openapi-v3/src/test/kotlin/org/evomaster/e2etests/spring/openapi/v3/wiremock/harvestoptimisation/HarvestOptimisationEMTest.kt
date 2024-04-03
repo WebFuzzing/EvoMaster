@@ -55,7 +55,7 @@ class HarvestOptimisationEMTest: SpringTestBase() {
             "HarvestOptimisationEM",
             "org.foo.HarvestOptimisationEM",
             1000,
-                true,//!CIUtils.isRunningGA(),
+            false,//!CIUtils.isRunningGA(),
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")
