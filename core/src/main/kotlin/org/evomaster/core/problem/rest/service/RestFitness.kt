@@ -12,7 +12,7 @@ import org.evomaster.core.search.FitnessValue
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-open class RestFitness : AbstractRestFitness<RestIndividual>() {
+open class RestFitness : AbstractRestFitness() {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(RestFitness::class.java)

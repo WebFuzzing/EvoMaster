@@ -23,7 +23,7 @@ import javax.ws.rs.core.NewCookie
 /**
  * take care of calculating/collecting fitness of [RestIndividual]
  */
-class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
+class RestResourceFitness : AbstractRestFitness() {
 
 
     @Inject

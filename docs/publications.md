@@ -33,7 +33,7 @@ Also, some of these papers provides full replication packages, which are linked 
 * A. Arcuri, M. Zhang, J.P. Galeotti.
   *Advanced White-Box Heuristics for Search-Based Fuzzing of REST APIs*.
   ACM Transactions on Software Engineering and Methodology (TOSEM).
-  [to appear][[Scripts](exp/2024_tosem_advanced_heuristics.py)]
+  [[PDF](publications/2024_tosem_tt.pdf)][[Scripts](exp/2024_tosem_advanced_heuristics.py)]
 
 
 ### 2023

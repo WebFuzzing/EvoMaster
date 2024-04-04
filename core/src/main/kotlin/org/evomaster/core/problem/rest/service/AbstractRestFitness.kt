@@ -49,7 +49,7 @@ import javax.ws.rs.core.NewCookie
 import javax.ws.rs.core.Response
 
 
-abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual {
+abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
     // TODO: This will moved under ApiWsFitness once RPC and GraphQL support is completed
     @Inject
@@ -559,7 +559,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
             }
         }
 
-        if (response.status == 401 && a.auth !is NoAuth) {
+        if (response.status == 401 && a.auth !is NoAuth && !a.auth.requireMockHandling) {
             /*
                 if the endpoint itself is to get auth info, we might exclude auth check for it
                 eg,
@@ -760,7 +760,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
             return null
         }
 
-        val dto = updateFitnessAfterEvaluation(targets, allCovered, individual as T, fv)
+        val dto = updateFitnessAfterEvaluation(targets, allCovered, individual, fv)
             ?: return null
 
         handleExtra(dto, fv)

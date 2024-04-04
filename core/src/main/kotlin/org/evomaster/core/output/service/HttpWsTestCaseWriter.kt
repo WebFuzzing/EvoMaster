@@ -200,7 +200,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
         handleLastStatementComment(res, lines)
 
-        if (config.enableBasicAssertions) {
+        if (config.enableBasicAssertions && !call.shouldSkipAssertionsOnResponseBody()) {
             handleResponseAssertions(lines, res, responseVariableName)
         }
     }
@@ -438,7 +438,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
             handleLastStatementComment(res, lines)
 
-            if (config.enableBasicAssertions) {
+            if (config.enableBasicAssertions && !call.shouldSkipAssertionsOnResponseBody()) {
                 handleResponseAssertions(lines, res, null)
             }
 
