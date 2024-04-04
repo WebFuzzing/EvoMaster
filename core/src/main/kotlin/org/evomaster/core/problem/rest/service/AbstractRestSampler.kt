@@ -87,13 +87,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         setupAuthentication(infoDto)
 
         if(!openApiURL.isNullOrBlank()) {
-
-            try {
-                retrieveSwagger(openApiURL)
-            }
-            catch (e : Exception) {
-                e.printStackTrace()
-            }
+            retrieveSwagger(openApiURL)
         } else if(! openApiSchema.isNullOrBlank()){
             swagger = OpenApiAccess.getOpenApi(openApiSchema)
         } else {
@@ -161,6 +155,10 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
                 // try to retrieve the swagger with authentication info
                 swagger = OpenApiAccess.getOpenAPIFromURL(openApiURL, currentAuthInfo)
+            }
+            else {
+                throw AuthenticationRequiredException("Accessing the OpenAPI schema from $openApiURL" +
+                        " requires authentication, but there is no auth info provided that can be used")
             }
         }
 
@@ -293,14 +291,8 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         // adding authentication from config should be moved here.
         addAuthFromConfig()
 
-        //swagger = OpenApiAccess.getOpenAPIFromURL(configuration.bbSwaggerUrl)
-
-        try {
-            retrieveSwagger(configuration.bbSwaggerUrl)
-        }
-        catch (e : Exception) {
-            e.printStackTrace()
-        }
+        // retrieve the swagger
+        retrieveSwagger(configuration.bbSwaggerUrl)
 
         if (swagger.paths == null) {
             throw SutProblemException("There is no endpoint definition in the retrieved OpenAPI file")

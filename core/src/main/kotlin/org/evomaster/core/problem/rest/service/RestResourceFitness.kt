@@ -69,9 +69,6 @@ class RestResourceFitness : AbstractRestFitness() {
 
         doMongoDbCalls(individual.seeInitializingActions().filterIsInstance<MongoDbAction>(), actionResults)
 
-        //val cookies = AuthUtils.getCookies(client, getBaseUrl(), individual)
-        //val tokens = AuthUtils.getTokens(client, getBaseUrl(), individual)
-
         val cookies = AuthUtils.getCookies(client, getBaseUrl(), individual)
         val tokens = AuthUtils.getTokens(client, getBaseUrl(), individual)
 
