@@ -322,7 +322,9 @@ class EMConfig {
                 cff.configs[it.name] = default
             }
 
-            LoggingUtil.uniqueUserInfo("Going to create configuration file at: ${Path(configPath).toAbsolutePath()}")
+            if(! avoidNonDeterministicLogs) {
+                LoggingUtil.uniqueUserInfo("Going to create configuration file at: ${Path(configPath).toAbsolutePath()}")
+            }
             ConfigUtil.createConfigFileTemplate(configPath, cff)
         }
     }
@@ -338,7 +340,9 @@ class EMConfig {
             }
         }
 
-        LoggingUtil.uniqueUserInfo("Loading configuration file from: ${Path(configPath).toAbsolutePath()}")
+        if(! avoidNonDeterministicLogs) {
+            LoggingUtil.uniqueUserInfo("Loading configuration file from: ${Path(configPath).toAbsolutePath()}")
+        }
 
         val cf = ConfigUtil.readFromFile(configPath)
         cf.validateAndNormalizeAuth()
