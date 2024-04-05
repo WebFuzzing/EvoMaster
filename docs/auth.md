@@ -1,6 +1,5 @@
 # Security: Authentication
 
-### WARNING: this is work in progress documentation for current SNAPSHOT version
 
 The API/SUT might require authenticated requests (e.g., when _Spring Security_ is used).
 And there are several different mechanism to do authentication.
