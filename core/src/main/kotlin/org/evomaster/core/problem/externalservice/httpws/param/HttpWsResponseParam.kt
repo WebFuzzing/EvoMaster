@@ -60,12 +60,6 @@ class HttpWsResponseParam(
      * @return HTTP status code
      */
     fun getHttpStatusCode(): Int {
-        if (hasBody()) {
-            val statusCode = getStatusCodeBasedOnBody()
-            status.index = status.values.indexOf(statusCode)
-
-            return statusCode
-        }
         return status.values[status.index]
     }
 
@@ -73,19 +67,16 @@ class HttpWsResponseParam(
      * @return HTTP 200 if the [responseBody] has value.
      * @return HTTP 204 if the body is blank
      */
-    private fun getStatusCodeBasedOnBody(): Int {
-        if (responseBody.getValueAsRawString().isBlank()) {
-            return 204
+    fun getResponseBodyBasedOnStatus(): String {
+        val statusCode = getHttpStatusCode()
+
+        if (statusCode == 204) {
+            return ""
         }
-        return 200
+
+        return responseBody.getValueAsRawString()
     }
 
-    /**
-     * @return true if [responseBody] is not empty, otherwise false.
-     */
-    private fun hasBody(): Boolean {
-        return responseBody.getValueAsRawString().isNotEmpty()
-    }
 
     /**
      * @return whether the HTTP status code is part of success family
