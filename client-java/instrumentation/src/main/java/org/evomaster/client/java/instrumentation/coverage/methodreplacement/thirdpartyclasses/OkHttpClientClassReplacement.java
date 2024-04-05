@@ -147,7 +147,7 @@ public class OkHttpClientClassReplacement extends ThirdPartyMethodReplacementCla
 
         Method original = getOriginal(singleton, "okhttpclient_newCall", caller);
 
-        if (MethodReplacementPreserveSemantics.shouldPreserveSemantics) {
+        if (MethodReplacementUtils.needToPreserverSemantics()) {
             try{
                 return  original.invoke(caller, request);
             } catch (IllegalAccessException e){

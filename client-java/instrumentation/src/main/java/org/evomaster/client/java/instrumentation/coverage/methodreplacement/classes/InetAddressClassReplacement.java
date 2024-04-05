@@ -1,10 +1,7 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
 import org.evomaster.client.java.instrumentation.HostnameResolutionInfo;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ExternalServiceInfoUtils;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.*;
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils;
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
@@ -53,7 +50,7 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
                         || ExternalServiceInfoUtils.isValidIP(host)
                         || ExecutionTracer.skipHostname(host)
                         || "localhost".equals(host)
-                        || MethodReplacementPreserveSemantics.shouldPreserveSemantics
+                        || MethodReplacementUtils.needToPreserverSemantics()
 
         ) {
             //we are only interested in hostnames... recall user could manually specify some to skip.

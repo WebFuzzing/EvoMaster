@@ -1,10 +1,7 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.thirdpartyclasses;
 
 import org.evomaster.client.java.instrumentation.ExternalServiceInfo;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ExternalServiceInfoUtils;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyMethodReplacementClass;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.*;
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
@@ -76,7 +73,7 @@ public class OkUrlFactoryClassReplacement extends ThirdPartyMethodReplacementCla
     }
 
     private static URL getReplacedURL(URL url){
-        if (MethodReplacementPreserveSemantics.shouldPreserveSemantics) {
+        if (MethodReplacementUtils.needToPreserverSemantics()) {
             return url;
         }
 
