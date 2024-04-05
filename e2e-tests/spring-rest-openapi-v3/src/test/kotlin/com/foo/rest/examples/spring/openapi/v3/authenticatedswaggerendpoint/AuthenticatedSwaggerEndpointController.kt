@@ -14,7 +14,7 @@ class AuthenticatedSwaggerEndpointController : SpringController(AuthenticatedSwa
 
     override fun getProblemInfo(): ProblemInfo {
         return RestProblem(
-            "http://localhost:$sutPort/v3/api-docs",
+            "http://localhost:$sutPort/openapi-schema",
             listOf("/api/logintoken/login") // make sure it is handled in auth
         )
     }

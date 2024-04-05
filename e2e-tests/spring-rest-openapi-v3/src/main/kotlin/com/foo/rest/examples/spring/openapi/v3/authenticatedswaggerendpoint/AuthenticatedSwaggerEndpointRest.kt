@@ -37,7 +37,7 @@ class AuthenticatedSwaggerEndpointRest {
         return ResponseEntity.status(401).build()
     }
 
-    @GetMapping(path = ["/v3/api-docs"])
+    @GetMapping(path = ["/openapi-schema"])
     fun retrieveAPIDocs(@RequestHeader("Authorization") authorization: String?) : ResponseEntity<String>{
 
         if(authorization == "Bearer $SECRET"){
