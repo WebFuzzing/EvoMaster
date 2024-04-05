@@ -45,7 +45,8 @@ public abstract class RestTestBase  extends EnterpriseTestBase {
                 "--sutControllerPort", "" + controllerPort,
                 "--maxActionEvaluations", "" + iterations,
                 "--stoppingCriterion", "FITNESS_EVALUATIONS",
-                "--useTimeInFeedbackSampling" , "false"
+                "--useTimeInFeedbackSampling" , "false",
+                "--createConfigPathIfMissing", "false"
         ));
 
         return isDeterminismConsumer(args, lambda, times, notDeterminism);
