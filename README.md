@@ -46,6 +46,7 @@ __Key features__:
 * _Installation_: we provide installers for the main operating systems: Windows (`.msi`),
   OSX (`.dmg`) and Linux (`.deb`). We also provide an uber-fat JAR file.
   To download them, see the [Release page](https://github.com/EMResearch/EvoMaster/releases).
+  Release notes are present in the file [release_notes.md](https://github.com/EMResearch/EvoMaster/blob/master/release_notes.md).
 
 * _State-of-the-art_: an [independent study (2022)](https://arxiv.org/abs/2204.08348), comparing 10 fuzzers on 20 RESTful APIs, shows that _EvoMaster_ gives the best results.
 

@@ -2,7 +2,7 @@
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-VERSION=2.0.1
+VERSION=3.0.1
 SOURCE=https://api.nuget.org/v3/index.json
 
 APIKEY=$1
