@@ -83,6 +83,10 @@ However, it might take some hours before those are in sync with Maven Central,
 which you can check at [https://search.maven.org/](https://search.maven.org/).
 
 
+## Release Notes
+
+Update the release notes (i.e., the `release_notes.md` file), by replacing the SNAPSHOT version with the new release version. 
+
 ## GitHub Release
 
 Push the version changes in the `pom.xml` files on Git.

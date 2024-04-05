@@ -159,6 +159,7 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
+          body: "See release notes at release_notes.md"
           prerelease: false
           draft: false
           fail_on_unmatched_files: true
