@@ -192,10 +192,6 @@ public abstract class EnterpriseTestBase {
             boolean createTests,
             Consumer<List<String>> lambda,
             int timeoutMinutes) throws Throwable{
-
-
-//        MethodReplacementPreserveSemantics.shouldPreserveSemantics = true;
-
         List<ClassName> classNames = new ArrayList<>();
 
         String splitType = "";
@@ -271,7 +267,6 @@ public abstract class EnterpriseTestBase {
         if (terminations == null) terminations = Arrays.asList("");
         //BMR: this is where I should handle multiples???
         if (createTests){
-            // TODO: Verify
             MethodReplacementPreserveSemantics.shouldPreserveSemantics = true;
 
             for (String termination : terminations) {
