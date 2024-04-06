@@ -12,6 +12,7 @@ import org.evomaster.core.problem.api.service.ApiWsFitness
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.HttpWsCallResult
+import org.evomaster.core.problem.httpws.auth.AuthUtils
 import org.evomaster.core.problem.httpws.auth.EndpointCallLogin
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.HeaderParam
@@ -121,122 +122,7 @@ abstract class HttpWsFitness<T>: ApiWsFitness<T>() where T : Individual {
         return baseUrl
     }
 
-    /**
-     * If any action needs auth based on tokens via JSON, do a "login" before
-     * running the actions, and store the tokens
-     */
-    protected fun getTokens(ind: T): Map<String, String>{
 
-        val tokensLogin = TokenWriter.getTokenLoginAuth(ind)
-
-        //from userId to Token
-        val map = mutableMapOf<String, String>()
-
-        val baseUrl = getBaseUrl()
-
-        for(tl in tokensLogin){
-
-            val response = makeCall(tl, baseUrl)
-                ?: continue
-
-            if(! response.hasEntity()){
-                log.warn("Login request failed, with no body response from which to extract the auth token")
-                continue
-            }
-
-            val body = response.readEntity(String::class.java)
-            val jackson = ObjectMapper()
-            val tree = jackson.readTree(body)
-            var token = tree.at(tl.token!!.extractFromField).asText()
-            if(token == null || token.isEmpty()){
-                log.warn("Failed login. Cannot extract token '${tl.token!!.extractFromField}' from response: $body")
-                continue
-            }
-
-            if(tl.token!!.headerPrefix.isNotEmpty()){
-                token = tl.token!!.headerPrefix + token
-            }
-
-            map[tl.name] = token
-        }
-
-        return map
-    }
-
-    /**
-     * If any action needs auth based on cookies, do a "login" before
-     * running the actions, and collect the cookies from the server.
-     *
-     * @return a map from username to auth cookie for those users
-     */
-    protected fun getCookies(ind: T): Map<String, List<NewCookie>> {
-
-        val cookieLogins = CookieWriter.getCookieLoginAuth(ind)
-
-        val map: MutableMap<String, List<NewCookie>> = mutableMapOf()
-
-        val baseUrl = getBaseUrl()
-
-        for (cl in cookieLogins) {
-
-            val response = makeCall(cl, baseUrl)
-                ?: continue
-
-            if (response.cookies.isEmpty()) {
-                log.warn("Cookie-based login request did not give back any new cookie")
-                continue
-            }
-
-            map[cl.name] = response.cookies.values.toList()
-        }
-
-        return map
-    }
-
-
-
-    private fun makeCall(x: EndpointCallLogin, baseUrl: String) : Response?{
-
-        val mediaType = when (x.contentType) {
-            ContentType.X_WWW_FORM_URLENCODED -> MediaType.APPLICATION_FORM_URLENCODED_TYPE
-            ContentType.JSON -> MediaType.APPLICATION_JSON_TYPE
-        }
-
-        val response = try {
-            client.target(x.getUrl(baseUrl))
-                .request()
-                //TODO could consider other cases besides POST
-                .buildPost(Entity.entity(x.payload, mediaType))
-                .invoke()
-        } catch (e: Exception) {
-            log.warn("Failed to login for ${x.name}: $e")
-            return null
-        }
-
-        if (response.statusInfo.family != Response.Status.Family.SUCCESSFUL) {
-
-            /*
-                if it is a 3xx, we need to look at Location header to determine
-                if a success or failure.
-                TODO: could explicitly ask for this info in the auth DTO.
-                However, as 3xx makes little sense in a REST API, maybe not so
-                important right now, although had this issue with some APIs using
-                default settings in Spring Security
-            */
-            if (response.statusInfo.family == Response.Status.Family.REDIRECTION) {
-                val location = response.getHeaderString("location")
-                if (location != null && (location.contains("error", true) || location.contains("login", true))) {
-                    log.warn("Login request failed with ${response.status} redirection toward $location")
-                    return null
-                }
-            } else {
-                log.warn("Login request failed with status ${response.status}")
-                return null
-            }
-        }
-
-        return response
-    }
 
 
     @Deprecated("replaced by doDbCalls()")
@@ -272,19 +158,15 @@ abstract class HttpWsFitness<T>: ApiWsFitness<T>() where T : Individual {
 
 
     protected fun handleHeaders(a: HttpWsAction, builder: Invocation.Builder, cookies: Map<String, List<NewCookie>>, tokens: Map<String, String>) {
-        a.auth.headers.forEach {
-            builder.header(it.name, it.value)
-        }
 
         val prechosenAuthHeaders = a.auth.headers.map { it.name }
+
+        val tokenHeader = a.auth.endpointCallLogin?.token?.httpHeaderName ?: null
 
         /*
             TODO: optimization, avoid mutating header gene if anyway
             using pre-chosen one
          */
-
-        val tokenHeader = a.auth.endpointCallLogin?.token?.httpHeaderName ?: null
-
         a.parameters.filterIsInstance<HeaderParam>()
                 //TODO those should be skipped directly in the search, ie, right now they are useless genes
                 .filter { !prechosenAuthHeaders.contains(it.name) }
@@ -294,26 +176,8 @@ abstract class HttpWsFitness<T>: ApiWsFitness<T>() where T : Individual {
                     builder.header(it.name, it.getRawValue())
                 }
 
-        val ecl = a.auth.endpointCallLogin
-
-        if(ecl != null) {
-            if (ecl.expectsCookie()) {
-                val list = cookies[ecl.name]
-                if (list.isNullOrEmpty()) {
-                    log.warn("No cookies for ${ecl.name}")
-                } else {
-                    list.forEach {
-                        builder.cookie(it.toCookie())
-                    }
-                }
-            } else {
-                val token = tokens[ecl.name]
-                if (token.isNullOrEmpty()) {
-                    log.warn("No auth token for ${ecl.name}")
-                } else {
-                    builder.header(ecl.token!!.httpHeaderName, token)
-                }
-            }
-        }
+        AuthUtils.addAuthHeaders(a.auth, builder, cookies, tokens)
     }
+
+
 }
