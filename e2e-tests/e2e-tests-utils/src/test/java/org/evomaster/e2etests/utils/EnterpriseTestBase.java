@@ -138,7 +138,8 @@ public abstract class EnterpriseTestBase {
                 "--sutControllerPort", "" + controllerPort,
                 "--maxActionEvaluations", "" + iterations,
                 "--stoppingCriterion", "FITNESS_EVALUATIONS",
-                "--useTimeInFeedbackSampling" , "false"
+                "--useTimeInFeedbackSampling" , "false",
+                "--createConfigPathIfMissing", "false"
         ));
 
         StaticCounter.Companion.reset();
@@ -389,7 +390,8 @@ public abstract class EnterpriseTestBase {
                 "--testSuiteFileName", testClassName.getFullNameWithDots(),
                 "--testSuiteSplitType", split,
                 "--expectationsActive", "TRUE",
-                "--executiveSummary", summary
+                "--executiveSummary", summary,
+                "--createConfigPathIfMissing", "false"
         ));
     }
 

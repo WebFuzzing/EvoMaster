@@ -80,7 +80,7 @@ class RestResourceIndividualDisabledHMTest : RestIndividualTestBase(){
 
     override fun getMutator(): StandardMutator<RestIndividual> = mutator
 
-    override fun getFitnessFunction(): AbstractRestFitness<RestIndividual> = ff
+    override fun getFitnessFunction(): AbstractRestFitness = ff
 
     private fun sampleDbAction(table : Table) : List<SqlAction>{
         val actions = sqlInsertBuilder!!.createSqlInsertionAction(table.name)

@@ -24,4 +24,12 @@ abstract class ApiWsAction(
     fun addParam(param: Param){
         addChild(param)
     }
+
+    /**
+     * In some very special cases, we want to skip creating assertions on response bodies from the API
+     */
+    open fun shouldSkipAssertionsOnResponseBody() : Boolean{
+        return false
+    }
+
 }

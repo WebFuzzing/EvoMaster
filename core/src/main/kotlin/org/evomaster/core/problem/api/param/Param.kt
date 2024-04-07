@@ -9,7 +9,7 @@ abstract class Param(
         val genes : MutableList<Gene>
 ) : StructuralElement(genes){
 
-    //TODO need refactoring
+    //TODO need refactoring. eg shared abstract class for cases in which only 1 gene for sure
     @Deprecated("Assumes there is only 1 gene")
      val gene : Gene = genes[0]
 

@@ -61,7 +61,7 @@ class EMConfig {
          */
         const val stringLengthHardLimit = 20_000
 
-        private const val defaultExternalServiceIP = "127.0.0.3"
+        private const val defaultExternalServiceIP = "127.0.0.4"
 
         //leading zeros are allowed
         private const val lz = "0*"
@@ -69,9 +69,9 @@ class EMConfig {
         private const val _eip_s = "^${lz}127"
         // other numbers could be anything between 0 and 255
         private const val _eip_e = "(\\.${lz}(25[0-5]|2[0-4][0-9]|1?[0-9]?[0-9])){3}$"
-        // first numbers (127.0.0.0 to 127.0.0.2) are reserved
+        // first four numbers (127.0.0.0 to 127.0.0.3) are reserved
         // this is done with a negated lookahead ?!
-        private const val _eip_n = "(?!${_eip_s}(\\.${lz}0){2}\\.${lz}[012]$)"
+        private const val _eip_n = "(?!${_eip_s}(\\.${lz}0){2}\\.${lz}[0123]$)"
 
         private const val externalServiceIPRegex = "$_eip_n$_eip_s$_eip_e"
 
@@ -81,7 +81,12 @@ class EMConfig {
                                     // actual singleton instance created with Guice
 
             val parser = getOptionParser()
-            val options = parser.parse(*args)
+
+            val options = try{
+                parser.parse(*args)
+            }catch (e: joptsimple.OptionException){
+                throw ConfigProblemException("Wrong input configuration parameters. ${e.message}")
+            }
 
             if (!options.has("help")) {
                 //actual validation is done here when updating
@@ -317,7 +322,9 @@ class EMConfig {
                 cff.configs[it.name] = default
             }
 
-            LoggingUtil.uniqueUserInfo("Going to create configuration file at: ${Path(configPath).toAbsolutePath()}")
+            if(! avoidNonDeterministicLogs) {
+                LoggingUtil.uniqueUserInfo("Going to create configuration file at: ${Path(configPath).toAbsolutePath()}")
+            }
             ConfigUtil.createConfigFileTemplate(configPath, cff)
         }
     }
@@ -333,7 +340,9 @@ class EMConfig {
             }
         }
 
-        LoggingUtil.uniqueUserInfo("Loading configuration file from: ${Path(configPath).toAbsolutePath()}")
+        if(! avoidNonDeterministicLogs) {
+            LoggingUtil.uniqueUserInfo("Loading configuration file from: ${Path(configPath).toAbsolutePath()}")
+        }
 
         val cf = ConfigUtil.readFromFile(configPath)
         cf.validateAndNormalizeAuth()
@@ -675,7 +684,7 @@ class EMConfig {
                 m.setter.call(this, java.lang.Double.parseDouble(optionValue))
 
             } else if (java.lang.Boolean.TYPE.isAssignableFrom(returnType)) {
-                m.setter.call(this, java.lang.Boolean.parseBoolean(optionValue))
+                m.setter.call(this, parseBooleanStrict(optionValue))
 
             } else if (java.lang.String::class.java.isAssignableFrom(returnType)) {
                 m.setter.call(this, optionValue)
@@ -693,6 +702,14 @@ class EMConfig {
         }
     }
 
+    private fun parseBooleanStrict(s: String?) : Boolean{
+        if(s==null){
+            throw IllegalArgumentException("value is 'null'")
+        }
+        if(s.equals("true", true)) return true
+        if(s.equals("false", true)) return false
+        throw IllegalArgumentException("Invalid boolean value: $s")
+    }
 
     fun shouldGenerateSqlData() = isMIO() && (generateSqlDataWithDSE || generateSqlDataWithSearch)
 
@@ -2076,7 +2093,7 @@ class EMConfig {
             " When EvoMaster mocks external services, mock server instances will run on local addresses starting from" +
             " this provided address." +
             " Min value is ${defaultExternalServiceIP}." +
-            " Lower values like ${ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP} are reserved.")
+            " Lower values like ${ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP} and ${ExternalServiceSharedUtils.DEFAULT_WM_LOCAL_IP} are reserved.")
     @Experimental
     @Regex(externalServiceIPRegex)
     var externalServiceIP : String = defaultExternalServiceIP

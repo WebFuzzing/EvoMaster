@@ -8,6 +8,7 @@ import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceRequest
+import org.evomaster.core.problem.httpws.auth.AuthUtils
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
@@ -23,7 +24,7 @@ import javax.ws.rs.core.NewCookie
 /**
  * take care of calculating/collecting fitness of [RestIndividual]
  */
-class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
+class RestResourceFitness : AbstractRestFitness() {
 
 
     @Inject
@@ -68,8 +69,8 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
 
         doMongoDbCalls(individual.seeInitializingActions().filterIsInstance<MongoDbAction>(), actionResults)
 
-        val cookies = getCookies(individual)
-        val tokens = getTokens(individual)
+        val cookies = AuthUtils.getCookies(client, getBaseUrl(), individual)
+        val tokens = AuthUtils.getTokens(client, getBaseUrl(), individual)
 
         //used for things like chaining "location" paths
         val chainState = mutableMapOf<String, String>()
