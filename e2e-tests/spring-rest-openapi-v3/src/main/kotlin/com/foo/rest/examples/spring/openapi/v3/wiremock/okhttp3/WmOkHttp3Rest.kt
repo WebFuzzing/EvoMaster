@@ -39,7 +39,7 @@ class WmOkHttp3Rest {
             } else if (code in 300..499){
                 ResponseEntity.status(400).build()
             }else{
-                ResponseEntity.status(500).build()
+                ResponseEntity.status(418).build()
             }
         }catch (e: Exception){
            return ResponseEntity.status(500).build()
@@ -87,7 +87,7 @@ class WmOkHttp3Rest {
             } else if (code in 300..499){
                 ResponseEntity.status(400).build()
             }else{
-                ResponseEntity.status(500).build()
+                ResponseEntity.status(418).build()
             }
         }catch (e: Exception){
             return ResponseEntity.status(500).build()
