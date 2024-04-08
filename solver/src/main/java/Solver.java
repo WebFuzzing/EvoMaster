@@ -113,11 +113,6 @@ public class Solver implements AutoCloseable {
         return fileName;
     }
 
-    private Map<String, String> parseToMap(String response) {
-        return null;
-    }
-
-
     /**
      * Parses the model from Z3 response and returns a map with the solved variables from the constraints
      * @param model the model as string
