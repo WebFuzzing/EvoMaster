@@ -254,6 +254,9 @@ class HttpWsExternalServiceHandler {
         externalServices.filter { it.value.isActive() }.forEach {
             it.value.stopWireMockServer()
         }
+        externalServices.clear()
+        hostnameLocalAddressMapping.clear()
+        hostnameResolutionInfos.clear()
     }
 
     /**
