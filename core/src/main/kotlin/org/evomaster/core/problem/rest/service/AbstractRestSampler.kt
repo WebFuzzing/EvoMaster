@@ -12,6 +12,7 @@ import org.evomaster.core.problem.externalservice.ExternalService
 import org.evomaster.core.problem.externalservice.HostnameResolutionInfo
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceInfo
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
+import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
 import org.evomaster.core.problem.httpws.service.HttpWsSampler
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.RestActionBuilderV3.buildActionBasedOnUrl
@@ -19,6 +20,7 @@ import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.seeding.Parser
 import org.evomaster.core.problem.rest.seeding.postman.PostmanParser
+import org.evomaster.core.remote.AuthenticationRequiredException
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
@@ -81,18 +83,18 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         val openApiURL = problem.openApiUrl
         val openApiSchema = problem.openApiSchema
 
+        // set up authentications moved up since we are going to get authentication info from HttpWsSampler
+        setupAuthentication(infoDto)
+
         if(!openApiURL.isNullOrBlank()) {
-            swagger = OpenApiAccess.getOpenAPIFromURL(openApiURL)
+            retrieveSwagger(openApiURL)
         } else if(! openApiSchema.isNullOrBlank()){
             swagger = OpenApiAccess.getOpenApi(openApiSchema)
         } else {
             throw SutProblemException("No info on the OpenAPI schema was provided")
         }
 
-        if (swagger.paths == null) {
-            throw SutProblemException("There is no endpoint definition in the retrieved Swagger file")
-        }
-
+        // The code should never reach this line without a valid swagger.
         actionCluster.clear()
         val skip = EndpointFilter.getEndpointsToSkip(config, swagger, infoDto)
         RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, skip, RestActionBuilderV3.Options(config))
@@ -104,7 +106,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
             addExtraHeader(actionCluster)
         }
 
-        setupAuthentication(infoDto)
+
         initSqlInfo(infoDto)
 
         initHostnameInfo(infoDto)
@@ -131,6 +133,40 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         partialOracles.setupForRest(swagger, config)
 
         log.debug("Done initializing {}", AbstractRestSampler::class.simpleName)
+    }
+
+    /*
+    This function retrieves the swagger. It is used for both black-box and white-box.
+     */
+    private fun retrieveSwagger(openApiURL : String) {
+
+        // first try to retrieve the OpenAPI without authentication
+        try {
+            swagger = OpenApiAccess.getOpenAPIFromURL(openApiURL, HttpWsNoAuth())
+        }
+        catch (sutException : AuthenticationRequiredException) {
+            log.warn(sutException.message)
+
+            // First check if we have authentication information available inside infoDto.infoForAuthentication
+            if (authentications.isNotEmpty()) {
+
+                //get the first authentication info
+                val currentAuthInfo = authentications.getFirstAuthentication()
+
+                // try to retrieve the swagger with authentication info
+                swagger = OpenApiAccess.getOpenAPIFromURL(openApiURL, currentAuthInfo)
+            }
+            else {
+                throw AuthenticationRequiredException("Accessing the OpenAPI schema from $openApiURL" +
+                        " requires authentication, but there is no auth info provided that can be used")
+            }
+        }
+
+        // if we still could not retrieve the swagger, then throw an exception and finish
+        if (!this::swagger.isInitialized) {
+            throw SutProblemException("Cannot retrieve OpenAPI schema from $openApiURL," +
+                    "\n after trying both authenticated and unauthenticated calls.")
+        }
     }
 
     private fun addExtraQueryParam(actionCluster: Map<String, Action>){
@@ -252,7 +288,12 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
     private fun initForBlackBox() {
 
-        swagger = OpenApiAccess.getOpenAPIFromURL(configuration.bbSwaggerUrl)
+        // adding authentication from config should be moved here.
+        addAuthFromConfig()
+
+        // retrieve the swagger
+        retrieveSwagger(configuration.bbSwaggerUrl)
+
         if (swagger.paths == null) {
             throw SutProblemException("There is no endpoint definition in the retrieved OpenAPI file")
         }
@@ -263,7 +304,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         }
 
         // ONUR: Add all paths to list of paths to ignore except endpointFocus
-        val endpointsToSkip = EndpointFilter.getEndpointsToSkip(config,swagger);
+        val endpointsToSkip = EndpointFilter.getEndpointsToSkip(config,swagger)
 
         actionCluster.clear()
 
@@ -274,7 +315,6 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         if (config.seedTestCases)
             initSeededTests()
 
-        addAuthFromConfig()
 
         /*
             TODO this would had been better handled with optional injection, but Guice seems pretty buggy :(

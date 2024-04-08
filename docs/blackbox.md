@@ -101,15 +101,9 @@ evomaster.exe  --problemType GRAPHQL --bbTargetUrl https://gitlab.com/api/graphq
 ## AUTH
 
 Since version `1.3.0`, it is possible to specify custom HTTP headers (e.g., to pass auth tokens), using the options from `--header0` to `--header2` (in case more than one HTTP header is needed). 
+Many more options are now available since version `3.0.0`.
+This is clarified in details in the [authentication documentation](auth.md).
 
-However, in contrast to white-box mode, in black-box mode there is 
-currently no configuration to automatically setup the fetching of
-dynamic tokens.
-For example, if an auth token needs to be fetched from a login endpoint
-(e.g., a POST on a `/login` with username and password),
-then such call has to be done manually (and then the token can be passed
-to EvoMaster with `--header0` option, e.g., `--header0 "cookie: <token>"`).
-Such call can be done with other tools like Postman and cURL.
 
 
 ## WARNING
