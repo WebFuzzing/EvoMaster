@@ -2,6 +2,10 @@
 
 Under development in `master` branch.
 
+### Addressed GitHub Issues
+- #834: Authentication required when accessing schema
+
+
 ---
 # Version: 3.0.0
 
