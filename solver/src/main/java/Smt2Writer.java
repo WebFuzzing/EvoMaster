@@ -64,11 +64,11 @@ public class Smt2Writer  {
     }
 
     private void declareConstants(StringBuilder sb) {
-        for (String value: this.variables.keySet()) {
+        for (String key: this.variables.keySet()) {
             sb.append("(declare-fun ");
-            sb.append(value); // variable name
+            sb.append(key); // variable name
             sb.append(" () ");
-            sb.append(this.variables.get(value)); // type
+            sb.append(this.variables.get(key)); // type
             sb.append(")\n");
         }
     }
@@ -82,9 +82,9 @@ public class Smt2Writer  {
     }
 
     private void getValues(StringBuilder sb) {
-        for (String value : this.variables.keySet()) {
+        for (String key : this.variables.keySet()) {
             sb.append("(get-value (");
-            sb.append(value);
+            sb.append(key);
             sb.append("))\n");
         }
     }
@@ -130,13 +130,15 @@ public class Smt2Writer  {
                 SqlOrCondition orCondition = (SqlOrCondition) condition;
                 List<SqlCondition> conditions = orCondition.getOrConditions();
                 List<String> orMembers = new ArrayList<>();
+
+                Map<String, String> variablesAndType = new HashMap<>();
                 for (SqlCondition c : conditions) {
                     Pair<Map<String, String>, String> response = parseCheckExpression(tableDto, c);
-                    variables.putAll(response.getFirst());
+                    variablesAndType.putAll(response.getFirst());
                     orMembers.add(response.getSecond());
                 }
 
-                return new Pair<>(variables, toOr(orMembers));
+                return new Pair<>(variablesAndType, toOr(orMembers));
             }
 
             if (condition instanceof SqlInCondition) {
@@ -144,14 +146,14 @@ public class Smt2Writer  {
 
                 String columnName = inCondition.getSqlColumn().getColumnName();
                 String variable = asTableVariableKey(tableDto, columnName);
-                Map<String, String> variables = new HashMap<>();
+                Map<String, String> variablesAndType = new HashMap<>();
                 String variableType = getSmtTypeFromDto(tableDto, columnName);
-                variables.put(variable, toSmtType(variableType));
+                variablesAndType.put(variable, toSmtType(variableType));
 
                 List<SqlCondition> expressions = inCondition.getLiteralList().getSqlConditionExpressions();
                 String assertion = inArrayExpressionToOrAssert(variable, expressions);
 
-                return new Pair<>(variables, assertion);
+                return new Pair<>(variablesAndType, assertion);
             }
 
             if (!(condition instanceof SqlComparisonCondition)) {
