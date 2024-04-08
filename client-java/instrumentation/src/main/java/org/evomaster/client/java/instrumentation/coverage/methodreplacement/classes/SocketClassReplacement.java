@@ -1,10 +1,7 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
 import org.evomaster.client.java.instrumentation.ExternalServiceInfo;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ExternalServiceInfoUtils;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.*;
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils;
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
@@ -30,7 +27,7 @@ public class SocketClassReplacement implements MethodReplacementClass {
             usageFilter = UsageFilter.ANY
     )
     public static void connect(Socket caller, SocketAddress endpoint, int timeout) throws IOException {
-        if (MethodReplacementPreserveSemantics.shouldPreserveSemantics) {
+        if (MethodReplacementUtils.needToPreserverSemantics()) {
             SimpleLogger.warn("Preserving semantics: java.net.socket");
             caller.connect(endpoint, timeout);
         } else {
