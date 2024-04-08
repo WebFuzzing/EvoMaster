@@ -2,6 +2,7 @@ package org.evomaster.core.problem.rest.service
 
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.mongo.MongoDbAction
+import org.evomaster.core.problem.httpws.auth.AuthUtils
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
@@ -23,8 +24,8 @@ open class RestFitness : AbstractRestFitness() {
 
         rc.resetSUT()
 
-        val cookies = getCookies(individual)
-        val tokens = getTokens(individual)
+        val cookies = AuthUtils.getCookies(client, getBaseUrl(), individual)
+        val tokens = AuthUtils.getTokens(client, getBaseUrl(), individual)
 
         if (log.isTraceEnabled){
             log.trace("do evaluate the individual, which contains {} dbactions and {} rest actions",
