@@ -3,7 +3,7 @@
     <PropertyGroup>
           <!--  There is question of whether to use netstandard2.1, but that would break compilation -->
          <TargetFramework>netcoreapp3.1</TargetFramework>
-         <Version>2.0.1-SNAPSHOT</Version>
+         <Version>3.0.1-SNAPSHOT</Version>
          <Authors>EvoMaster Team</Authors>
      </PropertyGroup>
 </Project>
