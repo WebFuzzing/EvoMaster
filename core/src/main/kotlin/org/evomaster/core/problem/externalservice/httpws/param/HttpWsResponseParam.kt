@@ -66,6 +66,9 @@ class HttpWsResponseParam(
     /**
      * @return HTTP 200 if the [responseBody] has value.
      * @return HTTP 204 if the body is blank
+     *
+     *  All 1xx (Informational), 204 (No Content), and 304 (Not Modified) responses do not include content.
+     *  https://www.rfc-editor.org/rfc/rfc9110.html#section-6.4.1-8
      */
     fun getResponseBodyBasedOnStatus(): String {
         val statusCode = getHttpStatusCode()
