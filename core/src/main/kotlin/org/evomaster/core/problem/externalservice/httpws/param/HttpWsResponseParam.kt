@@ -70,7 +70,7 @@ class HttpWsResponseParam(
     fun getResponseBodyBasedOnStatus(): String {
         val statusCode = getHttpStatusCode()
 
-        if (statusCode == 204) {
+        if (arrayOf(204, 304).contains(statusCode)) {
             return ""
         }
 
