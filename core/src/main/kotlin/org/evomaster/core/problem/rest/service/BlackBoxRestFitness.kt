@@ -2,6 +2,7 @@ package org.evomaster.core.problem.rest.service
 
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.core.problem.httpws.HttpWsCallResult
+import org.evomaster.core.problem.httpws.auth.AuthUtils
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.action.ActionResult
@@ -33,8 +34,8 @@ class BlackBoxRestFitness : RestFitness() {
             rc.resetSUT()
         }
 
-        cookies.putAll(getCookies(individual))
-        tokens.putAll(getTokens(individual))
+        cookies.putAll(AuthUtils.getCookies(client, getBaseUrl(), individual))
+        tokens.putAll(AuthUtils.getTokens(client, getBaseUrl(), individual))
 
         val fv = FitnessValue(individual.size().toDouble())
 
