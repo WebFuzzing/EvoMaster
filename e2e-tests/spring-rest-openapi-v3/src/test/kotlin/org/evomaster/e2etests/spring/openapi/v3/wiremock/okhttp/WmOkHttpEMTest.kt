@@ -37,7 +37,7 @@ class WmOkHttpEMTest : SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "WmOkHttpEM",
             "org.foo.WmOkHttpEM",
-            500,
+            1500,
             true,
             { args: MutableList<String> ->
 
