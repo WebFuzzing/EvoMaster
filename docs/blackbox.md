@@ -89,7 +89,7 @@ public class EvoMasterTest {
 ### CLI Parameters
 
 Note that there are several further parameters that can be configured ([see documentation](./options.md)).
-These for example include options to specify where to store the generated files (`--outputFolder`), filter endpoints to test (e.g., `--endpointPrefix`), specify how test files will be named (e.g., `outputFilePrefix` and `outputFileSuffix`), etc.
+These for example include options to specify where to store the generated files (`--outputFolder`), filter endpoints to test (e.g., `--endpointPrefix`), specify how test files will be named (e.g., `--outputFilePrefix` and `--outputFileSuffix`), etc.
 
 Since version `3.0.0` these options can be specified in the generated `em.yaml` configuration files (so they do not need to be typed each time). 
 
