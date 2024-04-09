@@ -37,7 +37,7 @@ The command is doing the following:
   using JUnit 4 in this case. Note: the language of the generated tests is not necessarily related
   to the language in which the tested application is implemented. 
 * `--maxTime 30s`: for how long to run the search, i.e., just 30 seconds in this very simple example.
-* `--ratePerMinute 60`: avoid doing a DoS attack by bombarding the remote service with too many HTTP calls in quick rapid succession. Limit to max 1 per second (i.e., 60 per minute) in this example.
+* `--ratePerMinute 60`: avoid doing a DoS attack by bombarding the remote service with too many HTTP calls in quick rapid succession. Limit to max 1 per second (i.e., 60 per minute) in this example. Note: if you are testing an API running on your machine (e.g., on `localhost`) then this parameter is not only __not required__, but also __detrimental__ for performance (i.e., do not use it).
 
 This command will create the following test suite, in which 2 `GET` calls are executed:
 
@@ -85,6 +85,14 @@ public class EvoMasterTest {
     }
 }
 ```
+
+### CLI Parameters
+
+Note that there are several further parameters that can be configured ([see documentation](./options.md)).
+These for example include options to specify where to store the generated files (`--outputFolder`), filter endpoints to test (e.g., `--endpointPrefix`), specify how test files will be named (e.g., `outputFilePrefix` and `outputFileSuffix`), etc.
+
+Since version `3.0.0` these options can be specified in the generated `em.yaml` configuration files (so they do not need to be typed each time). 
+
 
 ### Issues with JDKs Above 8
 
