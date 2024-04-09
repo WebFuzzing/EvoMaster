@@ -251,12 +251,9 @@ class HttpWsExternalServiceHandler {
     }
 
     fun reset() {
-        externalServices.filter { it.value.isActive() }.forEach {
+        externalServices.forEach {
             it.value.stopWireMockServer()
         }
-        externalServices.clear()
-        hostnameLocalAddressMapping.clear()
-        hostnameResolutionInfos.clear()
     }
 
     /**

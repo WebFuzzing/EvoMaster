@@ -208,7 +208,7 @@ class HttpWsExternalService(
      * To stop the WireMock server
      */
     fun stopWireMockServer() {
-//        if (!externalServiceInfo.isPartial())
+        if (isActive())
             wireMockServer!!.stop()
     }
 
