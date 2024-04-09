@@ -86,6 +86,25 @@ public class EvoMasterTest {
 }
 ```
 
+### Issues with JDKs Above 8
+
+The previous example run _EvoMaster_ directly from its JAR file, using the command:
+
+```java -jar core/target/evomaster.jar```
+
+To do this, you need to have a JDK installed on your machine, version 8 or later. 
+An easier approach is to download and install _EvoMaster_ through its installer files (e.g., `.msi` for Windows), as those embed a JDK as well, with right configuration.
+Then _EvoMaster_ can be run with for example `evomaster.exe` (for Windows).
+
+If you want to run the JAR file directly with the JDK, you will encounter issues with versions from 17 on, due _integrity constraints_ on the JDK. 
+You will have to manually add `--add-opens` commands like:
+
+```java --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED -jar core/target/evomaster.jar ```
+
+If you fail to do that, _EvoMaster_ will crash, but at least it will tell you what to do (with the most update requirements, in case more `--add-opens` are required since this documentation was written).
+
+Unfortunately, there is nothing we can do to address this major usability problem in the latest JDK versions :-( 
+
 ## GraphQL APIs
 
 Black-box fuzzing of GraphQL APIs uses the same options as for RESTful APIs.
