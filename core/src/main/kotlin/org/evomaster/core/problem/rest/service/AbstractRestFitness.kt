@@ -337,7 +337,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 }
 
                 val unauthorized = !AuthUtils.checkUnauthorizedWithAuth(status, actions[it])
-                if(unauthorized){
+                if(unauthorized && config.httpOracles){
                     val unauthorizedId = idMapper.handleLocalTarget("")
                     FIXME as fault
                 }
