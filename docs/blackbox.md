@@ -135,12 +135,11 @@ This is clarified in details in the [authentication documentation](auth.md).
 
 ## WARNING
 
-Black-box testing is easy to do: first download the tool, and then just specify where the Swagger schema
-can be found.
-However, as it does know nothing about the internal details of the tested application, it is 
-unlikely that it will get good results (i.e., in terms of code coverage and detected faults).
+Black-box testing is easy to do: first download the tool, and then just specify where the OpenAPI/GraphQL schema can be found.
+However, as it does know nothing about the internal details of the tested application, it is  unlikely that black-box testing will get good results in terms of code coverage.
+Albeit it can still detect many kinds faults (especially related to input validation).
 
-The first time you try _EvoMaster_, use black-box testing to get an idea of what _EvoMaster_
-could do for you.
+The first time you try _EvoMaster_, use black-box testing to get an idea of what _EvoMaster_ could do for you.
 However, after an initial trial, we recommend to switch to [white-box testing](whitebox.md),
 as it can lead to much, much better results.
+However, for the time being only programs running on the JVM (e.g., written in Java or Kotlin) are supported for white-box testing. 
