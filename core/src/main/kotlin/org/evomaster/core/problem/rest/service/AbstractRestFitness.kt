@@ -15,6 +15,8 @@ import org.evomaster.core.problem.externalservice.HostnameResolutionInfo
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceInfo
+import org.evomaster.core.problem.httpws.HttpWsAction
+import org.evomaster.core.problem.httpws.auth.AuthUtils
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
 import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
 import org.evomaster.core.problem.rest.*
@@ -330,7 +332,14 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 handleAdditionalStatusTargetDescription(fv, status, name, it, location5xx)
 
                 if (config.expectationsActive) {
+                    //TODO refactor
                     handleAdditionalOracleTargetDescription(fv, actions, result, name, it)
+                }
+
+                val unauthorized = !AuthUtils.checkUnauthorizedWithAuth(status, actions[it])
+                if(unauthorized){
+                    val unauthorizedId = idMapper.handleLocalTarget("")
+                    FIXME as fault
                 }
             }
     }
@@ -559,25 +568,12 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             }
         }
 
-        if (response.status == 401 && a.auth !is NoAuth && !a.auth.requireMockHandling) {
-            /*
-                if the endpoint itself is to get auth info, we might exclude auth check for it
-                eg,
-                    the auth is Login with foo,
-                    then the action is to Login with a generated account (eg bar)
-                    thus, the response would likely be 401
-             */
-            if (!a.auth.excludeAuthCheck(a)) {
-                //this would likely be a misconfiguration in the SUT controller
-                log.warn("Got 401 although having auth for '${a.auth.name}'")
-            }
-        }
-
-
         if (!handleSaveLocation(a, response, rcr, chainState)) return false
 
         return true
     }
+
+
 
 
     private fun createInvocation(
