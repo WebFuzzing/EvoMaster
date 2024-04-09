@@ -13,10 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Solver implements AutoCloseable {
 
@@ -32,14 +29,6 @@ public class Solver implements AutoCloseable {
 
     private final String resourcesFolder;
     private final String tmpFolderPath;
-
-
-
-    // The variables that solve the constraint, the key is the variable name and the value is the type in smt format (e.g. "x" -> "Int")
-    private final Map<String, String> variables = new HashMap<>();
-
-    // The assertions that those variables need to satisfy in smt format (e.g. "(> x 5)")
-    private final List<String> constraints = new ArrayList<>();
 
 
     public Solver(String resourcesFolder) {
@@ -73,26 +62,51 @@ public class Solver implements AutoCloseable {
         z3Prover.stop();
     }
 
-
     /**
      * @param cs a list of constraints to solve
-     * @return a map with the keys of the variable names and their values
+     * @return a list with all the row with values that the solver found
      */
-    public Map<String, String> solve(List<TableConstraint> cs) {
-        String text = parseConstraintsToSmtText(cs);
+    public Map<String, RowWithValues> solve(List<RowToSolve> rowsToSolve, List<TableConstraint> cs) {
+        String text = parseConstraintsToSmtText(rowsToSolve, cs);
         String fileName = storeToTmpFile(text);
         String model = solveFromFile(this.tmpFolderPath + fileName);
         return toSolvedConstraintsMap(model);
     }
 
-     String parseConstraintsToSmtText(List<TableConstraint> cs) {
+    private void loadVariablesFrom(Map<String, String> variables, List<RowToSolve> rowsToSolve) {
+        for (RowToSolve row : rowsToSolve) {
+            String tableName = row.getTableName();
+            for (String key : row.getColumns().keySet()) {
+                variables.put(tableName + "__" + key, row.getColumns().get(key).toString());
+            }
+        }
+    }
+
+    String parseConstraintsToSmtText(List<RowToSolve> rowsToSolve, List<TableConstraint> cs) {
+
+        // The variables that solve the constraint, the key is the variable name and the value is the type in smt format (e.g. "x" -> "Int")
+        Map<String, String> variables = new HashMap<>();
+
+        // The assertions that those variables need to satisfy in smt format (e.g. "(> x 5)")
+        List<String> constraints = new ArrayList<>();
+
+
+        // First load all the variables that the user needs to solve
+        loadVariablesFrom(variables, rowsToSolve);
         // The assertions that those variables need to satisfy in smt format (e.g. "(> x 5)")
         for (TableConstraint c : cs) {
             Pair<Map<String, String>, String> pair = toSmtFormat(c);
-            variables.putAll(pair.getFirst());
-            constraints.add(pair.getSecond());
+            String tableName = c.getTableName();
+            for (String key : pair.getFirst().keySet()) {
+                if (!variables.containsKey(tableName + "__" + key)) {
+                    variables.put(tableName + "__" + key, pair.getFirst().get(key));
+                }
+            }
+            if (pair.getSecond() != null) {
+                constraints.add(pair.getSecond());
+            }
         }
-        return asText();
+        return asText(variables, constraints);
     }
 
     /**
@@ -116,18 +130,45 @@ public class Solver implements AutoCloseable {
     /**
      * Parses the model from Z3 response and returns a map with the solved variables from the constraints
      * @param model the model as string
-     * @return a map with the solved variables and their values as string
+     * @return a map with the solved variables and their values: key table name, value the row for that table
      */
-    private Map<String, String> toSolvedConstraintsMap(String model) {
+    private Map<String, RowWithValues> toSolvedConstraintsMap(String model) {
         String[] lines = model.split("\n");
-        Map<String, String> solved = new HashMap<>();
+        Map<String, RowWithValues> response = new HashMap<>();
 
         for (int i = 1; i < lines.length; i++) {
-            String[] values = lines[i].substring(2, lines[i].length()-2).split(" ");
+            // example: lines[i] === "((products__stock 1))"
+            String removeBraces = lines[i].substring(2, lines[i].length()-2); // "products__stock 1"
+            String[] keyAndValue = removeBraces.split(" "); // ["products__stock", "1"]
+            String[] key = keyAndValue[0].split("__"); // ["products", "stock"]
+            String tableName = key[0];
+            String columnName = key[1];
+            String currentValueAsString = keyAndValue[1];
 
-            solved.put(values[0], values[1]);
+
+            RowWithValues rowToEdit;
+
+            if (response.containsKey(tableName)) {
+                rowToEdit = response.get(tableName);
+            } else {
+                RowWithValues newRow = new RowWithValues(tableName);
+                response.put(tableName, newRow);
+                rowToEdit = newRow;
+            }
+
+            try {
+                int v = Integer.parseInt(currentValueAsString);
+                rowToEdit.withColumn(columnName, new IntSolvedValue(v));
+            } catch(NumberFormatException | NullPointerException e) {
+                try {
+                    Double v = Double.parseDouble(currentValueAsString);
+                    rowToEdit.withColumn(columnName, new RealSolvedValue(v));
+                } catch (NumberFormatException | NullPointerException f) {
+                    rowToEdit.withColumn(columnName, new StringSolvedValue(currentValueAsString));
+                }
+            }
         }
-        return solved;
+        return response;
     }
 
     /**
@@ -165,31 +206,31 @@ public class Solver implements AutoCloseable {
         }
     }
 
-    String asText() {
+    String asText(Map<String, String> variables, List<String> constraints) {
         StringBuilder sb = new StringBuilder();
 
         sb.append("(set-logic QF_SLIA)\n");
 
-        declareConstants(sb);
-        assertConstraints(sb);
+        declareConstants(variables, sb);
+        assertConstraints(constraints, sb);
 
         sb.append("(check-sat)\n");
-        getValues(sb);
+        getValues(variables, sb);
 
         return sb.toString();
     }
 
-    private void declareConstants(StringBuilder sb) {
-        for (String key: this.variables.keySet()) {
+    private void declareConstants(Map<String, String> variables, StringBuilder sb) {
+        for (String key: variables.keySet()) {
             sb.append("(declare-fun ");
             sb.append(key); // variable name
             sb.append(" () ");
-            sb.append(this.variables.get(key)); // type
+            sb.append(variables.get(key)); // type
             sb.append(")\n");
         }
     }
 
-    private void assertConstraints(StringBuilder sb){
+    private void assertConstraints(List<String> constraints, StringBuilder sb){
         for (String constraint : constraints) {
             sb.append("(assert ");
             sb.append(constraint);
@@ -197,8 +238,8 @@ public class Solver implements AutoCloseable {
         }
     }
 
-    private void getValues(StringBuilder sb) {
-        for (String key : this.variables.keySet()) {
+    private void getValues(Map<String, String> variables, StringBuilder sb) {
+        for (String key : variables.keySet()) {
             sb.append("(get-value (");
             sb.append(key);
             sb.append("))\n");
@@ -239,40 +280,40 @@ public class Solver implements AutoCloseable {
             List<String> enumValues = enumConstraint.getValuesAsStrings();
             Map<String, String> variablesAndType = new HashMap<>();
             variablesAndType.put(enumConstraint.getColumnName(), "String"); // TODO: Check If enum constraint always string?
-            String smtRule = toInValues(enumConstraint.getColumnName(), enumValues);
+            String smtRule = toInValues(c.getTableName(), enumConstraint.getColumnName(), enumValues);
             return new Pair<>(variablesAndType, smtRule);
 
         } else if (c instanceof LowerBoundConstraint) {
             LowerBoundConstraint lowerBoundConstraint = (LowerBoundConstraint) c;
-            String smtRule = "(<= " + lowerBoundConstraint.getColumnName() + " " + lowerBoundConstraint.getLowerBound() + ")";
+            String smtRule = "(<= " + lowerBoundConstraint.getTableName() + "__" + lowerBoundConstraint.getColumnName() + " " + lowerBoundConstraint.getLowerBound() + ")";
 
             Map<String, String> variablesAndType = new HashMap<>();
             variablesAndType.put(lowerBoundConstraint.getColumnName(), "Int"); // TODO: Check numeric type
             return new Pair<>(variablesAndType, smtRule);
         } else if (c instanceof UpperBoundConstraint) {
             UpperBoundConstraint upperBoundConstraint = (UpperBoundConstraint) c;
-            String smtRule = "(>= " + upperBoundConstraint.getColumnName() + " " + upperBoundConstraint.getUpperBound() + ")";
+            String smtRule = "(>= " + upperBoundConstraint.getTableName() + "__" + upperBoundConstraint.getColumnName() + " " + upperBoundConstraint.getUpperBound() + ")";
             Map<String, String> variablesAndType = new HashMap<>();
             variablesAndType.put(upperBoundConstraint.getColumnName(), "Int"); // TODO: Check numeric type
             return new Pair<>(variablesAndType, smtRule);
         } else if (c instanceof RangeConstraint) {
             RangeConstraint rangeConstraint = (RangeConstraint) c;
             String columnName = rangeConstraint.getColumnName();
-            String smtRule = "(and (>= " + columnName + " " + rangeConstraint.getMinValue() + ") (<= " + columnName + " " + rangeConstraint.getMaxValue() + "))";
+            String smtRule = "(and (>= " + rangeConstraint.getTableName() + "__" + columnName + " " + rangeConstraint.getMinValue() + ") (<= " + rangeConstraint.getTableName() + "__" + columnName + " " + rangeConstraint.getMaxValue() + "))";
             Map<String, String> variablesAndType = new HashMap<>();
             variablesAndType.put(rangeConstraint.getColumnName(), "Int"); // TODO: Check numeric type
             return new Pair<>(variablesAndType, smtRule);
         } else if (c instanceof SimilarToConstraint) {
             SimilarToConstraint similarToConstraint = (SimilarToConstraint) c;
             // TODO: Probably this doesnt work
-            String smtRule = "(like " + similarToConstraint.getColumnName() + " " + similarToConstraint.getPattern() + ")";
+            String smtRule = "(like " + similarToConstraint.getTableName() + "__" + similarToConstraint.getColumnName() + " " + similarToConstraint.getPattern() + ")";
             Map<String, String> variablesAndType = new HashMap<>();
             variablesAndType.put(similarToConstraint.getColumnName(), "String"); // TODO: Check string type
             return new Pair<>(variablesAndType, smtRule);
         } else if (c instanceof LikeConstraint) {
             LikeConstraint likeConstraint = (LikeConstraint) c;
             // TODO: Probably this doesnt work
-            String smtRule = "(like " + likeConstraint.getColumnName() + " " + likeConstraint.getPattern() + ")";
+            String smtRule = "(like " + likeConstraint.getTableName() + "__" + likeConstraint.getColumnName() + " " + likeConstraint.getPattern() + ")";
             Map<String, String> variablesAndType = new HashMap<>();
             variablesAndType.put(likeConstraint.getColumnName(), "String"); // TODO: Check string type
             return new Pair<>(variablesAndType, smtRule);
@@ -288,22 +329,24 @@ public class Solver implements AutoCloseable {
             return new Pair<>(variablesAndType, smtRule);
         } else if (c instanceof IsNotNullConstraint) {
             IsNotNullConstraint isNotNullConstraint = (IsNotNullConstraint) c;
-            // TODO: Probably different check for null here
-            String smtRule = "(not (= " + isNotNullConstraint.getColumnName() + " null))";
+            // Declaring a variable in smt is enough for it to return a value
             Map<String, String> variablesAndType = new HashMap<>();
             variablesAndType.put(isNotNullConstraint.getColumnName(), "String"); // TODO: Check string type
-            return new Pair<>(variablesAndType, smtRule);
+            return new Pair<>(variablesAndType, null);
         } else {
             throw new IllegalArgumentException("Unknown constraint type: " + c);
         }
     }
 
-    private String toInValues( String columnName, List<String> enumValues) {
+    private String toInValues(String tableName, String columnName, List<String> enumValues) {
         if (enumValues.isEmpty()) {
             return "";
         } else if (enumValues.size() == 1) {
-            return "(= " + columnName + " \"" + enumValues.get(0) + "\")";
+            return "(= " + tableName + "__" + columnName + " \"" + enumValues.get(0) + "\")";
         }
-        return "(or (= " + columnName + " \"" +  enumValues.get(0) + "\") " + toInValues(columnName, enumValues.subList(1, enumValues.size())) + ")";
+        return "(or (= " + tableName + "__" + columnName + " \"" +  enumValues.get(0) + "\") " +
+                toInValues(tableName, columnName, enumValues.subList(1, enumValues.size())) + ")";
     }
 }
+
+

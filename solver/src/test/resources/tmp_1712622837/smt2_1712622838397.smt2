@@ -1,0 +1,8 @@
+(set-logic QF_SLIA)
+(declare-fun PRODUCTS_STOCK () Int)
+(declare-fun PRODUCTS_MIN_PRICE () Int)
+(assert (>= PRODUCTS_STOCK 5))
+(assert (> PRODUCTS_MIN_PRICE 1))
+(check-sat)
+(get-value (PRODUCTS_STOCK))
+(get-value (PRODUCTS_MIN_PRICE))
