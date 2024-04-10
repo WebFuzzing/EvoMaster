@@ -33,6 +33,8 @@ class SecurityRest {
     @Inject
     private lateinit var randomness: Randomness
 
+    @Inject
+    private lateinit var fitness: AbstractRestFitness
 
     /**
      * All actions that can be defined from the OpenAPI schema
@@ -255,11 +257,8 @@ class SecurityRest {
             // TODO Fix how to perform fitness function evaluation here.
 
             // Then evaluate the fitness function to create evaluatedIndividual
-            val fitness : FitnessFunction<RestIndividual> = RestResourceFitness()
 
             val evaluatedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(individualToAddToSuite)
-
-
 
             val newTarget = this.archive.coveredTargets().max() + 1
 
