@@ -337,9 +337,16 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 }
 
                 val unauthorized = !AuthUtils.checkUnauthorizedWithAuth(status, actions[it])
-                if(unauthorized && config.httpOracles){
-                    val unauthorizedId = idMapper.handleLocalTarget("")
-                    FIXME as fault
+                if(unauthorized){
+                    /*
+                        Note: at this point we cannot consider it as a bug, because it could be just a
+                        misconfigured auth info.
+                        however, if for other endpoints or parameters we get a 2xx, then it is clearly
+                        a bug (although we need to make 100% sure of handling token caching accordingly).
+                        but this would be check in specific security tests after the end of the search.
+                     */
+                    val unauthorizedId = idMapper.handleLocalTarget("wrong_authorization:$name")
+                    fv.updateTarget(unauthorizedId, 1.0, it)
                 }
             }
     }
