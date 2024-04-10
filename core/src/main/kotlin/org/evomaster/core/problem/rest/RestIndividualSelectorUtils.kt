@@ -18,20 +18,7 @@ object RestIndividualSelectorUtils {
     //FIXME this needs to be cleaned-up
 
 
-    /**
-     * Finds the first index of a main REST action with a given verb and path among actions in the individual.
-     *
-     * @return negative value if not found
-     */
-    fun getActionIndexFromIndividual(
-        individual: RestIndividual,
-        actionVerb: HttpVerb,
-        path: RestPath
-    ) : Int {
-        return individual.seeMainExecutableActions().indexOfFirst  {
-            it.verb == actionVerb && it.path.isEquivalent(path)
-        }
-    }
+
 
     fun findActionFromIndividual(
         individual: EvaluatedIndividual<RestIndividual>,

@@ -1,11 +1,9 @@
 package org.evomaster.core.problem.rest.selectorutils
 
 import bar.examples.it.spring.pathstatus.PathStatusController
-import org.evomaster.core.problem.rest.HttpVerb
-import org.evomaster.core.problem.rest.IntegrationTestRestBase
-import org.evomaster.core.problem.rest.RestIndividualSelectorUtils
-import org.evomaster.core.problem.rest.RestPath
+import org.evomaster.core.problem.rest.*
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
@@ -47,4 +45,21 @@ class RestIndividualSelectorUtilsPathStatusTest : IntegrationTestRestBase(){
         assertEquals(0, r1.size)
     }
 
+    @Test
+    fun testIndex(){
+
+        val pirTest = getPirToRest()
+
+        val byStatus = RestPath("/api/pathstatus/byStatus/{status}")
+        val others = RestPath("/api/pathstatus/others/{x}")
+
+        val s200 = pirTest.fromVerbPath("get", "/api/pathstatus/byStatus/200")!!
+        val s400 = pirTest.fromVerbPath("get", "/api/pathstatus/byStatus/400")!!
+        val o200 = pirTest.fromVerbPath("get", "/api/pathstatus/others/200")!!
+
+        val x = createIndividual(listOf(s200,s400,o200,s200.copy() as RestCallAction))
+
+        assertEquals(2, x.individual.getActionIndex(HttpVerb.GET, others))
+        assertTrue(x.individual.getActionIndex(HttpVerb.POST, others) < 0)
+    }
 }

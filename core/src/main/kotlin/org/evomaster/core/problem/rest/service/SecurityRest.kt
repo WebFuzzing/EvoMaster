@@ -167,8 +167,7 @@ class SecurityRest {
                 // we can just get the first item
                 val currentIndividualWith403 = existing403[0]
 
-                val deleteAction = RestIndividualSelectorUtils.getActionIndexFromIndividual(currentIndividualWith403.individual, HttpVerb.DELETE,
-                    delete.path)
+                val deleteAction = currentIndividualWith403.individual.getActionIndex(HttpVerb.DELETE, delete.path)
 
                 val deleteActionIndex = RestIndividualSelectorUtils.getActionWithIndex(currentIndividualWith403, deleteAction)
 
@@ -218,8 +217,7 @@ class SecurityRest {
                 if (verbUsedForCreation != null) {
 
                     // so we found an individual with a successful PUT or POST,  we will slice all calls after PUT or POST
-                    actionIndexForCreation = RestIndividualSelectorUtils.getActionIndexFromIndividual(
-                        existingEndpointForCreation.individual,
+                    actionIndexForCreation = existingEndpointForCreation.individual.getActionIndex(
                         verbUsedForCreation,
                         delete.path
                     )
@@ -242,8 +240,7 @@ class SecurityRest {
 
             // After having a set of requests in which the last one is a DELETE call with another user, add a PUT
             // with another user
-            val deleteActionIndex = RestIndividualSelectorUtils.getActionIndexFromIndividual(individualToChooseForTest, HttpVerb.DELETE,
-                delete.path)
+            val deleteActionIndex = individualToChooseForTest.getActionIndex(HttpVerb.DELETE, delete.path)
 
             val deleteAction = RestIndividualSelectorUtils.getActionWithIndexRestIndividual(individualToChooseForTest, deleteActionIndex)
 
