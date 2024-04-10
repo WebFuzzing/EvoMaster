@@ -183,6 +183,8 @@ class Main {
             writeImpacts(injector, solution)
             writeExecuteInfo(injector)
 
+            resetExternalServiceHandler(injector)
+
 
             val stc = injector.getInstance(SearchTimeController::class.java)
 
@@ -327,8 +329,6 @@ class Main {
                             " to run the search for longer, like for example something between '1h' and '24h' hours."))
                 }
             }
-
-            resetExternalServiceHandler(injector)
 
             solution.statistics = data.toMutableList()
             return solution
