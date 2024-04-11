@@ -68,6 +68,8 @@ class HarvestOptimisationEMTest: SpringTestBase() {
                 args.add("0.1")
                 args.add("--externalRequestResponseSelectionStrategy")
                 args.add("EXACT")
+                args.add("--minimize")
+                args.add("false")
 
                 val solution = initAndRun(args)
 

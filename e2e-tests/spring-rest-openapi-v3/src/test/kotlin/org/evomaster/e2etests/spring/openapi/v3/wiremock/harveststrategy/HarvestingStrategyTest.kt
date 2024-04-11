@@ -62,6 +62,8 @@ class HarvestingStrategyTest : SpringTestBase() {
                 args.add("0.1")
                 args.add("--externalRequestResponseSelectionStrategy")
                 args.add("EXACT")
+                args.add("--minimize")
+                args.add("false")
 
                 val solution = initAndRun(args)
 
@@ -120,6 +122,8 @@ class HarvestingStrategyTest : SpringTestBase() {
                 args.add("0.1")
                 args.add("--externalRequestResponseSelectionStrategy")
                 args.add("CLOSEST_SAME_DOMAIN")
+                args.add("--minimize")
+                args.add("false")
 
                 val solution = initAndRun(args)
 

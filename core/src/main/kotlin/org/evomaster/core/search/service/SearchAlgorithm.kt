@@ -91,6 +91,7 @@ abstract class SearchAlgorithm<T> where T : Individual {
     private fun handleAfterSearch() {
 
         externalServiceHandler.reset()
+        Thread.sleep(3000);
 
         time.doStopRecording()
 
