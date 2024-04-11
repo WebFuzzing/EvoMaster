@@ -49,8 +49,8 @@ class WmOkHttpEMTest : SpringTestBase() {
                 args.add("USER")
                 args.add("--externalServiceIP")
                 args.add("127.0.0.12")
-                args.add("--minimize")
-                args.add("false")
+//                args.add("--minimize")
+//                args.add("false")
 
                 val solution = initAndRun(args)
 

@@ -183,7 +183,7 @@ class Main {
             writeImpacts(injector, solution)
             writeExecuteInfo(injector)
 
-            resetExternalServiceHandler(injector)
+//            resetExternalServiceHandler(injector)
 
             val stc = injector.getInstance(SearchTimeController::class.java)
 
