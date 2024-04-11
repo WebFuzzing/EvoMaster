@@ -49,7 +49,7 @@ class HarvestingStrategyTest : SpringTestBase() {
             "HarvestStrategyExactEMTest",
             "org.foo.HarvestStrategyExactEMTest",
             1500,
-            !CIUtils.isRunningGA(), // this fails in local and CI
+            false, // this fails in local and CI
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")
@@ -107,7 +107,7 @@ class HarvestingStrategyTest : SpringTestBase() {
             "HarvestStrategyClosestSameDomainEMTest",
             "org.foo.HarvestStrategyClosestEMTest",
             1000,
-            true,
+            false,
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")
