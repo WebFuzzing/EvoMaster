@@ -185,7 +185,6 @@ class Main {
 
             resetExternalServiceHandler(injector)
 
-
             val stc = injector.getInstance(SearchTimeController::class.java)
 
             LoggingUtil.getInfoLogger().apply {
@@ -871,10 +870,8 @@ class Main {
          * WireMock instances to free up the IP addresses.
          */
         private fun resetExternalServiceHandler(injector: Injector) {
-            LoggingUtil.getInfoLogger().info("Resetting WireMock")
             val externalServiceHandler = injector.getInstance(HttpWsExternalServiceHandler::class.java)
             externalServiceHandler.reset()
-            LoggingUtil.getInfoLogger().info("WireMock reset completed")
         }
     }
 }
