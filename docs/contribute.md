@@ -34,7 +34,7 @@ the [issues](https://github.com/EMResearch/EvoMaster/issues) page:
   There are some open-source projects that can be used (e.g., which we selected and aggregated in the
   [EMB repository](https://github.com/EMResearch/EMB)).
   But open-source applications are not necessarily representative of software developed in industry.
-  Therefore, we "collaborate" with different companies (e.g., [Universitetsforlaget](https://www.universitetsforlaget.no/)),
+  Therefore, we "collaborate" with different companies (e.g., currently Volkswagen and Meituan),
   to apply _EvoMaster_ on their systems.
       
   * *Benefits for us*: access to the source code of real, industrial systems (of course, under NDAs). 
