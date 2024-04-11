@@ -509,7 +509,7 @@ object RestActionBuilderV3 {
         }
 
         if (!listOf(HttpVerb.POST, HttpVerb.PATCH, HttpVerb.PUT).contains(verb)) {
-            log.warn("In HTTP, body payloads are undefined for $verb")
+            log.warn("In HTTP, body payloads are undefined for $verb. Issue in $restPath")
             return
         }
 
