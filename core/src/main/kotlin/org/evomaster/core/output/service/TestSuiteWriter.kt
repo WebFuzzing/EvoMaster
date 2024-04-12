@@ -195,7 +195,23 @@ class TestSuiteWriter {
 
         //if (all.isEmpty()) return "null"
 
-        val input = if(all.isEmpty()) "" else all.groupBy { it.lowercase() }.map { it.value.first() }.joinToString(",") { "\"$it\"" }
+        val tableNamesInSchema = remoteController.getCachedSutInfo()?.sqlSchemaDto?.tables?.map { it.name }?.toSet()
+            ?: setOf()
+
+        val missingTables = all.filter { x ->  tableNamesInSchema.none { y -> y.equals(x,true) } }.sorted()
+        if(missingTables.isNotEmpty()){
+            /*
+                Weird case... but actually seen it in familie-ba-sak, regarding table "task", which is in the migration
+                files (V9) but then somehow doesn't show up in the database...
+                TODO should investigate what the heck is happening there
+             */
+            log.warn("Some SQL commands have referred to tables that do not seem to appear in the database schema: " +
+                    "${missingTables.joinToString(", ")}")
+        }
+
+        val input = if(all.isEmpty()) ""
+            else all.filter { tableNamesInSchema.contains(it) }.sorted().joinToString(",") { "\"$it\"" }
+
         return when {
             config.outputFormat.isJava() -> "Arrays.asList($input)"
             config.outputFormat.isKotlin() -> "listOf($input)"
@@ -629,7 +645,7 @@ class TestSuiteWriter {
                         addStatement("$controller.registerOrExecuteInitSqlCommandsIfNeeded()", lines)
 
                         if(config.problemType == EMConfig.ProblemType.WEBFRONTEND){
-                            val infoDto = remoteController.getSutInfo()!! //TODO refactor. save it in a service
+                            val infoDto = remoteController.getCachedSutInfo()!!
                             addStatement("$baseUrlOfSut = validateAndGetUrlOfStartingPageForDocker($baseUrlOfSut,\"${infoDto.webProblem.urlPathOfStartingPage}\", true)", lines)
                         }
                         /*

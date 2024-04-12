@@ -96,7 +96,7 @@ public class SutInfoDto {
      * there might exist some errors which could be
      * ignored for the moment in order to make evomaster
      * still process test generations.
-     * however, such error should be handled propertly in
+     * however, such error should be handled properly in
      * the future.
      * to better view such errors, might show them on
      * the core side
