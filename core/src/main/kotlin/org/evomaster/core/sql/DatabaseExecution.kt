@@ -71,7 +71,7 @@ class DatabaseExecution(
                     cloneData(dealWithQuotes(dto?.updatedData)),
                     cloneData(dealWithQuotes(dto?.insertedData)),
                     cloneData(dealWithQuotes(dto?.failedWhere)),
-                dealWithQuotes(dto?.deletedData?.toList()) ?: listOf(),
+                    dealWithQuotes(dto?.deletedData?.toList()) ?: listOf(),
                     dto?.numberOfSqlCommands ?: 0,
                     cloneSqlExecutionInfo(dto?.sqlExecutionLogDtoList)
             )

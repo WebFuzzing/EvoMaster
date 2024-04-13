@@ -210,7 +210,7 @@ class TestSuiteWriter {
         }
 
         val input = if(all.isEmpty()) ""
-            else all.filter { tableNamesInSchema.contains(it) }.sorted().joinToString(",") { "\"$it\"" }
+            else all.filter { x -> tableNamesInSchema.any{y -> y.equals(x,true)} }.sorted().joinToString(",") { "\"$it\"" }
 
         return when {
             config.outputFormat.isJava() -> "Arrays.asList($input)"
