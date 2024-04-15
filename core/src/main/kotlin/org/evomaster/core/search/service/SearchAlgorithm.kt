@@ -90,9 +90,6 @@ abstract class SearchAlgorithm<T> where T : Individual {
 
     private fun handleAfterSearch() {
 
-        externalServiceHandler.reset()
-        Thread.sleep(3000);
-
         time.doStopRecording()
 
         ssu.enabled = false
@@ -105,6 +102,8 @@ abstract class SearchAlgorithm<T> where T : Individual {
             val seconds = minimizer.passedTimeInSecond()
             LoggingUtil.getInfoLogger().info("Minimization phase took $seconds seconds")
         }
+
+        externalServiceHandler.reset()
 
         if(config.addPreDefinedTests) {
             for (ind in sampler.getPreDefinedIndividuals()) {
