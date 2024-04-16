@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class ParserUtilsTest {
 
-    @Disabled //TODO see https://github.com/JSQLParser/JSqlParser/issues/420
+    //TODO see https://github.com/JSQLParser/JSqlParser/issues/420
     @Test
     public void testEscapeInput(){
 
@@ -25,7 +25,7 @@ public class ParserUtilsTest {
         assertTrue(ParserUtils.canParseSqlStatement("SELECT * FROM Foo WHERE x LIKE ?1 ESCAPE ?2"));
     }
 
-    @Disabled //TODO see https://github.com/JSQLParser/JSqlParser/issues/1405
+     //TODO see https://github.com/JSQLParser/JSqlParser/issues/1405
     @Test
     public void testRestartSequence(){
 
@@ -36,19 +36,18 @@ public class ParserUtilsTest {
         assertTrue(parsed);
     }
 
-    @Disabled
+
     @Test
     public void testEmptyInsertValue(){
-
         /*
             this is accepted by H2, although it does not seem to be valid according to the
-            SQL syntax. so i guess it is fine that JSqlParser does not handle it
+            SQL syntax. so I guess it is fine that JSqlParser does not handle it
          */
         String sql = "INSERT INTO Foo() VALUES()";
 
         boolean parsed = ParserUtils.canParseSqlStatement(sql);
 
-        assertTrue(parsed);
+        assertFalse(parsed);
     }
 
     @ParameterizedTest
