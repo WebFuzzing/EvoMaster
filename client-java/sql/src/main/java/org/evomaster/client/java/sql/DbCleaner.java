@@ -234,7 +234,7 @@ public class DbCleaner {
                 if (tables.stream().noneMatch(t -> t.equalsIgnoreCase(skip))) {
                     String msg = "Asked to skip/clean table '" + skip + "', but it does not exist.";
                     msg += " Existing tables in schema '" + schema + "': [" +
-                            String.join(", ", tables) + "]";
+                            String.join(", ", tables.stream().sorted().collect(Collectors.toList())) + "]";
                     throw new IllegalStateException(msg);
                 }
             }
