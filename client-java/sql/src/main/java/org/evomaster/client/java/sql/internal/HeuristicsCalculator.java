@@ -180,15 +180,15 @@ public class HeuristicsCalculator {
 
         //TODO can left be a list???
 
-        Expression itemsList = exp.getRightExpression();
-        if (itemsList instanceof ExpressionList<?>) {
-            ExpressionList<Expression> list = (ExpressionList) itemsList;
+        Expression rightExpression = exp.getRightExpression();
+        if (rightExpression instanceof ExpressionList<?>) {
+            ExpressionList<?> expressionList = (ExpressionList<?>) rightExpression;
 
             if (exp.isNot()) {
 
                 double max = 0;
 
-                for (Expression element : list) {
+                for (Expression element : expressionList) {
                     ComparisonOperator op = new NotEqualsTo();
                     op.setLeftExpression(exp.getLeftExpression());
                     op.setRightExpression(element);
@@ -206,7 +206,7 @@ public class HeuristicsCalculator {
 
                 double min = Double.MAX_VALUE;
 
-                for (Expression element : list) {
+                for (Expression element : expressionList) {
                     ComparisonOperator op = new EqualsTo();
                     op.setLeftExpression(exp.getLeftExpression());
                     op.setRightExpression(element);
