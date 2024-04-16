@@ -40,6 +40,7 @@ class RemoteControllerImplementation() : RemoteController{
 
     private var extractSqlExecutionInfo = true
 
+    private var cachedSutInfoDto : SutInfoDto? = null
 
     @Inject
     private lateinit var config: EMConfig
@@ -205,7 +206,15 @@ class RemoteControllerImplementation() : RemoteController{
             return null
         }
 
-        return getData(dto)
+        cachedSutInfoDto = getData(dto)
+        return cachedSutInfoDto
+    }
+
+    override fun getCachedSutInfo(): SutInfoDto? {
+        if(cachedSutInfoDto == null){
+            getSutInfo()
+        }
+        return cachedSutInfoDto
     }
 
 

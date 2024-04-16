@@ -375,10 +375,7 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
             }
         }
 
-        if (response.status == 401 && action.auth !is NoAuth) {
-            //this would likely be a misconfiguration in the SUT controller
-            log.warn("Got 401 although having auth for '${action.auth.name}'")
-        }
+        AuthUtils.checkUnauthorizedWithAuth(response.status, action)
 
         return true
     }
