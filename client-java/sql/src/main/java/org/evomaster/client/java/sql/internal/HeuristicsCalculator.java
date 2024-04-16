@@ -151,7 +151,7 @@ public class HeuristicsCalculator {
         if (exp instanceof Matches) {
             //TODO
         }
-        if (exp instanceof MultiExpressionList) {
+        if (exp instanceof ExpressionList) {
             //TODO
         }
         if (exp instanceof NamedExpressionList) {
@@ -180,15 +180,15 @@ public class HeuristicsCalculator {
 
         //TODO can left be a list???
 
-        ItemsList itemsList = exp.getRightItemsList();
-        if (itemsList instanceof ExpressionList) {
-            ExpressionList list = (ExpressionList) itemsList;
+        Expression itemsList = exp.getRightExpression();
+        if (itemsList instanceof ExpressionList<?>) {
+            ExpressionList<Expression> list = (ExpressionList) itemsList;
 
             if (exp.isNot()) {
 
                 double max = 0;
 
-                for (Expression element : list.getExpressions()) {
+                for (Expression element : list) {
                     ComparisonOperator op = new NotEqualsTo();
                     op.setLeftExpression(exp.getLeftExpression());
                     op.setRightExpression(element);
