@@ -206,7 +206,7 @@ public class HeuristicsCalculator {
 
                 double min = Double.MAX_VALUE;
 
-                for (Expression element : list.getExpressions()) {
+                for (Expression element : list) {
                     ComparisonOperator op = new EqualsTo();
                     op.setLeftExpression(exp.getLeftExpression());
                     op.setRightExpression(element);
