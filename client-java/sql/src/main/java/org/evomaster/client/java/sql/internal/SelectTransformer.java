@@ -91,7 +91,7 @@ public class SelectTransformer {
 
     public static String removeConstraints(String select) {
         Select stmt = asSelectStatement(select);
-        handlePlainSelect(stmt.getPlainSelect());
+        handleSelect(stmt);
         return stmt.toString();
     }
 
@@ -103,10 +103,20 @@ public class SelectTransformer {
         return (Select) stmt;
     }
 
-    private static void handlePlainSelect(PlainSelect plainSelect) {
+    private static void handleSelect(Select select) {
+        if (select instanceof PlainSelect) {
+            PlainSelect plainSelect = (PlainSelect)select;
             plainSelect.setWhere(null);
             plainSelect.setLimit(null);
             plainSelect.setGroupByElement(null);
+        } else if (select instanceof SetOperationList) {
+            SetOperationList setOperationList = (SetOperationList) select;
+            for (Select innerSelect : setOperationList.getSelects()) {
+                handleSelect(innerSelect);
+            }
+        } else {
+            throw new RuntimeException("Cannot handle " + select.getClass());
+        }
     }
 
 
