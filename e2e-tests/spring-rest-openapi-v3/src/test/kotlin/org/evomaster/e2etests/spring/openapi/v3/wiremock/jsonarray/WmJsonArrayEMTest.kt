@@ -34,13 +34,13 @@ class WmJsonArrayEMTest : SpringTestBase() {
             "WmJsonArrayEM",
             "org.foo.WmJsonArrayEM",
             1000,
-            false,
+            true,
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")
                 args.add("USER")
                 args.add("--externalServiceIP")
-                args.add("127.0.0.46")
+                args.add("127.0.0.26")
 
                 val solution = initAndRun(args)
 
