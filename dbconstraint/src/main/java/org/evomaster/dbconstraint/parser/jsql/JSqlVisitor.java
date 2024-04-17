@@ -197,7 +197,8 @@ public class JSqlVisitor implements ExpressionVisitor {
 
     @Override
     public void visit(OverlapsCondition overlapsCondition) {
-
+        // TODO This translation should be implemented
+        throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
@@ -295,22 +296,26 @@ public class JSqlVisitor implements ExpressionVisitor {
 
     @Override
     public void visit(DoubleAnd doubleAnd) {
-
+        // TODO This translation should be implemented
+        throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
     public void visit(Contains contains) {
-
+        // TODO This translation should be implemented
+        throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
     public void visit(ContainedBy containedBy) {
-
+        // TODO This translation should be implemented
+        throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
     public void visit(ParenthesedSelect parenthesedSelect) {
-
+        // TODO This translation should be implemented
+        throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     private static final String QUOTE_CHAR = "\"";
@@ -387,7 +392,8 @@ public class JSqlVisitor implements ExpressionVisitor {
 
     @Override
     public void visit(MemberOfExpression memberOfExpression) {
-
+        // TODO This translation should be implemented
+        throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
