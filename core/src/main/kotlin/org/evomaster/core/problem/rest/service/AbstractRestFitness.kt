@@ -9,6 +9,7 @@ import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUti
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils.getWMDefaultSignature
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.enterprise.auth.NoAuth
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.externalservice.HostnameResolutionInfo
@@ -24,6 +25,7 @@ import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.param.UpdateForBodyParam
+import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.util.ParserDtoUtil
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.TcpUtils
@@ -884,8 +886,14 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         val actionDto = super.getActionDto(action, index)
         // TODO: Need to move under ApiWsFitness after the GraphQL and RPC support is completed
         if (index == 0) {
+            val individual = action.parent?.parent?.parent as RestIndividual
+            val dnsActions = individual.seeActions(ActionFilter.ONLY_DNS)
+
+            if (dnsActions.isNotEmpty()) {
+                actionDto.localAddressMapping = externalServiceHandler.getLocalDomainNameMapping()
+            }
+
             actionDto.externalServiceMapping = externalServiceHandler.getExternalServiceMappings()
-            actionDto.localAddressMapping = externalServiceHandler.getLocalDomainNameMapping()
             actionDto.skippedExternalServices = externalServiceHandler.getSkippedExternalServices()
         }
         return actionDto
