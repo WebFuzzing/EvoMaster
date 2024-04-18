@@ -2216,6 +2216,11 @@ class EMConfig {
             " created.")
     var createConfigPathIfMissing: Boolean = true
 
+
+    @Experimental
+    @Cfg("Extra checks on HTTP properties in returned responses, used as automated oracles to detect faults.")
+    var httpOracles = false
+
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
             return maxTimeInSeconds
