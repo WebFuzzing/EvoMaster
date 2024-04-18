@@ -43,6 +43,7 @@ import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import wiremock.org.apache.hc.core5.net.Host
 import java.net.URL
 import javax.ws.rs.ProcessingException
 import javax.ws.rs.client.ClientBuilder
@@ -887,10 +888,20 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         // TODO: Need to move under ApiWsFitness after the GraphQL and RPC support is completed
         if (index == 0) {
             val individual = action.parent?.parent?.parent as RestIndividual
-            val dnsActions = individual.seeActions(ActionFilter.ONLY_DNS)
+            val dnsActions = individual
+                .seeActions(ActionFilter.ONLY_DNS)
+                .filterIsInstance<HostnameResolutionAction>()
 
             if (dnsActions.isNotEmpty()) {
-                actionDto.localAddressMapping = externalServiceHandler.getLocalDomainNameMapping()
+                val addressMapping = mutableMapOf<String, String>()
+                val localDomainNameMapping = externalServiceHandler.getLocalDomainNameMapping()
+
+                dnsActions.forEach {
+                    if (localDomainNameMapping.containsKey(it.hostname)) {
+                        addressMapping[it.hostname] = localDomainNameMapping.getValue(it.hostname)
+                    }
+                }
+                actionDto.localAddressMapping = addressMapping
             }
 
             actionDto.externalServiceMapping = externalServiceHandler.getExternalServiceMappings()
