@@ -4,6 +4,7 @@ import com.google.inject.Inject
 import javax.annotation.PostConstruct
 
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.enterprise.auth.AuthSettings
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
@@ -282,10 +283,17 @@ class SecurityRest {
                                                                     newActionVerb : HttpVerb,
     ) : RestIndividual {
 
-        var actionList = mutableListOf<RestCallAction>()
+        /*
+            Create a new individual based on some existing data.
+            Need to make sure we copy this existing data (to avoid different individuals re-using shared mutable
+            state), as well as resetting their internal dynamic info (eg local ids) before a new individual is
+            instantiated
+         */
+
+        val actionList = mutableListOf<RestCallAction>()
 
         for (act in individual.seeMainExecutableActions()) {
-            actionList.add(act)
+            actionList.add(act.copy() as RestCallAction)
         }
 
         // create a new action with the authentication not used in current individual
@@ -295,7 +303,7 @@ class SecurityRest {
 
         if (authenticationOfOther != null) {
             newRestCallAction = RestCallAction("newDelete", newActionVerb, currentAction.path,
-                currentAction.parameters.toMutableList(), authenticationOfOther  )
+                currentAction.parameters.map { it.copy() as Param }.toMutableList(), authenticationOfOther  )
         }
 
         if (newRestCallAction != null) {
@@ -303,7 +311,11 @@ class SecurityRest {
         }
 
 
-        val newIndividual = RestIndividual(actionList, SampleType.SECURITY)
+        actionList.forEach { it.resetLocalIdRecursively() }
+
+        val newIndividual =  sampler.createIndividual(SampleType.SECURITY, actionList)
+        //RestIndividual(actionList, SampleType.SECURITY)
+        newIndividual.ensureFlattenedStructure()
 
         return newIndividual
 

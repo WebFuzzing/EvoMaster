@@ -27,6 +27,9 @@ public class ACDeletePutEMTest extends SpringTestBase {
                 100,
                 (args) -> {
 
+                    args.add("--security");
+                    args.add("true");
+
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     // GET request
