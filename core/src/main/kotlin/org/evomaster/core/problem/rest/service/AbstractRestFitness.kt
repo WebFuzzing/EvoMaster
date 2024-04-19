@@ -891,9 +891,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             val dnsActions = individual
                 .seeActions(ActionFilter.ONLY_DNS)
                 .filterIsInstance<HostnameResolutionAction>()
+            val addressMapping = mutableMapOf<String, String>()
 
             if (dnsActions.isNotEmpty()) {
-                val addressMapping = mutableMapOf<String, String>()
+
                 val localDomainNameMapping = externalServiceHandler.getLocalDomainNameMapping()
 
                 dnsActions.forEach {
@@ -901,9 +902,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                         addressMapping[it.hostname] = localDomainNameMapping.getValue(it.hostname)
                     }
                 }
-                actionDto.localAddressMapping = addressMapping
-            }
 
+            }
+            actionDto.localAddressMapping = addressMapping
             actionDto.externalServiceMapping = externalServiceHandler.getExternalServiceMappings()
             actionDto.skippedExternalServices = externalServiceHandler.getSkippedExternalServices()
         }
