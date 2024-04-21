@@ -10,6 +10,8 @@ _EvoMaster_ is composed of two main components:
             Note: the driver is __NOT__ needed for [Black-Box Testing](./blackbox.md). 
 
 
+## Core Tool
+
 The latest release of the `evomaster.jar` executable  can be downloaded from GitHub
  on the [releases page](https://github.com/EMResearch/EvoMaster/releases).
 Alternatively, it can be built from [source code](./build.md).
@@ -50,8 +52,14 @@ Notice that these installer files are built with the latest versions
 of these operating systems on GitHub Actions.
 They might not work when trying to use these installers on older operating system versions.
 
+
+## Driver Library
+
 Regarding the _driver_ library, it depends on the language/environment.
 For example, the JVM support is available from [Maven Central](https://mvnrepository.com/artifact/org.evomaster). 
+You would import it (e.g., with Maven or Gradle) like any other library.
+See [documentation on writing a driver class](write_driver.md) for more details.
+
 If you are building such library from [source code](./build.md), then make sure to
 use the Maven `install` option to copy it over your local `~/.m2` repository.
 You might also want to use `-DskipTests` the option. 
