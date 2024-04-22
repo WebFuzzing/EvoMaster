@@ -1,13 +1,13 @@
 package org.evomaster.core.output.service
 
 import com.google.inject.Inject
+import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestCase
 import org.evomaster.core.output.service.TestWriterUtils.Companion.getWireMockVariableName
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
-import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.param.HttpWsResponseParam
 import org.evomaster.core.search.action.Action
@@ -117,36 +117,25 @@ abstract class TestCaseWriter {
         return lines
     }
 
-    protected fun handleDnsForExternalServiceActions(
-        lines: Lines,
-        actions: List<HttpExternalServiceAction>,
-        exToWM: Map<String, HttpWsExternalService>?
-    ) : Boolean{
-
-        var any = false
-
-        exToWM?.forEach {
-            lines.add("DnsCacheManipulator.setDnsCache(\"${it.key}\", \"${it.value.getWireMockAddress()}\")")
-            lines.appendSemicolon(format)
-            any = true
-        }
-
-        actions.filterNot { exToWM?.containsKey(it.externalService.getRemoteHostName()) == true }
-                .distinctBy { it.externalService.getRemoteHostName() }
-                .forEach {action->
-                    lines.add("DnsCacheManipulator.setDnsCache(\"${action.externalService.getRemoteHostName()}\", \"${action.externalService.getWireMockAddress()}\")")
-                    lines.appendSemicolon(format)
-                    any = true
-                }
-        return any
-    }
-
     fun handleHostnameResolutionActions(
         lines: Lines,
         actions: List<HostnameResolutionAction>
     ) {
+        val mappings: MutableList<HostnameResolutionAction> = mutableListOf()
+
         actions.forEach { action ->
-            lines.add("DnsCacheManipulator.setDnsCache(\"${action.hostname}\", \"${action.localIPAddress}\")")
+           val existing = actions.filter { it.hostname == action.hostname }
+            if (existing.size > 1) {
+                if (action.localIPAddress != RESERVED_RESOLVED_LOCAL_IP) {
+                    mappings.add(action)
+                }
+            } else {
+                mappings.add(action)
+            }
+        }
+
+        mappings.forEach {
+            lines.add("DnsCacheManipulator.setDnsCache(\"${it.hostname}\", \"${it.localIPAddress}\")")
             lines.appendSemicolon(format)
         }
     }
