@@ -48,8 +48,6 @@ public class ExternalServiceMockingFlakyEMTest extends SpringTestBase {
                     args.add("USER");
                     args.add("--externalServiceIP");
                     args.add("127.0.0.5");
-                    args.add("--minimize");
-                    args.add("false");
 
 
                     Solution<RestIndividual> solution = initAndRun(args);

@@ -6,7 +6,6 @@ import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.delete.Delete;
-import net.sf.jsqlparser.statement.insert.Insert;
 import net.sf.jsqlparser.statement.select.*;
 import net.sf.jsqlparser.statement.update.Update;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
@@ -144,23 +143,17 @@ public class SqlNameContext {
     private FromItem getFromItem() {
 
         FromItem fromItem = null;
-
         if(statement instanceof Select) {
-            SelectBody selectBody = ((Select) statement).getSelectBody();
-
-            if (selectBody instanceof PlainSelect) {
-                PlainSelect plainSelect = (PlainSelect) selectBody;
-
-                fromItem =  plainSelect.getFromItem();
-            } else {
-                throw new IllegalArgumentException("Currently only handling Plain SELECTs");
-            }
+            Select select = (Select)statement;
+            PlainSelect plainSelect = select.getPlainSelect();
+            fromItem =  plainSelect.getFromItem();
         }
 
-        if(fromItem == null)
+        if(fromItem == null) {
             throw new IllegalArgumentException("Cannot handle FromItem for: " + statement);
-
-        return fromItem;
+        } else {
+            return fromItem;
+        }
     }
 
 
@@ -170,8 +163,8 @@ public class SqlNameContext {
             FromItem fromItem = getFromItem();
             fromItem.accept(new AliasVisitor(tableAliases));
 
-            SelectBody selectBody = ((Select) statement).getSelectBody();
-            PlainSelect plainSelect = (PlainSelect) selectBody;
+            Select select = (Select)statement;
+            PlainSelect plainSelect = select.getPlainSelect();
 
             List<Join> joins = plainSelect.getJoins();
             if (joins != null) {
@@ -203,16 +196,16 @@ public class SqlNameContext {
             handleAlias(aliases, table);
         }
 
-        @Override
-        public void visit(SubSelect subSelect) {
-            handleAlias(aliases, subSelect);
-        }
 
+        @Override
+        public void visit(ParenthesedSelect selectBody) {
+            handleAlias(aliases, selectBody.getPlainSelect());
+        }
     }
 
 
-    private static void handleAlias(Map<String, String> aliases, SubSelect subSelect) {
-        Alias alias = subSelect.getAlias();
+    private static void handleAlias(Map<String, String> aliases, PlainSelect plainSelect) {
+        Alias alias = plainSelect.getFromItem().getAlias();
         if (alias != null) {
             String aliasName = alias.getName();
             if (aliasName != null) {
