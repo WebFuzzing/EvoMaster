@@ -24,9 +24,6 @@ abstract class SearchAlgorithm<T> where T : Individual {
     protected lateinit var time : SearchTimeController
 
     @Inject
-    protected lateinit var externalServiceHandler: HttpWsExternalServiceHandler
-
-    @Inject
     protected lateinit var archive: Archive<T>
 
     @Inject
@@ -107,8 +104,6 @@ abstract class SearchAlgorithm<T> where T : Individual {
             val seconds = minimizer.passedTimeInSecond()
             LoggingUtil.getInfoLogger().info("Minimization phase took $seconds seconds")
         }
-
-        externalServiceHandler.reset()
 
         if(config.addPreDefinedTests) {
             for (ind in sampler.getPreDefinedIndividuals()) {
