@@ -435,7 +435,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      * handle specified init sql script after SUT is started.
      */
     public final void registerOrExecuteInitSqlCommandsIfNeeded()  {
-        registerOrExecuteInitSqlCommandsIfNeeded(true);
+        registerOrExecuteInitSqlCommandsIfNeeded(false);
     }
 
     /**

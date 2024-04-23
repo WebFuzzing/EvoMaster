@@ -642,7 +642,7 @@ class TestSuiteWriter {
                         addStatement("$controller.setupForGeneratedTest()", lines)
                         addStatement("$baseUrlOfSut = $controller.startSut()", lines)
                         //registerOrExecuteInitSqlCommands
-                        addStatement("$controller.registerOrExecuteInitSqlCommandsIfNeeded(false)", lines)
+                        addStatement("$controller.registerOrExecuteInitSqlCommandsIfNeeded()", lines)
 
                         if(config.problemType == EMConfig.ProblemType.WEBFRONTEND){
                             val infoDto = remoteController.getCachedSutInfo()!!
