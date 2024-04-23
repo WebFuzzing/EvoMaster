@@ -56,7 +56,7 @@ public class ExternalServiceInfoUtils {
         ExecutionTracer.addExternalServiceHost(remoteHostInfo);
         String signature = remoteHostInfo.signature();
 
-        if (!ExecutionTracer.hasMockServerForHostname(remoteHostInfo.getHostname())) {
+        if (!ExecutionTracer.hasLocalAddressForHost(remoteHostInfo.getHostname())) {
             int connectPort = remotePort;
 
             if (!ExecutionTracer.hasActiveExternalMappingForSignature(signature)) {
@@ -65,9 +65,10 @@ public class ExternalServiceInfoUtils {
                 connectPort = ExternalServiceSharedUtils.getDefaultWMPort(signature);
             }
 
-            return new String[]{ExecutionTracer.getExternalMappingForSignature(signature), "" + connectPort};
+            return new String[]{ExecutionTracer.getLocalAddress(remoteHostInfo.getHostname()), "" + connectPort};
+//            return new String[]{ExecutionTracer.getExternalMappingForSignature(signature), "" + connectPort};
         } else {
-            return new String[]{ExecutionTracer.getExternalMappingForHostname(remoteHostInfo.getHostname()), "" + remotePort};
+            return new String[]{ExecutionTracer.getLocalAddress(remoteHostInfo.getHostname()), "" + remotePort};
         }
     }
 
