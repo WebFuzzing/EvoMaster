@@ -35,6 +35,9 @@ abstract class SearchAlgorithm<T> where T : Individual {
     @Inject
     protected lateinit var config: EMConfig
 
+    @Inject
+    protected lateinit var externalServiceHandler: HttpWsExternalServiceHandler
+
 
     @Inject(optional = true)
     private lateinit var mutator: Mutator<T>
@@ -93,6 +96,8 @@ abstract class SearchAlgorithm<T> where T : Individual {
         time.doStopRecording()
 
         ssu.enabled = false
+
+        externalServiceHandler.resetWireMockServers()
 
         if(config.minimize){
             minimizer.doStartTheTimer()

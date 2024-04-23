@@ -191,7 +191,7 @@ class HttpWsExternalService(
      * requests.
      */
     fun reset() {
-        if (!externalServiceInfo.isPartial())
+        if (isActive())
             wireMockServer!!.resetAll()
     }
 

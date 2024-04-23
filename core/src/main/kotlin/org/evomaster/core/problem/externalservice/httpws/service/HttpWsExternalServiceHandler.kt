@@ -250,8 +250,14 @@ class HttpWsExternalServiceHandler {
         return externalServices.filter { it.value.isActive() }
     }
 
-    fun reset() {
-        externalServices.forEach {
+    fun resetWireMockServers() {
+        externalServices.filter { it.value.isActive() }.forEach {
+            it.value.reset()
+        }
+    }
+
+    fun stopActiveWireMockServers() {
+        externalServices.filter { it.value.isActive() }.forEach {
             it.value.stopWireMockServer()
         }
     }
