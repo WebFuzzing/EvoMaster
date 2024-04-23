@@ -752,6 +752,10 @@ public class ExecutionTracer {
         return localAddressMapping.get(hostname);
     }
 
+    public static String getDefaultWireMockAddress() {
+        return "127.0.0.3";
+    }
+
     public static boolean skipHostname(String hostname) {
         return skippedExternalServices
                 .stream().anyMatch(e -> e.getHostname().equals(hostname.toLowerCase()));
