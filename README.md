@@ -144,20 +144,20 @@ As we are the authors of EvoMaster, we are too biased to compare it properly wit
 However, an [independent study (2022)](https://arxiv.org/abs/2204.08348) shows that EvoMaster is among the best performant.
 Furthermore, if your APIs are running on the JVM (e.g., written in Java or Kotlin), then EvoMaster has clearly an advantage, as it supports _white-box_ testing. 
 
-
+<!---
 ### Hiring
 
 Depending on the year, we might have funding for _postdoc_ and _PhD student_ positions to work on this project (in Oslo, Norway).
 
 Current open positions: none.
-<!---
+< !---
 * 2023: PhD student positions. No new calls scheduled for the moment.
 * 2023: Postdoc positions. No new calls scheduled for the moment.
---->
+--- >
 
 For questions on these positions, please contact Prof. Andrea Arcuri.
 
-<!---
+< !---
 For more details on current vacancies, see our group page at [AISE Lab](https://emresearch.github.io/).
 --->
 
