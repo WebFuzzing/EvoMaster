@@ -182,6 +182,7 @@ public interface SutHandler {
     /**
      * <p>
      * register or execute specified SQL script for initializing data in database
+     * there is no need to be enabled.
      * </p>
      */
     default void registerOrExecuteInitSqlCommandsIfNeeded(){}
