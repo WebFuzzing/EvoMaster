@@ -370,7 +370,7 @@ public class EMController {
                             return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
                         }
                         noKillSwitch(() -> sutController.initSqlHandler());
-                        noKillSwitch(() -> sutController.registerOrExecuteInitSqlCommandsIfNeeded());
+                        noKillSwitch(() -> sutController.registerOrExecuteInitSqlCommandsIfNeeded(true));
                         noKillSwitch(() -> sutController.initMongoHandler());
                     } else {
                         //TODO as starting should be blocking, need to check
