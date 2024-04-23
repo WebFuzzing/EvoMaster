@@ -7,7 +7,7 @@ Under development in `master` branch.
 
 ### Addressed GitHub Issues
 - #834: Authentication required when accessing schema
-
+- #957: Generated test cases fail due to 'checkInstrumentation' 
 
 ---
 # Version: 3.0.0
