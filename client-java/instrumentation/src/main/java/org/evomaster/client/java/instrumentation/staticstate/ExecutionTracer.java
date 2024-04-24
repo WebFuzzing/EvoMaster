@@ -752,8 +752,8 @@ public class ExecutionTracer {
         return localAddressMapping.get(hostname);
     }
 
-    public static String getDefaultWireMockAddress() {
-        return "127.0.0.3";
+    public static String getDefaultSinkholeAddress() {
+        return "127.0.0.2";
     }
 
     public static boolean skipHostname(String hostname) {
