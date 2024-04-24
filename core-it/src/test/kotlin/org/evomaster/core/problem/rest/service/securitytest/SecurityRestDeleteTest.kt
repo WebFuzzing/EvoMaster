@@ -19,5 +19,6 @@ class SecurityRestDeleteTest : IntegrationTestRestBase() {
     fun testDeletePut(){
 
         //TODO
+        val pirTest = getPirToRest()
     }
 }

@@ -152,7 +152,7 @@ class SecurityRest {
 
         // From schema, check all DELETE operations, in order to do that
         // obtain DELETE operations in the SUT according to the swagger
-        val deleteOperations = getAllActionDefinitions(HttpVerb.DELETE)
+        val deleteOperations = RestIndividualSelectorUtils.getAllActionDefinitions(actionDefinitions, HttpVerb.DELETE)
 
         // for each endpoint for which there is a DELETE operation
         deleteOperations.forEach { delete ->
@@ -250,6 +250,18 @@ class SecurityRest {
             var individualToAddToSuite = createIndividualWithAnotherActionAddedDifferentAuthRest(individualToChooseForTest,
                 deleteAction, HttpVerb.PUT )
 
+            // create an individual with the following
+            // PUT/POST with one authenticated user userA
+            //          For that, we need to find which request is used for resource creation
+            // DELETE with the same user which succeeds (userA)
+            //          For that, we need to find which request is used for resource deletion
+            // PUT/POST with the authenticated user, userA
+            //          For that, we just need to copy the previous one
+            // DELETE with another user (userB) which should fail
+            //          For that, we just need to replace the authenticated user
+            // PUT with another user (userB) which should fail, if succeeds, that's a security issue.
+            //          For that, we just need to replace the authenticated user
+
             /*
                 FIXME fitness bean must be injected, and not instantiated directly.
                 note, issue we have 2 different implementation, need to double-check
@@ -260,8 +272,6 @@ class SecurityRest {
             // Then evaluate the fitness function to create evaluatedIndividual
 
             val evaluatedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(individualToAddToSuite)
-
-            val newTarget = this.archive.coveredTargets().max() + 1
 
             // add the evaluated individual to the archive
             if (evaluatedIndividual != null) {
@@ -319,10 +329,6 @@ class SecurityRest {
 
         return newIndividual
 
-    }
-
-    private fun getAllActionDefinitions(verb: HttpVerb): List<RestCallAction> {
-        return actionDefinitions.filter { it.verb == verb }
     }
 
 }

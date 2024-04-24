@@ -580,4 +580,12 @@ object RestIndividualSelectorUtils {
         // return the list of AuthenticationInfo objects
         return listOfAuthenticationInfoUsedInIndividuals
     }
+
+    /**
+     * Get all action definitions with a given verb
+     */
+    fun getAllActionDefinitions(actionDefinitions: List<RestCallAction>, verb: HttpVerb): List<RestCallAction> {
+        return actionDefinitions.filter { it.verb == verb }
+    }
+
 }
