@@ -59,7 +59,7 @@ class WmHttpOkHttp3EMTest : SpringTestBase() {
 
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/socketconnect/object", "OK")
             },
-            10
+            3
         )
     }
 
