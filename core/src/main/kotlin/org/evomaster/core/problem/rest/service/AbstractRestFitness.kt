@@ -888,18 +888,14 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         // TODO: Need to move under ApiWsFitness after the GraphQL and RPC support is completed
         if (index == 0) {
             val addressMapping = mutableMapOf<String, String>()
-            val individual = action.parent?.parent?.parent as RestIndividual
+            val individual = action.getRoot() as RestIndividual
             val dnsActions = individual
                 .seeActions(ActionFilter.ONLY_DNS)
                 .filterIsInstance<HostnameResolutionAction>()
-            if (dnsActions.isNotEmpty()) {
-                val localDomainNameMapping = externalServiceHandler.getLocalDomainNameMapping()
-                dnsActions.forEach {
-                    if (localDomainNameMapping.containsKey(it.hostname)) {
-                        addressMapping[it.hostname] = localDomainNameMapping.getValue(it.hostname)
-                    }
+            dnsActions.forEach {
+                if (externalServiceHandler.hasLocalDomainNameMapping(it.hostname)) {
+                    addressMapping[it.hostname] = externalServiceHandler.getLocalDomainNameMapping(it.hostname)
                 }
-
             }
             actionDto.localAddressMapping = addressMapping
             actionDto.externalServiceMapping = externalServiceHandler.getExternalServiceMappings()
