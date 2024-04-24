@@ -202,6 +202,14 @@ class HttpWsExternalServiceHandler {
         return hostnameLocalAddressMapping.toMap()
     }
 
+    fun hasLocalDomainNameMapping(hostname: String): Boolean {
+        return hostnameLocalAddressMapping.containsKey(hostname)
+    }
+
+    fun getLocalDomainNameMapping(hostname: String): String {
+        return hostnameLocalAddressMapping.get(hostname)!!
+    }
+
     fun isWireMockAddress(address: String) : Boolean {
         return hostnameLocalAddressMapping.containsValue(address)
     }
