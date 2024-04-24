@@ -30,7 +30,7 @@ class WmOkHttp3Rest {
             val body = data.body?.string()
             val code = data.code
             data.close()
-            return if (code in 200..299){
+            val response = if (code in 200..299){
                 if (body == "\"HELLO THERE!!!\""){
                     ResponseEntity.ok("Hello There")
                 }else{
@@ -41,6 +41,8 @@ class WmOkHttp3Rest {
             }else{
                 ResponseEntity.status(500).build()
             }
+
+            return response
         }catch (e: Exception){
            return ResponseEntity.status(500).build()
         }

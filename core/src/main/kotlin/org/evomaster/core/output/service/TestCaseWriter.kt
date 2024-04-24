@@ -121,8 +121,16 @@ abstract class TestCaseWriter {
         lines: Lines,
         actions: List<HostnameResolutionAction>
     ) {
-        actions.forEach {
-            lines.add("DnsCacheManipulator.setDnsCache(\"${it.hostname}\", \"${it.localIPAddress}\")")
+
+        actions.forEach { a ->
+            val x = actions.filter { it.hostname == a.hostname }
+
+            if (x.size > 1) {
+                // This should not happen
+                throw IllegalStateException("Have more than one action for ${a.hostname}")
+            }
+
+            lines.add("DnsCacheManipulator.setDnsCache(\"${a.hostname}\", \"${a.localIPAddress}\")")
             lines.appendSemicolon(format)
         }
     }
