@@ -12,6 +12,7 @@ import org.evomaster.core.search.EvaluatedIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -30,6 +31,7 @@ public class ExternalServiceMockingFlakyEMTest extends SpringTestBase {
         SpringTestBase.initClass(serviceController, config);
     }
 
+    @Disabled //TODO needs to be put back once fixed issues with WM
     @Test
     public void externalServiceMockingTest() throws Throwable {
         runTestHandlingFlakyAndCompilation(
