@@ -188,7 +188,7 @@ class HttpWsExternalServiceHandler {
     }
 
     fun getExternalServiceMappings(): Map<String, ExternalServiceMappingDto> {
-        return externalServices.mapValues { (_, v) ->
+        return externalServices.filter { it.value.isActive() }.mapValues { (_, v) ->
             ExternalServiceMappingDto(
                 v.getRemoteHostName(),
                 v.getIP(),

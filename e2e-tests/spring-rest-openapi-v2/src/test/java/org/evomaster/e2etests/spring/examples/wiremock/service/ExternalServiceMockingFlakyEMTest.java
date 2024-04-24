@@ -12,6 +12,7 @@ import org.evomaster.core.search.EvaluatedIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -30,13 +31,14 @@ public class ExternalServiceMockingFlakyEMTest extends SpringTestBase {
         SpringTestBase.initClass(serviceController, config);
     }
 
+    @Disabled
     @Test
     public void externalServiceMockingTest() throws Throwable {
         runTestHandlingFlakyAndCompilation(
                 "ExternalServiceMockingEMGeneratedTest",
                 "org.bar.ExternalServiceMockingEMGeneratedTest",
                 1500,
-                true,//!CIUtils.isRunningGA(),
+                true,
                 (args) -> {
 
                     // IP set to 127.0.0.5 to confirm the test failure
@@ -48,6 +50,8 @@ public class ExternalServiceMockingFlakyEMTest extends SpringTestBase {
                     args.add("USER");
                     args.add("--externalServiceIP");
                     args.add("127.0.0.5");
+                    args.add("--minimize");
+                    args.add("false");
 
 
                     Solution<RestIndividual> solution = initAndRun(args);

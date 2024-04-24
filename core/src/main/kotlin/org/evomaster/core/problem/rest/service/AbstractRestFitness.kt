@@ -888,29 +888,18 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         // TODO: Need to move under ApiWsFitness after the GraphQL and RPC support is completed
         if (index == 0) {
             val addressMapping = mutableMapOf<String, String>()
-            if (action.parent is EnterpriseActionGroup<*>) {
-                val actionGroup = action.parent as EnterpriseActionGroup<*>
-                if (actionGroup.parent is RestResourceCalls) {
-                    val resourceCall = actionGroup.parent as RestResourceCalls
-                    if (resourceCall.parent is RestIndividual) {
-                        val individual = resourceCall.parent as RestIndividual
-                        val dnsActions = individual
-                            .seeActions(ActionFilter.ONLY_DNS)
-                            .filterIsInstance<HostnameResolutionAction>()
-
-                        if (dnsActions.isNotEmpty()) {
-
-                            val localDomainNameMapping = externalServiceHandler.getLocalDomainNameMapping()
-
-                            dnsActions.forEach {
-                                if (localDomainNameMapping.containsKey(it.hostname)) {
-                                    addressMapping[it.hostname] = localDomainNameMapping.getValue(it.hostname)
-                                }
-                            }
-
-                        }
+            val individual = action.parent?.parent?.parent as RestIndividual
+            val dnsActions = individual
+                .seeActions(ActionFilter.ONLY_DNS)
+                .filterIsInstance<HostnameResolutionAction>()
+            if (dnsActions.isNotEmpty()) {
+                val localDomainNameMapping = externalServiceHandler.getLocalDomainNameMapping()
+                dnsActions.forEach {
+                    if (localDomainNameMapping.containsKey(it.hostname)) {
+                        addressMapping[it.hostname] = localDomainNameMapping.getValue(it.hostname)
                     }
                 }
+
             }
             actionDto.localAddressMapping = addressMapping
             actionDto.externalServiceMapping = externalServiceHandler.getExternalServiceMappings()
