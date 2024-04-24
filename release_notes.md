@@ -2,9 +2,12 @@
 
 Under development in `master` branch.
 
+### Bug Fixes
+- better dealing with reset of SQL tables where names in queries used quotes, and/or table is not accessible in database.
+
 ### Addressed GitHub Issues
 - #834: Authentication required when accessing schema
-
+- #957: Generated test cases fail due to 'checkInstrumentation' 
 
 ---
 # Version: 3.0.0

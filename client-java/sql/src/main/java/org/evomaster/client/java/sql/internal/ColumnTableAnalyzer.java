@@ -108,29 +108,22 @@ public class ColumnTableAnalyzer {
          */
 
         Select stmt = (Select) ParserUtils.asStatement(select);
-        SelectBody selectBody = stmt.getSelectBody();
+        PlainSelect plainSelect = stmt.getPlainSelect();
 
-        if (selectBody instanceof PlainSelect) {
+        FromItem fromItem = plainSelect.getFromItem();
+        if(fromItem == null){
+            //is this even possible? ie, a SELECT without FROM
+            return map;
+        }
 
-            PlainSelect plainSelect = (PlainSelect) selectBody;
+        extractUsedColumnsAndTables(map, fromItem);
 
-            FromItem fromItem = plainSelect.getFromItem();
-            if(fromItem == null){
-                //is this even possible? ie, a SELECT without FROM
-                return map;
+        List<Join> joins = plainSelect.getJoins();
+        if(joins != null) {
+            for (Join join : joins) {
+                FromItem rightItem = join.getRightItem();
+                extractUsedColumnsAndTables(map, rightItem);
             }
-
-            extractUsedColumnsAndTables(map, fromItem);
-
-            List<Join> joins = plainSelect.getJoins();
-            if(joins != null) {
-                for (Join join : joins) {
-                    FromItem rightItem = join.getRightItem();
-                    extractUsedColumnsAndTables(map, rightItem);
-                }
-            }
-        } else {
-            throw new IllegalArgumentException("Cannot handle select: " + select);
         }
 
         return map;
