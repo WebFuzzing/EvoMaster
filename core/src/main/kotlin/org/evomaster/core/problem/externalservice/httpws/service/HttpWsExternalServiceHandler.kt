@@ -252,7 +252,7 @@ class HttpWsExternalServiceHandler {
 
     fun resetWireMockServers() {
         externalServices.filter { it.value.isActive() }.forEach {
-            it.value.reset()
+            it.value.resetAll()
         }
     }
 

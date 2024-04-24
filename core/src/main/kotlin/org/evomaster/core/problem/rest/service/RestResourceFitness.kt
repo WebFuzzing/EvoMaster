@@ -250,7 +250,7 @@ class RestResourceFitness : AbstractRestFitness() {
             So 2 options: (1) always reset before calling SUT, or (2) always reset after call in which external
             setups were used.
          */
-        externalServiceHandler.resetServedRequests()
+        externalServiceHandler.resetWireMockServers()
 
         val externalServiceActions = actionGroup.getExternalServiceActions()
 
