@@ -36,7 +36,7 @@ class WmOkHttp3Rest {
                 } else{
                     ResponseEntity.ok("OK")
                 }
-            } else if (code in 300..499){
+            } else if (code in 400..499){
                 ResponseEntity.status(400).build()
             }else{
                 ResponseEntity.status(418).build()
