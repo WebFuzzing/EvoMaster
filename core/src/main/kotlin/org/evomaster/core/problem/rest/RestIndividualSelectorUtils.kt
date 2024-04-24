@@ -1,13 +1,16 @@
 package org.evomaster.core.problem.rest
 
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
+import org.evomaster.core.problem.enterprise.EnterpriseIndividual
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.sql.SqlAction
 
 /**
  * Utility functions to select one or more REST Individual from a group, based on different criteria.
@@ -140,12 +143,7 @@ object RestIndividualSelectorUtils {
     ): List<EvaluatedIndividual<RestIndividual>> {
 
         return individuals.filter { ind ->
-            ind.evaluatedMainActions().any{ea ->
-                val a = ea.action as RestCallAction
-                val r = ea.result as RestCallResult
-
-                a.verb == verb && a.path.isEquivalent(path) && r.getStatusCode() == statusCode
-            }
+           getIndexOfAction(ind,verb,path,statusCode) >= 0
         }
     }
 
@@ -182,25 +180,20 @@ object RestIndividualSelectorUtils {
         }
     }
 
-    fun sliceAllCallsInIndividualAfterAction(individual: EvaluatedIndividual<RestIndividual>,
-                                                     action: RestCallAction) : RestIndividual {
+    fun sliceAllCallsInIndividualAfterAction(restIndividual: RestIndividual, index: Int) : RestIndividual {
 
-        // find the index of the individual
-        val mainActions = individual.individual.seeMainExecutableActions()
-        val actIndex = individual.individual.seeMainExecutableActions().indexOf(action)
+        val ind = restIndividual.copy() as RestIndividual
 
-        var actionList = mutableListOf<RestCallAction>()
+        val n = ind.size()
 
-        for (index in 0..mainActions.size) {
-            if (index <= actIndex) {
-                actionList.add(mainActions.get(index))
-            }
+        for(i in n-1 downTo index+1){
+            ind.removeMainExecutableAction(i)
         }
 
-        val newIndividual = RestIndividual(actionList, SampleType.SECURITY)
+        ind.fixGeneBindingsIfNeeded()
+        ind.removeLocationId()
 
-        return newIndividual
-
+        return ind
     }
 
     /**
@@ -212,6 +205,26 @@ object RestIndividualSelectorUtils {
         return getActionWithIndexRestIndividual(individual.individual, actionIndex)
 
     }
+
+    fun getIndexOfAction(individual: EvaluatedIndividual<RestIndividual>,
+                         verb: HttpVerb,
+                         path: RestPath,
+                         statusCode: Int) : Int{
+
+        val actions = individual.evaluatedMainActions()
+
+        for(index in actions.indices){
+            val a = actions[index].action as RestCallAction
+            val r = actions[index].result as RestCallResult
+
+            if(a.verb == verb && a.path.isEquivalent(path) && r.getStatusCode() == statusCode){
+                return index
+            }
+        }
+
+        return -1
+    }
+
 
     fun getActionWithIndexRestIndividual(individual: RestIndividual, actionIndex : Int) : RestCallAction {
 

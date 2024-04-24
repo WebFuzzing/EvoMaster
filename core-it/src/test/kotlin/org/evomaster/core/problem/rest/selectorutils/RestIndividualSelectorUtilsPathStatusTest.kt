@@ -62,4 +62,13 @@ class RestIndividualSelectorUtilsPathStatusTest : IntegrationTestRestBase(){
         assertEquals(2, x.individual.getActionIndex(HttpVerb.GET, others))
         assertTrue(x.individual.getActionIndex(HttpVerb.POST, others) < 0)
     }
+
+
+    @Test
+    fun testSliceBasic(){
+
+        TODO
+        sliceAllCallsInIndividualAfterAction
+    }
+
 }

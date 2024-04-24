@@ -44,7 +44,8 @@ class SecurityRest {
 
 
     /**
-     * Individuals in the solution
+     * Individuals in the solution.
+     * Derived from archive.
      */
     private lateinit var individualsInSolution : List<EvaluatedIndividual<RestIndividual>>
 
@@ -76,9 +77,12 @@ class SecurityRest {
 
 
         // we can see what is available from the schema, and then check if already existing a test for it in archive
+        // newly generated tests will be added back to archive
         addForAccessControl()
 
-        // just return the archive for solutions including the security test.
+        //TODO possible other kinds of tests here
+
+        // just return the archive for solutions including the security tests.
         return archive.extractSolution()
     }
 
@@ -158,10 +162,9 @@ class SecurityRest {
         deleteOperations.forEach { delete ->
 
             // from archive, search if there is any test with a DELETE returning a 403
-            val existing403 : List<EvaluatedIndividual<RestIndividual>> =
-                RestIndividualSelectorUtils.findIndividuals(individualsInSolution, HttpVerb.DELETE, delete.path, 403)
+            val existing403  = RestIndividualSelectorUtils.findIndividuals(individualsInSolution, HttpVerb.DELETE, delete.path, 403)
 
-            var individualToChooseForTest : RestIndividual
+            val individualToChooseForTest : RestIndividual
 
             // if there is such an individual
             if (existing403.isNotEmpty()) {
@@ -170,12 +173,10 @@ class SecurityRest {
                 // we can just get the first item
                 val currentIndividualWith403 = existing403[0]
 
-                val deleteAction = currentIndividualWith403.individual.getActionIndex(HttpVerb.DELETE, delete.path)
-
-                val deleteActionIndex = RestIndividualSelectorUtils.getActionWithIndex(currentIndividualWith403, deleteAction)
+                val deleteActionIndex = RestIndividualSelectorUtils.getIndexOfAction(currentIndividualWith403,HttpVerb.DELETE,delete.path, 403)
 
                 // slice the individual in a way that delete all calls after the DELETE request
-                individualToChooseForTest = RestIndividualSelectorUtils.sliceAllCallsInIndividualAfterAction(currentIndividualWith403, deleteActionIndex)
+                individualToChooseForTest = RestIndividualSelectorUtils.sliceAllCallsInIndividualAfterAction(currentIndividualWith403.individual, deleteActionIndex)
             } else {
                 // there is not. need to create it based on successful create resources with authenticated user
                 var verbUsedForCreation : HttpVerb? = null;
@@ -231,7 +232,7 @@ class SecurityRest {
                 val existingEndpointForCreationCopy = existingEndpointForCreation.copy()
                 val actionForCreation = RestIndividualSelectorUtils.getActionWithIndex(existingEndpointForCreation, actionIndexForCreation)
 
-                RestIndividualSelectorUtils.sliceAllCallsInIndividualAfterAction(existingEndpointForCreationCopy, actionForCreation)
+                RestIndividualSelectorUtils.sliceAllCallsInIndividualAfterAction(existingEndpointForCreationCopy.individual, -1)//actionForCreation)
 
                 // add a DELETE call with another user
                 individualToChooseForTest =
