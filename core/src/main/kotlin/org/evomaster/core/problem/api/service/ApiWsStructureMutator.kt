@@ -206,6 +206,9 @@ abstract class ApiWsStructureMutator : StructureMutator() {
             val hasActions = old.any { it.hostname == a.hostname && it.localIPAddress == a.localIPAddress }
             if (!hasActions) {
                 addedInsertions.add(a)
+                // Removing the existing default IP address action
+                val defaultAction = old.filter { it.hostname == a.hostname && it.localIPAddress == a.localIPAddress }
+//                ind.removeHostnameResolutionAction(defaultAction)
             }
 
             // Removing the existing action added with the default WireMock address

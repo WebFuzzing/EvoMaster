@@ -121,20 +121,7 @@ abstract class TestCaseWriter {
         lines: Lines,
         actions: List<HostnameResolutionAction>
     ) {
-        val mappings: MutableList<HostnameResolutionAction> = mutableListOf()
-
-        actions.forEach { action ->
-           val existing = actions.filter { it.hostname == action.hostname }
-            if (existing.size > 1) {
-                if (action.localIPAddress != RESERVED_RESOLVED_LOCAL_IP) {
-                    mappings.add(action)
-                }
-            } else {
-                mappings.add(action)
-            }
-        }
-
-        mappings.forEach {
+        actions.forEach {
             lines.add("DnsCacheManipulator.setDnsCache(\"${it.hostname}\", \"${it.localIPAddress}\")")
             lines.appendSemicolon(format)
         }
