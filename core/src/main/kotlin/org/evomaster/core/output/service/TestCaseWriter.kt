@@ -123,9 +123,9 @@ abstract class TestCaseWriter {
     ) {
 
         actions.forEach { a ->
-            val x = actions.filter { it.hostname == a.hostname }
+            val ea = actions.filter { it.hostname == a.hostname }
 
-            if (x.size > 1) {
+            if (ea.size > 1) {
                 // This should not happen
                 throw IllegalStateException("Have more than one action for ${a.hostname}")
             }
