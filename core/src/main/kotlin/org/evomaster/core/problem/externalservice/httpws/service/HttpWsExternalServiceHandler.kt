@@ -370,16 +370,6 @@ class HttpWsExternalServiceHandler {
         return ip
     }
 
-
-    /**
-     * To prevent from the 404 when no matching stub below stub is added
-     * WireMock throws an exception when there is no stub for the request
-     * to avoid the exception it handled manually
-     */
-    private fun wireMockSetDefaults(es: HttpWsExternalService) {
-        es.getWireMockServer().stubFor(es.getDefaultWMMappingBuilder())
-    }
-
     fun registerExternalServiceToSkip(service: ExternalService) {
         skippedExternalServices.add(service)
     }
