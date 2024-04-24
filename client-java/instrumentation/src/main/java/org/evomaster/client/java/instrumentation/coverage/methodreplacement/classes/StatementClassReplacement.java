@@ -21,7 +21,7 @@ public class StatementClassReplacement implements MethodReplacementClass {
         return Statement.class;
     }
 
-    private static void handleSql(String sql, boolean exception, long executionTime){
+    static void handleSql(String sql, boolean exception, long executionTime){
         /*
             TODO need to provide proper info data here.
             Bit tricky, need to check actual DB implementations, see:
@@ -145,18 +145,29 @@ public class StatementClassReplacement implements MethodReplacementClass {
      *
      * Man: actually comments of prepared statement have been removed, this might be redundant for them.
      *      TODO need to refactor the sql handling a bit
+     *
      */
     private static String formatSql(String sql){
-        try {
-            return CCJSqlParserUtil.parse(sql).toString();
-        } catch (JSQLParserException e) {
+        /*
+           JP: In JSQLParser >= 4.9 empty strings are now successfully parsed to "null".
+           Therefore, instead of a JSQLParserException, a NullPointerException was
+           being thrown (that was not properly handled). We added this check to
+           avoid parsing the "", and continue supporting the formatting of the "" sql
+           command.
+         */
+        if (!sql.equals("")) {
+            try {
+                return CCJSqlParserUtil.parse(sql).toString();
+            } catch (JSQLParserException e) {
             /*
                 Man: skip error log here since the sql would be checked when SqlHandler.computeDistance.
                     in addition, log here would lead to some redundant errors about e.g., SET @@foreign_key_checks, ALTER TABLE flyway_schema_history
              */
-            //SimpleLogger.error("SQL ERROR. Could not handle "+ sql + " with JSQLParserException, and the error message :"+e.getMessage());
-            return sql;
+                //SimpleLogger.error("SQL ERROR. Could not handle "+ sql + " with JSQLParserException, and the error message :"+e.getMessage());
+            }
         }
+        return sql;
+
     }
 
 }
