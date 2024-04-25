@@ -887,17 +887,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         val actionDto = super.getActionDto(action, index)
         // TODO: Need to move under ApiWsFitness after the GraphQL and RPC support is completed
         if (index == 0) {
-            val addressMapping = mutableMapOf<String, String>()
             val individual = action.getRoot() as RestIndividual
-            val dnsActions = individual
+            actionDto.localAddressMapping = individual
                 .seeActions(ActionFilter.ONLY_DNS)
                 .filterIsInstance<HostnameResolutionAction>()
-            dnsActions.forEach {
-                if (externalServiceHandler.hasLocalDomainNameMapping(it.hostname)) {
-                    addressMapping[it.hostname] = externalServiceHandler.getLocalDomainNameMapping(it.hostname)
-                }
-            }
-            actionDto.localAddressMapping = addressMapping
+                .associate { it.hostname to it.localIPAddress }
             actionDto.externalServiceMapping = externalServiceHandler.getExternalServiceMappings()
             actionDto.skippedExternalServices = externalServiceHandler.getSkippedExternalServices()
         }
