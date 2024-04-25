@@ -183,8 +183,6 @@ class Main {
             writeImpacts(injector, solution)
             writeExecuteInfo(injector)
 
-            stopExternalServiceHandler(injector)
-
             val stc = injector.getInstance(SearchTimeController::class.java)
 
             LoggingUtil.getInfoLogger().apply {
@@ -228,6 +226,8 @@ class Main {
             writeCoveredTargets(injector, solution)
             writeTests(injector, solution, controllerInfo)
             writeStatistics(injector, solution) //FIXME if other phases after search, might get skewed data on 100% snapshots...
+
+            stopExternalServiceHandler(injector)
 
             val statistics = injector.getInstance(Statistics::class.java)
             val data = statistics.getData(solution)
