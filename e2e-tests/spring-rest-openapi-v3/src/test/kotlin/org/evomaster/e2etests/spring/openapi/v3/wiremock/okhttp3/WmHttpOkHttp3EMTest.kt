@@ -37,7 +37,7 @@ class WmHttpOkHttp3EMTest : SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "WmHttpOkHttp3EM",
             "org.foo.WmHttpOkHttp3EM",
-            1000,
+            100,
             true,
             { args: MutableList<String> ->
 
@@ -45,8 +45,6 @@ class WmHttpOkHttp3EMTest : SpringTestBase() {
                 args.add("USER")
                 args.add("--externalServiceIP")
                 args.add("127.0.0.72")
-//                args.add("--minimize")
-//                args.add("false")
 
                 val solution = initAndRun(args)
 
