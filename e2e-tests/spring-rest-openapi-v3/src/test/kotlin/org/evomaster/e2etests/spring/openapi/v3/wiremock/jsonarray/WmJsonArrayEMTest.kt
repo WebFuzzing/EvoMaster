@@ -28,7 +28,7 @@ class WmJsonArrayEMTest : SpringTestBase() {
     }
 
 
-    @Disabled("TODO: Disabled until the issues with WM is fixed")
+//    @Disabled("TODO: Disabled until the issues with WM is fixed")
     @Test
     fun testRunEM() {
 
@@ -36,7 +36,7 @@ class WmJsonArrayEMTest : SpringTestBase() {
             "WmJsonArrayEM",
             "org.foo.WmJsonArrayEM",
             1000,
-            false,
+            true,
             { args: MutableList<String> ->
                 // TODO: Generated test looks perfect but for some reason it fails.
                 //  CreatedTests is set to false temporarily
