@@ -676,6 +676,8 @@ public class ExecutionTracer {
 
     public static void addHostnameInfo(HostnameResolutionInfo hostnameResolutionInfo) {
         getCurrentAdditionalInfo().addHostnameInfo(hostnameResolutionInfo);
+        if (!executingAction)
+            ObjectiveRecorder.registerHostnameResolutionInfoAtSutStartupTime(hostnameResolutionInfo);
     }
 
     /**

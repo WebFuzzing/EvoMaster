@@ -31,13 +31,12 @@ public class ExternalServiceMockingFlakyEMTest extends SpringTestBase {
         SpringTestBase.initClass(serviceController, config);
     }
 
-    @Disabled
     @Test
     public void externalServiceMockingTest() throws Throwable {
         runTestHandlingFlakyAndCompilation(
                 "ExternalServiceMockingEMGeneratedTest",
                 "org.bar.ExternalServiceMockingEMGeneratedTest",
-                1500,
+                500,
                 true,
                 (args) -> {
 
@@ -50,9 +49,6 @@ public class ExternalServiceMockingFlakyEMTest extends SpringTestBase {
                     args.add("USER");
                     args.add("--externalServiceIP");
                     args.add("127.0.0.5");
-                    args.add("--minimize");
-                    args.add("false");
-
 
                     Solution<RestIndividual> solution = initAndRun(args);
 
