@@ -115,6 +115,14 @@ public class ObjectiveRecorder {
     }
 
     /**
+     * register hostname resolution info at Sut Startup Time
+     * @param info to append
+     */
+    public static void registerHostnameResolutionInfoAtSutStartupTime(HostnameResolutionInfo info){
+        bootTimeObjectiveInfo.registerHostnameResolutionInfoAtSutBootTime(info);
+    }
+
+    /**
      * register external service info at Sut Startup Time
      * @param info to append
      */
