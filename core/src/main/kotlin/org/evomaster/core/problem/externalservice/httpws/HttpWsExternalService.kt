@@ -69,7 +69,7 @@ class HttpWsExternalService(
              */
             if (externalServiceInfo !is DefaultHttpExternalServiceInfo) {
                 wm.start()
-//                wm.stubFor(getDefaultWMMappingBuilder())
+                wm.stubFor(getDefaultWMMappingBuilder())
             }
 
             wireMockServer = wm
@@ -198,7 +198,7 @@ class HttpWsExternalService(
     fun resetToDefaultState() {
         if (isActive()) {
             wireMockServer!!.resetAll()
-//            wireMockServer!!.stubFor(getDefaultWMMappingBuilder())
+            wireMockServer!!.stubFor(getDefaultWMMappingBuilder())
         }
     }
 
