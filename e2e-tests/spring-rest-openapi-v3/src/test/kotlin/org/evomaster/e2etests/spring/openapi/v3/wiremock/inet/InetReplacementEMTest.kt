@@ -22,13 +22,14 @@ class InetReplacementEMTest : SpringTestBase() {
         }
     }
 
-    @Disabled("Disabled temporarily")
+    @Disabled("FIXME")
+    @Test
     fun testRunEM() {
         runTestHandlingFlakyAndCompilation(
             "InetReplacementEM",
             "org.foo.InetReplacementEM",
-            1000,
-            !CIUtils.isRunningGA(),
+            500,
+            true,
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")
@@ -38,8 +39,8 @@ class InetReplacementEMTest : SpringTestBase() {
 
                 //FIXME should make sure it works with true.
                 //looks like a bug in resetting the DNS cache to default state
-                args.add("--minimize")
-                args.add("false")
+//                args.add("--minimize")
+//                args.add("false")
 
                 val solution = initAndRun(args)
 

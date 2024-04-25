@@ -33,7 +33,7 @@ class WmAuth0EMTest : SpringTestBase() {
     }
 
 
-    @Disabled("Disabled temporarily")
+    @Test
     fun testRunEM() {
 
         runTestHandlingFlakyAndCompilation(
@@ -46,7 +46,7 @@ class WmAuth0EMTest : SpringTestBase() {
                 args.add("--externalServiceIPSelectionStrategy")
                 args.add("USER")
                 args.add("--externalServiceIP")
-                args.add("127.3.0.12")
+                args.add("127.0.0.22")
                 args.add("--instrumentMR_NET")
                 args.add("true")
 

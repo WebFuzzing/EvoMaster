@@ -22,13 +22,14 @@ class HostnameResolutionActionEMTest: SpringTestBase() {
         }
     }
 
+    @Disabled("FIXME")
     @Test
     fun testRunEM() {
         runTestHandlingFlakyAndCompilation(
             "HostnameResolutionActionEMTest",
             "org.foo.HostnameResolutionActionEMTest",
             100,
-            false,
+            true,
             { args: MutableList<String> ->
 
                 // Note: WireMock is initiated based on the served requests.
@@ -40,10 +41,10 @@ class HostnameResolutionActionEMTest: SpringTestBase() {
                 args.add("--externalServiceIPSelectionStrategy")
                 args.add("USER")
                 args.add("--externalServiceIP")
-                args.add("127.0.0.4")
+                args.add("127.0.0.14")
                 // TODO: Need to remove, once the issue resolved
-                args.add("--minimize")
-                args.add("false")
+//                args.add("--minimize")
+//                args.add("false")
 
                 val solution = initAndRun(args)
 

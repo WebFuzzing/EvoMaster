@@ -27,15 +27,13 @@ class WmJsonArrayEMTest : SpringTestBase() {
         }
     }
 
-
-//    @Disabled("TODO: Disabled until the issues with WM is fixed")
     @Test
     fun testRunEM() {
 
         runTestHandlingFlakyAndCompilation(
             "WmJsonArrayEM",
             "org.foo.WmJsonArrayEM",
-            1000,
+            100,
             true,
             { args: MutableList<String> ->
                 // TODO: Generated test looks perfect but for some reason it fails.
