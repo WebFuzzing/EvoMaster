@@ -256,6 +256,12 @@ class HttpWsExternalServiceHandler {
         }
     }
 
+    fun resetWireMockServersToDefaultState() {
+        externalServices.filter { it.value.isActive() }.forEach {
+            it.value.resetToDefaultState()
+        }
+    }
+
     fun stopActiveWireMockServers() {
         externalServices.filter { it.value.isActive() }.forEach {
             it.value.stopWireMockServer()
