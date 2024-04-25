@@ -291,6 +291,8 @@ public abstract class EnterpriseTestBase {
         runTestHandlingFlaky(outputFolderName, fullClassName, iterations, createTests,lambda, timeoutMinutes);
 
         if (createTests){
+            MethodReplacementPreserveSemantics.shouldPreserveSemantics = true;
+
             assertTimeoutPreemptively(Duration.ofMinutes(2), () -> {
                 ClassName className = new ClassName(fullClassName);
                 compileRunAndVerifyTests(outputFolderName, className);
