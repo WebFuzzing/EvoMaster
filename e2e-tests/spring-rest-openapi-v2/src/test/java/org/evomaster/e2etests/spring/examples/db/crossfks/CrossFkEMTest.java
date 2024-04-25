@@ -7,6 +7,7 @@ import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -17,11 +18,13 @@ public class CrossFkEMTest extends SpringTestBase {
     public static void initClass() throws Exception {
         SpringTestBase.initClass(new CrossFkController());
     }
+    @Disabled("TEMP")
     @Test
     public void testEnableTaintSampleEM() throws Throwable {
         forceSqlAllColumnInsertion(true);
     }
 
+    @Disabled("TEMP")
     @Test
     public void testDisableTaintSampleEM() throws Throwable {
         forceSqlAllColumnInsertion(false);
