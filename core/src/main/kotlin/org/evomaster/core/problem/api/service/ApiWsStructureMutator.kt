@@ -208,7 +208,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
                 addedInsertions.add(a)
             }
 
-            // Removing the existing action added with the default WireMock address
+            // Removing the existing action added for RESERVED_RESOLVED_LOCAL_IP
             val defaultActions = old.filter { it.hostname == a.hostname && it.localIPAddress == ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP };
             if (defaultActions.isNotEmpty()) {
                 ind.removeHostnameResolutionAction(defaultActions)
