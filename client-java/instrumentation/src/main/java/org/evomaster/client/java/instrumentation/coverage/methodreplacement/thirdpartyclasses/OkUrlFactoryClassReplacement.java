@@ -73,7 +73,7 @@ public class OkUrlFactoryClassReplacement extends ThirdPartyMethodReplacementCla
     }
 
     private static URL getReplacedURL(URL url){
-        if (MethodReplacementUtils.needToPreserverSemantics()) {
+        if (MethodReplacementPreserveSemantics.shouldPreserveSemantics) {
             return url;
         }
 

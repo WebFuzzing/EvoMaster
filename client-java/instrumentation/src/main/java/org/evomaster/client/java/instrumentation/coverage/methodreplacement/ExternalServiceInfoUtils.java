@@ -6,6 +6,7 @@ import org.evomaster.client.java.instrumentation.coverage.methodreplacement.clas
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils;
 import org.evomaster.client.java.instrumentation.shared.IPAddressValidator;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+import org.evomaster.client.java.instrumentation.staticstate.MethodReplacementPreserveSemantics;
 
 import java.net.InetAddress;
 

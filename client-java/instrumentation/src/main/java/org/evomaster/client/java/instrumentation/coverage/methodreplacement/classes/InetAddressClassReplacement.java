@@ -50,7 +50,7 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
                         || ExternalServiceInfoUtils.isValidIP(host)
                         || ExecutionTracer.skipHostname(host)
                         || "localhost".equals(host)
-                        || MethodReplacementUtils.needToPreserverSemantics()
+                        || MethodReplacementPreserveSemantics.shouldPreserveSemantics
 
         ) {
             //we are only interested in hostnames... recall user could manually specify some to skip.
