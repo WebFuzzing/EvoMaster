@@ -27,7 +27,7 @@ public class SocketClassReplacement implements MethodReplacementClass {
             usageFilter = UsageFilter.ANY
     )
     public static void connect(Socket caller, SocketAddress endpoint, int timeout) throws IOException {
-        if (MethodReplacementUtils.needToPreserverSemantics()) {
+        if (MethodReplacementPreserveSemantics.shouldPreserveSemantics) {
             SimpleLogger.warn("Preserving semantics: java.net.socket");
             caller.connect(endpoint, timeout);
         } else {

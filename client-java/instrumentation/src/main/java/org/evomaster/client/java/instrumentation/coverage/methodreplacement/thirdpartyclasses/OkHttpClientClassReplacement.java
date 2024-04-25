@@ -9,7 +9,6 @@ import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.staticstate.MethodReplacementPreserveSemantics;
 
-
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSocketFactory;
 import java.lang.reflect.Constructor;
@@ -147,7 +146,7 @@ public class OkHttpClientClassReplacement extends ThirdPartyMethodReplacementCla
 
         Method original = getOriginal(singleton, "okhttpclient_newCall", caller);
 
-        if (MethodReplacementUtils.needToPreserverSemantics()) {
+        if (MethodReplacementPreserveSemantics.shouldPreserveSemantics) {
             try{
                 return  original.invoke(caller, request);
             } catch (IllegalAccessException e){
