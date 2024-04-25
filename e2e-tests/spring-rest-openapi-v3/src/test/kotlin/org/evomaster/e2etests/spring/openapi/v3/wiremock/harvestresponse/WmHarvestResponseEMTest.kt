@@ -27,20 +27,21 @@ class WmHarvestResponseEMTest : SpringTestBase() {
     }
 
 
-    @Disabled("Disabled temporarily")
+    @Disabled("Won't work because of the use of port 8080 and 443")
+    @Test
     fun testRunEM() {
         // External service uses port 80 and 443 so the test will fail in macOS.
         runTestHandlingFlakyAndCompilation(
             "WmHarvestResponseEM",
             "org.foo.WmHarvestResponseEM",
             1500,
-                true,//!CIUtils.isRunningGA(),
+            true,
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")
                 args.add("USER")
                 args.add("--externalServiceIP")
-                args.add("127.0.0.4")
+                args.add("127.0.0.50")
                 args.add("--probOfHarvestingResponsesFromActualExternalServices")
                 args.add("0.9")
                 args.add("--probOfMutatingResponsesBasedOnActualResponse")

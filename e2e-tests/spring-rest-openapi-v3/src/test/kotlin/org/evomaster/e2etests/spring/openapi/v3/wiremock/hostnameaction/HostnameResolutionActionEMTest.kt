@@ -22,14 +22,14 @@ class HostnameResolutionActionEMTest: SpringTestBase() {
         }
     }
 
-    @Disabled("FIXME")
+//    @Disabled("FIXME")
     @Test
     fun testRunEM() {
         runTestHandlingFlakyAndCompilation(
             "HostnameResolutionActionEMTest",
             "org.foo.HostnameResolutionActionEMTest",
             100,
-            true,
+            false,
             { args: MutableList<String> ->
 
                 // Note: WireMock is initiated based on the served requests.

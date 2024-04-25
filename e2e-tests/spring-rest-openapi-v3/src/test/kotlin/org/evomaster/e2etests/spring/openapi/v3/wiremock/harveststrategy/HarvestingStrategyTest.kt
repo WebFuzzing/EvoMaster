@@ -49,21 +49,19 @@ class HarvestingStrategyTest : SpringTestBase() {
             "HarvestStrategyExactEMTest",
             "org.foo.HarvestStrategyExactEMTest",
             1500,
-            false, // this fails in local and CI
+            true, // this fails in local and CI
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")
                 args.add("USER")
                 args.add("--externalServiceIP")
-                args.add("127.0.0.4")
+                args.add("127.0.0.20")
                 args.add("--probOfHarvestingResponsesFromActualExternalServices")
                 args.add("0.9")
                 args.add("--probOfMutatingResponsesBasedOnActualResponse")
                 args.add("0.1")
                 args.add("--externalRequestResponseSelectionStrategy")
                 args.add("EXACT")
-                args.add("--minimize")
-                args.add("false")
 
                 val solution = initAndRun(args)
 
@@ -109,21 +107,19 @@ class HarvestingStrategyTest : SpringTestBase() {
             "HarvestStrategyClosestSameDomainEMTest",
             "org.foo.HarvestStrategyClosestEMTest",
             1000,
-            false,
+            true,
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")
                 args.add("USER")
                 args.add("--externalServiceIP")
-                args.add("127.0.0.4")
+                args.add("127.0.0.30")
                 args.add("--probOfHarvestingResponsesFromActualExternalServices")
                 args.add("0.9")
                 args.add("--probOfMutatingResponsesBasedOnActualResponse")
                 args.add("0.1")
                 args.add("--externalRequestResponseSelectionStrategy")
                 args.add("CLOSEST_SAME_DOMAIN")
-                args.add("--minimize")
-                args.add("false")
 
                 val solution = initAndRun(args)
 
