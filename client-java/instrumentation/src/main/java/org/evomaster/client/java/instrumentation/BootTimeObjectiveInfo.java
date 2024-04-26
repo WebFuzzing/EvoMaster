@@ -43,7 +43,7 @@ public class BootTimeObjectiveInfo implements Serializable {
         externalServiceInfo.clear();
     }
 
-    public void registerHostnameInfoAtSutBootTime(HostnameResolutionInfo hostnameResolutionInfo) {
+    public void registerHostnameResolutionInfoAtSutBootTime(HostnameResolutionInfo hostnameResolutionInfo) {
         if (hostnameResolutionInfos.isEmpty() || hostnameResolutionInfos.stream().noneMatch(h -> h.equals(hostnameResolutionInfo))) {
             hostnameResolutionInfos.add(hostnameResolutionInfo.copy());
         }
