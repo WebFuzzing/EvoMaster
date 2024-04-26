@@ -29,7 +29,7 @@ public class ServiceRest {
         try {
             // To bind WireMock in port 80 and 443 require root privileges
             // To avoid that port set to 3000 for e2e-test
-            URL url = new URL("http://foo.bar:10000/api/echo/foo");
+            URL url = new URL("http://foo.bar:8080/api/echo/foo");
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setConnectTimeout(500);
             connection.setRequestProperty("accept", "application/json");
@@ -77,12 +77,12 @@ public class ServiceRest {
         try {
             // To bind WireMock in port 80 and 443 require root privileges
             // To avoid that port set to 3000 for e2e-test
-            URL url = new URL("http://foo.baz:10000/api/echo/bar");
+            URL url = new URL("http://foo.baz:8080/api/echo/bar");
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestProperty("accept", "application/json");
 
             if (connection.getResponseCode() == 200) {
-                URL secondURL = new URL("http://bar.baz:10000/api/echo/bazz");
+                URL secondURL = new URL("http://bar.baz:8080/api/echo/bazz");
                 HttpURLConnection secondConnection = (HttpURLConnection) secondURL.openConnection();
                 secondConnection.setRequestProperty("accept", "application/json");
 

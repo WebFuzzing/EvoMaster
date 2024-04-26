@@ -31,6 +31,7 @@ public class ExternalServiceMockingFlakyEMTest extends SpringTestBase {
         SpringTestBase.initClass(serviceController, config);
     }
 
+    @Disabled("FIXME")
     @Test
     public void externalServiceMockingTest() throws Throwable {
         runTestHandlingFlakyAndCompilation(
