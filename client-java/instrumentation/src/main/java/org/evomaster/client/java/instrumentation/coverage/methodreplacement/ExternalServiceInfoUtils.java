@@ -5,10 +5,13 @@ import org.evomaster.client.java.instrumentation.HostnameResolutionInfo;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes.InetAddressClassReplacement;
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils;
 import org.evomaster.client.java.instrumentation.shared.IPAddressValidator;
+import org.evomaster.client.java.instrumentation.shared.PreDefinedSSLInfo;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.staticstate.MethodReplacementPreserveSemantics;
 
 import java.net.InetAddress;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 public class ExternalServiceInfoUtils {
 
@@ -123,5 +126,42 @@ public class ExternalServiceInfoUtils {
         }
 
         return port;
+    }
+
+
+    public static URL getUrl(URL url) {
+        if (MethodReplacementPreserveSemantics.shouldPreserveSemantics) {
+            return url;
+        }
+
+        URL replacedURL = url;
+        if ((url.getProtocol().equalsIgnoreCase("http")
+                || url.getProtocol().equalsIgnoreCase("https"))
+                && !skipHostnameOrIp(url.getHost())
+                && !ExecutionTracer.skipHostnameAndPort(url.getHost(), url.getPort())) {
+
+            int port = ExternalServiceInfoUtils.inferPort(url.getPort(), url.getProtocol());
+
+            ExternalServiceInfoUtils.analyzeDnsResolution(url.getHost());
+
+            if (url.getProtocol().equalsIgnoreCase("https"))
+                PreDefinedSSLInfo.setTrustAllForHttpsURLConnection();
+
+            ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(url.getProtocol(), url.getHost(), port);
+            String[] ipAndPort = collectExternalServiceInfo(remoteHostInfo, port);
+
+            // Usage of ports below 1024 require root privileges to run
+            String urlString = url.getProtocol() + "://" + ipAndPort[0] + ":" + ipAndPort[1] + url.getPath();
+
+            if (url.getQuery() != null)
+                urlString += "?" + url.getQuery();
+
+            try {
+                replacedURL = new URL(urlString);
+            } catch (MalformedURLException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return replacedURL;
     }
 }
