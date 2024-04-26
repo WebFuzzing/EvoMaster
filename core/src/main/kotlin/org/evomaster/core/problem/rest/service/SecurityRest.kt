@@ -181,42 +181,21 @@ class SecurityRest {
                 individualToChooseForTest = RestIndividualSelectorUtils.sliceAllCallsInIndividualAfterAction(currentIndividualWith403.individual, deleteAction)
             } else {
                 // there is not. need to create it based on successful create resources with authenticated user
-                var verbUsedForCreation : HttpVerb? = null;
-                // search for create resource for endpoint of DELETE using PUT
-                lateinit var existingEndpointForCreation : EvaluatedIndividual<RestIndividual>
 
-                val existingPutForEndpointOfDelete : List<EvaluatedIndividual<RestIndividual>> =
-                    RestIndividualSelectorUtils.getIndividualsWithActionAndStatusGroup(individualsInSolution, HttpVerb.PUT, delete.path,
-                        "2xx")
-
-                lateinit var existingPostReqForEndpointOfDelete : List<EvaluatedIndividual<RestIndividual>>
-
-                if (existingPutForEndpointOfDelete.isNotEmpty()) {
-                    existingEndpointForCreation = existingPutForEndpointOfDelete[0]
-                    verbUsedForCreation = HttpVerb.PUT
-                }
-                else {
-                    // if there is no such, search for an existing POST
-                    existingPostReqForEndpointOfDelete = RestIndividualSelectorUtils.getIndividualsWithActionAndStatusGroup(
-                        individualsInSolution,
-                        HttpVerb.POST, delete.path,
-                        "2xx"
-                    )
-
-                    if (existingPostReqForEndpointOfDelete.isNotEmpty()) {
-                        existingEndpointForCreation = existingPostReqForEndpointOfDelete[0]
-                        verbUsedForCreation = HttpVerb.DELETE
-                    }
-
-                }
+                val creation = RestIndividualSelectorUtils.findIndividualWithEndpointCreationForResource(
+                    individualsInSolution,
+                    delete.path,
+                    true
+                )
 
                 // if neither POST not PUT exists for the endpoint, we need to handle that case specifically
-                if (existingEndpointForCreation == null) {
-                    // TODO
+                if (creation == null) {
                     LoggingUtil.getInfoLogger().debug(
-                        "The archive does not contain any successful PUT or POST requests, this case is not handled")
-                    return
+                        "The archive does not contain any successful PUT or POST requests to create for ${delete.path}")
+                    return@forEach
                 }
+
+                TODO fixme
 
                 var actionIndexForCreation = -1
 
