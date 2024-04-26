@@ -31,7 +31,7 @@ public class ExternalServiceMockingFlakyEMTest extends SpringTestBase {
         SpringTestBase.initClass(serviceController, config);
     }
 
-    @Disabled("FIXME")
+//    @Disabled("FIXME")
     @Test
     public void externalServiceMockingTest() throws Throwable {
         runTestHandlingFlakyAndCompilation(
@@ -49,7 +49,7 @@ public class ExternalServiceMockingFlakyEMTest extends SpringTestBase {
                     args.add("--externalServiceIPSelectionStrategy");
                     args.add("USER");
                     args.add("--externalServiceIP");
-                    args.add("127.0.0.5");
+                    args.add("127.0.0.50");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 
