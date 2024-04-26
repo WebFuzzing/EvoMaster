@@ -147,7 +147,7 @@ class SecurityRest {
          */
 
         // Check if at least 2 users. if not, nothing to do
-        if (authSettings.size(HttpWsAuthenticationInfo::class.java) <= 1) {
+        if ( !checkForAtLeastNumberOfAuthenticatedUsers(2) ) {
             // nothing to test if there are not at least 2 users
             LoggingUtil.getInfoLogger().debug(
                 "Security test handleForbiddenDeleteButOkPutOrPatch requires at least 2 authenticated users")
@@ -175,8 +175,10 @@ class SecurityRest {
 
                 val deleteActionIndex = RestIndividualSelectorUtils.getIndexOfAction(currentIndividualWith403,HttpVerb.DELETE,delete.path, 403)
 
+                val deleteAction = RestIndividualSelectorUtils.getActionWithIndex(currentIndividualWith403, deleteActionIndex)
+
                 // slice the individual in a way that delete all calls after the DELETE request
-                individualToChooseForTest = RestIndividualSelectorUtils.sliceAllCallsInIndividualAfterAction(currentIndividualWith403.individual, deleteActionIndex)
+                individualToChooseForTest = RestIndividualSelectorUtils.sliceAllCallsInIndividualAfterAction(currentIndividualWith403.individual, deleteAction)
             } else {
                 // there is not. need to create it based on successful create resources with authenticated user
                 var verbUsedForCreation : HttpVerb? = null;
@@ -223,23 +225,21 @@ class SecurityRest {
                     // so we found an individual with a successful PUT or POST,  we will slice all calls after PUT or POST
                     actionIndexForCreation = existingEndpointForCreation.individual.getActionIndex(
                         verbUsedForCreation,
-                        delete.path
-                    )
-
+                        delete.path)
                 }
 
                 // create a copy of the existingEndpointForCreation
                 val existingEndpointForCreationCopy = existingEndpointForCreation.copy()
                 val actionForCreation = RestIndividualSelectorUtils.getActionWithIndex(existingEndpointForCreation, actionIndexForCreation)
 
-                RestIndividualSelectorUtils.sliceAllCallsInIndividualAfterAction(existingEndpointForCreationCopy.individual, -1)//actionForCreation)
+                //RestIndividualSelectorUtils.sliceAllCallsInIndividualAfterAction(existingEndpointForCreationCopy.individual, -1)//actionForCreation)
 
                 // add a DELETE call with another user
                 individualToChooseForTest =
-                    createIndividualWithAnotherActionAddedDifferentAuthRest(existingEndpointForCreationCopy.individual,
-                    actionForCreation, HttpVerb.DELETE )
-
-
+                    RestIndividualSelectorUtils.createIndividualWithAnotherActionAddedDifferentAuthRest(sampler,
+                                                                     existingEndpointForCreationCopy.individual,
+                                                                                              actionForCreation,
+                                                                                                HttpVerb.DELETE )
             }
 
             // After having a set of requests in which the last one is a DELETE call with another user, add a PUT
@@ -248,8 +248,11 @@ class SecurityRest {
 
             val deleteAction = RestIndividualSelectorUtils.getActionWithIndexRestIndividual(individualToChooseForTest, deleteActionIndex)
 
-            var individualToAddToSuite = createIndividualWithAnotherActionAddedDifferentAuthRest(individualToChooseForTest,
-                deleteAction, HttpVerb.PUT )
+            var individualToAddToSuite = RestIndividualSelectorUtils.
+            createIndividualWithAnotherActionAddedDifferentAuthRest(sampler,
+                                                  individualToChooseForTest,
+                                                               deleteAction,
+                                                              HttpVerb.PUT )
 
             // create an individual with the following
             // PUT/POST with one authenticated user userA
@@ -282,54 +285,64 @@ class SecurityRest {
 
     }
 
+
     /**
-     * Create another individual from the individual by adding a new action with a new verb and with a different
-     * authentication.
-     * @param individual - REST indovidual which is the starting point
-     * @param currentAction - REST action for the new individual
-     * @param newActionVerb - verb for the new action, such as GET, POST
+     * Information leakage
+     * accessing endpoint with id with not authorized should return 403, even if not exists.
+     * otherwise, if returning 404, we can find out that the resource does not exist.
      */
-    private fun createIndividualWithAnotherActionAddedDifferentAuthRest(individual: RestIndividual,
-                                                                    currentAction : RestCallAction,
-                                                                    newActionVerb : HttpVerb,
-    ) : RestIndividual {
+    fun handleNotAuthorizedInAnyCase() {
 
-        /*
-            Create a new individual based on some existing data.
-            Need to make sure we copy this existing data (to avoid different individuals re-using shared mutable
-            state), as well as resetting their internal dynamic info (eg local ids) before a new individual is
-            instantiated
-         */
-
-        val actionList = mutableListOf<RestCallAction>()
-
-        for (act in individual.seeMainExecutableActions()) {
-            actionList.add(act.copy() as RestCallAction)
+        // There has to be at least two authenticated users
+        if ( !checkForAtLeastNumberOfAuthenticatedUsers(2) ) {
+            // nothing to test if there are not at least 2 users
+            LoggingUtil.getInfoLogger().debug(
+                "Security test handleNotAuthorizedInAnyCase requires at least 2 authenticated users")
+            return
         }
 
-        // create a new action with the authentication not used in current individual
-        val authenticationOfOther = sampler.authentications.getDifferentOne(currentAction.auth.name, HttpWsAuthenticationInfo::class.java, randomness)
+        // get all endpoints each user has access to (this can be a function since we need this often)
 
-        var newRestCallAction :RestCallAction? = null;
+        // among endpoints userA has access, those endpoints should give 2xx as response
 
-        if (authenticationOfOther != null) {
-            newRestCallAction = RestCallAction("newDelete", newActionVerb, currentAction.path,
-                currentAction.parameters.map { it.copy() as Param }.toMutableList(), authenticationOfOther  )
+        // find an endpoint userA does not have access but another user has access, this should give 403
+
+        // try with an endpoint that does not exist, this should give 403 as well, not 404.
+
+
+    }
+
+
+    /**
+     * Wrong Authorization
+     *
+     * User A, access endpoint X, but get 401 (instead of 403).
+     * In theory, a bug. But, could be false positive if A is misconfigured.
+     * How to check it?
+     * See if on any other endpoint Y we get a 2xx with A.
+     * But, maybe Y does not need authentication...
+     * so, check if there is any test case for which on Y we get a 401 or 403.
+     * if yes, then X is buggy, as should had rather returned 403 for A.
+     * This seems to actually happen for familie-ba-sak, new NAV SUT.
+     */
+    fun handleUnauthorizedInsteadOfForbidden() {
+
+    }
+
+    /**
+     *
+     */
+    private fun checkForAtLeastNumberOfAuthenticatedUsers(numberOfUsers : Int) : Boolean {
+
+        // check the number of authenticated users
+        if (authSettings.size(HttpWsAuthenticationInfo::class.java) < numberOfUsers) {
+
+            LoggingUtil.getInfoLogger().debug(
+                "Security test for this method requires at least $numberOfUsers authenticated users")
+            return false
         }
 
-        if (newRestCallAction != null) {
-            actionList.add(newRestCallAction)
-        }
-
-
-        actionList.forEach { it.resetLocalIdRecursively() }
-
-        val newIndividual =  sampler.createIndividual(SampleType.SECURITY, actionList)
-        //RestIndividual(actionList, SampleType.SECURITY)
-        newIndividual.ensureFlattenedStructure()
-
-        return newIndividual
-
+        return true
     }
 
 }

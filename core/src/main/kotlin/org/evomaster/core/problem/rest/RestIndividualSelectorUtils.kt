@@ -1,16 +1,17 @@
 package org.evomaster.core.problem.rest
 
+import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
-import org.evomaster.core.problem.enterprise.EnterpriseIndividual
+import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.rest.param.PathParam
+import org.evomaster.core.problem.rest.service.AbstractRestSampler
 import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.gene.string.StringGene
-import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.search.service.Randomness
 
 /**
  * Utility functions to select one or more REST Individual from a group, based on different criteria.
@@ -20,7 +21,8 @@ object RestIndividualSelectorUtils {
 
     //FIXME this needs to be cleaned-up
 
-
+    @Inject
+    private lateinit var randomness: Randomness
 
 
     fun findActionFromIndividual(
@@ -180,13 +182,15 @@ object RestIndividualSelectorUtils {
         }
     }
 
-    fun sliceAllCallsInIndividualAfterAction(restIndividual: RestIndividual, index: Int) : RestIndividual {
+    fun sliceAllCallsInIndividualAfterAction(restIndividual: RestIndividual, action: RestCallAction) : RestIndividual {
+
+        val actionIndex = getIndexOfGivenAction(restIndividual, action)
 
         val ind = restIndividual.copy() as RestIndividual
 
-        val n = ind.size()
+        val n = ind.seeMainExecutableActions().size
 
-        for(i in n-1 downTo index+1){
+        for(i in n-1 downTo actionIndex+1){
             ind.removeMainExecutableAction(i)
         }
 
@@ -204,6 +208,12 @@ object RestIndividualSelectorUtils {
 
         return getActionWithIndexRestIndividual(individual.individual, actionIndex)
 
+    }
+
+    fun getIndexOfGivenAction(individual: RestIndividual,
+                              action : RestCallAction) : Int {
+
+        return individual.seeMainExecutableActions().indexOf(action)
     }
 
     fun getIndexOfAction(individual: EvaluatedIndividual<RestIndividual>,
@@ -599,6 +609,56 @@ object RestIndividualSelectorUtils {
      */
     fun getAllActionDefinitions(actionDefinitions: List<RestCallAction>, verb: HttpVerb): List<RestCallAction> {
         return actionDefinitions.filter { it.verb == verb }
+    }
+
+    /**
+     * Create another individual from the individual by adding a new action with a new verb and with a different
+     * authentication.
+     * @param individual - REST indovidual which is the starting point
+     * @param currentAction - REST action for the new individual
+     * @param newActionVerb - verb for the new action, such as GET, POST
+     */
+    fun createIndividualWithAnotherActionAddedDifferentAuthRest( sampler : AbstractRestSampler,
+                                                                        individual: RestIndividual,
+                                                                        currentAction : RestCallAction,
+                                                                        newActionVerb : HttpVerb) : RestIndividual {
+
+        /*
+            Create a new individual based on some existing data.
+            Need to make sure we copy this existing data (to avoid different individuals re-using shared mutable
+            state), as well as resetting their internal dynamic info (eg local ids) before a new individual is
+            instantiated
+         */
+
+        val actionList = mutableListOf<RestCallAction>()
+
+        for (act in individual.seeMainExecutableActions()) {
+            actionList.add(act.copy() as RestCallAction)
+        }
+
+        // create a new action with the authentication not used in current individual
+        val authenticationOfOther = sampler.authentications.getDifferentOne(currentAction.auth.name, HttpWsAuthenticationInfo::class.java, randomness)
+
+        var newRestCallAction :RestCallAction? = null;
+
+        if (authenticationOfOther != null) {
+            newRestCallAction = RestCallAction("newDelete", newActionVerb, currentAction.path,
+                currentAction.parameters.map { it.copy() as Param }.toMutableList(), authenticationOfOther  )
+        }
+
+        if (newRestCallAction != null) {
+            actionList.add(newRestCallAction)
+        }
+
+
+        actionList.forEach { it.resetLocalIdRecursively() }
+
+        val newIndividual =  sampler.createIndividual(SampleType.SECURITY, actionList)
+        //RestIndividual(actionList, SampleType.SECURITY)
+        newIndividual.ensureFlattenedStructure()
+
+        return newIndividual
+
     }
 
 }
