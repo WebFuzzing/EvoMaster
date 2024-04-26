@@ -2,6 +2,7 @@ package org.evomaster.client.java.instrumentation.staticstate;
 
 import org.evomaster.client.java.instrumentation.BootTimeObjectiveInfo;
 import org.evomaster.client.java.instrumentation.ExternalServiceInfo;
+import org.evomaster.client.java.instrumentation.HostnameResolutionInfo;
 
 import java.io.PrintWriter;
 import java.util.*;
@@ -111,6 +112,14 @@ public class ObjectiveRecorder {
 
             bootTimeObjectiveInfo.reset();
         }
+    }
+
+    /**
+     * register hostname resolution info at Sut Startup Time
+     * @param info to append
+     */
+    public static void registerHostnameResolutionInfoAtSutStartupTime(HostnameResolutionInfo info){
+        bootTimeObjectiveInfo.registerHostnameResolutionInfoAtSutBootTime(info);
     }
 
     /**

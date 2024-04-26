@@ -674,12 +674,17 @@ public class ExecutionTracer {
         updateBranch(className, line, branchId, t);
     }
 
+    /**
+     * To add HostnameResolution information to [AdditionalInfo]
+     */
     public static void addHostnameInfo(HostnameResolutionInfo hostnameResolutionInfo) {
         getCurrentAdditionalInfo().addHostnameInfo(hostnameResolutionInfo);
+        if (!executingAction)
+            ObjectiveRecorder.registerHostnameResolutionInfoAtSutStartupTime(hostnameResolutionInfo);
     }
 
     /**
-     * Add the external HTTP/S hostname to the additional info to keep track.
+     * To add the external service information to [AdditionalInfo]
      */
     public static void addExternalServiceHost(ExternalServiceInfo hostInfo) {
         getCurrentAdditionalInfo().addExternalService(hostInfo);
