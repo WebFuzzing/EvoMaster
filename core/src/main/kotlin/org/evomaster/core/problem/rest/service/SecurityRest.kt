@@ -239,7 +239,8 @@ class SecurityRest {
                     RestIndividualSelectorUtils.createIndividualWithAnotherActionAddedDifferentAuthRest(sampler,
                                                                      existingEndpointForCreationCopy.individual,
                                                                                               actionForCreation,
-                                                                                                HttpVerb.DELETE )
+                                                                                                HttpVerb.DELETE,
+                                                                                                    randomness )
             }
 
             // After having a set of requests in which the last one is a DELETE call with another user, add a PUT
@@ -252,7 +253,8 @@ class SecurityRest {
             createIndividualWithAnotherActionAddedDifferentAuthRest(sampler,
                                                   individualToChooseForTest,
                                                                deleteAction,
-                                                              HttpVerb.PUT )
+                                                              HttpVerb.PUT,
+                                                              randomness)
 
             // create an individual with the following
             // PUT/POST with one authenticated user userA

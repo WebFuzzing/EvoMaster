@@ -21,9 +21,6 @@ object RestIndividualSelectorUtils {
 
     //FIXME this needs to be cleaned-up
 
-    @Inject
-    private lateinit var randomness: Randomness
-
 
     fun findActionFromIndividual(
         individual: EvaluatedIndividual<RestIndividual>,
@@ -621,7 +618,8 @@ object RestIndividualSelectorUtils {
     fun createIndividualWithAnotherActionAddedDifferentAuthRest( sampler : AbstractRestSampler,
                                                                         individual: RestIndividual,
                                                                         currentAction : RestCallAction,
-                                                                        newActionVerb : HttpVerb) : RestIndividual {
+                                                                        newActionVerb : HttpVerb,
+                                                                        randomness : Randomness) : RestIndividual {
 
         /*
             Create a new individual based on some existing data.
@@ -637,9 +635,12 @@ object RestIndividualSelectorUtils {
         }
 
         // create a new action with the authentication not used in current individual
-        val authenticationOfOther = sampler.authentications.getDifferentOne(currentAction.auth.name, HttpWsAuthenticationInfo::class.java, randomness)
+        val authenticationOfOther = sampler.authentications.getDifferentOne(currentAction.auth.name,
+                                                                            HttpWsAuthenticationInfo::class.java,
+                                                                            randomness)
 
         var newRestCallAction :RestCallAction? = null;
+        var newPutAction : RestCallAction? = null
 
         if (authenticationOfOther != null) {
             newRestCallAction = RestCallAction("newDelete", newActionVerb, currentAction.path,
@@ -648,7 +649,15 @@ object RestIndividualSelectorUtils {
 
         if (newRestCallAction != null) {
             actionList.add(newRestCallAction)
+
+            // add put request with authentication of other, which is a security issue if it succeeds.
+            //newPutAction = RestCallAction("newDelete", HttpVerb.PUT, currentAction.path,
+             //   currentAction.parameters.map { it.copy() as Param }.toMutableList(), authenticationOfOther  )
+
+            //actionList.add(newPutAction)
         }
+
+        // add a rest call action with
 
 
         actionList.forEach { it.resetLocalIdRecursively() }
@@ -656,6 +665,8 @@ object RestIndividualSelectorUtils {
         val newIndividual =  sampler.createIndividual(SampleType.SECURITY, actionList)
         //RestIndividual(actionList, SampleType.SECURITY)
         newIndividual.ensureFlattenedStructure()
+
+
 
         return newIndividual
 
