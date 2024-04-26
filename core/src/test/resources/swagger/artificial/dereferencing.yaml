@@ -44,7 +44,7 @@ components:
     Bar:
       description: a response object
       content:
-        application/json:
+        application/xml:
           schema:
             $ref: '#/components/schemas/DTO'
   schemas:

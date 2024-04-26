@@ -11,6 +11,8 @@ import io.swagger.v3.oas.models.media.MediaType
 import io.swagger.v3.oas.models.media.ObjectSchema
 import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.parameters.Parameter
+import io.swagger.v3.oas.models.parameters.RequestBody
+import io.swagger.v3.oas.models.responses.ApiResponse
 import org.evomaster.client.java.instrumentation.shared.ClassToSchemaUtils.OPENAPI_COMPONENT_NAME
 import org.evomaster.client.java.instrumentation.shared.ClassToSchemaUtils.OPENAPI_SCHEMA_NAME
 import org.evomaster.core.EMConfig
@@ -325,6 +327,14 @@ object RestActionBuilderV3 {
     }
 
 
+    private fun resolveResponse(swagger: OpenAPI, responseOrRef: ApiResponse): ApiResponse {
+        responseOrRef.`$ref`?.let { ref ->
+            val refKey = extractReferenceName(ref)
+            return swagger.components.responses[refKey] ?: responseOrRef
+        }
+        return responseOrRef
+    }
+
     private fun handleOperation(
         actionCluster: MutableMap<String, Action>,
         verb: HttpVerb,
@@ -340,6 +350,8 @@ object RestActionBuilderV3 {
             repairParams(params, restPath)
 
             val produces = operation.responses?.values //different response objects based on HTTP code
+                ?.asSequence()
+                ?.map { resolveResponse(swagger, it) }
                 ?.filter { it.content != null && it.content.isNotEmpty() }
                 //each response can have different media-types
                 ?.flatMap { it.content.keys }
@@ -496,6 +508,12 @@ object RestActionBuilderV3 {
         }
     }
 
+
+    private fun resolveRequestBody(swagger: OpenAPI, reference: String): RequestBody? {
+        val classDef = extractReferenceName(reference)
+        return swagger.components.requestBodies[classDef]
+    }
+
     private fun handleBodyPayload(
             operation: Operation,
             verb: HttpVerb,
@@ -503,6 +521,9 @@ object RestActionBuilderV3 {
             swagger: OpenAPI,
             params: MutableList<Param>,
             options: Options) {
+
+        // Return early if requestBody is missing
+        val body = operation.requestBody ?: return
 
         if (operation.requestBody == null) {
             return
@@ -513,11 +534,16 @@ object RestActionBuilderV3 {
             return
         }
 
-        val body = operation.requestBody!!
+        // Handle dereferencing if requestBody is referenced
+        val resolvedBody = if (body.`$ref` != null) {
+            resolveRequestBody(swagger, body.`$ref`) ?: return
+        } else {
+            body
+        }
 
         val name = "body"
 
-        val bodies = body.content.filter {
+        val bodies = resolvedBody.content?.filter {
             /*
                 If it is a reference, then it must be present.
                 Had issue with SpringFox in Proxyprint generating wrong schemas
@@ -529,7 +555,7 @@ object RestActionBuilderV3 {
                 val reference = it.value.schema.`$ref`
                 reference.isNullOrBlank() || getLocalObjectSchema(swagger, reference) != null
             }
-        }
+        } ?: emptyMap()
 
         if (bodies.isEmpty()) {
             log.warn("No valid body-payload for $verb:$restPath")
