@@ -13,7 +13,7 @@ import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-public class ExternalServiceInfoUtils {
+public class ExternalServiceUtils {
 
     /**
      * Check if string literal is a valid v4 or v6 IP address
@@ -141,9 +141,9 @@ public class ExternalServiceInfoUtils {
                 && !skipHostnameOrIp(url.getHost())
                 && !ExecutionTracer.skipHostnameAndPort(url.getHost(), url.getPort())) {
 
-            int port = ExternalServiceInfoUtils.inferPort(url.getPort(), url.getProtocol());
+            int port = ExternalServiceUtils.inferPort(url.getPort(), url.getProtocol());
 
-            ExternalServiceInfoUtils.analyzeDnsResolution(url.getHost());
+            ExternalServiceUtils.analyzeDnsResolution(url.getHost());
 
             if (url.getProtocol().equalsIgnoreCase("https"))
                 PreDefinedSSLInfo.setTrustAllForHttpsURLConnection();

@@ -10,7 +10,7 @@ import org.evomaster.client.java.utils.SimpleLogger;
 import java.net.*;
 import java.util.Objects;
 
-import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.ExternalServiceInfoUtils.*;
+import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.ExternalServiceUtils.*;
 
 public class URLClassReplacement implements MethodReplacementClass {
 

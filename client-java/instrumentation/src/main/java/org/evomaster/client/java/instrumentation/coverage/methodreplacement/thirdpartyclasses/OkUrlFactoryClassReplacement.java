@@ -10,7 +10,7 @@ import java.net.HttpURLConnection;
 import java.net.Proxy;
 import java.net.URL;
 
-import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.ExternalServiceInfoUtils.*;
+import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.ExternalServiceUtils.*;
 
 public class OkUrlFactoryClassReplacement extends ThirdPartyMethodReplacementClass {
 
