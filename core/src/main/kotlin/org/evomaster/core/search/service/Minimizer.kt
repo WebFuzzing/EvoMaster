@@ -214,6 +214,8 @@ class Minimizer<T: Individual> {
 
         LoggingUtil.getInfoLogger().info("Recomputing full coverage for ${currentEvaluated.size} tests")
 
+        FIXME
+
         val beforeCovered = archive.coveredTargets()
 
         /*
@@ -263,7 +265,8 @@ class Minimizer<T: Individual> {
         val other = y.evaluatedMainActions()
 
         if(original.size != other.size){
-            log.warn("Mismatch between number of actions in re-evaluated individual")
+            log.warn("Mismatch between number of actions in re-evaluated individual." +
+                    " Original=${original.size}, Re-evaluated=${other.size}")
             assert(false)
             return
         }
