@@ -17,7 +17,7 @@ public class ServiceApplicationStartup implements ApplicationListener<Applicatio
         try {
             // To bind WireMock in port 80 and 443 require root privileges
             // To avoid that port set to 3000 for e2etest
-            URL url = new URL("https://foobarbazz.com:8443/api/echo/foo");
+            URL url = new URL("https://foobarbazz.com:10000/api/echo/foo");
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setConnectTimeout(500); // added to reduce time during testing
             connection.setRequestProperty("accept", "application/json");
