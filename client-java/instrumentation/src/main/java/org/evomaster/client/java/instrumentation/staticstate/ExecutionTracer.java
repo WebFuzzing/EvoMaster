@@ -674,12 +674,17 @@ public class ExecutionTracer {
         updateBranch(className, line, branchId, t);
     }
 
+    /**
+     * To add HostnameResolution information to [AdditionalInfo]
+     */
     public static void addHostnameInfo(HostnameResolutionInfo hostnameResolutionInfo) {
         getCurrentAdditionalInfo().addHostnameInfo(hostnameResolutionInfo);
+        if (!executingAction)
+            ObjectiveRecorder.registerHostnameResolutionInfoAtSutStartupTime(hostnameResolutionInfo);
     }
 
     /**
-     * Add the external HTTP/S hostname to the additional info to keep track.
+     * To add the external service information to [AdditionalInfo]
      */
     public static void addExternalServiceHost(ExternalServiceInfo hostInfo) {
         getCurrentAdditionalInfo().addExternalService(hostInfo);
@@ -750,6 +755,10 @@ public class ExecutionTracer {
 
     public static String getLocalAddress(String hostname) {
         return localAddressMapping.get(hostname);
+    }
+
+    public static String getDefaultSinkholeAddress() {
+        return "127.0.0.2";
     }
 
     public static boolean skipHostname(String hostname) {

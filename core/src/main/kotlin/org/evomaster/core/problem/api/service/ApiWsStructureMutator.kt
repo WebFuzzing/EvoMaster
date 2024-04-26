@@ -203,15 +203,15 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 
         val addedInsertions: MutableList<Action> = mutableListOf()
         externalServiceHandler.getHostnameResolutionActions().forEach { a ->
-            val hasActions = old.any { it.hostname == a.hostname && it.localIPAddress == a.localIPAddress }
+            val hasActions = old.any { it == a }
             if (!hasActions) {
                 addedInsertions.add(a)
             }
 
-            // Removing the existing default IP address action
-            val defaultHNAction = old.filter { it.hostname == a.hostname && it.localIPAddress != a.localIPAddress }
-            if (hasActions && defaultHNAction.isNotEmpty()) {
-                ind.removeHostnameResolutionAction(defaultHNAction)
+            // Removing the existing action added for RESERVED_RESOLVED_LOCAL_IP
+            val defaultActions = old.filter { it.hostname == a.hostname && it.localIPAddress == ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP };
+            if (defaultActions.isNotEmpty()) {
+                ind.removeHostnameResolutionAction(defaultActions)
             }
         }
 
