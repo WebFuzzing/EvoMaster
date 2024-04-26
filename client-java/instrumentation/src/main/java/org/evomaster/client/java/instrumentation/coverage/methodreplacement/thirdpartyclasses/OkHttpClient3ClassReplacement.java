@@ -12,8 +12,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 
-import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.ExternalServiceInfoUtils.collectExternalServiceInfo;
-import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.ExternalServiceInfoUtils.skipHostnameOrIp;
+import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.ExternalServiceUtils.collectExternalServiceInfo;
+import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.ExternalServiceUtils.skipHostnameOrIp;
 
 public class OkHttpClient3ClassReplacement extends ThirdPartyMethodReplacementClass {
 
@@ -113,7 +113,7 @@ public class OkHttpClient3ClassReplacement extends ThirdPartyMethodReplacementCl
                 && !ExecutionTracer.skipHostname(urlHost)
         ){
             // To fetch DNS information
-            ExternalServiceInfoUtils.analyzeDnsResolution(urlHost);
+            ExternalServiceUtils.analyzeDnsResolution(urlHost);
 
             ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(urlScheme, urlHost, urlPort);
             String[] ipAndPort = collectExternalServiceInfo(remoteHostInfo, urlPort);

@@ -12,7 +12,7 @@ import org.evomaster.client.java.utils.SimpleLogger;
 import java.io.IOException;
 import java.net.*;
 
-import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.ExternalServiceInfoUtils.collectExternalServiceInfo;
+import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.ExternalServiceUtils.collectExternalServiceInfo;
 
 public class SocketClassReplacement implements MethodReplacementClass {
     @Override
@@ -34,6 +34,7 @@ public class SocketClassReplacement implements MethodReplacementClass {
             if (endpoint instanceof InetSocketAddress) {
                 InetSocketAddress socketAddress = (InetSocketAddress) endpoint;
 
+                ExternalServiceUtils.analyzeDnsResolution(socketAddress.getHostName());
             /*
                 We MUST NOT call getHostName() anywhere in EM.
                 On Windows, it can take more than 4 seconds when dealing with a fake hostname.
@@ -43,7 +44,7 @@ public class SocketClassReplacement implements MethodReplacementClass {
              */
             ExternalServiceInfoUtils.analyzeDnsResolution(socketAddress.getHostString());
 
-                if (ExternalServiceInfoUtils.skipHostnameOrIp(socketAddress.getHostString())
+                if (ExternalServiceUtils.skipHostnameOrIp(socketAddress.getHostString())
                         || ExecutionTracer.skipHostnameAndPort(socketAddress.getHostString(), socketAddress.getPort())
                 ) {
                     caller.connect(endpoint, timeout);
