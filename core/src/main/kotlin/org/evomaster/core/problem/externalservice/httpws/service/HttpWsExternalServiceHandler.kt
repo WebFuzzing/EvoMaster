@@ -188,7 +188,7 @@ class HttpWsExternalServiceHandler {
     }
 
     fun getExternalServiceMappings(): Map<String, ExternalServiceMappingDto> {
-        return externalServices.mapValues { (_, v) ->
+        return externalServices.filter { it.value.isActive() }.mapValues { (_, v) ->
             ExternalServiceMappingDto(
                 v.getRemoteHostName(),
                 v.getIP(),
@@ -200,6 +200,14 @@ class HttpWsExternalServiceHandler {
 
     fun getLocalDomainNameMapping(): Map<String, String> {
         return hostnameLocalAddressMapping.toMap()
+    }
+
+    fun hasLocalDomainNameMapping(hostname: String): Boolean {
+        return hostnameLocalAddressMapping.containsKey(hostname)
+    }
+
+    fun getLocalDomainNameMapping(hostname: String): String {
+        return hostnameLocalAddressMapping.get(hostname)!!
     }
 
     fun isWireMockAddress(address: String) : Boolean {
