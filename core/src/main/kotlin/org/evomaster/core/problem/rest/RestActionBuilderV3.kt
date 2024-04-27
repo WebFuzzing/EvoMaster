@@ -509,8 +509,16 @@ object RestActionBuilderV3 {
         }
 
         if (!listOf(HttpVerb.POST, HttpVerb.PATCH, HttpVerb.PUT).contains(verb)) {
-            log.warn("In HTTP, body payloads are undefined for $verb. Issue in $restPath")
-            return
+            log.warn("In OpenAPI, body payloads are not allowed for $verb," +
+                    " although they are technically valid for HTTP (RFC 9110). Issue in $restPath")
+            //https://swagger.io/docs/specification/describing-request-body/
+            //https://www.rfc-editor.org/rfc/rfc9110.html#section-9.3.1-6
+            if(verb == HttpVerb.GET){
+                //currently cannot handle it due to bud in Jersey :(
+                //TODO check once upgrading Jersey
+                //TODO update AbstractRestFitness accordingly
+                return
+            }
         }
 
         val body = operation.requestBody!!
