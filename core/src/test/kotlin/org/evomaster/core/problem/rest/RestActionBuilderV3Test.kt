@@ -45,10 +45,15 @@ class RestActionBuilderV3Test{
         val a = map.values.first() as RestCallAction
 
         val topGenes = a.seeTopGenes()
-        assertEquals(3, topGenes.size)
-        assertTrue(topGenes.any { it is IntegerGene })
-        assertTrue(topGenes.any { it is BooleanGene })
-        assertTrue(topGenes.any { it is ObjectGene && it.fields.size == 1 && it.fields[0] is DoubleGene })
+        assertEquals(4, topGenes.size)
+        assertTrue(topGenes.any { it is IntegerGene})
+        assertTrue(topGenes.any { it.getWrappedGene(BooleanGene::class.java) != null })
+        assertTrue(topGenes.any {
+            it is ObjectGene
+            && it.fields.size == 1
+            && it.fields[0].getWrappedGene(DoubleGene::class.java) != null
+        })
+        assertTrue(topGenes.any { it is EnumGene<*> })
 
         assertEquals(1, a.produces.size)
         assertTrue(a.produces.contains("application/xml"))

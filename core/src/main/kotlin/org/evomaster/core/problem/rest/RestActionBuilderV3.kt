@@ -402,7 +402,7 @@ object RestActionBuilderV3 {
 
         val params = mutableListOf<Param>()
 
-        removeDuplicatedParams(operation)
+        removeDuplicatedParams(swagger,operation)
                 .forEach { p ->
 
                     if(p.`$ref` != null){
@@ -511,7 +511,11 @@ object RestActionBuilderV3 {
 
     private fun resolveRequestBody(swagger: OpenAPI, reference: String): RequestBody? {
         val classDef = extractReferenceName(reference)
-        return swagger.components.requestBodies[classDef]
+        val body =  swagger.components.requestBodies[classDef]
+        if(body == null){
+            log.warn("Cannot find reference to request body: $reference")
+        }
+        return body
     }
 
     private fun handleBodyPayload(
@@ -575,7 +579,7 @@ object RestActionBuilderV3 {
         var gene = getGene("body", obj.schema, swagger, referenceClassDef = null, options = options)
 
 
-        if (body.required != true && gene !is OptionalGene) {
+        if (resolvedBody.required != true && gene !is OptionalGene) {
             gene = OptionalGene(name, gene)
         }
 
@@ -1387,7 +1391,11 @@ object RestActionBuilderV3 {
     private fun getLocalParameter(swagger: OpenAPI, reference: String) : Parameter?{
         val name = extractReferenceName(reference)
 
-        return swagger.components.parameters[name]
+        val p = swagger.components.parameters[name]
+        if(p==null){
+            log.warn("Cannot find parameter reference: $reference")
+        }
+        return p
     }
 
     private fun getLocalObjectSchema(swagger: OpenAPI, reference: String): Schema<*>? {
@@ -1408,7 +1416,7 @@ object RestActionBuilderV3 {
         return reference.substring(reference.lastIndexOf("/") + 1)
     }
 
-    private fun removeDuplicatedParams(operation: Operation): List<Parameter> {
+    private fun removeDuplicatedParams(swagger: OpenAPI, operation: Operation): List<Parameter> {
 
         /*
             Duplicates are not allowed, based on combination of "name" and "location".
@@ -1422,13 +1430,19 @@ object RestActionBuilderV3 {
         val selection = mutableListOf<Parameter>()
         val seen = mutableSetOf<String>()
 
-        for (p in operation.parameters) {
+       operation.parameters.forEach {
 
-            val key = p.`in` + "_" + p.name
-            if (!seen.contains(key)) {
-                seen.add(key)
-                selection.add(p)
-            }
+            val p = if(it.`$ref` != null)
+                getLocalParameter(swagger, it.`$ref`)
+           else
+               it
+           if(p != null) {
+               val key = p.`in` + "_" + p.name
+               if (!seen.contains(key)) {
+                   seen.add(key)
+                   selection.add(p)
+               }
+           }
         }
 
         val diff = operation.parameters.size - selection.size
