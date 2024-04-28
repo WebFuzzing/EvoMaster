@@ -209,22 +209,32 @@ class Minimizer<T: Individual> {
     }
 
     private fun recomputeArchiveWithFullCoverageInfo(){
+
+        val beforeCovered = archive.coveredTargets()
+
         val currentEvaluated = archive.getCopyOfUniqueCoveringEvaluatedIndividuals()
-            .onEach { if(it.individual is EnterpriseIndividual) it.individual.ensureFlattenedStructure()  }
 
         LoggingUtil.getInfoLogger().info("Recomputing full coverage for ${currentEvaluated.size} tests")
 
-        val beforeCovered = archive.coveredTargets()
 
         /*
             Previously evaluated individual only had partial info, due to performance issues.
             Need to make sure to fetch all coverage info.
          */
         val population = currentEvaluated.mapNotNull {
+
+            val possibleIssues = if(it.individual is EnterpriseIndividual)
+                //must flatten to simplify minimization... but it can introduce issues
+                it.individual.ensureFlattenedStructure()
+            else
+                false
+
+
             val ei = fitness.computeWholeAchievedCoverageForPostProcessing(it.individual)
             if(ei == null){
                 log.warn("Failed to re-evaluate individual during minimization")
-            } else {
+            } else if(!possibleIssues){
+                //don't check mismatch if possible issues, as then mismatches would be expected
                 checkResultMismatches(it, ei)
             }
             ei
@@ -263,7 +273,8 @@ class Minimizer<T: Individual> {
         val other = y.evaluatedMainActions()
 
         if(original.size != other.size){
-            log.warn("Mismatch between number of actions in re-evaluated individual")
+            log.warn("Mismatch between number of actions in re-evaluated individual." +
+                    " Original=${original.size}, Re-evaluated=${other.size}")
             assert(false)
             return
         }
