@@ -31,7 +31,7 @@ public class ExternalServiceMockingFlakyEMTest extends SpringTestBase {
         SpringTestBase.initClass(serviceController, config);
     }
 
-    @Disabled
+    @Disabled //TODO needs to be put back once fixed issues with WM
     @Test
     public void externalServiceMockingTest() throws Throwable {
         runTestHandlingFlakyAndCompilation(
