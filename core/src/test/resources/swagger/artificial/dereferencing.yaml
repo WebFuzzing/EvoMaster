@@ -1,0 +1,58 @@
+---
+openapi: 3.0.0
+info:
+  title: dereferencing
+  version: 1.0.0
+servers:
+  - url: "/v2"
+paths:
+  "/api/def/{y}":
+    post:
+      parameters:
+        - $ref: '#/components/parameters/X'
+        - $ref: '#/components/parameters/Y'
+      requestBody:
+        $ref: '#/components/requestBodies/Foo'
+      responses:
+        '201':
+          $ref: '#/components/responses/Bar'
+components:
+  parameters:
+    X:
+      required: true
+      name: "x"
+      in: "query"
+      schema:
+        type: "number"
+        format: "int32"
+    Y:
+      required: true
+      name: "y"
+      in: "path"
+      schema:
+        type: "boolean"
+        format: "boolean"
+  requestBodies:
+    Foo:
+      required: true
+      description: the body payload
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DTO'
+  responses:
+    Bar:
+      description: a response object
+      content:
+        application/xml:
+          schema:
+            $ref: '#/components/schemas/DTO'
+  schemas:
+    DTO:
+      type: "object"
+      properties:
+        data:
+          type: "number"
+          "format": "double"
+
+
