@@ -246,9 +246,25 @@ public class SchemaExtractor {
     private static String getSchemaName(Connection connection, DatabaseType dt) throws SQLException {
         String schemaName;
         if (dt.equals(DatabaseType.MYSQL)) {
-
-            // schema is database name in mysql
-            schemaName = connection.getCatalog();
+            /*
+             * https://stackoverflow.com/questions/23303206/jdbc-connection-returning-null-what-to-do
+             *
+             * MySQL doesn't support the concept of schema. For MySQL, the schema is in fact the database. From MySQL Glossary:
+             *
+             * Conceptually, a schema is a set of interrelated database objects, such as tables, table columns,
+             * data types of the columns, indexes, foreign keys, and so on. (...)
+             */
+            String getSchemaQuery = "SELECT DATABASE() AS schema_name";
+            try (Statement getSchemaStmt = connection.createStatement()) {
+                ResultSet getSchemaResultSet = getSchemaStmt.executeQuery(getSchemaQuery);
+                if (getSchemaResultSet.next()) {
+                    schemaName = getSchemaResultSet.getString("schema_name");
+                } else if (connection.getSchema()==null) {
+                    schemaName = connection.getCatalog();
+                } else {
+                    schemaName = connection.getSchema();
+                }
+            }
         } else {
             try {
                 schemaName = connection.getSchema();
@@ -528,6 +544,12 @@ public class SchemaExtractor {
     }
 
     private static void handleTableEntry(Connection connection, DbSchemaDto schemaDto, DatabaseMetaData md, ResultSet tables, Set<String> tableNames) throws SQLException {
+        String tableCatalog = tables.getString("TABLE_CAT");
+        if (tableCatalog!=null && !tableCatalog.equalsIgnoreCase(schemaDto.name)) {
+            // skip processing table if Schema does not match
+            return;
+        }
+
         TableDto tableDto = new TableDto();
         schemaDto.tables.add(tableDto);
         tableDto.name = tables.getString("TABLE_NAME");
@@ -557,11 +579,11 @@ public class SchemaExtractor {
 
         tableDto.primaryKeySequence.addAll(primaryKeySequence.values());
 
+        //ResultSet columns = md.getColumns(null, schemaDto.name, tableDto.name, null);
         ResultSet columns = md.getColumns(null, schemaDto.name, tableDto.name, null);
 
         Set<String> columnNames = new HashSet<>();
         while (columns.next()) {
-
             ColumnDto columnDto = new ColumnDto();
             tableDto.columns.add(columnDto);
 
