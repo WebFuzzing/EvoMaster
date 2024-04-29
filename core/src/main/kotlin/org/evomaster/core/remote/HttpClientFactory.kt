@@ -57,6 +57,8 @@ object HttpClientFactory {
             //workaround bug in Jersey client
             .property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true)
             .property(ClientProperties.FOLLOW_REDIRECTS, followRedirects)
+            // see discussion about OpenAPI and RFC 9110 in RestActionBuilderV3
+            .property(ClientProperties.SUPPRESS_HTTP_COMPLIANCE_VALIDATION,true)
             .build()
     }
 }
