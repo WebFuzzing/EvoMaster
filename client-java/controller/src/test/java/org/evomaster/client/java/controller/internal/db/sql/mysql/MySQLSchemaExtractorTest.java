@@ -3,15 +3,12 @@ package org.evomaster.client.java.controller.internal.db.sql.mysql;
 import org.evomaster.client.java.controller.DatabaseTestTemplate;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
-import org.evomaster.client.java.sql.DataRow;
-import org.evomaster.client.java.sql.QueryResult;
 import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.evomaster.client.java.controller.internal.SutController;
 import org.evomaster.client.java.sql.SchemaExtractor;
 import org.junit.jupiter.api.Test;
 
 import java.sql.*;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
