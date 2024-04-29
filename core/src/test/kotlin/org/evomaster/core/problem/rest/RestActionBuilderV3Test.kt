@@ -8,6 +8,7 @@ import org.evomaster.core.problem.rest.param.FormParam
 import org.evomaster.core.problem.rest.resource.ResourceCluster
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
@@ -15,6 +16,7 @@ import org.evomaster.core.search.gene.collection.FixedMapGene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.TimeGene
+import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.optional.ChoiceGene
 import org.evomaster.core.search.gene.optional.OptionalGene
@@ -34,6 +36,27 @@ class RestActionBuilderV3Test{
     @BeforeEach
     fun reset(){
         RestActionBuilderV3.cleanCache()
+    }
+
+
+    @Test
+    fun testDereferencing(){
+        val map = loadAndAssertActions("/swagger/artificial/dereferencing.yaml",1, true)
+        val a = map.values.first() as RestCallAction
+
+        val topGenes = a.seeTopGenes()
+        assertEquals(4, topGenes.size)
+        assertTrue(topGenes.any { it is IntegerGene})
+        assertTrue(topGenes.any { it.getWrappedGene(BooleanGene::class.java) != null })
+        assertTrue(topGenes.any {
+            it is ObjectGene
+            && it.fields.size == 1
+            && it.fields[0].getWrappedGene(DoubleGene::class.java) != null
+        })
+        assertTrue(topGenes.any { it is EnumGene<*> })
+
+        assertEquals(1, a.produces.size)
+        assertTrue(a.produces.contains("application/xml"))
     }
 
     @ParameterizedTest
