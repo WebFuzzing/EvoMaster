@@ -135,7 +135,6 @@ public class MySQLSchemaExtractorTest extends DatabaseMySQLTestInit implements D
 
         assertEquals("geometrycollectioncolumn",table.columns.get(8).name);
         assertEquals("GEOMCOLLECTION",table.columns.get(8).type);
-
     }
 
     @Test

@@ -543,10 +543,27 @@ public class SchemaExtractor {
         }
     }
 
+
     private static void handleTableEntry(Connection connection, DbSchemaDto schemaDto, DatabaseMetaData md, ResultSet tables, Set<String> tableNames) throws SQLException {
+
         String tableCatalog = tables.getString("TABLE_CAT");
-        if (tableCatalog!=null && !tableCatalog.equalsIgnoreCase(schemaDto.name)) {
-            // skip processing table if Schema does not match
+        String tableSchema = tables.getString("TABLE_SCHEM");
+
+        if (schemaDto.databaseType.equals(DatabaseType.MYSQL) && tableSchema==null ) {
+            /**
+             * In some versions of MySQL, tableSchema is not stored in the
+             * TABLE_SCHEM column, but in the TABLE_CAT (Catalog) column.
+             * We first check if the table's schema is stored in the TABLE_SCHEM
+             * column. If it is not, we check default to the TABLE_CAT column
+             */
+            tableSchema =tableCatalog;
+        }
+
+        if (tableSchema!=null && !tableSchema.equalsIgnoreCase(schemaDto.name)) {
+            /**
+             * If this table does not belong to the current schema under extraction,
+             * skip adding the table.
+             */
             return;
         }
 
