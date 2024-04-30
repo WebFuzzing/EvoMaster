@@ -2245,6 +2245,13 @@ class EMConfig {
         return (hours * 60 * 60) + (minutes * 60) + seconds
     }
 
+
+    @Cfg("How much data elements, per key, can be stored in the Data Pool." +
+            " Once limit is reached, new old will replace old data. ")
+    @Min(1.0)
+    var maxSizeDataPool = 100
+
+
     fun trackingEnabled() = isMIO() && (enableTrackEvaluatedIndividual || enableTrackIndividual)
 
     /**
