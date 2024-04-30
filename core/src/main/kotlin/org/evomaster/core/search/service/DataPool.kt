@@ -1,5 +1,8 @@
 package org.evomaster.core.search.service
 
+import com.google.inject.Inject
+import org.evomaster.core.EMConfig
+
 /**
  * Service to keep track of data values associated with a string key.
  * The key can be used to define links between actions, to enable smart re-use of data.
@@ -20,10 +23,16 @@ package org.evomaster.core.search.service
  * We follow a similar algorithm as described in Section 5.2.1 of:
  *
  * "Automated black-box testing of nominal and error scenarios in RESTful APIs"
- * 
+ *
  *
  */
 class DataPool {
+
+    @Inject
+    lateinit var config: EMConfig
+        private set
+
+
 
     private val stringData : MutableMap<String,String> = mutableMapOf()
 
