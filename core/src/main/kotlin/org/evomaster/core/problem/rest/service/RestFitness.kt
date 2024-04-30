@@ -92,7 +92,8 @@ open class RestFitness : AbstractRestFitness() {
         }
 
         val restActionResults = actionResults.filterIsInstance<RestCallResult>()
-        restActionResultHandling(individual, targets, allCovered,restActionResults, fv)?:return null
+        restActionResultHandling(individual, targets, allCovered,restActionResults, fv)
+            ?: return null
 
         if (log.isTraceEnabled){
             log.trace("restActionResult are handled")

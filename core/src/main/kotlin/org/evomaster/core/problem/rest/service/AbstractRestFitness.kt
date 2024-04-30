@@ -759,6 +759,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         return "location_$id"
     }
 
+    /**
+     * WARNING: possible side-effects on input parameters, eg actionResults
+     */
     protected fun restActionResultHandling(
         individual: RestIndividual, targets: Set<Int>, allCovered: Boolean, actionResults: List<ActionResult>, fv: FitnessValue
     ): TestResultsDto? {
@@ -788,7 +791,14 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             dto.additionalInfoList
         )
 
-        handleExternalServiceInfo(individual, fv, dto.additionalInfoList)
+        val wmStarted = handleExternalServiceInfo(individual, fv, dto.additionalInfoList)
+        if(wmStarted){
+            /*
+                Quite tricky... if a WM instance was started as part of this test case evaluation,
+                then the results are invalid, as they are based on WM not being there.
+             */
+            return null
+        }
 
         if(! allCovered) {
             if (config.expandRestIndividuals) {
@@ -814,8 +824,14 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
      * Based on info coming from SUT execution, register and start new WireMock instances.
      *
      * TODO push this thing up to hierarchy to EntepriseFitness
+     *
+     * @return whether there was side effect of starting new instance of WireMock
      */
-    private fun handleExternalServiceInfo(individual: RestIndividual, fv: FitnessValue, infoDto: List<AdditionalInfoDto>) {
+    private fun handleExternalServiceInfo(
+        individual: RestIndividual,
+        fv: FitnessValue,
+        infoDto: List<AdditionalInfoDto>
+    ) : Boolean {
 
         /*
             Note: this info here is based from what connections / hostname resolving done in the SUT,
@@ -824,6 +840,8 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             However, what is actually called on an already up and running WM instance from a previous call is
             done on WM directly, and it must be done at SUT call (as WM get reset there)
          */
+
+        var wmStarted = false
 
         infoDto.forEachIndexed { index, info ->
             info.hostnameResolutionInfoDtos.forEach { hn ->
@@ -865,20 +883,14 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                     The info here is coming from SUT instrumentation
                  */
 
-                /*
-                    TODO: check, do we really want to start WireMock instances right now after a fitness evaluation?
-                    We need to make sure then, if we do this, that a call in instrumented SUT with (now) and
-                    without (previous fitness evaluation) WM instances would result in same behavior.
-
-                    TODO: ie make sure that, if test is executed again now, the behavior is the same
-                 */
-                externalServiceHandler.addExternalService(
+                val started = externalServiceHandler.addExternalService(
                     HttpExternalServiceInfo(
                         es.protocol,
                         es.remoteHostname,
                         es.remotePort
                     )
                 )
+                wmStarted = wmStarted || started
             }
 
 
@@ -891,6 +903,8 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 }
             )
         }
+
+        return wmStarted
     }
 
     override fun getActionDto(action: Action, index: Int): ActionDto {

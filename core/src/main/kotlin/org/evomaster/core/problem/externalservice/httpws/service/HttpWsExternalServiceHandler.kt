@@ -108,11 +108,14 @@ class HttpWsExternalServiceHandler {
      *
      * If there is a WireMock instance is available for the [HttpWsExternalService] signature,
      * it will be skipped from creating a new one.
+     *
+     * @return whether there was side effect of starting new instance of WireMock
      */
-    fun addExternalService(externalServiceInfo: HttpExternalServiceInfo) {
+    fun addExternalService(externalServiceInfo: HttpExternalServiceInfo) : Boolean {
         if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
-            registerHttpExternalServiceInfo(externalServiceInfo)
+            return  registerHttpExternalServiceInfo(externalServiceInfo)
         }
+        return false
     }
 
     fun addHostname(hostnameResolutionInfo: HostnameResolutionInfo) {
@@ -134,17 +137,20 @@ class HttpWsExternalServiceHandler {
         }
     }
 
-    private fun registerHttpExternalServiceInfo(externalServiceInfo: HttpExternalServiceInfo) {
+    /**
+     * @return true if WM was started as result of this
+     */
+    private fun registerHttpExternalServiceInfo(externalServiceInfo: HttpExternalServiceInfo) : Boolean {
         if (skippedExternalServices.contains(externalServiceInfo.toExternalService())) {
-            return
+            return false
         }
 
         if (externalServices.containsKey(externalServiceInfo.signature())) {
-            return
+            return false
         }
 
         if (!hostnameLocalAddressMapping.containsKey(externalServiceInfo.remoteHostname)) {
-            return
+            return false
         }
 
         val ip: String = hostnameLocalAddressMapping[externalServiceInfo.remoteHostname]!!
@@ -154,11 +160,14 @@ class HttpWsExternalServiceHandler {
                     !it.isActive()
         }
 
+        var started = false
+
         if (registered.isNotEmpty()) {
             registered.forEach { (k, e) ->
                 if (!externalServiceInfo.isPartial()) {
                     e.updateRemotePort(externalServiceInfo.remotePort)
                     e.startWireMock()
+                    started = true
                     /*
                         Signature should be updated after the port is updated
                         So the existing element will be removed from the map.
@@ -177,6 +186,7 @@ class HttpWsExternalServiceHandler {
                     log.warn("Trying to bind in ${es.getIP()}:${externalServiceInfo.remotePort} for ${externalServiceInfo.remoteHostname}")
                     Lazy.assert { isAddressAvailable(es.getIP(), externalServiceInfo.remotePort) }
                     es.startWireMock()
+                    started = true
                 }
 
                 /*
@@ -186,6 +196,8 @@ class HttpWsExternalServiceHandler {
                 externalServices[es.getSignature()] = es
             }
         }
+
+        return started
     }
 
     fun getExternalServiceMappings(): Map<String, ExternalServiceMappingDto> {
