@@ -3,6 +3,7 @@ package org.evomaster.core.search.service
 import com.google.inject.Inject
 import opennlp.tools.stemmer.PorterStemmer
 import org.evomaster.core.EMConfig
+import org.evomaster.core.output.clustering.metrics.LevenshteinDistance
 
 /**
  * Service to keep track of data values associated with a string key.
@@ -69,6 +70,10 @@ class DataPool {
 
     fun stringValue(key: String, objectName: String? = null) : String?{
 
+        if(stringData.isEmpty()){
+            return null
+        }
+
         val k = normalize(key) // eg "Pets" get converted into "pet"
 
         //first exact match
@@ -77,15 +82,41 @@ class DataPool {
             return randomness.choose(data)
         }
 
-        if(objectName != null){
-            val name = normalize(objectName) // eg "Users" into "user"
-            val id = name + k  // eg "userpet"
+        val fullQualifier = fullQualifier(k, objectName)
 
-            data = stringData[id]
+        if(fullQualifier != null){
+            data = stringData[fullQualifier]
             if(data != null){
                 return randomness.choose(data)
             }
         }
+
+        val closestKey = closestKey(k)
+
+        if(closestKey != null){
+            return randomness.choose(stringData[closestKey]!!)
+        }
+
+        TODO closest full qualifier (if any)
+        TODO substring
+    }
+
+    private fun fullQualifier(normalizedK : String, objectName: String?) : String?{
+        if(objectName == null){
+            return null
+        }
+        val name = normalize(objectName) // eg "Users" into "user"
+        val id = name + normalizedK  // eg "userpet"
+        return id
+    }
+
+    private fun closestKey(k: String): String? {
+        val closest = stringData.keys
+            .map { Pair(it, LevenshteinDistance.distance(it, k)) }
+            .filter { it.second < config.thresholdDistanceForDataPool }
+            .minByOrNull { it.second }
+            ?.first
+        return closest
     }
 
 

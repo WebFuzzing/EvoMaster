@@ -2251,6 +2251,10 @@ class EMConfig {
     @Min(1.0)
     var maxSizeDataPool = 100
 
+    @Cfg("Threshold of Levenshtein distance for key-matching in Data Pool")
+    @Min(0.0)
+    val thresholdDistanceForDataPool = 2.0
+
 
     fun trackingEnabled() = isMIO() && (enableTrackEvaluatedIndividual || enableTrackIndividual)
 
