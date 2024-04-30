@@ -435,6 +435,14 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      * handle specified init sql script after SUT is started.
      */
     public final void registerOrExecuteInitSqlCommandsIfNeeded()  {
+        registerOrExecuteInitSqlCommandsIfNeeded(false);
+    }
+
+    /**
+     * handle specified init sql script after SUT is started.
+     * @param instrumentationEnabled represents whether the instrumentation is enabled
+     */
+    public final void registerOrExecuteInitSqlCommandsIfNeeded(boolean instrumentationEnabled)  {
         Connection connection = getConnectionIfExist();
         if (connection == null) return;
         DbSpecification dbSpecification = getDbSpecifications().get(0);
@@ -444,12 +452,12 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         tableInitSqlMap.clear();
 
         try {
-            setExecutingInitSql(true);
+            if(instrumentationEnabled) setExecutingInitSql(true);
             registerInitSqlCommands(connection, dbSpecification);
         } catch (SQLException e) {
             throw new RuntimeException("Fail to register or execute the script for initializing data in SQL database, please check specified `initSqlScript` or initSqlOnResourcePath. Error Msg:", e);
         } finally {
-            setExecutingInitSql(false);
+            if(instrumentationEnabled) setExecutingInitSql(false);
         }
     }
 
