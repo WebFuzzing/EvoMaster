@@ -22,18 +22,10 @@ class WmAuth0EMTest : SpringTestBase() {
             val config = EMConfig()
             config.instrumentMR_NET = true
             initClass(WmAuth0Controller(), config)
-
-            /*
-            The test fails on CI, but not local with WM 2.32.0
-
-            if updating WM to 2.34.0, the test fails on local windows as well (TO CHECK)
-            */
-           // CIUtils.skipIfOnGA()
         }
     }
 
 
-    @Disabled("FIXME")
     @Test
     fun testRunEM() {
 
