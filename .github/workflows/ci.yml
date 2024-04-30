@@ -84,8 +84,15 @@ jobs:
         with:
           report_paths: '**/target/surefire-reports/TEST-*.xml'
       # Upload coverage results
-      - name: Upload coverage to CodeCov
+      # As of 2024, looks like a rate limiter is breaking the build.
+      # As such, now we only upload from master branch, hoping it is enough.
+      # If not, might have to remove this
+      - if: github.ref == 'refs/heads/master'
+        name: Upload coverage to CodeCov
         run: curl -s https://codecov.io/bash | bash
+      - if: github.ref != 'refs/heads/master'
+        name: Uploading coverage to CodeCov is done only on 'master' branch builds
+        run: echo Skipping upload to CodeCov
       # Only once coverage is uploaded, we try to build with other versions of Java, as "mvn clean" would delete those reports
       # However, the latest LTS is fully built (with tests) on a different job
       - name: Setup JDK 11
