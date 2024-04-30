@@ -27,7 +27,6 @@ class HostnameResolutionActionEMTest: SpringTestBase() {
         }
     }
 
-    @Disabled("FIXME")
     @Test
     fun testRunEM() {
         runTestHandlingFlakyAndCompilation(
@@ -47,17 +46,18 @@ class HostnameResolutionActionEMTest: SpringTestBase() {
                 args.add("USER")
                 args.add("--externalServiceIP")
                 args.add("127.0.0.14")
-                // TODO: Need to remove, once the issue resolved
-//                args.add("--minimize")
-//                args.add("false")
 
                 val solution = initAndRun(args)
 
-                Assertions.assertTrue(solution.individuals.size >= 1)
+                assertTrue(solution.individuals.size >= 1)
 
-                //if (!CIUtils.isRunningGA()) {
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/resolve", "OK")
-                //}
+                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/resolve", "OK")
+                /*
+                    Tricky. First time a test is evaluated, this will happen.
+                    But, from there on, WM will always be on, so impossible to replicate,
+                    eg, in minimizer or generated tests.
+                 */
+                assertNone(solution, HttpVerb.GET, 400)
             },
             20
         )
