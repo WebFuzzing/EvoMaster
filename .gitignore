@@ -137,4 +137,5 @@ Migrations/
 /solver/target/
 /em.yaml
 /e2e-tests/spring-rest-openapi-v2/em.yaml
+/e2e-tests/spring-rest-openapi-v3/em.yaml
 /core-it/em.yaml
