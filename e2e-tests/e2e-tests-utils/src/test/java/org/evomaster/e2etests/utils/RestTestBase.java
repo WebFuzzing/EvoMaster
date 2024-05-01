@@ -109,7 +109,6 @@ public abstract class RestTestBase  extends EnterpriseTestBase {
         for (int i = 0; i < actions.size() && !stopped; i++) {
             RestCallResult restCallResult = (RestCallResult) results.get(i);
             stopped = restCallResult.getStopping();
-
             RestCallAction action = actions.get(i);
 
             if (action.getVerb() != verb) {
@@ -118,11 +117,9 @@ public abstract class RestTestBase  extends EnterpriseTestBase {
 
             Integer statusCode = restCallResult.getStatusCode();
 
-            if (!statusCode.equals(expectedStatusCode)) {
-                continue;
+            if (statusCode != null && statusCode.equals(expectedStatusCode)) {
+                return true;
             }
-
-            return true;
         }
 
         return false;
@@ -161,7 +158,7 @@ public abstract class RestTestBase  extends EnterpriseTestBase {
 
             Integer statusCode = res.getStatusCode();
 
-            if (!statusCode.equals(expectedStatusCode)) {
+            if (statusCode != null && !statusCode.equals(expectedStatusCode)) {
                 continue;
             }
 
