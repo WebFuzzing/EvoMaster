@@ -10,6 +10,7 @@ import org.evomaster.core.output.service.TestWriterUtils.Companion.handleDefault
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
+import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.rest.BlackBoxUtils
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rpc.RPCIndividual
@@ -65,6 +66,9 @@ class TestSuiteWriter {
 
     @Inject(optional = true)
     private lateinit var remoteController: RemoteController
+
+    @Inject
+    private lateinit var externalServiceHandler: HttpWsExternalServiceHandler
 
     private var activePartialOracles = mutableMapOf<String, Boolean>()
 
@@ -379,7 +383,7 @@ class TestSuiteWriter {
                 addImport("io.restassured.response.ValidatableResponse", lines)
             }
 
-            if (config.isEnabledExternalServiceMocking() && solution.hasAnyActiveHttpExternalServiceAction()) {
+            if (config.isEnabledExternalServiceMocking() && solution.needWireMockServers()) {
                 addImport("com.github.tomakehurst.wiremock.client.WireMock.*", lines, true)
                 addImport("com.github.tomakehurst.wiremock.WireMockServer", lines)
                 addImport("com.github.tomakehurst.wiremock.core.WireMockConfiguration", lines)
@@ -521,7 +525,7 @@ class TestSuiteWriter {
         solution: Solution<*>
     ) {
 
-        val wireMockServers = getWireMockServerActions(solution)
+        val wireMockServers = getActiveWireMockServers()
 
         val executable = if (controllerInput.isNullOrBlank()) ""
         else "\"$controllerInput\"".replace("\\", "\\\\")
@@ -694,7 +698,7 @@ class TestSuiteWriter {
                 }
             }
 
-            val wireMockServers = getWireMockServerActions(solution)
+            val wireMockServers = getActiveWireMockServers()
             if (config.isEnabledExternalServiceMocking() && wireMockServers.isNotEmpty()) {
                 if (format.isJavaOrKotlin()) {
                     wireMockServers
@@ -773,7 +777,7 @@ class TestSuiteWriter {
                             && config.isEnabledExternalServiceMocking()
                             && solution.needsHostnameReplacement()
                         ) {
-                            getWireMockServerActions(solution)
+                            getActiveWireMockServers()
                                 .forEach { action ->
                                     addStatement("${getWireMockVariableName(action)}.stop()", lines)
                                 }
@@ -827,7 +831,7 @@ class TestSuiteWriter {
                 addStatement("$controller.resetStateOfSUT()", lines)
 
                 if (format.isJavaOrKotlin() && config.isEnabledExternalServiceMocking()) {
-                    getWireMockServerActions(solution)
+                    getActiveWireMockServers()
                         .forEach { es ->
                             addStatement("${getWireMockVariableName(es)}.resetAll()", lines)
                             // set the default responses for all wm
@@ -979,6 +983,14 @@ class TestSuiteWriter {
                     //.plus( it.fitness.getViewEmployedDefaultWM())
             }
             .distinctBy { it.getSignature() }.toList()
+    }
+
+    private fun getActiveWireMockServers(): List<HttpWsExternalService> {
+        return externalServiceHandler.getExternalServices()
+            .filter { it.value.isActive() }
+            .map { it.value }
+            .distinctBy { it.getSignature() }
+            .toList()
     }
 
 }
