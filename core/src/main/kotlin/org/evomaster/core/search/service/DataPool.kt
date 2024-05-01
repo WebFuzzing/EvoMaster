@@ -39,7 +39,7 @@ class DataPool {
     lateinit var randomness: Randomness
         private set
 
-    private val stringData : MutableMap<String, ArrayDeque<String>> = mutableMapOf()
+    private val pool : MutableMap<String, ArrayDeque<String>> = mutableMapOf()
 
     private val stemmer = PorterStemmer()
 
@@ -55,7 +55,7 @@ class DataPool {
 
     fun addValue(key: String, data: String){
 
-        val queue = stringData.getOrPut(normalize(key)) { ArrayDeque<String>() }
+        val queue = pool.getOrPut(normalize(key)) { ArrayDeque<String>() }
 
         if(queue.contains(data)){
             return // already there
@@ -70,35 +70,49 @@ class DataPool {
 
     fun stringValue(key: String, objectName: String? = null) : String?{
 
-        if(stringData.isEmpty()){
+        if(pool.isEmpty()){
             return null
         }
 
         val k = normalize(key) // eg "Pets" get converted into "pet"
 
-        //first exact match
-        var data = stringData[k]
+        //(1) first exact match
+        var data = pool[k]
         if(data != null){
             return randomness.choose(data)
         }
 
+        //(2) check exact match with object qualifier
         val fullQualifier = fullQualifier(k, objectName)
-
         if(fullQualifier != null){
-            data = stringData[fullQualifier]
+            data = pool[fullQualifier]
             if(data != null){
                 return randomness.choose(data)
             }
         }
 
+        //(3) partial match
         val closestKey = closestKey(k)
-
         if(closestKey != null){
-            return randomness.choose(stringData[closestKey]!!)
+            return randomness.choose(pool[closestKey]!!)
         }
 
-        TODO closest full qualifier (if any)
-        TODO substring
+        //(4) partial match with object qualifier
+        if(fullQualifier != null){
+            val closestFullQualifier = closestKey(fullQualifier)
+            if(closestFullQualifier != null){
+                return randomness.choose(pool[closestFullQualifier]!!)
+            }
+        }
+
+        //(5) check if any key is a substring
+        val sub = pool.keys.firstOrNull { k.contains(it, true) }
+        if(sub != null){
+            return randomness.choose(pool[sub]!!)
+        }
+
+        //got nothing
+        return null;
     }
 
     private fun fullQualifier(normalizedK : String, objectName: String?) : String?{
@@ -111,7 +125,7 @@ class DataPool {
     }
 
     private fun closestKey(k: String): String? {
-        val closest = stringData.keys
+        val closest = pool.keys
             .map { Pair(it, LevenshteinDistance.distance(it, k)) }
             .filter { it.second < config.thresholdDistanceForDataPool }
             .minByOrNull { it.second }
