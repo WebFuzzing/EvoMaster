@@ -10,6 +10,8 @@ import org.evomaster.core.sql.schema.Column
 import org.evomaster.core.sql.schema.ColumnDataType
 import org.evomaster.core.sql.schema.Table
 import org.evomaster.core.problem.enterprise.SampleType
+import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
+import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.search.gene.numeric.IntegerGene
@@ -86,6 +88,27 @@ object TestUtils {
         val queryIdParam = QueryParam("id", IntegerGene("id"))
         val actions : MutableList<Param> = if (onlyId) mutableListOf(queryIdParam) else  mutableListOf(queryIdParam, queryNameParam)
         return RestCallAction(id, HttpVerb.GET, RestPath(pathString), actions)
+    }
+
+    /**
+     * Create a RestCallAction based on id, verb, pathString, params and authentication
+     */
+    fun generateFakeRestActionWithVerb(id: String,
+                                       verb: HttpVerb,
+                                       pathString : String,
+                                       params : List<Param> = emptyList(),
+                                       authentication: HttpWsAuthenticationInfo = HttpWsNoAuth()) : RestCallAction {
+
+        // a new list for parameters
+        val paramsCopy = mutableListOf<Param>()
+
+        // get copies of each parameters
+        for(p in params) {
+            paramsCopy.add(p.copy())
+        }
+
+        // action to create
+        return RestCallAction(id, verb, RestPath(pathString), paramsCopy, authentication)
     }
 
 

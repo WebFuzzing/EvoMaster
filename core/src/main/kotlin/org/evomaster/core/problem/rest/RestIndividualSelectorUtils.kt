@@ -5,8 +5,10 @@ import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
+import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.service.AbstractRestSampler
+import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.action.ActionResult
@@ -21,6 +23,272 @@ object RestIndividualSelectorUtils {
 
     //FIXME this needs to be cleaned-up
 
+    /**
+     * Compare two given status codes, 201 is equal to 201, 2x1 is equal to 201, etc...
+     * This is used to get individuals with given status codes.
+     */
+     fun compareTwoStatusCodes(firstStatus : String, secondStatus : String) : Boolean {
+
+        // check if they have the same size
+        if (firstStatus.length != secondStatus.length) {
+            return false
+        }
+        else {
+
+            var sameStatus = true
+            // for each character, either same character or if one of them is x, the other can be any
+            var i =0
+
+            while( (i < firstStatus.length) && sameStatus) {
+                if (firstStatus[i] != secondStatus[i]) {
+                    // if none of those characters are x, status codes are not equivalent
+                    if (firstStatus[i].lowercaseChar() != 'x' && secondStatus[i].lowercaseChar() != 'x') {
+                        sameStatus = false
+                    }
+                }
+                // increment i
+                i += 1
+            }
+            return sameStatus
+        }
+    }
+
+    /**
+     * check a given action for the given conditions, this is a helper method for
+     * findIndividualsContainingActionsWithGivenParameters
+     */
+    fun checkIfActionSatisfiesConditions(act: EvaluatedAction,
+                                         verb: HttpVerb? = null,
+                                         path: RestPath? = null,
+                                         status: String? = null,
+                                         mustBeAuthenticated : Boolean = false
+                                         ) : Boolean {
+
+        // get actions and results first
+        val action = act.action as RestCallAction
+        val resultOfAction = act.result as RestCallResult
+
+        // assume that it satisfies the condition to be included
+        var actionSatisfiesConditions = true
+
+        // now check all conditions to see if any of them make the action not be included
+
+        // verb
+        if (verb != null) {
+            if (action.verb != verb) {
+                actionSatisfiesConditions = false
+            }
+        }
+
+        // path
+        if (actionSatisfiesConditions && path != null) {
+
+            if(action.path != path) {
+                actionSatisfiesConditions = false
+            }
+        }
+
+        // status
+        if (actionSatisfiesConditions && status != null) {
+
+            if (!compareTwoStatusCodes(resultOfAction.getStatusCode().toString(), status) ) {
+                actionSatisfiesConditions = false
+            }
+        }
+
+        // authenticated or not
+        if (actionSatisfiesConditions && mustBeAuthenticated) {
+
+            if (action.auth == HttpWsNoAuth()) {
+                actionSatisfiesConditions = false
+            }
+        }
+
+        return actionSatisfiesConditions
+
+    }
+
+    /**
+     * Find individuals which contain actions with given parameters, such as verb, path, result.
+     * If any of those parameters are not given as null, that parameter is used for filtering individuals.
+     */
+    fun findIndividualsContainingActionsWithGivenParameters(individualsInSolution: List<EvaluatedIndividual<RestIndividual>>,
+                                                                                                   verb: HttpVerb? = null,
+                                                                                                   path: RestPath? = null,
+                                                                                                   status: String? = null,
+                                                                                                   authenticated : Boolean = false
+                                                            ) : List<EvaluatedIndividual<RestIndividual>> {
+
+        val individualsList = mutableListOf<EvaluatedIndividual<RestIndividual>>()
+
+        individualsInSolution.forEach { ind ->
+
+            // assume that the current individual will not be included
+
+            val actions = ind.evaluatedMainActions()
+
+            val includeIndividual = actions.any {
+                checkIfActionSatisfiesConditions(it, verb, path, status, authenticated)
+            }
+
+            if (includeIndividual) {
+                // add individual to list
+                individualsList.add(ind.copy())
+            }
+        }
+
+        return individualsList
+    }
+
+    /**
+     * get all action definitions from the swagger based on the given verb
+     */
+    fun getAllActionDefinitions(actionDefinitions: List<RestCallAction>, verb: HttpVerb): List<RestCallAction> {
+        return actionDefinitions.filter { it.verb == verb }
+    }
+
+    /**
+     * Given a resource path, we want to find any individual that has a create operation for that resource
+     *
+     * Assume for example the resource "/users/{id}"
+     *
+     * We could search for a
+     * PUT "/users/id"
+     * that returns 201
+     *
+     * or a
+     * POST "/users"
+     * that returns something in 2xx (not necessarily 201)
+     *
+     * @return null if none found
+     */
+    fun findIndividualWithEndpointCreationForResource( individuals: List<EvaluatedIndividual<RestIndividual>>,
+                                                       resourcePath: RestPath,
+                                                       mustBeAuthenticated: Boolean
+    ) : Pair<EvaluatedIndividual<RestIndividual>,Endpoint>?{
+
+        // there is not. need to create it based on successful create resources with authenticated user
+        lateinit var verbUsedForCreation : HttpVerb
+        // search for create resource for endpoint of DELETE using PUT
+        lateinit var existingEndpointForCreation : EvaluatedIndividual<RestIndividual>
+
+        val existingPuts  = findIndividualsContainingActionsWithGivenParameters(
+            individuals,
+            HttpVerb.PUT,
+            resourcePath,
+            "201",
+            mustBeAuthenticated // TODO with Authentication
+        )
+
+        if(existingPuts.isNotEmpty()){
+            return Pair(
+                existingPuts.sortedBy { it.individual.size() }[0],
+                Endpoint(HttpVerb.PUT, resourcePath)
+            )
+        }
+        // if not, search for a
+        else {
+            // TODO since we cannot search for a POST with the same path, we can just return null
+            return null
+        }
+
+        /*
+
+        lateinit var existingPostReqForEndpointOfDelete : List<EvaluatedIndividual<RestIndividual>>
+
+        if (existingPutForEndpointOfDelete.isNotEmpty()) {
+            existingEndpointForCreation = existingPutForEndpointOfDelete[0]
+            verbUsedForCreation = HttpVerb.PUT
+        }
+        else {
+            // if there is no such, search for an existing POST
+            existingPostReqForEndpointOfDelete = RestIndividualSelectorUtils.getIndividualsWithActionAndStatusGroup(
+                individualsInSolution,
+                HttpVerb.POST,
+                delete.path,  // FIXME might be a parent, eg POST:/users for DELETE:/users/{id} . BUT CHECK FOR PATH STRUCTURE
+                "2xx"
+            )
+
+            if (existingPostReqForEndpointOfDelete.isNotEmpty()) {
+                existingEndpointForCreation = existingPostReqForEndpointOfDelete[0]
+                verbUsedForCreation = HttpVerb.DELETE
+            }
+
+        }
+
+
+        return null
+
+         */
+    }
+
+    /**
+     * Create another individual from the individual by adding a new action with a new verb and with a different
+     * authentication.
+     * @param individual - REST individual which is the starting point
+     * @param currentAction - REST action for the new individual
+     * @param newActionVerb - verb for the new action, such as GET, POST
+     */
+    fun createIndividualWithAnotherActionAddedDifferentAuthRest( sampler : AbstractRestSampler,
+                                                                 individual: RestIndividual,
+                                                                 currentAction : RestCallAction,
+                                                                 newActionVerb : HttpVerb,
+                                                                 newActionID : String,
+                                                                 randomness : Randomness) : RestIndividual {
+
+        /*
+            Create a new individual based on some existing data.
+            Need to make sure we copy this existing data (to avoid different individuals re-using shared mutable
+            state), as well as resetting their internal dynamic info (eg local ids) before a new individual is
+            instantiated
+         */
+
+        val actionList = mutableListOf<RestCallAction>()
+
+        for (act in individual.seeMainExecutableActions()) {
+            actionList.add(act.copy() as RestCallAction)
+        }
+
+        // create a new action with the authentication not used in current individual
+        val authenticationOfOther = sampler.authentications.getDifferentOne(currentAction.auth.name,
+            HttpWsAuthenticationInfo::class.java,
+            randomness)
+
+        var newRestCallAction :RestCallAction? = null;
+        var newPutAction : RestCallAction? = null
+
+        if (authenticationOfOther != null) {
+            newRestCallAction = RestCallAction(newActionID, newActionVerb, currentAction.path,
+                currentAction.parameters.map { it.copy() as Param }.toMutableList(), authenticationOfOther  )
+        }
+
+        if (newRestCallAction != null) {
+            actionList.add(newRestCallAction)
+
+            // add put request with authentication of other, which is a security issue if it succeeds.
+            //newPutAction = RestCallAction("newDelete", HttpVerb.PUT, currentAction.path,
+            //   currentAction.parameters.map { it.copy() as Param }.toMutableList(), authenticationOfOther  )
+
+            //actionList.add(newPutAction)
+        }
+
+        // add a rest call action with
+
+
+        actionList.forEach { it.resetLocalIdRecursively() }
+
+        val newIndividual =  sampler.createIndividual(SampleType.SECURITY, actionList)
+        //RestIndividual(actionList, SampleType.SECURITY)
+        newIndividual.ensureFlattenedStructure()
+
+
+
+        return newIndividual
+
+    }
+
+
+    /**
 
     /**
      * Given a resource path, we want to find any individual that has a create operation for that resource
@@ -744,4 +1012,5 @@ object RestIndividualSelectorUtils {
 
     }
 
+    */
 }

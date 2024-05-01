@@ -121,6 +121,8 @@ class SecurityRest {
      * - authenticated user B gets 403 on DELETE X
      * - authenticated user B gets 200 on PUT/PATCH on X
      */
+
+
     private fun handleForbiddenDeleteButOkPutOrPatch() {
 
         /*
@@ -162,8 +164,13 @@ class SecurityRest {
         deleteOperations.forEach { delete ->
 
             // from archive, search if there is any test with a DELETE returning a 403
-            val existing403  = RestIndividualSelectorUtils.findIndividuals(individualsInSolution, HttpVerb.DELETE, delete.path, 403)
-
+            val existing403  =
+                RestIndividualSelectorUtils.findIndividualsContainingActionsWithGivenParameters(individualsInSolution,
+                                                                                                HttpVerb.DELETE,
+                                                                                                delete.path,
+                                                                                          "403",
+                                                                                    true)
+            // individual to choose for test, this is the individual we are going to manipulate
             val individualToChooseForTest : RestIndividual
 
             // if there is such an individual
@@ -171,6 +178,9 @@ class SecurityRest {
 
                 // current individual in the list of existing 403. Since the list is not empty,\
                 // we can just get the first item
+                // TODO fix methods here and add test for existing 403
+                /*
+
                 val currentIndividualWith403 = existing403[0]
 
                 val deleteActionIndex = RestIndividualSelectorUtils.getIndexOfAction(currentIndividualWith403,HttpVerb.DELETE,delete.path, 403)
@@ -179,26 +189,71 @@ class SecurityRest {
 
                 // slice the individual in a way that delete all calls after the DELETE request
                 individualToChooseForTest = RestIndividualSelectorUtils.sliceAllCallsInIndividualAfterAction(currentIndividualWith403.individual, deleteAction)
+                */
             } else {
+
                 // there is not. need to create it based on successful create resources with authenticated user
 
-                val creation = RestIndividualSelectorUtils.findIndividualWithEndpointCreationForResource(
+
+                val creationPair = RestIndividualSelectorUtils.findIndividualWithEndpointCreationForResource(
                     individualsInSolution,
                     delete.path,
-                    true
-                )
+                    true)
+
+
 
                 // if neither POST not PUT exists for the endpoint, we need to handle that case specifically
+
+                /*
                 if (creation == null) {
                     LoggingUtil.getInfoLogger().debug(
                         "The archive does not contain any successful PUT or POST requests to create for ${delete.path}")
                     return@forEach
                 }
 
-                TODO fixme
+                 */
+
+                //TODO fixme
 
                 var actionIndexForCreation = -1
 
+                // if we have already found resource creation pair
+                if (creationPair != null) {
+
+                    // find the index of the creation action
+                    actionIndexForCreation = creationPair.first.individual.getActionIndex(
+                        creationPair.second.verb,
+                        creationPair.second.path)
+
+
+                    // create a new individual with DELETE action with the same endpoint of PUT but different user
+                    val individualWithDelete =
+                        RestIndividualSelectorUtils.createIndividualWithAnotherActionAddedDifferentAuthRest(sampler,
+                            creationPair.first.individual,
+                            creationPair.first.individual.seeMainExecutableActions().get(actionIndexForCreation),
+                            HttpVerb.DELETE,
+                            "deleteActionAfterPut",
+                            randomness )
+
+                    // create a new individual from individual with delete that contains PUT with a different endpoint
+                    val finalIndividual =
+                        RestIndividualSelectorUtils.createIndividualWithAnotherActionAddedDifferentAuthRest(sampler,
+                            individualWithDelete,
+                            individualWithDelete.seeMainExecutableActions().get(actionIndexForCreation),
+                            HttpVerb.PUT,
+                            "putActionAfterDelete",
+                            randomness )
+
+                    val evaluatedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(finalIndividual)
+
+                    // add the evaluated individual to the archive
+                    if (evaluatedIndividual != null) {
+                        archive.addIfNeeded(evaluatedIndividual)
+                    }
+                }
+
+
+                /*
                 if (verbUsedForCreation != null) {
 
                     // so we found an individual with a successful PUT or POST,  we will slice all calls after PUT or POST
@@ -207,7 +262,11 @@ class SecurityRest {
                         delete.path)
                 }
 
+                 */
+
                 // create a copy of the existingEndpointForCreation
+
+                /*
                 val existingEndpointForCreationCopy = existingEndpointForCreation.copy()
                 val actionForCreation = RestIndividualSelectorUtils.getActionWithIndex(existingEndpointForCreation, actionIndexForCreation)
 
@@ -220,20 +279,22 @@ class SecurityRest {
                                                                                               actionForCreation,
                                                                                                 HttpVerb.DELETE,
                                                                                                     randomness )
+
+                 */
             }
 
             // After having a set of requests in which the last one is a DELETE call with another user, add a PUT
             // with another user
-            val deleteActionIndex = individualToChooseForTest.getActionIndex(HttpVerb.DELETE, delete.path)
+            //val deleteActionIndex = individualToChooseForTest.getActionIndex(HttpVerb.DELETE, delete.path)
 
-            val deleteAction = RestIndividualSelectorUtils.getActionWithIndexRestIndividual(individualToChooseForTest, deleteActionIndex)
+            //val deleteAction = RestIndividualSelectorUtils.getActionWithIndexRestIndividual(individualToChooseForTest, deleteActionIndex)
 
-            var individualToAddToSuite = RestIndividualSelectorUtils.
-            createIndividualWithAnotherActionAddedDifferentAuthRest(sampler,
-                                                  individualToChooseForTest,
-                                                               deleteAction,
-                                                              HttpVerb.PUT,
-                                                              randomness)
+            //var individualToAddToSuite = RestIndividualSelectorUtils.
+            //createIndividualWithAnotherActionAddedDifferentAuthRest(sampler,
+            //                                      individualToChooseForTest,
+            //                                                   deleteAction,
+            //                                                  HttpVerb.PUT,
+            //                                                  randomness)
 
             // create an individual with the following
             // PUT/POST with one authenticated user userA
@@ -256,12 +317,12 @@ class SecurityRest {
 
             // Then evaluate the fitness function to create evaluatedIndividual
 
-            val evaluatedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(individualToAddToSuite)
+            //val evaluatedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(individualToAddToSuite)
 
             // add the evaluated individual to the archive
-            if (evaluatedIndividual != null) {
-                archive.addIfNeeded(evaluatedIndividual)
-            }
+            //if (evaluatedIndividual != null) {
+            //    archive.addIfNeeded(evaluatedIndividual)
+           // }
         }
 
     }
