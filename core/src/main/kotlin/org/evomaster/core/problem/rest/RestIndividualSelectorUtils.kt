@@ -68,6 +68,31 @@ object RestIndividualSelectorUtils {
         return true
     }
 
+
+    fun findAction(
+        individualsInSolution: List<EvaluatedIndividual<RestIndividual>>,
+        verb: HttpVerb? = null,
+        path: RestPath? = null,
+        status: Int? = null,
+        statusGroup: StatusGroup? = null,
+        authenticated: Boolean = false
+    ): RestCallAction? {
+
+        if(status != null && statusGroup!= null){
+            throw IllegalArgumentException("Shouldn't specify both status and status group")
+        }
+
+        individualsInSolution.forEach {ind ->
+            ind.evaluatedMainActions().forEach { a ->
+                if(checkIfActionSatisfiesConditions(a, verb, path, status, statusGroup, authenticated)){
+                    return a.action as RestCallAction
+                }
+            }
+        }
+        return null
+    }
+
+
     /**
      * Find individuals which contain actions with given parameters, such as verb, path, result.
      * If any of those parameters are not given as null, that parameter is used for filtering individuals.
@@ -130,7 +155,7 @@ object RestIndividualSelectorUtils {
             resourcePath,
             201,
             statusGroup = null,
-            mustBeAuthenticated // TODO with Authentication
+            mustBeAuthenticated
         )
 
         if(existingPuts.isNotEmpty()){
@@ -238,6 +263,49 @@ object RestIndividualSelectorUtils {
 
         return newIndividual
 
+    }
+
+    fun getIndexOfAction(individual: EvaluatedIndividual<RestIndividual>,
+                         verb: HttpVerb,
+                         path: RestPath,
+                         statusCode: Int
+    ) : Int {
+
+        val actions = individual.evaluatedMainActions()
+
+        for(index in actions.indices){
+            val a = actions[index].action as RestCallAction
+            val r = actions[index].result as RestCallResult
+
+            if(a.verb == verb && a.path.isEquivalent(path) && r.getStatusCode() == statusCode){
+                return index
+            }
+        }
+
+        return -1
+    }
+
+    /**
+     * Create a copy of individual, where all main actions after index are removed
+     */
+    fun sliceAllCallsInIndividualAfterAction(restIndividual: RestIndividual, actionIndex: Int) : RestIndividual {
+
+        val ind = restIndividual.copy() as RestIndividual
+
+        val n = ind.seeMainExecutableActions().size
+
+        /*
+            We start from last, going backward.
+            So, actionIndex stays the same
+         */
+        for(i in n-1 downTo actionIndex+1){
+            ind.removeMainExecutableAction(i)
+        }
+
+        ind.fixGeneBindingsIfNeeded()
+        ind.removeLocationId()
+
+        return ind
     }
 
 
@@ -506,24 +574,7 @@ object RestIndividualSelectorUtils {
         return individual.seeMainExecutableActions().indexOf(action)
     }
 
-    fun getIndexOfAction(individual: EvaluatedIndividual<RestIndividual>,
-                         verb: HttpVerb,
-                         path: RestPath,
-                         statusCode: Int) : Int{
 
-        val actions = individual.evaluatedMainActions()
-
-        for(index in actions.indices){
-            val a = actions[index].action as RestCallAction
-            val r = actions[index].result as RestCallResult
-
-            if(a.verb == verb && a.path.isEquivalent(path) && r.getStatusCode() == statusCode){
-                return index
-            }
-        }
-
-        return -1
-    }
 
 
     fun getActionWithIndexRestIndividual(individual: RestIndividual, actionIndex : Int) : RestCallAction {
