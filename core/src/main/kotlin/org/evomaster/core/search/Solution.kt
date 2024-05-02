@@ -41,8 +41,8 @@ where T : Individual {
         return  "${name}_$testSuiteNameSuffix"
     }
 
-    fun hasAnyActiveHttpExternalServiceAction() : Boolean{
-        return individuals.any { ind -> ind.individual.seeAllActions().any { a ->  a is HttpExternalServiceAction && a.active } }
+    fun needWireMockServers() : Boolean{
+        return individuals.any { ind -> ind.individual.seeInitializingActions().any { a ->  a is HostnameResolutionAction } }
     }
 
     private fun hasAnyHostnameResolutionAction(): Boolean {
