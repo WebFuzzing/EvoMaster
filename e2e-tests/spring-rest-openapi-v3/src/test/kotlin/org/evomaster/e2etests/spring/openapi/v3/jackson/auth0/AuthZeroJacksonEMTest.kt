@@ -29,7 +29,7 @@ class AuthZeroJacksonEMTest: SpringTestBase() {
             "GeneratedAuthZeroJacksonEMTest",
             "org.foo.GeneratedAuthZeroJacksonEMTest",
             500,
-            !CIUtils.isRunningGA(),
+            true,
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")
