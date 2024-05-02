@@ -60,7 +60,7 @@ class DataPool() {
 
     fun addValue(key: String, data: String){
 
-        val queue = pool.getOrPut(normalize(key)) { ArrayDeque<String>() }
+        val queue = pool.getOrPut(normalize(key)) { ArrayDeque() }
 
         if(queue.contains(data)){
             return // already there

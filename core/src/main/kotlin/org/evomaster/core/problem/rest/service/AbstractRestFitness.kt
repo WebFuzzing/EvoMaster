@@ -41,6 +41,7 @@ import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.service.DataPool
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -63,6 +64,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
     @Inject
     protected lateinit var harvestResponseHandler: HarvestActualHttpWsResponseHandler
+
+    @Inject
+    protected lateinit var responsePool: DataPool
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(AbstractRestFitness::class.java)
@@ -807,13 +811,23 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             }
         }
 
+        if(config.useResponseDataPool){
+            recordResponseData(individual, actionResults.filterIsInstance<RestCallResult>())
+        }
+
         return dto
+    }
+
+    private fun recordResponseData(individual: RestIndividual, actionResults: List<RestCallResult>) {
+
+        TODO
+        responsePool
     }
 
     /**
      * Based on info coming from SUT execution, register and start new WireMock instances.
      *
-     * TODO push this thing up to hierarchy to EntepriseFitness
+     * TODO push this thing up to hierarchy to EnterpriseFitness
      */
     private fun handleExternalServiceInfo(individual: RestIndividual, fv: FitnessValue, infoDto: List<AdditionalInfoDto>) {
 
