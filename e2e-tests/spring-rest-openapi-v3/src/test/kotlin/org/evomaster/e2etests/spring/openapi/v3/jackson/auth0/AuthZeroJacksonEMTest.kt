@@ -11,17 +11,15 @@ import org.junit.jupiter.api.Test
 
 class AuthZeroJacksonEMTest: SpringTestBase() {
 
-
     companion object {
         @BeforeAll
         @JvmStatic
         fun init() {
             initClass(AuthZeroJacksonController())
-            //CIUtils.skipIfOnGA()
         }
     }
 
-    @Disabled("Disabled temporarily")
+    @Test
     fun testRunEM() {
         // Generated test has response which is accurate, but test fails because the
         // SUT throws error for the case which worked during the search.
