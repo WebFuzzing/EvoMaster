@@ -210,7 +210,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 
             // Removing the existing action added for RESERVED_RESOLVED_LOCAL_IP
             val defaultActions = old.filter { it.hostname == a.hostname && it.localIPAddress == ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP };
-            if (hasActions && defaultActions.isNotEmpty()) {
+            if (defaultActions.isNotEmpty()) {
                 ind.removeHostnameResolutionAction(defaultActions)
             }
         }
