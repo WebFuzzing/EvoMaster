@@ -21,8 +21,6 @@ class WmHarvestResponseEMTest : SpringTestBase() {
             val config = EMConfig()
             config.instrumentMR_NET = true
             initClass(WmHarvestResponseController(), config)
-
-            //CIUtils.skipIfOnGA()
         }
     }
 

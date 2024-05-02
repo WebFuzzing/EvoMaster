@@ -66,9 +66,7 @@ class HarvestingStrategyTest : SpringTestBase() {
                 val solution = initAndRun(args)
 
                 assertTrue(solution.individuals.size >= 1)
-                if (!CIUtils.isRunningGA()) {
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/harvest/strategy/exact", "Working")
-                }
+                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/harvest/strategy/exact", "Working")
             },
             3
         )

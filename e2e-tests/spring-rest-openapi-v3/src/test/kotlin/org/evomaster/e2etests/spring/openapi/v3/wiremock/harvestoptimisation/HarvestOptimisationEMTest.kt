@@ -23,7 +23,6 @@ class HarvestOptimisationEMTest: SpringTestBase() {
             val config = EMConfig()
             config.instrumentMR_NET = true
             initClass(HarvestOptimisationController(), config)
-            //CIUtils.skipIfOnGA()
         }
     }
 

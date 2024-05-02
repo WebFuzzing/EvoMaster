@@ -61,14 +61,14 @@ public class ExternalServiceUtils {
 //        String signature = remoteHostInfo.signature();
 
         if (!ExecutionTracer.hasLocalAddressForHost(remoteHostInfo.getHostname())) {
-            int connectPort = remotePort;
+//            int connectPort = remotePort;
 
 //            if (!ExecutionTracer.hasActiveExternalMappingForSignature(signature)) {
 //                ExecutionTracer.addEmployedDefaultWMHost(remoteHostInfo);
 //                signature = ExternalServiceSharedUtils.getWMDefaultSignature(remoteHostInfo.getProtocol(), remotePort);
 //                connectPort = ExternalServiceSharedUtils.getDefaultWMPort(signature);
 //            }
-
+            ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(remoteHostInfo.getHostname(), ExecutionTracer.getDefaultSinkholeAddress()));
             return new String[]{ExecutionTracer.getDefaultSinkholeAddress(), "" + remotePort};
 //            return new String[]{ExecutionTracer.getExternalMappingForSignature(signature), "" + connectPort};
         } else {

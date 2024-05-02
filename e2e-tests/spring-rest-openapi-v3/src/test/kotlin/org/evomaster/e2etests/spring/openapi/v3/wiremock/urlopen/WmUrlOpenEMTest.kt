@@ -51,7 +51,7 @@ class WmUrlOpenEMTest : SpringTestBase() {
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/urlopen/sstring", "OK")
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/urlopen/object", "OK")
             },
-            3,
+            15,
         )
     }
 
