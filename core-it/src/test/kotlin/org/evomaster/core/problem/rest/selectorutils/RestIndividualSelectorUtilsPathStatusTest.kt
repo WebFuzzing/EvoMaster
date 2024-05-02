@@ -67,8 +67,8 @@ class RestIndividualSelectorUtilsPathStatusTest : IntegrationTestRestBase(){
     @Test
     fun testSliceBasic(){
 
-        TODO
-        sliceAllCallsInIndividualAfterAction
+//        TODO
+//        sliceAllCallsInIndividualAfterAction
     }
 
 }

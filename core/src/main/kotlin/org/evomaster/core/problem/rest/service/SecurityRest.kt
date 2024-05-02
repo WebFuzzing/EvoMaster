@@ -164,12 +164,13 @@ class SecurityRest {
         deleteOperations.forEach { delete ->
 
             // from archive, search if there is any test with a DELETE returning a 403
-            val existing403  =
-                RestIndividualSelectorUtils.findIndividualsContainingActionsWithGivenParameters(individualsInSolution,
-                                                                                                HttpVerb.DELETE,
-                                                                                                delete.path,
-                                                                                          "403",
-                                                                                    true)
+            val existing403  = RestIndividualSelectorUtils.findIndividuals(
+                    individualsInSolution,
+                    HttpVerb.DELETE,
+                    delete.path,
+                    403,
+                    authenticated = true
+                )
             // individual to choose for test, this is the individual we are going to manipulate
             val individualToChooseForTest : RestIndividual
 

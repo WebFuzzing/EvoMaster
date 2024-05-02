@@ -4,6 +4,7 @@ import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.enterprise.SampleType
+import org.evomaster.core.problem.enterprise.auth.NoAuth
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
 import org.evomaster.core.problem.rest.param.PathParam
@@ -24,43 +25,13 @@ object RestIndividualSelectorUtils {
     //FIXME this needs to be cleaned-up
 
     /**
-     * Compare two given status codes, 201 is equal to 201, 2x1 is equal to 201, etc...
-     * This is used to get individuals with given status codes.
+     * check a given action for the given conditions
      */
-     fun compareTwoStatusCodes(firstStatus : String, secondStatus : String) : Boolean {
-
-        // check if they have the same size
-        if (firstStatus.length != secondStatus.length) {
-            return false
-        }
-        else {
-
-            var sameStatus = true
-            // for each character, either same character or if one of them is x, the other can be any
-            var i =0
-
-            while( (i < firstStatus.length) && sameStatus) {
-                if (firstStatus[i] != secondStatus[i]) {
-                    // if none of those characters are x, status codes are not equivalent
-                    if (firstStatus[i].lowercaseChar() != 'x' && secondStatus[i].lowercaseChar() != 'x') {
-                        sameStatus = false
-                    }
-                }
-                // increment i
-                i += 1
-            }
-            return sameStatus
-        }
-    }
-
-    /**
-     * check a given action for the given conditions, this is a helper method for
-     * findIndividualsContainingActionsWithGivenParameters
-     */
-    fun checkIfActionSatisfiesConditions(act: EvaluatedAction,
+    private fun checkIfActionSatisfiesConditions(act: EvaluatedAction,
                                          verb: HttpVerb? = null,
                                          path: RestPath? = null,
-                                         status: String? = null,
+                                         status: Int? = null,
+                                         statusGroup: StatusGroup? = null,
                                          mustBeAuthenticated : Boolean = false
                                          ) : Boolean {
 
@@ -68,76 +39,57 @@ object RestIndividualSelectorUtils {
         val action = act.action as RestCallAction
         val resultOfAction = act.result as RestCallResult
 
-        // assume that it satisfies the condition to be included
-        var actionSatisfiesConditions = true
-
         // now check all conditions to see if any of them make the action not be included
 
         // verb
-        if (verb != null) {
-            if (action.verb != verb) {
-                actionSatisfiesConditions = false
-            }
+        if (verb != null && action.verb != verb) {
+                return false
         }
 
         // path
-        if (actionSatisfiesConditions && path != null) {
-
-            if(action.path != path) {
-                actionSatisfiesConditions = false
-            }
+        if(path != null && !action.path.isEquivalent(path)) {
+            return false
         }
 
         // status
-        if (actionSatisfiesConditions && status != null) {
+        if(status!=null && resultOfAction.getStatusCode() != status){
+            return false
+        }
 
-            if (!compareTwoStatusCodes(resultOfAction.getStatusCode().toString(), status) ) {
-                actionSatisfiesConditions = false
-            }
+        if(statusGroup != null && !statusGroup.isInGroup(resultOfAction.getStatusCode())){
+            return false
         }
 
         // authenticated or not
-        if (actionSatisfiesConditions && mustBeAuthenticated) {
-
-            if (action.auth == HttpWsNoAuth()) {
-                actionSatisfiesConditions = false
-            }
+        if(mustBeAuthenticated && action.auth is NoAuth){
+            return false
         }
 
-        return actionSatisfiesConditions
-
+        return true
     }
 
     /**
      * Find individuals which contain actions with given parameters, such as verb, path, result.
      * If any of those parameters are not given as null, that parameter is used for filtering individuals.
      */
-    fun findIndividualsContainingActionsWithGivenParameters(individualsInSolution: List<EvaluatedIndividual<RestIndividual>>,
-                                                                                                   verb: HttpVerb? = null,
-                                                                                                   path: RestPath? = null,
-                                                                                                   status: String? = null,
-                                                                                                   authenticated : Boolean = false
-                                                            ) : List<EvaluatedIndividual<RestIndividual>> {
+    fun findIndividuals(
+        individualsInSolution: List<EvaluatedIndividual<RestIndividual>>,
+        verb: HttpVerb? = null,
+        path: RestPath? = null,
+        status: Int? = null,
+        statusGroup: StatusGroup? = null,
+        authenticated: Boolean = false
+    ): List<EvaluatedIndividual<RestIndividual>> {
 
-        val individualsList = mutableListOf<EvaluatedIndividual<RestIndividual>>()
-
-        individualsInSolution.forEach { ind ->
-
-            // assume that the current individual will not be included
-
-            val actions = ind.evaluatedMainActions()
-
-            val includeIndividual = actions.any {
-                checkIfActionSatisfiesConditions(it, verb, path, status, authenticated)
-            }
-
-            if (includeIndividual) {
-                // add individual to list
-                individualsList.add(ind.copy())
-            }
+        if(status != null && statusGroup!= null){
+            throw IllegalArgumentException("Shouldn't specify both status and status group")
         }
 
-        return individualsList
+        return individualsInSolution.filter {ind ->
+            ind.evaluatedMainActions().any { a ->
+                checkIfActionSatisfiesConditions(a, verb, path, status, statusGroup, authenticated)
+            }
+        }
     }
 
     /**
@@ -172,11 +124,12 @@ object RestIndividualSelectorUtils {
         // search for create resource for endpoint of DELETE using PUT
         lateinit var existingEndpointForCreation : EvaluatedIndividual<RestIndividual>
 
-        val existingPuts  = findIndividualsContainingActionsWithGivenParameters(
+        val existingPuts  = findIndividuals(
             individuals,
             HttpVerb.PUT,
             resourcePath,
-            "201",
+            201,
+            statusGroup = null,
             mustBeAuthenticated // TODO with Authentication
         )
 
