@@ -10,8 +10,12 @@ class DataPoolTest{
     private var pool = createPool()
 
 
-    private fun createPool() : DataPool{
-        return DataPool(EMConfig(), Randomness())
+    private fun createPool(threshold: Int? = null) : DataPool{
+        val config = EMConfig()
+        if(threshold!=null){
+            config.thresholdDistanceForDataPool = threshold
+        }
+        return DataPool(config, Randomness())
     }
 
     @BeforeEach
@@ -52,4 +56,44 @@ class DataPoolTest{
         assertEquals(data, res)
     }
 
+
+    @Test
+    fun testDistance(){
+
+        val key = "id"
+        val data = "123"
+        pool.addValue(key, data)
+
+        val res = pool.extractValue("id")
+        assertEquals(data, res)
+
+        val res1 = pool.extractValue("1id")
+        assertEquals(data, res1)
+
+        val res2 = pool.extractValue("1i2d")
+        assertEquals(data, res2)
+
+        val res3 = pool.extractValue("1i2d3")
+        assertNull(res3)
+    }
+
+
+    @Test
+    fun testSubstring(){
+
+        pool = createPool(0)
+
+        val key = "id"
+        val data = "123"
+        pool.addValue(key, data)
+
+        val res = pool.extractValue("petId")
+        assertEquals(data, res)
+
+        val res1 = pool.extractValue("  ID 1232 d")
+        assertEquals(data, res1)
+
+        val res2 = pool.extractValue("i d")
+        assertNull(res2)
+    }
 }

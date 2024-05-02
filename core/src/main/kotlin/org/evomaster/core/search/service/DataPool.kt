@@ -130,9 +130,12 @@ class DataPool() {
     }
 
     private fun closestKey(k: String): String? {
+
+        val distance = org.apache.commons.text.similarity.LevenshteinDistance(config.thresholdDistanceForDataPool)
+
         val closest = pool.keys
-            .map { Pair(it, LevenshteinDistance.distance(it, k)) }
-            .filter { it.second < config.thresholdDistanceForDataPool }
+            .map { Pair(it, distance.apply(it, k)) }
+            .filter { it.second >= 0 }
             .minByOrNull { it.second }
             ?.first
         return closest

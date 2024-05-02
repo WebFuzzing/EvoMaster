@@ -2252,13 +2252,13 @@ class EMConfig {
     var maxSizeDataPool = 100
 
     @Experimental
-    @Cfg("Threshold of Levenshtein distance for key-matching in Data Pool")
+    @Cfg("Threshold of Levenshtein Distance for key-matching in Data Pool")
     @Min(0.0)
-    val thresholdDistanceForDataPool = 2.0
+    var thresholdDistanceForDataPool = 2
 
     @Experimental
     @Cfg("Enable the collection of response data, to feed new individuals based on field names matching.")
-    val useResponseDataPool = false
+    var useResponseDataPool = false
 
     fun trackingEnabled() = isMIO() && (enableTrackEvaluatedIndividual || enableTrackIndividual)
 
