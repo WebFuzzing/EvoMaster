@@ -58,6 +58,7 @@ class HostnameResolutionActionEMTest: SpringTestBase() {
                     eg, in minimizer or generated tests.
                  */
                 assertNone(solution, HttpVerb.GET, 400)
+                assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/resolve",null)
             },
             20
         )

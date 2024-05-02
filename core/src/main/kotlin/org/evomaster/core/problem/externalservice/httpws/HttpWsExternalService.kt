@@ -40,7 +40,7 @@ class HttpWsExternalService(
     private var wireMockServer: WireMockServer? = null
 
     /**
-     * Will initialise WireMock instance on a given IP address for a given port.
+     * Will initialize WireMock instance on a given IP address for a given port.
      */
     fun startWireMock() {
         if (!externalServiceInfo.isPartial()) {
