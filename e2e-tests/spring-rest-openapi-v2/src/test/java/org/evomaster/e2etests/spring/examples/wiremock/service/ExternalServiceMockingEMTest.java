@@ -35,7 +35,6 @@ public class ExternalServiceMockingEMTest extends SpringTestBase {
      * The test is disabled since, encountered some errors within the
      * existing e2e tests. Will be completed once those sorted.
      */
-//    @Disabled
     @Test
     public void externalServiceSuccessTest() throws Throwable {
         String[] args = new String[]{
