@@ -29,19 +29,24 @@ import org.evomaster.core.output.clustering.metrics.LevenshteinDistance
  *
  *
  */
-class DataPool {
+class DataPool() {
 
     @Inject
-    lateinit var config: EMConfig
-        private set
+    private lateinit var config: EMConfig
 
     @Inject
-    lateinit var randomness: Randomness
-        private set
+    private lateinit var randomness: Randomness
+
 
     private val pool : MutableMap<String, ArrayDeque<String>> = mutableMapOf()
 
     private val stemmer = PorterStemmer()
+
+    internal constructor(_config: EMConfig, _randomness: Randomness) : this(){
+        config = _config
+        randomness = _randomness
+    }
+
 
     fun normalize(s: String) : String{
 
@@ -68,7 +73,7 @@ class DataPool {
     }
 
 
-    fun stringValue(key: String, objectName: String? = null) : String?{
+    fun extractValue(key: String, objectName: String? = null) : String?{
 
         if(pool.isEmpty()){
             return null
