@@ -10,8 +10,6 @@ import java.net.HttpURLConnection;
 import java.net.Proxy;
 import java.net.URL;
 
-import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.ExternalServiceUtils.*;
-
 public class OkUrlFactoryClassReplacement extends ThirdPartyMethodReplacementClass {
 
     private static final OkUrlFactoryClassReplacement singleton = new OkUrlFactoryClassReplacement();
@@ -34,7 +32,7 @@ public class OkUrlFactoryClassReplacement extends ThirdPartyMethodReplacementCla
 
         Method original = getOriginal(singleton, "okhttpclient_OkUrlFactory_open", caller);
 
-        URL replaced = getReplacedURL(url);
+        URL replaced = ExternalServiceUtils.getReplacedURL(url);
         try {
             return (HttpURLConnection) original.invoke(caller, replaced);
         } catch (IllegalAccessException e) {
@@ -57,7 +55,7 @@ public class OkUrlFactoryClassReplacement extends ThirdPartyMethodReplacementCla
 
         Method original = getOriginal(singleton, "okhttpclient_OkUrlFactory_open_proxy", caller);
 
-        URL replaced = getReplacedURL(url);
+        URL replaced = ExternalServiceUtils.getReplacedURL(url);
         try {
             return (HttpURLConnection) original.invoke(caller, replaced, proxy);
         } catch (IllegalAccessException e) {
@@ -67,7 +65,4 @@ public class OkUrlFactoryClassReplacement extends ThirdPartyMethodReplacementCla
         }
     }
 
-    private static URL getReplacedURL(URL url) {
-        return getUrl(url);
-    }
 }
