@@ -10,8 +10,6 @@ import org.evomaster.client.java.utils.SimpleLogger;
 import java.net.*;
 import java.util.Objects;
 
-import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.ExternalServiceUtils.*;
-
 public class URLClassReplacement implements MethodReplacementClass {
 
 
@@ -113,7 +111,7 @@ public class URLClassReplacement implements MethodReplacementClass {
         if (!caller.getProtocol().equals("jar") && !caller.getProtocol().equals("file"))
             SimpleLogger.uniqueWarn("not handle the protocol with:" + caller.getProtocol());
 
-        URL newURL = getReplacedURL(caller);
+        URL newURL = ExternalServiceUtils.getReplacedURL(caller);
 
         return newURL.openConnection();
     }
@@ -132,12 +130,8 @@ public class URLClassReplacement implements MethodReplacementClass {
         if (!caller.getProtocol().equals("jar") && !caller.getProtocol().equals("file"))
             SimpleLogger.uniqueWarn("not handle the protocol with:" + caller.getProtocol());
 
-        URL newURL = getReplacedURL(caller);
+        URL newURL = ExternalServiceUtils.getReplacedURL(caller);
 
         return newURL.openConnection(proxy);
-    }
-
-    private static URL getReplacedURL(URL url) throws java.io.IOException {
-        return getUrl(url);
     }
 }

@@ -130,7 +130,7 @@ public class ExternalServiceUtils {
     }
 
 
-    public static URL getUrl(URL url) {
+    public static URL getReplacedURL(URL url) {
         if (MethodReplacementPreserveSemantics.shouldPreserveSemantics) {
             return url;
         }

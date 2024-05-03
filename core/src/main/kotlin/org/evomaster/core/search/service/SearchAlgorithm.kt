@@ -94,7 +94,7 @@ abstract class SearchAlgorithm<T> where T : Individual {
 
         ssu.enabled = false
 
-        externalServiceHandler.resetWireMockServers()
+//        externalServiceHandler.resetWireMockServers()
 
         if(config.minimize){
             minimizer.doStartTheTimer()
