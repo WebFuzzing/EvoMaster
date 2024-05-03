@@ -68,7 +68,6 @@ public class ExternalServiceUtils {
 //                signature = ExternalServiceSharedUtils.getWMDefaultSignature(remoteHostInfo.getProtocol(), remotePort);
 //                connectPort = ExternalServiceSharedUtils.getDefaultWMPort(signature);
 //            }
-            ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(remoteHostInfo.getHostname(), ExecutionTracer.getDefaultSinkholeAddress()));
             return new String[]{ExecutionTracer.getDefaultSinkholeAddress(), "" + remotePort};
 //            return new String[]{ExecutionTracer.getExternalMappingForSignature(signature), "" + connectPort};
         } else {
