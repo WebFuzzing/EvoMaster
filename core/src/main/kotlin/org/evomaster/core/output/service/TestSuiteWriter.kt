@@ -3,6 +3,8 @@ package org.evomaster.core.output.service
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto
 import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionDto
+import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
+import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils.DEFAULT_WM_LOCAL_IP
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.*
 import org.evomaster.core.output.service.TestWriterUtils.Companion.getWireMockVariableName
@@ -987,6 +989,7 @@ class TestSuiteWriter {
 
     private fun getActiveWireMockServers(): List<HttpWsExternalService> {
         return externalServiceHandler.getExternalServices()
+            .filter { it.value.getIP() != ExternalServiceSharedUtils.DEFAULT_WM_LOCAL_IP }
             .filter { it.value.isActive() }
             .map { it.value }
             .distinctBy { it.getSignature() }
