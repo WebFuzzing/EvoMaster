@@ -1,5 +1,7 @@
 package org.evomaster.core.problem.rest.service
 
+import com.fasterxml.jackson.core.JsonProcessingException
+import com.fasterxml.jackson.databind.JsonMappingException
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.JsonNodeType
@@ -51,6 +53,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import wiremock.org.apache.hc.core5.net.Host
 import java.net.URL
+import javax.ws.rs.POST
 import javax.ws.rs.ProcessingException
 import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.client.Entity
@@ -72,9 +75,6 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     @Inject
     protected lateinit var responsePool: DataPool
 
-    private val mapper = ObjectMapper()
-
-    private val stemmer = PorterStemmer()
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(AbstractRestFitness::class.java)
@@ -842,76 +842,12 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 log.warn("Failed to analyze response. Cannot match response to source action")
                 assert(false)//only break in tests
                 continue
-            } //FIXME refactor... call on single action/result in new class
-
-            val status = res.getStatusCode()
-            if(status !in 200..299){
-                //collect data only from successful requests
-                continue
             }
-
-            if(source.verb != HttpVerb.GET && source.verb != HttpVerb.POST){
-                /*
-                    Only interested in GET... and possibly POST if it returns id of
-                    generated resource... although this should be handled as well
-                    by smart seeding
-                 */
-                continue
-            }
-
-            val body = res.getBody()
-                ?: continue
-            if(body.isBlank()){
-                continue
-            }
-
-            if(res.getBodyType()?.isCompatible(MediaType.APPLICATION_JSON_TYPE) == true){
-                val qualifier = source.path.nameQualifier
-                val node = mapper.readTree(body)
-
-                if(source.verb == HttpVerb.GET) {
-                    analyzeJsonNode(node, null, qualifier)
-                }
-
-                //TODO special case POST, just want id
-            }
+            RestResponseFeeder.handleResponse(source, res, responsePool)
         }
     }
 
-    private fun isCompositeType(node: JsonNode) =
-        node.nodeType == JsonNodeType.OBJECT
-                || node.nodeType == JsonNodeType.POJO
-                || node.nodeType == JsonNodeType.ARRAY
 
-    private fun analyzeJsonNode(node: JsonNode, field: String?, qualifier: String){
-        when(node.nodeType){
-            JsonNodeType.OBJECT, JsonNodeType.POJO -> node.fields().forEach {
-                val q = if(isCompositeType(it.value)){
-                    it.key
-                } else {
-                    qualifier
-                }
-                analyzeJsonNode(it.value, it.key, q)
-            }
-            JsonNodeType.ARRAY -> node.elements().forEach {
-                stemmer.reset()
-                val q = stemmer.stem(qualifier)
-                analyzeJsonNode(it, q)
-            }
-            JsonNodeType.NUMBER, JsonNodeType.STRING -> {
-                val key = if(field == null){
-                    qualifier
-                } else if(field.equals("id",true)){
-                        stemmer.reset()
-                        stemmer.stem(field) + "id"
-                } else {
-                    field
-                }
-                responsePool.addValue(key, node.asText())
-            }
-            else -> {/* do nothing */}
-        }
-    }
 
     /**
      * Based on info coming from SUT execution, register and start new WireMock instances.
