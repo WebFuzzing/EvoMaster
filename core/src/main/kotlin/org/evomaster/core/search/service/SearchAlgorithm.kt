@@ -3,7 +3,6 @@ package org.evomaster.core.search.service
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.mutator.Mutator
@@ -31,9 +30,6 @@ abstract class SearchAlgorithm<T> where T : Individual {
 
     @Inject
     protected lateinit var config: EMConfig
-
-    @Inject
-    protected lateinit var externalServiceHandler: HttpWsExternalServiceHandler
 
 
     @Inject(optional = true)
@@ -93,8 +89,6 @@ abstract class SearchAlgorithm<T> where T : Individual {
         time.doStopRecording()
 
         ssu.enabled = false
-
-//        externalServiceHandler.resetWireMockServers()
 
         if(config.minimize){
             minimizer.doStartTheTimer()
