@@ -47,6 +47,7 @@ class DataPool() {
         randomness = _randomness
     }
 
+    fun keySize() = pool.size
 
     fun normalize(s: String) : String{
 
