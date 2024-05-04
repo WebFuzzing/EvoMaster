@@ -80,6 +80,9 @@ class RestPath(path: String) {
                         "Are you sure you didn't pass a full URI?\n$path"
             )
         }
+        if(path.isBlank()){
+            throw IllegalArgumentException("Empty path definition")
+        }
 
         endsWithSlash = path.endsWith("/")
 
@@ -471,6 +474,12 @@ class RestPath(path: String) {
 
     private fun computeNameQualifier() : String {
 
+        val noQualifier = "/"
+
+        if(elements.isEmpty()){
+            return noQualifier
+        }
+
         var index = elements.indices.last
         val last = elements[index]
         if(!last.hasParams()){
@@ -490,6 +499,6 @@ class RestPath(path: String) {
             return stemmer.stem(raw)
         }
 
-        return "/"
+        return noQualifier
     }
 }

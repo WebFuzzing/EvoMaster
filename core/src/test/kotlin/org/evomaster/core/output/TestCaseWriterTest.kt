@@ -947,7 +947,7 @@ class TestCaseWriterTest {
 
         val baseUrlOfSut = "baseUrlOfSut"
         val sampleType = SampleType.RANDOM
-        val action = RestCallAction("1", HttpVerb.GET, RestPath(""), mutableListOf())
+        val action = RestCallAction("1", HttpVerb.GET, RestPath("/"), mutableListOf())
         val restActions = listOf(action).toMutableList()
         val individual = RestIndividual(restActions, sampleType)
         TestUtils.doInitializeIndividualForTesting(individual)
