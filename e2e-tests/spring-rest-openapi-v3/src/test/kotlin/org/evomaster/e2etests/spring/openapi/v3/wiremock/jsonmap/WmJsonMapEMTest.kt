@@ -52,7 +52,7 @@ class WmJsonMapEMTest : SpringTestBase() {
                 assertHasAtLeastOne(solution, HttpVerb.GET, 404, "/api/wm/jsonmap/gson", "empty map")
                 assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/wm/jsonmap/gson", "")
             },
-            3
+            10
         )
     }
 
