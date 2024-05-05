@@ -976,7 +976,7 @@ class TestCaseWriterTest {
             add("given().accept(\"*/*\")")
             indent()
             indent()
-            add(".get(baseUrlOfSut + \"\");")
+            add(".get(baseUrlOfSut + \"/\");")
             deindent()
             deindent()
             deindent()
