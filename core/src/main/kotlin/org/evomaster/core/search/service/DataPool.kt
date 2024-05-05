@@ -73,7 +73,22 @@ class DataPool() {
         queue.addLast(data)
     }
 
+    /**
+     * Mainly for testing
+     */
+    fun hasExactKey(key: String) = pool.containsKey(key)
 
+    /**
+     * Mainly for testing
+     */
+    fun extractAllWithExactKey(key: String) = pool[key]?.toList() ?: listOf()
+
+    /**
+     * Extract a value from the pool, given the input key.
+     * The key matching does not need to be exact, as some minor level of mismatches are tolerated.
+     *
+     * @param [objectName] qualifier name of the object context, if any. Mainly needed to deal with "id" keys.
+     */
     fun extractValue(key: String, objectName: String? = null) : String?{
 
         if(pool.isEmpty()){

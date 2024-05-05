@@ -129,7 +129,7 @@ object RestResponseFeeder {
                     qualifier
                 } else if(field.equals("id",true)){
                     stemmer.reset()
-                    stemmer.stem(field) + "id"
+                    stemmer.stem(qualifier) + "id"
                 } else {
                     field
                 }

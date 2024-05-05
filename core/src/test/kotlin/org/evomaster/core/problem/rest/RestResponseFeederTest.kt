@@ -27,6 +27,7 @@ class RestResponseFeederTest{
     @BeforeEach
     fun initTest(){
         pool = createPool()
+        assertEquals(0, pool.keySize())
     }
 
     private fun createActionWithResponse(
@@ -120,11 +121,129 @@ class RestResponseFeederTest{
         assertEquals(age, pool.extractValue("ag")!!.toInt())
     }
 
-    /*
-        TODO
-        - nested objects
-        - ids
-        - arrays
-        - POST
-     */
+
+    @Test
+    fun testNestedObject(){
+
+        val name = "foo"
+        val surname = "bar"
+        val city = "Oslo"
+        val country = "Norway"
+        val payload = """
+            {
+                "name": "$name",
+                "surname": "$surname",
+                "address": {
+                    "city" : "$city",                   
+                    "country": "$country"                                       
+                }
+            }
+        """.trimIndent()
+        feed(HttpVerb.GET, "/api/users/{id}", 200, payload)
+        assertEquals(4, pool.keySize())
+        assertEquals(name, pool.extractValue("name"))
+        assertEquals(surname, pool.extractValue("surnames"))
+        assertEquals(city, pool.extractValue("city"))
+        assertEquals(country, pool.extractValue("country"))
+    }
+
+    @Test
+    fun testIdsBase(){
+
+        val id = "123456"
+        val payload = """
+            {
+                "id": $id,
+                "name": "foo",
+                "surname": "bar"
+            }
+        """.trimIndent()
+
+        feed(HttpVerb.GET, "/api/users/{id}", 200, payload)
+        assertEquals(id, pool.extractValue("userid"))
+        assertTrue(pool.hasExactKey("userid"))
+    }
+
+
+    @Test
+    fun testIdsComplex(){
+
+        val id = "dslfmlefm"
+        val f1 = "fdsfegfdddddd"
+        val f2 = "2223rdsdsc"
+        val payload = """
+            {
+                "id": "$id",
+                "name": "foo",
+                "surname": "bar",
+                "friends":[
+                    {"id": "$f1"},
+                    {"id": "$f2"}
+                ]
+            }
+        """.trimIndent()
+
+        feed(HttpVerb.GET, "/api/users/{id}", 200, payload)
+        assertTrue(pool.hasExactKey("userid"))
+        assertTrue(pool.hasExactKey("friendid"))
+
+        assertEquals(id, pool.extractValue("userid"))
+        assertEquals(id, pool.extractValue("id", "users"))
+
+        val friends = pool.extractAllWithExactKey("friendid")
+        assertEquals(2, friends.size)
+        assertTrue(friends.contains(f1))
+        assertTrue(friends.contains(f2))
+    }
+
+
+    @Test
+    fun testPostBase(){
+
+        val id = "123456"
+        val payload = """
+            {
+                "id": $id,
+                "name": "foo",
+                "surname": "bar"
+            }
+        """.trimIndent()
+
+        feed(HttpVerb.POST, "/api/users", 201, payload)
+        assertEquals(id, pool.extractValue("userid"))
+        assertTrue(pool.hasExactKey("userid"))
+
+        //name and surname should NOT be collected, as POST only deals with ids
+        assertEquals(1, pool.keySize())
+    }
+
+    @Test
+    fun testPostWithQualifierNotExact(){
+
+        val id = "123456"
+        val payload = """
+            {
+                "userrID": $id,
+                "name": "foo",
+                "surname": "bar"
+            }
+        """.trimIndent()
+
+        feed(HttpVerb.POST, "/api/users", 201, payload)
+        assertEquals(id, pool.extractValue("userid"))
+        assertTrue(pool.hasExactKey("userrid"))
+
+        //name and surname should NOT be collected, as POST only deals with ids
+        assertEquals(1, pool.keySize())
+    }
+    @Test
+    fun testPostNumber(){
+
+        val id = "123456"
+        val payload = "$id"
+
+        feed(HttpVerb.POST, "/api/users", 201, payload)
+        assertEquals(id, pool.extractValue("userid"))
+        assertTrue(pool.hasExactKey("userid"))
+    }
 }
