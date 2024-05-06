@@ -596,7 +596,6 @@ public class SchemaExtractor {
 
         tableDto.primaryKeySequence.addAll(primaryKeySequence.values());
 
-        //ResultSet columns = md.getColumns(null, schemaDto.name, tableDto.name, null);
         ResultSet columns = md.getColumns(null, schemaDto.name, tableDto.name, null);
 
         Set<String> columnNames = new HashSet<>();
