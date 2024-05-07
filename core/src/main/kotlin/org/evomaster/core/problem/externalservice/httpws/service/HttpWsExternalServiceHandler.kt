@@ -258,7 +258,19 @@ class HttpWsExternalServiceHandler {
         return externalServices.filter { it.value.isActive() }
     }
 
-    fun reset() {
+    fun resetWireMockServers() {
+        externalServices.filter { it.value.isActive() }.forEach {
+            it.value.resetAll()
+        }
+    }
+
+    fun resetWireMockServersToDefaultState() {
+        externalServices.filter { it.value.isActive() }.forEach {
+            it.value.resetToDefaultState()
+        }
+    }
+
+    fun stopActiveWireMockServers() {
         externalServices.filter { it.value.isActive() }.forEach {
             it.value.stopWireMockServer()
         }
@@ -362,16 +374,6 @@ class HttpWsExternalServiceHandler {
             }
         }
         return ip
-    }
-
-
-    /**
-     * To prevent from the 404 when no matching stub below stub is added
-     * WireMock throws an exception when there is no stub for the request
-     * to avoid the exception it handled manually
-     */
-    private fun wireMockSetDefaults(es: HttpWsExternalService) {
-        es.getWireMockServer().stubFor(es.getDefaultWMMappingBuilder())
     }
 
     fun registerExternalServiceToSkip(service: ExternalService) {
