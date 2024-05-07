@@ -4,6 +4,11 @@ import com.google.inject.Inject
 import opennlp.tools.stemmer.PorterStemmer
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.clustering.metrics.LevenshteinDistance
+import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.problem.rest.RestResponseFeeder
+import org.evomaster.core.problem.rest.param.PathParam
+import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.ObjectGene
 
 /**
  * Service to keep track of data values associated with a string key.
@@ -59,6 +64,35 @@ class DataPool() {
         return stemmer.stem(s)
     }
 
+    fun applyTo(gene: Gene) : Boolean{
+        val context =
+            //are we inside an object? if so, take object's name
+            gene.getFirstParent(ObjectGene::class.java)?.name
+            //alternative, are we inside a path element? if so, resolve name from full path
+                ?: gene.getFirstParent(PathParam::class.java)?.let {
+                    gene.getFirstParent(RestCallAction::class.java)?.path?.nameQualifier
+                }
+
+        val x = extractValue(gene.name, context)
+            ?: return false
+
+        if(RestResponseFeeder.heuristicIsId(gene.name) && gene.getFirstParent(PathParam::class.java)!=null){
+            val action = gene.getFirstParent(RestCallAction::class.java)
+            if(action != null && action.verb.isWriteOperation()){
+                /*
+                    if we are in path param which potentially represents an id, and the current
+                    action is a write-one, then do not apply data pool.
+                    The reason is that we want to avoid manipulating possibly existing resources.
+                    Those should rather be handled with smart seeding with action dependencies
+                    among HTTP calls
+                 */
+                return false
+            }
+        }
+
+        val applied = gene.setFromStringValue(x)
+        return applied
+    }
     fun addValue(key: String, data: String){
 
         val queue = pool.getOrPut(normalize(key)) { ArrayDeque() }

@@ -240,11 +240,11 @@ class StringGene(
         val useDataPool = randomness.nextBoolean(config.getProbabilityUseDataPool())
 
         if(config.blackBox && useDataPool){
-            applyDataPool(state.dataPool)
+            state.dataPool.applyTo(this)
         } else if(!config.blackBox){
 
             val successfulDataPool = if(useDataPool){
-                applyDataPool(state.dataPool)
+                state.dataPool.applyTo(this)
             } else {
                 false
             }
@@ -272,37 +272,6 @@ class StringGene(
         }
         //config might have stricter limits for length
         repair()
-    }
-
-    private fun applyDataPool(dataPool: DataPool): Boolean{
-
-        val context =
-            //are we inside an object? if so, take object's name
-            getFirstParent(ObjectGene::class.java)?.name
-            //alternative, are we inside a path element? if so, resolve name from full path
-                ?: getFirstParent(PathParam::class.java)?.let {
-                getFirstParent(RestCallAction::class.java)?.path?.nameQualifier
-            }
-
-        val x = dataPool.extractValue(name, context)
-            ?: return false
-
-        if(RestResponseFeeder.heuristicIsId(name) && getFirstParent(PathParam::class.java)!=null){
-            val action = getFirstParent(RestCallAction::class.java)
-            if(action != null && action.verb.isWriteOperation()){
-                /*
-                    if we are in path param which potentially represents an id, and the current
-                    action is a write-one, then do not apply data pool.
-                    The reason is that we want to avoid manipulating possibly existing resources.
-                    Those should rather be handled with smart seeding with action dependencies
-                    among HTTP calls
-                 */
-                return false
-            }
-        }
-
-        value = x
-        return true
     }
 
     override fun mutablePhenotypeChildren(): List<Gene> {
