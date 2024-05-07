@@ -2260,6 +2260,27 @@ class EMConfig {
     @Cfg("Enable the collection of response data, to feed new individuals based on field names matching.")
     var useResponseDataPool = false
 
+    @Experimental
+    @Probability
+    @Cfg("Specify the probability of using the data pool when sampling test cases." +
+            " This is for black-box (bb) mode")
+    var bbProbabilityUseDataPool = 0.8
+
+    @Experimental
+    @Probability
+    @Cfg("Specify the probability of using the data pool when sampling test cases." +
+            " This is for white-box (wb) mode")
+    var wbProbabilityUseDataPool = 0.2
+
+
+    fun getProbabilityUseDataPool() : Double{
+        return if(blackBox){
+            bbProbabilityUseDataPool
+        } else {
+            wbProbabilityUseDataPool
+        }
+    }
+
     fun trackingEnabled() = isMIO() && (enableTrackEvaluatedIndividual || enableTrackIndividual)
 
     /**

@@ -15,7 +15,20 @@ object RestResponseFeeder {
 
     private val stemmer = PorterStemmer()
 
-     fun handleResponse(source: RestCallAction, res: RestCallResult, pool: DataPool){
+    /**
+     * Heuristically try to tell if the given string name is representing an id.
+     * Note: we can never be 100% sure, so this is just a heuristic.
+     */
+    fun heuristicIsId(s: String) = s.endsWith("id", true)
+
+
+    /**
+     * Based on response of a REST action, feed the data pool.
+     * This means extracting all key-value pairs, and add them to the pool.
+     * However, this is done only for successful 2xx GET requests.
+     * Special case is for POST, in which only ids are handled
+     */
+    fun handleResponse(source: RestCallAction, res: RestCallResult, pool: DataPool){
 
         val status = res.getStatusCode()
         if(status !in 200..299){
