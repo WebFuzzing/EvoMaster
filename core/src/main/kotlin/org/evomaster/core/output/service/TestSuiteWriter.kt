@@ -708,11 +708,6 @@ class TestSuiteWriter {
                             val address = externalService.getWireMockAddress()
                             val name = getWireMockVariableName(externalService)
 
-//                            addStatement(
-//                                "DnsCacheManipulator.setDnsCache(\"${action.externalService.getRemoteHostName()}\", \"${address}\")",
-//                                lines
-//                            )
-
                             if (format.isJava()) {
                                 lines.add("${name} = new WireMockServer(new WireMockConfiguration()")
                             }
