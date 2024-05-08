@@ -25,9 +25,9 @@ class AuthZeroJacksonEMTest: SpringTestBase() {
         // When the created tests set to false, the test pass.
         // SUT uses HTTPS so the test won't work on macOS.
         runTestHandlingFlakyAndCompilation(
-            "GeneratedAuthZeroJacksonEMTest",
-            "org.foo.GeneratedAuthZeroJacksonEMTest",
-            500,
+            "GeneratedAuth0JacksonEMTest",
+            "org.foo.GeneratedAuth0JacksonEMTest",
+            2000,
             true,
             { args: MutableList<String> ->
 
