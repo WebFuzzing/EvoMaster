@@ -1,12 +1,10 @@
 package org.evomaster.e2etests.spring.openapi.v3.jackson.auth0
 
 import com.foo.rest.examples.spring.openapi.v3.jackson.auth0.AuthZeroJacksonController
-import org.evomaster.ci.utils.CIUtils
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 class AuthZeroJacksonEMTest: SpringTestBase() {
@@ -19,7 +17,7 @@ class AuthZeroJacksonEMTest: SpringTestBase() {
         }
     }
 
-    @Disabled
+//    @Disabled
     @Test
     fun testRunEM() {
         // Generated test has response which is accurate, but test fails because the
@@ -29,14 +27,14 @@ class AuthZeroJacksonEMTest: SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "GeneratedAuthZeroJacksonEMTest",
             "org.foo.GeneratedAuthZeroJacksonEMTest",
-            1000,
+            500,
             true,
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")
                 args.add("USER")
                 args.add("--externalServiceIP")
-                args.add("127.0.0.4")
+                args.add("127.0.0.34")
                 args.add("--instrumentMR_NET")
                 args.add("true")
 
