@@ -8,7 +8,7 @@ import org.evomaster.client.java.controller.internal.SutController;
 import org.evomaster.client.java.sql.SchemaExtractor;
 import org.junit.jupiter.api.Test;
 
-import java.sql.Connection;
+import java.sql.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -135,8 +135,57 @@ public class MySQLSchemaExtractorTest extends DatabaseMySQLTestInit implements D
 
         assertEquals("geometrycollectioncolumn",table.columns.get(8).name);
         assertEquals("GEOMCOLLECTION",table.columns.get(8).type);
+    }
+
+    @Test
+    public void testTwoSchemas() throws Exception {
+        final String url = getUrl();
+
+        final String anotherTestUserName = "testuser1";
+        final String anotherTestUserPassword = "testuser1password";
+
+        createNewUserInDatabase(url, anotherTestUserName, anotherTestUserPassword);
+
+        final Connection testUser1Connection = DriverManager.getConnection(url, anotherTestUserName, anotherTestUserPassword);
+        SqlScriptRunner.execCommand(testUser1Connection, "CREATE SCHEMA new_schema");
+        SqlScriptRunner.execCommand(testUser1Connection, "USE new_schema");
+
+        final Connection testUser0Connection = getConnection();
+
+        SqlScriptRunner.execCommand(testUser0Connection, "CREATE TABLE my_table (\n" +
+                "    id INT\n" +
+                ")");
+
+        SqlScriptRunner.execCommand(testUser1Connection, "CREATE TABLE my_table (\n" +
+                "    id INT\n" +
+                ")");
+
+        DbSchemaDto schemaTest0 = SchemaExtractor.extract(testUser0Connection);
+        assertEquals("test", schemaTest0.name);
+        assertEquals(1, schemaTest0.tables.size());
+        assertEquals("my_table", schemaTest0.tables.get(0).name);
+
+        DbSchemaDto newSchema = SchemaExtractor.extract(testUser1Connection);
+        assertEquals("new_schema", newSchema.name);
+        assertEquals(1, newSchema.tables.size());
+        assertEquals("my_table", newSchema.tables.get(0).name);
+
+        SqlScriptRunner.execCommand(testUser1Connection, "DROP SCHEMA IF EXISTS new_schema");
+        deleteUserInDatabase(url, anotherTestUserName);
 
     }
 
+    private static void createNewUserInDatabase(String url, String anotherTestUserName, String anotherTestUserPassword) throws SQLException {
+        final Connection rootConnection = DriverManager.getConnection(url, MYSQL_ROOT_USER_NAME, MYSQL_ROOT_USER_PASSWORD);
+        SqlScriptRunner.execCommand(rootConnection, String.format("CREATE USER '%s'@'%%' IDENTIFIED BY '%s'", anotherTestUserName, anotherTestUserPassword));
+        SqlScriptRunner.execCommand(rootConnection, String.format("GRANT CREATE ON *.* TO '%s'@'%%'", anotherTestUserName));
+        SqlScriptRunner.execCommand(rootConnection, String.format("GRANT DROP ON *.* TO '%s'@'%%'", anotherTestUserName));
+        SqlScriptRunner.execCommand(rootConnection, "FLUSH PRIVILEGES");
+    }
+
+    private static void deleteUserInDatabase(String url, String anotherTestUserName) throws SQLException {
+        final Connection rootConnection = DriverManager.getConnection(url, MYSQL_ROOT_USER_NAME, MYSQL_ROOT_USER_PASSWORD);
+        SqlScriptRunner.execCommand(rootConnection, String.format("DROP USER '%s'", anotherTestUserName));
+    }
 
 }
