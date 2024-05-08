@@ -390,9 +390,10 @@ class Archive<T> where T : Individual {
      */
     fun addIfNeeded(ei: EvaluatedIndividual<T>): Boolean {
 
-        if(ei.seeResults().any { it.deathSentence }){
-            return false
-        }
+        // TODO: Disabled, since it is not necessary
+        // if(ei.seeResults().any { it.deathSentence }){
+        //     return false
+        // }
 
         val copy = ei.copy(tracker.getCopyFilterForEvalInd(ei))
 
