@@ -11,6 +11,8 @@ import javax.ws.rs.core.MediaType
 
 object RestResponseFeeder {
 
+    private const val data = "data"
+
     private val mapper = ObjectMapper()
 
     private val stemmer = PorterStemmer()
@@ -88,7 +90,17 @@ object RestResponseFeeder {
                     ?: node.fields().asSequence().firstOrNull{
                         it.key.endsWith("id", true) && it.value.isValueNode
                     }
-                    ?: return
+
+                if(id == null) {
+                    /*
+                        special case of wrapped responses
+                     */
+                    val d = node.fields().asSequence().firstOrNull{it.key.equals("data")}
+                    if(d != null){
+                        handleOnlyId(d.value, qualifier, pool)
+                    }
+                    return
+                }
 
                 val name = if(id.key.equals("id",true)){
                     stemmer.reset()
@@ -125,7 +137,13 @@ object RestResponseFeeder {
     private fun analyzeJsonNode(node: JsonNode, field: String?, qualifier: String, pool: DataPool){
         when(node.nodeType){
             JsonNodeType.OBJECT, JsonNodeType.POJO -> node.fields().forEach {
-                val q = if(isCompositeType(it.value)){
+                val q = if(isCompositeType(it.value)
+                        /*
+                            "data" is a generic term... which is also often used for
+                            wrapped responses (eg, that's the case for GraphQL).
+                            As such, we skip it as a qualifier
+                         */
+                        && it.key != data){
                     it.key
                 } else {
                     qualifier
