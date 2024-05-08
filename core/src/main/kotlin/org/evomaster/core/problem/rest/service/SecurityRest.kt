@@ -4,7 +4,6 @@ import com.google.inject.Inject
 import javax.annotation.PostConstruct
 
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.enterprise.auth.AuthSettings
 import org.evomaster.core.problem.enterprise.auth.NoAuth
@@ -15,8 +14,9 @@ import org.evomaster.core.problem.rest.resource.RestResourceCalls
 
 import org.evomaster.core.search.*
 import org.evomaster.core.search.service.Archive
-import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.service.Randomness
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 //FIXME this needs to be cleaned-up
 
@@ -24,6 +24,10 @@ import org.evomaster.core.search.service.Randomness
  * Service class used to do security testing after the search phase
  */
 class SecurityRest {
+
+    companion object {
+        private val log: Logger = LoggerFactory.getLogger(SecurityRest::class.java)
+    }
 
     /**
      * Archive including test cases
@@ -317,15 +321,37 @@ class SecurityRest {
 
                     val finalIndividual = individualToChooseForTest.copy() as RestIndividual
                     finalIndividual.addResourceCall(restCalls = RestResourceCalls(actions = mutableListOf(it), sqlActions = listOf()))
+                    finalIndividual.modifySampleType(SampleType.SECURITY)
 
                     val evaluatedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(finalIndividual)
+                    if(evaluatedIndividual == null){
+                        log.warn("Failed to evaluate constructed individual in security testing phase")
+                        return@forEach
+                    }
+
+                    //first, let's verify indeed second last action if a 403 DELETE. otherwise, it is a problem
+                    val ema = evaluatedIndividual.evaluatedMainActions()
+                    val secondLast = ema[ema.size-2]
+                    if(!(secondLast.action is RestCallAction && secondLast.action.verb == HttpVerb.DELETE
+                            && secondLast.result is RestCallResult && secondLast.result.getStatusCode() == 403)){
+                        log.warn("Issue with constructing evaluated individual. Expected a 403 DELETE, but got: $secondLast")
+                        return@forEach
+                    }
+
+                    //now we can finally ask, is there a problem with last call?
 
                     //TODO new testing targets
+                    /*
+                        FIXME: if we do it only here, then we would lose this info if the test case is re-evaluated
+                        for any reason... eg, in minimizer
+                        need to think of a good, general solution...
+
+                        let's do it directly in the fitness function, with new security test oracle
+                     */
 
                     // add the evaluated individual to the archive
-                    if (evaluatedIndividual != null) {
                         archive.addIfNeeded(evaluatedIndividual)
-                    }
+
 
                 }
             }
