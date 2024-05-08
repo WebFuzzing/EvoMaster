@@ -20,7 +20,6 @@ import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.annotation.PostConstruct
-import javax.mail.Address
 
 /**
  * To manage the external service related activities
