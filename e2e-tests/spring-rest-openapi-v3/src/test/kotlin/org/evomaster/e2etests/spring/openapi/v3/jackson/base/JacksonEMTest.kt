@@ -15,20 +15,11 @@ class JacksonEMTest : SpringTestBase() {
         @JvmStatic
         fun init() {
             initClass(JacksonController())
-            /*
-                TODO for some weird reason, this fails on CI, although it pass on different
-                 Mac and Windows machines locally.
-                Could be an issue with Linux or used JDK
-             */
-            //CIUtils.skipIfOnGA()
         }
     }
 
     @Test
     fun basicEMTest() {
-
-        //CIUtils.skipIfOnGA()
-
         runTestHandlingFlakyAndCompilation(
             "JacksonGenericEM",
             "org.foo.JacksonGenericEM",

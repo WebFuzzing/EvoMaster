@@ -33,7 +33,7 @@ class WmJsonMapEMTest : SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "WmJsonMapEM",
             "org.foo.WmJsonMapEM",
-            1000,
+            100,
             true,
             { args: MutableList<String> ->
 

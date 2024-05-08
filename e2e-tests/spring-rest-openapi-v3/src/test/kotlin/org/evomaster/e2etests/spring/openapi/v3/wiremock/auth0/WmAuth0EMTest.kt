@@ -32,7 +32,7 @@ class WmAuth0EMTest : SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "WmAuth0EM",
             "org.foo.WmAuth0EM",
-            500,
+            200,
             true,
             { args: MutableList<String> ->
 

@@ -53,7 +53,7 @@ class HarvestOptimisationEMTest: SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "HarvestOptimisationEM",
             "org.foo.HarvestOptimisationEM",
-            1000,
+            100,
             true,
             { args: MutableList<String> ->
 

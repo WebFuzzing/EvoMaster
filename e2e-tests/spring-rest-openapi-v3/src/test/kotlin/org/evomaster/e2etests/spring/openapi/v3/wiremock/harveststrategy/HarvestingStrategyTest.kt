@@ -48,7 +48,7 @@ class HarvestingStrategyTest : SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "HarvestStrategyExactEMTest",
             "org.foo.HarvestStrategyExactEMTest",
-            1500,
+            100,
             true, // this fails in local and CI
             { args: MutableList<String> ->
 
@@ -104,7 +104,7 @@ class HarvestingStrategyTest : SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "HarvestStrategyClosestSameDomainEMTest",
             "org.foo.HarvestStrategyClosestEMTest",
-            1000,
+            100,
             true,
             { args: MutableList<String> ->
 
