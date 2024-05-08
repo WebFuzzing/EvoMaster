@@ -10,6 +10,8 @@ import org.evomaster.core.problem.enterprise.auth.AuthSettings
 import org.evomaster.core.problem.enterprise.auth.NoAuth
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.rest.*
+import org.evomaster.core.problem.rest.param.PathParam
+import org.evomaster.core.problem.rest.resource.RestResourceCalls
 
 import org.evomaster.core.search.*
 import org.evomaster.core.search.service.Archive
@@ -197,7 +199,7 @@ class SecurityRest {
 
             } else {
                 // there is not. need to create it based on successful create resources with authenticated user
-                // but, first let's check if can have any succesfully delete action
+                // but, first let's check if can have any successfully delete action
 
                 /*
                     We have a DELETE path in form for example
@@ -266,8 +268,19 @@ class SecurityRest {
                 deleteAction.auth = authSettings.getDifferentOne(creationAction.auth.name, HttpWsAuthenticationInfo::class.java, randomness)
 
                 //TODO bind to same path as creation action
+                /*
+                    for now let's bind just to a PUT.
+                    We need to create "links" when dealing with POST creating new ids
+                    TODO this would be part anyway of ongoing refactoring of BB testing
+                 */
+                if(creationEndpoint.path.isEquivalent(delete.path)){
+                    deleteAction.bindBasedOn(creationAction.path, creationAction.parameters.filterIsInstance<PathParam>(),null)
+                } else {
+                    //TODO. eg POST on ancestor path
+                    return@forEach
+                }
 
-                //TODO add deleteAction to sliced creation individual
+                sliced.addResourceCall(restCalls = RestResourceCalls(actions = mutableListOf(deleteAction), sqlActions = listOf()))
 
                 individualToChooseForTest = sliced // FIXME
             }
@@ -302,9 +315,9 @@ class SecurityRest {
                     it.resetLocalId()
                     it.auth = lastAction.auth
 
-                    //TODO append
+                    val finalIndividual = individualToChooseForTest.copy() as RestIndividual
+                    finalIndividual.addResourceCall(restCalls = RestResourceCalls(actions = mutableListOf(it), sqlActions = listOf()))
 
-                    val finalIndividual = individualToChooseForTest //FIXME
                     val evaluatedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(finalIndividual)
 
                     //TODO new testing targets
