@@ -284,7 +284,7 @@ class RestResourceFitness : AbstractRestFitness() {
             es.getRemoteHostName() to es
         }
 
-        fv.registerExternalRequestToDefaultWM(indexOfAction, employedDefault)
+//        fv.registerExternalRequestToDefaultWM(indexOfAction, employedDefault)
 
         externalServiceActions.filterIsInstance<HttpExternalServiceAction>()
             .groupBy { it.request.absoluteURL }
