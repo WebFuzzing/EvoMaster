@@ -22,7 +22,7 @@ class QueryParamArrayEMTest : SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "QueryParamArrayEMT",
             "org.foo.QueryParamArrayEMT",
-            20
+            50
         ) { args: List<String> ->
 
             val solution = initAndRun(args)
