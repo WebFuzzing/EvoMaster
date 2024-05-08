@@ -34,14 +34,15 @@ public class SocketClassReplacement implements MethodReplacementClass {
             if (endpoint instanceof InetSocketAddress) {
                 InetSocketAddress socketAddress = (InetSocketAddress) endpoint;
 
-                /*
-                    We MUST NOT call getHostName() anywhere in EM.
-                    On Windows, it can take more than 4 seconds when dealing with a fake hostname.
-                    This latter is common case when dealing with microservices where connections are done on localhost,
-                    and we still want to mock them, so we give them a fake hostname.
-                    A concrete example in EMB is CWA.
-                 */
-                ExternalServiceUtils.analyzeDnsResolution(socketAddress.getHostString());
+                ExternalServiceUtils.analyzeDnsResolution(socketAddress.getHostName());
+
+            /*
+                We MUST NOT call getHostName() anywhere in EM.
+                On Windows, it can take more than 4 seconds when dealing with a fake hostname.
+                This latter is common case when dealing with microservices where connections are done on localhost,
+                and we still want to mock them, so we give them a fake hostname.
+                A concrete example in EMB is CWA.
+             */
 
                 if (ExternalServiceUtils.skipHostnameOrIp(socketAddress.getHostString())
                         || ExecutionTracer.skipHostnameAndPort(socketAddress.getHostString(), socketAddress.getPort())
