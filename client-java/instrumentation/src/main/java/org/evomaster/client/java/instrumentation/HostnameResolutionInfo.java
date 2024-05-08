@@ -1,6 +1,6 @@
 package org.evomaster.client.java.instrumentation;
 
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ExternalServiceInfoUtils;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ExternalServiceUtils;
 
 import java.io.Serializable;
 import java.util.Objects;
@@ -20,7 +20,7 @@ public class HostnameResolutionInfo implements Serializable {
             throw new IllegalArgumentException("Empty remoteHostName");
         }
 
-        if(resolvedAddress != null && !ExternalServiceInfoUtils.isValidIP(resolvedAddress)){
+        if(resolvedAddress != null && !ExternalServiceUtils.isValidIP(resolvedAddress)){
             // IP address could null (ie not resolved). however, if specified, must be valid
             throw new IllegalArgumentException("Invalid resolved IP address: " + resolvedAddress);
         }
