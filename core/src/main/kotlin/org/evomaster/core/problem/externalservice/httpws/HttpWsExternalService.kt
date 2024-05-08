@@ -190,9 +190,16 @@ class HttpWsExternalService(
      * Reset WireMock to clean everything including stubs and
      * requests.
      */
-    fun reset() {
-        if (!externalServiceInfo.isPartial())
+    fun resetAll() {
+        if (isActive())
             wireMockServer!!.resetAll()
+    }
+
+    fun resetToDefaultState() {
+        if (isActive()) {
+            wireMockServer!!.resetAll()
+            wireMockServer!!.stubFor(getDefaultWMMappingBuilder())
+        }
     }
 
     /**
@@ -208,7 +215,7 @@ class HttpWsExternalService(
      * To stop the WireMock server
      */
     fun stopWireMockServer() {
-        if (!externalServiceInfo.isPartial())
+        if (isActive())
             wireMockServer!!.stop()
     }
 
