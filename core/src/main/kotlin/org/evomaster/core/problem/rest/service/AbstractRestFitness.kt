@@ -834,7 +834,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         return dto
     }
 
-    private fun recordResponseData(individual: RestIndividual, actionResults: List<RestCallResult>) {
+    protected fun recordResponseData(individual: RestIndividual, actionResults: List<RestCallResult>) {
 
         for (res in actionResults) {
             val source = individual.seeAllActions().find { it.getLocalId() == res.sourceLocalId } as RestCallAction?
