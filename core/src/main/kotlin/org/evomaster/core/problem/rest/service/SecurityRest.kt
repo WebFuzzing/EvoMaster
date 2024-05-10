@@ -18,7 +18,6 @@ import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-//FIXME this needs to be cleaned-up
 
 /**
  * Service class used to do security testing after the search phase
@@ -65,8 +64,6 @@ class SecurityRest {
     @PostConstruct
     private fun postInit() {
 
-
-        // get action definitions
         actionDefinitions = sampler.getActionDefinitions() as List<RestCallAction>
 
         authSettings = sampler.authentications
@@ -87,7 +84,7 @@ class SecurityRest {
         // newly generated tests will be added back to archive
         addForAccessControl()
 
-        //TODO possible other kinds of tests here
+        //TODO possible other kinds of security tests here
 
         // just return the archive for solutions including the security tests.
         return archive.extractSolution()
@@ -117,7 +114,13 @@ class SecurityRest {
 
         // quite a few rules here that can be defined
         handleForbiddenDeleteButOkPutOrPatch()
+
         //TODO other rules
+        //eg, ok PUT but not DELETE or PATCH
+        //eg, ok PATCH but not DELETE or PUT
+
+        // eg 401/403 info leakage
+        //etc.
     }
 
 
@@ -286,7 +289,7 @@ class SecurityRest {
 
                 sliced.addResourceCall(restCalls = RestResourceCalls(actions = mutableListOf(deleteAction), sqlActions = listOf()))
 
-                individualToChooseForTest = sliced // FIXME
+                individualToChooseForTest = sliced
             }
 
             // After having a set of requests in which the last one is a 403 DELETE call with another user, add a PUT
@@ -346,13 +349,11 @@ class SecurityRest {
                         for any reason... eg, in minimizer
                         need to think of a good, general solution...
 
-                        let's do it directly in the fitness function, with new security test oracle
+                        TODO let's do it directly in the fitness function, with new security test oracle
                      */
 
                     // add the evaluated individual to the archive
-                        archive.addIfNeeded(evaluatedIndividual)
-
-
+                    archive.addIfNeeded(evaluatedIndividual)
                 }
             }
         }
@@ -365,7 +366,9 @@ class SecurityRest {
      * accessing endpoint with id with not authorized should return 403, even if not exists.
      * otherwise, if returning 404, we can find out that the resource does not exist.
      */
-    fun handleNotAuthorizedInAnyCase() {
+    fun handleNotAuthorizedResourceExistenceLeakage() {
+
+        //TODO
 
         // There has to be at least two authenticated users
         if (!checkForAtLeastNumberOfAuthenticatedUsers(2)) {
