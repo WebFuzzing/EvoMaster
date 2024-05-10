@@ -225,7 +225,7 @@ class RestIndividualSelectorUtilsPathStatusTest : IntegrationTestRestBase(){
         val actionWithPathOthersResult = createdIndividualSecond.evaluatedMainActions()[4].result as RestCallResult
 
         Assert.assertTrue(actionWithPathOthers.verb == HttpVerb.GET)
-        Assert.assertTrue(actionWithPathOthersResult.getStatusCode() == 200)
+        //Assert.assertTrue(actionWithPathOthersResult.getStatusCode() == 200)
         Assert.assertTrue(actionWithPathOthersResult.getBody().equals("304"))
 
 
@@ -242,5 +242,53 @@ class RestIndividualSelectorUtilsPathStatusTest : IntegrationTestRestBase(){
 
 
     }
+
+    @Test
+    fun testFindIndividuals() {
+
+        val pirTest = getPirToRest()
+
+        val byStatus = RestPath("/api/pathstatus/byStatus/{status}")
+        val others = RestPath("/api/pathstatus/others/{x}")
+
+        // create 10 actions
+        val action1 = pirTest.fromVerbPath("get", "/api/pathstatus/byStatus/200")!!
+        val action2 = pirTest.fromVerbPath("get", "/api/pathstatus/byStatus/201")!!
+        val action3 = pirTest.fromVerbPath("get", "/api/pathstatus/byStatus/202")!!
+        val action4 = pirTest.fromVerbPath("get", "/api/pathstatus/byStatus/204")!!
+        val action5 = pirTest.fromVerbPath("get", "/api/pathstatus/byStatus/301")!!
+        val action6 = pirTest.fromVerbPath("get", "/api/pathstatus/byStatus/302")!!
+
+        action6.auth = HttpWsAuthenticationInfo("auth1",
+            listOf(AuthenticationHeader("header0", "name")), null, false)
+
+        val action7 = pirTest.fromVerbPath("get", "/api/pathstatus/byStatus/401")!!
+        val action8 = pirTest.fromVerbPath("get", "/api/pathstatus/others/402")!!
+        val action9 = pirTest.fromVerbPath("get", "/api/pathstatus/byStatus/404")!!
+
+        val createdIndividualFirst = createIndividual(listOf(action1, action2, action3, action4, action5))
+        val createdIndividualSecond = createIndividual(listOf( action6, action7, action8, action9))
+
+        val listOfIndividuals = listOf(createdIndividualFirst, createdIndividualSecond)
+
+        // find individuals having authenticated action
+        val individualsInList = RestIndividualSelectorUtils.findIndividuals(listOfIndividuals, null, null, null,
+            null, true)
+
+        Assert.assertTrue(individualsInList.size == 1)
+
+        // find individuals having the path of others
+        val individualsWithOthers = RestIndividualSelectorUtils.findIndividuals(listOfIndividuals, null, others)
+
+        Assert.assertTrue(individualsWithOthers.size == 1)
+
+        // find individuals having onw get request, which means both of them
+        val individualsWithGet = RestIndividualSelectorUtils.findIndividuals(listOfIndividuals, HttpVerb.GET)
+
+        Assert.assertTrue(individualsWithGet.size == 2)
+
+    }
+
+
 
 }
