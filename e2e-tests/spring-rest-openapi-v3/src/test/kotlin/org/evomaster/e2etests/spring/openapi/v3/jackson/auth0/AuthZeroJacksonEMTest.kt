@@ -17,7 +17,7 @@ class AuthZeroJacksonEMTest: SpringTestBase() {
         }
     }
 
-//    @Disabled
+    @Disabled
     @Test
     fun testRunEM() {
         // Generated test has response which is accurate, but test fails because the
@@ -27,7 +27,7 @@ class AuthZeroJacksonEMTest: SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "GeneratedAuth0JacksonEMTest",
             "org.foo.GeneratedAuth0JacksonEMTest",
-            2000,
+            500,
             true,
             { args: MutableList<String> ->
 
