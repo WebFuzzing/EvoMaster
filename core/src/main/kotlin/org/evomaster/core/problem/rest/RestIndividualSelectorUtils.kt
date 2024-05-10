@@ -66,7 +66,6 @@ object RestIndividualSelectorUtils {
         return true
     }
 
-
     fun findAction(
         individualsInSolution: List<EvaluatedIndividual<RestIndividual>>,
         verb: HttpVerb? = null,
@@ -76,6 +75,20 @@ object RestIndividualSelectorUtils {
         authenticated: Boolean = false
     ): RestCallAction? {
 
+        return findEvaluatedAction(individualsInSolution,verb,path,status,statusGroup,authenticated)
+            ?.action as RestCallAction
+    }
+
+
+    fun findEvaluatedAction(
+        individualsInSolution: List<EvaluatedIndividual<RestIndividual>>,
+        verb: HttpVerb? = null,
+        path: RestPath? = null,
+        status: Int? = null,
+        statusGroup: StatusGroup? = null,
+        authenticated: Boolean = false
+    ): EvaluatedAction? {
+
         if(status != null && statusGroup!= null){
             throw IllegalArgumentException("Shouldn't specify both status and status group")
         }
@@ -83,7 +96,7 @@ object RestIndividualSelectorUtils {
         individualsInSolution.forEach {ind ->
             ind.evaluatedMainActions().forEach { a ->
                 if(checkIfActionSatisfiesConditions(a, verb, path, status, statusGroup, authenticated)){
-                    return a.action as RestCallAction
+                    return a
                 }
             }
         }
