@@ -9,7 +9,7 @@ on:
 
 env:
   evomaster-version: 3.0.1
-  jdk: 17
+  jdk: 21
   retention-days: 1
 ## Doesn't work, ie, use env in env
 #  installer-windows: evomaster-${evomaster-version}.msi
