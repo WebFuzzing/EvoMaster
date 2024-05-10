@@ -90,26 +90,4 @@ object TestUtils {
         return RestCallAction(id, HttpVerb.GET, RestPath(pathString), actions)
     }
 
-    /**
-     * Create a RestCallAction based on id, verb, pathString, params and authentication
-     */
-    fun generateFakeRestActionWithVerb(id: String,
-                                       verb: HttpVerb,
-                                       pathString : String,
-                                       params : List<Param> = emptyList(),
-                                       authentication: HttpWsAuthenticationInfo = HttpWsNoAuth()) : RestCallAction {
-
-        // a new list for parameters
-        val paramsCopy = mutableListOf<Param>()
-
-        // get copies of each parameters
-        for(p in params) {
-            paramsCopy.add(p.copy())
-        }
-
-        // action to create
-        return RestCallAction(id, verb, RestPath(pathString), paramsCopy, authentication)
-    }
-
-
 }
