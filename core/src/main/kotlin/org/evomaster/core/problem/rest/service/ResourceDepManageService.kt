@@ -2,7 +2,6 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
-import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.sql.SqlAction
@@ -347,9 +346,9 @@ class ResourceDepManageService {
             val tb = blistHeuristics[t]
 
             if (ta != null && tb != null) {
-                if (ta.distance > tb.distance)
+                if (ta.score > tb.score)
                     return 1
-                else if (ta.distance < tb.distance)
+                else if (ta.score < tb.score)
                     return -1
             }
         }

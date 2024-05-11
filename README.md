@@ -40,11 +40,15 @@ __Key features__:
 * _Whitebox_ testing mode: can be used for APIs compiled to
   JVM (e.g., Java and Kotlin). _EvoMaster_ analyses the bytecode of the tested applications, and uses
   several heuristics such as _testability transformations_ and _taint analysis_ to be able to generate
-  more effective test cases. We support JDK __8__ and the major LTS versions after that (currently JDK __17__). Might work on other JVM versions, but we provide __NO__ support for it.
-  Note: there is initial support for other languages as well, like for example JavaScript/TypeScript and C#, but they are not in a stable, feature-complete state yet.
+  more effective test cases. We support JDK __8__ and the major LTS versions after that (currently JDK __17__, where JDK __21__ has not been properly tested yet). Might work on other JVM versions, but we provide __NO__ support for it.
+  Note: there was initial support for other languages as well, like for example JavaScript/TypeScript and C#, but they are not in a stable, feature-complete state. The support for those languages has been dropped, at least for the time being. 
 
-* _Installation_: we provide installers for the main operating systems: Windows (`.msi`),
-  OSX (`.dmg`) and Linux (`.deb`). We also provide an uber-fat JAR file.
+* _Installation_: we provide installers for the main operating systems: _Windows_ (`.msi`),
+  _OSX_ (`.dmg`) and _Linux_ (`.deb`). We also provide an uber-fat JAR file.
+  To download them, see the [Release page](https://github.com/EMResearch/EvoMaster/releases).
+  Release notes are present in the file [release_notes.md](https://github.com/EMResearch/EvoMaster/blob/master/release_notes.md).
+  If you are using JDK 17 or later, it is recommended to use one of the installers, instead of using directly the uber-fat JAR (otherwise you will need to deal with the [usability limitations](docs/jdks.md) of the latest JDKs). 
+   When you use one of the installers, keep in mind that currently they do not update the `PATH` variable. This needs to be done manually, [see documentation](docs/download.md). 
 
 * _State-of-the-art_: an [independent study (2022)](https://arxiv.org/abs/2204.08348), comparing 10 fuzzers on 20 RESTful APIs, shows that _EvoMaster_ gives the best results.
 
@@ -68,6 +72,8 @@ __Key features__:
 
 
 * _Authentication_: we support auth based on authentication headers and cookies.
+  Besides using fixed HTTP headers, 
+  it is also possible to declaratively specify which login endpoint should be used to dynamically obtain authentication info (e.g., auth tokens or cookies) for each test execution. [See documentation](docs/auth.md).
 
 __Known limitations__:
 
@@ -140,20 +146,20 @@ As we are the authors of EvoMaster, we are too biased to compare it properly wit
 However, an [independent study (2022)](https://arxiv.org/abs/2204.08348) shows that EvoMaster is among the best performant.
 Furthermore, if your APIs are running on the JVM (e.g., written in Java or Kotlin), then EvoMaster has clearly an advantage, as it supports _white-box_ testing. 
 
-
+<!---
 ### Hiring
 
 Depending on the year, we might have funding for _postdoc_ and _PhD student_ positions to work on this project (in Oslo, Norway).
 
 Current open positions: none.
-<!---
+< !---
 * 2023: PhD student positions. No new calls scheduled for the moment.
 * 2023: Postdoc positions. No new calls scheduled for the moment.
---->
+--- >
 
 For questions on these positions, please contact Prof. Andrea Arcuri.
 
-<!---
+< !---
 For more details on current vacancies, see our group page at [AISE Lab](https://emresearch.github.io/).
 --->
 

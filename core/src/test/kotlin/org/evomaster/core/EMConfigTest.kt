@@ -388,25 +388,27 @@ internal class EMConfigTest{
         }
     }
 
-    @Test
-    fun testParamsInConfigFile(){
+    @ParameterizedTest
+    @ValueSource(strings = ["number.toml","number.yml"])
+    fun testParamsInConfigFile(fileName: String){
         val parser = EMConfig.getOptionParser()
         val config = EMConfig()
 
         config.populationSize = 77
-        val options = parser.parse("--configPath", "src/test/resources/config/number.toml")
+        val options = parser.parse("--configPath", "src/test/resources/config/$fileName")
         config.updateProperties(options)
         assertEquals(42, config.populationSize)
     }
 
-    @Test
-    fun testCLIOverrideParamsInConfigFile(){
+    @ParameterizedTest
+    @ValueSource(strings = ["number.toml","number.yml"])
+    fun testCLIOverrideParamsInConfigFile(fileName: String){
         val parser = EMConfig.getOptionParser()
         val config = EMConfig()
 
         val n = 1234
         config.populationSize = 77
-        val options = parser.parse("--configPath", "src/test/resources/config/number.toml", "--populationSize","$n")
+        val options = parser.parse("--configPath", "src/test/resources/config/$fileName", "--populationSize","$n")
         config.updateProperties(options)
         assertEquals(n, config.populationSize)
     }
@@ -527,7 +529,7 @@ internal class EMConfigTest{
 
     @Test
     fun testLowestExternalServiceIP() {
-        val params = arrayOf("--externalServiceIP", "127.0.0.3")
+        val params = arrayOf("--externalServiceIP", "127.0.0.4")
         EMConfig.validateOptions(params)
     }
 
@@ -543,7 +545,7 @@ internal class EMConfigTest{
     }
 
     @ParameterizedTest
-    @ValueSource(strings = ["127.0.0.1","127.0.0.2","0127.0.00.1","127.0.0.002","127.0.0.0"])
+    @ValueSource(strings = ["127.0.0.1","127.0.0.2","0127.0.00.1","127.0.0.002","127.0.0.0","127.0.0.3"])
     fun testTooLowValues(ipAddress: String){
         InetAddress.getByName(ipAddress) // should throw no exception
 

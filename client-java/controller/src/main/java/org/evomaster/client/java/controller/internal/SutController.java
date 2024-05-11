@@ -14,7 +14,6 @@ import org.evomaster.client.java.controller.SutHandler;
 import org.evomaster.client.java.controller.api.ControllerConstants;
 import org.evomaster.client.java.controller.api.dto.*;
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto;
-import org.evomaster.client.java.controller.api.dto.auth.CookieLoginDto;
 import org.evomaster.client.java.controller.api.dto.constraint.ElementConstraintsDto;
 import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto;
 import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionLogDto;
@@ -436,6 +435,14 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      * handle specified init sql script after SUT is started.
      */
     public final void registerOrExecuteInitSqlCommandsIfNeeded()  {
+        registerOrExecuteInitSqlCommandsIfNeeded(false);
+    }
+
+    /**
+     * handle specified init sql script after SUT is started.
+     * @param instrumentationEnabled represents whether the instrumentation is enabled
+     */
+    public final void registerOrExecuteInitSqlCommandsIfNeeded(boolean instrumentationEnabled)  {
         Connection connection = getConnectionIfExist();
         if (connection == null) return;
         DbSpecification dbSpecification = getDbSpecifications().get(0);
@@ -445,12 +452,12 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         tableInitSqlMap.clear();
 
         try {
-            setExecutingInitSql(true);
+            if(instrumentationEnabled) setExecutingInitSql(true);
             registerInitSqlCommands(connection, dbSpecification);
         } catch (SQLException e) {
             throw new RuntimeException("Fail to register or execute the script for initializing data in SQL database, please check specified `initSqlScript` or initSqlOnResourcePath. Error Msg:", e);
         } finally {
-            setExecutingInitSql(false);
+            if(instrumentationEnabled) setExecutingInitSql(false);
         }
     }
 
@@ -503,6 +510,20 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                             throw new RuntimeException("SQL Init Execution Error: fail to execute "+ c + " with error "+e);
                         }
                     });
+                });
+            });
+        }
+    }
+
+    private void reAddAllInitSql() throws SQLException{
+        if(tableInitSqlMap != null){
+            tableInitSqlMap.keySet().stream().forEach(t->{
+                tableInitSqlMap.get(t).forEach(c->{
+                    try {
+                        SqlScriptRunner.execCommand(getConnectionIfExist(), c);
+                    } catch (SQLException e) {
+                        throw new RuntimeException("SQL Init Execution Error: fail to execute "+ c + " with error "+e);
+                    }
                 });
             });
         }
@@ -1157,7 +1178,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      *
      * <p>
      * What type of info to provide here depends on the auth mechanism, e.g.,
-     * Basic or cookie-based (using {@link CookieLoginDto}).
+     * Basic or cookie-based (using {@link org.evomaster.client.java.controller.api.dto.auth.LoginEndpointDto}).
      * To simplify the creation of these DTOs with auth info, you can look
      * at {@link org.evomaster.client.java.controller.AuthUtils}.
      * </p>
@@ -1458,6 +1479,20 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                 if (spec==null || spec.connection == null || !spec.employSmartDbClean){
                     return;
                 }
+
+                if(tablesToClean == null){
+                    // all data will be reset
+                    DbCleaner.clearDatabase(spec.connection, null, null, null, spec.dbType);
+                    try {
+                        reAddAllInitSql();
+                    } catch (SQLException e) {
+                        throw new RuntimeException("Fail to process all specified initSqlScript "+e);
+                    }
+                    return;
+                }
+
+                if (tablesToClean.isEmpty()) return;
+
                 if (spec.schemaNames == null || spec.schemaNames.isEmpty())
                     DbCleaner.clearDatabase(spec.connection, null, null, tablesToClean, spec.dbType);
                 else

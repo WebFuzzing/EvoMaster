@@ -28,6 +28,9 @@ import kotlin.math.max
  *
  * @property trackOperator indicates which operator create this individual.
  * @property index indicates when the individual is created, ie, using num of evaluated individual.
+ *
+ *
+ * FIXME: why having to use AbstractRestSampler.createIndividual() instead of having such code here in constructor???
  */
 class RestIndividual(
     sampleType: SampleType,
@@ -124,12 +127,12 @@ class RestIndividual(
     /**
      * remove RestResourceCall structure and binding among genes
      */
-    override fun doFlattenStructure() {
+    protected override fun doFlattenStructure() : Boolean{
 
         // check the top structure
         val resources = groupsView()!!.getAllInGroup(GroupsOfChildren.MAIN).filterIsInstance<RestResourceCalls>()
 
-        if (resources.isEmpty()) return
+        if (resources.isEmpty()) return false
 
         // remove all bindings among genes
         removeAllBindingAmongGenes()
@@ -146,6 +149,11 @@ class RestIndividual(
         addChildrenToGroup(sqlActions, GroupsOfChildren.INITIALIZATION_SQL)
         addChildrenToGroup(mongoDbActions, GroupsOfChildren.INITIALIZATION_MONGO)
         addChildrenToGroup(dnsActions, GroupsOfChildren.INITIALIZATION_DNS)
+
+        /*
+            if we move any environment action to the beginning of the individual, it might impact the fitness
+         */
+        return dnsActions.isNotEmpty() || sqlActions.isNotEmpty() || mongoDbActions.isNotEmpty()
 
         // re-generate local id
 //        resetLocalIdRecursively()

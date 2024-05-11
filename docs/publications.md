@@ -25,10 +25,15 @@ Also, some of these papers provides full replication packages, which are linked 
 
 ### 2024
 
+* S. Seran.
+  *Search-based Security Testing of Enterprise Microservices*.
+  IEEE International Conference on Software Testing, Validation and Verification (ICST), Doctoral Symposium.
+  [[PDF](publications/2024_icst_ds.pdf)]
+
 * A. Arcuri, M. Zhang, J.P. Galeotti.
   *Advanced White-Box Heuristics for Search-Based Fuzzing of REST APIs*.
   ACM Transactions on Software Engineering and Methodology (TOSEM).
-  [to appear][[Scripts](exp/2024_tosem_advanced_heuristics.py)]
+  [[PDF](publications/2024_tosem_tt.pdf)][[Scripts](exp/2024_tosem_advanced_heuristics.py)]
 
 
 ### 2023

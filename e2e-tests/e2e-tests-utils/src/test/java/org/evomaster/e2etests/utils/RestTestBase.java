@@ -45,7 +45,8 @@ public abstract class RestTestBase  extends EnterpriseTestBase {
                 "--sutControllerPort", "" + controllerPort,
                 "--maxActionEvaluations", "" + iterations,
                 "--stoppingCriterion", "FITNESS_EVALUATIONS",
-                "--useTimeInFeedbackSampling" , "false"
+                "--useTimeInFeedbackSampling" , "false",
+                "--createConfigPathIfMissing", "false"
         ));
 
         return isDeterminismConsumer(args, lambda, times, notDeterminism);
@@ -100,16 +101,27 @@ public abstract class RestTestBase  extends EnterpriseTestBase {
     protected boolean hasAtLeastOne(EvaluatedIndividual<RestIndividual> ind,
                                     HttpVerb verb,
                                     int expectedStatusCode) {
+        List<RestCallAction> actions = ind.getIndividual().seeMainExecutableActions();
+        List<ActionResult> results = ind.seeResults(actions);
 
-        List<Integer> index = getIndexOfHttpCalls(ind.getIndividual(), verb);
-        List<ActionResult> results = ind.seeResults(null);
-        for (int i : index) {
-            String statusCode = results.get(i).getResultValue(
-                    RestCallResult.STATUS_CODE);
-            if (statusCode!=null && statusCode.equals("" + expectedStatusCode)) {
+        boolean stopped = false;
+
+        for (int i = 0; i < actions.size() && !stopped; i++) {
+            RestCallResult restCallResult = (RestCallResult) results.get(i);
+            stopped = restCallResult.getStopping();
+            RestCallAction action = actions.get(i);
+
+            if (action.getVerb() != verb) {
+                continue;
+            }
+
+            Integer statusCode = restCallResult.getStatusCode();
+
+            if (statusCode != null && statusCode.equals(expectedStatusCode)) {
                 return true;
             }
         }
+
         return false;
     }
 
@@ -146,7 +158,7 @@ public abstract class RestTestBase  extends EnterpriseTestBase {
 
             Integer statusCode = res.getStatusCode();
 
-            if (!statusCode.equals(expectedStatusCode)) {
+            if (statusCode != null && !statusCode.equals(expectedStatusCode)) {
                 continue;
             }
 

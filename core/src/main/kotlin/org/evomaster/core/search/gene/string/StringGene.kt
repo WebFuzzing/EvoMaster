@@ -69,7 +69,7 @@ class StringGene(
 
     init {
         if (minLength>maxLength) {
-            throw IllegalArgumentException("Cannot create string gene ${this.name} with mininum length ${this.minLength} and maximum length ${this.maxLength}")
+            throw IllegalArgumentException("Cannot create string gene ${this.name} with minimum length ${this.minLength} and maximum length ${this.maxLength}")
         }
     }
 
@@ -318,14 +318,15 @@ class StringGene(
             return true
 
         } else if (specializationGene != null) {
-            if (selectionUpdatedSinceLastMutation && randomness.nextBoolean(0.5)) {
+            if (selectionUpdatedSinceLastMutation && randomness.nextBoolean(0.67)) {
                 /*
                     selection of most recent added gene, but only with a given
                     probability, albeit high.
                     point is, switching is not always going to be beneficial
 
-                    TODO is this branch possible? to get here, would need a specialization gene that still counts
+                    is this branch possible? to get here, would need a specialization gene that still counts
                     as a tainted value...
+                    YES! that applies for Regex, as those are handled specially (with values sent at each Action evaluation)
                  */
                 selectedSpecialization = specializationGenes.lastIndex
             } else if (specializationGenes.size > 1 && (!specializationGene.isMutable() ||randomness.nextBoolean(taintChangeSpecializationProbability))) {
@@ -651,7 +652,6 @@ class StringGene(
             log.trace("JSON_MAP, added specification size: {}", toAddGenes.size)
         }
 
-        //all regex are combined with disjunction in a single gene
         handleRegex(key, toAddSpecs, toAddGenes)
 
         /*
@@ -697,9 +697,17 @@ class StringGene(
         val partialPredicate = { s: StringSpecializationInfo -> s.stringSpecialization.isRegex && s.type.isPartialMatch }
 
         if (toAddSpecs.any(fullPredicate)) {
-            val regex = toAddSpecs
+
+            /*
+                originally, all regex with combined with disjunction in a single gene...
+                but likely was not a good idea...
+             */
+
+            //val regex =
+                  toAddSpecs
                     .filter(fullPredicate)
                     .filter{RegexUtils.isMeaningfulRegex(it.value)}
+                    .filter{RegexUtils.isNotUselessRegex(it.value) }
                     .map {
                         if(it.stringSpecialization == StringSpecialization.REGEX_WHOLE) {
                             RegexSharedUtils.forceFullMatch(it.value)
@@ -707,15 +715,24 @@ class StringGene(
                             RegexSharedUtils.handlePartialMatch(it.value)
                         }
                     }
-                    .joinToString("|")
+                    //.joinToString("|")
+                    .forEach {regex ->
+                      try {
+                              toAddGenes.add(RegexHandler.createGeneForJVM(regex))
+                              log.trace("Regex, added specification for: {}", regex)
 
-            try {
-                toAddGenes.add(RegexHandler.createGeneForJVM(regex))
-                log.trace("Regex, added specification size: {}", toAddGenes.size)
+                          } catch (e: Exception) {
+                              LoggingUtil.uniqueWarn(log, "Failed to handle regex: $regex")
+                          }
+                      }
 
-            } catch (e: Exception) {
-                LoggingUtil.uniqueWarn(log, "Failed to handle regex: $regex")
-            }
+//            try {
+//                toAddGenes.add(RegexHandler.createGeneForJVM(regex))
+//                log.trace("Regex, added specification size: {}", toAddGenes.size)
+//
+//            } catch (e: Exception) {
+//                LoggingUtil.uniqueWarn(log, "Failed to handle regex: $regex")
+//            }
         }
 
 /*
@@ -966,4 +983,20 @@ class StringGene(
         return otherelements.none { it is Gene && it.flatView().any { g-> g is StringGene && g.getPossiblyTaintedValue().equals(getPossiblyTaintedValue(), ignoreCase = true) } }
     }
 
+
+    override fun setFromStringValue(value: String): Boolean {
+
+        val previousSpecialization = selectedSpecialization
+        val previousValue = value
+
+        this.value = value
+        selectedSpecialization = -1
+        if(!isLocallyValid() || !checkForGloballyValid()){
+            this.value = previousValue
+            this.selectedSpecialization = previousSpecialization
+            return false
+        }
+
+        return true
+    }
 }

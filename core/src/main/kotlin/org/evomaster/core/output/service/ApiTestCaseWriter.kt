@@ -7,6 +7,8 @@ import org.evomaster.core.sql.SqlActionResult
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.mongo.MongoDbActionResult
 import org.evomaster.core.output.*
+import org.evomaster.core.output.auth.CookieWriter
+import org.evomaster.core.output.auth.TokenWriter
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.search.EvaluatedDbAction
 import org.evomaster.core.search.EvaluatedIndividual

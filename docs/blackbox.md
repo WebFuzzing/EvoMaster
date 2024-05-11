@@ -37,7 +37,7 @@ The command is doing the following:
   using JUnit 4 in this case. Note: the language of the generated tests is not necessarily related
   to the language in which the tested application is implemented. 
 * `--maxTime 30s`: for how long to run the search, i.e., just 30 seconds in this very simple example.
-* `--ratePerMinute 60`: avoid doing a DoS attack by bombarding the remote service with too many HTTP calls in quick rapid succession. Limit to max 1 per second (i.e., 60 per minute) in this example.
+* `--ratePerMinute 60`: avoid doing a DoS attack by bombarding the remote service with too many HTTP calls in quick rapid succession. Limit to max 1 per second (i.e., 60 per minute) in this example. Note: if you are testing an API running on your machine (e.g., on `localhost`) then this parameter is not only __not required__, but also __detrimental__ for performance (i.e., do not use it).
 
 This command will create the following test suite, in which 2 `GET` calls are executed:
 
@@ -86,6 +86,33 @@ public class EvoMasterTest {
 }
 ```
 
+### CLI Parameters
+
+Note that there are several further parameters that can be configured ([see documentation](./options.md)).
+These for example include options to specify where to store the generated files (`--outputFolder`), filter endpoints to test (e.g., `--endpointPrefix`), specify how test files will be named (e.g., `--outputFilePrefix` and `--outputFileSuffix`), etc.
+
+Since version `3.0.0` these options can be specified in the generated `em.yaml` configuration files (so they do not need to be typed each time). 
+
+
+### Issues with JDKs Above 8
+
+The previous example run _EvoMaster_ directly from its JAR file, using the command:
+
+```java -jar core/target/evomaster.jar```
+
+To do this, you need to have a JDK installed on your machine, version 8 or later. 
+An easier approach is to download and install _EvoMaster_ through its installer files (e.g., `.msi` for Windows), as those embed a JDK as well, with right configuration.
+Then _EvoMaster_ can be run with for example `evomaster.exe` (for Windows).
+
+If you want to run the JAR file directly with the JDK, you will encounter issues with versions from 17 on, due _integrity constraints_ on the JDK. 
+You will have to manually add `--add-opens` commands like:
+
+```java --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED -jar core/target/evomaster.jar ```
+
+If you fail to do that, _EvoMaster_ will crash, but at least it will tell you what to do (with the most update requirements, in case more `--add-opens` are required since this documentation was written).
+
+Unfortunately, there is nothing we can do to address this major usability problem in the latest JDK versions :-( 
+
 ## GraphQL APIs
 
 Black-box fuzzing of GraphQL APIs uses the same options as for RESTful APIs.
@@ -101,25 +128,18 @@ evomaster.exe  --problemType GRAPHQL --bbTargetUrl https://gitlab.com/api/graphq
 ## AUTH
 
 Since version `1.3.0`, it is possible to specify custom HTTP headers (e.g., to pass auth tokens), using the options from `--header0` to `--header2` (in case more than one HTTP header is needed). 
+Many more options are now available since version `3.0.0`.
+This is clarified in details in the [authentication documentation](auth.md).
 
-However, in contrast to white-box mode, in black-box mode there is 
-currently no configuration to automatically setup the fetching of
-dynamic tokens.
-For example, if an auth token needs to be fetched from a login endpoint
-(e.g., a POST on a `/login` with username and password),
-then such call has to be done manually (and then the token can be passed
-to EvoMaster with `--header0` option, e.g., `--header0 "cookie: <token>"`).
-Such call can be done with other tools like Postman and cURL.
 
 
 ## WARNING
 
-Black-box testing is easy to do: first download the tool, and then just specify where the Swagger schema
-can be found.
-However, as it does know nothing about the internal details of the tested application, it is 
-unlikely that it will get good results (i.e., in terms of code coverage and detected faults).
+Black-box testing is easy to do: first download the tool, and then just specify where the OpenAPI/GraphQL schema can be found.
+However, as it does know nothing about the internal details of the tested application, it is  unlikely that black-box testing will get good results in terms of code coverage.
+Albeit it can still detect many kinds faults (especially related to input validation).
 
-The first time you try _EvoMaster_, use black-box testing to get an idea of what _EvoMaster_
-could do for you.
+The first time you try _EvoMaster_, use black-box testing to get an idea of what _EvoMaster_ could do for you.
 However, after an initial trial, we recommend to switch to [white-box testing](whitebox.md),
 as it can lead to much, much better results.
+However, for the time being only programs running on the JVM (e.g., written in Java or Kotlin) are supported for white-box testing. 

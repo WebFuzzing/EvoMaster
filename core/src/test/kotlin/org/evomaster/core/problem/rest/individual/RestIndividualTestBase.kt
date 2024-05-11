@@ -150,8 +150,9 @@ abstract class RestIndividualTestBase {
             return range.map {r-> budget.map { Arguments.of(it, r) } }.flatten().stream()
         }
 
+        @JvmStatic
         @AfterAll
-        fun clean(){
+        fun clean(): Unit {
             mockServer.close()
         }
     }
@@ -173,7 +174,7 @@ abstract class RestIndividualTestBase {
 
     abstract fun getSampler() : AbstractRestSampler
     abstract fun getMutator() : StandardMutator<RestIndividual>
-    abstract fun getFitnessFunction() : AbstractRestFitness<RestIndividual>
+    abstract fun getFitnessFunction() : AbstractRestFitness
 
     @ParameterizedTest
     @MethodSource("getBudgetAndNumOfResourceForSampler")

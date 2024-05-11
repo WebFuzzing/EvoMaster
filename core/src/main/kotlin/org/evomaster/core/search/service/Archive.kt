@@ -118,7 +118,7 @@ class Archive<T> where T : Individual {
 
         val current = extractSolution()
         coveredStatisticsBySeededTests = CoveredStatisticsBySeededTests(
-            coveredTargets = current.overall.getViewOfData().filter { it.value.distance == FitnessValue.MAX_VALUE }.keys.toList(),
+            coveredTargets = current.overall.getViewOfData().filter { it.value.score == FitnessValue.MAX_VALUE }.keys.toList(),
             if (config.exportTestCasesDuringSeeding) current.individuals.map { it.copy() } else emptyList()
         )
 
@@ -129,6 +129,10 @@ class Archive<T> where T : Individual {
 
     fun getCopyOfUniqueCoveringIndividuals() : List<T>{
         return getUniquePopulation().map { it.individual.copy() as T }
+    }
+
+    fun getCopyOfUniqueCoveringEvaluatedIndividuals() : List<EvaluatedIndividual<T>>{
+        return getUniquePopulation().map { it.copy() }
     }
 
     private fun getUniquePopulation(): MutableSet<EvaluatedIndividual<T>> {
@@ -367,7 +371,7 @@ class Archive<T> where T : Individual {
     fun wouldReachNewTarget(ei: EvaluatedIndividual<T>): Boolean {
 
         return ei.fitness.getViewOfData()
-                .filter { it.value.distance > 0.0 }
+                .filter { it.value.score > 0.0 }
                 .map { it.key }
                 .any { populations[it]?.isEmpty() ?: true }
     }
@@ -375,7 +379,7 @@ class Archive<T> where T : Individual {
     fun identifyNewTargets(ei: EvaluatedIndividual<T>, targetInfo: MutableMap<Int, EvaluatedMutation>) {
 
         ei.fitness.getViewOfData()
-                .filter { it.value.distance > 0.0 && populations[it.key]?.isEmpty() ?: true}
+                .filter { it.value.score > 0.0 && populations[it.key]?.isEmpty() ?: true}
                 .forEach { t->
                     targetInfo[t.key] = EvaluatedMutation.NEWLY_IDENTIFIED
                 }
@@ -393,7 +397,7 @@ class Archive<T> where T : Individual {
 
         for ((k, v) in ei.fitness.getViewOfData()) {
 
-            if (v.distance == 0.0) {
+            if (v.score == 0.0) {
                 /*
                     No point adding an individual with no impact
                     on a given target
@@ -417,7 +421,7 @@ class Archive<T> where T : Individual {
                 continue
             }
 
-            val maxed = FitnessValue.isMaxValue(v.distance)
+            val maxed = FitnessValue.isMaxValue(v.score)
 
             if (isCovered(k) && maxed) {
                 /*

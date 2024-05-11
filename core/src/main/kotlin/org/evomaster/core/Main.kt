@@ -4,6 +4,7 @@ import com.google.inject.Injector
 import com.google.inject.Key
 import com.google.inject.TypeLiteral
 import com.netflix.governator.guice.LifecycleInjector
+import org.evomaster.client.java.controller.api.EMTestUtils
 import org.evomaster.client.java.controller.api.dto.ControllerInfoDto
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.AnsiColor.Companion.inBlue
@@ -182,7 +183,6 @@ class Main {
             writeImpacts(injector, solution)
             writeExecuteInfo(injector)
 
-
             val stc = injector.getInstance(SearchTimeController::class.java)
 
             LoggingUtil.getInfoLogger().apply {
@@ -226,6 +226,8 @@ class Main {
             writeCoveredTargets(injector, solution)
             writeTests(injector, solution, controllerInfo)
             writeStatistics(injector, solution) //FIXME if other phases after search, might get skewed data on 100% snapshots...
+
+            stopExternalServiceHandler(injector)
 
             val statistics = injector.getInstance(Statistics::class.java)
             val data = statistics.getData(solution)
@@ -326,8 +328,6 @@ class Main {
                             " to run the search for longer, like for example something between '1h' and '24h' hours."))
                 }
             }
-
-            resetExternalServiceHandler(injector)
 
             solution.statistics = data.toMutableList()
             return solution
@@ -869,9 +869,9 @@ class Main {
          * To reset external service handler to clear the existing
          * WireMock instances to free up the IP addresses.
          */
-        private fun resetExternalServiceHandler(injector: Injector) {
+        private fun stopExternalServiceHandler(injector: Injector) {
             val externalServiceHandler = injector.getInstance(HttpWsExternalServiceHandler::class.java)
-            externalServiceHandler.reset()
+            externalServiceHandler.stopActiveWireMockServers()
         }
     }
 }

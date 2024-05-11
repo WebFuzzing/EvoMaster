@@ -9,19 +9,25 @@ import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUti
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils.getWMDefaultSignature
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
+import org.evomaster.core.problem.enterprise.auth.NoAuth
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.externalservice.HostnameResolutionInfo
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceInfo
+import org.evomaster.core.problem.httpws.HttpWsAction
+import org.evomaster.core.problem.httpws.auth.AuthUtils
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
-import org.evomaster.core.problem.httpws.auth.NoAuth
+import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.param.UpdateForBodyParam
+import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.util.ParserDtoUtil
+import org.evomaster.core.remote.HttpClientFactory
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.TcpUtils
 import org.evomaster.core.search.action.Action
@@ -38,6 +44,7 @@ import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import wiremock.org.apache.hc.core5.net.Host
 import java.net.URL
 import javax.ws.rs.ProcessingException
 import javax.ws.rs.client.ClientBuilder
@@ -48,7 +55,7 @@ import javax.ws.rs.core.NewCookie
 import javax.ws.rs.core.Response
 
 
-abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual {
+abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
     // TODO: This will moved under ApiWsFitness once RPC and GraphQL support is completed
     @Inject
@@ -329,7 +336,21 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                 handleAdditionalStatusTargetDescription(fv, status, name, it, location5xx)
 
                 if (config.expectationsActive) {
+                    //TODO refactor
                     handleAdditionalOracleTargetDescription(fv, actions, result, name, it)
+                }
+
+                val unauthorized = !AuthUtils.checkUnauthorizedWithAuth(status, actions[it])
+                if(unauthorized){
+                    /*
+                        Note: at this point we cannot consider it as a bug, because it could be just a
+                        misconfigured auth info.
+                        however, if for other endpoints or parameters we get a 2xx, then it is clearly
+                        a bug (although we need to make 100% sure of handling token caching accordingly).
+                        but this would be check in specific security tests after the end of the search.
+                     */
+                    val unauthorizedId = idMapper.handleLocalTarget("wrong_authorization:$name")
+                    fv.updateTarget(unauthorizedId, 1.0, it)
                 }
             }
     }
@@ -465,7 +486,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                         And while we are at it, let's release any hanging network resource
                      */
                     client.close() //make sure to release any resource
-                    client = ClientBuilder.newClient()
+                    client = HttpClientFactory.createTrustingJerseyClient(false, config.tcpTimeoutMs)
 
                     TcpUtils.handleEphemeralPortIssue()
 
@@ -558,25 +579,12 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
             }
         }
 
-        if (response.status == 401 && a.auth !is NoAuth) {
-            /*
-                if the endpoint itself is to get auth info, we might exclude auth check for it
-                eg,
-                    the auth is Login with foo,
-                    then the action is to Login with a generated account (eg bar)
-                    thus, the response would likely be 401
-             */
-            if (!a.auth.excludeAuthCheck(a)) {
-                //this would likely be a misconfiguration in the SUT controller
-                log.warn("Got 401 although having auth for '${a.auth.name}'")
-            }
-        }
-
-
         if (!handleSaveLocation(a, response, rcr, chainState)) return false
 
         return true
     }
+
+
 
 
     private fun createInvocation(
@@ -674,9 +682,18 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
 
         val invocation = when (a.verb) {
             HttpVerb.GET -> builder.buildGet()
+//            HttpVerb.DELETE -> builder.buildDelete()
+            /*
+                As of RFC 9110 it is allowed to have bodies for GET and DELETE, albeit in special cases.
+                https://www.rfc-editor.org/rfc/rfc9110.html#section-9.3.1-6
+
+                Note: due to bug in Jersey, can handle DELETE but not GET :(
+                TODO: update RestActionBuilderV3 once upgraded Jersey, after JDK 11 move
+             */
+//            HttpVerb.GET -> builder.build("GET", bodyEntity)
+            HttpVerb.DELETE -> builder.build("DELETE", bodyEntity)
             HttpVerb.POST -> builder.buildPost(bodyEntity)
             HttpVerb.PUT -> builder.buildPut(bodyEntity)
-            HttpVerb.DELETE -> builder.buildDelete()
             HttpVerb.PATCH -> builder.build("PATCH", bodyEntity)
             HttpVerb.OPTIONS -> builder.build("OPTIONS")
             HttpVerb.HEAD -> builder.build("HEAD")
@@ -763,7 +780,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
             return null
         }
 
-        val dto = updateFitnessAfterEvaluation(targets, allCovered, individual as T, fv)
+        val dto = updateFitnessAfterEvaluation(targets, allCovered, individual, fv)
             ?: return null
 
         handleExtra(dto, fv)
@@ -835,12 +852,17 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                         the genotype of this evaluated individual (without modifying its phenotype)
                      */
                     val actions = individual.seeActions(ActionFilter.ONLY_DNS) as List<HostnameResolutionAction>
-                    if(actions.isEmpty() || actions.none{ it.hostname == hn.remoteHostname}){
+                    if ((actions.isEmpty() || actions.none{ it.hostname == hn.remoteHostname}) &&
+                        // To avoid adding action for the local WM address in case of InetAddress used
+                        // in the case study.
+                        !externalServiceHandler.isWireMockAddress(hn.remoteHostname)){
                         // OK, we are in that special case
                         val hra = HostnameResolutionAction(hn.remoteHostname, ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP)
                         individual.addChildToGroup(hra, GroupsOfChildren.INITIALIZATION_DNS)
-//                        TODO: Above line adds unnecessary tests at the end, which is
-//                          causing the created tests to fail
+                        // TODO: Above line adds unnecessary tests at the end, which is
+                        //  causing the created tests to fail.
+                        //  Now handling in Mutator, removing existing actions with default IP address for the same hostname.
+
                     }
                 }
             }
@@ -883,8 +905,12 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
         val actionDto = super.getActionDto(action, index)
         // TODO: Need to move under ApiWsFitness after the GraphQL and RPC support is completed
         if (index == 0) {
+            val individual = action.getRoot() as RestIndividual
+            actionDto.localAddressMapping = individual
+                .seeActions(ActionFilter.ONLY_DNS)
+                .filterIsInstance<HostnameResolutionAction>()
+                .associate { it.hostname to it.localIPAddress }
             actionDto.externalServiceMapping = externalServiceHandler.getExternalServiceMappings()
-            actionDto.localAddressMapping = externalServiceHandler.getLocalDomainNameMapping()
             actionDto.skippedExternalServices = externalServiceHandler.getSkippedExternalServices()
         }
         return actionDto

@@ -25,7 +25,7 @@ class RestIndividualResourceTest : RestIndividualTestBase() {
 
     override fun getProblemModule() = ResourceRestModule(false)
     override fun getMutator(): StandardMutator<RestIndividual> = mutator
-    override fun getFitnessFunction(): AbstractRestFitness<RestIndividual> = ff
+    override fun getFitnessFunction(): AbstractRestFitness = ff
     override fun getSampler(): AbstractRestSampler = sampler
 
 

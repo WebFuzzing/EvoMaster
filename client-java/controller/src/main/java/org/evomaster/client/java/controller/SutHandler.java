@@ -181,7 +181,8 @@ public interface SutHandler {
 
     /**
      * <p>
-     * register or execute specified SQL script for initalizing data in database
+     * register or execute specified SQL script for initializing data in database
+     * there is no need to be enabled.
      * </p>
      */
     default void registerOrExecuteInitSqlCommandsIfNeeded(){}
@@ -190,6 +191,8 @@ public interface SutHandler {
      * <p>
      * reset database if the smart db cleaning is employed
      * </p>
+     * @param tablesToClean represents a list of table which will be reset based on specified DbSpecification.
+     *                      note that null tablesToClean means all table will be reset.
      */
     default void resetDatabase(List<String> tablesToClean){}
 

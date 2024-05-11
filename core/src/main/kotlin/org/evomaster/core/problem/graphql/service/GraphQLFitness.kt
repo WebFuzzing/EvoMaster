@@ -7,9 +7,10 @@ import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.core.Lazy
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.enterprise.auth.NoAuth
 import org.evomaster.core.problem.graphql.*
+import org.evomaster.core.problem.httpws.auth.AuthUtils
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
-import org.evomaster.core.problem.httpws.auth.NoAuth
 import org.evomaster.core.remote.TcpUtils
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
@@ -39,8 +40,8 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
     ): EvaluatedIndividual<GraphQLIndividual>? {
         rc.resetSUT()
 
-        val cookies = getCookies(individual)
-        val tokens = getTokens(individual)
+        val cookies = AuthUtils.getCookies(client, getBaseUrl(), individual)
+        val tokens = AuthUtils.getTokens(client, getBaseUrl(), individual)
 
         val actionResults: MutableList<ActionResult> = mutableListOf()
 
@@ -374,10 +375,7 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
             }
         }
 
-        if (response.status == 401 && action.auth !is NoAuth) {
-            //this would likely be a misconfiguration in the SUT controller
-            log.warn("Got 401 although having auth for '${action.auth.name}'")
-        }
+        AuthUtils.checkUnauthorizedWithAuth(response.status, action)
 
         return true
     }

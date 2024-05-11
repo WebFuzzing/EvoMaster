@@ -34,9 +34,10 @@ There are 3 types of options:
 |Options|Description|
 |---|---|
 |`maxTime`| __String__. Maximum amount of time allowed for the search.  The time is expressed with a string where hours (`h`), minutes (`m`) and seconds (`s`) can be specified, e.g., `1h10m120s` and `72m` are both valid and equivalent. Each component (i.e., `h`, `m` and `s`) is optional, but at least one must be specified.  In other words, if you need to run the search for just `30` seconds, you can write `30s`  instead of `0h0m30s`. **The more time is allowed, the better results one can expect**. But then of course the test generation will take longer. For how long should _EvoMaster_ be left run? The default 1 _minute_ is just for demonstration. __We recommend to run it between 1 and 24 hours__, depending on the size and complexity  of the tested application. *Constraints*: `regex (\s*)((?=(\S+))(\d+h)?(\d+m)?(\d+s)?)(\s*)`. *Default value*: `60s`.|
+|`outputFolder`| __String__. The path directory of where the generated test classes should be saved to. *Default value*: `src/em`.|
+|`configPath`| __String__. File path for file with configuration settings. Supported formats are YAML and TOML. When EvoMaster starts, it will read such file and import all configurations from it. *Constraints*: `regex .*\.(yml\|yaml\|toml)`. *Default value*: `em.yaml`.|
 |`outputFilePrefix`| __String__. The name prefix of generated file(s) with the test cases, without file type extension. In JVM languages, if the name contains '.', folders will be created to represent the given package structure. Also, in JVM languages, should not use '-' in the file name, as not valid symbol for class identifiers. This prefix be combined with the outputFileSuffix to combined the final name. As EvoMaster can split the generated tests among different files, each will get a label, and the names will be in the form prefix+label+suffix. *Constraints*: `regex [-a-zA-Z$_][-0-9a-zA-Z$_]*(.[-a-zA-Z$_][-0-9a-zA-Z$_]*)*`. *Default value*: `EvoMaster`.|
 |`outputFileSuffix`| __String__. The name suffix for the generated file(s), to be added before the file type extension. As EvoMaster can split the generated tests among different files, each will get a label, and the names will be in the form prefix+label+suffix. *Constraints*: `regex [-a-zA-Z$_][-0-9a-zA-Z$_]*(.[-a-zA-Z$_][-0-9a-zA-Z$_]*)*`. *Default value*: `Test`.|
-|`outputFolder`| __String__. The path directory of where the generated test classes should be saved to. *Default value*: `src/em`.|
 |`outputFormat`| __Enum__. Specify in which format the tests should be outputted. If left on `DEFAULT`, then the value specified in the _EvoMaster Driver_ will be used. But a different value must be chosen if doing Black-Box testing. *Valid values*: `DEFAULT, JAVA_JUNIT_5, JAVA_JUNIT_4, KOTLIN_JUNIT_4, KOTLIN_JUNIT_5, JS_JEST, CSHARP_XUNIT`. *Default value*: `DEFAULT`.|
 |`testTimeout`| __Int__. Enforce timeout (in seconds) in the generated tests. This feature might not be supported in all frameworks. If 0 or negative, the timeout is not applied. *Default value*: `60`.|
 |`blackBox`| __Boolean__. Use EvoMaster in black-box mode. This does not require an EvoMaster Driver up and running. However, you will need to provide further option to specify how to connect to the SUT. *Default value*: `false`.|
@@ -72,6 +73,7 @@ There are 3 types of options:
 |`bloatControlForSecondaryObjective`| __Boolean__. Whether secondary objectives are less important than test bloat control. *Default value*: `false`.|
 |`coveredTargetFile`| __String__. Specify a file which saves covered targets info regarding generated test suite. *Default value*: `coveredTargets.txt`.|
 |`coveredTargetSortedBy`| __Enum__. Specify a format to organize the covered targets by the search. *Valid values*: `NAME, TEST`. *Default value*: `NAME`.|
+|`createConfigPathIfMissing`| __Boolean__. If there is no configuration file, create a default template at given configPath location. However this is done only on the 'default' location. If you change 'configPath', no new file will be created. *Default value*: `true`.|
 |`createTests`| __Boolean__. Specify if test classes should be created as output of the tool. Usually, you would put it to 'false' only when debugging EvoMaster itself. *Default value*: `true`.|
 |`customNaming`| __Boolean__. Enable custom naming and sorting criteria. *Default value*: `true`.|
 |`d`| __Double__. When weight-based mutation rate is enabled, specify a percentage of calculating mutation rate based on a number of candidate genes to mutate. For instance, d = 1.0 means that the mutation rate fully depends on a number of candidate genes to mutate, and d = 0.0 means that the mutation rate fully depends on weights of candidates genes to mutate. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.8`.|
@@ -155,6 +157,8 @@ There are 3 types of options:
 |`probOfRandomSampling`| __Double__. Probability of sampling a new individual at random. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.5`.|
 |`probOfSelectFromDatabase`| __Double__. Specify a probability that enables selection (i.e., SELECT sql) of data from database instead of insertion (i.e., INSERT sql) for preparing resources for REST actions. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.1`.|
 |`probOfSmartSampling`| __Double__. When sampling new test cases to evaluate, probability of using some smart strategy instead of plain random. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.95`.|
+|`probRestDefault`| __Double__. In REST, specify probability of using 'default' values, if any is specified in the schema. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.2`.|
+|`probRestExamples`| __Double__. In REST, specify probability of using 'example(s)' values, if any is specified in the schema. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.05`.|
 |`problemType`| __Enum__. The type of SUT we want to generate tests for, e.g., a RESTful API. If left to DEFAULT, the type will be inferred from the EM Driver. However, in case of ambiguities (e.g., the driver specifies more than one type), then this field must be set with a specific type. This is also the case for Black-Box testing where there is no EM Driver. In this latter case, the system defaults to handle REST APIs. *Valid values*: `DEFAULT, REST, GRAPHQL`. *Experimental values*: `RPC, WEBFRONTEND`. *Default value*: `DEFAULT`.|
 |`processFiles`| __String__. Specify a folder to save results when a search monitor is enabled. *DEBUG option*. *Default value*: `process_data`.|
 |`processFormat`| __Enum__. Specify a format to save the process data. *DEBUG option*. *Valid values*: `JSON_ALL, TEST_IND, TARGET_TEST_IND`. *Default value*: `JSON_ALL`.|
@@ -206,8 +210,6 @@ There are 3 types of options:
 |Options|Description|
 |---|---|
 |`abstractInitializationGeneToMutate`| __Boolean__. During mutation, whether to abstract genes for repeated SQL actions. *Default value*: `false`.|
-|`configPath`| __String__. File path for file with configuration settings. *Default value*: `em.toml`.|
-|`createConfigPathIfMissing`| __Boolean__. If there is no configuration file, create a default template at given configPath location. *Default value*: `false`.|
 |`discoveredInfoRewardedInFitness`| __Boolean__. If there is new discovered information from a test execution, reward it in the fitness function. *Default value*: `false`.|
 |`dpcTargetTestSize`| __Int__. Specify a max size of a test to be targeted when either DPC_INCREASING or DPC_DECREASING is enabled. *Default value*: `1`.|
 |`employResourceSizeHandlingStrategy`| __Enum__. Specify a strategy to determinate a number of resources to be manipulated throughout the search. *Valid values*: `NONE, RANDOM, DPC`. *Default value*: `NONE`.|
@@ -218,13 +220,14 @@ There are 3 types of options:
 |`exportTestCasesDuringSeeding`| __Boolean__. Whether to export test cases during seeding as a separate file. *Default value*: `false`.|
 |`externalRequestHarvesterNumberOfThreads`| __Int__. Number of threads for external request harvester. No more threads than numbers of processors will be used. *Constraints*: `min=1.0`. *Default value*: `2`.|
 |`externalRequestResponseSelectionStrategy`| __Enum__. Harvested external request response selection strategy. *Valid values*: `EXACT, CLOSEST_SAME_DOMAIN, CLOSEST_SAME_PATH, RANDOM`. *Default value*: `EXACT`.|
-|`externalServiceIP`| __String__. User provided external service IP. When EvoMaster mocks external services, mock server instances will run on local addresses starting from this provided address. Min value is 127.0.0.3. Lower values like 127.0.0.2 are reserved. *Constraints*: `regex (?!^0*127(\.0*0){2}\.0*[012]$)^0*127(\.0*(25[0-5]\|2[0-4][0-9]\|1?[0-9]?[0-9])){3}$`. *Default value*: `127.0.0.3`.|
+|`externalServiceIP`| __String__. User provided external service IP. When EvoMaster mocks external services, mock server instances will run on local addresses starting from this provided address. Min value is 127.0.0.4. Lower values like 127.0.0.2 and 127.0.0.3 are reserved. *Constraints*: `regex (?!^0*127(\.0*0){2}\.0*[0123]$)^0*127(\.0*(25[0-5]\|2[0-4][0-9]\|1?[0-9]?[0-9])){3}$`. *Default value*: `127.0.0.4`.|
 |`externalServiceIPSelectionStrategy`| __Enum__. Specify a method to select the first external service spoof IP address. *Valid values*: `NONE, DEFAULT, USER, RANDOM`. *Default value*: `NONE`.|
 |`extractMongoExecutionInfo`| __Boolean__. Enable extracting Mongo execution info. *Default value*: `false`.|
 |`generateMongoData`| __Boolean__. Enable EvoMaster to generate Mongo data with direct accesses to the database. *Default value*: `false`.|
 |`generateSqlDataWithDSE`| __Boolean__. Enable EvoMaster to generate SQL data with direct accesses to the database. Use Dynamic Symbolic Execution. *Default value*: `false`.|
 |`heuristicsForMongo`| __Boolean__. Tracking of Mongo commands to improve test generation. *Default value*: `false`.|
 |`heuristicsForSQLAdvanced`| __Boolean__. If using SQL heuristics, enable more advanced version. *Default value*: `false`.|
+|`httpOracles`| __Boolean__. Extra checks on HTTP properties in returned responses, used as automated oracles to detect faults. *Default value*: `false`.|
 |`initStructureMutationProbability`| __Double__. Probability of applying a mutation that can change the structure of test's initialization if it has. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`instrumentMR_MONGO`| __Boolean__. Execute instrumentation for method replace with category MONGO. Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin on the JVM. *Default value*: `false`.|
 |`instrumentMR_NET`| __Boolean__. Execute instrumentation for method replace with category NET. Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin on the JVM. *Default value*: `false`.|
@@ -240,8 +243,6 @@ There are 3 types of options:
 |`probOfMutatingResponsesBasedOnActualResponse`| __Double__. a probability of mutating mocked responses based on actual responses. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`probOfPrioritizingSuccessfulHarvestedActualResponses`| __Double__. a probability of prioritizing to employ successful harvested actual responses from external services as seeds (e.g., 2xx from HTTP external service). *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`probOfSmartInitStructureMutator`| __Double__. Specify a probability of applying a smart structure mutator for initialization of the individual. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
-|`probRestDefault`| __Double__. In REST, specify probability of using 'default' values, if any is specified in the schema. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
-|`probRestExamples`| __Double__. In REST, specify probability of using 'example(s)' values, if any is specified in the schema. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`saveMockedResponseAsSeparatedFile`| __Boolean__. Whether to save mocked responses as separated files. *Default value*: `false`.|
 |`security`| __Boolean__. Apply a security testing phase after functional test cases have been generated. *Default value*: `false`.|
 |`seedTestCases`| __Boolean__. Whether to seed EvoMaster with some initial test cases. These test cases will be used and evolved throughout the search process. *Default value*: `false`.|

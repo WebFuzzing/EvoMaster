@@ -61,7 +61,7 @@ class EMConfig {
          */
         const val stringLengthHardLimit = 20_000
 
-        private const val defaultExternalServiceIP = "127.0.0.3"
+        private const val defaultExternalServiceIP = "127.0.0.4"
 
         //leading zeros are allowed
         private const val lz = "0*"
@@ -69,9 +69,9 @@ class EMConfig {
         private const val _eip_s = "^${lz}127"
         // other numbers could be anything between 0 and 255
         private const val _eip_e = "(\\.${lz}(25[0-5]|2[0-4][0-9]|1?[0-9]?[0-9])){3}$"
-        // first numbers (127.0.0.0 to 127.0.0.2) are reserved
+        // first four numbers (127.0.0.0 to 127.0.0.3) are reserved
         // this is done with a negated lookahead ?!
-        private const val _eip_n = "(?!${_eip_s}(\\.${lz}0){2}\\.${lz}[012]$)"
+        private const val _eip_n = "(?!${_eip_s}(\\.${lz}0){2}\\.${lz}[0123]$)"
 
         private const val externalServiceIPRegex = "$_eip_n$_eip_s$_eip_e"
 
@@ -81,7 +81,12 @@ class EMConfig {
                                     // actual singleton instance created with Guice
 
             val parser = getOptionParser()
-            val options = parser.parse(*args)
+
+            val options = try{
+                parser.parse(*args)
+            }catch (e: joptsimple.OptionException){
+                throw ConfigProblemException("Wrong input configuration parameters. ${e.message}")
+            }
 
             if (!options.has("help")) {
                 //actual validation is done here when updating
@@ -299,14 +304,16 @@ class EMConfig {
     }
 
     private fun handleCreateConfigPathIfMissing(properties: List<KMutableProperty<*>>) {
-        if (createConfigPathIfMissing && !Path(configPath).exists()) {
+        if (createConfigPathIfMissing && !Path(configPath).exists() && configPath == defaultConfigPath) {
 
             val cff = ConfigsFromFile()
             val important = properties.filter { it.annotations.any { a -> a is Important } }
             important.forEach {
                 var default = it.call(this).toString()
                 val type = (it.returnType.javaType as Class<*>)
-                if (default.isBlank()) {
+                if(default == "null"){
+                    default = "null"
+                }else if (default.isBlank()) {
                     default = "\"\""
                 } else if(type.isEnum || String::class.java.isAssignableFrom(type)){
                     default = "\"$default\""
@@ -315,22 +322,31 @@ class EMConfig {
                 cff.configs[it.name] = default
             }
 
-            LoggingUtil.uniqueUserInfo("Going to create configuration file at: ${Path(configPath).toAbsolutePath()}")
-            ConfigUtil.createConfigFileTemplateToml(configPath, cff)
+            if(! avoidNonDeterministicLogs) {
+                LoggingUtil.uniqueUserInfo("Going to create configuration file at: ${Path(configPath).toAbsolutePath()}")
+            }
+            ConfigUtil.createConfigFileTemplate(configPath, cff)
         }
     }
 
     private fun loadConfigFile(): ConfigsFromFile?{
 
         //if specifying one manually, file MUST exist. otherwise might be missing
-
-        if(configPath == defaultConfigPath && !Path(configPath).exists()) {
-            return null
+        if(!Path(configPath).exists()) {
+            if (configPath == defaultConfigPath) {
+                return null
+            } else {
+                throw ConfigProblemException("There is no configuration file at custom path: $configPath")
+            }
         }
 
-        LoggingUtil.uniqueUserInfo("Loading configuration file from: ${Path(configPath).toAbsolutePath()}")
+        if(! avoidNonDeterministicLogs) {
+            LoggingUtil.uniqueUserInfo("Loading configuration file from: ${Path(configPath).toAbsolutePath()}")
+        }
 
-        return ConfigUtil.readFromToml(configPath)
+        val cf = ConfigUtil.readFromFile(configPath)
+        cf.validateAndNormalizeAuth()
+        return cf
     }
 
     private fun applyConfigFromFile(cff: ConfigsFromFile) {
@@ -668,7 +684,7 @@ class EMConfig {
                 m.setter.call(this, java.lang.Double.parseDouble(optionValue))
 
             } else if (java.lang.Boolean.TYPE.isAssignableFrom(returnType)) {
-                m.setter.call(this, java.lang.Boolean.parseBoolean(optionValue))
+                m.setter.call(this, parseBooleanStrict(optionValue))
 
             } else if (java.lang.String::class.java.isAssignableFrom(returnType)) {
                 m.setter.call(this, optionValue)
@@ -686,6 +702,14 @@ class EMConfig {
         }
     }
 
+    private fun parseBooleanStrict(s: String?) : Boolean{
+        if(s==null){
+            throw IllegalArgumentException("value is 'null'")
+        }
+        if(s.equals("true", true)) return true
+        if(s.equals("false", true)) return false
+        throw IllegalArgumentException("Invalid boolean value: $s")
+    }
 
     fun shouldGenerateSqlData() = isMIO() && (generateSqlDataWithDSE || generateSqlDataWithSearch)
 
@@ -854,10 +878,20 @@ class EMConfig {
     @Regex("(\\s*)((?=(\\S+))(\\d+h)?(\\d+m)?(\\d+s)?)(\\s*)")
     var maxTime = defaultMaxTime
 
-    @Important(2.0)
+    @Important(1.1)
     @Cfg("The path directory of where the generated test classes should be saved to")
     @Folder
     var outputFolder = "src/em"
+
+
+    val defaultConfigPath = "em.yaml"
+
+    @Important(1.2)
+    @Cfg("File path for file with configuration settings. Supported formats are YAML and TOML." +
+            " When EvoMaster starts, it will read such file and import all configurations from it.")
+    @Regex(".*\\.(yml|yaml|toml)")
+    @FilePath
+    var configPath: String = defaultConfigPath
 
 
     @Important(2.0)
@@ -2059,7 +2093,7 @@ class EMConfig {
             " When EvoMaster mocks external services, mock server instances will run on local addresses starting from" +
             " this provided address." +
             " Min value is ${defaultExternalServiceIP}." +
-            " Lower values like ${ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP} are reserved.")
+            " Lower values like ${ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP} and ${ExternalServiceSharedUtils.DEFAULT_WM_LOCAL_IP} are reserved.")
     @Experimental
     @Regex(externalServiceIPRegex)
     var externalServiceIP : String = defaultExternalServiceIP
@@ -2159,15 +2193,13 @@ class EMConfig {
         private set
 
 
-    @Experimental
     @Cfg("In REST, specify probability of using 'default' values, if any is specified in the schema")
     @Probability(true)
-    var probRestDefault = 0.0
+    var probRestDefault = 0.20
 
-    @Experimental
     @Cfg("In REST, specify probability of using 'example(s)' values, if any is specified in the schema")
     @Probability(true)
-    var probRestExamples = 0.0
+    var probRestExamples = 0.05
 
 
     //TODO mark as deprecated once we support proper Robustness Testing
@@ -2178,16 +2210,16 @@ class EMConfig {
     @Cfg("Apply a security testing phase after functional test cases have been generated.")
     var security = false
 
-    val defaultConfigPath = "em.toml"
+
+    @Cfg("If there is no configuration file, create a default template at given configPath location." +
+            " However this is done only on the 'default' location. If you change 'configPath', no new file will be" +
+            " created.")
+    var createConfigPathIfMissing: Boolean = true
+
 
     @Experimental
-    @Cfg("File path for file with configuration settings")
-    @FilePath
-    var configPath: String = defaultConfigPath
-
-    @Experimental
-    @Cfg("If there is no configuration file, create a default template at given configPath location")
-    var createConfigPathIfMissing: Boolean = false
+    @Cfg("Extra checks on HTTP properties in returned responses, used as automated oracles to detect faults.")
+    var httpOracles = false
 
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {

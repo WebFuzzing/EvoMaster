@@ -37,7 +37,7 @@ class EvaluatedIndividual<T>(
     val individual: T,
     /**
      * Note: as the test execution could had been
-     * prematurely stopped, there might be less
+     * prematurely stopped, there might be fewer
      * results than actions
      */
     private val results: List<out ActionResult>,

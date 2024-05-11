@@ -142,22 +142,27 @@ abstract class EnterpriseIndividual(
      * This happens eg in Rest Resource, if a middle SQL action is moved into initialization group and impact
      * state of previous REST actions (an example of this did happen for example for CrossFkEMTest...).
      * This means that, after a flattening, to be on safe side should recompute fitness
+     *
+     * @return true if there is potential (but not necessarily) issues, and fitness might be stale
      */
-    fun ensureFlattenedStructure(){
+    fun ensureFlattenedStructure() : Boolean{
 
         val before = seeAllActions().size
 
-        doFlattenStructure()
+        val issues = doFlattenStructure()
 
         //make sure the flattening worked
         Lazy.assert { isFlattenedStructure() }
         //no base action should have been lost
         Lazy.assert { seeAllActions().size == before }
+
+        return issues
     }
 
-    protected open fun doFlattenStructure(){
+    protected open fun doFlattenStructure() : Boolean{
         //for most types, there is nothing to do.
         //can be overridden if needed
+        return false
     }
 
     private fun isFlattenedStructure() : Boolean{
@@ -343,6 +348,13 @@ abstract class EnterpriseIndividual(
      */
     fun removeInitDbActions(actions: List<SqlAction>) {
         killChildren { it is SqlAction && actions.contains(it)}
+    }
+
+    /***
+     * remove specified list of [HostnameResolutionAction] from the initializing actions.
+     */
+    fun removeHostnameResolutionAction(actions: List<HostnameResolutionAction>) {
+        killChildren {  it is HostnameResolutionAction && actions.contains(it) }
     }
 
     /**

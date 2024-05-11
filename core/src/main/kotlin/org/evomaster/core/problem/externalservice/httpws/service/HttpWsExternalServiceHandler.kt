@@ -20,6 +20,7 @@ import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.annotation.PostConstruct
+import javax.mail.Address
 
 /**
  * To manage the external service related activities
@@ -122,7 +123,7 @@ class HttpWsExternalServiceHandler {
             ) {
                 val ip =
                     if (hostnameResolutionInfo.remoteHostName == ExternalServiceSharedUtils.DEFAULT_WM_DUMMY_HOSTNAME) {
-                        ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP
+                        ExternalServiceSharedUtils.DEFAULT_WM_LOCAL_IP
                     } else {
                         getNewIP()
                     }
@@ -187,7 +188,7 @@ class HttpWsExternalServiceHandler {
     }
 
     fun getExternalServiceMappings(): Map<String, ExternalServiceMappingDto> {
-        return externalServices.mapValues { (_, v) ->
+        return externalServices.filter { it.value.isActive() }.mapValues { (_, v) ->
             ExternalServiceMappingDto(
                 v.getRemoteHostName(),
                 v.getIP(),
@@ -201,6 +202,18 @@ class HttpWsExternalServiceHandler {
         return hostnameLocalAddressMapping.toMap()
     }
 
+    fun hasLocalDomainNameMapping(hostname: String): Boolean {
+        return hostnameLocalAddressMapping.containsKey(hostname)
+    }
+
+    fun getLocalDomainNameMapping(hostname: String): String {
+        return hostnameLocalAddressMapping.get(hostname)!!
+    }
+
+    fun isWireMockAddress(address: String) : Boolean {
+        return hostnameLocalAddressMapping.containsValue(address)
+    }
+
     /**
      * Returns a list of [HostnameResolutionAction].
      * Excluding Default WireMock entries.
@@ -209,7 +222,7 @@ class HttpWsExternalServiceHandler {
         val output: MutableList<HostnameResolutionAction> = mutableListOf()
         hostnameLocalAddressMapping
             .filter { it.key != ExternalServiceSharedUtils.DEFAULT_WM_DUMMY_HOSTNAME }
-            .filter { it.value != ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP }
+            .filter { it.value != ExternalServiceSharedUtils.DEFAULT_WM_LOCAL_IP }
             .forEach {
             val action = HostnameResolutionAction(it.key, it.value)
             output.add(action)
@@ -245,7 +258,19 @@ class HttpWsExternalServiceHandler {
         return externalServices.filter { it.value.isActive() }
     }
 
-    fun reset() {
+    fun resetWireMockServers() {
+        externalServices.filter { it.value.isActive() }.forEach {
+            it.value.resetAll()
+        }
+    }
+
+    fun resetWireMockServersToDefaultState() {
+        externalServices.filter { it.value.isActive() }.forEach {
+            it.value.resetToDefaultState()
+        }
+    }
+
+    fun stopActiveWireMockServers() {
         externalServices.filter { it.value.isActive() }.forEach {
             it.value.stopWireMockServer()
         }
@@ -349,16 +374,6 @@ class HttpWsExternalServiceHandler {
             }
         }
         return ip
-    }
-
-
-    /**
-     * To prevent from the 404 when no matching stub below stub is added
-     * WireMock throws an exception when there is no stub for the request
-     * to avoid the exception it handled manually
-     */
-    private fun wireMockSetDefaults(es: HttpWsExternalService) {
-        es.getWireMockServer().stubFor(es.getDefaultWMMappingBuilder())
     }
 
     fun registerExternalServiceToSkip(service: ExternalService) {

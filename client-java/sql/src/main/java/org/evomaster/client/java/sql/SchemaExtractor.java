@@ -246,9 +246,25 @@ public class SchemaExtractor {
     private static String getSchemaName(Connection connection, DatabaseType dt) throws SQLException {
         String schemaName;
         if (dt.equals(DatabaseType.MYSQL)) {
-
-            // schema is database name in mysql
-            schemaName = connection.getCatalog();
+            /*
+             * https://stackoverflow.com/questions/23303206/jdbc-connection-returning-null-what-to-do
+             *
+             * MySQL doesn't support the concept of schema. For MySQL, the schema is in fact the database. From MySQL Glossary:
+             *
+             * Conceptually, a schema is a set of interrelated database objects, such as tables, table columns,
+             * data types of the columns, indexes, foreign keys, and so on. (...)
+             */
+            String getSchemaQuery = "SELECT DATABASE() AS schema_name";
+            try (Statement getSchemaStmt = connection.createStatement()) {
+                ResultSet getSchemaResultSet = getSchemaStmt.executeQuery(getSchemaQuery);
+                if (getSchemaResultSet.next()) {
+                    schemaName = getSchemaResultSet.getString("schema_name");
+                } else if (connection.getSchema()==null) {
+                    schemaName = connection.getCatalog();
+                } else {
+                    schemaName = connection.getSchema();
+                }
+            }
         } else {
             try {
                 schemaName = connection.getSchema();
@@ -527,7 +543,30 @@ public class SchemaExtractor {
         }
     }
 
+
     private static void handleTableEntry(Connection connection, DbSchemaDto schemaDto, DatabaseMetaData md, ResultSet tables, Set<String> tableNames) throws SQLException {
+
+        String tableCatalog = tables.getString("TABLE_CAT");
+        String tableSchema = tables.getString("TABLE_SCHEM");
+
+        if (schemaDto.databaseType.equals(DatabaseType.MYSQL) && tableSchema==null ) {
+            /**
+             * In some versions of MySQL, tableSchema is not stored in the
+             * TABLE_SCHEM column, but in the TABLE_CAT (Catalog) column.
+             * We first check if the table's schema is stored in the TABLE_SCHEM
+             * column. If it is not, we check default to the TABLE_CAT column
+             */
+            tableSchema =tableCatalog;
+        }
+
+        if (tableSchema!=null && !tableSchema.equalsIgnoreCase(schemaDto.name)) {
+            /**
+             * If this table does not belong to the current schema under extraction,
+             * skip adding the table.
+             */
+            return;
+        }
+
         TableDto tableDto = new TableDto();
         schemaDto.tables.add(tableDto);
         tableDto.name = tables.getString("TABLE_NAME");
@@ -561,7 +600,6 @@ public class SchemaExtractor {
 
         Set<String> columnNames = new HashSet<>();
         while (columns.next()) {
-
             ColumnDto columnDto = new ColumnDto();
             tableDto.columns.add(columnDto);
 

@@ -9,6 +9,7 @@ import org.evomaster.client.java.controller.api.dto.SutInfoDto;
 import org.evomaster.client.java.controller.internal.SutController;
 import org.evomaster.client.java.instrumentation.shared.ClassName;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+import org.evomaster.client.java.instrumentation.staticstate.MethodReplacementPreserveSemantics;
 import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.evomaster.client.java.utils.SimpleLogger;
@@ -92,6 +93,9 @@ public abstract class EnterpriseTestBase {
     @BeforeEach
     public void initTest() {
 
+        //make sure the search can use all instrumentation, even the ones using non-preserving semantics
+        MethodReplacementPreserveSemantics.shouldPreserveSemantics = false;
+
         //in case it was modified in a previous test in the same class
         defaultSeed = STARTING_SEED;
 
@@ -115,6 +119,9 @@ public abstract class EnterpriseTestBase {
             each test.
          */
         ObjectiveRecorder.reset(true);
+
+        //as this can be modified (eg before running generated tests), make sure to put it back to default
+        MethodReplacementPreserveSemantics.shouldPreserveSemantics = false;
     }
 
 
@@ -138,7 +145,8 @@ public abstract class EnterpriseTestBase {
                 "--sutControllerPort", "" + controllerPort,
                 "--maxActionEvaluations", "" + iterations,
                 "--stoppingCriterion", "FITNESS_EVALUATIONS",
-                "--useTimeInFeedbackSampling" , "false"
+                "--useTimeInFeedbackSampling" , "false",
+                "--createConfigPathIfMissing", "false"
         ));
 
         StaticCounter.Companion.reset();
@@ -184,7 +192,6 @@ public abstract class EnterpriseTestBase {
             boolean createTests,
             Consumer<List<String>> lambda,
             int timeoutMinutes) throws Throwable{
-
         List<ClassName> classNames = new ArrayList<>();
 
         String splitType = "";
@@ -260,6 +267,8 @@ public abstract class EnterpriseTestBase {
         if (terminations == null) terminations = Arrays.asList("");
         //BMR: this is where I should handle multiples???
         if (createTests){
+            MethodReplacementPreserveSemantics.shouldPreserveSemantics = true;
+
             for (String termination : terminations) {
                 assertTimeoutPreemptively(Duration.ofMinutes(2), () -> {
                     ClassName className = new ClassName(fullClassName + termination);
@@ -282,6 +291,8 @@ public abstract class EnterpriseTestBase {
         runTestHandlingFlaky(outputFolderName, fullClassName, iterations, createTests,lambda, timeoutMinutes);
 
         if (createTests){
+            MethodReplacementPreserveSemantics.shouldPreserveSemantics = true;
+
             assertTimeoutPreemptively(Duration.ofMinutes(2), () -> {
                 ClassName className = new ClassName(fullClassName);
                 compileRunAndVerifyTests(outputFolderName, className);
@@ -389,7 +400,8 @@ public abstract class EnterpriseTestBase {
                 "--testSuiteFileName", testClassName.getFullNameWithDots(),
                 "--testSuiteSplitType", split,
                 "--expectationsActive", "TRUE",
-                "--executiveSummary", summary
+                "--executiveSummary", summary,
+                "--createConfigPathIfMissing", "false"
         ));
     }
 

@@ -8,7 +8,7 @@ on:
       - "v*"
 
 env:
-  evomaster-version: 2.0.1
+  evomaster-version: 3.0.1
   jdk: 17
   retention-days: 1
 ## Doesn't work, ie, use env in env
@@ -159,6 +159,7 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
+          body: "See release notes at [release_notes.md](https://github.com/EMResearch/EvoMaster/blob/master/release_notes.md)."
           prerelease: false
           draft: false
           fail_on_unmatched_files: true
