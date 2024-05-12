@@ -566,6 +566,14 @@ internal class EMConfigTest{
     }
 
 
+    @Test
+    fun testPythonOnlyValidForBb() {
+        val parser = EMConfig.getOptionParser()
+        val config = EMConfig()
+
+        var options = parser.parse("--outputFormat", "PYTHON_UNITTEST")
+        assertThrows(Exception::class.java, {config.updateProperties(options)})
+    }
 
 
 }

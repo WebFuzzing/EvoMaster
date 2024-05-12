@@ -445,6 +445,10 @@ class EMConfig {
                     " EvoMaster from bombarding such service with HTTP requests.")
         }
 
+        if (!blackBox && outputFormat == OutputFormat.PYTHON_UNITTEST) {
+            throw ConfigProblemException("Python output is used only for black-box testing")
+        }
+
         when (stoppingCriterion) {
             StoppingCriterion.TIME -> if (maxActionEvaluations != defaultMaxActionEvaluations) {
                 throw ConfigProblemException("Changing number of max actions, but stopping criterion is time")
