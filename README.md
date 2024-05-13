@@ -72,6 +72,8 @@ __Key features__:
 
 
 * _Authentication_: we support auth based on authentication headers and cookies.
+  Besides using fixed HTTP headers, 
+  it is also possible to declaratively specify which login endpoint should be used to dynamically obtain authentication info (e.g., auth tokens or cookies) for each test execution. [See documentation](docs/auth.md).
 
 __Known limitations__:
 
