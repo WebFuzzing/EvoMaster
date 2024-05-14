@@ -321,6 +321,9 @@ jobs:
       - name: Build installation file
         shell: bash
         run: bash makeExecutable.sh DEBIAN
+      - name: Check generated files
+        shell: bash
+        run: ls -l
       - name: Upload installation file
         uses: actions/upload-artifact@v3
         with:

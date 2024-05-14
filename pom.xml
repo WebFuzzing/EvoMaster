@@ -145,7 +145,7 @@
             https://www.logicbig.com/tutorials/core-java-tutorial/java-9-changes/multi-release-jars.html
         -->
         <jackson.version>2.14.3</jackson.version>
-        <asm.version>9.2</asm.version>
+        <asm.version>9.7</asm.version>
         <testcontainers.version>1.17.6</testcontainers.version>
         <testcontainers.mockerserver.version>1.17.2</testcontainers.mockerserver.version>
         <mockserver.client.version>5.13.2</mockserver.client.version>
