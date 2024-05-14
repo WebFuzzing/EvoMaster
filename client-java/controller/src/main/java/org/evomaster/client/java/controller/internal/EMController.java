@@ -741,7 +741,6 @@ public class EMController {
                     queryResult = SqlScriptRunner.execCommand(connection, dto.command);
                 } else {
                     insertionResultsDto = SqlScriptRunner.execInsert(connection, dto.insertions);
-
                 }
             } catch (Exception e) {
                 String msg = "Failed to execute database command: " + e.getMessage();
