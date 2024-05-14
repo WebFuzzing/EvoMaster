@@ -348,17 +348,10 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
      * @return a created individual with specified actions, i.e., [restCalls].
      * All actions must have been already initialized
      *
-     *
-     * FIXME: why this function instead of dealing with this directly in the constructor of RestIndividual???
      */
     open fun createIndividual(sampleType: SampleType, restCalls: MutableList<RestCallAction>): RestIndividual {
-        if(restCalls.any { !it.isInitialized() }){
-            throw IllegalArgumentException("Action is not initialized")
-        }
         val ind =  RestIndividual(restCalls, sampleType, mutableListOf()//, usedObjects.copy()
                 ,trackOperator = if (config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else Traceable.DEFAULT_INDEX)
-        ind.doInitializeLocalId()
-//        ind.computeTransitiveBindingGenes()
         org.evomaster.core.Lazy.assert { ind.isInitialized() }
         return ind
     }

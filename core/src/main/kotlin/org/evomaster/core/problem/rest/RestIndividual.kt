@@ -78,6 +78,14 @@ class RestIndividual(
             )
 
 
+    init {
+        if(seeAllActions().any { !it.isInitialized() }){
+            throw IllegalArgumentException("Action is not initialized")
+        }
+
+        doInitializeLocalId()
+    }
+
 
     override fun copyContent(): Individual {
         return RestIndividual(
