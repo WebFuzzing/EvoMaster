@@ -41,7 +41,7 @@ class SecurityRest {
     private lateinit var randomness: Randomness
 
     @Inject
-    private lateinit var fitness: AbstractRestFitness
+    private lateinit var fitness: RestFitness
 
     /**
      * All actions that can be defined from the OpenAPI schema
@@ -206,7 +206,7 @@ class SecurityRest {
 
             } else {
                 // there is not. need to create it based on successful create resources with authenticated user
-                // but, first let's check if can have any successfully delete action
+                // but, first let's check if we can have any successfully delete action
 
                 /*
                     We have a DELETE path in form for example
@@ -226,11 +226,11 @@ class SecurityRest {
                 )
                 if(deleteIndividuals.isEmpty()){
                     /*
-                        This needs bit of explanation.
+                        This needs a bit of explanation.
                         We want to get a DELETE that works, with failed constraint validation on
                         query parameters or body payloads.
                         Ideally, a 2xx would do.
-                        But what if could not create any because they all fail to point to an existing
+                        But what if we could not create any because they all fail to point to an existing
                         resource? if 404, could still be fine, as then we link it to creation operation
                      */
                     deleteIndividuals = RestIndividualSelectorUtils.findIndividuals(
@@ -400,7 +400,7 @@ class SecurityRest {
      * See if on any other endpoint Y we get a 2xx with A.
      * But, maybe Y does not need authentication...
      * so, check if there is any test case for which on Y we get a 401 or 403.
-     * if yes, then X is buggy, as should had rather returned 403 for A.
+     * if yes, then X is buggy, as it should rather have returned 403 for A.
      * This seems to actually happen for familie-ba-sak, new NAV SUT.
      */
     fun handleUnauthorizedInsteadOfForbidden() {
