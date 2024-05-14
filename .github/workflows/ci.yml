@@ -323,7 +323,7 @@ jobs:
         run: bash makeExecutable.sh DEBIAN
       - name: Check generated files
         shell: bash
-        run: ls -l
+        run: ls -l release
       - name: Upload installation file
         uses: actions/upload-artifact@v3
         with:
