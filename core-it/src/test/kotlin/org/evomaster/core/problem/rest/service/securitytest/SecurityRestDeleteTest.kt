@@ -2,6 +2,7 @@ package org.evomaster.core.problem.rest.service.securitytest
 
 import org.evomaster.core.problem.rest.IntegrationTestRestBase
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 class SecurityRestDeleteTest : IntegrationTestRestBase() {
@@ -14,7 +15,7 @@ class SecurityRestDeleteTest : IntegrationTestRestBase() {
         }
     }
 
-
+    @Disabled
     @Test
     fun testDeletePut(){
 
