@@ -12,6 +12,7 @@ Under development in `master` branch.
 ### Addressed GitHub Issues
 - #834: Authentication required when accessing schema
 - #957: Generated test cases fail due to 'checkInstrumentation' 
+- #962: Fail to parse endpoint due to body.content must not be null when requestBody has $ref
 
 ---
 # Version: 3.0.0
