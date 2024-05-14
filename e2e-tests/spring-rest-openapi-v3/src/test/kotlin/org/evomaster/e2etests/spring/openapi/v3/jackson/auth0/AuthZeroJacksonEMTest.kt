@@ -18,7 +18,7 @@ class AuthZeroJacksonEMTest: SpringTestBase() {
         }
     }
 
-    @Disabled
+//    @Disabled
     @Test
     fun testRunEM() {
         // Generated test has response which is accurate, but test fails because the
