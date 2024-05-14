@@ -7,10 +7,12 @@ Under development in `master` branch.
 
 ### Bug Fixes
 - better dealing with reset of SQL tables where names in queries used quotes, and/or table is not accessible in database.
+- fixed issue related to SQL insertion failures preventing all SQL insertions from being part of the generated tests, leading to flaky tests.
 
 ### Addressed GitHub Issues
 - #834: Authentication required when accessing schema
 - #957: Generated test cases fail due to 'checkInstrumentation' 
+- #962: Fail to parse endpoint due to body.content must not be null when requestBody has $ref
 
 ---
 # Version: 3.0.0
