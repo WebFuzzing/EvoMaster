@@ -248,7 +248,7 @@ class SearchTimeController {
 
     fun isImprovementTimeout() : Boolean{
 
-        if(configuration.maxTimeAttempt.isNullOrBlank()){
+        if(configuration.prematureStop.isNullOrBlank()){
             return false
         }
 

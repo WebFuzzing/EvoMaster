@@ -33,8 +33,8 @@ class BaseMaxTimeAttemptEMTest : SpringTestBase() {
                     "--sutControllerPort", "" + controllerPort,
                     "--stoppingCriterion", "TIME",
                     "--createConfigPathIfMissing", "false",
-                    "--maxTime", "10m",
-                    "--maxTimeAttempt", "5s"
+                    "--maxTime", "10m", // way more than the JUnit @Timeout(60)
+                    "--prematureStop", "5s" // short compared to JUnit @Timeout(60)
             )
 
             val solution = initAndRun(args)

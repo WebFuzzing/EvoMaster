@@ -80,7 +80,7 @@ abstract class SearchAlgorithm<T> where T : Individual {
         }
 
         if(time.isImprovementTimeout()){
-            LoggingUtil.uniqueUserWarn("Premature stop of the search. No improvement in the last ${config.maxTimeAttempt}")
+            LoggingUtil.uniqueUserWarn("Premature stop of the search. No improvement in the last ${config.prematureStop}")
         }
 
         handleAfterSearch()

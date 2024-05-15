@@ -550,8 +550,8 @@ class EMConfig {
             throw ConfigProblemException("The use of 'security' requires 'minimize'")
         }
 
-        if(maxTimeAttempt.isNotEmpty() && stoppingCriterion != StoppingCriterion.TIME){
-            throw ConfigProblemException("The use of 'maxTimeAttempt' is meaningful only if the stopping criterion" +
+        if(prematureStop.isNotEmpty() && stoppingCriterion != StoppingCriterion.TIME){
+            throw ConfigProblemException("The use of 'prematureStop' is meaningful only if the stopping criterion" +
                     " 'stoppingCriterion' is based on time")
         }
     }
@@ -880,8 +880,8 @@ class EMConfig {
             " The default 1 _minute_ is just for demonstration." +
             " __We recommend to run it between 1 and 24 hours__, depending on the size and complexity " +
             " of the tested application." +
-            " You can get better results by combining this option with `--maxTimeAttempt`." +
-            " For example, something like `--maxTime 24h --maxTimeAttempt 1h` will run the search for 24 hours," +
+            " You can get better results by combining this option with `--prematureStop`." +
+            " For example, something like `--maxTime 24h --prematureStop 1h` will run the search for 24 hours," +
             " but the it will stop at any point in time in which there has be no improvement in last hour."
     )
     @Regex(timeRegex)
@@ -893,7 +893,7 @@ class EMConfig {
             " If there is no improvement within this allotted max time, then the search will be prematurely stopped," +
             " regardless of what specified in --maxTime option.")
     @Regex("($timeRegex)|(^$)")
-    var maxTimeAttempt : String = ""
+    var prematureStop : String = ""
 
 
     @Important(1.1)
@@ -2248,10 +2248,10 @@ class EMConfig {
     }
 
     fun improvementTimeoutInSeconds() : Int {
-        if(maxTimeAttempt.isNullOrBlank()){
+        if(prematureStop.isNullOrBlank()){
             return Int.MAX_VALUE
         }
-        return convertToSeconds(maxTimeAttempt)
+        return convertToSeconds(prematureStop)
     }
 
     private fun convertToSeconds(time: String): Int {
