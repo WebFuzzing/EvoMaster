@@ -29,23 +29,9 @@ class RestSampler : AbstractRestSampler(){
         }
         val ind = RestIndividual(actions, SampleType.RANDOM, mutableListOf(), this, time.evaluatedIndividuals)
         ind.doGlobalInitialize(searchGlobalState)
-//        ind.computeTransitiveBindingGenes()
         return ind
     }
 
-
-    /*
-        FIXME: following call is likely unnecessary... originally under RestAction will could have different
-        action types like SQL, but in the end we used a different approach (ie pre-init steps).
-        So, likely can be removed, but need to check the refactoring RestResouce first
-     */
-
-    private fun sampleRandomCallAction(noAuthP: Double): RestCallAction {
-        val action = randomness.choose(actionCluster.filter { a -> a.value is RestCallAction }).copy() as RestCallAction
-        action.doInitialize(randomness)
-        action.auth = getRandomAuth(noAuthP)
-        return action
-    }
 
 
     override fun smartSample(): RestIndividual {
@@ -70,7 +56,7 @@ class RestSampler : AbstractRestSampler(){
 
         val test = mutableListOf<RestCallAction>()
 
-        val action = sampleRandomCallAction(0.0)
+        val action = sampleRandomAction(0.0) as RestCallAction
 
         /*
             TODO: each of these "smart" tests could end with a GET, to make
@@ -91,15 +77,15 @@ class RestSampler : AbstractRestSampler(){
             else -> SampleType.RANDOM
         }
 
-        if (!test.isEmpty()) {
-            val objInd = RestIndividual(test, sampleType, mutableListOf()//, usedObjects.copy()
-                    ,trackOperator = if (config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else Traceable.DEFAULT_INDEX)
+        if (test.isNotEmpty()) {
+            val objInd = RestIndividual(test, sampleType, mutableListOf(),
+                trackOperator = if (config.trackingEnabled()) this else null,
+                index = if (config.trackingEnabled()) time.evaluatedIndividuals else Traceable.DEFAULT_INDEX)
 
             objInd.doGlobalInitialize(searchGlobalState)
-//            objInd.computeTransitiveBindingGenes()
             return objInd
         }
-        //usedObjects.clear()
+
         return sampleAtRandom()
     }
 
@@ -108,6 +94,7 @@ class RestSampler : AbstractRestSampler(){
         Lazy.assert{post.verb == HttpVerb.POST}
 
         //as POST is used in all the others, maybe here we do not really need to handle it specially?
+        //we still do it, as might be some side-effects we have not thought about
         test.add(post)
         return SampleType.SMART
     }
@@ -220,13 +207,13 @@ class RestSampler : AbstractRestSampler(){
         } else {
             //only lock path params if it is not a single GET
             test.forEach { t ->
-                preventPathParamMutation(t as RestCallAction)
+                preventPathParamMutation(t)
             }
         }
 
         if (created && !get.path.isLastElementAParameter()) {
 
-            val lastPost = test[test.size - 2] as RestCallAction
+            val lastPost = test[test.size - 2]
             Lazy.assert{lastPost.verb == HttpVerb.POST}
 
             val available = getMaxTestSizeDuringSampler() - test.size
