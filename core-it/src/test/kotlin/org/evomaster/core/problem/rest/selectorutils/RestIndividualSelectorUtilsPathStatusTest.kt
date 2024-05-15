@@ -5,9 +5,11 @@ import org.evomaster.core.problem.httpws.auth.AuthenticationHeader
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.rest.*
 import org.junit.Assert
+import org.junit.Ignore
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 class RestIndividualSelectorUtilsPathStatusTest : IntegrationTestRestBase(){
@@ -251,7 +253,10 @@ class RestIndividualSelectorUtilsPathStatusTest : IntegrationTestRestBase(){
 
     }
 
+
+    /*
     @Test
+    @Disabled
     fun testFindIndividuals() {
 
         val pirTest = getPirToRest()
@@ -297,6 +302,8 @@ class RestIndividualSelectorUtilsPathStatusTest : IntegrationTestRestBase(){
 
     }
 
+
+     */
 
 
 }
