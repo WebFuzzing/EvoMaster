@@ -1,8 +1,6 @@
 package org.evomaster.e2etests.spring.openapi.v3.wiremock.jsonarray
 
 import com.foo.rest.examples.spring.openapi.v3.wiremock.jsonarray.WmJsonArrayController
-import org.evomaster.ci.utils.CIUtils
-
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
@@ -36,8 +34,6 @@ class WmJsonArrayEMTest : SpringTestBase() {
             100,
             true,
             { args: MutableList<String> ->
-                // TODO: Generated test looks perfect but for some reason it fails.
-                //  CreatedTests is set to false temporarily
                 args.add("--externalServiceIPSelectionStrategy")
                 args.add("USER")
                 args.add("--externalServiceIP")
@@ -47,7 +43,6 @@ class WmJsonArrayEMTest : SpringTestBase() {
 
                 assertTrue(solution.individuals.size >= 1)
 
-                //FIXME same issue as other WM tests... pass locally. Maybe should try again on CircleCI
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/jsonarray", "OK X")
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/jsonarray", "OK X and Y")
 

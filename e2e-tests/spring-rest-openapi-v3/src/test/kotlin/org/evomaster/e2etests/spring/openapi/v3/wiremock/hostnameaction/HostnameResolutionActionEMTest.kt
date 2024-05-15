@@ -1,14 +1,12 @@
 package org.evomaster.e2etests.spring.openapi.v3.wiremock.hostnameaction
 
 import com.foo.rest.examples.spring.openapi.v3.wiremock.hostnameaction.HostnameResolutionActionController
-import org.evomaster.ci.utils.CIUtils
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.service.ResourceSampler
 import org.evomaster.core.problem.rest.service.RestResourceFitness
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
-import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
@@ -34,12 +32,6 @@ class HostnameResolutionActionEMTest: SpringTestBase() {
             100,
             true,
             { args: MutableList<String> ->
-
-                // Note: WireMock is initiated based on the served requests.
-                // This SUT doesn't make any requests, so [TestSuiteWriter] will not add
-                // any WM, eventually the generated tests will fail.
-                // TODO: This will fail when [createTests] is true regardless of the
-                //  environment.
 
                 args.add("--externalServiceIPSelectionStrategy")
                 args.add("USER")
@@ -86,12 +78,12 @@ class HostnameResolutionActionEMTest: SpringTestBase() {
         val resourceSampler = injector.getInstance(ResourceSampler::class.java)
         val restIndividual = resourceSampler.sample(false)
 
-        assertEquals(0, externalServiceHandler.getLocalDomainNameMapping().size)
+        assertEquals(1, externalServiceHandler.getLocalDomainNameMapping().size)
 
         restResourceFitness.calculateCoverage(restIndividual, setOf())
 
         assertTrue(externalServiceHandler.getLocalDomainNameMapping().containsKey("imaginary-second.local"))
-        assertEquals(1, externalServiceHandler.getLocalDomainNameMapping().size)
+        assertEquals(2, externalServiceHandler.getLocalDomainNameMapping().size)
     }
 
 }
