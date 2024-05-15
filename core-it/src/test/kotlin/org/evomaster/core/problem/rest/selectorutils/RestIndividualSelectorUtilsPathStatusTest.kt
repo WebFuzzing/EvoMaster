@@ -4,7 +4,6 @@ import bar.examples.it.spring.pathstatus.PathStatusController
 import org.evomaster.core.problem.httpws.auth.AuthenticationHeader
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.rest.*
-import org.evomaster.core.search.EvaluatedIndividual
 import org.junit.Assert
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -20,6 +19,17 @@ class RestIndividualSelectorUtilsPathStatusTest : IntegrationTestRestBase(){
             initClass(PathStatusController())
         }
     }
+
+
+    /**
+     * Tests for methods inside RestIndividualSelectorUtils.kt
+     *
+     * 1. findAction based on VERB only
+     * 2. findAction based on PATH only
+     * 3. findAction based on
+     */
+
+
 
 
     @Test
@@ -201,8 +211,8 @@ class RestIndividualSelectorUtilsPathStatusTest : IntegrationTestRestBase(){
         val action6 = pirTest.fromVerbPath("get", "/api/pathstatus/byStatus/302")!!
         val action7 = pirTest.fromVerbPath("get", "/api/pathstatus/others/304")!!
 
-        action7.auth = HttpWsAuthenticationInfo("auth1",
-            listOf(AuthenticationHeader("header0", "name")), null, false)
+        //action7.auth = HttpWsAuthenticationInfo("auth1",
+         //   listOf(AuthenticationHeader("header0", "name")), null, false)
 
         val action8 = pirTest.fromVerbPath("get", "/api/pathstatus/byStatus/401")!!
         val action9 = pirTest.fromVerbPath("get", "/api/pathstatus/others/402")!!
@@ -257,8 +267,8 @@ class RestIndividualSelectorUtilsPathStatusTest : IntegrationTestRestBase(){
         val action5 = pirTest.fromVerbPath("get", "/api/pathstatus/byStatus/301")!!
         val action6 = pirTest.fromVerbPath("get", "/api/pathstatus/byStatus/302")!!
 
-        action6.auth = HttpWsAuthenticationInfo("auth1",
-            listOf(AuthenticationHeader("header0", "name")), null, false)
+        //action6.auth = HttpWsAuthenticationInfo("auth1",
+        //    listOf(AuthenticationHeader("header0", "name")), null, false)
 
         val action7 = pirTest.fromVerbPath("get", "/api/pathstatus/byStatus/401")!!
         val action8 = pirTest.fromVerbPath("get", "/api/pathstatus/others/402")!!
