@@ -2261,13 +2261,13 @@ class EMConfig {
     var useResponseDataPool = false
 
     @Experimental
-    @Probability
+    @Probability(false)
     @Cfg("Specify the probability of using the data pool when sampling test cases." +
             " This is for black-box (bb) mode")
     var bbProbabilityUseDataPool = 0.8
 
     @Experimental
-    @Probability
+    @Probability(false)
     @Cfg("Specify the probability of using the data pool when sampling test cases." +
             " This is for white-box (wb) mode")
     var wbProbabilityUseDataPool = 0.2
