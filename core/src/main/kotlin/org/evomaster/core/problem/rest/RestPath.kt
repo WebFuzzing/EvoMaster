@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.rest
 
+import opennlp.tools.stemmer.PorterStemmer
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.param.QueryParam
@@ -37,6 +38,8 @@ class RestPath(path: String) {
         override fun toString(): String {
             return tokens.joinToString("")
         }
+
+        fun hasParams() = tokens.any { it.isParameter }
     }
 
     private data class Token(val name: String, val isParameter: Boolean) {
@@ -57,12 +60,28 @@ class RestPath(path: String) {
 
     private val endsWithSlash : Boolean
 
+    /**
+     * The qualifying name for this resource endpoint.
+     * Typically, it would be the last element of the path.
+     * If this is a variable, then we look up to first constant ancestor, and we get its _stem_
+     *
+     * For example:
+     *
+     * /users/{id}/balance -> balance
+     * /users/{id}         -> user
+     * /users              -> users
+     */
+    val nameQualifier : String
+
     init {
         if (path.contains("?") || path.contains("#")) {
             throw IllegalArgumentException(
                 "The path contains invalid characters. " +
                         "Are you sure you didn't pass a full URI?\n$path"
             )
+        }
+        if(path.isBlank()){
+            throw IllegalArgumentException("Empty path definition")
         }
 
         endsWithSlash = path.endsWith("/")
@@ -72,6 +91,8 @@ class RestPath(path: String) {
             .map { extractElement(it) }
 
         computedToString = "/" + elements.joinToString("/") + if(endsWithSlash) "/" else ""
+
+        nameQualifier = computeNameQualifier()
     }
 
 
@@ -450,4 +471,34 @@ class RestPath(path: String) {
     }
 
 
+
+    private fun computeNameQualifier() : String {
+
+        val noQualifier = "/"
+
+        if(elements.isEmpty()){
+            return noQualifier
+        }
+
+        var index = elements.indices.last
+        val last = elements[index]
+        if(!last.hasParams()){
+            return last.toString()
+        }
+
+        index--
+
+        while(index >= 0){
+            if(elements[index].hasParams()){
+                index--
+                continue
+            }
+
+            val raw = elements[index].toString()
+            val stemmer = PorterStemmer()
+            return stemmer.stem(raw)
+        }
+
+        return noQualifier
+    }
 }
