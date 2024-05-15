@@ -27,7 +27,6 @@ class WmUrlOpenEMTest : SpringTestBase() {
     }
 
 
-    @Disabled //TODO needs to be put back once fixed issues with WM
     @Test
     fun testRunEM() {
 
@@ -36,8 +35,8 @@ class WmUrlOpenEMTest : SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "WmUrlOpenEM",
             "org.foo.WmUrlOpenEM",
-            500,
-            false,
+            100,
+            true,
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")
@@ -50,11 +49,8 @@ class WmUrlOpenEMTest : SpringTestBase() {
                 assertTrue(solution.individuals.size >= 1)
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/urlopen/string", "OK")
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/urlopen/sstring", "OK")
+                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/urlopen/object", "OK")
 
-                if(!CIUtils.isRunningGA()) {
-                    //FIXME: this weird... fails on CI, even when incresing budget significantly... but passes local on all OS
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/urlopen/object", "OK")
-                }
             },
             3,
         )

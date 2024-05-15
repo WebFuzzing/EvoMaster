@@ -1,12 +1,10 @@
 package org.evomaster.e2etests.spring.openapi.v3.jackson.auth0
 
 import com.foo.rest.examples.spring.openapi.v3.jackson.auth0.AuthZeroJacksonController
-import org.evomaster.ci.utils.CIUtils
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 class AuthZeroJacksonEMTest: SpringTestBase() {
@@ -17,7 +15,6 @@ class AuthZeroJacksonEMTest: SpringTestBase() {
         @JvmStatic
         fun init() {
             initClass(AuthZeroJacksonController())
-            CIUtils.skipIfOnGA()
         }
     }
 

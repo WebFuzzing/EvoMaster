@@ -3,7 +3,6 @@ package org.evomaster.e2etests.spring.openapi.v3.wiremock.harvestresponse
 import com.foo.rest.examples.spring.openapi.v3.wiremock.harvestresponse.WmHarvestResponseController
 import com.foo.rest.examples.spring.openapi.v3.wiremock.harvestresponse.WmHarvestResponseRest.Companion.HARVEST_FOUND
 import com.foo.rest.examples.spring.openapi.v3.wiremock.harvestresponse.WmHarvestResponseRest.Companion.HARVEST_NOT_FOUND
-import org.evomaster.ci.utils.CIUtils
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
@@ -20,8 +19,6 @@ class WmHarvestResponseEMTest : SpringTestBase() {
             val config = EMConfig()
             config.instrumentMR_NET = true
             initClass(WmHarvestResponseController(), config)
-
-            CIUtils.skipIfOnGA()
         }
     }
 
@@ -33,7 +30,7 @@ class WmHarvestResponseEMTest : SpringTestBase() {
             "WmHarvestResponseEM",
             "org.foo.WmHarvestResponseEM",
             1500,
-            !CIUtils.isRunningGA(),
+            true,
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")
