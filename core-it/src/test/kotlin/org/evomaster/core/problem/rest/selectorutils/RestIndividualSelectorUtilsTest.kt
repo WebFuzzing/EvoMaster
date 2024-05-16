@@ -5,6 +5,7 @@ import org.evomaster.core.problem.httpws.auth.AuthenticationHeader
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.search.EvaluatedIndividual
+import org.junit.Assert
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -218,7 +219,7 @@ class RestIndividualSelectorUtilsTest : IntegrationTestRestBase() {
     }
 
     @Test
-    fun testFindActionGroupsWithAuthenticatedActionsOnly() {
+    fun testFindActionAuthenticatedActionsOnly() {
 
         val listOfIndividuals = initializeIndividuals()
 
@@ -237,26 +238,264 @@ class RestIndividualSelectorUtilsTest : IntegrationTestRestBase() {
 
         val listOfIndividuals = initializeIndividuals()
 
-        // in the beginning all the individuals are selected since each has GET request
         val selectedIndividuals = RestIndividualSelectorUtils.findIndividuals(
             listOfIndividuals, HttpVerb.DELETE,
             RestPath("/api/endpoint5/{endpointIdentifier}")
         )
 
-        // Only 1 individual has a request with the path "/api/endpoint5/setStatus/{status}"
         Assertions.assertTrue(selectedIndividuals.size == 2)
 
-        // now find all individuals with endpoint /api/endpoint2, this is none of the individuals
         val secondSelectedIndividuals = RestIndividualSelectorUtils.findIndividuals(
             listOfIndividuals, HttpVerb.POST,
             RestPath("/api/endpoint5/{endpointIdentifier}")
         )
 
-        // Only 1 individual has a request with the path "/api/endpoint2"
         Assertions.assertTrue(secondSelectedIndividuals.isEmpty())
+    }
+
+    @Test
+    fun testFindActionGroupsBasedOnVerbAndStatus() {
+
+        val listOfIndividuals = initializeIndividuals()
+
+        val selectedIndividuals = RestIndividualSelectorUtils.findIndividuals(
+            listOfIndividuals, HttpVerb.DELETE,
+            null, 201
+        )
+
+        Assertions.assertTrue(selectedIndividuals.isEmpty())
+
+        val secondSelectedIndividuals = RestIndividualSelectorUtils.findIndividuals(
+            listOfIndividuals, HttpVerb.POST,
+            null, 301
+        )
+
+        Assertions.assertTrue(secondSelectedIndividuals.size == 2)
+    }
+
+    @Test
+    fun testFindActionGroupsBasedOnPathAndStatus() {
+
+        val listOfIndividuals = initializeIndividuals()
+
+        val selectedIndividuals = RestIndividualSelectorUtils.findIndividuals(
+            listOfIndividuals, null, RestPath("/api/endpoint5/setStatus/{status}"), 402)
+
+        Assertions.assertTrue(selectedIndividuals.size == 1)
 
 
     }
+
+    @Test
+    fun testFindActionGroupsBasedOnPathAndStatusGroup() {
+
+        val listOfIndividuals = initializeIndividuals()
+
+        val selectedIndividuals = RestIndividualSelectorUtils.findIndividuals(
+            listOfIndividuals, null, RestPath("/api/endpoint3"), null,
+            StatusGroup.G_3xx)
+
+        Assertions.assertTrue(selectedIndividuals.size == 1)
+
+    }
+
+    @Test
+    fun testFindActionGroupsBasedOnVerbPathStatus() {
+
+        val listOfIndividuals = initializeIndividuals()
+
+        val selectedIndividuals = RestIndividualSelectorUtils.findIndividuals(
+            listOfIndividuals, HttpVerb.GET, RestPath("/api/endpoint2/setStatus/{status}"), 403)
+
+        Assertions.assertTrue(selectedIndividuals.size == 1)
+
+    }
+
+    @Test
+    fun testFindActionGroupsBasedOnVerbPathStatusGroup() {
+
+        val listOfIndividuals = initializeIndividuals()
+
+        val selectedIndividuals = RestIndividualSelectorUtils.findIndividuals(
+            listOfIndividuals, HttpVerb.GET, RestPath("/api/endpoint2/setStatus/{status}"), null,
+            StatusGroup.G_5xx)
+
+        Assertions.assertTrue(selectedIndividuals.isEmpty())
+
+    }
+
+    @Test
+    fun testFindAuthenticatedActions() {
+
+        val listOfIndividuals = initializeIndividuals()
+
+        val selectedIndividuals = RestIndividualSelectorUtils.findIndividuals(
+            listOfIndividuals, null, null, null,
+            null, true)
+
+        Assertions.assertTrue(selectedIndividuals.size == 3)
+
+    }
+
+    @Test
+    fun testFindNonAuthenticatedActions() {
+
+        val listOfIndividuals = initializeIndividuals()
+
+        val selectedIndividuals = RestIndividualSelectorUtils.findIndividuals(
+            listOfIndividuals, null, null, null,
+            null, false)
+
+        Assertions.assertTrue(selectedIndividuals.size == 4)
+
+    }
+
+    /**
+     * Find the first evaluated action with POST and /api/endpoint2
+     */
+    @Test
+    fun testFindEvaluatedAction() {
+
+        val listOfIndividuals = initializeIndividuals()
+
+        val selectedAction = RestIndividualSelectorUtils.findEvaluatedAction(
+            listOfIndividuals, HttpVerb.POST, RestPath("/api/endpoint3"), 303
+        )
+
+        Assertions.assertTrue((selectedAction?.action as RestCallAction).verb == HttpVerb.POST)
+        Assertions.assertTrue((selectedAction?.action as RestCallAction).path == RestPath("/api/endpoint3"))
+        Assertions.assertTrue((selectedAction?.result as RestCallResult).getStatusCode() == 303)
+
+    }
+
+    /**
+     * Find the first evaluated action with POST and /api/endpoint2
+     */
+    @Test
+    fun testFindEvaluatedActionNonExistent() {
+
+        val listOfIndividuals = initializeIndividuals()
+
+        val selectedAction = RestIndividualSelectorUtils.findEvaluatedAction(
+            listOfIndividuals, HttpVerb.POST, RestPath("/api/endpoint3"), 404
+        )
+
+        Assertions.assertTrue( selectedAction == null)
+
+    }
+
+    /**
+     * Test findAction
+     */
+    @Test
+    fun testFindAction() {
+
+        val listOfIndividuals = initializeIndividuals()
+
+        val selectedAction = RestIndividualSelectorUtils.findAction(
+            listOfIndividuals, HttpVerb.POST, RestPath("/api/endpoint3"), 303
+        )
+
+        Assertions.assertTrue( (selectedAction?.verb == HttpVerb.POST) )
+        Assertions.assertTrue( (selectedAction?.path == RestPath("/api/endpoint3")) )
+
+    }
+
+    /**
+     * Test getting indices of actions in individuals.
+     */
+    @Test
+    fun testGetIndexOfAction() {
+
+        val listOfIndividuals = initializeIndividuals()
+
+        val actionIndex = RestIndividualSelectorUtils.getIndexOfAction(listOfIndividuals[0], HttpVerb.POST,
+            RestPath("/api/endpoint1"), 301)
+
+        Assertions.assertTrue(actionIndex == 1)
+
+        val actionIndexSecond = RestIndividualSelectorUtils.getIndexOfAction(listOfIndividuals[2], HttpVerb.GET,
+            RestPath("/api/endpoint4/setStatus/{status}"), 415)
+
+        Assertions.assertTrue(actionIndexSecond == 4)
+
+    }
+
+    /**
+     * Test getting indices of actions in individuals.
+     */
+    @Test
+    fun testGetIndexOfActionNonExistent() {
+
+        val listOfIndividuals = initializeIndividuals()
+
+        val actionIndex = RestIndividualSelectorUtils.getIndexOfAction(listOfIndividuals[0], HttpVerb.POST,
+            RestPath("/api/endpoint1"), 501)
+
+        Assertions.assertTrue(actionIndex == -1)
+
+        val actionIndexSecond = RestIndividualSelectorUtils.getIndexOfAction(listOfIndividuals[2], HttpVerb.GET,
+            RestPath("/api/endpoint4/setStatus/{status}"), 417)
+
+        Assertions.assertTrue(actionIndexSecond == -1)
+
+    }
+
+    @Test
+    fun testSliceAllCallsInIndividualAfterAction() {
+        val listOfIndividuals = initializeIndividuals()
+
+        val newIndividual = RestIndividualSelectorUtils.sliceAllCallsInIndividualAfterAction(
+            listOfIndividuals[1].individual, 2)
+
+        // now check actions in the newIndividual
+        Assertions.assertTrue(newIndividual.size() == 3)
+
+        // check actions of slices
+        Assertions.assertTrue(newIndividual.seeMainExecutableActions()[0].verb == HttpVerb.GET)
+        Assertions.assertTrue(newIndividual.seeMainExecutableActions()[1].verb == HttpVerb.POST)
+        Assertions.assertTrue(newIndividual.seeMainExecutableActions()[2].verb == HttpVerb.PUT)
+
+        // check paths of slices
+        Assertions.assertTrue(newIndividual.seeMainExecutableActions()[0].path == RestPath("/api/endpoint1/{endpointIdentifier}"))
+        Assertions.assertTrue(newIndividual.seeMainExecutableActions()[1].path == RestPath("/api/endpoint3") )
+        Assertions.assertTrue(newIndividual.seeMainExecutableActions()[2].path == RestPath("/api/endpoint4/{endpointIdentifier}"))
+
+
+        // now try from index 1
+        val newIndividualSecond = RestIndividualSelectorUtils.sliceAllCallsInIndividualAfterAction(
+            listOfIndividuals[1].individual, 1)
+
+        // now check actions in the newIndividual
+        Assertions.assertTrue(newIndividualSecond.size() == 2)
+
+        // check actions of slices
+        Assertions.assertTrue(newIndividualSecond.seeMainExecutableActions()[0].verb == HttpVerb.GET)
+        Assertions.assertTrue(newIndividualSecond.seeMainExecutableActions()[1].verb == HttpVerb.POST)
+
+
+        // check paths of slices
+        Assertions.assertTrue(newIndividualSecond.seeMainExecutableActions()[0].path == RestPath("/api/endpoint1/{endpointIdentifier}"))
+        Assertions.assertTrue(newIndividualSecond.seeMainExecutableActions()[1].path == RestPath("/api/endpoint3") )
+
+    }
+
+    @Test
+    fun testSliceAllCallsInIndividualAfterActionNonValidIndices() {
+        val listOfIndividuals = initializeIndividuals()
+
+        Assert.assertThrows(IllegalArgumentException::class.java) {
+            RestIndividualSelectorUtils.sliceAllCallsInIndividualAfterAction(
+                listOfIndividuals[1].individual, 10)
+        }
+
+        Assert.assertThrows(IllegalArgumentException::class.java) {
+            RestIndividualSelectorUtils.sliceAllCallsInIndividualAfterAction(
+                listOfIndividuals[1].individual, -10)
+        }
+
+    }
+
 
 
 }

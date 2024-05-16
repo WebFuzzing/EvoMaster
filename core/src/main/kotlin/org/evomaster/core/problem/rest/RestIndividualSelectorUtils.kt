@@ -1,20 +1,10 @@
 package org.evomaster.core.problem.rest
 
-import com.google.inject.Inject
-import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
-import org.evomaster.core.problem.api.param.Param
-import org.evomaster.core.problem.enterprise.SampleType
+
 import org.evomaster.core.problem.enterprise.auth.NoAuth
-import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
-import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
-import org.evomaster.core.problem.rest.param.PathParam
-import org.evomaster.core.problem.rest.service.AbstractRestSampler
 import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.StructuralElement
-import org.evomaster.core.search.action.ActionResult
-import org.evomaster.core.search.gene.string.StringGene
-import org.evomaster.core.search.service.Randomness
+
 
 /**
  * Utility functions to select one or more REST Individual from a group, based on different criteria.
@@ -238,6 +228,11 @@ object RestIndividualSelectorUtils {
      * Create a copy of individual, where all main actions after index are removed
      */
     fun sliceAllCallsInIndividualAfterAction(restIndividual: RestIndividual, actionIndex: Int) : RestIndividual {
+
+        // we need to check that the index is within the range
+        if (actionIndex < 0 || actionIndex > restIndividual.size() -1) {
+            throw IllegalArgumentException("Action index has to be between 0 and ${restIndividual.size()}")
+        }
 
         val ind = restIndividual.copy() as RestIndividual
 
