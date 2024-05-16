@@ -62,7 +62,7 @@ public class ExternalServiceMockingEMTest extends SpringTestBase {
         assertTrue( externalServiceHandler.getExternalServices().containsKey("https__foobarbazz.com__8443"));
         restResourceFitness.calculateCoverage(restIndividual, Collections.emptySet());
         // assertion after the execution
-        assertEquals(2, externalServiceHandler.getExternalServices().size());
+        assertEquals(4, externalServiceHandler.getExternalServices().size());
 
     }
 }
