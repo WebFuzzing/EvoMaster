@@ -105,15 +105,15 @@ class RestIndividualSelectorUtilsPathStatusTest : IntegrationTestRestBase(){
 
         // find action with GET request
         val actionWithGet = RestIndividualSelectorUtils.findAction(listOfIndividuals, HttpVerb.GET) as RestCallAction
-        Assert.assertTrue(actionWithGet.verb == HttpVerb.GET)
+        assertTrue(actionWithGet.verb == HttpVerb.GET)
 
         // find action with get request having path as others and status code as 200
         val eval = RestIndividualSelectorUtils.findEvaluatedAction(listOfIndividuals, HttpVerb.GET, others, 200 )
         val actionWithPathOthers = eval!!.action as RestCallAction
         val actionWithPathOthersResult = eval!!.result as RestCallResult
 
-        Assert.assertTrue(actionWithPathOthers.verb == HttpVerb.GET)
-        Assert.assertTrue(actionWithPathOthersResult.getStatusCode() == 200)
+        assertTrue(actionWithPathOthers.verb == HttpVerb.GET)
+        assertTrue(actionWithPathOthersResult.getStatusCode() == 200)
     }
 
 }
