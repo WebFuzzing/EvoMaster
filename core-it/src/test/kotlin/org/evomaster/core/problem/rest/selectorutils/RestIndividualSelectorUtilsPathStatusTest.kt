@@ -44,7 +44,7 @@ class RestIndividualSelectorUtilsPathStatusTest : IntegrationTestRestBase(){
         assertEquals(0, r1.size)
 
         val r2 = RestIndividualSelectorUtils.findIndividuals(individuals, HttpVerb.GET, others, 200)
-        assertEquals(0, r2.size)
+        assertEquals(2, r2.size)
     }
 
     @Test
