@@ -2,7 +2,6 @@ package org.evomaster.core.problem.rest.selectorutils
 
 import bar.examples.it.spring.pathstatus.PathStatusController
 import org.evomaster.core.problem.rest.*
-import org.junit.Assert
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
@@ -17,16 +16,6 @@ class RestIndividualSelectorUtilsPathStatusTest : IntegrationTestRestBase(){
             initClass(PathStatusController())
         }
     }
-
-
-    /**
-     * Tests for methods inside RestIndividualSelectorUtils.kt
-     *
-     * 1. findAction based on VERB only
-     * 2. findAction based on PATH only
-     * 3. findAction based on
-     */
-
 
     @Test
     fun testPathStatus(){
@@ -110,7 +99,7 @@ class RestIndividualSelectorUtilsPathStatusTest : IntegrationTestRestBase(){
         // find action with get request having path as others and status code as 200
         val eval = RestIndividualSelectorUtils.findEvaluatedAction(listOfIndividuals, HttpVerb.GET, others, 200 )
         val actionWithPathOthers = eval!!.action as RestCallAction
-        val actionWithPathOthersResult = eval!!.result as RestCallResult
+        val actionWithPathOthersResult = eval.result as RestCallResult
 
         assertTrue(actionWithPathOthers.verb == HttpVerb.GET)
         assertTrue(actionWithPathOthersResult.getStatusCode() == 200)
