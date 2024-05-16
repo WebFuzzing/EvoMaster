@@ -312,6 +312,19 @@ class RestIndividualSelectorUtilsTest : IntegrationTestRestBase() {
     }
 
     @Test
+    fun testFindActionGroupsBasedOnVerbPathStatusStatusGroup() {
+
+        val listOfIndividuals = initializeIndividuals()
+
+        Assertions.assertThrows(IllegalArgumentException::class.java) {
+            RestIndividualSelectorUtils.findIndividuals(
+                listOfIndividuals, HttpVerb.GET, RestPath("/api/endpoint2/setStatus/{status}"),
+                403, StatusGroup.G_4xx)
+        }
+
+    }
+
+    @Test
     fun testFindActionGroupsBasedOnVerbPathStatusGroup() {
 
         val listOfIndividuals = initializeIndividuals()
