@@ -38,7 +38,7 @@ class WmHarvestResponseEMTest : SpringTestBase() {
                 args.add("--externalServiceIPSelectionStrategy")
                 args.add("USER")
                 args.add("--externalServiceIP")
-                args.add("127.0.0.4")
+                args.add("127.0.0.55")
                 args.add("--probOfHarvestingResponsesFromActualExternalServices")
                 args.add("0.9")
                 args.add("--probOfMutatingResponsesBasedOnActualResponse")
