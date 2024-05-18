@@ -7,6 +7,7 @@ import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.util.HttpWsUtil
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
