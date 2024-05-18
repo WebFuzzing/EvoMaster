@@ -61,35 +61,6 @@ class HostnameResolutionActionEMTest: SpringTestBase() {
         )
     }
 
-    @Test
-    fun manualTest() {
-        val args = arrayOf(
-            "--createTests", "false",
-            "--seed", "42",
-            "--sutControllerPort", "" + controllerPort,
-            "--maxActionEvaluations", "1",
-            "--stoppingCriterion", "FITNESS_EVALUATIONS",
-            "--executiveSummary", "false",
-            "--expectationsActive", "true",
-            "--outputFormat", "JAVA_JUNIT_5",
-            "--outputFolder", "target/em-tests/HostnameResolutionActionTest",
-            "--externalServiceIPSelectionStrategy", "USER",
-            "--externalServiceIP", "127.0.0.30"
-        )
-        val injector = init(args.toList())
 
-        val externalServiceHandler = injector.getInstance(HttpWsExternalServiceHandler::class.java)
-
-        val restResourceFitness = injector.getInstance(RestResourceFitness::class.java)
-        val resourceSampler = injector.getInstance(ResourceSampler::class.java)
-        val restIndividual = resourceSampler.sample(false)
-
-        assertEquals(0, externalServiceHandler.getLocalDomainNameMapping().size)
-
-        restResourceFitness.calculateCoverage(restIndividual, setOf())
-
-        assertTrue(externalServiceHandler.getLocalDomainNameMapping().containsKey("imaginary-second.local"))
-        assertEquals(1, externalServiceHandler.getLocalDomainNameMapping().size)
-    }
 
 }

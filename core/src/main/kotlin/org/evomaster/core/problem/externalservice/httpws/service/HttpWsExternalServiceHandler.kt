@@ -283,6 +283,17 @@ class HttpWsExternalServiceHandler {
         }
     }
 
+    fun reset() {
+        stopActiveWireMockServers()
+        externalServices.clear()
+        hostnameResolutionInfos.clear()
+        hostnameLocalAddressMapping.clear()
+        skippedExternalServices.clear()
+        lastIPAddress = ""
+        counter = 0
+
+    }
+
     fun stopActiveWireMockServers() {
         externalServices.filter { it.value.isActive() }.forEach {
             it.value.stopWireMockServer()
