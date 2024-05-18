@@ -15,7 +15,7 @@ class WmAuth0Rest {
     fun get() : ResponseEntity<String> {
 
         try {
-            val domain = "www.doesnotexistfoo.org"
+            val domain = "www.doesnotexistfoo.org:6789"
             val audience = String.format("https://%s/api/v2/", domain)
             val authClient = AuthAPI(domain, "foo", "123")
 

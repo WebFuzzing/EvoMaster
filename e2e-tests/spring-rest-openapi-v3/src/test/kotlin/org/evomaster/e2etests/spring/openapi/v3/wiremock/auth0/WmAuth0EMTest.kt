@@ -15,11 +15,9 @@ class WmAuth0EMTest : SpringTestBase() {
         @BeforeAll
         @JvmStatic
         fun init() {
-
             val config = EMConfig()
             config.instrumentMR_NET = true
             initClass(WmAuth0Controller(), config)
-
         }
     }
 

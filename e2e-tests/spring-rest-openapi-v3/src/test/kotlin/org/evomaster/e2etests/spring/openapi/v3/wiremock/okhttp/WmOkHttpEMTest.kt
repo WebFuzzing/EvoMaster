@@ -15,7 +15,6 @@ class WmOkHttpEMTest : SpringTestBase() {
         @BeforeAll
         @JvmStatic
         fun init() {
-
             val config = EMConfig()
             config.instrumentMR_NET = true
             initClass(WmOkHttpController(), config)

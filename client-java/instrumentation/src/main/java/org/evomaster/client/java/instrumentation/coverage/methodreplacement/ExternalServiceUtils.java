@@ -58,19 +58,9 @@ public class ExternalServiceUtils {
         // data structure of the external service mapping inside ExecutionTracer
 
         ExecutionTracer.addExternalServiceHost(remoteHostInfo);
-        String signature = remoteHostInfo.signature();
 
         if (!ExecutionTracer.hasLocalAddressForHost(remoteHostInfo.getHostname())) {
-            int connectPort = remotePort;
-
-            if (!ExecutionTracer.hasActiveExternalMappingForSignature(signature)) {
-                ExecutionTracer.addEmployedDefaultWMHost(remoteHostInfo);
-                signature = ExternalServiceSharedUtils.getWMDefaultSignature(remoteHostInfo.getProtocol(), remotePort);
-                connectPort = ExternalServiceSharedUtils.getDefaultWMPort(signature);
-            }
-
             return new String[]{ExecutionTracer.getDefaultSinkholeAddress(), "" + remotePort};
-//            return new String[]{ExecutionTracer.getExternalMappingForSignature(signature), "" + connectPort};
         } else {
             return new String[]{ExecutionTracer.getLocalAddress(remoteHostInfo.getHostname()), "" + remotePort};
         }

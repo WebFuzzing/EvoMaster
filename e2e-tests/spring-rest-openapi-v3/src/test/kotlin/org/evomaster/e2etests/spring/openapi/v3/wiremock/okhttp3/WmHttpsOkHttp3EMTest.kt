@@ -15,7 +15,6 @@ class WmHttpsOkHttp3EMTest : SpringTestBase() {
         @BeforeAll
         @JvmStatic
         fun init() {
-
             val config = EMConfig()
             config.instrumentMR_NET = true
             initClass(WmOkHttp3Controller(listOf("/api/wm/socketconnect/string","/api/wm/socketconnect/object")), config)
