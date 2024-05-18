@@ -5,10 +5,9 @@ import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
-@Disabled
+
 class AuthZeroJacksonEMTest: SpringTestBase() {
 
     companion object {
@@ -28,7 +27,7 @@ class AuthZeroJacksonEMTest: SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "GeneratedAuth0JacksonEMTest",
             "org.foo.GeneratedAuth0JacksonEMTest",
-            500,
+            1000,
             true,
             { args: MutableList<String> ->
 
