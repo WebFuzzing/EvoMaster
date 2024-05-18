@@ -49,7 +49,7 @@ class HarvestingStrategyTest : SpringTestBase() {
             "HarvestStrategyExactEMTest",
             "org.foo.HarvestStrategyExactEMTest",
             100,
-            true, // this fails in local and CI
+            true,
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")
