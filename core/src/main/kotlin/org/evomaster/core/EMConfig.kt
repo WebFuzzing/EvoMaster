@@ -2245,6 +2245,42 @@ class EMConfig {
         return (hours * 60 * 60) + (minutes * 60) + seconds
     }
 
+    @Experimental
+    @Cfg("How much data elements, per key, can be stored in the Data Pool." +
+            " Once limit is reached, new old will replace old data. ")
+    @Min(1.0)
+    var maxSizeDataPool = 100
+
+    @Experimental
+    @Cfg("Threshold of Levenshtein Distance for key-matching in Data Pool")
+    @Min(0.0)
+    var thresholdDistanceForDataPool = 2
+
+    @Experimental
+    @Cfg("Enable the collection of response data, to feed new individuals based on field names matching.")
+    var useResponseDataPool = false
+
+    @Experimental
+    @Probability(false)
+    @Cfg("Specify the probability of using the data pool when sampling test cases." +
+            " This is for black-box (bb) mode")
+    var bbProbabilityUseDataPool = 0.8
+
+    @Experimental
+    @Probability(false)
+    @Cfg("Specify the probability of using the data pool when sampling test cases." +
+            " This is for white-box (wb) mode")
+    var wbProbabilityUseDataPool = 0.2
+
+
+    fun getProbabilityUseDataPool() : Double{
+        return if(blackBox){
+            bbProbabilityUseDataPool
+        } else {
+            wbProbabilityUseDataPool
+        }
+    }
+
     fun trackingEnabled() = isMIO() && (enableTrackEvaluatedIndividual || enableTrackIndividual)
 
     /**

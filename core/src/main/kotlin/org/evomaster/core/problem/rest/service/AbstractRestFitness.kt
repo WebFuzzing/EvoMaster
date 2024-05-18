@@ -1,6 +1,12 @@
 package org.evomaster.core.problem.rest.service
 
+import com.fasterxml.jackson.core.JsonProcessingException
+import com.fasterxml.jackson.databind.JsonMappingException
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.JsonNodeType
 import com.google.inject.Inject
+import opennlp.tools.stemmer.PorterStemmer
 import org.evomaster.client.java.controller.api.EMTestUtils
 import org.evomaster.client.java.controller.api.dto.ActionDto
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
@@ -34,10 +40,12 @@ import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.service.DataPool
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.URL
+import javax.ws.rs.POST
 import javax.ws.rs.ProcessingException
 import javax.ws.rs.client.Entity
 import javax.ws.rs.client.Invocation
@@ -54,6 +62,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
     @Inject
     protected lateinit var harvestResponseHandler: HarvestActualHttpWsResponseHandler
+
+    @Inject
+    protected lateinit var responsePool: DataPool
+
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(AbstractRestFitness::class.java)
@@ -193,12 +205,13 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                          parameters in body payload of form submissions in x-www-form-urlencoded format.
                          This happens for example in LanguageTool.
                      */
-                    !action.parameters.any{
-                            b -> b is BodyParam && b.isForm()
-                            && b.seeGenes().flatMap { it.flatView() }.any { it.name.equals(name, ignoreCase = true)  }
+                    !action.parameters.any { b ->
+                        b is BodyParam && b.isForm()
+                                && b.seeGenes().flatMap { it.flatView() }
+                            .any { it.name.equals(name, ignoreCase = true) }
                     }
                 }
-                .filter{ name ->
+                .filter { name ->
                     /*
                         Another tricky case. Some frameworks like Spring can have hidden params to override the method
                         type of the requests. This is needed for handling web browsers without JS.
@@ -332,7 +345,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 }
 
                 val unauthorized = !AuthUtils.checkUnauthorizedWithAuth(status, actions[it])
-                if(unauthorized){
+                if (unauthorized) {
                     /*
                         Note: at this point we cannot consider it as a bug, because it could be just a
                         misconfigured auth info.
@@ -506,12 +519,17 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 }
 
                 TcpUtils.isUnknownHost(e) -> {
-                    throw SutProblemException("Unknown host: ${URL(getBaseUrl()).host}\n" +
-                            " Are you sure you did not misspell it?")
+                    throw SutProblemException(
+                        "Unknown host: ${URL(getBaseUrl()).host}\n" +
+                                " Are you sure you did not misspell it?"
+                    )
                 }
 
-                TcpUtils.isInternalError(e) ->{
-                    throw RuntimeException("Internal bug with EvoMaster when making a HTTP call toward ${a.resolvedPath()}", e)
+                TcpUtils.isInternalError(e) -> {
+                    throw RuntimeException(
+                        "Internal bug with EvoMaster when making a HTTP call toward ${a.resolvedPath()}",
+                        e
+                    )
                 }
 
                 else -> throw e
@@ -574,8 +592,6 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         return true
     }
-
-
 
 
     private fun createInvocation(
@@ -754,7 +770,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
      * WARNING: possible side-effects on input parameters, eg actionResults
      */
     protected fun restActionResultHandling(
-        individual: RestIndividual, targets: Set<Int>, allCovered: Boolean, actionResults: List<ActionResult>, fv: FitnessValue
+        individual: RestIndividual,
+        targets: Set<Int>,
+        allCovered: Boolean,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
     ): TestResultsDto? {
 
         if (actionResults.any { it is RestCallResult && it.getTcpProblem() }) {
@@ -791,7 +811,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             return null
         }
 
-        if(! allCovered) {
+        if (!allCovered) {
             if (config.expandRestIndividuals) {
                 expandIndividual(individual, dto.additionalInfoList, actionResults)
             }
@@ -808,8 +828,27 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             }
         }
 
+        if (config.useResponseDataPool) {
+            recordResponseData(individual, actionResults.filterIsInstance<RestCallResult>())
+        }
+
         return dto
     }
+
+    protected fun recordResponseData(individual: RestIndividual, actionResults: List<RestCallResult>) {
+
+        for (res in actionResults) {
+            val source = individual.seeAllActions().find { it.getLocalId() == res.sourceLocalId } as RestCallAction?
+            if (source == null) {
+                log.warn("Failed to analyze response. Cannot match response to source action")
+                assert(false)//only break in tests
+                continue
+            }
+            RestResponseFeeder.handleResponse(source, res, responsePool)
+        }
+    }
+
+
 
     /**
      * Based on info coming from SUT execution, register and start new WireMock instances.
@@ -843,7 +882,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 )
                 externalServiceHandler.addHostname(dns)
 
-                if(dns.isResolved()){
+                if (dns.isResolved()) {
                     /*
                         We need to ask, are we in that special case in which a hostname was resolved but there is
                         no action for it?
@@ -853,12 +892,16 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                         the genotype of this evaluated individual (without modifying its phenotype)
                      */
                     val actions = individual.seeActions(ActionFilter.ONLY_DNS) as List<HostnameResolutionAction>
-                    if ((actions.isEmpty() || actions.none{ it.hostname == hn.remoteHostname}) &&
+                    if ((actions.isEmpty() || actions.none { it.hostname == hn.remoteHostname }) &&
                         // To avoid adding action for the local WM address in case of InetAddress used
                         // in the case study.
-                        !externalServiceHandler.isWireMockAddress(hn.remoteHostname)){
+                        !externalServiceHandler.isWireMockAddress(hn.remoteHostname)
+                    ) {
                         // OK, we are in that special case
-                        val hra = HostnameResolutionAction(hn.remoteHostname, ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP)
+                        val hra = HostnameResolutionAction(
+                            hn.remoteHostname,
+                            ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP
+                        )
                         individual.addChildToGroup(hra, GroupsOfChildren.INITIALIZATION_DNS)
                         // TODO: Above line adds unnecessary tests at the end, which is
                         //  causing the created tests to fail.

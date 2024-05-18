@@ -426,4 +426,10 @@ abstract class StructuralElement (
         return parent!!.getFirstParent(predicate)
     }
 
+    /**
+     * @return the first parent of the given type, or null if none found
+     */
+    fun <T:StructuralElement> getFirstParent(klass: Class<T>) : T? {
+        return getFirstParent { klass.isAssignableFrom(it.javaClass) } as T?
+    }
 }
