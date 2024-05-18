@@ -16,6 +16,20 @@ internal class RestPathTest{
 
 
     @Test
+    fun testNameQualifier(){
+
+        val balance = RestPath("/users/{id}/balance")
+        val user = RestPath("/users/{id}")
+        val users = RestPath("/users")
+        val root = RestPath("/{x}/{y}")
+
+        assertEquals("balance", balance.nameQualifier)
+        assertEquals("user", user.nameQualifier)
+        assertEquals("users", users.nameQualifier)
+        assertEquals("/", root.nameQualifier)
+    }
+
+    @Test
     fun testGestaohospitalIssue(){
 
         val original = "/v1/hospitais/"

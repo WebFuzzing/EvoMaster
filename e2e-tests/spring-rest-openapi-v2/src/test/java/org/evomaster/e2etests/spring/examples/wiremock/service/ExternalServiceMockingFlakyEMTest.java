@@ -17,6 +17,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@Disabled
 public class ExternalServiceMockingFlakyEMTest extends SpringTestBase {
 
     @BeforeAll
@@ -27,13 +28,12 @@ public class ExternalServiceMockingFlakyEMTest extends SpringTestBase {
         SpringTestBase.initClass(serviceController, config);
     }
 
-    @Disabled //TODO needs to be put back once fixed issues with WM
     @Test
     public void externalServiceMockingTest() throws Throwable {
         runTestHandlingFlakyAndCompilation(
                 "ExternalServiceMockingEMGeneratedTest",
                 "org.bar.ExternalServiceMockingEMGeneratedTest",
-                1500,
+                500,
                 true,
                 (args) -> {
 
@@ -45,7 +45,7 @@ public class ExternalServiceMockingFlakyEMTest extends SpringTestBase {
                     args.add("--externalServiceIPSelectionStrategy");
                     args.add("USER");
                     args.add("--externalServiceIP");
-                    args.add("127.0.0.5");
+                    args.add("127.0.0.50");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 
@@ -54,9 +54,6 @@ public class ExternalServiceMockingFlakyEMTest extends SpringTestBase {
                     // manually.
                     List<Action> actions = new ArrayList<>();
                     for (EvaluatedIndividual<RestIndividual> individual : solution.getIndividuals()) {
-//                        for (RestResourceCalls call : individual.getIndividual().getResourceCalls()) {
-//                            actions.addAll(call.seeActions(ActionFilter.ONLY_EXTERNAL_SERVICE));
-//                        }
                         actions.addAll(individual.getIndividual().seeExternalServiceActions());
                     }
                     //assertEquals(actions.size(), 13);

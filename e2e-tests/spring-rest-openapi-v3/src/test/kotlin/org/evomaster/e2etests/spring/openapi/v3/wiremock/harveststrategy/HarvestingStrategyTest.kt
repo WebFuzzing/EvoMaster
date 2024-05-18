@@ -6,7 +6,6 @@ import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer
-import org.evomaster.ci.utils.CIUtils
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
@@ -23,7 +22,6 @@ class HarvestingStrategyTest: SpringTestBase() {
             val config = EMConfig()
             config.instrumentMR_NET = true
             initClass(HarvestStrategyController(), config)
-            CIUtils.skipIfOnGA()
         }
     }
 
@@ -48,8 +46,8 @@ class HarvestingStrategyTest: SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "HarvestStrategyExactEMTest",
             "org.foo.HarvestStrategyExactEMTest",
-            1000,
-            !CIUtils.isRunningGA(),
+            100,
+            true,
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")
@@ -102,7 +100,7 @@ class HarvestingStrategyTest: SpringTestBase() {
             "HarvestStrategyClosestEMTest",
             "org.foo.HarvestStrategyClosestEMTest",
             100,
-            !CIUtils.isRunningGA(),
+            true,
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")

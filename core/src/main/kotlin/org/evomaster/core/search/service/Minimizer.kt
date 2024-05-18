@@ -286,7 +286,7 @@ class Minimizer<T: Individual> {
                 val b = other[index].result.getResultValue(HttpWsCallResult.STATUS_CODE)
 
                 if(a != b){
-                    log.warn("Different status code returned $a != $b for endpoint: ${action.getName()}")
+                    log.warn("Different status code $b returned from original $a, ie, $a != $b for endpoint: ${action.getName()}")
                     assert(false)
                 }
             }

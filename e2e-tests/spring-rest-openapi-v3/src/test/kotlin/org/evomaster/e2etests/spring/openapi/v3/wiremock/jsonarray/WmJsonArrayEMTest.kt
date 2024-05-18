@@ -1,14 +1,11 @@
 package org.evomaster.e2etests.spring.openapi.v3.wiremock.jsonarray
 
 import com.foo.rest.examples.spring.openapi.v3.wiremock.jsonarray.WmJsonArrayController
-import org.evomaster.ci.utils.CIUtils
-
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 /**
@@ -28,18 +25,15 @@ class WmJsonArrayEMTest : SpringTestBase() {
     }
 
 
-    @Disabled("TODO: Disabled until the issues with WM is fixed")
     @Test
     fun testRunEM() {
 
         runTestHandlingFlakyAndCompilation(
             "WmJsonArrayEM",
             "org.foo.WmJsonArrayEM",
-            1000,
-            false,
+            100,
+            true,
             { args: MutableList<String> ->
-                // TODO: Generated test looks perfect but for some reason it fails.
-                //  CreatedTests is set to false temporarily
                 args.add("--externalServiceIPSelectionStrategy")
                 args.add("USER")
                 args.add("--externalServiceIP")
@@ -49,11 +43,9 @@ class WmJsonArrayEMTest : SpringTestBase() {
 
                 assertTrue(solution.individuals.size >= 1)
 
-                if (!CIUtils.isRunningGA()) {
-                    //FIXME same issue as other WM tests... pass locally. Maybe should try again on CircleCI
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/jsonarray", "OK X")
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/jsonarray", "OK X and Y")
-                }
+                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/jsonarray", "OK X")
+                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/jsonarray", "OK X and Y")
+
             },
             3
         )

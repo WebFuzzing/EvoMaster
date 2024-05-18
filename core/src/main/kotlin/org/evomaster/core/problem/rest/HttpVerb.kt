@@ -15,6 +15,12 @@ enum class HttpVerb {
     TRACE,
     HEAD;
 
+    fun isWriteOperation() : Boolean{
+        return this == POST || this == PUT || this == DELETE || this == PATCH
+    }
+
+    fun isReadOperation() = !isWriteOperation()
+
     companion object {
 
         fun from(method: HttpMethod): HttpVerb {
