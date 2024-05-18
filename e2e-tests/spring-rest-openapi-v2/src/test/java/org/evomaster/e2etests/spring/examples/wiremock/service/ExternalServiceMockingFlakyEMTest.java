@@ -17,7 +17,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Disabled
+
 public class ExternalServiceMockingFlakyEMTest extends SpringTestBase {
 
     @BeforeAll

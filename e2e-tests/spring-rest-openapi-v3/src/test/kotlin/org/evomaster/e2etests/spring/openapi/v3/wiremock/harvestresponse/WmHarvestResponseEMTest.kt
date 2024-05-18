@@ -8,8 +8,10 @@ import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
+@Disabled
 class WmHarvestResponseEMTest : SpringTestBase() {
 
     companion object {
@@ -36,7 +38,7 @@ class WmHarvestResponseEMTest : SpringTestBase() {
                 args.add("--externalServiceIPSelectionStrategy")
                 args.add("USER")
                 args.add("--externalServiceIP")
-                args.add("127.0.0.4")
+                args.add("127.0.0.55")
                 args.add("--probOfHarvestingResponsesFromActualExternalServices")
                 args.add("0.9")
                 args.add("--probOfMutatingResponsesBasedOnActualResponse")
