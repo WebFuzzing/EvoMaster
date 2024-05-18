@@ -78,12 +78,12 @@ class HostnameResolutionActionEMTest: SpringTestBase() {
         val resourceSampler = injector.getInstance(ResourceSampler::class.java)
         val restIndividual = resourceSampler.sample(false)
 
-        assertEquals(1, externalServiceHandler.getLocalDomainNameMapping().size)
+        assertEquals(0, externalServiceHandler.getLocalDomainNameMapping().size)
 
         restResourceFitness.calculateCoverage(restIndividual, setOf())
 
         assertTrue(externalServiceHandler.getLocalDomainNameMapping().containsKey("imaginary-second.local"))
-        assertEquals(2, externalServiceHandler.getLocalDomainNameMapping().size)
+        assertEquals(1, externalServiceHandler.getLocalDomainNameMapping().size)
     }
 
 }
