@@ -1,12 +1,7 @@
 package org.evomaster.core.problem.rest.service
 
-import com.fasterxml.jackson.core.JsonProcessingException
-import com.fasterxml.jackson.databind.JsonMappingException
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.node.JsonNodeType
+
 import com.google.inject.Inject
-import opennlp.tools.stemmer.PorterStemmer
 import org.evomaster.client.java.controller.api.EMTestUtils
 import org.evomaster.client.java.controller.api.dto.ActionDto
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
@@ -45,7 +40,6 @@ import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.URL
-import javax.ws.rs.POST
 import javax.ws.rs.ProcessingException
 import javax.ws.rs.client.Entity
 import javax.ws.rs.client.Invocation
