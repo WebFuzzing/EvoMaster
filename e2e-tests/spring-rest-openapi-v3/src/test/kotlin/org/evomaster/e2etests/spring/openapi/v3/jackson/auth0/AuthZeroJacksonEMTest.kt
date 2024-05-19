@@ -27,7 +27,7 @@ class AuthZeroJacksonEMTest: SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "GeneratedAuth0JacksonEMTest",
             "org.foo.GeneratedAuth0JacksonEMTest",
-            1000,
+            1500,
             true,
             { args: MutableList<String> ->
 

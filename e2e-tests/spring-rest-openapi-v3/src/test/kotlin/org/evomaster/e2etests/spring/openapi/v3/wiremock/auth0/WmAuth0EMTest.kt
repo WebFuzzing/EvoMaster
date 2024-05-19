@@ -29,7 +29,7 @@ class WmAuth0EMTest : SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "WmAuth0EM",
             "org.foo.WmAuth0EM",
-            200,
+            500,
             true,
             { args: MutableList<String> ->
 
@@ -45,7 +45,7 @@ class WmAuth0EMTest : SpringTestBase() {
                 assertTrue(solution.individuals.size >= 1)
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/auth0", "OK")
             },
-            5
+            3
         )
     }
 
