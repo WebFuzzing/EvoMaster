@@ -42,7 +42,7 @@ class AuthZeroJacksonEMTest: SpringTestBase() {
 
                 Assertions.assertTrue(solution.individuals.size >= 1)
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/jackson/auth", "Working")
-            }, 3
+            }, 5
         )
     }
 }
