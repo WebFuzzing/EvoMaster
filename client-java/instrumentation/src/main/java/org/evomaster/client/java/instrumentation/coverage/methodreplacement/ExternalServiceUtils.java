@@ -7,10 +7,12 @@ import org.evomaster.client.java.instrumentation.shared.IPAddressValidator;
 import org.evomaster.client.java.instrumentation.shared.PreDefinedSSLInfo;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.staticstate.MethodReplacementPreserveSemantics;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.time.LocalDateTime;
 
 public class ExternalServiceUtils {
 
@@ -32,7 +34,9 @@ public class ExternalServiceUtils {
         // TODO: If we skip Inet resolution at this point, incase if it is already exists, would
         //  it improve the speed?
         try {
+            SimpleLogger.info("Beginning to resolve IP for " + host + " at " + LocalDateTime.now());
             InetAddress addresses = InetAddressClassReplacement.getByName(host);
+            SimpleLogger.info("After to resolved " + host + " at " + LocalDateTime.now());
             ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(host, addresses.getHostAddress()));
         } catch (Exception e){
             //do nothing
