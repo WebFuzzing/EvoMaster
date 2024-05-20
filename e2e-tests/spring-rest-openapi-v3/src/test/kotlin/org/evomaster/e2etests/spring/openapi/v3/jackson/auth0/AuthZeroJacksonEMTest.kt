@@ -8,7 +8,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
-@Disabled("Failing in CI for reasons unknown")
+//@Disabled("Failing in CI for reasons unknown")
 class AuthZeroJacksonEMTest: SpringTestBase() {
 
     companion object {
@@ -28,7 +28,7 @@ class AuthZeroJacksonEMTest: SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "GeneratedAuth0JacksonEMTest",
             "org.foo.GeneratedAuth0JacksonEMTest",
-            2500,
+            3000,
             true,
             { args: MutableList<String> ->
 
@@ -43,7 +43,7 @@ class AuthZeroJacksonEMTest: SpringTestBase() {
 
                 Assertions.assertTrue(solution.individuals.size >= 1)
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/jackson/auth", "Working")
-            }, 3
+            }, 5
         )
     }
 }
