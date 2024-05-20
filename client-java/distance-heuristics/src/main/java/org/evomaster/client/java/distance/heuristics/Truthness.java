@@ -1,5 +1,9 @@
 package org.evomaster.client.java.distance.heuristics;
 
+import java.util.Objects;
+
+import static java.lang.String.format;
+
 /**
  * 2 values: one for true, and one for false.
  * The values are in [0,1].
@@ -10,6 +14,11 @@ package org.evomaster.client.java.distance.heuristics;
  * would had been from being taken
  */
 public class Truthness {
+
+    public static final Double C = DistanceHelper.H_NOT_NULL;
+    public static final Truthness TRUE = new Truthness(1d, C);
+    public static final Truthness FALSE = new Truthness(C, 1d);
+    public static final Truthness FALSE_LOWER = new Truthness(C / 2, 1d);
 
     private final double ofTrue;
     private final double ofFalse;
@@ -35,7 +44,6 @@ public class Truthness {
         return new Truthness(ofFalse, ofTrue);
     }
 
-
     /**
      * @return a value in [0,1], where 1 means the expression evaluated to true
      */
@@ -56,5 +64,29 @@ public class Truthness {
 
     public boolean isFalse(){
         return ofFalse == 1d;
+    }
+
+    @Override
+    public String toString() {
+        if(equals(FALSE)) {
+            return "false";
+        } else if(equals(TRUE)) {
+            return "true";
+        } else {
+            return format("%f (Truthness: (%f, %f))", ofTrue, ofTrue, ofFalse);
+        }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Truthness truthness = (Truthness) o;
+        return Double.compare(ofTrue, truthness.ofTrue) == 0 && Double.compare(ofFalse, truthness.ofFalse) == 0;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(ofTrue, ofFalse);
     }
 }

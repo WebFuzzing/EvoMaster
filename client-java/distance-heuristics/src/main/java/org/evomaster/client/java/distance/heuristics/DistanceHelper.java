@@ -115,7 +115,7 @@ public class DistanceHelper {
     public static double scaleHeuristicWithBase(double heuristic, double base){
 
         if(heuristic < 0 || heuristic >= 1){
-            throw new IllegalArgumentException("Invalid heuristic: " + base);
+            throw new IllegalArgumentException("Invalid heuristic: " + heuristic);
         }
         if(base < 0 || base >= 1){
             throw new IllegalArgumentException("Invalid base: " + base);

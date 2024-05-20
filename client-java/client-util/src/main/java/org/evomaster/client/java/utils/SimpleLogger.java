@@ -16,7 +16,7 @@ public class SimpleLogger {
 
     private static final Set<String> errorMsgToRecord = new CopyOnWriteArraySet<>();
 
-    public enum Level {DEBUG, INFO, WARN, ERROR, OFF}
+    public enum Level {TRACE, DEBUG, INFO, WARN, ERROR, OFF}
 
     /**
      * Property used to control the logging level by system property
@@ -52,6 +52,9 @@ public class SimpleLogger {
         }
     }
 
+    public static void trace(String message){
+        printMessage(Level.TRACE, message, null);
+    }
 
     public static void debug(String message){
         printMessage(Level.DEBUG, message, null);

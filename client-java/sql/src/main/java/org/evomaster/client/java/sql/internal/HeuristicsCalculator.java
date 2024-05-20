@@ -35,12 +35,9 @@ public class HeuristicsCalculator {
 
     private final TaintHandler taintHandler;
 
-    private final boolean advancedHeuristics;
-
-    protected HeuristicsCalculator(SqlNameContext context, TaintHandler handler, boolean advancedHeuristics) {
+    protected HeuristicsCalculator(SqlNameContext context, TaintHandler handler) {
         this.context = Objects.requireNonNull(context);
         this.taintHandler = handler;
-        this.advancedHeuristics = advancedHeuristics;
     }
 
     //only for tests
@@ -77,7 +74,7 @@ public class HeuristicsCalculator {
         if (schema != null) {
             context.setSchema(schema);
         }
-        HeuristicsCalculator calculator = new HeuristicsCalculator(context, taintHandler, advancedHeuristics);
+        HeuristicsCalculator calculator = new HeuristicsCalculator(context, taintHandler);
 
         double min = Double.MAX_VALUE;
         for (DataRow row : data.seeRows()) {

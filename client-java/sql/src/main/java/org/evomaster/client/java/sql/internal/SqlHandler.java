@@ -9,8 +9,13 @@ import net.sf.jsqlparser.statement.Statement;
 import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto;
 import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionLogDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
+import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.sql.QueryResult;
 import org.evomaster.client.java.sql.SqlScriptRunner;
+import org.evomaster.client.java.sql.advanced.AdvancedHeuristic;
+import org.evomaster.client.java.sql.advanced.driver.Schema;
+import org.evomaster.client.java.sql.advanced.driver.SqlDriver;
+import org.evomaster.client.java.sql.advanced.driver.cache.ConcurrentCache;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.sql.Connection;
@@ -19,6 +24,10 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static java.util.Objects.isNull;
+import static org.evomaster.client.java.sql.advanced.AdvancedHeuristic.createAdvancedHeuristic;
+import static org.evomaster.client.java.sql.advanced.driver.Schema.createSchema;
+import static org.evomaster.client.java.sql.advanced.driver.SqlDriver.createSqlDriver;
 import static org.evomaster.client.java.sql.internal.ParserUtils.*;
 
 /**
@@ -55,6 +64,8 @@ public class SqlHandler {
     private int numberOfSqlCommands;
 
     private volatile Connection connection;
+
+    private volatile AdvancedHeuristic advancedHeuristic;
 
     private volatile boolean calculateHeuristics;
 
@@ -96,6 +107,8 @@ public class SqlHandler {
         executedInfo.clear();
 
         numberOfSqlCommands = 0;
+
+        advancedHeuristic = null;
     }
 
     public void setConnection(Connection connection) {
@@ -181,7 +194,7 @@ public class SqlHandler {
                             dist = computeDistance(sql);
                         } catch (Exception e) {
                             SimpleLogger.error("FAILED TO COMPUTE HEURISTICS FOR SQL: " + sql);
-                            dist = Double.MAX_VALUE;
+                            dist = maxDistance();
                             //assert false; //TODO put back once we update JSqlParser
                             //return;
                         }
@@ -195,6 +208,9 @@ public class SqlHandler {
         return distances;
     }
 
+    private double maxDistance() {
+        return isAdvancedHeuristics() ? 1d : Double.MAX_VALUE;
+    }
 
     private Double computeDistance(String command) {
 
@@ -208,7 +224,7 @@ public class SqlHandler {
             statement = CCJSqlParserUtil.parse(command);
         } catch (Exception e) {
             SimpleLogger.uniqueWarn("Cannot handle command: " + command + "\n" + e);
-            return Double.MAX_VALUE;
+            return maxDistance();
         }
 
 
@@ -223,7 +239,17 @@ public class SqlHandler {
             //TODO check if table(s) not empty, and give >0 otherwise
             dist = 0;
         } else {
-            dist = getDistanceForWhere(command, columns);
+            if(isAdvancedHeuristics()){
+                if(isNull(advancedHeuristic)){
+                    Schema schema = createSchema(this.schema);
+                    SqlDriver sqlDriver = createSqlDriver(connection, schema, new ConcurrentCache());
+                    advancedHeuristic = createAdvancedHeuristic(sqlDriver);
+                }
+                Truthness truthness = advancedHeuristic.calculate(command);
+                dist = 1 - truthness.getOfTrue();
+            } else {
+                dist = getDistanceForWhere(command, columns);
+            }
         }
 
         if (dist > 0) {
@@ -265,7 +291,7 @@ public class SqlHandler {
             throw new RuntimeException(e);
         }
 
-        return HeuristicsCalculator.computeDistance(command, data, schema, taintHandler,advancedHeuristics);
+        return HeuristicsCalculator.computeDistance(command, data, schema, taintHandler, advancedHeuristics);
     }
 
     private String createSelectForSingleTable(String tableName, Set<String> columns) {

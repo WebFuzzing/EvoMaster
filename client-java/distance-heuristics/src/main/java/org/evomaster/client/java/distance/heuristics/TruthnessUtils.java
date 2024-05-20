@@ -1,5 +1,11 @@
 package org.evomaster.client.java.distance.heuristics;
 
+import java.util.Arrays;
+
+import static org.evomaster.client.java.distance.heuristics.DistanceHelper.scaleHeuristicWithBase;
+import static org.evomaster.client.java.distance.heuristics.Truthness.FALSE;
+import static org.evomaster.client.java.distance.heuristics.Truthness.TRUE;
+
 public class TruthnessUtils {
 
     /**
@@ -62,6 +68,13 @@ public class TruthnessUtils {
         );
     }
 
+    public static Truthness getLessThanTruthness(double a, double b) {
+        double distance = DistanceHelper.getDistanceToEquality(a, b);
+        return new Truthness(
+                a < b ? 1d : 1d / (1.1d + distance),
+                a >= b ? 1d : 1d / (1.1d + distance)
+        );
+    }
 
     /**
      * @param len a positive value for a length
@@ -73,10 +86,57 @@ public class TruthnessUtils {
             throw new IllegalArgumentException("lengths should always be non-negative. Invalid length " + len);
         }
         if (len == 0) {
-            t = new Truthness(1, DistanceHelper.H_NOT_NULL);
+            t = new Truthness(1, Truthness.C);
         } else {
             t = new Truthness(1d / (1d + len), 1);
         }
         return t;
+    }
+
+    public static Truthness getStringEqualityTruthness(String str1, String str2){
+        if (str1.equals(str2)) {
+            return new Truthness(1d, Truthness.C);
+        } else {
+            final double base = Truthness.C;
+            double distance = DistanceHelper.getLeftAlignmentDistance(str1, str2);
+            double h = DistanceHelper.heuristicFromScaledDistanceWithBase(base, distance);
+            return new Truthness(h, 1d);
+        }
+    }
+
+    public static Double avgOfTrue(Truthness... items) {
+        return Arrays.stream(items).mapToDouble(Truthness::getOfTrue).sum() / items.length;
+    }
+
+    public static Double avgOfFalse(Truthness... items) {
+        return Arrays.stream(items).mapToDouble(Truthness::getOfFalse).sum() / items.length;
+    }
+
+    public static Double trueOrAvgTrue(Truthness... items) {
+        return Arrays.stream(items).anyMatch(Truthness::isTrue) ? 1d : avgOfTrue(items);
+    }
+
+    public static Double falseOrAvgFalse(Truthness... items) {
+        return Arrays.stream(items).anyMatch(Truthness::isFalse) ? 1d : avgOfFalse(items);
+    }
+
+    public static Truthness andAggregation(Truthness... items) {
+        return new Truthness(avgOfTrue(items), falseOrAvgFalse(items));
+    }
+
+    public static Truthness orAggregation(Truthness... items) {
+        return new Truthness(trueOrAvgTrue(items), avgOfFalse(items));
+    }
+
+    public static Truthness trueIfConditionElseFalse(Boolean condition) {
+        return condition ? TRUE : FALSE;
+    }
+
+    public static Truthness scaleTrue(Double ofTrue){
+        return new Truthness(scaleHeuristicWithBase(ofTrue, Truthness.C), 1d);
+    }
+
+    public static Truthness trueOrScaleTrue(Double ofTrue){
+        return ofTrue == 1d ? TRUE : scaleTrue(ofTrue);
     }
 }
