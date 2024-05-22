@@ -802,7 +802,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 Quite tricky... if a WM instance was started as part of this test case evaluation,
                 then the results are invalid, as they are based on WM not being there.
              */
-            // return null
+             return null
         }
 
         if (!allCovered) {
