@@ -14,6 +14,7 @@ import org.evomaster.core.problem.rest.resource.RestResourceCalls
 
 import org.evomaster.core.search.*
 import org.evomaster.core.search.service.Archive
+import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -42,6 +43,9 @@ class SecurityRest {
 
     @Inject
     private lateinit var fitness: RestFitness
+
+    @Inject
+    private lateinit var idMapper: IdMapper
 
     /**
      * All actions that can be defined from the OpenAPI schema
@@ -341,19 +345,25 @@ class SecurityRest {
                         return@forEach
                     }
 
-                    //now we can finally ask, is there a problem with last call?
-
-                    //TODO new testing targets
                     /*
-                        FIXME: if we do it only here, then we would lose this info if the test case is re-evaluated
-                        for any reason... eg, in minimizer
-                        need to think of a good, general solution...
+                        now we can finally ask, is there a problem with last call?
+                        if so, this should had already been handled in the fitness function.
+                        regardless, we still need to create a new testing target, regardless of whether a fault
+                        is found or not, otherwise this test will be lost.
+                        if no fault is found, this kind of test is good for regression.
 
-                        TODO let's do it directly in the fitness function, with new security test oracle
+                        note: we do not compute fault here because, if we do it only here,
+                        then we would lose this info if the test case is re-evaluated
+                        for any reason... eg, in minimizer
                      */
 
+                    val scenarioId = idMapper.handleLocalTarget("security:forbiddenDelete:${delete.path}")
+                    evaluatedIndividual.fitness.updateTarget(scenarioId, 1.0)
+
                     // add the evaluated individual to the archive
-                    archive.addIfNeeded(evaluatedIndividual)
+                    val added = archive.addIfNeeded(evaluatedIndividual)
+                    //if we arrive here, should always be added, because we are creating a new testing target
+                    assert(added)
                 }
             }
         }
