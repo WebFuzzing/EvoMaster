@@ -169,7 +169,10 @@
         <apache.http.client.version>4.5.13</apache.http.client.version>
         <okhttp3.client.version>4.9.3</okhttp3.client.version>
         <okhttp.client.version>2.4.0</okhttp.client.version>
-        <dns.cache.manipulator.version>1.8.0</dns.cache.manipulator.version>
+        <!--  Will need update to support JDK 21
+          https://github.com/alibaba/java-dns-cache-manipulator/issues/252
+          -->
+        <dns.cache.manipulator.version>1.8.1</dns.cache.manipulator.version>
         <jakarta.annotation.version>2.0.0</jakarta.annotation.version>
         <jakarta.validation-api.version>3.0.2</jakarta.validation-api.version>
         <jakarta.persistence-api.version>3.1.0</jakarta.persistence-api.version>
@@ -1233,7 +1236,7 @@
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>0.8.7</version>
+                    <version>0.8.12</version>
                     <configuration>
                         <excludes>
                             <!--  Prevent SUTs in E2E to be part of coverage report -->
