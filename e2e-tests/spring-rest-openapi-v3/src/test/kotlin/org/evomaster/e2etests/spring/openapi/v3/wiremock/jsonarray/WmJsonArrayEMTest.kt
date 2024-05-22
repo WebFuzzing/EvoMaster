@@ -9,10 +9,6 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
-/**
- *
- */
-
 class WmJsonArrayEMTest : SpringTestBase() {
 
     companion object {
@@ -34,8 +30,6 @@ class WmJsonArrayEMTest : SpringTestBase() {
             100,
             true,
             { args: MutableList<String> ->
-                // TODO: Generated test looks perfect but for some reason it fails.
-                //  CreatedTests is set to false temporarily
                 args.add("--externalServiceIPSelectionStrategy")
                 args.add("USER")
                 args.add("--externalServiceIP")
@@ -45,7 +39,6 @@ class WmJsonArrayEMTest : SpringTestBase() {
 
                 assertTrue(solution.individuals.size >= 1)
 
-                //FIXME same issue as other WM tests... pass locally. Maybe should try again on CircleCI
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/jsonarray", "OK X")
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/jsonarray", "OK X and Y")
             },
