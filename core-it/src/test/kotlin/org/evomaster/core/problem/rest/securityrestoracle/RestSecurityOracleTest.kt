@@ -8,5 +8,15 @@ class RestSecurityOracleTest {
 
     @Test
     fun testHandleForbiddenDelete() {
+
+        /*
+            TODO
+
+            - create test cases manually with Pir
+            - they ll not be SampleType.SECURITY, so oracle not computed
+            - call RestSecurityOracle directly on such created invididual
+            - verify properties
+         */
+
     }
 }
