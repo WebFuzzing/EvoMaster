@@ -80,6 +80,7 @@ class SearchStatusUpdater : SearchListener{
 
         if(first){
             println()
+            println()
             if(config.e_u1f984){
                 println()
             }
@@ -107,10 +108,15 @@ class SearchStatusUpdater : SearchListener{
             val avgTime = String.format("%.1f", avgTimeAndSize.first)
             val avgSize = String.format("%.1f",avgTimeAndSize.second)
 
+            val sinceLast = time.getSecondsSinceLastImprovement()
+
             upLineAndErase()
-            println("* Consumed search budget: $passed%;" +
-                    " covered targets: $coverage;" +
-                    " time per test: ${avgTime}ms ($avgSize actions)")
+            upLineAndErase()
+            println("* Consumed search budget: $passed%")
+            println("* Covered targets: $coverage;" +
+                    " time per test: ${avgTime}ms ($avgSize actions);" +
+                    " since last improvement: ${sinceLast}s"
+            )
 
             if(config.e_u1f984){
                 updateExtra()

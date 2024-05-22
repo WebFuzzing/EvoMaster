@@ -46,6 +46,8 @@ class EMConfig {
 
         private val log = LoggerFactory.getLogger(EMConfig::class.java)
 
+        private const val timeRegex = "(\\s*)((?=(\\S+))(\\d+h)?(\\d+m)?(\\d+s)?)(\\s*)"
+
         private const val headerRegex = "(.+:.+)|(^$)"
 
         private const val targetSeparator = ";"
@@ -205,7 +207,7 @@ class EMConfig {
             val max = (m.annotations.find { it is Max } as? Max)?.max
             val probability = m.annotations.find { it is Probability }
             val url = m.annotations.find { it is Url }
-            val regex = (m.annotations.find { it is Regex } as? Regex)?.regex
+            val regex = (m.annotations.find { it is Regex } as? Regex)
 
             var constraints = ""
             if (min != null || max != null || probability != null || url != null || regex != null) {
@@ -223,7 +225,7 @@ class EMConfig {
                     constraints += "URL"
                 }
                 if (regex != null) {
-                    constraints += "regex $regex"
+                    constraints += "regex ${regex.regex}"
                 }
             }
 
@@ -547,6 +549,11 @@ class EMConfig {
         if(security && !minimize){
             throw ConfigProblemException("The use of 'security' requires 'minimize'")
         }
+
+        if(prematureStop.isNotEmpty() && stoppingCriterion != StoppingCriterion.TIME){
+            throw ConfigProblemException("The use of 'prematureStop' is meaningful only if the stopping criterion" +
+                    " 'stoppingCriterion' is based on time")
+        }
     }
 
     private fun checkPropertyConstraints(m: KMutableProperty<*>) {
@@ -857,7 +864,6 @@ class EMConfig {
 
     //----- "Important" options, sorted by priority --------------
 
-
     val defaultMaxTime = "60s"
 
     @Important(1.0)
@@ -873,10 +879,22 @@ class EMConfig {
             " For how long should _EvoMaster_ be left run?" +
             " The default 1 _minute_ is just for demonstration." +
             " __We recommend to run it between 1 and 24 hours__, depending on the size and complexity " +
-            " of the tested application."
+            " of the tested application." +
+            " You can get better results by combining this option with `--prematureStop`." +
+            " For example, something like `--maxTime 24h --prematureStop 1h` will run the search for 24 hours," +
+            " but the it will stop at any point in time in which there has be no improvement in last hour."
     )
-    @Regex("(\\s*)((?=(\\S+))(\\d+h)?(\\d+m)?(\\d+s)?)(\\s*)")
+    @Regex(timeRegex)
     var maxTime = defaultMaxTime
+
+    @Experimental
+    @Cfg("Max amount of time the search is going to wait since last improvement (on metrics we optimize for," +
+            " like fault finding and code/schema coverage)." +
+            " If there is no improvement within this allotted max time, then the search will be prematurely stopped," +
+            " regardless of what specified in --maxTime option.")
+    @Regex("($timeRegex)|(^$)")
+    var prematureStop : String = ""
+
 
     @Important(1.1)
     @Cfg("The path directory of where the generated test classes should be saved to")
@@ -2226,20 +2244,31 @@ class EMConfig {
             return maxTimeInSeconds
         }
 
-        val h = maxTime.indexOf('h')
-        val m = maxTime.indexOf('m')
-        val s = maxTime.indexOf('s')
+        return convertToSeconds(maxTime)
+    }
+
+    fun improvementTimeoutInSeconds() : Int {
+        if(prematureStop.isNullOrBlank()){
+            return Int.MAX_VALUE
+        }
+        return convertToSeconds(prematureStop)
+    }
+
+    private fun convertToSeconds(time: String): Int {
+        val h = time.indexOf('h')
+        val m = time.indexOf('m')
+        val s = time.indexOf('s')
 
         val hours = if (h >= 0) {
-            maxTime.subSequence(0, h).toString().trim().toInt()
+            time.subSequence(0, h).toString().trim().toInt()
         } else 0
 
         val minutes = if (m >= 0) {
-            maxTime.subSequence(if (h >= 0) h + 1 else 0, m).toString().trim().toInt()
+            time.subSequence(if (h >= 0) h + 1 else 0, m).toString().trim().toInt()
         } else 0
 
         val seconds = if (s >= 0) {
-            maxTime.subSequence(if (m >= 0) m + 1 else (if (h >= 0) h + 1 else 0), s).toString().trim().toInt()
+            time.subSequence(if (m >= 0) m + 1 else (if (h >= 0) h + 1 else 0), s).toString().trim().toInt()
         } else 0
 
         return (hours * 60 * 60) + (minutes * 60) + seconds
