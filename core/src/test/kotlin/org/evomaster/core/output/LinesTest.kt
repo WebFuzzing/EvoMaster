@@ -19,4 +19,12 @@ internal class LinesTest {
         lines.add("   // Hello There!!! ...  ")
         assertTrue(lines.isCurrentACommentLine())
     }
+
+    @Test
+    fun testPythonCommentLineUsesHashSymbol() {
+        val lines = Lines()
+        lines.addBlockCommentLine("this is a python comment", OutputFormat.PYTHON_UNITTEST)
+        assertTrue(lines.toString().startsWith("# this"))
+        assertTrue(lines.isCurrentACommentLine())
+    }
 }

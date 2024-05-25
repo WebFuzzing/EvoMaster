@@ -1,7 +1,5 @@
 package org.evomaster.core.output
 
-import java.nio.Buffer
-
 
 /**
  * Class used to create an indented version of a list of strings, each
@@ -29,10 +27,12 @@ class Lines {
         appendSemicolon(format)
     }
 
-    fun block(indentention: Int = 1, expression: () -> Any){
-        append(" {")
+    fun block(indentention: Int = 1, format: OutputFormat, expression: () -> Any){
+        if (!format.isPython())
+            append(" {")
         indented(indentention, expression)
-        add("}")
+        if (!format.isPython())
+            add("}")
     }
 
     fun indented(times: Int = 1, expression: () -> Any){
@@ -80,7 +80,7 @@ class Lines {
         if(buffer.isEmpty()){
             return false
         }
-        return buffer.last().matches(Regex("^\\s*//.*$"))
+        return buffer.last().matches(Regex("^\\s*(//|#).*$"))
     }
 
     fun currentContains(s: String) : Boolean{
@@ -103,6 +103,23 @@ class Lines {
 
     fun append(token: String) {
         buffer[buffer.lastIndex] = buffer.last() + token
+    }
+
+    fun startCommentBlock(format: OutputFormat) {
+        if (!format.isPython()) {
+            add("/**")
+        }
+    }
+
+    fun addBlockCommentLine(line: String, format: OutputFormat) {
+        val commentToken = if (format.isPython()) "# " else "* "
+        add(commentToken + line)
+    }
+
+    fun endCommentBlock(format: OutputFormat) {
+        if (!format.isPython()) {
+            add("*/")
+        }
     }
 
     override fun toString(): String {

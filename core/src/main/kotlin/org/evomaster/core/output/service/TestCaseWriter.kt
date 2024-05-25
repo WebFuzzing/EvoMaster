@@ -109,7 +109,9 @@ abstract class TestCaseWriter {
         }
 
 
-        lines.add("}")
+        if (!format.isPython()) {
+            lines.add("}")
+        }
 
         if (format.isJavaScript()) {
             lines.append(");")
@@ -268,7 +270,9 @@ abstract class TestCaseWriter {
                 lines.add("//${it.replace('\n', ' ').replace('\r', ' ')}")
             }
         }
-        lines.add("}")
+        if (!format.isPython()) {
+            lines.add("}")
+        }
     }
 
 
