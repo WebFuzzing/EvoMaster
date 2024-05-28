@@ -66,7 +66,7 @@ abstract class TestCaseWriter {
 
         counter = 0
 
-        val lines = Lines()
+        val lines = Lines(config.outputFormat)
 
         if (config.testSuiteSplitType == EMConfig.TestSuiteSplitType.CLUSTER
             && test.test.getClusters().size != 0
@@ -109,7 +109,9 @@ abstract class TestCaseWriter {
         }
 
 
-        lines.add("}")
+        if (!format.isPython()) {
+            lines.add("}")
+        }
 
         if (format.isJavaScript()) {
             lines.append(");")
@@ -268,7 +270,9 @@ abstract class TestCaseWriter {
                 lines.add("//${it.replace('\n', ' ').replace('\r', ' ')}")
             }
         }
-        lines.add("}")
+        if (!format.isPython()) {
+            lines.add("}")
+        }
     }
 
 

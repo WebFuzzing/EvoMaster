@@ -7,7 +7,7 @@ import java.nio.Buffer
  * Class used to create an indented version of a list of strings, each
  * one representing a line
  */
-class Lines {
+class Lines(val format: OutputFormat) {
 
     private val buffer: MutableList<String> = mutableListOf()
 
@@ -30,9 +30,12 @@ class Lines {
     }
 
     fun block(indentention: Int = 1, expression: () -> Any){
-        append(" {")
+        if (!format.isPython())
+            append(" {")
         indented(indentention, expression)
         add("}")
+        if (!format.isPython())
+            add("}")
     }
 
     fun indented(times: Int = 1, expression: () -> Any){
@@ -80,7 +83,7 @@ class Lines {
         if(buffer.isEmpty()){
             return false
         }
-        return buffer.last().matches(Regex("^\\s*//.*$"))
+        return buffer.last().matches(Regex("^\\s*(//|#).*$"))
     }
 
     fun currentContains(s: String) : Boolean{
@@ -103,6 +106,23 @@ class Lines {
 
     fun append(token: String) {
         buffer[buffer.lastIndex] = buffer.last() + token
+    }
+
+    fun startCommentBlock() {
+        if (!format.isPython()) {
+            add("/**")
+        }
+    }
+
+    fun addBlockCommentLine(line: String) {
+        val commentToken = if (format.isPython()) "# " else "* "
+        add(commentToken + line)
+    }
+
+    fun endCommentBlock() {
+        if (!format.isPython()) {
+            add("*/")
+        }
     }
 
     override fun toString(): String {
