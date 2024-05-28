@@ -1,3 +1,4 @@
+import net.sf.jsqlparser.statement.Statement;
 import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableCheckExpressionDto;
@@ -9,11 +10,11 @@ import java.util.*;
 
 import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
+import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.select.PlainSelect;
 import net.sf.jsqlparser.statement.select.Select;
-import net.sf.jsqlparser.statement.select.SelectBody;
 import net.sf.jsqlparser.expression.Expression;
-import net.sf.jsqlparser.schema.Table;
+import org.evomaster.client.java.sql.internal.ParserUtils;
 import org.evomaster.dbconstraint.ConstraintDatabaseType;
 import org.evomaster.dbconstraint.ast.*;
 import org.evomaster.dbconstraint.parser.SqlConditionParserException;
@@ -78,18 +79,16 @@ public class SMTGenerator {
     }
 
     private String extractTableName(String sqlQuery) throws JSQLParserException {
-        Select selectStatement = (Select) CCJSqlParserUtil.parse(sqlQuery);
-        SelectBody selectBody = selectStatement.getSelectBody();
-        PlainSelect plainSelect = (PlainSelect) selectBody;
+        Statement selectStatement = CCJSqlParserUtil.parse(sqlQuery);
+        Select select = (Select) selectStatement;
+        PlainSelect plainSelect = (PlainSelect) select.getSelectBody();
         Table table = (Table) plainSelect.getFromItem();
         return table.getName();
     }
 
     private String extractCondition(String sqlQuery) throws JSQLParserException {
-        Select selectStatement = (Select) CCJSqlParserUtil.parse(sqlQuery);
-        SelectBody selectBody = selectStatement.getSelectBody();
-        PlainSelect plainSelect = (PlainSelect) selectBody;
-        Expression where = plainSelect.getWhere();
+        Statement selectStatement = CCJSqlParserUtil.parse(sqlQuery);
+        Expression where = ParserUtils.getWhere(selectStatement);
         return where.toString();
     }
 
