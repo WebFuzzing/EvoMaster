@@ -31,7 +31,6 @@ class Lines(val format: OutputFormat) {
         if (!format.isPython())
             append(" {")
         indented(indentention, expression)
-        add("}")
         if (!format.isPython())
             add("}")
     }
