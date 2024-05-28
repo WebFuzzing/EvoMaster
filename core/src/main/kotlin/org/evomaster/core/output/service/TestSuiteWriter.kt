@@ -3,6 +3,8 @@ package org.evomaster.core.output.service
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto
 import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionDto
+import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
+import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils.DEFAULT_WM_LOCAL_IP
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.*
 import org.evomaster.core.output.service.TestWriterUtils.Companion.getWireMockVariableName
@@ -10,6 +12,7 @@ import org.evomaster.core.output.service.TestWriterUtils.Companion.handleDefault
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
+import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.rest.BlackBoxUtils
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rpc.RPCIndividual
@@ -65,6 +68,9 @@ class TestSuiteWriter {
 
     @Inject(optional = true)
     private lateinit var remoteController: RemoteController
+
+    @Inject
+    private lateinit var externalServiceHandler: HttpWsExternalServiceHandler
 
     private var activePartialOracles = mutableMapOf<String, Boolean>()
 
@@ -195,7 +201,23 @@ class TestSuiteWriter {
 
         //if (all.isEmpty()) return "null"
 
-        val input = if(all.isEmpty()) "" else all.groupBy { it.lowercase() }.map { it.value.first() }.joinToString(",") { "\"$it\"" }
+        val tableNamesInSchema = remoteController.getCachedSutInfo()?.sqlSchemaDto?.tables?.map { it.name }?.toSet()
+            ?: setOf()
+
+        val missingTables = all.filter { x ->  tableNamesInSchema.none { y -> y.equals(x,true) } }.sorted()
+        if(missingTables.isNotEmpty()){
+            /*
+                Weird case... but actually seen it in familie-ba-sak, regarding table "task", which is in the migration
+                files (V9) but then somehow doesn't show up in the database...
+                TODO should investigate what the heck is happening there
+             */
+            log.warn("Some SQL commands have referred to tables that do not seem to appear in the database schema: " +
+                    "${missingTables.joinToString(", ")}")
+        }
+
+        val input = if(all.isEmpty()) ""
+            else all.filter { x -> tableNamesInSchema.any{y -> y.equals(x,true)} }.sorted().joinToString(",") { "\"$it\"" }
+
         return when {
             config.outputFormat.isJava() -> "Arrays.asList($input)"
             config.outputFormat.isKotlin() -> "listOf($input)"
@@ -363,7 +385,7 @@ class TestSuiteWriter {
                 addImport("io.restassured.response.ValidatableResponse", lines)
             }
 
-            if (config.isEnabledExternalServiceMocking() && solution.hasAnyActiveHttpExternalServiceAction()) {
+            if (config.isEnabledExternalServiceMocking() && solution.needWireMockServers()) {
                 addImport("com.github.tomakehurst.wiremock.client.WireMock.*", lines, true)
                 addImport("com.github.tomakehurst.wiremock.WireMockServer", lines)
                 addImport("com.github.tomakehurst.wiremock.core.WireMockConfiguration", lines)
@@ -505,7 +527,7 @@ class TestSuiteWriter {
         solution: Solution<*>
     ) {
 
-        val wireMockServers = getWireMockServerActions(solution)
+        val wireMockServers = getActiveWireMockServers()
 
         val executable = if (controllerInput.isNullOrBlank()) ""
         else "\"$controllerInput\"".replace("\\", "\\\\")
@@ -629,7 +651,7 @@ class TestSuiteWriter {
                         addStatement("$controller.registerOrExecuteInitSqlCommandsIfNeeded()", lines)
 
                         if(config.problemType == EMConfig.ProblemType.WEBFRONTEND){
-                            val infoDto = remoteController.getSutInfo()!! //TODO refactor. save it in a service
+                            val infoDto = remoteController.getCachedSutInfo()!!
                             addStatement("$baseUrlOfSut = validateAndGetUrlOfStartingPageForDocker($baseUrlOfSut,\"${infoDto.webProblem.urlPathOfStartingPage}\", true)", lines)
                         }
                         /*
@@ -678,18 +700,13 @@ class TestSuiteWriter {
                 }
             }
 
-            val wireMockServers = getWireMockServerActions(solution)
+            val wireMockServers = getActiveWireMockServers()
             if (config.isEnabledExternalServiceMocking() && wireMockServers.isNotEmpty()) {
                 if (format.isJavaOrKotlin()) {
                     wireMockServers
                         .forEach { externalService ->
                             val address = externalService.getWireMockAddress()
                             val name = getWireMockVariableName(externalService)
-
-//                            addStatement(
-//                                "DnsCacheManipulator.setDnsCache(\"${action.externalService.getRemoteHostName()}\", \"${address}\")",
-//                                lines
-//                            )
 
                             if (format.isJava()) {
                                 lines.add("${name} = new WireMockServer(new WireMockConfiguration()")
@@ -762,7 +779,7 @@ class TestSuiteWriter {
                             && config.isEnabledExternalServiceMocking()
                             && solution.needsHostnameReplacement()
                         ) {
-                            getWireMockServerActions(solution)
+                            getActiveWireMockServers()
                                 .forEach { action ->
                                     addStatement("${getWireMockVariableName(action)}.stop()", lines)
                                 }
@@ -816,7 +833,7 @@ class TestSuiteWriter {
                 addStatement("$controller.resetStateOfSUT()", lines)
 
                 if (format.isJavaOrKotlin() && config.isEnabledExternalServiceMocking()) {
-                    getWireMockServerActions(solution)
+                    getActiveWireMockServers()
                         .forEach { es ->
                             addStatement("${getWireMockVariableName(es)}.resetAll()", lines)
                             // set the default responses for all wm
@@ -968,6 +985,15 @@ class TestSuiteWriter {
                     //.plus( it.fitness.getViewEmployedDefaultWM())
             }
             .distinctBy { it.getSignature() }.toList()
+    }
+
+    private fun getActiveWireMockServers(): List<HttpWsExternalService> {
+        return externalServiceHandler.getExternalServices()
+            .filter { it.value.getIP() != ExternalServiceSharedUtils.DEFAULT_WM_LOCAL_IP }
+            .filter { it.value.isActive() }
+            .map { it.value }
+            .distinctBy { it.getSignature() }
+            .toList()
     }
 
 }

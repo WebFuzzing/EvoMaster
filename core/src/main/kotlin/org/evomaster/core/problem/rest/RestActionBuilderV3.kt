@@ -11,6 +11,8 @@ import io.swagger.v3.oas.models.media.MediaType
 import io.swagger.v3.oas.models.media.ObjectSchema
 import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.parameters.Parameter
+import io.swagger.v3.oas.models.parameters.RequestBody
+import io.swagger.v3.oas.models.responses.ApiResponse
 import org.evomaster.client.java.instrumentation.shared.ClassToSchemaUtils.OPENAPI_COMPONENT_NAME
 import org.evomaster.client.java.instrumentation.shared.ClassToSchemaUtils.OPENAPI_SCHEMA_NAME
 import org.evomaster.core.EMConfig
@@ -325,6 +327,14 @@ object RestActionBuilderV3 {
     }
 
 
+    private fun resolveResponse(swagger: OpenAPI, responseOrRef: ApiResponse): ApiResponse {
+        responseOrRef.`$ref`?.let { ref ->
+            val refKey = extractReferenceName(ref)
+            return swagger.components.responses[refKey] ?: responseOrRef
+        }
+        return responseOrRef
+    }
+
     private fun handleOperation(
         actionCluster: MutableMap<String, Action>,
         verb: HttpVerb,
@@ -340,6 +350,8 @@ object RestActionBuilderV3 {
             repairParams(params, restPath)
 
             val produces = operation.responses?.values //different response objects based on HTTP code
+                ?.asSequence()
+                ?.map { resolveResponse(swagger, it) }
                 ?.filter { it.content != null && it.content.isNotEmpty() }
                 //each response can have different media-types
                 ?.flatMap { it.content.keys }
@@ -390,7 +402,7 @@ object RestActionBuilderV3 {
 
         val params = mutableListOf<Param>()
 
-        removeDuplicatedParams(operation)
+        removeDuplicatedParams(swagger,operation)
                 .forEach { p ->
 
                     if(p.`$ref` != null){
@@ -496,6 +508,16 @@ object RestActionBuilderV3 {
         }
     }
 
+
+    private fun resolveRequestBody(swagger: OpenAPI, reference: String): RequestBody? {
+        val classDef = extractReferenceName(reference)
+        val body =  swagger.components.requestBodies[classDef]
+        if(body == null){
+            log.warn("Cannot find reference to request body: $reference")
+        }
+        return body
+    }
+
     private fun handleBodyPayload(
             operation: Operation,
             verb: HttpVerb,
@@ -504,20 +526,36 @@ object RestActionBuilderV3 {
             params: MutableList<Param>,
             options: Options) {
 
+        // Return early if requestBody is missing
+        val body = operation.requestBody ?: return
+
         if (operation.requestBody == null) {
             return
         }
 
         if (!listOf(HttpVerb.POST, HttpVerb.PATCH, HttpVerb.PUT).contains(verb)) {
-            log.warn("In HTTP, body payloads are undefined for $verb")
-            return
+            log.warn("In OpenAPI, body payloads are not allowed for $verb," +
+                    " although they are technically valid for HTTP (RFC 9110). Issue in $restPath")
+            //https://swagger.io/docs/specification/describing-request-body/
+            //https://www.rfc-editor.org/rfc/rfc9110.html#section-9.3.1-6
+            if(verb == HttpVerb.GET){
+                //currently cannot handle it due to bud in Jersey :(
+                //TODO check once upgrading Jersey
+                //TODO update AbstractRestFitness accordingly
+                return
+            }
         }
 
-        val body = operation.requestBody!!
+        // Handle dereferencing if requestBody is referenced
+        val resolvedBody = if (body.`$ref` != null) {
+            resolveRequestBody(swagger, body.`$ref`) ?: return
+        } else {
+            body
+        }
 
         val name = "body"
 
-        val bodies = body.content.filter {
+        val bodies = resolvedBody.content?.filter {
             /*
                 If it is a reference, then it must be present.
                 Had issue with SpringFox in Proxyprint generating wrong schemas
@@ -529,7 +567,7 @@ object RestActionBuilderV3 {
                 val reference = it.value.schema.`$ref`
                 reference.isNullOrBlank() || getLocalObjectSchema(swagger, reference) != null
             }
-        }
+        } ?: emptyMap()
 
         if (bodies.isEmpty()) {
             log.warn("No valid body-payload for $verb:$restPath")
@@ -549,7 +587,7 @@ object RestActionBuilderV3 {
         var gene = getGene("body", obj.schema, swagger, referenceClassDef = null, options = options)
 
 
-        if (body.required != true && gene !is OptionalGene) {
+        if (resolvedBody.required != true && gene !is OptionalGene) {
             gene = OptionalGene(name, gene)
         }
 
@@ -1361,7 +1399,11 @@ object RestActionBuilderV3 {
     private fun getLocalParameter(swagger: OpenAPI, reference: String) : Parameter?{
         val name = extractReferenceName(reference)
 
-        return swagger.components.parameters[name]
+        val p = swagger.components.parameters[name]
+        if(p==null){
+            log.warn("Cannot find parameter reference: $reference")
+        }
+        return p
     }
 
     private fun getLocalObjectSchema(swagger: OpenAPI, reference: String): Schema<*>? {
@@ -1382,7 +1424,7 @@ object RestActionBuilderV3 {
         return reference.substring(reference.lastIndexOf("/") + 1)
     }
 
-    private fun removeDuplicatedParams(operation: Operation): List<Parameter> {
+    private fun removeDuplicatedParams(swagger: OpenAPI, operation: Operation): List<Parameter> {
 
         /*
             Duplicates are not allowed, based on combination of "name" and "location".
@@ -1396,13 +1438,19 @@ object RestActionBuilderV3 {
         val selection = mutableListOf<Parameter>()
         val seen = mutableSetOf<String>()
 
-        for (p in operation.parameters) {
+       operation.parameters.forEach {
 
-            val key = p.`in` + "_" + p.name
-            if (!seen.contains(key)) {
-                seen.add(key)
-                selection.add(p)
-            }
+            val p = if(it.`$ref` != null)
+                getLocalParameter(swagger, it.`$ref`)
+           else
+               it
+           if(p != null) {
+               val key = p.`in` + "_" + p.name
+               if (!seen.contains(key)) {
+                   seen.add(key)
+                   selection.add(p)
+               }
+           }
         }
 
         val diff = operation.parameters.size - selection.size

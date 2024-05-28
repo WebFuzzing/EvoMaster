@@ -1,6 +1,12 @@
 package org.evomaster.core.problem.rest.service
 
+import com.fasterxml.jackson.core.JsonProcessingException
+import com.fasterxml.jackson.databind.JsonMappingException
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.JsonNodeType
 import com.google.inject.Inject
+import opennlp.tools.stemmer.PorterStemmer
 import org.evomaster.client.java.controller.api.EMTestUtils
 import org.evomaster.client.java.controller.api.dto.ActionDto
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
@@ -9,12 +15,15 @@ import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUti
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils.getWMDefaultSignature
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.enterprise.auth.NoAuth
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.externalservice.HostnameResolutionInfo
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceInfo
+import org.evomaster.core.problem.httpws.HttpWsAction
+import org.evomaster.core.problem.httpws.auth.AuthUtils
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
 import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
 import org.evomaster.core.problem.rest.*
@@ -22,7 +31,9 @@ import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.param.UpdateForBodyParam
+import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.util.ParserDtoUtil
+import org.evomaster.core.remote.HttpClientFactory
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.TcpUtils
 import org.evomaster.core.search.action.Action
@@ -36,10 +47,13 @@ import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.service.DataPool
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import wiremock.org.apache.hc.core5.net.Host
 import java.net.URL
+import javax.ws.rs.POST
 import javax.ws.rs.ProcessingException
 import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.client.Entity
@@ -57,6 +71,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
     @Inject
     protected lateinit var harvestResponseHandler: HarvestActualHttpWsResponseHandler
+
+    @Inject
+    protected lateinit var responsePool: DataPool
+
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(AbstractRestFitness::class.java)
@@ -196,12 +214,13 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                          parameters in body payload of form submissions in x-www-form-urlencoded format.
                          This happens for example in LanguageTool.
                      */
-                    !action.parameters.any{
-                            b -> b is BodyParam && b.isForm()
-                            && b.seeGenes().flatMap { it.flatView() }.any { it.name.equals(name, ignoreCase = true)  }
+                    !action.parameters.any { b ->
+                        b is BodyParam && b.isForm()
+                                && b.seeGenes().flatMap { it.flatView() }
+                            .any { it.name.equals(name, ignoreCase = true) }
                     }
                 }
-                .filter{ name ->
+                .filter { name ->
                     /*
                         Another tricky case. Some frameworks like Spring can have hidden params to override the method
                         type of the requests. This is needed for handling web browsers without JS.
@@ -330,7 +349,21 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 handleAdditionalStatusTargetDescription(fv, status, name, it, location5xx)
 
                 if (config.expectationsActive) {
+                    //TODO refactor
                     handleAdditionalOracleTargetDescription(fv, actions, result, name, it)
+                }
+
+                val unauthorized = !AuthUtils.checkUnauthorizedWithAuth(status, actions[it])
+                if (unauthorized) {
+                    /*
+                        Note: at this point we cannot consider it as a bug, because it could be just a
+                        misconfigured auth info.
+                        however, if for other endpoints or parameters we get a 2xx, then it is clearly
+                        a bug (although we need to make 100% sure of handling token caching accordingly).
+                        but this would be check in specific security tests after the end of the search.
+                     */
+                    val unauthorizedId = idMapper.handleLocalTarget("wrong_authorization:$name")
+                    fv.updateTarget(unauthorizedId, 1.0, it)
                 }
             }
     }
@@ -466,7 +499,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                         And while we are at it, let's release any hanging network resource
                      */
                     client.close() //make sure to release any resource
-                    client = ClientBuilder.newClient()
+                    client = HttpClientFactory.createTrustingJerseyClient(false, config.tcpTimeoutMs)
 
                     TcpUtils.handleEphemeralPortIssue()
 
@@ -495,12 +528,17 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 }
 
                 TcpUtils.isUnknownHost(e) -> {
-                    throw SutProblemException("Unknown host: ${URL(getBaseUrl()).host}\n" +
-                            " Are you sure you did not misspell it?")
+                    throw SutProblemException(
+                        "Unknown host: ${URL(getBaseUrl()).host}\n" +
+                                " Are you sure you did not misspell it?"
+                    )
                 }
 
-                TcpUtils.isInternalError(e) ->{
-                    throw RuntimeException("Internal bug with EvoMaster when making a HTTP call toward ${a.resolvedPath()}", e)
+                TcpUtils.isInternalError(e) -> {
+                    throw RuntimeException(
+                        "Internal bug with EvoMaster when making a HTTP call toward ${a.resolvedPath()}",
+                        e
+                    )
                 }
 
                 else -> throw e
@@ -558,21 +596,6 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 log.warn("Failed to parse HTTP response: ${e.message}")
             }
         }
-
-        if (response.status == 401 && a.auth !is NoAuth && !a.auth.requireMockHandling) {
-            /*
-                if the endpoint itself is to get auth info, we might exclude auth check for it
-                eg,
-                    the auth is Login with foo,
-                    then the action is to Login with a generated account (eg bar)
-                    thus, the response would likely be 401
-             */
-            if (!a.auth.excludeAuthCheck(a)) {
-                //this would likely be a misconfiguration in the SUT controller
-                log.warn("Got 401 although having auth for '${a.auth.name}'")
-            }
-        }
-
 
         if (!handleSaveLocation(a, response, rcr, chainState)) return false
 
@@ -675,9 +698,18 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         val invocation = when (a.verb) {
             HttpVerb.GET -> builder.buildGet()
+//            HttpVerb.DELETE -> builder.buildDelete()
+            /*
+                As of RFC 9110 it is allowed to have bodies for GET and DELETE, albeit in special cases.
+                https://www.rfc-editor.org/rfc/rfc9110.html#section-9.3.1-6
+
+                Note: due to bug in Jersey, can handle DELETE but not GET :(
+                TODO: update RestActionBuilderV3 once upgraded Jersey, after JDK 11 move
+             */
+//            HttpVerb.GET -> builder.build("GET", bodyEntity)
+            HttpVerb.DELETE -> builder.build("DELETE", bodyEntity)
             HttpVerb.POST -> builder.buildPost(bodyEntity)
             HttpVerb.PUT -> builder.buildPut(bodyEntity)
-            HttpVerb.DELETE -> builder.buildDelete()
             HttpVerb.PATCH -> builder.build("PATCH", bodyEntity)
             HttpVerb.OPTIONS -> builder.build("OPTIONS")
             HttpVerb.HEAD -> builder.build("HEAD")
@@ -744,7 +776,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     }
 
     protected fun restActionResultHandling(
-        individual: RestIndividual, targets: Set<Int>, allCovered: Boolean, actionResults: List<ActionResult>, fv: FitnessValue
+        individual: RestIndividual,
+        targets: Set<Int>,
+        allCovered: Boolean,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
     ): TestResultsDto? {
 
         if (actionResults.any { it is RestCallResult && it.getTcpProblem() }) {
@@ -774,7 +810,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         handleExternalServiceInfo(individual, fv, dto.additionalInfoList)
 
-        if(! allCovered) {
+        if (!allCovered) {
             if (config.expandRestIndividuals) {
                 expandIndividual(individual, dto.additionalInfoList, actionResults)
             }
@@ -791,15 +827,38 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             }
         }
 
+        if (config.useResponseDataPool) {
+            recordResponseData(individual, actionResults.filterIsInstance<RestCallResult>())
+        }
+
         return dto
     }
+
+    protected fun recordResponseData(individual: RestIndividual, actionResults: List<RestCallResult>) {
+
+        for (res in actionResults) {
+            val source = individual.seeAllActions().find { it.getLocalId() == res.sourceLocalId } as RestCallAction?
+            if (source == null) {
+                log.warn("Failed to analyze response. Cannot match response to source action")
+                assert(false)//only break in tests
+                continue
+            }
+            RestResponseFeeder.handleResponse(source, res, responsePool)
+        }
+    }
+
+
 
     /**
      * Based on info coming from SUT execution, register and start new WireMock instances.
      *
-     * TODO push this thing up to hierarchy to EntepriseFitness
+     * TODO push this thing up to hierarchy to EnterpriseFitness
      */
-    private fun handleExternalServiceInfo(individual: RestIndividual, fv: FitnessValue, infoDto: List<AdditionalInfoDto>) {
+    private fun handleExternalServiceInfo(
+        individual: RestIndividual,
+        fv: FitnessValue,
+        infoDto: List<AdditionalInfoDto>
+    ) {
 
         /*
             Note: this info here is based from what connections / hostname resolving done in the SUT,
@@ -818,7 +877,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 )
                 externalServiceHandler.addHostname(dns)
 
-                if(dns.isResolved()){
+                if (dns.isResolved()) {
                     /*
                         We need to ask, are we in that special case in which a hostname was resolved but there is
                         no action for it?
@@ -828,12 +887,16 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                         the genotype of this evaluated individual (without modifying its phenotype)
                      */
                     val actions = individual.seeActions(ActionFilter.ONLY_DNS) as List<HostnameResolutionAction>
-                    if ((actions.isEmpty() || actions.none{ it.hostname == hn.remoteHostname}) &&
+                    if ((actions.isEmpty() || actions.none { it.hostname == hn.remoteHostname }) &&
                         // To avoid adding action for the local WM address in case of InetAddress used
                         // in the case study.
-                        !externalServiceHandler.isWireMockAddress(hn.remoteHostname)){
+                        !externalServiceHandler.isWireMockAddress(hn.remoteHostname)
+                    ) {
                         // OK, we are in that special case
-                        val hra = HostnameResolutionAction(hn.remoteHostname, ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP)
+                        val hra = HostnameResolutionAction(
+                            hn.remoteHostname,
+                            ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP
+                        )
                         individual.addChildToGroup(hra, GroupsOfChildren.INITIALIZATION_DNS)
                         // TODO: Above line adds unnecessary tests at the end, which is
                         //  causing the created tests to fail.
@@ -881,8 +944,12 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         val actionDto = super.getActionDto(action, index)
         // TODO: Need to move under ApiWsFitness after the GraphQL and RPC support is completed
         if (index == 0) {
+            val individual = action.getRoot() as RestIndividual
+            actionDto.localAddressMapping = individual
+                .seeActions(ActionFilter.ONLY_DNS)
+                .filterIsInstance<HostnameResolutionAction>()
+                .associate { it.hostname to it.localIPAddress }
             actionDto.externalServiceMapping = externalServiceHandler.getExternalServiceMappings()
-            actionDto.localAddressMapping = externalServiceHandler.getLocalDomainNameMapping()
             actionDto.skippedExternalServices = externalServiceHandler.getSkippedExternalServices()
         }
         return actionDto

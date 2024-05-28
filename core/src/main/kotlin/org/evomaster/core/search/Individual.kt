@@ -400,6 +400,16 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
         return true
     }
 
+    fun fixGeneBindingsIfNeeded() : Boolean{
+        if (!verifyBindingGenes()){
+            cleanBrokenBindingReference()
+            computeTransitiveBindingGenes()
+            return true
+        }
+        return false
+    }
+
+
     /**
      * @return an action based on the specified [localId]
      */

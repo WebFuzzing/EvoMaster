@@ -599,6 +599,11 @@ class SqlInsertBuilder(
             val constraintDatabaseType = getConstraintDatabaseType(this.databaseType)
             val tableConstraint =
                 builder.translateToConstraint(tableName, sqlCheckExpression.sqlCheckExpression, constraintDatabaseType)
+
+            if (tableConstraint is UnsupportedTableConstraint) {
+                log.warn("Unsupported table constraint " + tableConstraint.notParserSqlCondition)
+            }
+
             tableConstraints.add(tableConstraint)
         }
         return tableConstraints

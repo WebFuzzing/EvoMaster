@@ -1,11 +1,16 @@
 package org.evomaster.core.problem.httpws.auth
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.auth.CookieWriter
 import org.evomaster.core.output.auth.TokenWriter
+import org.evomaster.core.problem.enterprise.auth.NoAuth
+import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
 import org.evomaster.core.problem.rest.ContentType
+import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.problem.rest.service.AbstractRestFitness
 import org.evomaster.core.search.Individual
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -182,5 +187,36 @@ object AuthUtils {
                 }
             }
         }
+    }
+
+    /**
+     * Check if we have valid credentials, but got 401
+     */
+     fun checkUnauthorizedWithAuth(status: Int, a: HttpWsAction) : Boolean{
+        if (status == 401 && a.auth !is NoAuth && !a.auth.requireMockHandling) {
+            /*
+                if the endpoint itself is to get auth info, we might exclude auth check for it
+                eg,
+                    the auth is Login with foo,
+                    then the action is to Login with a generated account (eg bar)
+                    thus, the response would likely be 401
+             */
+            if (!a.auth.excludeAuthCheck(a)) {
+                /*
+                    this would likely be a misconfiguration in the SUT controller.
+                    However, there could be at least 2 cases in which it could happen
+                    1) reusing tokens between tests for performance reasons
+                    2) wrongly returning 401 instead of 403
+                 */
+                val endpoint = when (a) {
+                    is RestCallAction -> a.path.toString()
+                    is GraphQLAction -> a.methodName
+                    else -> "undefined"
+                }
+                LoggingUtil.uniqueWarn(log, "Got 401 although having auth for '${a.auth.name}' on endpoint: $endpoint")
+                return false
+            }
+        }
+        return true
     }
 }

@@ -26,44 +26,42 @@ public class SelectTransformer {
 
         Select stmt = asSelectStatement(select);
 
-        SelectBody selectBody = stmt.getSelectBody();
-        if (selectBody instanceof PlainSelect) {
-            PlainSelect plainSelect = (PlainSelect) selectBody;
+        PlainSelect plainSelect = stmt.getPlainSelect();
 
-            Expression where = plainSelect.getWhere();
-            if (where == null) {
-                //nothing to do
-                return select;
-            }
+        Expression where = plainSelect.getWhere();
+        if (where == null) {
+            //nothing to do
+            return select;
+        }
 
-            List<SelectItem> fields = plainSelect.getSelectItems();
+        List<SelectItem<?>> fields = plainSelect.getSelectItems();
 
-            boolean allColumns = fields.stream().anyMatch(f -> f instanceof AllColumns || f instanceof AllTableColumns);
+        boolean allColumns = fields.stream().anyMatch(f -> f.getExpression() instanceof AllColumns
+                || f.getExpression() instanceof AllTableColumns);
 
-            if(! allColumns) {
-                where.accept(new ExpressionVisitorAdapter() {
-                    @Override
-                    public void visit(Column column) {
+        if(! allColumns) {
+            where.accept(new ExpressionVisitorAdapter() {
+                @Override
+                public void visit(Column column) {
 
-                        String target = column.toString();
+                    String target = column.toString();
 
-                        boolean found = false;
-                        for (SelectItem si : fields) {
-                            SelectExpressionItem field = (SelectExpressionItem) si;
-                            String exp = field.getExpression().toString();
-                            if (target.equals(exp)) {
-                                found = true;
-                                break;
-                            }
-                        }
-                        if (!found) {
-                            SelectExpressionItem item = new SelectExpressionItem();
-                            item.setExpression(column);
-                            fields.add(item);
+                    boolean found = false;
+                    for (SelectItem<?> si : fields) {
+                        String exp = si.getExpression().toString();
+                        if (target.equals(exp)) {
+                            found = true;
+                            break;
                         }
                     }
-                });
-            }
+
+                    if (!found) {
+                        SelectItem<Expression> item = new SelectItem<>();
+                        item.setExpression(column);
+                        fields.add(item);
+                    }
+                }
+            });
         }
 
         return stmt.toString();
@@ -80,28 +78,20 @@ public class SelectTransformer {
     public static String removeOperations(String select){
 
         Select stmt = asSelectStatement(select);
-        SelectBody selectBody = stmt.getSelectBody();
+        PlainSelect plainSelect = stmt.getPlainSelect();
 
-        if (selectBody instanceof PlainSelect) {
-            PlainSelect plainSelect = (PlainSelect) selectBody;
-
-            plainSelect.getSelectItems()
+        plainSelect.getSelectItems()
                     .removeIf(item ->
-                            (item instanceof SelectExpressionItem) &&
-                            ((SelectExpressionItem)item).getExpression() instanceof Function);
-        }
+                            (item instanceof SelectItem<?>) &&
+                            item.getExpression() instanceof Function);
 
         return stmt.toString();
     }
 
 
     public static String removeConstraints(String select) {
-
         Select stmt = asSelectStatement(select);
-
-        SelectBody selectBody = stmt.getSelectBody();
-        handleSelectBody(selectBody);
-
+        handleSelect(stmt);
         return stmt.toString();
     }
 
@@ -113,20 +103,20 @@ public class SelectTransformer {
         return (Select) stmt;
     }
 
-    private static void handleSelectBody(SelectBody selectBody) {
-        if (selectBody instanceof PlainSelect) {
-            PlainSelect plainSelect = (PlainSelect) selectBody;
+    private static void handleSelect(Select select) {
+        if (select instanceof PlainSelect) {
+            PlainSelect plainSelect = (PlainSelect)select;
             plainSelect.setWhere(null);
             plainSelect.setLimit(null);
             plainSelect.setGroupByElement(null);
-        } else if (selectBody instanceof SetOperationList) {
-            for(SelectBody select : ((SetOperationList) selectBody).getSelects()){
-                handleSelectBody(select);
+        } else if (select instanceof SetOperationList) {
+            SetOperationList setOperationList = (SetOperationList) select;
+            for (Select innerSelect : setOperationList.getSelects()) {
+                handleSelect(innerSelect);
             }
         } else {
-            throw new RuntimeException("Cannot handle " + selectBody.getClass());
+            throw new RuntimeException("Cannot handle " + select.getClass());
         }
-
     }
 
 

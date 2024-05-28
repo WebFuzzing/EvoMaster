@@ -28,9 +28,6 @@ import kotlin.math.max
  *
  * @property trackOperator indicates which operator create this individual.
  * @property index indicates when the individual is created, ie, using num of evaluated individual.
- *
- *
- * FIXME: why having to use AbstractRestSampler.createIndividual() instead of having such code here in constructor???
  */
 class RestIndividual(
     sampleType: SampleType,
@@ -46,6 +43,18 @@ class RestIndividual(
 ): ApiWsIndividual(sampleType, trackOperator, index, allActions,
     childTypeVerifier = EnterpriseChildTypeVerifier(RestCallAction::class.java,RestResourceCalls::class.java),
     groups) {
+
+    /*
+        Note when instantiating this class... input actions might or might have not been initialized.
+        This all depends on how this object is created.
+        If not initialized, then would need to make sure to call doInitialize() on it.
+        Likewise, might need to handle doInitializeLocalId().
+        Furthermore, doGlobalInitialize() can only be handled once the object is created.
+        Note that this latter would call doInitializeLocalId() if needed.
+        However, when creating test cases manually with specific values (or seeded from tests) might
+        want to skip calling doGlobalInitialize() as that can modify the values (and so might need to
+        call doInitializeLocalId() directly, possibly by calling resetLocalIdRecursively() first).
+     */
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(RestIndividual::class.java)
@@ -125,12 +134,12 @@ class RestIndividual(
     /**
      * remove RestResourceCall structure and binding among genes
      */
-    override fun doFlattenStructure() {
+    protected override fun doFlattenStructure() : Boolean{
 
         // check the top structure
         val resources = groupsView()!!.getAllInGroup(GroupsOfChildren.MAIN).filterIsInstance<RestResourceCalls>()
 
-        if (resources.isEmpty()) return
+        if (resources.isEmpty()) return false
 
         // remove all bindings among genes
         removeAllBindingAmongGenes()
@@ -147,6 +156,11 @@ class RestIndividual(
         addChildrenToGroup(sqlActions, GroupsOfChildren.INITIALIZATION_SQL)
         addChildrenToGroup(mongoDbActions, GroupsOfChildren.INITIALIZATION_MONGO)
         addChildrenToGroup(dnsActions, GroupsOfChildren.INITIALIZATION_DNS)
+
+        /*
+            if we move any environment action to the beginning of the individual, it might impact the fitness
+         */
+        return dnsActions.isNotEmpty() || sqlActions.isNotEmpty() || mongoDbActions.isNotEmpty()
 
         // re-generate local id
 //        resetLocalIdRecursively()
@@ -389,5 +403,19 @@ class RestIndividual(
 
     override fun seeMainExecutableActions(): List<RestCallAction> {
         return super.seeMainExecutableActions() as List<RestCallAction>
+    }
+
+    /**
+     * Finds the first index of a main REST action with a given verb and path among actions in the individual.
+     *
+     * @return negative value if not found
+     */
+    fun getActionIndex(
+        actionVerb: HttpVerb,
+        path: RestPath
+    ) : Int {
+        return seeMainExecutableActions().indexOfFirst  {
+            it.verb == actionVerb && it.path.isEquivalent(path)
+        }
     }
 }

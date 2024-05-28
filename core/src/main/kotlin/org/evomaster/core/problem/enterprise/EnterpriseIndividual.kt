@@ -32,7 +32,8 @@ import java.util.*
  * per action, and not here in the initialization phase.
  */
 abstract class EnterpriseIndividual(
-    val sampleType: SampleType,
+    //see https://discuss.kotlinlang.org/t/private-setter-for-var-in-primary-constructor/3640/11
+    private var sampleTypeField: SampleType,
     /**
      * a tracked operator to manipulate the individual (nullable)
      */
@@ -123,6 +124,18 @@ abstract class EnterpriseIndividual(
         }
     }
 
+    val sampleType get() = sampleTypeField
+
+    /**
+     * This should never happen directly during the search.
+     * However, we might manually create new individuals by modifying and copying existing individuals.
+     * In those cases it simple to modify the sample directly, instead of re-building with same actions
+     * (which actually could be a possibility...).
+     */
+    fun modifySampleType(x: SampleType){
+        sampleTypeField = x
+    }
+
     /**
      * a list of db actions for its Initialization
      */
@@ -142,22 +155,27 @@ abstract class EnterpriseIndividual(
      * This happens eg in Rest Resource, if a middle SQL action is moved into initialization group and impact
      * state of previous REST actions (an example of this did happen for example for CrossFkEMTest...).
      * This means that, after a flattening, to be on safe side should recompute fitness
+     *
+     * @return true if there is potential (but not necessarily) issues, and fitness might be stale
      */
-    fun ensureFlattenedStructure(){
+    fun ensureFlattenedStructure() : Boolean{
 
         val before = seeAllActions().size
 
-        doFlattenStructure()
+        val issues = doFlattenStructure()
 
         //make sure the flattening worked
         Lazy.assert { isFlattenedStructure() }
         //no base action should have been lost
         Lazy.assert { seeAllActions().size == before }
+
+        return issues
     }
 
-    protected open fun doFlattenStructure(){
+    protected open fun doFlattenStructure() : Boolean{
         //for most types, there is nothing to do.
         //can be overridden if needed
+        return false
     }
 
     private fun isFlattenedStructure() : Boolean{

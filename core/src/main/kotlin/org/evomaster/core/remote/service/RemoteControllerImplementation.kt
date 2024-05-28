@@ -40,6 +40,7 @@ class RemoteControllerImplementation() : RemoteController{
 
     private var extractSqlExecutionInfo = true
 
+    private var cachedSutInfoDto : SutInfoDto? = null
 
     @Inject
     private lateinit var config: EMConfig
@@ -205,7 +206,15 @@ class RemoteControllerImplementation() : RemoteController{
             return null
         }
 
-        return getData(dto)
+        cachedSutInfoDto = getData(dto)
+        return cachedSutInfoDto
+    }
+
+    override fun getCachedSutInfo(): SutInfoDto? {
+        if(cachedSutInfoDto == null){
+            getSutInfo()
+        }
+        return cachedSutInfoDto
     }
 
 
@@ -471,13 +480,13 @@ class RemoteControllerImplementation() : RemoteController{
                     .post(Entity.entity(dto, MediaType.APPLICATION_JSON_TYPE))
         }
 
-        val dto = getDtoFromResponse(response, type)
+        val responseDto = getDtoFromResponse(response, type)
 
-        if (!checkResponse(response, dto, "Failed to execute database command")) {
+        if (!checkResponse(response, responseDto, "Failed to execute database command")) {
             return null
         }
 
-        return dto?.data
+        return responseDto?.data
     }
 
     private fun <T> executeMongoDatabaseCommandAndGetResults(dto: MongoDatabaseCommandDto, type: GenericType<WrappedResponseDto<T>>): T? {

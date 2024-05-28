@@ -55,8 +55,8 @@ class TestWriterUtils {
 
         fun handleStubForAsJavaOrKotlin(lines: Lines, wm : HttpWsExternalService, response: HttpWsResponseParam, method: String, urlSetting: String, priority: Int, outputFormat: OutputFormat){
             val name = getWireMockVariableName(wm)
-            val bodyLines = formatJsonWithEscapes(response.responseBody.getValueAsRawString(), outputFormat, extraSpace = "")
-            handleStubForAsJavaOrKotlin(lines, name, method, urlSetting, response.connectionHeader, response.getResponseContentType(), response.status.getValueAsRawString().toInt(), bodyLines, priority)
+            val bodyLines = formatJsonWithEscapes(response.getResponseBodyBasedOnStatus(), outputFormat, extraSpace = "")
+            handleStubForAsJavaOrKotlin(lines, name, method, urlSetting, response.connectionHeader, response.getResponseContentType(), response.getHttpStatusCode(), bodyLines, priority)
         }
 
         private fun handleStubForAsJavaOrKotlin(lines: Lines, name: String, method: String, urlSetting: String, connectionHeader: String?, contentTypeHeader: String?, status: Int, bodyLines: List<String>, priority : Int){

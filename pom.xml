@@ -423,7 +423,15 @@
                 <artifactId>auth0</artifactId>
                 <version>1.8.0</version>
             </dependency>
-
+            <dependency>
+                <groupId>org.apache.opennlp</groupId>
+                <artifactId>opennlp-tools</artifactId>
+                <!--
+                    As of version of 2.0.0, they moved to JDK 11
+                    https://opennlp.apache.org/news/release-200.html
+                -->
+                <version>1.9.4</version>
+            </dependency>
 
 
             <!-- Jetty -->
@@ -678,7 +686,7 @@
             <dependency>
                 <groupId>com.github.jsqlparser</groupId>
                 <artifactId>jsqlparser</artifactId>
-                <version>4.4</version>
+                <version>4.9</version>
             </dependency>
             <dependency>
                 <groupId>org.postgresql</groupId>

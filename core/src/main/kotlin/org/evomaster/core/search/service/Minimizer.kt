@@ -5,7 +5,12 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.enterprise.EnterpriseIndividual
 import org.evomaster.core.problem.gui.GuiIndividual
+import org.evomaster.core.problem.httpws.HttpWsAction
+import org.evomaster.core.problem.httpws.HttpWsCallResult
+import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.mutator.StructureMutator
@@ -169,6 +174,10 @@ class Minimizer<T: Individual> {
 
         val n = ind.size()
 
+        /*
+         * This is done because ind might not be flattened. in this case, in REST, there can be SQL actions for
+         * resource handling in the main action group-trees
+         */
         val sqlActions = if (ind is EnterpriseIndividual) ind.seeSQLActionBeforeIndex(index).map { it.copy() as SqlAction} else null
 
         for(i in n-1 downTo index+1){
@@ -182,10 +191,7 @@ class Minimizer<T: Individual> {
             ind.addChildrenToGroup(sqlActions, GroupsOfChildren.INITIALIZATION_SQL)
         }
 
-        if (!ind.verifyBindingGenes()){
-            ind.cleanBrokenBindingReference()
-            ind.computeTransitiveBindingGenes()
-        }
+        ind.fixGeneBindingsIfNeeded()
 
         if(ind is RestIndividual){
             ind.removeLocationId()
@@ -204,21 +210,33 @@ class Minimizer<T: Individual> {
     }
 
     private fun recomputeArchiveWithFullCoverageInfo(){
-        val current = archive.getCopyOfUniqueCoveringIndividuals()
-            .onEach { if(it is EnterpriseIndividual) it.ensureFlattenedStructure()  }
-
-        LoggingUtil.getInfoLogger().info("Recomputing full coverage for ${current.size} tests")
 
         val beforeCovered = archive.coveredTargets()
+
+        val currentEvaluated = archive.getCopyOfUniqueCoveringEvaluatedIndividuals()
+
+        LoggingUtil.getInfoLogger().info("Recomputing full coverage for ${currentEvaluated.size} tests")
+
 
         /*
             Previously evaluated individual only had partial info, due to performance issues.
             Need to make sure to fetch all coverage info.
          */
-        val population = current.mapNotNull {
-            val ei = fitness.computeWholeAchievedCoverageForPostProcessing(it)
+        val population = currentEvaluated.mapNotNull {
+
+            val possibleIssues = if(it.individual is EnterpriseIndividual)
+                //must flatten to simplify minimization... but it can introduce issues
+                it.individual.ensureFlattenedStructure()
+            else
+                false
+
+
+            val ei = fitness.computeWholeAchievedCoverageForPostProcessing(it.individual)
             if(ei == null){
                 log.warn("Failed to re-evaluate individual during minimization")
+            } else if(!possibleIssues){
+                //don't check mismatch if possible issues, as then mismatches would be expected
+                checkResultMismatches(it, ei)
             }
             ei
         }
@@ -247,6 +265,32 @@ class Minimizer<T: Individual> {
             }
 
             assert(false)//shouldn't really happen in the E2E...
+        }
+    }
+
+    private fun checkResultMismatches(x: EvaluatedIndividual<T>, y: EvaluatedIndividual<T>){
+
+        val original = x.evaluatedMainActions()
+        val other = y.evaluatedMainActions()
+
+        if(original.size != other.size){
+            log.warn("Mismatch between number of actions in re-evaluated individual." +
+                    " Original=${original.size}, Re-evaluated=${other.size}")
+            assert(false)
+            return
+        }
+
+        original.forEachIndexed { index, it ->
+            val action = it.action
+            if(action is HttpWsAction){
+                val a = it.result.getResultValue(HttpWsCallResult.STATUS_CODE)
+                val b = other[index].result.getResultValue(HttpWsCallResult.STATUS_CODE)
+
+                if(a != b){
+                    log.warn("Different status code returned $a != $b for endpoint: ${action.getName()}")
+                    assert(false)
+                }
+            }
         }
     }
 }
