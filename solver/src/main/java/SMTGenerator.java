@@ -88,8 +88,9 @@ public class SMTGenerator {
 
     private String extractCondition(String sqlQuery) throws JSQLParserException {
         Statement selectStatement = CCJSqlParserUtil.parse(sqlQuery);
-        Expression where = ParserUtils.getWhere(selectStatement);
-        return where.toString();
+        Select select = (Select) selectStatement;
+        PlainSelect plainSelect = (PlainSelect) select.getSelectBody();
+        return plainSelect.getWhere().toString();
     }
 
     private void generateTableDefinitions(TableDto table, StringBuilder smt) throws SqlConditionParserException {
@@ -138,23 +139,44 @@ public class SMTGenerator {
         if (condition instanceof SqlAndCondition) {
             SqlAndCondition andCondition = (SqlAndCondition) condition;
 
-            SqlComparisonCondition leftComparisonCondition = (SqlComparisonCondition) andCondition.getLeftExpr();
-            String left = getAssertFromComparison(tableDto, index, leftComparisonCondition);
+            String leftResponse = parseCheckExpression(tableDto, andCondition.getLeftExpr(), index);
+            String rightResponse = parseCheckExpression(tableDto, andCondition.getRightExpr(), index);
 
-            SqlComparisonCondition rightComparisonCondition = (SqlComparisonCondition) andCondition.getRightExpr();
-            String right = getAssertFromComparison(tableDto, index, rightComparisonCondition);
-
-            return "(and " + left + " " + right + ")";
+            return "(and " + leftResponse + " " + rightResponse + ")";
         }
 
-        if (condition instanceof  SqlComparisonCondition) {
-            SqlComparisonCondition comparisonCondition = (SqlComparisonCondition) condition;
-            return getAssertFromComparison(tableDto, index, comparisonCondition);
+        if (condition instanceof SqlOrCondition) {
+            SqlOrCondition orCondition = (SqlOrCondition) condition;
+
+            List<String> orMembers = new ArrayList<>();
+            for (SqlCondition c : orCondition.getOrConditions()) {
+                String response = parseCheckExpression(tableDto, c, index);
+                orMembers.add(response);
+            }
+            return concatenateOrs(orMembers);
         }
 
-        // TODO: Support other check expressions
-        throw new RuntimeException("The condition is not supported");
+        if (condition instanceof SqlInCondition) {
+            // TODO
+//            SqlInCondition inCondition = (SqlInCondition) condition;
+//
+//            String columnName = inCondition.getSqlColumn().getColumnName();
+//            String variable = asTableVariableKey(tableDto, columnName);
+//            Map<String, String> variables = new HashMap<>();
+//            String variableType = getSmtTypeFromDto(tableDto, columnName);
+//            variables.put(variable, toSmtType(variableType));
+//
+//            List<SqlCondition> expressions = inCondition.getLiteralList().getSqlConditionExpressions();
+//            return inArrayExpressionToOrAssert(variable, expressions);
+        }
 
+        if (!(condition instanceof SqlComparisonCondition)) {
+            // TODO: Support other check expressions
+            throw new RuntimeException("The condition is not a comparison condition");
+        }
+        SqlComparisonCondition comparisonCondition = (SqlComparisonCondition) condition;
+
+        return getAssertFromComparison(tableDto, index, comparisonCondition);
     }
 
     private static String getAssertFromComparison(TableDto tableDto, Integer index, SqlComparisonCondition comparisonCondition) {
@@ -163,6 +185,19 @@ public class SMTGenerator {
         String compare = comparisonCondition.getRightOperand().toString();
         String comparator = comparisonCondition.getSqlComparisonOperator().toString();
         return "(" + comparator + " " + variable + " " + compare + ")";
+    }
+
+    private String concatenateOrs(List<String> orMembers) {
+        if (orMembers.isEmpty())
+            throw new RuntimeException("The or condition is empty");
+
+        if (orMembers.size() == 1)
+            return orMembers.get(0);
+
+        if (orMembers.size() == 2)
+            return "(or " + orMembers.get(0) + " " + orMembers.get(1) + ")";
+
+        return "(or " + orMembers.get(orMembers.size() - 1) + " " + concatenateOrs(orMembers.subList(0, orMembers.size() - 1)) + ")";
     }
 
     private void addQueryConstraints(TableDto table, String condition, StringBuilder smt) {

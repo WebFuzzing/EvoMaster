@@ -1,6 +1,8 @@
 (declare-datatypes () ((UsersRow (id-name-age-points (ID Int) (NAME String) (AGE Int) (POINTS Int) ))))
 (declare-const users1 UsersRow)
 (declare-const users2 UsersRow)
+(assert (= (NAME users1) 'agus'))
+(assert (= (NAME users2) 'agus'))
 (assert (and (> (AGE users1) 18) (< (AGE users1) 100)))
 (assert (and (> (AGE users2) 18) (< (AGE users2) 100)))
 (assert (<= (POINTS users1) 10))
