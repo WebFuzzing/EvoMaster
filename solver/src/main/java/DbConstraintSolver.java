@@ -1,16 +1,35 @@
-import org.evomaster.core.sql.SqlAction;
+import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 
-import java.util.List;
+import java.time.Instant;
 
-/**
- * The interface for the constraint solver only for Database Constraints.
- * Such as Check, Unique, Primary Key, Foreign Key, etc.
- */
-public interface DbConstraintSolver extends AutoCloseable {
+public class DbConstraintSolver {
+
+    private final Z3SolverExecutor executor;
+    private final SMTGenerator generator;
+    private final String tmpFolderPath;
+    private final String resourcesFolder;
+
+    DbConstraintSolver (DbSchemaDto schemaDto, String resourcesFolder) {
+        String instant = Long.toString(Instant.now().getEpochSecond());
+        tmpFolderPath = "tmp_" + instant + "/";
+        this.resourcesFolder = resourcesFolder + tmpFolderPath;
+        executor = new Z3SolverExecutor(resourcesFolder);
+        generator = new SMTGenerator(schemaDto);
+    }
 
     /**
      * Solves the given constraints and returns the Db Gene to insert in the database
      * @return a list of SQLAction with the inserts in the db for the given constraints
      */
-    List<SqlAction> solve();
+    // TODO: this should return a sqlaction list    List<SqlAction> solve();
+    String solve(String sqlQuery) {
+        String fileName = "smt2_" + System.currentTimeMillis() + ".smt2";
+        try {
+            generator.generateSMTFile(sqlQuery,resourcesFolder + fileName);
+            return executor.solveFromFile(tmpFolderPath + fileName);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 }
