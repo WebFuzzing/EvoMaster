@@ -263,7 +263,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                         .distinctBy { it.externalService.getSignature() }
                         .forEach { action ->
                             lines.add("${TestWriterUtils.getWireMockVariableName(action.externalService)}.resetAll()")
-                            lines.appendSemicolon(format)
+                            lines.appendSemicolon()
                         }
             }
         }
@@ -552,7 +552,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         }
 
 
-        if (lines.shouldUseSemicolon(format)) {
+        if (lines.shouldUseSemicolon()) {
             /*
                 FIXME this is wrong when // is in a string of response, like a URL.
                 Need to check last //, and that is not inside  ""
@@ -572,7 +572,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 }
 
             } else {
-                lines.appendSemicolon(format)
+                lines.appendSemicolon()
             }
         }
 

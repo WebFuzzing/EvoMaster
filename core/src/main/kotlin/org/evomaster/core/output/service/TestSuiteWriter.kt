@@ -696,7 +696,7 @@ class TestSuiteWriter {
                         lines.add(".jsonConfig(JsonConfig.jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE))")
                         lines.add(".redirect(redirectConfig().followRedirects(false))")
                     }
-                    lines.appendSemicolon(config.outputFormat)
+                    lines.appendSemicolon()
                 }
             }
 
@@ -838,7 +838,7 @@ class TestSuiteWriter {
                             addStatement("${getWireMockVariableName(es)}.resetAll()", lines)
                             // set the default responses for all wm
                             handleDefaultStubForAsJavaOrKotlin(lines, es, format)
-                            lines.appendSemicolon(format)
+                            lines.appendSemicolon()
                         }
                 }
 
@@ -952,7 +952,7 @@ class TestSuiteWriter {
     }
 
     private fun addStatement(statement: String, lines: Lines) {
-        lines.addStatement(statement,config.outputFormat)
+        lines.addStatement(statement)
     }
 
 

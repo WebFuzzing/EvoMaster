@@ -1,7 +1,5 @@
 package org.evomaster.core.output
 
-import java.nio.Buffer
-
 
 /**
  * Class used to create an indented version of a list of strings, each
@@ -15,18 +13,18 @@ class Lines(val format: OutputFormat) {
         private set
 
     //TODO what about C#???
-    fun shouldUseSemicolon(format: OutputFormat) = format.isJava() || format.isJavaScript() || format.isCsharp()
+    fun shouldUseSemicolon() = format.isJava() || format.isJavaScript() || format.isCsharp()
 
-    fun appendSemicolon(format: OutputFormat) {
+    fun appendSemicolon() {
 
-        if (shouldUseSemicolon(format)) {
+        if (shouldUseSemicolon()) {
             append(";")
         }
     }
 
-    fun addStatement(statement: String, format: OutputFormat) {
+    fun addStatement(statement: String) {
         add(statement)
-        appendSemicolon(format)
+        appendSemicolon()
     }
 
     fun block(indentention: Int = 1, expression: () -> Any){

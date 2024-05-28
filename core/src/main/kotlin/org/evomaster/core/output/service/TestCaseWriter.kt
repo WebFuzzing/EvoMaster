@@ -133,7 +133,7 @@ abstract class TestCaseWriter {
             }
 
             lines.add("DnsCacheManipulator.setDnsCache(\"${a.hostname}\", \"${a.localIPAddress}\")")
-            lines.appendSemicolon(format)
+            lines.appendSemicolon()
         }
     }
 
@@ -154,7 +154,7 @@ abstract class TestCaseWriter {
                 // Default behaviour of WireMock has been removed, since found no purpose
                 // in case if there is a failure regarding no routes found in WireMock
                 // consider adding that later
-                lines.addStatement("assertNotNull(${name})", config.outputFormat)
+                lines.addStatement("assertNotNull(${name})")
 
                 TestWriterUtils.handleStubForAsJavaOrKotlin(
                     lines,
@@ -165,7 +165,7 @@ abstract class TestCaseWriter {
                     index+1,
                     format
                 )
-                lines.appendSemicolon(format)
+                lines.appendSemicolon()
                 lines.addEmpty(1)
             }
     }
