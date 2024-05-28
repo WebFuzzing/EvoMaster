@@ -801,6 +801,13 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             /*
                 Quite tricky... if a WM instance was started as part of this test case evaluation,
                 then the results are invalid, as they are based on WM not being there.
+
+                FIXME: For the first time when an external web service call detected core will
+                  start initiating WM for it. Next time during the search subsequent tests will pass.
+                  Although in [HostnameResolutionActionEMTest] we end up having test cases which captures
+                  the first-time cases. To avoid this we're skipping those test where external web service
+                  call detected but there is no active WM running.
+                  We can issue [deathSentence] to the individual at this point.
              */
              return null
         }
