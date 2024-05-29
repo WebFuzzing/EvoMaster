@@ -73,9 +73,9 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             format.isCsharp() -> lines.append("await Client")
         }
 
-        if (!format.isJavaScript() && !format.isCsharp()) {
+        if (!format.isJavaScript() && !format.isCsharp() && !format.isPython()) {
             // in JS, the Accept must be after the verb
-            // in C#, must be before the call
+            // in C# and Python, must be before the call
             lines.append(getAcceptHeader(call, res))
         }
     }
@@ -95,6 +95,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             format.isJavaOrKotlin() -> ".accept("
             format.isJavaScript() -> ".set('Accept', "
             format.isCsharp() -> "Client.DefaultRequestHeaders.Add(\"Accept\", "
+            format.isPython() -> "" // TODO PhG: do nothing for python yet
             else -> throw IllegalArgumentException("Invalid format: $format")
         }
     }
@@ -262,7 +263,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                         .distinctBy { it.externalService.getSignature() }
                         .forEach { action ->
                             lines.add("${TestWriterUtils.getWireMockVariableName(action.externalService)}.resetAll()")
-                            lines.appendSemicolon(format)
+                            lines.appendSemicolon()
                         }
             }
         }
@@ -551,7 +552,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         }
 
 
-        if (lines.shouldUseSemicolon(format)) {
+        if (lines.shouldUseSemicolon()) {
             /*
                 FIXME this is wrong when // is in a string of response, like a URL.
                 Need to check last //, and that is not inside  ""
@@ -571,12 +572,12 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 }
 
             } else {
-                lines.appendSemicolon(format)
+                lines.appendSemicolon()
             }
         }
 
         //TODO what was the reason for this?
-        if (!format.isCsharp()) {
+        if (!format.isCsharp() && !format.isPython()) {
             lines.deindent(2)
         }
     }

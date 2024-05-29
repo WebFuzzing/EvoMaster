@@ -52,7 +52,7 @@ object TokenWriter {
             }
 
             if (format.isJavaScript()){
-                lines.appendSemicolon(format)
+                lines.appendSemicolon()
             }else{
                 lines.append(" + ")
             }
@@ -77,7 +77,7 @@ object TokenWriter {
             }else
                 lines.add(".then().extract().response().path(\"$path\")")
 
-            lines.appendSemicolon(format)
+            lines.appendSemicolon()
             lines.addEmpty()
 
             lines.deindent(2)
