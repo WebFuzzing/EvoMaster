@@ -6,10 +6,7 @@ import net.sf.jsqlparser.statement.select.FromItem;
 import net.sf.jsqlparser.statement.select.Join;
 import net.sf.jsqlparser.statement.select.PlainSelect;
 import net.sf.jsqlparser.statement.select.Select;
-import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto;
-import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
-import org.evomaster.client.java.controller.api.dto.database.schema.TableCheckExpressionDto;
-import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.*;
 import org.evomaster.dbconstraint.ConstraintDatabaseType;
 import org.evomaster.dbconstraint.ast.SqlCondition;
 import org.evomaster.dbconstraint.parser.SqlConditionParserException;
@@ -18,6 +15,7 @@ import org.evomaster.dbconstraint.parser.jsql.JSqlConditionParser;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class SMTGenerator {
 
@@ -44,6 +42,7 @@ public class SMTGenerator {
         StringBuilder smt = new StringBuilder();
 
         appendTableDefinitions(smt);
+        appendKeyConstraints(smt);
         appendQueryConstraints(smt, sqlQuery);
         appendGetValues(smt);
 
@@ -59,7 +58,6 @@ public class SMTGenerator {
     }
 
     private void appendQueryConstraints(StringBuilder smt, String sqlQuery) {
-        // Parse the SQL query to extract the table names and condition
         List<String> tableNames;
         Expression condition;
         try {
@@ -69,7 +67,6 @@ public class SMTGenerator {
             throw new RuntimeException("Error when parsing table and condition from sqlQuery: " + sqlQuery, e);
         }
 
-        // Filter the tables from schema based on the parsed table names
         List<TableDto> tablesInQuery = new ArrayList<>();
         for (String tableName : tableNames) {
             TableDto table = schema.tables.stream()
@@ -83,12 +80,10 @@ public class SMTGenerator {
             tablesInQuery.add(table);
         }
 
-        // Add constraints from the SQL query
         addQueryConstraints(tablesInQuery, condition, smt);
     }
 
     private void appendTableDefinitions(StringBuilder smt) {
-        // Generate SMT definitions for each table
         for (TableDto table : schema.tables) {
             generateTableDefinitions(table, smt);
         }
@@ -139,13 +134,11 @@ public class SMTGenerator {
         }
         smt.append("))))\n");
 
-        // Declare constants for rows
         for (int i = 1; i <= numberOfRows; i++) {
             smt.append("(declare-const ").append(table.name.toLowerCase()).append(i)
                     .append(" ").append(tableName).append("Row)\n");
         }
 
-        // Add constraints for each column
         for (TableCheckExpressionDto check : table.tableCheckExpressions) {
             try {
                 SqlCondition condition = parser.parse(check.sqlCheckExpression, this.dbType);
@@ -192,4 +185,62 @@ public class SMTGenerator {
             }
         }
     }
+
+    private void appendKeyConstraints(StringBuilder smt) {
+        for (TableDto table : schema.tables) {
+            // Add primary key constraints
+            List<ColumnDto> primaryKeys = table.columns.stream()
+                    .filter(c -> c.primaryKey)
+                    .collect(Collectors.toList());
+
+            for (int i = 1; i <= numberOfRows; i++) {
+                for (int j = i + 1; j <= numberOfRows; j++) {
+                    for (ColumnDto primaryKey : primaryKeys) {
+                        smt.append("(assert (distinct (")
+                                .append(primaryKey.name.toUpperCase()).append(" ")
+                                .append(table.name.toLowerCase()).append(i).append(") (")
+                                .append(primaryKey.name.toUpperCase()).append(" ")
+                                .append(table.name.toLowerCase()).append(j).append(")))\n");
+                    }
+                }
+            }
+
+            // Add foreign key constraints
+            for (ForeignKeyDto foreignKey : table.foreignKeys) {
+                String referencedTable = foreignKey.targetTable.toLowerCase();
+                TableDto referencedTableDto = schema.tables.stream()
+                        .filter(t -> t.name.equalsIgnoreCase(foreignKey.targetTable))
+                        .findFirst()
+                        .orElseThrow(() -> new RuntimeException("Referenced table not found: " + foreignKey.targetTable));
+
+                List<ColumnDto> referencedPrimaryKeys = referencedTableDto.columns.stream()
+                        .filter(c -> c.primaryKey)
+                        .collect(Collectors.toList());
+
+                if (referencedPrimaryKeys.isEmpty()) {
+                    throw new RuntimeException("Referenced table has no primary key: " + foreignKey.targetTable);
+                }
+
+                ColumnDto referencedPrimaryKey = referencedPrimaryKeys.get(0); // Assuming single-column primary keys
+
+                for (String sourceColumn : foreignKey.sourceColumns) {
+                    String sourceColumnUpper = sourceColumn.toUpperCase();
+                    String referencedColumnUpper = referencedPrimaryKey.name.toUpperCase();
+
+                    for (int i = 1; i <= numberOfRows; i++) {
+                        smt.append("(assert (or ");
+                        for (int j = 1; j <= numberOfRows; j++) {
+                            smt.append("(= (")
+                                    .append(sourceColumnUpper).append(" ")
+                                    .append(table.name.toLowerCase()).append(i).append(") (")
+                                    .append(referencedColumnUpper).append(" ")
+                                    .append(referencedTable).append(j).append(")) ");
+                        }
+                        smt.append("))\n");
+                    }
+                }
+            }
+        }
+    }
+
 }
