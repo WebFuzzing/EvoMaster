@@ -2,7 +2,7 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 
 import java.time.Instant;
 
-public class DbConstraintSolver {
+public class DbConstraintSolver implements AutoCloseable {
 
     private final Z3SolverExecutor executor;
     private final SMTGenerator generator;
@@ -31,5 +31,10 @@ public class DbConstraintSolver {
             e.printStackTrace();
             return null;
         }
+    }
+
+    @Override
+    public void close() {
+        executor.close();
     }
 }
