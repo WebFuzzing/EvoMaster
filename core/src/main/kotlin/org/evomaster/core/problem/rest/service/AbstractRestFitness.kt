@@ -830,7 +830,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             fv: FitnessValue
     ){
         //TODO the other cases
-        RestSecurityOracle.handleForbiddenDelete(individual,actionResults,fv)
+        val fault = RestSecurityOracle.handleForbiddenDelete(individual,actionResults)
+        if(fault != null){
+            val scenarioId = idMapper.handleLocalTarget(fault)
+            fv.updateTarget(scenarioId, 1.0)
+        }
     }
 
 

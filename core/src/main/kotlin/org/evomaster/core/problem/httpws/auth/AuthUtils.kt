@@ -218,32 +218,5 @@ object AuthUtils {
         return true
     }
 
-    /**
-     * Helper function which checks if two given authentication objects are identical by checking headers
-     */
-    fun checkIdenticalAuthentication(first: HttpWsAuthenticationInfo,
-                                     second: HttpWsAuthenticationInfo) : Boolean {
 
-        if (first.headers.size != second.headers.size) {
-            return false
-        }
-        else {
-
-            var index = 0
-
-            while (index < first.headers.size) {
-
-                if ( !(first.headers[index].name == second.headers[index].name &&
-                            second.headers[index].value == first.headers[index].value) ) {
-                    return false
-                }
-
-            }
-
-            return true
-
-        }
-
-
-    }
 }
