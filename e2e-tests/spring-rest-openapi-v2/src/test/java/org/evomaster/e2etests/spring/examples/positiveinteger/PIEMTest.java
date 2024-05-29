@@ -6,6 +6,9 @@ import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.List;
 
@@ -14,32 +17,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class PIEMTest extends PITestBase {
 
 
-
-    @Test
-    public void testMIO() throws Throwable {
-        testRunEM(EMConfig.Algorithm.MIO, 1000);
+    @ParameterizedTest
+    @EnumSource(EMConfig.Algorithm.class)
+    public void testAlgorithms(EMConfig.Algorithm alg)  throws Throwable {
+        testRunEM(alg, 2000);// high value, just to check if no crash
     }
 
-    @Test
-    public void testRand() throws Throwable {
-        testRunEM(EMConfig.Algorithm.RANDOM, 20);
-    }
-
-    @Test
-    public void testWTS() throws Throwable {
-        testRunEM(EMConfig.Algorithm.WTS, 2_000); // high value, just to check if no crash
-    }
-
-    @Test
-    public void testMOSA() throws Throwable {
-        testRunEM(EMConfig.Algorithm.MOSA, 2_000); // high value, just to check if no crash
-    }
 
 
     private void testRunEM(EMConfig.Algorithm alg, int iterations) throws Throwable {
 
         String outputFolderName = "PIEM_" + alg.toString();
-        ClassName className = new ClassName("org.PIEM_Run_" + alg.toString());
+        ClassName className = new ClassName("org.PIEM_Run_" + alg);
         clearGeneratedFiles(outputFolderName, className);
 
         handleFlaky(() -> {
