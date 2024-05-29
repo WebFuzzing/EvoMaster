@@ -854,6 +854,10 @@ class Main {
                                      controllerInfoDto: ControllerInfoDto?,
                                      splitResult: SplitResult,
                                      snapshotTimestamp: String = "") {
+
+            val executiveSummary = splitResult.executiveSummary
+                    ?: return
+
             val config = injector.getInstance(EMConfig::class.java)
 
             if (!config.createTests) {
@@ -862,7 +866,7 @@ class Main {
 
             val writer = injector.getInstance(TestSuiteWriter::class.java)
             assert(controllerInfoDto == null || controllerInfoDto.fullName != null)
-            writer.writeTests(splitResult.executiveSummary, controllerInfoDto?.fullName,controllerInfoDto?.executableFullPath, snapshotTimestamp)
+            writer.writeTests(executiveSummary, controllerInfoDto?.fullName,controllerInfoDto?.executableFullPath, snapshotTimestamp)
         }
 
         /**

@@ -73,10 +73,6 @@ object TestSuiteSplitter {
         }
     }
 
-    fun split(solution: Solution<*>,
-              config: EMConfig) : SplitResult { //List<Solution<*>>{
-        return split(solution as Solution<*>, config, PartialOracles())
-    }
     /**
      * Given a [Solution], split it into several smaller solutions, based on the given [type] strategy.
      * No test must be lost, and combining/aggregating all those smaller solutions should give back
@@ -84,17 +80,21 @@ object TestSuiteSplitter {
      */
     fun split(solution: Solution<*>,
               config: EMConfig,
-              oracles: PartialOracles) : SplitResult { //List<Solution<*>>{
+              oracles: PartialOracles = PartialOracles()
+    ) : SplitResult {
 
         val type = config.testSuiteSplitType
 
-        // BMR: Splitting support for new problems
+        // TODO splitting support for other problem types
         val sol = if(config.problemType == EMConfig.ProblemType.GRAPHQL){
             solution as Solution<GraphQLIndividual>
         } else {
             solution as Solution<RestIndividual>
         }
-        val metrics = mutableListOf(DistanceMetricErrorText(config.errorTextEpsilon), DistanceMetricLastLine(config.lastLineEpsilon))
+
+        val metrics = mutableListOf(DistanceMetricErrorText(config.errorTextEpsilon),
+                DistanceMetricLastLine(config.lastLineEpsilon))
+
         val errs = sol.individuals.filter {ind ->
             if (ind.individual is RestIndividual || ind.individual is GraphQLIndividual) {
                 ind.evaluatedMainActions().any { ac ->
@@ -111,19 +111,14 @@ object TestSuiteSplitter {
             EMConfig.TestSuiteSplitType.CODE -> splitResult.splitOutcome = splitByCode(sol, config)
             EMConfig.TestSuiteSplitType.CLUSTER -> {
                 if(errs.size <= 1){
+                    //TODO is this correct? likely not
                     splitResult.splitOutcome = splitByCode(sol, config)
-
-                    // TODO: BMR - what is the executive summary behaviour for 1 or fewer errors?
-                    // Onur - Executive summary gets all success cases in case there are no faults.
-                    // So if the executive summary gets all success cases, it should not be shown.
-                    splitResult.executiveSummary = sol.convertSolutionToExecutiveSummary()
+                    //no need of executive summary here
                 } else {
                     val clusters = conductClustering(sol as Solution<ApiWsIndividual>, oracles, config, metrics, splitResult)
                     splitByCluster(clusters, sol, oracles, splitResult, config)
                 }
-
             }
-
         }
 
         return splitResult
@@ -428,6 +423,8 @@ object TestSuiteSplitter {
      *  - if it contains a GraphQL call with a response containing an "errors" field
      *  - IF [PartialOracles] are selected, if the test contains a call that fails an expectation
      *  (i.e. is selected for clustering by one of the partial oracles).
+     *
+     *  FIXME: this must be made exactly same as done in fitness function
      */
     fun assessFailed(action: EvaluatedAction, oracles: PartialOracles?, config: EMConfig): Boolean{
         val codeSelect = when (action.result) {
