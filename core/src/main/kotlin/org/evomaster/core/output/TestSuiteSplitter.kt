@@ -74,7 +74,7 @@ object TestSuiteSplitter {
     }
 
     /**
-     * Given a [Solution], split it into several smaller solutions, based on the given [type] strategy.
+     * Given a [Solution], split it into several smaller solutions, based on the configured strategy.
      * No test must be lost, and combining/aggregating all those smaller solutions should give back
      * the original [Solution]
      */
@@ -108,8 +108,7 @@ object TestSuiteSplitter {
 
         when(type){
             EMConfig.TestSuiteSplitType.NONE  -> splitResult.splitOutcome = listOf(sol)
-            EMConfig.TestSuiteSplitType.CODE -> splitResult.splitOutcome = splitByCode(sol, config)
-            EMConfig.TestSuiteSplitType.CLUSTER -> {
+            EMConfig.TestSuiteSplitType.FAULTS -> {
                 if(errs.size <= 1){
                     //TODO is this correct? likely not
                     splitResult.splitOutcome = splitByCode(sol, config)
@@ -147,7 +146,8 @@ object TestSuiteSplitter {
                                   oracles: PartialOracles = PartialOracles(),
                                   config: EMConfig,
                                   metrics: List<DistanceMetric<HttpWsCallResult>>,
-                                  splitResult: SplitResult) : MutableMap<String, MutableList<MutableList<HttpWsCallResult>>> {
+                                  splitResult: SplitResult
+    ) : MutableMap<String, MutableList<MutableList<HttpWsCallResult>>> {
 
         val clusteringStart = System.currentTimeMillis()
         val errs = solution.individuals.filter {
@@ -156,11 +156,13 @@ object TestSuiteSplitter {
             }
         }.toMutableList()
 
-        val clusterableActions = errs.flatMap {
-            it.evaluatedMainActions().filter { ac ->
-                TestSuiteSplitter.assessFailed(ac, oracles, config)
-            }
-        }.map { ac -> ac.result }
+        val clusterableActions = errs
+                .flatMap {
+                    it.evaluatedMainActions().filter { ac ->
+                    assessFailed(ac, oracles, config)
+                    }
+                }
+                .map { ac -> ac.result }
                 .filterIsInstance<HttpWsCallResult>()
 
         // If no individuals have a failed result, the summary is empty
@@ -177,6 +179,7 @@ object TestSuiteSplitter {
                 listOf()
             ))
         }
+
         val clusters = mutableMapOf<String, MutableList<MutableList<HttpWsCallResult>>>()
         val clusteringSol = Solution(
             errs,
@@ -187,13 +190,12 @@ object TestSuiteSplitter {
             listOf()
         )
 
-        /**
-        In order for clustering to make sense, we need a set of clusterable actions with at least 2 elements.
+        /*
+            In order for clustering to make sense, we need a set of clusterable actions with at least 2 elements.
          */
         if(clusterableActions.size >= 2){
             for (metric in metrics) {
                 clusters[metric.getName()] = Clusterer.cluster(
-                        //Solution(errs, solution.testSuiteName, Termination.SUMMARY),
                         clusteringSol,
                         config,
                         epsilon = metric.getRecommendedEpsilon(),
@@ -320,9 +322,11 @@ object TestSuiteSplitter {
             listOf(),
             listOf()
         )
+
         splitResult.splitOutcome = mutableListOf(solErrors,
                 solSuccesses,
                 solRemainder)
+
         return splitResult
     }
 
@@ -345,7 +349,6 @@ object TestSuiteSplitter {
         val s500 = solution.individuals.filter {
             it.evaluatedMainActions().any { ac ->
                 assessFailed(ac, null, config)
-
             }
         }.toMutableList()
 
