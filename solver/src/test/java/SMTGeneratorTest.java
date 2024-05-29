@@ -44,7 +44,8 @@ public class SMTGeneratorTest {
                 "ALTER TABLE users add CHECK (age>18 AND age<100);\n" +
                 "ALTER TABLE users add CHECK (points<=10);\n" +
                 "ALTER TABLE users add CHECK (points>=0);\n" +
-                "ALTER TABLE users add CHECK (name = 'agus');");
+                "ALTER TABLE users add CHECK (points<4 OR points>6);\n" +
+                "ALTER TABLE users add CHECK (name = 'agus');\n");
 
         DbSchemaDto schemaDto = SchemaExtractor.extract(connection);
 
@@ -59,9 +60,9 @@ public class SMTGeneratorTest {
     }
 
     @Test
-    public void satisfiabilityExample() throws IOException, JSQLParserException, SqlConditionParserException {
+    public void satisfiabilityExample() throws IOException {
         String outputFileName = Paths.get(  resourcesFolder + tmpFolderPath + "smt2_" + System.currentTimeMillis() + ".smt2").toString();
-        generator.generateSMTFile( "SELECT * FROM Users WHERE Age > 30;", outputFileName);
+        generator.generateSMTFile( "SELECT * FROM Users WHERE Age > 30 AND points = 7;", outputFileName);
 
         // Read from file the response and compare
         String everything = readFromFileAsString(outputFileName);

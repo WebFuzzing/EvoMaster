@@ -56,7 +56,7 @@ public class DbConstraintSolverTest {
         String sqlQuery = "SELECT * FROM users WHERE age = 20 AND points = 5";
         String result = dbConstraintSolver.solve(sqlQuery);
         assertEquals("sat\n" +
-                "((users1 (id-name-age-points 2 \"!0!\" 20 0)))\n" +
-                "((users2 (id-name-age-points 3 \"!1!\" 20 8)))\n", result);
+                "((users1 (id-name-age-points 2 \"!0!\" 20 5)))\n" +
+                "((users2 (id-name-age-points 3 \"!1!\" 20 5)))\n", result);
     }
 }
