@@ -43,11 +43,22 @@ public class SMTGenerator {
     public void generateSMTFile(String sqlQuery, String filePath) {
         StringBuilder smt = new StringBuilder();
 
-        // Generate SMT definitions for each table
-        for (TableDto table : schema.tables) {
-            generateTableDefinitions(table, smt);
-        }
+        appendTableDefinitions(smt);
+        appendQueryConstraints(smt, sqlQuery);
+        appendGetValues(smt);
 
+        writeToFile(smt, filePath);
+    }
+
+    private static void writeToFile(StringBuilder smt, String filePath) {
+        try (FileWriter writer = new FileWriter(filePath)) {
+            writer.write(smt.toString());
+        } catch (IOException e) {
+            throw new RuntimeException("Error when writing SMT to file", e);
+        }
+    }
+
+    private void appendQueryConstraints(StringBuilder smt, String sqlQuery) {
         // Parse the SQL query to extract the table names and condition
         List<String> tableNames;
         Expression condition;
@@ -74,15 +85,12 @@ public class SMTGenerator {
 
         // Add constraints from the SQL query
         addQueryConstraints(tablesInQuery, condition, smt);
+    }
 
-        // Add final SMT lines
-        addFinalLines(smt, schema.tables);
-
-        // Write to file
-        try (FileWriter writer = new FileWriter(filePath)) {
-            writer.write(smt.toString());
-        } catch (IOException e) {
-            throw new RuntimeException("Error when writing SMT to file", e);
+    private void appendTableDefinitions(StringBuilder smt) {
+        // Generate SMT definitions for each table
+        for (TableDto table : schema.tables) {
+            generateTableDefinitions(table, smt);
         }
     }
 
@@ -175,9 +183,9 @@ public class SMTGenerator {
         }
     }
 
-    private void addFinalLines(StringBuilder smt, List<TableDto> tables) {
+    private void appendGetValues(StringBuilder smt) {
         smt.append("(check-sat)\n");
-        for (TableDto table : tables) {
+        for (TableDto table : schema.tables) {
             String tableNameLower = table.name.toLowerCase();
             for (int i = 1; i <= numberOfRows; i++) {
                 smt.append("(get-value (").append(tableNameLower).append(i).append("))\n");

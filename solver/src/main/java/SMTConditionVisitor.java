@@ -84,8 +84,6 @@ public class SMTConditionVisitor implements SqlConditionVisitor<Boolean, Integer
                 throw new RuntimeException("The condition is not supported: " + condition.getClass().getSimpleName());
     }
 
-
-
     @Override
     public Boolean visit(SqlNullLiteralValue condition, Integer index) {
                 throw new RuntimeException("The condition is not supported: " + condition.getClass().getSimpleName());
