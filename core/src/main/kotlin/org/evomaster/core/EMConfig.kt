@@ -1028,7 +1028,7 @@ class EMConfig {
     var avoidNonDeterministicLogs = false
 
     enum class Algorithm {
-        MIO, RANDOM, WTS, MOSA
+        MIO, RANDOM, WTS, MOSA, Genetic
     }
 
     @Cfg("The algorithm used to generate test cases")
@@ -1273,6 +1273,14 @@ class EMConfig {
     @Cfg("Define the population size in the search algorithms that use populations (e.g., Genetic Algorithms, but not MIO)")
     @Min(1.0)
     var populationSize = 30
+
+    @Cfg("Cross over rate for Genetic Algorithms")
+    @Probability
+    var crossoverRate = 0.7
+
+    @Cfg("Mutation rate for Genetic Algorithms")
+    @Probability
+    var mutationRate = 0.04
 
     @Cfg("Define the maximum number of tests in a suite in the search algorithms that evolve whole suites, e.g. WTS")
     @Min(1.0)
