@@ -139,62 +139,13 @@ public class SMTGenerator {
         }
     }
 
-    /**
-     * Parses a check expression and returns the string to assert in smt format
-     * @param tableDto the table where the variable is a column of
-     * @param condition the condition to parse and translate
-     * @return the string to assert in smt format
-     */
-    private String parseCheckExpression(TableDto tableDto, SqlCondition condition, Integer index) {
+    private String parseCheckExpression(TableDto table, SqlCondition condition, int index) {
+        StringBuilder smt = new StringBuilder();
 
-        if (condition instanceof SqlAndCondition) {
-            SqlAndCondition andCondition = (SqlAndCondition) condition;
+        SMTConditionVisitor visitor = new SMTConditionVisitor(smt, table.name.toLowerCase());
+        condition.accept(visitor, index);
 
-            String leftResponse = parseCheckExpression(tableDto, andCondition.getLeftExpr(), index);
-            String rightResponse = parseCheckExpression(tableDto, andCondition.getRightExpr(), index);
-
-            return "(and " + leftResponse + " " + rightResponse + ")";
-        }
-
-        if (condition instanceof SqlOrCondition) {
-            SqlOrCondition orCondition = (SqlOrCondition) condition;
-
-            List<String> orMembers = new ArrayList<>();
-            for (SqlCondition c : orCondition.getOrConditions()) {
-                String response = parseCheckExpression(tableDto, c, index);
-                orMembers.add(response);
-            }
-            return concatenateOrs(orMembers);
-        }
-        if (!(condition instanceof SqlComparisonCondition)) {
-            // TODO: Support other check expressions
-            throw new RuntimeException("The condition is not supported: " + condition.getClass().getSimpleName());
-        }
-        SqlComparisonCondition comparisonCondition = (SqlComparisonCondition) condition;
-
-        return getAssertFromComparison(tableDto, index, comparisonCondition);
-    }
-
-    private static String getAssertFromComparison(TableDto table, Integer index, SqlComparisonCondition condition) {
-        String columnName = condition.getLeftOperand().toString();
-        String variable = "(" + columnName + " " + table.name.toLowerCase() + index + ")";
-        String compare = condition.getRightOperand().toString().replace("'", "\"");
-        String comparator = condition.getSqlComparisonOperator().toString();
-        return "(" + comparator + " " + variable + " " + compare + ")";
-    }
-
-    private String concatenateOrs(List<String> orMembers) {
-        if (orMembers.isEmpty())
-            throw new RuntimeException("The or condition is empty");
-
-        if (orMembers.size() == 1)
-            return orMembers.get(0);
-
-        if (orMembers.size() == 2)
-            return "(or " + orMembers.get(0) + " " + orMembers.get(1) + ")";
-
-        return "(or " + orMembers.get(orMembers.size() - 1) + " " +
-                concatenateOrs(orMembers.subList(0, orMembers.size() - 1)) + ")";
+        return smt.toString();
     }
 
     private void addQueryConstraints(TableDto table, Expression where, StringBuilder smt) {
