@@ -2,7 +2,6 @@ package org.evomaster.e2etests.spring.examples.splitter;
 
 import org.evomaster.client.java.instrumentation.shared.ClassName;
 import org.evomaster.core.EMConfig;
-import org.evomaster.core.output.ObjectGenerator;
 import org.evomaster.core.output.TestSuiteSplitter;
 import org.evomaster.core.output.Termination;
 import org.evomaster.core.output.clustering.SplitResult;
@@ -48,19 +47,19 @@ public class TestSuiteSplitterTest extends SplitterTestBase {
         if(splitType == EMConfig.TestSuiteSplitType.CODE){
             terminations = Arrays.asList(Termination.FAULTS.getSuffix(),
                     Termination.SUCCESSES.getSuffix(),
-                    Termination.OTHER.getSuffix());
+                    Termination.OTHERS.getSuffix());
         }
         if(splitType == EMConfig.TestSuiteSplitType.CLUSTER){
             if(executiveSummary) {
                 terminations = Arrays.asList(Termination.FAULTS.getSuffix(),
                         Termination.SUCCESSES.getSuffix(),
-                        Termination.OTHER.getSuffix(),
-                        Termination.SUMMARY.getSuffix());
+                        Termination.OTHERS.getSuffix(),
+                        Termination.FAULT_REPRESENTATIVES.getSuffix());
             }
             else {
                 terminations = Arrays.asList(Termination.FAULTS.getSuffix(),
                         Termination.SUCCESSES.getSuffix(),
-                        Termination.OTHER.getSuffix());
+                        Termination.OTHERS.getSuffix());
             }
         }
 

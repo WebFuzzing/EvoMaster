@@ -49,7 +49,7 @@ object TestSuiteSplitter {
                     individuals = o.value.toMutableList(),
                     testSuiteNamePrefix = "${solution.testSuiteNamePrefix}_${o.key}",
                     testSuiteNameSuffix = solution.testSuiteNameSuffix,
-                    termination = Termination.OTHER,listOf(), listOf()
+                    termination = Termination.OTHERS,listOf(), listOf()
                 )
             }
 //                .plus(Solution(individuals = other.toMutableList(),
@@ -66,7 +66,7 @@ object TestSuiteSplitter {
                         individuals = e.value.toMutableList(),
                         testSuiteNamePrefix = "${solution.testSuiteNamePrefix}${level}",
                         testSuiteNameSuffix = solution.testSuiteNameSuffix,
-                        termination = Termination.EXCEPTION,listOf(), listOf()
+                        termination = Termination.EXCEPTIONS,listOf(), listOf()
                     )
                 }
             )
@@ -177,7 +177,7 @@ object TestSuiteSplitter {
                 errs,
                 solution.testSuiteNamePrefix,
                 solution.testSuiteNameSuffix,
-                Termination.SUMMARY,
+                Termination.FAULT_REPRESENTATIVES,
                 listOf(),
                 listOf()
             ))
@@ -187,7 +187,7 @@ object TestSuiteSplitter {
             errs,
             solution.testSuiteNamePrefix,
             solution.testSuiteNameSuffix,
-            Termination.SUMMARY,
+            Termination.FAULT_REPRESENTATIVES,
             listOf(),
             listOf()
         )
@@ -215,7 +215,7 @@ object TestSuiteSplitter {
     }
 
     /**
-     * The [execSummary] function takes in a solution, clusters individuals containing errors by error messsage,
+     * The [execSummary] function takes in a solution, clusters individuals based on their errors,
      * then picks from each cluster one individual.
      *
      * The method uses [MutableSet] to ensure the uniqueness of [EvaluatedIndividual] objects
@@ -250,7 +250,7 @@ object TestSuiteSplitter {
             execSolList,
             solution.testSuiteNamePrefix,
             solution.testSuiteNameSuffix,
-            Termination.SUMMARY,
+            Termination.FAULT_REPRESENTATIVES,
             listOf(),
             listOf()
         )
@@ -294,7 +294,7 @@ object TestSuiteSplitter {
             remainder,
             solution.testSuiteNamePrefix,
             solution.testSuiteNameSuffix,
-            Termination.OTHER,
+            Termination.OTHERS,
             listOf(),
             listOf()
         )
@@ -387,7 +387,7 @@ object TestSuiteSplitter {
                     remainder,
                     solution.testSuiteNamePrefix,
                     solution.testSuiteNameSuffix,
-                    Termination.OTHER,
+                    Termination.OTHERS,
                     listOf(),
                     listOf()
                 )
@@ -510,7 +510,7 @@ object TestSuiteSplitter {
                     remainder,
                     solution.testSuiteNamePrefix,
                     solution.testSuiteNameSuffix,
-                    Termination.OTHER,
+                    Termination.OTHERS,
                     listOf(),
                     listOf()
                 )
