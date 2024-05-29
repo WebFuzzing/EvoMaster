@@ -1,23 +1,23 @@
+import net.sf.jsqlparser.JSQLParserException;
+import net.sf.jsqlparser.expression.Expression;
+import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.statement.Statement;
+import net.sf.jsqlparser.statement.select.FromItem;
+import net.sf.jsqlparser.statement.select.Join;
+import net.sf.jsqlparser.statement.select.PlainSelect;
+import net.sf.jsqlparser.statement.select.Select;
 import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableCheckExpressionDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
+import org.evomaster.dbconstraint.ConstraintDatabaseType;
+import org.evomaster.dbconstraint.ast.SqlCondition;
+import org.evomaster.dbconstraint.parser.SqlConditionParserException;
+import org.evomaster.dbconstraint.parser.jsql.JSqlConditionParser;
 
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
-
-import net.sf.jsqlparser.JSQLParserException;
-import net.sf.jsqlparser.parser.CCJSqlParserUtil;
-import net.sf.jsqlparser.schema.Table;
-import net.sf.jsqlparser.statement.select.PlainSelect;
-import net.sf.jsqlparser.statement.select.Select;
-import net.sf.jsqlparser.expression.Expression;
-import org.evomaster.dbconstraint.ConstraintDatabaseType;
-import org.evomaster.dbconstraint.ast.*;
-import org.evomaster.dbconstraint.parser.SqlConditionParserException;
-import org.evomaster.dbconstraint.parser.jsql.JSqlConditionParser;
 
 public class SMTGenerator {
 
@@ -40,41 +40,43 @@ public class SMTGenerator {
         this.dbType = ConstraintDatabaseType.valueOf(schemaDto.databaseType.name());
     }
 
-    /**
-     * Generates an SMT file based on an SQL query
-     * @param sqlQuery SQL query to generate SMT file for
-     * @param filePath Path to write the SMT file to
-     */
     public void generateSMTFile(String sqlQuery, String filePath) {
         StringBuilder smt = new StringBuilder();
 
-        // Parse the SQL query to extract the table name and condition
-        String tableName;
+        // Generate SMT definitions for each table
+        for (TableDto table : schema.tables) {
+            generateTableDefinitions(table, smt);
+        }
+
+        // Parse the SQL query to extract the table names and condition
+        List<String> tableNames;
         Expression condition;
         try {
-            tableName = extractTableName(sqlQuery);
+            tableNames = extractTableNames(sqlQuery);
             condition = extractCondition(sqlQuery);
         } catch (JSQLParserException e) {
             throw new RuntimeException("Error when parsing table and condition from sqlQuery: " + sqlQuery, e);
         }
 
-        TableDto table = schema.tables.stream()
-                .filter(t -> t.name.equalsIgnoreCase(tableName))
-                .findFirst()
-                .orElse(null);
+        // Filter the tables from schema based on the parsed table names
+        List<TableDto> tablesInQuery = new ArrayList<>();
+        for (String tableName : tableNames) {
+            TableDto table = schema.tables.stream()
+                    .filter(t -> t.name.equalsIgnoreCase(tableName))
+                    .findFirst()
+                    .orElse(null);
 
-        if (table == null) {
-            throw new RuntimeException("Table not found in schema: " + tableName);
+            if (table == null) {
+                throw new RuntimeException("Table not found in schema: " + tableName);
+            }
+            tablesInQuery.add(table);
         }
 
-        // Generate SMT definitions for the table
-        generateTableDefinitions(table, smt);
-
         // Add constraints from the SQL query
-        addQueryConstraints(table, condition, smt);
+        addQueryConstraints(tablesInQuery, condition, smt);
 
         // Add final SMT lines
-        addFinalLines(smt, table.name.toLowerCase());
+        addFinalLines(smt, schema.tables);
 
         // Write to file
         try (FileWriter writer = new FileWriter(filePath)) {
@@ -84,12 +86,22 @@ public class SMTGenerator {
         }
     }
 
-    private String extractTableName(String sqlQuery) throws JSQLParserException {
+    private List<String> extractTableNames(String sqlQuery) throws JSQLParserException {
         Statement selectStatement = CCJSqlParserUtil.parse(sqlQuery);
         Select select = (Select) selectStatement;
         PlainSelect plainSelect = (PlainSelect) select.getSelectBody();
-        Table table = (Table) plainSelect.getFromItem();
-        return table.getName();
+        List<String> tableNames = new ArrayList<>();
+
+        FromItem fromItem = plainSelect.getFromItem();
+        tableNames.add(fromItem.toString());
+
+        if (plainSelect.getJoins() != null) {
+            for (Join join : plainSelect.getJoins()) {
+                FromItem joinItem = join.getRightItem();
+                tableNames.add(joinItem.toString());
+            }
+        }
+        return tableNames;
     }
 
     private Expression extractCondition(String sqlQuery) throws JSQLParserException {
@@ -148,23 +160,28 @@ public class SMTGenerator {
         return smt.toString();
     }
 
-    private void addQueryConstraints(TableDto table, Expression where, StringBuilder smt) {
+    private void addQueryConstraints(List<TableDto> tables, Expression where, StringBuilder smt) {
         if (where != null) {
-            for (int i = 1; i <= numberOfRows; i++) {
-                String rowVariable = table.name.toLowerCase() + i;
-                StringBuilder conditionBuilder = new StringBuilder();
-                SMTExpressionDeParser expressionDeParser = new SMTExpressionDeParser(conditionBuilder, rowVariable);
-                where.accept(expressionDeParser);
+            for (TableDto table : tables) {
+                for (int i = 1; i <= numberOfRows; i++) {
+                    String rowVariable = table.name.toLowerCase() + i;
+                    StringBuilder conditionBuilder = new StringBuilder();
+                    SMTExpressionDeParser expressionDeParser = new SMTExpressionDeParser(conditionBuilder, rowVariable);
+                    where.accept(expressionDeParser);
 
-                smt.append("(assert ").append(conditionBuilder).append(")\n");
+                    smt.append("(assert ").append(conditionBuilder).append(")\n");
+                }
             }
         }
     }
 
-    private void addFinalLines(StringBuilder smt, String tableNameLower) {
+    private void addFinalLines(StringBuilder smt, List<TableDto> tables) {
         smt.append("(check-sat)\n");
-        for (int i = 1; i <= numberOfRows; i++) {
-            smt.append("(get-value (").append(tableNameLower).append(i).append("))\n");
+        for (TableDto table : tables) {
+            String tableNameLower = table.name.toLowerCase();
+            for (int i = 1; i <= numberOfRows; i++) {
+                smt.append("(get-value (").append(tableNameLower).append(i).append("))\n");
+            }
         }
     }
 }
