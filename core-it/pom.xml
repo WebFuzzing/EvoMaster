@@ -109,6 +109,14 @@
             <version>${project.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-framework-bom</artifactId>
+            <version>6.1.7</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+
     </dependencies>
 
 
