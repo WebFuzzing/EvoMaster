@@ -4,6 +4,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.algorithms.genetic.GeneticEvalIndividual
 import org.evomaster.core.search.service.SearchAlgorithm
+import kotlin.math.min
 
 class GeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
@@ -49,8 +50,7 @@ class GeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
     }
 
     private fun mutate(individual: GeneticEvalIndividual<T>) {
-        // Implement mutation logic
-        // Example: random gene alteration
+        //TODO
     }
 
     private fun selection(): GeneticEvalIndividual<T> {
@@ -62,9 +62,21 @@ class GeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
     }
 
     private fun crossover(parent1: GeneticEvalIndividual<T>, parent2: GeneticEvalIndividual<T>) {
-        // Implement crossover logic
-        // Example: single-point crossover
+        if (parent1.genes.isEmpty() || parent2.genes.isEmpty()) return
+
+        // Choose a random crossover point
+        val crossoverPoint = randomness.nextInt(min(parent1.genes.size, parent2.genes.size))
+
+        // Swap genes after the crossover point
+        for (i in crossoverPoint until parent1.genes.size) {
+            if (i < parent2.genes.size) {
+                val temp = parent1.genes[i]
+                parent1.genes[i] = parent2.genes[i]
+                parent2.genes[i] = temp
+            }
+        }
     }
+
 
     private fun initPopulation() {
         val n = config.populationSize
@@ -78,6 +90,7 @@ class GeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
         }
     }
 
+    //TODO
     private fun sampleIndividual(): GeneticEvalIndividual<T> {
         // Generate a new individual with random genes
         // Example: random initialization of genes
