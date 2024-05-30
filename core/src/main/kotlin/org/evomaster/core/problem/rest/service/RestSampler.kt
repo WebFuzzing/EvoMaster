@@ -146,7 +146,9 @@ class RestSampler : AbstractRestSampler(){
         test.add(write)
 
         //Need to find a POST on a parent collection resource
-        createResourcesFor(write, test)
+        if (test.size < getMaxTestSizeDuringSampler()) {
+            builder.createResourcesFor(write, test)
+        }
 
         if (write.verb == HttpVerb.PATCH &&
                 getMaxTestSizeDuringSampler() >= test.size + 1 &&
@@ -155,13 +157,13 @@ class RestSampler : AbstractRestSampler(){
                 As PATCH is not idempotent (in contrast to PUT), it can make sense to test
                 two patches in sequence
              */
-            val secondPatch = createActionFor(write, write)
+            val secondPatch = builder.createActionFor(write, write)
             test.add(secondPatch)
             secondPatch.locationId = write.locationId
         }
 
         test.forEach { t ->
-            preventPathParamMutation(t as RestCallAction)
+            preventPathParamMutation(t)
         }
     }
 
@@ -193,7 +195,9 @@ class RestSampler : AbstractRestSampler(){
 
         test.add(get)
 
-        val created = createResourcesFor(get, test)
+        val created = if (test.size >= getMaxTestSizeDuringSampler()) {
+            false
+        } else builder.createResourcesFor(get, test)
 
         if (!created) {
             /*
@@ -232,7 +236,7 @@ class RestSampler : AbstractRestSampler(){
                 val k = 1 + randomness.nextInt(available)
 
                 (0 until k).forEach {
-                    val create = createActionFor(lastPost, get)
+                    val create = builder.createActionFor(lastPost, get)
                     preventPathParamMutation(create)
                     create.locationId = lastPost.locationId
 
@@ -248,82 +252,13 @@ class RestSampler : AbstractRestSampler(){
     }
 
 
-    private fun createResourcesFor(target: RestCallAction, test: MutableList<RestCallAction>)
-            : Boolean {
 
-        if (test.size >= getMaxTestSizeDuringSampler()) {
-            return false
-        }
-
-        val template = builder.chooseClosestAncestor(target, listOf(HttpVerb.POST))
-                ?: return false
-
-        val post = createActionFor(template, target)
-
-        test.add(0, post)
-
-        /*
-            Check if POST depends itself on the creation of
-            some intermediate resource
-         */
-        if (post.path.hasVariablePathParameters() &&
-                (!post.path.isLastElementAParameter()) ||
-                post.path.getVariableNames().size >= 2) {
-
-            val dependencyCreated = createResourcesFor(post, test)
-            if (!dependencyCreated) {
-                return false
-            }
-        }
-
-
-        /*
-            Once the POST is fully initialized, need to fix
-            links with target
-         */
-        if (!post.path.isEquivalent(target.path)) {
-            /*
-                eg
-                POST /x
-                GET  /x/{id}
-             */
-            post.saveLocation = true
-            target.locationId = post.path.lastElement()
-        } else {
-            /*
-                eg
-                POST /x
-                POST /x/{id}/y
-                GET  /x/{id}/y
-             */
-            //not going to save the position of last POST, as same as target
-            post.saveLocation = false
-
-            // the target (eg GET) needs to use the location of first POST, or more correctly
-            // the same location used for the last POST (in case there is a deeper chain)
-            target.locationId = post.locationId
-        }
-
-        return true
-    }
 
     private fun preventPathParamMutation(action: RestCallAction) {
         action.parameters.forEach { p -> if (p is PathParam) p.preventMutation() }
     }
 
-    fun createActionFor(template: RestCallAction, target: RestCallAction): RestCallAction {
 
-        val res = template.copy() as RestCallAction
-        if(res.isInitialized()){
-            res.seeTopGenes().forEach { it.randomize(randomness, false) }
-        } else {
-            res.doInitialize(randomness)
-        }
-        res.auth = target.auth
-        res.bindToSamePathResolution(target)
-
-        return res
-    }
 
 
 
