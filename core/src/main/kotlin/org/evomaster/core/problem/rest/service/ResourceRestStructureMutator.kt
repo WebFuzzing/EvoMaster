@@ -35,10 +35,10 @@ class ResourceRestStructureMutator : ApiWsStructureMutator() {
     private lateinit var sampler : ResourceSampler
 
     @Inject
-    protected lateinit var mwc : MutationWeightControl
+    private lateinit var mwc : MutationWeightControl
 
     @Inject
-    protected lateinit var archiveImpactSelector : ArchiveImpactSelector
+    private lateinit var archiveImpactSelector : ArchiveImpactSelector
 
     companion object{
         private val log : Logger = LoggerFactory.getLogger(ResourceRestStructureMutator::class.java)
