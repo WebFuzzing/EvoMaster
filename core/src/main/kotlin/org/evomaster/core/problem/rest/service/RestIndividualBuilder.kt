@@ -18,7 +18,7 @@ class RestIndividualBuilder {
 
     /**
      * Based on a given [template], create a new action for it.
-     * Such new action will have the same path resolution of [target].
+     * Such new action will have the same path resolution of [target], using same auth.
      * Note that [template] must have same path of be an ancestor of [target].
      * For example:
      * template: GET /users/{id}
