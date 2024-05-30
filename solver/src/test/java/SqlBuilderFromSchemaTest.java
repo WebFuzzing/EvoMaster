@@ -118,8 +118,8 @@ public class SqlBuilderFromSchemaTest {
         assertEquals(1, genes.size());
 
         assertTrue(genes.get(0) instanceof IntegerGene);
-//        assertEquals(101, ((IntegerGene) genes.get(0)).getMin());
-//        assertEquals(9998, ((IntegerGene) genes.get(0)).getMaximum());
+        assertEquals(101, ((IntegerGene) genes.get(0)).getMin());
+        assertEquals(9998, ((IntegerGene) genes.get(0)).getMaximum());
     }
 
     /**
@@ -157,8 +157,8 @@ public class SqlBuilderFromSchemaTest {
         assertEquals(1, genes.size());
 
         assertTrue(genes.get(0) instanceof LongGene);
-//        assertEquals(101, ((LongGene) genes.get(0)).getMin());
-//        assertEquals(9998, ((LongGene) genes.get(0)).getMaximum());
+        assertEquals(101, ((LongGene) genes.get(0)).getMin());
+        assertEquals(9998, ((LongGene) genes.get(0)).getMaximum());
     }
 
     /**
@@ -196,8 +196,8 @@ public class SqlBuilderFromSchemaTest {
         assertEquals(1, genes.size());
 
         assertTrue(genes.get(0) instanceof LongGene);
-//        assertEquals(101, ((LongGene) genes.get(0)).getMin());
-//        assertEquals(9998, ((LongGene) genes.get(0)).getMaximum());
+        assertEquals(101, ((LongGene) genes.get(0)).getMin());
+        assertEquals(9998, ((LongGene) genes.get(0)).getMaximum());
     }
 
     /**
