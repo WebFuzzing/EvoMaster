@@ -12,5 +12,5 @@ public interface DbConstraintSolver extends AutoCloseable {
      * Solves the given constraints and returns the Db Gene to insert in the database
      * @return a list of SQLAction with the inserts in the db for the given constraints
      */
-    List<SqlAction> solve();
+    List<SqlAction> solve(String sqlQuery);
 }
