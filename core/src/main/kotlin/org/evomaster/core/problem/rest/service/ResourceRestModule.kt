@@ -20,9 +20,11 @@ import org.evomaster.core.search.service.mutator.StructureMutator
 import org.evomaster.core.seeding.service.rest.PirToRest
 
 
-class ResourceRestModule(private val bindRemote : Boolean = true) : AbstractModule(){
+class ResourceRestModule(private val bindRemote : Boolean = true) : RestBaseModule(){
 
     override fun configure() {
+
+        super.configure()
 
         if(bindRemote){
             /*
@@ -64,17 +66,6 @@ class ResourceRestModule(private val bindRemote : Boolean = true) : AbstractModu
                 .to(RestResourceFitness::class.java)
                 .asEagerSingleton()
 
-        bind(object : TypeLiteral<Minimizer<RestIndividual>>(){})
-                .asEagerSingleton()
-
-        bind(object : TypeLiteral<Minimizer<*>>(){})
-                .asEagerSingleton()
-
-        bind(object : TypeLiteral<Archive<RestIndividual>>() {})
-                .asEagerSingleton()
-
-        bind(object : TypeLiteral<Archive<*>>() {})
-                .to(object : TypeLiteral<Archive<RestIndividual>>() {})
 
         bind(object : TypeLiteral<Mutator<RestIndividual>>() {})
                 .to(ResourceRestMutator::class.java)
@@ -97,12 +88,6 @@ class ResourceRestModule(private val bindRemote : Boolean = true) : AbstractModu
         bind(ResourceDepManageService::class.java)
                 .asEagerSingleton()
 
-        bind(TestCaseWriter::class.java)
-                .to(RestTestCaseWriter::class.java)
-                .asEagerSingleton()
-
-        bind(TestSuiteWriter::class.java)
-                .asEagerSingleton()
 
         bind(HttpWsExternalServiceHandler::class.java)
                 .asEagerSingleton()
@@ -110,14 +95,7 @@ class ResourceRestModule(private val bindRemote : Boolean = true) : AbstractModu
         bind(HarvestActualHttpWsResponseHandler::class.java)
             .asEagerSingleton()
 
-        bind(SecurityRest::class.java)
-            .asEagerSingleton()
 
-        bind(PirToRest::class.java)
-            .asEagerSingleton()
-
-        bind(RestIndividualBuilder::class.java)
-            .asEagerSingleton()
 
     }
 }

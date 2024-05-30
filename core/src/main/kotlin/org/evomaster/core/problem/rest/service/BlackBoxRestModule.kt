@@ -16,9 +16,12 @@ import org.evomaster.core.seeding.service.rest.PirToRest
 
 class BlackBoxRestModule(
         val usingRemoteController: Boolean
-): AbstractModule(){
+): RestBaseModule(){
 
     override fun configure() {
+
+        super.configure()
+
         bind(object : TypeLiteral<Sampler<RestIndividual>>() {})
                 .to(RestSampler::class.java)
                 .asEagerSingleton()
@@ -42,17 +45,6 @@ class BlackBoxRestModule(
             .to(BlackBoxRestFitness::class.java)
             .asEagerSingleton()
 
-        bind(object : TypeLiteral<Archive<RestIndividual>>() {})
-                .asEagerSingleton()
-
-        bind(object : TypeLiteral<Archive<*>>() {})
-                .to(object : TypeLiteral<Archive<RestIndividual>>() {})
-
-        bind(object : TypeLiteral<Minimizer<RestIndividual>>(){})
-                .asEagerSingleton()
-
-        bind(object : TypeLiteral<Minimizer<*>>(){})
-                .asEagerSingleton()
 
 
         if(usingRemoteController) {
@@ -60,22 +52,6 @@ class BlackBoxRestModule(
                     .to(RemoteControllerImplementation::class.java)
                     .asEagerSingleton()
         }
-
-        bind(TestCaseWriter::class.java)
-                .to(RestTestCaseWriter::class.java)
-                .asEagerSingleton()
-
-        bind(TestSuiteWriter::class.java)
-                .asEagerSingleton()
-
-        bind(SecurityRest::class.java)
-            .asEagerSingleton()
-
-        bind(PirToRest::class.java)
-            .asEagerSingleton()
-
-        bind(RestIndividualBuilder::class.java)
-            .asEagerSingleton()
 
     }
 }
