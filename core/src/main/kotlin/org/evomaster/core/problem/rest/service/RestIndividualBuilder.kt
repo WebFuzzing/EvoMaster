@@ -1,9 +1,7 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
-import org.evomaster.core.problem.rest.HttpVerb
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestPath
+import org.evomaster.core.problem.rest.*
 import org.evomaster.core.search.service.Randomness
 
 
@@ -149,4 +147,13 @@ class RestIndividualBuilder {
         return true
     }
 
+
+    /**
+     * Create a copy of individual, where all main actions after index are removed
+     */
+    fun sliceAllCallsInIndividualAfterAction(restIndividual: RestIndividual, actionIndex: Int) : RestIndividual {
+
+        //TODO move code here
+        return RestIndividualSelectorUtils.sliceAllCallsInIndividualAfterAction(restIndividual, actionIndex)
+    }
 }
