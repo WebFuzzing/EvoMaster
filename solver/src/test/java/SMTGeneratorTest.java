@@ -87,6 +87,20 @@ public class SMTGeneratorTest {
         assertEquals(expected, everything);
     }
 
+    @Test
+    public void selectFromUsersJoinProducts() throws IOException {
+        String outputFileName = Paths.get(  resourcesFolder + tmpFolderPath + "smt2_" + System.currentTimeMillis() + ".smt2").toString();
+        generator.generateSMTFile( "SELECT * FROM Users u \n" +
+                "JOIN Products p ON u.id = p.user_id \n" +
+                "WHERE u.Age > 30 AND u.points = 7 AND p.min_price > 30 AND p.stock = 8;\n", outputFileName);
+
+        // Read from file the response and compare
+        String everything = readFromFileAsString(outputFileName);
+        String expected = readFromFileAsString(resourcesFolder + "select-from-users-join-products.smt");
+
+        assertEquals(expected, everything);
+    }
+
     private static String readFromFileAsString(String fileName) throws IOException {
         BufferedReader br = new BufferedReader(new FileReader(fileName));
         StringBuilder sb = new StringBuilder();
