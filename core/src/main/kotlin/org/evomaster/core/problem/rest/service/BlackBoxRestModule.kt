@@ -74,5 +74,8 @@ class BlackBoxRestModule(
         bind(PirToRest::class.java)
             .asEagerSingleton()
 
+        bind(RestIndividualBuilder::class.java)
+            .asEagerSingleton()
+
     }
 }

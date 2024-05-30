@@ -97,5 +97,8 @@ class RestModule(private val bindRemote : Boolean = true) : AbstractModule(){
 
         bind(PirToRest::class.java)
             .asEagerSingleton()
+
+        bind(RestIndividualBuilder::class.java)
+            .asEagerSingleton()
     }
 }

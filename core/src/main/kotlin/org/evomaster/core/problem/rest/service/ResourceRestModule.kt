@@ -116,5 +116,8 @@ class ResourceRestModule(private val bindRemote : Boolean = true) : AbstractModu
         bind(PirToRest::class.java)
             .asEagerSingleton()
 
+        bind(RestIndividualBuilder::class.java)
+            .asEagerSingleton()
+
     }
 }

@@ -18,7 +18,6 @@ class RestSampler : AbstractRestSampler(){
     }
 
 
-
     override fun sampleAtRandom(): RestIndividual {
 
         val actions = mutableListOf<RestCallAction>()
@@ -256,7 +255,7 @@ class RestSampler : AbstractRestSampler(){
             return false
         }
 
-        val template = chooseClosestAncestor(target, listOf(HttpVerb.POST))
+        val template = builder.chooseClosestAncestor(target, listOf(HttpVerb.POST))
                 ?: return false
 
         val post = createActionFor(template, target)
@@ -326,52 +325,6 @@ class RestSampler : AbstractRestSampler(){
         return res
     }
 
-    /**
-     * Make sure that what returned is different from the target.
-     * This can be a strict ancestor (shorter path), or same
-     * endpoint but with different HTTP verb.
-     * Among the different ancestors, return one of the longest
-     */
-    private fun chooseClosestAncestor(target: RestCallAction, verbs: List<HttpVerb>): RestCallAction? {
-
-        var others = sameOrAncestorEndpoints(target.path)
-        others = hasWithVerbs(others, verbs).filter { t -> t.getName() != target.getName() }
-
-        if (others.isEmpty()) {
-            return null
-        }
-
-        return chooseLongestPath(others)
-    }
-
-    /**
-     * Get all ancestor (same path prefix) endpoints that do at least one
-     * of the specified operations
-     */
-    private fun sameOrAncestorEndpoints(path: RestPath): List<RestCallAction> {
-        return actionCluster.values.asSequence()
-                .filter { a -> a is RestCallAction && a.path.isAncestorOf(path) }
-                .map { a -> a as RestCallAction }
-                .toList()
-    }
-
-    private fun chooseLongestPath(actions: List<RestCallAction>): RestCallAction {
-
-        if (actions.isEmpty()) {
-            throw IllegalArgumentException("Cannot choose from an empty collection")
-        }
-
-        val max = actions.asSequence().map { a -> a.path.levels() }.maxOrNull()!!
-        val candidates = actions.filter { a -> a.path.levels() == max }
-
-        return randomness.choose(candidates)
-    }
-
-    private fun hasWithVerbs(actions: List<RestCallAction>, verbs: List<HttpVerb>): List<RestCallAction> {
-        return actions.filter { a ->
-            verbs.contains(a.verb)
-        }
-    }
 
 
     override fun customizeAdHocInitialIndividuals() {

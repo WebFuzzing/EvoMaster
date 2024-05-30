@@ -46,6 +46,9 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
     @Inject
     protected lateinit var partialOracles: PartialOracles
 
+    @Inject
+    protected lateinit var builder: RestIndividualBuilder
+
     protected val adHocInitialIndividuals: MutableList<RestIndividual> = mutableListOf()
 
     lateinit var swagger: OpenAPI
