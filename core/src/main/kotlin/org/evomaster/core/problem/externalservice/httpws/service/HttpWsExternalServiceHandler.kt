@@ -58,6 +58,8 @@ class HttpWsExternalServiceHandler {
     /**
      * Skipped external services information provided through the driver to skip from
      * handling.
+     *
+     * TODO: List or Set?
      */
     private val skippedExternalServices: MutableList<ExternalService> = mutableListOf()
 

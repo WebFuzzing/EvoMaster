@@ -74,6 +74,8 @@ public class AdditionalInfo implements Serializable {
 
     private final Set<HostnameResolutionInfo> hostnameResolutionInfos = new CopyOnWriteArraySet<>();
 
+    private final Set<ExternalServiceInfo> skippedHostnames = new HashSet<>();
+
     /**
      * info for external services which have been referred to the default setup (eg, specified ip and port)
      */
@@ -286,5 +288,7 @@ public class AdditionalInfo implements Serializable {
     public Set<ExternalServiceInfo> getEmployedDefaultWM() {
         return Collections.unmodifiableSet(employDefaultWM);
     }
+
+    public Set<ExternalServiceInfo> getSkippedHostnames() { return Collections.unmodifiableSet(skippedHostnames); }
 
 }

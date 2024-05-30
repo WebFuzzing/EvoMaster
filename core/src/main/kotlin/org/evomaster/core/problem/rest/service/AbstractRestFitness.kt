@@ -17,6 +17,7 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.enterprise.auth.NoAuth
+import org.evomaster.core.problem.externalservice.ExternalService
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.externalservice.HostnameResolutionInfo
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
@@ -904,6 +905,13 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
                     }
                 }
+            }
+
+            info.skippedHostnames.forEach { s ->
+                externalServiceHandler.registerExternalServiceToSkip(ExternalService(
+                    s.remoteHostname,
+                    s.remotePort
+                ))
             }
 
             info.externalServices.forEach { es ->
