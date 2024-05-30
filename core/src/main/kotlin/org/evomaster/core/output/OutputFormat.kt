@@ -18,7 +18,8 @@ enum class OutputFormat {
     KOTLIN_JUNIT_4,
     KOTLIN_JUNIT_5,
     JS_JEST,
-    CSHARP_XUNIT
+    CSHARP_XUNIT,
+    PYTHON_UNITTEST
     ;
 
     /*
@@ -45,5 +46,7 @@ enum class OutputFormat {
     fun isJUnit() = this.name.contains("_junit_", true)
 
     fun isCsharp() = this.name.startsWith("csharp",ignoreCase = true)
+
+    fun isPython() = this.name.startsWith("python_", true)
 
 }

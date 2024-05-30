@@ -65,7 +65,7 @@ abstract class TestCaseWriter {
 
         counter = 0
 
-        val lines = Lines()
+        val lines = Lines(config.outputFormat)
 
         if (config.testSuiteSplitType == EMConfig.TestSuiteSplitType.CLUSTER
             && test.test.getClusters().size != 0
@@ -108,7 +108,9 @@ abstract class TestCaseWriter {
         }
 
 
-        lines.add("}")
+        if (!format.isPython()) {
+            lines.add("}")
+        }
 
         if (format.isJavaScript()) {
             lines.append(");")
@@ -130,7 +132,7 @@ abstract class TestCaseWriter {
             }
 
             lines.add("DnsCacheManipulator.setDnsCache(\"${a.hostname}\", \"${a.localIPAddress}\")")
-            lines.appendSemicolon(format)
+            lines.appendSemicolon()
         }
     }
 
@@ -151,7 +153,7 @@ abstract class TestCaseWriter {
                 // Default behaviour of WireMock has been removed, since found no purpose
                 // in case if there is a failure regarding no routes found in WireMock
                 // consider adding that later
-                lines.addStatement("assertNotNull(${name})", config.outputFormat)
+                lines.addStatement("assertNotNull(${name})")
 
                 TestWriterUtils.handleStubForAsJavaOrKotlin(
                     lines,
@@ -162,7 +164,7 @@ abstract class TestCaseWriter {
                     index+1,
                     format
                 )
-                lines.appendSemicolon(format)
+                lines.appendSemicolon()
                 lines.addEmpty(1)
             }
     }
@@ -267,7 +269,9 @@ abstract class TestCaseWriter {
                 lines.add("//${it.replace('\n', ' ').replace('\r', ' ')}")
             }
         }
-        lines.add("}")
+        if (!format.isPython()) {
+            lines.add("}")
+        }
     }
 
 
