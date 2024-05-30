@@ -65,26 +65,22 @@ public class SMTGeneratorTest {
 
     @Test
     public void selectFromUsers() throws IOException {
-        String outputFileName = Paths.get(  resourcesFolder + tmpFolderPath + "smt2_" + System.currentTimeMillis() + ".smt2").toString();
-        generator.generateSMTFile( "SELECT * FROM Users WHERE Age > 30 AND points = 7;", outputFileName);
+        String response = generator.generateSMT( "SELECT * FROM Users WHERE Age > 30 AND points = 7;");
 
         // Read from file the response and compare
-        String everything = readFromFileAsString(outputFileName);
         String expected = readFromFileAsString(resourcesFolder + "select-from-users.smt");
 
-        assertEquals(expected, everything);
+        assertEquals(expected, response);
     }
 
     @Test
     public void selectFromProducts() throws IOException {
-        String outputFileName = Paths.get(  resourcesFolder + tmpFolderPath + "smt2_" + System.currentTimeMillis() + ".smt2").toString();
-        generator.generateSMTFile( "SELECT * FROM Products WHERE min_price > 30 AND stock = 8;", outputFileName);
+        String response = generator.generateSMT( "SELECT * FROM Products WHERE min_price > 30 AND stock = 8;");
 
         // Read from file the response and compare
-        String everything = readFromFileAsString(outputFileName);
         String expected = readFromFileAsString(resourcesFolder + "select-from-products.smt");
 
-        assertEquals(expected, everything);
+        assertEquals(expected, response);
     }
 
     private static String readFromFileAsString(String fileName) throws IOException {

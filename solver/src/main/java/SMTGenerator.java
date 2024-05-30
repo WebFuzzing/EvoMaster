@@ -12,8 +12,6 @@ import org.evomaster.dbconstraint.ast.SqlCondition;
 import org.evomaster.dbconstraint.parser.SqlConditionParserException;
 import org.evomaster.dbconstraint.parser.jsql.JSqlConditionParser;
 
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -38,7 +36,7 @@ public class SMTGenerator {
         this.dbType = ConstraintDatabaseType.valueOf(schemaDto.databaseType.name());
     }
 
-    public void generateSMTFile(String sqlQuery, String filePath) {
+    public String generateSMT(String sqlQuery) {
         StringBuilder smt = new StringBuilder();
 
         appendTableDefinitions(smt);
@@ -46,15 +44,7 @@ public class SMTGenerator {
         appendQueryConstraints(smt, sqlQuery);
         appendGetValues(smt);
 
-        writeToFile(smt, filePath);
-    }
-
-    private static void writeToFile(StringBuilder smt, String filePath) {
-        try (FileWriter writer = new FileWriter(filePath)) {
-            writer.write(smt.toString());
-        } catch (IOException e) {
-            throw new RuntimeException("Error when writing SMT to file", e);
-        }
+        return smt.toString();
     }
 
     private void appendQueryConstraints(StringBuilder smt, String sqlQuery) {
