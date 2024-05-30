@@ -157,7 +157,7 @@ class RestSampler : AbstractRestSampler(){
                 As PATCH is not idempotent (in contrast to PUT), it can make sense to test
                 two patches in sequence
              */
-            val secondPatch = builder.createActionFor(write, write)
+            val secondPatch = builder.createBoundActionFor(write, write)
             test.add(secondPatch)
             secondPatch.locationId = write.locationId
         }
@@ -236,7 +236,7 @@ class RestSampler : AbstractRestSampler(){
                 val k = 1 + randomness.nextInt(available)
 
                 (0 until k).forEach {
-                    val create = builder.createActionFor(lastPost, get)
+                    val create = builder.createBoundActionFor(lastPost, get)
                     preventPathParamMutation(create)
                     create.locationId = lastPost.locationId
 

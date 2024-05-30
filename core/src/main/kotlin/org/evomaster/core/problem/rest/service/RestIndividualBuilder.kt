@@ -16,7 +16,23 @@ class RestIndividualBuilder {
     private lateinit var randomness: Randomness
 
 
-    fun createActionFor(template: RestCallAction, target: RestCallAction): RestCallAction {
+    /**
+     * Based on a given [template], create a new action for it.
+     * Such new action will have the same path resolution of [target].
+     * Note that [template] must have same path of be an ancestor of [target].
+     * For example:
+     * template: GET /users/{id}
+     * target:   PUT /users/42/orders/77
+     * would lead to return something like:
+     *           GET /users/42
+     *
+     */
+    fun createBoundActionFor(template: RestCallAction, target: RestCallAction): RestCallAction {
+
+        if (!template.path.isAncestorOf(target.path)) {
+            throw IllegalArgumentException("Cannot create an action for unrelated paths: " +
+                    "${template.path} vs ${target.path}")
+        }
 
         val res = template.copy() as RestCallAction
         if(res.isInitialized()){
@@ -84,7 +100,7 @@ class RestIndividualBuilder {
         val template = chooseClosestAncestor(target, listOf(HttpVerb.POST))
             ?: return false
 
-        val post = createActionFor(template, target)
+        val post = createBoundActionFor(template, target)
 
         test.add(0, post)
 
