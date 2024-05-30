@@ -17,6 +17,7 @@ import org.evomaster.core.search.service.mutator.StructureMutator
 import org.evomaster.core.seeding.service.rest.PirToRest
 
 
+@Deprecated("For WB use ResourceRestModule, for BB use BlackBoxRestModule")
 class RestModule(private val bindRemote : Boolean = true) : AbstractModule(){
 
     override fun configure() {
@@ -48,6 +49,11 @@ class RestModule(private val bindRemote : Boolean = true) : AbstractModule(){
         bind(object : TypeLiteral<FitnessFunction<RestIndividual>>() {})
                 .to(RestFitness::class.java)
                 .asEagerSingleton()
+
+        bind(object : TypeLiteral<AbstractRestFitness>() {})
+            .to(RestResourceFitness::class.java)
+            .asEagerSingleton()
+
 
         bind(object : TypeLiteral<FitnessFunction<*>>() {})
                 .to(RestFitness::class.java)

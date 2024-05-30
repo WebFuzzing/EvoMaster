@@ -57,7 +57,7 @@ object CookieWriter {
             lines.indented {
                 addCallCommand(lines, k, testCaseWriter, format, baseUrlOfSut)
                 lines.add(".then().extract().cookies()") //TODO check response status and cookie headers?
-                lines.appendSemicolon(format)
+                lines.appendSemicolon()
                 lines.addEmpty()
             }
         }

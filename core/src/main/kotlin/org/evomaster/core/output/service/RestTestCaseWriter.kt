@@ -320,7 +320,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                     format.isJavaOrKotlin() -> {
                         val extract = "$resVarName.extract().header(\"location\")"
                         lines.add("$location = $extract")
-                        lines.appendSemicolon(format)
+                        lines.appendSemicolon()
                         lines.add("assertTrue(isValidURIorEmpty($location));")
                     }
                     format.isJavaScript() -> {
@@ -351,7 +351,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                     "$resVarName.extract().body().path$extraTypeInfo(\"${res.getResourceIdName()}\").toString()"
 
                 lines.add("${locationVar(call.path.lastElement())} = $baseUri + \"/\" + $extract")
-                lines.appendSemicolon(format)
+                lines.appendSemicolon()
             }
         }
     }
@@ -371,7 +371,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
             format.isJava() -> lines.append("ExpectationHandler expectationHandler = expectationHandler()")
             format.isKotlin() -> lines.append("val expectationHandler: ExpectationHandler = expectationHandler()")
         }
-        lines.appendSemicolon(format)
+        lines.appendSemicolon()
     }
 
     private fun handleExpectationSpecificLines(call: RestCallAction, lines: Lines, res: RestCallResult, name: String) {
