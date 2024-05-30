@@ -356,6 +356,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
                 ,trackOperator = if (config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else Traceable.DEFAULT_INDEX)
         ind.doInitializeLocalId()
 //        ind.computeTransitiveBindingGenes()
+        ind.doGlobalInitialize(searchGlobalState)
         org.evomaster.core.Lazy.assert { ind.isInitialized() }
         return ind
     }

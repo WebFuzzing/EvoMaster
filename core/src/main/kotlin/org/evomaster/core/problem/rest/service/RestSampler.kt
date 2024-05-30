@@ -408,7 +408,6 @@ class RestSampler : AbstractRestSampler(){
                     copy.auth = auth
                     copy.doInitialize(randomness)
                     val ind = createIndividual(SampleType.SMART, mutableListOf(copy))
-                    ind.doGlobalInitialize(searchGlobalState)
                     adHocInitialIndividuals.add(ind)
                 }
     }
