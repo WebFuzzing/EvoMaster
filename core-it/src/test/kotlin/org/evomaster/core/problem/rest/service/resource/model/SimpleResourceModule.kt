@@ -20,6 +20,11 @@ class SimpleResourceModule : AbstractModule(){
                 .to(SimpleResourceSampler::class.java)
                 .asEagerSingleton()
 
+        bind(AbstractRestSampler::class.java)
+            .to(SimpleResourceSampler::class.java)
+            .asEagerSingleton()
+
+
         bind(ResourceSampler::class.java)
             .to(SimpleResourceSampler::class.java)
             .asEagerSingleton()
