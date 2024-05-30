@@ -34,10 +34,6 @@ public class ExternalServiceUtils {
         //  it improve the speed?
         try {
             InetAddress addresses = InetAddressClassReplacement.getByName(host);
-            String canonicalHost = addresses.getCanonicalHostName();
-            if (host.equals(canonicalHost)) {
-                ExecutionTracer.skipHostname(host);
-            }
             ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(host, addresses.getHostAddress()));
         } catch (Exception e){
             //do nothing
