@@ -111,16 +111,12 @@ object TestSuiteSplitter {
 
     private fun <T : Individual> faultIndividuals(sol: Solution<T>, oracles: PartialOracles, config: EMConfig) =
             sol.individuals.filter { ind ->
-                ind.evaluatedMainActions().any { ac ->
-                    assessFailed(ac, oracles, config)
-                }
+                ind.hasAnyPotentialFault()
             }.toMutableList()
 
     private fun <T : Individual> successIndividuals(solution: Solution<T>, oracles: PartialOracles, config: EMConfig) =
             solution.individuals.filter { ind ->
-                ind.evaluatedMainActions().none { ac ->
-                    assessFailed(ac, oracles, config)
-                }
+                !ind.hasAnyPotentialFault()
                         &&
                         ind.evaluatedMainActions().all { ac ->
                             //TODO generic per type
@@ -296,6 +292,7 @@ object TestSuiteSplitter {
      * A [GraphQlCallResult] is considered to be "failed" (and thus a potential fault)
      * if it contains the field "errors" in its body.
      */
+    @Deprecated("oracles will be refactored away")
     fun assessFailed(result: GraphQlCallResult): Boolean {
         val resultBody = try {
             Gson().fromJson(result.getBody(), HashMap::class.java)
@@ -310,6 +307,7 @@ object TestSuiteSplitter {
      * A [HttpWsCallResult] is considered failed if it has a 500 code (i.e.
      * if it contains a server error) OR if it contains no code at all.
      */
+    @Deprecated("oracles will be refactored away")
     fun assessFailed(result: HttpWsCallResult): Boolean {
         val code = result.getStatusCode()
         return (code != null && code == 500)
@@ -329,6 +327,7 @@ object TestSuiteSplitter {
      *
      *  FIXME: this must be made exactly same as done in fitness function
      */
+    @Deprecated("oracles will be refactored away")
     fun assessFailed(action: EvaluatedAction, oracles: PartialOracles?, config: EMConfig): Boolean {
         val codeSelect = when (action.result) {
             is GraphQlCallResult -> {
@@ -347,8 +346,6 @@ object TestSuiteSplitter {
             oracles != null -> oracles.selectForClustering(action)
             else -> false
         }
-        //config.expectationsActive == false -> false
-        //else ->            oracles?.selectForClustering(action) ?: false
 
         return codeSelect || oracleSelect
     }
@@ -369,6 +366,7 @@ object TestSuiteSplitter {
      * Nevertheless, it is up to individual test engineers to look at these test cases in more depth and decide
      * if any further action or investigation is required.
      */
+    @Deprecated("oracles will be refactored away")
     private fun <T : Individual> splitByCluster(solution: Solution<T>,
                                                 oracles: PartialOracles = PartialOracles(),
                                                 config: EMConfig): List<Solution<T>> {
