@@ -1,10 +1,6 @@
 package org.evomaster.core.problem.rest.service
 
-import com.google.inject.AbstractModule
 import com.google.inject.TypeLiteral
-import org.evomaster.core.output.service.RestTestCaseWriter
-import org.evomaster.core.output.service.TestCaseWriter
-import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.rest.RestIndividual
@@ -14,7 +10,6 @@ import org.evomaster.core.search.service.mutator.StandardMutator
 import org.evomaster.core.search.service.*
 import org.evomaster.core.search.service.mutator.Mutator
 import org.evomaster.core.search.service.mutator.StructureMutator
-import org.evomaster.core.seeding.service.rest.PirToRest
 
 
 class RestModule(private val bindRemote : Boolean = true) : RestBaseModule(){
@@ -49,7 +44,7 @@ class RestModule(private val bindRemote : Boolean = true) : RestBaseModule(){
                 .asEagerSingleton()
 
         bind(object : TypeLiteral<AbstractRestFitness>() {})
-            .to(RestResourceFitness::class.java)
+            .to(ResourceRestFitness::class.java)
             .asEagerSingleton()
 
 

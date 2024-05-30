@@ -37,7 +37,7 @@ class SimpleResourceModule : AbstractModule(){
                 .asEagerSingleton()
 
         bind(StructureMutator::class.java)
-                .to(RestResourceStructureMutator::class.java)
+                .to(ResourceRestStructureMutator::class.java)
                 .asEagerSingleton()
 
         bind(TestCaseWriter::class.java)

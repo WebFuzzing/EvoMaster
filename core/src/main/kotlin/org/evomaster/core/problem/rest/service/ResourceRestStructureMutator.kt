@@ -23,7 +23,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import kotlin.math.roundToInt
 
-class RestResourceStructureMutator : ApiWsStructureMutator() {
+class ResourceRestStructureMutator : ApiWsStructureMutator() {
 
     @Inject
     private lateinit var rm : ResourceManageService
@@ -41,7 +41,7 @@ class RestResourceStructureMutator : ApiWsStructureMutator() {
     protected lateinit var archiveImpactSelector : ArchiveImpactSelector
 
     companion object{
-        private val log : Logger = LoggerFactory.getLogger(RestResourceStructureMutator::class.java)
+        private val log : Logger = LoggerFactory.getLogger(ResourceRestStructureMutator::class.java)
     }
 
     override fun mutateStructure(individual: Individual, evaluatedIndividual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?, targets: Set<Int>) {
