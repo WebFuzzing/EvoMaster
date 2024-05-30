@@ -309,6 +309,9 @@ namespace EvoMaster.Controller {
         public abstract string GetDatabaseDriverName();
 
         //TODO: Complete this method
+        public abstract IList<TargetInfo> GetAllCoveredTargetInfos();
+
+        //TODO: Complete this method
         public abstract IList<TargetInfo> GetTargetInfos(IEnumerable<int> ids);
 
         /**

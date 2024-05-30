@@ -1,4 +1,5 @@
 using System;
+using EvoMaster.Instrumentation.StaticState;
 
 namespace EvoMaster.Instrumentation {
     [Serializable]
@@ -34,6 +35,17 @@ namespace EvoMaster.Instrumentation {
                 throw new ArgumentException("Id already existing");
             }
 
+            return new TargetInfo(theId, DescriptiveId, Value, ActionIndex);
+        }
+
+        public TargetInfo EnforceMappedId(){
+            if(DescriptiveId == null){
+                throw new InvalidOperationException("Cannot enforce mapped id from records in which the descriptive id was removed");
+            }
+            if(MappedId != null){
+                return this;
+            }
+            var theId = ObjectiveRecorder.GetMappedId(DescriptiveId);
             return new TargetInfo(theId, DescriptiveId, Value, ActionIndex);
         }
 

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using EvoMaster.Client.Util;
 using EvoMaster.Instrumentation.StaticState;
 
 namespace EvoMaster.Instrumentation {
@@ -23,6 +24,26 @@ namespace EvoMaster.Instrumentation {
                we explicitly say to return ALL targets
              */
             ObjectiveRecorder.ClearFirstTimeEncountered();
+        }
+
+        public static List<TargetInfo> GetAllCoveredTargetInfos() {
+            var list = new List<TargetInfo>();
+
+            var objectives = ExecutionTracer.GetInternalReferenceToObjectiveCoverage();
+            objectives.ToList().ForEach(e => {
+                if (!e.Value.Value.HasValue) { // if value doesn't exist, do nothing
+                    return;
+                }
+                
+                const double tolerance = 1e-9;
+                if (Math.Abs(e.Value.Value.Value - 1d) > tolerance) { // only covered
+                    return;
+                }
+                //try to save bandwidth by only sending mapped ids
+                list.Add(e.Value.EnforceMappedId().WithNoDescriptiveId());
+            });
+
+            return list;
         }
 
         public static List<TargetInfo> GetTargetInfos(IEnumerable<int> ids) {

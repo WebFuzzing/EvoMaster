@@ -23,6 +23,10 @@ namespace EvoMaster.Controller {
             ExecutionTracer.SetAction(new Action(dto.Index, dto.InputVariables));
         }
 
+        public override IList<TargetInfo> GetAllCoveredTargetInfos() {
+            return InstrumentationController.GetAllCoveredTargetInfos();
+        }
+
         public override IList<TargetInfo> GetTargetInfos(IEnumerable<int> ids) {
             return InstrumentationController.GetTargetInfos(ids);
         }
