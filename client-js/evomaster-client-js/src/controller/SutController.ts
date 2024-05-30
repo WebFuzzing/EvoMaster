@@ -117,6 +117,23 @@ export default abstract class SutController implements SutHandler {
         ObjectiveRecorder.clearFirstTimeEncountered();
     }
 
+    public getAllCoveredTargetInfos(): Array<TargetInfo> {
+
+        const list = new Array<TargetInfo>();
+
+        const objectives = ExecutionTracer.getInternalReferenceToObjectiveCoverage();
+
+        objectives.forEach((info, descriptiveId, map) => {
+            if (info.value != 1.0) { // only covered
+                return
+            }
+            //try to save bandwidth by only sending mapped ids
+            list.push(info.enforceMappedId().withNoDescriptiveId());
+        });
+
+        return list;
+    }
+
     public getTargetInfos(ids: Set<number>): Array<TargetInfo> {
 
         const list = new Array<TargetInfo>();

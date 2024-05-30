@@ -211,18 +211,29 @@ export default class EMController {
         this.app.get(c.BASE_PATH + c.TEST_RESULTS, (req, res) => {
 
             const idsParam = (req.query.ids) as string;
+            const allCovered = (req.query.allCovered) as boolean;
 
-            const ids = new Set(idsParam
-                .split(",")
-                .filter((s) => s && s.trim().length > 0)
-                .map((s) => parseInt(s, 10))
-            );
+            let targetInfos
+            if (!allCovered) {
+                const ids = new Set(idsParam
+                    .split(",")
+                    .filter((s) => s && s.trim().length > 0)
+                    .map((s) => parseInt(s, 10))
+                );
 
-            const targetInfos = this.sutController.getTargetInfos(ids);
-            if (!targetInfos) {
-                res.status(500);
-                res.json(WrappedResponseDto.withError("Failed to collect target information for " + ids.size + " ids"));
-                return;
+                targetInfos = this.sutController.getTargetInfos(ids);
+                if (!targetInfos) {
+                    res.status(500);
+                    res.json(WrappedResponseDto.withError("Failed to collect target information for " + ids.size + " ids"));
+                    return;
+                }
+            } else {
+                targetInfos = this.sutController.getAllCoveredTargetInfos();
+                if (!targetInfos) {
+                    res.status(500);
+                    res.json(WrappedResponseDto.withError("Failed to collect all covered target information"));
+                    return;
+                }
             }
 
             const dto = new TestResultsDto();

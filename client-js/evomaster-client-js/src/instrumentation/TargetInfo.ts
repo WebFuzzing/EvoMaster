@@ -1,3 +1,5 @@
+import ObjectiveRecorder from "./staticstate/ObjectiveRecorder";
+
 /**
  * This represents the same data as in TargetInfoDto.
  * Here is replicated to have a clear distinction on how
@@ -41,5 +43,16 @@ export default class TargetInfo {
 
     public withNoDescriptiveId(): TargetInfo {
         return new TargetInfo(this.mappedId, null, this.value, this.actionIndex);
+    }
+
+    public enforceMappedId(): TargetInfo {
+        if(this.descriptiveId == null){
+            throw new Error("Cannot enforce mapped id from records in which the descriptive id was removed");
+        }
+        if(this.mappedId != null){
+            return this;
+        }
+        let theID = ObjectiveRecorder.getMappedId(this.descriptiveId);
+        return new TargetInfo(theID, this.descriptiveId, this.value, this.actionIndex);
     }
 }
