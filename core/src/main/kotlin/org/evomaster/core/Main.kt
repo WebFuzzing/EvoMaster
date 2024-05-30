@@ -386,8 +386,15 @@ class Main {
                     if (config.blackBox) {
                         BlackBoxRestModule(config.bbExperiments)
                     } else if (config.isEnabledResourceStrategy()) {
+                        /*
+                            default for white-box testing using MIO
+                         */
                         ResourceRestModule()
                     } else {
+                        /*
+                            old, pre-resource handling, version for white-box testing.
+                            not deprecated, as algorithms different from MIO would still use this
+                         */
                         RestModule()
                     }
                 }
