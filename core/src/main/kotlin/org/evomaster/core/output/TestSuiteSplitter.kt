@@ -100,11 +100,14 @@ object TestSuiteSplitter {
                     if (faults != null && faults.individuals.size > 1) {
                         val metrics = mutableListOf(DistanceMetricErrorText(config.errorTextEpsilon),
                                 DistanceMetricLastLine(config.lastLineEpsilon))
-                        conductClustering(sol as Solution<ApiWsIndividual>, oracles, config, metrics, splitResult)
+                        conductClustering(faults as Solution<ApiWsIndividual>, oracles, config, metrics, splitResult)
                     }
                 }
             }
         }
+
+        // no test should be lost, or duplicated, after the split
+        assert(solution.individuals.size == splitResult.splitOutcome.sumOf { it.individuals.size })
 
         return splitResult
     }
