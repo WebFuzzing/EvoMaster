@@ -43,9 +43,13 @@ class RestCallAction(
      *
      * Note: it might well be that we save the location returned
      * by a POST, where the POST itself might use a location for
-     * path coming from a previous POST
+     * path coming from a previous POST.
+     *
+     * It is possible that no location header is used, but id of newly created
+     * resource is returned in body payload.
+     * As such, we might use some heuristics to infer the "location"
      */
-    var locationId: String? = null,
+    var usePreviousLocationId: String? = null,
     val produces: List<String> = listOf(),
     val responseRefs : MutableMap<String, String> = mutableMapOf(),
     val skipOracleChecks : Boolean = false
@@ -66,11 +70,23 @@ class RestCallAction(
 
     override fun shouldCountForFitnessEvaluations(): Boolean = true
 
-    fun isLocationChained() = saveLocation || locationId?.isNotBlank() ?: false
+
+    /**
+     * @return a string representing an id to use when setting "saveLocation".
+     *  following REST call can use such id to refer to the dynamically generated resource.
+     */
+    fun postLocationId() : String {
+        if(verb != HttpVerb.POST){
+            throw IllegalStateException("Location Ids are meaningful only for POST operations")
+        }
+        return  path.lastElement()
+    }
+
+    fun isLocationChained() = saveLocation || usePreviousLocationId?.isNotBlank() ?: false
 
     override fun copyContent(): Action {
         val p = parameters.asSequence().map(Param::copy).toMutableList()
-        return RestCallAction(id, verb, path, p, auth, saveLocation, locationId, produces, responseRefs, skipOracleChecks)
+        return RestCallAction(id, verb, path, p, auth, saveLocation, usePreviousLocationId, produces, responseRefs, skipOracleChecks)
     }
 
     override fun getName(): String {
@@ -199,11 +215,11 @@ class RestCallAction(
     }
 
     /**
-     * reset [saveLocation], [locationId] and [responseRefs] properties of [this] RestCallAction
+     * reset [saveLocation], [usePreviousLocationId] and [responseRefs] properties of [this] RestCallAction
      */
     fun resetProperties(){
         saveLocation = false
-        locationId = null
+        usePreviousLocationId = null
         resetLocalId()
         seeTopGenes().flatMap { it.flatView() }.forEach { it.resetLocalId() }
         clearRefs()

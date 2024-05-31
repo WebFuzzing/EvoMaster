@@ -165,20 +165,24 @@ class RestIndividualBuilder {
                 GET  /x/{id}
              */
             create.saveLocation = true
-            target.locationId = create.path.lastElement()
+            target.usePreviousLocationId = create.path.lastElement()
         } else {
             /*
                 eg
                 POST /x
                 POST /x/{id}/y
                 GET  /x/{id}/y
+                not going to save the position of last POST, as same as target
+
+                however, might also be in the case of:
+                PUT /x/{id}
+                GET /x/{id}
              */
-            //not going to save the position of last POST, as same as target
             create.saveLocation = false
 
             // the target (eg GET) needs to use the location of first POST, or more correctly
             // the same location used for the last POST (in case there is a deeper chain)
-            target.locationId = create.locationId
+            target.usePreviousLocationId = create.usePreviousLocationId
         }
 
         return true
