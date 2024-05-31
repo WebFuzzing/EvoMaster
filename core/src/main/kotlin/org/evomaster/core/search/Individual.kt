@@ -9,6 +9,8 @@ import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.SqlActionUtils
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.api.param.Param
+import org.evomaster.core.problem.enterprise.EnterpriseIndividual
+import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.string.StringGene
@@ -124,11 +126,12 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
         if (!areAllLocalIdsAssigned())
             doInitializeLocalId()
 
-        //TODO make sure that seeded individual get skipped here
-
         this.searchGlobalState = searchGlobalState
 
-        seeGenes().forEach { it.doGlobalInitialize() }
+        //make sure that seeded individuals get skipped here, as global initialize might change them
+        if(this is EnterpriseIndividual && this.sampleType != SampleType.SEEDED && this.sampleType != SampleType.PREDEFINED) {
+            seeGenes().forEach { it.doGlobalInitialize() }
+        }
 
         computeTransitiveBindingGenes()
     }
