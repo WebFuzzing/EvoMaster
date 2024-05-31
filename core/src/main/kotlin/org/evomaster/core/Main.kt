@@ -4,7 +4,6 @@ import com.google.inject.Injector
 import com.google.inject.Key
 import com.google.inject.TypeLiteral
 import com.netflix.governator.guice.LifecycleInjector
-import org.evomaster.client.java.controller.api.EMTestUtils
 import org.evomaster.client.java.controller.api.dto.ControllerInfoDto
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.AnsiColor.Companion.inBlue
@@ -386,8 +385,15 @@ class Main {
                     if (config.blackBox) {
                         BlackBoxRestModule(config.bbExperiments)
                     } else if (config.isEnabledResourceStrategy()) {
+                        /*
+                            default for white-box testing using MIO
+                         */
                         ResourceRestModule()
                     } else {
+                        /*
+                            old, pre-resource handling, version for white-box testing.
+                            not deprecated, as algorithms different from MIO would still use this
+                         */
                         RestModule()
                     }
                 }
@@ -717,12 +723,11 @@ class Main {
 
                 when(config.testSuiteSplitType){
                     EMConfig.TestSuiteSplitType.NONE -> writer.writeTests(solution, controllerInfoDto?.fullName, controllerInfoDto?.executableFullPath)
-                    EMConfig.TestSuiteSplitType.CODE -> throw IllegalStateException("RPC problem does not support splitting tests by code")
                     /*
                         for RPC, just simple split based on whether there exist any exception in a test
                         TODD need to check with Andrea whether we use cluster or other type
                      */
-                    EMConfig.TestSuiteSplitType.CLUSTER -> {
+                    EMConfig.TestSuiteSplitType.FAULTS -> {
                         val splitResult = TestSuiteSplitter.splitRPCByException(solution as Solution<RPCIndividual>)
                         splitResult.splitOutcome
                             .filter { !it.individuals.isNullOrEmpty() }
@@ -854,6 +859,10 @@ class Main {
                                      controllerInfoDto: ControllerInfoDto?,
                                      splitResult: SplitResult,
                                      snapshotTimestamp: String = "") {
+
+            val executiveSummary = splitResult.executiveSummary
+                    ?: return
+
             val config = injector.getInstance(EMConfig::class.java)
 
             if (!config.createTests) {
@@ -862,7 +871,7 @@ class Main {
 
             val writer = injector.getInstance(TestSuiteWriter::class.java)
             assert(controllerInfoDto == null || controllerInfoDto.fullName != null)
-            writer.writeTests(splitResult.executiveSummary, controllerInfoDto?.fullName,controllerInfoDto?.executableFullPath, snapshotTimestamp)
+            writer.writeTests(executiveSummary, controllerInfoDto?.fullName,controllerInfoDto?.executableFullPath, snapshotTimestamp)
         }
 
         /**

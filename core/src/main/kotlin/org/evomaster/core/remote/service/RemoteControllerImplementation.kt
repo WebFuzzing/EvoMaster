@@ -480,13 +480,13 @@ class RemoteControllerImplementation() : RemoteController{
                     .post(Entity.entity(dto, MediaType.APPLICATION_JSON_TYPE))
         }
 
-        val dto = getDtoFromResponse(response, type)
+        val responseDto = getDtoFromResponse(response, type)
 
-        if (!checkResponse(response, dto, "Failed to execute database command")) {
+        if (!checkResponse(response, responseDto, "Failed to execute database command")) {
             return null
         }
 
-        return dto?.data
+        return responseDto?.data
     }
 
     private fun <T> executeMongoDatabaseCommandAndGetResults(dto: MongoDatabaseCommandDto, type: GenericType<WrappedResponseDto<T>>): T? {

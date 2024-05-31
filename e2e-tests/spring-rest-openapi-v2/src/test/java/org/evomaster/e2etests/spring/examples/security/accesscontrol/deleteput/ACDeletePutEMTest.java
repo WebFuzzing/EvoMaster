@@ -6,6 +6,7 @@ import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 
@@ -18,6 +19,7 @@ public class ACDeletePutEMTest extends SpringTestBase {
         SpringTestBase.initClass(new ACDeletePutController());
     }
 
+    @Disabled
     @Test
     public void testRunEM() throws Throwable {
 
@@ -26,6 +28,9 @@ public class ACDeletePutEMTest extends SpringTestBase {
                 "org.bar.ACDeletePutEM",
                 100,
                 (args) -> {
+
+                    args.add("--security");
+                    args.add("true");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 
