@@ -1,4 +1,6 @@
+package org.evomaster.solver;
 
+import org.evomaster.solver.smtlib.*;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableList;
 
@@ -18,17 +20,17 @@ public class SMTLibTest {
     @Test
     public void SMTLibSelectToString() throws IOException {
         SMTLib smtLib = new SMTLib();
-        smtLib.addNode(new SMTLib.DeclareDatatype("UsersRow", ImmutableList.of(
-                new SMTLib.DeclareConst("ID", "Int"),
-                new SMTLib.DeclareConst("NAME", "String"),
-                new SMTLib.DeclareConst("AGE", "Int"),
-                new SMTLib.DeclareConst("POINTS", "Int")
+        smtLib.addNode(new DeclareDatatype("UsersRow", ImmutableList.of(
+                new DeclareConst("ID", "Int"),
+                new DeclareConst("NAME", "String"),
+                new DeclareConst("AGE", "Int"),
+                new DeclareConst("POINTS", "Int")
         )));
-        smtLib.addNode(new SMTLib.DeclareConst("users1", "UsersRow"));
-        smtLib.addNode(new SMTLib.DeclareConst("users2", "UsersRow"));
-        smtLib.addNode(new SMTLib.CheckSat());
-        smtLib.addNode(new SMTLib.GetValue("users1"));
-        smtLib.addNode(new SMTLib.GetValue("users2"));
+        smtLib.addNode(new DeclareConst("users1", "UsersRow"));
+        smtLib.addNode(new DeclareConst("users2", "UsersRow"));
+        smtLib.addNode(new CheckSat());
+        smtLib.addNode(new GetValue("users1"));
+        smtLib.addNode(new GetValue("users2"));
 
         // Read from file the response and compare
         String expected = readFromFileAsString(resourcesFolder + "select-from-users.smt");

@@ -4,13 +4,13 @@ import net.sf.jsqlparser.statement.Statement;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.sql.SchemaExtractor;
 import org.evomaster.client.java.sql.SqlScriptRunner;
+import org.evomaster.solver.smtlib.*;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableList;
 
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -48,17 +48,17 @@ public class SmtLibGeneratorTest {
         SMTLib response = generator.generateSMT(selectStatement);
 
         SMTLib expected = new SMTLib();
-        expected.addNode(new SMTLib.DeclareDatatype("UsersRow", ImmutableList.of(
-                new SMTLib.DeclareConst("ID", "Int"),
-                new SMTLib.DeclareConst("NAME", "String"),
-                new SMTLib.DeclareConst("AGE", "Int"),
-                new SMTLib.DeclareConst("POINTS", "Int")
+        expected.addNode(new DeclareDatatype("UsersRow", ImmutableList.of(
+                new DeclareConst("ID", "Int"),
+                new DeclareConst("NAME", "String"),
+                new DeclareConst("AGE", "Int"),
+                new DeclareConst("POINTS", "Int")
         )));
-        expected.addNode(new SMTLib.DeclareConst("users1", "UsersRow"));
-        expected.addNode(new SMTLib.DeclareConst("users2", "UsersRow"));
-        expected.addNode(new SMTLib.CheckSat());
-        expected.addNode(new SMTLib.GetValue("users1"));
-        expected.addNode(new SMTLib.GetValue("users2"));
+        expected.addNode(new DeclareConst("users1", "UsersRow"));
+        expected.addNode(new DeclareConst("users2", "UsersRow"));
+        expected.addNode(new CheckSat());
+        expected.addNode(new GetValue("users1"));
+        expected.addNode(new GetValue("users2"));
 
         assertEquals(expected, response);
     }

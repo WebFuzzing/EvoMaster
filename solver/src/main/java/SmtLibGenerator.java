@@ -2,6 +2,7 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
 import org.evomaster.dbconstraint.ConstraintDatabaseType;
 import net.sf.jsqlparser.statement.Statement;
+import org.evomaster.solver.smtlib.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -45,11 +46,11 @@ public class SmtLibGenerator {
         for (TableDto table : schema.tables) {
             String tableName = table.name.substring(0, 1).toUpperCase() + table.name.substring(1).toLowerCase();
             String dataTypeName = tableName + "Row";
-            smt.addNode(new SMTLib.DeclareDatatype(dataTypeName, getConstructors(table)));
+            smt.addNode(new DeclareDatatype(dataTypeName, getConstructors(table)));
 
             // Declare the variables for each table
             for (int i = 1; i <= numberOfRows; i++) {
-                smt.addNode(new SMTLib.DeclareConst(table.name.toLowerCase() + i, dataTypeName));
+                smt.addNode(new DeclareConst(table.name.toLowerCase() + i, dataTypeName));
             }
         }
 
@@ -65,24 +66,24 @@ public class SmtLibGenerator {
     }
 
     private void appendGetValues(SMTLib smt) {
-        smt.addNode(new SMTLib.CheckSat());
+        smt.addNode(new CheckSat());
 
         for (TableDto table : schema.tables) {
             String tableNameLower = table.name.toLowerCase();
             for (int i = 1; i <= numberOfRows; i++) {
-                smt.addNode(new SMTLib.GetValue(tableNameLower + i));
+                smt.addNode(new GetValue(tableNameLower + i));
             }
 
 
         }
     }
 
-    private static List<SMTLib.DeclareConst> getConstructors(TableDto table) {
+    private static List<DeclareConst> getConstructors(TableDto table) {
         return
                 table.columns.stream()
                         .map(c -> {
                             String smtType = TYPE_MAP.get(c.type.toUpperCase());
-                            return new SMTLib.DeclareConst(c.name, smtType);
+                            return new DeclareConst(c.name, smtType);
                         })
                         .collect(Collectors.toList());
     }

@@ -1,3 +1,5 @@
+package org.evomaster.solver;
+
 import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.Container;
 import org.testcontainers.containers.GenericContainer;
@@ -42,7 +44,7 @@ public class Z3DockerExecutor implements AutoCloseable {
      * @param fileName the name of the file to read
      * @return the result of the Z3 solver with the obtained model as string
      */
-    String solveFromFile(String fileName) {
+    public String solveFromFile(String fileName) {
         try {
             Container.ExecResult result = z3Prover.execInContainer("z3", containerPath + fileName);
             String stdout = result.getStdout();

@@ -1,17 +1,11 @@
 import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.statement.Statement;
-import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto;
-import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
-import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
 import org.evomaster.core.sql.SqlAction;
-import org.evomaster.core.sql.schema.ColumnDataType;
-import org.evomaster.core.sql.schema.ForeignKey;
-import org.evomaster.dbconstraint.TableConstraint;
+import org.evomaster.solver.smtlib.SMTLib;
+import org.evomaster.solver.Z3DockerExecutor;
 import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
-import org.evomaster.core.sql.schema.Column;
-import org.evomaster.core.sql.schema.Table;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,8 +14,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * A smt2 solver implementation using Z3 in a Docker container.
