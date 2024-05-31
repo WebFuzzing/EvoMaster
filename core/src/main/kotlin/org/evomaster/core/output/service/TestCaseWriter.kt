@@ -1,7 +1,6 @@
 package org.evomaster.core.output.service
 
 import com.google.inject.Inject
-import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
@@ -68,7 +67,7 @@ abstract class TestCaseWriter {
 
         val lines = Lines(config.outputFormat)
 
-        if (config.testSuiteSplitType == EMConfig.TestSuiteSplitType.CLUSTER
+        if (config.testSuiteSplitType == EMConfig.TestSuiteSplitType.FAULTS
             && test.test.getClusters().size != 0
         ) {
             clusterComment(lines, test)
