@@ -1,9 +1,17 @@
 import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.statement.Statement;
+import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
 import org.evomaster.core.sql.SqlAction;
+import org.evomaster.core.sql.schema.ColumnDataType;
+import org.evomaster.core.sql.schema.ForeignKey;
+import org.evomaster.dbconstraint.TableConstraint;
 import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
+import org.evomaster.core.sql.schema.Column;
+import org.evomaster.core.sql.schema.Table;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,6 +20,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * A smt2 solver implementation using Z3 in a Docker container.
@@ -26,13 +36,14 @@ public class SMTLibZ3DbConstraintSolver implements DbConstraintSolver {
 
     private final SmtLibGenerator generator;
     private final Z3DockerExecutor executor;
+    private final DbSchemaDto schemaDto;
 
     public SMTLibZ3DbConstraintSolver(DbSchemaDto schemaDto) {
 
         String resourcesFolder = tmpResourcesFolder();
         createTmpFolder(resourcesFolder);
         this.resourcesFolder = resourcesFolder;
-
+        this.schemaDto = schemaDto;
         this.generator = new SmtLibGenerator(schemaDto);
         this.executor = new Z3DockerExecutor(resourcesFolder);
     }
@@ -73,20 +84,22 @@ public class SMTLibZ3DbConstraintSolver implements DbConstraintSolver {
     @Override
     public List<SqlAction> solve(String sqlQuery) {
 
+        Statement queryStatement = parseStatement(sqlQuery);
+        SMTLib smtLib = this.generator.generateSMT(queryStatement);
+        String fileName = storeToTmpFile(smtLib);
+        String z3Response = executor.solveFromFile(fileName);
+
+        return toSqlActionList(z3Response);
+    }
+
+    private static Statement parseStatement(String sqlQuery) {
         Statement queryStatement;
         try {
             queryStatement = CCJSqlParserUtil.parse(sqlQuery);
         } catch (JSQLParserException e) {
             throw new RuntimeException(e);
         }
-
-        SMTLib smtLib = this.generator.generateSMT(queryStatement);
-
-        String fileName = storeToTmpFile(smtLib);
-
-        String z3Response = executor.solveFromFile(fileName);
-
-        return toSqlActionList(z3Response);
+        return queryStatement;
     }
 
     private List<SqlAction> toSqlActionList(String z3Response) {
