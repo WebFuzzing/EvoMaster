@@ -220,15 +220,18 @@ class RestPath(path: String) {
             return false
         }
 
-        return other.isAncestorOf(this)
+        return other.isSameOrAncestorOf(this)
     }
 
 
     /**
      * Prefix or same as "other"
      */
-    fun isAncestorOf(other: RestPath): Boolean {
+    fun isSameOrAncestorOf(other: RestPath): Boolean {
         if (this.elements.size > other.elements.size) {
+            return false
+        }
+        if(this.elements.size == other.elements.size && this.endsWithSlash && !other.endsWithSlash){
             return false
         }
 

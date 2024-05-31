@@ -227,6 +227,7 @@ object RestIndividualSelectorUtils {
     /**
      * Create a copy of individual, where all main actions after index are removed
      */
+    @Deprecated("Rather use implementation in RestIndividualBuilder")
     fun sliceAllCallsInIndividualAfterAction(restIndividual: RestIndividual, actionIndex: Int) : RestIndividual {
 
         // we need to check that the index is within the range
