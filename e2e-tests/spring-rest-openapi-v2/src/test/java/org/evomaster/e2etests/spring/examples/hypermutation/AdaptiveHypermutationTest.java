@@ -49,6 +49,8 @@ public class AdaptiveHypermutationTest extends HypermutationTestBase {
                     args.add("--minimize");
                     args.add("false");
 
+                    args.add("--focusedSearchActivationTime");
+                    args.add("0.5");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 
