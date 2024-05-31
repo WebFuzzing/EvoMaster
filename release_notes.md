@@ -13,6 +13,7 @@ Under development in `master` branch.
 - #834: Authentication required when accessing schema
 - #957: Generated test cases fail due to 'checkInstrumentation' 
 - #962: Fail to parse endpoint due to body.content must not be null when requestBody has $ref
+- #988: Is it normal that EvoMaster combined "sucess" and "other" tests into "fault_representatives"?
 
 ---
 # Version: 3.0.0

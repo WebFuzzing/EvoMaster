@@ -47,4 +47,8 @@ class SearchGlobalState {
     @Inject
     lateinit var dataPool: DataPool
         private set
+
+    @Inject
+    lateinit var idMapper: IdMapper
+        private set
 }

@@ -512,7 +512,7 @@ class EMConfig {
         }
 
         // Clustering constraints: the executive summary is not really meaningful without the clustering
-        if (executiveSummary && testSuiteSplitType != TestSuiteSplitType.CLUSTER) {
+        if (executiveSummary && testSuiteSplitType != TestSuiteSplitType.FAULTS) {
             executiveSummary = false
             LoggingUtil.uniqueUserWarn("The option to turn on Executive Summary is only meaningful when clustering is turned on (--testSuiteSplitType CLUSTERING). " +
                     "The option has been deactivated for this run, to prevent a crash.")
@@ -1067,21 +1067,20 @@ class EMConfig {
 
     enum class TestSuiteSplitType {
         NONE,
-        CLUSTER,
-        CODE
+        FAULTS
+        //CODE //This was never properly implemented
     }
 
     @Cfg("Instead of generating a single test file, it could be split in several files, according to different strategies")
-    var testSuiteSplitType = TestSuiteSplitType.CLUSTER
+    var testSuiteSplitType = TestSuiteSplitType.FAULTS
 
     @Experimental
     @Cfg("Specify the maximum number of tests to be generated in one test suite. " +
             "Note that a negative number presents no limit per test suite")
     var maxTestsPerTestSuite = -1
 
-    @Cfg("Generate an executive summary, containing an example of each category of potential fault found." +
-            "NOTE: This option is only meaningful when used in conjuction with clustering. " +
-            "This is achieved by turning the option --testSuiteSplitType to CLUSTER")
+    @Cfg("Generate an executive summary, containing an example of each category of potential faults found." +
+            "NOTE: This option is only meaningful when used in conjunction with test suite splitting.")
     var executiveSummary = true
 
     @Cfg("The Distance Metric Last Line may use several values for epsilon." +

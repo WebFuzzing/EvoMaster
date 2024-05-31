@@ -380,6 +380,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
            Objectives for the two partial oracles implemented thus far.
         */
         val call = actions[indexOfAction] as RestCallAction
+        if(call.skipOracleChecks){
+            return
+        }
         val oracles = writer.getPartialOracles().activeOracles(call, result)
         oracles.filter { it.value }.forEach { entry ->
             val oracleId = idMapper.getFaultDescriptiveIdForPartialOracle("${entry.key} $name")
