@@ -8,7 +8,7 @@ import org.evomaster.core.problem.enterprise.SampleType;
 import org.evomaster.core.problem.rest.resource.RestResourceCalls;
 import org.evomaster.core.problem.rest.service.ResourceManageService;
 import org.evomaster.core.problem.rest.service.ResourceRestMutator;
-import org.evomaster.core.problem.rest.service.RestResourceFitness;
+import org.evomaster.core.problem.rest.service.ResourceRestFitness;
 import org.evomaster.core.search.action.ActionFilter;
 import org.evomaster.core.search.EvaluatedIndividual;
 import org.evomaster.core.search.impact.impactinfocollection.ImpactsOfIndividual;
@@ -41,7 +41,7 @@ public class ResourceDbMIOAndAdaptiveHMBasicTest extends ResourceMIOHWTestBase {
 
         ResourceManageService rmanger = injector.getInstance(ResourceManageService.class);
         ResourceRestMutator mutator = injector.getInstance(ResourceRestMutator.class);
-        RestResourceFitness ff = injector.getInstance(RestResourceFitness.class);
+        ResourceRestFitness ff = injector.getInstance(ResourceRestFitness.class);
         Archive<RestIndividual> archive = injector.getInstance(Key.get(
                 new TypeLiteral<Archive<RestIndividual>>() {}));
 
