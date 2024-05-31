@@ -49,12 +49,18 @@ class RestIndividualBuilder {
      * This can be a strict ancestor (shorter path), or same
      * endpoint but with different HTTP verb.
      * Among the different ancestors, return one of the longest
+     *
+     * @return a potentially null [RestCallAction] using any of the given verbs,
+     *        and that is different from [target], but having same or ancestor path.
      */
     fun chooseClosestAncestor(target: RestCallAction, verbs: List<HttpVerb>): RestCallAction? {
 
         var others = sameOrAncestorEndpoints(target.path)
-        others = hasWithVerbs(others, verbs)
-            .filter { t -> t.getName() != target.getName() }
+        others = filterBasedOnVerbs(others, verbs)
+            .filter {
+                //recall name is using verb and path
+                t -> t.getName() != target.getName()
+            }
 
         if (others.isEmpty()) {
             return null
@@ -63,20 +69,30 @@ class RestIndividualBuilder {
         return chooseLongestPath(others)
     }
 
-    private fun hasWithVerbs(actions: List<RestCallAction>, verbs: List<HttpVerb>): List<RestCallAction> {
+    /**
+     * return all actions using any of the specified verbs
+     */
+    private fun filterBasedOnVerbs(actions: List<RestCallAction>, verbs: List<HttpVerb>): List<RestCallAction> {
         return actions.filter { a ->
             verbs.contains(a.verb)
         }
     }
 
     /**
-     * Get all ancestor (same path prefix) endpoints
+     * Get all ancestor (or same path) endpoints.
+     * This is based on their path structure
      */
     fun sameOrAncestorEndpoints(path: RestPath): List<RestCallAction> {
         return sampler.seeAvailableActions().asSequence()
             .filterIsInstance<RestCallAction>()
             .filter { it.path.isSameOrAncestorOf(path) }
             .toList()
+    }
+
+    private fun findTemplate(path: RestPath, verb: HttpVerb) : RestCallAction? {
+        return sampler.seeAvailableActions()
+            .filterIsInstance<RestCallAction>()
+            .find { it.path.isEquivalent(path) && it.verb == verb }
     }
 
     private fun chooseLongestPath(actions: List<RestCallAction>): RestCallAction {
@@ -91,26 +107,47 @@ class RestIndividualBuilder {
         return randomness.choose(candidates)
     }
 
+    /**
+     * Create a new action, to be added to the list representing the [test] we are building.
+     * Given a [target] (eg, a GET on a specific resource path X), create a new action that should lead
+     * to the creation of such resource.
+     * Target must be inside [test].
+     * This new action will be added at the beginning of [test].
+     * As such action might need its own ancestor resources, this process is then applied recursively.
+     */
      fun createResourcesFor(target: RestCallAction, test: MutableList<RestCallAction>)
             : Boolean {
 
+         if(!test.contains(target)){
+             throw IllegalArgumentException("Target ${target.getName()} is not inside test:" +
+                     " ${test.joinToString(" , ") { it.getName() }}")
+         }
 
         val template = chooseClosestAncestor(target, listOf(HttpVerb.POST))
-            ?: return false
+            ?: (if(target.verb != HttpVerb.PUT) findTemplate(target.path, HttpVerb.PUT) else null)
+                ?: return false
 
-        val post = createBoundActionFor(template, target)
+        val create = createBoundActionFor(template, target)
 
-        test.add(0, post)
+        if(template.verb == HttpVerb.PUT){
+            /*
+                TODO: should check if body payload has any id matching the path element...
+                if so, should bind it
+             */
+        }
+
+        test.add(0, create)
 
         /*
-            Check if POST depends itself on the creation of
-            some intermediate resource
+            Check if create action depends itself on the creation of
+            some intermediate resources
          */
-        if (post.path.hasVariablePathParameters() &&
-            (!post.path.isLastElementAParameter()) ||
-            post.path.getVariableNames().size >= 2) {
+        if (
+            (create.path.hasVariablePathParameters() && !create.path.isLastElementAParameter())
+            || create.path.getVariableNames().size >= 2
+            ) {
 
-            val dependencyCreated = createResourcesFor(post, test)
+            val dependencyCreated = createResourcesFor(create, test)
             if (!dependencyCreated) {
                 return false
             }
@@ -118,17 +155,17 @@ class RestIndividualBuilder {
 
 
         /*
-            Once the POST is fully initialized, need to fix
+            Once the create is fully initialized, need to fix
             links with target
          */
-        if (!post.path.isEquivalent(target.path)) {
+        if (!create.path.isEquivalent(target.path)) {
             /*
                 eg
                 POST /x
                 GET  /x/{id}
              */
-            post.saveLocation = true
-            target.locationId = post.path.lastElement()
+            create.saveLocation = true
+            target.locationId = create.path.lastElement()
         } else {
             /*
                 eg
@@ -137,11 +174,11 @@ class RestIndividualBuilder {
                 GET  /x/{id}/y
              */
             //not going to save the position of last POST, as same as target
-            post.saveLocation = false
+            create.saveLocation = false
 
             // the target (eg GET) needs to use the location of first POST, or more correctly
             // the same location used for the last POST (in case there is a deeper chain)
-            target.locationId = post.locationId
+            target.locationId = create.locationId
         }
 
         return true
@@ -149,7 +186,7 @@ class RestIndividualBuilder {
 
 
     /**
-     * Create a copy of individual, where all main actions after index are removed
+     * Create a copy of [restIndividual], where all main actions after index are removed
      */
     fun sliceAllCallsInIndividualAfterAction(restIndividual: RestIndividual, actionIndex: Int) : RestIndividual {
 
