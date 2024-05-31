@@ -95,7 +95,7 @@ class RestCallAction(
      *
      **/
     fun bindToSamePathResolution(other: RestCallAction) {
-        if (!this.path.isAncestorOf(other.path)) {
+        if (!this.path.isSameOrAncestorOf(other.path)) {
             throw IllegalArgumentException("Cannot bind 2 different unrelated paths to the same path resolution: " +
                     "${this.path} vs ${other.path}")
         }

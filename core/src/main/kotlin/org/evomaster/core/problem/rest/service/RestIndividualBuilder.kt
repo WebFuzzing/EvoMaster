@@ -27,7 +27,7 @@ class RestIndividualBuilder {
      */
     fun createBoundActionFor(template: RestCallAction, target: RestCallAction): RestCallAction {
 
-        if (!template.path.isAncestorOf(target.path)) {
+        if (!template.path.isSameOrAncestorOf(target.path)) {
             throw IllegalArgumentException("Cannot create an action for unrelated paths: " +
                     "${template.path} vs ${target.path}")
         }
@@ -75,7 +75,7 @@ class RestIndividualBuilder {
     fun sameOrAncestorEndpoints(path: RestPath): List<RestCallAction> {
         return sampler.seeAvailableActions().asSequence()
             .filterIsInstance<RestCallAction>()
-            .filter { it.path.isAncestorOf(path) }
+            .filter { it.path.isSameOrAncestorOf(path) }
             .toList()
     }
 
