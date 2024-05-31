@@ -60,6 +60,8 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     @Inject
     protected lateinit var responsePool: DataPool
 
+    @Inject
+    protected lateinit var builder: RestIndividualBuilder
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(AbstractRestFitness::class.java)
@@ -739,7 +741,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                  */
                 val id = rcr.getResourceId()
 
-                if (id != null && hasParameterChild(a)) {
+                if (id != null && builder.hasParameterChild(a)) {
                     location = a.resolvedPath() + "/" + id
                     rcr.setHeuristicsForChainedLocation(true)
                 }
@@ -752,12 +754,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     }
 
 
-    fun hasParameterChild(a: RestCallAction): Boolean {
-        return sampler.seeAvailableActions()
-            .filterIsInstance<RestCallAction>()
-            .map { it.path }
-            .any { it.isDirectChildOf(a.path) && it.isLastElementAParameter() }
-    }
+
 
     private fun locationName(id: String): String {
         return "location_$id"

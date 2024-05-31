@@ -5,6 +5,10 @@ import org.evomaster.core.problem.rest.*
 import org.evomaster.core.search.service.Randomness
 
 
+/**
+ * Set of operations to help creating new individuals, taking into account what is available
+ * in the schema (but NOT the archive).
+ */
 class RestIndividualBuilder {
 
     @Inject
@@ -197,4 +201,16 @@ class RestIndividualBuilder {
         //TODO move code here
         return RestIndividualSelectorUtils.sliceAllCallsInIndividualAfterAction(restIndividual, actionIndex)
     }
+
+    /**
+     * Check in the schema if there is any action which is a direct child of [a] and last path element is a parameter
+     */
+    fun hasParameterChild(a: RestCallAction): Boolean {
+        return sampler.seeAvailableActions()
+            .filterIsInstance<RestCallAction>()
+            .map { it.path }
+            .any { it.isDirectChildOf(a.path) && it.isLastElementAParameter() }
+    }
+
+
 }

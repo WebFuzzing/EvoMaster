@@ -344,6 +344,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                 }
 
                 //TODO JS and C#
+                //TODO code here should use same algorithm as in res.getResourceId()
                 val extract =
                     "$resVarName.extract().body().path$extraTypeInfo(\"${res.getResourceIdName()}\").toString()"
 
