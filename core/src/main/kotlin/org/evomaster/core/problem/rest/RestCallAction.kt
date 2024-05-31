@@ -34,7 +34,7 @@ class RestCallAction(
      * use by following calls. Typical case is to save the location of
      * a resource generated with a POST
      */
-    var saveLocation: Boolean = false,
+    saveLocation: Boolean = false,
     /**
      * Specify to use the "location" header of a
      * previous POST as path. As there might be different
@@ -54,6 +54,14 @@ class RestCallAction(
     val responseRefs : MutableMap<String, String> = mutableMapOf(),
     val skipOracleChecks : Boolean = false
 ) : HttpWsAction(auth, parameters) {
+
+    var saveLocation : Boolean = saveLocation
+        set(value) {
+            if(value && verb != HttpVerb.POST){
+                throw IllegalArgumentException("Save location can only be used for POST")
+            }
+            field = value
+        }
 
     /**
      * collect info of description and summary from swagger

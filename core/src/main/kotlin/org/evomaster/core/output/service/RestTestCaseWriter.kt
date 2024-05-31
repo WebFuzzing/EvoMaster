@@ -301,7 +301,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
 
             if (!res.getHeuristicsForChainedLocation()) {
 
-                val location = locationVar(call.path.lastElement())
+                val location = locationVar(call.postLocationId())
 
                 /*
                     If there is a "location" header, then it must be either empty or a valid URI.
@@ -347,7 +347,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                 val extract =
                     "$resVarName.extract().body().path$extraTypeInfo(\"${res.getResourceIdName()}\").toString()"
 
-                lines.add("${locationVar(call.path.lastElement())} = $baseUri + \"/\" + $extract")
+                lines.add("${locationVar(call.postLocationId())} = $baseUri + \"/\" + $extract")
                 lines.appendSemicolon()
             }
         }

@@ -165,7 +165,7 @@ class RestIndividualBuilder {
                 GET  /x/{id}
              */
             create.saveLocation = true
-            target.usePreviousLocationId = create.path.lastElement()
+            target.usePreviousLocationId = create.postLocationId()
         } else {
             /*
                 eg

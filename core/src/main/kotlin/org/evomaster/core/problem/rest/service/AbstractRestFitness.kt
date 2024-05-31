@@ -725,7 +725,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 return false
             }
 
-            val name = locationName(a.path.lastElement())
+            val name = locationName(a.postLocationId())
             var location = response.getHeaderString("location")
 
             if (location == null) {
