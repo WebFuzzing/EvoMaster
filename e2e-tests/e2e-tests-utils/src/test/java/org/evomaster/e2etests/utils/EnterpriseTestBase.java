@@ -198,12 +198,12 @@ public abstract class EnterpriseTestBase {
 
         if(terminations == null || terminations.isEmpty()){
             classNames.add(new ClassName(fullClassName));
-            splitType = "NONE";
+            splitType = EMConfig.TestSuiteSplitType.NONE.name();
         } else {
             for (String termination : terminations) {
                 classNames.add(new ClassName(fullClassName + termination));
             }
-            splitType = "CLUSTER";
+            splitType = EMConfig.TestSuiteSplitType.FAULTS.name();
         }
 
          /*

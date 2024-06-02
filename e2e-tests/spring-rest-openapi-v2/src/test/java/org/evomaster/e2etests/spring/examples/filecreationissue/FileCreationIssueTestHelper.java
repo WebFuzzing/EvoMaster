@@ -47,7 +47,7 @@ public class FileCreationIssueTestHelper {
                 if (fileName.contains(filenamePrefix + "_" + filenameSuffix)) {
                     emptyFound = true;
                 }
-                else if (fileName.contains(filenamePrefix + Termination.SUMMARY.getSuffix() + "_" + filenameSuffix)) {
+                else if (fileName.contains(filenamePrefix + Termination.FAULT_REPRESENTATIVES.getSuffix() + "_" + filenameSuffix)) {
                     summaryFound = true;
                 }
 

@@ -67,7 +67,7 @@ abstract class TestCaseWriter {
 
         val lines = Lines(config.outputFormat)
 
-        if (config.testSuiteSplitType == EMConfig.TestSuiteSplitType.CLUSTER
+        if (config.testSuiteSplitType == EMConfig.TestSuiteSplitType.FAULTS
             && test.test.getClusters().size != 0
         ) {
             clusterComment(lines, test)

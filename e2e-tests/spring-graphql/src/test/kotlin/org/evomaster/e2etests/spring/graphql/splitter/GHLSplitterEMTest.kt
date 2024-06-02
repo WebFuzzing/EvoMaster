@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import java.io.File
-import java.util.*
 
 class GHLSplitterEMTest : SpringTestBase() {
     companion object {
@@ -53,7 +52,7 @@ class GHLSplitterEMTest : SpringTestBase() {
 
             val em = EMConfig()
 
-            em.testSuiteSplitType = EMConfig.TestSuiteSplitType.CODE
+            em.testSuiteSplitType = EMConfig.TestSuiteSplitType.FAULTS
             em.executiveSummary = false
 
 

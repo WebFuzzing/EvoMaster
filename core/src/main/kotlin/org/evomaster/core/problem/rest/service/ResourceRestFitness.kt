@@ -24,7 +24,7 @@ import javax.ws.rs.core.NewCookie
 /**
  * take care of calculating/collecting fitness of [RestIndividual]
  */
-class RestResourceFitness : AbstractRestFitness() {
+class ResourceRestFitness : AbstractRestFitness() {
 
 
     @Inject
@@ -34,7 +34,7 @@ class RestResourceFitness : AbstractRestFitness() {
     private lateinit var rm: ResourceManageService
 
     companion object {
-        private val log: Logger = LoggerFactory.getLogger(RestResourceFitness::class.java)
+        private val log: Logger = LoggerFactory.getLogger(ResourceRestFitness::class.java)
     }
 
     /*
