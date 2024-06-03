@@ -159,7 +159,7 @@ class RestSampler : AbstractRestSampler(){
              */
             val secondPatch = builder.createBoundActionFor(write, write)
             test.add(secondPatch)
-            secondPatch.locationId = write.locationId
+            secondPatch.usePreviousLocationId = write.usePreviousLocationId
         }
 
         test.forEach { t ->
@@ -238,7 +238,7 @@ class RestSampler : AbstractRestSampler(){
                 (0 until k).forEach {
                     val create = builder.createBoundActionFor(lastPost, get)
                     preventPathParamMutation(create)
-                    create.locationId = lastPost.locationId
+                    create.usePreviousLocationId = lastPost.usePreviousLocationId
 
                     //add just before the last GET
                     test.add(test.size - 1, create)

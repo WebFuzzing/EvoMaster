@@ -1,11 +1,9 @@
 package org.evomaster.core.output.service
 
 import com.google.inject.Inject
-import org.apache.xpath.operations.Bool
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.SqlWriter
-import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.RestCallAction
@@ -19,7 +17,6 @@ import org.evomaster.core.search.gene.utils.GeneUtils
 import org.slf4j.LoggerFactory
 import java.nio.file.Path
 import java.util.*
-import javax.swing.text.StyledEditorKit.BoldAction
 
 class RestTestCaseWriter : HttpWsTestCaseWriter {
 
@@ -79,8 +76,8 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
             ind.evaluatedMainActions().asSequence()
                 .map { it.action }
                 .filterIsInstance(RestCallAction::class.java)
-                .filter { it.locationId != null }
-                .map { it.locationId }
+                .filter { it.usePreviousLocationId != null }
+                .map { it.usePreviousLocationId }
                 .distinct()
                 .forEach { id ->
                     val name = locationVar(id!!)
@@ -196,16 +193,16 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
             }
         }
 
-        if (call.locationId != null) {
+        if (call.usePreviousLocationId != null) {
             if (format.isJavaScript()) {
                 lines.append("${TestSuiteWriter.jsImport}.")
             }
 
             if (format.isCsharp()) {
                 //TODO: double check this
-                lines.append("${locationVar(call.locationId!!)} + $baseUrlOfSut + \"${call.resolvedPath()}\"")
+                lines.append("${locationVar(call.usePreviousLocationId!!)} + $baseUrlOfSut + \"${call.resolvedPath()}\"")
             } else {
-                lines.append("resolveLocation(${locationVar(call.locationId!!)}, $baseUrlOfSut + \"${call.resolvedPath()}\")")
+                lines.append("resolveLocation(${locationVar(call.usePreviousLocationId!!)}, $baseUrlOfSut + \"${call.resolvedPath()}\")")
             }
 
         } else {
@@ -304,7 +301,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
 
             if (!res.getHeuristicsForChainedLocation()) {
 
-                val location = locationVar(call.path.lastElement())
+                val location = locationVar(call.postLocationId())
 
                 /*
                     If there is a "location" header, then it must be either empty or a valid URI.
@@ -338,19 +335,20 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                     format.isKotlin() -> "<Object>"
                     else -> ""
                 }
-                val baseUri: String = if (call.locationId != null) {
+                val baseUri: String = if (call.usePreviousLocationId != null) {
                     /* A variable should NOT be enclosed by quotes */
-                    locationVar(call.locationId!!)
+                    locationVar(call.usePreviousLocationId!!)
                 } else {
                     /* Literals should be enclosed by quotes */
                     "\"${call.path.resolveOnlyPath(call.parameters)}\""
                 }
 
                 //TODO JS and C#
+                //TODO code here should use same algorithm as in res.getResourceId()
                 val extract =
                     "$resVarName.extract().body().path$extraTypeInfo(\"${res.getResourceIdName()}\").toString()"
 
-                lines.add("${locationVar(call.path.lastElement())} = $baseUri + \"/\" + $extract")
+                lines.add("${locationVar(call.postLocationId())} = $baseUri + \"/\" + $extract")
                 lines.appendSemicolon()
             }
         }

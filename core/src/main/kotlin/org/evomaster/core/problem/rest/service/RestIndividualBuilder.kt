@@ -5,6 +5,10 @@ import org.evomaster.core.problem.rest.*
 import org.evomaster.core.search.service.Randomness
 
 
+/**
+ * Set of operations to help creating new individuals, taking into account what is available
+ * in the schema (but NOT the archive).
+ */
 class RestIndividualBuilder {
 
     @Inject
@@ -165,20 +169,24 @@ class RestIndividualBuilder {
                 GET  /x/{id}
              */
             create.saveLocation = true
-            target.locationId = create.path.lastElement()
+            target.usePreviousLocationId = create.postLocationId()
         } else {
             /*
                 eg
                 POST /x
                 POST /x/{id}/y
                 GET  /x/{id}/y
+                not going to save the position of last POST, as same as target
+
+                however, might also be in the case of:
+                PUT /x/{id}
+                GET /x/{id}
              */
-            //not going to save the position of last POST, as same as target
             create.saveLocation = false
 
             // the target (eg GET) needs to use the location of first POST, or more correctly
             // the same location used for the last POST (in case there is a deeper chain)
-            target.locationId = create.locationId
+            target.usePreviousLocationId = create.usePreviousLocationId
         }
 
         return true
@@ -193,4 +201,16 @@ class RestIndividualBuilder {
         //TODO move code here
         return RestIndividualSelectorUtils.sliceAllCallsInIndividualAfterAction(restIndividual, actionIndex)
     }
+
+    /**
+     * Check in the schema if there is any action which is a direct child of [a] and last path element is a parameter
+     */
+    fun hasParameterChild(a: RestCallAction): Boolean {
+        return sampler.seeAvailableActions()
+            .filterIsInstance<RestCallAction>()
+            .map { it.path }
+            .any { it.isDirectChildOf(a.path) && it.isLastElementAParameter() }
+    }
+
+
 }
