@@ -1,11 +1,15 @@
 package org.evomaster.solver;
 
+import org.evomaster.solver.smtlib.SMTResultParser;
+import org.evomaster.solver.smtlib.value.SMTLibValue;
 import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.Container;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.images.builder.ImageFromDockerfile;
 
 import java.io.IOException;
+import java.util.Map;
+import java.util.Optional;
 
 public class Z3DockerExecutor implements AutoCloseable {
 
@@ -42,9 +46,9 @@ public class Z3DockerExecutor implements AutoCloseable {
      * Returns the result as string.
      * The file must be in the containerPath defined in the constructor.
      * @param fileName the name of the file to read
-     * @return the result of the Z3 solver with the obtained model as string
+     * @return the result of the Z3 solver with the obtained model as string if sat, empty if unsat
      */
-    public String solveFromFile(String fileName) {
+    public Optional<Map<String, SMTLibValue>> solveFromFile(String fileName) {
         try {
             Container.ExecResult result = z3Prover.execInContainer("z3", containerPath + fileName);
             String stdout = result.getStdout();
@@ -52,10 +56,10 @@ public class Z3DockerExecutor implements AutoCloseable {
                 String stderr = result.getStderr();
                 throw new RuntimeException(stderr);
             }
-            return stdout;
+            return Optional.of(SMTResultParser.parseZ3Response(stdout));
         }
         catch (IOException | InterruptedException e) {
-            throw new RuntimeException(e);
+            return Optional.empty();
         }
     }
 

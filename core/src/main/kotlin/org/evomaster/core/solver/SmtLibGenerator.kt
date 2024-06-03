@@ -1,17 +1,13 @@
 package org.evomaster.core.solver
-import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto
-import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
-import org.evomaster.dbconstraint.ConstraintDatabaseType
-import org.evomaster.solver.smtlib.*
 
 import net.sf.jsqlparser.statement.Statement
+import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto
+import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
+import org.evomaster.solver.smtlib.*
 import java.util.*
 
 
-class SmtLibGenerator(private val schema: DbSchemaDto) {
-
-    private val dbType: ConstraintDatabaseType = ConstraintDatabaseType.valueOf(schema.databaseType.name)
-    private val numberOfRows: Int = 2
+class SmtLibGenerator(private val schema: DbSchemaDto, private val numberOfRows: Int) {
 
     fun generateSMT(sqlQuery: Statement): SMTLib {
         val smt = SMTLib()

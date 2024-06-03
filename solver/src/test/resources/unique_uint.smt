@@ -23,5 +23,6 @@
 
 ; Solve
 (check-sat)
-(get-value (id_1 id_2))
+(get-value (id_1))
+(get-value (id_2))
 (pop)
