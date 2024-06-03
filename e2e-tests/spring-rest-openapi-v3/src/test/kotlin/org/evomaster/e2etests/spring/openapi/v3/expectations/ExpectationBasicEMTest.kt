@@ -76,7 +76,7 @@ class ExpectationBasicEMTest : SpringTestBase() {
     fun testRunEM_Split_ExpectationsOff() {
         val outputFolderName = "ExpectationsBasicEM"
         val className = ClassName("org.foo.ExpectationBasicEMOff")
-        val splitType = EMConfig.TestSuiteSplitType.CLUSTER
+        val splitType = EMConfig.TestSuiteSplitType.FAULTS
         testRunEMGeneric(false, splitType, className)
 
         val assertion = generatedCodeAssertion(outputFolderName, "${className.bytecodeName}_faults", OutputFormat.KOTLIN_JUNIT_5, false)

@@ -477,7 +477,7 @@ open class RestResourceNode(
                 GET  /x/{id}
              */
             post.saveLocation = true
-            target.locationId = post.path.lastElement()
+            target.usePreviousLocationId = post.postLocationId()
         } else {
             /*
                 eg
@@ -490,7 +490,7 @@ open class RestResourceNode(
 
             // the target (eg GET) needs to use the location of first POST, or more correctly
             // the same location used for the last POST (in case there is a deeper chain)
-            target.locationId = post.locationId
+            target.usePreviousLocationId = post.usePreviousLocationId
         }
     }
 

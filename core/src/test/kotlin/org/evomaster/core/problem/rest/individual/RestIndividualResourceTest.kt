@@ -21,7 +21,7 @@ class RestIndividualResourceTest : RestIndividualTestBase() {
     private lateinit var sampler: ResourceSampler
     private lateinit var mutator: ResourceRestMutator
     private lateinit var rm: ResourceManageService
-    private lateinit var ff: RestResourceFitness
+    private lateinit var ff: ResourceRestFitness
 
     override fun getProblemModule() = ResourceRestModule(false)
     override fun getMutator(): StandardMutator<RestIndividual> = mutator
@@ -35,7 +35,7 @@ class RestIndividualResourceTest : RestIndividualTestBase() {
         mutator = injector.getInstance(ResourceRestMutator::class.java)
 
         rm = injector.getInstance(ResourceManageService::class.java)
-        ff = injector.getInstance(RestResourceFitness::class.java)
+        ff = injector.getInstance(ResourceRestFitness::class.java)
 
     }
 
@@ -112,7 +112,7 @@ class RestIndividualResourceTest : RestIndividualTestBase() {
 
         if (anyNewDbActions == 0) {
 
-            if (mutated.trackOperator?.operatorTag() == RestResourceStructureMutator::class.java.simpleName) {
+            if (mutated.trackOperator?.operatorTag() == ResourceRestStructureMutator::class.java.simpleName) {
                 //TODO might check the structure impact
             } else if (mutated.trackOperator?.operatorTag() == ResourceRestMutator::class.java.simpleName) {
                 var improved = 0

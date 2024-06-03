@@ -1,15 +1,10 @@
 package org.evomaster.e2etests.spring.examples.resource.seedtest;
 
 import com.google.inject.Injector;
-import org.evomaster.core.problem.rest.RestIndividual;
-import org.evomaster.core.problem.rest.service.ResourceRestMutator;
 import org.evomaster.core.problem.rest.service.ResourceSampler;
-import org.evomaster.core.problem.rest.service.RestResourceFitness;
-import org.evomaster.core.search.EvaluatedIndividual;
 import org.evomaster.e2etests.spring.examples.resource.ResourceMIOHWTestBase;
 import org.junit.jupiter.api.Test;
 
-import java.util.HashSet;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;

@@ -195,7 +195,7 @@ class RestIndividual(
      */
     fun removeLocationId(){
         seeMainExecutableActions().forEach { a->
-            a.locationId = null
+            a.usePreviousLocationId = null
             a.saveLocation = false
         }
     }
@@ -403,5 +403,19 @@ class RestIndividual(
 
     override fun seeMainExecutableActions(): List<RestCallAction> {
         return super.seeMainExecutableActions() as List<RestCallAction>
+    }
+
+    /**
+     * Finds the first index of a main REST action with a given verb and path among actions in the individual.
+     *
+     * @return negative value if not found
+     */
+    fun getActionIndex(
+        actionVerb: HttpVerb,
+        path: RestPath
+    ) : Int {
+        return seeMainExecutableActions().indexOfFirst  {
+            it.verb == actionVerb && it.path.isEquivalent(path)
+        }
     }
 }

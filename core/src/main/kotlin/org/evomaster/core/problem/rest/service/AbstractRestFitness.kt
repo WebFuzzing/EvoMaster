@@ -1,12 +1,6 @@
 package org.evomaster.core.problem.rest.service
 
-import com.fasterxml.jackson.core.JsonProcessingException
-import com.fasterxml.jackson.databind.JsonMappingException
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.node.JsonNodeType
 import com.google.inject.Inject
-import opennlp.tools.stemmer.PorterStemmer
 import org.evomaster.client.java.controller.api.EMTestUtils
 import org.evomaster.client.java.controller.api.dto.ActionDto
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
@@ -15,23 +9,18 @@ import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUti
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils.getWMDefaultSignature
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
-import org.evomaster.core.problem.enterprise.auth.NoAuth
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.externalservice.HostnameResolutionInfo
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceInfo
-import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.auth.AuthUtils
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
-import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.param.UpdateForBodyParam
-import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.util.ParserDtoUtil
 import org.evomaster.core.remote.HttpClientFactory
 import org.evomaster.core.remote.SutProblemException
@@ -40,7 +29,6 @@ import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.GroupsOfChildren
-import org.evomaster.core.search.Individual
 import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.EnumGene
@@ -51,11 +39,8 @@ import org.evomaster.core.search.service.DataPool
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import wiremock.org.apache.hc.core5.net.Host
 import java.net.URL
-import javax.ws.rs.POST
 import javax.ws.rs.ProcessingException
-import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.client.Entity
 import javax.ws.rs.client.Invocation
 import javax.ws.rs.core.MediaType
@@ -75,6 +60,8 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     @Inject
     protected lateinit var responsePool: DataPool
 
+    @Inject
+    protected lateinit var builder: RestIndividualBuilder
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(AbstractRestFitness::class.java)
@@ -380,6 +367,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
            Objectives for the two partial oracles implemented thus far.
         */
         val call = actions[indexOfAction] as RestCallAction
+        if(call.skipOracleChecks){
+            return
+        }
         val oracles = writer.getPartialOracles().activeOracles(call, result)
         oracles.filter { it.value }.forEach { entry ->
             val oracleId = idMapper.getFaultDescriptiveIdForPartialOracle("${entry.key} $name")
@@ -614,8 +604,8 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         val path = a.resolvedPath()
 
-        val locationHeader = if (a.locationId != null) {
-            chainState[locationName(a.locationId!!)]
+        val locationHeader = if (a.usePreviousLocationId != null) {
+            chainState[locationName(a.usePreviousLocationId!!)]
                 ?: throw IllegalStateException("Call expected a missing chained 'location'")
         } else {
             null
@@ -737,7 +727,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 return false
             }
 
-            val name = locationName(a.path.lastElement())
+            val name = locationName(a.postLocationId())
             var location = response.getHeaderString("location")
 
             if (location == null) {
@@ -751,7 +741,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                  */
                 val id = rcr.getResourceId()
 
-                if (id != null && hasParameterChild(a)) {
+                if (id != null && builder.hasParameterChild(a)) {
                     location = a.resolvedPath() + "/" + id
                     rcr.setHeuristicsForChainedLocation(true)
                 }
@@ -764,12 +754,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     }
 
 
-    fun hasParameterChild(a: RestCallAction): Boolean {
-        return sampler.seeAvailableActions()
-            .filterIsInstance<RestCallAction>()
-            .map { it.path }
-            .any { it.isDirectChildOf(a.path) && it.isLastElementAParameter() }
-    }
+
 
     private fun locationName(id: String): String {
         return "location_$id"
