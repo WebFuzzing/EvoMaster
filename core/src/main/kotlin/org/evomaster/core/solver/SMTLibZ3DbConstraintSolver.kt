@@ -18,19 +18,12 @@ import org.evomaster.core.sql.schema.ForeignKey
 import org.evomaster.core.sql.schema.Table
 import org.evomaster.solver.Z3DockerExecutor
 import org.evomaster.solver.smtlib.SMTLib
-import org.evomaster.solver.smtlib.value.IntValue
-import org.evomaster.solver.smtlib.value.RealValue
-import org.evomaster.solver.smtlib.value.SMTLibValue
-import org.evomaster.solver.smtlib.value.StringValue
-import org.evomaster.solver.smtlib.value.StructValue
+import org.evomaster.solver.smtlib.value.*
 import org.slf4j.LoggerFactory
-import org.testcontainers.shaded.org.apache.commons.io.FileUtils
-import java.io.File
 import java.io.IOException
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Paths
-import java.time.Instant
 import java.util.*
 
 /**
@@ -39,39 +32,15 @@ import java.util.*
  * and then executes Z3 to get values and returns the necessary list of SqlActions
  * to satisfy the query.
  */
-class SMTLibZ3DbConstraintSolver(private val schemaDto: DbSchemaDto, private val numberOfRows: Int = 2) : DbConstraintSolver {
+class SMTLibZ3DbConstraintSolver(private val schemaDto: DbSchemaDto, private val resourcesFolder: String, private val numberOfRows: Int = 2) : DbConstraintSolver {
 
-    private val resourcesFolder: String = tmpResourcesFolder()
     private val generator: SmtLibGenerator = SmtLibGenerator(schemaDto, numberOfRows)
     private val executor: Z3DockerExecutor = Z3DockerExecutor(resourcesFolder)
-
-    init {
-        createTmpFolder(resourcesFolder)
-    }
-
-    private fun tmpResourcesFolder(): String {
-        val instant = Instant.now().epochSecond.toString()
-        val tmpFolderPath = "/tmp-solver/$instant/"
-        return System.getProperty("user.dir") + tmpFolderPath
-    }
-
-    private fun createTmpFolder(resourcesFolderWithTmpDir: String) {
-        try {
-            Files.createDirectories(Paths.get(resourcesFolderWithTmpDir))
-        } catch (e: IOException) {
-            throw RuntimeException("Error creating tmp folder '$resourcesFolderWithTmpDir'. ", e)
-        }
-    }
 
     /**
      * Deletes the tmp folder with all its content and then stops the Z3 Docker container.
      */
     override fun close() {
-        try {
-            FileUtils.deleteDirectory(File(System.getProperty("user.dir") + "/tmp-solver"))
-        } catch (e: IOException) {
-            log.error("Error deleting tmp folder '${this.resourcesFolder}'. ", e)
-        }
         executor.close()
     }
 
