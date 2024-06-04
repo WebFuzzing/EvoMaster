@@ -9,7 +9,7 @@ internal class LinesTest {
     @Test
     fun isCurrentACommentLine() {
 
-        val lines = Lines()
+        val lines = Lines(OutputFormat.JAVA_JUNIT_4)
         lines.add("foo")
         assertFalse(lines.isCurrentACommentLine())
 
@@ -17,6 +17,14 @@ internal class LinesTest {
         assertFalse(lines.isCurrentACommentLine())
 
         lines.add("   // Hello There!!! ...  ")
+        assertTrue(lines.isCurrentACommentLine())
+    }
+
+    @Test
+    fun testPythonCommentLineUsesHashSymbol() {
+        val lines = Lines(OutputFormat.PYTHON_UNITTEST)
+        lines.addBlockCommentLine("this is a python comment")
+        assertTrue(lines.toString().startsWith("# this"))
         assertTrue(lines.isCurrentACommentLine())
     }
 }

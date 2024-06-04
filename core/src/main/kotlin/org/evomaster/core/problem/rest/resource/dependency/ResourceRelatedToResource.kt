@@ -21,7 +21,7 @@ open class ResourceRelatedToResources(
         if (!path.contains(target))
             throw IllegalArgumentException("$target does not belong to this ResourceRelatedToResources")
         val rpath = RestPath(target)
-        return targets.filter { !exclude.contains(it) && (!exceptDirectHierarchy || !RestPath(it).run { rpath.isDirectChildOf(this) || rpath.isAncestorOf(this)})}
+        return targets.filter { !exclude.contains(it) && (!exceptDirectHierarchy || !RestPath(it).run { rpath.isDirectChildOf(this) || rpath.isSameOrAncestorOf(this)})}
     }
 
     open fun toCSVHeader() = listOf(

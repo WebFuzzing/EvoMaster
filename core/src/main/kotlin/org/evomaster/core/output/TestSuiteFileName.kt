@@ -39,6 +39,7 @@ class TestSuiteFileName(
             format.isKotlin() -> ".kt"
             format.isJavaScript() -> ".js"
             format.isCsharp() -> ".cs"
+            format.isPython() -> ".py"
             else -> throw IllegalStateException("Unsupported format $format")
         }
     }

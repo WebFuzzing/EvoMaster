@@ -46,6 +46,9 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
     @Inject
     protected lateinit var partialOracles: PartialOracles
 
+    @Inject
+    protected lateinit var builder: RestIndividualBuilder
+
     protected val adHocInitialIndividuals: MutableList<RestIndividual> = mutableListOf()
 
     lateinit var swagger: OpenAPI
@@ -356,6 +359,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
                 ,trackOperator = if (config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else Traceable.DEFAULT_INDEX)
         ind.doInitializeLocalId()
 //        ind.computeTransitiveBindingGenes()
+        ind.doGlobalInitialize(searchGlobalState)
         org.evomaster.core.Lazy.assert { ind.isInitialized() }
         return ind
     }

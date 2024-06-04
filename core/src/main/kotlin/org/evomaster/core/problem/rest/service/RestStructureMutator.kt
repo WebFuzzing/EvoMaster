@@ -2,17 +2,14 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.core.Lazy
-import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.sql.SqlInsertBuilder
 import org.evomaster.core.problem.api.service.ApiWsStructureMutator
 import org.evomaster.core.problem.enterprise.SampleType
-import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -27,6 +24,8 @@ class RestStructureMutator : ApiWsStructureMutator() {
     @Inject
     private lateinit var sampler: RestSampler
 
+    @Inject
+    private lateinit var builder: RestIndividualBuilder
 
     override fun addInitializingActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?) {
         addInitializingActions(individual, mutatedGenes, sampler)
@@ -131,7 +130,7 @@ class RestStructureMutator : ApiWsStructureMutator() {
             val postTemplate = ind.seeMainExecutableActions()[idx]
             Lazy.assert{postTemplate.verb == HttpVerb.POST && !postTemplate.saveLocation}
 
-            val post = sampler.createActionFor(postTemplate, ind.seeAllActions().last() as RestCallAction)
+            val post = builder.createBoundActionFor(postTemplate, ind.seeAllActions().last() as RestCallAction)
 
 
             /*
