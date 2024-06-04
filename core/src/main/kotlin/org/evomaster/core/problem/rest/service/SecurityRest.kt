@@ -47,6 +47,9 @@ class SecurityRest {
     @Inject
     private lateinit var idMapper: IdMapper
 
+    @Inject
+    private lateinit var builder: RestIndividualBuilder
+
     /**
      * All actions that can be defined from the OpenAPI schema
      */
@@ -203,7 +206,7 @@ class SecurityRest {
                 )
 
                 // slice the individual in a way that delete all calls after the DELETE request
-                individualToChooseForTest = RestIndividualSelectorUtils.sliceAllCallsInIndividualAfterAction(
+                individualToChooseForTest = builder.sliceAllCallsInIndividualAfterAction(
                     currentIndividualWith403.individual,
                     deleteActionIndex
                 )
@@ -251,11 +254,12 @@ class SecurityRest {
                 }
 
                 //start from base test in which resource is created
-                val (creationIndividual, creationEndpoint) = RestIndividualSelectorUtils.findIndividualWithEndpointCreationForResource(
-                    individualsInSolution,
-                    delete.path,
-                    true
-                ) ?: return@forEach
+                val (creationIndividual, creationEndpoint) = RestIndividualSelectorUtils
+                    .findIndividualWithEndpointCreationForResource(
+                        individualsInSolution,
+                        delete.path,
+                        true
+                    ) ?: return@forEach
 
                 // find the index of the creation action
                 val actionIndexForCreation = creationIndividual.individual.getActionIndex(
@@ -266,7 +270,7 @@ class SecurityRest {
                 assert(creationAction.auth !is NoAuth)
 
                 //we don't need anything after the creation action
-                val sliced = RestIndividualSelectorUtils.sliceAllCallsInIndividualAfterAction(
+                val sliced = builder.sliceAllCallsInIndividualAfterAction(
                     creationIndividual.individual,
                     actionIndexForCreation
                 )
@@ -278,17 +282,11 @@ class SecurityRest {
                 deleteAction.resetLocalId()
                 deleteAction.auth = authSettings.getDifferentOne(creationAction.auth.name, HttpWsAuthenticationInfo::class.java, randomness)
 
-                //TODO bind to same path as creation action
-                /*
-                    for now let's bind just to a PUT.
-                    We need to create "links" when dealing with POST creating new ids
-                    TODO this would be part anyway of ongoing refactoring of BB testing
-                 */
+
                 if(creationEndpoint.path.isEquivalent(delete.path)){
                     deleteAction.bindBasedOn(creationAction.path, creationAction.parameters.filterIsInstance<PathParam>(),null)
                 } else {
-                    //TODO. eg POST on ancestor path
-                    return@forEach
+                   builder.linkDynamicCreateResource(creationAction,deleteAction)
                 }
 
                 sliced.addResourceCall(restCalls = RestResourceCalls(actions = mutableListOf(deleteAction), sqlActions = listOf()))
