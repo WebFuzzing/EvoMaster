@@ -546,4 +546,16 @@ internal class RestPathTest{
         assertTrue(parent.isRoot())
     }
 
+    @Test
+    fun testResolveOnlyPathNoParam(){
+
+        val x = "/api/foo/bar/"
+        val resolvedX = RestPath(x).resolveOnlyPath(listOf())
+        assertEquals(x, resolvedX)
+
+        val y = "/"
+        val resolvedY = RestPath(y).resolveOnlyPath(listOf())
+        assertEquals(y, resolvedY)
+    }
+
 }

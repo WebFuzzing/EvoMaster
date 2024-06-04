@@ -362,6 +362,11 @@ class RestPath(path: String) {
             path.append("/")
         }
 
+        if(path.isEmpty()){
+            //handle root, in case elements is empty and no / is added
+            path.append("/")
+        }
+
         return URI(null, null, path.toString(), null, null).rawPath
     }
 
