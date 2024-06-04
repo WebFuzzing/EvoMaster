@@ -90,11 +90,13 @@ class RestPath(path: String) {
             .filter { it.isNotBlank() }
             .map { extractElement(it) }
 
-        computedToString = "/" + elements.joinToString("/") + if(endsWithSlash) "/" else ""
+        computedToString = doComputeToString(elements, endsWithSlash)
 
         nameQualifier = computeNameQualifier()
     }
 
+    private fun doComputeToString(elements: List<Element>, endsWithSlash : Boolean)
+        = "/" + elements.joinToString("/") + if(endsWithSlash) "/" else ""
 
     private fun extractElement(s: String): Element {
 
@@ -503,5 +505,21 @@ class RestPath(path: String) {
         }
 
         return noQualifier
+    }
+
+    fun isRoot() = levels() == 0
+
+    fun parentPath() : RestPath {
+        if(isRoot()){
+            throw IllegalStateException("Root has no parent")
+        }
+
+        if(endsWithSlash){
+            return RestPath(doComputeToString(elements, false))
+        }
+
+        val reduced = elements.subList(0, elements.lastIndex - 1)
+        val path = doComputeToString(reduced, false)
+        return RestPath(path)
     }
 }
