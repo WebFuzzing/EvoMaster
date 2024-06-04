@@ -48,11 +48,11 @@ object RestSecurityOracle {
         val restCallResults = actionResults.filterIsInstance<RestCallResult>()
 
         // last 3 results
-        val lastResult = restCallResults.find { it.sourceLocalId == lastAction.locationId }
+        val lastResult = restCallResults.find { it.sourceLocalId == lastAction.getLocalId() }
                 ?.getStatusCode() ?: return null
-        val secondLastResult = restCallResults.find { it.sourceLocalId == secondLastAction.locationId }
+        val secondLastResult = restCallResults.find { it.sourceLocalId == secondLastAction.getLocalId() }
                 ?.getStatusCode() ?: return null
-        val thirdLastResult = restCallResults.find { it.sourceLocalId == thirdLastAction.locationId }
+        val thirdLastResult = restCallResults.find { it.sourceLocalId == thirdLastAction.getLocalId() }
                 ?.getStatusCode() ?: return null
 
         // first check that they all refer to the same endpoint //TODO

@@ -50,7 +50,7 @@ class RestSecurityOracleTest : IntegrationTestRestBase() {
 
         val sampleInd = createIndividual(listOf(action1Ind1, action2Ind1, action3Ind1, action4Ind1, action5Ind1), SampleType.SECURITY)
 
-        val testCovered = RestSecurityOracle.handleForbiddenDelete(sampleInd.individual, sampleInd.seeResults(), FitnessValue(0.0) )
+        val testCovered = RestSecurityOracle.handleForbiddenDelete(sampleInd.individual, sampleInd.seeResults() )
 
         Assert.assertNull(testCovered)
 
