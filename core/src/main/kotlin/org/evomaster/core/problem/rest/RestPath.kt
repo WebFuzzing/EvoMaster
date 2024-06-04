@@ -84,7 +84,7 @@ class RestPath(path: String) {
             throw IllegalArgumentException("Empty path definition")
         }
 
-        endsWithSlash = path.endsWith("/")
+        endsWithSlash = path.endsWith("/") && path != "/"
 
         elements = path.split("/")
             .filter { it.isNotBlank() }
@@ -518,7 +518,7 @@ class RestPath(path: String) {
             return RestPath(doComputeToString(elements, false))
         }
 
-        val reduced = elements.subList(0, elements.lastIndex - 1)
+        val reduced = elements.subList(0, elements.lastIndex)
         val path = doComputeToString(reduced, false)
         return RestPath(path)
     }
