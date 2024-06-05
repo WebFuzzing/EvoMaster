@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.openapi.v3.wiremock.jsonarray
 
 import com.foo.rest.examples.spring.openapi.v3.wiremock.jsonarray.WmJsonArrayController
+
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
@@ -40,7 +41,6 @@ class WmJsonArrayEMTest : SpringTestBase() {
 
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/jsonarray", "OK X")
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/jsonarray", "OK X and Y")
-
             },
             3
         )
