@@ -6,7 +6,6 @@ import org.evomaster.client.java.controller.api.dto.ActionDto
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
-import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils.getWMDefaultSignature
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.externalservice.ExternalService
@@ -761,6 +760,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         return "location_$id"
     }
 
+    /**
+     * WARNING: possible side-effects on input parameters, eg actionResults
+     */
     protected fun restActionResultHandling(
         individual: RestIndividual,
         targets: Set<Int>,
@@ -794,7 +796,21 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             dto.additionalInfoList
         )
 
-        handleExternalServiceInfo(individual, fv, dto.additionalInfoList)
+        val wmStarted = handleExternalServiceInfo(individual, fv, dto.additionalInfoList)
+        if(wmStarted){
+            /*
+                Quite tricky... if a WM instance was started as part of this test case evaluation,
+                then the results are invalid, as they are based on WM not being there.
+
+                FIXME: For the first time when an external web service call detected core will
+                  start initiating WM for it. Next time during the search subsequent tests will pass.
+                  Although in [HostnameResolutionActionEMTest] we end up having test cases which captures
+                  the first-time cases. To avoid this we're skipping those test where external web service
+                  call detected but there is no active WM running.
+                  We can issue [deathSentence] to the individual at this point.
+             */
+             return null
+        }
 
         if (!allCovered) {
             if (config.expandRestIndividuals) {
@@ -838,13 +854,15 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     /**
      * Based on info coming from SUT execution, register and start new WireMock instances.
      *
-     * TODO push this thing up to hierarchy to EnterpriseFitness
+     * TODO push this thing up to hierarchy to EntepriseFitness
+     *
+     * @return whether there was side effect of starting new instance of WireMock
      */
     private fun handleExternalServiceInfo(
         individual: RestIndividual,
         fv: FitnessValue,
         infoDto: List<AdditionalInfoDto>
-    ) {
+    ) : Boolean {
 
         /*
             Note: this info here is based from what connections / hostname resolving done in the SUT,
@@ -853,6 +871,8 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             However, what is actually called on an already up and running WM instance from a previous call is
             done on WM directly, and it must be done at SUT call (as WM get reset there)
          */
+
+        var wmStarted = false
 
         infoDto.forEachIndexed { index, info ->
             info.hostnameResolutionInfoDtos.forEach { hn ->
@@ -905,32 +925,28 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                     The info here is coming from SUT instrumentation
                  */
 
-                /*
-                    TODO: check, do we really want to start WireMock instances right now after a fitness evaluation?
-                    We need to make sure then, if we do this, that a call in instrumented SUT with (now) and
-                    without (previous fitness evaluation) WM instances would result in same behavior.
-
-                    TODO: ie make sure that, if test is executed again now, the behavior is the same
-                 */
-                externalServiceHandler.addExternalService(
+                val started = externalServiceHandler.addExternalService(
                     HttpExternalServiceInfo(
                         es.protocol,
                         es.remoteHostname,
                         es.remotePort
                     )
                 )
+                wmStarted = wmStarted || started
             }
 
 
             // register the external service info which re-direct to the default WM
-            fv.registerExternalRequestToDefaultWM(
-                index,
-                info.employedDefaultWM.associate { it ->
-                    val signature = getWMDefaultSignature(it.protocol, it.remotePort)
-                    it.remoteHostname to externalServiceHandler.getExternalService(signature)
-                }
-            )
+//            fv.registerExternalRequestToDefaultWM(
+//                index,
+//                info.employedDefaultWM.associate { it ->
+//                    val signature = getWMDefaultSignature(it.protocol, it.remotePort)
+//                    it.remoteHostname to externalServiceHandler.getExternalService(signature)
+//                }
+//            )
         }
+
+        return wmStarted
     }
 
     override fun getActionDto(action: Action, index: Int): ActionDto {

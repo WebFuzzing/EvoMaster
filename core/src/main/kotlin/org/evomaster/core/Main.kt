@@ -226,7 +226,7 @@ class Main {
             writeTests(injector, solution, controllerInfo)
             writeStatistics(injector, solution) //FIXME if other phases after search, might get skewed data on 100% snapshots...
 
-            stopExternalServiceHandler(injector)
+            resetExternalServiceHandler(injector)
 
             val statistics = injector.getInstance(Statistics::class.java)
             val data = statistics.getData(solution)
@@ -878,9 +878,9 @@ class Main {
          * To reset external service handler to clear the existing
          * WireMock instances to free up the IP addresses.
          */
-        private fun stopExternalServiceHandler(injector: Injector) {
+        private fun resetExternalServiceHandler(injector: Injector) {
             val externalServiceHandler = injector.getInstance(HttpWsExternalServiceHandler::class.java)
-            externalServiceHandler.stopActiveWireMockServers()
+            externalServiceHandler.reset()
         }
     }
 }

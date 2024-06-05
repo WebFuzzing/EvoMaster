@@ -33,7 +33,7 @@ class WmOkHttp3Rest {
             return if (code in 200..299){
                 if (body == "\"HELLO THERE!!!\""){
                     ResponseEntity.ok("Hello There")
-                }else{
+                } else{
                     ResponseEntity.ok("OK")
                 }
             } else if (code in 400..499){
