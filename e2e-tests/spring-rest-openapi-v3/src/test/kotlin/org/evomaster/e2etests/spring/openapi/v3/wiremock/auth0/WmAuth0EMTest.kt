@@ -1,8 +1,6 @@
 package org.evomaster.e2etests.spring.openapi.v3.wiremock.auth0
 
 import com.foo.rest.examples.spring.openapi.v3.wiremock.auth0.WmAuth0Controller
-import com.foo.rest.examples.spring.openapi.v3.wiremock.okhttp.WmOkHttpController
-import org.evomaster.ci.utils.CIUtils
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
@@ -21,13 +19,6 @@ class WmAuth0EMTest : SpringTestBase() {
             val config = EMConfig()
             config.instrumentMR_NET = true
             initClass(WmAuth0Controller(), config)
-
-            /*
-            The test fails on CI, but not local with WM 2.32.0
-
-            if updating WM to 2.34.0, the test fails on local windows as well (TO CHECK)
-            */
-            CIUtils.skipIfOnGA()
         }
     }
 
@@ -39,13 +30,13 @@ class WmAuth0EMTest : SpringTestBase() {
             "WmAuth0EM",
             "org.foo.WmAuth0EM",
             500,
-            false,
+            true,
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")
                 args.add("USER")
                 args.add("--externalServiceIP")
-                args.add("127.3.0.12")
+                args.add("127.0.0.22")
                 args.add("--instrumentMR_NET")
                 args.add("true")
 

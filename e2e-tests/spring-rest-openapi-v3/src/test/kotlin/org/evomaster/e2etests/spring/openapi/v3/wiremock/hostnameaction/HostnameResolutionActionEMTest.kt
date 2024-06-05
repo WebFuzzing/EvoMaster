@@ -1,13 +1,11 @@
 package org.evomaster.e2etests.spring.openapi.v3.wiremock.hostnameaction
 
 import com.foo.rest.examples.spring.openapi.v3.wiremock.hostnameaction.HostnameResolutionActionController
-import org.evomaster.ci.utils.CIUtils
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
-import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 class HostnameResolutionActionEMTest: SpringTestBase() {
@@ -22,33 +20,43 @@ class HostnameResolutionActionEMTest: SpringTestBase() {
         }
     }
 
-    @Disabled
+    @Test
     fun testRunEM() {
         runTestHandlingFlakyAndCompilation(
             "HostnameResolutionActionEMTest",
             "org.foo.HostnameResolutionActionEMTest",
-            1000,
-            false,
+            100,
+            true,
             { args: MutableList<String> ->
+
+                // Note: WireMock is initiated based on the served requests.
+                // This SUT doesn't make any requests, so [TestSuiteWriter] will not add
+                // any WM, eventually the generated tests will fail.
+                // TODO: This will fail when [createTests] is true regardless of the
+                //  environment.
 
                 args.add("--externalServiceIPSelectionStrategy")
                 args.add("USER")
                 args.add("--externalServiceIP")
-                args.add("127.0.0.4")
-                // TODO: Need to remove, once the issue resolved
-                args.add("--minimize")
-                args.add("false")
+                args.add("127.0.0.14")
 
                 val solution = initAndRun(args)
 
-                Assertions.assertTrue(solution.individuals.size >= 1)
+                assertTrue(solution.individuals.size >= 1)
 
-                if (!CIUtils.isRunningGA()) {
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/resolve", "OK")
-                }
+                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/resolve", "OK")
+                /*
+                    Tricky. First time a test is evaluated, this will happen.
+                    But, from there on, WM will always be on, so impossible to replicate,
+                    eg, in minimizer or generated tests.
+                 */
+                assertNone(solution, HttpVerb.GET, 400)
+                assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/resolve",null)
             },
             3
         )
     }
+
+
 
 }
