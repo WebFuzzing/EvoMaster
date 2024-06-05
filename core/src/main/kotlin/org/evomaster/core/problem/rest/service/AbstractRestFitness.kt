@@ -1,6 +1,5 @@
 package org.evomaster.core.problem.rest.service
 
-
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.EMTestUtils
 import org.evomaster.client.java.controller.api.dto.ActionDto
@@ -60,6 +59,8 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     @Inject
     protected lateinit var responsePool: DataPool
 
+    @Inject
+    protected lateinit var builder: RestIndividualBuilder
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(AbstractRestFitness::class.java)
@@ -602,8 +603,8 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         val path = a.resolvedPath()
 
-        val locationHeader = if (a.locationId != null) {
-            chainState[locationName(a.locationId!!)]
+        val locationHeader = if (a.usePreviousLocationId != null) {
+            chainState[locationName(a.usePreviousLocationId!!)]
                 ?: throw IllegalStateException("Call expected a missing chained 'location'")
         } else {
             null
@@ -725,7 +726,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 return false
             }
 
-            val name = locationName(a.path.lastElement())
+            val name = locationName(a.postLocationId())
             var location = response.getHeaderString("location")
 
             if (location == null) {
@@ -739,7 +740,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                  */
                 val id = rcr.getResourceId()
 
-                if (id != null && hasParameterChild(a)) {
+                if (id != null && builder.hasParameterChild(a)) {
                     location = a.resolvedPath() + "/" + id
                     rcr.setHeuristicsForChainedLocation(true)
                 }
@@ -752,12 +753,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     }
 
 
-    fun hasParameterChild(a: RestCallAction): Boolean {
-        return sampler.seeAvailableActions()
-            .filterIsInstance<RestCallAction>()
-            .map { it.path }
-            .any { it.isDirectChildOf(a.path) && it.isLastElementAParameter() }
-    }
+
 
     private fun locationName(id: String): String {
         return "location_$id"

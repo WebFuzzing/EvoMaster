@@ -195,7 +195,7 @@ class RestIndividual(
      */
     fun removeLocationId(){
         seeMainExecutableActions().forEach { a->
-            a.locationId = null
+            a.usePreviousLocationId = null
             a.saveLocation = false
         }
     }
