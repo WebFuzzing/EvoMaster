@@ -13,8 +13,15 @@ public class SMTResultParser {
     public static Map<String, SMTLibValue> parseZ3Response(String z3Response) {
         Map<String, SMTLibValue> results = new HashMap<>();
 
-        Pattern valuePattern = Pattern.compile("\\(\\((\\w+) (\\d+|\"[^\"]*\"|[+-]?([0-9]*[.])?[0-9]+)\\)\\)");
-        Pattern composedTypePattern = Pattern.compile("\\(\\((\\w+\\d+) \\(([^)]+)\\)\\)\\)");
+        // Pattern for matching simple value assignments, like (id_1 2) or (name_1 "example")
+        String simpleValuePattern = "\\d+|\"[^\"]*\"|[+-]?([0-9]*[.])?[0-9]+";
+        // Matches ((variableName value)), where value can be an integer, string, or real number
+        Pattern valuePattern = Pattern.compile("\\(\\((\\w+) (" + simpleValuePattern + ")\\)\\)");
+
+        // Pattern for matching composed types or structures, like ((user1 (id 1 name "John" age 30)))
+        String composedValuePattern = "\\(([^)]+)\\)";
+        // Matches ((variableName (field1 value1 field2 value2 ...)))
+        Pattern composedTypePattern = Pattern.compile("\\(\\((\\w+\\d+) " + composedValuePattern + "\\)\\)");
 
         String[] lines = z3Response.split("\n");
 

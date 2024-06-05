@@ -9,7 +9,7 @@
         <version>3.0.1-SNAPSHOT</version>
     </parent>
 
-    <groupId>org.example</groupId>
+    <groupId>org.evomaster</groupId>
     <artifactId>solver</artifactId>
 
     <dependencies>
