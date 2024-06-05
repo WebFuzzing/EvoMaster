@@ -1,14 +1,16 @@
 package org.evomaster.solver.smtlib;
 
-public class Assert extends SMTNode {
-    private final String condition;
+import org.evomaster.solver.smtlib.assertion.Assertion;
 
-    public Assert(String condition) {
-        this.condition = condition;
+public class Assert extends SMTNode {
+    private final Assertion assertion;
+
+    public Assert(Assertion assertion) {
+        this.assertion = assertion;
     }
 
     @Override
     public String toString() {
-        return "(assert " + condition + ")";
+        return "(assert " + assertion.toString() + ")";
     }
 }

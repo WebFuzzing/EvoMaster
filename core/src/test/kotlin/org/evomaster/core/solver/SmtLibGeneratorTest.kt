@@ -6,6 +6,7 @@ import net.sf.jsqlparser.statement.Statement
 import org.evomaster.client.java.sql.SchemaExtractor
 import org.evomaster.client.java.sql.SqlScriptRunner
 import org.evomaster.solver.smtlib.*
+import org.evomaster.solver.smtlib.assertion.Distinct
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeAll
@@ -59,6 +60,7 @@ class SmtLibGeneratorTest {
             )))
             addNode(DeclareConst("users1", "UsersRow"))
             addNode(DeclareConst("users2", "UsersRow"))
+            addNode(Assert(Distinct(listOf("ID users1", "ID users2"))))
             addNode(CheckSat())
             addNode(GetValue("users1"))
             addNode(GetValue("users2"))

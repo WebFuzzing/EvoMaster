@@ -1,9 +1,18 @@
 package org.evomaster.core.solver
 
+import net.sf.jsqlparser.expression.Expression
+import net.sf.jsqlparser.schema.Table
 import net.sf.jsqlparser.statement.Statement
+import net.sf.jsqlparser.statement.select.FromItem
+import net.sf.jsqlparser.statement.select.PlainSelect
+import net.sf.jsqlparser.statement.select.Select
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
 import org.evomaster.solver.smtlib.*
+import org.evomaster.solver.smtlib.assertion.Assertion
+import org.evomaster.solver.smtlib.assertion.Distinct
+import org.evomaster.solver.smtlib.assertion.Equals
+import org.evomaster.solver.smtlib.assertion.Or
 import java.util.*
 
 
@@ -33,11 +42,142 @@ class SmtLibGenerator(private val schema: DbSchemaDto, private val numberOfRows:
     }
 
     private fun appendKeyConstraints(smt: SMTLib) {
-        // TODO
+        for (table in schema.tables) {
+            appendPrimaryKeyConstraints(smt, table)
+            appendForeignKeyConstraints(smt, table)
+        }
     }
 
-    private fun appendQueryConstraints(smt: SMTLib, sqlQuery: Statement) {
-        // TODO
+    private fun appendPrimaryKeyConstraints(
+        smt: SMTLib,
+        table: TableDto
+    ) {
+        val tableName = table.name.lowercase(Locale.getDefault())
+
+        val primaryKeys = table.columns.filter { it.primaryKey }
+
+        for (i in 1..numberOfRows) {
+            for (j in i + 1..numberOfRows) {
+                for (primaryKey in primaryKeys) {
+                    val pkSelector = primaryKey.name.uppercase(Locale.getDefault())
+                    smt.addNode(
+                        Assert(
+                            Distinct(listOf("$pkSelector $tableName$i", "$pkSelector $tableName$j"))
+                        )
+                    )
+                }
+            }
+        }
+    }
+
+    private fun appendForeignKeyConstraints(
+        smt: SMTLib,
+        table: TableDto
+    ) {
+        val sourceTableName = table.name.lowercase(Locale.getDefault())
+
+        for (foreignKey in table.foreignKeys) {
+            val referencedTable =
+                schema.tables.firstOrNull { it.name.equals(foreignKey.targetTable, ignoreCase = true) }
+                    ?: throw RuntimeException("Referenced table not found: ${foreignKey.targetTable}")
+            val referencedTableName = referencedTable.name.lowercase(Locale.getDefault())
+
+            val referencedPrimaryKeys = referencedTable.columns.filter { it.primaryKey }
+            if (referencedPrimaryKeys.isEmpty()) {
+                throw RuntimeException("Referenced table has no primary key: ${foreignKey.targetTable}")
+            }
+            // Assuming single-column primary keys
+            val referencedColumnSelector = referencedPrimaryKeys[0].name.uppercase(Locale.getDefault())
+
+            for (sourceColumn in foreignKey.sourceColumns) {
+                val sourceColumnSelector = sourceColumn.uppercase(Locale.getDefault())
+
+                for (i in 1..numberOfRows) {
+                    val conditions = (1..numberOfRows).map { j ->
+                        Equals(listOf(
+                            "$sourceColumnSelector $sourceTableName$i",
+                            "$referencedColumnSelector $referencedTableName$j")
+                        )
+                    }
+                    smt.addNode(Assert(Or(conditions)))
+                }
+            }
+        }
+    }
+
+    private fun appendQueryConstraints(smt: SMTLib, selectStatement: Statement) {
+
+        val tableAliases = extractTableAliases(selectStatement)
+        val condition = extractCondition(selectStatement) ?: return
+
+        val tables = extractTableNames(selectStatement).map { tableName ->
+            schema.tables.find { it.name.equals(tableName, ignoreCase = true) }
+                ?: throw RuntimeException("Table not found in schema: $tableName")
+        }
+
+        tables.forEach { table ->
+            (1..numberOfRows).forEach { i ->
+                val rowVariable = "${table.name.lowercase(Locale.getDefault())}$i"
+                // TODO: handle joins
+            }
+        }
+    }
+
+    private fun extractTableNames(statement: Statement): List<String> {
+        val tableNames = mutableListOf<String>()
+
+        val select = statement as Select
+        val plainSelect = select.selectBody as PlainSelect
+
+        fun extractTableName(fromItem: FromItem) {
+            val tableName = when (fromItem) {
+                is Table -> fromItem.name
+                else -> null
+            }
+            if (tableName != null) {
+                tableNames.add(tableName)
+            }
+        }
+
+        extractTableName(plainSelect.fromItem)
+
+        plainSelect.joins?.forEach { join ->
+            extractTableName(join.rightItem)
+        }
+
+        return tableNames
+    }
+
+    private fun extractTableAliases(statement: Statement): Map<String, String> {
+        val tableAliases = mutableMapOf<String, String>()
+
+        val select = statement as Select
+        val plainSelect = select.selectBody as PlainSelect
+
+        fun extractAlias(fromItem: FromItem) {
+            val alias = fromItem.alias
+            val tableName = when (fromItem) {
+                is Table -> fromItem.name
+                else -> null
+            }
+            if (alias != null && tableName != null) {
+                tableAliases[alias.name] = tableName
+            }
+        }
+
+        extractAlias(plainSelect.fromItem)
+
+        plainSelect.joins?.forEach { join ->
+            extractAlias(join.rightItem)
+        }
+
+        return tableAliases
+    }
+
+    private fun extractCondition(statement: Statement): Expression? {
+        val select = statement as Select
+        val plainSelect = select.selectBody as PlainSelect
+        return plainSelect.where
     }
 
     private fun appendGetValues(smt: SMTLib) {
