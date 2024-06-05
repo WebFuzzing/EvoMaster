@@ -85,7 +85,7 @@ class HttpWsExternalServiceHandler {
     fun initialize() {
         log.debug("Initializing {}", HttpWsExternalServiceHandler::class.simpleName)
         // TODO: Disabled, since is not necessary anymore. Should clean it.
-//        initDefaultWM()
+        // initDefaultWM()
     }
 
 
