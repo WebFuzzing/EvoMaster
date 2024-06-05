@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
-class HarvestingStrategyTest: SpringTestBase() {
+class HarvestingStrategyTest : SpringTestBase() {
 
     companion object {
         @BeforeAll
@@ -36,7 +36,8 @@ class HarvestingStrategyTest: SpringTestBase() {
         wm.start()
         wm.stubFor(
             WireMock.get(
-                WireMock.urlEqualTo("/api/mock"))
+                WireMock.urlEqualTo("/api/mock")
+            )
                 .atPriority(1)
                 .willReturn(WireMock.aResponse().withStatus(200).withBody("{\"message\" : \"Working\"}"))
         )
@@ -86,18 +87,21 @@ class HarvestingStrategyTest: SpringTestBase() {
         wm.start()
         wm.stubFor(
             WireMock.get(
-                WireMock.urlEqualTo("/api/mock"))
+                WireMock.urlEqualTo("/api/mock")
+            )
                 .atPriority(1)
                 .willReturn(WireMock.aResponse().withStatus(200).withBody("{\"message\" : \"Working\"}"))
         )
-        wm.stubFor(WireMock.any(WireMock.anyUrl())
-            .atPriority(2)
-            .willReturn(WireMock.aResponse().withStatus(500).withBody("Internal Server Error")))
+        wm.stubFor(
+            WireMock.any(WireMock.anyUrl())
+                .atPriority(2)
+                .willReturn(WireMock.aResponse().withStatus(500).withBody("Internal Server Error"))
+        )
 
         DnsCacheManipulator.setDnsCache("mock.int", "127.0.0.13")
 
         runTestHandlingFlakyAndCompilation(
-            "HarvestStrategyClosestEMTest",
+            "HarvestStrategyClosestSameDomainEMTest",
             "org.foo.HarvestStrategyClosestEMTest",
             100,
             true,

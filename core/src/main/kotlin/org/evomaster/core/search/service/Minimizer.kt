@@ -174,6 +174,10 @@ class Minimizer<T: Individual> {
 
         val n = ind.size()
 
+        /*
+         * This is done because ind might not be flattened. in this case, in REST, there can be SQL actions for
+         * resource handling in the main action group-trees
+         */
         val sqlActions = if (ind is EnterpriseIndividual) ind.seeSQLActionBeforeIndex(index).map { it.copy() as SqlAction} else null
 
         for(i in n-1 downTo index+1){
@@ -187,10 +191,7 @@ class Minimizer<T: Individual> {
             ind.addChildrenToGroup(sqlActions, GroupsOfChildren.INITIALIZATION_SQL)
         }
 
-        if (!ind.verifyBindingGenes()){
-            ind.cleanBrokenBindingReference()
-            ind.computeTransitiveBindingGenes()
-        }
+        ind.fixGeneBindingsIfNeeded()
 
         if(ind is RestIndividual){
             ind.removeLocationId()

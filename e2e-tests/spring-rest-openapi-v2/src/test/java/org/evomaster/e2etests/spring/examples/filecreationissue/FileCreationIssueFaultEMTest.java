@@ -65,12 +65,13 @@ public class FileCreationIssueFaultEMTest extends SpringTestBase {
 
             // if we are testing with faults, summary file is expected but the empty file is not
             // expected.
+            // UPDATE: actually no. if there is only 1 fault, then summary file is not created
             Assert.assertTrue(
                     FileCreationIssueTestHelper.checkExistenceOfRelevantFilesInDirectory(
                             outFolder,
                             sol.getTestSuiteNamePrefix(),
                             sol.getTestSuiteNameSuffix(),
-                            true,
+                            false, // was "true" before semantic update
                             false));
         } finally {
             if (outFolder != null) {

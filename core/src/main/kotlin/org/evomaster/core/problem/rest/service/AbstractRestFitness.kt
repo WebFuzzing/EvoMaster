@@ -1,18 +1,11 @@
 package org.evomaster.core.problem.rest.service
 
-import com.fasterxml.jackson.core.JsonProcessingException
-import com.fasterxml.jackson.databind.JsonMappingException
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.node.JsonNodeType
 import com.google.inject.Inject
-import opennlp.tools.stemmer.PorterStemmer
 import org.evomaster.client.java.controller.api.EMTestUtils
 import org.evomaster.client.java.controller.api.dto.ActionDto
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
-import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils.getWMDefaultSignature
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
@@ -46,7 +39,6 @@ import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.URL
-import javax.ws.rs.POST
 import javax.ws.rs.ProcessingException
 import javax.ws.rs.client.Entity
 import javax.ws.rs.client.Invocation
@@ -67,6 +59,8 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     @Inject
     protected lateinit var responsePool: DataPool
 
+    @Inject
+    protected lateinit var builder: RestIndividualBuilder
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(AbstractRestFitness::class.java)
@@ -372,6 +366,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
            Objectives for the two partial oracles implemented thus far.
         */
         val call = actions[indexOfAction] as RestCallAction
+        if(call.skipOracleChecks){
+            return
+        }
         val oracles = writer.getPartialOracles().activeOracles(call, result)
         oracles.filter { it.value }.forEach { entry ->
             val oracleId = idMapper.getFaultDescriptiveIdForPartialOracle("${entry.key} $name")
@@ -606,8 +603,8 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         val path = a.resolvedPath()
 
-        val locationHeader = if (a.locationId != null) {
-            chainState[locationName(a.locationId!!)]
+        val locationHeader = if (a.usePreviousLocationId != null) {
+            chainState[locationName(a.usePreviousLocationId!!)]
                 ?: throw IllegalStateException("Call expected a missing chained 'location'")
         } else {
             null
@@ -729,7 +726,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 return false
             }
 
-            val name = locationName(a.path.lastElement())
+            val name = locationName(a.postLocationId())
             var location = response.getHeaderString("location")
 
             if (location == null) {
@@ -743,7 +740,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                  */
                 val id = rcr.getResourceId()
 
-                if (id != null && hasParameterChild(a)) {
+                if (id != null && builder.hasParameterChild(a)) {
                     location = a.resolvedPath() + "/" + id
                     rcr.setHeuristicsForChainedLocation(true)
                 }
@@ -756,17 +753,15 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     }
 
 
-    fun hasParameterChild(a: RestCallAction): Boolean {
-        return sampler.seeAvailableActions()
-            .filterIsInstance<RestCallAction>()
-            .map { it.path }
-            .any { it.isDirectChildOf(a.path) && it.isLastElementAParameter() }
-    }
+
 
     private fun locationName(id: String): String {
         return "location_$id"
     }
 
+    /**
+     * WARNING: possible side-effects on input parameters, eg actionResults
+     */
     protected fun restActionResultHandling(
         individual: RestIndividual,
         targets: Set<Int>,
@@ -800,7 +795,21 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             dto.additionalInfoList
         )
 
-        handleExternalServiceInfo(individual, fv, dto.additionalInfoList)
+        val wmStarted = handleExternalServiceInfo(individual, fv, dto.additionalInfoList)
+        if(wmStarted){
+            /*
+                Quite tricky... if a WM instance was started as part of this test case evaluation,
+                then the results are invalid, as they are based on WM not being there.
+
+                FIXME: For the first time when an external web service call detected core will
+                  start initiating WM for it. Next time during the search subsequent tests will pass.
+                  Although in [HostnameResolutionActionEMTest] we end up having test cases which captures
+                  the first-time cases. To avoid this we're skipping those test where external web service
+                  call detected but there is no active WM running.
+                  We can issue [deathSentence] to the individual at this point.
+             */
+             return null
+        }
 
         if (!allCovered) {
             if (config.expandRestIndividuals) {
@@ -844,13 +853,15 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     /**
      * Based on info coming from SUT execution, register and start new WireMock instances.
      *
-     * TODO push this thing up to hierarchy to EnterpriseFitness
+     * TODO push this thing up to hierarchy to EntepriseFitness
+     *
+     * @return whether there was side effect of starting new instance of WireMock
      */
     private fun handleExternalServiceInfo(
         individual: RestIndividual,
         fv: FitnessValue,
         infoDto: List<AdditionalInfoDto>
-    ) {
+    ) : Boolean {
 
         /*
             Note: this info here is based from what connections / hostname resolving done in the SUT,
@@ -859,6 +870,8 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             However, what is actually called on an already up and running WM instance from a previous call is
             done on WM directly, and it must be done at SUT call (as WM get reset there)
          */
+
+        var wmStarted = false
 
         infoDto.forEachIndexed { index, info ->
             info.hostnameResolutionInfoDtos.forEach { hn ->
@@ -904,32 +917,28 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                     The info here is coming from SUT instrumentation
                  */
 
-                /*
-                    TODO: check, do we really want to start WireMock instances right now after a fitness evaluation?
-                    We need to make sure then, if we do this, that a call in instrumented SUT with (now) and
-                    without (previous fitness evaluation) WM instances would result in same behavior.
-
-                    TODO: ie make sure that, if test is executed again now, the behavior is the same
-                 */
-                externalServiceHandler.addExternalService(
+                val started = externalServiceHandler.addExternalService(
                     HttpExternalServiceInfo(
                         es.protocol,
                         es.remoteHostname,
                         es.remotePort
                     )
                 )
+                wmStarted = wmStarted || started
             }
 
 
             // register the external service info which re-direct to the default WM
-            // fv.registerExternalRequestToDefaultWM(
-            //     index,
-            //     info.employedDefaultWM.associate { it ->
-            //         val signature = getWMDefaultSignature(it.protocol, it.remotePort)
-            //         it.remoteHostname to externalServiceHandler.getExternalService(signature)
-            //     }
-            // )
+//            fv.registerExternalRequestToDefaultWM(
+//                index,
+//                info.employedDefaultWM.associate { it ->
+//                    val signature = getWMDefaultSignature(it.protocol, it.remotePort)
+//                    it.remoteHostname to externalServiceHandler.getExternalService(signature)
+//                }
+//            )
         }
+
+        return wmStarted
     }
 
     override fun getActionDto(action: Action, index: Int): ActionDto {

@@ -4,8 +4,8 @@ import com.foo.rest.examples.spring.openapi.v3.wiremock.hostnameaction.HostnameR
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.rest.HttpVerb
+import org.evomaster.core.problem.rest.service.ResourceRestFitness
 import org.evomaster.core.problem.rest.service.ResourceSampler
-import org.evomaster.core.problem.rest.service.RestResourceFitness
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -33,6 +33,12 @@ class HostnameResolutionActionEMTest: SpringTestBase() {
             true,
             { args: MutableList<String> ->
 
+                // Note: WireMock is initiated based on the served requests.
+                // This SUT doesn't make any requests, so [TestSuiteWriter] will not add
+                // any WM, eventually the generated tests will fail.
+                // TODO: This will fail when [createTests] is true regardless of the
+                //  environment.
+
                 args.add("--externalServiceIPSelectionStrategy")
                 args.add("USER")
                 args.add("--externalServiceIP")
@@ -55,6 +61,7 @@ class HostnameResolutionActionEMTest: SpringTestBase() {
         )
     }
 
+
     @Test
     fun manualTest() {
         val args = arrayOf(
@@ -74,7 +81,7 @@ class HostnameResolutionActionEMTest: SpringTestBase() {
 
         val externalServiceHandler = injector.getInstance(HttpWsExternalServiceHandler::class.java)
 
-        val restResourceFitness = injector.getInstance(RestResourceFitness::class.java)
+        val restResourceFitness = injector.getInstance(ResourceRestFitness::class.java)
         val resourceSampler = injector.getInstance(ResourceSampler::class.java)
         val restIndividual = resourceSampler.sample(false)
 
@@ -85,5 +92,6 @@ class HostnameResolutionActionEMTest: SpringTestBase() {
         assertTrue(externalServiceHandler.getLocalDomainNameMapping().containsKey("imaginary-second.local"))
         assertEquals(1, externalServiceHandler.getLocalDomainNameMapping().size)
     }
+
 
 }

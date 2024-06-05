@@ -78,7 +78,7 @@ object MongoWriter {
             }
 
         lines.add(".dtos()")
-        lines.appendSemicolon(format)
+        lines.appendSemicolon()
 
         lines.deindent()
 
@@ -89,7 +89,7 @@ object MongoWriter {
                 else -> throw IllegalStateException("Not support mongo insertions generation for $format")
             } + "$insertionVarResult = controller.execInsertionsIntoMongoDatabase($insertionVar)"
         )
-        lines.appendSemicolon(format)
+        lines.appendSemicolon()
 
         insertionVars.add(insertionVar to insertionVarResult)
 

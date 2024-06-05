@@ -28,7 +28,7 @@ class WmJsonMapEMTest : SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "WmJsonMapEM",
             "org.foo.WmJsonMapEM",
-            100,
+            1000,
             true,
             { args: MutableList<String> ->
 
@@ -46,7 +46,6 @@ class WmJsonMapEMTest : SpringTestBase() {
                 //assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/jsonmap/gson", "bar54") // not solved yet
                 assertHasAtLeastOne(solution, HttpVerb.GET, 404, "/api/wm/jsonmap/gson", "empty map")
                 assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/wm/jsonmap/gson", "")
-
             },
             3
         )

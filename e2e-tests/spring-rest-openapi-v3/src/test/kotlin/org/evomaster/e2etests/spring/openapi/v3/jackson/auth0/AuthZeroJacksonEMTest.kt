@@ -8,9 +8,9 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
-@Disabled
-class AuthZeroJacksonEMTest: SpringTestBase() {
 
+@Disabled("Failing in CI for reasons unknown")
+class AuthZeroJacksonEMTest: SpringTestBase() {
 
     companion object {
         @BeforeAll
@@ -27,16 +27,16 @@ class AuthZeroJacksonEMTest: SpringTestBase() {
         // When the created tests set to false, the test pass.
         // SUT uses HTTPS so the test won't work on macOS.
         runTestHandlingFlakyAndCompilation(
-            "GeneratedAuthZeroJacksonEMTest",
-            "org.foo.GeneratedAuthZeroJacksonEMTest",
-            500,
+            "GeneratedAuth0JacksonEMTest",
+            "org.foo.GeneratedAuth0JacksonEMTest",
+            2500,
             true,
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")
                 args.add("USER")
                 args.add("--externalServiceIP")
-                args.add("127.0.0.4")
+                args.add("127.0.0.34")
                 args.add("--instrumentMR_NET")
                 args.add("true")
 

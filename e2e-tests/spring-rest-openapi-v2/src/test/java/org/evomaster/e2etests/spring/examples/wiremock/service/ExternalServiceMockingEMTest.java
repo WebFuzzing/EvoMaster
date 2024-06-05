@@ -3,16 +3,18 @@ package org.evomaster.e2etests.spring.examples.wiremock.service;
 import com.foo.rest.examples.spring.wiremock.service.ServiceController;
 import com.google.inject.Injector;
 import org.evomaster.core.EMConfig;
+import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService;
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.problem.rest.service.ResourceSampler;
-import org.evomaster.core.problem.rest.service.RestResourceFitness;
+import org.evomaster.core.problem.rest.service.ResourceRestFitness;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -52,7 +54,7 @@ public class ExternalServiceMockingEMTest extends SpringTestBase {
 
         HttpWsExternalServiceHandler externalServiceHandler = injector.getInstance(HttpWsExternalServiceHandler.class);
 
-        RestResourceFitness restResourceFitness = injector.getInstance(RestResourceFitness.class);
+        ResourceRestFitness restResourceFitness = injector.getInstance(ResourceRestFitness.class);
         ResourceSampler resourceSampler = injector.getInstance(ResourceSampler.class);
         RestIndividual restIndividual = resourceSampler.sample(false);
 

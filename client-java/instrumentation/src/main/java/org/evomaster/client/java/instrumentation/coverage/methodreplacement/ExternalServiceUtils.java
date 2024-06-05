@@ -7,10 +7,12 @@ import org.evomaster.client.java.instrumentation.shared.IPAddressValidator;
 import org.evomaster.client.java.instrumentation.shared.PreDefinedSSLInfo;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.staticstate.MethodReplacementPreserveSemantics;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.time.LocalDateTime;
 
 public class ExternalServiceUtils {
 

@@ -29,7 +29,7 @@ class WebTestCaseWriter : TestCaseWriter() {
         testCaseName: String,
         testSuitePath: Path?
     ) {
-        lines.addStatement("goToPage($driver, $baseUrlOfSut, 5)", format)
+        lines.addStatement("goToPage($driver, $baseUrlOfSut, 5)")
 
         if(ind.individual is WebIndividual){
             ind.evaluatedMainActions().forEachIndexed { index,  a ->
@@ -51,7 +51,7 @@ class WebTestCaseWriter : TestCaseWriter() {
     }
 
     private fun addWaitPageToLoad(lines: Lines, seconds : Int = 2){
-        lines.addStatement("waitForPageToLoad($driver, $seconds)", format)
+        lines.addStatement("waitForPageToLoad($driver, $seconds)")
         //TODO need to handle init of JS scripts, not just load of page
     }
 
@@ -72,7 +72,7 @@ class WebTestCaseWriter : TestCaseWriter() {
         a.userInteractions.forEach {
             when(it.userActionType){
                 UserActionType.CLICK -> {
-                    lines.addStatement("clickAndWaitPageLoad($driver, \"${it.cssSelector}\")", format)
+                    lines.addStatement("clickAndWaitPageLoad($driver, \"${it.cssSelector}\")")
                     lines.append(getCommentOnPage("on page", r.getUrlPageStart()!!, r.getUrlPageEnd(), r.getValidHtml()))
                 }
                 //TODO all other cases
