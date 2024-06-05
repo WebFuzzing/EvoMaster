@@ -3,8 +3,8 @@ package org.evomaster.e2etests.spring.openapi.v3.wiremock.hostnameaction
 import com.foo.rest.examples.spring.openapi.v3.wiremock.hostnameaction.HostnameResolutionActionController
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
+import org.evomaster.core.problem.rest.service.ResourceRestFitness
 import org.evomaster.core.problem.rest.service.ResourceSampler
-import org.evomaster.core.problem.rest.service.RestResourceFitness
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -42,7 +42,7 @@ class HostnameResolutionActionManualTest: SpringTestBase() {
 
         val externalServiceHandler = injector.getInstance(HttpWsExternalServiceHandler::class.java)
 
-        val restResourceFitness = injector.getInstance(RestResourceFitness::class.java)
+        val restResourceFitness = injector.getInstance(ResourceRestFitness::class.java)
         val resourceSampler = injector.getInstance(ResourceSampler::class.java)
         val restIndividual = resourceSampler.sample(false)
 
