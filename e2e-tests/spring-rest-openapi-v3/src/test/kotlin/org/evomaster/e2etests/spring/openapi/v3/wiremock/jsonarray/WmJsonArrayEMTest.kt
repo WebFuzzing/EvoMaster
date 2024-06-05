@@ -1,10 +1,6 @@
 package org.evomaster.e2etests.spring.openapi.v3.wiremock.jsonarray
 
 import com.foo.rest.examples.spring.openapi.v3.wiremock.jsonarray.WmJsonArrayController
-<<<<<<< HEAD
-=======
-
->>>>>>> master
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
