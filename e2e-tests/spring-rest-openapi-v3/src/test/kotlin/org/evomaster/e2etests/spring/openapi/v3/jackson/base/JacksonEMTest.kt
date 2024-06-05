@@ -1,7 +1,6 @@
 package org.evomaster.e2etests.spring.openapi.v3.jackson.base
 
 import com.foo.rest.examples.spring.openapi.v3.jackson.base.JacksonController
-import org.evomaster.ci.utils.CIUtils
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions
@@ -15,20 +14,11 @@ class JacksonEMTest : SpringTestBase() {
         @JvmStatic
         fun init() {
             initClass(JacksonController())
-            /*
-                TODO for some weird reason, this fails on CI, although it pass on different
-                 Mac and Windows machines locally.
-                Could be an issue with Linux or used JDK
-             */
-            CIUtils.skipIfOnGA()
         }
     }
 
     @Test
     fun basicEMTest() {
-
-        CIUtils.skipIfOnGA()
-
         runTestHandlingFlakyAndCompilation(
             "JacksonGenericEM",
             "org.foo.JacksonGenericEM",
