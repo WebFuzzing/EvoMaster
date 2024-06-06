@@ -87,12 +87,14 @@ class HttpWsExternalServiceHandler {
     fun initialize() {
         log.debug("Initializing {}", HttpWsExternalServiceHandler::class.simpleName)
         // TODO: Disabled, since is not necessary anymore. Should clean it.
-//        initDefaultWM()
+        // initDefaultWM()
     }
 
 
     /**
      * init default WM
+     *
+     * TODO: No longer needed
      */
     private fun initDefaultWM() {
         if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
@@ -303,14 +305,6 @@ class HttpWsExternalServiceHandler {
     }
 
     /**
-     * Reset all the served requests.
-     * The WireMock instances will still be up and running
-     */
-    fun resetServedRequests() {
-        externalServices.filter { it.value.isActive() }.forEach { it.value.resetServedRequests() }
-    }
-
-    /**
      * Creates an [HttpExternalServiceAction] based on the given [HttpExternalServiceRequest]
      */
     fun createExternalServiceAction(
@@ -354,6 +348,8 @@ class HttpWsExternalServiceHandler {
 
     /**
      * @return a list of the served requests to the default WM
+     *
+     * TODO: No longer needed
      */
     fun getAllServedRequestsToDefaultWM(): List<HttpExternalServiceRequest> {
         return externalServices.values.filter { isDefaultSignature(it.getSignature()) }
