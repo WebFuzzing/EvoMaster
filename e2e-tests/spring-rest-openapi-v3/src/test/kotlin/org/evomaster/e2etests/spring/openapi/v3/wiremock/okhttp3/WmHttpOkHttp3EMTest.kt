@@ -29,7 +29,7 @@ class WmHttpOkHttp3EMTest : SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "WmHttpOkHttp3EM",
             "org.foo.WmHttpOkHttp3EM",
-            1000,
+            100,
             true,
             { args: MutableList<String> ->
 
@@ -45,8 +45,7 @@ class WmHttpOkHttp3EMTest : SpringTestBase() {
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/socketconnect/string", "Hello There")
 
                 assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/wm/socketconnect/string", null)
-                // TODO: disabling temporarily until issues fixed
-                //assertHasAtLeastOne(solution, HttpVerb.GET, 418, "/api/wm/socketconnect/string", null)
+                assertHasAtLeastOne(solution, HttpVerb.GET, 418, "/api/wm/socketconnect/string", null)
                 assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/wm/socketconnect/string", null)
 
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/socketconnect/object", "OK")
