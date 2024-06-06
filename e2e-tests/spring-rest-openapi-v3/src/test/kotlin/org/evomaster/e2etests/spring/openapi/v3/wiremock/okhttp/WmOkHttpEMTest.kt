@@ -33,10 +33,6 @@ class WmOkHttpEMTest : SpringTestBase() {
             true,
             { args: MutableList<String> ->
 
-                // TODO: When using actual domain name, Java tries to verify for the SSL certificate the
-                //  respective name, so generated tests fails.
-                //  PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
-
                 args.add("--externalServiceIPSelectionStrategy")
                 args.add("USER")
                 args.add("--externalServiceIP")

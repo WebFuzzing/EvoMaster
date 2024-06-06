@@ -29,12 +29,6 @@ class HostnameResolutionActionEMTest: SpringTestBase() {
             true,
             { args: MutableList<String> ->
 
-                // Note: WireMock is initiated based on the served requests.
-                // This SUT doesn't make any requests, so [TestSuiteWriter] will not add
-                // any WM, eventually the generated tests will fail.
-                // TODO: This will fail when [createTests] is true regardless of the
-                //  environment.
-
                 args.add("--externalServiceIPSelectionStrategy")
                 args.add("USER")
                 args.add("--externalServiceIP")
