@@ -8,7 +8,6 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
-@Disabled("Failing in CI for reasons unknown")
 class AuthZeroJacksonEMTest: SpringTestBase() {
 
     companion object {
