@@ -472,7 +472,17 @@ class TestSuiteWriter {
             addUsing("EvoMaster.Controller", lines)
         }
 
-        lines.addEmpty(4)
+        if (format.isPython()) {
+            lines.add("import json")
+            lines.add("import unittest")
+            lines.add("import requests")
+            createRequirementsTxt("requests==2.25.1")
+        }
+
+        when {
+            format.isPython() -> lines.addEmpty(2)
+            else -> lines.addEmpty(4)
+        }
 
         classDescriptionComment(solution, lines, timestamp)
 
@@ -490,6 +500,16 @@ class TestSuiteWriter {
             defineClass(name, lines)
             lines.addEmpty()
         }
+    }
+
+    private fun createRequirementsTxt(testFileContent: String) {
+        val path = Paths.get(config.outputFolder, "requirements.txt")
+
+        Files.createDirectories(path.parent)
+        Files.deleteIfExists(path)
+        Files.createFile(path)
+
+        path.toFile().appendText(testFileContent)
     }
 
     private fun classFields(lines: Lines, format: OutputFormat) {
