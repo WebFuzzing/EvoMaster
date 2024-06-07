@@ -52,13 +52,16 @@ env:
 jobs:
 
   setup:
+    # what a mess... GA does not allow to refer to "env" in "if" for a job (but can for a step).
+    # so we have to go through this convoluted approach of first running a job that set a variable
+    # via console output...
     runs-on: ubuntu-latest
     outputs:
       debug: ${{ steps.set-output.outputs.debug }}
     steps:
      - name: Set skip-jobs variable
        id: set-output
-       run: echo "::set-output name=debug::${{ env.debug }}"
+       run: echo "debug=${{ env.debug }}" >> $GITHUB_OUTPUT
 
 
   debug:
