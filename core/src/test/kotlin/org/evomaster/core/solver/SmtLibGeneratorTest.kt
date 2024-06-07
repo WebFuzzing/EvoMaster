@@ -6,7 +6,7 @@ import net.sf.jsqlparser.statement.Statement
 import org.evomaster.client.java.sql.SchemaExtractor
 import org.evomaster.client.java.sql.SqlScriptRunner
 import org.evomaster.solver.smtlib.*
-import org.evomaster.solver.smtlib.assertion.Distinct
+import org.evomaster.solver.smtlib.assertion.DistinctAssertion
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeAll
@@ -52,18 +52,31 @@ class SmtLibGeneratorTest {
         val response: SMTLib = generator.generateSMT(selectStatement)
 
         val expected = SMTLib().apply {
-            addNode(DeclareDatatype("UsersRow", ImmutableList.of(
-                DeclareConst("ID", "Int"),
-                DeclareConst("NAME", "String"),
-                DeclareConst("AGE", "Int"),
-                DeclareConst("POINTS", "Int")
-            )))
-            addNode(DeclareConst("users1", "UsersRow"))
-            addNode(DeclareConst("users2", "UsersRow"))
-            addNode(Assert(Distinct(listOf("ID users1", "ID users2"))))
-            addNode(CheckSat())
-            addNode(GetValue("users1"))
-            addNode(GetValue("users2"))
+            addNode(
+                DeclareDatatypeSMTNode(
+                    "UsersRow", ImmutableList.of(
+                        DeclareConstSMTNode("ID", "Int"),
+                        DeclareConstSMTNode("NAME", "String"),
+                        DeclareConstSMTNode("AGE", "Int"),
+                        DeclareConstSMTNode("POINTS", "Int")
+                    )
+                )
+            )
+            addNode(DeclareConstSMTNode("users1", "UsersRow"))
+            addNode(DeclareConstSMTNode("users2", "UsersRow"))
+            addNode(
+                AssertSMTNode(
+                    DistinctAssertion(
+                        listOf(
+                            "ID users1",
+                            "ID users2"
+                        )
+                    )
+                )
+            )
+            addNode(CheckSatSMTNode())
+            addNode(GetValueSMTNode("users1"))
+            addNode(GetValueSMTNode("users2"))
         }
 
         assertEquals(expected, response)

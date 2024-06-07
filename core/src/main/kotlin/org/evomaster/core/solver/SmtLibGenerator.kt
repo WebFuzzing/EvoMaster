@@ -7,12 +7,12 @@ import net.sf.jsqlparser.statement.select.FromItem
 import net.sf.jsqlparser.statement.select.PlainSelect
 import net.sf.jsqlparser.statement.select.Select
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto
+import org.evomaster.client.java.controller.api.dto.database.schema.ForeignKeyDto
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
 import org.evomaster.solver.smtlib.*
-import org.evomaster.solver.smtlib.assertion.Assertion
-import org.evomaster.solver.smtlib.assertion.Distinct
-import org.evomaster.solver.smtlib.assertion.Equals
-import org.evomaster.solver.smtlib.assertion.Or
+import org.evomaster.solver.smtlib.assertion.DistinctAssertion
+import org.evomaster.solver.smtlib.assertion.EqualsAssertion
+import org.evomaster.solver.smtlib.assertion.OrAssertion
 import java.util.*
 
 
@@ -33,10 +33,23 @@ class SmtLibGenerator(private val schema: DbSchemaDto, private val numberOfRows:
         for (table in schema.tables) {
             val tableName = table.name.substring(0, 1).uppercase(Locale.getDefault()) + table.name.substring(1).toLowerCase()
             val dataTypeName = tableName + "Row"
-            smt.addNode(DeclareDatatype(dataTypeName, getConstructors(table)))
+            smt.addNode(
+                DeclareDatatypeSMTNode(
+                    dataTypeName,
+                    getConstructors(table)
+                )
+            )
 
             for (i in 1..numberOfRows) {
-                smt.addNode(DeclareConst("${table.name.lowercase(Locale.getDefault())}$i", dataTypeName))
+                smt.addNode(
+                    DeclareConstSMTNode(
+                        "${
+                            table.name.lowercase(
+                                Locale.getDefault()
+                            )
+                        }$i", dataTypeName
+                    )
+                )
             }
         }
     }
@@ -48,61 +61,90 @@ class SmtLibGenerator(private val schema: DbSchemaDto, private val numberOfRows:
         }
     }
 
-    private fun appendPrimaryKeyConstraints(
-        smt: SMTLib,
-        table: TableDto
-    ) {
-        val tableName = table.name.lowercase(Locale.getDefault())
+    private fun appendPrimaryKeyConstraints(smt: SMTLib, table: TableDto) {
 
+        val tableName = table.name.lowercase(Locale.getDefault())
         val primaryKeys = table.columns.filter { it.primaryKey }
 
-        for (i in 1..numberOfRows) {
-            for (j in i + 1..numberOfRows) {
-                for (primaryKey in primaryKeys) {
-                    val pkSelector = primaryKey.name.uppercase(Locale.getDefault())
-                    smt.addNode(
-                        Assert(
-                            Distinct(listOf("$pkSelector $tableName$i", "$pkSelector $tableName$j"))
-                        )
-                    )
-                }
-            }
+        for (primaryKey in primaryKeys) {
+            val pkSelector = primaryKey.name.uppercase(Locale.getDefault())
+
+            val nodes = assertForDistinctField(pkSelector, tableName)
+            smt.addNodes(nodes)
         }
     }
 
-    private fun appendForeignKeyConstraints(
-        smt: SMTLib,
-        table: TableDto
-    ) {
+    private fun assertForDistinctField(pkSelector: String, tableName: String): List<SMTNode> {
+        val nodes = mutableListOf<AssertSMTNode>()
+        for (i in 1..numberOfRows) {
+            for (j in i + 1..numberOfRows) {
+                nodes.add(
+                    AssertSMTNode(
+                        DistinctAssertion(
+                            listOf(
+                                "$pkSelector $tableName$i",
+                                "$pkSelector $tableName$j"
+                            )
+                        )
+                    )
+                )
+            }
+        }
+        return nodes
+    }
+
+    private fun appendForeignKeyConstraints(smt: SMTLib, table: TableDto) {
         val sourceTableName = table.name.lowercase(Locale.getDefault())
 
         for (foreignKey in table.foreignKeys) {
-            val referencedTable =
-                schema.tables.firstOrNull { it.name.equals(foreignKey.targetTable, ignoreCase = true) }
-                    ?: throw RuntimeException("Referenced table not found: ${foreignKey.targetTable}")
+            val referencedTable = findReferencedTable(foreignKey)
             val referencedTableName = referencedTable.name.lowercase(Locale.getDefault())
-
-            val referencedPrimaryKeys = referencedTable.columns.filter { it.primaryKey }
-            if (referencedPrimaryKeys.isEmpty()) {
-                throw RuntimeException("Referenced table has no primary key: ${foreignKey.targetTable}")
-            }
-            // Assuming single-column primary keys
-            val referencedColumnSelector = referencedPrimaryKeys[0].name.uppercase(Locale.getDefault())
+            val referencedColumnSelector = findReferencedPKSelector(referencedTable, foreignKey)
 
             for (sourceColumn in foreignKey.sourceColumns) {
                 val sourceColumnSelector = sourceColumn.uppercase(Locale.getDefault())
 
-                for (i in 1..numberOfRows) {
-                    val conditions = (1..numberOfRows).map { j ->
-                        Equals(listOf(
-                            "$sourceColumnSelector $sourceTableName$i",
-                            "$referencedColumnSelector $referencedTableName$j")
-                        )
-                    }
-                    smt.addNode(Assert(Or(conditions)))
-                }
+                val nodes = assertForEqualsAny(
+                    sourceColumnSelector, sourceTableName,
+                    referencedColumnSelector, referencedTableName)
+
+                smt.addNodes(nodes)
             }
         }
+    }
+
+    private fun assertForEqualsAny(
+        sourceColumnSelector: String, sourceTableName: String,
+        referencedColumnSelector: String, referencedTableName: String
+    ): List<AssertSMTNode> {
+        val nodes = mutableListOf<AssertSMTNode>()
+
+        for (i in 1..numberOfRows) {
+            val conditions = (1..numberOfRows).map { j ->
+                EqualsAssertion(
+                    listOf(
+                        "$sourceColumnSelector $sourceTableName$i",
+                        "$referencedColumnSelector $referencedTableName$j"
+                    )
+                )
+            }
+            nodes.add(AssertSMTNode(OrAssertion(conditions)))
+        }
+        return nodes
+    }
+
+    private fun findReferencedPKSelector(referencedTable: TableDto, foreignKey: ForeignKeyDto): String {
+        val referencedPrimaryKeys = referencedTable.columns.filter { it.primaryKey }
+        if (referencedPrimaryKeys.isEmpty()) {
+            throw RuntimeException("Referenced table has no primary key: ${foreignKey.targetTable}")
+        }
+        // Assuming single-column primary keys
+        return referencedPrimaryKeys[0].name.uppercase(Locale.getDefault())
+    }
+
+    private fun findReferencedTable(foreignKey: ForeignKeyDto): TableDto {
+        return schema.tables.firstOrNull { it.name.equals(foreignKey.targetTable, ignoreCase = true) }
+            ?: throw RuntimeException("Referenced table not found: ${foreignKey.targetTable}")
     }
 
     private fun appendQueryConstraints(smt: SMTLib, selectStatement: Statement) {
@@ -181,20 +223,20 @@ class SmtLibGenerator(private val schema: DbSchemaDto, private val numberOfRows:
     }
 
     private fun appendGetValues(smt: SMTLib) {
-        smt.addNode(CheckSat())
+        smt.addNode(CheckSatSMTNode())
 
         for (table in schema.tables) {
             val tableNameLower = table.name.lowercase(Locale.getDefault())
             for (i in 1..numberOfRows) {
-                smt.addNode(GetValue("$tableNameLower$i"))
+                smt.addNode(GetValueSMTNode("$tableNameLower$i"))
             }
         }
     }
 
-    private fun getConstructors(table: TableDto): List<DeclareConst> {
+    private fun getConstructors(table: TableDto): List<DeclareConstSMTNode> {
         return table.columns.map { c ->
             val smtType = TYPE_MAP[c.type.uppercase(Locale.getDefault())]
-            DeclareConst(c.name, smtType!!)
+            DeclareConstSMTNode(c.name, smtType!!)
         }
     }
 

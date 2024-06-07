@@ -2,10 +2,10 @@ package org.evomaster.solver.smtlib;
 
 import org.evomaster.solver.smtlib.assertion.Assertion;
 
-public class Assert extends SMTNode {
+public class AssertSMTNode extends SMTNode {
     private final Assertion assertion;
 
-    public Assert(Assertion assertion) {
+    public AssertSMTNode(Assertion assertion) {
         this.assertion = assertion;
     }
 
