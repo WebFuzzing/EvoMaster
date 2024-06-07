@@ -51,9 +51,20 @@ env:
 
 jobs:
 
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      debug: ${{ steps.set-output.outputs.debug }}
+    steps:
+     - name: Set skip-jobs variable
+       id: set-output
+       run: echo "::set-output name=debug::${{ env.debug }}"
+
+
   debug:
     runs-on: ubuntu-latest
-    if: ${{env.debug == 'true'}}
+    needs: setup
+    if: needs.setup.outputs.debug == 'true'
     steps:
       - uses: actions/checkout@v4
       - name: Setup JDK ${{env.build-jdk}}
@@ -73,7 +84,8 @@ jobs:
 
   full-build-base:
     runs-on: ubuntu-latest
-    if: ${{env.debug == 'false'}}
+    needs: setup
+    if: needs.setup.outputs.debug == 'false'
     steps:
       # Checkout code
       - uses: actions/checkout@v4
@@ -133,7 +145,8 @@ jobs:
 
   base-build-mac:
     runs-on: macos-latest
-    if: ${{env.debug == 'false'}}
+    needs: setup
+    if: needs.setup.outputs.debug == 'false'
     steps:
       - uses: actions/checkout@v4
       - name: Setup JDK ${{env.latest-jdk}}
@@ -153,7 +166,8 @@ jobs:
 
   base-build-windows:
     runs-on: windows-latest
-    if: ${{env.debug == 'false'}}
+    needs: setup
+    if: needs.setup.outputs.debug == 'false'
     steps:
       - uses: actions/checkout@v4
       - name: Setup JDK ${{env.latest-jdk}}
@@ -179,7 +193,8 @@ jobs:
     # TODO check this again in the future
     # runs-on: windows-latest
     runs-on: ubuntu-latest
-    if: ${{env.debug == 'false'}}
+    needs: setup
+    if: needs.setup.outputs.debug == 'false'
     steps:
       - uses: actions/checkout@v4
       - name: Setup JDK ${{env.latest-jdk}}
