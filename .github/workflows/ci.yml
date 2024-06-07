@@ -41,7 +41,7 @@ env:
   latest-jdk: 17
   build-jdk: 1.8
   retention-days: 5
-  debug: true  # put to true if need to debug a specific test
+  debug: false  # put to true if need to debug a specific test
   debugTestName: "AuthZeroJacksonEMTest" # replace with test to debug
 
 # This build is quite expensive (some hours), so we run it whole only on some JVM versions and OSs.
