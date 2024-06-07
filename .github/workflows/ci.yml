@@ -53,7 +53,7 @@ jobs:
 
   debug:
     runs-on: ubuntu-latest
-    if: ${{vars.debug == 'true'}}
+    if: ${{env.debug == 'true'}}
     steps:
       - uses: actions/checkout@v4
       - name: Setup JDK ${{env.build-jdk}}
@@ -73,7 +73,7 @@ jobs:
 
   full-build-base:
     runs-on: ubuntu-latest
-    if: ${{vars.debug == 'false'}}
+    if: ${{env.debug == 'false'}}
     steps:
       # Checkout code
       - uses: actions/checkout@v4
@@ -133,6 +133,7 @@ jobs:
 
   base-build-mac:
     runs-on: macos-latest
+    if: ${{env.debug == 'false'}}
     steps:
       - uses: actions/checkout@v4
       - name: Setup JDK ${{env.latest-jdk}}
@@ -152,6 +153,7 @@ jobs:
 
   base-build-windows:
     runs-on: windows-latest
+    if: ${{env.debug == 'false'}}
     steps:
       - uses: actions/checkout@v4
       - name: Setup JDK ${{env.latest-jdk}}
@@ -177,7 +179,7 @@ jobs:
     # TODO check this again in the future
     # runs-on: windows-latest
     runs-on: ubuntu-latest
-    if: ${{vars.debug == 'false'}}
+    if: ${{env.debug == 'false'}}
     steps:
       - uses: actions/checkout@v4
       - name: Setup JDK ${{env.latest-jdk}}
