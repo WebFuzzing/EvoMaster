@@ -34,7 +34,7 @@ public class SocketClassReplacement implements MethodReplacementClass {
             if (endpoint instanceof InetSocketAddress) {
                 InetSocketAddress socketAddress = (InetSocketAddress) endpoint;
 
-                ExternalServiceUtils.analyzeDnsResolution(socketAddress.getHostName());
+                ExternalServiceUtils.analyzeDnsResolution(socketAddress.getHostString());
 
             /*
                 We MUST NOT call getHostName() anywhere in EM.
