@@ -496,7 +496,7 @@ class TestSuiteWriter {
             defineFixture(lines, controllerName)
         }
 
-        if (format.isJavaOrKotlin() || format.isCsharp()) {
+        if (format.isJavaOrKotlin() || format.isCsharp() || format.isPython()) {
             defineClass(name, lines)
             lines.addEmpty()
         }
@@ -949,10 +949,11 @@ class TestSuiteWriter {
             format.isCsharp() -> lines.append("public ")
         }
 
-        if (!format.isCsharp())
-            lines.append("class ${name.getClassName()} {")
-        else
-            lines.append("class ${name.getClassName()} : IClassFixture<$fixtureClass> {")
+        when {
+            format.isCsharp() -> lines.append("class ${name.getClassName()} : IClassFixture<$fixtureClass> {")
+            format.isPython() -> lines.append("class ${name.getClassName()}(unittest.TestCase):")
+            else -> lines.append("class ${name.getClassName()} {")
+        }
     }
 
     private fun addImport(klass: String, lines: Lines, static: Boolean = false) {
