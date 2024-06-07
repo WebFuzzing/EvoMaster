@@ -41,7 +41,8 @@ env:
   latest-jdk: 17
   build-jdk: 1.8
   retention-days: 5
-
+  debug: true  # put to true if need to debug a specific test
+  debugTestName: "AuthZeroJacksonEMTest" # replace with test to debug
 
 # This build is quite expensive (some hours), so we run it whole only on some JVM versions and OSs.
 # For the moment, we need to support JVM 8 and all following LTS versions (e.g, 11 and  17).
@@ -50,8 +51,29 @@ env:
 
 jobs:
 
+  debug:
+    runs-on: ubuntu-latest
+    if: ${{vars.debug == 'true'}}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup JDK ${{env.build-jdk}}
+        uses: actions/setup-java@v1
+        with:
+          java-version: ${{env.build-jdk}}
+      - name: Cache Maven packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: Debug Test Case
+        env:
+          CI_env: GithubAction
+        run: mvn test  -Dtest=${{env.debugTestName}} -Dsurefire.failIfNoSpecifiedTests=false  -DredirectTestOutputToFile=false
+
   full-build-base:
     runs-on: ubuntu-latest
+    if: ${{vars.debug == 'false'}}
     steps:
       # Checkout code
       - uses: actions/checkout@v4
@@ -155,6 +177,7 @@ jobs:
     # TODO check this again in the future
     # runs-on: windows-latest
     runs-on: ubuntu-latest
+    if: ${{vars.debug == 'false'}}
     steps:
       - uses: actions/checkout@v4
       - name: Setup JDK ${{env.latest-jdk}}
