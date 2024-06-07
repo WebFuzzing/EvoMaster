@@ -31,28 +31,23 @@ class SmtLibGenerator(private val schema: DbSchemaDto, private val numberOfRows:
 
     private fun appendTableDefinitions(smt: SMTLib) {
         for (table in schema.tables) {
-            val tableName = table.name.substring(0, 1).uppercase(Locale.getDefault()) + table.name.substring(1).toLowerCase()
-            val dataTypeName = tableName + "Row"
+            val dataTypeName = "${capitalization(table.name)}Row"
+
             smt.addNode(
-                DeclareDatatypeSMTNode(
-                    dataTypeName,
-                    getConstructors(table)
-                )
+                DeclareDatatypeSMTNode(dataTypeName, getConstructors(table))
             )
 
             for (i in 1..numberOfRows) {
                 smt.addNode(
-                    DeclareConstSMTNode(
-                        "${
-                            table.name.lowercase(
-                                Locale.getDefault()
-                            )
-                        }$i", dataTypeName
-                    )
+                    DeclareConstSMTNode("${table.name.lowercase(Locale.getDefault())}$i", dataTypeName)
                 )
             }
         }
     }
+
+    private fun capitalization(word: String) =
+        word.substring(0, 1).uppercase(Locale.getDefault()) +
+        word.substring(1).lowercase(Locale.getDefault())
 
     private fun appendKeyConstraints(smt: SMTLib) {
         for (table in schema.tables) {
@@ -68,8 +63,8 @@ class SmtLibGenerator(private val schema: DbSchemaDto, private val numberOfRows:
 
         for (primaryKey in primaryKeys) {
             val pkSelector = primaryKey.name.uppercase(Locale.getDefault())
-
             val nodes = assertForDistinctField(pkSelector, tableName)
+
             smt.addNodes(nodes)
         }
     }
