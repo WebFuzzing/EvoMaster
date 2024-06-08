@@ -935,6 +935,12 @@ class TestSuiteWriter {
             lines.addEmpty(2)
             lines.add("}")
         }
+
+        if (config.outputFormat.isPython()) {
+            lines.add("if __name__ == '__main__':")
+            lines.indent()
+            lines.add("unittest.main()")
+        }
     }
 
     private fun defineClass(name: TestSuiteFileName, lines: Lines) {

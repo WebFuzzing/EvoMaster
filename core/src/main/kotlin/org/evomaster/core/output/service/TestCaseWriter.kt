@@ -104,7 +104,7 @@ abstract class TestCaseWriter {
             val insertionVars = mutableListOf<Pair<String, String>>()
             // FIXME: HostnameResolutionActions can be a separately, for now it's under
             //  handleFieldDeclarations.
-            if (format.isPython()) {
+            if (format.isPython()) { // TODO PhG: remove this when python test content is added
                 lines.add("pass")
             }
             handleFieldDeclarations(lines, baseUrlOfSut, ind, insertionVars)
