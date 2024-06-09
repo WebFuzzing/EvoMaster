@@ -476,7 +476,6 @@ class TestSuiteWriter {
             lines.add("import json")
             lines.add("import unittest")
             lines.add("import requests")
-            createRequirementsTxt("requests==2.25.1")
         }
 
         when {
@@ -500,16 +499,6 @@ class TestSuiteWriter {
             defineClass(name, lines)
             lines.addEmpty()
         }
-    }
-
-    private fun createRequirementsTxt(testFileContent: String) {
-        val path = Paths.get(config.outputFolder, "requirements.txt")
-
-        Files.createDirectories(path.parent)
-        Files.deleteIfExists(path)
-        Files.createFile(path)
-
-        path.toFile().appendText(testFileContent)
     }
 
     private fun classFields(lines: Lines, format: OutputFormat) {

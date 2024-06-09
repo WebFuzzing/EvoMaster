@@ -53,7 +53,14 @@ class TestSuiteWriterTest{
         config.outputFilePrefix = "Foo_testEmptySuite"
         config.outputFileSuffix = ""
 
-        val solution = getEmptySolution(config)
+        val solution = Solution<RestIndividual>(
+            mutableListOf(),
+            config.outputFilePrefix,
+            config.outputFileSuffix,
+            Termination.NONE,
+            listOf(),
+            listOf()
+        )
 
 
         //make sure we delete any existing folder from previous test runs
@@ -97,50 +104,6 @@ class TestSuiteWriterTest{
         assertTrue(methods.any { it.name == "initClass" })
         assertTrue(methods.any { it.name == "tearDown" })
         assertTrue(methods.any { it.name == "initTest" })
-    }
-
-
-    @Test
-    fun testPythonCreatesRequirementsFile(){
-
-        val injector = LifecycleInjector.builder()
-            .withModules(BaseModule(), ReducedModule())
-            .build().createInjector()
-
-        val config = injector.getInstance(EMConfig::class.java)
-        config.createTests = true
-        config.outputFormat = OutputFormat.PYTHON_UNITTEST
-        config.outputFolder = "$baseTargetFolder/python_requirements"
-        config.outputFilePrefix = "Foo_testPythonRequirements"
-        config.outputFileSuffix = ""
-
-        val solution = getEmptySolution(config)
-
-        //make sure we delete any existing folder from previous test runs
-        val srcFolder = File(config.outputFolder)
-        srcFolder.deleteRecursively()
-
-        val writer = injector.getInstance(TestSuiteWriter::class.java)
-        //write the test suite
-        writer.writeTests(solution, FakeController::class.qualifiedName!!, null)
-
-        // the requirements file should exist
-        val requirementsFile = Paths.get("${config.outputFolder}/requirements.txt")
-        assertTrue(Files.exists(requirementsFile))
-
-        val testContent = String(Files.readAllBytes(requirementsFile))
-        assertTrue(testContent.contains("requests==2.25.1"))
-    }
-
-    private fun getEmptySolution(config: EMConfig): Solution<RestIndividual> {
-        return Solution<RestIndividual>(
-            mutableListOf(),
-            config.outputFilePrefix,
-            config.outputFileSuffix,
-            Termination.NONE,
-            listOf(),
-            listOf()
-        )
     }
 
 }
