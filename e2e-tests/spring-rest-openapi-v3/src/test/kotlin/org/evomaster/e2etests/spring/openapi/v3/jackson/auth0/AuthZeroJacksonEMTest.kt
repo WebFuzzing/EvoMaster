@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.openapi.v3.jackson.auth0
 
 import com.foo.rest.examples.spring.openapi.v3.jackson.auth0.AuthZeroJacksonController
+import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions
@@ -14,7 +15,9 @@ class AuthZeroJacksonEMTest: SpringTestBase() {
         @BeforeAll
         @JvmStatic
         fun init() {
-            initClass(AuthZeroJacksonController())
+            val config = EMConfig()
+            config.instrumentMR_NET = true
+            initClass(AuthZeroJacksonController(), config)
         }
     }
 
