@@ -6,7 +6,6 @@ import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer
-import org.evomaster.ci.utils.CIUtils
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
@@ -14,7 +13,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
-class HarvestingStrategyTest: SpringTestBase() {
+class HarvestingStrategyTest : SpringTestBase() {
 
     companion object {
         @BeforeAll
@@ -23,7 +22,6 @@ class HarvestingStrategyTest: SpringTestBase() {
             val config = EMConfig()
             config.instrumentMR_NET = true
             initClass(HarvestStrategyController(), config)
-            CIUtils.skipIfOnGA()
         }
     }
 
@@ -38,7 +36,8 @@ class HarvestingStrategyTest: SpringTestBase() {
         wm.start()
         wm.stubFor(
             WireMock.get(
-                WireMock.urlEqualTo("/api/mock"))
+                WireMock.urlEqualTo("/api/mock")
+            )
                 .atPriority(1)
                 .willReturn(WireMock.aResponse().withStatus(200).withBody("{\"message\" : \"Working\"}"))
         )
@@ -48,14 +47,14 @@ class HarvestingStrategyTest: SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "HarvestStrategyExactEMTest",
             "org.foo.HarvestStrategyExactEMTest",
-            1000,
-            !CIUtils.isRunningGA(),
+            100,
+            true,
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")
                 args.add("USER")
                 args.add("--externalServiceIP")
-                args.add("127.0.0.4")
+                args.add("127.0.0.45")
                 args.add("--probOfHarvestingResponsesFromActualExternalServices")
                 args.add("0.9")
                 args.add("--probOfMutatingResponsesBasedOnActualResponse")
@@ -88,27 +87,30 @@ class HarvestingStrategyTest: SpringTestBase() {
         wm.start()
         wm.stubFor(
             WireMock.get(
-                WireMock.urlEqualTo("/api/mock"))
+                WireMock.urlEqualTo("/api/mock")
+            )
                 .atPriority(1)
                 .willReturn(WireMock.aResponse().withStatus(200).withBody("{\"message\" : \"Working\"}"))
         )
-        wm.stubFor(WireMock.any(WireMock.anyUrl())
-            .atPriority(2)
-            .willReturn(WireMock.aResponse().withStatus(500).withBody("Internal Server Error")))
+        wm.stubFor(
+            WireMock.any(WireMock.anyUrl())
+                .atPriority(2)
+                .willReturn(WireMock.aResponse().withStatus(500).withBody("Internal Server Error"))
+        )
 
         DnsCacheManipulator.setDnsCache("mock.int", "127.0.0.13")
 
         runTestHandlingFlakyAndCompilation(
-            "HarvestStrategyClosestEMTest",
+            "HarvestStrategyClosestSameDomainEMTest",
             "org.foo.HarvestStrategyClosestEMTest",
             100,
-            !CIUtils.isRunningGA(),
+            true,
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")
                 args.add("USER")
                 args.add("--externalServiceIP")
-                args.add("127.0.0.4")
+                args.add("127.0.0.60")
                 args.add("--probOfHarvestingResponsesFromActualExternalServices")
                 args.add("0.9")
                 args.add("--probOfMutatingResponsesBasedOnActualResponse")
