@@ -243,6 +243,11 @@
             <artifactId>bson</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.evomaster</groupId>
+            <artifactId>solver</artifactId>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
 
