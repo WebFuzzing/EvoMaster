@@ -1,10 +1,12 @@
 package org.evomaster.e2etests.spring.openapi.v3.jackson.auth0
 
 import com.foo.rest.examples.spring.openapi.v3.jackson.auth0.AuthZeroJacksonController
+import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
@@ -23,10 +25,6 @@ class AuthZeroJacksonEMTest: SpringTestBase() {
 
     @Test
     fun testRunEM() {
-        /*
-            test works fine locally in Windows, but having issues in GA
-            TODO need to investigate
-         */
         runTestHandlingFlakyAndCompilation(
             "Auth0JacksonEM",
             "org.foo.Auth0JacksonEMTest",
@@ -42,6 +40,11 @@ class AuthZeroJacksonEMTest: SpringTestBase() {
                 args.add("true")
 
                 val solution = initAndRun(args)
+
+                //This doesn't work when test are re-run for flakiness, as info is removed
+//                val replacements = UnitsInfoRecorder.getMethodReplacementInfo()
+//                val network = replacements.filter { it.contains("OkHttpClient3ClassReplacement.newCall") }
+//                assertEquals(1, network.size)
 
                 Assertions.assertTrue(solution.individuals.size >= 1)
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/jackson/auth", "Working")
