@@ -26,7 +26,7 @@ public class AdaptiveHypermutationTest extends HypermutationTestBase {
         runTestHandlingFlakyAndCompilation(
                 "hypermtation/TestLowWeightHighImpact",
                 "org.adaptivehypermuation.LowWeightHighImpactTest",
-                500,
+                1000,
                 true,
                 (args) -> {
 
@@ -49,8 +49,6 @@ public class AdaptiveHypermutationTest extends HypermutationTestBase {
                     args.add("--minimize");
                     args.add("false");
 
-                    args.add("--focusedSearchActivationTime");
-                    args.add("0.5");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 
