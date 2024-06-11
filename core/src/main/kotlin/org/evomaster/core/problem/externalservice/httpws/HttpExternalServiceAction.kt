@@ -66,8 +66,10 @@ class HttpExternalServiceAction(
 
     override fun doInitialize(randomness: Randomness?) {
         super.doInitialize(randomness)
-        //randomization might modify those values
-        (response as HttpWsResponseParam).status.index = 0 // start with 200, otherwise can lose taint
+        if(randomness != null && randomness.nextBoolean(0.5)) {
+            // higher chances to start with 200, otherwise can lose taint
+            (response as HttpWsResponseParam).setStatus(200)
+        }
         response.responseBody.isActive = true
         if (response.responseBody.gene is StringGene)
             (response.responseBody.gene as StringGene).forceTaintedValue()
