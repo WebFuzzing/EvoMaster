@@ -1,21 +1,17 @@
 package org.evomaster.e2etests.spring.openapi.v3.wiremock.canonical
 
-import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.net.InetAddress
-import java.net.InetSocketAddress
 
 class InetCanonicalManualTest {
-
-
 
     @Test
     fun manualTest() {
         val address = InetAddress.getByName("localhost")
 
-//        val canonical = InetAddress.getByName(address.address.toString())
+        val canonical = address.canonicalHostName
 
-        assertEquals("localhost", address.canonicalHostName)
+        assertEquals("localhost", canonical)
     }
 }

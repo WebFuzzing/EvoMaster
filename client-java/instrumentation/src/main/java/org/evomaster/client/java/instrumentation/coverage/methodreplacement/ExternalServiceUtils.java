@@ -31,13 +31,14 @@ public class ExternalServiceUtils {
      * Force collecting DNS info, without failing if errors
      */
     public static void analyzeDnsResolution(String host){
-        // TODO: If we skip Inet resolution at this point, incase if it is already exists, would
+        // TODO: If we skip Inet resolution at this point, in case if it is already exists, would
         //  it improve the speed?
         try {
             InetAddress address = InetAddressClassReplacement.getByName(host);
             ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(host, address.getHostAddress()));
 
             if (host.equalsIgnoreCase("localhost") && !address.getCanonicalHostName().equalsIgnoreCase("localhost")) {
+                SimpleLogger.warn("Canonical hostname is different: "  + host + " and " + address.getCanonicalHostName());
                 ExecutionTracer.addHostnameToSkip(host);
             }
         } catch (Exception e){
