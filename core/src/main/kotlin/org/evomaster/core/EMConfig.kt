@@ -899,6 +899,12 @@ class EMConfig {
     @Regex("($timeRegex)|(^$)")
     var prematureStop : String = ""
 
+    enum class PrematureStopStrategy{
+        ANY, NEW
+    }
+
+
+    var prematureStopStrategy = PrematureStopStrategy.NEW
 
     @Important(1.1)
     @Cfg("The path directory of where the generated test classes should be saved to")
