@@ -33,7 +33,7 @@ class WmUrlOpenEMTest : SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "WmUrlOpenEM",
             "org.foo.WmUrlOpenEM",
-            100,
+            500,
             true,
             { args: MutableList<String> ->
 

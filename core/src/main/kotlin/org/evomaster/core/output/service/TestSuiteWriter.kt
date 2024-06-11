@@ -472,7 +472,16 @@ class TestSuiteWriter {
             addUsing("EvoMaster.Controller", lines)
         }
 
-        lines.addEmpty(4)
+        if (format.isPython()) {
+            lines.add("import json")
+            lines.add("import unittest")
+            lines.add("import requests")
+        }
+
+        when {
+            format.isPython() -> lines.addEmpty(2)
+            else -> lines.addEmpty(4)
+        }
 
         classDescriptionComment(solution, lines, timestamp)
 
@@ -486,7 +495,7 @@ class TestSuiteWriter {
             defineFixture(lines, controllerName)
         }
 
-        if (format.isJavaOrKotlin() || format.isCsharp()) {
+        if (format.isJavaOrKotlin() || format.isCsharp() || format.isPython()) {
             defineClass(name, lines)
             lines.addEmpty()
         }
@@ -915,6 +924,12 @@ class TestSuiteWriter {
             lines.addEmpty(2)
             lines.add("}")
         }
+
+        if (config.outputFormat.isPython()) {
+            lines.add("if __name__ == '__main__':")
+            lines.indent()
+            lines.add("unittest.main()")
+        }
     }
 
     private fun defineClass(name: TestSuiteFileName, lines: Lines) {
@@ -929,10 +944,11 @@ class TestSuiteWriter {
             format.isCsharp() -> lines.append("public ")
         }
 
-        if (!format.isCsharp())
-            lines.append("class ${name.getClassName()} {")
-        else
-            lines.append("class ${name.getClassName()} : IClassFixture<$fixtureClass> {")
+        when {
+            format.isCsharp() -> lines.append("class ${name.getClassName()} : IClassFixture<$fixtureClass> {")
+            format.isPython() -> lines.append("class ${name.getClassName()}(unittest.TestCase):")
+            else -> lines.append("class ${name.getClassName()} {")
+        }
     }
 
     private fun addImport(klass: String, lines: Lines, static: Boolean = false) {

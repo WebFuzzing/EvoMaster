@@ -70,6 +70,13 @@ public class UnitsInfoRecorder implements Serializable {
      */
     private transient Map<String, List<ClassLoader>> classLoaders;
 
+    /**
+     * Only used for debugging and E2E.
+     * Keeping track of what is instrumented
+     */
+    private Set<String> methodReplacements;
+
+
     private UnitsInfoRecorder(){
         unitNames = new CopyOnWriteArraySet<>();
         numberOfLines = new AtomicInteger(0);
@@ -83,6 +90,7 @@ public class UnitsInfoRecorder implements Serializable {
         analyzedClasses = false;
         extractedSpecifiedDtos = new ConcurrentHashMap<>();
         classLoaders = new ConcurrentHashMap<>();
+        methodReplacements = new CopyOnWriteArraySet<>();
     }
 
     /**
@@ -103,6 +111,10 @@ public class UnitsInfoRecorder implements Serializable {
 
     public static UnitsInfoRecorder getInstance(){
         return singleton;
+    }
+
+    public static Set<String> getMethodReplacementInfo(){
+        return singleton.methodReplacements;
     }
 
     public static void forceLoadingLazyDataStructures(){
@@ -130,16 +142,19 @@ public class UnitsInfoRecorder implements Serializable {
         singleton.numberOfBranches.addAndGet(2);
     }
 
-    public static void markNewReplacedMethodInSut(){
+    public static void markNewReplacedMethodInSut(String debugInfo){
         singleton.numberOfReplacedMethodsInSut.incrementAndGet();
+        singleton.methodReplacements.add(debugInfo);
     }
 
-    public static void markNewReplacedMethodInThirdParty(){
+    public static void markNewReplacedMethodInThirdParty(String debugInfo){
         singleton.numberOfReplacedMethodsInThirdParty.incrementAndGet();
+        singleton.methodReplacements.add(debugInfo);
     }
 
-    public static void markNewTrackedMethod(){
+    public static void markNewTrackedMethod(String debugInfo){
         singleton.numberOfTrackedMethods.incrementAndGet();
+        singleton.methodReplacements.add(debugInfo);
     }
 
     public static void markNewInstrumentedNumberComparison(){
