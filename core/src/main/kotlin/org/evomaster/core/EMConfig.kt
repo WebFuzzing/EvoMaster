@@ -903,7 +903,9 @@ class EMConfig {
         ANY, NEW
     }
 
-
+    @Experimental
+    @Cfg("Specify how 'improvement' is defined: either any kind of improvement even if partial (ANY)," +
+            " or at least one new target is fully covered (NEW).")
     var prematureStopStrategy = PrematureStopStrategy.NEW
 
     @Important(1.1)
