@@ -38,13 +38,16 @@ public class Action implements Serializable {
      */
     private final List<ExternalService> skippedExternalServices;
 
-    public Action(int index, String name, Collection<String> inputVariables, Map<String, ExternalServiceMapping> externalServiceMapping, Map<String, String> localAddressMapping, List<ExternalService> skippedExternalServices) {
+    private final Set<String> skippedHostnames;
+
+    public Action(int index, String name, Collection<String> inputVariables, Map<String, ExternalServiceMapping> externalServiceMapping, Map<String, String> localAddressMapping, List<ExternalService> skippedExternalServices, Set<String> skippedHostnames) {
         this.index = index;
         this.name = name;
         this.inputVariables = Collections.unmodifiableSet(new HashSet<>(inputVariables));
         this.externalServiceMapping = Collections.unmodifiableMap(new HashMap<>(externalServiceMapping));
         this.localAddressMapping = Collections.unmodifiableMap(new HashMap<>(localAddressMapping));
         this.skippedExternalServices = Collections.unmodifiableList(new ArrayList<>(skippedExternalServices));
+        this.skippedHostnames = Collections.unmodifiableSet(new HashSet<>(skippedHostnames));
     }
 
     public int getIndex() {
@@ -65,6 +68,10 @@ public class Action implements Serializable {
 
     public List<ExternalService> getSkippedExternalServices() {
         return skippedExternalServices;
+    }
+
+    public Set<String> getSkippedHostnames() {
+        return skippedHostnames;
     }
 
     public String getName() {

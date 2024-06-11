@@ -57,4 +57,6 @@ public class ActionDto {
      */
     public List<ExternalServiceDto> skippedExternalServices = new ArrayList<>();
 
+    public Set<String> skippedHostnames = new HashSet<>();
+
 }

@@ -13,7 +13,7 @@ import java.net.*;
 /**
  * InetAddress could be called directly, or indirectly from other JDK classes like Socket and URl.openConnection.
  * Recall that we do not instrument JDK classes, as those loaded by bootstrap classloader.
- * <p>
+ *
  * with socket connection, it will first do host lookup with java.net.InetAddress#getByName
  * if it does not exist, UnknownHostException will be thrown,
  * then the `socket.connect` cannot be reached.
@@ -48,7 +48,7 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
                 host == null
                         || host.isEmpty()
                         || ExternalServiceUtils.isValidIP(host)
-                        || ExecutionTracer.skipHostname(host)
+                        || ExecutionTracer.skippedHostname(host)
                         || "localhost".equals(host)
                         || MethodReplacementPreserveSemantics.shouldPreserveSemantics
 

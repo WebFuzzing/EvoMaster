@@ -63,6 +63,11 @@ class HttpWsExternalServiceHandler {
     private val skippedExternalServices: MutableList<ExternalService> = mutableListOf()
 
     /**
+     * Skipped hostnames captured through drivers
+     */
+    private val skippedHostnames: MutableSet<String> = mutableSetOf()
+
+    /**
      * Map of remote hostname vs local DNS replacement
      */
     private val hostnameLocalAddressMapping: MutableMap<String, String> = mutableMapOf()
@@ -145,7 +150,7 @@ class HttpWsExternalServiceHandler {
      * @return true if WM was started as result of this
      */
     private fun registerHttpExternalServiceInfo(externalServiceInfo: HttpExternalServiceInfo) : Boolean {
-        if (skippedExternalServices.contains(externalServiceInfo.toExternalService())) {
+        if (skippedExternalServices.contains(externalServiceInfo.toExternalService()) || skippedHostnames.contains(externalServiceInfo.remoteHostname)) {
             return false
         }
 
@@ -293,6 +298,7 @@ class HttpWsExternalServiceHandler {
         hostnameResolutionInfos.clear()
         hostnameLocalAddressMapping.clear()
         skippedExternalServices.clear()
+        skippedHostnames.clear()
         lastIPAddress = ""
         counter = 0
 
@@ -411,6 +417,14 @@ class HttpWsExternalServiceHandler {
             output.add(dto)
         }
         return output
+    }
+
+    fun registerHostnameToSkip(hostname: String) {
+        skippedHostnames.add(hostname)
+    }
+
+    fun getSkippedHostnames(): Set<String> {
+        return skippedHostnames
     }
 
 }

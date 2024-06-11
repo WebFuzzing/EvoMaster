@@ -68,5 +68,5 @@ public class AdditionalInfoDto {
 
     public List<HostnameResolutionInfoDto> hostnameResolutionInfoDtos = new ArrayList<>();
 
-    public Set<ExternalServiceInfoDto> skippedHostnames = new HashSet<>();
+    public Set<String> skippedHostnames = new HashSet<>();
 }

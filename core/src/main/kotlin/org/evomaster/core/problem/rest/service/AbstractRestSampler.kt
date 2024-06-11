@@ -403,6 +403,8 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
     private fun registerExternalServicesToSkip(services: List<ExternalServiceDto>) {
         services.forEach {
+            externalServiceHandler.registerHostnameToSkip(it.hostname)
+
             externalServiceHandler.registerExternalServiceToSkip(
                 ExternalService(
                 it.hostname,

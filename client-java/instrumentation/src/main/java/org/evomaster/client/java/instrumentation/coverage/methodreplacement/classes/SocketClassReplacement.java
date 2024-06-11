@@ -45,6 +45,7 @@ public class SocketClassReplacement implements MethodReplacementClass {
              */
 
                 if (ExternalServiceUtils.skipHostnameOrIp(socketAddress.getHostString())
+                        || ExecutionTracer.skippedHostname(socketAddress.getHostString())
                         || ExecutionTracer.skipHostnameAndPort(socketAddress.getHostString(), socketAddress.getPort())
                 ) {
                     caller.connect(endpoint, timeout);

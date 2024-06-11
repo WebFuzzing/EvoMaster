@@ -34,8 +34,12 @@ public class ExternalServiceUtils {
         // TODO: If we skip Inet resolution at this point, incase if it is already exists, would
         //  it improve the speed?
         try {
-            InetAddress addresses = InetAddressClassReplacement.getByName(host);
-            ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(host, addresses.getHostAddress()));
+            InetAddress address = InetAddressClassReplacement.getByName(host);
+            ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(host, address.getHostAddress()));
+
+            if (host.equalsIgnoreCase("localhost") && !address.getCanonicalHostName().equalsIgnoreCase("localhost")) {
+                ExecutionTracer.addHostnameToSkip(host);
+            }
         } catch (Exception e){
             //do nothing
             ExecutionTracer.addHostnameInfo(new HostnameResolutionInfo(host, null));
@@ -130,6 +134,7 @@ public class ExternalServiceUtils {
         if ((url.getProtocol().equalsIgnoreCase("http")
                 || url.getProtocol().equalsIgnoreCase("https"))
                 && !skipHostnameOrIp(url.getHost())
+                && !ExecutionTracer.skippedHostname(url.getHost())
                 && !ExecutionTracer.skipHostnameAndPort(url.getHost(), url.getPort())) {
 
             int port = ExternalServiceUtils.inferPort(url.getPort(), url.getProtocol());

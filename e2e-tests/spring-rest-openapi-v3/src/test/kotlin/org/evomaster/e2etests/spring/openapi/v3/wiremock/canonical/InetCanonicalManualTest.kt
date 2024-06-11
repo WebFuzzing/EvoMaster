@@ -12,7 +12,7 @@ class InetCanonicalManualTest {
 
     @Test
     fun manualTest() {
-        val address = InetAddress.getByName("127.0.0.1")
+        val address = InetAddress.getByName("localhost")
 
 //        val canonical = InetAddress.getByName(address.address.toString())
 

@@ -913,10 +913,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             }
 
             info.skippedHostnames.forEach { s ->
-                externalServiceHandler.registerExternalServiceToSkip(ExternalService(
-                    s.remoteHostname,
-                    s.remotePort
-                ))
+                externalServiceHandler.registerHostnameToSkip(s)
             }
 
             info.externalServices.forEach { es ->
@@ -960,6 +957,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 .associate { it.hostname to it.localIPAddress }
             actionDto.externalServiceMapping = externalServiceHandler.getExternalServiceMappings()
             actionDto.skippedExternalServices = externalServiceHandler.getSkippedExternalServices()
+            actionDto.skippedHostnames = externalServiceHandler.getSkippedHostnames()
         }
         return actionDto
     }

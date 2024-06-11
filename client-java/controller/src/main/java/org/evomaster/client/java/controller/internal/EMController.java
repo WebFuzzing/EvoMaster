@@ -547,13 +547,7 @@ public class EMController {
                                         des.getRemotePort()
                                 )
                         ).collect(Collectors.toList());
-                        info.skippedHostnames = a.getSkippedHostnames().stream().map(
-                                s -> new ExternalServiceInfoDto(
-                                        s.getProtocol(),
-                                        s.getHostname(),
-                                        s.getRemotePort()
-                                )
-                        ).collect(Collectors.toSet());
+                        info.skippedHostnames = new HashSet<>(a.getSkippedHostnames());
                         info.stringSpecializations = new LinkedHashMap<>();
                         for (Map.Entry<String, Set<StringSpecializationInfo>> entry :
                                 a.getStringSpecializationsView().entrySet()) {
