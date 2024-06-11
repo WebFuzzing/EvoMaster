@@ -527,7 +527,7 @@ object GraphQLUtils {
         adj?.removeAll(cycle)
 
         if (getAdjacent(current, graph).isNullOrEmpty() || adj.isNullOrEmpty()) {
-            paths.add(stack.reversed())//current is a leaf
+//            paths.add(stack.reversed())//current is a leaf
             stack.pop() //backtrack
         } else {
             stack.pop() //backtrack
@@ -610,7 +610,7 @@ object GraphQLUtils {
     ) {
         stack.push(current)
         if (isPathTo(stack, end)) {//goal node already reached
-            paths.add(stack.reversed())
+//            paths.add(stack.reversed())
         }
         for (adjacent in getAdjacent(current, graph)!!) {
             if (stack.contains(adjacent)) {

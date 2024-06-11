@@ -4,6 +4,7 @@ import net.sf.jsqlparser.statement.Statement
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto
 import org.evomaster.client.java.controller.api.dto.database.schema.ForeignKeyDto
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
+import org.evomaster.core.utils.StringUtils
 import org.evomaster.solver.smtlib.*
 import org.evomaster.solver.smtlib.assertion.DistinctAssertion
 import org.evomaster.solver.smtlib.assertion.EqualsAssertion
@@ -26,7 +27,7 @@ class SmtLibGenerator(private val schema: DbSchemaDto, private val numberOfRows:
 
     private fun appendTableDefinitions(smt: SMTLib) {
         for (table in schema.tables) {
-            val dataTypeName = "${capitalization(table.name)}Row"
+            val dataTypeName = "${StringUtils.capitalization(table.name)}Row"
 
             smt.addNode(
                 DeclareDatatypeSMTNode(dataTypeName, getConstructors(table))
@@ -39,10 +40,6 @@ class SmtLibGenerator(private val schema: DbSchemaDto, private val numberOfRows:
             }
         }
     }
-
-    private fun capitalization(word: String) =
-        word.substring(0, 1).uppercase(Locale.getDefault()) +
-        word.substring(1).lowercase(Locale.getDefault())
 
     private fun appendKeyConstraints(smt: SMTLib) {
         for (table in schema.tables) {
