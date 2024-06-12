@@ -9,7 +9,7 @@
         <version>3.0.1-SNAPSHOT</version>
     </parent>
 
-    <groupId>org.example</groupId>
+    <groupId>org.evomaster</groupId>
     <artifactId>solver</artifactId>
 
     <dependencies>
@@ -31,16 +31,6 @@
             <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.evomaster</groupId>
-            <artifactId>evomaster-client-java-sql</artifactId>
-        </dependency>
-        <dependency>
-            <!-- TODO: Remove this circular dependency, for this module to run outside of EM it can not depend on core. -->
-            <groupId>org.evomaster</groupId>
-            <artifactId>evomaster-core</artifactId>
-        </dependency>
-
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>

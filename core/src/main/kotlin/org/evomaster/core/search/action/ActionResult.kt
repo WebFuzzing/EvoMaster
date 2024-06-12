@@ -9,7 +9,18 @@ open class ActionResult(
         val sourceLocalId: String,
         /** Specify whether the result of this action led to stop the evaluation
          * of the following actions*/
-        var stopping: Boolean = false) {
+        var stopping: Boolean = false,
+        /**
+         * The result of this action has condemned its individual to death.
+         * As such, should not be added to archive, or used anywhere.
+         * Note, the individual itself is fine, but the resulting EvaluatedIndividual is
+         * the problematic one.
+         *
+         * Note: this is for very, very special cases. An example is the handling of WireMock.
+         * See tests like [HostnameResolutionActionEMTest]
+         */
+        var deathSentence : Boolean = false
+) {
 
     init{
         if(sourceLocalId == StructuralElement.NONE_LOCAL_ID){

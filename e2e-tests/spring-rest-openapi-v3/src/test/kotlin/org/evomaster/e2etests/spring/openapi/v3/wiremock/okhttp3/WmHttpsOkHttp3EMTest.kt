@@ -1,7 +1,6 @@
 package org.evomaster.e2etests.spring.openapi.v3.wiremock.okhttp3
 
 import com.foo.rest.examples.spring.openapi.v3.wiremock.okhttp3.WmOkHttp3Controller
-import org.evomaster.ci.utils.CIUtils
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
@@ -20,13 +19,6 @@ class WmHttpsOkHttp3EMTest : SpringTestBase() {
             val config = EMConfig()
             config.instrumentMR_NET = true
             initClass(WmOkHttp3Controller(listOf("/api/wm/socketconnect/string","/api/wm/socketconnect/object")), config)
-
-            /*
-            The test fails on CI, but not local with WM 2.32.0
-
-            if updating WM to 2.34.0, the test fails on local windows as well (TO CHECK)
-            */
-            CIUtils.skipIfOnGA()
         }
     }
 
@@ -37,8 +29,8 @@ class WmHttpsOkHttp3EMTest : SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "WmHttpsOkHttp3EM",
             "org.foo.WmHttpsOkHttp3EM",
-            500,
-            false,
+            100,
+            true,
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")
@@ -52,6 +44,7 @@ class WmHttpsOkHttp3EMTest : SpringTestBase() {
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/socketconnect/sstring", "OK")
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/socketconnect/sstring", "Hello There")
                 assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/wm/socketconnect/sstring", null)
+                assertHasAtLeastOne(solution, HttpVerb.GET, 418, "/api/wm/socketconnect/sstring", null)
                 assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/wm/socketconnect/sstring", null)
             },
             3

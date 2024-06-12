@@ -10,6 +10,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
+import static org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP;
+
 /**
  * Methods of this class will be injected in the SUT to
  * keep track of what the tests do execute/cover.
@@ -758,7 +760,7 @@ public class ExecutionTracer {
     }
 
     public static String getDefaultSinkholeAddress() {
-        return "127.0.0.2";
+        return RESERVED_RESOLVED_LOCAL_IP;
     }
 
     public static boolean skipHostname(String hostname) {

@@ -162,14 +162,19 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
             handleConstruct(m, candidateClasses.get(0).getClass());
         }
 
+        //Can be put back if needed for debugging... otherwise it is just expensive overhead
+//        String debugInfo = className+"."+methodName+"("+desc+") -> "
+//                + m.getDeclaringClass().getName() + "." +  m.getName();
+        String debugInfo = "";
+
         Replacement a = m.getAnnotation(Replacement.class);
         if (a.type() == ReplacementType.TRACKER) {
-            UnitsInfoRecorder.markNewTrackedMethod();
+            UnitsInfoRecorder.markNewTrackedMethod(debugInfo);
         } else {
             if (isInSUT) {
-                UnitsInfoRecorder.markNewReplacedMethodInSut();
+                UnitsInfoRecorder.markNewReplacedMethodInSut(debugInfo);
             } else {
-                UnitsInfoRecorder.markNewReplacedMethodInThirdParty();
+                UnitsInfoRecorder.markNewReplacedMethodInThirdParty(debugInfo);
             }
         }
     }
