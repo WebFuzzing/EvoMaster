@@ -22,7 +22,7 @@ class JacksonEMTest : SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "JacksonGenericEM",
             "org.foo.JacksonGenericEM",
-            100
+            500
         ) { args: List<String> ->
 
             val solution = initAndRun(args)

@@ -1,34 +1,34 @@
 package org.evomaster.e2etests.spring.openapi.v3.jackson.auth0
 
 import com.foo.rest.examples.spring.openapi.v3.jackson.auth0.AuthZeroJacksonController
+import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder
+import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
-@Disabled("Failing in CI for reasons unknown")
 class AuthZeroJacksonEMTest: SpringTestBase() {
 
     companion object {
         @BeforeAll
         @JvmStatic
         fun init() {
-            initClass(AuthZeroJacksonController())
+            val config = EMConfig()
+            config.instrumentMR_NET = true
+            initClass(AuthZeroJacksonController(), config)
         }
     }
 
     @Test
     fun testRunEM() {
-        // Generated test has response which is accurate, but test fails because the
-        // SUT throws error for the case which worked during the search.
-        // When the created tests set to false, the test pass.
-        // SUT uses HTTPS so the test won't work on macOS.
         runTestHandlingFlakyAndCompilation(
-            "GeneratedAuth0JacksonEMTest",
-            "org.foo.GeneratedAuth0JacksonEMTest",
-            2500,
+            "Auth0JacksonEM",
+            "org.foo.Auth0JacksonEMTest",
+            250,
             true,
             { args: MutableList<String> ->
 
@@ -41,9 +41,14 @@ class AuthZeroJacksonEMTest: SpringTestBase() {
 
                 val solution = initAndRun(args)
 
+                //This doesn't work when test are re-run for flakiness, as info is removed
+//                val replacements = UnitsInfoRecorder.getMethodReplacementInfo()
+//                val network = replacements.filter { it.contains("OkHttpClient3ClassReplacement.newCall") }
+//                assertEquals(1, network.size)
+
                 Assertions.assertTrue(solution.individuals.size >= 1)
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/jackson/auth", "Working")
-            }, 3
+            }, 5
         )
     }
 }

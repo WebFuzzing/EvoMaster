@@ -41,6 +41,7 @@ public class BootTimeObjectiveInfo implements Serializable {
     public void reset(){
         maxObjectiveCoverage.clear();
         externalServiceInfo.clear();
+        hostnameResolutionInfos.clear();
     }
 
     public void registerHostnameResolutionInfoAtSutBootTime(HostnameResolutionInfo hostnameResolutionInfo) {
