@@ -12,7 +12,6 @@ import org.evomaster.client.java.utils.SimpleLogger;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.time.LocalDateTime;
 
 public class ExternalServiceUtils {
 
@@ -135,8 +134,8 @@ public class ExternalServiceUtils {
         if ((url.getProtocol().equalsIgnoreCase("http")
                 || url.getProtocol().equalsIgnoreCase("https"))
                 && !skipHostnameOrIp(url.getHost())
-                && !ExecutionTracer.skippedHostname(url.getHost())
-                && !ExecutionTracer.skipHostnameAndPort(url.getHost(), url.getPort())) {
+                && !ExecutionTracer.skipHostname(url.getHost())
+                && !ExecutionTracer.skipServiceByHostnameAndPort(url.getHost(), url.getPort())) {
 
             int port = ExternalServiceUtils.inferPort(url.getPort(), url.getProtocol());
 

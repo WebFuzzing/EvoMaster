@@ -110,7 +110,7 @@ public class OkHttpClient3ClassReplacement extends ThirdPartyMethodReplacementCl
 
         if ((urlScheme.equalsIgnoreCase("https") || urlScheme.equalsIgnoreCase("http"))
                 && !skipHostnameOrIp(urlHost)
-                && !ExecutionTracer.skippedHostname(urlHost)
+                && !ExecutionTracer.skipHostname(urlHost)
         ){
             // To fetch DNS information
             ExternalServiceUtils.analyzeDnsResolution(urlHost);

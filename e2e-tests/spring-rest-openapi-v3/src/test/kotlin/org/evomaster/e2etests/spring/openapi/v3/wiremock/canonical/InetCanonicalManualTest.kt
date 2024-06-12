@@ -8,10 +8,10 @@ class InetCanonicalManualTest {
 
     @Test
     fun manualTest() {
+        // TODO: This is a dummy test for development purpose.
+        //  Can be expanded or deleted later if necessary.
         val address = InetAddress.getByName("localhost")
 
-        val canonical = address.canonicalHostName
-
-        assertEquals("localhost", canonical)
+        assertEquals("localhost", address.canonicalHostName)
     }
 }

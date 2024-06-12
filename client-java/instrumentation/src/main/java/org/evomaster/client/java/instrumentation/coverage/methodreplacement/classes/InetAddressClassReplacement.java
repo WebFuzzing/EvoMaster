@@ -48,7 +48,7 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
                 host == null
                         || host.isEmpty()
                         || ExternalServiceUtils.isValidIP(host)
-                        || ExecutionTracer.skippedHostname(host)
+                        || ExecutionTracer.skipHostname(host)
                         || "localhost".equals(host)
                         || MethodReplacementPreserveSemantics.shouldPreserveSemantics
 

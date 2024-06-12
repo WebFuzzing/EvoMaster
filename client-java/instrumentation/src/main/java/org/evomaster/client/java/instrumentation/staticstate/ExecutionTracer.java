@@ -767,12 +767,12 @@ public class ExecutionTracer {
         return RESERVED_RESOLVED_LOCAL_IP;
     }
 
-    public static boolean skipHostname(String hostname) {
+    public static boolean skipServiceByHostname(String hostname) {
         return skippedExternalServices
                 .stream().anyMatch(e -> e.getHostname().equals(hostname.toLowerCase()));
     }
 
-    public static boolean skipHostnameAndPort(String hostname, int port) {
+    public static boolean skipServiceByHostnameAndPort(String hostname, int port) {
         return skippedExternalServices
                 .stream().anyMatch(e -> e.getHostname().equals(hostname.toLowerCase()) && e.getPort() == port);
     }
@@ -781,7 +781,7 @@ public class ExecutionTracer {
         getCurrentAdditionalInfo().addHostnameToSkip(hostname);
     }
 
-    public static boolean skippedHostname(String hostname) {
+    public static boolean skipHostname(String hostname) {
         return skippedHostnames.contains(hostname);
     }
 
