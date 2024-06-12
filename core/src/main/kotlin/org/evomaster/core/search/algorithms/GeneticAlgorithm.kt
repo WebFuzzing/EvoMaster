@@ -1,14 +1,17 @@
 package org.evomaster.core.search.algorithms
 
 import org.evomaster.core.EMConfig
+import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.algorithms.genetic.GeneticEvalIndividual
+import org.evomaster.core.search.algorithms.wts.WtsEvalIndividual
+import org.evomaster.core.search.gene.BooleanGene
+import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.service.SearchAlgorithm
-import kotlin.math.min
+
 
 class GeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
-    private val population: MutableList<GeneticEvalIndividual<T>> = mutableListOf()
+    private val population: MutableList<WtsEvalIndividual<T>> = mutableListOf()
 
     override fun getType(): EMConfig.Algorithm {
         return EMConfig.Algorithm.Genetic
@@ -21,24 +24,18 @@ class GeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
     override fun searchOnce() {
         val n = config.populationSize
-
-        val nextPop: MutableList<GeneticEvalIndividual<T>> = mutableListOf()
+        val nextPop: MutableList<WtsEvalIndividual<T>> = mutableListOf()
 
         while (nextPop.size < n) {
-            val parent1 = selection()
-            val parent2 = selection()
+            val x = selection()
+            val y = selection()
 
-            val offspring1 = parent1.copy()
-            val offspring2 = parent2.copy()
+            crossover(x, y)
+            mutate(x)
+            mutate(y)
 
-            if (randomness.nextBoolean(config.xoverProbability)) {
-                crossover(offspring1, offspring2)
-            }
-            mutate(offspring1)
-            mutate(offspring2)
-
-            nextPop.add(offspring1)
-            nextPop.add(offspring2)
+            nextPop.add(x)
+            nextPop.add(y)
 
             if (!time.shouldContinueSearch()) {
                 break
@@ -49,51 +46,95 @@ class GeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
         population.addAll(nextPop)
     }
 
-    private fun mutate(individual: GeneticEvalIndividual<T>) {
-        //TODO
+    private fun mutate(individual: WtsEvalIndividual<T>) {
+        // Randomly select a test case from the suite
+        val index = randomness.nextInt(individual.suite.size)
+        val testCase = individual.suite[index]
+
+        mutateTestCase(testCase)
     }
 
-    private fun selection(): GeneticEvalIndividual<T> {
-        // Implement selection logic (e.g., tournament selection)
-        val candidate1 = randomness.choose(population)
-        val candidate2 = randomness.choose(population)
+    private fun mutateTestCase(testCase: EvaluatedIndividual<T>) {
+        val genes = testCase.individual.seeGenes()
 
-        return if (candidate1.calculateFitness() > candidate2.calculateFitness()) candidate1.copy() else candidate2.copy()
-    }
+        // Randomly select a gene to mutate
+        val geneIndex = randomness.nextInt(genes.size)
+        val geneToMutate = genes[geneIndex]
 
-    private fun crossover(parent1: GeneticEvalIndividual<T>, parent2: GeneticEvalIndividual<T>) {
-        if (parent1.genes.isEmpty() || parent2.genes.isEmpty()) return
+        // For demonstration, we toggle a boolean value if the gene is of type BooleanGene
+        if (geneToMutate is BooleanGene) {
+            val oldValue = geneToMutate.value
+            val newValue = !oldValue
+            geneToMutate.value = newValue
+        }
+        if (geneToMutate is DoubleGene) {
 
-        // Choose a random crossover point
-        val crossoverPoint = randomness.nextInt(min(parent1.genes.size, parent2.genes.size))
-
-        // Swap genes after the crossover point
-        for (i in crossoverPoint until parent1.genes.size) {
-            if (i < parent2.genes.size) {
-                val temp = parent1.genes[i]
-                parent1.genes[i] = parent2.genes[i]
-                parent2.genes[i] = temp
+            if(geneToMutate.value<Double.MAX_VALUE){
+                geneToMutate.value += 1
             }
+            else{
+                geneToMutate.value -= 1
+            }
+        }
+    }
+
+    private fun selection(): WtsEvalIndividual<T> {
+        val totalFitness = population.sumOf { it.calculateCombinedFitness() }
+        var randomNumber = randomness.nextDouble() * totalFitness
+        var accumulatedFitness = 0.0
+
+        for (individual in population) {
+            accumulatedFitness += individual.calculateCombinedFitness()
+            if (accumulatedFitness >= randomNumber) {
+                return individual
+            }
+        }
+
+        return population.last()
+    }
+
+    private fun crossover(x: WtsEvalIndividual<T>, y: WtsEvalIndividual<T>) {
+        val n = x.suite.size
+        val splitPoint = randomness.nextInt(n)
+
+        for (i in 0 until splitPoint) {
+            val temp = x.suite[i]
+            x.suite[i] = y.suite[i]
+            y.suite[i] = temp
         }
     }
 
 
     private fun initPopulation() {
         val n = config.populationSize
-
         for (i in 1..n) {
-            population.add(sampleIndividual())
-
+            population.add(sampleSuite())
             if (!time.shouldContinueSearch()) {
                 break
             }
         }
     }
 
-    //TODO
-    private fun sampleIndividual(): GeneticEvalIndividual<T> {
-        // Generate a new individual with random genes
-        // Example: random initialization of genes
-        return GeneticEvalIndividual(mutableListOf())
+    private fun sampleSuite(): WtsEvalIndividual<T> {
+
+        val n = 1 + randomness.nextInt(config.maxSearchSuiteSize)
+
+        val wts = WtsEvalIndividual<T>(mutableListOf())
+
+        for (i in 1..n) {
+            ff.calculateCoverage(sampler.sample())?.run {
+                archive.addIfNeeded(this)
+                wts.suite.add(this)
+            }
+
+            if (!time.shouldContinueSearch()) {
+                break
+            }
+        }
+
+        return wts
     }
+
+
+
 }
