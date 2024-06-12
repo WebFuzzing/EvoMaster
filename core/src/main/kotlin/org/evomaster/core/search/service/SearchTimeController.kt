@@ -54,6 +54,9 @@ class SearchTimeController {
     var lastActionImprovementTimestamp = -1L
         private set
 
+    var lastActionNewTargetTimestamp = -1L
+        private set
+
     var lastActionTimestamp = 0L
         private set
 
@@ -135,6 +138,7 @@ class SearchTimeController {
         searchStarted = true
         startTime = System.currentTimeMillis()
         lastActionImprovementTimestamp = startTime
+        lastActionNewTargetTimestamp = startTime
     }
 
     fun addListener(listener: SearchListener){
@@ -209,6 +213,7 @@ class SearchTimeController {
     fun newCoveredTarget(){
         if(!recording) return
         newActionImprovement()
+        lastActionNewTargetTimestamp = System.currentTimeMillis()
     }
 
     fun newActionImprovement(){
@@ -258,7 +263,11 @@ class SearchTimeController {
     }
 
     fun getSecondsSinceLastImprovement() : Int{
-        return ((System.currentTimeMillis() - lastActionImprovementTimestamp) / 1000.0).toInt()
+        val timestamp =  when(configuration.prematureStopStrategy){
+            EMConfig.PrematureStopStrategy.ANY -> lastActionImprovementTimestamp
+            EMConfig.PrematureStopStrategy.NEW -> lastActionNewTargetTimestamp
+        }
+        return ((System.currentTimeMillis() - timestamp) / 1000.0).toInt()
     }
 
     /**
