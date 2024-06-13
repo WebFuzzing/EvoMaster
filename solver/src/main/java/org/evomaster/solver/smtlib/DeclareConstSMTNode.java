@@ -1,10 +1,10 @@
 package org.evomaster.solver.smtlib;
 
-public class DeclareConst extends SMTNode {
+public class DeclareConstSMTNode extends SMTNode {
     final String name;
     final String type;
 
-    public DeclareConst(String name, String type) {
+    public DeclareConstSMTNode(String name, String type) {
         this.name = name;
         this.type = type;
     }

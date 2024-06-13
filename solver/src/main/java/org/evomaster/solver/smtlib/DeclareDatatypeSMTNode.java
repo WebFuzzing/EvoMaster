@@ -2,11 +2,11 @@ package org.evomaster.solver.smtlib;
 
 import java.util.List;
 
-public class DeclareDatatype extends SMTNode {
+public class DeclareDatatypeSMTNode extends SMTNode {
     private final String name;
-    private final List<DeclareConst> constructors;
+    private final List<DeclareConstSMTNode> constructors;
 
-    public DeclareDatatype(String name, List<DeclareConst> constructors) {
+    public DeclareDatatypeSMTNode(String name, List<DeclareConstSMTNode> constructors) {
         this.name = name;
         this.constructors = constructors;
     }
@@ -23,7 +23,7 @@ public class DeclareDatatype extends SMTNode {
                 .append(name).append(" (")
                 .append(columnsConcat).append(" ");
 
-        for (DeclareConst constructor : constructors) {
+        for (DeclareConstSMTNode constructor : constructors) {
             sb.append("(").append(constructor.name.toUpperCase()).append(" ").append(constructor.type).append(") ");
         }
         sb.append("))))\n");
