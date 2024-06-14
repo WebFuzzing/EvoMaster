@@ -111,7 +111,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                             format,
                             c.first,
                             lines,
-                            ind.individual.seeDbActions(),
+                            ind.individual.seeSqlDbActions(),
                             groupIndex = index.toString(),
                             insertionVars = insertionVars,
                             skipFailure = config.skipFailureSQLInTestFile
