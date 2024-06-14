@@ -290,7 +290,7 @@ class RestIndividual(
         }
     }
 
-    private fun getFirstIndexOfRestResourceCalls() = max(0, max(children.indexOfLast { it is SqlAction }+1, children.indexOfFirst { it is RestResourceCalls }))
+    private fun getFirstIndexOfRestResourceCalls() = max(0, max(children.indexOfLast { it is EnvironmentAction }+1, children.indexOfFirst { it is RestResourceCalls }))
 
     /**
      * replace the resourceCall at [position] with [resourceCalls]
