@@ -9,7 +9,7 @@ import org.evomaster.core.sql.SqlActionUtils
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
-import org.evomaster.core.problem.externalservice.DnsAction
+import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.search.*
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Randomness
@@ -32,7 +32,8 @@ import java.util.*
  * per action, and not here in the initialization phase.
  */
 abstract class EnterpriseIndividual(
-    val sampleType: SampleType,
+    //see https://discuss.kotlinlang.org/t/private-setter-for-var-in-primary-constructor/3640/11
+    private var sampleTypeField: SampleType,
     /**
      * a tracked operator to manipulate the individual (nullable)
      */
@@ -46,7 +47,7 @@ abstract class EnterpriseIndividual(
      * a list of children of the individual
      */
     children: MutableList<out ActionComponent>,
-    childTypeVerifier: (Class<*>) -> Boolean,
+    childTypeVerifier: EnterpriseChildTypeVerifier,
     /**
      * if no group definition is specified, then it is assumed that all action are for the MAIN group
      */
@@ -108,9 +109,9 @@ abstract class EnterpriseIndividual(
                 if(sizeMongo==0) -1 else startIndexMongo , if(sizeMongo==0) -1 else endIndexMongo
             )
 
-            val startIndexDns = children.indexOfFirst { a -> a is DnsAction }
-            val endIndexDns = children.indexOfLast { a -> a is DnsAction }
-            val dns = ChildGroup<StructuralElement>(GroupsOfChildren.INITIALIZATION_DNS,{e -> e is ActionComponent && e.flatten().all { a -> a is DnsAction }},
+            val startIndexDns = children.indexOfFirst { a -> a is HostnameResolutionAction }
+            val endIndexDns = children.indexOfLast { a -> a is HostnameResolutionAction }
+            val dns = ChildGroup<StructuralElement>(GroupsOfChildren.INITIALIZATION_DNS,{e -> e is ActionComponent && e.flatten().all { a -> a is HostnameResolutionAction }},
                 if(sizeDNS==0) -1 else startIndexDns , if(sizeDNS==0) -1 else endIndexDns
             )
 
@@ -123,6 +124,18 @@ abstract class EnterpriseIndividual(
         }
     }
 
+    val sampleType get() = sampleTypeField
+
+    /**
+     * This should never happen directly during the search.
+     * However, we might manually create new individuals by modifying and copying existing individuals.
+     * In those cases it simple to modify the sample directly, instead of re-building with same actions
+     * (which actually could be a possibility...).
+     */
+    fun modifySampleType(x: SampleType){
+        sampleTypeField = x
+    }
+
     /**
      * a list of db actions for its Initialization
      */
@@ -133,6 +146,43 @@ abstract class EnterpriseIndividual(
                 .map { it as SqlAction }
         }
 
+
+    /**
+     * Make sure that no secondary type is used in the main actions, and that only [EnterpriseActionGroup]
+     * are used.
+     *
+     * Ideally, a flattening should not impact fitness, but, in few cases, it might :(
+     * This happens eg in Rest Resource, if a middle SQL action is moved into initialization group and impact
+     * state of previous REST actions (an example of this did happen for example for CrossFkEMTest...).
+     * This means that, after a flattening, to be on safe side should recompute fitness
+     *
+     * @return true if there is potential (but not necessarily) issues, and fitness might be stale
+     */
+    fun ensureFlattenedStructure() : Boolean{
+
+        val before = seeAllActions().size
+
+        val issues = doFlattenStructure()
+
+        //make sure the flattening worked
+        Lazy.assert { isFlattenedStructure() }
+        //no base action should have been lost
+        Lazy.assert { seeAllActions().size == before }
+
+        return issues
+    }
+
+    protected open fun doFlattenStructure() : Boolean{
+        //for most types, there is nothing to do.
+        //can be overridden if needed
+        return false
+    }
+
+    private fun isFlattenedStructure() : Boolean{
+        return groupsView()!!.getAllInGroup(GroupsOfChildren.MAIN).all { it is EnterpriseActionGroup<*> }
+    }
+
+
     final override fun seeActions(filter: ActionFilter) : List<Action>{
         return when (filter) {
             ActionFilter.ALL -> seeAllActions()
@@ -142,14 +192,18 @@ abstract class EnterpriseIndividual(
             ActionFilter.INIT ->
                 groupsView()!!
                     .getAllInGroup(GroupsOfChildren.INITIALIZATION_SQL).flatMap { (it as ActionComponent).flatten() } + groupsView()!!
-                    .getAllInGroup(GroupsOfChildren.INITIALIZATION_MONGO).flatMap { (it as ActionComponent).flatten()}
+                    .getAllInGroup(GroupsOfChildren.INITIALIZATION_MONGO).flatMap { (it as ActionComponent).flatten()}+ groupsView()!!
+                    .getAllInGroup(GroupsOfChildren.INITIALIZATION_DNS).flatMap { (it as ActionComponent).flatten()}
             // WARNING: this can still return DbAction, MongoDbAction and External ones...
             ActionFilter.NO_INIT -> groupsView()!!.getAllInGroup(GroupsOfChildren.MAIN).flatMap { (it as ActionComponent).flatten() }
             ActionFilter.ONLY_SQL -> seeAllActions().filterIsInstance<SqlAction>()
             ActionFilter.ONLY_MONGO -> seeAllActions().filterIsInstance<MongoDbAction>()
             ActionFilter.NO_SQL -> seeAllActions().filter { it !is SqlAction }
+            ActionFilter.ONLY_DB -> seeAllActions().filter { it is SqlAction || it is MongoDbAction }
+            ActionFilter.NO_DB -> seeAllActions().filter { it !is SqlAction && it !is MongoDbAction }
             ActionFilter.ONLY_EXTERNAL_SERVICE -> seeAllActions().filterIsInstance<ApiExternalServiceAction>()
-            ActionFilter.NO_EXTERNAL_SERVICE -> seeAllActions().filter { it !is ApiExternalServiceAction }
+            ActionFilter.NO_EXTERNAL_SERVICE -> seeAllActions().filter { it !is ApiExternalServiceAction }.filter { it !is HostnameResolutionAction }
+            ActionFilter.ONLY_DNS -> groupsView()!!.getAllInGroup(GroupsOfChildren.INITIALIZATION_DNS).flatMap { (it as ActionComponent).flatten()}
         }
     }
 
@@ -200,7 +254,7 @@ abstract class EnterpriseIndividual(
      * NOTE THAT if EMConfig.probOfApplySQLActionToCreateResources is 0.0, this method
      * would be same with [seeInitializingActions]
      */
-    fun seeDbActions() : List<SqlAction> = seeActions(ActionFilter.ONLY_SQL) as List<SqlAction>
+    fun seeSqlDbActions() : List<SqlAction> = seeActions(ActionFilter.ONLY_SQL) as List<SqlAction>
 
     fun seeMongoDbActions() : List<MongoDbAction> = seeActions(ActionFilter.ONLY_MONGO) as List<MongoDbAction>
 
@@ -256,11 +310,17 @@ abstract class EnterpriseIndividual(
     private fun getLastIndexOfMongoDbActionToAdd(): Int =
         groupsView()!!.endIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_MONGO)
 
+    private fun getLastIndexOfHostnameResolutionActionToAdd(): Int =
+        groupsView()!!.endIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_DNS)
+
     private fun getFirstIndexOfDbActionToAdd(): Int =
         groupsView()!!.startIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_SQL)
 
     private fun getFirstIndexOfMongoDbActionToAdd(): Int =
         groupsView()!!.startIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_MONGO)
+
+    private fun getFirstIndexOfHostnameResolutionActionToAdd(): Int =
+        groupsView()!!.startIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_DNS)
 
     /**
      * add [actions] at [relativePosition]
@@ -282,6 +342,14 @@ abstract class EnterpriseIndividual(
         }
     }
 
+    fun addInitializingHostnameResolutionActions(relativePosition: Int=-1, actions: List<Action>) {
+        if (relativePosition < 0) {
+            addChildrenToGroup(getLastIndexOfHostnameResolutionActionToAdd(), actions, GroupsOfChildren.INITIALIZATION_DNS)
+        } else {
+            addChildrenToGroup(getFirstIndexOfHostnameResolutionActionToAdd()+relativePosition, actions, GroupsOfChildren.INITIALIZATION_DNS)
+        }
+    }
+
     private fun resetInitializingActions(actions: List<SqlAction>){
         killChildren { it is SqlAction }
         // TODO: Can be merged with DbAction later
@@ -293,6 +361,13 @@ abstract class EnterpriseIndividual(
      */
     fun removeInitDbActions(actions: List<SqlAction>) {
         killChildren { it is SqlAction && actions.contains(it)}
+    }
+
+    /***
+     * remove specified list of [HostnameResolutionAction] from the initializing actions.
+     */
+    fun removeHostnameResolutionAction(actions: List<HostnameResolutionAction>) {
+        killChildren {  it is HostnameResolutionAction && actions.contains(it) }
     }
 
     /**

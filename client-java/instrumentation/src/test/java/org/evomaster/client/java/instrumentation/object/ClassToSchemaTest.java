@@ -219,6 +219,32 @@ public class ClassToSchemaTest {
     }
 
     @Test
+    public void testLocalDateTime(){
+        String schema = ClassToSchema.getOrDeriveNonNestedSchema(DtoLocalDateTime.class);
+        JsonObject json = parse(schema);
+        JsonObject obj = json.get(DtoLocalDateTime.class.getName()).getAsJsonObject();
+        assertEquals(1, obj.get("properties").getAsJsonObject().entrySet().size());
+        verifyTypeAndFormatOfFieldInProperties(obj, "string", "local-date-time", "foo");
+    }
+
+    @Test
+    public void testLocalDate(){
+        String schema = ClassToSchema.getOrDeriveNonNestedSchema(DtoLocalDate.class);
+        JsonObject json = parse(schema);
+        JsonObject obj = json.get(DtoLocalDate.class.getName()).getAsJsonObject();
+        assertEquals(1, obj.get("properties").getAsJsonObject().entrySet().size());
+        verifyTypeAndFormatOfFieldInProperties(obj, "string", "local-date", "foo");
+    }
+
+    public void testLocalTime(){
+        String schema = ClassToSchema.getOrDeriveNonNestedSchema(DtoLocalTime.class);
+        JsonObject json = parse(schema);
+        JsonObject obj = json.get(DtoLocalTime.class.getName()).getAsJsonObject();
+        assertEquals(1, obj.get("properties").getAsJsonObject().entrySet().size());
+        verifyTypeAndFormatOfFieldInProperties(obj, "string", "local-date", "foo");
+    }
+
+    @Test
     public void testObjectRequiredFields(){
 
         String schema = ClassToSchema.getOrDeriveNonNestedSchema(DtoObj.class, true, Collections.emptyList());
@@ -231,6 +257,15 @@ public class ClassToSchemaTest {
         assertEquals("foo", obj.get("required").getAsJsonArray().get(0).getAsString());
     }
 
+    @Test
+    public void testCollectionField() {
+        String schema = ClassToSchema.getOrDeriveNonNestedSchema(DtoCollection.class);
+        JsonObject json = parse(schema);
+        JsonObject obj = json.get(DtoCollection.class.getName()).getAsJsonObject();
+
+        checkDtoCollection(obj);
+    }
+
 
     private void checkDtoArray(JsonObject obj){
         assertEquals(5, obj.get("properties").getAsJsonObject().entrySet().size());
@@ -239,6 +274,12 @@ public class ClassToSchemaTest {
         verifyTypeInArray(obj, "string", "set_raw");
         verifyTypeInArray(obj, "boolean", "list");
         verifyTypeInArray(obj, "string", "list_raw");
+    }
+
+    private void checkDtoCollection(JsonObject obj){
+        assertEquals(2, obj.get("properties").getAsJsonObject().entrySet().size());
+        verifyTypeInArray(obj, "boolean", "collection");
+        verifyTypeInArray(obj, "string", "collection_raw");
     }
 
     private void checkMapDto(JsonObject obj){

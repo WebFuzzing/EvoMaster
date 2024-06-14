@@ -3,7 +3,7 @@ package com.foo.spring.rest.mongo;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import org.evomaster.client.java.controller.EmbeddedSutController;
-import org.evomaster.client.java.controller.api.dto.AuthenticationDto;
+import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto;
 import org.evomaster.client.java.controller.api.dto.SutInfoDto;
 import org.evomaster.client.java.sql.DbSpecification;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
@@ -11,6 +11,8 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.testcontainers.containers.GenericContainer;
 import org.evomaster.client.java.controller.problem.RestProblem;
+
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -20,6 +22,7 @@ public abstract class MongoController extends EmbeddedSutController {
     private MongoClient mongoClient;
 
     private final GenericContainer<?> mongodb = new GenericContainer<>("mongo:6.0")
+            .withTmpFs(Collections.singletonMap("/data/db", "rw"))
             .withExposedPorts(MONGODB_PORT);
     private ConfigurableApplicationContext ctx;
 
@@ -30,6 +33,7 @@ public abstract class MongoController extends EmbeddedSutController {
     protected MongoController(String databaseName, Class<?> mongoAppClass) {
         this.databaseName  = databaseName;
         this.mongoAppClass = mongoAppClass;
+        super.setControllerPort(0);
     }
 
     @Override

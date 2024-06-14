@@ -108,7 +108,7 @@ class RPCTestCaseWriter : ApiTestCaseWriter() {
     private fun handleAssertNull(lines: Lines, resVarName: String){
         if (format.isJava()){
             lines.add("assertNull($resVarName)")
-            lines.appendSemicolon(config.outputFormat)
+            lines.appendSemicolon()
         }
 
     }
@@ -149,7 +149,7 @@ class RPCTestCaseWriter : ApiTestCaseWriter() {
                     if (format.isJavaOrKotlin()){
                         lines.add(TestSuiteWriter.controller+"."+authAction.actionName+"("+authInfo+")")
 
-                        lines.appendSemicolon(format)
+                        lines.appendSemicolon()
                     }
 
                 }else
@@ -259,7 +259,7 @@ class RPCTestCaseWriter : ApiTestCaseWriter() {
                 config.outputFormat.isJava() -> lines.add("$t = (${handleClientType(u.first)}) $getClient")
                 else -> throw IllegalStateException("NOT SUPPORT for the format : ${config.outputFormat}")
             }
-            lines.appendSemicolon(format)
+            lines.appendSemicolon()
         }
     }
 
@@ -273,7 +273,7 @@ class RPCTestCaseWriter : ApiTestCaseWriter() {
                 config.outputFormat.isJava() -> lines.add("private static ${handleClientType(u.first)} $t")
                 else -> throw IllegalStateException("NOT SUPPORT for the format : ${config.outputFormat}")
             }
-            lines.appendSemicolon(format)
+            lines.appendSemicolon()
         }
     }
 
@@ -286,8 +286,8 @@ class RPCTestCaseWriter : ApiTestCaseWriter() {
      * @param lines are generated lines which save the generated test scripts
      */
     private fun handleCustomizedExternalServiceHandling(action: Action, index: Int, testCaseName: String, enable: Boolean, lines: Lines, testSuitePath: Path?){
-        if(config.enableCustomizedMethodForMockObjectHandling && action.parent is EnterpriseActionGroup){
-            val group = action.parent as EnterpriseActionGroup
+        if(config.enableCustomizedMethodForMockObjectHandling && action.parent is EnterpriseActionGroup<*>){
+            val group = action.parent as EnterpriseActionGroup<*>
 
             /*
                 now only support customized handling of external service for RPC problem
@@ -318,8 +318,8 @@ class RPCTestCaseWriter : ApiTestCaseWriter() {
      * @param lines are generated lines which save the generated test scripts
      */
     private fun handleCustomizedMockDatabaseHandling(action: Action, index: Int, testCaseName: String, enable: Boolean, lines: Lines, testSuitePath: Path?){
-        if(config.enableCustomizedMethodForMockObjectHandling && action.parent is EnterpriseActionGroup){
-            val group = action.parent as EnterpriseActionGroup
+        if(config.enableCustomizedMethodForMockObjectHandling && action.parent is EnterpriseActionGroup<*>){
+            val group = action.parent as EnterpriseActionGroup<*>
 
             val mockDbActions = group.getExternalServiceActions()
                 .filterIsInstance<DbAsExternalServiceAction>()

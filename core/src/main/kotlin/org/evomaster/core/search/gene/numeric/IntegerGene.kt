@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene.numeric
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
@@ -50,6 +51,35 @@ class IntegerGene(
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(IntegerGene::class.java)
+    }
+
+
+    override fun applyGlobalUpdates() {
+        val state = getSearchGlobalState()!! //cannot be null when this method is called
+
+        val useDataPool = state.randomness.nextBoolean(state.config.getProbabilityUseDataPool())
+
+        if(useDataPool) {
+            val applied = state.dataPool.applyTo(this)
+            if (applied) {
+                if (this.value < getMinimum()) {
+                    this.value = getMinimum()
+                }
+                if (this.value > getMaximum()) {
+                    this.value = getMaximum()
+                }
+            }
+            Lazy.assert { isLocallyValid() }
+        }
+    }
+
+    override fun setFromStringValue(value: String) : Boolean{
+        try{
+            this.value = value.toInt()
+            return true
+        }catch (e: NumberFormatException){
+            return false
+        }
     }
 
     override fun copyContent(): Gene {

@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.util
 
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.rest.Endpoint
 import org.evomaster.core.remote.SutProblemException
 
 
@@ -10,8 +11,8 @@ import org.evomaster.core.remote.SutProblemException
 object ActionBuilderUtil {
 
     fun verifySkipped(
-        skipped: List<String>,
-        endpointsToSkip: List<String>,
+        skipped: List<Endpoint>,
+        endpointsToSkip: List<Endpoint>,
     ) {
         if (endpointsToSkip.toSet().size != endpointsToSkip.size) {
 

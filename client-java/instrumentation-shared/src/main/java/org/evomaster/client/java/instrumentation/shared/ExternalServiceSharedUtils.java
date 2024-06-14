@@ -2,6 +2,20 @@ package org.evomaster.client.java.instrumentation.shared;
 
 public class ExternalServiceSharedUtils {
 
+
+    /**
+     * Hardcoded local ip address for which we guarantee we will never start WM or any other service on.
+     * This is needed when we want to have an hostname that resolved to our own IP address, but nothing runs on it.
+     */
+    public static final String RESERVED_RESOLVED_LOCAL_IP = "127.0.0.2";
+
+    /**
+     * Local IP address used to run the default WireMock server.
+     */
+    public static final String DEFAULT_WM_LOCAL_IP = "127.0.0.3";
+
+    public static final String DEFAULT_WM_DUMMY_HOSTNAME = "no_host_name";
+
     /**
      * default WM signature for https
      */

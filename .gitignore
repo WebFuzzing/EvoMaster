@@ -132,3 +132,10 @@ Migrations/
 /client-java/sql/target/
 /client-java/distance-heuristics/target/
 /e2e-tests/spring-rpc/spring-rpc-grpc/target/
+/em.toml
+
+/solver/target/
+/em.yaml
+/e2e-tests/spring-rest-openapi-v2/em.yaml
+/e2e-tests/spring-rest-openapi-v3/em.yaml
+/core-it/em.yaml

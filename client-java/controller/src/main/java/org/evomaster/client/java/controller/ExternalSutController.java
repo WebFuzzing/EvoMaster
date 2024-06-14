@@ -5,6 +5,7 @@ import org.evomaster.client.java.controller.api.dto.BootTimeInfoDto;
 import org.evomaster.client.java.controller.api.dto.UnitsInfoDto;
 import org.evomaster.client.java.instrumentation.*;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.evomaster.client.java.utils.SimpleLogger;
 import org.evomaster.client.java.controller.internal.SutController;
 import org.evomaster.client.java.instrumentation.external.JarAgentLocator;
@@ -445,7 +446,7 @@ public abstract class ExternalSutController extends SutController {
                     dto.index,
                     dto.name,
                     dto.inputVariables,
-                    dto.externalServiceMapping,
+                    dto.externalServiceMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> new ExternalServiceMapping(e.getValue().remoteHostname, e.getValue().localIPAddress, e.getValue().signature, e.getValue().isActive))),
                     dto.localAddressMapping,
                     dto.skippedExternalServices.stream().map(e -> new ExternalService(e.hostname, e.port)).collect(Collectors.toList())
             ));
@@ -458,6 +459,10 @@ public abstract class ExternalSutController extends SutController {
         if(!isInstrumentationActivated()){
             return null;
         }
+
+        UnitsInfoRecorder recorder = serverController.getUnitsInfoRecorder();
+        // must be analyzed on SUT process, as here we have no access to SUT classes
+        assert(recorder.areClassesAnalyzed());
 
         return getUnitsInfoDto(serverController.getUnitsInfoRecorder());
     }

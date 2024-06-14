@@ -85,12 +85,19 @@ import sys
 
 EXP_ID = "evomaster"
 
+### Named optional parameters
+LABEL_cluster = "cluster"
+LABEL_seed = "seed"
+LABEL_timeout = "timeout"
+LABEL_njobs = "njobs"
+LABEL_configfilter = "configfilter"
+LABEL_sutfilter = "sutfilter"
+LABELS = [LABEL_cluster,LABEL_seed,LABEL_timeout,LABEL_njobs,LABEL_configfilter,LABEL_sutfilter]
 
 
 if len(sys.argv) < 5:
-    print(
-        # old "Usage:\n<nameOfScript>.py <cluster> <baseSeed> <dir> <minSeed> <maxSeed> <budget> <timeoutMinutes> <nJobs> <configFilter?> <sutFilter?>")
-        "Usage:\n<nameOfScript>.py <dir> <minSeed> <maxSeed> <budget> named_param=? ... named_param=?")
+    print("Usage:\n<nameOfScript>.py <dir> <minSeed> <maxSeed> <budget> named_param=? ... named_param=?")
+    print("Available named parameters: " + str(LABELS))
     exit(1)
 
 
@@ -166,7 +173,6 @@ SUTFILTER = None
 
 
 ### Derived named variables ###
-
 if len(sys.argv) > 5:
     # There might be better ways to build such map in Python...
     options = sys.argv[5:len(sys.argv)]
@@ -174,13 +180,6 @@ if len(sys.argv) > 5:
     values = list(map(lambda z: z.split("=")[1], options))
     kv = dict(zip(keys,values))
 
-    LABEL_cluster = "cluster"
-    LABEL_seed = "seed"
-    LABEL_timeout = "timeout"
-    LABEL_njobs = "njobs"
-    LABEL_configfilter = "configfilter"
-    LABEL_sutfilter = "sutfilter"
-    LABELS = [LABEL_cluster,LABEL_seed,LABEL_timeout,LABEL_njobs,LABEL_configfilter,LABEL_sutfilter]
 
     if LABEL_cluster in kv:
         CLUSTER = kv[LABEL_cluster].lower() in ("yes", "true", "t")
@@ -259,6 +258,8 @@ SUTS = [
     #Sut("ind0", 1, JDK_8),
     #Sut("ind1", 1, JDK_11),
     # REST JVM
+    Sut("familie-ba-sak",1,JDK_17),
+    Sut("pay-publicapi",1,JDK_11),
     Sut("reservations-api", 1, JDK_11),
     Sut("bibliothek", 1, JDK_17),
     Sut("features-service", 1, JDK_8),
@@ -275,6 +276,7 @@ SUTS = [
     Sut("cwa-verification", 1, JDK_11),
     Sut("genome-nexus", 1, JDK_8),
     Sut("market", 1, JDK_11),
+    Sut("session-service",1,JDK_8),
     # GRAPHQL JVM
     Sut("petclinic-graphql", 1, JDK_8),
     Sut("patio-api", 1, JDK_11),
@@ -282,7 +284,7 @@ SUTS = [
     Sut("graphql-ncs", 1, JDK_8),
     Sut("graphql-scs", 1, JDK_8),
     # RPC
-    Sut("signal-registration",1,JDK_17)
+    Sut("signal-registration",1,JDK_17),
     Sut("rpc-thrift-ncs", 1, JDK_8),
     Sut("rpc-thrift-scs", 1, JDK_8),
     # REST NodeJS
@@ -748,7 +750,7 @@ def addJobBody(port, sut, seed, setting, configName):
     params += " --coveredTargetFile="+REPORT_DIR+"/covered_target_file" + identifier + ".txt"
     params += " --externalServiceIP=" + generate_ip()
     params += " --probOfHarvestingResponsesFromActualExternalServices=0"  # this adds way too much noise to results
-
+    params += " --createConfigPathIfMissing=false"
 
     JAVA = getJavaCommand(sut)
     command = JAVA + EVOMASTER_JAVA_OPTIONS + params + " >> " + em_log + " 2>&1"

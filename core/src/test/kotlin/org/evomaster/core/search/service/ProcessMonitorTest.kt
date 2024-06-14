@@ -67,7 +67,7 @@ class ProcessMonitorTest{
         TestUtils.doInitializeIndividualForTesting(a,randomness)
         a.setValue(0, 1.0)
 
-        val eval = ff.calculateCoverage(a)!!
+        val eval = ff.calculateCoverage(a, modifiedSpec = null)!!
         processMonitor.eval = eval
         processMonitor.newActionEvaluated()
 
@@ -92,7 +92,7 @@ class ProcessMonitorTest{
         TestUtils.doInitializeIndividualForTesting(a, randomness)
         a.setValue(0, 1.0)
 
-        val eval = ff.calculateCoverage(a)!!
+        val eval = ff.calculateCoverage(a, modifiedSpec = null)!!
         processMonitor.eval = eval
         processMonitor.newActionEvaluated()
 
@@ -121,7 +121,7 @@ class ProcessMonitorTest{
         individual.resetAllToZero()
         individual.setValue(0, 1.0)
 
-        val eval = ff.calculateCoverage(individual)!!
+        val eval = ff.calculateCoverage(individual, modifiedSpec = null)!!
         processMonitor.eval = eval
         processMonitor.newActionEvaluated()
 
@@ -144,7 +144,7 @@ class ProcessMonitorTest{
 //            assertEquals(individual.seeGenes().size, evalIndividual.individual.seeGenes().size)
             assertEquals(evalIndividual.fitness.coveredTargets(), evalIndividual.fitness.coveredTargets())
             evalIndividual.fitness.getViewOfData().forEach { (t, u) ->
-                assertEquals(evalIndividual.fitness.getHeuristic(t) , u.distance)
+                assertEquals(evalIndividual.fitness.getHeuristic(t) , u.score)
             }
         }
     }
@@ -169,7 +169,7 @@ class ProcessMonitorTest{
         TestUtils.doInitializeIndividualForTesting(a, randomness)
         a.resetAllToZero()
         a.setValue(0, 1.0)
-        val evalA = ff.calculateCoverage(a)!!
+        val evalA = ff.calculateCoverage(a, modifiedSpec = null)!!
         processMonitor.eval = evalA
         processMonitor.newActionEvaluated()
 
@@ -181,7 +181,7 @@ class ProcessMonitorTest{
         TestUtils.doInitializeIndividualForTesting(b,randomness)
         a.resetAllToZero()
         b.setValue(1, 1.0)
-        val evalB = ff.calculateCoverage(b)!!
+        val evalB = ff.calculateCoverage(b, modifiedSpec = null)!!
         processMonitor.eval = evalB
         processMonitor.newActionEvaluated()
 

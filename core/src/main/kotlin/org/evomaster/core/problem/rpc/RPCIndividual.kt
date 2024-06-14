@@ -9,6 +9,7 @@ import org.evomaster.core.sql.SqlActionUtils
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
+import org.evomaster.core.problem.enterprise.EnterpriseChildTypeVerifier
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 
@@ -34,10 +35,7 @@ class RPCIndividual(
 ) : ApiWsIndividual(
     sampleType,
     trackOperator, index, allActions,
-    childTypeVerifier = {
-        EnterpriseActionGroup::class.java.isAssignableFrom(it)
-                || SqlAction::class.java.isAssignableFrom(it)
-    },
+    childTypeVerifier = EnterpriseChildTypeVerifier(RPCCallAction::class.java),
     groups
 ) {
 
@@ -77,14 +75,13 @@ class RPCIndividual(
             GeneFilter.ALL -> seeAllActions().flatMap(Action::seeTopGenes)
             GeneFilter.NO_SQL -> seeActions(ActionFilter.NO_SQL).flatMap(Action::seeTopGenes)
             GeneFilter.ONLY_MONGO -> seeMongoDbActions().flatMap(MongoDbAction::seeTopGenes)
-            GeneFilter.ONLY_SQL -> seeDbActions().flatMap(SqlAction::seeTopGenes)
+            GeneFilter.ONLY_SQL -> seeSqlDbActions().flatMap(SqlAction::seeTopGenes)
+            GeneFilter.ONLY_DB -> seeActions(ActionFilter.ONLY_DB).flatMap { it.seeTopGenes() }
+            GeneFilter.NO_DB -> seeActions(ActionFilter.NO_DB).flatMap { it.seeTopGenes() }
             GeneFilter.ONLY_EXTERNAL_SERVICE -> seeExternalServiceActions().flatMap(ApiExternalServiceAction::seeTopGenes)
         }
     }
 
-    override fun size(): Int {
-        return seeMainExecutableActions().size
-    }
 
     override fun canMutateStructure(): Boolean = true
 
@@ -116,10 +113,10 @@ class RPCIndividual(
      * remove an action from [actions] at [position]
      */
     fun removeAction(position: Int) {
-        killChildByIndex(getFirstIndexOfEnterpriseActionGroup() + position) as EnterpriseActionGroup
+        killChildByIndex(getFirstIndexOfEnterpriseActionGroup() + position) as EnterpriseActionGroup<*>
     }
 
-    private fun getFirstIndexOfEnterpriseActionGroup() = max(0, max(children.indexOfLast { it is SqlAction }+1, children.indexOfFirst { it is EnterpriseActionGroup }))
+    private fun getFirstIndexOfEnterpriseActionGroup() = max(0, max(children.indexOfLast { it is SqlAction }+1, children.indexOfFirst { it is EnterpriseActionGroup<*> }))
 
     override fun copyContent(): Individual {
         return RPCIndividual(

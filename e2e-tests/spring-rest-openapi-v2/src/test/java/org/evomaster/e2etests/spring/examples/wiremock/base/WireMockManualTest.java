@@ -27,14 +27,14 @@ public class WireMockManualTest extends SpringTestBase {
         SpringTestBase.initClass(wireMockController);
 
         // DNS cache manipulator sets the IP for foo.bar to a different loopback address
-        DnsCacheManipulator.setDnsCache("foo.bar", "127.0.0.2");
+        DnsCacheManipulator.setDnsCache("foo.bar", "127.0.0.3");
 
         /*
          * For the moment port is set to 8080, under a different loopback address
          * Ports 80 and 443 can be set, but require sudo permission, so application
          * should run as root
          * */
-        wireMockServer = new WireMockServer(new WireMockConfiguration().bindAddress("127.0.0.2").port(8080).extensions(new ResponseTemplateTransformer(false)));
+        wireMockServer = new WireMockServer(new WireMockConfiguration().bindAddress("127.0.0.3").port(8080).extensions(new ResponseTemplateTransformer(false)));
         wireMockServer.start();
 
         // WireMock endpoint will respond the third value of the request path

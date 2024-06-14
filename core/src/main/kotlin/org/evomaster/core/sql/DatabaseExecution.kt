@@ -26,16 +26,52 @@ class DatabaseExecution(
         val executionInfo: List<SqlExecutionInfo>
 ) {
 
+    init {
+        /*
+            The handling of quotes in SQL databases is tricky, see for example for Postgres
+            https://stackoverflow.com/questions/20878932/are-postgresql-column-names-case-sensitive
+         */
+        validateQuotes(queriedData)
+        validateQuotes(updatedData)
+        validateQuotes(insertedData)
+        validateQuotes(failedWhere)
+        validateQuotes(deletedData)
+    }
+
+    private fun validateQuotes(data: Map<String, Set<String>>) {
+        val quoted = data.keys.filter { it.startsWith("\"") }
+        if(quoted.isNotEmpty()) {
+            throw IllegalArgumentException("Following table names are quoted: ${quoted.joinToString(", ")}")
+        }
+    }
+
+    private fun validateQuotes(data: List<String>) {
+        val quoted = data.filter { it.startsWith("\"") }
+        if(quoted.isNotEmpty()) {
+            throw IllegalArgumentException("Following table names are quoted: ${quoted.joinToString(", ")}")
+        }
+    }
+
+
     companion object {
 
         fun fromDto(dto: org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto?): DatabaseExecution {
 
+            /*
+                Dealing with quotes in table names is tricky... could be to handle reserved words or case sensitivity.
+                for now, we just remove the quotes, if any.
+                TODO this should be handled properly, although unsure how common it is...
+
+                Note: instead of dealing with this in the driver, better here in the core, as what returned in driver
+                might depend on library used to analyze the SQL commands.
+             */
+
             return DatabaseExecution(
-                    cloneData(dto?.queriedData),
-                    cloneData(dto?.updatedData),
-                    cloneData(dto?.insertedData),
-                    cloneData(dto?.failedWhere),
-                    dto?.deletedData?.toList() ?: listOf(),
+                    cloneData(dealWithQuotes(dto?.queriedData)),
+                    cloneData(dealWithQuotes(dto?.updatedData)),
+                    cloneData(dealWithQuotes(dto?.insertedData)),
+                    cloneData(dealWithQuotes(dto?.failedWhere)),
+                    dealWithQuotes(dto?.deletedData?.toList()) ?: listOf(),
                     dto?.numberOfSqlCommands ?: 0,
                     cloneSqlExecutionInfo(dto?.sqlExecutionLogDtoList)
             )
@@ -54,6 +90,22 @@ class DatabaseExecution(
 
             return data
         }
+
+        private fun dealWithQuotes(data: Map<String, Set<String>>?): Map<String, Set<String>>? {
+            if(data == null) return null
+
+            return data.entries.associate {
+                (if(it.key.startsWith("\"")) removeQuotes(it.key) else it.key) to it.value
+            }
+        }
+
+        private fun dealWithQuotes(data: List<String>?) : List<String>?{
+            if(data == null) return null
+
+            return data.map { if(it.startsWith("\"")) removeQuotes(it) else it }
+        }
+
+        private fun removeQuotes(s: String) = s.substring(1,s.length-1)
 
         private fun cloneData(data: List<String>?): List<String> {
             if (data == null) {

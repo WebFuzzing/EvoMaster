@@ -33,13 +33,13 @@ class WmOkHttp3Rest {
             return if (code in 200..299){
                 if (body == "\"HELLO THERE!!!\""){
                     ResponseEntity.ok("Hello There")
-                }else{
+                } else{
                     ResponseEntity.ok("OK")
                 }
-            } else if (code in 300..499){
+            } else if (code in 400..499){
                 ResponseEntity.status(400).build()
             }else{
-                ResponseEntity.status(500).build()
+                ResponseEntity.status(418).build()
             }
         }catch (e: Exception){
            return ResponseEntity.status(500).build()
@@ -87,7 +87,7 @@ class WmOkHttp3Rest {
             } else if (code in 300..499){
                 ResponseEntity.status(400).build()
             }else{
-                ResponseEntity.status(500).build()
+                ResponseEntity.status(418).build()
             }
         }catch (e: Exception){
             return ResponseEntity.status(500).build()

@@ -9,6 +9,7 @@ import org.evomaster.client.java.controller.api.dto.SutInfoDto;
 import org.evomaster.client.java.controller.internal.SutController;
 import org.evomaster.client.java.instrumentation.shared.ClassName;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+import org.evomaster.client.java.instrumentation.staticstate.MethodReplacementPreserveSemantics;
 import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.evomaster.client.java.utils.SimpleLogger;
@@ -22,6 +23,7 @@ import org.evomaster.core.problem.api.ApiWsIndividual;
 import org.evomaster.core.remote.service.RemoteController;
 import org.evomaster.core.remote.service.RemoteControllerImplementation;
 import org.evomaster.core.search.Solution;
+import org.evomaster.core.search.service.Statistics;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -91,6 +93,9 @@ public abstract class EnterpriseTestBase {
     @BeforeEach
     public void initTest() {
 
+        //make sure the search can use all instrumentation, even the ones using non-preserving semantics
+        MethodReplacementPreserveSemantics.shouldPreserveSemantics = false;
+
         //in case it was modified in a previous test in the same class
         defaultSeed = STARTING_SEED;
 
@@ -114,6 +119,9 @@ public abstract class EnterpriseTestBase {
             each test.
          */
         ObjectiveRecorder.reset(true);
+
+        //as this can be modified (eg before running generated tests), make sure to put it back to default
+        MethodReplacementPreserveSemantics.shouldPreserveSemantics = false;
     }
 
 
@@ -137,7 +145,8 @@ public abstract class EnterpriseTestBase {
                 "--sutControllerPort", "" + controllerPort,
                 "--maxActionEvaluations", "" + iterations,
                 "--stoppingCriterion", "FITNESS_EVALUATIONS",
-                "--useTimeInFeedbackSampling" , "false"
+                "--useTimeInFeedbackSampling" , "false",
+                "--createConfigPathIfMissing", "false"
         ));
 
         StaticCounter.Companion.reset();
@@ -183,19 +192,18 @@ public abstract class EnterpriseTestBase {
             boolean createTests,
             Consumer<List<String>> lambda,
             int timeoutMinutes) throws Throwable{
-
         List<ClassName> classNames = new ArrayList<>();
 
         String splitType = "";
 
         if(terminations == null || terminations.isEmpty()){
             classNames.add(new ClassName(fullClassName));
-            splitType = "NONE";
+            splitType = EMConfig.TestSuiteSplitType.NONE.name();
         } else {
             for (String termination : terminations) {
                 classNames.add(new ClassName(fullClassName + termination));
             }
-            splitType = "CLUSTER";
+            splitType = EMConfig.TestSuiteSplitType.FAULTS.name();
         }
 
          /*
@@ -217,6 +225,13 @@ public abstract class EnterpriseTestBase {
         });
     }
 
+    protected void runTestHandlingFlakyAndCompilation(
+            String label,
+            int iterations,
+            Consumer<List<String>> lambda) throws Throwable {
+
+        runTestHandlingFlakyAndCompilation(label, "org.bar."+label, iterations, lambda);
+    }
 
 
     protected void runTestHandlingFlakyAndCompilation(
@@ -252,6 +267,8 @@ public abstract class EnterpriseTestBase {
         if (terminations == null) terminations = Arrays.asList("");
         //BMR: this is where I should handle multiples???
         if (createTests){
+            MethodReplacementPreserveSemantics.shouldPreserveSemantics = true;
+
             for (String termination : terminations) {
                 assertTimeoutPreemptively(Duration.ofMinutes(2), () -> {
                     ClassName className = new ClassName(fullClassName + termination);
@@ -274,6 +291,8 @@ public abstract class EnterpriseTestBase {
         runTestHandlingFlaky(outputFolderName, fullClassName, iterations, createTests,lambda, timeoutMinutes);
 
         if (createTests){
+            MethodReplacementPreserveSemantics.shouldPreserveSemantics = true;
+
             assertTimeoutPreemptively(Duration.ofMinutes(2), () -> {
                 ClassName className = new ClassName(fullClassName);
                 compileRunAndVerifyTests(outputFolderName, className);
@@ -352,11 +371,16 @@ public abstract class EnterpriseTestBase {
 
     protected void compile(String outputFolderName){
 
+        long start = System.currentTimeMillis();
+
         CompilerForTestGenerated.INSTANCE.compile(
                 OutputFormat.KOTLIN_JUNIT_5,
                 new File(outputFolderPath(outputFolderName)),
                 new File("target/test-classes")
         );
+
+        int passed = (int)(System.currentTimeMillis() - start) / 1000;
+        System.out.println("Folder compiled in " + passed + " seconds: " + outputFolderName);
     }
 
     protected List<String> getArgsWithCompilation(int iterations, String outputFolderName, ClassName testClassName){
@@ -381,7 +405,8 @@ public abstract class EnterpriseTestBase {
                 "--testSuiteFileName", testClassName.getFullNameWithDots(),
                 "--testSuiteSplitType", split,
                 "--expectationsActive", "TRUE",
-                "--executiveSummary", summary
+                "--executiveSummary", summary,
+                "--createConfigPathIfMissing", "false"
         ));
     }
 
@@ -464,7 +489,7 @@ public abstract class EnterpriseTestBase {
     protected void assertInsertionIntoTable(Solution<? extends ApiWsIndividual> solution, String tableName) {
 
         boolean ok = solution.getIndividuals().stream().anyMatch(
-                ind -> ind.getIndividual().seeDbActions().stream().anyMatch(
+                ind -> ind.getIndividual().seeSqlDbActions().stream().anyMatch(
                         da -> da.getTable().getName().equalsIgnoreCase(tableName))
         );
 
@@ -501,4 +526,23 @@ public abstract class EnterpriseTestBase {
         }
 
     }
+
+    /**
+     * This function is used to retrieve the item with the identifier "key" in the Solution "sol"
+     * from Statistics. Returns the value of the element if the element exists, otherwise returns null.
+     * @param sol
+     * @param key
+     * @return
+     */
+    protected String findValueOfItemWithKeyInStats(Solution sol, String key) {
+
+        for(Statistics.Pair el : (List<Statistics.Pair>)sol.getStatistics()) {
+            if (el.getHeader().equals(key)) {
+                return el.getElement();
+            }
+        }
+
+        return null;
+    }
+
 }

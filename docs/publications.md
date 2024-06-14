@@ -13,9 +13,6 @@ Also, some of these papers provides full replication packages, which are linked 
 
 ## Recent arXiv Technical Reports, not Peer-Reviewed (Yet)
 
-* A. Arcuri, M. Zhang, J.P. Galeotti.
-  *Advanced White-Box Heuristics for Search-Based Fuzzing of REST APIs*.
-  [[arXiv](https://arxiv.org/abs/2309.08360)][[Scripts](exp/arxiv_advanced_heuristics.py)]
   
 * M. Zhang, A. Arcuri, Y. Li, K Xue, Z Wang, J. Huo, W Huang.
   *Fuzzing Microservices In Industry: Experience of Applying EvoMaster at Meituan*.
@@ -26,18 +23,30 @@ Also, some of these papers provides full replication packages, which are linked 
 
 ## Peer-Reviewed Publications
 
+### 2024
+
+* S. Seran.
+  *Search-based Security Testing of Enterprise Microservices*.
+  IEEE International Conference on Software Testing, Validation and Verification (ICST), Doctoral Symposium.
+  [[PDF](publications/2024_icst_ds.pdf)]
+
+* A. Arcuri, M. Zhang, J.P. Galeotti.
+  *Advanced White-Box Heuristics for Search-Based Fuzzing of REST APIs*.
+  ACM Transactions on Software Engineering and Methodology (TOSEM).
+  [[PDF](publications/2024_tosem_tt.pdf)][[Scripts](exp/2024_tosem_advanced_heuristics.py)]
+
 
 ### 2023
 
 * S. Seran, M. Zhang, A. Arcuri.
   *Search-Based Mock Generation of External Web Service Interactions*.
   Symposium on Search-based Software Engineering (SSBSE).
-  (to appear)
+  [[PDF](publications/2023_ssbse_wm.pdf)]
 
 * A. Golmohammadi, M. Zhang, A. Arcuri.
   *On the Impact of Tool Evolution and Case Study Size on SBSE Experiments: A Replicated Study with EvoMaster*.
   Symposium on Search-based Software Engineering (SSBSE).
-  (to appear)
+  [[PDF](publications/2023_ssbse_tuning.pdf)]
 
 * A. Golmohammadi.
   *Enhancing White-Box Search-Based Testing of RESTful APIs*.
@@ -58,15 +67,16 @@ Also, some of these papers provides full replication packages, which are linked 
   *Random Testing and Evolutionary Testing for Fuzzing GraphQL APIs*.
   ACM Transactions on the Web (TWEB). 
   [[PDF](publications/2023_tweb.pdf)]
-  [[Script 0](exp/arxiv_gql_bb.py)]
-  [[Script 1](exp/arxiv_gql_wb.py)]
+  [[Script 0](exp/2023_tweb_gql_bb.py)]
+  [[Script 1](exp/2023_tweb_gql_wb.py)]
 
 * M. Zhang, A. Arcuri.
   *Open Problems in Fuzzing RESTful APIs: A Comparison of Tools*.
   ACM Transactions on Software Engineering and Methodology (TOSEM).
   [[PDF](publications/2023_tosem_comparisons.pdf)]
-  [[Script 0](exp/arxiv_open_problems_bb.py)]
-  [[Script 1](exp/arxiv_open_problems_wb.py)]
+  [[Script 0](exp/2023_tosem__open_problems_bb.py)]
+  [[Script 1](exp/2023_tosem_open_problems_wb.py)]
+  [[Script others](exp/2023_tosem_open_problems_others.zip)]
 
 * M. Zhang, A. Belhadi, A. Arcuri.
   *JavaScript SBST Heuristics To Enable Effective Fuzzing of NodeJS Web APIs*.

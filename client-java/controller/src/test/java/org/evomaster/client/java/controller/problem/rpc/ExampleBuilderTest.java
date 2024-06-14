@@ -2,6 +2,8 @@ package org.evomaster.client.java.controller.problem.rpc;
 
 import com.thrift.example.artificial.*;
 import org.evomaster.client.java.controller.api.dto.*;
+import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto;
+import org.evomaster.client.java.controller.api.dto.auth.JsonAuthRPCEndpointDto;
 import org.evomaster.client.java.controller.problem.rpc.schema.EndpointSchema;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;

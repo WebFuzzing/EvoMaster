@@ -23,7 +23,7 @@ class ObjectIdGene(
      */
     name: String,
 
-    private val id: RegexGene = RegexHandler.createGeneForJVM("[0-9a-f]{24}")
+    private val id: RegexGene = RegexHandler.createGeneForJVM("^[0-9a-f]{24}$")
 
 ) : CompositeFixedGene(name, mutableListOf(id)) {
 

@@ -73,5 +73,23 @@ class EJSONOutputModeTest {
             gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.EJSON)
         )
     }
+
+    @Test
+    fun testEscapedString() {
+        val gene = ObjectGene("Object", listOf(StringGene("someStringField", value = "\\")))
+        val ejsonString = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.EJSON)
+        assertEquals(
+            "{\"someStringField\":\"\\\\\"}", ejsonString
+        )
+    }
+
+    @Test
+    fun testAnotherEscapedString() {
+        val gene = ObjectGene("Object", listOf(StringGene("someStringField", value = "\"")))
+        val ejsonString = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.EJSON)
+        assertEquals(
+            "{\"someStringField\":\"\\\"\"}", ejsonString
+        )
+    }
 }
 

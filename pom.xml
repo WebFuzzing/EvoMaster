@@ -9,7 +9,7 @@
         To change version in all modules, use:
         mvn versions:set -DnewVersion=a.b.c
      -->
-    <version>2.0.1-SNAPSHOT</version>
+    <version>3.0.1-SNAPSHOT</version>
 
     <inceptionYear>2016</inceptionYear>
     <name>EvoMaster</name>
@@ -27,6 +27,7 @@
         <module>e2e-tests</module>
         <module>report</module>
         <module>test-old-libraries</module>
+        <module>solver</module>
     </modules>
 
     <issueManagement>
@@ -114,6 +115,7 @@
 
     <properties>
         <addOpens></addOpens> <!-- overridden in profile -->
+        <redirectTestOutputToFile>true</redirectTestOutputToFile>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>1.8</java.version>
         <kotlin.version>1.8.20</kotlin.version>
@@ -122,16 +124,28 @@
         <junit.platform.version>1.7.2</junit.platform.version>
         <dropwizard.version>1.3.7</dropwizard.version>
         <swagger.version>1.6.1</swagger.version>
+        <!--   upgrading to 1.0.68  breaks Spring... TODO would need try upgrading in own branch    -->
         <swagger.parser-v2.version>1.0.61</swagger.parser-v2.version>
+        <!--   upgrading to 2.1.18  breaks Spring... TODO would need try upgrading in own branch -->
         <swagger.parser-v3.version>2.1.8</swagger.parser-v3.version>
         <swagger.annotations.version>2.2.7</swagger.annotations.version>
         <springboot.version>2.5.4</springboot.version>
+        <springboot3.version>3.1.5</springboot3.version>
         <springfox.version>3.0.0</springfox.version>
         <springdoc.version>1.6.9</springdoc.version>
         <jetty.version>9.4.29.v20200521</jetty.version>
+        <slf4j.version>1.7.24</slf4j.version>
         <jersey.version>2.33</jersey.version>
         <javax.el.version>2.2.5</javax.el.version>
-        <jackson.version>2.11.0</jackson.version>
+        <!--
+            Using latest, eg 2.16.0, breaks build, as Maven Shade Plugin
+            still does not support multi-release JARs
+            https://github.com/apache/maven-shade-plugin/pull/202
+            recent versions of Jackson are multi-release.
+            More info at:
+            https://www.logicbig.com/tutorials/core-java-tutorial/java-9-changes/multi-release-jars.html
+        -->
+        <jackson.version>2.14.3</jackson.version>
         <asm.version>9.2</asm.version>
         <testcontainers.version>1.17.6</testcontainers.version>
         <testcontainers.mockerserver.version>1.17.2</testcontainers.mockerserver.version>
@@ -158,12 +172,14 @@
         <okhttp.client.version>2.4.0</okhttp.client.version>
         <dns.cache.manipulator.version>1.8.0</dns.cache.manipulator.version>
         <jakarta.annotation.version>2.0.0</jakarta.annotation.version>
+        <jakarta.validation-api.version>3.0.2</jakarta.validation-api.version>
+        <jakarta.persistence-api.version>3.1.0</jakarta.persistence-api.version>
+        <jakarta.ws.rs-api.version>3.1.0</jakarta.ws.rs-api.version>
         <micronaut.version>3.2.7</micronaut.version>
         <micronaut.openapi.version>3.2.0</micronaut.openapi.version>
         <micronaut.test.version>3.0.5</micronaut.test.version>
         <org.mongodb.version>4.2.3</org.mongodb.version>
         <org.locationtech.jts.version>1.19.0</org.locationtech.jts.version>
-
     </properties>
 
 
@@ -235,7 +251,11 @@
                 <artifactId>evomaster-client-java-distance-heuristics</artifactId>
                 <version>${project.version}</version>
             </dependency>
-
+            <dependency>
+                <groupId>org.evomaster</groupId>
+                <artifactId>solver</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
             <!-- Kotlin -->
             <dependency>
@@ -391,7 +411,12 @@
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
-                <version>1.7.24</version>
+                <version>${slf4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-simple</artifactId>
+                <version>${slf4j.version}</version>
             </dependency>
             <dependency>
                 <groupId>ch.qos.logback</groupId>
@@ -403,7 +428,15 @@
                 <artifactId>auth0</artifactId>
                 <version>1.8.0</version>
             </dependency>
-
+            <dependency>
+                <groupId>org.apache.opennlp</groupId>
+                <artifactId>opennlp-tools</artifactId>
+                <!--
+                    As of version of 2.0.0, they moved to JDK 11
+                    https://opennlp.apache.org/news/release-200.html
+                -->
+                <version>1.9.4</version>
+            </dependency>
 
 
             <!-- Jetty -->
@@ -475,6 +508,11 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.datatype</groupId>
                 <artifactId>jackson-dataformat-yaml</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-toml</artifactId>
                 <version>${jackson.version}</version>
             </dependency>
             <dependency>
@@ -653,7 +691,7 @@
             <dependency>
                 <groupId>com.github.jsqlparser</groupId>
                 <artifactId>jsqlparser</artifactId>
-                <version>4.4</version>
+                <version>4.9</version>
             </dependency>
             <dependency>
                 <groupId>org.postgresql</groupId>
@@ -740,6 +778,12 @@
 
 
             <!-- test dependencies -->
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter</artifactId>
+                <version>${junit.jupiter.version}</version>
+                <scope>test</scope>
+            </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-engine</artifactId>
@@ -998,15 +1042,10 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <!--Man: maven 3.6.3 and jdk1.8.0_261.
-                        with 3.0.0-M4, there exist an error
-                         "The forked VM terminated without properly saying goodbye. VM crash or System.exit called?"
-                        then fixed with 3.0.0-M5
-                    -->
-                    <version>3.0.0-M5</version>
+                    <version>3.2.5</version>
                     <configuration>
                         <forkCount>1</forkCount>
-                        <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                        <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>
                         <rerunFailingTestsCount>2</rerunFailingTestsCount>
                         <trimStackTrace>false</trimStackTrace>
                         <!--

@@ -2,7 +2,7 @@ package org.evomaster.core.remote.service
 
 import org.evomaster.client.java.controller.EmbeddedSutController
 import org.evomaster.client.java.controller.api.dto.ActionDto
-import org.evomaster.client.java.controller.api.dto.AuthenticationDto
+import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.internal.EMController
 import org.evomaster.client.java.sql.DbSpecification

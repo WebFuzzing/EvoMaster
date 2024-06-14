@@ -268,11 +268,11 @@ something like `spring-boot-starter-parent`).
 If you need to use such external poms, you can import them as dependency, i.e., specifying
 the `<scope>import</scope>` tag. 
 
-When creating a new module, it is also important to add it as a dependency to `report`,
+DEPRECATED: When creating a new module, it is also important to add it as a dependency to `report`,
 so that aggregated, transitive code coverage can be calculated.
 
 
-### MAVEN DEPENDENCY VERSION 
+### MAVEN DEPENDENCY VERSION FOR LIBRARIES
 
 All dependency `<version>` tags must be declared in the *root* `pom.xml` file, 
 in the `<dependencyManagement>` section.
@@ -285,17 +285,25 @@ in submodules can lead to duplicated `<version>` declarations with different ver
 All version numbers should be easily audited, and so should be in a single file (i.e., the
 *root* `pom.xml`).
 
+There are cases in which we might need different versions of the same library in different modules (e.g., recall the difference between `core`, `client` and `e2e` modules).
+And the are cases as well in which adding a dependency management definition can have side effects on transitively imported libraries.
+In those cases, a dependency management declaration in the root pom file would be problematic.
+In such a case, should still have the version number declared as a property (see `<properties>` entry) in the root pom file.
+
 
 ### THIRD-PARTY LIBRARIES
 
-Adding a new dependency is fine, but few things to consider:
+In general, adding a new dependency is fine, but few things to consider:
 
 * __NEVER__ ever add a GPL licensed library, unless it is under the so called _classpath exception_.
   Note that LGPL libraries are fine.
  
 * When adding a new library, check who is maintaining it, and when was its last update.
   No longer maintained libraries should be avoided. 
-  
+
+* Libraries might need to be *shaded* if added to the client controller module.
+
+* Best to always ask the team lead before adding any new library (especially if you do not know what shading is). 
       
 ### THIRD-PARTY CODE
   

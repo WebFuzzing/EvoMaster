@@ -13,6 +13,7 @@ import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
+import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.util.RestResourceTemplateHandler
 import org.evomaster.core.problem.util.BindingBuilder
@@ -85,6 +86,11 @@ class RestResourceCalls(
     private val mongoDbActions: List<MongoDbAction>
         get() {
             return children.flatMap { it.flatten() }.filterIsInstance<MongoDbAction>()
+        }
+
+    private val dnsActions: List<HostnameResolutionAction>
+        get() {
+            return children.flatMap { it.flatView() }.filterIsInstance<HostnameResolutionAction>()
         }
 
     private val externalServiceActions: List<ApiExternalServiceAction>
@@ -174,20 +180,31 @@ class RestResourceCalls(
     }
 
     /**
+     * @return EnterpriseActionGroup in the top structure of ActionTree
+     */
+    fun seeEnterpriseActionGroup() : List<EnterpriseActionGroup<RestCallAction>>{
+        return children.filterIsInstance<EnterpriseActionGroup<*>>() as List<EnterpriseActionGroup<RestCallAction>>
+    }
+
+    /**
      * @return actions with specified action [filter]
      */
     fun seeActions(filter: ActionFilter): List<out Action> {
         return when (filter) {
-            ActionFilter.ALL -> sqlActions.plus(externalServiceActions).plus(mainActions)
-            ActionFilter.INIT -> sqlActions.plus(mongoDbActions)
+            ActionFilter.ALL -> sqlActions.plus(externalServiceActions).plus(mainActions) // FIXME: Is this correct?
+            ActionFilter.INIT -> sqlActions.plus(mongoDbActions).plus(dnsActions)
             ActionFilter.ONLY_SQL -> sqlActions
-            ActionFilter.NO_INIT, ActionFilter.NO_SQL -> externalServiceActions.plus(mainActions)
+            ActionFilter.NO_INIT, ActionFilter.NO_SQL, ActionFilter.NO_DB -> externalServiceActions.plus(mainActions)
             ActionFilter.MAIN_EXECUTABLE -> mainActions
             ActionFilter.ONLY_EXTERNAL_SERVICE -> externalServiceActions
             ActionFilter.NO_EXTERNAL_SERVICE -> sqlActions.plus(mainActions)
             ActionFilter.ONLY_MONGO -> mongoDbActions
+            ActionFilter.ONLY_DNS -> dnsActions
+            ActionFilter.ONLY_DB -> sqlActions.plus(mongoDbActions)
         }
     }
+
+
 
     /**
      * @return size of action with specified action [filter]

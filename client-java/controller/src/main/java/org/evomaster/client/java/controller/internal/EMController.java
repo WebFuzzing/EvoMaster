@@ -370,7 +370,7 @@ public class EMController {
                             return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
                         }
                         noKillSwitch(() -> sutController.initSqlHandler());
-                        noKillSwitch(() -> sutController.registerOrExecuteInitSqlCommandsIfNeeded());
+                        noKillSwitch(() -> sutController.registerOrExecuteInitSqlCommandsIfNeeded(true));
                         noKillSwitch(() -> sutController.initMongoHandler());
                     } else {
                         //TODO as starting should be blocking, need to check
@@ -527,6 +527,12 @@ public class EMController {
                         info.lastExecutedStatement = a.getLastExecutedStatement();
                         info.rawAccessOfHttpBodyPayload = a.isRawAccessOfHttpBodyPayload();
                         info.parsedDtoNames = new HashSet<>(a.getParsedDtoNamesView());
+                        info.hostnameResolutionInfoDtos = a.getHostnameInfos().stream()
+                                .map(hn -> new HostnameResolutionInfoDto(
+                                        hn.getHostname(),
+                                        hn.getResolvedAddress()
+                                ))
+                                .collect(Collectors.toList());
                         info.externalServices = a.getExternalServices().stream()
                                 .map(es -> new ExternalServiceInfoDto(
                                         es.getProtocol(),
@@ -735,7 +741,6 @@ public class EMController {
                     queryResult = SqlScriptRunner.execCommand(connection, dto.command);
                 } else {
                     insertionResultsDto = SqlScriptRunner.execInsert(connection, dto.insertions);
-
                 }
             } catch (Exception e) {
                 String msg = "Failed to execute database command: " + e.getMessage();
@@ -806,7 +811,9 @@ public class EMController {
             } catch (Exception e) {
                 String msg = "Failed to execute database command: " + e.getMessage();
                 SimpleLogger.warn(msg);
-                return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
+                mongoInsertionResultsDto = new MongoInsertionResultsDto();
+                mongoInsertionResultsDto.handleFailedInsertion(dto.insertions, e);
+                return Response.status(400).entity(WrappedResponseDto.withData(mongoInsertionResultsDto)).build();
             }
 
             if (mongoInsertionResultsDto != null) {

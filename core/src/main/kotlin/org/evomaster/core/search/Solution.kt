@@ -3,7 +3,7 @@ package org.evomaster.core.search
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.output.Termination
-import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
+import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 
 
 class Solution<T>(
@@ -40,16 +40,16 @@ where T : Individual {
         return  "${name}_$testSuiteNameSuffix"
     }
 
-    fun hasAnyActiveHttpExternalServiceAction() : Boolean{
-        return individuals.any { ind -> ind.individual.seeAllActions().any { a ->  a is HttpExternalServiceAction && a.active } }
+    fun needWireMockServers() : Boolean{
+        return individuals.any { ind -> ind.individual.seeInitializingActions().any { a ->  a is HostnameResolutionAction } }
     }
 
-    fun hasAnyUsageOfDefaultExternalService() : Boolean{
-        return individuals.any{ind -> ind.fitness.getViewEmployedDefaultWM().isNotEmpty()}
+    private fun hasAnyHostnameResolutionAction(): Boolean {
+        return individuals.any { ind -> ind.individual.seeAllActions().any() { a -> a is HostnameResolutionAction } }
     }
 
-    fun needsMockedDns() : Boolean{
-        return hasAnyActiveHttpExternalServiceAction() || hasAnyUsageOfDefaultExternalService()
+    fun needsHostnameReplacement(): Boolean {
+        return hasAnyHostnameResolutionAction()
     }
 
     fun hasAnySqlAction() : Boolean{
@@ -65,5 +65,13 @@ where T : Individual {
      */
     fun extractSolutionDuringSeeding() : Solution<T>{
         return Solution(individualsDuringSeeding.toMutableList(), testSuiteNamePrefix, testSuiteNameSuffix, Termination.SEEDING, listOf(), listOf())
+    }
+
+    /**
+     * Add a function which sets the termination criteria
+     */
+    fun convertSolutionToExecutiveSummary() : Solution<T> {
+        return Solution(individuals, testSuiteNamePrefix, testSuiteNameSuffix, Termination.FAULT_REPRESENTATIVES,
+            individualsDuringSeeding, targetsDuringSeeding)
     }
 }

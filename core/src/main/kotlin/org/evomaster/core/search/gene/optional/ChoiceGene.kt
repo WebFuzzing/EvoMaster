@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.optional
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
@@ -13,9 +12,10 @@ import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMuta
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.util.Collections
 
 /**
- * A gene that holds many potenial genes (genotype) but
+ * A gene that holds many potential genes (genotype) but
  * only one is active at any time (phenotype). The list
  * of gene choices cannot be empty.
  */
@@ -23,7 +23,11 @@ import org.slf4j.LoggerFactory
 class ChoiceGene<T>(
     name: String,
     private val geneChoices: List<T>,
-    activeChoice: Int = 0
+    activeChoice: Int = 0,
+    /**
+     * Potentially, associate different probabilities for the different choices
+     */
+    probabilities: List<Double>? = null
 
 ) : CompositeFixedGene(name, geneChoices) where T : Gene {
 
@@ -34,6 +38,8 @@ class ChoiceGene<T>(
     var activeGeneIndex: Int = activeChoice
         private set
 
+    private val probabilities = probabilities?.toList() //make a copy
+
     init {
         if (geneChoices.isEmpty()) {
             throw IllegalArgumentException("The list of gene choices cannot be empty")
@@ -42,15 +48,23 @@ class ChoiceGene<T>(
         if (activeChoice < 0 || activeChoice >= geneChoices.size) {
             throw IllegalArgumentException("Active choice must be between 0 and ${geneChoices.size - 1}")
         }
+        if(probabilities != null && probabilities.size != geneChoices.size){
+            throw IllegalArgumentException("If probabilities are defined, then they must be same number as the genes")
+        }
     }
 
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
-        activeGeneIndex = randomness.nextInt(geneChoices.size)
+
+        activeGeneIndex = if(probabilities != null){
+            randomness.chooseByProbability(probabilities.mapIndexed { index, d -> index to d }.toMap())
+        } else {
+            randomness.nextInt(geneChoices.size)
+        }
 
         /*
             Even the non-selected genes need to be randomized, otherwise could be let in
-            a inconsistent state
+            an inconsistent state
          */
         if(!initialized){
         geneChoices
@@ -213,7 +227,8 @@ class ChoiceGene<T>(
     override fun copyContent(): Gene = ChoiceGene(
         name,
         activeChoice = this.activeGeneIndex,
-        geneChoices = this.geneChoices.map { it.copy() }.toList()
+        geneChoices = this.geneChoices.map { it.copy() }.toList(),
+        probabilities = probabilities // immutable
     )
 
     /**

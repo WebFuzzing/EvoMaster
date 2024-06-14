@@ -7,8 +7,11 @@ import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.SqlActionUtils
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.api.ApiWsIndividual
+import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
+import org.evomaster.core.problem.enterprise.EnterpriseChildTypeVerifier
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
+import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.SamplerSpecification
 import org.evomaster.core.search.*
@@ -38,10 +41,20 @@ class RestIndividual(
     dnsSize: Int = 0,
     groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(allActions,mainSize,sqlSize,mongoSize,dnsSize)
 ): ApiWsIndividual(sampleType, trackOperator, index, allActions,
-    childTypeVerifier = {
-        RestResourceCalls::class.java.isAssignableFrom(it)
-                || SqlAction::class.java.isAssignableFrom(it) || MongoDbAction::class.java.isAssignableFrom(it)
-    }, groups) {
+    childTypeVerifier = EnterpriseChildTypeVerifier(RestCallAction::class.java,RestResourceCalls::class.java),
+    groups) {
+
+    /*
+        Note when instantiating this class... input actions might or might have not been initialized.
+        This all depends on how this object is created.
+        If not initialized, then would need to make sure to call doInitialize() on it.
+        Likewise, might need to handle doInitializeLocalId().
+        Furthermore, doGlobalInitialize() can only be handled once the object is created.
+        Note that this latter would call doInitializeLocalId() if needed.
+        However, when creating test cases manually with specific values (or seeded from tests) might
+        want to skip calling doGlobalInitialize() as that can modify the values (and so might need to
+        call doInitializeLocalId() directly, possibly by calling resetLocalIdRecursively() first).
+     */
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(RestIndividual::class.java)
@@ -112,10 +125,48 @@ class RestIndividual(
         return when (filter) {
             GeneFilter.ALL -> seeAllActions().flatMap(Action::seeTopGenes)
             GeneFilter.NO_SQL -> seeActions(ActionFilter.NO_SQL).flatMap(Action::seeTopGenes)
-            GeneFilter.ONLY_SQL -> seeDbActions().flatMap(SqlAction::seeTopGenes)
+            GeneFilter.ONLY_SQL -> seeSqlDbActions().flatMap(SqlAction::seeTopGenes)
             GeneFilter.ONLY_MONGO -> seeMongoDbActions().flatMap(MongoDbAction::seeTopGenes)
+            GeneFilter.ONLY_DB -> seeActions(ONLY_DB).flatMap { it.seeTopGenes() }
+            GeneFilter.NO_DB -> seeActions(NO_DB).flatMap { it.seeTopGenes() }
             GeneFilter.ONLY_EXTERNAL_SERVICE -> seeExternalServiceActions().flatMap(ApiExternalServiceAction::seeTopGenes)
         }
+    }
+
+    /**
+     * remove RestResourceCall structure and binding among genes
+     */
+    protected override fun doFlattenStructure() : Boolean{
+
+        // check the top structure
+        val resources = groupsView()!!.getAllInGroup(GroupsOfChildren.MAIN).filterIsInstance<RestResourceCalls>()
+
+        if (resources.isEmpty()) return false
+
+        // remove all bindings among genes
+        removeAllBindingAmongGenes()
+
+        val dnsActions = resources.flatMap { it.seeActions(ONLY_DNS)} as List<HostnameResolutionAction>
+        val sqlActions = resources.flatMap { it.seeActions(ONLY_SQL) } as List<SqlAction>
+        val mongoDbActions = resources.flatMap { it.seeActions(ONLY_MONGO) } as List<MongoDbAction>
+
+        val groups = resources.flatMap { it.seeEnterpriseActionGroup() }
+
+        removeResourceCall(resources)
+        addChildrenToGroup(groups, GroupsOfChildren.MAIN)
+
+        addChildrenToGroup(sqlActions, GroupsOfChildren.INITIALIZATION_SQL)
+        addChildrenToGroup(mongoDbActions, GroupsOfChildren.INITIALIZATION_MONGO)
+        addChildrenToGroup(dnsActions, GroupsOfChildren.INITIALIZATION_DNS)
+
+        /*
+            if we move any environment action to the beginning of the individual, it might impact the fitness
+         */
+        return dnsActions.isNotEmpty() || sqlActions.isNotEmpty() || mongoDbActions.isNotEmpty()
+
+        // re-generate local id
+//        resetLocalIdRecursively()
+//        doInitializeLocalId()
     }
 
     enum class ResourceFilter { ALL, NO_SQL, ONLY_SQL, ONLY_SQL_INSERTION, ONLY_SQL_EXISTING }
@@ -141,6 +192,15 @@ class RestIndividual(
         }
     }
 
+    /**
+     * remove location id among actions used for minimization phase
+     */
+    fun removeLocationId(){
+        seeMainExecutableActions().forEach { a->
+            a.usePreviousLocationId = null
+            a.saveLocation = false
+        }
+    }
 
     //FIXME refactor
     override fun verifyInitializationActions(): Boolean {
@@ -180,6 +240,17 @@ class RestIndividual(
      * @return all groups of actions for resource handling
      */
     fun getResourceCalls() : List<RestResourceCalls> = children.filterIsInstance<RestResourceCalls>()
+
+
+    /**
+     * @return a list of EnterpriseActionGroups under GroupsOfChildren.MAIN
+     * if the list is empty, it indicates that `doFlattenStructure` has been processed yet then return null
+     */
+    fun getFlattenMainEnterpriseActionGroup() : List<EnterpriseActionGroup<RestCallAction>>?{
+        val groups = groupsView()!!.getAllInGroup(GroupsOfChildren.MAIN).filterIsInstance<EnterpriseActionGroup<*>>()
+        if (groups.isEmpty()) return null
+        return groups as List<EnterpriseActionGroup<RestCallAction>>
+    }
 
     /**
      * return all the resource calls in this individual, with their index in the children list
@@ -329,10 +400,24 @@ class RestIndividual(
 
 
     override fun getInsertTableNames(): List<String> {
-        return seeDbActions().filterNot { it.representExistingData }.map { it.table.name }
+        return seeSqlDbActions().filterNot { it.representExistingData }.map { it.table.name }
     }
 
     override fun seeMainExecutableActions(): List<RestCallAction> {
         return super.seeMainExecutableActions() as List<RestCallAction>
+    }
+
+    /**
+     * Finds the first index of a main REST action with a given verb and path among actions in the individual.
+     *
+     * @return negative value if not found
+     */
+    fun getActionIndex(
+        actionVerb: HttpVerb,
+        path: RestPath
+    ) : Int {
+        return seeMainExecutableActions().indexOfFirst  {
+            it.verb == actionVerb && it.path.isEquivalent(path)
+        }
     }
 }

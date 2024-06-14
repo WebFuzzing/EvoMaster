@@ -6,43 +6,69 @@ import org.evomaster.core.EMConfig
 
 object EndpointFilter {
 
-     fun getEndPointsToSkip(config: EMConfig, swagger: OpenAPI):List<String> {
+     fun getEndpointsToSkip(config: EMConfig, swagger: OpenAPI):List<Endpoint> {
         if(config.endpointFocus.isNullOrBlank()
-            && config.endpointPrefix.isNullOrBlank()){
+            && config.endpointPrefix.isNullOrBlank()
+            && config.endpointTagFilter.isNullOrBlank()){
             return listOf()
         }
 
-        val all = swagger.paths.map{it.key}
-
-        val selection =  if(config.endpointFocus != null) {
-            all.filter { it != config.endpointFocus }
-        } else if(config.endpointPrefix != null){
-            all.filter { ! it.startsWith(config.endpointPrefix!!) }
-        } else {
-            //should never happens
-            throw IllegalStateException("Invalid endpoint to skip configuration")
+        if(! config.endpointTagFilter.isNullOrBlank()){
+            //this validation needs to be done here and not in EMConfig, as there we have no info on schema
+            Endpoint.validateTags(config.getTagFilters(), swagger)
         }
 
-        return selection
+        if(! config.endpointFocus.isNullOrBlank()){
+            Endpoint.validateFocus(config.endpointFocus!!, swagger)
+        }
+
+        if(! config.endpointPrefix.isNullOrBlank()){
+            Endpoint.validatePrefix(config.endpointPrefix!!, swagger)
+        }
+
+        val all = Endpoint.fromOpenApi(swagger)
+
+        val x =  if(config.endpointFocus != null) {
+            all.filter { it.path.toString() != config.endpointFocus }
+        } else if(config.endpointPrefix != null){
+            all.filter { ! it.path.toString().startsWith(config.endpointPrefix!!) }
+        } else {
+           listOf()
+        }
+
+        val tags = config.getTagFilters()
+        val y = if(tags.isNotEmpty()){
+            all.filter { e -> e.getTags(swagger).none { t -> tags.contains(t) }}
+        } else {
+            listOf()
+        }
+
+        return mutableSetOf<Endpoint>().apply {
+            addAll(x)
+            addAll(y)
+        }.toList()
     }
 
 
 
      fun getEndpointsToSkip(config: EMConfig, swagger: OpenAPI, infoDto: SutInfoDto)
-            : List<String>{
+            : List<Endpoint>{
 
         /*
-            If we are debugging, and focusing on a single endpoint, we skip
-            everything but it.
-            Otherwise, we just look at what configured in the SUT EM Driver.
+            Check if we are manually configuring some as well as what configured in the SUT EM Driver.
          */
 
-        val endpointsToSkip = getEndPointsToSkip(config, swagger)
-        if(endpointsToSkip.isNotEmpty()){
-            return endpointsToSkip
-        }
+        val fromConfig = getEndpointsToSkip(config, swagger)
 
-        //this has less priority
-        return  infoDto.restProblem?.endpointsToSkip ?: listOf()
+        val all = Endpoint.fromOpenApi(swagger)
+
+        val fromDriver =  infoDto.restProblem?.endpointsToSkip
+            ?.flatMap {s ->  all.filter { e -> e.path.toString() == s } }
+            ?: listOf()
+
+         return mutableSetOf<Endpoint>().apply {
+             addAll(fromConfig)
+             addAll(fromDriver)
+         }.toList()
     }
 }

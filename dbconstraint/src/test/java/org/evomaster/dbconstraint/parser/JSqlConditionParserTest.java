@@ -16,7 +16,6 @@ public class JSqlConditionParserTest {
         JSqlConditionParser parser = new JSqlConditionParser();
         parser.parse("c >= 100", ConstraintDatabaseType.H2);
     }
-
     @Test
     public void testIn() throws SqlConditionParserException {
         JSqlConditionParser parser = new JSqlConditionParser();

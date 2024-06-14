@@ -54,6 +54,37 @@ class BBAuthEMTest : SpringTestBase() {
     }
 
     @Test
+    fun testRunEMOkInConfig() {
+        runTestHandlingFlakyAndCompilation(
+            "BBAuthEMInConfig",
+            "org.foo.BBAuthEMInConfig",
+            20
+        ) { args: MutableList<String> ->
+
+            args.add("--blackBox")
+            args.add("true")
+            args.add("--bbTargetUrl")
+            args.add(baseUrlOfSut)
+            args.add("--bbSwaggerUrl")
+            args.add("$baseUrlOfSut/v3/api-docs")
+            args.add("--bbExperiments")
+            args.add("false")
+
+            args.add("--configPath")
+            args.add("src/main/resources/config/bbauth.toml")
+
+            //make sure we do not solve it via taint analysis
+            args.add("--baseTaintAnalysisProbability")
+            args.add("0")
+
+            val solution = initAndRun(args)
+
+            Assertions.assertTrue(solution.individuals.size >= 1)
+            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/bbauth", "OK")
+        }
+    }
+
+    @Test
     fun testRunEMFail() {
         runTestHandlingFlakyAndCompilation(
                 "BBAuthEMFail",

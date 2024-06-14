@@ -5,7 +5,7 @@ import org.evomaster.client.java.sql.DbSpecification;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RestProblem;
 import org.evomaster.client.java.controller.api.Formats;
-import org.evomaster.client.java.controller.api.dto.AuthenticationDto;
+import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto;
 import org.evomaster.client.java.controller.api.dto.SutInfoDto;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;

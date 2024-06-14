@@ -157,7 +157,7 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
                 }
     }
 
-    private fun createRPCIndividual(sampleType: SampleType, actions : MutableList<EnterpriseActionGroup>) : RPCIndividual{
+    private fun createRPCIndividual(sampleType: SampleType, actions : MutableList<EnterpriseActionGroup<*>>) : RPCIndividual{
         // enable tracking in rpc
         return RPCIndividual(
             sampleType = sampleType,

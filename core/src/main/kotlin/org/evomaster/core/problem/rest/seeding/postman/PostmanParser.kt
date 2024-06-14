@@ -17,6 +17,7 @@ import java.lang.IllegalStateException
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 
+@Deprecated("Code here will be replaced with intermediate representation. See new 'seeding' package")
 class PostmanParser(
         defaultRestCallActions: List<RestCallAction>,
         swagger: OpenAPI

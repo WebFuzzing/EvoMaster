@@ -7,6 +7,9 @@ import org.evomaster.core.sql.SqlActionResult
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.mongo.MongoDbActionResult
 import org.evomaster.core.output.*
+import org.evomaster.core.output.auth.CookieWriter
+import org.evomaster.core.output.auth.TokenWriter
+import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.search.EvaluatedDbAction
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.EvaluatedMongoDbAction
@@ -44,6 +47,10 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         if (initializingMongoResults.any { (it as? MongoDbActionResult) == null })
             throw IllegalStateException("the type of results are expected as MongoDbActionResults")
 
+        //FIXME this doing initializations, not field declaration
+        val initializingHostnameResolutionActions = ind.individual
+            .seeInitializingActions()
+            .filterIsInstance<HostnameResolutionAction>()
 
         if (initializingSqlActions.isNotEmpty()) {
             SqlWriter.handleDbInitialization(
@@ -61,6 +68,10 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                     EvaluatedMongoDbAction(initializingMongoActions[it], initializingMongoResults[it] as MongoDbActionResult)
                 },
                 lines, insertionVars = insertionVars, skipFailure = config.skipFailureSQLInTestFile)
+        }
+
+        if (initializingHostnameResolutionActions.isNotEmpty()) {
+            handleHostnameResolutionActions(lines, initializingHostnameResolutionActions)
         }
     }
 

@@ -76,8 +76,8 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
             ind.evaluatedMainActions().asSequence()
                 .map { it.action }
                 .filterIsInstance(RestCallAction::class.java)
-                .filter { it.locationId != null }
-                .map { it.locationId }
+                .filter { it.usePreviousLocationId != null }
+                .map { it.usePreviousLocationId }
                 .distinct()
                 .forEach { id ->
                     val name = locationVar(id!!)
@@ -103,24 +103,31 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
     ) {
         //SQL actions are generated in between
         if (ind.individual is RestIndividual) {
-            ind.evaluatedResourceActions().forEachIndexed { index, c ->
-                // db
-                if (c.first.isNotEmpty())
-                    SqlWriter.handleDbInitialization(
-                        format,
-                        c.first,
-                        lines,
-                        ind.individual.seeDbActions(),
-                        groupIndex = index.toString(),
-                        insertionVars = insertionVars,
-                        skipFailure = config.skipFailureSQLInTestFile
-                    )
-                //actions
-                c.second.forEach { a ->
-                    val exeuctionIndex = ind.individual.seeMainExecutableActions().indexOf(a.action)
-                    handleSingleCall(a, exeuctionIndex, ind.fitness, lines, testCaseName, testSuitePath, baseUrlOfSut)
+            if((ind.individual as RestIndividual).getResourceCalls().isNotEmpty()){
+                ind.evaluatedResourceActions().forEachIndexed { index, c ->
+                    // db
+                    if (c.first.isNotEmpty())
+                        SqlWriter.handleDbInitialization(
+                            format,
+                            c.first,
+                            lines,
+                            ind.individual.seeSqlDbActions(),
+                            groupIndex = index.toString(),
+                            insertionVars = insertionVars,
+                            skipFailure = config.skipFailureSQLInTestFile
+                        )
+                    //actions
+                    c.second.forEach { a ->
+                        val exeuctionIndex = ind.individual.seeMainExecutableActions().indexOf(a.action)
+                        handleSingleCall(a, exeuctionIndex, ind.fitness, lines, testCaseName, testSuitePath, baseUrlOfSut)
+                    }
+                }
+            }else{
+                ind.evaluatedMainActions().forEachIndexed { index, evaluatedAction ->
+                    handleSingleCall(evaluatedAction, index, ind.fitness, lines, testCaseName, testSuitePath, baseUrlOfSut)
                 }
             }
+
         }
     }
 
@@ -186,16 +193,16 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
             }
         }
 
-        if (call.locationId != null) {
+        if (call.usePreviousLocationId != null) {
             if (format.isJavaScript()) {
                 lines.append("${TestSuiteWriter.jsImport}.")
             }
 
             if (format.isCsharp()) {
                 //TODO: double check this
-                lines.append("${locationVar(call.locationId!!)} + $baseUrlOfSut + \"${call.resolvedPath()}\"")
+                lines.append("${locationVar(call.usePreviousLocationId!!)} + $baseUrlOfSut + \"${call.resolvedPath()}\"")
             } else {
-                lines.append("resolveLocation(${locationVar(call.locationId!!)}, $baseUrlOfSut + \"${call.resolvedPath()}\")")
+                lines.append("resolveLocation(${locationVar(call.usePreviousLocationId!!)}, $baseUrlOfSut + \"${call.resolvedPath()}\")")
             }
 
         } else {
@@ -294,7 +301,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
 
             if (!res.getHeuristicsForChainedLocation()) {
 
-                val location = locationVar(call.path.lastElement())
+                val location = locationVar(call.postLocationId())
 
                 /*
                     If there is a "location" header, then it must be either empty or a valid URI.
@@ -310,7 +317,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                     format.isJavaOrKotlin() -> {
                         val extract = "$resVarName.extract().header(\"location\")"
                         lines.add("$location = $extract")
-                        lines.appendSemicolon(format)
+                        lines.appendSemicolon()
                         lines.add("assertTrue(isValidURIorEmpty($location));")
                     }
                     format.isJavaScript() -> {
@@ -328,20 +335,21 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                     format.isKotlin() -> "<Object>"
                     else -> ""
                 }
-                val baseUri: String = if (call.locationId != null) {
+                val baseUri: String = if (call.usePreviousLocationId != null) {
                     /* A variable should NOT be enclosed by quotes */
-                    locationVar(call.locationId!!)
+                    locationVar(call.usePreviousLocationId!!)
                 } else {
                     /* Literals should be enclosed by quotes */
                     "\"${call.path.resolveOnlyPath(call.parameters)}\""
                 }
 
                 //TODO JS and C#
+                //TODO code here should use same algorithm as in res.getResourceId()
                 val extract =
                     "$resVarName.extract().body().path$extraTypeInfo(\"${res.getResourceIdName()}\").toString()"
 
-                lines.add("${locationVar(call.path.lastElement())} = $baseUri + \"/\" + $extract")
-                lines.appendSemicolon(format)
+                lines.add("${locationVar(call.postLocationId())} = $baseUri + \"/\" + $extract")
+                lines.appendSemicolon()
             }
         }
     }
@@ -361,7 +369,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
             format.isJava() -> lines.append("ExpectationHandler expectationHandler = expectationHandler()")
             format.isKotlin() -> lines.append("val expectationHandler: ExpectationHandler = expectationHandler()")
         }
-        lines.appendSemicolon(format)
+        lines.appendSemicolon()
     }
 
     private fun handleExpectationSpecificLines(call: RestCallAction, lines: Lines, res: RestCallResult, name: String) {

@@ -2,6 +2,7 @@ package org.evomaster.core.search.service
 
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
+import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.webfrontend.service.BrowserController
 
 /**
@@ -39,4 +40,15 @@ class SearchGlobalState {
 
     @Inject(optional = true)
     lateinit var browser: BrowserController
+
+    @Inject
+    lateinit var externalServiceHandler: HttpWsExternalServiceHandler
+
+    @Inject
+    lateinit var dataPool: DataPool
+        private set
+
+    @Inject
+    lateinit var idMapper: IdMapper
+        private set
 }

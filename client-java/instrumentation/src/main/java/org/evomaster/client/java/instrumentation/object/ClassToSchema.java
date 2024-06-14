@@ -7,6 +7,9 @@ import org.evomaster.client.java.utils.SimpleLogger;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -40,6 +43,16 @@ public class ClassToSchema {
         date	        string	date	As defined by full-date - RFC3339
         dateTime	    string	date-time	As defined by date-time - RFC3339
         password	    string	password	Used to hint UIs the input needs to be obscured.
+
+        We also provide extended support for the following types and formats (not defined in
+        https://github.com/OAI/OpenAPI-Specification/blob/3.0.1/versions/3.0.1.md#dataTypeFormat)
+
+        Common Name	        type	format	        Comments
+        integer             integer int8            signed 8-bits
+        integer             integer int16           signed 16-bits
+        localDate           string  local-date      A date without a time-zone in the ISO-8601 calendar system
+        localDateTime       string  local-date-time A date-time without a time-zone in the ISO-8601 calendar system
+        localTime           string  local-time      A time without a time-zone in the ISO-8601 calendar system
          */
 
     /**
@@ -203,7 +216,7 @@ public class ClassToSchema {
     private static boolean isCollectionOrMap(Type type) {
         if (!(type instanceof Class)) return false;
         Class<?> kclazz = (Class<?>) type;
-        return kclazz.isArray() || List.class.isAssignableFrom(kclazz) || Set.class.isAssignableFrom(kclazz) || Map.class.isAssignableFrom(kclazz);
+        return kclazz.isArray() || Collection.class.isAssignableFrom(kclazz) || Map.class.isAssignableFrom(kclazz);
     }
 
 
@@ -293,18 +306,25 @@ public class ClassToSchema {
             if (Date.class.isAssignableFrom(klass)) {
                 return fieldSchema("string", "date");
             }
+            if (LocalDate.class.isAssignableFrom(klass)) {
+                return fieldSchema("string", "local-date");
+            }
+            if (LocalDateTime.class.isAssignableFrom(klass)) {
+                return fieldSchema("string", "local-date-time");
+            }
+            if (LocalTime.class.isAssignableFrom(klass)) {
+                return fieldSchema("string", "local-time");
+            }
             for (CustomTypeToOasConverter converter : converters) {
                 if (converter.isInstanceOf(klass)) {
                     return converter.convert();
                 }
             }
         }
-        //TODO date fields
 
-
-        if ((klass != null && (klass.isArray() || List.class.isAssignableFrom(klass) || Set.class.isAssignableFrom(klass)))
+        if ((klass != null && (klass.isArray() || Collection.class.isAssignableFrom(klass)))
                 ||
-                (pType != null && (List.class.isAssignableFrom((Class) pType.getRawType()) || Set.class.isAssignableFrom((Class) pType.getRawType())))) {
+                (pType != null && (Collection.class.isAssignableFrom((Class) pType.getRawType()) ))) {
             return fieldArraySchema(klass, pType, nested, allNested, objectFieldsRequired, converters);
         }
 
@@ -393,7 +413,7 @@ public class ClassToSchema {
         //TODO there are other ways to define names
         for (Annotation a : field.getAnnotations()) {
             String name = a.annotationType().getName();
-            if (name.equals("com.fasterxml.jackson.annotation.JsonProperty")
+            if (name.equals("  com.fasterxml.jackson.annotation.JsonProperty".trim())//due to bug in shader...
                     || name.equals("com.google.gson.annotations.SerializedName")
                     || name.equals("org.springframework.data.mongodb.core.mapping.Field")) {
                 try {

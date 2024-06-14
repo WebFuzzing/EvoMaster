@@ -8,7 +8,19 @@ import java.time.chrono.ChronoLocalDateTime;
 import java.util.Date;
 import java.util.Objects;
 
+/**
+ * All generic distance functions on JVM types should be defined here.
+ * Recall the distinction between "distance" and "heuristic" terms in EvoMaster:
+ *
+ * - distance: a value between 0 and MAX. If 0, constraint is solved.
+ * - heuristic: a value between 0 and 1. If 0, constraint is NOT solved. If solved, value is 1.
+ *
+ * The "distance"s are what usually used in literature.
+ * However, in EvoMaster we need [0,1] "heuristic"s (due to the handling of Many Objective Optimization).
+ */
 public class DistanceHelper {
+
+    // "H" here stand for "heuristic"
 
     public static final double H_REACHED_BUT_NULL = 0.05d;
 
@@ -34,6 +46,9 @@ public class DistanceHelper {
      */
     public static double increasedDistance(double distance, double delta){
 
+        if(distance < 0){
+            throw new IllegalArgumentException("Negative distance: " + distance);
+        }
         if(delta < 0){
             throw new IllegalArgumentException("Invalid negative delta: " + delta);
         }
@@ -50,6 +65,29 @@ public class DistanceHelper {
         }
 
         return distance + delta;
+    }
+
+    /**
+     * Add the 2 distances together, taking into account possible overflows
+     *
+     * @param a
+     * @param b
+     * @return
+     */
+    public static double addDistances(double a, double b) {
+        if(a < 0){
+            throw new IllegalArgumentException("Negative distance: " + a);
+        }
+        if(b < 0){
+            throw new IllegalArgumentException("Negative distance: " + b);
+        }
+        double sum = a + b;
+        if (sum < Math.max(a, b)) {
+            //overflow
+            return Double.MAX_VALUE;
+        } else {
+            return sum;
+        }
     }
 
     /**

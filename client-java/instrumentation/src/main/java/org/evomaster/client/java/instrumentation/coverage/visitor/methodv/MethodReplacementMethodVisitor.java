@@ -162,14 +162,19 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
             handleConstruct(m, candidateClasses.get(0).getClass());
         }
 
+        //Can be put back if needed for debugging... otherwise it is just expensive overhead
+//        String debugInfo = className+"."+methodName+"("+desc+") -> "
+//                + m.getDeclaringClass().getName() + "." +  m.getName();
+        String debugInfo = "";
+
         Replacement a = m.getAnnotation(Replacement.class);
         if (a.type() == ReplacementType.TRACKER) {
-            UnitsInfoRecorder.markNewTrackedMethod();
+            UnitsInfoRecorder.markNewTrackedMethod(debugInfo);
         } else {
             if (isInSUT) {
-                UnitsInfoRecorder.markNewReplacedMethodInSut();
+                UnitsInfoRecorder.markNewReplacedMethodInSut(debugInfo);
             } else {
-                UnitsInfoRecorder.markNewReplacedMethodInThirdParty();
+                UnitsInfoRecorder.markNewReplacedMethodInThirdParty(debugInfo);
             }
         }
     }
@@ -192,6 +197,11 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
             This seems working, but need to watch out for possible side-effects
          */
         this.visitInsn(Opcodes.POP2); //pop NEW and DUP refs
+
+        if (!Arrays.stream(mrc.getDeclaredMethods())
+                .anyMatch(it -> it.getName().equals(MethodReplacementClass.CONSUME_INSTANCE_METHOD_NAME))) {
+            throw new RuntimeException("Class " + mrc.getName() + " must have a definition of method " + MethodReplacementClass.CONSUME_INSTANCE_METHOD_NAME);
+        }
 
         Method consumeInstance = Arrays.stream(mrc.getDeclaredMethods())
                         .filter(it -> it.getName().equals(MethodReplacementClass.CONSUME_INSTANCE_METHOD_NAME))

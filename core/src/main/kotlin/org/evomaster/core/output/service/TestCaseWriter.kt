@@ -6,7 +6,7 @@ import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestCase
 import org.evomaster.core.output.service.TestWriterUtils.Companion.getWireMockVariableName
-import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
+import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.param.HttpWsResponseParam
 import org.evomaster.core.search.action.Action
@@ -65,9 +65,9 @@ abstract class TestCaseWriter {
 
         counter = 0
 
-        val lines = Lines()
+        val lines = Lines(config.outputFormat)
 
-        if (config.testSuiteSplitType == EMConfig.TestSuiteSplitType.CLUSTER
+        if (config.testSuiteSplitType == EMConfig.TestSuiteSplitType.FAULTS
             && test.test.getClusters().size != 0
         ) {
             clusterComment(lines, test)
@@ -95,16 +95,26 @@ abstract class TestCaseWriter {
             format.isKotlin() -> lines.add("fun ${test.name}()  {")
             format.isJavaScript() -> lines.add("test(\"${test.name}\", async () => {")
             format.isCsharp() -> lines.add("public async Task ${test.name}() {")
+            format.isPython() -> lines.add("def ${test.name}(self):")
         }
+
 
         lines.indented {
             val ind = test.test
             val insertionVars = mutableListOf<Pair<String, String>>()
+            // FIXME: HostnameResolutionActions can be a separately, for now it's under
+            //  handleFieldDeclarations.
+            if (format.isPython()) { // TODO PhG: remove this when python test content is added
+                lines.add("pass")
+            }
             handleFieldDeclarations(lines, baseUrlOfSut, ind, insertionVars)
             handleActionCalls(lines, baseUrlOfSut, ind, insertionVars, testCaseName = test.name, testSuitePath)
         }
 
-        lines.add("}")
+
+        if (!format.isPython()) {
+            lines.add("}")
+        }
 
         if (format.isJavaScript()) {
             lines.append(");")
@@ -112,28 +122,22 @@ abstract class TestCaseWriter {
         return lines
     }
 
-    protected fun handleDnsForExternalServiceActions(
+    fun handleHostnameResolutionActions(
         lines: Lines,
-        actions: List<HttpExternalServiceAction>,
-        exToWM: Map<String, HttpWsExternalService>?
-    ) : Boolean{
+        actions: List<HostnameResolutionAction>
+    ) {
 
-        var any = false
+        actions.forEach { a ->
+            val ea = actions.filter { it.hostname == a.hostname }
 
-        exToWM?.forEach {
-            lines.add("DnsCacheManipulator.setDnsCache(\"${it.key}\", \"${it.value.getWireMockAddress()}\")")
-            lines.appendSemicolon(format)
-            any = true
+            if (ea.size > 1) {
+                // This should not happen
+                throw IllegalStateException("Have more than one action for ${a.hostname}")
+            }
+
+            lines.add("DnsCacheManipulator.setDnsCache(\"${a.hostname}\", \"${a.localIPAddress}\")")
+            lines.appendSemicolon()
         }
-
-        actions.filterNot { exToWM?.containsKey(it.externalService.getRemoteHostName()) == true }
-                .distinctBy { it.externalService.getRemoteHostName() }
-                .forEach {action->
-                    lines.add("DnsCacheManipulator.setDnsCache(\"${action.externalService.getRemoteHostName()}\", \"${action.externalService.getWireMockAddress()}\")")
-                    lines.appendSemicolon(format)
-                    any = true
-                }
-        return any
     }
 
     protected fun handleExternalServiceActions(
@@ -153,7 +157,7 @@ abstract class TestCaseWriter {
                 // Default behaviour of WireMock has been removed, since found no purpose
                 // in case if there is a failure regarding no routes found in WireMock
                 // consider adding that later
-                lines.addStatement("assertNotNull(${name})", config.outputFormat)
+                lines.addStatement("assertNotNull(${name})")
 
                 TestWriterUtils.handleStubForAsJavaOrKotlin(
                     lines,
@@ -164,7 +168,7 @@ abstract class TestCaseWriter {
                     index+1,
                     format
                 )
-                lines.appendSemicolon(format)
+                lines.appendSemicolon()
                 lines.addEmpty(1)
             }
     }
@@ -269,7 +273,9 @@ abstract class TestCaseWriter {
                 lines.add("//${it.replace('\n', ' ').replace('\r', ' ')}")
             }
         }
-        lines.add("}")
+        if (!format.isPython()) {
+            lines.add("}")
+        }
     }
 
 

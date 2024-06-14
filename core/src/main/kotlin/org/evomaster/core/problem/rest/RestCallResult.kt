@@ -11,7 +11,7 @@ import javax.ws.rs.core.MediaType
 
 class RestCallResult : HttpWsCallResult {
 
-    constructor(stopping: Boolean = false) : super(stopping)
+    constructor(sourceLocalId: String, stopping: Boolean = false) : super(sourceLocalId, stopping)
 
     @VisibleForTesting
     internal constructor(other: ActionResult) : super(other)
@@ -28,6 +28,10 @@ class RestCallResult : HttpWsCallResult {
     fun getResourceIdName() = "id"
 
     fun getResourceId(): String? {
+
+        /*
+            TODO should use more sophisticated algorithm, taking into what done in RestResponseFeeder
+         */
 
         if(!MediaType.APPLICATION_JSON_TYPE.isCompatible(getBodyType())){
             //TODO could also handle other media types

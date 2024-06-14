@@ -151,7 +151,7 @@ public class HeuristicsCalculator {
         if (exp instanceof Matches) {
             //TODO
         }
-        if (exp instanceof MultiExpressionList) {
+        if (exp instanceof ExpressionList) {
             //TODO
         }
         if (exp instanceof NamedExpressionList) {
@@ -173,22 +173,22 @@ public class HeuristicsCalculator {
         double after = computeComparison(x, start, new GreaterThanEquals());
         double before = computeComparison(x, end, new MinorThanEquals());
 
-        return addDistances(after, before);
+        return DistanceHelper.addDistances(after, before);
     }
 
     private double computeInExpression(InExpression exp, DataRow data) {
 
         //TODO can left be a list???
 
-        ItemsList itemsList = exp.getRightItemsList();
-        if (itemsList instanceof ExpressionList) {
-            ExpressionList list = (ExpressionList) itemsList;
+        Expression rightExpression = exp.getRightExpression();
+        if (rightExpression instanceof ExpressionList<?>) {
+            ExpressionList<?> expressionList = (ExpressionList<?>) rightExpression;
 
             if (exp.isNot()) {
 
                 double max = 0;
 
-                for (Expression element : list.getExpressions()) {
+                for (Expression element : expressionList) {
                     ComparisonOperator op = new NotEqualsTo();
                     op.setLeftExpression(exp.getLeftExpression());
                     op.setRightExpression(element);
@@ -206,7 +206,7 @@ public class HeuristicsCalculator {
 
                 double min = Double.MAX_VALUE;
 
-                for (Expression element : list.getExpressions()) {
+                for (Expression element : expressionList) {
                     ComparisonOperator op = new EqualsTo();
                     op.setLeftExpression(exp.getLeftExpression());
                     op.setRightExpression(element);
@@ -251,18 +251,13 @@ public class HeuristicsCalculator {
         double a = computeExpression(exp.getLeftExpression(), data);
         double b = computeExpression(exp.getRightExpression(), data);
 
-        return addDistances(a, b);
+        /*
+            We divide by 2, to avoid overflows when two distances are sum together.
+            This is particularly important as in few cases we use Double.MAX_VALUE as a distance value
+         */
+        return DistanceHelper.addDistances(a/2.0, b/2.0);
     }
 
-    private double addDistances(double a, double b) {
-        double sum = a + b;
-        if (sum < Math.max(a, b)) {
-            //overflow
-            return Double.MAX_VALUE;
-        } else {
-            return sum;
-        }
-    }
 
     private double computeOr(OrExpression exp, DataRow data) {
 

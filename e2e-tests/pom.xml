@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster</artifactId>
-        <version>2.0.1-SNAPSHOT</version>
+        <version>3.0.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>evomaster-e2e-tests</artifactId>
@@ -67,5 +67,21 @@
             </plugins>
         </pluginManagement>
     </build>
+
+    <profiles>
+        <profile>
+            <id>Configs for JDK >= 17</id>
+            <activation>
+                <jdk>[17,)</jdk>
+            </activation>
+           <!--
+           This module should be enabled after Spring2 dependencies
+           are pulled down to each e2e project
+           -->
+<!--            <modules>-->
+<!--                <module>spring-rest-jakarta</module>-->
+<!--            </modules>-->
+        </profile>
+    </profiles>
 
 </project>

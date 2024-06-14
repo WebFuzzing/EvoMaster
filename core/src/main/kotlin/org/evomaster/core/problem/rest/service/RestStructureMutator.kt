@@ -24,12 +24,12 @@ class RestStructureMutator : ApiWsStructureMutator() {
     @Inject
     private lateinit var sampler: RestSampler
 
+    @Inject
+    private lateinit var builder: RestIndividualBuilder
 
     override fun addInitializingActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?) {
         addInitializingActions(individual, mutatedGenes, sampler)
     }
-
-
 
     override fun mutateStructure(individual: Individual, evaluatedIndividual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?, targets: Set<Int>) {
         if (individual !is RestIndividual) {
@@ -130,7 +130,7 @@ class RestStructureMutator : ApiWsStructureMutator() {
             val postTemplate = ind.seeMainExecutableActions()[idx]
             Lazy.assert{postTemplate.verb == HttpVerb.POST && !postTemplate.saveLocation}
 
-            val post = sampler.createActionFor(postTemplate, ind.seeAllActions().last() as RestCallAction)
+            val post = builder.createBoundActionFor(postTemplate, ind.seeAllActions().last() as RestCallAction)
 
 
             /*

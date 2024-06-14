@@ -37,7 +37,7 @@ class SkipEMTest : SpringTestBase() {
             "--outputFormat", "JAVA_JUNIT_5",
             "--outputFolder", "target/em-tests/SkipExternalServiceEM",
             "--externalServiceIPSelectionStrategy", "USER",
-            "--externalServiceIP", "127.0.0.2"
+            "--externalServiceIP", "127.0.0.50"
         )
 
         val injector = init(args.toList())

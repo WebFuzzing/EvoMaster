@@ -46,7 +46,7 @@ class WriteXMLTest {
 
         val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
-        val expectedLines = Lines().apply {
+        val expectedLines = Lines(format).apply {
             add("@Test")
             add("public void test() throws Exception {")
             indent()
@@ -93,7 +93,7 @@ class WriteXMLTest {
 
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
-        val expectedLines = Lines().apply {
+        val expectedLines = Lines(format).apply {
             add("@Test")
             add("public void test() throws Exception {")
             indent()
@@ -136,7 +136,7 @@ class WriteXMLTest {
 
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
-        val expectedLines = Lines().apply {
+        val expectedLines = Lines(format).apply {
             add("@Test")
             add("public void test() throws Exception {")
             indent()

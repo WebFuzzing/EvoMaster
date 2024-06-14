@@ -64,7 +64,7 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
             return true
         }
 
-        val dbresults = (allSqlActions.indices).map { SqlActionResult() }
+        val dbresults = (allSqlActions).map { SqlActionResult(it.getLocalId()) }
         actionResults.addAll(dbresults)
 
         if (allSqlActions.none { !it.representExistingData }) {
@@ -139,7 +139,7 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
             return true
         }
 
-        val mongoDbResults = (allDbActions.indices).map { MongoDbActionResult() }
+        val mongoDbResults = (allDbActions).map { MongoDbActionResult(it.getLocalId()) }
         actionResults.addAll(mongoDbResults)
 
         val dto = try {

@@ -28,6 +28,8 @@ class Statistics : SearchListener {
         const val DISTINCT_ACTIONS = "distinctActions"
         const val COVERED_2XX = "covered2xx"
         const val GQL_NO_ERRORS = "gqlNoErrors"
+        const val LAST_ACTION_IMPROVEMENT = "lastActionImprovement";
+        const val EVALUATED_ACTIONS = "evaluatedActions"
     }
 
     @Inject
@@ -189,12 +191,12 @@ class Statistics : SearchListener {
         list.apply {
             add(Pair("evaluatedTests", "" + time.evaluatedIndividuals))
             add(Pair("individualsWithSqlFailedWhere", "" + time.individualsWithSqlFailedWhere))
-            add(Pair("evaluatedActions", "" + time.evaluatedActions))
+            add(Pair(EVALUATED_ACTIONS, "" + time.evaluatedActions))
             add(Pair("elapsedSeconds", "" + time.getElapsedSeconds()))
             add(Pair("generatedTests", "" + solution.individuals.size))
             add(Pair("generatedTestTotalSize", "" + solution.individuals.map{ it.individual.size()}.sum()))
             add(Pair("coveredTargets", "" + targetsInfo.total))
-            add(Pair("lastActionImprovement", "" + time.lastActionImprovement))
+            add(Pair(LAST_ACTION_IMPROVEMENT, "" + time.lastActionImprovement))
             add(Pair(DISTINCT_ACTIONS, "" + distinctActions()))
             add(Pair("endpoints", "" + distinctActions()))
             add(Pair(COVERED_2XX, "" + covered2xxEndpoints(solution)))

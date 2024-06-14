@@ -2,6 +2,7 @@ package org.evomaster.core.problem.webfrontend
 
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
+import org.evomaster.core.problem.enterprise.EnterpriseChildTypeVerifier
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.gui.GuiIndividual
 import org.evomaster.core.search.action.ActionComponent
@@ -21,10 +22,7 @@ class WebIndividual(
 ) : GuiIndividual(
     sampleType = sampleType,
     children = children,
-    childTypeVerifier = {
-        EnterpriseActionGroup::class.java.isAssignableFrom(it)
-                || SqlAction::class.java.isAssignableFrom(it)
-    },
+    childTypeVerifier = EnterpriseChildTypeVerifier(WebAction::class.java),
     groups = groups
 ) {
 

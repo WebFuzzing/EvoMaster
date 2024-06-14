@@ -1,9 +1,32 @@
 package org.evomaster.core.search.action
 
-open class ActionResult constructor(
+import org.evomaster.core.search.StructuralElement
+
+open class ActionResult(
+        /**
+        *   Must provide the localId of the source action that generated this result
+        */
+        val sourceLocalId: String,
         /** Specify whether the result of this action led to stop the evaluation
          * of the following actions*/
-        var stopping: Boolean = false) {
+        var stopping: Boolean = false,
+        /**
+         * The result of this action has condemned its individual to death.
+         * As such, should not be added to archive, or used anywhere.
+         * Note, the individual itself is fine, but the resulting EvaluatedIndividual is
+         * the problematic one.
+         *
+         * Note: this is for very, very special cases. An example is the handling of WireMock.
+         * See tests like [HostnameResolutionActionEMTest]
+         */
+        var deathSentence : Boolean = false
+) {
+
+    init{
+        if(sourceLocalId == StructuralElement.NONE_LOCAL_ID){
+            throw IllegalArgumentException("Action results must have a valid id of the source action")
+        }
+    }
 
     companion object{
         const val ERROR_MESSAGE = "ERROR_MESSAGE"
@@ -11,7 +34,7 @@ open class ActionResult constructor(
 
     private val results : MutableMap<String, String> = mutableMapOf()
 
-    protected constructor(other: ActionResult) : this(other.stopping){
+    protected constructor(other: ActionResult) : this(other.sourceLocalId, other.stopping){
         results.putAll(other.results)
     }
 

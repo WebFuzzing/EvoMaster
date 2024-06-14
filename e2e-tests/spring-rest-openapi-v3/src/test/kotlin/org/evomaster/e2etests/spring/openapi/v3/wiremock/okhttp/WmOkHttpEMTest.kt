@@ -1,7 +1,6 @@
 package org.evomaster.e2etests.spring.openapi.v3.wiremock.okhttp
 
 import com.foo.rest.examples.spring.openapi.v3.wiremock.okhttp.WmOkHttpController
-import org.evomaster.ci.utils.CIUtils
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
@@ -20,13 +19,6 @@ class WmOkHttpEMTest : SpringTestBase() {
             val config = EMConfig()
             config.instrumentMR_NET = true
             initClass(WmOkHttpController(), config)
-
-            /*
-            The test fails on CI, but not local with WM 2.32.0
-
-            if updating WM to 2.34.0, the test fails on local windows as well (TO CHECK)
-            */
-            CIUtils.skipIfOnGA()
         }
     }
 
@@ -37,8 +29,8 @@ class WmOkHttpEMTest : SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "WmOkHttpEM",
             "org.foo.WmOkHttpEM",
-            500,
-            false,
+            200,
+            true,
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")

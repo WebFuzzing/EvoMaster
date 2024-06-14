@@ -1,0 +1,9 @@
+[[auth]]
+name="a"
+[auth.cookieLogin]
+username="first"
+password="foo"
+usernameField="x"
+passwordField="y"
+loginEndpointUrl="/login"
+foo="invalid field"

@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster-client-java</artifactId>
-        <version>2.0.1-SNAPSHOT</version>
+        <version>3.0.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>evomaster-client-java-instrumentation</artifactId>
@@ -210,8 +210,8 @@
                                     <shadedPattern>shaded.dk.brics.automaton</shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>com.github.jsqlparser</pattern>
-                                    <shadedPattern>shaded.com.github.jsqlparser</shadedPattern>
+                                    <pattern>net.sf.jsqlparser</pattern>
+                                    <shadedPattern>shaded.net.sf.jsqlparser</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>

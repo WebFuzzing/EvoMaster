@@ -168,32 +168,29 @@ class FitnessValue(
     fun getViewOfAggregatedFailedFind() = aggregatedFailedFind
 
     fun doesCover(target: Int): Boolean {
-        return targets[target]?.distance == MAX_VALUE
+        return targets[target]?.score == MAX_VALUE
     }
 
-    fun getHeuristic(target: Int): Double = targets[target]?.distance ?: 0.0
+    fun getHeuristic(target: Int): Double = targets[target]?.score ?: 0.0
 
-    fun reachedTargets() : Set<Int> = getViewOfData().filter { it.value.distance > 0.0 }.keys
+    fun reachedTargets() : Set<Int> = getViewOfData().filter { it.value.score > 0.0 }.keys
 
     fun computeFitnessScore(): Double {
-
-        return targets.values.map { h -> h.distance }.sum()
+        return targets.values.sumOf { h -> h.score }
     }
 
     fun computeFitnessScore(targetIds : List<Int>): Double {
-
-        return targets.filterKeys { targetIds.contains(it)}.values.map { h -> h.distance }.sum()
+        return targets.filterKeys { targetIds.contains(it)}.values.map { h -> h.score }.sum()
     }
 
     fun coveredTargets(): Int {
-
-        return targets.values.filter { t -> t.distance == MAX_VALUE }.count()
+        return targets.values.count { t -> t.score == MAX_VALUE }
     }
 
     fun coveredTargets(prefix: String, idMapper: IdMapper) : Int{
 
         return targets.entries
-                .filter { it.value.distance == MAX_VALUE }
+                .filter { it.value.score == MAX_VALUE }
                 .filter { idMapper.getDescriptiveId(it.key).startsWith(prefix) }
                 .count()
     }
@@ -211,7 +208,7 @@ class FitnessValue(
             /*
                 Due to minimize phase, then need to ensure that coveredTargetsDuringSeeding is part of targets
              */
-            targets.containsKey(it) && targets[it]!!.distance == MAX_VALUE
+            targets.containsKey(it) && targets[it]!!.score == MAX_VALUE
         }.size
     }
 
@@ -224,7 +221,7 @@ class FitnessValue(
                 /*
                     Due to minimize phase, then need to ensure that coveredTargetsDuringSeeding is part of targets
                 */
-                targets.containsKey(it) && targets[it]!!.distance == MAX_VALUE
+                targets.containsKey(it) && targets[it]!!.score == MAX_VALUE
                         && idMapper.getDescriptiveId(it).startsWith(prefix) }
     }
 
@@ -254,7 +251,7 @@ class FitnessValue(
         var seedingTime = 0
         var searchTime = 0
 
-        targets.entries.filter { e -> (e.value.distance == MAX_VALUE && (prefix == null || idMapper.getDescriptiveId(e.key).startsWith(prefix))) }.forEach { e ->
+        targets.entries.filter { e -> (e.value.score == MAX_VALUE && (prefix == null || idMapper.getDescriptiveId(e.key).startsWith(prefix))) }.forEach { e ->
             if (coveredTargetsDuringSeeding.contains(e.key))
                 seedingTime++
             else
@@ -288,37 +285,37 @@ class FitnessValue(
         updateTarget(id, MAX_VALUE)
     }
 
+
+    private fun getCoveredTargetKeys() : Set<Int> = targets.filter { it.value.score == MAX_VALUE }.keys
+
     fun gqlErrors(idMapper: IdMapper, withLine : Boolean): List<String>{
         // GQLErrors would be >0 when it is initialed, so we count it when it is covered.
-        return targets.filter { it.value.distance == MAX_VALUE }.keys
+        return getCoveredTargetKeys()
                 .filter { idMapper.isGQLErrors(it, withLine) }
                 .map { idMapper.getDescriptiveId(it) }
     }
 
     fun gqlNoErrors(idMapper: IdMapper): List<String>{
         // GQLNoErrors would be >0 when it is initialed, so we count it when it is covered.
-        return targets.filter { it.value.distance == MAX_VALUE }.keys
+        return getCoveredTargetKeys()
                 .filter { idMapper.isGQLNoErrors(it) }
                 .map { idMapper.getDescriptiveId(it) }
     }
 
     fun potentialFoundFaults(idMapper: IdMapper) : List<String>{
-        return targets.keys
+        return getCoveredTargetKeys()
                 .filter { idMapper.isFault(it)}
                 .map { idMapper.getDescriptiveId(it) }
     }
 
+    fun hasAnyPotentialFault(idMapper: IdMapper) = getCoveredTargetKeys().any { idMapper.isFault(it) }
+
     fun potential500Faults(idMapper: IdMapper): List<String>{
-        return targets.keys
+        return getCoveredTargetKeys()
                 .filter{ idMapper.isFault500(it)}
                 .map{idMapper.getDescriptiveId(it)}
     }
 
-    fun potentialPartialOracleFaults(idMapper: IdMapper): List<String>{
-        return targets.keys
-                .filter{idMapper.isFaultExpectation(it)}
-                .map{idMapper.getDescriptiveId(it)}
-    }
 
     // RPC
     /**
@@ -409,7 +406,7 @@ class FitnessValue(
 
         val current = targets[id]
 
-        if(current == null || value > current.distance) {
+        if(current == null || value > current.score) {
             targets[id] = Heuristics(value, actionIndex)
         }
     }
@@ -453,8 +450,8 @@ class FitnessValue(
 
         for (k in targetSubset) {
 
-            val v = this.targets[k]?.distance ?: 0.0
-            val z = other.targets[k]?.distance ?: 0.0
+            val v = this.targets[k]?.score ?: 0.0
+            val z = other.targets[k]?.score ?: 0.0
             if (v < z) {
                 //  if it is worse on any target, then it cannot be subsuming
                 if (log.isTraceEnabled){

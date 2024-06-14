@@ -43,8 +43,12 @@ public class CoverageClassVisitor extends ClassVisitor {
 
             https://docs.oracle.com/javase/tutorial/java/generics/bridgeMethods.html
             http://www.javaworld.com/article/2073578/java-s-synthetic-methods.html
+
+            Actually, although there are several cases in which synthetic are not useful, we cannot skip them.
+            Reason is that lambda expressions (eg used in stream operations) are converted into
+            synthetic methods
          */
-        if (Constants.isMethodSyntheticOrBridge(methodAccess)) {
+        if (Constants.isMethodBridge(methodAccess)) {
             return mv;
         }
 

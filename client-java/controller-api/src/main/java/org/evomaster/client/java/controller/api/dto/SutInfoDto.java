@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.api.dto;
 
+import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto;
@@ -95,7 +96,7 @@ public class SutInfoDto {
      * there might exist some errors which could be
      * ignored for the moment in order to make evomaster
      * still process test generations.
-     * however, such error should be handled propertly in
+     * however, such error should be handled properly in
      * the future.
      * to better view such errors, might show them on
      * the core side

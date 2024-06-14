@@ -9,7 +9,7 @@ import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUti
  * we make the SUT connect to our specified default WM as this info
  */
 class DefaultHttpExternalServiceInfo private constructor(protocol: String, remotePort: Int)
-    : HttpExternalServiceInfo(protocol, "no_host_name", remotePort) {
+    : HttpExternalServiceInfo(protocol, ExternalServiceSharedUtils.DEFAULT_WM_DUMMY_HOSTNAME, remotePort) {
 
     companion object{
         fun createDefaultHttps() = DefaultHttpExternalServiceInfo("https", getDefaultWMHttpsPort())

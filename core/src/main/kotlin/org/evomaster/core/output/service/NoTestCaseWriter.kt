@@ -8,7 +8,7 @@ import java.nio.file.Path
 
 class NoTestCaseWriter : TestCaseWriter() {
     override fun handleFieldDeclarations(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>) {
-        //empty
+        // empty
     }
 
     override fun handleActionCalls(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>, testCaseName: String, testSuitePath: Path?) {

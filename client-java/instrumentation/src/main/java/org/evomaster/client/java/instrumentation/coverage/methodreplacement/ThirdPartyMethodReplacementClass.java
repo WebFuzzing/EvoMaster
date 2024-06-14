@@ -252,9 +252,20 @@ public abstract class ThirdPartyMethodReplacementClass implements MethodReplacem
             //this would be clearly a bug...
             throw new IllegalStateException("No access to last caller class");
         }
-        //TODO what if more than 1 available ???
-        //might have to store last one in use for caller class
-        ClassLoader loader = UnitsInfoRecorder.getInstance().getClassLoaders(callerName).get(0);
+
+        /*
+            TODO what if more than 1 classloader available ???
+
+            This is tricky... originally, we went directly for classloader of caller class, to avoid possible issues
+            of class not been initialized yet.
+            however, that didn't work in some cases (eg reservations-api).
+            so, we go directly to the original class, and, if no info for it, we fallback on caller class
+         */
+        ClassLoader loader = UnitsInfoRecorder.getInstance().getFirstClassLoader(singleton.getTargetClassName());
+        if(loader == null) {
+            //might have to store last one in use for caller class
+            loader = UnitsInfoRecorder.getInstance().getClassLoaders(callerName).get(0);
+        }
 
         StateInfo info = singleton.classInfoPerClassLoader.get(loader);
 

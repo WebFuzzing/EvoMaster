@@ -75,7 +75,7 @@ class WebSampler : EnterpriseSampler<WebIndividual>() {
 
 
     override fun sampleAtRandom(): WebIndividual {
-        val actions = mutableListOf<EnterpriseActionGroup>()
+        val actions = mutableListOf<EnterpriseActionGroup<*>>()
         val n = randomness.nextInt(1, getMaxTestSizeDuringSampler())
 
         (0 until n).forEach {

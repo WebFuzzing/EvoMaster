@@ -193,12 +193,11 @@ public List<DbSpecification> getDbSpecifications() {
 Here, you can specify how to connect to 1 or more SQL databases.
 You need to specify the type of database, and a `Connection` object for it.
 
-In _SpringBoot_, you can extract a connection object in the `startSut()` method (and save it in a variable),
+You can extract a connection object in the `startSut()` method (and save it in a variable),
 by simply using:
 
 ```
-JdbcTemplate jdbc = ctx.getBean(JdbcTemplate.class);
-connection = jdbc.getDataSource().getConnection();
+connection =  java.sql.DriverManager.getConnection(url,user,password);
 ```
 
 Note that, since version `1.5.0`, the methods `getConnection()` and  `getDatabaseDriverName()` have been removed.
@@ -284,7 +283,8 @@ For example:
 
 ```
 private static final GenericContainer mongodb =  
-         new GenericContainer("mongo:3.2")
+         new GenericContainer("mongo:6.0")
+                .withTmpFs(Collections.singletonMap("/data/db", "rw"))
                 .withExposedPorts(27017);
 ```
 
@@ -345,51 +345,4 @@ Here, in `RPCProblem` there are 3 main things you need to specify:
 
 The SUT might require authenticated requests (e.g., when _Spring Security_ is used).
 How to do it must be specified in the `getInfoForAuthentication()`.
-We support auth based on authentication headers and cookies.
-
-
-The `org.evomaster.client.java.controller.AuthUtils` can be used to simplify the creation of such
-configuration objects, e.g., by using methods like `getForDefaultSpringFormLogin()`.
-Consider the following example from the `proxyprint` case study
-in the [EMB repository](https://github.com/EMResearch/EMB).
-
-```
-@Override
-public List<AuthenticationDto> getInfoForAuthentication() {
-        return Arrays.asList(
-                AuthUtils.getForBasic("admin","master","1234"),
-                AuthUtils.getForBasic("consumer","joao","1234"),
-                AuthUtils.getForBasic("manager","joaquim","1234"),
-                AuthUtils.getForBasic("employee","mafalda","1234")
-        );
-}
-```
-
-Here, auth is done with [RFC-7617](https://tools.ietf.org/html/rfc7617) _Basic_.
-Four different users are defined.
-When _EvoMaster_ generates test cases, it can decide to use some of those auth credentials, and
-generate the valid HTTP headers for them.
-In case of cookies, _EvoMaster_ is able to first make a login request, store the cookie, and then use such
-cookie in the following HTTP calls in its generated tests.
-
-
-Although _EvoMaster_ can read and analyze the content of a SQL database, it cannot reverse-engineer the
-hashed passwords.
-These must be provided with `getInfoForAuthentication()`.
-If such auth info is stored in a SQL database, and you are resetting the state of such database in the
-`resetStateOfSUT()` method, you will need there to recreate the login/password credentials as well.
-You could write such auth setup in a `init_db.sql` SQL script file, and then
-in `resetStateOfSUT()` execute:
-
-```
-DbCleaner.clearDatabase_H2(connection);
-SqlScriptRunnerCached.runScriptFromResourceFile(connection,"/init_db.sql");
-```     
-
-__IMPORTANT__: since version `1.5.0`, if delegating the resetting of SQL database to _EvoMaster_ (i.e., without `withDisabledSmartClean()`), then initializing scripts should be set directly on the `DbSpecification` object, e.g., `new DbSpecification(DatabaseType.H2,sqlConnection)
-.withInitSqlOnResourcePath("/init_db.sql")`.
-Look at the JavaDocs of `DbSpecification` to see all the available utility methods.
-
-Note: at the moment _EvoMaster_ is not able to register new users on the fly with HTTP requests,
-and use such info to authenticate its following requests. 
-
+This is clarified in details in the [authentication documentation](auth.md).

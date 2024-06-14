@@ -10,6 +10,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
+import static org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP;
+
 /**
  * Methods of this class will be injected in the SUT to
  * keep track of what the tests do execute/cover.
@@ -70,10 +72,12 @@ public class ExecutionTracer {
     private static Set<String> inputVariables = new HashSet<>();
 
     /**
-     * A map of external service hostname and WireMock IP mapping information
+     * Map of external services mapping. Key is the WireMock signature
+     * (use protocol, remote hostname, and port), and value contains information
+     * about remote hostname, mock server local IP address, state
+     * (active or inactive) and WireMock signature.
      */
-    private static Map<String, String> externalServiceMapping = new HashMap<>();
-
+    private static Map<String, ExternalServiceMapping> externalServiceMapping = new HashMap<>();
 
     private static Map<String, String> localAddressMapping = new HashMap<>();
 
@@ -673,7 +677,16 @@ public class ExecutionTracer {
     }
 
     /**
-     * Add the external HTTP/S hostname to the additional info to keep track.
+     * To add HostnameResolution information to [AdditionalInfo]
+     */
+    public static void addHostnameInfo(HostnameResolutionInfo hostnameResolutionInfo) {
+        getCurrentAdditionalInfo().addHostnameInfo(hostnameResolutionInfo);
+        if (!executingAction)
+            ObjectiveRecorder.registerHostnameResolutionInfoAtSutStartupTime(hostnameResolutionInfo);
+    }
+
+    /**
+     * To add the external service information to [AdditionalInfo]
      */
     public static void addExternalServiceHost(ExternalServiceInfo hostInfo) {
         getCurrentAdditionalInfo().addExternalService(hostInfo);
@@ -693,30 +706,41 @@ public class ExecutionTracer {
      * Return the WireMock IP if there is a mapping for the hostname. If there is
      * no mapping NULL will be returned
      */
-    public static String getExternalMapping(String signature) {
-        return externalServiceMapping.get(signature);
+    public static String getExternalMappingForSignature(String signature) {
+        if (externalServiceMapping.containsKey(signature)) {
+            return externalServiceMapping.get(signature).getLocalIPAddress();
+        }
+        return null;
     }
 
-    public static boolean hasExternalMapping(String signature) {
+    public static String getExternalMappingForHostname(String hostname) {
+        return externalServiceMapping
+                .entrySet().stream()
+                .filter(e -> e.getValue().getRemoteHostname().equals(hostname))
+                .findFirst().get().getValue().getLocalIPAddress();
+    }
+
+    public static boolean hasActiveExternalMappingForSignature(String signature) {
         return externalServiceMapping.containsKey(signature);
     }
 
-    public static boolean hasMockServer(String hostname) {
-        return externalServiceMapping.containsValue(hostname);
+    public static boolean hasMockServerForHostname(String hostname) {
+        return externalServiceMapping
+                .entrySet().stream().anyMatch(e -> e.getValue().getLocalIPAddress().equals(hostname));
     }
 
     /**
      * Check whether there is a local IP address available for the given
      * remote hostname.
      */
-    public static boolean hasLocalAddress(String hostname) {
+    public static boolean hasLocalAddressForHost(String hostname) {
         return localAddressMapping.containsKey(hostname);
     }
 
     /**
      * Checks for any replacement available to given local IP address.
      */
-    public static boolean hasLocalAddressReplacement(String localAddress) {
+    public static boolean hasMappingForLocalAddress(String localAddress) {
         return localAddressMapping.containsValue(localAddress);
     }
 
@@ -735,18 +759,18 @@ public class ExecutionTracer {
         return localAddressMapping.get(hostname);
     }
 
+    public static String getDefaultSinkholeAddress() {
+        return RESERVED_RESOLVED_LOCAL_IP;
+    }
+
     public static boolean skipHostname(String hostname) {
         return skippedExternalServices
-                .stream()
-                .filter(e -> e.getHostname().equals(hostname.toLowerCase()))
-                .count() > 0;
+                .stream().anyMatch(e -> e.getHostname().equals(hostname.toLowerCase()));
     }
 
     public static boolean skipHostnameAndPort(String hostname, int port) {
         return skippedExternalServices
-                .stream()
-                .filter(e -> e.getHostname().equals(hostname.toLowerCase()) && e.getPort() == port)
-                .count() > 0;
+                .stream().anyMatch(e -> e.getHostname().equals(hostname.toLowerCase()) && e.getPort() == port);
     }
 
 }

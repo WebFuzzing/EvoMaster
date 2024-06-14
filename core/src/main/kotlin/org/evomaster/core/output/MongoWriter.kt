@@ -29,14 +29,15 @@ object MongoWriter {
         skipFailure: Boolean
     ) {
 
-        if (mongoDbInitialization.isEmpty()) return
+        if (mongoDbInitialization.isEmpty() || mongoDbInitialization.none {!skipFailure || it.mongoResult.getInsertExecutionResult()}) {
+            return
+        }
 
         val insertionVar = "insertions${groupIndex}"
         val insertionVarResult = "${insertionVar}result"
         val previousVar = insertionVars.joinToString(", ") { it.first }
-        val previousVarResults = insertionVars.joinToString(", ") { it.second }
         mongoDbInitialization
-            .filter { !skipFailure || it.result.getInsertExecutionResult() }
+            .filter { !skipFailure || it.mongoResult.getInsertExecutionResult() }
             .forEachIndexed { index, evaluatedMongoDbAction ->
 
                 lines.add(
@@ -44,7 +45,7 @@ object MongoWriter {
                         index == 0 && format.isJava() -> "List<MongoInsertionDto> $insertionVar = mongo($previousVar)"
                         index == 0 && format.isKotlin() -> "val $insertionVar = mongo($previousVar)"
                         else -> ".and()"
-                    } + ".insertInto(\"${evaluatedMongoDbAction.action.database}\"" + ", " + "\"${evaluatedMongoDbAction.action.collection}\")"
+                    } + ".insertInto(\"${evaluatedMongoDbAction.mongoAction.database}\"" + ", " + "\"${evaluatedMongoDbAction.mongoAction.collection}\")"
                 )
 
                 if (index == 0) {
@@ -77,7 +78,7 @@ object MongoWriter {
             }
 
         lines.add(".dtos()")
-        lines.appendSemicolon(format)
+        lines.appendSemicolon()
 
         lines.deindent()
 
@@ -86,9 +87,9 @@ object MongoWriter {
                 format.isJava() -> "MongoInsertionResultsDto "
                 format.isKotlin() -> "val "
                 else -> throw IllegalStateException("Not support mongo insertions generation for $format")
-            } + "$insertionVarResult = controller.execInsertionsIntoMongoDatabase(${if (previousVarResults.isBlank()) insertionVar else "$insertionVar, $previousVarResults"})"
+            } + "$insertionVarResult = controller.execInsertionsIntoMongoDatabase($insertionVar)"
         )
-        lines.appendSemicolon(format)
+        lines.appendSemicolon()
 
         insertionVars.add(insertionVar to insertionVarResult)
 

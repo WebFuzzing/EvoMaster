@@ -72,6 +72,8 @@ public class AdditionalInfo implements Serializable {
      */
     private final Set<ExternalServiceInfo> externalServices = new CopyOnWriteArraySet<>();
 
+    private final Set<HostnameResolutionInfo> hostnameResolutionInfos = new CopyOnWriteArraySet<>();
+
     /**
      * info for external services which have been referred to the default setup (eg, specified ip and port)
      */
@@ -263,6 +265,14 @@ public class AdditionalInfo implements Serializable {
 
     public void addExternalService(ExternalServiceInfo hostInfo) {
         externalServices.add(hostInfo);
+    }
+
+    public void addHostnameInfo(HostnameResolutionInfo hostnameResolutionInfo) {
+        hostnameResolutionInfos.add(hostnameResolutionInfo);
+    }
+
+    public Set<HostnameResolutionInfo> getHostnameInfos() {
+        return Collections.unmodifiableSet(hostnameResolutionInfos);
     }
 
     public Set<ExternalServiceInfo> getExternalServices() {

@@ -767,6 +767,17 @@ abstract class Gene(
     open fun possiblySame(gene : Gene) : Boolean = gene.name == name && gene::class == this::class
 
 
+    /**
+     * Given a string value, apply it to the current state of this gene (and possibly recursively to its children).
+     * If it fails for any reason, return false, without modifying its state.
+     */
+    open fun setFromStringValue(value: String) : Boolean{
+        //TODO in future this should be abstract, to force each gene to handle it.
+        //few implementations can be based on AbstractParser class for Postman
+        throw IllegalStateException("setFromStringValue() is not implemented for gene ${this::class.simpleName}")
+    }
+
+
     //========================= handing binding genes ===================================
 
     //TODO make sure all public methods keep the gene in a valid state.
@@ -933,6 +944,13 @@ abstract class Gene(
         bindingGenes.clear()
         bindingGenes.addAll(genes)
         Lazy.assert { !bindingGenes.contains(this) }
+    }
+
+    /**
+     * clean bindingGenes
+     */
+    fun cleanBinding(){
+        bindingGenes.clear()
     }
 
     /**

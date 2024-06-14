@@ -5,6 +5,12 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.enterprise.EnterpriseIndividual
 import org.evomaster.core.problem.gui.GuiIndividual
+import org.evomaster.core.problem.httpws.HttpWsAction
+import org.evomaster.core.problem.httpws.HttpWsCallResult
+import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.problem.rest.RestCallResult
+import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.mutator.StructureMutator
@@ -96,7 +102,7 @@ class Minimizer<T: Individual> {
 
         val current = archive.getCopyOfUniqueCoveringIndividuals()
             .filter {
-                getSize(it) > 1
+                it.size() > 1
             } //can't minimize below 1
 
         if(current.isEmpty()){
@@ -144,29 +150,11 @@ class Minimizer<T: Individual> {
         }
     }
 
-    private fun getSize(ind: T) : Int{
-        /*
-          FIXME: we currently have a rather major limitation, has in REST we have group of calls
-          related to same resources, and cannot currently delete single calls with messing up lot of things...
-          We need to do some major refactoring.
 
-          Man comments:
-          there might be two options:
-          1) re-construct  RestResourceCalls , e.g., three actions, A-B-C, remove B, then construct the resources with A and C,
-          2) remove the resource only if all actions are reductant
-          there might be a problematic regarding value binding, then you can remove all binding before the minimization phase, since it is last one
-          see replaceResourceCall  in RestIndividual , it can use for option 1.  removeResourceCall  can be used to remove resource, eg, option 2
-          replaceResourceCall  and removeResourceCall  have handled the binding, should be fine.
-
-          TODO a further problem is that, for some custom tests, we have no group definitions
-      */
-        return ind.groupsView()?.sizeOfGroup(GroupsOfChildren.MAIN)
-                ?: ind.size()
-    }
 
     private fun splitIntoSingleCalls(ind: T) : List<T>{
 
-        val n = getSize(ind)
+        val n = ind.size()
 
         if(n <= 1){
             throw IllegalArgumentException("Need at least 2 actions to apply split")
@@ -184,8 +172,12 @@ class Minimizer<T: Individual> {
 
     private fun removeAllMainActionsButIndex(ind: T, index: Int){
 
-        val n = getSize(ind)
+        val n = ind.size()
 
+        /*
+         * This is done because ind might not be flattened. in this case, in REST, there can be SQL actions for
+         * resource handling in the main action group-trees
+         */
         val sqlActions = if (ind is EnterpriseIndividual) ind.seeSQLActionBeforeIndex(index).map { it.copy() as SqlAction} else null
 
         for(i in n-1 downTo index+1){
@@ -199,9 +191,10 @@ class Minimizer<T: Individual> {
             ind.addChildrenToGroup(sqlActions, GroupsOfChildren.INITIALIZATION_SQL)
         }
 
-        if (!ind.verifyBindingGenes()){
-            ind.cleanBrokenBindingReference()
-            ind.computeTransitiveBindingGenes()
+        ind.fixGeneBindingsIfNeeded()
+
+        if(ind is RestIndividual){
+            ind.removeLocationId()
         }
     }
 
@@ -217,20 +210,33 @@ class Minimizer<T: Individual> {
     }
 
     private fun recomputeArchiveWithFullCoverageInfo(){
-        val current = archive.getCopyOfUniqueCoveringIndividuals()
-
-        LoggingUtil.getInfoLogger().info("Recomputing full coverage for ${current.size} tests")
 
         val beforeCovered = archive.coveredTargets()
+
+        val currentEvaluated = archive.getCopyOfUniqueCoveringEvaluatedIndividuals()
+
+        LoggingUtil.getInfoLogger().info("Recomputing full coverage for ${currentEvaluated.size} tests")
+
 
         /*
             Previously evaluated individual only had partial info, due to performance issues.
             Need to make sure to fetch all coverage info.
          */
-        val population = current.mapNotNull {
-            val ei = fitness.computeWholeAchievedCoverageForPostProcessing(it)
+        val population = currentEvaluated.mapNotNull {
+
+            val possibleIssues = if(it.individual is EnterpriseIndividual)
+                //must flatten to simplify minimization... but it can introduce issues
+                it.individual.ensureFlattenedStructure()
+            else
+                false
+
+
+            val ei = fitness.computeWholeAchievedCoverageForPostProcessing(it.individual)
             if(ei == null){
                 log.warn("Failed to re-evaluate individual during minimization")
+            } else if(!possibleIssues){
+                //don't check mismatch if possible issues, as then mismatches would be expected
+                checkResultMismatches(it, ei)
             }
             ei
         }
@@ -259,6 +265,32 @@ class Minimizer<T: Individual> {
             }
 
             assert(false)//shouldn't really happen in the E2E...
+        }
+    }
+
+    private fun checkResultMismatches(x: EvaluatedIndividual<T>, y: EvaluatedIndividual<T>){
+
+        val original = x.evaluatedMainActions()
+        val other = y.evaluatedMainActions()
+
+        if(original.size != other.size){
+            log.warn("Mismatch between number of actions in re-evaluated individual." +
+                    " Original=${original.size}, Re-evaluated=${other.size}")
+            assert(false)
+            return
+        }
+
+        original.forEachIndexed { index, it ->
+            val action = it.action
+            if(action is HttpWsAction){
+                val a = it.result.getResultValue(HttpWsCallResult.STATUS_CODE)
+                val b = other[index].result.getResultValue(HttpWsCallResult.STATUS_CODE)
+
+                if(a != b){
+                    log.warn("Different status code $b returned from original $a, ie, $a != $b for endpoint: ${action.getName()}")
+                    assert(false)
+                }
+            }
         }
     }
 }

@@ -145,7 +145,7 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
         }
 
 
-        val result = WebResult(blocking)
+        val result = WebResult(a.getLocalId(), blocking)
 
         val start = pageIdentifier.registerShape(HtmlUtils.computeIdentifyingShape(pageBeforeExecutingAction))
         result.setIdentifyingPageIdStart(start)

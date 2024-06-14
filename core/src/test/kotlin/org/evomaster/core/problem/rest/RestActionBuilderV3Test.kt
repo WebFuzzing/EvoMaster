@@ -8,27 +8,55 @@ import org.evomaster.core.problem.rest.param.FormParam
 import org.evomaster.core.problem.rest.resource.ResourceCluster
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.collection.FixedMapGene
+import org.evomaster.core.search.gene.datetime.DateGene
+import org.evomaster.core.search.gene.datetime.DateTimeGene
+import org.evomaster.core.search.gene.datetime.TimeGene
+import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.optional.ChoiceGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+import java.time.format.DateTimeFormatter
 
 class RestActionBuilderV3Test{
 
     @BeforeEach
     fun reset(){
         RestActionBuilderV3.cleanCache()
+    }
+
+
+    @Test
+    fun testDereferencing(){
+        val map = loadAndAssertActions("/swagger/artificial/dereferencing.yaml",1, true)
+        val a = map.values.first() as RestCallAction
+
+        val topGenes = a.seeTopGenes()
+        assertEquals(4, topGenes.size)
+        assertTrue(topGenes.any { it is IntegerGene})
+        assertTrue(topGenes.any { it.getWrappedGene(BooleanGene::class.java) != null })
+        assertTrue(topGenes.any {
+            it is ObjectGene
+            && it.fields.size == 1
+            && it.fields[0].getWrappedGene(DoubleGene::class.java) != null
+        })
+        assertTrue(topGenes.any { it is EnumGene<*> })
+
+        assertEquals(1, a.produces.size)
+        assertTrue(a.produces.contains("application/xml"))
     }
 
     @ParameterizedTest
@@ -184,7 +212,7 @@ class RestActionBuilderV3Test{
             }
         """.trimIndent()
 
-        val gene = RestActionBuilderV3.createObjectGenesForDTOs(name, dtoSchema, RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling))
+        val gene = RestActionBuilderV3.createGeneForDTO(name, dtoSchema, RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling))
         assertEquals(name, gene.name)
         assertTrue(gene is ObjectGene)
         (gene as ObjectGene).apply {
@@ -235,7 +263,7 @@ class RestActionBuilderV3Test{
             }
         """.trimIndent()
 
-        val gene = RestActionBuilderV3.createObjectGeneForDTO(name, dtoSchema, null, RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling))
+        val gene = RestActionBuilderV3.createGeneForDTO(name, dtoSchema, null, RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling))
         assertEquals(name, gene.name)
 
         assertTrue(gene is ObjectGene)
@@ -278,7 +306,7 @@ class RestActionBuilderV3Test{
           }
         """.trimIndent()
 
-        val gene = RestActionBuilderV3.createObjectGeneForDTO(name, dtoSchema, null, RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling)) as ObjectGene
+        val gene = RestActionBuilderV3.createGeneForDTO(name, dtoSchema, null, RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling)) as ObjectGene
 
         assertEquals(name, gene.name)
         assertEquals(3, gene.fields.size)
@@ -352,7 +380,7 @@ class RestActionBuilderV3Test{
             }
         """.trimIndent()
 
-        val gene = RestActionBuilderV3.createObjectGeneForDTO(name, dtoSchema, null, RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling)) as ObjectGene
+        val gene = RestActionBuilderV3.createGeneForDTO(name, dtoSchema, null, RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling)) as ObjectGene
 
         assertEquals(name, gene.name)
         assertEquals(4, gene.fields.size)
@@ -383,7 +411,7 @@ class RestActionBuilderV3Test{
         """.trimIndent()
 
 
-        val gene = RestActionBuilderV3.createObjectGeneForDTO(name, dtoSchema, name,
+        val gene = RestActionBuilderV3.createGeneForDTO(name, dtoSchema, name,
             RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling, invalidData = false)) as ObjectGene
         assertEquals(name, gene.name)
         assertEquals(2, gene.fields.size)
@@ -435,7 +463,7 @@ class RestActionBuilderV3Test{
             }     
         """.trimIndent()
 
-        val gene = RestActionBuilderV3.createObjectGeneForDTO(name, dtoSchema, name, RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling)) as ObjectGene
+        val gene = RestActionBuilderV3.createGeneForDTO(name, dtoSchema, name, RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling)) as ObjectGene
         assertEquals(name, gene.name)
         assertEquals(2, gene.fields.size)
 
@@ -482,7 +510,7 @@ class RestActionBuilderV3Test{
             }     
         """.trimIndent()
 
-        val objGenes = RestActionBuilderV3.createObjectGeneForDTOs(listOf(nameFoo, nameBar), listOf(dtoSchemaFoo, dtoSchemaBar), listOf(nameFoo, nameBar), RestActionBuilderV3.Options(enableConstraintHandling = enableConstraintHandling))
+        val objGenes = RestActionBuilderV3.createGenesForDTOs(listOf(nameFoo, nameBar), listOf(dtoSchemaFoo, dtoSchemaBar), listOf(nameFoo, nameBar), RestActionBuilderV3.Options(enableConstraintHandling = enableConstraintHandling))
         assertEquals(2, objGenes.size)
 
         assertEquals(nameFoo, objGenes[0].name)
@@ -570,7 +598,7 @@ class RestActionBuilderV3Test{
             }
         """.trimIndent()
 
-        val mapGene = RestActionBuilderV3.createObjectGenesForDTOs(mapDto, allSchema, RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling))
+        val mapGene = RestActionBuilderV3.createGeneForDTO(mapDto, allSchema, RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling))
         assertTrue(mapGene is ObjectGene)
         (mapGene as ObjectGene).apply {
             assertEquals(2, fields.size)
@@ -783,25 +811,29 @@ class RestActionBuilderV3Test{
                }
             }
         """
-        val ghGene = RestActionBuilderV3.createObjectGenesForDTOs(classToExtract, schema, RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling))
+        val ghGene = RestActionBuilderV3.createGeneForDTO(classToExtract, schema, RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling))
     }
 
     //---------------------------------
 
     private fun loadAndAssertActions(resourcePath: String, expectedNumberOfActions: Int, enableConstraintHandling: Boolean)
             : MutableMap<String, Action> {
+        return loadAndAssertActions(resourcePath, expectedNumberOfActions, RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling))
+    }
 
+    private fun loadAndAssertActions(resourcePath: String, expectedNumberOfActions: Int, options: RestActionBuilderV3.Options)
+            : MutableMap<String, Action> {
 
         val schema = OpenAPIParser().readLocation(resourcePath, null, null).openAPI
 
         val actions: MutableMap<String, Action> = mutableMapOf()
 
-        RestActionBuilderV3.addActionsFromSwagger(schema, actions, enableConstraintHandling = enableConstraintHandling)
+        RestActionBuilderV3.addActionsFromSwagger(schema, actions, options=options)
 
         assertEquals(expectedNumberOfActions, actions.size)
 
         //should not crash
-        RestActionBuilderV3.getModelsFromSwagger(schema, mutableMapOf(), options = RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling))
+        RestActionBuilderV3.getModelsFromSwagger(schema, mutableMapOf(), options = options)
 
         return actions
     }
@@ -1279,4 +1311,504 @@ class RestActionBuilderV3Test{
 
         }
     }
+
+
+    @Test
+    fun testDefaultInt(){
+        val path = "/swagger/artificial/defaultandexamples/default_int.yml"
+
+        val without = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseDefault = 0.0))
+                        .values.first()
+        assertEquals(1, without.seeTopGenes().size)
+        val x = without.seeTopGenes().first().flatView()
+        assertTrue(x.any { it is IntegerGene })
+        assertTrue(x.none { it is ChoiceGene<*> })
+        assertTrue(x.none {it is EnumGene<*>})
+
+        val with = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseDefault = 0.5))
+                        .values.first()
+        assertEquals(1, with.seeTopGenes().size)
+        val y = with.seeTopGenes().first().flatView()
+        assertTrue(y.any { it is IntegerGene })
+        assertTrue(y.any { it is ChoiceGene<*> })
+        assertTrue(y.any {it is EnumGene<*>})
+
+        val certain = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseDefault = 1.0))
+            .values.first()
+            .seeTopGenes().first()
+        val output = certain.getValueAsRawString()
+        assertEquals("42", output)
+    }
+
+
+
+    @Test
+    fun testDefaultStringQuery(){
+        val path = "/swagger/artificial/defaultandexamples/default_string_query.yml"
+
+        val without = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseDefault = 0.0))
+            .values.first()
+        assertEquals(1, without.seeTopGenes().size)
+        val x = without.seeTopGenes().first().flatView()
+        assertTrue(x.any { it is StringGene })
+        assertTrue(x.none { it is ChoiceGene<*> })
+        assertTrue(x.none {it is EnumGene<*>})
+
+
+        val with = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseDefault = 0.5))
+            .values.first()
+        assertEquals(1, with.seeTopGenes().size)
+        val y = with.seeTopGenes().first().flatView()
+        assertTrue(y.any { it is StringGene })
+        assertTrue(y.any { it is ChoiceGene<*> })
+        assertTrue(y.any {it is EnumGene<*>})
+
+
+        val certain = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseDefault = 1.0))
+            .values.first()
+            .seeTopGenes().first()
+        val output = certain.getValueAsRawString()
+        assertEquals("Foo", output)
+    }
+
+    @Test
+    fun testDefaultStringPath(){
+        val path = "/swagger/artificial/defaultandexamples/default_string_path.yml"
+
+        val a = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseDefault = 0.1))
+            .values.first()
+
+        val rand = Randomness()
+        a.doInitialize(rand)
+
+        var isFoo = false
+        var isInvalid = false
+
+        for(i in 0..1000){
+            a.randomize(rand,false)
+            val s = a.seeTopGenes().first().getValueAsRawString()
+            if(s == "foo"){
+                isFoo = true
+            }
+            if(s.isEmpty() || s.contains("/")){
+                isInvalid = true
+            }
+            if(isFoo && isInvalid){
+                break
+            }
+        }
+
+        assertTrue(isFoo)
+        assertFalse(isInvalid)
+    }
+
+
+
+    @ParameterizedTest
+    @ValueSource(strings = ["/swagger/artificial/defaultandexamples/example_int_in.yml",
+        "/swagger/artificial/defaultandexamples/example_int_out.yml"])
+    fun testExampleInt(path: String){
+
+        val without = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseExamples = 0.0))
+            .values.first()
+        assertEquals(1, without.seeTopGenes().size)
+        val x = without.seeTopGenes().first().flatView()
+        assertTrue(x.any { it is IntegerGene })
+        assertTrue(x.none { it is ChoiceGene<*> })
+        assertTrue(x.none {it is EnumGene<*>})
+
+        val with = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseExamples = 0.5))
+            .values.first()
+        assertEquals(1, with.seeTopGenes().size)
+        val y = with.seeTopGenes().first().flatView()
+        assertTrue(y.any { it is IntegerGene })
+        assertTrue(y.any { it is ChoiceGene<*> })
+        assertTrue(y.any {it is EnumGene<*>})
+
+        val certain = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseExamples = 1.0))
+            .values.first()
+            .seeTopGenes().first()
+        val output = certain.getValueAsRawString()
+        assertEquals("42", output)
+    }
+
+
+    @ParameterizedTest
+    @ValueSource(strings = ["/swagger/artificial/defaultandexamples/examples_string_in.yml",
+        "/swagger/artificial/defaultandexamples/examples_string_out.yml"])
+    fun testExamplesString(path: String){
+
+        val a = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseExamples = 0.5))
+            .values.first()
+
+        val rand = Randomness()
+        a.doInitialize(rand)
+
+        var isFoo = false
+        var isBar = false
+        var isHello = false
+
+        for(i in 0..1000){
+            a.randomize(rand,false)
+            val s = a.seeTopGenes().first().getValueAsRawString()
+            if(s == "Foo"){
+                isFoo = true
+            } else if(s == "Bar") {
+                isBar = true
+            } else if(s == "Hello"){
+                isHello = true
+            }
+            if(isFoo && isBar && isHello){
+                break
+            }
+        }
+
+        assertTrue(isFoo)
+        assertTrue(isBar)
+        assertTrue(isHello)
+    }
+
+    @Test
+    fun testExampleDefault(){
+        val path = "/swagger/artificial/defaultandexamples/example_default.yml"
+
+        val without = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseExamples = 0.0, probUseDefault = 0.0))
+            .values.first()
+        assertEquals(1, without.seeTopGenes().size)
+        val x = without.seeTopGenes().first().flatView()
+        assertTrue(x.any { it is IntegerGene })
+        assertTrue(x.none { it is ChoiceGene<*> })
+        assertTrue(x.none {it is EnumGene<*>})
+
+        val with = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseExamples = 0.5, probUseDefault = 0.5))
+            .values.first()
+        assertEquals(1, with.seeTopGenes().size)
+        val y = with.seeTopGenes().first().flatView()
+        assertTrue(y.any { it is IntegerGene })
+        assertTrue(y.any { it is ChoiceGene<*> })
+        assertTrue(y.any {it is EnumGene<*>})
+
+        val certainExample = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseExamples = 1.0))
+            .values.first()
+            .seeTopGenes().first()
+            .getValueAsRawString()
+        assertEquals("42", certainExample)
+
+        val certainDefault = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseDefault = 1.0))
+            .values.first()
+            .seeTopGenes().first()
+            .getValueAsRawString()
+        assertEquals("13", certainDefault)
+    }
+
+
+    @Test
+    fun testExamplesAll() {
+
+        val path = "/swagger/artificial/defaultandexamples/examples_string_all.yml"
+
+        val a = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseExamples = 1.0))
+            .values.first()
+
+        val rand = Randomness()
+        a.doInitialize(rand)
+
+        val found = mutableSetOf<String>()
+
+        for (i in 0..1000) {
+            a.randomize(rand, false)
+            val s = a.seeTopGenes().first().getValueAsRawString()
+            found.add(s)
+            if(found.size == 5){
+                break
+            }
+        }
+
+        assertEquals(5, found.size)
+        assertTrue(found.contains("A"))
+        assertTrue(found.contains("B"))
+        assertTrue(found.contains("D"))
+        assertTrue(found.contains("E"))
+        assertTrue(found.contains("F"))
+    }
+
+    @Test
+    fun testInt8AndInt16Formats() {
+
+        val dtoSchemaName = "foo.com.BarDto"
+        val dtoSchema = """
+            "$dtoSchemaName":{
+                "type":"object",
+                "properties": {
+                    "short_primitive":{"type":"integer", "format":"int16"},
+                    "short_wrapped":{"type":"integer", "format":"int16"},
+                    "byte_primitive":{"type":"integer", "format":"int8"},
+                    "byte_wrapped":{"type":"integer", "format":"int8"}
+                },
+                "required": [
+                    "short_primitive",
+                    "byte_primitive"
+                ]
+            }
+            """.trimIndent()
+
+        val allSchemas = "\"${dtoSchemaName}\":{${dtoSchema}}"
+
+        val gene = RestActionBuilderV3.createGeneForDTO(
+            dtoSchemaName,
+            allSchemas,
+            RestActionBuilderV3.Options(enableConstraintHandling = true)
+        )
+
+        assertTrue(gene is ObjectGene)
+        (gene as ObjectGene).apply {
+            assertEquals(4, gene.fields.size)
+            assertEquals("short_primitive", gene.fields[0].name)
+            assertEquals("short_wrapped", gene.fields[1].name)
+            assertEquals("byte_primitive", gene.fields[2].name)
+            assertEquals("byte_wrapped", gene.fields[3].name)
+
+            assertTrue(gene.fields[0] is IntegerGene)
+            assertTrue(gene.fields[1] is OptionalGene)
+            assertTrue(gene.fields[2] is IntegerGene)
+            assertTrue(gene.fields[3] is OptionalGene)
+
+            val shortPrimitiveGene = (gene.fields[0] as IntegerGene)
+            assertEquals(Short.MIN_VALUE.toInt(), shortPrimitiveGene.min)
+            assertEquals(Short.MAX_VALUE.toInt(), shortPrimitiveGene.max)
+
+            val bytePrimitiveGene = (gene.fields[2] as IntegerGene)
+            assertEquals(Byte.MIN_VALUE.toInt(), bytePrimitiveGene.min)
+            assertEquals(Byte.MAX_VALUE.toInt(), bytePrimitiveGene.max)
+
+            val shortWrappedGene = (gene.fields[1] as OptionalGene).gene
+            assertTrue(shortWrappedGene is IntegerGene)
+            (shortWrappedGene as IntegerGene).apply {
+                assertEquals(Short.MIN_VALUE.toInt(), shortWrappedGene.min)
+                assertEquals(Short.MAX_VALUE.toInt(), shortWrappedGene.max)
+            }
+
+            val byteWrappedGene = (gene.fields[3] as OptionalGene).gene
+            assertTrue(byteWrappedGene is IntegerGene)
+            (byteWrappedGene as IntegerGene).apply {
+                assertEquals(Byte.MIN_VALUE.toInt(), byteWrappedGene.min)
+                assertEquals(Byte.MAX_VALUE.toInt(), byteWrappedGene.max)
+            }
+
+        }
+    }
+
+
+    @Test
+    fun testInt8AndInt16FormatsWithConstraints() {
+
+        val dtoSchemaName = "foo.com.BarDto"
+        val dtoSchema = """
+            "$dtoSchemaName":{
+                "type":"object",
+                "properties": {
+                    "short_primitive":{
+                        "type":"integer", 
+                        "format":"int16",
+                        "minimum": 0,
+                        "maximum": 16
+                    },
+                    "byte_primitive":{
+                        "type":"integer", 
+                        "format":"int8",
+                        "minimum": -1,
+                        "maximum": 5
+                    }
+                },
+                "required": [
+                    "short_primitive",
+                    "byte_primitive"
+                    
+                ]
+            }
+            """.trimIndent()
+
+        val allSchemas = "\"${dtoSchemaName}\":{${dtoSchema}}"
+
+        val gene = RestActionBuilderV3.createGeneForDTO(
+            dtoSchemaName,
+            allSchemas,
+            RestActionBuilderV3.Options(enableConstraintHandling = true)
+        )
+
+        assertTrue(gene is ObjectGene)
+        (gene as ObjectGene).apply {
+            assertEquals(2, gene.fields.size)
+            assertEquals("short_primitive", gene.fields[0].name)
+            assertEquals("byte_primitive", gene.fields[1].name)
+
+            assertTrue(gene.fields[0] is IntegerGene)
+            assertTrue(gene.fields[1] is IntegerGene)
+
+            val shortPrimitiveGene = (gene.fields[0] as IntegerGene)
+            assertEquals(0, shortPrimitiveGene.min)
+            assertEquals(16, shortPrimitiveGene.max)
+
+            val bytePrimitiveGene = (gene.fields[1] as IntegerGene)
+            assertEquals(-1, bytePrimitiveGene.min)
+            assertEquals(5, bytePrimitiveGene.max)
+
+
+        }
+    }
+
+
+    @Test
+    fun testDateField() {
+
+        val dtoSchemaName = "foo.com.BarDto"
+        val dtoSchema = """
+            "$dtoSchemaName":{
+                "type":"object",
+                "properties": {
+                    "date_field":{
+                        "type":"string", 
+                        "format":"date"
+                    }
+                },
+                "required": [
+                    "date_field"
+                    
+                ]
+            }
+            """.trimIndent()
+
+        val allSchemas = "\"${dtoSchemaName}\":{${dtoSchema}}"
+
+        val gene = RestActionBuilderV3.createGeneForDTO(
+            dtoSchemaName,
+            allSchemas,
+            RestActionBuilderV3.Options(enableConstraintHandling = true)
+        )
+
+        assertTrue(gene is ObjectGene)
+        (gene as ObjectGene).apply {
+            assertEquals(1, gene.fields.size)
+            assertEquals("date_field", gene.fields[0].name)
+            assertTrue(gene.fields[0] is DateGene)
+        }
+    }
+
+    @Test
+    fun testDateTimeField() {
+
+        val dtoSchemaName = "foo.com.BarDto"
+        val dtoSchema = """
+            "$dtoSchemaName":{
+                "type":"object",
+                "properties": {
+                    "date_time_field":{
+                        "type":"string", 
+                        "format":"date-time"
+                    }
+                },
+                "required": [
+                    "date_time_field"
+                    
+                ]
+            }
+            """.trimIndent()
+
+        val allSchemas = "\"${dtoSchemaName}\":{${dtoSchema}}"
+
+        val gene = RestActionBuilderV3.createGeneForDTO(
+            dtoSchemaName,
+            allSchemas,
+            RestActionBuilderV3.Options(enableConstraintHandling = true)
+        )
+
+        assertTrue(gene is ObjectGene)
+        (gene as ObjectGene).apply {
+            assertEquals(1, gene.fields.size)
+            assertEquals("date_time_field", gene.fields[0].name)
+            assertTrue(gene.fields[0] is DateTimeGene)
+        }
+    }
+
+    @Test
+    fun testLocalDateField() {
+
+        val dtoSchemaName = "foo.com.BarDto"
+        val dtoSchema = """
+            "$dtoSchemaName":{
+                "type":"object",
+                "properties": {
+                    "local_date_field":{
+                        "type":"string", 
+                        "format":"local-date"
+                    }
+                },
+                "required": [
+                    "local_date_field"
+                    
+                ]
+            }
+            """.trimIndent()
+
+        val allSchemas = "\"${dtoSchemaName}\":{${dtoSchema}}"
+
+        val gene = RestActionBuilderV3.createGeneForDTO(
+            dtoSchemaName,
+            allSchemas,
+            RestActionBuilderV3.Options(enableConstraintHandling = true)
+        )
+
+        assertTrue(gene is ObjectGene)
+        (gene as ObjectGene).apply {
+            assertEquals(1, gene.fields.size)
+            assertEquals("local_date_field", gene.fields[0].name)
+            assertTrue(gene.fields[0] is DateGene)
+        }
+    }
+
+    @Test
+    fun testLocalDateTimeField() {
+
+        val dtoSchemaName = "foo.com.BarDto"
+        val dtoSchema = """
+            "$dtoSchemaName":{
+                "type":"object",
+                "properties": {
+                    "local_date_time_field":{
+                        "type":"string", 
+                        "format":"local-date-time"
+                    }
+                },
+                "required": [
+                    "local_date_time_field"
+                    
+                ]
+            }
+            """.trimIndent()
+
+        val allSchemas = "\"${dtoSchemaName}\":{${dtoSchema}}"
+
+        val gene = RestActionBuilderV3.createGeneForDTO(
+            dtoSchemaName,
+            allSchemas,
+            RestActionBuilderV3.Options(enableConstraintHandling = true)
+        )
+
+        assertTrue(gene is ObjectGene)
+        (gene as ObjectGene).apply {
+            assertEquals(1, gene.fields.size)
+            assertEquals("local_date_time_field", gene.fields[0].name)
+            assertTrue(gene.fields[0] is DateTimeGene)
+        }
+
+        val rand = Randomness()
+
+        gene.doInitialize(rand)
+
+        val dateTimeString = gene.fields[0].getValueAsRawString()
+        DateTimeFormatter.ISO_LOCAL_DATE_TIME.parse(dateTimeString)
+
+
+    }
+
 }

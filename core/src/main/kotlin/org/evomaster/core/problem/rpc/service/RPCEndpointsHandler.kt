@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.*
 import org.evomaster.client.java.controller.api.dto.MockDatabaseDto
+import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.*
 import org.evomaster.core.EMConfig
@@ -281,7 +282,7 @@ class RPCEndpointsHandler {
                             }else if(sutInfoDto.unitsInfoDto.extractedSpecifiedDtos?.containsKey(s) == true){
                                 val schema = sutInfoDto.unitsInfoDto.extractedSpecifiedDtos[s]!!
                                 fromClass = true
-                                RestActionBuilderV3.createObjectGeneForDTO("return", schema, s,
+                                RestActionBuilderV3.createGeneForDTO("return", schema, s,
                                     RestActionBuilderV3.Options(enableConstraintHandling=config.enableSchemaConstraintHandling))
                             }else{
                                 val node = readJson(dto.responses[index])
@@ -755,7 +756,7 @@ class RPCEndpointsHandler {
         var eactions : List<StructuralElement>? = externalActions
         // get external action if not specified
         if (externalActions.isNullOrEmpty()){
-            eactions = (action.parent as EnterpriseActionGroup)
+            eactions = (action.parent as EnterpriseActionGroup<*>)
                 .groupsView()!!.getAllInGroup(GroupsOfChildren.EXTERNAL_SERVICES)
         }
 

@@ -5,37 +5,41 @@ import org.evomaster.client.java.controller.api.EMTestUtils
 import org.evomaster.client.java.controller.api.dto.ActionDto
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
-import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils.getWMDefaultSignature
+import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.externalservice.HostnameResolutionAction
+import org.evomaster.core.problem.externalservice.HostnameResolutionInfo
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceInfo
+import org.evomaster.core.problem.httpws.auth.AuthUtils
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
-import org.evomaster.core.problem.httpws.auth.NoAuth
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.param.UpdateForBodyParam
 import org.evomaster.core.problem.util.ParserDtoUtil
+import org.evomaster.core.remote.HttpClientFactory
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.TcpUtils
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.FitnessValue
-import org.evomaster.core.search.Individual
+import org.evomaster.core.search.GroupsOfChildren
+import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.service.DataPool
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.URL
 import javax.ws.rs.ProcessingException
-import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.client.Entity
 import javax.ws.rs.client.Invocation
 import javax.ws.rs.core.MediaType
@@ -43,7 +47,7 @@ import javax.ws.rs.core.NewCookie
 import javax.ws.rs.core.Response
 
 
-abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual {
+abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
     // TODO: This will moved under ApiWsFitness once RPC and GraphQL support is completed
     @Inject
@@ -51,6 +55,12 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
 
     @Inject
     protected lateinit var harvestResponseHandler: HarvestActualHttpWsResponseHandler
+
+    @Inject
+    protected lateinit var responsePool: DataPool
+
+    @Inject
+    protected lateinit var builder: RestIndividualBuilder
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(AbstractRestFitness::class.java)
@@ -190,12 +200,13 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                          parameters in body payload of form submissions in x-www-form-urlencoded format.
                          This happens for example in LanguageTool.
                      */
-                    !action.parameters.any{
-                            b -> b is BodyParam && b.isForm()
-                            && b.seeGenes().flatMap { it.flatView() }.any { it.name.equals(name, ignoreCase = true)  }
+                    !action.parameters.any { b ->
+                        b is BodyParam && b.isForm()
+                                && b.seeGenes().flatMap { it.flatView() }
+                            .any { it.name.equals(name, ignoreCase = true) }
                     }
                 }
-                .filter{ name ->
+                .filter { name ->
                     /*
                         Another tricky case. Some frameworks like Spring can have hidden params to override the method
                         type of the requests. This is needed for handling web browsers without JS.
@@ -324,7 +335,21 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                 handleAdditionalStatusTargetDescription(fv, status, name, it, location5xx)
 
                 if (config.expectationsActive) {
+                    //TODO refactor
                     handleAdditionalOracleTargetDescription(fv, actions, result, name, it)
+                }
+
+                val unauthorized = !AuthUtils.checkUnauthorizedWithAuth(status, actions[it])
+                if (unauthorized) {
+                    /*
+                        Note: at this point we cannot consider it as a bug, because it could be just a
+                        misconfigured auth info.
+                        however, if for other endpoints or parameters we get a 2xx, then it is clearly
+                        a bug (although we need to make 100% sure of handling token caching accordingly).
+                        but this would be check in specific security tests after the end of the search.
+                     */
+                    val unauthorizedId = idMapper.handleLocalTarget("wrong_authorization:$name")
+                    fv.updateTarget(unauthorizedId, 1.0, it)
                 }
             }
     }
@@ -341,6 +366,9 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
            Objectives for the two partial oracles implemented thus far.
         */
         val call = actions[indexOfAction] as RestCallAction
+        if(call.skipOracleChecks){
+            return
+        }
         val oracles = writer.getPartialOracles().activeOracles(call, result)
         oracles.filter { it.value }.forEach { entry ->
             val oracleId = idMapper.getFaultDescriptiveIdForPartialOracle("${entry.key} $name")
@@ -413,7 +441,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
 
         searchTimeController.waitForRateLimiter()
 
-        val rcr = RestCallResult()
+        val rcr = RestCallResult(a.getLocalId())
         actionResults.add(rcr)
 
         val response = try {
@@ -460,7 +488,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                         And while we are at it, let's release any hanging network resource
                      */
                     client.close() //make sure to release any resource
-                    client = ClientBuilder.newClient()
+                    client = HttpClientFactory.createTrustingJerseyClient(false, config.tcpTimeoutMs)
 
                     TcpUtils.handleEphemeralPortIssue()
 
@@ -489,12 +517,17 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                 }
 
                 TcpUtils.isUnknownHost(e) -> {
-                    throw SutProblemException("Unknown host: ${URL(getBaseUrl()).host}\n" +
-                            " Are you sure you did not misspell it?")
+                    throw SutProblemException(
+                        "Unknown host: ${URL(getBaseUrl()).host}\n" +
+                                " Are you sure you did not misspell it?"
+                    )
                 }
 
-                TcpUtils.isInternalError(e) ->{
-                    throw RuntimeException("Internal bug with EvoMaster when making a HTTP call toward ${a.resolvedPath()}", e)
+                TcpUtils.isInternalError(e) -> {
+                    throw RuntimeException(
+                        "Internal bug with EvoMaster when making a HTTP call toward ${a.resolvedPath()}",
+                        e
+                    )
                 }
 
                 else -> throw e
@@ -553,21 +586,6 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
             }
         }
 
-        if (response.status == 401 && a.auth !is NoAuth) {
-            /*
-                if the endpoint itself is to get auth info, we might exclude auth check for it
-                eg,
-                    the auth is Login with foo,
-                    then the action is to Login with a generated account (eg bar)
-                    thus, the response would likely be 401
-             */
-            if (!a.auth.excludeAuthCheck(a)) {
-                //this would likely be a misconfiguration in the SUT controller
-                log.warn("Got 401 although having auth for '${a.auth.name}'")
-            }
-        }
-
-
         if (!handleSaveLocation(a, response, rcr, chainState)) return false
 
         return true
@@ -585,8 +603,8 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
 
         val path = a.resolvedPath()
 
-        val locationHeader = if (a.locationId != null) {
-            chainState[locationName(a.locationId!!)]
+        val locationHeader = if (a.usePreviousLocationId != null) {
+            chainState[locationName(a.usePreviousLocationId!!)]
                 ?: throw IllegalStateException("Call expected a missing chained 'location'")
         } else {
             null
@@ -669,9 +687,18 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
 
         val invocation = when (a.verb) {
             HttpVerb.GET -> builder.buildGet()
+//            HttpVerb.DELETE -> builder.buildDelete()
+            /*
+                As of RFC 9110 it is allowed to have bodies for GET and DELETE, albeit in special cases.
+                https://www.rfc-editor.org/rfc/rfc9110.html#section-9.3.1-6
+
+                Note: due to bug in Jersey, can handle DELETE but not GET :(
+                TODO: update RestActionBuilderV3 once upgraded Jersey, after JDK 11 move
+             */
+//            HttpVerb.GET -> builder.build("GET", bodyEntity)
+            HttpVerb.DELETE -> builder.build("DELETE", bodyEntity)
             HttpVerb.POST -> builder.buildPost(bodyEntity)
             HttpVerb.PUT -> builder.buildPut(bodyEntity)
-            HttpVerb.DELETE -> builder.buildDelete()
             HttpVerb.PATCH -> builder.build("PATCH", bodyEntity)
             HttpVerb.OPTIONS -> builder.build("OPTIONS")
             HttpVerb.HEAD -> builder.build("HEAD")
@@ -699,7 +726,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                 return false
             }
 
-            val name = locationName(a.path.lastElement())
+            val name = locationName(a.postLocationId())
             var location = response.getHeaderString("location")
 
             if (location == null) {
@@ -713,7 +740,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                  */
                 val id = rcr.getResourceId()
 
-                if (id != null && hasParameterChild(a)) {
+                if (id != null && builder.hasParameterChild(a)) {
                     location = a.resolvedPath() + "/" + id
                     rcr.setHeuristicsForChainedLocation(true)
                 }
@@ -726,19 +753,21 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
     }
 
 
-    fun hasParameterChild(a: RestCallAction): Boolean {
-        return sampler.seeAvailableActions()
-            .filterIsInstance<RestCallAction>()
-            .map { it.path }
-            .any { it.isDirectChildOf(a.path) && it.isLastElementAParameter() }
-    }
+
 
     private fun locationName(id: String): String {
         return "location_$id"
     }
 
+    /**
+     * WARNING: possible side-effects on input parameters, eg actionResults
+     */
     protected fun restActionResultHandling(
-        individual: RestIndividual, targets: Set<Int>, allCovered: Boolean, actionResults: List<ActionResult>, fv: FitnessValue
+        individual: RestIndividual,
+        targets: Set<Int>,
+        allCovered: Boolean,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
     ): TestResultsDto? {
 
         if (actionResults.any { it is RestCallResult && it.getTcpProblem() }) {
@@ -754,7 +783,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
             return null
         }
 
-        val dto = updateFitnessAfterEvaluation(targets, allCovered, individual as T, fv)
+        val dto = updateFitnessAfterEvaluation(targets, allCovered, individual, fv)
             ?: return null
 
         handleExtra(dto, fv)
@@ -766,9 +795,23 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
             dto.additionalInfoList
         )
 
-        handleExternalServiceInfo(fv, dto.additionalInfoList)
+        val wmStarted = handleExternalServiceInfo(individual, fv, dto.additionalInfoList)
+        if(wmStarted){
+            /*
+                Quite tricky... if a WM instance was started as part of this test case evaluation,
+                then the results are invalid, as they are based on WM not being there.
 
-        if(! allCovered) {
+                FIXME: For the first time when an external web service call detected core will
+                  start initiating WM for it. Next time during the search subsequent tests will pass.
+                  Although in [HostnameResolutionActionEMTest] we end up having test cases which captures
+                  the first-time cases. To avoid this we're skipping those test where external web service
+                  call detected but there is no active WM running.
+                  We can issue [deathSentence] to the individual at this point.
+             */
+             return null
+        }
+
+        if (!allCovered) {
             if (config.expandRestIndividuals) {
                 expandIndividual(individual, dto.additionalInfoList, actionResults)
             }
@@ -785,13 +828,40 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
             }
         }
 
+        if (config.useResponseDataPool) {
+            recordResponseData(individual, actionResults.filterIsInstance<RestCallResult>())
+        }
+
         return dto
     }
 
+    protected fun recordResponseData(individual: RestIndividual, actionResults: List<RestCallResult>) {
+
+        for (res in actionResults) {
+            val source = individual.seeAllActions().find { it.getLocalId() == res.sourceLocalId } as RestCallAction?
+            if (source == null) {
+                log.warn("Failed to analyze response. Cannot match response to source action")
+                assert(false)//only break in tests
+                continue
+            }
+            RestResponseFeeder.handleResponse(source, res, responsePool)
+        }
+    }
+
+
+
     /**
      * Based on info coming from SUT execution, register and start new WireMock instances.
+     *
+     * TODO push this thing up to hierarchy to EntepriseFitness
+     *
+     * @return whether there was side effect of starting new instance of WireMock
      */
-    private fun handleExternalServiceInfo(fv: FitnessValue, infoDto: List<AdditionalInfoDto>) {
+    private fun handleExternalServiceInfo(
+        individual: RestIndividual,
+        fv: FitnessValue,
+        infoDto: List<AdditionalInfoDto>
+    ) : Boolean {
 
         /*
             Note: this info here is based from what connections / hostname resolving done in the SUT,
@@ -801,47 +871,86 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
             done on WM directly, and it must be done at SUT call (as WM get reset there)
          */
 
+        var wmStarted = false
+
         infoDto.forEachIndexed { index, info ->
+            info.hostnameResolutionInfoDtos.forEach { hn ->
+
+                val dns = HostnameResolutionInfo(
+                    hn.remoteHostname,
+                    hn.resolvedAddress
+                )
+                externalServiceHandler.addHostname(dns)
+
+                if (dns.isResolved()) {
+                    /*
+                        We need to ask, are we in that special case in which a hostname was resolved but there is
+                        no action for it?
+                        that would represent a real website resolution, which we cannot allow in the generated tests.
+                        for this reason, in instrumentation, we redirect toward a RESERVED IP address.
+                        to guarantee such behavior in generated tests, where there is instrumentation, we need to modify
+                        the genotype of this evaluated individual (without modifying its phenotype)
+                     */
+                    val actions = individual.seeActions(ActionFilter.ONLY_DNS) as List<HostnameResolutionAction>
+                    if ((actions.isEmpty() || actions.none { it.hostname == hn.remoteHostname }) &&
+                        // To avoid adding action for the local WM address in case of InetAddress used
+                        // in the case study.
+                        !externalServiceHandler.isWireMockAddress(hn.remoteHostname)
+                    ) {
+                        // OK, we are in that special case
+                        val hra = HostnameResolutionAction(
+                            hn.remoteHostname,
+                            ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP
+                        )
+                        individual.addChildToGroup(hra, GroupsOfChildren.INITIALIZATION_DNS)
+                        // TODO: Above line adds unnecessary tests at the end, which is
+                        //  causing the created tests to fail.
+                        //  Now handling in Mutator, removing existing actions with default IP address for the same hostname.
+
+                    }
+                }
+            }
+
             info.externalServices.forEach { es ->
 
                 /*
                     The info here is coming from SUT instrumentation
                  */
 
-                /*
-                    TODO: check, do we really want to start WireMock isntances right now after a fitness evaluation?
-                    We need to make sure then, if we do this, that a call in instrumented SUT with (now) and
-                    without (previous fitness evaluation) WM instances would result in same behavior.
-
-                    TODO: ie make sure that, if test is executed again now, the behavior is the same
-                 */
-                externalServiceHandler.addExternalService(
+                val started = externalServiceHandler.addExternalService(
                     HttpExternalServiceInfo(
                         es.protocol,
                         es.remoteHostname,
                         es.remotePort
                     )
                 )
+                wmStarted = wmStarted || started
             }
 
 
             // register the external service info which re-direct to the default WM
-            fv.registerExternalRequestToDefaultWM(
-                index,
-                info.employedDefaultWM.associate { it ->
-                    val signature = getWMDefaultSignature(it.protocol, it.remotePort)
-                    it.remoteHostname to externalServiceHandler.getExternalService(signature)
-                }
-            )
+//            fv.registerExternalRequestToDefaultWM(
+//                index,
+//                info.employedDefaultWM.associate { it ->
+//                    val signature = getWMDefaultSignature(it.protocol, it.remotePort)
+//                    it.remoteHostname to externalServiceHandler.getExternalService(signature)
+//                }
+//            )
         }
+
+        return wmStarted
     }
 
     override fun getActionDto(action: Action, index: Int): ActionDto {
         val actionDto = super.getActionDto(action, index)
         // TODO: Need to move under ApiWsFitness after the GraphQL and RPC support is completed
         if (index == 0) {
+            val individual = action.getRoot() as RestIndividual
+            actionDto.localAddressMapping = individual
+                .seeActions(ActionFilter.ONLY_DNS)
+                .filterIsInstance<HostnameResolutionAction>()
+                .associate { it.hostname to it.localIPAddress }
             actionDto.externalServiceMapping = externalServiceHandler.getExternalServiceMappings()
-            actionDto.localAddressMapping = externalServiceHandler.getLocalAddressMapping()
             actionDto.skippedExternalServices = externalServiceHandler.getSkippedExternalServices()
         }
         return actionDto

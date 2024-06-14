@@ -7,7 +7,7 @@ import org.evomaster.core.search.action.ActionResult
  */
 class SqlActionResult : ActionResult {
 
-    constructor(stopping: Boolean = false) : super(stopping)
+    constructor(sourceLocalId: String, stopping: Boolean = false) : super(sourceLocalId, stopping)
     constructor(other: SqlActionResult): super(other)
 
     companion object{

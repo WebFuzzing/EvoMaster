@@ -56,7 +56,7 @@ abstract class StructuralElement (
         if (!hasLocalId())
             this.localId = id
         else
-            throw IllegalStateException("cannot re-assign the id of the action, the current id is ${this.localId}")
+            throw IllegalStateException("Cannot re-assign the id of the element with $id. The current id is ${this.localId}")
     }
 
     /**
@@ -426,4 +426,10 @@ abstract class StructuralElement (
         return parent!!.getFirstParent(predicate)
     }
 
+    /**
+     * @return the first parent of the given type, or null if none found
+     */
+    fun <T:StructuralElement> getFirstParent(klass: Class<T>) : T? {
+        return getFirstParent { klass.isAssignableFrom(it.javaClass) } as T?
+    }
 }

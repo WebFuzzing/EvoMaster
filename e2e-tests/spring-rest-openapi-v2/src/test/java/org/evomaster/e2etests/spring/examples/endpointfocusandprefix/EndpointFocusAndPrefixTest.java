@@ -2,6 +2,9 @@ package org.evomaster.e2etests.spring.examples.endpointfocusandprefix;
 
 import com.foo.rest.examples.spring.endpointfocusandprefix.EndpointFocusAndPrefixController;
 
+import org.evomaster.ci.utils.JUnitExtra;
+import org.evomaster.core.config.ConfigProblemException;
+import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth;
 import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.OpenApiAccess;
 import org.evomaster.core.problem.rest.RestIndividual;
@@ -59,7 +62,7 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
                     assertAllSolutionsHavePathFocusOrPrefixList(solution, pathsToCheck, false);
 
                     // get all paths from the swagger
-                    OpenAPI swagger = OpenApiAccess.INSTANCE.getOpenAPIFromURL(baseUrlOfSut + "/v2/api-docs");
+                    OpenAPI swagger = OpenApiAccess.INSTANCE.getOpenAPIFromURL(baseUrlOfSut + "/v2/api-docs", new HttpWsNoAuth());
 
                     // api paths
                     Paths apiPaths = swagger.getPaths();
@@ -341,7 +344,7 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
 
         String outputFolder = "BlackboxFocusNonExistingFocusValidPrefix";
 
-        assertThrows(IllegalArgumentException.class, () ->
+        JUnitExtra.assertThrowsInnermost(ConfigProblemException.class, () ->
 
                 runTestHandlingFlakyAndCompilation(
                         outputFolder,
@@ -375,7 +378,7 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
 
         String outputFolder = "BlackboxNonExistingFocusNonExistingPrefix";
 
-        assertThrows(IllegalArgumentException.class, () ->
+        JUnitExtra.assertThrowsInnermost(ConfigProblemException.class, () ->
 
                 runTestHandlingFlakyAndCompilation(
                         outputFolder,
@@ -409,7 +412,7 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
 
         String outputFolder = "BlackboxPrefixNonExistingPrefix";
 
-        assertThrows(IllegalArgumentException.class, () ->
+        JUnitExtra.assertThrowsInnermost(ConfigProblemException.class, () ->
 
                 runTestHandlingFlakyAndCompilation(
                         outputFolder,
@@ -444,7 +447,7 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
 
         String outputFolder = "BlackboxBothFocusAndPrefix";
 
-        assertThrows(IllegalArgumentException.class, () ->
+        assertThrows(ConfigProblemException.class, () ->
 
                 runTestHandlingFlakyAndCompilation(
                         outputFolder,

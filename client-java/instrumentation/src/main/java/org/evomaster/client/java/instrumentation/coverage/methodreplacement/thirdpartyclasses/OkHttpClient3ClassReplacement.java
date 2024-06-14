@@ -2,20 +2,18 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement.thi
 
 
 import org.evomaster.client.java.instrumentation.ExternalServiceInfo;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyCast;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyMethodReplacementClass;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.*;
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+import org.evomaster.client.java.instrumentation.staticstate.MethodReplacementPreserveSemantics;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 
-import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.ExternalServiceInfoUtils.collectExternalServiceInfo;
-import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.ExternalServiceInfoUtils.skipHostnameOrIp;
+import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.ExternalServiceUtils.collectExternalServiceInfo;
+import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.ExternalServiceUtils.skipHostnameOrIp;
 
 public class OkHttpClient3ClassReplacement extends ThirdPartyMethodReplacementClass {
 
@@ -88,6 +86,17 @@ public class OkHttpClient3ClassReplacement extends ThirdPartyMethodReplacementCl
         }
 
         Method original = getOriginal(singleton, "okhttpclient3_newCall", caller);
+
+        if (MethodReplacementPreserveSemantics.shouldPreserveSemantics) {
+            try{
+                return  original.invoke(caller, request);
+            } catch (IllegalAccessException e){
+                throw new RuntimeException(e);
+            } catch (InvocationTargetException e){
+                throw (Exception) e.getCause();
+            }
+        }
+
         Object replaced = request;
 
         Object url = request.getClass().getMethod("url").invoke(request);
@@ -103,6 +112,9 @@ public class OkHttpClient3ClassReplacement extends ThirdPartyMethodReplacementCl
                 && !skipHostnameOrIp(urlHost)
                 && !ExecutionTracer.skipHostname(urlHost)
         ){
+            // To fetch DNS information
+            ExternalServiceUtils.analyzeDnsResolution(urlHost);
+
             ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(urlScheme, urlHost, urlPort);
             String[] ipAndPort = collectExternalServiceInfo(remoteHostInfo, urlPort);
 

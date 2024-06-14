@@ -65,4 +65,6 @@ public class AdditionalInfoDto {
      * a list of external service info which is direct to default WM
      */
     public List<ExternalServiceInfoDto> employedDefaultWM = new ArrayList<>();
+
+    public List<HostnameResolutionInfoDto> hostnameResolutionInfoDtos = new ArrayList<>();
 }

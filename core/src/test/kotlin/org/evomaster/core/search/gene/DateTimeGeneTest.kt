@@ -98,7 +98,6 @@ class DateTimeGeneTest {
                 DateTimeGene.DateTimeGeneFormat.DEFAULT_DATE_TIME,
                 copyOfGene0.dateTimeGeneFormat
         )
-
     }
 
     @Test
@@ -131,7 +130,6 @@ class DateTimeGeneTest {
                 DateTimeGene.DateTimeGeneFormat.ISO_LOCAL_DATE_TIME_FORMAT,
                 copyOfGene0.dateTimeGeneFormat
         )
-
     }
 
 

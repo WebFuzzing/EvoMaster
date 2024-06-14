@@ -2,7 +2,9 @@ package org.evomaster.core.problem.rest.service
 
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.core.problem.httpws.HttpWsCallResult
+import org.evomaster.core.problem.httpws.auth.AuthUtils
 import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
@@ -18,7 +20,11 @@ class BlackBoxRestFitness : RestFitness() {
         private val log: Logger = LoggerFactory.getLogger(BlackBoxRestFitness::class.java)
     }
 
-    override fun doCalculateCoverage(individual: RestIndividual, targets: Set<Int>, allCovered: Boolean): EvaluatedIndividual<RestIndividual>? {
+    override fun doCalculateCoverage(
+        individual: RestIndividual,
+        targets: Set<Int>,
+        allCovered: Boolean
+    ): EvaluatedIndividual<RestIndividual>? {
 
         val cookies = mutableMapOf<String, List<NewCookie>>()
         val tokens = mutableMapOf<String, String>()
@@ -31,15 +37,10 @@ class BlackBoxRestFitness : RestFitness() {
                 memory leak
              */
             rc.resetSUT()
-
-            /*
-                currently, for bb, the auth can be only configured with the driver,
-                ie, bbExperiments is enabled.
-                TODO might support other manner to configure auth for bb
-             */
-            cookies.putAll(getCookies(individual))
-            tokens.putAll(getTokens(individual))
         }
+
+        cookies.putAll(AuthUtils.getCookies(client, getBaseUrl(), individual))
+        tokens.putAll(AuthUtils.getTokens(client, getBaseUrl(), individual))
 
         val fv = FitnessValue(individual.size().toDouble())
 
@@ -68,6 +69,10 @@ class BlackBoxRestFitness : RestFitness() {
         }
 
         handleResponseTargets(fv, individual.seeAllActions().filterIsInstance<RestCallAction>(), actionResults, listOf())
+
+        if (config.useResponseDataPool) {
+            recordResponseData(individual, actionResults.filterIsInstance<RestCallResult>())
+        }
 
         return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults, trackOperator = individual.trackOperator, index = time.evaluatedIndividuals, config = config)
     }

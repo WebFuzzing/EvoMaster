@@ -1,101 +1,119 @@
 package org.evomaster.core.problem.rest
 
+import io.swagger.parser.OpenAPIParser
 import org.evomaster.core.EMConfig
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
 class EndpointFilterTest {
 
-    private val endpointFocus = "endpointFocus"
-    private val endpointPrefix = "endpointPrefix"
+    companion object{
 
-    @Test
-    /*
-    Check endpointFocus exists in EMConfig
-    */
-    fun testEndpointFocusExists() {
+        private val schema = OpenAPIParser().readLocation("/swagger/artificial/filters.yaml", null, null).openAPI
 
-        val options = EMConfig.getOptionParser()
-        assertTrue(options.recognizedOptions().containsKey(endpointFocus))
-    }
-
-    @Test
-    /*
-    Check endpointPrefix exists in EMConfig
-     */
-    fun testEndpointPrefixExists() {
-
-        val options = EMConfig.getOptionParser()
-        assertTrue(options.recognizedOptions().containsKey(endpointPrefix))
-    }
-
-    @Test
-    /*
-    The user provides neither endpointFocus nor EndpointPrefix.
-    In this case both endpointFocus and endpointPrefix should be NULL
-    */
-    fun testNoEndpointFocusNoEndpointPrefix() {
-
-        val parser = EMConfig.getOptionParser()
-        val options = parser.parse()
-        val endpointFocusVal = options.valueOf("endpointFocus")
-        val endpointPrefixVal = options.valueOf("endpointPrefix")
-
-        // both endpointFocus and endpointPrefix are null
-        assertEquals("null", endpointFocusVal)
-        assertEquals("null", endpointPrefixVal)
-    }
-
-    /*
-    The user does not provide endpointFocus, but provides endpointPrefix
-     */
-    @Test
-    fun testNoEndpointFocusEndpointPrefix() {
-
-        val sampleEndpointPrefix = "/endPointPrefixSample"
-        val parser = EMConfig.getOptionParser()
-        val options = parser.parse("--endpointPrefix", sampleEndpointPrefix)
-        val endpointFocusVal = options.valueOf("endpointFocus")
-        val endpointPrefixVal = options.valueOf("endpointPrefix")
-
-        // both endpointFocus and endpointPrefix are null
-        assertEquals("null", endpointFocusVal)
-        assertEquals(sampleEndpointPrefix, endpointPrefixVal)
-    }
-
-    @Test
-    /*
-    The user provides endpointFocus, but does not provide endpointPrefix
-     */
-    fun testEndpointFocusNoEndpointPrefix() {
-
-        val parser = EMConfig.getOptionParser()
-        val sampleEndpointFocus = "/endpointFocusSample"
-        val options = parser.parse("--endpointFocus", sampleEndpointFocus)
-        val endpointFocusVal = options.valueOf("endpointFocus")
-        val endpointPrefixVal = options.valueOf("endpointPrefix")
-
-        // both endpointFocus and endpointPrefix are null
-        assertEquals(sampleEndpointFocus, endpointFocusVal)
-        assertEquals("null", endpointPrefixVal)
-    }
-
-    @Test
-    /*
-    The user provides both endpointFocus and endpointPrefix. In that case, an exception
-    should be thrown.
-     */
-    fun testEndPointToFocusEndpointToPrefix() {
-
-        val sampleEndpointFocus = "/endpointFocusSample"
-        val sampleEndpointPrefix = "/endPointPrefixSample"
-
-        assertThrows(
-            IllegalArgumentException::class.java
-        ) {
-            val params = arrayOf("--endpointFocus", sampleEndpointFocus,
-                "--endpointPrefix", sampleEndpointPrefix)
-            EMConfig.validateOptions(params)
+        @JvmStatic
+        @BeforeAll
+        fun checkInit(){
+            assertNotNull(schema)
+            assertNotNull(schema.paths)
+            assertEquals(4, schema.paths.size)
         }
+    }
+
+    @Test
+    fun testNone(){
+        val config = EMConfig()
+        val selection = EndpointFilter.getEndpointsToSkip(config, schema)
+        assertEquals(0, selection.size)
+    }
+
+    @Test
+    fun testFocus(){
+        val config = EMConfig()
+        config.endpointFocus = "/api/x"
+        val selection = EndpointFilter.getEndpointsToSkip(config, schema)
+        assertEquals(3, selection.size)
+    }
+
+    @Test
+    fun testPrefix(){
+        val config = EMConfig()
+        config.endpointPrefix = "/api/y"
+        val selection = EndpointFilter.getEndpointsToSkip(config, schema)
+        assertEquals(4, selection.size)
+    }
+
+    @Test
+    fun testWrongTag(){
+        val config = EMConfig()
+        config.endpointTagFilter = "foo"
+        assertThrows(Exception::class.java){EndpointFilter.getEndpointsToSkip(config,schema)}
+    }
+
+    @Test
+    fun testTagsX(){
+        val config = EMConfig()
+        config.endpointTagFilter = "X"
+        val selection = EndpointFilter.getEndpointsToSkip(config, schema)
+        assertEquals(3, selection.size)
+    }
+
+    @Test
+    fun testTagsY(){
+        val config = EMConfig()
+        config.endpointTagFilter = "Y"
+        val selection = EndpointFilter.getEndpointsToSkip(config, schema)
+        assertEquals(3, selection.size)
+    }
+
+    @Test
+    fun testTagsZ(){
+        val config = EMConfig()
+        config.endpointTagFilter = "Z"
+        val selection = EndpointFilter.getEndpointsToSkip(config, schema)
+        assertEquals(5, selection.size)
+    }
+
+    @Test
+    fun testTagsXY(){
+        val config = EMConfig()
+        config.endpointTagFilter = "X ,   Y"
+        val selection = EndpointFilter.getEndpointsToSkip(config, schema)
+        assertEquals(1, selection.size)
+    }
+
+    @Test
+    fun testTagsYZ(){
+        val config = EMConfig()
+        config.endpointTagFilter = "   Z ,   Y"
+        val selection = EndpointFilter.getEndpointsToSkip(config, schema)
+        assertEquals(3, selection.size)
+    }
+
+
+    @Test
+    fun testTagsXZ(){
+        val config = EMConfig()
+        config.endpointTagFilter = "   Z ,   X   "
+        val selection = EndpointFilter.getEndpointsToSkip(config, schema)
+        assertEquals(2, selection.size)
+    }
+
+    @Test
+    fun testTagsXYZ(){
+        val config = EMConfig()
+        config.endpointTagFilter = "   Z ,   X ,Y  "
+        val selection = EndpointFilter.getEndpointsToSkip(config, schema)
+        assertEquals(1, selection.size)
+    }
+
+    @Test
+    fun testMixed(){
+        val config = EMConfig()
+        config.endpointTagFilter = "X"
+        config.endpointPrefix = "/api/y"
+        val selection = EndpointFilter.getEndpointsToSkip(config, schema)
+        assertEquals(5, selection.size)
     }
 }
