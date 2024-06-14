@@ -49,6 +49,7 @@ class ImpactUtils {
 
         private val log: Logger = LoggerFactory.getLogger(ImpactUtils::class.java)
 
+
         fun createGeneImpact(gene : Gene, id : String) : GeneImpact{
             return when(gene){
                 is CustomMutationRateGene<*> -> DisruptiveGeneImpact(id, gene)
@@ -102,6 +103,7 @@ class ImpactUtils {
         private const val SEPARATOR_ACTION_TO_GENE = "::"
         private const val SEPARATOR_GENE = ";"
         private const val SEPARATOR_GENE_WITH_TYPE = ">"
+        private const val SEPARATOR_GENETYPE_TO_NAME = "::"
 
         /**
          * TODO
@@ -314,6 +316,33 @@ class ImpactUtils {
             return found.firstOrNull { it.getLocalId() == gene.getLocalId() }?: found.also {
                 if (it.size > 1) log.warn("{} genes have been mutated with the name {} and localId {}",it.size, gene.name, gene.getLocalId())
             }.firstOrNull()
+        }
+
+
+        /**
+         * @param gene current gene
+         * @param msg message to show
+         * @return message of gene types from gene to its root gene
+         */
+        fun printGeneToRoot(gene: Gene) : String{
+            val classNames = mutableListOf<String>()
+            getGeneClassAndNameToItsRootGene(gene, classNames)
+            return joinMsgAsDirectory(classNames)
+        }
+
+        /**
+         * format msg as directory
+         */
+        fun joinMsgAsDirectory(msg: MutableList<String>): String{
+            if (msg.isEmpty()) return ""
+            return msg.mapIndexed { index, s ->  "${" ".repeat(index)}|-$s"}.joinToString(System.lineSeparator())
+        }
+
+        private fun getGeneClassAndNameToItsRootGene(gene:Gene, classNames: MutableList<String>){
+            classNames.add("${gene::class.java.simpleName}$SEPARATOR_GENETYPE_TO_NAME${gene.name}")
+            if (gene.parent != null && gene.parent is Gene){
+                getGeneClassAndNameToItsRootGene(gene.parent as Gene, classNames)
+            }
         }
     }
 }
