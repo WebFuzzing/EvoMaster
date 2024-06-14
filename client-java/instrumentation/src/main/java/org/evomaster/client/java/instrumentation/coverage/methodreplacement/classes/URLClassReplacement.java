@@ -108,9 +108,6 @@ public class URLClassReplacement implements MethodReplacementClass {
     public static URLConnection openConnection(URL caller) throws java.io.IOException {
         Objects.requireNonNull(caller);
 
-        if (!caller.getProtocol().equals("jar") && !caller.getProtocol().equals("file"))
-            SimpleLogger.uniqueWarn("not handle the protocol with:" + caller.getProtocol());
-
         URL newURL = ExternalServiceUtils.getReplacedURL(caller);
 
         return newURL.openConnection();
@@ -126,9 +123,6 @@ public class URLClassReplacement implements MethodReplacementClass {
     )
     public static URLConnection openConnection(URL caller, Proxy proxy) throws java.io.IOException {
         Objects.requireNonNull(caller);
-
-        if (!caller.getProtocol().equals("jar") && !caller.getProtocol().equals("file"))
-            SimpleLogger.uniqueWarn("not handle the protocol with:" + caller.getProtocol());
 
         URL newURL = ExternalServiceUtils.getReplacedURL(caller);
 
