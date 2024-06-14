@@ -13,6 +13,9 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.parser.RegexUtils
 import org.evomaster.core.problem.rest.RestActionBuilderV3
+import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.problem.rest.RestResponseFeeder
+import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.*
 import org.evomaster.core.search.gene.datetime.DateGene
@@ -29,6 +32,7 @@ import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.StringGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
+import org.evomaster.core.search.service.DataPool
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
@@ -46,7 +50,7 @@ class StringGene(
         val minLength: Int = 0,
         /**
          * Inclusive.
-         * Constraint on maximum lenght of the string. This could had been specified as
+         * Constraint on maximum length of the string. This could had been specified as
          * a constraint in the schema, or specific for the represented data type.
          * Note: further limits could be imposed to avoid too large strings that would
          * hamper the search process, which can be set via [EMConfig] options
@@ -231,19 +235,41 @@ class StringGene(
 
         //check if starting directly with a tainted value
         val state = getSearchGlobalState()!! //cannot be null when this method is called
-        if(state.config.taintOnSampling){
+        val config = state.config
+        val randomness = state.randomness
+        val useDataPool = randomness.nextBoolean(config.getProbabilityUseDataPool())
 
-            if(state.spa.hasInfoFor(name) && state.randomness.nextDouble() < state.config.useGlobalTaintInfoProbability){
-                val spec = state.spa.chooseSpecialization(name, state.randomness)!!
-                assert(specializations.size == 0)
-                addSpecializations("", listOf(spec),state.randomness, false, enableConstraintHandling = state.config.enableSchemaConstraintHandling)
-                assert(specializationGenes.size == 1)
-                selectedSpecialization = specializationGenes.lastIndex
+        if(config.blackBox && useDataPool){
+            state.dataPool.applyTo(this)
+        } else if(!config.blackBox){
+
+            val successfulDataPool = if(useDataPool){
+                state.dataPool.applyTo(this)
             } else {
-                redoTaint(state.apc, state.randomness)
+                false
+            }
+
+            //taint makes no sense in blackbox.
+            //not applied if used data pool
+            if (!successfulDataPool && config.taintOnSampling) {
+
+                if (state.spa.hasInfoFor(name) && randomness.nextDouble() < state.config.useGlobalTaintInfoProbability) {
+                    val spec = state.spa.chooseSpecialization(name, randomness)!!
+                    assert(specializations.size == 0)
+                    addSpecializations(
+                        "",
+                        listOf(spec),
+                        randomness,
+                        false,
+                        enableConstraintHandling = state.config.enableSchemaConstraintHandling
+                    )
+                    assert(specializationGenes.size == 1)
+                    selectedSpecialization = specializationGenes.lastIndex
+                } else {
+                    redoTaint(state.apc, randomness)
+                }
             }
         }
-
         //config might have stricter limits for length
         repair()
     }

@@ -4,6 +4,7 @@ import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.httpws.auth.AuthUtils
 import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
@@ -68,6 +69,10 @@ class BlackBoxRestFitness : RestFitness() {
         }
 
         handleResponseTargets(fv, individual.seeAllActions().filterIsInstance<RestCallAction>(), actionResults, listOf())
+
+        if (config.useResponseDataPool) {
+            recordResponseData(individual, actionResults.filterIsInstance<RestCallResult>())
+        }
 
         return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults, trackOperator = individual.trackOperator, index = time.evaluatedIndividuals, config = config)
     }

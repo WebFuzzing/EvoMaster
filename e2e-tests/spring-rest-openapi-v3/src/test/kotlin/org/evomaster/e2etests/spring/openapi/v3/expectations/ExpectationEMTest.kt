@@ -6,7 +6,6 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
-import org.jetbrains.kotlin.diagnostics.WhenMissingCase
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -78,7 +77,7 @@ class ExpectationEMTest : SpringTestBase() {
     fun testRunEM_Split_ExpectationsOff() {
         val outputFolderName = "ExpectationsEM"
         val className = ClassName("org.foo.ExpectationEMOff")
-        val splitType = EMConfig.TestSuiteSplitType.CLUSTER
+        val splitType = EMConfig.TestSuiteSplitType.FAULTS
         testRunEMGeneric(false, splitType, className)
 
         val assertion = generatedCodeAssertion(outputFolderName, "${className.bytecodeName}_faults", OutputFormat.KOTLIN_JUNIT_5, false)

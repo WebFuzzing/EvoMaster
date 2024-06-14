@@ -115,6 +115,7 @@
 
     <properties>
         <addOpens></addOpens> <!-- overridden in profile -->
+        <redirectTestOutputToFile>true</redirectTestOutputToFile>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>1.8</java.version>
         <kotlin.version>1.8.20</kotlin.version>
@@ -250,7 +251,11 @@
                 <artifactId>evomaster-client-java-distance-heuristics</artifactId>
                 <version>${project.version}</version>
             </dependency>
-
+            <dependency>
+                <groupId>org.evomaster</groupId>
+                <artifactId>solver</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
             <!-- Kotlin -->
             <dependency>
@@ -423,7 +428,15 @@
                 <artifactId>auth0</artifactId>
                 <version>1.8.0</version>
             </dependency>
-
+            <dependency>
+                <groupId>org.apache.opennlp</groupId>
+                <artifactId>opennlp-tools</artifactId>
+                <!--
+                    As of version of 2.0.0, they moved to JDK 11
+                    https://opennlp.apache.org/news/release-200.html
+                -->
+                <version>1.9.4</version>
+            </dependency>
 
 
             <!-- Jetty -->
@@ -1029,15 +1042,10 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <!--Man: maven 3.6.3 and jdk1.8.0_261.
-                        with 3.0.0-M4, there exist an error
-                         "The forked VM terminated without properly saying goodbye. VM crash or System.exit called?"
-                        then fixed with 3.0.0-M5
-                    -->
-                    <version>3.0.0-M5</version>
+                    <version>3.2.5</version>
                     <configuration>
                         <forkCount>1</forkCount>
-                        <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                        <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>
                         <rerunFailingTestsCount>2</rerunFailingTestsCount>
                         <trimStackTrace>false</trimStackTrace>
                         <!--

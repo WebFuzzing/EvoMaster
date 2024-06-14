@@ -4,7 +4,6 @@ import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.output.Termination
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
-import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 
 
 class Solution<T>(
@@ -72,7 +71,7 @@ where T : Individual {
      * Add a function which sets the termination criteria
      */
     fun convertSolutionToExecutiveSummary() : Solution<T> {
-        return Solution(individuals, testSuiteNamePrefix, testSuiteNameSuffix, Termination.SUMMARY,
+        return Solution(individuals, testSuiteNamePrefix, testSuiteNameSuffix, Termination.FAULT_REPRESENTATIVES,
             individualsDuringSeeding, targetsDuringSeeding)
     }
 }

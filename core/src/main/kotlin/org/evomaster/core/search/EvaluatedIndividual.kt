@@ -981,4 +981,6 @@ class EvaluatedIndividual<T>(
     private fun initializingActionClasses(): List<KClass<*>> {
         return listOf(MongoDbAction::class, SqlAction::class)
     }
+
+    fun hasAnyPotentialFault() = this.fitness.hasAnyPotentialFault(this.individual.searchGlobalState!!.idMapper)
 }

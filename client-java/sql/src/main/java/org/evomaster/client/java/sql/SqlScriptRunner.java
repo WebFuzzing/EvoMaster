@@ -205,7 +205,10 @@ public class SqlScriptRunner {
                 sqlResults.set(i, true);
             } catch (SQLException e) {
                 String msg = "Failed to execute insertion with index " + i + " with SQL: " + sql + ". Error: " + e.getMessage();
-                throw new SQLException(msg, e);
+                SimpleLogger.warn(msg);
+                //throw new SQLException(msg, e);
+                sqlResults.set(i, false);
+                continue;
             }
 
             if(insDto.id == null){

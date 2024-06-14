@@ -51,6 +51,12 @@ class SearchTimeController {
     var lastActionImprovement = -1
         private set
 
+    var lastActionImprovementTimestamp = -1L
+        private set
+
+    var lastActionNewTargetTimestamp = -1L
+        private set
+
     var lastActionTimestamp = 0L
         private set
 
@@ -131,6 +137,8 @@ class SearchTimeController {
         recording = true
         searchStarted = true
         startTime = System.currentTimeMillis()
+        lastActionImprovementTimestamp = startTime
+        lastActionNewTargetTimestamp = startTime
     }
 
     fun addListener(listener: SearchListener){
@@ -205,11 +213,13 @@ class SearchTimeController {
     fun newCoveredTarget(){
         if(!recording) return
         newActionImprovement()
+        lastActionNewTargetTimestamp = System.currentTimeMillis()
     }
 
     fun newActionImprovement(){
         if(!recording) return
         lastActionImprovement = evaluatedActions
+        lastActionImprovementTimestamp = System.currentTimeMillis()
     }
 
 
@@ -238,7 +248,26 @@ class SearchTimeController {
 
     fun shouldContinueSearch(): Boolean{
 
-        return percentageUsedBudget() < 1.0
+        return percentageUsedBudget() < 1.0 && !isImprovementTimeout()
+    }
+
+    fun isImprovementTimeout() : Boolean{
+
+        if(configuration.prematureStop.isNullOrBlank()){
+            return false
+        }
+
+        val passed = getSecondsSinceLastImprovement()
+
+        return  passed > configuration.improvementTimeoutInSeconds()
+    }
+
+    fun getSecondsSinceLastImprovement() : Int{
+        val timestamp =  when(configuration.prematureStopStrategy){
+            EMConfig.PrematureStopStrategy.ANY -> lastActionImprovementTimestamp
+            EMConfig.PrematureStopStrategy.NEW -> lastActionNewTargetTimestamp
+        }
+        return ((System.currentTimeMillis() - timestamp) / 1000.0).toInt()
     }
 
     /**

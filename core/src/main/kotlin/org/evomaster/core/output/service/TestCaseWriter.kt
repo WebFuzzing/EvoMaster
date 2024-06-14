@@ -1,7 +1,6 @@
 package org.evomaster.core.output.service
 
 import com.google.inject.Inject
-import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
@@ -66,9 +65,9 @@ abstract class TestCaseWriter {
 
         counter = 0
 
-        val lines = Lines()
+        val lines = Lines(config.outputFormat)
 
-        if (config.testSuiteSplitType == EMConfig.TestSuiteSplitType.CLUSTER
+        if (config.testSuiteSplitType == EMConfig.TestSuiteSplitType.FAULTS
             && test.test.getClusters().size != 0
         ) {
             clusterComment(lines, test)
@@ -96,6 +95,7 @@ abstract class TestCaseWriter {
             format.isKotlin() -> lines.add("fun ${test.name}()  {")
             format.isJavaScript() -> lines.add("test(\"${test.name}\", async () => {")
             format.isCsharp() -> lines.add("public async Task ${test.name}() {")
+            format.isPython() -> lines.add("def ${test.name}(self):")
         }
 
 
@@ -104,12 +104,17 @@ abstract class TestCaseWriter {
             val insertionVars = mutableListOf<Pair<String, String>>()
             // FIXME: HostnameResolutionActions can be a separately, for now it's under
             //  handleFieldDeclarations.
+            if (format.isPython()) { // TODO PhG: remove this when python test content is added
+                lines.add("pass")
+            }
             handleFieldDeclarations(lines, baseUrlOfSut, ind, insertionVars)
             handleActionCalls(lines, baseUrlOfSut, ind, insertionVars, testCaseName = test.name, testSuitePath)
         }
 
 
-        lines.add("}")
+        if (!format.isPython()) {
+            lines.add("}")
+        }
 
         if (format.isJavaScript()) {
             lines.append(");")
@@ -131,7 +136,7 @@ abstract class TestCaseWriter {
             }
 
             lines.add("DnsCacheManipulator.setDnsCache(\"${a.hostname}\", \"${a.localIPAddress}\")")
-            lines.appendSemicolon(format)
+            lines.appendSemicolon()
         }
     }
 
@@ -152,7 +157,7 @@ abstract class TestCaseWriter {
                 // Default behaviour of WireMock has been removed, since found no purpose
                 // in case if there is a failure regarding no routes found in WireMock
                 // consider adding that later
-                lines.addStatement("assertNotNull(${name})", config.outputFormat)
+                lines.addStatement("assertNotNull(${name})")
 
                 TestWriterUtils.handleStubForAsJavaOrKotlin(
                     lines,
@@ -163,7 +168,7 @@ abstract class TestCaseWriter {
                     index+1,
                     format
                 )
-                lines.appendSemicolon(format)
+                lines.appendSemicolon()
                 lines.addEmpty(1)
             }
     }
@@ -268,7 +273,9 @@ abstract class TestCaseWriter {
                 lines.add("//${it.replace('\n', ' ').replace('\r', ' ')}")
             }
         }
-        lines.add("}")
+        if (!format.isPython()) {
+            lines.add("}")
+        }
     }
 
 

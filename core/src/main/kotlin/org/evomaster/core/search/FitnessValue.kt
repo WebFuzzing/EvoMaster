@@ -176,18 +176,15 @@ class FitnessValue(
     fun reachedTargets() : Set<Int> = getViewOfData().filter { it.value.score > 0.0 }.keys
 
     fun computeFitnessScore(): Double {
-
-        return targets.values.map { h -> h.score }.sum()
+        return targets.values.sumOf { h -> h.score }
     }
 
     fun computeFitnessScore(targetIds : List<Int>): Double {
-
         return targets.filterKeys { targetIds.contains(it)}.values.map { h -> h.score }.sum()
     }
 
     fun coveredTargets(): Int {
-
-        return targets.values.filter { t -> t.score == MAX_VALUE }.count()
+        return targets.values.count { t -> t.score == MAX_VALUE }
     }
 
     fun coveredTargets(prefix: String, idMapper: IdMapper) : Int{
@@ -288,37 +285,37 @@ class FitnessValue(
         updateTarget(id, MAX_VALUE)
     }
 
+
+    private fun getCoveredTargetKeys() : Set<Int> = targets.filter { it.value.score == MAX_VALUE }.keys
+
     fun gqlErrors(idMapper: IdMapper, withLine : Boolean): List<String>{
         // GQLErrors would be >0 when it is initialed, so we count it when it is covered.
-        return targets.filter { it.value.score == MAX_VALUE }.keys
+        return getCoveredTargetKeys()
                 .filter { idMapper.isGQLErrors(it, withLine) }
                 .map { idMapper.getDescriptiveId(it) }
     }
 
     fun gqlNoErrors(idMapper: IdMapper): List<String>{
         // GQLNoErrors would be >0 when it is initialed, so we count it when it is covered.
-        return targets.filter { it.value.score == MAX_VALUE }.keys
+        return getCoveredTargetKeys()
                 .filter { idMapper.isGQLNoErrors(it) }
                 .map { idMapper.getDescriptiveId(it) }
     }
 
     fun potentialFoundFaults(idMapper: IdMapper) : List<String>{
-        return targets.keys
+        return getCoveredTargetKeys()
                 .filter { idMapper.isFault(it)}
                 .map { idMapper.getDescriptiveId(it) }
     }
 
+    fun hasAnyPotentialFault(idMapper: IdMapper) = getCoveredTargetKeys().any { idMapper.isFault(it) }
+
     fun potential500Faults(idMapper: IdMapper): List<String>{
-        return targets.keys
+        return getCoveredTargetKeys()
                 .filter{ idMapper.isFault500(it)}
                 .map{idMapper.getDescriptiveId(it)}
     }
 
-    fun potentialPartialOracleFaults(idMapper: IdMapper): List<String>{
-        return targets.keys
-                .filter{idMapper.isFaultExpectation(it)}
-                .map{idMapper.getDescriptiveId(it)}
-    }
 
     // RPC
     /**

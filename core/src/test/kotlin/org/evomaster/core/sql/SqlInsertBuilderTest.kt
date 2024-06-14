@@ -1071,5 +1071,223 @@ class SqlInsertBuilderTest {
         assertTrue(enabled.subList(1,3).map { it.table.name }.containsAll(listOf("NODEB", "NODEC")))
     }
 
+    ////// Tests Numeric parsing for Min/Max Bounds
 
+    /**
+     * When having a check constraint that contains only lower bound,
+     * then the SqlInsertBuilder takes it as the min value
+     */
+    @Test
+    fun minInt() {
+
+        val schemaQuery = """
+            CREATE TABLE products(price int not null);
+            ALTER TABLE products add CHECK (price>100);
+        """.trimIndent()
+
+        val newActions = getSqlActionsFromSchema(schemaQuery)
+
+        assertEquals(1, newActions.size)
+        val genes = newActions[0].seeTopGenes()
+        assertEquals(1, genes.size)
+
+        assertTrue(genes[0] is IntegerGene)
+        assertEquals(101, (genes[0] as IntegerGene).min)
+        assertEquals(2147483647, (genes[0] as IntegerGene).max)
+    }
+
+    /**
+     * When having a check constraint that contains only upper bound,
+     * then the SqlInsertBuilder takes it as the max value
+     */
+    @Test
+    fun maxInt() {
+
+        val schemaQuery = """
+            CREATE TABLE products(price int not null);
+            ALTER TABLE products add CHECK (price<9999);
+        """.trimIndent()
+
+        val newActions = getSqlActionsFromSchema(schemaQuery)
+
+        assertEquals(1, newActions.size)
+        val genes = newActions[0].seeTopGenes()
+        assertEquals(1, genes.size)
+
+        assertTrue(genes[0] is IntegerGene)
+        assertEquals(-2147483648, (genes[0] as IntegerGene).min)
+        assertEquals(9998, (genes[0] as IntegerGene).max)
+    }
+
+    /**
+     * When having two separate check constraints that contain an upper and lower bound,
+     * then the SqlInsertBuilder takes them as min/max
+     */
+    @Test
+    fun minAndMaxIntSeparated() {
+
+        val schemaQuery = """
+            CREATE TABLE products(price int not null);
+            ALTER TABLE products add CHECK (price>100);
+            ALTER TABLE products add CHECK (price<9999);
+        """.trimIndent()
+
+        val newActions = getSqlActionsFromSchema(schemaQuery)
+
+        assertEquals(1, newActions.size)
+        val genes = newActions[0].seeTopGenes()
+        assertEquals(1, genes.size)
+
+        assertTrue(genes[0] is IntegerGene)
+        assertEquals(101, (genes[0] as IntegerGene).min)
+        assertEquals(9998, (genes[0] as IntegerGene).max)
+    }
+
+    /**
+     * When having a check constraint that contains an upper and lower bound,
+     * then the SqlInsertBuilder takes them as min/max
+     */
+    @Test
+    fun minAndMaxIntInTheSameCheck() {
+
+        val schemaQuery = """
+            CREATE TABLE products(price int not null);
+            ALTER TABLE products add CHECK (price>100 AND price<9999);
+        """.trimIndent()
+
+        val newActions = getSqlActionsFromSchema(schemaQuery)
+
+        assertEquals(1, newActions.size)
+        val genes = newActions[0].seeTopGenes()
+        assertEquals(1, genes.size)
+
+        assertTrue(genes[0] is IntegerGene)
+        assertEquals(101, (genes[0] as IntegerGene).min)
+        assertEquals(9998, (genes[0] as IntegerGene).max)
+    }
+
+    /**
+     * When comparing two different fields in the same check condition,
+     * then the parser in create insert SQL Builder Action fails
+     */
+    @Test
+    fun compareTwoFields() {
+
+        val schemaQuery = """
+            CREATE TABLE products(price int not null, min_price int not null);
+            ALTER TABLE products add CHECK (price > min_price);
+        """.trimIndent()
+
+        try {
+            getSqlActionsFromSchema(schemaQuery)
+        } catch (e: Exception) {
+            // An exception is thrown when parsing the check with two fields
+            return
+        }
+        fail<Any>("Expected an exception to be thrown")
+    }
+
+    /**
+     * When a column is BigInt type, then the gene is a LongGene
+     */
+    @Test
+    fun bigIntToLongGene() {
+
+        val schemaQuery = """
+            CREATE TABLE products(price bigint not null);
+            ALTER TABLE products add CHECK (price>100 AND price<9999);
+        """.trimIndent()
+
+        val newActions = getSqlActionsFromSchema(schemaQuery)
+
+        assertEquals(1, newActions.size)
+        val genes = newActions[0].seeTopGenes()
+        assertEquals(1, genes.size)
+
+        assertTrue(genes[0] is LongGene)
+        assertEquals(101, (genes[0] as LongGene).min)
+        assertEquals(9998, (genes[0] as LongGene).max)
+    }
+
+    /**
+     * When a column is Float type, then the gene is a DoubleGene
+     */
+    @Test
+    fun floatToDouble() {
+
+        val schemaQuery = """
+            CREATE TABLE products(price float not null);
+        """.trimIndent()
+
+        val newActions = getSqlActionsFromSchema(schemaQuery)
+
+        assertEquals(1, newActions.size)
+        val genes = newActions[0].seeTopGenes()
+        assertEquals(1, genes.size)
+
+        assertTrue(genes[0] is DoubleGene)
+    }
+
+    /**
+     * When setting lower and upper bounds in a Long Column,
+     * Then they are considered as min/max in the gene
+     */
+    @Test
+    fun setMinMaxInLongGene() {
+
+        val schemaQuery = """
+            CREATE TABLE products(price long not null);
+            ALTER TABLE products add CHECK (price > 100);
+            ALTER TABLE products add CHECK (price < 9999);
+        """.trimIndent()
+
+        val newActions = getSqlActionsFromSchema(schemaQuery)
+
+        assertEquals(1, newActions.size)
+        val genes = newActions[0].seeTopGenes()
+        assertEquals(1, genes.size)
+
+        assertTrue(genes[0] is LongGene)
+        assertEquals(101, (genes[0] as LongGene).min)
+        assertEquals(9998, (genes[0] as LongGene).max)
+    }
+
+    /**
+     * When setting lower and upper bounds in a Double Column,
+     * then the parser in create insert SQL Builder Action fails
+     */
+    @Test
+    fun setMinMaxInDoubleGene() {
+
+        val schemaQuery = """
+            CREATE TABLE products(price double not null);
+            ALTER TABLE products add CHECK (price > 100);
+            ALTER TABLE products add CHECK (price < 9999);
+        """.trimIndent()
+
+        try {
+            getSqlActionsFromSchema(schemaQuery)
+        } catch (e: Exception) {
+            // An exception is thrown when parsing the check with a lower or upper bound
+            return
+        }
+        fail<Any>("Expected an exception to be thrown")
+    }
+
+    @Throws(Exception::class)
+    private fun getSqlActionsFromSchema(schemaQuery: String): List<SqlAction> {
+        SqlScriptRunner.execCommand(connection, schemaQuery)
+
+        val schemaDto = SchemaExtractor.extract(connection)
+        val sqlInsertBuilder = SqlInsertBuilder(schemaDto, null)
+
+        return sqlInsertBuilder.createSqlInsertionAction(
+            schemaDto.tables[0].name,
+            setOf("*"),
+            mutableListOf(),
+            false,
+            false,
+            false
+        )
+    }
 }

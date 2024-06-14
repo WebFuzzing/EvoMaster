@@ -7,8 +7,8 @@ import org.evomaster.core.problem.rest.resource.RestResourceCalls;
 import org.evomaster.core.problem.rest.resource.RestResourceNode;
 import org.evomaster.core.problem.rest.service.ResourceManageService;
 import org.evomaster.core.problem.rest.service.ResourceRestMutator;
-import org.evomaster.core.problem.rest.service.RestResourceFitness;
-import org.evomaster.core.problem.rest.service.RestResourceStructureMutator;
+import org.evomaster.core.problem.rest.service.ResourceRestFitness;
+import org.evomaster.core.problem.rest.service.ResourceRestStructureMutator;
 import org.evomaster.core.problem.util.BindingBuilder;
 import org.evomaster.core.search.action.ActionFilter;
 import org.evomaster.core.search.EvaluatedIndividual;
@@ -43,7 +43,7 @@ public class ResourceDbMIOAndHypermutationBasicTest extends ResourceMIOHWTestBas
 
         ResourceManageService rmanger = injector.getInstance(ResourceManageService.class);
         ResourceRestMutator mutator = injector.getInstance(ResourceRestMutator.class);
-        RestResourceFitness ff = injector.getInstance(RestResourceFitness.class);
+        ResourceRestFitness ff = injector.getInstance(ResourceRestFitness.class);
 
         String raIdkey = "/api/rA/{rAId}";
         String rdkey = "/api/rd";
@@ -93,8 +93,8 @@ public class ResourceDbMIOAndHypermutationBasicTest extends ResourceMIOHWTestBas
 
         ResourceManageService rmanger = injector.getInstance(ResourceManageService.class);
         ResourceRestMutator mutator = injector.getInstance(ResourceRestMutator.class);
-        RestResourceFitness ff = injector.getInstance(RestResourceFitness.class);
-        RestResourceStructureMutator structureMutator = injector.getInstance(RestResourceStructureMutator.class);
+        ResourceRestFitness ff = injector.getInstance(ResourceRestFitness.class);
+        ResourceRestStructureMutator structureMutator = injector.getInstance(ResourceRestStructureMutator.class);
 
         assertEquals(keysToTemplate.keySet(), rmanger.getResourceCluster().keySet());
 

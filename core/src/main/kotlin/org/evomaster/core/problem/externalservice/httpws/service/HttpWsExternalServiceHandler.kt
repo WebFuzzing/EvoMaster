@@ -20,7 +20,6 @@ import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.annotation.PostConstruct
-import javax.mail.Address
 
 /**
  * To manage the external service related activities
@@ -85,12 +84,15 @@ class HttpWsExternalServiceHandler {
     @PostConstruct
     fun initialize() {
         log.debug("Initializing {}", HttpWsExternalServiceHandler::class.simpleName)
-        initDefaultWM()
+        // TODO: Disabled, since is not necessary anymore. Should clean it.
+        // initDefaultWM()
     }
 
 
     /**
      * init default WM
+     *
+     * TODO: No longer needed
      */
     private fun initDefaultWM() {
         if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
@@ -108,11 +110,14 @@ class HttpWsExternalServiceHandler {
      *
      * If there is a WireMock instance is available for the [HttpWsExternalService] signature,
      * it will be skipped from creating a new one.
+     *
+     * @return whether there was side effect of starting new instance of WireMock
      */
-    fun addExternalService(externalServiceInfo: HttpExternalServiceInfo) {
+    fun addExternalService(externalServiceInfo: HttpExternalServiceInfo) : Boolean {
         if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
-            registerHttpExternalServiceInfo(externalServiceInfo)
+            return  registerHttpExternalServiceInfo(externalServiceInfo)
         }
+        return false
     }
 
     fun addHostname(hostnameResolutionInfo: HostnameResolutionInfo) {
@@ -134,17 +139,20 @@ class HttpWsExternalServiceHandler {
         }
     }
 
-    private fun registerHttpExternalServiceInfo(externalServiceInfo: HttpExternalServiceInfo) {
+    /**
+     * @return true if WM was started as result of this
+     */
+    private fun registerHttpExternalServiceInfo(externalServiceInfo: HttpExternalServiceInfo) : Boolean {
         if (skippedExternalServices.contains(externalServiceInfo.toExternalService())) {
-            return
+            return false
         }
 
         if (externalServices.containsKey(externalServiceInfo.signature())) {
-            return
+            return false
         }
 
         if (!hostnameLocalAddressMapping.containsKey(externalServiceInfo.remoteHostname)) {
-            return
+            return false
         }
 
         val ip: String = hostnameLocalAddressMapping[externalServiceInfo.remoteHostname]!!
@@ -154,11 +162,14 @@ class HttpWsExternalServiceHandler {
                     !it.isActive()
         }
 
+        var started = false
+
         if (registered.isNotEmpty()) {
             registered.forEach { (k, e) ->
                 if (!externalServiceInfo.isPartial()) {
                     e.updateRemotePort(externalServiceInfo.remotePort)
                     e.startWireMock()
+                    started = true
                     /*
                         Signature should be updated after the port is updated
                         So the existing element will be removed from the map.
@@ -174,8 +185,10 @@ class HttpWsExternalServiceHandler {
                 val es = HttpWsExternalService(externalServiceInfo, ip)
 
                 if (!externalServiceInfo.isPartial()) {
+                    log.warn("Trying to bind in ${es.getIP()}:${externalServiceInfo.remotePort} for ${externalServiceInfo.remoteHostname}")
                     Lazy.assert { isAddressAvailable(es.getIP(), externalServiceInfo.remotePort) }
                     es.startWireMock()
+                    started = true
                 }
 
                 /*
@@ -185,6 +198,8 @@ class HttpWsExternalServiceHandler {
                 externalServices[es.getSignature()] = es
             }
         }
+
+        return started
     }
 
     fun getExternalServiceMappings(): Map<String, ExternalServiceMappingDto> {
@@ -270,18 +285,21 @@ class HttpWsExternalServiceHandler {
         }
     }
 
+    fun reset() {
+        stopActiveWireMockServers()
+        externalServices.clear()
+        hostnameResolutionInfos.clear()
+        hostnameLocalAddressMapping.clear()
+        skippedExternalServices.clear()
+        lastIPAddress = ""
+        counter = 0
+
+    }
+
     fun stopActiveWireMockServers() {
         externalServices.filter { it.value.isActive() }.forEach {
             it.value.stopWireMockServer()
         }
-    }
-
-    /**
-     * Reset all the served requests.
-     * The WireMock instances will still be up and running
-     */
-    fun resetServedRequests() {
-        externalServices.filter { it.value.isActive() }.forEach { it.value.resetServedRequests() }
     }
 
     /**
@@ -328,6 +346,8 @@ class HttpWsExternalServiceHandler {
 
     /**
      * @return a list of the served requests to the default WM
+     *
+     * TODO: No longer needed
      */
     fun getAllServedRequestsToDefaultWM(): List<HttpExternalServiceRequest> {
         return externalServices.values.filter { isDefaultSignature(it.getSignature()) }

@@ -32,7 +32,8 @@ import java.util.*
  * per action, and not here in the initialization phase.
  */
 abstract class EnterpriseIndividual(
-    val sampleType: SampleType,
+    //see https://discuss.kotlinlang.org/t/private-setter-for-var-in-primary-constructor/3640/11
+    private var sampleTypeField: SampleType,
     /**
      * a tracked operator to manipulate the individual (nullable)
      */
@@ -121,6 +122,18 @@ abstract class EnterpriseIndividual(
 
             return GroupsOfChildren(children, listOf(db, mongodb, dns, main))
         }
+    }
+
+    val sampleType get() = sampleTypeField
+
+    /**
+     * This should never happen directly during the search.
+     * However, we might manually create new individuals by modifying and copying existing individuals.
+     * In those cases it simple to modify the sample directly, instead of re-building with same actions
+     * (which actually could be a possibility...).
+     */
+    fun modifySampleType(x: SampleType){
+        sampleTypeField = x
     }
 
     /**
