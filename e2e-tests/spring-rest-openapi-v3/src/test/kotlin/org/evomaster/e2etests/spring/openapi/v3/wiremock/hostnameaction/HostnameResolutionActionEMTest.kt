@@ -47,6 +47,8 @@ class HostnameResolutionActionEMTest: SpringTestBase() {
                     Tricky. First time a test is evaluated, this will happen.
                     But, from there on, WM will always be on, so impossible to replicate,
                     eg, in minimizer or generated tests.
+
+                    FIXME but this can be solved!!! see comments in AbstractRestFitness
                  */
                 assertNone(solution, HttpVerb.GET, 400)
                 assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/resolve",null)
