@@ -60,7 +60,11 @@ class IndividualGeneImpactTest {
 
         assert(spec.mutatedIndividual != null)
         assert(spec.mutatedGenes.size == 1)
-        val mutatedGeneId = ImpactUtils.generateGeneId(spec.mutatedIndividual!!, spec.mutatedGenes.first().gene!!)
+        val firstMutatedGene = spec.mutatedGenes.first().gene!!
+        val mutatedGeneId = ImpactUtils.generateGeneId(spec.mutatedIndividual!!, firstMutatedGene)
+
+        assertEquals("${System.lineSeparator()}GeneValue:mutated_index2${System.lineSeparator()}|-IndMainAction[index1,index2]${System.lineSeparator()} |-StringGene::index2",
+            ImpactUtils.printGeneToRootAction(firstMutatedGene))
 
         val evaluatedTargets = mutableMapOf<Int, EvaluatedMutation>()
         evaluatedTargets[simulatedMutator.getNewTarget()] = EvaluatedMutation.BETTER_THAN
