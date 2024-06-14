@@ -324,10 +324,10 @@ class ImpactUtils {
          * @param msg message to show
          * @return message of gene types from gene to its root gene
          */
-        fun printGeneToRoot(gene: Gene) : String{
+        fun printGeneToRoot(gene: Gene, doIncludeGeneValue: Boolean= true) : String{
             val classNames = mutableListOf<String>()
             getGeneClassAndNameToItsRootGene(gene, classNames)
-            return joinMsgAsDirectory(classNames)
+            return "${System.lineSeparator()}${if (doIncludeGeneValue) "GeneValue:${gene.getValueAsRawString()}${System.lineSeparator()}" else ""}${joinMsgAsDirectory(classNames)}"
         }
 
         /**
