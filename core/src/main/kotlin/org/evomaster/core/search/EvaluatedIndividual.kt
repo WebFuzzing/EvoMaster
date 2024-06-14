@@ -14,7 +14,6 @@ import org.evomaster.core.sql.SqlActionResult
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
-import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
@@ -369,7 +368,7 @@ class EvaluatedIndividual<T>(
             return
         }
 
-        impactInfo!!.syncBasedOnIndividual(individual)
+        impactInfo!!.syncBasedOnIndividual(individual,initializingActionClasses())
 
         if (mutatedGenes.addedActionsInInitializationGenes.isNotEmpty()) {
             //TODO there is no any impact with added initialization, we may record this case.

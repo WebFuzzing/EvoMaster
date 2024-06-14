@@ -10,6 +10,7 @@ import org.evomaster.core.search.Individual
 import org.evomaster.core.search.action.ActionFilter
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import kotlin.reflect.KClass
 
 /**
  * this class is to collect impacts for an individual including
@@ -224,8 +225,9 @@ open class ImpactsOfIndividual(
      *      eg, repair Db actions, new genes for the rest action with additional info, new external service actions
      * thus, we need to synchronize the action impacts based on the [individual]
      */
-    fun syncBasedOnIndividual(individual: Individual) {
-        individual.seeInitializingActions().groupBy { it::class.java.name }.forEach {g->
+    fun syncBasedOnIndividual(individual: Individual, initializingActionClasses: List<KClass<*>>?) {
+        individual.seeInitializingActions()
+            .filter { initializingActionClasses == null || initializingActionClasses.any { k->k.isInstance(it) } }.groupBy { it::class.java.name }.forEach {g->
             syncInitActionsBasedOnIndividual(individual, g.key, g.value)
         }
 
@@ -270,7 +272,8 @@ open class ImpactsOfIndividual(
 
     private fun syncInitActionsBasedOnIndividual(individual: Individual, initActionClassName: String, initActions : List<EnvironmentAction>) {
 
-        val impactsForInitActionType = initActionImpacts[initActionClassName]?: throw IllegalArgumentException("cannot find impacts for initialization action typed with $initActionClassName")
+        val impactsForInitActionType = initActionImpacts[initActionClassName]
+            ?: throw IllegalArgumentException("cannot find impacts for initialization action typed with $initActionClassName")
         //for initialization due to db action fixing
         val diff = initActions.size - impactsForInitActionType.getOriginalSize()
         if (diff < 0) { //truncation
