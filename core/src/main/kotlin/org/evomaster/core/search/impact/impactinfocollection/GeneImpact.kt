@@ -19,11 +19,11 @@ open class GeneImpact (sharedImpactInfo: SharedImpactInfo, specificImpactInfo: S
 
     fun check(previous: Gene?, current: Gene){
         if (previous != null && !validate(previous)){
-            throw IllegalArgumentException("mismatched gene impact for previous ${previous::class.java}:${ImpactUtils.printGeneToRoot(previous)}")
+            throw IllegalArgumentException("mismatched gene impact for previous ${previous::class.java}:${ImpactUtils.printGeneToRootAction(previous)}")
         }
 
         if (!validate(current)){
-            throw IllegalArgumentException("mismatched gene impact for current ${current::class.java}:${ImpactUtils.printGeneToRoot(current)}")
+            throw IllegalArgumentException("mismatched gene impact for current ${current::class.java}:${ImpactUtils.printGeneToRootAction(current)}")
         }
     }
 

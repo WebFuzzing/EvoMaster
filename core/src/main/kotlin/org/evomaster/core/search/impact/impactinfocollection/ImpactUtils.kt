@@ -322,11 +322,11 @@ class ImpactUtils {
         /**
          * @param gene current gene
          * @param msg message to show
-         * @return message of gene types from gene to its root gene
+         * @return message of gene types from gene to its root action
          */
-        fun printGeneToRoot(gene: Gene, doIncludeGeneValue: Boolean= true) : String{
+        fun printGeneToRootAction(gene: Gene, doIncludeGeneValue: Boolean= true) : String{
             val classNames = mutableListOf<String>()
-            getGeneClassAndNameToItsRootGene(gene, classNames)
+            getGeneClassAndNameToItsRootAction(gene, classNames)
             return "${System.lineSeparator()}${if (doIncludeGeneValue) "GeneValue:${gene.getValueAsRawString()}${System.lineSeparator()}" else ""}${joinMsgAsDirectory(classNames)}"
         }
 
@@ -338,10 +338,14 @@ class ImpactUtils {
             return msg.mapIndexed { index, s ->  "${" ".repeat(index)}|-$s"}.joinToString(System.lineSeparator())
         }
 
-        private fun getGeneClassAndNameToItsRootGene(gene:Gene, classNames: MutableList<String>){
+        private fun getGeneClassAndNameToItsRootAction(gene:Gene, classNames: MutableList<String>){
             classNames.add("${gene::class.java.simpleName}$SEPARATOR_GENETYPE_TO_NAME${gene.name}")
-            if (gene.parent != null && gene.parent is Gene){
-                getGeneClassAndNameToItsRootGene(gene.parent as Gene, classNames)
+            if (gene.parent != null){
+                if(gene.parent is Gene){
+                    getGeneClassAndNameToItsRootAction(gene.parent as Gene, classNames)
+                }else if (gene.parent is Action){
+                    classNames.add((gene.parent as Action).getName())
+                }
             }
         }
     }
