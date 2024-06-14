@@ -339,12 +339,12 @@ class ImpactUtils {
         }
 
         private fun getGeneClassAndNameToItsRootAction(gene:Gene, classNames: MutableList<String>){
-            classNames.add("${gene::class.java.simpleName}$SEPARATOR_GENETYPE_TO_NAME${gene.name}")
+            classNames.add(0,"${gene::class.java.simpleName}$SEPARATOR_GENETYPE_TO_NAME${gene.name}")
             if (gene.parent != null){
                 if(gene.parent is Gene){
                     getGeneClassAndNameToItsRootAction(gene.parent as Gene, classNames)
                 }else if (gene.parent is Action){
-                    classNames.add((gene.parent as Action).getName())
+                    classNames.add(0, "${(gene.parent as Action)::class.java.simpleName}[${(gene.parent as Action).getName()}]")
                 }
             }
         }
