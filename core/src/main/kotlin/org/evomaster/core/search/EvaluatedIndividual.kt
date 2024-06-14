@@ -836,6 +836,10 @@ class EvaluatedIndividual<T>(
         return impactInfo.getSizeOfActionImpacts(fromInitialization)
     }
 
+    /**
+     * @param fromInitialization specified if the action is from initialization
+     * @return a map of gene id to its impact with given [actionIndex]
+     */
     fun getImpactOfFixedAction(actionIndex: Int, fromInitialization: Boolean): MutableMap<String, GeneImpact>? {
         impactInfo ?: return null
         return impactInfo.findImpactsByAction(
