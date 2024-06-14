@@ -9,6 +9,10 @@ public class AssertSMTNode extends SMTNode {
         this.assertion = assertion;
     }
 
+    public Assertion getAssertion() {
+        return assertion;
+    }
+
     @Override
     public String toString() {
         return "(assert " + assertion.toString() + ")";

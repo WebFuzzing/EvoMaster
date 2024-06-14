@@ -1,11 +1,14 @@
 package org.evomaster.core.solver
 
 import net.sf.jsqlparser.statement.Statement
-import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto
-import org.evomaster.client.java.controller.api.dto.database.schema.ForeignKeyDto
-import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
+import org.evomaster.client.java.controller.api.dto.database.schema.*
 import org.evomaster.core.utils.StringUtils
+import org.evomaster.dbconstraint.ConstraintDatabaseType
+import org.evomaster.dbconstraint.ast.SqlCondition
+import org.evomaster.dbconstraint.parser.SqlConditionParserException
+import org.evomaster.dbconstraint.parser.jsql.JSqlConditionParser
 import org.evomaster.solver.smtlib.*
+import org.evomaster.solver.smtlib.assertion.Assertion
 import org.evomaster.solver.smtlib.assertion.DistinctAssertion
 import org.evomaster.solver.smtlib.assertion.EqualsAssertion
 import org.evomaster.solver.smtlib.assertion.OrAssertion
@@ -14,10 +17,13 @@ import java.util.*
 
 class SmtLibGenerator(private val schema: DbSchemaDto, private val numberOfRows: Int) {
 
+    private var parser = JSqlConditionParser()
+
     fun generateSMT(sqlQuery: Statement): SMTLib {
         val smt = SMTLib()
 
         appendTableDefinitions(smt)
+        appendTableConstraints(smt)
         appendKeyConstraints(smt)
         appendQueryConstraints(smt, sqlQuery)
         appendGetValues(smt)
@@ -38,6 +44,55 @@ class SmtLibGenerator(private val schema: DbSchemaDto, private val numberOfRows:
                     DeclareConstSMTNode("${table.name.lowercase(Locale.getDefault())}$i", dataTypeName)
                 )
             }
+        }
+    }
+
+    private fun appendTableConstraints(smt: SMTLib) {
+        for (table in schema.tables) {
+            appendUniqueConstraints(smt, table)
+            appendCheckConstraints(smt, table)
+        }
+    }
+
+    private fun appendUniqueConstraints(smt: SMTLib, table: TableDto) {
+        val tableName = table.name.lowercase(Locale.getDefault())
+        for (column in table.columns) {
+            if (column.unique) {
+                val columnName = column.name.uppercase(Locale.getDefault())
+                val nodes = assertForDistinctField(columnName, tableName)
+                smt.addNodes(nodes)
+            }
+        }
+    }
+
+    private fun appendCheckConstraints(smt: SMTLib, table: TableDto) {
+        for (check in table.tableCheckExpressions) {
+            try {
+                val condition: SqlCondition = parser.parse(check.sqlCheckExpression, toDBType(schema.databaseType))
+                for (i in 1..numberOfRows) {
+                    val constraint: SMTNode = parseCheckExpression(table, condition, i)
+                    smt.addNode(constraint)
+                }
+            } catch (e: SqlConditionParserException) {
+                throw java.lang.RuntimeException("Error parsing check expression: " + check.sqlCheckExpression, e)
+            }
+        }
+    }
+
+    private fun parseCheckExpression(table: TableDto, condition: SqlCondition, index: Int): SMTNode {
+        val visitor = SMTConditionVisitor(table.name.lowercase(Locale.getDefault()), index)
+        return condition.accept(visitor, null) as SMTNode
+    }
+
+    private fun toDBType(databaseType: DatabaseType?): ConstraintDatabaseType {
+        return when (databaseType) {
+            DatabaseType.H2 -> ConstraintDatabaseType.H2
+            DatabaseType.DERBY -> ConstraintDatabaseType.DERBY
+            DatabaseType.MYSQL -> ConstraintDatabaseType.MYSQL
+            DatabaseType.POSTGRES -> ConstraintDatabaseType.POSTGRES
+            DatabaseType.MARIADB -> ConstraintDatabaseType.MARIADB
+            DatabaseType.MS_SQL_SERVER -> ConstraintDatabaseType.MS_SQL_SERVER
+            else -> ConstraintDatabaseType.OTHER
         }
     }
 
@@ -69,8 +124,8 @@ class SmtLibGenerator(private val schema: DbSchemaDto, private val numberOfRows:
                     AssertSMTNode(
                         DistinctAssertion(
                             listOf(
-                                "$pkSelector $tableName$i",
-                                "$pkSelector $tableName$j"
+                                "($pkSelector $tableName$i)",
+                                "($pkSelector $tableName$j)"
                             )
                         )
                     )
@@ -110,8 +165,8 @@ class SmtLibGenerator(private val schema: DbSchemaDto, private val numberOfRows:
             val conditions = (1..numberOfRows).map { j ->
                 EqualsAssertion(
                     listOf(
-                        "$sourceColumnSelector $sourceTableName$i",
-                        "$referencedColumnSelector $referencedTableName$j"
+                        "($sourceColumnSelector $sourceTableName$i)",
+                        "($referencedColumnSelector $referencedTableName$j)"
                     )
                 )
             }
