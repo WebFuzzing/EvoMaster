@@ -47,7 +47,7 @@ abstract class FitnessFunction<T>  where T : Individual {
      * @param modifiedSpec uses to collect modified info, e.g., HostnameResolutionAction might be added during this evaluation phase
      * @return null if there were problems in calculating the coverage
      */
-    fun calculateCoverage(individual: T, targets: Set<Int> = setOf(), modifiedSpec: MutatedGeneSpecification?) : EvaluatedIndividual<T>?{
+    fun calculateCoverage(individual: T, targets: Set<Int> = setOf(), modifiedSpec: MutatedGeneSpecification? = null) : EvaluatedIndividual<T>?{
 
         val a = individual.seeMainExecutableActions().count()
 
