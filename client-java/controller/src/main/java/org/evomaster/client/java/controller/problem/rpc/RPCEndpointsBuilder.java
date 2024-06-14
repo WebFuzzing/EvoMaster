@@ -1365,7 +1365,7 @@ public class RPCEndpointsBuilder {
         if (exceptionStack != null && exceptionStack.length > 0){
             msg.append(" with stack:");
             for (int i = 0; i < Math.min(exceptionStack.length, 5); i++){
-                msg.append(exceptionStack.toString());
+                msg.append(exceptionStack[i].toString());
                 msg.append(System.lineSeparator());
             }
         }
