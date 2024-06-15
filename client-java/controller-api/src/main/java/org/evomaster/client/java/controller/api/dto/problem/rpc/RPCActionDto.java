@@ -187,6 +187,10 @@ public class RPCActionDto {
                 "("+ requestParams.stream().map(s-> s.type.type.toString()).collect(Collectors.joining(",")) +")";
     }
 
+    /**
+     *
+     * @return if the action needs mock object
+     */
     public boolean mockObjectNeeded(){
         return (mockDatabaseDtos != null && (!mockDatabaseDtos.isEmpty())) || (mockRPCExternalServiceDtos!=null && (!mockRPCExternalServiceDtos.isEmpty()));
     }
