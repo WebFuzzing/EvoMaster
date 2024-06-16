@@ -44,6 +44,7 @@ class WmHttpsOkHttp3EMTest : SpringTestBase() {
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/socketconnect/sstring", "OK")
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/socketconnect/sstring", "Hello There")
                 assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/wm/socketconnect/sstring", null)
+                assertHasAtLeastOne(solution, HttpVerb.GET, 418, "/api/wm/socketconnect/sstring", null)
                 assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/wm/socketconnect/sstring", null)
             },
             3

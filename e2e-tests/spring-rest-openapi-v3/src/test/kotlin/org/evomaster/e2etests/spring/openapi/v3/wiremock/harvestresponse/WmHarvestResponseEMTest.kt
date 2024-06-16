@@ -11,6 +11,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
+@Deprecated("Should not have tests that rely on actual real external services... as major source of flakiness")
 class WmHarvestResponseEMTest : SpringTestBase() {
 
     companion object {
@@ -24,7 +25,7 @@ class WmHarvestResponseEMTest : SpringTestBase() {
     }
 
 
-    @Disabled("Won't work because of the use of port 8080 and 443")
+    @Disabled("Won't work because of the use of port 8080 and 443. Also it is flaky by design")
     @Test
     fun testRunEM() {
         // External service uses port 80 and 443 so the test will fail in macOS.

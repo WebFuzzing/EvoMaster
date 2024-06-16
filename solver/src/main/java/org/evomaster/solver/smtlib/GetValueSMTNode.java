@@ -1,9 +1,9 @@
 package org.evomaster.solver.smtlib;
 
-public class GetValue extends SMTNode {
+public class GetValueSMTNode extends SMTNode {
     private final String variable;
 
-    public GetValue(String variable) {
+    public GetValueSMTNode(String variable) {
         this.variable = variable;
     }
 

@@ -41,8 +41,9 @@ class WmJsonMapEMTest : SpringTestBase() {
                 assertTrue(solution.individuals.size >= 1)
 
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/jsonmap/gson", "not empty map and include")
-                //assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/jsonmap/gson", "foo42") // not solved yet
-                //assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/jsonmap/gson", "bar54") // not solved yet
+                //TODO need to handle fields in Map in JSON parsing
+//                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/jsonmap/gson", "foo42") // not solved yet
+//                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/jsonmap/gson", "bar54") // not solved yet
                 assertHasAtLeastOne(solution, HttpVerb.GET, 404, "/api/wm/jsonmap/gson", "empty map")
                 assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/wm/jsonmap/gson", "")
             },
