@@ -178,7 +178,18 @@ class PythonTestCaseWriterTest {
                             headers=headers)
                 
                 assert res_0.status_code == 200
-                assert res_0.json() == json.loads("[\n     {},\n     {\n         \"id\":\"foo\",\n         \"properties\":[\n             {},\n             {\n               \"name\":\"mapProperty1\",\n               \"type\":\"string\",\n               \"value\":\"one\"\n             },\n             {\n               \"name\":\"mapProperty2\",\n               \"type\":\"string\",\n               \"value\":\"two\"\n             }],\n         \"empty\":{}\n     }\n]")
+                assert "application/json" in res_0.headers["content-type"]
+                assert len(res_0.json()) == 2
+                assert len(res_0.json()[0]) == 0
+                assert len(res_0.json()[1]["properties"]) == 3
+                assert len(res_0.json()[1]["properties"][0]) == 0
+                assert res_0.json()[1]["properties"][1]["name"] == "mapProperty1"
+                assert res_0.json()[1]["properties"][1]["type"] == "string"
+                assert res_0.json()[1]["properties"][1]["value"] == "one"
+                assert res_0.json()[1]["properties"][2]["name"] == "mapProperty2"
+                assert res_0.json()[1]["properties"][2]["type"] == "string"
+                assert res_0.json()[1]["properties"][2]["value"] == "two"
+                assert len(res_0.json()[1]["empty"]) == 0
 
 """.trimIndent()
 
@@ -241,7 +252,17 @@ class PythonTestCaseWriterTest {
                             headers=headers)
                 
                 assert res_0.status_code == 200
-                assert res_0.json() == json.loads("{\n     \"p1\":{},\n     \"p2\":{\n         \"id\":\"foo\",\n         \"properties\":[\n             {},\n             {\n               \"name\":\"mapProperty1\",\n               \"type\":\"string\",\n               \"value\":\"one\"\n             },\n             {\n               \"name\":\"mapProperty2\",\n               \"type\":\"string\",\n               \"value\":\"two\"\n             }],\n         \"empty\":{}\n     }\n}")
+                assert "application/json" in res_0.headers["content-type"]
+                assert len(res_0.json()["p1"]) == 0
+                assert len(res_0.json()["p2"]["properties"]) == 3
+                assert len(res_0.json()["p2"]["properties"][0]) == 0
+                assert res_0.json()["p2"]["properties"][1]["name"] == "mapProperty1"
+                assert res_0.json()["p2"]["properties"][1]["type"] == "string"
+                assert res_0.json()["p2"]["properties"][1]["value"] == "one"
+                assert res_0.json()["p2"]["properties"][2]["name"] == "mapProperty2"
+                assert res_0.json()["p2"]["properties"][2]["type"] == "string"
+                assert res_0.json()["p2"]["properties"][2]["value"] == "two"
+                assert len(res_0.json()["p2"]["empty"]) == 0
 
 """.trimIndent()
         assertEquals(expectedLines, lines.toString())
@@ -290,7 +311,8 @@ class PythonTestCaseWriterTest {
                             headers=headers)
                 
                 assert res_0.status_code == 200
-                assert res_0.json() == json.loads("{\n     \"email\":\"foo@foo.foo\"\n}")
+                assert "application/json" in res_0.headers["content-type"]
+                assert res_0.json()["email"] == "foo@foo.foo"
 
 """.trimIndent()
         assertEquals(expectedLines, lines.toString())
