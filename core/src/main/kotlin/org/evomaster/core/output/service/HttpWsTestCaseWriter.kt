@@ -239,8 +239,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
     protected open fun handleLastStatementComment(res: HttpWsCallResult, lines: Lines) {
         val code = res.getStatusCode()
         if (code == 500 && !config.blackBox) {
-            val comment = if (format.isPython()) "#" else "//"
-            lines.append(" $comment " + res.getLastStatementWhen500())
+            lines.appendSingleCommentLine(res.getLastStatementWhen500() ?: "")
         }
     }
 

@@ -255,11 +255,23 @@ abstract class TestCaseWriter {
                         what about expect(false).toBe(true)?
                      */
                     if (format.isPython()) {
-                        lines.add("self.fail(\"Expected exception\")")
+                        lines.add("raise AssertionError(\"Expected exception\")")
                     } else {
                         lines.add("fail(\"Expected exception\");")
                     }
                 }
+            }
+        }
+
+        /*
+         Python does not distinguish between errors and exceptions,
+         therefore we need to throw a specific exception to catch and throw again in the catch.
+         Any other exception thrown will go to the second catch which has a `pass` body that allows for the next code to be executed
+         */
+        if (format.isPython()) {
+            lines.add("except AssertionError as e:")
+            lines.indented {
+                lines.add("raise e")
             }
         }
 
@@ -273,8 +285,7 @@ abstract class TestCaseWriter {
 
         res.getErrorMessage()?.let {
             lines.indented {
-                val comment = if (format.isPython()) "#" else "//"
-                lines.add("${comment}${it.replace('\n', ' ').replace('\r', ' ')}")
+                lines.addSingleCommentLine("${it.replace('\n', ' ').replace('\r', ' ')}")
             }
         }
 
