@@ -20,18 +20,11 @@ import static org.junit.Assert.assertEquals;
 public class DbConstraintSolverTest {
 
     static String resourcesFolder = System.getProperty("user.dir") + "/src/test/resources/";
-    static String tmpFolderPath = "tmp_" + Instant.now().getEpochSecond() + "/";
     private static Connection connection;
     private static DbConstraintSolver dbConstraintSolver;
 
     @BeforeAll
     static void setup() throws Exception {
-
-        try {
-            Files.createDirectories(Paths.get(resourcesFolder + tmpFolderPath));
-        } catch (IOException e) {
-            throw new RuntimeException(String.format("Error creating tmp folder '%s'. ", tmpFolderPath), e);
-        }
 
         connection = DriverManager.getConnection("jdbc:h2:mem:constraint_test", "sa", "");
 
@@ -47,8 +40,7 @@ public class DbConstraintSolverTest {
     @AfterAll
     static void tearDown() throws SQLException, IOException {
         connection.close();
-
-        FileUtils.deleteDirectory(new File(resourcesFolder + tmpFolderPath));
+        dbConstraintSolver.close();
     }
 
     @Test

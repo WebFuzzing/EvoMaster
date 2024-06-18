@@ -21,10 +21,6 @@ public class Z3SolverExecutor implements AutoCloseable {
     private final String containerPath = "/smt2-resources/";
     private final GenericContainer<?>  z3Prover;
 
-    private final String resourcesFolder;
-    private final String tmpFolderPath;
-    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(Z3SolverExecutor.class.getName());
-
     /**
      * The current implementation of the Z3 solver reads content either from STDIN or from a file.
      * In this case, it is reading from a file each time it needs to solve a problem.
@@ -34,10 +30,6 @@ public class Z3SolverExecutor implements AutoCloseable {
      * @param resourcesFolder the name of the folder in the file system that will be linked to the Docker volume
      */
     public Z3SolverExecutor(String resourcesFolder) {
-
-        this.resourcesFolder = resourcesFolder;
-        this.tmpFolderPath = "tmp_" + Instant.now().getEpochSecond() + "/";
-
         ImageFromDockerfile image = new ImageFromDockerfile()
                 .withDockerfileFromBuilder(builder -> builder
                         .from(Z3_DOCKER_IMAGE)
@@ -51,15 +43,10 @@ public class Z3SolverExecutor implements AutoCloseable {
     }
 
     /**
-     * Deletes the tmp folder with all its content and then stops the Z3 Docker container.
+     * Stops the Z3 Docker container.
      */
     @Override
     public void close() {
-        try {
-            FileUtils.deleteDirectory(new File(this.resourcesFolder + this.tmpFolderPath));
-        } catch (IOException e) {
-            log.error(String.format("Error deleting tmp folder '%s'. ", this.tmpFolderPath), e);
-        }
         z3Prover.stop();
     }
 
@@ -67,7 +54,7 @@ public class Z3SolverExecutor implements AutoCloseable {
      * Reads from a file in the container 'filename' the smt2 problem, and runs z3 with it.
      * Returns the result as string.
      * The file must be in the containerPath defined in the constructor.
-     * @param fileName the name of the file to read
+     * @param fileName the name of the file to read (only the file name, as the directory is already linked)
      * @return the result of the Z3 solver with the obtained model as string
      */
     public String solveFromFile(String fileName) {
