@@ -104,9 +104,6 @@ abstract class TestCaseWriter {
             val insertionVars = mutableListOf<Pair<String, String>>()
             // FIXME: HostnameResolutionActions can be a separately, for now it's under
             //  handleFieldDeclarations.
-            if (format.isPython()) { // TODO PhG: remove this when python test content is added
-                lines.add("pass")
-            }
             handleFieldDeclarations(lines, baseUrlOfSut, ind, insertionVars)
             handleActionCalls(lines, baseUrlOfSut, ind, insertionVars, testCaseName = test.name, testSuitePath)
         }
@@ -244,6 +241,7 @@ abstract class TestCaseWriter {
             format.isJavaOrKotlin() -> lines.add("try{")
             format.isJavaScript() -> lines.add("try{")
             format.isCsharp() -> lines.add("try{")
+            format.isPython() -> lines.add("try:")
         }
 
         lines.indented {
@@ -256,8 +254,24 @@ abstract class TestCaseWriter {
                         https://github.com/facebook/jest/issues/2129
                         what about expect(false).toBe(true)?
                      */
-                    lines.add("fail(\"Expected exception\");")
+                    if (format.isPython()) {
+                        lines.add("raise AssertionError(\"Expected exception\")")
+                    } else {
+                        lines.add("fail(\"Expected exception\");")
+                    }
                 }
+            }
+        }
+
+        /*
+         Python does not distinguish between errors and exceptions,
+         therefore we need to throw a specific exception to catch and throw again in the catch.
+         Any other exception thrown will go to the second catch which has a `pass` body that allows for the next code to be executed
+         */
+        if (format.isPython()) {
+            lines.add("except AssertionError as e:")
+            lines.indented {
+                lines.add("raise e")
             }
         }
 
@@ -266,14 +280,20 @@ abstract class TestCaseWriter {
             format.isKotlin() -> lines.add("} catch(e: Exception){")
             format.isJavaScript() -> lines.add("} catch(e){")
             format.isCsharp() -> lines.add("} catch(Exception e){")
+            format.isPython() -> lines.add("except Exception as e:")
         }
 
         res.getErrorMessage()?.let {
             lines.indented {
-                lines.add("//${it.replace('\n', ' ').replace('\r', ' ')}")
+                lines.addSingleCommentLine("${it.replace('\n', ' ').replace('\r', ' ')}")
             }
         }
-        if (!format.isPython()) {
+
+        if (format.isPython()) {
+            lines.indented {
+                lines.add("pass")
+            }
+        } else {
             lines.add("}")
         }
     }
@@ -286,12 +306,12 @@ abstract class TestCaseWriter {
 
     protected fun clusterComment(lines: Lines, test: TestCase) {
         if (test.test.clusterAssignments.size > 0) {
-            lines.add("/**")
-            lines.add("* [${test.name}] is a part of 1 or more clusters, as defined by the selected clustering options. ")
+            lines.startCommentBlock()
+            lines.addBlockCommentLine("[${test.name}] is a part of 1 or more clusters, as defined by the selected clustering options. ")
             for (c in test.test.clusterAssignments) {
-                lines.add("* $c")
+                lines.addBlockCommentLine("$c")
             }
-            lines.add("*/")
+            lines.endCommentBlock()
         }
     }
 

@@ -48,16 +48,10 @@ public class ExternalServiceMockingFlakyEMTest extends SpringTestBase {
 
                     Solution<RestIndividual> solution = initAndRun(args);
 
-                    // The below block of code is an experiment
-                    // The value 13 is decided by looking at the generated actions count
-                    // manually.
                     List<Action> actions = new ArrayList<>();
                     for (EvaluatedIndividual<RestIndividual> individual : solution.getIndividuals()) {
                         actions.addAll(individual.getIndividual().seeExternalServiceActions());
                     }
-                    //assertEquals(actions.size(), 13);
-                    //Andrea: there should be clear reason for hardcoded numbers like 13. otherwise, when we get a new
-                    // value (like 12 in my case) how do we know it is a bug and not just a harmless change in the search process?
                     assertTrue(actions.size() > 0);
 
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wiremock/external", "true");

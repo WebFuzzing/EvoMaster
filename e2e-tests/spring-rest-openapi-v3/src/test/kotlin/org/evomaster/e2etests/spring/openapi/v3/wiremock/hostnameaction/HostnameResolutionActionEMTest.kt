@@ -33,12 +33,6 @@ class HostnameResolutionActionEMTest: SpringTestBase() {
             true,
             { args: MutableList<String> ->
 
-                // Note: WireMock is initiated based on the served requests.
-                // This SUT doesn't make any requests, so [TestSuiteWriter] will not add
-                // any WM, eventually the generated tests will fail.
-                // TODO: This will fail when [createTests] is true regardless of the
-                //  environment.
-
                 args.add("--externalServiceIPSelectionStrategy")
                 args.add("USER")
                 args.add("--externalServiceIP")
@@ -53,6 +47,8 @@ class HostnameResolutionActionEMTest: SpringTestBase() {
                     Tricky. First time a test is evaluated, this will happen.
                     But, from there on, WM will always be on, so impossible to replicate,
                     eg, in minimizer or generated tests.
+
+                    FIXME but this can be solved!!! see comments in AbstractRestFitness
                  */
                 assertNone(solution, HttpVerb.GET, 400)
                 assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/resolve",null)

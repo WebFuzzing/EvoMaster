@@ -599,6 +599,8 @@ class TestSuiteWriter {
             }
         } else if (config.outputFormat.isCsharp()) {
             lines.add("private static readonly HttpClient Client = new HttpClient ();")
+        } else if (config.outputFormat.isPython()) {
+            lines.add("$baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\"")
         }
 
         testCaseWriter.addExtraStaticVariables(lines)
@@ -926,6 +928,7 @@ class TestSuiteWriter {
         }
 
         if (config.outputFormat.isPython()) {
+            lines.addEmpty(2)
             lines.add("if __name__ == '__main__':")
             lines.indent()
             lines.add("unittest.main()")

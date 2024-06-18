@@ -899,6 +899,14 @@ class EMConfig {
     @Regex("($timeRegex)|(^$)")
     var prematureStop : String = ""
 
+    enum class PrematureStopStrategy{
+        ANY, NEW
+    }
+
+    @Experimental
+    @Cfg("Specify how 'improvement' is defined: either any kind of improvement even if partial (ANY)," +
+            " or at least one new target is fully covered (NEW).")
+    var prematureStopStrategy = PrematureStopStrategy.NEW
 
     @Important(1.1)
     @Cfg("The path directory of where the generated test classes should be saved to")

@@ -371,11 +371,16 @@ public abstract class EnterpriseTestBase {
 
     protected void compile(String outputFolderName){
 
+        long start = System.currentTimeMillis();
+
         CompilerForTestGenerated.INSTANCE.compile(
                 OutputFormat.KOTLIN_JUNIT_5,
                 new File(outputFolderPath(outputFolderName)),
                 new File("target/test-classes")
         );
+
+        int passed = (int)(System.currentTimeMillis() - start) / 1000;
+        System.out.println("Folder compiled in " + passed + " seconds: " + outputFolderName);
     }
 
     protected List<String> getArgsWithCompilation(int iterations, String outputFolderName, ClassName testClassName){
@@ -484,7 +489,7 @@ public abstract class EnterpriseTestBase {
     protected void assertInsertionIntoTable(Solution<? extends ApiWsIndividual> solution, String tableName) {
 
         boolean ok = solution.getIndividuals().stream().anyMatch(
-                ind -> ind.getIndividual().seeDbActions().stream().anyMatch(
+                ind -> ind.getIndividual().seeSqlDbActions().stream().anyMatch(
                         da -> da.getTable().getName().equalsIgnoreCase(tableName))
         );
 

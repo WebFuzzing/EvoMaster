@@ -1,6 +1,8 @@
 package org.evomaster.client.java.instrumentation;
 
-public class ExternalServiceMapping {
+import java.io.Serializable;
+
+public class ExternalServiceMapping implements Serializable {
 
     private final String remoteHostName;
 

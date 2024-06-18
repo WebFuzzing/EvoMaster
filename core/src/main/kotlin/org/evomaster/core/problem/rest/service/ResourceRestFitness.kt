@@ -83,7 +83,8 @@ class ResourceRestFitness : AbstractRestFitness() {
             computeFitnessForEachEnterpriseActionGroup(individual, chainState, cookies, tokens, allServedHttpRequests, actionResults)
 
         val allRestResults = actionResults.filterIsInstance<RestCallResult>()
-        val dto = restActionResultHandling(individual, targets, allCovered, allRestResults, fv) ?: return null
+        val dto = restActionResultHandling(individual, targets, allCovered, allRestResults, fv)
+            ?: return null
 
         /*
             harvest actual requests once all actions are executed

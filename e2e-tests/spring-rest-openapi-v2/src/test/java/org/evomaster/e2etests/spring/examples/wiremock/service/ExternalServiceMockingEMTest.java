@@ -30,10 +30,7 @@ public class ExternalServiceMockingEMTest extends SpringTestBase {
         SpringTestBase.initClass(serviceController,config);
     }
 
-    /**
-     * The test is disabled since, encountered some errors within the
-     * existing e2e tests. Will be completed once those sorted.
-     */
+
     @Test
     public void externalServiceSuccessTest() throws Throwable {
         String[] args = new String[]{
@@ -62,7 +59,7 @@ public class ExternalServiceMockingEMTest extends SpringTestBase {
         assertEquals(1, externalServiceHandler.getExternalServices().size(), externalServiceHandler.getExternalServiceMappings().size());
 
         assertTrue( externalServiceHandler.getExternalServices().containsKey("https__foobarbazz.com__8443"));
-        restResourceFitness.calculateCoverage(restIndividual, Collections.emptySet());
+        restResourceFitness.calculateCoverage(restIndividual, Collections.emptySet(), null);
         // assertion after the execution
         assertEquals(2, externalServiceHandler.getExternalServices().size());
 
