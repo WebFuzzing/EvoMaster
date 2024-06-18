@@ -56,7 +56,7 @@ class SmtLibGeneratorTest {
     @Test
     @Throws(JSQLParserException::class)
     fun selectFromUsers() {
-        val selectStatement: Statement = CCJSqlParserUtil.parse("SELECT * FROM Users;")
+        val selectStatement: Statement = CCJSqlParserUtil.parse("SELECT * FROM Users WHERE Age > 30 AND points = 7;")
         val response: SMTLib = generator.generateSMT(selectStatement)
 
         val expected = SMTLib().apply {
@@ -184,6 +184,26 @@ class SmtLibGeneratorTest {
                         listOf(
                             "(ID users1)",
                             "(ID users2)"
+                        )
+                    )
+                )
+            )
+            addNode(
+                AssertSMTNode(
+                    AndAssertion(
+                        listOf(
+                            GreaterThanAssertion("(AGE users1)", "30"),
+                            EqualsAssertion(listOf("(POINTS users1)", "7"))
+                        )
+                    )
+                )
+            )
+            addNode(
+                AssertSMTNode(
+                    AndAssertion(
+                        listOf(
+                            GreaterThanAssertion("(AGE users2)", "30"),
+                            EqualsAssertion(listOf("(POINTS users2)", "7"))
                         )
                     )
                 )

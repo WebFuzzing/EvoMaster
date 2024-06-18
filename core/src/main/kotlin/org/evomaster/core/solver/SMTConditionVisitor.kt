@@ -4,6 +4,7 @@ import org.evomaster.dbconstraint.ast.*
 import org.evomaster.solver.smtlib.AssertSMTNode
 import org.evomaster.solver.smtlib.SMTNode
 import org.evomaster.solver.smtlib.assertion.*
+import java.util.*
 
 class SMTConditionVisitor(
     private val tableName: String,
@@ -11,7 +12,7 @@ class SMTConditionVisitor(
 ) : SqlConditionVisitor<SMTNode, Void> {
 
     private fun getColumnReference(columnName: String): String {
-        return "($columnName $tableName$rowIndex)"
+        return "(${columnName.uppercase(Locale.getDefault())} $tableName$rowIndex)"
     }
 
     override fun visit(condition: SqlAndCondition, parameter: Void?): SMTNode {
@@ -29,9 +30,7 @@ class SMTConditionVisitor(
         val columnName = condition.leftOperand.toString()
         val variable = getColumnReference(columnName)
         val compare = condition.rightOperand.toString().replace("'", "\"")
-        val comparator = getSMTComparator(condition.sqlComparisonOperator.toString())
-
-        return when (comparator) {
+        return when (val comparator = getSMTComparator(condition.sqlComparisonOperator.toString())) {
             "=" -> AssertSMTNode(EqualsAssertion(listOf(variable, compare)))
             "distinct" -> AssertSMTNode(DistinctAssertion(listOf(variable, compare)))
             ">" -> AssertSMTNode(GreaterThanAssertion(variable, compare))
