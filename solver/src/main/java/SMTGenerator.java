@@ -50,8 +50,9 @@ public class SMTGenerator {
     private void appendQueryConstraints(StringBuilder smt, String sqlQuery) {
         List<String> tableNames;
         Expression condition;
+        List<Expression> joinConditions = new ArrayList<>();
         try {
-            tableNames = extractTableNames(sqlQuery);
+            tableNames = extractTableNamesAndJoinConditions(sqlQuery, joinConditions);
             condition = extractCondition(sqlQuery);
         } catch (JSQLParserException e) {
             throw new RuntimeException("Error when parsing table and condition from sqlQuery: " + sqlQuery, e);
@@ -70,6 +71,10 @@ public class SMTGenerator {
             tablesInQuery.add(table);
         }
 
+        // Add join constraints
+        addJoinConstraints(joinConditions, smt);
+
+        // Add where constraints
         addQueryConstraints(tablesInQuery, condition, smt);
     }
 
@@ -79,7 +84,7 @@ public class SMTGenerator {
         }
     }
 
-    private List<String> extractTableNames(String sqlQuery) throws JSQLParserException {
+    private List<String> extractTableNamesAndJoinConditions(String sqlQuery, List<Expression> joinConditions) throws JSQLParserException {
         Statement selectStatement = CCJSqlParserUtil.parse(sqlQuery);
         Select select = (Select) selectStatement;
         PlainSelect plainSelect = (PlainSelect) select.getSelectBody();
@@ -92,6 +97,7 @@ public class SMTGenerator {
             for (Join join : plainSelect.getJoins()) {
                 FromItem joinItem = join.getRightItem();
                 tableNames.add(joinItem.toString());
+                joinConditions.addAll(join.getOnExpressions());
             }
         }
         return tableNames;
@@ -149,6 +155,21 @@ public class SMTGenerator {
         condition.accept(visitor, index);
 
         return smt.toString();
+    }
+
+    private void addJoinConstraints(List<Expression> joinConditions, StringBuilder smt) {
+        if (!joinConditions.isEmpty()) {
+            for (int i = 1; i <= numberOfRows; i++) {
+                for (Expression joinCondition : joinConditions) {
+                    String tableName = joinCondition.toString().split("\\.")[0];
+                    String rowVariable = tableName.toLowerCase() + i;
+                    StringBuilder joinConditionBuilder = new StringBuilder();
+                    SMTExpressionDeParser expressionDeParser = new SMTExpressionDeParser(joinConditionBuilder, rowVariable);
+                    joinCondition.accept(expressionDeParser);
+                    smt.append("(assert ").append(joinConditionBuilder).append(")\n");
+                }
+            }
+        }
     }
 
     private void addQueryConstraints(List<TableDto> tables, Expression where, StringBuilder smt) {
@@ -232,5 +253,4 @@ public class SMTGenerator {
             }
         }
     }
-
 }
