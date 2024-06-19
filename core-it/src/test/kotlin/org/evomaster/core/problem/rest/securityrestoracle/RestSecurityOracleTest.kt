@@ -2,6 +2,7 @@ package org.evomaster.core.problem.rest.securityrestoracle
 
 import bar.examples.it.spring.multipleendpoints.MultipleEndpointsController
 import bar.examples.it.spring.simplesecuritydeleteput.SimpleSecurityDeletePutController
+import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.IntegrationTestRestBase
 import org.evomaster.core.problem.rest.RestSecurityOracle
@@ -36,8 +37,13 @@ class RestSecurityOracleTest : IntegrationTestRestBase() {
             - call RestSecurityOracle directly on such created invididual
             - verify properties
          */
+        // TODO initialize parameters and authentication in those objects.
 
         val pirTest = getPirToRest()
+
+        val firstAction = pirTest.fromVerbPath("PUT", "/api/endpoint/endpoint2")!!
+
+        val secondAction = pirTest.fromVerbPath("PUT", "/api/endpoint/endpoint2")!!
 
         val action1Ind1 = pirTest.fromVerbPath("GET", "/api/endpoint2/1000")!!
         val action2Ind1 = pirTest.fromVerbPath("POST", "/api/endpoint1")!!
@@ -48,7 +54,8 @@ class RestSecurityOracleTest : IntegrationTestRestBase() {
         val g1 = StringGene("sampleString")
         g1.markAllAsInitialized()
 
-        action1Ind1.addParam(QueryParam("param1", g1))
+        firstAction.addParam(QueryParam("param1", g1))
+
 
         val sampleInd = createIndividual(listOf(action1Ind1, action2Ind1, action3Ind1, action4Ind1, action5Ind1), SampleType.SECURITY)
 
