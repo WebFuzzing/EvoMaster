@@ -476,6 +476,9 @@ class TestSuiteWriter {
             lines.add("import json")
             lines.add("import unittest")
             lines.add("import requests")
+            if (config.testTimeout > 0) {
+                lines.add("import timeout_decorator")
+            }
         }
 
         when {

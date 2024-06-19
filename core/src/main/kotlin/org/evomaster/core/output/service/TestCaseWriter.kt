@@ -85,6 +85,10 @@ abstract class TestCaseWriter {
             }
         }
 
+        if (format.isPython() && config.testTimeout > 0) {
+            lines.add("@timeout_decorator.timeout(${config.testTimeout})")
+        }
+
         //TODO: check xUnit instead
         if (format.isCsharp()) {
             lines.add("[Fact]")
