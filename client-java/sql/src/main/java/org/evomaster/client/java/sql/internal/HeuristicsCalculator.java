@@ -42,18 +42,14 @@ public class HeuristicsCalculator {
 
     //only for tests
     protected static double computeDistance(String statement, QueryResult data) {
-        return computeDistance(statement, data, null, null,false);
+        return computeDistance(statement, data, null, null);
     }
 
     public static double computeDistance(
             String statement,
             QueryResult data,
             DbSchemaDto schema,
-            TaintHandler taintHandler,
-            /**
-             * Enable more advance techniques since first SQL support
-             */
-            boolean advancedHeuristics
+            TaintHandler taintHandler
     ) {
 
         if (data.isEmpty()) {

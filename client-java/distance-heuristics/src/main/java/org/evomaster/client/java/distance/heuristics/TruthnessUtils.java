@@ -95,7 +95,7 @@ public class TruthnessUtils {
 
     public static Truthness getStringEqualityTruthness(String str1, String str2){
         if (str1.equals(str2)) {
-            return new Truthness(1d, Truthness.C);
+            return TRUE;
         } else {
             final double base = Truthness.C;
             double distance = DistanceHelper.getLeftAlignmentDistance(str1, str2);
