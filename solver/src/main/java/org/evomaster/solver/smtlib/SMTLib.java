@@ -15,6 +15,12 @@ public class SMTLib {
         nodes.add(node);
     }
 
+    public void addNodes(List<SMTNode> newNodes) {
+        if (newNodes != null && !newNodes.isEmpty()) {
+            nodes.addAll(newNodes);
+        }
+    }
+
     // Two SMTLib are equal if they expose the same smt file
     @Override
     public boolean equals(Object o) {

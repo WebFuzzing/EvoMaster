@@ -192,7 +192,7 @@ class HttpWsExternalServiceHandler {
                 val es = HttpWsExternalService(externalServiceInfo, ip)
 
                 if (!externalServiceInfo.isPartial()) {
-                    log.warn("Trying to bind in ${es.getIP()}:${externalServiceInfo.remotePort} for ${externalServiceInfo.remoteHostname}")
+                    log.info("Trying to bind in ${es.getIP()}:${externalServiceInfo.remotePort} for ${externalServiceInfo.remoteHostname}")
                     Lazy.assert { isAddressAvailable(es.getIP(), externalServiceInfo.remotePort) }
                     es.startWireMock()
                     started = true

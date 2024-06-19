@@ -34,7 +34,7 @@ open class ActionResult(
 
     private val results : MutableMap<String, String> = mutableMapOf()
 
-    protected constructor(other: ActionResult) : this(other.sourceLocalId, other.stopping){
+    protected constructor(other: ActionResult) : this(other.sourceLocalId, other.stopping, other.deathSentence){
         results.putAll(other.results)
     }
 

@@ -1,6 +1,6 @@
 package org.evomaster.solver.smtlib;
 
-public class CheckSat extends SMTNode {
+public class CheckSatSMTNode extends SMTNode {
     @Override
     public String toString() {
         return "(check-sat)";
