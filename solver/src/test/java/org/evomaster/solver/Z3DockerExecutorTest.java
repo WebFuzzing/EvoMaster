@@ -118,7 +118,4 @@ public class Z3DockerExecutorTest {
         users2Expected.put("POINTS", new IntValue(7));
         assertEquals(new StructValue(users2Expected), response.get().get("users2"));
     }
-
-
-
 }

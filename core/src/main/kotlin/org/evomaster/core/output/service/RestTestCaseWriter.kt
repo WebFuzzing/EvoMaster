@@ -9,6 +9,7 @@ import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
@@ -86,6 +87,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                         format.isKotlin() -> lines.add("var $name : String? = \"\"")
                         format.isJavaScript() -> lines.add("let $name = \"\";")
                         format.isCsharp() -> lines.add("var $name = \"\";")
+                        format.isPython() -> {} // no need to declare variables
                         // should never happen
                         else -> throw IllegalStateException("Unsupported format $format")
                     }
@@ -111,7 +113,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                             format,
                             c.first,
                             lines,
-                            ind.individual.seeDbActions(),
+                            ind.individual.seeSqlDbActions(),
                             groupIndex = index.toString(),
                             insertionVars = insertionVars,
                             skipFailure = config.skipFailureSQLInTestFile
@@ -207,10 +209,10 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
 
         } else {
 
-            if (format.isKotlin()) {
-                lines.append("\"\${$baseUrlOfSut}")
-            } else {
-                lines.append("$baseUrlOfSut + \"")
+            when {
+                format.isKotlin() -> lines.append("\"\${$baseUrlOfSut}")
+                format.isPython() -> lines.append("self.$baseUrlOfSut + \"")
+                else -> lines.append("$baseUrlOfSut + \"")
             }
 
             if (call.path.numberOfUsableQueryParams(call.parameters) <= 1) {
@@ -244,6 +246,18 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                             )
                         }\""
                     )
+                }
+            }
+        }
+
+        if (format.isPython()) {
+            lines.append(",")
+            lines.indented {
+                val bodyParam = call.parameters.find { param -> param is BodyParam } as BodyParam?
+                if (bodyParam == null) {
+                    lines.add("headers=headers")
+                } else {
+                    lines.add("headers=headers, data=body")
                 }
             }
         }

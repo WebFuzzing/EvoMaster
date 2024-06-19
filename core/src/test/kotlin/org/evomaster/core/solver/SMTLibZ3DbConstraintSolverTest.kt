@@ -123,7 +123,7 @@ class SMTLibZ3DbConstraintSolverTest {
             when (gene.name) {
                 "ID" -> {
                     assertTrue(gene is IntegerGene)
-                    assertEquals(0, (gene as IntegerGene).value)
+                    assertEquals(1, (gene as IntegerGene).value)
                 }
                 "NAME" -> {
                     assertTrue(gene is StringGene)

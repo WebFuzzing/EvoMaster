@@ -74,10 +74,11 @@ public class Instrumentator {
         try {
             cn.accept(cv);
         } catch(Throwable e){
-            SimpleLogger.error("Failed to instrument " + className.getFullNameWithDots(), e);
+            SimpleLogger.error("Failed to instrument " + className.getFullNameWithDots() + " : " + e.getMessage());
             /*
                 throwing exception here is problematic... there are legit cases in which it crashes
-                when computing common ancestors, if those are on classpath
+                when computing common ancestors, if those are on classpath.
+                also, printing full stacktrace just clutters the logs
              */
             return null;
         }

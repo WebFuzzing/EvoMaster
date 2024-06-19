@@ -20,17 +20,17 @@ public class SMTLibTest {
     @Test
     public void SMTLibSelectToString() throws IOException {
         SMTLib smtLib = new SMTLib();
-        smtLib.addNode(new DeclareDatatype("UsersRow", ImmutableList.of(
-                new DeclareConst("ID", "Int"),
-                new DeclareConst("NAME", "String"),
-                new DeclareConst("AGE", "Int"),
-                new DeclareConst("POINTS", "Int")
+        smtLib.addNode(new DeclareDatatypeSMTNode("UsersRow", ImmutableList.of(
+                new DeclareConstSMTNode("ID", "Int"),
+                new DeclareConstSMTNode("NAME", "String"),
+                new DeclareConstSMTNode("AGE", "Int"),
+                new DeclareConstSMTNode("POINTS", "Int")
         )));
-        smtLib.addNode(new DeclareConst("users1", "UsersRow"));
-        smtLib.addNode(new DeclareConst("users2", "UsersRow"));
-        smtLib.addNode(new CheckSat());
-        smtLib.addNode(new GetValue("users1"));
-        smtLib.addNode(new GetValue("users2"));
+        smtLib.addNode(new DeclareConstSMTNode("users1", "UsersRow"));
+        smtLib.addNode(new DeclareConstSMTNode("users2", "UsersRow"));
+        smtLib.addNode(new CheckSatSMTNode());
+        smtLib.addNode(new GetValueSMTNode("users1"));
+        smtLib.addNode(new GetValueSMTNode("users2"));
 
         // Read from file the response and compare
         String expected = readFromFileAsString(resourcesFolder + "select-from-users.smt");
