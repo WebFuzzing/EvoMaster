@@ -1,14 +1,19 @@
 package org.evomaster.core.solver
 
 import net.sf.jsqlparser.statement.Statement
-import org.evomaster.client.java.controller.api.dto.database.schema.*
+import net.sf.jsqlparser.statement.select.PlainSelect
+import net.sf.jsqlparser.statement.select.Select
+import net.sf.jsqlparser.util.TablesNamesFinder
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
+import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto
+import org.evomaster.client.java.controller.api.dto.database.schema.ForeignKeyDto
+import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
 import org.evomaster.core.utils.StringUtils
 import org.evomaster.dbconstraint.ConstraintDatabaseType
 import org.evomaster.dbconstraint.ast.SqlCondition
 import org.evomaster.dbconstraint.parser.SqlConditionParserException
 import org.evomaster.dbconstraint.parser.jsql.JSqlConditionParser
 import org.evomaster.solver.smtlib.*
-import org.evomaster.solver.smtlib.assertion.Assertion
 import org.evomaster.solver.smtlib.assertion.DistinctAssertion
 import org.evomaster.solver.smtlib.assertion.EqualsAssertion
 import org.evomaster.solver.smtlib.assertion.OrAssertion
@@ -58,8 +63,7 @@ class SmtLibGenerator(private val schema: DbSchemaDto, private val numberOfRows:
         val tableName = table.name.lowercase(Locale.getDefault())
         for (column in table.columns) {
             if (column.unique) {
-                val columnName = column.name.uppercase(Locale.getDefault())
-                val nodes = assertForDistinctField(columnName, tableName)
+                val nodes = assertForDistinctField(column.name, tableName)
                 smt.addNodes(nodes)
             }
         }
@@ -109,8 +113,7 @@ class SmtLibGenerator(private val schema: DbSchemaDto, private val numberOfRows:
         val primaryKeys = table.columns.filter { it.primaryKey }
 
         for (primaryKey in primaryKeys) {
-            val pkSelector = primaryKey.name.uppercase(Locale.getDefault())
-            val nodes = assertForDistinctField(pkSelector, tableName)
+            val nodes = assertForDistinctField(primaryKey.name, tableName)
 
             smt.addNodes(nodes)
         }
@@ -124,8 +127,8 @@ class SmtLibGenerator(private val schema: DbSchemaDto, private val numberOfRows:
                     AssertSMTNode(
                         DistinctAssertion(
                             listOf(
-                                "($pkSelector $tableName$i)",
-                                "($pkSelector $tableName$j)"
+                                "(${pkSelector.uppercase(Locale.getDefault())} $tableName$i)",
+                                "(${pkSelector.uppercase(Locale.getDefault())} $tableName$j)"
                             )
                         )
                     )
@@ -144,11 +147,11 @@ class SmtLibGenerator(private val schema: DbSchemaDto, private val numberOfRows:
             val referencedColumnSelector = findReferencedPKSelector(referencedTable, foreignKey)
 
             for (sourceColumn in foreignKey.sourceColumns) {
-                val sourceColumnSelector = sourceColumn.uppercase(Locale.getDefault())
 
                 val nodes = assertForEqualsAny(
-                    sourceColumnSelector, sourceTableName,
-                    referencedColumnSelector, referencedTableName)
+                    sourceColumn, sourceTableName,
+                    referencedColumnSelector, referencedTableName
+                )
 
                 smt.addNodes(nodes)
             }
@@ -165,8 +168,8 @@ class SmtLibGenerator(private val schema: DbSchemaDto, private val numberOfRows:
             val conditions = (1..numberOfRows).map { j ->
                 EqualsAssertion(
                     listOf(
-                        "($sourceColumnSelector $sourceTableName$i)",
-                        "($referencedColumnSelector $referencedTableName$j)"
+                        "(${sourceColumnSelector.uppercase(Locale.getDefault())} $sourceTableName$i)",
+                        "(${referencedColumnSelector.uppercase(Locale.getDefault())} $referencedTableName$j)"
                     )
                 )
             }
@@ -181,7 +184,7 @@ class SmtLibGenerator(private val schema: DbSchemaDto, private val numberOfRows:
             throw RuntimeException("Referenced table has no primary key: ${foreignKey.targetTable}")
         }
         // Assuming single-column primary keys
-        return referencedPrimaryKeys[0].name.uppercase(Locale.getDefault())
+        return referencedPrimaryKeys[0].name
     }
 
     private fun findReferencedTable(foreignKey: ForeignKeyDto): TableDto {
@@ -189,8 +192,21 @@ class SmtLibGenerator(private val schema: DbSchemaDto, private val numberOfRows:
             ?: throw RuntimeException("Referenced table not found: ${foreignKey.targetTable}")
     }
 
-    private fun appendQueryConstraints(smt: SMTLib, selectStatement: Statement) {
-        // TODO
+    private fun appendQueryConstraints(smt: SMTLib, sqlQuery: Statement) {
+        if (sqlQuery is Select) { // TODO: Handle other queries
+            val plainSelect = sqlQuery.selectBody as PlainSelect
+            val where = plainSelect.where
+            val tableFromQuery = TablesNamesFinder().getTables(sqlQuery as Statement).firstOrNull();
+            val tableFromQueryDto = schema.tables.first { it.name.equals(tableFromQuery, ignoreCase = true) } // todo: Handle error case
+
+            if (where != null) {
+                val condition = parser.parse(where.toString(), toDBType(schema.databaseType))
+                for (i in 1..numberOfRows) {
+                    val constraint = parseCheckExpression(tableFromQueryDto, condition, i)
+                    smt.addNode(constraint)
+                }
+            }
+        }
     }
 
     private fun appendGetValues(smt: SMTLib) {
