@@ -1347,16 +1347,7 @@ public class RPCEndpointsBuilder {
                     results.put( String.format("%s_INDEX_%d", (dto.testName != null)?dto.testName:"untitled", seedRPCTests.indexOf(dto)), test);
                 }catch (RuntimeException e){
                     SimpleLogger.recordErrorMessage("Fail to handle specified seeded test: "+ ((dto.testName != null)? dto.testName:"index_"+seedRPCTests.indexOf(dto)));
-                    StringBuilder msg = new StringBuilder("Fail to handle specified seeded test " + e.getMessage());
-                    // reduce multiple copy of the stack
-                    StackTraceElement[] exceptionStack = e.getStackTrace();
-                    if (exceptionStack != null && exceptionStack.length > 0){
-                        msg.append(" with stack:");
-                        for (int i = 0; i < Math.min(exceptionStack.length, 5); i++){
-                            msg.append(exceptionStack.toString());
-                            msg.append(System.lineSeparator());
-                        }
-                    }
+                    StringBuilder msg = extractExceptionMsg(e);
                     SimpleLogger.recordErrorMessage(msg.toString());
                 }
             } else {
@@ -1364,5 +1355,20 @@ public class RPCEndpointsBuilder {
             }
         }
         return results;
+    }
+
+    private static StringBuilder extractExceptionMsg(RuntimeException e) {
+        StringBuilder msg = new StringBuilder("Fail to handle specified seeded test with exception ");
+        msg.append(e.getClass().getName()).append(" with message:").append(e.getMessage()).append(".");
+        // reduce multiple copy of the stack
+        StackTraceElement[] exceptionStack = e.getStackTrace();
+        if (exceptionStack != null && exceptionStack.length > 0){
+            msg.append(" with stack:");
+            for (int i = 0; i < Math.min(exceptionStack.length, 5); i++){
+                msg.append(exceptionStack[i].toString());
+                msg.append(System.lineSeparator());
+            }
+        }
+        return msg;
     }
 }

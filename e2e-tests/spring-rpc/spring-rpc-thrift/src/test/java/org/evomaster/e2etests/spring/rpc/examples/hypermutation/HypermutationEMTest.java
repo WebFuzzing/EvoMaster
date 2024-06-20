@@ -57,6 +57,9 @@ public class HypermutationEMTest extends RPCHypermutationTestBase {
                     args.add("--minimize");
                     args.add("false");
 
+                    args.add("--probOfRandomSampling");
+                    args.add("0.0");
+
                     Solution<RPCIndividual> solution = initAndRun(args);
 
                     boolean ok = check(solution, "differentWeight",0);
