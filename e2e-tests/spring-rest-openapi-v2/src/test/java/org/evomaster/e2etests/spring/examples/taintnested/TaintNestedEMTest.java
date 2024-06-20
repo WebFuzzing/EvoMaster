@@ -32,6 +32,8 @@ public class TaintNestedEMTest extends SpringTestBase {
                     args.add("true");
                     args.add("--discoveredInfoRewardedInFitness");
                     args.add("true");
+                    args.add("--baseTaintAnalysisProbability");
+                    args.add("0.9");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 
