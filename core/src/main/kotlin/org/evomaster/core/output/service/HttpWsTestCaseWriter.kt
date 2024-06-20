@@ -228,11 +228,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         handleLastStatementComment(res, lines)
 
         if (config.enableBasicAssertions && !call.shouldSkipAssertionsOnResponseBody()) {
-            if (format.isPython()) {
-                handlePythonResponseContents(lines, res, responseVariableName)
-            } else {
-                handleResponseAssertions(lines, res, responseVariableName)
-            }
+            handleResponseAssertions(lines, res, responseVariableName)
         }
     }
 
@@ -548,7 +544,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         }
 
         if (res.getTooLargeBody()) {
-            lines.add("// the response payload was too large, above the threshold of ${config.maxResponseByteSize} bytes." +
+            lines.addSingleCommentLine("the response payload was too large, above the threshold of ${config.maxResponseByteSize} bytes." +
                     " No assertion on it is therefore generated.")
             return
         }
@@ -573,6 +569,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                     "expect($responseVariableName.header[\"content-type\"].startsWith(\"$bodyTypeSimplified\")).toBe(true);"
 
                 format.isCsharp() -> "Assert.Contains(\"$bodyTypeSimplified\", $responseVariableName.Content.Headers.GetValues(\"Content-Type\").First());"
+                format.isPython() -> "assert \"$bodyTypeSimplified\" in $responseVariableName.headers[\"content-type\"]"
                 else -> throw IllegalStateException("Unsupported format $format")
             }
             lines.add(instruction)
@@ -612,23 +609,6 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             LoggingUtil.uniqueWarn(log, "Currently no assertions are generated for response type: $type")
         }
     }
-
-    private fun handlePythonResponseContents(lines: Lines, res: HttpWsCallResult, resVarName: String) {
-        val bodyString = res.getBody()
-        if (bodyString.isNullOrBlank()) {
-            lines.add("assert not $resVarName.text")
-        } else {
-            val type = res.getBodyType()!!
-            val escapedText = GeneUtils.applyEscapes(bodyString, mode = GeneUtils.EscapeMode.TEXT, format = format)
-            if (type.isCompatible(MediaType.APPLICATION_JSON_TYPE) || type.toString().toLowerCase().contains("json")) {
-                // TODO PhG: handle assertions for python properly
-                lines.add("assert $resVarName.json() == json.loads(\"$escapedText\")")
-            } else if (type.isCompatible(MediaType.TEXT_PLAIN_TYPE)) {
-                lines.add("assert \"$escapedText\" in $resVarName.text")
-            }
-        }
-    }
-
 
     protected fun handleLastLine(call: HttpWsAction, res: HttpWsCallResult, lines: Lines, resVarName: String) {
 
