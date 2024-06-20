@@ -5,6 +5,7 @@ import org.evomaster.client.java.sql.advanced.driver.SqlDriver;
 import org.evomaster.client.java.sql.advanced.query_calculator.CalculationResult;
 import org.evomaster.client.java.sql.advanced.query_calculator.QueryCalculator;
 import org.evomaster.client.java.sql.advanced.query_calculator.where_calculator.WhereCalculator;
+import org.evomaster.client.java.sql.internal.TaintHandler;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.util.UUID;
@@ -18,25 +19,30 @@ import static org.evomaster.client.java.sql.advanced.query_calculator.QueryCalcu
 public class AdvancedHeuristic {
 
     private SqlDriver sqlDriver;
-
     private Boolean dumpExceptions;
+    private TaintHandler taintHandler;
 
-    private AdvancedHeuristic(SqlDriver sqlDriver, Boolean dumpExceptions) {
+    private AdvancedHeuristic(SqlDriver sqlDriver, Boolean dumpExceptions, TaintHandler taintHandler) {
         this.sqlDriver = sqlDriver;
         this.dumpExceptions = dumpExceptions;
+        this.taintHandler = taintHandler;
     }
 
-    public static AdvancedHeuristic createAdvancedHeuristic(SqlDriver sqlDriver, Boolean dumpExceptions) {
-        return new AdvancedHeuristic(sqlDriver, dumpExceptions);
+    public static AdvancedHeuristic createAdvancedHeuristic(SqlDriver sqlDriver, Boolean dumpExceptions, TaintHandler taintHandler) {
+        return new AdvancedHeuristic(sqlDriver, dumpExceptions, taintHandler);
+    }
+
+    public static AdvancedHeuristic createAdvancedHeuristic(SqlDriver sqlDriver, TaintHandler taintHandler) {
+        return createAdvancedHeuristic(sqlDriver, false, taintHandler);
     }
 
     public static AdvancedHeuristic createAdvancedHeuristic(SqlDriver sqlDriver) {
-        return createAdvancedHeuristic(sqlDriver, false);
+        return createAdvancedHeuristic(sqlDriver, null);
     }
 
     public Truthness calculate(String query) {
         try {
-            QueryCalculator queryCalculator = createQueryCalculator(query, sqlDriver);
+            QueryCalculator queryCalculator = createQueryCalculator(query, sqlDriver, taintHandler);
             CalculationResult calculationResult = queryCalculator.calculate();
             return calculationResult.getTruthness();
         } catch (Exception e) {

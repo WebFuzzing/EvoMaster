@@ -5,6 +5,7 @@ import org.evomaster.client.java.sql.advanced.driver.SqlDriver;
 import org.evomaster.client.java.sql.advanced.driver.row.Row;
 import org.evomaster.client.java.sql.advanced.query_calculator.where_calculator.WhereCalculator;
 import org.evomaster.client.java.sql.advanced.select_query.SelectQuery;
+import org.evomaster.client.java.sql.internal.TaintHandler;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.util.List;
@@ -24,18 +25,20 @@ public class QueryCalculator {
 
   private SelectQuery query;
   private SqlDriver sqlDriver;
+  private TaintHandler taintHandler;
 
-  private QueryCalculator(SelectQuery query, SqlDriver sqlDriver) {
+  private QueryCalculator(SelectQuery query, SqlDriver sqlDriver, TaintHandler taintHandler) {
     this.query = query;
     this.sqlDriver = sqlDriver;
+    this.taintHandler = taintHandler;
   }
 
-  public static QueryCalculator createQueryCalculator(SelectQuery query, SqlDriver sqlDriver) {
-    return new QueryCalculator(query, sqlDriver);
+  public static QueryCalculator createQueryCalculator(SelectQuery query, SqlDriver sqlDriver, TaintHandler taintHandler) {
+    return new QueryCalculator(query, sqlDriver, taintHandler);
   }
 
-  public static QueryCalculator createQueryCalculator(String queryString, SqlDriver sqlDriver) {
-    return new QueryCalculator(createSelectQuery(queryString), sqlDriver);
+  public static QueryCalculator createQueryCalculator(String queryString, SqlDriver sqlDriver, TaintHandler taintHandler) {
+    return new QueryCalculator(createSelectQuery(queryString), sqlDriver, taintHandler);
   }
 
   public CalculationResult calculate() {
@@ -62,7 +65,7 @@ public class QueryCalculator {
       List<Row> queryWithoutWhereRows = sqlDriver.query(queryWithoutWhere);
       if(!queryWithoutWhereRows.isEmpty()) {
         Double maxRowTruthness = queryWithoutWhereRows.stream()
-          .map(row -> createWhereCalculator(query, row, sqlDriver))
+          .map(row -> createWhereCalculator(query, row, sqlDriver, taintHandler))
           .map(WhereCalculator::calculate)
           .map(Truthness::getOfTrue)
           .max(Double::compareTo)
@@ -93,7 +96,7 @@ public class QueryCalculator {
   }
 
   private CalculationResult calculateFromSubquery() {
-    QueryCalculator queryCalculator = createQueryCalculator(query.getFromSubquery(), sqlDriver);
+    QueryCalculator queryCalculator = createQueryCalculator(query.getFromSubquery(), sqlDriver, taintHandler);
     return queryCalculator.calculate();
   }
 
@@ -126,7 +129,7 @@ public class QueryCalculator {
 
   private List<CalculationResult> calculateQueries(List<SelectQuery> queries){
     return queries.stream()
-      .map(query -> createQueryCalculator(query, sqlDriver))
+      .map(query -> createQueryCalculator(query, sqlDriver, taintHandler))
       .map(QueryCalculator::calculate)
       .collect(Collectors.toList());
   }

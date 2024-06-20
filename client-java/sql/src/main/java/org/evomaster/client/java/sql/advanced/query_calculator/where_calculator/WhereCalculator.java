@@ -15,7 +15,7 @@ import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.sql.advanced.driver.SqlDriver;
 import org.evomaster.client.java.sql.advanced.driver.row.Row;
 import org.evomaster.client.java.sql.advanced.evaluation_context.EvaluationContext;
-import org.evomaster.client.java.sql.advanced.helpers.truthness.ObjectTruthnessHelper;
+import org.evomaster.client.java.sql.advanced.query_calculator.where_calculator.comparison_calculators.ObjectComparisonCalculator;
 import org.evomaster.client.java.sql.advanced.query_calculator.CalculationResult;
 import org.evomaster.client.java.sql.advanced.query_calculator.QueryCalculator;
 import org.evomaster.client.java.sql.advanced.query_calculator.where_calculator.expressions.ListExpression;
@@ -23,6 +23,7 @@ import org.evomaster.client.java.sql.advanced.query_calculator.where_calculator.
 import org.evomaster.client.java.sql.advanced.query_calculator.where_calculator.expressions.SelectExpression;
 import org.evomaster.client.java.sql.advanced.query_contextualizer.SubQueryContextualizer;
 import org.evomaster.client.java.sql.advanced.select_query.SelectQuery;
+import org.evomaster.client.java.sql.internal.TaintHandler;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.util.Collection;
@@ -45,6 +46,7 @@ import static org.evomaster.client.java.sql.advanced.helpers.ConversionsHelper.c
 import static org.evomaster.client.java.sql.advanced.helpers.LiteralsHelper.isBooleanLiteral;
 import static org.evomaster.client.java.sql.advanced.helpers.LiteralsHelper.isTrueLiteral;
 import static org.evomaster.client.java.sql.advanced.query_calculator.QueryCalculator.createQueryCalculator;
+import static org.evomaster.client.java.sql.advanced.query_calculator.where_calculator.comparison_calculators.ObjectComparisonCalculator.createObjectTruthnessCalculator;
 import static org.evomaster.client.java.sql.advanced.query_contextualizer.SubQueryContextualizer.createSubQueryContextualizer;
 import static org.evomaster.client.java.sql.advanced.select_query.QueryColumn.createQueryColumn;
 
@@ -58,17 +60,19 @@ public class WhereCalculator implements ExpressionVisitor {
     private EvaluationContext evaluationContext;
     private WhereCalculatorStack stack;
     private SqlDriver sqlDriver;
+    private TaintHandler taintHandler;
 
-    private WhereCalculator(Expression where, EvaluationContext evaluationContext, SqlDriver sqlDriver) {
+    private WhereCalculator(Expression where, EvaluationContext evaluationContext, SqlDriver sqlDriver, TaintHandler taintHandler) {
         this.where = where;
         this.evaluationContext = evaluationContext;
         this.stack = new WhereCalculatorStack();
         this.sqlDriver = sqlDriver;
+        this.taintHandler = taintHandler;
     }
 
-    public static WhereCalculator createWhereCalculator(SelectQuery query, Row row, SqlDriver sqlDriver) {
+    public static WhereCalculator createWhereCalculator(SelectQuery query, Row row, SqlDriver sqlDriver, TaintHandler taintHandler) {
         EvaluationContext evaluationContext = createEvaluationContext(query.getFromTables(), row);
-        return new WhereCalculator(query.getWhere(), evaluationContext, sqlDriver);
+        return new WhereCalculator(query.getWhere(), evaluationContext, sqlDriver, taintHandler);
     }
 
     public Truthness calculate() {
@@ -221,14 +225,15 @@ public class WhereCalculator implements ExpressionVisitor {
         Object maxValue = stack.popExpression();
         Object minValue = stack.popExpression();
         Object value = stack.popExpression();
+        ObjectComparisonCalculator objectComparisonCalculator = createObjectTruthnessCalculator(taintHandler);
 
         if(!between.isNot()) {
-            Truthness truthnessMin = ObjectTruthnessHelper.calculateTruthnessForGreaterThanOrEquals(value, minValue);
-            Truthness truthnessMax = ObjectTruthnessHelper.calculateTruthnessForMinorThanOrEquals(value, maxValue);
+            Truthness truthnessMin = objectComparisonCalculator.calculateTruthnessForGreaterThanOrEquals(value, minValue);
+            Truthness truthnessMax = objectComparisonCalculator.calculateTruthnessForMinorThanOrEquals(value, maxValue);
             stack.pushTruthness(andAggregation(truthnessMin, truthnessMax));
         } else {
-            Truthness truthnessMin = ObjectTruthnessHelper.calculateTruthnessForMinorThan(value, minValue);
-            Truthness truthnessMax = ObjectTruthnessHelper.calculateTruthnessForGreaterThan(value, maxValue);
+            Truthness truthnessMin = objectComparisonCalculator.calculateTruthnessForMinorThan(value, minValue);
+            Truthness truthnessMax = objectComparisonCalculator.calculateTruthnessForGreaterThan(value, maxValue);
             stack.pushTruthness(orAggregation(truthnessMin, truthnessMax));
         }
     }
@@ -306,19 +311,20 @@ public class WhereCalculator implements ExpressionVisitor {
         }
     }
 
-    private static BiFunction<Object, Object, Truthness> getTruthnessFunction(ComparisonOperator operator) {
+    private BiFunction<Object, Object, Truthness> getTruthnessFunction(ComparisonOperator operator) {
+        ObjectComparisonCalculator objectComparisonCalculator = createObjectTruthnessCalculator(taintHandler);
         if(operator instanceof EqualsTo) {
-            return ObjectTruthnessHelper::calculateTruthnessForEquals;
+            return objectComparisonCalculator::calculateTruthnessForEquals;
         } else if(operator instanceof NotEqualsTo) {
-            return ObjectTruthnessHelper::calculateTruthnessForNotEquals;
+            return objectComparisonCalculator::calculateTruthnessForNotEquals;
         } else if(operator instanceof GreaterThan) {
-            return ObjectTruthnessHelper::calculateTruthnessForGreaterThan;
+            return objectComparisonCalculator::calculateTruthnessForGreaterThan;
         } else if(operator instanceof GreaterThanEquals) {
-            return ObjectTruthnessHelper::calculateTruthnessForGreaterThanOrEquals;
+            return objectComparisonCalculator::calculateTruthnessForGreaterThanOrEquals;
         } else if(operator instanceof MinorThan) {
-            return ObjectTruthnessHelper::calculateTruthnessForMinorThan;
+            return objectComparisonCalculator::calculateTruthnessForMinorThan;
         } else if(operator instanceof MinorThanEquals) {
-            return ObjectTruthnessHelper::calculateTruthnessForMinorThanOrEquals;
+            return objectComparisonCalculator::calculateTruthnessForMinorThanOrEquals;
         } else {
             throw new UnsupportedOperationException("This comparison operator is not supported yet");
         }
@@ -331,13 +337,14 @@ public class WhereCalculator implements ExpressionVisitor {
 
         Object testValue = stack.popExpression();
         Object valuesExpression = stack.popExpression();
+        ObjectComparisonCalculator objectComparisonCalculator = createObjectTruthnessCalculator(taintHandler);
 
         if(valuesExpression instanceof ListExpression) {
             List<Object> values = ((ListExpression) valuesExpression).getValues();
             if(!inExpression.isNot()) {
-                stack.pushTruthness(any(testValue, values, ObjectTruthnessHelper::calculateTruthnessForEquals));
+                stack.pushTruthness(any(testValue, values, objectComparisonCalculator::calculateTruthnessForEquals));
             } else {
-                stack.pushTruthness(all(testValue, values, ObjectTruthnessHelper::calculateTruthnessForNotEquals));
+                stack.pushTruthness(all(testValue, values, objectComparisonCalculator::calculateTruthnessForNotEquals));
             }
         } else if(valuesExpression instanceof SelectExpression) {
             Select select = ((SelectExpression) valuesExpression).getSelect();
@@ -345,12 +352,12 @@ public class WhereCalculator implements ExpressionVisitor {
                 stack.pushTruthness(
                     calculateTruthnessForSubquery(select, calculationResult ->
                         any(testValue, rowValues(calculationResult.getRows()),
-                            ObjectTruthnessHelper::calculateTruthnessForEquals)));
+                            objectComparisonCalculator::calculateTruthnessForEquals)));
             } else {
                 stack.pushTruthness(
                     calculateTruthnessForSubquery(select, calculationResult ->
                         all(testValue, rowValues(calculationResult.getRows()),
-                            ObjectTruthnessHelper::calculateTruthnessForNotEquals)));
+                            objectComparisonCalculator::calculateTruthnessForNotEquals)));
             }
         } else {
             throw new RuntimeException("Values must be a list or a subquery");
@@ -360,7 +367,7 @@ public class WhereCalculator implements ExpressionVisitor {
     private Truthness calculateTruthnessForSubquery(Select select, java.util.function.Function<CalculationResult, Truthness> truthnessFunction) {
         SubQueryContextualizer subQueryContextualizer = createSubQueryContextualizer(select, evaluationContext, sqlDriver);
         String subQuery = subQueryContextualizer.contextualize();
-        QueryCalculator queryCalculator = createQueryCalculator(subQuery, sqlDriver);
+        QueryCalculator queryCalculator = createQueryCalculator(subQuery, sqlDriver, taintHandler);
         CalculationResult calculationResult = queryCalculator.calculate();
         return truthnessFunction.apply(calculationResult);
     }

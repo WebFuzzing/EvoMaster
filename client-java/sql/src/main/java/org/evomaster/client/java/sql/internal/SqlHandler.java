@@ -246,7 +246,7 @@ public class SqlHandler {
                 if(isNull(advancedHeuristic)){
                     Schema schema = createSchema(this.schema);
                     SqlDriver sqlDriver = createSqlDriver(connection, schema, new ConcurrentCache());
-                    advancedHeuristic = createAdvancedHeuristic(sqlDriver);
+                    advancedHeuristic = createAdvancedHeuristic(sqlDriver, taintHandler);
                 }
                 Truthness truthness = advancedHeuristic.calculate(command);
                 dist = 1 - truthness.getOfTrue();
