@@ -16,7 +16,6 @@ import org.evomaster.client.java.sql.advanced.AdvancedHeuristic;
 import org.evomaster.client.java.sql.advanced.driver.Schema;
 import org.evomaster.client.java.sql.advanced.driver.SqlDriver;
 import org.evomaster.client.java.sql.advanced.driver.cache.ConcurrentCache;
-import org.evomaster.client.java.sql.advanced.helpers.dump.PlainTextFileHelper;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.sql.Connection;
@@ -26,8 +25,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static java.util.Objects.isNull;
-import static org.evomaster.client.java.distance.heuristics.DistanceHelper.heuristicFromScaledDistanceWithBase;
-import static org.evomaster.client.java.distance.heuristics.Truthness.C;
 import static org.evomaster.client.java.sql.advanced.AdvancedHeuristic.createAdvancedHeuristic;
 import static org.evomaster.client.java.sql.advanced.driver.Schema.createSchema;
 import static org.evomaster.client.java.sql.advanced.driver.SqlDriver.createSqlDriver;
