@@ -176,7 +176,11 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
             if (!elc.expectsCookie()) {
                 val tokenHeader = elc.token!!.httpHeaderName
-                lines.add(".$set(\"$tokenHeader\", ${TokenWriter.tokenName(elc)}) // ${call.auth.name}")
+                if (format.isPython()) {
+                    lines.add("headers[\"$tokenHeader\"] = ${TokenWriter.tokenName(elc)} # ${call.auth.name}")
+                } else {
+                    lines.add(".$set(\"$tokenHeader\", ${TokenWriter.tokenName(elc)}) // ${call.auth.name}")
+                }
             } else {
                 when {
                     format.isJavaOrKotlin() -> lines.add(".cookies(${CookieWriter.cookiesName(elc)})")

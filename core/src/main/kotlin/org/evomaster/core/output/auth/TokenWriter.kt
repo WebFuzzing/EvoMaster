@@ -2,6 +2,7 @@ package org.evomaster.core.output.auth
 
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.output.auth.CookieWriter.responseName
 import org.evomaster.core.output.service.ApiTestCaseWriter
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.auth.EndpointCallLogin
@@ -42,20 +43,24 @@ object TokenWriter {
                 format.isJava() -> lines.add("final String ${tokenName(k)} = ")
                 format.isKotlin() -> lines.add("val ${tokenName(k)} : String = ")
                 format.isJavaScript() -> lines.add("let ${tokenName(k)} = ")
+                format.isPython() -> lines.add("${tokenName(k)} = ")
             }
 
             if(k.token!!.headerPrefix.isNotEmpty()) {
                 lines.append("\"${k.token!!.headerPrefix}\"")
             }else{
-                if (format.isJavaScript())
+                if (format.isJavaScript() || format.isPython())
                     lines.append("\"\"")
             }
 
-            if (format.isJavaScript()){
-                lines.appendSemicolon()
-            }else{
-                lines.append(" + ")
+            if (!format.isPython()) {
+                if (format.isJavaScript()){
+                    lines.appendSemicolon()
+                }else{
+                    lines.append(" + ")
+                }
             }
+
 
             when{
                 format.isJavaOrKotlin() -> lines.append("given()")
@@ -65,22 +70,37 @@ object TokenWriter {
                 }
             }
 
-            lines.indent(2)
+            if (!format.isPython()) {
+                lines.indent(2)
+            }
 
             CookieWriter.addCallCommand(lines,k,testCaseWriter,format,baseUrlOfSut)
 
-            val path = k.token!!.extractFromField.substring(1).replace("/",".")
+            var path = k.token!!.extractFromField.substring(1).replace("/",".")
+            if (format.isPython()) {
+                var endPath = ""
+                path.split(".").forEach {
+                    if (!it.startsWith("[")) {
+                        endPath += "[\"$it\"]"
+                    }
+                }
+                path = endPath
+            }
 
-            if (format.isJavaScript()){
+            if (format.isJavaScript()) {
                 lines.add(".then(res => {${tokenName(k)} += res.body.$path;},")
-                lines.indented { lines.add("error => {console.log(error.response.body); throw Error(\"Auth failed.\")});")}
+                lines.indented { lines.add("error => {console.log(error.response.body); throw Error(\"Auth failed.\")});") }
+            } else if (format.isPython()) {
+                lines.add("${tokenName(k)} = ${tokenName(k)} + \" \" + ${responseName(k)}.json()$path")
             }else
                 lines.add(".then().extract().response().path(\"$path\")")
 
             lines.appendSemicolon()
             lines.addEmpty()
 
-            lines.deindent(2)
+            if (!format.isPython()) {
+                lines.deindent(2)
+            }
 
         }
     }

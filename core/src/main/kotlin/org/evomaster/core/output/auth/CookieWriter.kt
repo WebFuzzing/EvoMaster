@@ -19,6 +19,8 @@ object CookieWriter {
 
     fun cookiesName(info: EndpointCallLogin): String = "cookies_${info.name}"
 
+    fun responseName(info: EndpointCallLogin): String = "res_${info.name}"
+
 
     /**
      *  Return the distinct auth info on cookie-based login in all actions
@@ -71,7 +73,12 @@ object CookieWriter {
         baseUrlOfSut: String
     ) {
         //TODO check if payload is specified
-        lines.add(".contentType(\"${k.contentType.defaultValue}\")")
+        if (format.isPython()) {
+            lines.add("headers = {}")
+            lines.add("headers[\"content-type\"] = \"${k.contentType.defaultValue}\"")
+        } else {
+            lines.add(".contentType(\"${k.contentType.defaultValue}\")")
+        }
         if (k.contentType == ContentType.X_WWW_FORM_URLENCODED) {
             if (testCaseWriter is HttpWsTestCaseWriter) { //FIXME
                 val send = testCaseWriter.sendBodyCommand()
@@ -86,17 +93,31 @@ object CookieWriter {
         }
 
          //TODO should check specified verb
+         if (format.isPython()) {
+             lines.add("${responseName(k)} = requests \\")
+             lines.indent(2)
+         }
         lines.add(".post(")
         if (k.externalEndpointURL != null) {
-            lines.append("\"${k.externalEndpointURL}\")")
+            lines.append("\"${k.externalEndpointURL}\"")
         } else {
             if (format.isJava()) {
                 lines.append("$baseUrlOfSut + \"")
+            } else if (format.isPython()) {
+                lines.append("self.$baseUrlOfSut + \"")
             } else {
                 lines.append("\"\${$baseUrlOfSut}")
             }
             //TODO should check or guarantee that base does not end with a / ?
-            lines.append("${k.endpoint}\")")
+            lines.append("${k.endpoint}\"")
         }
+        if (format.isPython()) {
+            lines.append(", ")
+            lines.indented {
+                lines.add("headers=headers, data=body")
+            }
+            lines.deindent(2)
+        }
+        lines.append(")")
     }
 }
