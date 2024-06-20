@@ -4,6 +4,7 @@ Under development in `master` branch.
 
 ### New Features
 - body payloads for GET, HEAD and DELETE are not valid in OpenAPI. However, they can be valid in some special cases in HTTP (as of RFC 9110). Now, EvoMaster can test those cases as well, but only for DELETE (for GET it is not possible, as current version of HTTP library in EvoMaster is faulty, i.e., it cannot handle such case).
+- update of internal parameter settings, based on large tuning experiments. 
 
 ### Bug Fixes
 - better dealing with reset of SQL tables where names in queries used quotes, and/or table is not accessible in database.
