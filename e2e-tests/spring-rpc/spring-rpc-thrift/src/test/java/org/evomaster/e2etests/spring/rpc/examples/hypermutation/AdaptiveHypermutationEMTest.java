@@ -55,6 +55,9 @@ public class AdaptiveHypermutationEMTest extends RPCHypermutationTestBase {
                     args.add("--minimize");
                     args.add("false");
 
+                    args.add("--focusedSearchActivationTime");
+                    args.add("0.5");
+                    
                     Solution<RPCIndividual> solution = initAndRun(args);
 
                     boolean ok = check(solution, "lowWeightHighCoverage",1);
