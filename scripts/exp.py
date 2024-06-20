@@ -258,6 +258,8 @@ SUTS = [
     #Sut("ind0", 1, JDK_8),
     #Sut("ind1", 1, JDK_11),
     # REST JVM
+    Sut("familie-ba-sak",1,JDK_17),
+    Sut("pay-publicapi",1,JDK_11),
     Sut("reservations-api", 1, JDK_11),
     Sut("bibliothek", 1, JDK_17),
     Sut("features-service", 1, JDK_8),

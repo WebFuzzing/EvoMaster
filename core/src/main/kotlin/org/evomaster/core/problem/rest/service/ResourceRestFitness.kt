@@ -83,7 +83,8 @@ class ResourceRestFitness : AbstractRestFitness() {
             computeFitnessForEachEnterpriseActionGroup(individual, chainState, cookies, tokens, allServedHttpRequests, actionResults)
 
         val allRestResults = actionResults.filterIsInstance<RestCallResult>()
-        val dto = restActionResultHandling(individual, targets, allCovered, allRestResults, fv) ?: return null
+        val dto = restActionResultHandling(individual, targets, allCovered, allRestResults, fv)
+            ?: return null
 
         /*
             harvest actual requests once all actions are executed
@@ -276,15 +277,15 @@ class ResourceRestFitness : AbstractRestFitness() {
             fv.registerExternalServiceRequest(indexOfAction, requestedExternalServiceRequests)
         }
 
-        val employedDefault = requestedExternalServiceRequests.map { it.wireMockSignature }.distinct().filter {
-            externalServiceActions.filterIsInstance<HttpExternalServiceAction>()
-                .none { a -> a.request.wireMockSignature == it }
-        }.associate {
-            val es = externalServiceHandler.getExternalService(it)
-            es.getRemoteHostName() to es
-        }
-
-        fv.registerExternalRequestToDefaultWM(indexOfAction, employedDefault)
+        // Disabled default WM
+        // val employedDefault = requestedExternalServiceRequests.map { it.wireMockSignature }.distinct().filter {
+        //     externalServiceActions.filterIsInstance<HttpExternalServiceAction>()
+        //         .none { a -> a.request.wireMockSignature == it }
+        // }.associate {
+        //     val es = externalServiceHandler.getExternalService(it)
+        //     es.getRemoteHostName() to es
+        // }
+       // fv.registerExternalRequestToDefaultWM(indexOfAction, employedDefault)
 
         externalServiceActions.filterIsInstance<HttpExternalServiceAction>()
             .groupBy { it.request.absoluteURL }

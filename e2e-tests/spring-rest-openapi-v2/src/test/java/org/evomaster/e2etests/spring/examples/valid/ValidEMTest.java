@@ -24,6 +24,9 @@ public class ValidEMTest extends SpringTestBase {
                 1000,
                 (args) -> {
 
+                    args.add("--baseTaintAnalysisProbability");
+                    args.add("0.9");
+
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertHasAtLeastOne(solution, HttpVerb.POST, 400, "/api/valid", null);

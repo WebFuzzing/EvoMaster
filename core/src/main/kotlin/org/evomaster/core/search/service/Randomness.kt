@@ -412,7 +412,10 @@ class Randomness {
 
         val k =  selection.subList(0, n)
 
-        if(log.isTraceEnabled) log.trace("Chosen: {}", k.joinToString(" "))
+        //printing actual values here lead to non-deterministic behavior is toString() is non-deterministic,
+        //which is the typical case for custom objects that do not override it, as output string will have
+        // a @ reference number to the heap
+        log.trace("Chosen {} elements from list", n)
 
         return k
     }
@@ -431,7 +434,7 @@ class Randomness {
 
         val k = selection.subList(0, n).toSet()
 
-        if(log.isTraceEnabled) log.trace("Chosen: {}", k.joinToString(" "))
+        log.trace("Chosen {} elements from set", n)
 
         return k
     }
@@ -457,7 +460,7 @@ class Randomness {
         }
 
         val k = iter.next()
-        log.trace("Chosen: {}", k)
+        log.trace("Chosen index: {}", i)
 
         return k
     }

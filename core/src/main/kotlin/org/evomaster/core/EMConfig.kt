@@ -899,6 +899,14 @@ class EMConfig {
     @Regex("($timeRegex)|(^$)")
     var prematureStop : String = ""
 
+    enum class PrematureStopStrategy{
+        ANY, NEW
+    }
+
+    @Experimental
+    @Cfg("Specify how 'improvement' is defined: either any kind of improvement even if partial (ANY)," +
+            " or at least one new target is fully covered (NEW).")
+    var prematureStopStrategy = PrematureStopStrategy.NEW
 
     @Important(1.1)
     @Cfg("The path directory of where the generated test classes should be saved to")
@@ -1115,11 +1123,11 @@ class EMConfig {
 
     @Cfg("Probability of sampling a new individual at random")
     @Probability
-    var probOfRandomSampling = 0.5
+    var probOfRandomSampling = 0.8
 
     @Cfg("The percentage of passed search before starting a more focused, less exploratory one")
     @PercentageAsProbability(true)
-    var focusedSearchActivationTime = 0.5
+    var focusedSearchActivationTime = 0.8
 
     @Cfg("Number of applied mutations on sampled individuals, at the start of the search")
     @Min(0.0)
@@ -1257,7 +1265,7 @@ class EMConfig {
     }
 
     @Cfg("Specify whether when we sample from archive we do look at the most promising targets for which we have had a recent improvement")
-    var feedbackDirectedSampling = FeedbackDirectedSampling.LAST
+    var feedbackDirectedSampling = FeedbackDirectedSampling.FOCUSED_QUICKEST
 
     //Warning: this is off in the tests, as it is a source of non-determinism
     @Cfg("Whether to use timestamp info on the execution time of the tests for sampling (e.g., to reward the quickest ones)")
@@ -1327,7 +1335,7 @@ class EMConfig {
 
     @Cfg("When generating SQL data, how many new rows (max) to generate for each specific SQL Select")
     @Min(1.0)
-    var maxSqlInitActionsPerMissingData = 5
+    var maxSqlInitActionsPerMissingData = 1
 
 
     @Cfg("Force filling data of all columns when inserting new row, instead of only minimal required set.")
@@ -1520,7 +1528,7 @@ class EMConfig {
 
     @Cfg("Specify a probability to apply SQL actions for preparing resources for REST Action")
     @Probability
-    var probOfApplySQLActionToCreateResources = 0.5
+    var probOfApplySQLActionToCreateResources = 0.1
 
     @Experimental
     @Cfg("Specify a maximum number of handling (remove/add) resource size at once, e.g., add 3 resource at most")
@@ -1845,7 +1853,7 @@ class EMConfig {
 
     @Cfg("Probability to use input tracking (i.e., a simple base form of taint-analysis) to determine how inputs are used in the SUT")
     @Probability
-    var baseTaintAnalysisProbability = 0.9
+    var baseTaintAnalysisProbability = 0.5
 
     @Cfg("Whether input tracking is used on sampling time, besides mutation time")
     var taintOnSampling = true

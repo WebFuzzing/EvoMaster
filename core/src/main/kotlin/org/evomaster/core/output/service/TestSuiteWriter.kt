@@ -4,7 +4,6 @@ import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto
 import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionDto
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
-import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils.DEFAULT_WM_LOCAL_IP
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.*
 import org.evomaster.core.output.service.TestWriterUtils.Companion.getWireMockVariableName
@@ -473,7 +472,19 @@ class TestSuiteWriter {
             addUsing("EvoMaster.Controller", lines)
         }
 
-        lines.addEmpty(4)
+        if (format.isPython()) {
+            lines.add("import json")
+            lines.add("import unittest")
+            lines.add("import requests")
+            if (config.testTimeout > 0) {
+                lines.add("import timeout_decorator")
+            }
+        }
+
+        when {
+            format.isPython() -> lines.addEmpty(2)
+            else -> lines.addEmpty(4)
+        }
 
         classDescriptionComment(solution, lines, timestamp)
 
@@ -487,7 +498,7 @@ class TestSuiteWriter {
             defineFixture(lines, controllerName)
         }
 
-        if (format.isJavaOrKotlin() || format.isCsharp()) {
+        if (format.isJavaOrKotlin() || format.isCsharp() || format.isPython()) {
             defineClass(name, lines)
             lines.addEmpty()
         }
@@ -591,6 +602,8 @@ class TestSuiteWriter {
             }
         } else if (config.outputFormat.isCsharp()) {
             lines.add("private static readonly HttpClient Client = new HttpClient ();")
+        } else if (config.outputFormat.isPython()) {
+            lines.add("$baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\"")
         }
 
         testCaseWriter.addExtraStaticVariables(lines)
@@ -916,6 +929,13 @@ class TestSuiteWriter {
             lines.addEmpty(2)
             lines.add("}")
         }
+
+        if (config.outputFormat.isPython()) {
+            lines.addEmpty(2)
+            lines.add("if __name__ == '__main__':")
+            lines.indent()
+            lines.add("unittest.main()")
+        }
     }
 
     private fun defineClass(name: TestSuiteFileName, lines: Lines) {
@@ -930,10 +950,11 @@ class TestSuiteWriter {
             format.isCsharp() -> lines.append("public ")
         }
 
-        if (!format.isCsharp())
-            lines.append("class ${name.getClassName()} {")
-        else
-            lines.append("class ${name.getClassName()} : IClassFixture<$fixtureClass> {")
+        when {
+            format.isCsharp() -> lines.append("class ${name.getClassName()} : IClassFixture<$fixtureClass> {")
+            format.isPython() -> lines.append("class ${name.getClassName()}(unittest.TestCase):")
+            else -> lines.append("class ${name.getClassName()} {")
+        }
     }
 
     private fun addImport(klass: String, lines: Lines, static: Boolean = false) {

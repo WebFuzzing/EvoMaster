@@ -413,7 +413,7 @@ public class ClassToSchema {
         //TODO there are other ways to define names
         for (Annotation a : field.getAnnotations()) {
             String name = a.annotationType().getName();
-            if (name.equals("com.fasterxml.jackson.annotation.JsonProperty")
+            if (name.equals("  com.fasterxml.jackson.annotation.JsonProperty".trim())//due to bug in shader...
                     || name.equals("com.google.gson.annotations.SerializedName")
                     || name.equals("org.springframework.data.mongodb.core.mapping.Field")) {
                 try {
