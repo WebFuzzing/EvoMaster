@@ -2,7 +2,6 @@ package org.evomaster.core.output.auth
 
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.output.auth.CookieWriter.responseName
 import org.evomaster.core.output.service.ApiTestCaseWriter
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.auth.EndpointCallLogin
@@ -12,6 +11,8 @@ import org.evomaster.core.search.Individual
 object TokenWriter {
 
     fun tokenName(info: EndpointCallLogin) = "token_${info.name}"
+
+    fun responseName(info: EndpointCallLogin): String = "res_${info.name}"
 
     /**
      *  Return the distinct auth info on token-based login in all actions
@@ -74,7 +75,7 @@ object TokenWriter {
                 lines.indent(2)
             }
 
-            CookieWriter.addCallCommand(lines,k,testCaseWriter,format,baseUrlOfSut)
+            CookieWriter.addCallCommand(lines,k,testCaseWriter,format,baseUrlOfSut, responseName(k))
 
             var path = k.token!!.extractFromField.substring(1).replace("/",".")
             if (format.isPython()) {

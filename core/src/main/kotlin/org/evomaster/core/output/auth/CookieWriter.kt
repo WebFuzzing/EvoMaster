@@ -19,9 +19,6 @@ object CookieWriter {
 
     fun cookiesName(info: EndpointCallLogin): String = "cookies_${info.name}"
 
-    fun responseName(info: EndpointCallLogin): String = "res_${info.name}"
-
-
     /**
      *  Return the distinct auth info on cookie-based login in all actions
      *  of this individual
@@ -55,12 +52,22 @@ object CookieWriter {
 
             //TODO JS
 
-            lines.append("given()")
-            lines.indented {
-                addCallCommand(lines, k, testCaseWriter, format, baseUrlOfSut)
+            if (!format.isPython()) {
+                lines.append("given()")
+                lines.indent()
+            }
+
+            addCallCommand(lines, k, testCaseWriter, format, baseUrlOfSut, cookiesName(k))
+            if (format.isPython()) {
+                lines.append(".cookies")
+            } else {
                 lines.add(".then().extract().cookies()") //TODO check response status and cookie headers?
-                lines.appendSemicolon()
-                lines.addEmpty()
+            }
+            lines.appendSemicolon()
+            lines.addEmpty()
+
+            if (!format.isPython()) {
+                lines.deindent()
             }
         }
     }
@@ -70,7 +77,8 @@ object CookieWriter {
         k: EndpointCallLogin,
         testCaseWriter: ApiTestCaseWriter,
         format: OutputFormat,
-        baseUrlOfSut: String
+        baseUrlOfSut: String,
+        targetVariable: String
     ) {
         //TODO check if payload is specified
         if (format.isPython()) {
@@ -94,7 +102,7 @@ object CookieWriter {
 
          //TODO should check specified verb
          if (format.isPython()) {
-             lines.add("${responseName(k)} = requests \\")
+             lines.add("$targetVariable = requests \\")
              lines.indent(2)
          }
         lines.add(".post(")
