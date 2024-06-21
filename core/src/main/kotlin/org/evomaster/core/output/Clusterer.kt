@@ -29,7 +29,8 @@ object Clusterer {
                 config: EMConfig,
                 epsilon: Double = 0.6,
                 oracles: PartialOracles = PartialOracles(),
-                metric: DistanceMetric<HttpWsCallResult>): MutableList<MutableList<HttpWsCallResult>>{
+                metric: DistanceMetric<HttpWsCallResult>
+    ): MutableList<MutableList<HttpWsCallResult>>{
 
         /*
         In order to be clustered, an individual must have at least one failed result.

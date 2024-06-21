@@ -27,6 +27,9 @@ public class HypermutationEMTest extends RPCHypermutationTestBase {
 
     @Test
     public void testRunEM() throws Throwable {
+
+        defaultSeed = 123;
+
         runTestHandlingFlakyAndCompilation(
                 "HypermutationEM",
                 "org.bar.HypermutationEM",
@@ -53,6 +56,9 @@ public class HypermutationEMTest extends RPCHypermutationTestBase {
                     //minimization loses impact info
                     args.add("--minimize");
                     args.add("false");
+
+                    args.add("--probOfRandomSampling");
+                    args.add("0.0");
 
                     Solution<RPCIndividual> solution = initAndRun(args);
 

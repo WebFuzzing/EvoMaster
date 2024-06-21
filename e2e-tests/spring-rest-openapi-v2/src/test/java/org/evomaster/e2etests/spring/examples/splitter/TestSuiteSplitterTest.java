@@ -2,10 +2,10 @@ package org.evomaster.e2etests.spring.examples.splitter;
 
 import org.evomaster.client.java.instrumentation.shared.ClassName;
 import org.evomaster.core.EMConfig;
-import org.evomaster.core.output.ObjectGenerator;
 import org.evomaster.core.output.TestSuiteSplitter;
 import org.evomaster.core.output.Termination;
 import org.evomaster.core.output.clustering.SplitResult;
+import org.evomaster.core.output.service.PartialOracles;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.junit.jupiter.api.Test;
@@ -22,10 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class TestSuiteSplitterTest extends SplitterTestBase {
 
 
-    @Test
-    public void testRunEM_CODE() throws Throwable {
-        testRunEMMulti(EMConfig.TestSuiteSplitType.CODE, false);
-    }
 
     @Test
     public void testRunEM_NONE() throws Throwable {
@@ -34,33 +30,28 @@ public class TestSuiteSplitterTest extends SplitterTestBase {
 
     @Test
     public void testRunEM_CLUSTERING() throws Throwable{
-        testRunEMMulti(EMConfig.TestSuiteSplitType.CLUSTER, false);
+        testRunEMMulti(EMConfig.TestSuiteSplitType.FAULTS, false);
     }
 
     @Test
     public void testRunEM_CLUSTERING_SUMMARY() throws Throwable{
-        testRunEMMulti(EMConfig.TestSuiteSplitType.CLUSTER, true);
+        testRunEMMulti(EMConfig.TestSuiteSplitType.FAULTS, true);
     }
 
     private void testRunEMMulti(EMConfig.TestSuiteSplitType splitType, Boolean executiveSummary) throws Throwable {
         List<String> terminations = Arrays.asList();
 
-        if(splitType == EMConfig.TestSuiteSplitType.CODE){
-            terminations = Arrays.asList(Termination.FAULTS.getSuffix(),
-                    Termination.SUCCESSES.getSuffix(),
-                    Termination.OTHER.getSuffix());
-        }
-        if(splitType == EMConfig.TestSuiteSplitType.CLUSTER){
+        if(splitType == EMConfig.TestSuiteSplitType.FAULTS){
             if(executiveSummary) {
                 terminations = Arrays.asList(Termination.FAULTS.getSuffix(),
                         Termination.SUCCESSES.getSuffix(),
-                        Termination.OTHER.getSuffix(),
-                        Termination.SUMMARY.getSuffix());
+                        Termination.OTHERS.getSuffix(),
+                        Termination.FAULT_REPRESENTATIVES.getSuffix());
             }
             else {
                 terminations = Arrays.asList(Termination.FAULTS.getSuffix(),
                         Termination.SUCCESSES.getSuffix(),
-                        Termination.OTHER.getSuffix());
+                        Termination.OTHERS.getSuffix());
             }
         }
 
@@ -89,7 +80,7 @@ public class TestSuiteSplitterTest extends SplitterTestBase {
 
             Solution<RestIndividual> solution = initAndRun(args);
             assertTrue(solution.getIndividuals().size() >= 1);
-            SplitResult splits = TestSuiteSplitter.INSTANCE.split(solution, em);
+            SplitResult splits = TestSuiteSplitter.INSTANCE.split(solution, em, new PartialOracles());
             assertTrue(splits.splitOutcome.size() >= 1);
         };
 

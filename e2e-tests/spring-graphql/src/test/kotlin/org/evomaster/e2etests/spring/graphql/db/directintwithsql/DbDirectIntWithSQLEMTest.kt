@@ -39,8 +39,10 @@ class DbDirectIntWithSQLEMTest : SpringTestBase() {
             val solution = initAndRun(args)
 
             assertTrue(solution.individuals.size >= 1)
-            assertHasAtLeastOne(solution, "get", GQMethodType.QUERY, 200, "\"x\"")
+            //no data
             assertHasAtLeastOne(solution, "get", GQMethodType.QUERY, 200, "\"get\":[]")
+            //at lest 1 entry
+            assertHasAtLeastOne(solution, "get", GQMethodType.QUERY, 200, "\"get\":[{")
             assertInsertionIntoTable(solution, "DB_DIRECT_INT")
             assertNoneWithErrors(solution)
         }

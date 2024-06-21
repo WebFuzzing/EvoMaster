@@ -5,11 +5,11 @@
 
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.evomaster/evomaster-client-java/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.evomaster/evomaster-client-java)
 [![javadoc](https://javadoc.io/badge2/org.evomaster/evomaster-client-java-controller/javadoc.svg)](https://javadoc.io/doc/org.evomaster/evomaster-client-java-controller)
-![CI](https://github.com/EMResearch/EvoMaster/workflows/CI/badge.svg)
-[![codecov](https://codecov.io/gh/EMResearch/EvoMaster/branch/master/graph/badge.svg)](https://codecov.io/gh/EMResearch/EvoMaster)
+![CI](https://github.com/WebFuzzing/EvoMaster/workflows/CI/badge.svg)
+[![codecov](https://codecov.io/gh/WebFuzzing/EvoMaster/branch/master/graph/badge.svg)](https://codecov.io/gh/WebFuzzing/EvoMaster)
 [![DOI](https://zenodo.org/badge/92385933.svg)](https://zenodo.org/badge/latestdoi/92385933)
 [![License: LGPL v3](https://img.shields.io/badge/License-LGPL_v3-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0)
-[![Github All Releases](https://img.shields.io/github/downloads/emresearch/evomaster/total.svg)](https://github.com/EMResearch/EvoMaster/releases)
+[![Github All Releases](https://img.shields.io/github/downloads/WebFuzzing/evomaster/total.svg)](https://github.com/WebFuzzing/EvoMaster/releases)
 
 
 ### Summary
@@ -45,8 +45,8 @@ __Key features__:
 
 * _Installation_: we provide installers for the main operating systems: _Windows_ (`.msi`),
   _OSX_ (`.dmg`) and _Linux_ (`.deb`). We also provide an uber-fat JAR file.
-  To download them, see the [Release page](https://github.com/EMResearch/EvoMaster/releases).
-  Release notes are present in the file [release_notes.md](https://github.com/EMResearch/EvoMaster/blob/master/release_notes.md).
+  To download them, see the [Release page](https://github.com/WebFuzzing/EvoMaster/releases).
+  Release notes are present in the file [release_notes.md](https://github.com/WebFuzzing/EvoMaster/blob/master/release_notes.md).
   If you are using JDK 17 or later, it is recommended to use one of the installers, instead of using directly the uber-fat JAR (otherwise you will need to deal with the [usability limitations](docs/jdks.md) of the latest JDKs). 
    When you use one of the installers, keep in mind that currently they do not update the `PATH` variable. This needs to be done manually, [see documentation](docs/download.md). 
 
@@ -116,11 +116,11 @@ __Known limitations__:
 
 * A [short video](https://youtu.be/3mYxjgnhLEo) (5 minutes)
   shows the use of _EvoMaster_ on one of the
-  case studies in [EMB](https://github.com/EMResearch/EMB).
+  case studies in [EMB](https://github.com/WebFuzzing/EMB).
 
 * This [13-minute video](https://youtu.be/ORxZoYw7LnM)
   shows how to write a white-box driver for EvoMaster, for the
-  [rest-api-example](https://github.com/EMResearch/rest-api-example).
+  [rest-api-example](https://github.com/WebFuzzing/rest-api-example).
 
 * How to [Download and Install EvoMaster on Windows 10](https://youtu.be/uh_XzGxws9o), using its _.msi_ installer.
 
@@ -167,7 +167,11 @@ For more details on current vacancies, see our group page at [AISE Lab](https://
 
 ### Documentation
 
-If you are trying to use _EvoMaster_, but the instructions in this documentation are not enough to get you started, or they are too unclear, then it means it is a _bug_ in the documentation, which then would need to be clarified and updated. In such cases, please create a new [issue](https://github.com/EMResearch/EvoMaster/issues).
+If you are trying to use _EvoMaster_, but the instructions in this documentation are not enough to get you started, or they are too unclear, then it means it is a _bug_ in the documentation, which then would need to be clarified and updated. In such cases, please create a new [issue](https://github.com/WebFuzzing/EvoMaster/issues).
+
+Also, feel free to start new discussion topics in the [Discussions forum](https://github.com/WebFuzzing/EvoMaster/discussions).
+If you have time, please consider answering the polls there.
+
 
 * [Example of generated tests](docs/example.md)
 * [Download and Install EvoMaster](docs/download.md)
@@ -204,7 +208,7 @@ _EvoMaster_ has been funded by:
    as part of the Frinatek project <i>Evolutionary Enterprise Testing</i>.
 
 
-<img src="https://github.com/EMResearch/EvoMaster/blob/master/docs/img/LOGO_ERC-FLAG_EU_.jpg?raw=true" width="200" >
+<img src="https://github.com/WebFuzzing/EvoMaster/blob/master/docs/img/LOGO_ERC-FLAG_EU_.jpg?raw=true" width="200" >
 
 
 This project has received funding from the European Research Council (ERC) under the European Union’s Horizon 2020 research and innovation programme (grant agreement No 864972).

@@ -28,9 +28,6 @@ import kotlin.math.max
  *
  * @property trackOperator indicates which operator create this individual.
  * @property index indicates when the individual is created, ie, using num of evaluated individual.
- *
- *
- * FIXME: why having to use AbstractRestSampler.createIndividual() instead of having such code here in constructor???
  */
 class RestIndividual(
     sampleType: SampleType,
@@ -46,6 +43,18 @@ class RestIndividual(
 ): ApiWsIndividual(sampleType, trackOperator, index, allActions,
     childTypeVerifier = EnterpriseChildTypeVerifier(RestCallAction::class.java,RestResourceCalls::class.java),
     groups) {
+
+    /*
+        Note when instantiating this class... input actions might or might have not been initialized.
+        This all depends on how this object is created.
+        If not initialized, then would need to make sure to call doInitialize() on it.
+        Likewise, might need to handle doInitializeLocalId().
+        Furthermore, doGlobalInitialize() can only be handled once the object is created.
+        Note that this latter would call doInitializeLocalId() if needed.
+        However, when creating test cases manually with specific values (or seeded from tests) might
+        want to skip calling doGlobalInitialize() as that can modify the values (and so might need to
+        call doInitializeLocalId() directly, possibly by calling resetLocalIdRecursively() first).
+     */
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(RestIndividual::class.java)
@@ -116,8 +125,10 @@ class RestIndividual(
         return when (filter) {
             GeneFilter.ALL -> seeAllActions().flatMap(Action::seeTopGenes)
             GeneFilter.NO_SQL -> seeActions(ActionFilter.NO_SQL).flatMap(Action::seeTopGenes)
-            GeneFilter.ONLY_SQL -> seeDbActions().flatMap(SqlAction::seeTopGenes)
+            GeneFilter.ONLY_SQL -> seeSqlDbActions().flatMap(SqlAction::seeTopGenes)
             GeneFilter.ONLY_MONGO -> seeMongoDbActions().flatMap(MongoDbAction::seeTopGenes)
+            GeneFilter.ONLY_DB -> seeActions(ONLY_DB).flatMap { it.seeTopGenes() }
+            GeneFilter.NO_DB -> seeActions(NO_DB).flatMap { it.seeTopGenes() }
             GeneFilter.ONLY_EXTERNAL_SERVICE -> seeExternalServiceActions().flatMap(ApiExternalServiceAction::seeTopGenes)
         }
     }
@@ -186,7 +197,7 @@ class RestIndividual(
      */
     fun removeLocationId(){
         seeMainExecutableActions().forEach { a->
-            a.locationId = null
+            a.usePreviousLocationId = null
             a.saveLocation = false
         }
     }
@@ -281,7 +292,7 @@ class RestIndividual(
         }
     }
 
-    private fun getFirstIndexOfRestResourceCalls() = max(0, max(children.indexOfLast { it is SqlAction }+1, children.indexOfFirst { it is RestResourceCalls }))
+    private fun getFirstIndexOfRestResourceCalls() = max(0, max(children.indexOfLast { it is EnvironmentAction }+1, children.indexOfFirst { it is RestResourceCalls }))
 
     /**
      * replace the resourceCall at [position] with [resourceCalls]
@@ -389,10 +400,24 @@ class RestIndividual(
 
 
     override fun getInsertTableNames(): List<String> {
-        return seeDbActions().filterNot { it.representExistingData }.map { it.table.name }
+        return seeSqlDbActions().filterNot { it.representExistingData }.map { it.table.name }
     }
 
     override fun seeMainExecutableActions(): List<RestCallAction> {
         return super.seeMainExecutableActions() as List<RestCallAction>
+    }
+
+    /**
+     * Finds the first index of a main REST action with a given verb and path among actions in the individual.
+     *
+     * @return negative value if not found
+     */
+    fun getActionIndex(
+        actionVerb: HttpVerb,
+        path: RestPath
+    ) : Int {
+        return seeMainExecutableActions().indexOfFirst  {
+            it.verb == actionVerb && it.path.isEquivalent(path)
+        }
     }
 }

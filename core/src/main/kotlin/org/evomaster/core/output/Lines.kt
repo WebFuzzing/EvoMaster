@@ -1,13 +1,11 @@
 package org.evomaster.core.output
 
-import java.nio.Buffer
-
 
 /**
  * Class used to create an indented version of a list of strings, each
  * one representing a line
  */
-class Lines {
+class Lines(val format: OutputFormat) {
 
     private val buffer: MutableList<String> = mutableListOf()
 
@@ -15,24 +13,26 @@ class Lines {
         private set
 
     //TODO what about C#???
-    fun shouldUseSemicolon(format: OutputFormat) = format.isJava() || format.isJavaScript() || format.isCsharp()
+    fun shouldUseSemicolon() = format.isJava() || format.isJavaScript() || format.isCsharp()
 
-    fun appendSemicolon(format: OutputFormat) {
+    fun appendSemicolon() {
 
-        if (shouldUseSemicolon(format)) {
+        if (shouldUseSemicolon()) {
             append(";")
         }
     }
 
-    fun addStatement(statement: String, format: OutputFormat) {
+    fun addStatement(statement: String) {
         add(statement)
-        appendSemicolon(format)
+        appendSemicolon()
     }
 
     fun block(indentention: Int = 1, expression: () -> Any){
-        append(" {")
+        if (!format.isPython())
+            append(" {")
         indented(indentention, expression)
-        add("}")
+        if (!format.isPython())
+            add("}")
     }
 
     fun indented(times: Int = 1, expression: () -> Any){
@@ -80,7 +80,7 @@ class Lines {
         if(buffer.isEmpty()){
             return false
         }
-        return buffer.last().matches(Regex("^\\s*//.*$"))
+        return buffer.last().matches(Regex("^\\s*(//|#).*$"))
     }
 
     fun currentContains(s: String) : Boolean{
@@ -105,6 +105,33 @@ class Lines {
         buffer[buffer.lastIndex] = buffer.last() + token
     }
 
+    fun startCommentBlock() {
+        if (!format.isPython()) {
+            add("/**")
+        }
+    }
+
+    fun addBlockCommentLine(line: String) {
+        val commentToken = if (format.isPython()) "# " else "* "
+        add(commentToken + line)
+    }
+
+    fun endCommentBlock() {
+        if (!format.isPython()) {
+            add("*/")
+        }
+    }
+
+    fun addSingleCommentLine(line: String) {
+        val commentToken = singleCommentLineToken()
+        add(commentToken + line)
+    }
+
+    fun appendSingleCommentLine(line: String) {
+        val commentToken = singleCommentLineToken()
+        append(commentToken + line)
+    }
+
     override fun toString(): String {
         val s = StringBuffer(buffer.sumOf{it.length + 2})
         buffer.forEach { v -> s.append("$v\n") }
@@ -120,6 +147,10 @@ class Lines {
         val buffer = StringBuffer("")
         (1..n).forEach { buffer.append(" ") }
         return buffer.toString()
+    }
+
+    private fun singleCommentLineToken(): String {
+        return if (format.isPython()) "# " else "// "
     }
 
 }

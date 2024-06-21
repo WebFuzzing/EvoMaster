@@ -84,7 +84,7 @@ object SqlWriter {
                 }
 
         lines.add(".dtos()")
-        lines.appendSemicolon(format)
+        lines.appendSemicolon()
 
         lines.deindent()
 
@@ -93,7 +93,7 @@ object SqlWriter {
             format.isKotlin() -> "val "
             else -> throw IllegalStateException("Not support sql insertions generation for $format")
         } + "$insertionVarResult = controller.execInsertionsIntoDatabase(${if (previousVarResults.isBlank()) insertionVar else "$insertionVar, $previousVarResults"})")
-        lines.appendSemicolon(format)
+        lines.appendSemicolon()
 
         insertionVars.add(insertionVar to insertionVarResult)
 

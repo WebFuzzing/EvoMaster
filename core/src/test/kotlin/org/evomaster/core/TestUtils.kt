@@ -10,6 +10,8 @@ import org.evomaster.core.sql.schema.Column
 import org.evomaster.core.sql.schema.ColumnDataType
 import org.evomaster.core.sql.schema.Table
 import org.evomaster.core.problem.enterprise.SampleType
+import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
+import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.search.gene.numeric.IntegerGene
@@ -87,6 +89,5 @@ object TestUtils {
         val actions : MutableList<Param> = if (onlyId) mutableListOf(queryIdParam) else  mutableListOf(queryIdParam, queryNameParam)
         return RestCallAction(id, HttpVerb.GET, RestPath(pathString), actions)
     }
-
 
 }

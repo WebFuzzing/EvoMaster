@@ -54,7 +54,7 @@ class TestCaseWriterTest {
 
         val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
-        val expectedLines = Lines().apply {
+        val expectedLines = Lines(format).apply {
             add("@Test")
             add("public void test() throws Exception {")
             add("}")
@@ -86,7 +86,7 @@ class TestCaseWriterTest {
 
         val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
-        val expectedLines = Lines().apply {
+        val expectedLines = Lines(format).apply {
             add("@Test")
             add("public void test() throws Exception {")
             indent()
@@ -153,7 +153,7 @@ class TestCaseWriterTest {
 
         val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
-        val expectedLines = Lines().apply {
+        val expectedLines = Lines(format).apply {
             add("@Test")
             add("public void test() throws Exception {")
             indent()
@@ -200,7 +200,7 @@ class TestCaseWriterTest {
 
         val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
-        val expectedLines = Lines().apply {
+        val expectedLines = Lines(format).apply {
             add("@Test")
             add("public void test() throws Exception {")
             indent()
@@ -244,7 +244,7 @@ class TestCaseWriterTest {
 
         val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
-        val expectedLines = Lines().apply {
+        val expectedLines = Lines(format).apply {
             add("@Test")
             add("public void test() throws Exception {")
             indent()
@@ -290,7 +290,7 @@ class TestCaseWriterTest {
 
         val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
-        val expectedLines = Lines().apply {
+        val expectedLines = Lines(format).apply {
             add("@Test")
             add("public void test() throws Exception {")
             indent()
@@ -343,7 +343,7 @@ class TestCaseWriterTest {
 
         val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
-        val expectedLines = Lines().apply {
+        val expectedLines = Lines(format).apply {
             add("@Test")
             add("public void test() throws Exception {")
             indent()
@@ -392,7 +392,7 @@ class TestCaseWriterTest {
 
         val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
-        val expectedLines = Lines().apply {
+        val expectedLines = Lines(format).apply {
             add("@Test")
             add("public void test() throws Exception {")
             indent()
@@ -442,7 +442,7 @@ class TestCaseWriterTest {
 
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
-        val expectedLines = Lines().apply {
+        val expectedLines = Lines(format).apply {
             add("@Test")
             add("public void test() throws Exception {")
             indent()
@@ -493,7 +493,7 @@ class TestCaseWriterTest {
 
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
-        val expectedLines = Lines().apply {
+        val expectedLines = Lines(format).apply {
             add("@Test")
             add("public void test() throws Exception {")
             indent()
@@ -541,7 +541,7 @@ class TestCaseWriterTest {
 
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
-        val expectedLines = Lines().apply {
+        val expectedLines = Lines(format).apply {
             add("@Test")
             add("public void test() throws Exception {")
             indent()
@@ -600,7 +600,7 @@ class TestCaseWriterTest {
 
         val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
-        val expectedLines = Lines().apply {
+        val expectedLines = Lines(format).apply {
             add("@Test")
             add("public void test() throws Exception {")
             indent()
@@ -661,7 +661,7 @@ class TestCaseWriterTest {
 
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
-        val expectedLines = Lines().apply {
+        val expectedLines = Lines(format).apply {
             add("@Test")
             add("public void test() throws Exception {")
             indent()
@@ -707,7 +707,7 @@ class TestCaseWriterTest {
 
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
-        val expectedLines = Lines().apply {
+        val expectedLines = Lines(format).apply {
             add("@Test")
             add("public void test() throws Exception {")
             indent()
@@ -750,7 +750,7 @@ class TestCaseWriterTest {
 
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
-        val expectedLines = Lines().apply {
+        val expectedLines = Lines(format).apply {
             add("@Test")
             add("public void test() throws Exception {")
             indent()
@@ -793,7 +793,7 @@ class TestCaseWriterTest {
 
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
-        val expectedLines = Lines().apply {
+        val expectedLines = Lines(format).apply {
             add("@Test")
             add("public void test() throws Exception {")
             indent()
@@ -837,7 +837,7 @@ class TestCaseWriterTest {
 
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
-        val expectedLines = Lines().apply {
+        val expectedLines = Lines(format).apply {
             add("@Test")
             add("public void test() throws Exception {")
             indent()
@@ -879,7 +879,7 @@ class TestCaseWriterTest {
 
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
-        val expectedLines = Lines().apply {
+        val expectedLines = Lines(format).apply {
             add("@Test")
             add("public void test() throws Exception {")
             indent()
@@ -921,7 +921,7 @@ class TestCaseWriterTest {
 
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
-        val expectedLines = Lines().apply {
+        val expectedLines = Lines(format).apply {
             add("@Test")
             add("public void test() throws Exception {")
             indent()
@@ -947,7 +947,7 @@ class TestCaseWriterTest {
 
         val baseUrlOfSut = "baseUrlOfSut"
         val sampleType = SampleType.RANDOM
-        val action = RestCallAction("1", HttpVerb.GET, RestPath(""), mutableListOf())
+        val action = RestCallAction("1", HttpVerb.GET, RestPath("/"), mutableListOf())
         val restActions = listOf(action).toMutableList()
         val individual = RestIndividual(restActions, sampleType)
         TestUtils.doInitializeIndividualForTesting(individual)
@@ -966,7 +966,7 @@ class TestCaseWriterTest {
 
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
-        val expectedLines = Lines().apply {
+        val expectedLines = Lines(format).apply {
             add("@Test")
             add("public void test() throws Exception {")
             indent()
@@ -976,7 +976,7 @@ class TestCaseWriterTest {
             add("given().accept(\"*/*\")")
             indent()
             indent()
-            add(".get(baseUrlOfSut + \"\");")
+            add(".get(baseUrlOfSut + \"/\");")
             deindent()
             deindent()
             deindent()

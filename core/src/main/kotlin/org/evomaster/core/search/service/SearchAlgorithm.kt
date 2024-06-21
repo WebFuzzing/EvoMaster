@@ -79,6 +79,10 @@ abstract class SearchAlgorithm<T> where T : Individual {
             }
         }
 
+        if(time.isImprovementTimeout()){
+            LoggingUtil.uniqueUserWarn("Premature stop of the search. No improvement in the last ${config.prematureStop}")
+        }
+
         handleAfterSearch()
 
         return archive.extractSolution()
@@ -101,7 +105,7 @@ abstract class SearchAlgorithm<T> where T : Individual {
 
         if(config.addPreDefinedTests) {
             for (ind in sampler.getPreDefinedIndividuals()) {
-                ff.calculateCoverage(ind)?.run {
+                ff.calculateCoverage(ind, modifiedSpec = null)?.run {
                     archive.addIfNeeded(this)
                 }
             }

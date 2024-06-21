@@ -7,8 +7,8 @@ import org.evomaster.core.problem.rest.resource.RestResourceCalls;
 import org.evomaster.core.problem.rest.resource.RestResourceNode;
 import org.evomaster.core.problem.rest.service.ResourceManageService;
 import org.evomaster.core.problem.rest.service.ResourceRestMutator;
-import org.evomaster.core.problem.rest.service.RestResourceFitness;
-import org.evomaster.core.problem.rest.service.RestResourceStructureMutator;
+import org.evomaster.core.problem.rest.service.ResourceRestFitness;
+import org.evomaster.core.problem.rest.service.ResourceRestStructureMutator;
 import org.evomaster.core.problem.util.BindingBuilder;
 import org.evomaster.core.search.action.ActionFilter;
 import org.evomaster.core.search.EvaluatedIndividual;
@@ -43,7 +43,7 @@ public class ResourceDbMIOAndHypermutationBasicTest extends ResourceMIOHWTestBas
 
         ResourceManageService rmanger = injector.getInstance(ResourceManageService.class);
         ResourceRestMutator mutator = injector.getInstance(ResourceRestMutator.class);
-        RestResourceFitness ff = injector.getInstance(RestResourceFitness.class);
+        ResourceRestFitness ff = injector.getInstance(ResourceRestFitness.class);
 
         String raIdkey = "/api/rA/{rAId}";
         String rdkey = "/api/rd";
@@ -55,7 +55,7 @@ public class ResourceDbMIOAndHypermutationBasicTest extends ResourceMIOHWTestBas
 
         RestIndividual twoCalls = new RestIndividual(calls, SampleType.SMART_RESOURCE, null, Collections.emptyList(), null, 1);
         twoCalls.doInitializeLocalId();
-        EvaluatedIndividual<RestIndividual> twoCallsEval = ff.calculateCoverage(twoCalls, Collections.emptySet());
+        EvaluatedIndividual<RestIndividual> twoCallsEval = ff.calculateCoverage(twoCalls, Collections.emptySet(), null);
         assertEquals(4, mutator.genesToMutation(twoCalls, twoCallsEval, Collections.emptySet()).stream().filter(s-> !BindingBuilder.INSTANCE.isExtraTaintParam(s.getName())).count());
 
         MutatedGeneSpecification spec = new MutatedGeneSpecification();
@@ -93,8 +93,8 @@ public class ResourceDbMIOAndHypermutationBasicTest extends ResourceMIOHWTestBas
 
         ResourceManageService rmanger = injector.getInstance(ResourceManageService.class);
         ResourceRestMutator mutator = injector.getInstance(ResourceRestMutator.class);
-        RestResourceFitness ff = injector.getInstance(RestResourceFitness.class);
-        RestResourceStructureMutator structureMutator = injector.getInstance(RestResourceStructureMutator.class);
+        ResourceRestFitness ff = injector.getInstance(ResourceRestFitness.class);
+        ResourceRestStructureMutator structureMutator = injector.getInstance(ResourceRestStructureMutator.class);
 
         assertEquals(keysToTemplate.keySet(), rmanger.getResourceCluster().keySet());
 
@@ -146,7 +146,7 @@ public class ResourceDbMIOAndHypermutationBasicTest extends ResourceMIOHWTestBas
         //test binding after value mutator
         RestIndividual raIdInd = new RestIndividual(calls, SampleType.SMART_RESOURCE, null, Collections.emptyList(), null, 1);
         raIdInd.doInitializeLocalId();
-        EvaluatedIndividual<RestIndividual> rdIdEval = ff.calculateCoverage(raIdInd, Collections.emptySet());
+        EvaluatedIndividual<RestIndividual> rdIdEval = ff.calculateCoverage(raIdInd, Collections.emptySet(), null);
         // mutable genes should be 0+1+2+1=4
         assertEquals(4, mutator.genesToMutation(raIdInd, rdIdEval, Collections.emptySet()).stream().filter(s-> !BindingBuilder.INSTANCE.isExtraTaintParam(s.getName())).count());
 

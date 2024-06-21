@@ -3,15 +3,16 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 import org.evomaster.client.java.instrumentation.ExternalServiceInfo;
 import org.evomaster.client.java.instrumentation.HostnameResolutionInfo;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes.InetAddressClassReplacement;
-import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils;
 import org.evomaster.client.java.instrumentation.shared.IPAddressValidator;
 import org.evomaster.client.java.instrumentation.shared.PreDefinedSSLInfo;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.staticstate.MethodReplacementPreserveSemantics;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.time.LocalDateTime;
 
 public class ExternalServiceUtils {
 
@@ -58,19 +59,9 @@ public class ExternalServiceUtils {
         // data structure of the external service mapping inside ExecutionTracer
 
         ExecutionTracer.addExternalServiceHost(remoteHostInfo);
-        String signature = remoteHostInfo.signature();
 
         if (!ExecutionTracer.hasLocalAddressForHost(remoteHostInfo.getHostname())) {
-            int connectPort = remotePort;
-
-            if (!ExecutionTracer.hasActiveExternalMappingForSignature(signature)) {
-                ExecutionTracer.addEmployedDefaultWMHost(remoteHostInfo);
-                signature = ExternalServiceSharedUtils.getWMDefaultSignature(remoteHostInfo.getProtocol(), remotePort);
-                connectPort = ExternalServiceSharedUtils.getDefaultWMPort(signature);
-            }
-
             return new String[]{ExecutionTracer.getDefaultSinkholeAddress(), "" + remotePort};
-//            return new String[]{ExecutionTracer.getExternalMappingForSignature(signature), "" + connectPort};
         } else {
             return new String[]{ExecutionTracer.getLocalAddress(remoteHostInfo.getHostname()), "" + remotePort};
         }
