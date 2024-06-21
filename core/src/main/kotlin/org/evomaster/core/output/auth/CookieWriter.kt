@@ -19,7 +19,6 @@ object CookieWriter {
 
     fun cookiesName(info: EndpointCallLogin): String = "cookies_${info.name}"
 
-
     /**
      *  Return the distinct auth info on cookie-based login in all actions
      *  of this individual
@@ -53,12 +52,22 @@ object CookieWriter {
 
             //TODO JS
 
-            lines.append("given()")
-            lines.indented {
-                addCallCommand(lines, k, testCaseWriter, format, baseUrlOfSut)
+            if (!format.isPython()) {
+                lines.append("given()")
+                lines.indent()
+            }
+
+            addCallCommand(lines, k, testCaseWriter, format, baseUrlOfSut, cookiesName(k))
+            if (format.isPython()) {
+                lines.append(".cookies")
+            } else {
                 lines.add(".then().extract().cookies()") //TODO check response status and cookie headers?
-                lines.appendSemicolon()
-                lines.addEmpty()
+            }
+            lines.appendSemicolon()
+            lines.addEmpty()
+
+            if (!format.isPython()) {
+                lines.deindent()
             }
         }
     }
@@ -68,10 +77,16 @@ object CookieWriter {
         k: EndpointCallLogin,
         testCaseWriter: ApiTestCaseWriter,
         format: OutputFormat,
-        baseUrlOfSut: String
+        baseUrlOfSut: String,
+        targetVariable: String
     ) {
         //TODO check if payload is specified
-        lines.add(".contentType(\"${k.contentType.defaultValue}\")")
+        if (format.isPython()) {
+            lines.add("headers = {}")
+            lines.add("headers[\"content-type\"] = \"${k.contentType.defaultValue}\"")
+        } else {
+            lines.add(".contentType(\"${k.contentType.defaultValue}\")")
+        }
         if (k.contentType == ContentType.X_WWW_FORM_URLENCODED) {
             if (testCaseWriter is HttpWsTestCaseWriter) { //FIXME
                 val send = testCaseWriter.sendBodyCommand()
@@ -86,17 +101,31 @@ object CookieWriter {
         }
 
          //TODO should check specified verb
+         if (format.isPython()) {
+             lines.add("$targetVariable = requests \\")
+             lines.indent(2)
+         }
         lines.add(".post(")
         if (k.externalEndpointURL != null) {
-            lines.append("\"${k.externalEndpointURL}\")")
+            lines.append("\"${k.externalEndpointURL}\"")
         } else {
             if (format.isJava()) {
                 lines.append("$baseUrlOfSut + \"")
+            } else if (format.isPython()) {
+                lines.append("self.$baseUrlOfSut + \"")
             } else {
                 lines.append("\"\${$baseUrlOfSut}")
             }
             //TODO should check or guarantee that base does not end with a / ?
-            lines.append("${k.endpoint}\")")
+            lines.append("${k.endpoint}\"")
         }
+        if (format.isPython()) {
+            lines.append(", ")
+            lines.indented {
+                lines.add("headers=headers, data=body")
+            }
+            lines.deindent(2)
+        }
+        lines.append(")")
     }
 }

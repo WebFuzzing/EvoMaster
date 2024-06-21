@@ -4,6 +4,7 @@ import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.SqlWriter
+import org.evomaster.core.output.auth.CookieWriter
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.RestCallAction
@@ -253,11 +254,14 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         if (format.isPython()) {
             lines.append(",")
             lines.indented {
+                lines.add("headers=headers")
+                val elc = call.auth.endpointCallLogin
+                if (elc != null && elc.expectsCookie()) {
+                    lines.append(", cookies=${CookieWriter.cookiesName(elc)}")
+                }
                 val bodyParam = call.parameters.find { param -> param is BodyParam } as BodyParam?
-                if (bodyParam == null) {
-                    lines.add("headers=headers")
-                } else {
-                    lines.add("headers=headers, data=body")
+                if (bodyParam != null) {
+                    lines.append(", data=body")
                 }
             }
         }
