@@ -40,7 +40,7 @@ __Key features__:
 * _Whitebox_ testing mode: can be used for APIs compiled to
   JVM (e.g., Java and Kotlin). _EvoMaster_ analyses the bytecode of the tested applications, and uses
   several heuristics such as _testability transformations_ and _taint analysis_ to be able to generate
-  more effective test cases. We support JDK __8__ and the major LTS versions after that (currently JDK __17__, where JDK __21__ has not been properly tested yet). Might work on other JVM versions, but we provide __NO__ support for it.
+  more effective test cases. We support JDK __8__ and the major LTS versions after that (currently JDK __21__). Might work on other JVM versions, but we provide __NO__ support for it.
   Note: there was initial support for other languages as well, like for example JavaScript/TypeScript and C#, but they are not in a stable, feature-complete state. The support for those languages has been dropped, at least for the time being. 
 
 * _Installation_: we provide installers for the main operating systems: _Windows_ (`.msi`),

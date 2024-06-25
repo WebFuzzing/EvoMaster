@@ -146,7 +146,7 @@
             https://www.logicbig.com/tutorials/core-java-tutorial/java-9-changes/multi-release-jars.html
         -->
         <jackson.version>2.14.3</jackson.version>
-        <asm.version>9.2</asm.version>
+        <asm.version>9.7</asm.version>
         <testcontainers.version>1.17.6</testcontainers.version>
         <testcontainers.mockerserver.version>1.17.2</testcontainers.mockerserver.version>
         <mockserver.client.version>5.13.2</mockserver.client.version>
@@ -170,7 +170,7 @@
         <apache.http.client.version>4.5.13</apache.http.client.version>
         <okhttp3.client.version>4.9.3</okhttp3.client.version>
         <okhttp.client.version>2.4.0</okhttp.client.version>
-        <dns.cache.manipulator.version>1.8.0</dns.cache.manipulator.version>
+        <dns.cache.manipulator.version>1.8.2</dns.cache.manipulator.version>
         <jakarta.annotation.version>2.0.0</jakarta.annotation.version>
         <jakarta.validation-api.version>3.0.2</jakarta.validation-api.version>
         <jakarta.persistence-api.version>3.1.0</jakarta.persistence-api.version>
@@ -1241,7 +1241,7 @@
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>0.8.7</version>
+                    <version>0.8.12</version>
                     <configuration>
                         <excludes>
                             <!--  Prevent SUTs in E2E to be part of coverage report -->
