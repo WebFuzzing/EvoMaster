@@ -4,7 +4,6 @@ import com.google.inject.Injector
 import com.google.inject.Key
 import com.google.inject.TypeLiteral
 import com.netflix.governator.guice.LifecycleInjector
-import org.evomaster.client.java.controller.api.EMTestUtils
 import org.evomaster.client.java.controller.api.dto.ControllerInfoDto
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.AnsiColor.Companion.inBlue
@@ -531,6 +530,9 @@ class Main {
 
                 config.algorithm == EMConfig.Algorithm.MOSA ->
                     Key.get(object : TypeLiteral<MosaAlgorithm<RestIndividual>>() {})
+
+                config.algorithm == EMConfig.Algorithm.MonotonicGA ->
+                    Key.get(object : TypeLiteral<MonotonicGeneticAlgorithm<RestIndividual>>() {})
 
                 config.algorithm == EMConfig.Algorithm.Genetic ->
                     Key.get(object : TypeLiteral<GeneticAlgorithm<RestIndividual>>() {})

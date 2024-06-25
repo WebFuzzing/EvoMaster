@@ -1028,7 +1028,7 @@ class EMConfig {
     var avoidNonDeterministicLogs = false
 
     enum class Algorithm {
-        MIO, RANDOM, WTS, MOSA, Genetic
+        MIO, RANDOM, WTS, MOSA, Genetic, MonotonicGA
     }
 
     @Cfg("The algorithm used to generate test cases")
