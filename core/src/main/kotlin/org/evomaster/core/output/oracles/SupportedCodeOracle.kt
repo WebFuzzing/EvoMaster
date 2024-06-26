@@ -27,13 +27,14 @@ class SupportedCodeOracle : ImplementedOracle() {
     private val log: Logger = LoggerFactory.getLogger(SupportedCodeOracle::class.java)
 
     override fun variableDeclaration(lines: Lines, format: OutputFormat) {
-        lines.add("/**")
-        lines.add("* $variableName - supported code oracle - checking that the response status code is among those supported according to the schema")
-        lines.add("*/")
+        lines.startCommentBlock()
+        lines.addBlockCommentLine("$variableName - supported code oracle - checking that the response status code is among those supported according to the schema")
+        lines.endCommentBlock()
         when{
             format.isJava() -> lines.add("private static boolean $variableName = false;")
             format.isKotlin() -> lines.add("private val $variableName = false")
             format.isJavaScript() -> lines.add("const $variableName = false;")
+            format.isPython() -> lines.add("$variableName = False")
         }
 
     }
@@ -47,7 +48,7 @@ class SupportedCodeOracle : ImplementedOracle() {
             val supportedCodes = getSupportedCode(call)
             //BMR: this will be a problem if supportedCode contains both codes and default...
             if(supportedCodes.contains("0")){
-                lines.add("// WARNING: the code list seems to contain an unsupported code (0 is not a valid HTTP code). This could indicate a problem with the schema. The issue has been logged.")
+                lines.addSingleCommentLine("WARNING: the code list seems to contain an unsupported code (0 is not a valid HTTP code). This could indicate a problem with the schema. The issue has been logged.")
                 supportedCodes.remove("0")
                 LoggingUtil.uniqueWarn(log, "The list of supported codes appears to contain an unsupported code (0 is not a valid HTTP code). This could indicate a problem with the schema.")
                 //TODO: if a need arises for more involved checks, refactor this
@@ -55,19 +56,27 @@ class SupportedCodeOracle : ImplementedOracle() {
             val supportedCode = supportedCodes.joinToString(", ")
 
             if(supportedCode.equals("")){
-                lines.add("/*")
-                lines.add(" Note: No supported codes appear to be defined. https://swagger.io/docs/specification/describing-responses/.")
-                lines.add(" This is somewhat unexpected, so the code below is likely to lead to a failed expectation")
-                lines.add("*/")
+                if (format.isJavaOrKotlin()) {
+                    addNoSupportedCodeComments(lines, "below")
+                }
                 when {
                     format.isJava() -> lines.add(".that($variableName, Arrays.asList().contains($name.extract().statusCode()))")
                     format.isKotlin() -> lines.add(".that($variableName, listOf<Int>().contains($name.extract().statusCode()))")
+                    format.isPython() -> lines.add(".that(self.$variableName, $name.status_code in [])")
+                }
+                if (format.isPython()) {
+                    /*
+                     Python does not support having comments in between lines of a single call.
+                     Therefore, we need to add the block comment below the code, but referencing the "above" code when the test is finally written
+                     */
+                    addNoSupportedCodeComments(lines, "above")
                 }
             }
             //TODO: check here if supported code contains 0 (or maybe check against a list of "acceptable" codes
             else when {
                 format.isJava() -> lines.add(".that($variableName, Arrays.asList($supportedCode).contains($name.extract().statusCode()))")
                 format.isKotlin() -> lines.add(".that($variableName, listOf<Int>($supportedCode).contains($name.extract().statusCode()))")
+                format.isPython() -> lines.add(".that(self.$variableName, $name.status_code in [$supportedCode])")
             }
         }
     }
@@ -126,5 +135,12 @@ class SupportedCodeOracle : ImplementedOracle() {
 
     override fun getName(): String {
         return "CodeOracle"
+    }
+
+    private fun addNoSupportedCodeComments(lines: Lines, position: String) {
+        lines.startCommentBlock()
+        lines.addBlockCommentLine("Note: No supported codes appear to be defined. https://swagger.io/docs/specification/describing-responses/.")
+        lines.addBlockCommentLine("This is somewhat unexpected, so the code $position is likely to lead to a failed expectation")
+        lines.endCommentBlock()
     }
 }

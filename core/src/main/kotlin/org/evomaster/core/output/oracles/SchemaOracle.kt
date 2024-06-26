@@ -43,15 +43,18 @@ class SchemaOracle : ImplementedOracle() {
     }
 
     override fun variableDeclaration(lines: Lines, format: OutputFormat) {
-        lines.add("/**")
-        lines.add("* $variableName - response structure oracle - checking that the response objects match the responses defined in the schema")
-        lines.add("*/")
+        lines.startCommentBlock()
+        lines.addBlockCommentLine("$variableName - response structure oracle - checking that the response objects match the responses defined in the schema")
+        lines.endCommentBlock()
         when{
             format.isJava() -> {
                 lines.add("private static boolean $variableName = false;")
             }
             format.isKotlin() -> {
                 lines.add("private val $variableName = false")
+            }
+            format.isPython() -> {
+                lines.add("$variableName = False")
             }
         }
     }

@@ -177,7 +177,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
     private fun shouldCheckExpectations() =
     //for now Expectations are only supported on the JVM
         //TODO C# (and maybe JS as well???)
-        config.expectationsActive && config.outputFormat.isJavaOrKotlin()
+        config.expectationsActive && (config.outputFormat.isJavaOrKotlin() || config.outputFormat.isPython())
 
 
     override fun handleVerbEndpoint(baseUrlOfSut: String, _call: HttpWsAction, lines: Lines) {
@@ -201,11 +201,10 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                 lines.append("${TestSuiteWriter.jsImport}.")
             }
 
-            if (format.isCsharp()) {
-                //TODO: double check this
-                lines.append("${locationVar(call.usePreviousLocationId!!)} + $baseUrlOfSut + \"${call.resolvedPath()}\"")
-            } else {
-                lines.append("resolveLocation(${locationVar(call.usePreviousLocationId!!)}, $baseUrlOfSut + \"${call.resolvedPath()}\")")
+            when {
+                format.isCsharp() -> lines.append("${locationVar(call.usePreviousLocationId!!)} + $baseUrlOfSut + \"${call.resolvedPath()}\"")
+                format.isPython() -> lines.append("resolve_location(${locationVar(call.usePreviousLocationId!!)}, self.$baseUrlOfSut + str(\"${call.resolvedPath()}\"))")
+                else -> lines.append("resolveLocation(${locationVar(call.usePreviousLocationId!!)}, $baseUrlOfSut + \"${call.resolvedPath()}\")")
             }
 
         } else {
@@ -346,6 +345,11 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                     format.isCsharp() -> {
                         lines.add("Assert.True(Uri.IsWellFormedUriString($location, UriKind.Absolute) || string.IsNullOrEmpty($location));")
                     }
+                    format.isPython() -> {
+                        lines.add("$location = $resVarName.headers['location']")
+                        val validCheck = "is_valid_uri_or_empty($location)"
+                        lines.add("assert $validCheck")
+                    }
                 }
             } else {
 
@@ -363,8 +367,10 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
 
                 //TODO JS and C#
                 //TODO code here should use same algorithm as in res.getResourceId()
-                val extract =
-                    "$resVarName.extract().body().path$extraTypeInfo(\"${res.getResourceIdName()}\").toString()"
+                val extract = when {
+                    format.isPython() -> "str($resVarName.json()['${res.getResourceIdName()}'])"
+                    else -> "$resVarName.extract().body().path$extraTypeInfo(\"${res.getResourceIdName()}\").toString()"
+                }
 
                 lines.add("${locationVar(call.postLocationId())} = $baseUri + \"/\" + $extract")
                 lines.appendSemicolon()
@@ -377,7 +383,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
             return
         }
 
-        if (!format.isJavaOrKotlin()) {
+        if (!(format.isJavaOrKotlin() || format.isPython())) {
             //TODO will need to see if going to support JS and C# as well
             return
         }
@@ -386,6 +392,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         when {
             format.isJava() -> lines.append("ExpectationHandler expectationHandler = expectationHandler()")
             format.isKotlin() -> lines.append("val expectationHandler: ExpectationHandler = expectationHandler()")
+            format.isPython() -> lines.append("expectation_handler = ExpectationHandler()")
         }
         lines.appendSemicolon()
     }
