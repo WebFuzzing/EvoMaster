@@ -886,12 +886,12 @@ class EMConfig {
             " of the tested application." +
             " You can get better results by combining this option with `--prematureStop`." +
             " For example, something like `--maxTime 24h --prematureStop 1h` will run the search for 24 hours," +
-            " but the it will stop at any point in time in which there has be no improvement in last hour."
+            " but then it will stop at any point in time in which there has be no improvement in the last hour."
     )
     @Regex(timeRegex)
     var maxTime = defaultMaxTime
 
-    @Experimental
+    @Important(1.01)
     @Cfg("Max amount of time the search is going to wait since last improvement (on metrics we optimize for," +
             " like fault finding and code/schema coverage)." +
             " If there is no improvement within this allotted max time, then the search will be prematurely stopped," +
