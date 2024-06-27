@@ -20,6 +20,9 @@ public class SocketClassReplacement implements MethodReplacementClass {
         return Socket.class;
     }
 
+
+    //FIXME other methods
+
     @Replacement(
             type = ReplacementType.TRACKER,
             category = ReplacementCategory.NET,
@@ -34,6 +37,7 @@ public class SocketClassReplacement implements MethodReplacementClass {
             if (endpoint instanceof InetSocketAddress) {
                 InetSocketAddress socketAddress = (InetSocketAddress) endpoint;
 
+                //FIXME this is just DNS, not port info sent yet
                 ExternalServiceUtils.analyzeDnsResolution(socketAddress.getHostString());
 
             /*
@@ -63,12 +67,18 @@ public class SocketClassReplacement implements MethodReplacementClass {
                     nothing will happen.
                  */
                     if (ExecutionTracer.hasMappingForLocalAddress(socketAddress.getHostString())) {
-                        String newHostname = ExecutionTracer.getRemoteHostname(socketAddress.getHostString());
+
+                        //FIXME 2 cases: only host, or host+port
+                        //FIXME if only host, that must be sink address
+
+                        //reverse lookup... socketAddress could be a fake local address
+                        String hostname = ExecutionTracer.getRemoteHostname(socketAddress.getHostString());
                         ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(
                                 ExternalServiceSharedUtils.DEFAULT_SOCKET_CONNECT_PROTOCOL,
-                                newHostname,
+                                hostname,
                                 socketAddress.getPort()
                         );
+                        //FIXME sending of info need done regardless
                         String[] ipAndPort = collectExternalServiceInfo(remoteHostInfo, socketAddress.getPort());
 
                         InetSocketAddress replaced = new InetSocketAddress(InetAddress.getByName(ipAndPort[0]), Integer.parseInt(ipAndPort[1]));
@@ -77,6 +87,7 @@ public class SocketClassReplacement implements MethodReplacementClass {
                     }
                 }
             }
+            //FIXME inconsistent with INetAddress... would connect to real service
             SimpleLogger.warn("not handle the type of endpoint yet:" + endpoint.getClass().getName());
             caller.connect(endpoint, timeout);
         }

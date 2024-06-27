@@ -27,6 +27,8 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
         return InetAddress.class;
     }
 
+    //FIXME other methods
+
     @Replacement(
             type = ReplacementType.TRACKER,
             category = ReplacementCategory.NET,
