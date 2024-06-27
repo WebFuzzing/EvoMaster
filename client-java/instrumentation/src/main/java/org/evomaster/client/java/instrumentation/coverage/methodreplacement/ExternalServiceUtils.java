@@ -72,6 +72,8 @@ public class ExternalServiceUtils {
 
         ExecutionTracer.addExternalServiceHost(remoteHostInfo);
 
+        //FIXME need to check if no info on port
+
         if (!ExecutionTracer.hasLocalAddressForHost(remoteHostInfo.getHostname())) {
             return new String[]{ExecutionTracer.getDefaultSinkholeAddress(), "" + remotePort};
         } else {
