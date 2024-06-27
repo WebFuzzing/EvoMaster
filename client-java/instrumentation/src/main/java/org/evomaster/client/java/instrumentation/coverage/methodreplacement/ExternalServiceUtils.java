@@ -90,20 +90,24 @@ public class ExternalServiceUtils {
         // https://en.wikipedia.org/wiki/Reserved_IP_addresses
         // There could be other possible ranges to ignore since it is not
         // necessary for the moment, following IP address ranges are skipped
-        if (hostname.isEmpty()
-                || hostname.equals("localhost")
+        return hostname == null
+                || hostname.isEmpty()
+                || skipHostname(hostname)
                 || hostname.startsWith("0.")
                 || hostname.startsWith("10.")
                 || hostname.startsWith("192.168.")
-                || hostname.equals("docker.socket")
                 // in some cases, we do not skip this, because
                 || (hostname.startsWith("127.") && !ExecutionTracer.hasMappingForLocalAddress(hostname))
-                || hostname.equals(canonicalLocalHostname)
-        ) {
-            return true;
-        }
+                ;
+    }
 
-        return false;
+    public static boolean skipHostname(String hostname){
+        return hostname == null
+                || hostname.isEmpty()
+                || hostname.equals("localhost")
+                || hostname.equals("docker.socket")
+                || hostname.equals(canonicalLocalHostname)
+                ;
     }
 
 
