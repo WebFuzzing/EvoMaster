@@ -21,7 +21,16 @@ public class SocketClassReplacement implements MethodReplacementClass {
     }
 
 
-    //FIXME other methods
+    @Replacement(
+            type = ReplacementType.TRACKER,
+            category = ReplacementCategory.NET,
+            replacingStatic = false,
+            usageFilter = UsageFilter.ANY
+    )
+    public static void connect(Socket caller, SocketAddress endpoint) throws IOException {
+        connect(caller,endpoint,0);
+    }
+
 
     @Replacement(
             type = ReplacementType.TRACKER,
