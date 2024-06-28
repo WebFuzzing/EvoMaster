@@ -5,6 +5,7 @@ import org.evomaster.client.java.controller.api.dto.database.operations.Insertio
 import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionDto
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
 import org.evomaster.core.EMConfig
+import org.evomaster.core.Main
 import org.evomaster.core.output.*
 import org.evomaster.core.output.service.TestWriterUtils.Companion.getWireMockVariableName
 import org.evomaster.core.output.service.TestWriterUtils.Companion.handleDefaultStubForAsJavaOrKotlin
@@ -73,6 +74,8 @@ class TestSuiteWriter {
 
     private var activePartialOracles = mutableMapOf<String, Boolean>()
 
+    private val pythonUtilsFilename = "em_test_utils.py"
+
 
     fun writeTests(
         solution: Solution<*>,
@@ -83,7 +86,7 @@ class TestSuiteWriter {
 
         val name = TestSuiteFileName(solution.getFileName())
         val content = convertToCompilableTestCode(solution, name, snapshotTimestamp, controllerName, controllerInput)
-        saveToDisk(content, config, name)
+        saveToDisk(content, getTestSuitePath(name, config))
     }
 
     /**
@@ -227,12 +230,8 @@ class TestSuiteWriter {
 
     private fun saveToDisk(
         testFileContent: String,
-        config: EMConfig,
-        testSuiteFileName: TestSuiteFileName
+        path: Path
     ) {
-
-        val path = getTestSuitePath(testSuiteFileName, config)
-
         Files.createDirectories(path.parent)
         Files.deleteIfExists(path)
         Files.createFile(path)
@@ -480,7 +479,8 @@ class TestSuiteWriter {
                 lines.add("import timeout_decorator")
             }
             lines.add("from em_test_utils import *")
-            PythonUtilsFileWriter().writePythonUtilsFile(config)
+            val pythonUtils = Main::class.java.getResource("/$pythonUtilsFilename").readText()
+            saveToDisk(pythonUtils, Paths.get(config.outputFolder, pythonUtilsFilename))
         }
 
         when {
@@ -605,7 +605,9 @@ class TestSuiteWriter {
         } else if (config.outputFormat.isCsharp()) {
             lines.add("private static readonly HttpClient Client = new HttpClient ();")
         } else if (config.outputFormat.isPython()) {
-            lines.add("$baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\"")
+            if (config.blackBox) {
+                lines.add("$baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\"")
+            }
         }
 
         testCaseWriter.addExtraStaticVariables(lines)
