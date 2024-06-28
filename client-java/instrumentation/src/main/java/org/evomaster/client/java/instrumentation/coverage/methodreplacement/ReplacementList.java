@@ -61,6 +61,7 @@ public class ReplacementList {
                     new ObjectsClassReplacement(),
                     new PatternClassReplacement(),
                     new PreparedStatementClassReplacement(),
+                    new ProviderBaseClassReplacement(),
                     new StatementClassReplacement(),
                     new StringClassReplacement(),
                     new ShortClassReplacement(),
