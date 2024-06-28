@@ -9,7 +9,7 @@ import java.util.Date;
 import static java.lang.String.format;
 import static java.util.Objects.isNull;
 import static org.evomaster.client.java.distance.heuristics.Truthness.FALSE;
-import static org.evomaster.client.java.distance.heuristics.Truthness.FALSE_LOWER;
+import static org.evomaster.client.java.distance.heuristics.Truthness.FALSE_BETTER;
 import static org.evomaster.client.java.distance.heuristics.TruthnessUtils.trueOrScaleTrue;
 import static org.evomaster.client.java.sql.advanced.helpers.ConversionsHelper.*;
 import static org.evomaster.client.java.sql.advanced.query_calculator.where_calculator.comparison_calculators.BooleanComparisonCalculator.createBooleanComparisonCalculator;
@@ -173,9 +173,9 @@ public class ObjectComparisonCalculator {
 
     private Truthness calculateTruthnessForNull(Object left, Object right) {
         if(isNull(left) && isNull(right)) {
-            return FALSE_LOWER;
-        } else {
             return FALSE;
+        } else {
+            return FALSE_BETTER;
         }
     }
 

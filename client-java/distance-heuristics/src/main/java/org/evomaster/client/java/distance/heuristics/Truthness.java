@@ -17,8 +17,8 @@ public class Truthness {
 
     public static final Double C = DistanceHelper.H_NOT_NULL;
     public static final Truthness TRUE = new Truthness(1d, C);
+    public static final Truthness FALSE_BETTER = new Truthness(C + C / 2, 1d);
     public static final Truthness FALSE = new Truthness(C, 1d);
-    public static final Truthness FALSE_LOWER = new Truthness(C / 2, 1d);
 
     private final double ofTrue;
     private final double ofFalse;

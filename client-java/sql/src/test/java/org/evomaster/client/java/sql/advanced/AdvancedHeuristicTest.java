@@ -788,7 +788,7 @@ public class AdvancedHeuristicTest {
         AdvancedHeuristic advancedHeuristic = createAdvancedHeuristic(sqlDriver);
         Truthness truthness = advancedHeuristic.calculate("SELECT * FROM employees WHERE " +
         "married = false OR married = true");
-        assertEquals(oneRowWith(orCondition(FALSE, FALSE)), truthness);
+        assertEquals(oneRowWith(orCondition(FALSE_BETTER, FALSE_BETTER)), truthness);
     }
 
     @Test
@@ -797,7 +797,7 @@ public class AdvancedHeuristicTest {
         AdvancedHeuristic advancedHeuristic = createAdvancedHeuristic(sqlDriver);
         Truthness truthness = advancedHeuristic.calculate("SELECT * FROM employees WHERE " +
             "married=null");
-        assertEquals(oneRowWith(singleCondition(FALSE_LOWER)), truthness);
+        assertEquals(oneRowWith(singleCondition(FALSE)), truthness);
     }
 
     @Test
