@@ -82,11 +82,7 @@ class PartialOracles {
             it.generatesExpectation(call, res)
         }
         if (!generates) return
-        if (format.isPython()) {
-            lines.add("expectation_handler.expect(self.$expectationsMasterSwitch) \\")
-        } else {
-            lines.add("expectationHandler.expect($expectationsMasterSwitch)")
-        }
+        lines.add("expectationHandler.expect($expectationsMasterSwitch)")
         lines.indented {
             for (oracle in oracles) { oracle.addExpectations(call, lines, res, name, format) }
             if (format.isJava()) { lines.append(";") }

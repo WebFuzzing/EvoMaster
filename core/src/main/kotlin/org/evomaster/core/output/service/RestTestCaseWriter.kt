@@ -177,7 +177,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
     private fun shouldCheckExpectations() =
     //for now Expectations are only supported on the JVM
         //TODO C# (and maybe JS as well???)
-        config.expectationsActive && (config.outputFormat.isJavaOrKotlin() || config.outputFormat.isPython())
+        config.expectationsActive && config.outputFormat.isJavaOrKotlin()
 
 
     override fun handleVerbEndpoint(baseUrlOfSut: String, _call: HttpWsAction, lines: Lines) {
@@ -383,7 +383,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
             return
         }
 
-        if (!(format.isJavaOrKotlin() || format.isPython())) {
+        if (!format.isJavaOrKotlin()) {
             //TODO will need to see if going to support JS and C# as well
             return
         }
@@ -392,7 +392,6 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         when {
             format.isJava() -> lines.append("ExpectationHandler expectationHandler = expectationHandler()")
             format.isKotlin() -> lines.append("val expectationHandler: ExpectationHandler = expectationHandler()")
-            format.isPython() -> lines.append("expectation_handler = ExpectationHandler()")
         }
         lines.appendSemicolon()
     }

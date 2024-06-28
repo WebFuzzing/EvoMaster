@@ -611,22 +611,19 @@ class TestSuiteWriter {
         testCaseWriter.addExtraStaticVariables(lines)
 
         if (config.expectationsActive) {
-            if (config.outputFormat.isJavaOrKotlin() || config.outputFormat.isPython()) {
+            if (config.outputFormat.isJavaOrKotlin()) {
                 //TODO JS and C#
                 if (activePartialOracles.any { it.value }) {
-                    lines.startCommentBlock()
-                    lines.addBlockCommentLine(
-                        "[$expectationsMasterSwitch] - expectations master switch - is the variable that activates/deactivates expectations " +
+                    lines.add(
+                        "/** [$expectationsMasterSwitch] - expectations master switch - is the variable that activates/deactivates expectations " +
                                 "individual test cases"
                     )
-                    lines.addBlockCommentLine(("by default, expectations are turned off. The variable needs to be set to [true] to enable expectations"))
-                    lines.endCommentBlock()
+                    lines.add(("* by default, expectations are turned off. The variable needs to be set to [true] to enable expectations"))
+                    lines.add("*/")
                     if (config.outputFormat.isJava()) {
                         lines.add("private static boolean $expectationsMasterSwitch = false;")
                     } else if (config.outputFormat.isKotlin()) {
                         lines.add("private val $expectationsMasterSwitch = false")
-                    } else if (config.outputFormat.isPython()) {
-                        lines.add("$expectationsMasterSwitch = False")
                     }
                 }
                 partialOracles?.variableDeclaration(lines, config.outputFormat, activePartialOracles)

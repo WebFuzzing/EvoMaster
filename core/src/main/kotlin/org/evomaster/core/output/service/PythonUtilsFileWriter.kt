@@ -14,7 +14,6 @@ class PythonUtilsFileWriter {
         addImports(lines)
         writeResolveLocation(lines)
         writeIsValidUriOrEmpty(lines)
-        writeExpectationHandler(lines)
         saveToDisk(lines.toString(), config)
     }
 
@@ -73,36 +72,6 @@ class PythonUtilsFileWriter {
         }
         lines.add("return True")
         lines.deindent()
-        lines.addEmpty(2)
-    }
-
-    private fun writeExpectationHandler(lines: Lines) {
-        lines.add("class ExpectationHandler:")
-        lines.addEmpty()
-        lines.indent()
-        lines.add("def __init__(self):")
-        lines.indented {
-            lines.add("self.master_switch = False")
-        }
-        lines.addEmpty()
-        lines.add("def expect(self, master_switch=False):")
-        lines.indented {
-            lines.add("self.master_switch = master_switch")
-            lines.add("return self")
-        }
-        lines.addEmpty()
-        lines.add("def that(self, active, condition):")
-        lines.indent()
-        lines.add("if (not active) or (not self.master_switch):")
-        lines.indented {
-            lines.add("return self")
-        }
-        lines.add("if not condition:")
-        lines.indented {
-            lines.add("raise AssertionError('Failed Expectation Exception')")
-        }
-        lines.add("return self")
-        lines.deindent(2)
         lines.addEmpty(2)
     }
 
