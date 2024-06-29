@@ -6,7 +6,6 @@ import org.evomaster.client.java.instrumentation.object.JsonTaint;
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
@@ -21,7 +20,7 @@ public class ProviderBaseClassReplacement extends ThirdPartyMethodReplacementCla
     @Override
     protected String getNameOfThirdPartyTargetClass() {
         //workaround shade plugin bug
-        return "  com.fasterxml.jackson.jaxrs.base".trim();
+        return "  com.fasterxml.jackson.jaxrs.base.ProviderBase".trim();
     }
 
 
