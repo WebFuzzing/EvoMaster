@@ -577,7 +577,7 @@ class TestSuiteWriter {
             } else {
                 lines.add("private val $baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\"")
             }
-            if (config.isEnabledExternalServiceMocking()) {
+            if (config.isEnabledExternalServiceMocking() && solution.needWireMockServers()) {
                 wireMockServers
                     .forEach { action ->
                         addStatement("private lateinit var ${getWireMockVariableName(action)}: WireMockServer", lines)
@@ -790,13 +790,15 @@ class TestSuiteWriter {
                         addStatement("$controller.stopSut()", lines)
                         if (format.isJavaOrKotlin()
                             && config.isEnabledExternalServiceMocking()
-                            && solution.needsHostnameReplacement()
                         ) {
-                            getActiveWireMockServers()
-                                .forEach { action ->
-                                    addStatement("${getWireMockVariableName(action)}.stop()", lines)
+                            if(solution.needWireMockServers()) {
+                                getActiveWireMockServers().forEach { action ->
+                                        addStatement("${getWireMockVariableName(action)}.stop()", lines)
                                 }
-                            addStatement("DnsCacheManipulator.clearDnsCache()", lines)
+                            }
+                            if(solution.needsHostnameReplacement()) {
+                                addStatement("DnsCacheManipulator.clearDnsCache()", lines)
+                            }
                         }
                         if(config.problemType == EMConfig.ProblemType.WEBFRONTEND){
                             addStatement("$browser.stop()", lines)

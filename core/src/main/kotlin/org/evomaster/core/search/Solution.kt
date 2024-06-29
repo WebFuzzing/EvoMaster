@@ -42,9 +42,12 @@ where T : Individual {
     }
 
     fun needWireMockServers() : Boolean{
-        return individuals.any { ind ->
-            ind.individual.seeActions(ActionFilter.ONLY_EXTERNAL_SERVICE).isNotEmpty()
-        }
+        return hasAnyHostnameResolutionAction()
+        // The following was wrong... could have SUT connecting to WM without any mocked response,
+        // which would result in no action in the tests
+//        return individuals.any { ind ->
+//            ind.individual.seeActions(ActionFilter.ONLY_EXTERNAL_SERVICE).isNotEmpty()
+//        }
     }
 
     private fun hasAnyHostnameResolutionAction(): Boolean {
