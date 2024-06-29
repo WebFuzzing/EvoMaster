@@ -851,7 +851,7 @@ class SqlInsertBuilder(
         pkValues: DataRowDto,
         useExtraSqlDbConstraints: Boolean,
         columnIds: List<String> = mutableListOf()
-    ): SqlAction {
+    ): SqlAction? {
 
         if (dbExecutor == null) {
             throw IllegalStateException("No Database Executor registered for this object")
@@ -859,13 +859,15 @@ class SqlInsertBuilder(
 
         val table = getTable(tableName, useExtraSqlDbConstraints)
 
-        val pks =
-            if (columnIds.isNotEmpty()) table.columns.filter { columnIds.contains(it.name) } else table.columns.filter { it.primaryKey }
+        val pks = if (columnIds.isNotEmpty()){
+            table.columns.filter { columnIds.contains(it.name) }
+        } else {
+            table.columns.filter { it.primaryKey }
+        }
         val cols = table.columns.toList()
 
         val row: DataRowDto?
         if (pks.isNotEmpty()) {
-
 
             val condition = SQLGenerator.composeAndConditions(
                 SQLGenerator.genConditions(
@@ -880,15 +882,26 @@ class SqlInsertBuilder(
             val dto = DatabaseCommandDto()
             dto.command = sql
 
-            val result: QueryResultDto = dbExecutor.executeDatabaseCommandAndGetQueryResults(dto)
-                ?: throw IllegalArgumentException("rows regarding pks can not be found")
-            if (result.rows.size != 1) {
+            val result = dbExecutor.executeDatabaseCommandAndGetQueryResults(dto)
+            if(result == null || result.rows.isEmpty()){
+                /*
+                    TODO this seems to happen in ind1... would need to investigate
+                 */
+                log.warn("rows regarding pks can not be found")
+                return null
+            }
+
+            /*
+                TODO: note, currently we don't have a good handling of PKs, as no multi-column support.
+             */
+
+            if (result.rows.size > 1) {
                 log.warn("there exist more than one rows (${result.rows.size}) with pkValues $condition")
             }
             row = result.rows.first()
-        } else
+        } else {
             row = pkValues
-
+        }
 
         val id = counter++
 

@@ -180,17 +180,23 @@ class ResourceCluster {
         sorted.forEach { t->
             if (!doNotCreateDuplicatedAction || preTables.none { p-> p.equals(t.name, ignoreCase = true) }){
                 val actions = if (!isInsertion){
-                    if ((getDataInDb(t.name)?.size ?: 0) == 0) null
-                    else{
+                    if ((getDataInDb(t.name)?.size ?: 0) == 0) {
+                        null
+                    } else {
                         val candidates = getDataInDb(t.name)!!
                         val row = randomness.choose(candidates)
-                        listOf(sqlInsertBuilder.extractExistingByCols(t.name, row, useExtraSqlDbConstraints))
+                        val a = sqlInsertBuilder.extractExistingByCols(t.name, row, useExtraSqlDbConstraints)
+                        if(a != null)
+                            listOf(a)
+                        else
+                            null
                     }
                 } else{
                     sqlInsertBuilder.createSqlInsertionAction(t.name, useExtraSqlDbConstraints = useExtraSqlDbConstraints, enableSingleInsertionForTable=enableSingleInsertionForTable)
                             .onEach { a -> a.doInitialize(randomness) }
                 }
-                if (actions != null){
+
+                if (!actions.isNullOrEmpty()){
                     //actions.forEach {it.doInitialize()}
                     added.addAll(actions)
                     preTables.addAll(actions.filter { !isInsertion || !it.representExistingData }.map { it.table.name })
