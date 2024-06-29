@@ -82,16 +82,12 @@ public class QueryCalculator {
   private CalculationResult calculateRowSet() {
     if(query.hasFromSubquery()) {
       return calculateFromSubquery();
-    } else {
-      if(query.hasJoins()){
+    } else if(query.hasJoins()){
         return calculateJoins();
-      } else {
-        if(query.hasFrom()) {
-          return calculateSingleTable();
-        } else {
-          return calculateNoTable();
-        }
-      }
+    } else if(query.hasFrom()) {
+        return calculateGenericFrom();
+    } else {
+        return calculateNoFrom();
     }
   }
 
@@ -113,12 +109,9 @@ public class QueryCalculator {
         return applyOnQueries(
           singletonList(query.isLeftJoin() ? query.getJoinSelects().get(0) : query.getJoinSelects().get(1)),
           truthnesses -> createCalculationResult(truthnesses[0]));
-      } else {
-        throw new UnsupportedOperationException(format("Unsupported JOIN type in query: %s", query.toString()));
       }
-    } else {
-      throw new UnsupportedOperationException(format("Unsupported JOIN in query: %s", query.toString()));
     }
+    return calculateGenericFrom();
   }
 
   private CalculationResult applyOnQueries(List<SelectQuery> queries, Function<Truthness[], CalculationResult> function){
@@ -134,14 +127,14 @@ public class QueryCalculator {
       .collect(Collectors.toList());
   }
 
-  private CalculationResult calculateSingleTable() {
+  private CalculationResult calculateGenericFrom() {
     SelectQuery queryWithoutWhere = query.removeWhere();
     List<Row> queryWithoutWhereRows = sqlDriver.query(queryWithoutWhere);
     Truthness truthness = getTruthnessToEmpty(queryWithoutWhereRows.size()).invert();
     return createCalculationResult(truthness);
   }
 
-  private CalculationResult calculateNoTable() {
+  private CalculationResult calculateNoFrom() {
     List<Row> rows = sqlDriver.query(query);
     return createCalculationResult(rows);
   }
