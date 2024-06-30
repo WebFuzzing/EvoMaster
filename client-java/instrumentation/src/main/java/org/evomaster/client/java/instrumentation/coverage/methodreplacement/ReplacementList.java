@@ -42,6 +42,7 @@ public class ReplacementList {
                     new HttpServletRequestClassReplacement(),
                     new IntegerClassReplacement(),
                     new InetAddressClassReplacement(),
+                    new InetSocketAddressClassReplacement(),
                     new JacksonObjectMapperClassReplacement(),
                     new LocalDateClassReplacement(),
                     new LocalDateTimeClassReplacement(),
