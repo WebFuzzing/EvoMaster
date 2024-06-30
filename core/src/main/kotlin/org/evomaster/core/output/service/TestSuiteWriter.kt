@@ -553,7 +553,7 @@ class TestSuiteWriter {
             } else {
                 lines.add("private static String $baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\";")
             }
-            if (config.isEnabledExternalServiceMocking()) {
+            if (config.isEnabledExternalServiceMocking() && solution.needWireMockServers()) {
                 wireMockServers
                     .forEach { externalService ->
                         addStatement("private static WireMockServer ${getWireMockVariableName(externalService)}", lines)
@@ -577,7 +577,7 @@ class TestSuiteWriter {
             } else {
                 lines.add("private val $baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\"")
             }
-            if (config.isEnabledExternalServiceMocking()) {
+            if (config.isEnabledExternalServiceMocking() && solution.needWireMockServers()) {
                 wireMockServers
                     .forEach { action ->
                         addStatement("private lateinit var ${getWireMockVariableName(action)}: WireMockServer", lines)
@@ -714,7 +714,7 @@ class TestSuiteWriter {
             }
 
             val wireMockServers = getActiveWireMockServers()
-            if (config.isEnabledExternalServiceMocking() && wireMockServers.isNotEmpty()) {
+            if (config.isEnabledExternalServiceMocking() && wireMockServers.isNotEmpty() && solution.needWireMockServers()) {
                 if (format.isJavaOrKotlin()) {
                     wireMockServers
                         .forEach { externalService ->
@@ -722,11 +722,11 @@ class TestSuiteWriter {
                             val name = getWireMockVariableName(externalService)
 
                             if (format.isJava()) {
-                                lines.add("${name} = new WireMockServer(new WireMockConfiguration()")
+                                lines.add("$name = new WireMockServer(new WireMockConfiguration()")
                             }
 
                             if (format.isKotlin()) {
-                                lines.add("${name} = WireMockServer(WireMockConfiguration()")
+                                lines.add("$name = WireMockServer(WireMockConfiguration()")
                             }
 
                             lines.indented {
@@ -790,13 +790,15 @@ class TestSuiteWriter {
                         addStatement("$controller.stopSut()", lines)
                         if (format.isJavaOrKotlin()
                             && config.isEnabledExternalServiceMocking()
-                            && solution.needsHostnameReplacement()
                         ) {
-                            getActiveWireMockServers()
-                                .forEach { action ->
-                                    addStatement("${getWireMockVariableName(action)}.stop()", lines)
+                            if(solution.needWireMockServers()) {
+                                getActiveWireMockServers().forEach { action ->
+                                        addStatement("${getWireMockVariableName(action)}.stop()", lines)
                                 }
-                            addStatement("DnsCacheManipulator.clearDnsCache()", lines)
+                            }
+                            if(solution.needsHostnameReplacement()) {
+                                addStatement("DnsCacheManipulator.clearDnsCache()", lines)
+                            }
                         }
                         if(config.problemType == EMConfig.ProblemType.WEBFRONTEND){
                             addStatement("$browser.stop()", lines)
@@ -845,7 +847,7 @@ class TestSuiteWriter {
                 }
                 addStatement("$controller.resetStateOfSUT()", lines)
 
-                if (format.isJavaOrKotlin() && config.isEnabledExternalServiceMocking()) {
+                if (format.isJavaOrKotlin() && config.isEnabledExternalServiceMocking() && solution.needWireMockServers()) {
                     getActiveWireMockServers()
                         .forEach { es ->
                             addStatement("${getWireMockVariableName(es)}.resetAll()", lines)

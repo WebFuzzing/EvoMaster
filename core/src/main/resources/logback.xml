@@ -27,5 +27,9 @@
         <appender-ref ref="INFO_STDOUT" />
     </logger>
 
+    <!-- Avoid annoying and pointless messages from WM, as those depend on how SUT interacts with it -->
+    <logger name="com.github.tomakehurst.wiremock" level="OFF"/>
+    <logger name="wiremock.org" level="OFF"/>
+    <logger name="WireMock" level="OFF"/>
 
 </configuration>

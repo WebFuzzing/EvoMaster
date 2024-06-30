@@ -27,6 +27,7 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
         return InetAddress.class;
     }
 
+
     @Replacement(
             type = ReplacementType.TRACKER,
             category = ReplacementCategory.NET,
@@ -48,8 +49,8 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
                 host == null
                         || host.isEmpty()
                         || ExternalServiceUtils.isValidIP(host)
+                        || ExternalServiceUtils.skipHostname(host)
                         || ExecutionTracer.skipHostname(host)
-                        || "localhost".equals(host)
                         || MethodReplacementPreserveSemantics.shouldPreserveSemantics
 
         ) {
@@ -71,6 +72,8 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
            /*
               if the real hostname does resolve, we cannot simulate it not resolving, because that will not work
               in the generated JUnit test cases.
+              this is because, at least in DnsCache, we cannot simulate a thrown exception, ie, remove a mapping
+              for a hostname.
               But we do not want to speak with the real service. so we default to an IP address we make sure nothing
               is up and running.
 
