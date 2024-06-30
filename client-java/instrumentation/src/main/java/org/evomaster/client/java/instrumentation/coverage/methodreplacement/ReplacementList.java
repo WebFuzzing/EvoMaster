@@ -50,6 +50,7 @@ public class ReplacementList {
                     new LongClassReplacement(),
                     new MapClassReplacement(),
                     new MatcherClassReplacement(),
+                    new MessageBodyReaderClassReplacement(),
                     new MethodClassReplacement(),
                     new MongoCollectionClassReplacement(),
                     new MappingMongoEntityInformationClassReplacement(),

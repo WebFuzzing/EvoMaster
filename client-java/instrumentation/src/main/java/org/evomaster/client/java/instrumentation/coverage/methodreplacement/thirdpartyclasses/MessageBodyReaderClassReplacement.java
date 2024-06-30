@@ -1,8 +1,6 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.thirdpartyclasses;
 
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.*;
-import org.evomaster.client.java.instrumentation.object.ClassToSchema;
-import org.evomaster.client.java.instrumentation.object.JsonTaint;
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 
@@ -13,20 +11,18 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.Objects;
 
-public class ProviderBaseClassReplacement extends ThirdPartyMethodReplacementClass {
+public class MessageBodyReaderClassReplacement extends ThirdPartyMethodReplacementClass {
 
-   private static final ProviderBaseClassReplacement singleton = new ProviderBaseClassReplacement();
+    private static final MessageBodyReaderClassReplacement singleton = new MessageBodyReaderClassReplacement();
 
     @Override
     protected String getNameOfThirdPartyTargetClass() {
-        //workaround shade plugin bug
-        return "  com.fasterxml.jackson.jaxrs.base.ProviderBase".trim();
+        return " javax.ws.rs.ext.MessageBodyReader".trim();
     }
-
 
     @Replacement(replacingStatic = false,
             type = ReplacementType.TRACKER,
-            id = "Jackson_ProviderBaser_readFrom",
+            id = "Javax_MessageBodyReader_readFrom",
             usageFilter = UsageFilter.ANY,
             category = ReplacementCategory.EXT_0)
     public static Object readFrom(
@@ -41,12 +37,13 @@ public class ProviderBaseClassReplacement extends ThirdPartyMethodReplacementCla
 
         Objects.requireNonNull(caller);
 
-        String content = JsonUtils.readStream(entityStream);
-        ClassToSchema.registerSchemaIfNeeded(type);
-        JsonTaint.handlePossibleJsonTaint(content, type);
-        entityStream = JsonUtils.toStream(content);
+        String className = caller.getClass().getSimpleName();
+        if(className.contains(".jackson.")){
+            return ProviderBaseClassReplacement.readFrom(caller,type,genericType,annotations,mediaType,httpHeaders,entityStream);
+        }
 
-        Method original = getOriginal(singleton, "Jackson_ProviderBaser_readFrom", caller);
+
+        Method original = getOriginal(singleton, "Javax_MessageBodyReader_readFrom", caller);
 
         try {
             return  original.invoke(caller, type, genericType, annotations, mediaType, httpHeaders, entityStream);
