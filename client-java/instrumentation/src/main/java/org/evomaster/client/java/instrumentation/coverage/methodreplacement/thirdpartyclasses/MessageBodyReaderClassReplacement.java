@@ -37,7 +37,7 @@ public class MessageBodyReaderClassReplacement extends ThirdPartyMethodReplaceme
 
         Objects.requireNonNull(caller);
 
-        String className = caller.getClass().getSimpleName();
+        String className = caller.getClass().getName();
         if(className.contains(".jackson.")){
             return ProviderBaseClassReplacement.readFrom(caller,type,genericType,annotations,mediaType,httpHeaders,entityStream);
         }
