@@ -1,6 +1,5 @@
 package org.evomaster.client.java.sql.internal;
 
-import org.evomaster.client.java.sql.internal.SelectTransformer;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -142,13 +141,18 @@ public class SelectTransformerTest {
     @Test
     public void testAddLimitForRowCount() {
 
-        String base = "select a from Foo ";
-        String sql = base + " where a=5 limit 1";
-        String addedLimit = "limit 5";
+        String base = "select a from Foo";
+        String originalLimit = " limit 1";
+        String where = " where a = 5";
+        String sql = base + where + originalLimit;
+        int limit = 5;
+        String addedLimit = " limit "+limit;
 
-        String res = SelectTransformer.addLimitForHandlingRowCount(sql, 5);
+        String res0 = SelectTransformer.addLimitForHandlingRowCount(sql,true, limit);
+        assertEquivalent(base + addedLimit, res0);
 
-        assertEquivalent(base+addedLimit, res);
+        String res1 = SelectTransformer.addLimitForHandlingRowCount(sql,false, limit);
+        assertEquivalent(base + where + addedLimit, res1);
     }
 
     @Test
