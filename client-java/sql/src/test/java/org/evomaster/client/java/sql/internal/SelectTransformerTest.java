@@ -140,6 +140,18 @@ public class SelectTransformerTest {
     }
 
     @Test
+    public void testAddLimitForRowCount() {
+
+        String base = "select a from Foo ";
+        String sql = base + " where a=5 limit 1";
+        String addedLimit = "limit 5";
+
+        String res = SelectTransformer.addLimitForHandlingRowCount(sql, 5);
+
+        assertEquivalent(base+addedLimit, res);
+    }
+
+    @Test
     public void testRemoveWhere_aliases() {
 
         String base = "select t.a as x, t.b as y from Foo t";
