@@ -98,13 +98,16 @@ public class SelectTransformer {
 
     /**
      * add LIMIT for select in order to control row count
-     * @param select specifies SELECT sql
-     * @param limitedRowCount specifies the limit
+     *
+     * @param select                   specifies SELECT sql
+     * @param doRemoveOtherConstraints specified whether to remove other constraints
+     * @param limitedRowCount          specifies the limit
      * @return select statement with LIMIT clause
      */
-    public static String addLimitForHandlingRowCount(String select, int limitedRowCount){
+    public static String addLimitForHandlingRowCount(String select, boolean doRemoveOtherConstraints, int limitedRowCount){
         Select stmt = asSelectStatement(select);
-        handleSelect(stmt);
+        if (doRemoveOtherConstraints)
+            handleSelect(stmt);
         if (limitedRowCount > 0){
             Limit limit = new Limit();
             limit.setRowCount(new LongValue(limitedRowCount));
