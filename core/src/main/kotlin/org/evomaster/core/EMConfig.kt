@@ -1977,9 +1977,15 @@ class EMConfig {
 
 
     @Experimental
-    @Cfg("Specify a maximum number of existing data in the database to sample when SQL handling is enabled. " +
+    @Cfg("Specify a maximum number of existing data in the database to sample in a test when SQL handling is enabled. " +
             "Note that a negative number means all existing data would be sampled")
-    var maximumExistingDataToSampleInDb = -1
+    var maxSizeOfExistingDataToSample = -1
+
+
+    @Experimental
+    @Cfg("Specify a maximum number of records of a table in the database to be employed for computing sql heuristics when SQL handling is enabled. " +
+            "Note that a negative number means all data would be fetched for computing sql heuristics")
+    var maxDataInDbToFetchForComputingSqlHeuristic = -1
 
     @Debug
     @Cfg("Whether to output executed sql info")
