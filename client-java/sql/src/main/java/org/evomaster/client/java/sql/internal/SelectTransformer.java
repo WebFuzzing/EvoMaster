@@ -104,6 +104,7 @@ public class SelectTransformer {
      */
     public static String addLimitForHandlingRowCount(String select, int limitedRowCount){
         Select stmt = asSelectStatement(select);
+        handleSelect(stmt);
         if (limitedRowCount > 0){
             Limit limit = new Limit();
             limit.setRowCount(new LongValue(limitedRowCount));
