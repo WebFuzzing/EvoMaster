@@ -95,7 +95,7 @@ class SQLGenerator{
         /**
          * select rows of specified columns with constraints, i.e., SELECT * FROM TABLE WHERE CONDITION
          */
-        private  fun genSelect(col : String, table: Table, condition: String? = null):String {
+        fun genSelect(col : String, table: Table, condition: String? = null):String {
             val sql = "${SQLKey.SELECT.key} $col ${SQLKey.FROM} ${table.name}"
             if(condition == null || condition.isBlank()) return sql
             return sql +" " + SQLKey.WHERE.key+ " "+ condition

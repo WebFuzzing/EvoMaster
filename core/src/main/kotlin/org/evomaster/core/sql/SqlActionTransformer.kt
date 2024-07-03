@@ -7,6 +7,7 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.sql.SqlWrapperGene
+import org.evomaster.core.sql.schema.Table
 
 
 object SqlActionTransformer {
@@ -80,11 +81,30 @@ object SqlActionTransformer {
                 insertion.data.add(entry)
             }
 
+            if (insertion.data.isNotEmpty()){
+                insertion.selectForInsertion = generateSelectForInsert(insertion.data, action.table)
+            }
+
             list.add(insertion)
             previous.addAll(action.seeTopGenes())
         }
 
         return DatabaseCommandDto().apply { this.insertions = list }
+    }
+
+
+    private fun generateSelectForInsert(data: List<InsertionEntryDto>, table: Table) : String{
+
+        val cols = data.map { it.variableName }.toTypedArray()
+        val condition = SQLGenerator.composeAndConditions(
+            SQLGenerator.genConditions(
+                cols,
+                data.map { it.printableValue },
+                table
+            )
+        )
+
+        return SQLGenerator.genSelect(SQLKey.ALL.key, table, condition)
     }
 
     /**
