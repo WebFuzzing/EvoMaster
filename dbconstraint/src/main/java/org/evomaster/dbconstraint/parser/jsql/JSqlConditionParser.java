@@ -1,5 +1,7 @@
 package org.evomaster.dbconstraint.parser.jsql;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
@@ -15,6 +17,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class JSqlConditionParser implements SqlConditionParser {
+
+    private static Logger log = LoggerFactory.getLogger(JSqlConditionParser.class);
 
     private static ExecutorService executor = Executors.newCachedThreadPool();
 
@@ -35,12 +39,15 @@ public class JSqlConditionParser implements SqlConditionParser {
 
         try {
             return future.get(timeoutMs, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException | TimeoutException e) {
+        } catch (InterruptedException e) {
             throw new SqlConditionParserException(e);
         } catch (ExecutionException e) {
             if(e.getCause() instanceof SqlConditionParserException){
                 throw (SqlConditionParserException) e.getCause();
             };
+            throw new SqlConditionParserException(e);
+        } catch (TimeoutException e){
+            log.warn("Failed to analyze SQL constraints within {} ms: {}", timeoutMs, sqlConditionStr);
             throw new SqlConditionParserException(e);
         }
     }
