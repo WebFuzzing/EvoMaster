@@ -10,10 +10,14 @@ import org.evomaster.dbconstraint.ast.SqlCondition;
 import org.evomaster.dbconstraint.parser.SqlConditionParser;
 import org.evomaster.dbconstraint.parser.SqlConditionParserException;
 
+import java.util.concurrent.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class JSqlConditionParser implements SqlConditionParser {
+
+    private static ExecutorService executor = Executors.newCachedThreadPool();
+
 
     /**
      * JSQL does not support legal check constraints such as (x=35) = (y=32).
@@ -23,6 +27,23 @@ public class JSqlConditionParser implements SqlConditionParser {
      * into those two formulas by using the Matcher.group(int) method
      */
     public static final String FORMULA_EQUALS_FORMULA_PATTERN = "\\(\\s*\\(([^<]*)\\)\\s*=\\s*\\(([^<]*)\\)\\s*\\)";
+
+    @Override
+    public SqlCondition parse(String sqlConditionStr, ConstraintDatabaseType databaseType, long timeoutMs) throws SqlConditionParserException{
+
+        Future<SqlCondition> future = executor.submit(() -> parse(sqlConditionStr, databaseType));
+
+        try {
+            return future.get(timeoutMs, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException | TimeoutException e) {
+            throw new SqlConditionParserException(e);
+        } catch (ExecutionException e) {
+            if(e.getCause() instanceof SqlConditionParserException){
+                throw (SqlConditionParserException) e.getCause();
+            };
+            throw new SqlConditionParserException(e);
+        }
+    }
 
     @Override
     public SqlCondition parse(String sqlConditionStr, ConstraintDatabaseType databaseType) throws SqlConditionParserException {
