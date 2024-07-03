@@ -5,6 +5,7 @@ import org.evomaster.core.problem.enterprise.auth.AuthSettings
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.param.PathParam
+import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.service.AbstractRestSampler
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.seeding.service.PirToIndividual
@@ -38,7 +39,10 @@ class PirToRest: PirToIndividual(){
     }
 
 
-    fun fromVerbPath(verb: String, path: String) : RestCallAction?{
+    /**
+     *  From components of a string representation, create an action, based on existing template
+     */
+    fun fromVerbPath(verb: String, path: String, queryParams : Map<String,String> = mapOf()) : RestCallAction?{
 
         val v = try{HttpVerb.valueOf(verb.uppercase())}
         catch (e: IllegalArgumentException){
@@ -61,6 +65,12 @@ class PirToRest: PirToIndividual(){
         val x = candidates[0].copy() as RestCallAction
         x.doInitialize(randomness)
 
+        /*
+         * looking at all existing parameters in the candidate template.
+         * note that input info might be missing data, if such is optional.
+         * for example, if a query parameter is optional, that might be missing in the input to this function,
+         * which would mean it must be off here
+         */
         x.parameters.forEach { p ->
             when(p){
                 is PathParam -> {
@@ -69,6 +79,15 @@ class PirToRest: PirToIndividual(){
                     if(!isSet){
                         log.warn("Failed to update path parameter ${p.name} with value: $toSeed")
                         return null
+                    }
+                }
+                is QueryParam ->{
+                    val name = p.name
+                    if(queryParams.containsKey(name)){
+                        p.getGeneForQuery().setFromStringValue(queryParams[name]!!)
+                    } else {
+                        //TODO check if optional. is so, deactivate. if not, outdate info, issue warning.
+                        //TODO also check nulllable genes
                     }
                 }
                 else -> {
