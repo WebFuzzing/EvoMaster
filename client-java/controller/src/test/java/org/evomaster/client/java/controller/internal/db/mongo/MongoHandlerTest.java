@@ -8,7 +8,7 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.evomaster.client.java.controller.internal.db.MongoHandler;
 import org.evomaster.client.java.controller.internal.db.MongoOperationDistance;
-import org.evomaster.client.java.instrumentation.MongoInfo;
+import org.evomaster.client.java.instrumentation.MongoFindCommand;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -58,6 +58,7 @@ public class MongoHandlerTest {
 
         MongoDatabase database = mongoClient.getDatabase(DATABASE_NAME);
         MongoCollection<Document> collection = database.getCollection(COLLECTION_NAME);
+
         assertFalse(collection.find().iterator().hasNext());
 
         collection.insertOne(document);
@@ -76,7 +77,7 @@ public class MongoHandlerTest {
         final boolean successfullyExecuted = true;
         final int executionTime = 1;
 
-        MongoInfo mongoInfo = new MongoInfo(DATABASE_NAME,
+        MongoFindCommand mongoFindCommand = new MongoFindCommand(DATABASE_NAME,
                 COLLECTION_NAME,
                 documentsType,
                 queryDocument,
@@ -87,7 +88,7 @@ public class MongoHandlerTest {
         mongoHandler.setMongoClient(mongoClient);
         mongoHandler.setCalculateHeuristics(true);
         mongoHandler.setExtractMongoExecution(true);
-        mongoHandler.handle(mongoInfo);
+        mongoHandler.handle(mongoFindCommand);
         List<MongoOperationDistance> distances = mongoHandler.getDistances();
 
         assertEquals(1, distances.size());

@@ -5,7 +5,7 @@ import java.io.Serializable;
 /**
  * Info related to MONGO command execution.
  */
-public class MongoInfo implements Serializable {
+public class MongoFindCommand implements Serializable {
     /**
      * Name of the collection that the operation was applied to
      */
@@ -25,10 +25,18 @@ public class MongoInfo implements Serializable {
      * Executed FIND query
      */
     private final Object bson;
+
+    /**
+     * If the operation was successfully executed
+     */
     private final boolean successfullyExecuted;
+
+    /**
+     * Elapsed execution time
+     */
     private final long executionTime;
 
-    public MongoInfo(String databaseName, String collectionName, String documentsType, Object bson, boolean successfullyExecuted, long executionTime) {
+    public MongoFindCommand(String databaseName, String collectionName, String documentsType, Object bson, boolean successfullyExecuted, long executionTime) {
         this.collectionName = collectionName;
         this.databaseName = databaseName;
         this.documentsType = documentsType;

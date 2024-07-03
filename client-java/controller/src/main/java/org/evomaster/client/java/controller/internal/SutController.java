@@ -304,7 +304,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         List<AdditionalInfo> list = getAdditionalInfoList();
         if(!list.isEmpty()) {
             AdditionalInfo last = list.get(list.size() - 1);
-            last.getMongoCollectionInfoData().forEach(mongoHandler::handle);
+            last.getMongoCollectionTypeData().forEach(mongoHandler::handle);
         }
     }
 
@@ -435,7 +435,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         if(mongoHandler.isExtractMongoExecution()){
             if(!additionalInfoList.isEmpty()) {
                 AdditionalInfo last = additionalInfoList.get(additionalInfoList.size() - 1);
-                last.getMongoCollectionInfoData().forEach(mongoHandler::handle);
+                last.getMongoCollectionTypeData().forEach(mongoHandler::handle);
             }
             dto.mongoExecutionDto = mongoHandler.getExecutionDto();
         }

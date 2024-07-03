@@ -5,8 +5,8 @@ import org.evomaster.client.java.controller.api.dto.database.execution.MongoExec
 import org.evomaster.client.java.controller.internal.TaintHandlerExecutionTracer;
 import org.evomaster.client.java.controller.mongo.MongoHeuristicsCalculator;
 import org.evomaster.client.java.controller.mongo.MongoOperation;
-import org.evomaster.client.java.instrumentation.MongoCollectionInfo;
-import org.evomaster.client.java.instrumentation.MongoInfo;
+import org.evomaster.client.java.instrumentation.MongoCollectionSchema;
+import org.evomaster.client.java.instrumentation.MongoFindCommand;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -24,7 +24,7 @@ public class MongoHandler {
     /**
      * Info about Find operations executed
      */
-    private final List<MongoInfo> operations;
+    private final List<MongoFindCommand> operations;
 
     /**
      * Whether to use execution's info or not
@@ -47,10 +47,10 @@ public class MongoHandler {
     private final List<MongoOperation> failedQueries;
 
     /**
-     * Info about types of the documents of the repository extracted from Spring framework.
+     * Info about schemas of the documents of the repository extracted from Spring framework.
      * Documents of the collection will be mapped to the Repository type
      */
-    private final Map<String, String> collectionInfo;
+    private final Map<String, String> collectionSchemas;
 
     /**
      * Since we do not want to add a dependency to given Mongo version, we
@@ -64,7 +64,7 @@ public class MongoHandler {
         distances = new ArrayList<>();
         operations = new ArrayList<>();
         failedQueries = new ArrayList<>();
-        collectionInfo = new HashMap<>();
+        collectionSchemas = new HashMap<>();
         extractMongoExecution = true;
         calculateHeuristics = true;
     }
@@ -92,14 +92,16 @@ public class MongoHandler {
         this.extractMongoExecution = extractMongoExecution;
     }
 
-    public void handle(MongoInfo info) {
+    public void handle(MongoFindCommand info) {
         if (extractMongoExecution) {
             operations.add(info);
         }
     }
 
-    public void handle(MongoCollectionInfo info) {
-        if (extractMongoExecution) collectionInfo.put(info.getCollectionName(), info.getDocumentsType());
+    public void handle(MongoCollectionSchema info) {
+        if (extractMongoExecution) {
+            collectionSchemas.put(info.getCollectionName(), info.getCollectionSchema());
+        }
     }
 
     public List<MongoOperationDistance> getDistances() {
@@ -143,7 +145,7 @@ public class MongoHandler {
         return documentsAsList;
     }
 
-    private double computeDistance(MongoInfo info) {
+    private double computeDistance(MongoFindCommand info) {
 
         String databaseName= info.getDatabaseName();
         String collectionName = info.getCollectionName();
@@ -152,8 +154,9 @@ public class MongoHandler {
         Iterable<?> documents = getDocuments(collection);
         boolean collectionIsEmpty = !documents.iterator().hasNext();
 
-        if (collectionIsEmpty)
+        if (collectionIsEmpty) {
             failedQueries.add(new MongoOperation(info.getCollectionName(), info.getQuery(), info.getDatabaseName(), info.getDocumentsType()));
+        }
 
         double min = Double.MAX_VALUE;
 
@@ -188,16 +191,16 @@ public class MongoHandler {
             return collection;
 
         } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Failed to retrieve a Mongo collection instance", e);
         }
 
     }
 
     private MongoFailedQuery extractRelevantInfo(MongoOperation operation) {
         String documentsType;
-        if (collectionTypeIsRegistered(operation.getCollectionName())) {
+        if (collectionSchemaIsRegistered(operation.getCollectionName())) {
             // We have to which class the documents of the collection will be mapped to
-            documentsType = collectionInfo.get(operation.getCollectionName());
+            documentsType = collectionSchemas.get(operation.getCollectionName());
         } else {
             // Just using the documents type provided by the MongoCollection method
             documentsType = operation.getDocumentsType();
@@ -205,8 +208,8 @@ public class MongoHandler {
         return new MongoFailedQuery(operation.getDatabaseName(), operation.getCollectionName(), documentsType);
     }
 
-    private boolean collectionTypeIsRegistered(String collectionName) {
-        return collectionInfo.containsKey(collectionName);
+    private boolean collectionSchemaIsRegistered(String collectionName) {
+        return collectionSchemas.containsKey(collectionName);
     }
 
     public void setMongoClient(Object mongoClient) {
