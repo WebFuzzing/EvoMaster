@@ -2,9 +2,9 @@ package org.evomaster.client.java.sql.advanced.query_calculator.where_calculator
 
 import org.evomaster.client.java.distance.heuristics.Truthness;
 
-import static org.evomaster.client.java.sql.advanced.helpers.ConversionsHelper.convertToBoolean;
 import static org.evomaster.client.java.distance.heuristics.Truthness.FALSE;
 import static org.evomaster.client.java.distance.heuristics.TruthnessUtils.trueIfConditionElseFalse;
+import static org.evomaster.client.java.sql.advanced.helpers.ConversionsHelper.convertToBoolean;
 
 public class WhereCalculatorStackItem {
 

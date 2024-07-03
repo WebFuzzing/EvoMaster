@@ -1,7 +1,6 @@
 package org.evomaster.client.java.sql.advanced.query_calculator.where_calculator.comparison_calculators;
 
 import org.evomaster.client.java.distance.heuristics.Truthness;
-import org.evomaster.client.java.sql.advanced.helpers.ConversionsHelper;
 
 import static org.evomaster.client.java.sql.advanced.helpers.ConversionsHelper.convertToDouble;
 import static org.evomaster.client.java.sql.advanced.query_calculator.where_calculator.comparison_calculators.DoubleComparisonCalculator.createDoubleComparisonCalculator;

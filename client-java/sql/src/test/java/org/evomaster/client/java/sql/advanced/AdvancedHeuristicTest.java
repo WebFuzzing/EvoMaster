@@ -10,7 +10,6 @@ import org.testcontainers.containers.DockerComposeContainer;
 
 import java.io.File;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 
 import static java.lang.String.format;
@@ -18,7 +17,6 @@ import static java.sql.DriverManager.getConnection;
 import static org.evomaster.client.java.distance.heuristics.Truthness.*;
 import static org.evomaster.client.java.distance.heuristics.TruthnessUtils.*;
 import static org.evomaster.client.java.sql.advanced.AdvancedHeuristic.createAdvancedHeuristic;
-import static org.evomaster.client.java.sql.advanced.driver.Schema.createSchema;
 import static org.evomaster.client.java.sql.advanced.driver.SqlDriver.createSqlDriver;
 import static org.evomaster.client.java.sql.advanced.helpers.dump.JsonFileHelper.loadObject;
 import static org.junit.Assert.assertEquals;

@@ -1,7 +1,7 @@
 package org.evomaster.client.java.sql.advanced.query_calculator;
 
-import org.evomaster.client.java.sql.advanced.driver.row.Row;
 import org.evomaster.client.java.distance.heuristics.Truthness;
+import org.evomaster.client.java.sql.advanced.driver.row.Row;
 
 import java.util.List;
 
