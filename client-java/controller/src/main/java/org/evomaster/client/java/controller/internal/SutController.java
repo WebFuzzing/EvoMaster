@@ -298,6 +298,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     public final void initMongoHandler() {
         // This is needed because the replacement use to get this info occurs during the start of the SUT.
+        Object connection = getMongoConnection();
+        mongoHandler.setMongoClient(connection);
 
         List<AdditionalInfo> list = getAdditionalInfoList();
         if(!list.isEmpty()) {

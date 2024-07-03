@@ -8,6 +8,8 @@ import org.evomaster.client.java.controller.mongo.MongoOperation;
 import org.evomaster.client.java.instrumentation.MongoCollectionInfo;
 import org.evomaster.client.java.instrumentation.MongoInfo;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -50,6 +52,12 @@ public class MongoHandler {
      */
     private final Map<String, String> collectionInfo;
 
+    /**
+     * Since we do not want to add a dependency to given Mongo version, we
+     * are using an Object reference
+     */
+    private Object mongoClient = null;
+
     private final MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator(new TaintHandlerExecutionTracer());
 
     public MongoHandler() {
@@ -85,7 +93,9 @@ public class MongoHandler {
     }
 
     public void handle(MongoInfo info) {
-        if (extractMongoExecution) operations.add(info);
+        if (extractMongoExecution) {
+            operations.add(info);
+        }
     }
 
     public void handle(MongoCollectionInfo info) {
@@ -114,8 +124,32 @@ public class MongoHandler {
         return dto;
     }
 
+    private static Class<?> getCollectionClass(Object collection) throws ClassNotFoundException {
+        // collection is an implementation of interface MongoCollection
+        return collection.getClass().getInterfaces()[0];
+    }
+
+    private Iterable<?> getDocuments(Object collection) {
+        // Need to convert result of getDocuments which a FindIterable instance as it is not Serializable
+        List<Object> documentsAsList = new ArrayList<>();
+        try {
+            Class<?> collectionClass = getCollectionClass(collection);
+            Iterable<?> findIterable = (Iterable<?>) collectionClass.getMethod("find").invoke(collection);
+            findIterable.forEach(documentsAsList::add);
+        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException |
+                 ClassNotFoundException e) {
+            throw new RuntimeException("Failed to retrieve all documents from a mongo collection", e);
+        }
+        return documentsAsList;
+    }
+
     private double computeDistance(MongoInfo info) {
-        Iterable<?> documents = info.getDocuments();
+
+        String databaseName= info.getDatabaseName();
+        String collectionName = info.getCollectionName();
+
+        Object collection = getCollection(databaseName,collectionName);
+        Iterable<?> documents = getDocuments(collection);
         boolean collectionIsEmpty = !documents.iterator().hasNext();
 
         if (collectionIsEmpty)
@@ -129,6 +163,34 @@ public class MongoHandler {
             if (dist < min) min = dist;
         }
         return min;
+    }
+
+    private Object getCollection(String databaseName, String collectionName) {
+        try {
+            // Get the MongoClient class
+            Class<?> mongoClientClass = mongoClient.getClass();
+
+            // Get the "getDatabase" method of class MongoClient
+            Method getDatabaseMethod = mongoClientClass.getMethod("getDatabase", String.class);
+
+            // mongoClient.getDatabase(databaseName)
+            Object database = getDatabaseMethod.invoke(mongoClient, databaseName);
+
+            // Get the MongoDatabase class
+            Class<?> mongoDatabaseClass = database.getClass();
+
+            // Get the "getCollection" method of class MongoCollection c
+            Method getCollectionMethod = mongoDatabaseClass.getMethod("getCollection", String.class);
+
+            // database.getCollection(collectionName)
+            Object collection = getCollectionMethod.invoke(database, collectionName);
+
+            return collection;
+
+        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     private MongoFailedQuery extractRelevantInfo(MongoOperation operation) {
@@ -145,5 +207,9 @@ public class MongoHandler {
 
     private boolean collectionTypeIsRegistered(String collectionName) {
         return collectionInfo.containsKey(collectionName);
+    }
+
+    public void setMongoClient(Object mongoClient) {
+        this.mongoClient = mongoClient;
     }
 }

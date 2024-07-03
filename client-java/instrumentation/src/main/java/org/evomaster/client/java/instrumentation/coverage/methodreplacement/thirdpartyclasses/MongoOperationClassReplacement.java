@@ -8,7 +8,6 @@ import org.evomaster.client.java.instrumentation.object.GeoJsonPointToOasConvert
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -18,24 +17,10 @@ public abstract class MongoOperationClassReplacement extends ThirdPartyMethodRep
     protected static void handleMongo(Object mongoCollection, Object bson, boolean successfullyExecuted, long executionTime) {
         List<CustomTypeToOasConverter> converters = Collections.singletonList(new GeoJsonPointToOasConverter());
         String schema = ClassToSchema.getOrDeriveSchemaWithItsRef(extractDocumentsType(mongoCollection), true, converters);
-        MongoInfo info = new MongoInfo(getCollectionName(mongoCollection), getDatabaseName(mongoCollection), schema, getDocuments(mongoCollection), bson, successfullyExecuted, executionTime);
+        MongoInfo info = new MongoInfo(getDatabaseName(mongoCollection), getCollectionName(mongoCollection), schema, bson, successfullyExecuted, executionTime);
         ExecutionTracer.addMongoInfo(info);
     }
 
-
-    private static Iterable<?> getDocuments(Object collection) {
-        // Need to convert result of getDocuments which a FindIterable instance as it is not Serializable
-        List<Object> documentsAsList = new ArrayList<>();
-        try {
-            Class<?> collectionClass = getCollectionClass(collection);
-            Iterable<?> findIterable = (Iterable<?>) collectionClass.getMethod("find").invoke(collection);
-            findIterable.forEach(documentsAsList::add);
-        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException |
-                 ClassNotFoundException e) {
-            throw new RuntimeException("Failed to retrieve all documents from a mongo collection", e);
-        }
-        return documentsAsList;
-    }
 
     private static Class<?> extractDocumentsType(Object collection) {
         try {

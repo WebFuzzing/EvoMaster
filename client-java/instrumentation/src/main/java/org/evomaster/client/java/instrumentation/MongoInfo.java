@@ -22,22 +22,16 @@ public class MongoInfo implements Serializable {
     private final String documentsType;
 
     /**
-     * Documents in the collection at the moment of the operation
-     */
-    private final Iterable<?> documents;
-
-    /**
      * Executed FIND query
      */
     private final Object bson;
     private final boolean successfullyExecuted;
     private final long executionTime;
 
-    public MongoInfo(String collectionName, String databaseName, String documentsType, Iterable<?> documents, Object bson, boolean successfullyExecuted, long executionTime) {
+    public MongoInfo(String databaseName, String collectionName, String documentsType, Object bson, boolean successfullyExecuted, long executionTime) {
         this.collectionName = collectionName;
         this.databaseName = databaseName;
         this.documentsType = documentsType;
-        this.documents = documents;
         this.bson = bson;
         this.successfullyExecuted = successfullyExecuted;
         this.executionTime = executionTime;
@@ -49,10 +43,6 @@ public class MongoInfo implements Serializable {
 
     public String getCollectionName() {
         return collectionName;
-    }
-
-    public Iterable<?> getDocuments() {
-        return documents;
     }
 
     public String getDocumentsType() {return documentsType;}
