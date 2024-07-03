@@ -17,4 +17,10 @@ public class InsertionDto {
     public String targetTable;
 
     public List<InsertionEntryDto> data = new ArrayList<>();
+
+
+    /**
+     * SELECT command for the insertion
+     */
+    public String selectForInsertion;
 }
