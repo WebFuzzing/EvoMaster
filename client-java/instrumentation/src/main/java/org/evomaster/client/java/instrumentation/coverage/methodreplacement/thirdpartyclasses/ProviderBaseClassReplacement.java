@@ -41,10 +41,7 @@ public class ProviderBaseClassReplacement extends ThirdPartyMethodReplacementCla
 
         Objects.requireNonNull(caller);
 
-        String content = JsonUtils.readStream(entityStream);
-        ClassToSchema.registerSchemaIfNeeded(type);
-        JsonTaint.handlePossibleJsonTaint(content, type);
-        entityStream = JsonUtils.toStream(content);
+        entityStream = JsonUtils.analyzeClass(entityStream, type);
 
         Method original = getOriginal(singleton, "Jackson_ProviderBaser_readFrom", caller);
 

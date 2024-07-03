@@ -39,9 +39,8 @@ public class MessageBodyReaderClassReplacement extends ThirdPartyMethodReplaceme
 
         String className = caller.getClass().getName();
         if(className.contains(".jackson.")){
-            return ProviderBaseClassReplacement.readFrom(caller,type,genericType,annotations,mediaType,httpHeaders,entityStream);
+           entityStream = JsonUtils.analyzeClass(entityStream, type);
         }
-
 
         Method original = getOriginal(singleton, "Javax_MessageBodyReader_readFrom", caller);
 

@@ -1,5 +1,8 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 
+import org.evomaster.client.java.instrumentation.object.ClassToSchema;
+import org.evomaster.client.java.instrumentation.object.JsonTaint;
+
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -20,5 +23,16 @@ public class JsonUtils {
 
     public static InputStream toStream(String content){
         return new ByteArrayInputStream(content.getBytes(Charset.defaultCharset()));
+    }
+
+
+    /**
+     * Consume the input stream, analyze the class for given type, and return a new stream for the input data
+     */
+    public static InputStream analyzeClass(InputStream entityStream, Class<Object> type){
+        String content = JsonUtils.readStream(entityStream);
+        ClassToSchema.registerSchemaIfNeeded(type);
+        JsonTaint.handlePossibleJsonTaint(content, type);
+        return JsonUtils.toStream(content);
     }
 }
