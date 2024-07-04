@@ -613,6 +613,18 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         }
     }
 
+    protected fun handlePythonVerbEndpoint(call: HttpWsAction, lines: Lines, appendBodyArgument: (HttpWsAction) -> Unit) {
+        lines.append(",")
+        lines.indented {
+            lines.add("headers=headers")
+            val elc = call.auth.endpointCallLogin
+            if (elc != null && elc.expectsCookie()) {
+                lines.append(", cookies=${CookieWriter.cookiesName(elc)}")
+            }
+            appendBodyArgument(call)
+        }
+    }
+
     protected fun handleLastLine(call: HttpWsAction, res: HttpWsCallResult, lines: Lines, resVarName: String) {
 
         if (format.isJavaScript()) {
