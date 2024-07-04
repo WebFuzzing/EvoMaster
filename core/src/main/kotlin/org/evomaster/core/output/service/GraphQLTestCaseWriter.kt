@@ -2,7 +2,6 @@ package org.evomaster.core.output.service
 
 import com.google.inject.Inject
 import org.evomaster.core.output.Lines
-import org.evomaster.core.output.auth.CookieWriter
 import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.graphql.GraphQLUtils
@@ -126,14 +125,7 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
         }
 
         if (format.isPython()) {
-            lines.append(",")
-            lines.indented {
-                lines.add("headers=headers")
-                val call = _call as GraphQLAction
-                val elc = call.auth.endpointCallLogin
-                if (elc != null && elc.expectsCookie()) {
-                    lines.append(", cookies=${CookieWriter.cookiesName(elc)}")
-                }
+            handlePythonVerbEndpoint(_call as GraphQLAction, lines) {
                 lines.append(", data=body")
             }
         }

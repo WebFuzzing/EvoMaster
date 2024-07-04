@@ -251,14 +251,8 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         }
 
         if (format.isPython()) {
-            lines.append(",")
-            lines.indented {
-                lines.add("headers=headers")
-                val elc = call.auth.endpointCallLogin
-                if (elc != null && elc.expectsCookie()) {
-                    lines.append(", cookies=${CookieWriter.cookiesName(elc)}")
-                }
-                val bodyParam = call.parameters.find { param -> param is BodyParam } as BodyParam?
+            handlePythonVerbEndpoint(call, lines) { action: HttpWsAction ->
+                val bodyParam = action.parameters.find { param -> param is BodyParam } as BodyParam?
                 if (bodyParam != null) {
                     lines.append(", data=body")
                 }
