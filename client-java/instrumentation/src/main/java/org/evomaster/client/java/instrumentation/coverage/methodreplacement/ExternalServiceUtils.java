@@ -17,6 +17,13 @@ import java.time.LocalDateTime;
 public class ExternalServiceUtils {
 
     /**
+     * A local address created based on a direct IP address like 127.0.0.1 can result
+     * in a reverse-lookup for hostname in something different than "localhost".
+     * This could be for example "kubernetes.docker.internal" if you have Docker installed.
+     */
+    public static final String canonicalLocalHostname = InetAddress.getLoopbackAddress().getCanonicalHostName();
+
+    /**
      * Check if string literal is a valid v4 or v6 IP address
      */
     public static boolean isValidIP(String s) {
@@ -31,7 +38,12 @@ public class ExternalServiceUtils {
      * Force collecting DNS info, without failing if errors
      */
     public static void analyzeDnsResolution(String host){
-        // TODO: If we skip Inet resolution at this point, incase if it is already exists, would
+
+        if(skipHostnameOrIp(host)){
+            return;
+        }
+
+        // TODO: If we skip Inet resolution at this point, in case if it is already exists, would
         //  it improve the speed?
         try {
             InetAddress addresses = InetAddressClassReplacement.getByName(host);
@@ -60,6 +72,8 @@ public class ExternalServiceUtils {
 
         ExecutionTracer.addExternalServiceHost(remoteHostInfo);
 
+        //FIXME need to check if no info on port
+
         if (!ExecutionTracer.hasLocalAddressForHost(remoteHostInfo.getHostname())) {
             return new String[]{ExecutionTracer.getDefaultSinkholeAddress(), "" + remotePort};
         } else {
@@ -78,18 +92,24 @@ public class ExternalServiceUtils {
         // https://en.wikipedia.org/wiki/Reserved_IP_addresses
         // There could be other possible ranges to ignore since it is not
         // necessary for the moment, following IP address ranges are skipped
-        if (hostname.isEmpty()
-                || hostname.startsWith("localhost")
+        return hostname == null
+                || hostname.isEmpty()
+                || skipHostname(hostname)
                 || hostname.startsWith("0.")
                 || hostname.startsWith("10.")
                 || hostname.startsWith("192.168.")
-                || hostname.startsWith("docker.socket")
                 // in some cases, we do not skip this, because
-                || (hostname.startsWith("127.") && !ExecutionTracer.hasMappingForLocalAddress(hostname))) {
-            return true;
-        }
+                || (hostname.startsWith("127.") && !ExecutionTracer.hasMappingForLocalAddress(hostname))
+                ;
+    }
 
-        return false;
+    public static boolean skipHostname(String hostname){
+        return hostname == null
+                || hostname.isEmpty()
+                || hostname.equals("localhost")
+                || hostname.equals("docker.socket")
+                || hostname.equals(canonicalLocalHostname)
+                ;
     }
 
 

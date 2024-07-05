@@ -8,7 +8,7 @@ import java.net.InetSocketAddress
 import java.net.ServerSocket
 
 
-class ExternalServiceUtilsTest {
+class HttpWsExternalServiceUtilsTest {
 
     /**
      * Tests the next IP address generator. If IP address is out of range from

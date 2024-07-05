@@ -176,13 +176,16 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
             if (!elc.expectsCookie()) {
                 val tokenHeader = elc.token!!.httpHeaderName
-                lines.add(".$set(\"$tokenHeader\", ${TokenWriter.tokenName(elc)}) // ${call.auth.name}")
+                if (format.isPython()) {
+                    lines.add("headers[\"$tokenHeader\"] = ${TokenWriter.tokenName(elc)} # ${call.auth.name}")
+                } else {
+                    lines.add(".$set(\"$tokenHeader\", ${TokenWriter.tokenName(elc)}) // ${call.auth.name}")
+                }
             } else {
                 when {
                     format.isJavaOrKotlin() -> lines.add(".cookies(${CookieWriter.cookiesName(elc)})")
                     format.isJavaScript() -> lines.add(".set('Cookies', ${CookieWriter.cookiesName(elc)})")
                     //TODO C#
-                    // TODO Python
                 }
             }
         }
@@ -371,10 +374,6 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
             val send = sendBodyCommand()
 
-            if (format.isPython()) {
-                lines.add("body = {}")
-            }
-
             when {
                 format.isJavaOrKotlin() -> lines.add(".contentType(\"${bodyParam.contentType()}\")")
                 format.isJavaScript() -> lines.add(".set('Content-Type','${bodyParam.contentType()}')")
@@ -383,6 +382,10 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             }
 
             if (bodyParam.isJson()) {
+
+                if (format.isPython()) {
+                    lines.add("body = {}")
+                }
 
                 val json =
                         bodyParam.gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = format)
@@ -398,7 +401,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                             lines.append("new StringContent(\"$body\", Encoding.UTF8, \"${bodyParam.contentType()}\")")
                         }
                         format.isPython() -> {
-                            lines.add("body = $body")
+                            lines.add("body = \"$body\"")
                         }
                         else -> lines.add(".$send($body)")
                     }
@@ -408,7 +411,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                             lines.append("new StringContent(\"${"""\"\""""}\", Encoding.UTF8, \"${bodyParam.contentType()}\")")
                         }
                         format.isPython() -> {
-                            lines.add("body = $body")
+                            lines.add("body = \"\"")
                         }
                         else -> lines.add(".$send(\"${"""\"\""""}\")")
                     }
@@ -428,7 +431,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                         lines.append("new StringContent(\"$body\", Encoding.UTF8, \"${bodyParam.contentType()}\")")
                     }
                     format.isPython() -> {
-                        lines.add("body = $body")
+                        lines.add("body = \"$body\"")
                     }
                     else -> lines.add(".$send(\"$body\")")
                 }
@@ -607,6 +610,18 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 lines.append("await $responseVariableName.Content.ReadAsStringAsync();")
             }
             LoggingUtil.uniqueWarn(log, "Currently no assertions are generated for response type: $type")
+        }
+    }
+
+    protected fun handlePythonVerbEndpoint(call: HttpWsAction, lines: Lines, appendBodyArgument: (HttpWsAction) -> Unit) {
+        lines.append(",")
+        lines.indented {
+            lines.add("headers=headers")
+            val elc = call.auth.endpointCallLogin
+            if (elc != null && elc.expectsCookie()) {
+                lines.append(", cookies=${CookieWriter.cookiesName(elc)}")
+            }
+            appendBodyArgument(call)
         }
     }
 

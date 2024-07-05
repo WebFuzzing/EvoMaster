@@ -375,7 +375,7 @@ else:
 
 
 # How to run EvoMaster
-EVOMASTER_JAVA_OPTIONS = " -Xms2G -Xmx4G  -jar evomaster.jar "
+EVOMASTER_JAVA_OPTIONS = " -Xms2G -Xmx8G  -jar evomaster.jar "
 AGENT = "evomaster-agent.jar"
 EM_POSTFIX = "-evomaster-runner.jar"
 EM_POSTFIX_DOTNET = "-evomaster-runner.dll"

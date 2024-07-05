@@ -4,6 +4,7 @@ import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.SqlWriter
+import org.evomaster.core.output.auth.CookieWriter
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.RestCallAction
@@ -200,11 +201,10 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                 lines.append("${TestSuiteWriter.jsImport}.")
             }
 
-            if (format.isCsharp()) {
-                //TODO: double check this
-                lines.append("${locationVar(call.usePreviousLocationId!!)} + $baseUrlOfSut + \"${call.resolvedPath()}\"")
-            } else {
-                lines.append("resolveLocation(${locationVar(call.usePreviousLocationId!!)}, $baseUrlOfSut + \"${call.resolvedPath()}\")")
+            when {
+                format.isCsharp() -> lines.append("${locationVar(call.usePreviousLocationId!!)} + $baseUrlOfSut + \"${call.resolvedPath()}\"")
+                format.isPython() -> lines.append("resolve_location(${locationVar(call.usePreviousLocationId!!)}, self.$baseUrlOfSut + str(\"${call.resolvedPath()}\"))")
+                else -> lines.append("resolveLocation(${locationVar(call.usePreviousLocationId!!)}, $baseUrlOfSut + \"${call.resolvedPath()}\")")
             }
 
         } else {
@@ -251,13 +251,10 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         }
 
         if (format.isPython()) {
-            lines.append(",")
-            lines.indented {
-                val bodyParam = call.parameters.find { param -> param is BodyParam } as BodyParam?
-                if (bodyParam == null) {
-                    lines.add("headers=headers")
-                } else {
-                    lines.add("headers=headers, data=body")
+            handlePythonVerbEndpoint(call, lines) { action: HttpWsAction ->
+                val bodyParam = action.parameters.find { param -> param is BodyParam } as BodyParam?
+                if (bodyParam != null) {
+                    lines.append(", data=body")
                 }
             }
         }
@@ -342,6 +339,11 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                     format.isCsharp() -> {
                         lines.add("Assert.True(Uri.IsWellFormedUriString($location, UriKind.Absolute) || string.IsNullOrEmpty($location));")
                     }
+                    format.isPython() -> {
+                        lines.add("$location = $resVarName.headers['location']")
+                        val validCheck = "is_valid_uri_or_empty($location)"
+                        lines.add("assert $validCheck")
+                    }
                 }
             } else {
 
@@ -359,8 +361,10 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
 
                 //TODO JS and C#
                 //TODO code here should use same algorithm as in res.getResourceId()
-                val extract =
-                    "$resVarName.extract().body().path$extraTypeInfo(\"${res.getResourceIdName()}\").toString()"
+                val extract = when {
+                    format.isPython() -> "str($resVarName.json()['${res.getResourceIdName()}'])"
+                    else -> "$resVarName.extract().body().path$extraTypeInfo(\"${res.getResourceIdName()}\").toString()"
+                }
 
                 lines.add("${locationVar(call.postLocationId())} = $baseUri + \"/\" + $extract")
                 lines.appendSemicolon()

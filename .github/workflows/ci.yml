@@ -37,12 +37,12 @@ env:
   # third-party libraries, which might do it only in special cases.
   # For some "hilarious" case, see:
   # https://github.com/EMResearch/EvoMaster/issues/447
-  release-jdk: 17
-  latest-jdk: 17
+  release-jdk: 21
+  latest-jdk: 21
   build-jdk: 1.8
   retention-days: 5
   debug: false  # put to true if need to debug a specific test
-  debugTestName: "AuthZeroJacksonEMTest" # replace with test to debug
+  debugTestName: "H2ColumnTypesEMTest" # replace with test to debug
 
 # This build is quite expensive (some hours), so we run it whole only on some JVM versions and OSs.
 # For the moment, we need to support JVM 8 and all following LTS versions (e.g, 11 and  17).
@@ -132,17 +132,26 @@ jobs:
         run: echo Skipping upload to CodeCov
       # Only once coverage is uploaded, we try to build with other versions of Java, as "mvn clean" would delete those reports
       # However, the latest LTS is fully built (with tests) on a different job
+      # JDK 11
       - name: Setup JDK 11
         uses: actions/setup-java@v1
         with:
           java-version: 11
       - name: Compile with JDK 11
         run: mvn clean verify -DskipTests
+      #JDK 17
       - name: Setup JDK 17
         uses: actions/setup-java@v1
         with:
           java-version: 17
       - name: Compile with JDK 17
+        run: mvn clean verify -DskipTests
+      #JDK 21
+      - name: Setup JDK 21
+        uses: actions/setup-java@v1
+        with:
+          java-version: 21
+      - name: Compile with JDK 21
         run: mvn clean verify -DskipTests
 
 
@@ -355,11 +364,16 @@ jobs:
       - name: Build installation file
         shell: bash
         run: bash makeExecutable.sh DEBIAN
+      - name: Check generated files
+        shell: bash
+        run: ls -l release
       - name: Upload installation file
         uses: actions/upload-artifact@v3
         with:
           name: evomaster.deb
-          path: release/evomaster_${{env.evomaster-version}}-1_amd64.deb
+#          JDK 17 and 21 use different suffixes... doesn't seem configurable :(
+#          path: release/evomaster_${{env.evomaster-version}}-1_amd64.deb
+          path: release/evomaster_${{env.evomaster-version}}_amd64.deb
           retention-days: ${{env.retention-days}}
           if-no-files-found: error
 
