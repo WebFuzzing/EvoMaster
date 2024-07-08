@@ -1,9 +1,11 @@
 package org.evomaster.client.java.controller.api.dto;
 
+import java.io.Serializable;
+
 /**
  * Created by arcuri82 on 14-Jun-19.
  */
-public class HeuristicEntryDto {
+public class HeuristicEntryDto implements Serializable {
 
     /**
      * The type of extra heuristic.
@@ -31,27 +33,30 @@ public class HeuristicEntryDto {
     }
 
 
-    public final Type type;
+    public Type type;
 
-    public final Objective objective;
+    public Objective objective;
 
     /**
      * An id representing this heuristics.
      * For example, for SQL, it could be a SQL command
      */
-    public final String id;
+    public String id;
 
 
     /**
      * The actual value of the heuristic
      */
-    public final Double value;
+    public Double value;
 
     /**
      * The number of records that were considered for computing the heuristic score.
      * It might be rows for SQL queries and documents for NoSQL/Mongo queries.
      */
-    public final int numberOfEvaluatedRecords;
+    public int numberOfEvaluatedRecords;
+
+    public HeuristicEntryDto() {
+    }
 
     public HeuristicEntryDto(Type type, Objective objective, String id, Double value, int numberOfEvaluatedRecords) {
         this.type = type;
