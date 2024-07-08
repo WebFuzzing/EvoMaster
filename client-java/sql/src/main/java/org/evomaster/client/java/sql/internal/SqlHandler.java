@@ -6,7 +6,7 @@ import net.sf.jsqlparser.expression.ExpressionVisitorAdapter;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.statement.Statement;
-import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto;
+import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionsDto;
 import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionLogDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.sql.QueryResult;
@@ -144,21 +144,21 @@ public class SqlHandler {
 
     }
 
-    public ExecutionDto getExecutionDto() {
+    public SqlExecutionsDto getExecutionDto() {
 
         if (!calculateHeuristics && !extractSqlExecution) {
             return null;
         }
 
-        ExecutionDto executionDto = new ExecutionDto();
-        executionDto.queriedData.putAll(queriedData);
-        executionDto.failedWhere.putAll(failedWhere);
-        executionDto.insertedData.putAll(insertedData);
-        executionDto.updatedData.putAll(updatedData);
-        executionDto.deletedData.addAll(deletedData);
-        executionDto.numberOfSqlCommands = this.numberOfSqlCommands;
-        executionDto.sqlExecutionLogDtoList.addAll(executedInfo);
-        return executionDto;
+        SqlExecutionsDto sqlExecutionsDto = new SqlExecutionsDto();
+        sqlExecutionsDto.queriedData.putAll(queriedData);
+        sqlExecutionsDto.failedWhere.putAll(failedWhere);
+        sqlExecutionsDto.insertedData.putAll(insertedData);
+        sqlExecutionsDto.updatedData.putAll(updatedData);
+        sqlExecutionsDto.deletedData.addAll(deletedData);
+        sqlExecutionsDto.numberOfSqlCommands = this.numberOfSqlCommands;
+        sqlExecutionsDto.sqlExecutionLogDtoList.addAll(executedInfo);
+        return sqlExecutionsDto;
     }
 
     /**

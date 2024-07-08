@@ -1,7 +1,7 @@
 package org.evomaster.client.java.controller.internal.db;
 
 import org.evomaster.client.java.controller.api.dto.database.execution.MongoFailedQuery;
-import org.evomaster.client.java.controller.api.dto.database.execution.MongoExecutionDto;
+import org.evomaster.client.java.controller.api.dto.database.execution.MongoExecutionsDto;
 import org.evomaster.client.java.controller.internal.TaintHandlerExecutionTracer;
 import org.evomaster.client.java.controller.mongo.MongoHeuristicsCalculator;
 import org.evomaster.client.java.controller.mongo.MongoOperation;
@@ -115,8 +115,8 @@ public class MongoHandler {
         return distances;
     }
 
-    public MongoExecutionDto getExecutionDto() {
-        MongoExecutionDto dto = new MongoExecutionDto();
+    public MongoExecutionsDto getExecutionDto() {
+        MongoExecutionsDto dto = new MongoExecutionsDto();
         dto.failedQueries = emptyCollections.stream().map(this::extractRelevantInfo).collect(Collectors.toList());
         return dto;
     }

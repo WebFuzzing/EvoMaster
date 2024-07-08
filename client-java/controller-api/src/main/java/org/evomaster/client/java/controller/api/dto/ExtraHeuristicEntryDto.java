@@ -5,7 +5,7 @@ import java.io.Serializable;
 /**
  * Created by arcuri82 on 14-Jun-19.
  */
-public class HeuristicEntryDto implements Serializable {
+public class ExtraHeuristicEntryDto implements Serializable {
 
     /**
      * The type of extra heuristic.
@@ -55,10 +55,10 @@ public class HeuristicEntryDto implements Serializable {
      */
     public int numberOfEvaluatedRecords;
 
-    public HeuristicEntryDto() {
+    public ExtraHeuristicEntryDto() {
     }
 
-    public HeuristicEntryDto(Type type, Objective objective, String id, Double value, int numberOfEvaluatedRecords) {
+    public ExtraHeuristicEntryDto(Type type, Objective objective, String id, Double value, int numberOfEvaluatedRecords) {
         this.type = type;
         this.objective = objective;
         this.id = id;

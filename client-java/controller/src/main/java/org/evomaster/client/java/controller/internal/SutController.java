@@ -15,7 +15,7 @@ import org.evomaster.client.java.controller.api.ControllerConstants;
 import org.evomaster.client.java.controller.api.dto.*;
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto;
 import org.evomaster.client.java.controller.api.dto.constraint.ElementConstraintsDto;
-import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto;
+import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionsDto;
 import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionLogDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto;
@@ -386,9 +386,9 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         if (sqlHandler.isCalculateHeuristics()) {
             sqlHandler.getDistances().stream()
                     .map(p ->
-                            new HeuristicEntryDto(
-                                    HeuristicEntryDto.Type.SQL,
-                                    HeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
+                            new ExtraHeuristicEntryDto(
+                                    ExtraHeuristicEntryDto.Type.SQL,
+                                    ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
                                     p.sqlCommand,
                                     p.distance,
                                     0
@@ -396,15 +396,15 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                     .forEach(h -> dto.heuristics.add(h));
         }
 
-        ExecutionDto executionDto = sqlHandler.getExecutionDto();
-        dto.databaseExecutionDto = executionDto;
+        SqlExecutionsDto sqlExecutionsDto = sqlHandler.getExecutionDto();
+        dto.sqlSqlExecutionsDto = sqlExecutionsDto;
         // set accessed table
-        if (executionDto != null) {
-            accessedTables.addAll(executionDto.deletedData);
-            accessedTables.addAll(executionDto.insertedData.keySet());
+        if (sqlExecutionsDto != null) {
+            accessedTables.addAll(sqlExecutionsDto.deletedData);
+            accessedTables.addAll(sqlExecutionsDto.insertedData.keySet());
             //accessedTables.addAll(executionDto.queriedData.keySet());
-            accessedTables.addAll(executionDto.insertedData.keySet());
-            accessedTables.addAll(executionDto.updatedData.keySet());
+            accessedTables.addAll(sqlExecutionsDto.insertedData.keySet());
+            accessedTables.addAll(sqlExecutionsDto.updatedData.keySet());
         }
     }
 
@@ -424,9 +424,9 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
             mongoHandler.getDistances().stream()
                     .map(p ->
-                            new HeuristicEntryDto(
-                                    HeuristicEntryDto.Type.MONGO,
-                                    HeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
+                            new ExtraHeuristicEntryDto(
+                                    ExtraHeuristicEntryDto.Type.MONGO,
+                                    ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
                                     p.findQuery.toString(),
                                     p.findDistance,
                                     p.numberOfEvaluatedDocuments
@@ -439,7 +439,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                 AdditionalInfo last = additionalInfoList.get(additionalInfoList.size() - 1);
                 last.getMongoCollectionTypeData().forEach(mongoHandler::handle);
             }
-            dto.mongoExecutionDto = mongoHandler.getExecutionDto();
+            dto.mongoExecutionsDto = mongoHandler.getExecutionDto();
         }
     }
 
