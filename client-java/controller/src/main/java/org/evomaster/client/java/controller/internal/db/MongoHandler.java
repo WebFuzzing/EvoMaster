@@ -44,7 +44,7 @@ public class MongoHandler {
     /**
      * Unsuccessful executed queries
      */
-    private final List<MongoOperation> failedQueries;
+    private final List<MongoOperation> emptyCollections;
 
     /**
      * Info about schemas of the documents of the repository extracted from Spring framework.
@@ -63,7 +63,7 @@ public class MongoHandler {
     public MongoHandler() {
         distances = new ArrayList<>();
         operations = new ArrayList<>();
-        failedQueries = new ArrayList<>();
+        emptyCollections = new ArrayList<>();
         collectionSchemas = new HashMap<>();
         extractMongoExecution = true;
         calculateHeuristics = true;
@@ -72,7 +72,7 @@ public class MongoHandler {
     public void reset() {
         operations.clear();
         distances.clear();
-        failedQueries.clear();
+        emptyCollections.clear();
         // collectionInfo is not cleared to avoid losing the info as it's retrieved while SUT is starting
     }
 
@@ -107,13 +107,8 @@ public class MongoHandler {
     public List<MongoOperationDistance> getDistances() {
 
         operations.stream().filter(info -> info.getQuery() != null).forEach(mongoInfo -> {
-            double dist;
-            try {
-                dist = computeDistance(mongoInfo);
-            } catch (Exception e) {
-                dist = Double.MAX_VALUE;
-            }
-            distances.add(new MongoOperationDistance(mongoInfo.getQuery(), dist));
+            MongoFindDistanceAndNumerOfEvaluatedDocuments dist = computeFindDistance(mongoInfo);
+            distances.add(new MongoOperationDistance(mongoInfo.getQuery(), dist.findDistance, dist.numberOfEvaluatedDocuments));
         });
         operations.clear();
 
@@ -122,7 +117,7 @@ public class MongoHandler {
 
     public MongoExecutionDto getExecutionDto() {
         MongoExecutionDto dto = new MongoExecutionDto();
-        dto.failedQueries = failedQueries.stream().map(this::extractRelevantInfo).collect(Collectors.toList());
+        dto.failedQueries = emptyCollections.stream().map(this::extractRelevantInfo).collect(Collectors.toList());
         return dto;
     }
 
@@ -132,22 +127,30 @@ public class MongoHandler {
     }
 
     private Iterable<?> getDocuments(Object collection) {
-        // Need to convert result of getDocuments which a FindIterable instance as it is not Serializable
-        List<Object> documentsAsList = new ArrayList<>();
         try {
             Class<?> collectionClass = getCollectionClass(collection);
             Iterable<?> findIterable = (Iterable<?>) collectionClass.getMethod("find").invoke(collection);
-            findIterable.forEach(documentsAsList::add);
+            return findIterable;
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException |
                  ClassNotFoundException e) {
             throw new RuntimeException("Failed to retrieve all documents from a mongo collection", e);
         }
-        return documentsAsList;
     }
 
-    private double computeDistance(MongoFindCommand info) {
+    private static class MongoFindDistanceAndNumerOfEvaluatedDocuments {
+        public final double findDistance;
 
-        String databaseName= info.getDatabaseName();
+        public final int numberOfEvaluatedDocuments;
+
+        public MongoFindDistanceAndNumerOfEvaluatedDocuments(double findDistance, int numberOfEvaluatedDocuments) {
+            this.findDistance = findDistance;
+            this.numberOfEvaluatedDocuments = numberOfEvaluatedDocuments;
+        }
+    }
+
+    private MongoFindDistanceAndNumerOfEvaluatedDocuments computeFindDistance(MongoFindCommand info) {
+
+        String databaseName = info.getDatabaseName();
         String collectionName = info.getCollectionName();
 
         Object collection = getCollection(databaseName,collectionName);
@@ -155,17 +158,26 @@ public class MongoHandler {
         boolean collectionIsEmpty = !documents.iterator().hasNext();
 
         if (collectionIsEmpty) {
-            failedQueries.add(new MongoOperation(info.getCollectionName(), info.getQuery(), info.getDatabaseName(), info.getDocumentsType()));
+            emptyCollections.add(new MongoOperation(info.getCollectionName(), info.getQuery(), info.getDatabaseName(), info.getDocumentsType()));
         }
 
         double min = Double.MAX_VALUE;
-
+        int numberOfEvaluatedDocuments = 0;
         for (Object doc : documents) {
-            double dist = calculator.computeExpression(info.getQuery(), doc);
-            if (dist == 0) return 0;
-            if (dist < min) min = dist;
+            numberOfEvaluatedDocuments += 1;
+            double findDistance;
+            try {
+                findDistance = calculator.computeExpression(info.getQuery(), doc);
+            } catch (Exception ex) {
+                findDistance = Double.MAX_VALUE;
+            }
+            if (findDistance == 0) {
+                return new MongoFindDistanceAndNumerOfEvaluatedDocuments(0, numberOfEvaluatedDocuments);
+            } else if (findDistance < min) {
+                min = findDistance;
+            }
         }
-        return min;
+        return new MongoFindDistanceAndNumerOfEvaluatedDocuments(min, numberOfEvaluatedDocuments);
     }
 
     private Object getCollection(String databaseName, String collectionName) {

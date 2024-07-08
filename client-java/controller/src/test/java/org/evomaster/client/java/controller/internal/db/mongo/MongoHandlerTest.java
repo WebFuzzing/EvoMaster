@@ -94,7 +94,8 @@ public class MongoHandlerTest {
         assertEquals(1, distances.size());
 
         MongoOperationDistance distance = distances.iterator().next();
-        assertEquals(queryDocument, distance.bson);
-        assertEquals(Math.abs(30 - 18), distance.distance);
+        assertEquals(queryDocument, distance.findQuery);
+        assertEquals(Math.abs(30 - 18), distance.findDistance);
+        assertEquals(1, distance.numberOfEvaluatedDocuments);
     }
 }

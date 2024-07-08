@@ -31,30 +31,33 @@ public class HeuristicEntryDto {
     }
 
 
-    public Type type;
+    public final Type type;
 
-    public Objective objective;
+    public final Objective objective;
 
     /**
      * An id representing this heuristics.
      * For example, for SQL, it could be a SQL command
      */
-    public String id;
+    public final String id;
 
 
     /**
      * The actual value of the heuristic
      */
-    public Double value;
+    public final Double value;
 
+    /**
+     * The number of records that were considered for computing the heuristic score.
+     * It might be rows for SQL queries and documents for NoSQL/Mongo queries.
+     */
+    public final int numberOfEvaluatedRecords;
 
-    public HeuristicEntryDto() {
-    }
-
-    public HeuristicEntryDto(Type type, Objective objective, String id, Double value) {
+    public HeuristicEntryDto(Type type, Objective objective, String id, Double value, int numberOfEvaluatedRecords) {
         this.type = type;
         this.objective = objective;
         this.id = id;
         this.value = value;
+        this.numberOfEvaluatedRecords = numberOfEvaluatedRecords;
     }
 }

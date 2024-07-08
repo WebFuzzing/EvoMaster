@@ -390,7 +390,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                                     HeuristicEntryDto.Type.SQL,
                                     HeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
                                     p.sqlCommand,
-                                    p.distance
+                                    p.distance,
+                                    0
                             ))
                     .forEach(h -> dto.heuristics.add(h));
         }
@@ -426,8 +427,9 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                             new HeuristicEntryDto(
                                     HeuristicEntryDto.Type.MONGO,
                                     HeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
-                                    p.bson.toString(),
-                                    p.distance
+                                    p.findQuery.toString(),
+                                    p.findDistance,
+                                    p.numberOfEvaluatedDocuments
                             ))
                     .forEach(h -> dto.heuristics.add(h));
         }

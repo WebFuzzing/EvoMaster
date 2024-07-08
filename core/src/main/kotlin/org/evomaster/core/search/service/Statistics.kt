@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Paths
 import javax.annotation.PostConstruct
+import kotlin.Double.Companion.NaN
 
 
 class Statistics : SearchListener {
@@ -63,6 +64,10 @@ class Statistics : SearchListener {
      */
     private var coverageFailures = 0
 
+
+    var mongoHeuristicEvaluationCount = 0
+
+    private var mongoHeuristicTotalNumberOfEvaluatedDocuments = 0.0
 
    class Pair(val header: String, val element: String)
 
@@ -140,6 +145,17 @@ class Statistics : SearchListener {
 
     fun reportCoverageFailure() {
         coverageFailures++
+    }
+
+    fun reportNumberOfEvaluatedDocumentsForComputingMongoHeuristic(numberOfEvaluatedDocuments: Int) {
+        mongoHeuristicTotalNumberOfEvaluatedDocuments += numberOfEvaluatedDocuments
+        mongoHeuristicEvaluationCount++
+    }
+
+    fun averageNumberOfEvaluatedDocumentsForMongoHeuristic(): Double = if (mongoHeuristicEvaluationCount==0) {
+        NaN
+    } else {
+        mongoHeuristicTotalNumberOfEvaluatedDocuments / mongoHeuristicEvaluationCount
     }
 
     override fun newActionEvaluated() {
@@ -275,6 +291,10 @@ class Statistics : SearchListener {
             add(Pair("coverageFailures", "$coverageFailures"))
             add(Pair("clusteringTime", "${solution.clusteringTime}"))
             add(Pair("id", config.statisticsColumnId))
+
+            // statistic info for MongoHeuristics
+            add(Pair("averageNumberOfEvaluatedDocumentsForMongoHeuristic","${averageNumberOfEvaluatedDocumentsForMongoHeuristic()}"))
+            add(Pair("mongoHeuristicEvaluationCount","$mongoHeuristicEvaluationCount"))
         }
         addConfig(list)
 
@@ -414,4 +434,5 @@ class Statistics : SearchListener {
         }
         return content
     }
+
 }
