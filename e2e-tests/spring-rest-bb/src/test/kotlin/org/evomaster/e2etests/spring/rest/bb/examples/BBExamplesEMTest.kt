@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.rest.bb.examples
 
 import com.foo.rest.examples.bb.examples.BBExamplesController
+import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.rest.bb.SpringTestBase
 import org.junit.jupiter.api.Assertions
@@ -26,23 +27,11 @@ class BBExamplesEMTest : SpringTestBase() {
                 500
         ) { args: MutableList<String> ->
 
-            args.add("--blackBox")
-            args.add("true")
-            args.add("--bbTargetUrl")
-            args.add(baseUrlOfSut)
-            args.add("--bbSwaggerUrl")
-            args.add("$baseUrlOfSut/openapi-bbexamples.json")
-            args.add("--bbExperiments")
-            args.add("false")
+            addBlackBoxOptions(args, OutputFormat.KOTLIN_JUNIT_5)
+            setOption(args, "bbSwaggerUrl", "$baseUrlOfSut/openapi-bbexamples.json")
+            setOption(args, "probRestDefault", "0.45")
+            setOption(args, "probRestExamples","0.45")
 
-            args.add("--probRestDefault")
-            args.add("0.45")
-            args.add("--probRestExamples")
-            args.add("0.45")
-
-            //make sure we do not solve it via taint analysis
-            args.add("--baseTaintAnalysisProbability")
-            args.add("0")
 
             val solution = initAndRun(args)
 
@@ -67,21 +56,9 @@ class BBExamplesEMTest : SpringTestBase() {
                 50
         ) { args: MutableList<String> ->
 
-            args.add("--blackBox")
-            args.add("true")
-            args.add("--bbTargetUrl")
-            args.add(baseUrlOfSut)
-            args.add("--bbSwaggerUrl")
-            args.add("$baseUrlOfSut/openapi-bbexamples.json")
-            args.add("--bbExperiments")
-            args.add("false")
-
-            args.add("--probRestExamples")
-            args.add("0.0")
-
-            //make sure we do not solve it via taint analysis
-            args.add("--baseTaintAnalysisProbability")
-            args.add("0")
+            addBlackBoxOptions(args, OutputFormat.KOTLIN_JUNIT_5)
+            setOption(args, "bbSwaggerUrl", "$baseUrlOfSut/openapi-bbexamples.json")
+            setOption(args, "probRestExamples", "0.0")
 
             val solution = initAndRun(args)
 

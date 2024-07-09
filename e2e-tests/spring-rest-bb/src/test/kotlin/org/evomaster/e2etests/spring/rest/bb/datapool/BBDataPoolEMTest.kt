@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.rest.bb.datapool
 
 import com.foo.rest.examples.bb.datapool.BBDataPoolController
+import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.rest.bb.SpringTestBase
 import org.junit.jupiter.api.Assertions
@@ -25,16 +26,8 @@ class BBDataPoolEMTest : SpringTestBase() {
                 200
         ) { args: MutableList<String> ->
 
-            args.add("--blackBox")
-            args.add("true")
-            args.add("--bbTargetUrl")
-            args.add(baseUrlOfSut)
-            args.add("--bbSwaggerUrl")
-            args.add("$baseUrlOfSut/v3/api-docs")
-            args.add("--bbExperiments")
-            args.add("false")
-            args.add("--useResponseDataPool")
-            args.add("true")
+            addBlackBoxOptions(args, OutputFormat.KOTLIN_JUNIT_5)
+            setOption(args, "useResponseDataPool", "true")
 
             val solution = initAndRun(args)
 

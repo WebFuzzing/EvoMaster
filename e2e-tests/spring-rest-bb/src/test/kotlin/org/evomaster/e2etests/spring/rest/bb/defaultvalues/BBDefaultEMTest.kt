@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.rest.bb.defaultvalues
 
 import com.foo.rest.examples.bb.defaultvalues.BBDefaultController
+import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.rest.bb.SpringTestBase
 import org.junit.jupiter.api.Assertions
@@ -26,21 +27,9 @@ class BBDefaultEMTest : SpringTestBase() {
                 20
         ) { args: MutableList<String> ->
 
-            args.add("--blackBox")
-            args.add("true")
-            args.add("--bbTargetUrl")
-            args.add(baseUrlOfSut)
-            args.add("--bbSwaggerUrl")
-            args.add("$baseUrlOfSut/openapi-bbdefault.json")
-            args.add("--bbExperiments")
-            args.add("false")
-
-            args.add("--probRestDefault")
-            args.add("0.5")
-
-            //make sure we do not solve it via taint analysis
-            args.add("--baseTaintAnalysisProbability")
-            args.add("0")
+            addBlackBoxOptions(args, OutputFormat.KOTLIN_JUNIT_5)
+            setOption(args, "bbSwaggerUrl", "$baseUrlOfSut/openapi-bbdefault.json")
+            setOption(args, "probRestDefault", "0.5")
 
             val solution = initAndRun(args)
 
@@ -58,21 +47,10 @@ class BBDefaultEMTest : SpringTestBase() {
                 20
         ) { args: MutableList<String> ->
 
-            args.add("--blackBox")
-            args.add("true")
-            args.add("--bbTargetUrl")
-            args.add(baseUrlOfSut)
-            args.add("--bbSwaggerUrl")
-            args.add("$baseUrlOfSut/openapi-bbdefault.json")
-            args.add("--bbExperiments")
-            args.add("false")
-
-            args.add("--probRestDefault")
-            args.add("0.0") // no way in BB should be able to get the right string with no further info
-
-            //make sure we do not solve it via taint analysis
-            args.add("--baseTaintAnalysisProbability")
-            args.add("0")
+            addBlackBoxOptions(args, OutputFormat.KOTLIN_JUNIT_5)
+            setOption(args, "bbSwaggerUrl", "$baseUrlOfSut/openapi-bbdefault.json")
+            // no way in BB should be able to get the right string with no further info
+            setOption(args, "probRestDefault", "0.0")
 
             val solution = initAndRun(args)
 

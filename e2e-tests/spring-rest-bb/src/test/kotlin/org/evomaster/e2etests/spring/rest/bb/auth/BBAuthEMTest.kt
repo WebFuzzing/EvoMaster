@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.rest.bb.auth
 
 import com.foo.rest.examples.bb.auth.BBAuthController
+import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.rest.bb.SpringTestBase
 import org.junit.jupiter.api.Assertions
@@ -21,7 +22,7 @@ class BBAuthEMTest : SpringTestBase() {
     fun testJavaScript(){
 
        // runTestHandlingFlaky()
-
+        //TODO
     }
 
 
@@ -33,25 +34,10 @@ class BBAuthEMTest : SpringTestBase() {
                 20
         ) { args: MutableList<String> ->
 
-            args.add("--blackBox")
-            args.add("true")
-            args.add("--bbTargetUrl")
-            args.add(baseUrlOfSut)
-            args.add("--bbSwaggerUrl")
-            args.add("$baseUrlOfSut/v3/api-docs")
-            args.add("--bbExperiments")
-            args.add("false")
-
-            args.add("--header0")
-            args.add("X-FOO:foo")
-            args.add("--header1")
-            args.add("X-BAR:42")
-            args.add("--header2")
-            args.add("Authorization:token")
-
-            //make sure we do not solve it via taint analysis
-            args.add("--baseTaintAnalysisProbability")
-            args.add("0")
+            addBlackBoxOptions(args, OutputFormat.KOTLIN_JUNIT_5)
+            setOption(args, "header0", "X-FOO:foo")
+            setOption(args, "header1", "X-BAR:42")
+            setOption(args, "header2", "Authorization:token")
 
             val solution = initAndRun(args)
 
@@ -68,21 +54,8 @@ class BBAuthEMTest : SpringTestBase() {
             20
         ) { args: MutableList<String> ->
 
-            args.add("--blackBox")
-            args.add("true")
-            args.add("--bbTargetUrl")
-            args.add(baseUrlOfSut)
-            args.add("--bbSwaggerUrl")
-            args.add("$baseUrlOfSut/v3/api-docs")
-            args.add("--bbExperiments")
-            args.add("false")
-
-            args.add("--configPath")
-            args.add("src/main/resources/config/bbauth.toml")
-
-            //make sure we do not solve it via taint analysis
-            args.add("--baseTaintAnalysisProbability")
-            args.add("0")
+            addBlackBoxOptions(args, OutputFormat.KOTLIN_JUNIT_5)
+            setOption(args, "configPath", "src/main/resources/config/bbauth.toml")
 
             val solution = initAndRun(args)
 
@@ -99,25 +72,10 @@ class BBAuthEMTest : SpringTestBase() {
                 20
         ) { args: MutableList<String> ->
 
-            args.add("--blackBox")
-            args.add("true")
-            args.add("--bbTargetUrl")
-            args.add(baseUrlOfSut)
-            args.add("--bbSwaggerUrl")
-            args.add("$baseUrlOfSut/v3/api-docs")
-            args.add("--bbExperiments")
-            args.add("false")
-
-//            args.add("--header0")
-//            args.add("X-FOO:foo")
-            args.add("--header1")
-            args.add("X-BAR:42")
-            args.add("--header2")
-            args.add("Authorization:token")
-
-            //make sure we do not solve it via taint analysis
-            args.add("--baseTaintAnalysisProbability")
-            args.add("0")
+            addBlackBoxOptions(args, OutputFormat.KOTLIN_JUNIT_5)
+            //setOption(args, "header0", "X-FOO:foo")
+            setOption(args, "header1", "X-BAR:42")
+            setOption(args, "header2", "Authorization:token")
 
             val solution = initAndRun(args)
 
