@@ -18,6 +18,163 @@ import java.sql.SQLException
 
 class SmtLibGeneratorTest {
 
+    val expected = SMTLib().apply {
+        addNode(
+            DeclareDatatypeSMTNode(
+                "ProductsRow", ImmutableList.of(
+                    DeclareConstSMTNode("PRICE", "Int"),
+                    DeclareConstSMTNode("MIN_PRICE", "Int"),
+                    DeclareConstSMTNode("STOCK", "Int"),
+                    DeclareConstSMTNode("USER_ID", "Int")
+                )
+            )
+        )
+        addNode(DeclareConstSMTNode("products1", "ProductsRow"))
+        addNode(DeclareConstSMTNode("products2", "ProductsRow"))
+        addNode(
+            DeclareDatatypeSMTNode(
+                "UsersRow", ImmutableList.of(
+                    DeclareConstSMTNode("ID", "Int"),
+                    DeclareConstSMTNode("DOCUMENT", "Int"),
+                    DeclareConstSMTNode("NAME", "String"),
+                    DeclareConstSMTNode("AGE", "Int"),
+                    DeclareConstSMTNode("POINTS", "Int")
+                )
+            )
+        )
+        addNode(DeclareConstSMTNode("users1", "UsersRow"))
+        addNode(DeclareConstSMTNode("users2", "UsersRow"))
+        addNode(
+            AssertSMTNode(DistinctAssertion(listOf("(DOCUMENT users1)", "(DOCUMENT users2)")))
+        )
+        addNode(
+            AssertSMTNode(
+                EqualsAssertion(listOf("(NAME users1)", "\"agus\""))
+            )
+        )
+        addNode(
+            AssertSMTNode(
+                EqualsAssertion(listOf("(NAME users2)", "\"agus\""))
+            )
+        )
+        addNode(
+            AssertSMTNode(
+                OrAssertion(
+                    listOf(
+                        LessThanAssertion("(POINTS users1)", "4"),
+                        GreaterThanAssertion("(POINTS users1)", "6")
+                    )
+                )
+            )
+        )
+        addNode(
+            AssertSMTNode(
+                OrAssertion(
+                    listOf(
+                        LessThanAssertion("(POINTS users2)", "4"),
+                        GreaterThanAssertion("(POINTS users2)", "6")
+                    )
+                )
+            )
+        )
+        addNode(
+            AssertSMTNode(
+                AndAssertion(
+                    listOf(
+                        GreaterThanAssertion("(AGE users1)", "18"),
+                        LessThanAssertion("(AGE users1)", "100")
+                    )
+                )
+            )
+        )
+        addNode(
+            AssertSMTNode(
+                AndAssertion(
+                    listOf(
+                        GreaterThanAssertion("(AGE users2)", "18"),
+                        LessThanAssertion("(AGE users2)", "100")
+                    )
+                )
+            )
+        )
+        addNode(
+            AssertSMTNode(
+                LessThanOrEqualsAssertion("(POINTS users1)", "10")
+            )
+        )
+        addNode(
+            AssertSMTNode(
+                LessThanOrEqualsAssertion("(POINTS users2)", "10")
+            )
+        )
+        addNode(
+            AssertSMTNode(
+                GreaterThanOrEqualsAssertion("(POINTS users1)", "0")
+            )
+        )
+        addNode(
+            AssertSMTNode(
+                GreaterThanOrEqualsAssertion("(POINTS users2)", "0")
+            )
+        )
+        addNode(
+            AssertSMTNode(
+                OrAssertion(
+                    listOf(
+                        EqualsAssertion(listOf("(USER_ID products1)", "(ID users1)")),
+                        EqualsAssertion(listOf("(USER_ID products1)", "(ID users2)"))
+                    )
+                )
+            )
+        )
+        addNode(
+            AssertSMTNode(
+                OrAssertion(
+                    listOf(
+                        EqualsAssertion(listOf("(USER_ID products2)", "(ID users1)")),
+                        EqualsAssertion(listOf("(USER_ID products2)", "(ID users2)"))
+                    )
+                )
+            )
+        )
+        addNode(
+            AssertSMTNode(
+                DistinctAssertion(
+                    listOf(
+                        "(ID users1)",
+                        "(ID users2)"
+                    )
+                )
+            )
+        )
+        addNode(
+            AssertSMTNode(
+                AndAssertion(
+                    listOf(
+                        GreaterThanAssertion("(AGE users1)", "30"),
+                        EqualsAssertion(listOf("(POINTS users1)", "7"))
+                    )
+                )
+            )
+        )
+        addNode(
+            AssertSMTNode(
+                AndAssertion(
+                    listOf(
+                        GreaterThanAssertion("(AGE users2)", "30"),
+                        EqualsAssertion(listOf("(POINTS users2)", "7"))
+                    )
+                )
+            )
+        )
+        addNode(CheckSatSMTNode())
+        addNode(GetValueSMTNode("products1"))
+        addNode(GetValueSMTNode("products2"))
+        addNode(GetValueSMTNode("users1"))
+        addNode(GetValueSMTNode("users2"))
+    }
+
+
     companion object {
         private lateinit var generator: SmtLibGenerator
         private lateinit var connection: Connection
@@ -57,163 +214,23 @@ class SmtLibGeneratorTest {
     @Throws(JSQLParserException::class)
     fun selectFromUsers() {
         val selectStatement: Statement = CCJSqlParserUtil.parse("SELECT * FROM Users WHERE Age > 30 AND points = 7;")
+
         val response: SMTLib = generator.generateSMT(selectStatement)
 
-        val expected = SMTLib().apply {
-            addNode(
-                DeclareDatatypeSMTNode(
-                    "ProductsRow", ImmutableList.of(
-                        DeclareConstSMTNode("PRICE", "Int"),
-                        DeclareConstSMTNode("MIN_PRICE", "Int"),
-                        DeclareConstSMTNode("STOCK", "Int"),
-                        DeclareConstSMTNode("USER_ID", "Int")
-                    )
-                )
-            )
-            addNode(DeclareConstSMTNode("products1", "ProductsRow"))
-            addNode(DeclareConstSMTNode("products2", "ProductsRow"))
-            addNode(
-                DeclareDatatypeSMTNode(
-                    "UsersRow", ImmutableList.of(
-                        DeclareConstSMTNode("ID", "Int"),
-                        DeclareConstSMTNode("DOCUMENT", "Int"),
-                        DeclareConstSMTNode("NAME", "String"),
-                        DeclareConstSMTNode("AGE", "Int"),
-                        DeclareConstSMTNode("POINTS", "Int")
-                    )
-                )
-            )
-            addNode(DeclareConstSMTNode("users1", "UsersRow"))
-            addNode(DeclareConstSMTNode("users2", "UsersRow"))
-            addNode(
-                AssertSMTNode(DistinctAssertion(listOf("(DOCUMENT users1)", "(DOCUMENT users2)")))
-            )
-            addNode(
-                AssertSMTNode(
-                    EqualsAssertion(listOf("(NAME users1)", "\"agus\""))
-                )
-            )
-            addNode(
-                AssertSMTNode(
-                    EqualsAssertion(listOf("(NAME users2)", "\"agus\""))
-                )
-            )
-            addNode(
-                AssertSMTNode(
-                    OrAssertion(
-                        listOf(
-                            LessThanAssertion("(POINTS users1)", "4"),
-                            GreaterThanAssertion("(POINTS users1)", "6")
-                        )
-                    )
-                )
-            )
-            addNode(
-                AssertSMTNode(
-                    OrAssertion(
-                        listOf(
-                            LessThanAssertion("(POINTS users2)", "4"),
-                            GreaterThanAssertion("(POINTS users2)", "6")
-                        )
-                    )
-                )
-            )
-            addNode(
-                AssertSMTNode(
-                    AndAssertion(
-                        listOf(
-                            GreaterThanAssertion("(AGE users1)", "18"),
-                            LessThanAssertion("(AGE users1)", "100")
-                        )
-                    )
-                )
-            )
-            addNode(
-                AssertSMTNode(
-                    AndAssertion(
-                        listOf(
-                            GreaterThanAssertion("(AGE users2)", "18"),
-                            LessThanAssertion("(AGE users2)", "100")
-                        )
-                    )
-                )
-            )
-            addNode(
-                AssertSMTNode(
-                    LessThanOrEqualsAssertion("(POINTS users1)", "10")
-                )
-            )
-            addNode(
-                AssertSMTNode(
-                    LessThanOrEqualsAssertion("(POINTS users2)", "10")
-                )
-            )
-            addNode(
-                AssertSMTNode(
-                    GreaterThanOrEqualsAssertion("(POINTS users1)", "0")
-                )
-            )
-            addNode(
-                AssertSMTNode(
-                    GreaterThanOrEqualsAssertion("(POINTS users2)", "0")
-                )
-            )
-            addNode(
-                AssertSMTNode(
-                    OrAssertion(
-                        listOf(
-                            EqualsAssertion(listOf("(USER_ID products1)", "(ID users1)")),
-                            EqualsAssertion(listOf("(USER_ID products1)", "(ID users2)"))
-                        )
-                    )
-                )
-            )
-            addNode(
-                AssertSMTNode(
-                    OrAssertion(
-                        listOf(
-                            EqualsAssertion(listOf("(USER_ID products2)", "(ID users1)")),
-                            EqualsAssertion(listOf("(USER_ID products2)", "(ID users2)"))
-                        )
-                    )
-                )
-            )
-            addNode(
-                AssertSMTNode(
-                    DistinctAssertion(
-                        listOf(
-                            "(ID users1)",
-                            "(ID users2)"
-                        )
-                    )
-                )
-            )
-            addNode(
-                AssertSMTNode(
-                    AndAssertion(
-                        listOf(
-                            GreaterThanAssertion("(AGE users1)", "30"),
-                            EqualsAssertion(listOf("(POINTS users1)", "7"))
-                        )
-                    )
-                )
-            )
-            addNode(
-                AssertSMTNode(
-                    AndAssertion(
-                        listOf(
-                            GreaterThanAssertion("(AGE users2)", "30"),
-                            EqualsAssertion(listOf("(POINTS users2)", "7"))
-                        )
-                    )
-                )
-            )
-            addNode(CheckSatSMTNode())
-            addNode(GetValueSMTNode("products1"))
-            addNode(GetValueSMTNode("products2"))
-            addNode(GetValueSMTNode("users1"))
-            addNode(GetValueSMTNode("users2"))
-        }
+        assertEquals(expected, response)
+    }
+
+
+    /**
+     * Test the generation of SMT from a simple select statement and a database schema
+     * @throws JSQLParserException if the statement is not valid
+     */
+    @Test
+    @Throws(JSQLParserException::class)
+    fun selectFromUsersWithTableAlias() {
+        val selectStatement: Statement = CCJSqlParserUtil.parse("SELECT * FROM Users u WHERE u.Age > 30 AND u.points = 7;")
+
+        val response: SMTLib = generator.generateSMT(selectStatement)
 
         assertEquals(expected, response)
     }

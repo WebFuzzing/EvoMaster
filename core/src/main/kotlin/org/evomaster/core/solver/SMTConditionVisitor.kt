@@ -7,12 +7,13 @@ import org.evomaster.solver.smtlib.assertion.*
 import java.util.*
 
 class SMTConditionVisitor(
-    private val tableName: String,
+    private val defaultTableName: String,
+    private val tableAliases: Map<String, String>,
     private val rowIndex: Int
 ) : SqlConditionVisitor<SMTNode, Void> {
 
-    private fun getColumnReference(columnName: String): String {
-        return "(${columnName.uppercase(Locale.getDefault())} $tableName$rowIndex)"
+    private fun getColumnReference(tableName: String, columnName: String): String {
+        return "(${columnName.uppercase(Locale.getDefault())} ${tableName.lowercase(Locale.getDefault())}$rowIndex)"
     }
 
     override fun visit(condition: SqlAndCondition, parameter: Void?): SMTNode {
@@ -27,8 +28,15 @@ class SMTConditionVisitor(
     }
 
     override fun visit(condition: SqlComparisonCondition, parameter: Void?): SMTNode {
-        val columnName = condition.leftOperand.toString()
-        val variable = getColumnReference(columnName)
+        val leftOperand = condition.leftOperand.toString()
+        var columnName = leftOperand
+        var tableName = defaultTableName
+        if (leftOperand.contains(".")) {
+            val parts = leftOperand.split(".")
+            tableName = tableAliases[parts[0]] ?: parts[0]
+            columnName = parts[1]
+        }
+        val variable = getColumnReference(tableName, columnName)
         val compare = condition.rightOperand.toString().replace("'", "\"")
         return when (val comparator = getSMTComparator(condition.sqlComparisonOperator.toString())) {
             "=" -> AssertSMTNode(EqualsAssertion(listOf(variable, compare)))

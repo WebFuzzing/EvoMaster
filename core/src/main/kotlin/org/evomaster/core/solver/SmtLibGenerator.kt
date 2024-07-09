@@ -1,5 +1,6 @@
 package org.evomaster.core.solver
 
+import net.sf.jsqlparser.expression.Expression
 import net.sf.jsqlparser.statement.Statement
 import net.sf.jsqlparser.statement.select.PlainSelect
 import net.sf.jsqlparser.statement.select.Select
@@ -84,7 +85,7 @@ class SmtLibGenerator(private val schema: DbSchemaDto, private val numberOfRows:
     }
 
     private fun parseCheckExpression(table: TableDto, condition: SqlCondition, index: Int): SMTNode {
-        val visitor = SMTConditionVisitor(table.name.lowercase(Locale.getDefault()), index)
+        val visitor = SMTConditionVisitor(table.name.lowercase(Locale.getDefault()), emptyMap<String, String>(), index)
         return condition.accept(visitor, null) as SMTNode
     }
 
@@ -193,20 +194,47 @@ class SmtLibGenerator(private val schema: DbSchemaDto, private val numberOfRows:
     }
 
     private fun appendQueryConstraints(smt: SMTLib, sqlQuery: Statement) {
+        val tableAliases = extractTableAliases(sqlQuery)
+
         if (sqlQuery is Select) { // TODO: Handle other queries
             val plainSelect = sqlQuery.selectBody as PlainSelect
             val where = plainSelect.where
-            val tableFromQuery = TablesNamesFinder().getTables(sqlQuery as Statement).firstOrNull();
-            val tableFromQueryDto = schema.tables.first { it.name.equals(tableFromQuery, ignoreCase = true) } // todo: Handle error case
 
             if (where != null) {
                 val condition = parser.parse(where.toString(), toDBType(schema.databaseType))
+                val tableFromQuery = TablesNamesFinder().getTables(sqlQuery as Statement).first();
                 for (i in 1..numberOfRows) {
-                    val constraint = parseCheckExpression(tableFromQueryDto, condition, i)
+                    val constraint = parseQueryCondition(tableAliases, tableFromQuery, condition, i)
                     smt.addNode(constraint)
                 }
             }
         }
+    }
+
+    private fun parseQueryCondition(tableAliases: Map<String, String>, defaultTableName: String, condition: SqlCondition, index: Int): SMTNode {
+        val visitor = SMTConditionVisitor(defaultTableName, tableAliases, index)
+        return condition.accept(visitor, null) as SMTNode
+    }
+
+    private fun extractTableAliases(sqlQuery: Statement): Map<String, String> {
+        val tableAliasMap = mutableMapOf<String, String>()
+        if (sqlQuery is Select) { // TODO: Handle other queries
+            val plainSelect = sqlQuery.selectBody as PlainSelect
+            val fromItem = plainSelect.fromItem
+            val tableName = (fromItem as net.sf.jsqlparser.schema.Table).name
+            val alias = fromItem.alias?.name ?: tableName
+            tableAliasMap[alias] = tableName
+
+            val joins = plainSelect.joins
+            if (joins != null) {
+                for (join in joins) {
+                    val joinAlias = join.rightItem.alias?.name ?: join.rightItem.toString()
+                    val joinName = (join.rightItem as net.sf.jsqlparser.schema.Table).name
+                    tableAliasMap[joinAlias] = joinName
+                }
+            }
+        }
+        return tableAliasMap
     }
 
     private fun appendGetValues(smt: SMTLib) {
