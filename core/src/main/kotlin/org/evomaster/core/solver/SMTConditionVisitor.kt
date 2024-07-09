@@ -6,6 +6,12 @@ import org.evomaster.solver.smtlib.SMTNode
 import org.evomaster.solver.smtlib.assertion.*
 import java.util.*
 
+/**
+ * Visitor to convert SQL conditions to SMT nodes
+ * @param defaultTableName table Name corresponding to the condition (this is used when only one table is involved)
+ * @param tableAliases the table aliases used in the query, so then we can know which table is being referred to
+ * @param rowIndex the row index to be used when declaring the variables in SMTlib
+ * */
 class SMTConditionVisitor(
     private val defaultTableName: String,
     private val tableAliases: Map<String, String>,
