@@ -255,13 +255,6 @@ public class SelectQuery {
             .withJoins(getJoins()));
     }
 
-    public Map<String, String> getFromAliases(){
-        return getAllFromItems().stream()
-            .map(this::table)
-            .filter(QueryTable::hasAlias)
-            .collect(Collectors.toMap(QueryTable::getName, QueryTable::getAlias));
-    }
-
     @Override
     public String toString(){
         return select.toString();

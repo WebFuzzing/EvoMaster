@@ -245,35 +245,6 @@ public class SelectQueryTest {
     }
 
     @Test
-    public void testGetFromAlias() { //Aliasing in table
-        SelectQuery query = createSelectQuery("SELECT * FROM customers c WHERE c.age > 25");
-        assertEquals(1, query.getFromAliases().size());
-        assertEquals("c", query.getFromAliases().get("customers"));
-    }
-
-    @Test
-    public void testGetFromAlias2() { //Aliasing in join
-        SelectQuery query1 = createSelectQuery("SELECT * FROM customers c JOIN orders o WHERE age > 25");
-        assertEquals(2, query1.getFromAliases().size());
-        assertEquals("c", query1.getFromAliases().get("customers"));
-        assertEquals("o", query1.getFromAliases().get("orders"));
-    }
-
-    @Test
-    public void testGetFromAlias3() { //Aliasing in join
-        SelectQuery query2 = createSelectQuery("SELECT * FROM customers JOIN orders o WHERE age > 25");
-        assertEquals(1, query2.getFromAliases().size());
-        assertEquals("o", query2.getFromAliases().get("orders"));
-    }
-
-    @Test
-    public void testGetFromAlias4() { //Aliasing in subquery
-        SelectQuery query = createSelectQuery("SELECT * FROM (SELECT * FROM customers) c WHERE c.age > 25");
-        assertEquals(1, query.getFromAliases().size());
-        assertEquals("c", query.getFromAliases().get("customers"));
-    }
-
-    @Test
     public void testDelete() {
         SelectQuery query = createSelectQuery("DELETE FROM customers JOIN orders WHERE age = 25");
         assertEquals("SELECT * FROM customers JOIN orders WHERE age = 25", query.toString());

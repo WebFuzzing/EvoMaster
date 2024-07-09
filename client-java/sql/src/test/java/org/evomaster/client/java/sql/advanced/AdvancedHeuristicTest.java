@@ -836,11 +836,11 @@ public class AdvancedHeuristicTest {
     }
 
     @Test
-    public void testColumnAlias() {
+    public void testAliasedColumns() {
         sqlDriver.execute("INSERT INTO customers VALUES (1, 'john', 24)");
         AdvancedHeuristic advancedHeuristic = createAdvancedHeuristic(sqlDriver);
-        Truthness truthness = advancedHeuristic.calculate("SELECT age AS age_alias FROM customers WHERE " +
-            "age = 25");
+        Truthness truthness = advancedHeuristic.calculate("SELECT age_alias FROM (SELECT age AS age_alias FROM customers) t WHERE " +
+            "age_alias = 25");
         assertEquals(oneRowWith(singleCondition(eq(24, 25))), truthness);
     }
 

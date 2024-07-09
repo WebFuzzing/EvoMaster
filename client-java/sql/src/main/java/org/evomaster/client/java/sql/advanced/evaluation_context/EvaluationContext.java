@@ -23,14 +23,10 @@ public class EvaluationContext {
     public static EvaluationContext createEvaluationContext(List<QueryTable> tables, Row row) {
         List<TableColumnsValues> columnsValues =
             Stream.concat(Stream.of(tables).flatMap(List::stream), Stream.of(DEFAULT_TABLE))
-                .filter(table -> row.containsKey(tableKey(table)))
-                .map(table -> new TableColumnsValues(table, row.get(tableKey(table))))
+                .filter(table -> row.containsKey(table.getName()))
+                .map(table -> new TableColumnsValues(table, row.get(table.getName())))
                 .collect(Collectors.toList());
         return new EvaluationContext(columnsValues);
-    }
-
-    private static String tableKey(QueryTable table) {
-        return table.hasAlias() ? table.getAlias() : table.getName();
     }
 
     public Boolean includes(QueryColumn column) {

@@ -3,7 +3,6 @@ package org.evomaster.client.java.sql.advanced.driver;
 import org.apache.commons.dbutils.QueryRunner;
 import org.evomaster.client.java.sql.advanced.driver.cache.Cache;
 import org.evomaster.client.java.sql.advanced.driver.row.Row;
-import org.evomaster.client.java.sql.advanced.select_query.SelectQuery;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.sql.Connection;
@@ -44,17 +43,17 @@ public class SqlDriver {
         }
     }
 
-    public List<Row> query(SelectQuery query) {
+    public List<Row> query(String query) {
         try {
             List<Row> result;
-            if(cache.isCached(query.toString())) {
+            if(cache.isCached(query)) {
                 SimpleLogger.trace(format("Query: %s was cached", query));
-                result = cache.get(query.toString());
+                result = cache.get(query);
             } else {
                 SimpleLogger.trace(format("Querying: %s", query));
                 QueryRunner queryRunner = new QueryRunner();
-                result = queryRunner.query(connection, query.toString(), createRowHandler(query));
-                cache.cache(query.toString(), result);
+                result = queryRunner.query(connection, query, createRowHandler());
+                cache.cache(query, result);
             }
             return result;
         } catch (SQLException e) {

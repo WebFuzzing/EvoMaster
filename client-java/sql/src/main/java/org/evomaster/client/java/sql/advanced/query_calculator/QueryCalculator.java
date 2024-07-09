@@ -59,10 +59,10 @@ public class QueryCalculator {
   }
 
   private CalculationResult calculateCondition() {
-    List<Row> queryRows = sqlDriver.query(query);
+    List<Row> queryRows = sqlDriver.query(query.toString());
     if(queryRows.isEmpty()) {
       SelectQuery queryWithoutWhere = query.removeWhere();
-      List<Row> queryWithoutWhereRows = sqlDriver.query(queryWithoutWhere);
+      List<Row> queryWithoutWhereRows = sqlDriver.query(queryWithoutWhere.toString());
       if(!queryWithoutWhereRows.isEmpty()) {
         Double maxRowTruthness = queryWithoutWhereRows.stream()
           .map(row -> createWhereCalculator(query, row, sqlDriver, taintHandler))
@@ -129,13 +129,13 @@ public class QueryCalculator {
 
   private CalculationResult calculateGenericFrom() {
     SelectQuery queryWithoutWhere = query.removeWhere();
-    List<Row> queryWithoutWhereRows = sqlDriver.query(queryWithoutWhere);
+    List<Row> queryWithoutWhereRows = sqlDriver.query(queryWithoutWhere.toString());
     Truthness truthness = getTruthnessToEmpty(queryWithoutWhereRows.size()).invert();
     return createCalculationResult(truthness);
   }
 
   private CalculationResult calculateNoFrom() {
-    List<Row> rows = sqlDriver.query(query);
+    List<Row> rows = sqlDriver.query(query.toString());
     return createCalculationResult(rows);
   }
 
