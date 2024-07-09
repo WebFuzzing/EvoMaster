@@ -28,15 +28,4 @@ abstract class SpringTestBase : RestTestBase(){
         }
     }
 
-
-    protected fun addBlackBoxOptions(
-        args: MutableList<String>,
-        outputFormat: OutputFormat
-    ){
-        setOption(args, "blackBox", "true")
-        setOption(args, "bbTargetUrl", baseUrlOfSut)
-        setOption(args, "bbSwaggerUrl", "$baseUrlOfSut/v3/api-docs")
-        setOption(args, "problemType", "REST")
-        setOption(args, "outputFormat", outputFormat.toString())
-    }
 }
