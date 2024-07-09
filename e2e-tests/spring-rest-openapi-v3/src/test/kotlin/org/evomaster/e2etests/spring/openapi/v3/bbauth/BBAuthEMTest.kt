@@ -17,6 +17,13 @@ class BBAuthEMTest : SpringTestBase() {
         }
     }
 
+    @Test
+    fun testJavaScript(){
+
+       // runTestHandlingFlaky()
+
+    }
+
 
     @Test
     fun testRunEMOk() {
