@@ -288,7 +288,7 @@ class SmtLibGeneratorTest {
         )
         expected.addNode(
             AssertSMTNode(
-                EqualsAssertion(listOf("(ID usfers2)", "(USER_ID products2)"))
+                EqualsAssertion(listOf("(ID users2)", "(USER_ID products2)"))
             )
         )
 
