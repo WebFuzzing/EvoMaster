@@ -85,13 +85,12 @@ public class HeuristicsCalculator {
             rowCount++;
             try {
                 double dist = calculator.computeExpression(where, row);
-                if (dist == 0) {
-                    return new SqlDistanceWithMetrics(minSqlDistance, rowCount);
+                if (dist == 0.0) {
+                    return new SqlDistanceWithMetrics(0.0, rowCount);
                 } else if (dist < minSqlDistance) {
                     minSqlDistance = dist;
                 }
             } catch (Exception ex) {
-
                 return new SqlDistanceWithMetrics(Double.MAX_VALUE, rowCount);
             }
         }
