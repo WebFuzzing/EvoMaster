@@ -139,3 +139,6 @@ Migrations/
 /e2e-tests/spring-rest-openapi-v2/em.yaml
 /e2e-tests/spring-rest-openapi-v3/em.yaml
 /core-it/em.yaml
+/test-utils/test-utils-js/coverage/
+/test-utils/test-utils-js/node_modules/
+/test-utils/test-utils-js/target/

@@ -1,6 +1,7 @@
 package org.evomaster.core.output.service
 
 import com.google.inject.Inject
+import org.evomaster.client.java.controller.SutHandler
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto
 import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionDto
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
@@ -20,6 +21,7 @@ import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.SearchTimeController
+import org.evomaster.test.utils.EMTestUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
@@ -374,8 +376,8 @@ class TestSuiteWriter {
         if (format.isJavaOrKotlin()) {
 
             addImport("java.util.List", lines)
-            addImport("org.evomaster.client.java.controller.api.EMTestUtils.*", lines, true)
-            addImport("org.evomaster.client.java.controller.SutHandler", lines)
+            addImport(EMTestUtils::class.java.name +".*", lines, true)
+            addImport(SutHandler::class.java.name, lines)
 
             if (useRestAssured()) {
                 addImport("io.restassured.RestAssured", lines)
