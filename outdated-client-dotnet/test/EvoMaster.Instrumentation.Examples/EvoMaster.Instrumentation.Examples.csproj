@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="../../common.props" />
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>EvoMaster.Instrumentation.Examples</RootNamespace>
+  </PropertyGroup>
+
+</Project>
