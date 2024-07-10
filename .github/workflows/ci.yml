@@ -311,4 +311,14 @@ jobs:
           if-no-files-found: error
 
 
-
+  test-utils-js:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Build/test for JavaScript
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+        working-directory: ./test-utils/test-utils-js
