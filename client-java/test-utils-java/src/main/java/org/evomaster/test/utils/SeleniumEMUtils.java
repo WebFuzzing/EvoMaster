@@ -1,4 +1,4 @@
-package org.evomaster.client.java.controller.api;
+package org.evomaster.test.utils;
 
 import org.openqa.selenium.*;
 import org.openqa.selenium.support.ui.ExpectedCondition;

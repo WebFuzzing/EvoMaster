@@ -4,7 +4,7 @@ import io.restassured.http.ContentType;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
-import static org.evomaster.client.java.controller.api.EMTestUtils.resolveLocation;
+import static org.evomaster.test.utils.EMTestUtils.resolveLocation;
 import static org.hamcrest.CoreMatchers.is;
 
 public class CPGManualTest extends CPGTestBase {

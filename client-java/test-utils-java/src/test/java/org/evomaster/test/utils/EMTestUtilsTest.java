@@ -1,4 +1,4 @@
-package org.evomaster.client.java.controller.api;
+package org.evomaster.test.utils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;

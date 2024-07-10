@@ -256,6 +256,11 @@
                 <artifactId>solver</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.evomaster</groupId>
+                <artifactId>evomaster-test-utils-java</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
             <!-- Kotlin -->
             <dependency>
