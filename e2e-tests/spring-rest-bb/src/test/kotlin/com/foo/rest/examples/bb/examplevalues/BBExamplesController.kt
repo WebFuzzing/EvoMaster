@@ -1,4 +1,4 @@
-package com.foo.rest.examples.bb.examples
+package com.foo.rest.examples.bb.examplevalues
 
 import com.foo.rest.examples.bb.SpringController
 import org.evomaster.client.java.controller.problem.ProblemInfo

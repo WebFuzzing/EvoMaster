@@ -1,4 +1,4 @@
-package com.foo.rest.examples.bb.auth
+package com.foo.rest.examples.bb.authheader
 
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication

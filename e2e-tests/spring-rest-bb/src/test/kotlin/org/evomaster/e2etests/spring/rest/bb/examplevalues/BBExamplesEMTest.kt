@@ -1,6 +1,6 @@
-package org.evomaster.e2etests.spring.rest.bb.examples
+package org.evomaster.e2etests.spring.rest.bb.examplevalues
 
-import com.foo.rest.examples.bb.examples.BBExamplesController
+import com.foo.rest.examples.bb.examplevalues.BBExamplesController
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.rest.bb.SpringTestBase
