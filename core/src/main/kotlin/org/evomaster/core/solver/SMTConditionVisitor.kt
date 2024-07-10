@@ -1,5 +1,6 @@
 package org.evomaster.core.solver
 
+import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
 import org.evomaster.dbconstraint.ast.*
 import org.evomaster.solver.smtlib.AssertSMTNode
 import org.evomaster.solver.smtlib.SMTNode
@@ -15,6 +16,7 @@ import java.util.*
 class SMTConditionVisitor(
     private val defaultTableName: String,
     private val tableAliases: Map<String, String>,
+    private val tables: List<TableDto>,
     private val rowIndex: Int
 ) : SqlConditionVisitor<SMTNode, Void> {
 
@@ -34,25 +36,38 @@ class SMTConditionVisitor(
     }
 
     override fun visit(condition: SqlComparisonCondition, parameter: Void?): SMTNode {
-        val leftOperand = condition.leftOperand.toString()
-        var columnName = leftOperand
-        var tableName = defaultTableName
-        if (leftOperand.contains(".")) {
-            val parts = leftOperand.split(".")
-            tableName = tableAliases[parts[0]] ?: parts[0]
-            columnName = parts[1]
-        }
-        val variable = getColumnReference(tableName, columnName)
-        val compare = condition.rightOperand.toString().replace("'", "\"")
+
+        val left = getVariableAndLiteral(condition.leftOperand.toString())
+        val right = getVariableAndLiteral(condition.rightOperand.toString())
+
         return when (val comparator = getSMTComparator(condition.sqlComparisonOperator.toString())) {
-            "=" -> AssertSMTNode(EqualsAssertion(listOf(variable, compare)))
-            "distinct" -> AssertSMTNode(DistinctAssertion(listOf(variable, compare)))
-            ">" -> AssertSMTNode(GreaterThanAssertion(variable, compare))
-            ">=" -> AssertSMTNode(GreaterThanOrEqualsAssertion(variable, compare))
-            "<" -> AssertSMTNode(LessThanAssertion(variable, compare))
-            "<=" -> AssertSMTNode(LessThanOrEqualsAssertion(variable, compare))
+            "=" -> AssertSMTNode(EqualsAssertion(listOf(left, right)))
+            "distinct" -> AssertSMTNode(DistinctAssertion(listOf(left, right)))
+            ">" -> AssertSMTNode(GreaterThanAssertion(left, right))
+            ">=" -> AssertSMTNode(GreaterThanOrEqualsAssertion(left, right))
+            "<" -> AssertSMTNode(LessThanAssertion(left, right))
+            "<=" -> AssertSMTNode(LessThanOrEqualsAssertion(left, right))
             else -> throw IllegalArgumentException("Unsupported SQL comparator: $comparator")
         }
+    }
+
+    private fun getVariableAndLiteral(operand: String): String {
+        return if (operand.contains(".")) { // It's using an alias to refer to the column, for example "u.age"
+            val parts = operand.split(".")
+            val tableName = tableAliases[parts[0]] ?: parts[0]
+            val columnName = parts[1]
+            getColumnReference(tableName, columnName)
+        } else if (isAColumn(operand)) {
+            getColumnReference(defaultTableName, operand)
+        } else if (operand.startsWith("'") && operand.endsWith("'")) {
+            operand.replace("'", "\"")
+        } else {
+            operand
+        }
+    }
+
+    private fun isAColumn(operand: String): Boolean {
+        return tables.any { it.name.lowercase() == defaultTableName.lowercase() && it.columns.any { it.name.lowercase() == operand.lowercase() }}
     }
 
     private fun getSMTComparator(sqlComparator: String): String {

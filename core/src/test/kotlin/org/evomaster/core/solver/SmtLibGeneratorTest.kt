@@ -18,7 +18,7 @@ import java.sql.SQLException
 
 class SmtLibGeneratorTest {
 
-    val expected = SMTLib().apply {
+    val tableConstraints = SMTLib().apply {
         addNode(
             DeclareDatatypeSMTNode(
                 "ProductsRow", ImmutableList.of(
@@ -147,32 +147,15 @@ class SmtLibGeneratorTest {
                 )
             )
         )
-        addNode(
-            AssertSMTNode(
-                AndAssertion(
-                    listOf(
-                        GreaterThanAssertion("(AGE users1)", "30"),
-                        EqualsAssertion(listOf("(POINTS users1)", "7"))
-                    )
-                )
-            )
-        )
-        addNode(
-            AssertSMTNode(
-                AndAssertion(
-                    listOf(
-                        GreaterThanAssertion("(AGE users2)", "30"),
-                        EqualsAssertion(listOf("(POINTS users2)", "7"))
-                    )
-                )
-            )
-        )
-        addNode(CheckSatSMTNode())
-        addNode(GetValueSMTNode("products1"))
-        addNode(GetValueSMTNode("products2"))
-        addNode(GetValueSMTNode("users1"))
-        addNode(GetValueSMTNode("users2"))
     }
+
+    val satConstraints = arrayOf(
+        CheckSatSMTNode(),
+        GetValueSMTNode("products1"),
+        GetValueSMTNode("products2"),
+        GetValueSMTNode("users1"),
+        GetValueSMTNode("users2")
+    )
 
 
     companion object {
@@ -213,13 +196,38 @@ class SmtLibGeneratorTest {
     @Test
     @Throws(JSQLParserException::class)
     fun selectFromUsers() {
-        val selectStatement: Statement = CCJSqlParserUtil.parse("SELECT * FROM Users WHERE Age > 30 AND points = 7;")
+        val selectStatement: Statement = CCJSqlParserUtil.parse("SELECT * FROM Users WHERE Age > 30 AND 7 = points;")
 
         val response: SMTLib = generator.generateSMT(selectStatement)
 
+        val expected = tableConstraints
+        // Query constraints
+        expected.addNode(
+            AssertSMTNode(
+                AndAssertion(
+                    listOf(
+                        GreaterThanAssertion("(AGE users1)", "30"),
+                        EqualsAssertion(listOf("7", "(POINTS users1)"))
+                    )
+                )
+            )
+        )
+        expected.addNode(
+            AssertSMTNode(
+                AndAssertion(
+                    listOf(
+                        GreaterThanAssertion("(AGE users2)", "30"),
+                        EqualsAssertion(listOf("7", "(POINTS users2)"))
+                    )
+                )
+            )
+        )
+        for (constraint in satConstraints) {
+            expected.addNode(constraint)
+        }
+
         assertEquals(expected, response)
     }
-
 
     /**
      * Test the generation of SMT from a simple select statement and a database schema
@@ -231,6 +239,104 @@ class SmtLibGeneratorTest {
         val selectStatement: Statement = CCJSqlParserUtil.parse("SELECT * FROM Users u WHERE u.Age > 30 AND u.points = 7;")
 
         val response: SMTLib = generator.generateSMT(selectStatement)
+        val expected = tableConstraints
+        // Query constraints
+        expected.addNode(
+            AssertSMTNode(
+                AndAssertion(
+                    listOf(
+                        GreaterThanAssertion("(AGE users1)", "30"),
+                        EqualsAssertion(listOf("(POINTS users1)", "7"))
+                    )
+                )
+            )
+        )
+        expected.addNode(
+            AssertSMTNode(
+                AndAssertion(
+                    listOf(
+                        GreaterThanAssertion("(AGE users2)", "30"),
+                        EqualsAssertion(listOf("(POINTS users2)", "7"))
+                    )
+                )
+            )
+        )
+        for (constraint in satConstraints) {
+            expected.addNode(constraint)
+        }
+
+        assertEquals(expected, response)
+    }
+
+    /**
+     * Test the generation of SMT from a simple select statement and a database schema
+     * @throws JSQLParserException if the statement is not valid
+     */
+    @Test
+    @Throws(JSQLParserException::class)
+    fun selectFromUsersWithJoin() {
+        val selectStatement: Statement = CCJSqlParserUtil.parse("SELECT * FROM Users u JOIN Products p ON u.id = p.user_id WHERE u.Age > 30 AND u.points = 7 AND p.min_price > 500 AND p.stock = 8;")
+
+        val response: SMTLib = generator.generateSMT(selectStatement)
+        val expected = tableConstraints
+
+        // JOIN ON constraints
+        expected.addNode(
+            AssertSMTNode(
+                EqualsAssertion(listOf("(ID users1)", "(USER_ID products1)"))
+            )
+        )
+        expected.addNode(
+            AssertSMTNode(
+                EqualsAssertion(listOf("(ID usfers2)", "(USER_ID products2)"))
+            )
+        )
+
+        // Query constraints
+        expected.addNode(
+            AssertSMTNode(
+                AndAssertion(
+                    listOf(
+                        AndAssertion(
+                            listOf(
+                                AndAssertion(
+                                    listOf(
+                                        GreaterThanAssertion("(AGE users1)", "30"),
+                                        EqualsAssertion(listOf("(POINTS users1)", "7"))
+                                    )
+                                ),
+                            GreaterThanAssertion("(MIN_PRICE products1)", "500")
+                            )
+                        ),
+                        EqualsAssertion(listOf("(STOCK products1)", "8"))
+                    )
+                )
+            )
+        )
+        expected.addNode(
+            AssertSMTNode(
+                AndAssertion(
+                    listOf(
+                        AndAssertion(
+                            listOf(
+                                AndAssertion(
+                                    listOf(
+                                        GreaterThanAssertion("(AGE users2)", "30"),
+                                        EqualsAssertion(listOf("(POINTS users2)", "7"))
+                                    )
+                                ),
+                                GreaterThanAssertion("(MIN_PRICE products2)", "500")
+                            )
+                        ),
+                        EqualsAssertion(listOf("(STOCK products2)", "8"))
+                    )
+                )
+            )
+        )
+
+        for (constraint in satConstraints) {
+            expected.addNode(constraint)
+        }
 
         assertEquals(expected, response)
     }
