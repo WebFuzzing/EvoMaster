@@ -21,6 +21,7 @@ import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.test.utils.EMTestUtils
+import org.evomaster.test.utils.js.JsLoader
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
@@ -453,7 +454,7 @@ class TestSuiteWriter {
         if (format.isJavaScript()) {
             lines.add("const superagent = require(\"superagent\");")
 
-            val jsUtils = Main::class.java.getResource("/$javascriptUtilsFilename").readText()
+            val jsUtils = JsLoader::class.java.getResource("/$javascriptUtilsFilename").readText()
             saveToDisk(jsUtils, Paths.get(config.outputFolder, javascriptUtilsFilename))
             lines.add("const $jsImport = require(\"./$javascriptUtilsFilename\");")
 
