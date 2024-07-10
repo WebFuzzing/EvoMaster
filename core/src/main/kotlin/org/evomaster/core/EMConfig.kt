@@ -1897,6 +1897,7 @@ class EMConfig {
     var maxLengthForStringsAtSamplingTime = 16
 
 
+    @Deprecated("Should not use this option any more, but rather run proper BB experiments")
     @Cfg("Only used when running experiments for black-box mode, where an EvoMaster Driver would be present, and can reset state after each experiment")
     var bbExperiments = false
 
