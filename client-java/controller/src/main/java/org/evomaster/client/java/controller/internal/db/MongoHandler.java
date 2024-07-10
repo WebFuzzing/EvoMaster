@@ -34,7 +34,7 @@ public class MongoHandler {
     /**
      * The heuristics based on the Mongo execution
      */
-    private final List<MongoOperationDistance> distances;
+    private final List<EvaluatedMongoCommand> evaluatedMongoCommands;
 
     /**
      * Whether to calculate heuristics based on execution or not
@@ -61,7 +61,7 @@ public class MongoHandler {
     private final MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator(new TaintHandlerExecutionTracer());
 
     public MongoHandler() {
-        distances = new ArrayList<>();
+        evaluatedMongoCommands = new ArrayList<>();
         operations = new ArrayList<>();
         emptyCollections = new ArrayList<>();
         collectionSchemas = new HashMap<>();
@@ -71,7 +71,7 @@ public class MongoHandler {
 
     public void reset() {
         operations.clear();
-        distances.clear();
+        evaluatedMongoCommands.clear();
         emptyCollections.clear();
         // collectionInfo is not cleared to avoid losing the info as it's retrieved while SUT is starting
     }
@@ -104,15 +104,15 @@ public class MongoHandler {
         }
     }
 
-    public List<MongoOperationDistance> getDistances() {
+    public List<EvaluatedMongoCommand> getEvaluatedMongoCommands() {
 
         operations.stream().filter(info -> info.getQuery() != null).forEach(mongoInfo -> {
-            MongoFindDistanceAndNumerOfEvaluatedDocuments dist = computeFindDistance(mongoInfo);
-            distances.add(new MongoOperationDistance(mongoInfo.getQuery(), dist.findDistance, dist.numberOfEvaluatedDocuments));
+            MongoDistanceWithMetrics distanceWithMetrics = computeFindDistance(mongoInfo);
+            evaluatedMongoCommands.add(new EvaluatedMongoCommand(mongoInfo.getQuery(), distanceWithMetrics));
         });
         operations.clear();
 
-        return distances;
+        return evaluatedMongoCommands;
     }
 
     public MongoExecutionsDto getExecutionDto() {
@@ -137,18 +137,7 @@ public class MongoHandler {
         }
     }
 
-    private static class MongoFindDistanceAndNumerOfEvaluatedDocuments {
-        public final double findDistance;
-
-        public final int numberOfEvaluatedDocuments;
-
-        public MongoFindDistanceAndNumerOfEvaluatedDocuments(double findDistance, int numberOfEvaluatedDocuments) {
-            this.findDistance = findDistance;
-            this.numberOfEvaluatedDocuments = numberOfEvaluatedDocuments;
-        }
-    }
-
-    private MongoFindDistanceAndNumerOfEvaluatedDocuments computeFindDistance(MongoFindCommand info) {
+    private MongoDistanceWithMetrics computeFindDistance(MongoFindCommand info) {
 
         String databaseName = info.getDatabaseName();
         String collectionName = info.getCollectionName();
@@ -172,12 +161,12 @@ public class MongoHandler {
                 findDistance = Double.MAX_VALUE;
             }
             if (findDistance == 0) {
-                return new MongoFindDistanceAndNumerOfEvaluatedDocuments(0, numberOfEvaluatedDocuments);
+                return new MongoDistanceWithMetrics(0, numberOfEvaluatedDocuments);
             } else if (findDistance < min) {
                 min = findDistance;
             }
         }
-        return new MongoFindDistanceAndNumerOfEvaluatedDocuments(min, numberOfEvaluatedDocuments);
+        return new MongoDistanceWithMetrics(min, numberOfEvaluatedDocuments);
     }
 
     private Object getCollection(String databaseName, String collectionName) {

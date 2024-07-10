@@ -64,10 +64,13 @@ class Statistics : SearchListener {
      */
     private var coverageFailures = 0
 
+    var sqlHeuristicsEvaluationCount = 0
 
-    var mongoHeuristicEvaluationCount = 0
+    private var sqlHeuristicsTotalNumberOfEvaluatedRows = 0
 
-    private var mongoHeuristicTotalNumberOfEvaluatedDocuments = 0.0
+    var mongoHeuristicsEvaluationCount = 0
+
+    private var mongoHeuristicsTotalNumberOfEvaluatedDocuments = 0
 
    class Pair(val header: String, val element: String)
 
@@ -147,15 +150,26 @@ class Statistics : SearchListener {
         coverageFailures++
     }
 
-    fun reportNumberOfEvaluatedDocumentsForComputingMongoHeuristic(numberOfEvaluatedDocuments: Int) {
-        mongoHeuristicTotalNumberOfEvaluatedDocuments += numberOfEvaluatedDocuments
-        mongoHeuristicEvaluationCount++
+    fun reportNumberOfEvaluatedRowsForComputingSqlHeuristic(numberOfEvaluatedRows: Int) {
+        sqlHeuristicsTotalNumberOfEvaluatedRows += numberOfEvaluatedRows
+        sqlHeuristicsEvaluationCount ++;
     }
 
-    fun averageNumberOfEvaluatedDocumentsForMongoHeuristic(): Double = if (mongoHeuristicEvaluationCount==0) {
+    fun reportNumberOfEvaluatedDocumentsForComputingMongoHeuristic(numberOfEvaluatedDocuments: Int) {
+        mongoHeuristicsTotalNumberOfEvaluatedDocuments += numberOfEvaluatedDocuments
+        mongoHeuristicsEvaluationCount++
+    }
+
+    fun averageNumberOfEvaluatedRowsForSqlHeuristics(): Double = if (sqlHeuristicsEvaluationCount==0) {
         NaN
     } else {
-        mongoHeuristicTotalNumberOfEvaluatedDocuments / mongoHeuristicEvaluationCount
+        sqlHeuristicsTotalNumberOfEvaluatedRows.toDouble() / sqlHeuristicsEvaluationCount.toDouble()
+    }
+
+    fun averageNumberOfEvaluatedDocumentsForMongoHeuristics(): Double = if (mongoHeuristicsEvaluationCount==0) {
+        NaN
+    } else {
+        mongoHeuristicsTotalNumberOfEvaluatedDocuments.toDouble() / mongoHeuristicsEvaluationCount.toDouble()
     }
 
     override fun newActionEvaluated() {
@@ -292,9 +306,14 @@ class Statistics : SearchListener {
             add(Pair("clusteringTime", "${solution.clusteringTime}"))
             add(Pair("id", config.statisticsColumnId))
 
-            // statistic info for MongoHeuristics
-            add(Pair("averageNumberOfEvaluatedDocumentsForMongoHeuristic","${averageNumberOfEvaluatedDocumentsForMongoHeuristic()}"))
-            add(Pair("mongoHeuristicEvaluationCount","$mongoHeuristicEvaluationCount"))
+            // statistics info for Mongo Heuristics
+            add(Pair("averageNumberOfEvaluatedDocumentsForMongoHeuristics","${averageNumberOfEvaluatedDocumentsForMongoHeuristics()}"))
+            add(Pair("mongoHeuristicsEvaluationCount","$mongoHeuristicsEvaluationCount"))
+
+            // statistics info for SQL Heuristics
+            add(Pair("averageNumberOfEvaluatedRowsForSqlHeuristics","${averageNumberOfEvaluatedRowsForSqlHeuristics()}"))
+            add(Pair("sqlHeuristicsEvaluationCount","$sqlHeuristicsEvaluationCount"))
+
         }
         addConfig(list)
 

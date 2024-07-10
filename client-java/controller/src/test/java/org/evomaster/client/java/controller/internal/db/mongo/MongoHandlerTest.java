@@ -7,7 +7,7 @@ import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.evomaster.client.java.controller.internal.db.MongoHandler;
-import org.evomaster.client.java.controller.internal.db.MongoOperationDistance;
+import org.evomaster.client.java.controller.internal.db.EvaluatedMongoCommand;
 import org.evomaster.client.java.instrumentation.MongoFindCommand;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,7 +51,7 @@ public class MongoHandlerTest {
     }
 
     @Test
-    public void testGetDistances() {
+    public void testGetEvaluatedMongoCommands() {
         Document document = new Document("name", "John Doe")
                 .append("age", 30)
                 .append("city", "New York");
@@ -89,13 +89,13 @@ public class MongoHandlerTest {
         mongoHandler.setCalculateHeuristics(true);
         mongoHandler.setExtractMongoExecution(true);
         mongoHandler.handle(mongoFindCommand);
-        List<MongoOperationDistance> distances = mongoHandler.getDistances();
+        List<EvaluatedMongoCommand> evaluatedMongoCommands = mongoHandler.getEvaluatedMongoCommands();
 
-        assertEquals(1, distances.size());
+        assertEquals(1, evaluatedMongoCommands.size());
 
-        MongoOperationDistance distance = distances.iterator().next();
-        assertEquals(queryDocument, distance.findQuery);
-        assertEquals(Math.abs(30 - 18), distance.findDistance);
-        assertEquals(1, distance.numberOfEvaluatedDocuments);
+        EvaluatedMongoCommand evaluatedMongoCommand = evaluatedMongoCommands.iterator().next();
+        assertEquals(queryDocument, evaluatedMongoCommand.mongoCommand);
+        assertEquals(Math.abs(30 - 18), evaluatedMongoCommand.mongoDistanceWithMetrics.findDistance);
+        assertEquals(1, evaluatedMongoCommand.mongoDistanceWithMetrics.numberOfEvaluatedDocuments);
     }
 }
