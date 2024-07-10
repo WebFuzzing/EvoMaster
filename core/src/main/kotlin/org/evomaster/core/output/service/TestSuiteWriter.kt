@@ -378,7 +378,7 @@ class TestSuiteWriter {
 
             addImport("java.util.List", lines)
             addImport(EMTestUtils::class.java.name +".*", lines, true)
-            addImport(SutHandler::class.java.name, lines)
+            addImport("org.evomaster.client.java.controller.SutHandler", lines)
 
             if (useRestAssured()) {
                 addImport("io.restassured.RestAssured", lines)

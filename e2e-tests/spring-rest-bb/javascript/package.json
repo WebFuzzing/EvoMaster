@@ -8,7 +8,8 @@
   "devDependencies": {
     "jest": "29.7.0",
     "superagent": "9.0.2",
-    "supertest": "7.0.0"
+    "supertest": "7.0.0",
+    "urijs": "1.19.6"
   },
   "scripts": {
     "test": "jest"
