@@ -8,7 +8,7 @@
         <version>3.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>evomaster-e2e-tests-test-utils-js</artifactId>
+    <artifactId>evomaster-test-utils-js</artifactId>
     <packaging>jar</packaging>
 
 

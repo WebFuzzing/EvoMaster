@@ -78,6 +78,7 @@ class TestSuiteWriter {
 
     private val pythonUtilsFilename = "em_test_utils.py"
 
+    private val javascriptUtilsFilename = "EMTestUtils.js"
 
     fun writeTests(
         solution: Solution<*>,
@@ -452,7 +453,11 @@ class TestSuiteWriter {
 
         if (format.isJavaScript()) {
             lines.add("const superagent = require(\"superagent\");")
-            lines.add("const $jsImport = require(\"evomaster-client-js\").EMTestUtils;")
+
+            val jsUtils = Main::class.java.getResource("/$javascriptUtilsFilename").readText()
+            saveToDisk(jsUtils, Paths.get(config.outputFolder, javascriptUtilsFilename))
+            lines.add("const $jsImport = require(\"./$javascriptUtilsFilename\");")
+
             if (controllerName != null) {
                 lines.add("const $controllerName = require(\"${config.jsControllerPath}\");")
             }

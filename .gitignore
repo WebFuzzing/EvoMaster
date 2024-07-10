@@ -142,3 +142,4 @@ Migrations/
 /test-utils/test-utils-js/coverage/
 /test-utils/test-utils-js/node_modules/
 /test-utils/test-utils-js/target/
+/core/em.yaml
