@@ -286,9 +286,9 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
                         it != null
                     }.forEach {
                         if (it.type == ExtraHeuristicEntryDto.Type.MONGO) {
-                            statistics.reportNumberOfEvaluatedDocumentsForComputingMongoHeuristic(it.numberOfEvaluatedRecords)
+                            statistics.reportNumberOfEvaluatedDocumentsForMongoHeuristic(it.numberOfEvaluatedRecords)
                         } else if (it.type==ExtraHeuristicEntryDto.Type.SQL) {
-                            statistics.reportNumberOfEvaluatedRowsForComputingSqlHeuristic(it.numberOfEvaluatedRecords)
+                            statistics.reportNumberOfEvaluatedRowsForSqlHeuristic(it.numberOfEvaluatedRecords)
                         }
                     }
 

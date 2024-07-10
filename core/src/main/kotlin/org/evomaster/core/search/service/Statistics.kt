@@ -150,12 +150,12 @@ class Statistics : SearchListener {
         coverageFailures++
     }
 
-    fun reportNumberOfEvaluatedRowsForComputingSqlHeuristic(numberOfEvaluatedRows: Int) {
+    fun reportNumberOfEvaluatedRowsForSqlHeuristic(numberOfEvaluatedRows: Int) {
         sqlHeuristicsTotalNumberOfEvaluatedRows += numberOfEvaluatedRows
         sqlHeuristicsEvaluationCount ++;
     }
 
-    fun reportNumberOfEvaluatedDocumentsForComputingMongoHeuristic(numberOfEvaluatedDocuments: Int) {
+    fun reportNumberOfEvaluatedDocumentsForMongoHeuristic(numberOfEvaluatedDocuments: Int) {
         mongoHeuristicsTotalNumberOfEvaluatedDocuments += numberOfEvaluatedDocuments
         mongoHeuristicsEvaluationCount++
     }
