@@ -21,6 +21,7 @@ import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.test.utils.EMTestUtils
+import org.evomaster.test.utils.SeleniumEMUtils
 import org.evomaster.test.utils.js.JsLoader
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -447,7 +448,7 @@ class TestSuiteWriter {
                 addImport("org.testcontainers.containers.BrowserWebDriverContainer", lines)
                 addImport("org.openqa.selenium.chrome.ChromeOptions", lines)
                 addImport("org.openqa.selenium.remote.RemoteWebDriver", lines)
-                addImport("org.evomaster.client.java.controller.api.SeleniumEMUtils.*", lines, true)
+                addImport(SeleniumEMUtils::class.java.name + ".*", lines, true)
             }
         }
 
