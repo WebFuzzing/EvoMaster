@@ -14,7 +14,7 @@ import org.evomaster.client.java.sql.advanced.query_calculator.where_calculator.
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -79,35 +79,48 @@ public class SelectQuery {
     }
 
     public Boolean hasFrom(){
-        return nonNull(getFrom());
+        return isPlainSelect() && nonNull(getFrom());
     }
 
     private FromItem getFrom(){
         return getPlainSelect().getFromItem();
     }
 
-    public List<QueryTable> getFromTables(){
-        List<QueryTable> tables = new LinkedList<>();
-        if(hasFrom()){
-            tables.add(table(getFrom()));
-            if(hasJoins()){
-                getJoins().forEach(join -> tables.add(table(join.getFromItem())));
-            }
+    public List<QueryTable> getFromTables(Boolean failOnUnsupportedCases){
+        List<Optional<QueryTable>> tables = getFromTables();
+        if(!failOnUnsupportedCases || tables.stream().allMatch(Optional::isPresent)) {
+            return tables.stream()
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toList());
+        } else {
+            throw new UnsupportedOperationException(format("Unsupported subquery in query: %s", select.toString()));
         }
-        return tables;
     }
 
-    private QueryTable table(FromItem fromItem){
+    private List<Optional<QueryTable>> getFromTables() {
+        List<Optional<QueryTable>> optionalTables = new LinkedList<>();
+        if(hasFrom()){
+            optionalTables.add(table(getFrom()));
+            if(hasJoins()){
+                getJoins().forEach(join -> optionalTables.add(table(join.getFromItem())));
+            }
+        }
+        return optionalTables;
+    }
+
+    private Optional<QueryTable> table(FromItem fromItem){
         if(isTable(fromItem)){
-            return createQueryTable((Table) fromItem);
+            return Optional.of(createQueryTable((Table) fromItem));
         } else {
             SelectQuery subquery = subquery(fromItem);
-            FromItem subqueryFromItem = subquery.getFrom();
-            if(isTable(subqueryFromItem)){
-                return createQueryTable((Table) subqueryFromItem, fromItem.getAlias());
-            } else {
-                throw new UnsupportedOperationException(format("Unsupported subquery in query: %s", select.toString()));
+            if(subquery.hasFrom() && !subquery.hasJoins()){
+                FromItem subqueryFromItem = subquery.getFrom();
+                if(isTable(subqueryFromItem)) {
+                    return Optional.of(createQueryTable((Table) subqueryFromItem, fromItem.getAlias()));
+                }
             }
+            return Optional.empty();
         }
     }
 

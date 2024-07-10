@@ -14,57 +14,66 @@ import static org.junit.Assert.*;
 public class TableColumnsValuesTest {
 
     @Test
-    public void testIncludes() {
+    public void testIncludes() { //Exact match using column without name
         QueryTable table = createQueryTable("table");
         Map<String, Object> columnValues = createMap("column", "value");
         TableColumnsValues tableColumnsValues = new TableColumnsValues(table, columnValues);
         QueryColumn column = createQueryColumn("column");
-        assertTrue(tableColumnsValues.includes(column));
+        assertTrue(tableColumnsValues.includes(column, true));
     }
 
     @Test
-    public void testIncludes2() {
+    public void testIncludes2() { //Exact match using column with table name
         QueryTable table = createQueryTable("table");
         Map<String, Object> columnValues = createMap("column", "value");
         TableColumnsValues tableColumnsValues = new TableColumnsValues(table, columnValues);
-        QueryColumn column = createQueryColumn(createQueryTable("table"), "column");
-        assertTrue(tableColumnsValues.includes(column));
+        QueryColumn column = createQueryColumn("table", "column");
+        assertTrue(tableColumnsValues.includes(column, true));
     }
 
     @Test
-    public void testIncludes3() {
+    public void testIncludes3() { //Exact match using column with table alias
         QueryTable table = createQueryTable("table", "alias");
         Map<String, Object> columnValues = createMap("column", "value");
         TableColumnsValues tableColumnsValues = new TableColumnsValues(table, columnValues);
-        QueryColumn column = createQueryColumn(createQueryTable("alias"), "column");
-        assertTrue(tableColumnsValues.includes(column));
+        QueryColumn column = createQueryColumn("alias", "column");
+        assertTrue(tableColumnsValues.includes(column, true));
     }
 
     @Test
-    public void testNotIncludes() {
+    public void testIncludes4() { //Loose match
+        QueryTable table = createQueryTable("table");
+        Map<String, Object> columnValues = createMap("column", "value");
+        TableColumnsValues tableColumnsValues = new TableColumnsValues(table, columnValues);
+        QueryColumn column = createQueryColumn("alias", "column");
+        assertTrue(tableColumnsValues.includes(column, false));
+    }
+
+    @Test
+    public void testNotIncludes() { //Different column name
         QueryTable table = createQueryTable("table");
         Map<String, Object> columnValues = createMap("column", "value");
         TableColumnsValues tableColumnsValues = new TableColumnsValues(table, columnValues);
         QueryColumn column = createQueryColumn("other_column");
-        assertFalse(tableColumnsValues.includes(column));
+        assertFalse(tableColumnsValues.includes(column, true));
     }
-
+    
     @Test
-    public void testNotIncludes2() {
+    public void testNotIncludes2() { //Exact match using column with different table name
         QueryTable table = createQueryTable("table");
         Map<String, Object> columnValues = createMap("column", "value");
         TableColumnsValues tableColumnsValues = new TableColumnsValues(table, columnValues);
-        QueryColumn column = createQueryColumn(createQueryTable("other_table"), "column");
-        assertFalse(tableColumnsValues.includes(column));
+        QueryColumn column = createQueryColumn("other_table", "column");
+        assertFalse(tableColumnsValues.includes(column, true));
     }
 
     @Test
-    public void testNotIncludes3() {
+    public void testNotIncludes3() { //Exact match using column with different table alias
         QueryTable table = createQueryTable("table", "alias");
         Map<String, Object> columnValues = createMap("column", "value");
         TableColumnsValues tableColumnsValues = new TableColumnsValues(table, columnValues);
-        QueryColumn column = createQueryColumn(createQueryTable("other_alias"), "column");
-        assertFalse(tableColumnsValues.includes(column));
+        QueryColumn column = createQueryColumn("other_alias", "column");
+        assertFalse(tableColumnsValues.includes(column, true));
     }
 
     @Test

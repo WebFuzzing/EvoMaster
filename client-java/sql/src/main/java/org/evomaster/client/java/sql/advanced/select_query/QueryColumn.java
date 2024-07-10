@@ -2,25 +2,26 @@ package org.evomaster.client.java.sql.advanced.select_query;
 
 import net.sf.jsqlparser.schema.Column;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static org.evomaster.client.java.sql.advanced.select_query.QueryTable.createQueryTable;
 
 public class QueryColumn {
 
-    private QueryTable table;
+    private String tableName;
     private String name;
 
-    private QueryColumn(QueryTable table, String name) {
-        this.table = table;
+    private QueryColumn(String tableName, String name) {
+        this.tableName = tableName;
         this.name = name;
     }
 
-    public static QueryColumn createQueryColumn(QueryTable table, String name) {
-        return new QueryColumn(table, name.toLowerCase());
+    public static QueryColumn createQueryColumn(String tableName, String name) {
+        return new QueryColumn(nonNull(tableName) ? tableName.toLowerCase() : null, name.toLowerCase());
     }
 
     public static QueryColumn createQueryColumn(Column column){
-        return createQueryColumn(nonNull(column.getTable()) ? createQueryTable(column.getTable()) : null, column.getColumnName());
+        return createQueryColumn(nonNull(column.getTable()) ? column.getTable().getName() : null, column.getColumnName());
     }
 
     public static QueryColumn createQueryColumn(String name){
@@ -28,11 +29,11 @@ public class QueryColumn {
     }
 
     public Boolean hasTable(){
-        return nonNull(table);
+        return nonNull(tableName);
     }
 
-    public QueryTable getTable() {
-        return table;
+    public String getTableName() {
+        return tableName;
     }
 
     public String getName() {
@@ -41,6 +42,6 @@ public class QueryColumn {
 
     @Override
     public String toString(){
-        return hasTable() ? "(" + table + ")." + name : name;
+        return hasTable() ? tableName + "." + name : name;
     }
 }

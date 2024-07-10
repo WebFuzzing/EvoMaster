@@ -71,7 +71,7 @@ public class WhereCalculator implements ExpressionVisitor {
     }
 
     public static WhereCalculator createWhereCalculator(SelectQuery query, Row row, SqlDriver sqlDriver, TaintHandler taintHandler) {
-        EvaluationContext evaluationContext = createEvaluationContext(query.getFromTables(), row);
+        EvaluationContext evaluationContext = createEvaluationContext(row, query.getFromTables(false));
         return new WhereCalculator(query.getWhere(), evaluationContext, sqlDriver, taintHandler);
     }
 
@@ -365,7 +365,7 @@ public class WhereCalculator implements ExpressionVisitor {
     }
 
     private Truthness calculateTruthnessForSubquery(Select select, java.util.function.Function<CalculationResult, Truthness> truthnessFunction) {
-        SubQueryContextualizer subQueryContextualizer = createSubQueryContextualizer(select, evaluationContext, sqlDriver);
+        SubQueryContextualizer subQueryContextualizer = createSubQueryContextualizer(sqlDriver.getSchema(), select, evaluationContext);
         String subQuery = subQueryContextualizer.contextualize();
         QueryCalculator queryCalculator = createQueryCalculator(subQuery, sqlDriver, taintHandler);
         CalculationResult calculationResult = queryCalculator.calculate();
@@ -401,14 +401,14 @@ public class WhereCalculator implements ExpressionVisitor {
         isBooleanExpression.getLeftExpression().accept(this);
         Boolean value = stack.popBoolean();
         if(!isNull(value)) {
-            if (!isBooleanExpression.isNot()) {
-                if (isBooleanExpression.isTrue()) {
+            if(!isBooleanExpression.isNot()) {
+                if(isBooleanExpression.isTrue()) {
                     stack.pushTruthness(trueIfConditionElseFalse(value));
                 } else {
                     stack.pushTruthness(trueIfConditionElseFalse(!value));
                 }
             } else {
-                if (isBooleanExpression.isTrue()) {
+                if(isBooleanExpression.isTrue()) {
                     stack.pushTruthness(trueIfConditionElseFalse(!value));
                 } else {
                     stack.pushTruthness(trueIfConditionElseFalse(value));

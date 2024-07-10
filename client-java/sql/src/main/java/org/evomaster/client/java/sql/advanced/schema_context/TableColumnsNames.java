@@ -1,6 +1,7 @@
 package org.evomaster.client.java.sql.advanced.schema_context;
 
 import org.evomaster.client.java.sql.advanced.evaluation_context.TableColumnsContainer;
+import org.evomaster.client.java.sql.advanced.select_query.QueryColumn;
 import org.evomaster.client.java.sql.advanced.select_query.QueryTable;
 
 import java.util.List;
@@ -14,6 +15,10 @@ public class TableColumnsNames extends TableColumnsContainer {
     public TableColumnsNames(QueryTable table, List<String> columnNames) {
         super(table);
         this.columnNames = columnNames;
+    }
+
+    protected Boolean includes(QueryColumn column) {
+        return includes(column, true);
     }
 
     @Override

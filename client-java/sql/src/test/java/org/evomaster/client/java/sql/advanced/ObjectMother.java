@@ -25,6 +25,6 @@ public class ObjectMother {
     }
 
     public static EvaluationContext createSimpleEvaluationContext(String tableName, String columnName, Object columnValue) {
-        return createEvaluationContext(singletonList(createQueryTable(tableName)), createSimpleRow(tableName, columnName, columnValue));
+        return createEvaluationContext(createSimpleRow(tableName, columnName, columnValue), singletonList(createQueryTable(tableName)));
     }
 }

@@ -13,7 +13,7 @@ public class SelectQueryTest {
     @Test
     public void testGetTables() { //Single table
         SelectQuery query = createSelectQuery("SELECT * FROM customers WHERE age > 20 AND true AND EXISTS (SELECT * FROM orders WHERE customer_id = customers.id)");
-        List<QueryTable> tables = query.getFromTables();
+        List<QueryTable> tables = query.getFromTables(true);
         assertEquals(1, tables.size());
         assertEquals("customers", tables.get(0).getName());
     }
@@ -21,7 +21,7 @@ public class SelectQueryTest {
     @Test
     public void testGetTables2() { //Join
         SelectQuery query = createSelectQuery("SELECT * FROM customers c JOIN orders");
-        List<QueryTable> tables = query.getFromTables();
+        List<QueryTable> tables = query.getFromTables(true);
         assertEquals(2, tables.size());
         assertEquals("customers", tables.get(0).getName());
         assertEquals("c", tables.get(0).getAlias());
@@ -31,7 +31,7 @@ public class SelectQueryTest {
     @Test
     public void testGetTables3() { //Implicit join
         SelectQuery query = createSelectQuery("SELECT * FROM customers, orders");
-        List<QueryTable> tables = query.getFromTables();
+        List<QueryTable> tables = query.getFromTables(true);
         assertEquals(2, tables.size());
         assertEquals("customers", tables.get(0).getName());
         assertEquals("orders", tables.get(1).getName());
@@ -40,7 +40,7 @@ public class SelectQueryTest {
     @Test
     public void testGetTables4() { //Subquery
         SelectQuery query = createSelectQuery("SELECT * FROM (SELECT * FROM customers) c");
-        List<QueryTable> tables = query.getFromTables();
+        List<QueryTable> tables = query.getFromTables(true);
         assertEquals(1, tables.size());
         assertEquals("customers", tables.get(0).getName());
         assertEquals("c", tables.get(0).getAlias());

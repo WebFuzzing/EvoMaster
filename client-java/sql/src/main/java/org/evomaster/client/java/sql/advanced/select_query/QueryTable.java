@@ -8,8 +8,6 @@ import static org.evomaster.client.java.sql.advanced.query_calculator.where_calc
 
 public class QueryTable {
 
-    public static final QueryTable DEFAULT_TABLE = createQueryTable(EMPTY_STRING);
-
     private String name;
     private String alias;
 

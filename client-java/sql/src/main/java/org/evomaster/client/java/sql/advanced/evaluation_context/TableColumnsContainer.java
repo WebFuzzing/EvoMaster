@@ -15,21 +15,21 @@ public abstract class TableColumnsContainer {
         return table;
     }
 
-    public Boolean includes(QueryColumn column) {
-        return (column.hasTable() && isThisTable(column.getTable())) ||
-            (!column.hasTable() && columnIsInThisTable(column.getName()));
+    protected Boolean includes(QueryColumn column, Boolean exactMatch) {
+        return (column.hasTable() && isThisTable(column.getTableName())) ||
+            ((!column.hasTable() || !exactMatch) && columnIsInThisTable(column.getName()));
     }
 
-    private Boolean isThisTable(QueryTable columnTable) {
-        return hasSameName(table, columnTable) || hasSameAlias(table, columnTable);
+    private Boolean isThisTable(String columnTableName) {
+        return hasSameNameThanThisTable(columnTableName) || hasSameAliasThanThisTable(columnTableName);
     }
 
-    private Boolean hasSameName(QueryTable thisTable, QueryTable columnTable) {
-        return columnTable.getName().equals(thisTable.getName());
+    private Boolean hasSameNameThanThisTable(String columnTableName) {
+        return columnTableName.equals(table.getName());
     }
 
-    private Boolean hasSameAlias(QueryTable thisTable, QueryTable columnTable) {
-        return thisTable.hasAlias() && columnTable.getName().equals(thisTable.getAlias());
+    private Boolean hasSameAliasThanThisTable(String columnTableName) {
+        return table.hasAlias() && columnTableName.equals(table.getAlias());
     }
 
     protected abstract Boolean columnIsInThisTable(String columnName);

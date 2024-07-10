@@ -7,10 +7,9 @@ import org.evomaster.client.java.sql.advanced.select_query.QueryTable;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.lang.String.format;
-import static org.evomaster.client.java.sql.advanced.select_query.QueryTable.DEFAULT_TABLE;
+import static org.evomaster.client.java.sql.advanced.select_query.QueryTable.createQueryTable;
 
 public class EvaluationContext {
 
@@ -20,28 +19,45 @@ public class EvaluationContext {
         this.tablesColumnsValues = tablesColumnsValues;
     }
 
-    public static EvaluationContext createEvaluationContext(List<QueryTable> tables, Row row) {
-        List<TableColumnsValues> columnsValues =
-            Stream.concat(Stream.of(tables).flatMap(List::stream), Stream.of(DEFAULT_TABLE))
-                .filter(table -> row.containsKey(table.getName()))
-                .map(table -> new TableColumnsValues(table, row.get(table.getName())))
-                .collect(Collectors.toList());
+    public static EvaluationContext createEvaluationContext(Row row, List<QueryTable> tables) {
+        List<TableColumnsValues> columnsValues = row.entrySet().stream()
+            .map(entry -> new TableColumnsValues(enrichTable(entry.getKey(), tables), entry.getValue()))
+            .collect(Collectors.toList());
         return new EvaluationContext(columnsValues);
     }
 
+    private static QueryTable enrichTable(String tableName, List<QueryTable> tables) {
+        return tables.stream()
+            .filter(table -> table.getName().equals(tableName))
+            .findFirst()
+            .orElse(createQueryTable(tableName));
+    }
+
     public Boolean includes(QueryColumn column) {
-        return tablesColumnsValues.stream().anyMatch(tableColumnsValues -> tableColumnsValues.includes(column));
+        return tablesColumnsValues.stream()
+            .anyMatch(tableColumnsValues -> tableColumnsValues.includes(column, false));
     }
 
     public Object getValue(QueryColumn column) {
+        TableColumnsValues table;
+        Optional<TableColumnsValues> exactMatchTable = tablesWithColumn(column, true).stream().findFirst();
+        if(exactMatchTable.isPresent()) {
+            table = exactMatchTable.get();
+        } else {
+            List<TableColumnsValues> candidateTables = tablesWithColumn(column, false);
+            if(candidateTables.size() == 1) {
+                table = candidateTables.get(0);
+            } else {
+                throw new RuntimeException(format("Column %s value is ambiguous in %s", column, tablesColumnsValues));
+            }
+        }
+        return table.getValue(column);
+    }
+
+    private List<TableColumnsValues> tablesWithColumn(QueryColumn column, Boolean exactMatch) {
         return tablesColumnsValues.stream()
-            .filter(tableColumnsValues -> tableColumnsValues.includes(column))
-            .map(tableColumnsValues -> tableColumnsValues.getValue(column))
-            .map(Optional::ofNullable)
-            .findFirst()
-            .orElseThrow(() -> new RuntimeException(
-                format("Column %s value must be present in %s", column, tablesColumnsValues)))
-            .orElse(null);
+            .filter(tableColumnsValues -> tableColumnsValues.includes(column, exactMatch))
+            .collect(Collectors.toList());
     }
 
     @Override

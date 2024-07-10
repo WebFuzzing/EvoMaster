@@ -844,6 +844,16 @@ public class AdvancedHeuristicTest {
         assertEquals(oneRowWith(singleCondition(eq(24, 25))), truthness);
     }
 
+    @Test
+    public void testBestEffort() {
+        sqlDriver.execute("INSERT INTO customers VALUES (1, 'john', 24)");
+        sqlDriver.execute("INSERT INTO orders VALUES (1, 1, 'guitar')");
+        AdvancedHeuristic advancedHeuristic = createAdvancedHeuristic(sqlDriver);
+        Truthness truthness = advancedHeuristic.calculate("SELECT * FROM (SELECT product FROM customers JOIN orders) t WHERE " +
+            "t.product = 'guita'");
+        assertEquals(oneRowWith(singleCondition(eq("guitar", "guita"))), truthness);
+    }
+
     @Ignore("Test template for issues")
     @Test
     public void testIssue() {

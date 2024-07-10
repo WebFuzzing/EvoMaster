@@ -31,4 +31,13 @@ public class TableColumnsNamesTest {
         QueryColumn column = createQueryColumn("other_column");
         assertFalse(tableColumnsNames.includes(column));
     }
+
+    @Test
+    public void testNotIncludes2() {
+        QueryTable table = createQueryTable("table");
+        List<String> columnNames = singletonList("column");
+        TableColumnsNames tableColumnsNames = new TableColumnsNames(table, columnNames);
+        QueryColumn column = createQueryColumn("alias", "column");
+        assertFalse(tableColumnsNames.includes(column));
+    }
 }
