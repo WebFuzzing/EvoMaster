@@ -1,7 +1,6 @@
 package org.evomaster.core.output.service
 
 import com.google.inject.Inject
-import org.evomaster.client.java.controller.SutHandler
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto
 import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionDto
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
