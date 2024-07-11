@@ -1,9 +1,6 @@
 package org.evomaster.client.java.controller.internal.db.mongo;
 
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoClients;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.*;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.evomaster.client.java.controller.internal.db.MongoHandler;
@@ -29,7 +26,7 @@ public class MongoHandlerTest {
             .withExposedPorts(MONGODB_PORT);
 
     @BeforeAll
-    public static void initClass() throws Exception {
+    public static void initClass()  {
         mongodb.start();
         int port = mongodb.getMappedPort(MONGODB_PORT);
 
@@ -59,10 +56,15 @@ public class MongoHandlerTest {
         MongoDatabase database = mongoClient.getDatabase(DATABASE_NAME);
         MongoCollection<Document> collection = database.getCollection(COLLECTION_NAME);
 
-        assertFalse(collection.find().iterator().hasNext());
+        try (MongoCursor<Document> cursor = collection.find().iterator()) {
+            assertFalse(cursor.hasNext());
+        }
 
         collection.insertOne(document);
-        assertTrue(collection.find().iterator().hasNext());
+
+        try (MongoCursor<Document> cursor = collection.find().iterator()) {
+            assertTrue(cursor.hasNext());
+        }
 
         List<Document> documents = new ArrayList<>();
         collection.find().into(documents);
@@ -71,15 +73,16 @@ public class MongoHandlerTest {
         final Bson bsonQuery = eq("age", 18);
         Document queryDocument = MongoHeuristicCalculatorTest.convertToDocument( bsonQuery);
 
-        assertFalse(collection.find(queryDocument ).iterator().hasNext());
+        try (MongoCursor<Document> cursor = collection.find(queryDocument).iterator()) {
+            assertFalse(cursor.hasNext());
+        }
 
-        final String documentsType = null;
         final boolean successfullyExecuted = true;
         final int executionTime = 1;
 
         MongoFindCommand mongoFindCommand = new MongoFindCommand(DATABASE_NAME,
                 COLLECTION_NAME,
-                documentsType,
+                null,
                 queryDocument,
                 successfullyExecuted,
                 executionTime);

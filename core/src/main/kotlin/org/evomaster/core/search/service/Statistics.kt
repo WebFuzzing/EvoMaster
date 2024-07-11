@@ -29,7 +29,7 @@ class Statistics : SearchListener {
         const val DISTINCT_ACTIONS = "distinctActions"
         const val COVERED_2XX = "covered2xx"
         const val GQL_NO_ERRORS = "gqlNoErrors"
-        const val LAST_ACTION_IMPROVEMENT = "lastActionImprovement";
+        const val LAST_ACTION_IMPROVEMENT = "lastActionImprovement"
         const val EVALUATED_ACTIONS = "evaluatedActions"
     }
 
@@ -158,7 +158,7 @@ class Statistics : SearchListener {
 
     fun reportNumberOfEvaluatedRowsForSqlHeuristic(numberOfEvaluatedRows: Int) {
         sqlHeuristicsTotalNumberOfEvaluatedRows += numberOfEvaluatedRows
-        sqlHeuristicsEvaluationCount ++;
+        sqlHeuristicsEvaluationCount ++
     }
 
     fun reportNumberOfEvaluatedDocumentsForMongoHeuristic(numberOfEvaluatedDocuments: Int) {
@@ -249,7 +249,7 @@ class Statistics : SearchListener {
             // However, 5xx are not counted here.
             add(Pair("failedOracleExpectations", "" + failedOracle(solution)))
             /**
-             * this is the total of all potential faults, eg distinct500Faults + failedOracleExpectations + any other
+             * this is the total of all potential faults, e.g. distinct500Faults + failedOracleExpectations + any other
              * for RPC, this comprises internal errors, exceptions (declared and unexpected) and customized service errors
              */
             //potential oracle we are going to introduce.
