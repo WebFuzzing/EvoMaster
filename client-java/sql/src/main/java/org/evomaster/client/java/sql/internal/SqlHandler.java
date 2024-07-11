@@ -213,10 +213,41 @@ public class SqlHandler {
     }
 
     private Double computeDistance(String command) {
-
         if (connection == null) {
             throw new IllegalStateException("Trying to calculate SQL distance with no DB connection");
         }
+
+        if(isAdvancedHeuristics()){
+            return computeAdvancedDistance(command);
+        } else {
+            return computeStandardDistance(command);
+        }
+    }
+
+    private Double computeAdvancedDistance(String command) {
+        if(isNull(advancedHeuristic)){
+            Schema schema = createSchema(this.schema);
+            SqlDriver sqlDriver = createSqlDriver(connection, schema, new ConcurrentCache());
+            advancedHeuristic = createAdvancedHeuristic(sqlDriver, taintHandler);
+        }
+
+        Truthness truthness = advancedHeuristic.calculate(command);
+        double dist = 1 - truthness.getOfTrue();
+
+        if (dist > 0) {
+            try {
+                Statement statement = CCJSqlParserUtil.parse(command);
+                Map<String, Set<String>> columns = extractColumnsInvolvedInWhere(statement);
+                mergeNewData(failedWhere, columns);
+            } catch (Exception e) {
+                SimpleLogger.uniqueWarn("Merge failed for command: " + command + "\n" + e);
+            }
+        }
+
+        return dist;
+    }
+
+    private Double computeStandardDistance(String command) {
 
         Statement statement;
 
@@ -239,17 +270,7 @@ public class SqlHandler {
             //TODO check if table(s) not empty, and give >0 otherwise
             dist = 0;
         } else {
-            if(isAdvancedHeuristics()){
-                if(isNull(advancedHeuristic)){
-                    Schema schema = createSchema(this.schema);
-                    SqlDriver sqlDriver = createSqlDriver(connection, schema, new ConcurrentCache());
-                    advancedHeuristic = createAdvancedHeuristic(sqlDriver, taintHandler);
-                }
-                Truthness truthness = advancedHeuristic.calculate(command);
-                dist = 1 - truthness.getOfTrue();
-            } else {
-                dist = getDistanceForWhere(command, columns);
-            }
+            dist = getDistanceForWhere(command, columns);
         }
 
         if (dist > 0) {
