@@ -21,7 +21,9 @@ class BBAuthEMTest : SpringTestBase() {
     @Test
     fun testJavaScript(){
 
-        runTestForJS("authheader", 50, 3){ args: MutableList<String> ->
+        val folderName = "authheader"
+
+        runTestForJS(folderName, 50, 3){ args: MutableList<String> ->
 
             setOption(args, "header0", "X-FOO:foo")
             setOption(args, "header1", "X-BAR:42")
@@ -32,6 +34,9 @@ class BBAuthEMTest : SpringTestBase() {
             Assertions.assertTrue(solution.individuals.size >= 1)
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/bbauth", "OK")
         }
+
+        runNpmTests(relativePath(folderName))
+
         //TODO
     }
 

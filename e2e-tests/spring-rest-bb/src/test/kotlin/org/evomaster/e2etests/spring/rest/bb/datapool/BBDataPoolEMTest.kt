@@ -20,6 +20,24 @@ class BBDataPoolEMTest : SpringTestBase() {
 
 
     @Test
+    fun testJavaScript(){
+
+        val folderName = "datapool"
+
+        runTestForJS(folderName, 200, 3){ args: MutableList<String> ->
+
+            setOption(args, "useResponseDataPool", "true")
+
+            val solution = initAndRun(args)
+
+            Assertions.assertTrue(solution.individuals.size >= 1)
+            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/bbdatapool/users/{id}", null)
+        }
+
+        runNpmTests(relativePath(folderName))
+    }
+
+    @Test
     fun testRunEMOk() {
         runTestHandlingFlakyAndCompilation(
                 "BBDataPoolEM",

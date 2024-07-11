@@ -7,9 +7,11 @@ import org.evomaster.core.EMConfig.TestSuiteSplitType
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.e2etests.utils.RestTestBase
 import org.junit.jupiter.api.assertTimeoutPreemptively
+import java.io.File
 import java.nio.file.Paths
 import java.time.Duration
 import java.util.*
+import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
 
 
@@ -19,6 +21,8 @@ abstract class SpringTestBase : RestTestBase() {
         const val JS_BASE_PATH = "./javascript"
         const val GENERATED_FOLDER_NAME = "generated"
     }
+
+    protected fun relativePath(folderName: String) = "$GENERATED_FOLDER_NAME/$folderName"
 
     protected fun addBlackBoxOptions(
         args: MutableList<String>,
@@ -78,5 +82,55 @@ abstract class SpringTestBase : RestTestBase() {
         }
     }
 
+    private fun isWindows(): Boolean {
+        return System.getProperty("os.name").lowercase(Locale.getDefault()).contains("win")
+    }
 
+    private fun npm() = if(isWindows()) "npm.cmd" else "npm"
+
+    private fun runNpmInstall(){
+
+        val command = listOf(npm(),"ci")
+
+        val builder = ProcessBuilder(command)
+        builder.inheritIO()
+        builder.directory(File(JS_BASE_PATH))
+
+        val process = builder.start()
+        val timeout = 30L
+        val terminated = process.waitFor(timeout, TimeUnit.SECONDS)
+
+        if(!terminated){
+            process.destroy()
+            throw IllegalStateException("NPM installation failed within $timeout seconds")
+        }
+
+        if(process.exitValue() != 0){
+            throw IllegalStateException("NPM installation failed with status code: ${process.exitValue()}")
+        }
+    }
+
+    fun runNpmTests(folderRelativePath: String){
+
+        runNpmInstall()
+
+        val command = listOf(npm(),"test", folderRelativePath)
+
+        val builder = ProcessBuilder(command)
+        builder.inheritIO()
+        builder.directory(File(JS_BASE_PATH))
+
+        val process = builder.start()
+        val timeout = 120L
+        val terminated = process.waitFor(timeout, TimeUnit.SECONDS)
+
+        if(!terminated){
+            process.destroy()
+            throw IllegalStateException("NPM tests did not complete within $timeout seconds")
+        }
+
+        if(process.exitValue() != 0){
+            throw IllegalStateException("NPM tests failed with status code: ${process.exitValue()}")
+        }
+    }
 }
