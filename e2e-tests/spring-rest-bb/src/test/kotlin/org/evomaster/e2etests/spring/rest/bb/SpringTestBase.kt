@@ -5,6 +5,7 @@ import org.apache.commons.io.FileUtils
 import org.evomaster.client.java.instrumentation.shared.ClassName
 import org.evomaster.core.EMConfig.TestSuiteSplitType
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.e2etests.utils.BlackBoxUtils
 import org.evomaster.e2etests.utils.CoveredTargets
 import org.evomaster.e2etests.utils.RestTestBase
 import org.junit.jupiter.api.Assertions.*
@@ -21,17 +22,11 @@ import kotlin.collections.Collection
 
 abstract class SpringTestBase : RestTestBase() {
 
-    companion object{
-        const val JS_BASE_PATH = "./javascript"
-        const val GENERATED_FOLDER_NAME = "generated"
-    }
 
     @BeforeEach
     fun clearTargets(){
         CoveredTargets.reset()
     }
-
-    protected fun relativePath(folderName: String) = "$GENERATED_FOLDER_NAME/$folderName"
 
     protected fun addBlackBoxOptions(
         args: MutableList<String>,
@@ -92,7 +87,7 @@ abstract class SpringTestBase : RestTestBase() {
         lambda: Consumer<MutableList<String>>
     ){
         val baseLocation = when {
-            outputFormat.isJavaScript() -> "$JS_BASE_PATH/$GENERATED_FOLDER_NAME"
+            outputFormat.isJavaScript() -> BlackBoxUtils.baseLocationForJavaScript
             // TODO Python here
             else -> throw IllegalArgumentException("Not supported output type $outputFormat")
         }
@@ -102,7 +97,7 @@ abstract class SpringTestBase : RestTestBase() {
     fun runGeneratedTests(outputFormat: OutputFormat, outputFolderName: String){
 
         when{
-            outputFormat.isJavaScript() -> runNpmTests(relativePath(outputFolderName))
+            outputFormat.isJavaScript() -> BlackBoxUtils.runNpmTests(BlackBoxUtils.relativePath(outputFolderName))
             //TODO Python here
             else -> throw IllegalArgumentException("Not supported output type $outputFormat")
         }
@@ -142,55 +137,4 @@ abstract class SpringTestBase : RestTestBase() {
         }
     }
 
-    private fun isWindows(): Boolean {
-        return System.getProperty("os.name").lowercase(Locale.getDefault()).contains("win")
-    }
-
-    private fun npm() = if(isWindows()) "npm.cmd" else "npm"
-
-    private fun runNpmInstall(){
-
-        val command = listOf(npm(),"ci")
-
-        val builder = ProcessBuilder(command)
-        builder.inheritIO()
-        builder.directory(File(JS_BASE_PATH))
-
-        val process = builder.start()
-        val timeout = 30L
-        val terminated = process.waitFor(timeout, TimeUnit.SECONDS)
-
-        if(!terminated){
-            process.destroy()
-            throw IllegalStateException("NPM installation failed within $timeout seconds")
-        }
-
-        if(process.exitValue() != 0){
-            throw IllegalStateException("NPM installation failed with status code: ${process.exitValue()}")
-        }
-    }
-
-    private fun runNpmTests(folderRelativePath: String){
-
-        runNpmInstall()
-
-        val command = listOf(npm(),"test", folderRelativePath)
-
-        val builder = ProcessBuilder(command)
-        builder.inheritIO()
-        builder.directory(File(JS_BASE_PATH))
-
-        val process = builder.start()
-        val timeout = 120L
-        val terminated = process.waitFor(timeout, TimeUnit.SECONDS)
-
-        if(!terminated){
-            process.destroy()
-            throw IllegalStateException("NPM tests did not complete within $timeout seconds")
-        }
-
-        if(process.exitValue() != 0){
-            throw IllegalStateException("NPM tests failed with status code: ${process.exitValue()}")
-        }
-    }
 }
