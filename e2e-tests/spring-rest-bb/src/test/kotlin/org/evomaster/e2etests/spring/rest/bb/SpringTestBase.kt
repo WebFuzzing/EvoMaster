@@ -65,19 +65,13 @@ abstract class SpringTestBase : RestTestBase() {
     ){
         assertFalse(CoveredTargets.areCovered(targetLabels))
         runBlackBoxEM(outputFormat, outputFolderName, iterations, timeoutMinutes, lambda)
-        checkCoveredTargets(targetLabels)
+        BlackBoxUtils.checkCoveredTargets(targetLabels)
 
         CoveredTargets.reset()
         runGeneratedTests(outputFormat, outputFolderName)
-        checkCoveredTargets(targetLabels)
+        BlackBoxUtils.checkCoveredTargets(targetLabels)
     }
 
-    private fun checkCoveredTargets(targetLabels: Collection<String>){
-        targetLabels.forEach {
-            assertTrue(CoveredTargets.isCovered(it), "Target '$it' is not covered")
-        }
-        assertEquals(targetLabels.size, CoveredTargets.numberOfCoveredTargets())
-    }
 
     fun runBlackBoxEM(
         outputFormat: OutputFormat,
