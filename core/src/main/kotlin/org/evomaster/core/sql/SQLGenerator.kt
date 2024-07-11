@@ -82,7 +82,8 @@ class SQLGenerator{
                 ColumnDataType.CHARACTER_LARGE_OBJECT,
                 ColumnDataType.CHARACTER_VARYING,
                 ColumnDataType.VARCHAR_IGNORECASE,
-                ColumnDataType.VARCHAR -> equalCondition(col.name, "\'$value\'")
+                ColumnDataType.VARCHAR,
+                ColumnDataType.TEXT -> equalCondition(col.name, "\'$value\'")
                 else -> {
                     ""
                     //TODO("not sure whether to handle the types, i.e., TIMESTAMP, VARBINARY, CLOB, BLOB")
