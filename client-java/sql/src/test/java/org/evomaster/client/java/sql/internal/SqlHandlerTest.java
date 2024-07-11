@@ -6,6 +6,7 @@ import org.evomaster.client.java.sql.internal.ParserUtils;
 import org.evomaster.client.java.sql.internal.SqlHandler;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -47,6 +48,7 @@ public class SqlHandlerTest {
         boolean canParseSqlStatement = ParserUtils.canParseSqlStatement(createSql);
         assertFalse(canParseSqlStatement);
     }
+
 
 
 
