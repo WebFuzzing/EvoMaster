@@ -4,7 +4,10 @@ import com.foo.rest.examples.bb.authheader.BBAuthController
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.rest.bb.SpringTestBase
+import org.evomaster.e2etests.utils.CoveredTargets
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
@@ -21,6 +24,8 @@ class BBAuthEMTest : SpringTestBase() {
     @Test
     fun testJavaScript(){
 
+        assertFalse(CoveredTargets.isCovered("OK"))
+
         val folderName = "authheader"
 
         runTestForJS(folderName, 50, 3){ args: MutableList<String> ->
@@ -31,13 +36,17 @@ class BBAuthEMTest : SpringTestBase() {
 
             val solution = initAndRun(args)
 
-            Assertions.assertTrue(solution.individuals.size >= 1)
+            assertTrue(solution.individuals.size >= 1)
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/bbauth", "OK")
+
+            assertTrue(CoveredTargets.isCovered("OK"))
         }
+
+        CoveredTargets.reset()
 
         runNpmTests(relativePath(folderName))
 
-        //TODO
+        assertTrue(CoveredTargets.isCovered("OK"))
     }
 
 

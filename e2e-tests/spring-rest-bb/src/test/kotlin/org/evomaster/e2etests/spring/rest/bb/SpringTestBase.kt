@@ -5,7 +5,9 @@ import org.apache.commons.io.FileUtils
 import org.evomaster.client.java.instrumentation.shared.ClassName
 import org.evomaster.core.EMConfig.TestSuiteSplitType
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.e2etests.utils.CoveredTargets
 import org.evomaster.e2etests.utils.RestTestBase
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.assertTimeoutPreemptively
 import java.io.File
 import java.nio.file.Paths
@@ -20,6 +22,11 @@ abstract class SpringTestBase : RestTestBase() {
     companion object{
         const val JS_BASE_PATH = "./javascript"
         const val GENERATED_FOLDER_NAME = "generated"
+    }
+
+    @BeforeEach
+    fun clearTargets(){
+        CoveredTargets.reset()
     }
 
     protected fun relativePath(folderName: String) = "$GENERATED_FOLDER_NAME/$folderName"

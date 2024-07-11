@@ -1,5 +1,6 @@
 package com.foo.rest.examples.bb.authheader
 
+import org.evomaster.e2etests.utils.CoveredTargets
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
@@ -27,8 +28,11 @@ open class BBAuthApplication {
                  @RequestHeader("Authorization") auth: String,
     ) : ResponseEntity<String> {
 
-        if(foo == "foo" && bar == "42" && auth == "token")
+        if(foo == "foo" && bar == "42" && auth == "token"){
+            CoveredTargets.cover("OK")
             return ResponseEntity.ok("OK")
+        }
+
 
         return ResponseEntity.status(400).build()
     }
