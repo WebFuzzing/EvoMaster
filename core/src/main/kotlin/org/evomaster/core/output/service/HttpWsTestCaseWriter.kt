@@ -119,7 +119,6 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
           but that is not the case for the other libraries used for example in JS and C#
          */
         return config.outputFormat == OutputFormat.JS_JEST
-                || config.outputFormat == OutputFormat.CSHARP_XUNIT
                 || config.outputFormat == OutputFormat.PYTHON_UNITTEST
     }
 

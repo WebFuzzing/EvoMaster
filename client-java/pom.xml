@@ -23,6 +23,7 @@
         <module>sql</module>
         <module>sql-dto</module>
         <module>distance-heuristics</module>
+        <module>test-utils-java</module>
     </modules>
 
     <dependencyManagement>
