@@ -1,0 +1,18 @@
+# A GraphQL API to retrieve info on Users
+type Query {
+    # Get all users
+    all: [User!]
+}
+
+#A user of the API
+type User{
+    #The unique id of the user
+    id: String!,
+    #The name of the user
+    name: String
+    #The surname of the user
+    surname: String
+    #The age of the user
+    age: Int
+}
+
