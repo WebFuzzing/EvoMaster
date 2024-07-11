@@ -64,13 +64,19 @@ class Statistics : SearchListener {
      */
     private var coverageFailures = 0
 
-    var sqlHeuristicsEvaluationCount = 0
+    private var sqlHeuristicsEvaluationCount = 0
+
+    fun getSqlHeuristicsEvaluationCount(): Int = sqlHeuristicsEvaluationCount
 
     private var sqlHeuristicsTotalNumberOfEvaluatedRows = 0
 
-    var mongoHeuristicsEvaluationCount = 0
+    private var mongoHeuristicsEvaluationCount = 0
+
+    fun getMongoHeuristicsEvaluationCount(): Int = mongoHeuristicsEvaluationCount
 
     private var mongoHeuristicsTotalNumberOfEvaluatedDocuments = 0
+
+
 
    class Pair(val header: String, val element: String)
 

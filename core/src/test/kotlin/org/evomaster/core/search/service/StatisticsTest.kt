@@ -12,7 +12,7 @@ class StatisticsTest {
         statistics.reportNumberOfEvaluatedDocumentsForMongoHeuristic(20)
         statistics.reportNumberOfEvaluatedDocumentsForMongoHeuristic(30)
 
-        assertEquals(3, statistics.mongoHeuristicsEvaluationCount)
+        assertEquals(3, statistics.getMongoHeuristicsEvaluationCount())
         assertEquals((10 + 20 + 30).toDouble() / 3, statistics.averageNumberOfEvaluatedDocumentsForMongoHeuristics())
     }
 
@@ -24,7 +24,7 @@ class StatisticsTest {
         statistics.reportNumberOfEvaluatedRowsForSqlHeuristic(11)
         statistics.reportNumberOfEvaluatedRowsForSqlHeuristic(13)
 
-        assertEquals(4, statistics.sqlHeuristicsEvaluationCount)
+        assertEquals(4, statistics.getSqlHeuristicsEvaluationCount())
         assertEquals((5 + 7 + 11 + 13).toDouble() / 4, statistics.averageNumberOfEvaluatedRowsForSqlHeuristics())
     }
 

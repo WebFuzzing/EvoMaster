@@ -7,13 +7,11 @@ import org.evomaster.client.java.controller.mongo.MongoHeuristicsCalculator;
 import org.evomaster.client.java.controller.mongo.MongoOperation;
 import org.evomaster.client.java.instrumentation.MongoCollectionSchema;
 import org.evomaster.client.java.instrumentation.MongoFindCommand;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -21,6 +19,7 @@ import java.util.stream.Collectors;
  */
 public class MongoHandler {
 
+    public static final String MONGO_COLLECTION_CLASS_NAME = "com.mongodb.client.MongoCollection";
     /**
      * Info about Find operations executed
      */
@@ -122,8 +121,11 @@ public class MongoHandler {
     }
 
     private static Class<?> getCollectionClass(Object collection) throws ClassNotFoundException {
-        // collection is an implementation of interface MongoCollection
-        return collection.getClass().getInterfaces()[0];
+        // return the first class with class name: com.mongodb.client.MongoCollection
+        return Arrays.stream(collection.getClass().getInterfaces())
+                .filter(iface -> iface.getName().equals(MONGO_COLLECTION_CLASS_NAME))
+                .findFirst()
+                .orElseThrow(() -> new ClassNotFoundException("Could not find class " + MONGO_COLLECTION_CLASS_NAME));
     }
 
     private Iterable<?> getDocuments(Object collection) {
@@ -158,6 +160,7 @@ public class MongoHandler {
             try {
                 findDistance = calculator.computeExpression(info.getQuery(), doc);
             } catch (Exception ex) {
+                SimpleLogger.uniqueWarn("Failed to compute find: " + info.getQuery() + " with data " + doc);
                 findDistance = Double.MAX_VALUE;
             }
             if (findDistance == 0) {

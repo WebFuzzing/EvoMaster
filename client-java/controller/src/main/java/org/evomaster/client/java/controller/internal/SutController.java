@@ -428,7 +428,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                                     ExtraHeuristicEntryDto.Type.MONGO,
                                     ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
                                     p.mongoCommand.toString(),
-                                    p.mongoDistanceWithMetrics.findDistance,
+                                    p.mongoDistanceWithMetrics.mongoDistance,
                                     p.mongoDistanceWithMetrics.numberOfEvaluatedDocuments
                             ))
                     .forEach(h -> dto.heuristics.add(h));

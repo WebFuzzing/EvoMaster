@@ -91,6 +91,7 @@ public class HeuristicsCalculator {
                     minSqlDistance = dist;
                 }
             } catch (Exception ex) {
+                SimpleLogger.uniqueWarn("Failed to compute where expression: " + where + " with data " + row);
                 return new SqlDistanceWithMetrics(Double.MAX_VALUE, rowCount);
             }
         }

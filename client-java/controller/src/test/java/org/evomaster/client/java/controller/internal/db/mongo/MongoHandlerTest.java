@@ -95,7 +95,7 @@ public class MongoHandlerTest {
 
         EvaluatedMongoCommand evaluatedMongoCommand = evaluatedMongoCommands.iterator().next();
         assertEquals(queryDocument, evaluatedMongoCommand.mongoCommand);
-        assertEquals(Math.abs(30 - 18), evaluatedMongoCommand.mongoDistanceWithMetrics.findDistance);
+        assertEquals(Math.abs(30 - 18), evaluatedMongoCommand.mongoDistanceWithMetrics.mongoDistance);
         assertEquals(1, evaluatedMongoCommand.mongoDistanceWithMetrics.numberOfEvaluatedDocuments);
     }
 }
