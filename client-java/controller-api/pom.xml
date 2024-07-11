@@ -18,6 +18,11 @@
             <artifactId>evomaster-client-java-sql-dto</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-test-utils-java</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
         </dependency>

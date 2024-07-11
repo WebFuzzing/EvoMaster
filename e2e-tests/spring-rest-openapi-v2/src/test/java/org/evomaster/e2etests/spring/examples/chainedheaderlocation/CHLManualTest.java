@@ -3,8 +3,8 @@ package org.evomaster.e2etests.spring.examples.chainedheaderlocation;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
-import static org.evomaster.client.java.controller.api.EMTestUtils.isValidURIorEmpty;
-import static org.evomaster.client.java.controller.api.EMTestUtils.resolveLocation;
+import static org.evomaster.test.utils.EMTestUtils.isValidURIorEmpty;
+import static org.evomaster.test.utils.EMTestUtils.resolveLocation;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CHLManualTest extends CHLTestBase {

@@ -20,6 +20,9 @@ import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.SearchTimeController
+import org.evomaster.test.utils.EMTestUtils
+import org.evomaster.test.utils.SeleniumEMUtils
+import org.evomaster.test.utils.js.JsLoader
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
@@ -76,6 +79,7 @@ class TestSuiteWriter {
 
     private val pythonUtilsFilename = "em_test_utils.py"
 
+    private val javascriptUtilsFilename = "EMTestUtils.js"
 
     fun writeTests(
         solution: Solution<*>,
@@ -374,7 +378,7 @@ class TestSuiteWriter {
         if (format.isJavaOrKotlin()) {
 
             addImport("java.util.List", lines)
-            addImport("org.evomaster.client.java.controller.api.EMTestUtils.*", lines, true)
+            addImport(EMTestUtils::class.java.name +".*", lines, true)
             addImport("org.evomaster.client.java.controller.SutHandler", lines)
 
             if (useRestAssured()) {
@@ -444,13 +448,17 @@ class TestSuiteWriter {
                 addImport("org.testcontainers.containers.BrowserWebDriverContainer", lines)
                 addImport("org.openqa.selenium.chrome.ChromeOptions", lines)
                 addImport("org.openqa.selenium.remote.RemoteWebDriver", lines)
-                addImport("org.evomaster.client.java.controller.api.SeleniumEMUtils.*", lines, true)
+                addImport(SeleniumEMUtils::class.java.name + ".*", lines, true)
             }
         }
 
         if (format.isJavaScript()) {
             lines.add("const superagent = require(\"superagent\");")
-            lines.add("const $jsImport = require(\"evomaster-client-js\").EMTestUtils;")
+
+            val jsUtils = JsLoader::class.java.getResource("/$javascriptUtilsFilename").readText()
+            saveToDisk(jsUtils, Paths.get(config.outputFolder, javascriptUtilsFilename))
+            lines.add("const $jsImport = require(\"./$javascriptUtilsFilename\");")
+
             if (controllerName != null) {
                 lines.add("const $controllerName = require(\"${config.jsControllerPath}\");")
             }

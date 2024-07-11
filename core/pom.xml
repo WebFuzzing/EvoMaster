@@ -14,6 +14,14 @@
     <dependencies>
         <dependency>
             <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-test-utils-java</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-test-utils-js</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.evomaster</groupId>
             <artifactId>evomaster-client-java-controller-api</artifactId>
         </dependency>
         <dependency>
