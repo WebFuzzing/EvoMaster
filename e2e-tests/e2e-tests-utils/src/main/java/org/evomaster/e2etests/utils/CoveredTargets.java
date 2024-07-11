@@ -1,5 +1,6 @@
 package org.evomaster.e2etests.utils;
 
+import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
@@ -17,6 +18,10 @@ public class CoveredTargets {
 
     public static boolean isCovered(String target){
         return coveredTargets.contains(target);
+    }
+
+    public static boolean areCovered(Collection<String> targets) {
+        return coveredTargets.containsAll(targets);
     }
 
     public static int numberOfCoveredTargets(){

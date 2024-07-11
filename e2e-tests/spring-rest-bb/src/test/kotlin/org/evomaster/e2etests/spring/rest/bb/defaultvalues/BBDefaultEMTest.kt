@@ -5,8 +5,11 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.rest.bb.SpringTestBase
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
 
 class BBDefaultEMTest : SpringTestBase() {
 
@@ -15,6 +18,29 @@ class BBDefaultEMTest : SpringTestBase() {
         @JvmStatic
         fun init() {
             initClass(BBDefaultController())
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(names = ["JS_JEST"]) //TODO add Python
+    fun testBlackBoxOutput(outputFormat: OutputFormat) {
+
+        executeAndEvaluateBBTest(
+            outputFormat,
+            "defaultvalues",
+            20,
+            3,
+            listOf("X","Y")
+        ){ args: MutableList<String> ->
+
+            setOption(args, "bbSwaggerUrl", "$baseUrlOfSut/openapi-bbdefault.json")
+            setOption(args, "probRestDefault", "0.5")
+
+            val solution = initAndRun(args)
+
+            assertTrue(solution.individuals.size >= 1)
+            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/bbdefault", "OK")
+            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/bbdefault/{x}", "OK")
         }
     }
 

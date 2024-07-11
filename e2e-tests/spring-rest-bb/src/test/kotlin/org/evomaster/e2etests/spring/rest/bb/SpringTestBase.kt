@@ -7,8 +7,7 @@ import org.evomaster.core.EMConfig.TestSuiteSplitType
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.e2etests.utils.CoveredTargets
 import org.evomaster.e2etests.utils.RestTestBase
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.assertTimeoutPreemptively
 import java.io.File
@@ -17,6 +16,7 @@ import java.time.Duration
 import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
+import kotlin.collections.Collection
 
 
 abstract class SpringTestBase : RestTestBase() {
@@ -47,7 +47,6 @@ abstract class SpringTestBase : RestTestBase() {
         setOption(args, "bbExperiments", "false")
     }
 
-
     fun executeAndEvaluateBBTest(
         outputFormat: OutputFormat,
         outputFolderName: String,
@@ -56,13 +55,33 @@ abstract class SpringTestBase : RestTestBase() {
         targetLabel: String,
         lambda: Consumer<MutableList<String>>
     ){
-        assertFalse(CoveredTargets.isCovered(targetLabel))
+        executeAndEvaluateBBTest(outputFormat, outputFolderName, iterations, timeoutMinutes,
+            listOf(targetLabel),
+            lambda)
+    }
+
+    fun executeAndEvaluateBBTest(
+        outputFormat: OutputFormat,
+        outputFolderName: String,
+        iterations: Int,
+        timeoutMinutes: Int,
+        targetLabels: Collection<String>,
+        lambda: Consumer<MutableList<String>>
+    ){
+        assertFalse(CoveredTargets.areCovered(targetLabels))
         runBlackBoxEM(outputFormat, outputFolderName, iterations, timeoutMinutes, lambda)
-        assertTrue(CoveredTargets.isCovered(targetLabel))
+        checkCoveredTargets(targetLabels)
 
         CoveredTargets.reset()
         runGeneratedTests(outputFormat, outputFolderName)
-        assertTrue(CoveredTargets.isCovered(targetLabel))
+        checkCoveredTargets(targetLabels)
+    }
+
+    private fun checkCoveredTargets(targetLabels: Collection<String>){
+        targetLabels.forEach {
+            assertTrue(CoveredTargets.isCovered(it), "Target '$it' is not covered")
+        }
+        assertEquals(targetLabels.size, CoveredTargets.numberOfCoveredTargets())
     }
 
     fun runBlackBoxEM(
