@@ -1,5 +1,6 @@
 package com.foo.rest.examples.bb.datapool
 
+import org.evomaster.e2etests.utils.CoveredTargets
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
@@ -39,6 +40,7 @@ open class BBDataPoolApplication {
         val payload = data.find { it.id == id }
             ?: return ResponseEntity.status(404).build()
 
+        CoveredTargets.cover("OK")
         return ResponseEntity.status(200).body(payload)
     }
 

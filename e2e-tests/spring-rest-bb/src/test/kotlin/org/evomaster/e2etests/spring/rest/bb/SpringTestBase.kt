@@ -7,6 +7,8 @@ import org.evomaster.core.EMConfig.TestSuiteSplitType
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.e2etests.utils.CoveredTargets
 import org.evomaster.e2etests.utils.RestTestBase
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.assertTimeoutPreemptively
 import java.io.File
@@ -46,17 +48,49 @@ abstract class SpringTestBase : RestTestBase() {
     }
 
 
-    fun runTestForJS(
+    fun executeAndEvaluateBBTest(
+        outputFormat: OutputFormat,
+        outputFolderName: String,
+        iterations: Int,
+        timeoutMinutes: Int,
+        targetLabel: String,
+        lambda: Consumer<MutableList<String>>
+    ){
+        assertFalse(CoveredTargets.isCovered(targetLabel))
+        runBlackBoxEM(outputFormat, outputFolderName, iterations, timeoutMinutes, lambda)
+        assertTrue(CoveredTargets.isCovered(targetLabel))
+
+        CoveredTargets.reset()
+        runGeneratedTests(outputFormat, outputFolderName)
+        assertTrue(CoveredTargets.isCovered(targetLabel))
+    }
+
+    fun runBlackBoxEM(
+        outputFormat: OutputFormat,
         outputFolderName: String,
         iterations: Int,
         timeoutMinutes: Int,
         lambda: Consumer<MutableList<String>>
-    ) {
-        val baseLocation = "$JS_BASE_PATH/$GENERATED_FOLDER_NAME"
-        runTestForNonJVM(OutputFormat.JS_JEST, baseLocation, outputFolderName, iterations, timeoutMinutes, lambda)
+    ){
+        val baseLocation = when {
+            outputFormat.isJavaScript() -> "$JS_BASE_PATH/$GENERATED_FOLDER_NAME"
+            // TODO Python here
+            else -> throw IllegalArgumentException("Not supported output type $outputFormat")
+        }
+        runTestForNonJVM(outputFormat, baseLocation, outputFolderName, iterations, timeoutMinutes, lambda)
     }
 
-    fun runTestForNonJVM(
+    fun runGeneratedTests(outputFormat: OutputFormat, outputFolderName: String){
+
+        when{
+            outputFormat.isJavaScript() -> runNpmTests(relativePath(outputFolderName))
+            //TODO Python here
+            else -> throw IllegalArgumentException("Not supported output type $outputFormat")
+        }
+    }
+
+
+    private fun runTestForNonJVM(
         outputFormat: OutputFormat,
         rootOutputFolderBasePath: String,
         outputFolderName: String,
@@ -117,7 +151,7 @@ abstract class SpringTestBase : RestTestBase() {
         }
     }
 
-    fun runNpmTests(folderRelativePath: String){
+    private fun runNpmTests(folderRelativePath: String){
 
         runNpmInstall()
 
