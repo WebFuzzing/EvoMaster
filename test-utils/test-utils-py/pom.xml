@@ -4,18 +4,14 @@
 
     <parent>
         <groupId>org.evomaster</groupId>
-        <artifactId>evomaster</artifactId>
+        <artifactId>evomaster-test-utils</artifactId>
         <version>3.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>evomaster-test-utils</artifactId>
-    <packaging>pom</packaging>
+    <artifactId>evomaster-test-utils-py</artifactId>
+    <packaging>jar</packaging>
 
 
-    <modules>
-        <module>test-utils-js</module>
-        <module>test-utils-py</module>
-    </modules>
 
 
 
