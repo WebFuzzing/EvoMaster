@@ -418,14 +418,15 @@ public class ExecutionTracer {
             getCurrentAdditionalInfo().addSqlInfo(info);
     }
 
-    public static void addMongoInfo(MongoInfo info){
+    public static void addMongoInfo(MongoFindCommand info){
         if (!executingInitMongo)
             getCurrentAdditionalInfo().addMongoInfo(info);
     }
 
-    public static void addMongoCollectionInfo(MongoCollectionInfo info){
-        if (!executingInitMongo)
-            getCurrentAdditionalInfo().addMongoCollectionInfo(info);
+    public static void addMongoCollectionType(MongoCollectionSchema mongoCollectionSchema){
+        if (!executingInitMongo) {
+            getCurrentAdditionalInfo().addMongoCollectionType(mongoCollectionSchema);
+        }
     }
 
     public static void markLastExecutedStatement(String lastLine, String lastMethod) {

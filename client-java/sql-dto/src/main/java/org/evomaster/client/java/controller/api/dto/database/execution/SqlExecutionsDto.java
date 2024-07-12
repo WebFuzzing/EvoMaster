@@ -15,7 +15,7 @@ import java.util.*;
  * not the result, eg, a DELETE might have deleted nothing if its WHERE
  * clause was not satisfied.
  */
-public class ExecutionDto {
+public class SqlExecutionsDto {
 
     /**
      * What was tried to be retrieved in a SELECT.
