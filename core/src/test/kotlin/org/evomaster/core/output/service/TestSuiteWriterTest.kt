@@ -10,6 +10,7 @@ import org.evomaster.core.output.Termination
 import org.evomaster.core.output.compiler.CompilerForTestGenerated
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.Solution
+import org.evomaster.test.utils.py.PyLoader
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -125,11 +126,11 @@ class TestSuiteWriterTest{
         writer.writeTests(solution, FakeController::class.qualifiedName!!, null)
 
         // the requirements file should exist
-        val requirementsFile = Paths.get("${config.outputFolder}/em_test_utils.py")
+        val requirementsFile = Paths.get("${config.outputFolder}/${TestSuiteWriter.pythonUtilsFilename}")
         assertTrue(Files.exists(requirementsFile))
 
         val generatedUtils = String(Files.readAllBytes(requirementsFile))
-        assertTrue(generatedUtils.equals(Main::class.java.getResource("/em_test_utils.py").readText()))
+        assertTrue(generatedUtils == PyLoader::class.java.getResource("/${TestSuiteWriter.pythonUtilsFilename}").readText())
     }
 
     private fun getEmptySolution(config: EMConfig): Solution<RestIndividual> {
