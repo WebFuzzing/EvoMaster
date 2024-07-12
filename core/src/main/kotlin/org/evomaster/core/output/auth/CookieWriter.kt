@@ -34,15 +34,8 @@ object CookieWriter {
                              ind: EvaluatedIndividual<*>,
                              lines: Lines,
                              baseUrlOfSut: String,
-                             testCaseWriter: ApiTestCaseWriter
+                             testCaseWriter: HttpWsTestCaseWriter
     ) {
-
-        if (testCaseWriter !is HttpWsTestCaseWriter) {
-            /*
-                FIXME this requires refactoring, after clarifying how to support auth in RPC
-             */
-            throw IllegalStateException("Currently not supporting type: ${testCaseWriter.javaClass.name}")
-        }
 
         val cookiesInfo =  getCookieLoginAuth(ind.individual)
 
