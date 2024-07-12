@@ -23,21 +23,22 @@ object CookieWriter {
      *  Return the distinct auth info on cookie-based login in all actions
      *  of this individual
      */
-    fun getCookieLoginAuth(ind: Individual) =  ind.seeAllActions()
-            .filterIsInstance<HttpWsAction>()
-            .filter { it.auth.endpointCallLogin != null && it.auth.endpointCallLogin!!.expectsCookie()}
-            .distinctBy { it.auth.name }
-            .map { it.auth.endpointCallLogin!! }
+    fun getCookieLoginAuth(ind: Individual) = ind.seeAllActions()
+        .filterIsInstance<HttpWsAction>()
+        .filter { it.auth.endpointCallLogin != null && it.auth.endpointCallLogin!!.expectsCookie() }
+        .distinctBy { it.auth.name }
+        .map { it.auth.endpointCallLogin!! }
 
 
-    fun handleGettingCookies(format: OutputFormat,
-                             ind: EvaluatedIndividual<*>,
-                             lines: Lines,
-                             baseUrlOfSut: String,
-                             testCaseWriter: HttpWsTestCaseWriter
+    fun handleGettingCookies(
+        format: OutputFormat,
+        ind: EvaluatedIndividual<*>,
+        lines: Lines,
+        baseUrlOfSut: String,
+        testCaseWriter: HttpWsTestCaseWriter
     ) {
 
-        val cookiesInfo =  getCookieLoginAuth(ind.individual)
+        val cookiesInfo = getCookieLoginAuth(ind.individual)
 
         if (cookiesInfo.isNotEmpty()) {
             lines.addEmpty()
@@ -48,7 +49,7 @@ object CookieWriter {
             when {
                 format.isJava() -> lines.add("final Map<String,String> ${cookiesName(k)} = ")
                 format.isKotlin() -> lines.add("val ${cookiesName(k)} : Map<String,String> = ")
-                //TODO JS
+                format.isJavaScript() -> lines.add("const ${cookiesName(k)} = (")
                 //TODO Python
             }
 
@@ -56,12 +57,10 @@ object CookieWriter {
             lines.indent()
             addCallCommand(lines, k, testCaseWriter, format, baseUrlOfSut, cookiesName(k))
 
-            if (format.isPython()) {
-                lines.append(".cookies")
-            } else if(format.isJavaScript()){
-                lines.add(").header['set-cookie'][0].split(';')[0]")
-            } else {
-                lines.add(".then().extract().cookies()")
+            when {
+                format.isJavaOrKotlin() -> lines.add(".then().extract().cookies()")
+                format.isJavaScript() -> lines.add(").header['set-cookie'][0].split(';')[0]")
+                format.isPython() -> lines.append(".cookies")
             }
             //TODO check response status and cookie headers?
 
@@ -74,53 +73,57 @@ object CookieWriter {
         }
     }
 
-     fun addCallCommand(
+    fun addCallCommand(
         lines: Lines,
         k: EndpointCallLogin,
-        testCaseWriter: ApiTestCaseWriter,
+        testCaseWriter: HttpWsTestCaseWriter,
         format: OutputFormat,
         baseUrlOfSut: String,
         targetVariable: String
     ) {
-        //TODO check if payload is specified
-        if (format.isPython()) {
-            lines.add("headers = {}")
-            lines.add("headers[\"content-type\"] = \"${k.contentType.defaultValue}\"")
-        } else {
-            lines.add(".contentType(\"${k.contentType.defaultValue}\")")
-        }
-        if (k.contentType == ContentType.X_WWW_FORM_URLENCODED) {
-            if (testCaseWriter is HttpWsTestCaseWriter) { //FIXME
-                val send = testCaseWriter.sendBodyCommand()
-                lines.add(".$send(\"${k.payload}\")")
-            }
-        } else if (k.contentType == ContentType.JSON) {
-            if (testCaseWriter is HttpWsTestCaseWriter) { //FIXME
-                testCaseWriter.printSendJsonBody(k.payload, lines)
-            }
-        } else {
-            throw IllegalStateException("Currently not supporting yet ${k.contentType} in login")
-        }
 
-         //TODO should check specified verb
-         if (format.isPython()) {
-             lines.add("$targetVariable = requests \\")
-             lines.indent(2)
-         }
         lines.add(".post(")
         if (k.externalEndpointURL != null) {
             lines.append("\"${k.externalEndpointURL}\"")
         } else {
-            if (format.isJava()) {
-                lines.append("$baseUrlOfSut + \"")
-            } else if (format.isPython()) {
-                lines.append("self.$baseUrlOfSut + \"")
-            } else {
-                lines.append("\"\${$baseUrlOfSut}")
+            when{
+                format.isJava() || format.isJavaScript() -> lines.append("$baseUrlOfSut + \"")
+                format.isPython() -> lines.append("self.$baseUrlOfSut + \"")
+                else -> lines.append("\"\${$baseUrlOfSut}")
             }
-            //TODO should check or guarantee that base does not end with a / ?
             lines.append("${k.endpoint}\"")
         }
+        lines.append(")")
+
+
+        when {
+            format.isJavaOrKotlin() -> lines.add(".contentType(\"${k.contentType.defaultValue}\")")
+            format.isJavaScript() -> lines.add(".set(\"content-type\", \"${k.contentType.defaultValue}\")")
+            format.isPython() -> {
+                lines.add("headers = {}")
+                lines.add("headers[\"content-type\"] = \"${k.contentType.defaultValue}\"")
+            }
+        }
+
+        when (k.contentType) {
+            ContentType.X_WWW_FORM_URLENCODED -> {
+                val send = testCaseWriter.sendBodyCommand()
+                lines.add(".$send(\"${k.payload}\")")
+            }
+            ContentType.JSON -> {
+                testCaseWriter.printSendJsonBody(k.payload, lines)
+            }
+            else -> {
+                throw IllegalStateException("Currently not supporting yet ${k.contentType} in login")
+            }
+        }
+
+        //TODO should check specified verb
+        if (format.isPython()) {
+            lines.add("$targetVariable = requests \\")
+            lines.indent(2)
+        }
+
         if (format.isPython()) {
             lines.append(", ")
             lines.indented {
@@ -128,6 +131,6 @@ object CookieWriter {
             }
             lines.deindent(2)
         }
-        lines.append(")")
+
     }
 }
