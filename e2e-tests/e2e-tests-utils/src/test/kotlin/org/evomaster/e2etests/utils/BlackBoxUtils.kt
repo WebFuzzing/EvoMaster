@@ -34,7 +34,8 @@ object BlackBoxUtils {
         val command = listOf(npm(), "ci")
 
         val builder = ProcessBuilder(command)
-        builder.inheritIO()
+        //Surefire does NOT like it... but needed when debugging locally
+        //builder.inheritIO()
         builder.directory(File(JS_BASE_PATH))
 
         val process = builder.start()
@@ -58,7 +59,8 @@ object BlackBoxUtils {
         val command = listOf(npm(), "test", folderRelativePath)
 
         val builder = ProcessBuilder(command)
-        builder.inheritIO()
+        //Surefire does NOT like it... but needed when debugging locally
+        //builder.inheritIO()
         builder.directory(File(JS_BASE_PATH))
 
         val process = builder.start()
