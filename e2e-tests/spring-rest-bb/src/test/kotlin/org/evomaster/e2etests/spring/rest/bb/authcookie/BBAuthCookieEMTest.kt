@@ -1,7 +1,6 @@
 package org.evomaster.e2etests.spring.rest.bb.authcookie
 
 import com.foo.rest.examples.bb.authcookie.CookieLoginController
-import com.foo.rest.examples.bb.authheader.BBAuthController
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.rest.bb.SpringTestBase
@@ -29,10 +28,11 @@ class BBAuthCookieEMTest : SpringTestBase() {
             "authcookie",
             20,
             3,
-            "OK"
+            "FOO"
         ){ args: MutableList<String> ->
 
-        //TODO
+            setOption(args, "configPath", "src/test/resources/config/authcookie.yaml")
+            setOption(args, "endpointFocus", "/api/logintoken/check")
 
             val solution = initAndRun(args)
 

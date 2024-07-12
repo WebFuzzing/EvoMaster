@@ -1,5 +1,6 @@
 package com.foo.rest.examples.bb.authcookie
 
+import org.evomaster.e2etests.utils.CoveredTargets
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -36,7 +37,10 @@ class CookieLoginRest {
             return ResponseEntity.status(401).build()
         }
 
-        val token = if (authorization == "foo") "this:" else if (authorization == "bar") "center:" else ""
+        val token = if (authorization == "foo"){
+            CoveredTargets.cover("FOO")
+            "this:"
+        }  else ""
 
         return ResponseEntity.ok(token + authorization)
     }

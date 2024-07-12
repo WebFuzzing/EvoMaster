@@ -37,6 +37,13 @@ object CookieWriter {
                              testCaseWriter: ApiTestCaseWriter
     ) {
 
+        if (testCaseWriter !is HttpWsTestCaseWriter) {
+            /*
+                FIXME this requires refactoring, after clarifying how to support auth in RPC
+             */
+            throw IllegalStateException("Currently not supporting type: ${testCaseWriter.javaClass.name}")
+        }
+
         val cookiesInfo =  getCookieLoginAuth(ind.individual)
 
         if (cookiesInfo.isNotEmpty()) {
@@ -48,21 +55,23 @@ object CookieWriter {
             when {
                 format.isJava() -> lines.add("final Map<String,String> ${cookiesName(k)} = ")
                 format.isKotlin() -> lines.add("val ${cookiesName(k)} : Map<String,String> = ")
+                //TODO JS
+                //TODO Python
             }
 
-            //TODO JS
-
-            if (!format.isPython()) {
-                lines.append("given()")
-                lines.indent()
-            }
-
+            testCaseWriter.startRequest(lines)
+            lines.indent()
             addCallCommand(lines, k, testCaseWriter, format, baseUrlOfSut, cookiesName(k))
+
             if (format.isPython()) {
                 lines.append(".cookies")
+            } else if(format.isJavaScript()){
+                lines.add(").header['set-cookie'][0].split(';')[0]")
             } else {
-                lines.add(".then().extract().cookies()") //TODO check response status and cookie headers?
+                lines.add(".then().extract().cookies()")
             }
+            //TODO check response status and cookie headers?
+
             lines.appendSemicolon()
             lines.addEmpty()
 
