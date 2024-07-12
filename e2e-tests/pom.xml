@@ -29,6 +29,7 @@
         <module>spring-web</module>
         <module>spring-rest-mongo</module>
         <module>spring-rest-bb</module>
+        <module>spring-graphql-bb</module>
 
     </modules>
 

@@ -1,5 +1,6 @@
 package com.foo.rest.examples.bb.defaultvalues
 
+import org.evomaster.e2etests.utils.CoveredTargets
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
@@ -22,9 +23,10 @@ open class BBDefaultApplication {
     @GetMapping
     open fun get(@RequestParam data: Int?) : ResponseEntity<String> {
 
-        if(data == 42)
+        if(data == 42) {
+            CoveredTargets.cover("X")
             return ResponseEntity.ok("OK")
-
+        }
         return ResponseEntity.status(400).build()
     }
 
@@ -32,8 +34,10 @@ open class BBDefaultApplication {
     @GetMapping(path = ["/{x}"])
     open fun getX(@PathVariable x: String) : ResponseEntity<String> {
 
-        if(x == "foo")
+        if(x == "foo") {
+            CoveredTargets.cover("Y")
             return ResponseEntity.ok("OK")
+        }
 
         return ResponseEntity.status(400).build()
     }

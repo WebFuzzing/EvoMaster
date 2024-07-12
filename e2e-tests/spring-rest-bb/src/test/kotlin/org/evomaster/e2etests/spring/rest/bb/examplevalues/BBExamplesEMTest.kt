@@ -5,8 +5,11 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.rest.bb.SpringTestBase
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
 
 class BBExamplesEMTest : SpringTestBase() {
 
@@ -18,6 +21,28 @@ class BBExamplesEMTest : SpringTestBase() {
         }
     }
 
+    @ParameterizedTest
+    @EnumSource(names = ["JS_JEST"]) //TODO add Python
+    fun testBlackBoxOutput(outputFormat: OutputFormat) {
+
+        executeAndEvaluateBBTest(
+            outputFormat,
+            "examplevalues",
+            500,
+            3,
+            listOf("A","B","C","D")
+        ){ args: MutableList<String> ->
+
+            setOption(args, "bbSwaggerUrl", "$baseUrlOfSut/openapi-bbexamples.json")
+            setOption(args, "probRestDefault", "0.45")
+            setOption(args, "probRestExamples","0.45")
+
+
+            val solution = initAndRun(args)
+
+            assertTrue(solution.individuals.size >= 1)
+        }
+    }
 
     @Test
     fun testRunEMOk() {

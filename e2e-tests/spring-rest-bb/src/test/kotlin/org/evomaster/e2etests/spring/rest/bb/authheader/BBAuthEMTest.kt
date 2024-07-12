@@ -4,9 +4,14 @@ import com.foo.rest.examples.bb.authheader.BBAuthController
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.rest.bb.SpringTestBase
+import org.evomaster.e2etests.utils.CoveredTargets
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
 
 class BBAuthEMTest : SpringTestBase() {
 
@@ -18,10 +23,17 @@ class BBAuthEMTest : SpringTestBase() {
         }
     }
 
-    @Test
-    fun testJavaScript(){
+    @ParameterizedTest
+    @EnumSource(names = ["JS_JEST"]) //TODO add Python
+    fun testBlackBoxOutput(outputFormat: OutputFormat) {
 
-        runTestForJS("authheader", 50, 3){ args: MutableList<String> ->
+        executeAndEvaluateBBTest(
+            outputFormat,
+            "authheader",
+            50,
+            3,
+            "OK"
+        ){ args: MutableList<String> ->
 
             setOption(args, "header0", "X-FOO:foo")
             setOption(args, "header1", "X-BAR:42")
@@ -29,10 +41,9 @@ class BBAuthEMTest : SpringTestBase() {
 
             val solution = initAndRun(args)
 
-            Assertions.assertTrue(solution.individuals.size >= 1)
+            assertTrue(solution.individuals.size >= 1)
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/bbauth", "OK")
         }
-        //TODO
     }
 
 

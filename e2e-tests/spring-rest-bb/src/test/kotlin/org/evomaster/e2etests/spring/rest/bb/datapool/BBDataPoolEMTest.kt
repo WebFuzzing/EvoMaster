@@ -5,8 +5,11 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.rest.bb.SpringTestBase
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
 
 class BBDataPoolEMTest : SpringTestBase() {
 
@@ -15,6 +18,29 @@ class BBDataPoolEMTest : SpringTestBase() {
         @JvmStatic
         fun init() {
             initClass(BBDataPoolController())
+        }
+    }
+
+
+
+    @ParameterizedTest
+    @EnumSource(names = ["JS_JEST"]) //TODO add Python
+    fun testBlackBoxOutput(outputFormat: OutputFormat) {
+
+        executeAndEvaluateBBTest(
+            outputFormat,
+            "datapool",
+            200,
+            3,
+            "OK"
+        ){ args: MutableList<String> ->
+
+            setOption(args, "useResponseDataPool", "true")
+
+            val solution = initAndRun(args)
+
+            assertTrue(solution.individuals.size >= 1)
+            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/bbdatapool/users/{id}", null)
         }
     }
 
