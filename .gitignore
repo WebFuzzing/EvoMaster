@@ -150,4 +150,10 @@ Migrations/
 /e2e-tests/spring-rest-bb/javascript/generated/
 
 /client-java/test-utils-java/target/
+
 /test-utils/test-utils-py/target/
+
+/e2e-tests/spring-graphql-bb/javascript/generated/
+/e2e-tests/spring-graphql-bb/javascript/node_modules/
+/e2e-tests/spring-graphql-bb/target/
+

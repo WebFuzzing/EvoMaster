@@ -1,5 +1,4 @@
-package org.evomaster.e2etests.spring.rest.bb
-
+package org.evomaster.e2etests.spring.graphql.bb
 
 import org.apache.commons.io.FileUtils
 import org.evomaster.client.java.instrumentation.shared.ClassName
@@ -7,20 +6,24 @@ import org.evomaster.core.EMConfig.TestSuiteSplitType
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.e2etests.utils.BlackBoxUtils
 import org.evomaster.e2etests.utils.CoveredTargets
-import org.evomaster.e2etests.utils.RestTestBase
-import org.junit.jupiter.api.Assertions.*
+import org.evomaster.e2etests.utils.GraphQLTestBase
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.assertTimeoutPreemptively
-import java.io.File
 import java.nio.file.Paths
 import java.time.Duration
-import java.util.*
-import java.util.concurrent.TimeUnit
+import java.util.ArrayList
 import java.util.function.Consumer
-import kotlin.collections.Collection
 
 
-abstract class SpringTestBase : RestTestBase() {
+abstract class SpringTestBase : GraphQLTestBase() {
+
+    /*
+        WARNING
+        lot of code below is copied&pasted from rest-bb.
+        reason is that dealing with multi-inheritance in JVM is not possible,
+        and refactoring would not be straightforward
+     */
 
 
     @BeforeEach
@@ -33,9 +36,8 @@ abstract class SpringTestBase : RestTestBase() {
         outputFormat: OutputFormat
     ) {
         setOption(args, "blackBox", "true")
-        setOption(args, "bbTargetUrl", baseUrlOfSut)
-        setOption(args, "bbSwaggerUrl", "$baseUrlOfSut/v3/api-docs")
-        setOption(args, "problemType", "REST")
+        setOption(args, "bbTargetUrl", "$baseUrlOfSut/graphql")
+        setOption(args, "problemType", "GRAPHQL")
         setOption(args, "outputFormat", outputFormat.toString())
 
         //this is deprecated
