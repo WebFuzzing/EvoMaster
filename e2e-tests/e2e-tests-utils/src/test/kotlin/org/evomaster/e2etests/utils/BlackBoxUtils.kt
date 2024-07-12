@@ -60,7 +60,7 @@ object BlackBoxUtils {
 
         val builder = ProcessBuilder(command)
         //Surefire does NOT like it... but needed when debugging locally
-        builder.inheritIO()
+        //builder.inheritIO()
         builder.directory(File(JS_BASE_PATH))
 
         val process = builder.start()
