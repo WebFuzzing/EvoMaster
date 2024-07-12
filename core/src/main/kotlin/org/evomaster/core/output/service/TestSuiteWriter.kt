@@ -23,6 +23,7 @@ import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.test.utils.EMTestUtils
 import org.evomaster.test.utils.SeleniumEMUtils
 import org.evomaster.test.utils.js.JsLoader
+import org.evomaster.test.utils.py.PyLoader
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
@@ -38,6 +39,7 @@ import java.time.ZonedDateTime
 class TestSuiteWriter {
 
     companion object {
+
         const val jsImport = "EM"
 
         /**
@@ -45,13 +47,18 @@ class TestSuiteWriter {
          */
         const val controller = "controller"
         const val driver = "driver"
+
+        private const val pythonUtilsFilenameNoExtension = "em_test_utils"
+        const val pythonUtilsFilename = "$pythonUtilsFilenameNoExtension.py"
+        const val javascriptUtilsFilename = "EMTestUtils.js"
+
+        private val log: Logger = LoggerFactory.getLogger(TestSuiteWriter::class.java)
+
         private const val baseUrlOfSut = "baseUrlOfSut"
         private const val expectationsMasterSwitch = "ems"
         private const val fixtureClass = "ControllerFixture"
         private const val fixture = "_fixture"
         private const val browser = "browser"
-
-        private val log: Logger = LoggerFactory.getLogger(TestSuiteWriter::class.java)
     }
 
     @Inject
@@ -77,9 +84,7 @@ class TestSuiteWriter {
 
     private var activePartialOracles = mutableMapOf<String, Boolean>()
 
-    private val pythonUtilsFilename = "em_test_utils.py"
 
-    private val javascriptUtilsFilename = "EMTestUtils.js"
 
     fun writeTests(
         solution: Solution<*>,
@@ -486,8 +491,8 @@ class TestSuiteWriter {
             if (config.testTimeout > 0) {
                 lines.add("import timeout_decorator")
             }
-            lines.add("from em_test_utils import *")
-            val pythonUtils = Main::class.java.getResource("/$pythonUtilsFilename").readText()
+            lines.add("from $pythonUtilsFilenameNoExtension import *")
+            val pythonUtils = PyLoader::class.java.getResource("/$pythonUtilsFilename").readText()
             saveToDisk(pythonUtils, Paths.get(config.outputFolder, pythonUtilsFilename))
         }
 
