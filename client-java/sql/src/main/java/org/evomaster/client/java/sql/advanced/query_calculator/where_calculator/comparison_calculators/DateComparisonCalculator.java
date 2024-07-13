@@ -19,33 +19,33 @@ public class DateComparisonCalculator {
         return new DateComparisonCalculator(createDoubleComparisonCalculator());
     }
 
-    public Truthness calculateTruthnessForEquals(Date left, Date right) {
-        return doubleComparisonCalculator.calculateTruthnessForEquals(
+    public Truthness calculateEquals(Date left, Date right) {
+        return doubleComparisonCalculator.calculateEquals(
             convertToDouble(left), convertToDouble(right));
     }
 
-    public Truthness calculateTruthnessForNotEquals(Date left, Date right) {
-        return doubleComparisonCalculator.calculateTruthnessForNotEquals(
+    public Truthness calculateNotEquals(Date left, Date right) {
+        return doubleComparisonCalculator.calculateNotEquals(
             convertToDouble(left), convertToDouble(right));
     }
 
-    public Truthness calculateTruthnessForGreaterThan(Date left, Date right) {
-        return doubleComparisonCalculator.calculateTruthnessForGreaterThan(
+    public Truthness calculateGreaterThan(Date left, Date right) {
+        return doubleComparisonCalculator.calculateGreaterThan(
             convertToDouble(left), convertToDouble(right));
     }
 
-    public Truthness calculateTruthnessForGreaterThanOrEquals(Date left, Date right) {
-        return doubleComparisonCalculator.calculateTruthnessForGreaterThanOrEquals(
+    public Truthness calculateGreaterThanOrEquals(Date left, Date right) {
+        return doubleComparisonCalculator.calculateGreaterThanOrEquals(
             convertToDouble(left), convertToDouble(right));
     }
 
-    public Truthness calculateTruthnessForMinorThan(Date left, Date right) {
-        return doubleComparisonCalculator.calculateTruthnessForMinorThan(
+    public Truthness calculateMinorThan(Date left, Date right) {
+        return doubleComparisonCalculator.calculateMinorThan(
             convertToDouble(left), convertToDouble(right));
     }
 
-    public Truthness calculateTruthnessForMinorThanOrEquals(Date left, Date right) {
-        return doubleComparisonCalculator.calculateTruthnessForMinorThanOrEquals(
+    public Truthness calculateMinorThanOrEquals(Date left, Date right) {
+        return doubleComparisonCalculator.calculateMinorThanOrEquals(
             convertToDouble(left), convertToDouble(right));
     }
 }

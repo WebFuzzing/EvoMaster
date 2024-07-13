@@ -128,10 +128,6 @@ public class TruthnessUtils {
         return new Truthness(trueOrAvgTrue(items), avgOfFalse(items));
     }
 
-    public static Truthness trueIfConditionElseFalse(Boolean condition) {
-        return condition ? TRUE : FALSE;
-    }
-
     public static Truthness scaleTrue(Double ofTrue){
         return new Truthness(scaleHeuristicWithBase(ofTrue, Truthness.C), 1d);
     }

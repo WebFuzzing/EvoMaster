@@ -16,6 +16,7 @@ import org.evomaster.client.java.sql.advanced.AdvancedHeuristic;
 import org.evomaster.client.java.sql.advanced.driver.Schema;
 import org.evomaster.client.java.sql.advanced.driver.SqlDriver;
 import org.evomaster.client.java.sql.advanced.driver.cache.ConcurrentCache;
+import org.evomaster.client.java.sql.advanced.helpers.dump.PlainTextFileHelper;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.sql.Connection;
@@ -23,11 +24,16 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Stream;
 
+import static java.lang.Double.MAX_VALUE;
+import static java.lang.String.format;
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static org.evomaster.client.java.sql.advanced.AdvancedHeuristic.createAdvancedHeuristic;
 import static org.evomaster.client.java.sql.advanced.driver.Schema.createSchema;
 import static org.evomaster.client.java.sql.advanced.driver.SqlDriver.createSqlDriver;
+import static org.evomaster.client.java.sql.advanced.helpers.dump.ExceptionHelper.exceptionToString;
 import static org.evomaster.client.java.sql.internal.ParserUtils.*;
 
 /**
@@ -209,7 +215,7 @@ public class SqlHandler {
     }
 
     private double maxDistance() {
-        return isAdvancedHeuristics() ? 1d : Double.MAX_VALUE;
+        return isAdvancedHeuristics() ? 1d : MAX_VALUE;
     }
 
     private Double computeDistance(String command) {
@@ -217,47 +223,87 @@ public class SqlHandler {
             throw new IllegalStateException("Trying to calculate SQL distance with no DB connection");
         }
 
-        if(isAdvancedHeuristics()){
-            return computeAdvancedDistance(command);
+        double advDist = MAX_VALUE;
+        String advDistanceException = null;
+        String mergeException = null;
+        String stdDistanceException = null;
+
+        try {
+            advDist = computeDistanceAdv(command);
+            if (advDist > 0){
+                try {
+                    mergeData(command);
+                } catch (Exception e){
+                    mergeException = exceptionToString(e);
+                }
+            }
+        } catch (Exception e){
+            advDistanceException = exceptionToString(e);
+        }
+
+        try {
+            computeDistanceStd(command);
+        } catch (Exception e){
+            stdDistanceException = exceptionToString(e);
+        }
+
+        if(nonNull(stdDistanceException) && isNull(advDistanceException)){
+            appendQuery("only_std_failed", command, stdDistanceException, null);
+        } else if(isNull(stdDistanceException) && nonNull(advDistanceException)) {
+            appendQuery("only_adv_failed", command, advDistanceException, null);
+        } else if(nonNull(stdDistanceException) && nonNull(advDistanceException)) {
+            appendQuery("both_failed", command, advDistanceException, stdDistanceException);
         } else {
-            return computeStandardDistance(command);
+            appendQuery("both_worked", command, null, null);
+        }
+
+        if(nonNull(mergeException)){
+            appendQuery("adv_works_but_merge_failed", command, mergeException, null);
+        }
+
+        if(isNull(advDistanceException)){
+            return advDist;
+        } else {
+            throw new RuntimeException();
         }
     }
 
-    private Double computeAdvancedDistance(String command) {
-        if(isNull(advancedHeuristic)){
-            Schema schema = createSchema(this.schema);
-            SqlDriver sqlDriver = createSqlDriver(connection, schema, new ConcurrentCache());
-            advancedHeuristic = createAdvancedHeuristic(sqlDriver, taintHandler);
-        }
-
-        Truthness truthness = advancedHeuristic.calculate(command);
-        double dist = 1 - truthness.getOfTrue();
-
-        if (dist > 0) {
-            try {
-                Statement statement = CCJSqlParserUtil.parse(command);
-                Map<String, Set<String>> columns = extractColumnsInvolvedInWhere(statement);
-                mergeNewData(failedWhere, columns);
-            } catch (Exception e) {
-                SimpleLogger.uniqueWarn("Merge failed for command: " + command + "\n" + e);
+    private void appendQuery(String prefix, String query, String... exceptions) {
+        PlainTextFileHelper.append(prefix + ".txt", query + "\n");
+        if(Stream.of(exceptions).anyMatch(Objects::nonNull)) {
+            PlainTextFileHelper.append(prefix + "_with_exceptions.txt", query + "\n\n");
+            for (String exception : exceptions) {
+                if(nonNull(exception)) {
+                    PlainTextFileHelper.append(prefix + "_with_exceptions.txt", exception + "\n\n");
+                }
             }
         }
-
-        return dist;
     }
 
-    private Double computeStandardDistance(String command) {
-
+    private void mergeData(String command) {
         Statement statement;
 
         try {
             statement = CCJSqlParserUtil.parse(command);
         } catch (Exception e) {
             SimpleLogger.uniqueWarn("Cannot handle command: " + command + "\n" + e);
-            return maxDistance();
+            throw new RuntimeException();
         }
 
+        Map<String, Set<String>> columns = extractColumnsInvolvedInWhere(statement);
+
+        mergeNewData(failedWhere, columns);
+    }
+
+    private Double computeDistanceStd(String command) {
+        Statement statement;
+
+        try {
+            statement = CCJSqlParserUtil.parse(command);
+        } catch (Exception e) {
+            SimpleLogger.uniqueWarn("Cannot handle command: " + command + "\n" + e);
+            throw new RuntimeException();
+        }
 
         Map<String, Set<String>> columns = extractColumnsInvolvedInWhere(statement);
 
@@ -278,6 +324,16 @@ public class SqlHandler {
         }
 
         return dist;
+    }
+
+    private double computeDistanceAdv(String command) {
+        if(isNull(advancedHeuristic)){
+            Schema schema = createSchema(this.schema);
+            SqlDriver sqlDriver = createSqlDriver(connection, schema, new ConcurrentCache());
+            advancedHeuristic = createAdvancedHeuristic(sqlDriver, taintHandler);
+        }
+        Truthness truthness = advancedHeuristic.calculate(command);
+        return 1 - truthness.getOfTrue();
     }
 
     private double getDistanceForWhere(String command, Map<String, Set<String>> columns) {

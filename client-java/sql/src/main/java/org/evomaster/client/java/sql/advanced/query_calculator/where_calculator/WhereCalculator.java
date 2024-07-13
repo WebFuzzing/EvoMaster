@@ -18,9 +18,7 @@ import org.evomaster.client.java.sql.advanced.evaluation_context.EvaluationConte
 import org.evomaster.client.java.sql.advanced.query_calculator.CalculationResult;
 import org.evomaster.client.java.sql.advanced.query_calculator.QueryCalculator;
 import org.evomaster.client.java.sql.advanced.query_calculator.where_calculator.comparison_calculators.ObjectComparisonCalculator;
-import org.evomaster.client.java.sql.advanced.query_calculator.where_calculator.expressions.ListExpression;
 import org.evomaster.client.java.sql.advanced.query_calculator.where_calculator.expressions.SelectComparisonExpression;
-import org.evomaster.client.java.sql.advanced.query_calculator.where_calculator.expressions.SelectExpression;
 import org.evomaster.client.java.sql.advanced.query_contextualizer.SubQueryContextualizer;
 import org.evomaster.client.java.sql.advanced.select_query.SelectQuery;
 import org.evomaster.client.java.sql.internal.TaintHandler;
@@ -41,8 +39,7 @@ import static org.evomaster.client.java.distance.heuristics.Truthness.FALSE;
 import static org.evomaster.client.java.distance.heuristics.Truthness.TRUE;
 import static org.evomaster.client.java.distance.heuristics.TruthnessUtils.*;
 import static org.evomaster.client.java.sql.advanced.evaluation_context.EvaluationContext.createEvaluationContext;
-import static org.evomaster.client.java.sql.advanced.helpers.ConversionsHelper.convertToDate;
-import static org.evomaster.client.java.sql.advanced.helpers.ConversionsHelper.convertToDouble;
+import static org.evomaster.client.java.sql.advanced.helpers.ConversionsHelper.*;
 import static org.evomaster.client.java.sql.advanced.helpers.LiteralsHelper.isBooleanLiteral;
 import static org.evomaster.client.java.sql.advanced.helpers.LiteralsHelper.isTrueLiteral;
 import static org.evomaster.client.java.sql.advanced.query_calculator.QueryCalculator.createQueryCalculator;
@@ -94,12 +91,12 @@ public class WhereCalculator implements ExpressionVisitor {
 
     @Override
     public void visit(NullValue nullValue) {
-        stack.pushExpression(null);
+        stack.push(null);
     }
 
     @Override
     public void visit(Function function) {
-        stack.pushExpression(evaluationContext.getValue(createQueryColumn(function.toString())));
+        stack.push(evaluationContext.getValue(createQueryColumn(function.toString())));
     }
 
     @Override
@@ -107,7 +104,7 @@ public class WhereCalculator implements ExpressionVisitor {
         signedExpression.getExpression().accept(this);
         Double numberWithoutSign = convertToDouble(stack.popNumber());
         Double number = signedExpression.getSign() != MINUS_SIGN ? numberWithoutSign : -numberWithoutSign;
-        stack.pushNumber(number);
+        stack.push(number);
     }
 
     @Override
@@ -122,12 +119,12 @@ public class WhereCalculator implements ExpressionVisitor {
 
     @Override
     public void visit(DoubleValue doubleValue) {
-        stack.pushNumber(doubleValue.getValue());
+        stack.push(doubleValue.getValue());
     }
 
     @Override
     public void visit(LongValue longValue) {
-        stack.pushNumber(longValue.getValue());
+        stack.push(longValue.getValue());
     }
 
     @Override
@@ -137,17 +134,17 @@ public class WhereCalculator implements ExpressionVisitor {
 
     @Override
     public void visit(DateValue dateValue) {
-        stack.pushExpression(dateValue.getValue());
+        stack.push(dateValue.getValue());
     }
 
     @Override
     public void visit(TimeValue timeValue) {
-        stack.pushExpression(timeValue.getValue());
+        stack.push(timeValue.getValue());
     }
 
     @Override
     public void visit(TimestampValue timestampValue) {
-        stack.pushExpression(timestampValue.getValue());
+        stack.push(timestampValue.getValue());
     }
 
     @Override
@@ -157,7 +154,7 @@ public class WhereCalculator implements ExpressionVisitor {
 
     @Override
     public void visit(StringValue stringValue) {
-        stack.pushExpression(stringValue.getValue());
+        stack.push(stringValue.getValue());
     }
 
     @Override
@@ -165,7 +162,7 @@ public class WhereCalculator implements ExpressionVisitor {
         addition.getRightExpression().accept(this);
         addition.getLeftExpression().accept(this);
         Double number = convertToDouble(stack.popNumber()) + convertToDouble(stack.popNumber());
-        stack.pushNumber(number);
+        stack.push(number);
     }
 
     @Override
@@ -173,7 +170,7 @@ public class WhereCalculator implements ExpressionVisitor {
         division.getRightExpression().accept(this);
         division.getLeftExpression().accept(this);
         Double number = convertToDouble(stack.popNumber()) / convertToDouble(stack.popNumber());
-        stack.pushNumber(number);
+        stack.push(number);
     }
 
     @Override
@@ -186,7 +183,7 @@ public class WhereCalculator implements ExpressionVisitor {
         multiplication.getRightExpression().accept(this);
         multiplication.getLeftExpression().accept(this);
         Double number = convertToDouble(stack.popNumber()) * convertToDouble(stack.popNumber());
-        stack.pushNumber(number);
+        stack.push(number);
     }
 
     @Override
@@ -194,21 +191,21 @@ public class WhereCalculator implements ExpressionVisitor {
         subtraction.getRightExpression().accept(this);
         subtraction.getLeftExpression().accept(this);
         Double number = convertToDouble(stack.popNumber()) - convertToDouble(stack.popNumber());
-        stack.pushNumber(number);
+        stack.push(number);
     }
 
     @Override
     public void visit(AndExpression andExpression) {
         andExpression.getRightExpression().accept(this);
         andExpression.getLeftExpression().accept(this);
-        stack.pushTruthness(andAggregation(stack.popTruthness(), stack.popTruthness()));
+        stack.push(andAggregation(stack.popTruthness(), stack.popTruthness()));
     }
 
     @Override
     public void visit(OrExpression orExpression) {
         orExpression.getRightExpression().accept(this);
         orExpression.getLeftExpression().accept(this);
-        stack.pushTruthness(orAggregation(stack.popTruthness(), stack.popTruthness()));
+        stack.push(orAggregation(stack.popTruthness(), stack.popTruthness()));
     }
 
     @Override
@@ -222,19 +219,19 @@ public class WhereCalculator implements ExpressionVisitor {
         between.getBetweenExpressionStart().accept(this);
         between.getBetweenExpressionEnd().accept(this);
 
-        Object maxValue = stack.popExpression();
-        Object minValue = stack.popExpression();
-        Object value = stack.popExpression();
+        Object maxValue = stack.popSingleValue();
+        Object minValue = stack.popSingleValue();
+        Object value = stack.popSingleValue();
         ObjectComparisonCalculator objectComparisonCalculator = createObjectTruthnessCalculator(taintHandler);
 
         if(!between.isNot()) {
-            Truthness truthnessMin = objectComparisonCalculator.calculateTruthnessForGreaterThanOrEquals(value, minValue);
-            Truthness truthnessMax = objectComparisonCalculator.calculateTruthnessForMinorThanOrEquals(value, maxValue);
-            stack.pushTruthness(andAggregation(truthnessMin, truthnessMax));
+            Truthness truthnessMin = objectComparisonCalculator.calculateGreaterThanOrEquals(value, minValue);
+            Truthness truthnessMax = objectComparisonCalculator.calculateMinorThanOrEquals(value, maxValue);
+            stack.push(andAggregation(truthnessMin, truthnessMax));
         } else {
-            Truthness truthnessMin = objectComparisonCalculator.calculateTruthnessForMinorThan(value, minValue);
-            Truthness truthnessMax = objectComparisonCalculator.calculateTruthnessForGreaterThan(value, maxValue);
-            stack.pushTruthness(orAggregation(truthnessMin, truthnessMax));
+            Truthness truthnessMin = objectComparisonCalculator.calculateMinorThan(value, minValue);
+            Truthness truthnessMax = objectComparisonCalculator.calculateGreaterThan(value, maxValue);
+            stack.push(orAggregation(truthnessMin, truthnessMax));
         }
     }
 
@@ -245,43 +242,44 @@ public class WhereCalculator implements ExpressionVisitor {
 
     @Override
     public void visit(EqualsTo equalsTo) {
-        calculateTruthnessForComparisonOperator(equalsTo);
+        calculateComparisonOperator(equalsTo);
     }
 
     @Override
     public void visit(GreaterThan greaterThan) {
-        calculateTruthnessForComparisonOperator(greaterThan);
+        calculateComparisonOperator(greaterThan);
     }
 
     @Override
     public void visit(GreaterThanEquals greaterThanEquals) {
-        calculateTruthnessForComparisonOperator(greaterThanEquals);
+        calculateComparisonOperator(greaterThanEquals);
     }
 
-    private void calculateTruthnessForComparisonOperator(ComparisonOperator operator) {
+    private void calculateComparisonOperator(ComparisonOperator operator) {
         operator.getRightExpression().accept(this);
         operator.getLeftExpression().accept(this);
 
-        Object leftValue = stack.popExpression();
-        Object rightValue = stack.popExpression();
+        Object leftValue = stack.popSingleValue();
 
-        if(rightValue instanceof SelectComparisonExpression) {
+        if(stack.peekGeneric() instanceof SelectComparisonExpression) {
+            Object rightValue = stack.popGeneric();
             SelectComparisonExpression selectComparisonExpression = (SelectComparisonExpression) rightValue;
             switch (selectComparisonExpression.getAnyType()) {
                 case ALL:
-                    stack.pushTruthness(
-                        calculateTruthnessForSubquery(selectComparisonExpression.getSelect(), calculationResult ->
-                            all(leftValue, rowValues(calculationResult.getRows()), getTruthnessFunction(operator))));
+                    stack.push(
+                        calculateSubquery(selectComparisonExpression.getSelect(), calculationResult ->
+                            all(leftValue, rowValues(calculationResult.getRows()), getOperatorFunction(operator))));
                     break;
                 case ANY:
                 case SOME:
                 default:
-                    stack.pushTruthness(
-                        calculateTruthnessForSubquery(selectComparisonExpression.getSelect(), calculationResult ->
-                            any(leftValue, rowValues(calculationResult.getRows()), getTruthnessFunction(operator))));
+                    stack.push(
+                        calculateSubquery(selectComparisonExpression.getSelect(), calculationResult ->
+                            any(leftValue, rowValues(calculationResult.getRows()), getOperatorFunction(operator))));
             }
         } else {
-            stack.pushTruthness(getTruthnessFunction(operator).apply(leftValue, rightValue));
+            Object rightValue = stack.popSingleValue();
+            stack.push(getOperatorFunction(operator).apply(leftValue, rightValue));
         }
     }
 
@@ -311,20 +309,20 @@ public class WhereCalculator implements ExpressionVisitor {
         }
     }
 
-    private BiFunction<Object, Object, Truthness> getTruthnessFunction(ComparisonOperator operator) {
+    private BiFunction<Object, Object, Truthness> getOperatorFunction(ComparisonOperator operator) {
         ObjectComparisonCalculator objectComparisonCalculator = createObjectTruthnessCalculator(taintHandler);
         if(operator instanceof EqualsTo) {
-            return objectComparisonCalculator::calculateTruthnessForEquals;
+            return objectComparisonCalculator::calculateEquals;
         } else if(operator instanceof NotEqualsTo) {
-            return objectComparisonCalculator::calculateTruthnessForNotEquals;
+            return objectComparisonCalculator::calculateNotEquals;
         } else if(operator instanceof GreaterThan) {
-            return objectComparisonCalculator::calculateTruthnessForGreaterThan;
+            return objectComparisonCalculator::calculateGreaterThan;
         } else if(operator instanceof GreaterThanEquals) {
-            return objectComparisonCalculator::calculateTruthnessForGreaterThanOrEquals;
+            return objectComparisonCalculator::calculateGreaterThanOrEquals;
         } else if(operator instanceof MinorThan) {
-            return objectComparisonCalculator::calculateTruthnessForMinorThan;
+            return objectComparisonCalculator::calculateMinorThan;
         } else if(operator instanceof MinorThanEquals) {
-            return objectComparisonCalculator::calculateTruthnessForMinorThanOrEquals;
+            return objectComparisonCalculator::calculateMinorThanOrEquals;
         } else {
             throw new UnsupportedOperationException("This comparison operator is not supported yet");
         }
@@ -335,41 +333,22 @@ public class WhereCalculator implements ExpressionVisitor {
         inExpression.getRightExpression().accept(this);
         inExpression.getLeftExpression().accept(this);
 
-        Object testValue = stack.popExpression();
-        Object valuesExpression = stack.popExpression();
+        Object testValue = stack.popSingleValue();
+        List<Object> values = stack.popValuesList();
         ObjectComparisonCalculator objectComparisonCalculator = createObjectTruthnessCalculator(taintHandler);
-
-        if(valuesExpression instanceof ListExpression) {
-            List<Object> values = ((ListExpression) valuesExpression).getValues();
-            if(!inExpression.isNot()) {
-                stack.pushTruthness(any(testValue, values, objectComparisonCalculator::calculateTruthnessForEquals));
-            } else {
-                stack.pushTruthness(all(testValue, values, objectComparisonCalculator::calculateTruthnessForNotEquals));
-            }
-        } else if(valuesExpression instanceof SelectExpression) {
-            Select select = ((SelectExpression) valuesExpression).getSelect();
-            if(!inExpression.isNot()) {
-                stack.pushTruthness(
-                    calculateTruthnessForSubquery(select, calculationResult ->
-                        any(testValue, rowValues(calculationResult.getRows()),
-                            objectComparisonCalculator::calculateTruthnessForEquals)));
-            } else {
-                stack.pushTruthness(
-                    calculateTruthnessForSubquery(select, calculationResult ->
-                        all(testValue, rowValues(calculationResult.getRows()),
-                            objectComparisonCalculator::calculateTruthnessForNotEquals)));
-            }
+        if(!inExpression.isNot()) {
+            stack.push(any(testValue, values, objectComparisonCalculator::calculateEquals));
         } else {
-            throw new RuntimeException("Values must be a list or a subquery");
+            stack.push(all(testValue, values, objectComparisonCalculator::calculateNotEquals));
         }
     }
 
-    private Truthness calculateTruthnessForSubquery(Select select, java.util.function.Function<CalculationResult, Truthness> truthnessFunction) {
+    private <T> T calculateSubquery(Select select, java.util.function.Function<CalculationResult, T> function) {
         SubQueryContextualizer subQueryContextualizer = createSubQueryContextualizer(sqlDriver.getSchema(), select, evaluationContext);
         String subQuery = subQueryContextualizer.contextualize();
         QueryCalculator queryCalculator = createQueryCalculator(subQuery, sqlDriver, taintHandler);
         CalculationResult calculationResult = queryCalculator.calculate();
-        return truthnessFunction.apply(calculationResult);
+        return function.apply(calculationResult);
     }
 
     private List<Object> rowValues(List<Row> rows) {
@@ -390,9 +369,9 @@ public class WhereCalculator implements ExpressionVisitor {
     public void visit(IsNullExpression isNullExpression) {
         isNullExpression.getLeftExpression().accept(this);
         if(!isNullExpression.isNot()) {
-            stack.pushTruthness(trueIfConditionElseFalse(isNull(stack.popExpression())));
+            stack.push(convertToTruthness(isNull(stack.popSingleValue())));
         } else {
-            stack.pushTruthness(trueIfConditionElseFalse(nonNull(stack.popExpression())));
+            stack.push(convertToTruthness(nonNull(stack.popSingleValue())));
         }
     }
 
@@ -403,19 +382,19 @@ public class WhereCalculator implements ExpressionVisitor {
         if(!isNull(value)) {
             if(!isBooleanExpression.isNot()) {
                 if(isBooleanExpression.isTrue()) {
-                    stack.pushTruthness(trueIfConditionElseFalse(value));
+                    stack.push(convertToTruthness(value));
                 } else {
-                    stack.pushTruthness(trueIfConditionElseFalse(!value));
+                    stack.push(convertToTruthness(!value));
                 }
             } else {
                 if(isBooleanExpression.isTrue()) {
-                    stack.pushTruthness(trueIfConditionElseFalse(!value));
+                    stack.push(convertToTruthness(!value));
                 } else {
-                    stack.pushTruthness(trueIfConditionElseFalse(value));
+                    stack.push(convertToTruthness(value));
                 }
             }
         } else {
-            stack.pushTruthness(FALSE);
+            stack.push(FALSE);
         }
     }
 
@@ -426,17 +405,17 @@ public class WhereCalculator implements ExpressionVisitor {
 
     @Override
     public void visit(MinorThan minorThan) {
-        calculateTruthnessForComparisonOperator(minorThan);
+        calculateComparisonOperator(minorThan);
     }
 
     @Override
     public void visit(MinorThanEquals minorThanEquals) {
-        calculateTruthnessForComparisonOperator(minorThanEquals);
+        calculateComparisonOperator(minorThanEquals);
     }
 
     @Override
     public void visit(NotEqualsTo notEqualsTo) {
-        calculateTruthnessForComparisonOperator(notEqualsTo);
+        calculateComparisonOperator(notEqualsTo);
     }
 
     @Override
@@ -463,13 +442,9 @@ public class WhereCalculator implements ExpressionVisitor {
     public void visit(Column column) {
         if(evaluationContext.includes(createQueryColumn(column))) {
             Object value = evaluationContext.getValue(createQueryColumn(column));
-            if(value instanceof Number) {
-                stack.pushNumber((Number) value);
-            } else {
-                stack.pushExpression(value);
-            }
+            stack.push(value);
         } else if(isBooleanLiteral(column.getColumnName())) {
-            stack.pushBoolean(isTrueLiteral(column.getColumnName()));
+            stack.push(isTrueLiteral(column.getColumnName()));
         } else {
             throw new RuntimeException(format("Column %s must be present in %s or be a boolean literal", column, evaluationContext));
         }
@@ -488,11 +463,11 @@ public class WhereCalculator implements ExpressionVisitor {
     @Override
     public void visit(ExistsExpression existsExpression) {
         Select select = (Select) existsExpression.getRightExpression();
-        Truthness truthness = calculateTruthnessForSubquery(select, CalculationResult::getTruthness);
+        Truthness truthness = calculateSubquery(select, CalculationResult::getTruthness);
         if(!existsExpression.isNot()) {
-            stack.pushTruthness(truthness);
+            stack.push(truthness);
         } else {
-            stack.pushTruthness(truthness.invert());
+            stack.push(truthness.invert());
         }
     }
 
@@ -503,7 +478,7 @@ public class WhereCalculator implements ExpressionVisitor {
 
     @Override
     public void visit(AnyComparisonExpression anyComparisonExpression) {
-        stack.pushExpression(
+        stack.push(
             new SelectComparisonExpression(
                 anyComparisonExpression.getSelect(), anyComparisonExpression.getAnyType()));
     }
@@ -601,11 +576,10 @@ public class WhereCalculator implements ExpressionVisitor {
     @Override
     public void visit(ExpressionList<?> expressionList) {
         expressionList.forEach(expression -> expression.accept(this));
-        ListExpression listExpression =
-            new ListExpression(Stream.generate(() -> stack.popExpression())
-                .limit(expressionList.size())
-                .collect(Collectors.toList()));
-        stack.pushExpression(listExpression);
+        List<Object> list = Stream.generate(() -> stack.popSingleValue())
+            .limit(expressionList.size())
+            .collect(Collectors.toList());
+        stack.push(list);
     }
 
     @Override
@@ -632,13 +606,13 @@ public class WhereCalculator implements ExpressionVisitor {
     public void visit(DateTimeLiteralExpression dateTimeLiteralExpression) {
         String unquotedStringLiteral = dateTimeLiteralExpression.getValue().replace(QUOTE, EMPTY_STRING);
         Date date = convertToDate(unquotedStringLiteral);
-        stack.pushExpression(date);
+        stack.push(date);
     }
 
     @Override
     public void visit(NotExpression notExpression) {
         notExpression.getExpression().accept(this);
-        stack.pushTruthness(stack.popTruthness().invert());
+        stack.push(stack.popTruthness().invert());
     }
 
     @Override
@@ -728,7 +702,8 @@ public class WhereCalculator implements ExpressionVisitor {
 
     @Override
     public void visit(Select select) {
-        stack.pushExpression(new SelectExpression(select));
+        stack.push(calculateSubquery(select,
+            calculationResult -> rowValues(calculationResult.getRows())));
     }
 
     @Override

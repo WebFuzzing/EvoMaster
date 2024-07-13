@@ -8,11 +8,11 @@ create table customers
 
 create table orders
 (
-    id        int         not null,
-    client_id int         not null,
-    product   varchar(25) not null,
+    id          int         not null,
+    customer_id int         not null,
+    product     varchar(25) not null,
     constraint orders_pk primary key (id),
-    constraint orders_customers_id_fk foreign key (client_id) references customers (id)
+    constraint orders_customers_id_fk foreign key (customer_id) references customers (id)
 );
 
 create table employees

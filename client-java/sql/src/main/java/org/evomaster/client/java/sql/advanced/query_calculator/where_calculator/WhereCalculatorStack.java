@@ -2,50 +2,51 @@ package org.evomaster.client.java.sql.advanced.query_calculator.where_calculator
 
 import org.evomaster.client.java.distance.heuristics.Truthness;
 
+import java.util.List;
 import java.util.Stack;
 
-import static org.evomaster.client.java.sql.advanced.query_calculator.where_calculator.WhereCalculatorStackItem.createStackItem;
+import static org.evomaster.client.java.sql.advanced.helpers.ConversionsHelper.convertToBoolean;
+import static org.evomaster.client.java.sql.advanced.helpers.ConversionsHelper.convertToTruthness;
 
+@SuppressWarnings("unchecked")
 public class WhereCalculatorStack {
 
-    private Stack<WhereCalculatorStackItem> stack;
+    private Stack<Object> stack;
 
     public WhereCalculatorStack(){
         stack = new Stack<>();
     }
 
-    public void pushExpression(Object expression) {
-        stack.push(createStackItem(expression));
+    public void push(Object expression) {
+        stack.push(expression);
     }
 
-    public Object popExpression() {
-        WhereCalculatorStackItem item = stack.pop();
-        return item.getExpression();
+    public Object popGeneric() {
+        return stack.pop();
     }
 
-    public void pushNumber(Number number) {
-        stack.push(createStackItem(number));
+    public Object peekGeneric() {
+        return stack.peek();
+    }
+
+    public List<Object> popValuesList() {
+        return (List<Object>) popGeneric();
+    }
+
+    public Object popSingleValue() {
+        Object expression = popGeneric();
+        return expression instanceof List ? ((List<?>) expression).get(0) : expression;
     }
 
     public Number popNumber() {
-        return (Number) popExpression();
-    }
-
-    public void pushBoolean(Boolean value) {
-        stack.push(createStackItem(value));
+        return (Number) popSingleValue();
     }
 
     public Boolean popBoolean() {
-        WhereCalculatorStackItem item = stack.pop();
-        return item.getBooleanValue();
-    }
-
-    public void pushTruthness(Truthness truthness) {
-        stack.push(createStackItem(truthness));
+        return convertToBoolean(popSingleValue());
     }
 
     public Truthness popTruthness() {
-        WhereCalculatorStackItem item = stack.pop();
-        return item.getTruthness();
+        return convertToTruthness(popSingleValue());
     }
 }

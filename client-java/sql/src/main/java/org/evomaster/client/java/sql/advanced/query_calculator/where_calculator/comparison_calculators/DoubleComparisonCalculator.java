@@ -11,27 +11,27 @@ public class DoubleComparisonCalculator {
         return new DoubleComparisonCalculator();
     }
 
-    public Truthness calculateTruthnessForEquals(Double left, Double right) {
+    public Truthness calculateEquals(Double left, Double right) {
         return TruthnessUtils.getEqualityTruthness(left, right);
     }
 
-    public Truthness calculateTruthnessForNotEquals(Double left, Double right) {
-        return calculateTruthnessForEquals(left, right).invert();
+    public Truthness calculateNotEquals(Double left, Double right) {
+        return calculateEquals(left, right).invert();
     }
 
-    public Truthness calculateTruthnessForGreaterThan(Double left, Double right) {
+    public Truthness calculateGreaterThan(Double left, Double right) {
         return TruthnessUtils.getLessThanTruthness(right, left);
     }
 
-    public Truthness calculateTruthnessForGreaterThanOrEquals(Double left, Double right) {
+    public Truthness calculateGreaterThanOrEquals(Double left, Double right) {
         return TruthnessUtils.getLessThanTruthness(left, right).invert();
     }
 
-    public Truthness calculateTruthnessForMinorThan(Double left, Double right) {
+    public Truthness calculateMinorThan(Double left, Double right) {
         return TruthnessUtils.getLessThanTruthness(left, right);
     }
 
-    public Truthness calculateTruthnessForMinorThanOrEquals(Double left, Double right) {
+    public Truthness calculateMinorThanOrEquals(Double left, Double right) {
         return TruthnessUtils.getLessThanTruthness(right, left).invert();
     }
 }

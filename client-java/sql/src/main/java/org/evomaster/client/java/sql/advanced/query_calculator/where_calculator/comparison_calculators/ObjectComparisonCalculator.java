@@ -43,23 +43,23 @@ public class ObjectComparisonCalculator {
             createStringComparisonCalculator(taintHandler));
     }
 
-    public Truthness calculateTruthnessForEquals(Object left, Object right) {
+    public Truthness calculateEquals(Object left, Object right) {
         if(isNull(left) || isNull(right)) {
-            return calculateTruthnessForNull(left, right);
+            return calculateNull(left, right);
         } else {
-            return trueOrScaleTrue(calculateTruthnessForNonNullEquals(left, right).getOfTrue());
+            return trueOrScaleTrue(calculateNonNullEquals(left, right).getOfTrue());
         }
     }
 
-    public Truthness calculateTruthnessForNonNullEquals(Object left, Object right) {
+    private Truthness calculateNonNullEquals(Object left, Object right) {
         if(left instanceof Number && right instanceof Number) {
-            return doubleComparisonCalculator.calculateTruthnessForEquals(convertToDouble(left), convertToDouble(right));
+            return doubleComparisonCalculator.calculateEquals(convertToDouble(left), convertToDouble(right));
         } else if(left instanceof String && right instanceof String) {
-            return stringComparisonCalculator.calculateTruthnessForEquals((String) left, (String) right);
+            return stringComparisonCalculator.calculateEquals((String) left, (String) right);
         } else if(left instanceof Boolean || right instanceof Boolean) {
-            return booleanComparisonCalculator.calculateTruthnessForEquals(convertToBoolean(left), convertToBoolean(right));
+            return booleanComparisonCalculator.calculateEquals(convertToBoolean(left), convertToBoolean(right));
         } else if(isInstanceOfDate(left) || isInstanceOfDate(right)) {
-            return dateComparisonCalculator.calculateTruthnessForEquals(convertToDate(left), convertToDate(right));
+            return dateComparisonCalculator.calculateEquals(convertToDate(left), convertToDate(right));
         } else {
             throw new UnsupportedOperationException(
                 format("Unsupported equals calculation between values %s (%s) and %s (%s)",
@@ -67,23 +67,23 @@ public class ObjectComparisonCalculator {
         }
     }
 
-    public Truthness calculateTruthnessForNotEquals(Object left, Object right) {
+    public Truthness calculateNotEquals(Object left, Object right) {
         if(isNull(left) || isNull(right)) {
-            return calculateTruthnessForNull(left, right);
+            return calculateNull(left, right);
         } else {
-            return trueOrScaleTrue(calculateTruthnessForNonNullNotEquals(left, right).getOfTrue());
+            return trueOrScaleTrue(calculateNonNullNotEquals(left, right).getOfTrue());
         }
     }
 
-    public Truthness calculateTruthnessForNonNullNotEquals(Object left, Object right) {
+    private Truthness calculateNonNullNotEquals(Object left, Object right) {
         if(left instanceof Number && right instanceof Number) {
-            return doubleComparisonCalculator.calculateTruthnessForNotEquals(convertToDouble(left), convertToDouble(right));
+            return doubleComparisonCalculator.calculateNotEquals(convertToDouble(left), convertToDouble(right));
         } else if(left instanceof String && right instanceof String) {
-            return stringComparisonCalculator.calculateTruthnessForNotEquals((String) left, (String) right);
+            return stringComparisonCalculator.calculateNotEquals((String) left, (String) right);
         } else if(left instanceof Boolean || right instanceof Boolean) {
-            return booleanComparisonCalculator.calculateTruthnessForNotEquals(convertToBoolean(left), convertToBoolean(right));
+            return booleanComparisonCalculator.calculateNotEquals(convertToBoolean(left), convertToBoolean(right));
         } else if(isInstanceOfDate(left) || isInstanceOfDate(right)) {
-            return dateComparisonCalculator.calculateTruthnessForNotEquals(convertToDate(left), convertToDate(right));
+            return dateComparisonCalculator.calculateNotEquals(convertToDate(left), convertToDate(right));
         } else {
             throw new UnsupportedOperationException(
                 format("Unsupported not equals calculation between values %s (%s) and %s (%s)",
@@ -91,19 +91,19 @@ public class ObjectComparisonCalculator {
         }
     }
 
-    public Truthness calculateTruthnessForGreaterThan(Object left, Object right) {
+    public Truthness calculateGreaterThan(Object left, Object right) {
         if(isNull(left) || isNull(right)) {
-            return calculateTruthnessForNull(left, right);
+            return calculateNull(left, right);
         } else {
-            return trueOrScaleTrue(calculateTruthnessForNonNullGreaterThan(left, right).getOfTrue());
+            return trueOrScaleTrue(calculateNonNullGreaterThan(left, right).getOfTrue());
         }
     }
 
-    public Truthness calculateTruthnessForNonNullGreaterThan(Object left, Object right) {
+    private Truthness calculateNonNullGreaterThan(Object left, Object right) {
         if(left instanceof Number && right instanceof Number) {
-            return doubleComparisonCalculator.calculateTruthnessForGreaterThan(convertToDouble(left), convertToDouble(right));
+            return doubleComparisonCalculator.calculateGreaterThan(convertToDouble(left), convertToDouble(right));
         } else if(isInstanceOfDate(left) || isInstanceOfDate(right)) {
-            return dateComparisonCalculator.calculateTruthnessForGreaterThan(convertToDate(left), convertToDate(right));
+            return dateComparisonCalculator.calculateGreaterThan(convertToDate(left), convertToDate(right));
         } else {
             throw new UnsupportedOperationException(
                 format("Unsupported greater than calculation between values %s (%s) and %s (%s)",
@@ -111,19 +111,19 @@ public class ObjectComparisonCalculator {
         }
     }
 
-    public Truthness calculateTruthnessForGreaterThanOrEquals(Object left, Object right) {
+    public Truthness calculateGreaterThanOrEquals(Object left, Object right) {
         if(isNull(left) || isNull(right)) {
-            return calculateTruthnessForNull(left, right);
+            return calculateNull(left, right);
         } else {
-            return trueOrScaleTrue(calculateTruthnessForNonNullGreaterThanOrEquals(left, right).getOfTrue());
+            return trueOrScaleTrue(calculateNonNullGreaterThanOrEquals(left, right).getOfTrue());
         }
     }
 
-    public Truthness calculateTruthnessForNonNullGreaterThanOrEquals(Object left, Object right) {
+    private Truthness calculateNonNullGreaterThanOrEquals(Object left, Object right) {
         if(left instanceof Number && right instanceof Number) {
-            return doubleComparisonCalculator.calculateTruthnessForGreaterThanOrEquals(convertToDouble(left), convertToDouble(right));
+            return doubleComparisonCalculator.calculateGreaterThanOrEquals(convertToDouble(left), convertToDouble(right));
         } else if(isInstanceOfDate(left) || isInstanceOfDate(right)) {
-            return dateComparisonCalculator.calculateTruthnessForGreaterThanOrEquals(convertToDate(left), convertToDate(right));
+            return dateComparisonCalculator.calculateGreaterThanOrEquals(convertToDate(left), convertToDate(right));
         } else {
             throw new UnsupportedOperationException(
                 format("Unsupported greater than equals calculation between values %s (%s) and %s (%s)",
@@ -131,19 +131,19 @@ public class ObjectComparisonCalculator {
         }
     }
 
-    public Truthness calculateTruthnessForMinorThan(Object left, Object right) {
+    public Truthness calculateMinorThan(Object left, Object right) {
         if(isNull(left) || isNull(right)) {
-            return calculateTruthnessForNull(left, right);
+            return calculateNull(left, right);
         } else {
-            return trueOrScaleTrue(calculateTruthnessForNonNullMinorThan(left, right).getOfTrue());
+            return trueOrScaleTrue(calculateNonNullMinorThan(left, right).getOfTrue());
         }
     }
 
-    public Truthness calculateTruthnessForNonNullMinorThan(Object left, Object right) {
+    private Truthness calculateNonNullMinorThan(Object left, Object right) {
         if(left instanceof Number && right instanceof Number) {
-            return doubleComparisonCalculator.calculateTruthnessForMinorThan(convertToDouble(left), convertToDouble(right));
+            return doubleComparisonCalculator.calculateMinorThan(convertToDouble(left), convertToDouble(right));
         } else if(isInstanceOfDate(left) || isInstanceOfDate(right)) {
-            return dateComparisonCalculator.calculateTruthnessForMinorThan(convertToDate(left), convertToDate(right));
+            return dateComparisonCalculator.calculateMinorThan(convertToDate(left), convertToDate(right));
         } else {
             throw new UnsupportedOperationException(
                 format("Unsupported minor than calculation between values %s (%s) and %s (%s)",
@@ -151,19 +151,19 @@ public class ObjectComparisonCalculator {
         }
     }
 
-    public Truthness calculateTruthnessForMinorThanOrEquals(Object left, Object right) {
+    public Truthness calculateMinorThanOrEquals(Object left, Object right) {
         if(isNull(left) || isNull(right)) {
-            return calculateTruthnessForNull(left, right);
+            return calculateNull(left, right);
         } else {
-            return trueOrScaleTrue(calculateTruthnessForNonNullMinorThanOrEquals(left, right).getOfTrue());
+            return trueOrScaleTrue(calculateNonNullMinorThanOrEquals(left, right).getOfTrue());
         }
     }
 
-    public Truthness calculateTruthnessForNonNullMinorThanOrEquals(Object left, Object right) {
+    private Truthness calculateNonNullMinorThanOrEquals(Object left, Object right) {
         if(left instanceof Number && right instanceof Number) {
-            return doubleComparisonCalculator.calculateTruthnessForMinorThanOrEquals(convertToDouble(left), convertToDouble(right));
+            return doubleComparisonCalculator.calculateMinorThanOrEquals(convertToDouble(left), convertToDouble(right));
         } else if(isInstanceOfDate(left) || isInstanceOfDate(right)) {
-            return dateComparisonCalculator.calculateTruthnessForMinorThanOrEquals(convertToDate(left), convertToDate(right));
+            return dateComparisonCalculator.calculateMinorThanOrEquals(convertToDate(left), convertToDate(right));
         } else {
             throw new UnsupportedOperationException(
                 format("Unsupported minor than or equals calculation between values %s (%s) and %s (%s)",
@@ -171,7 +171,7 @@ public class ObjectComparisonCalculator {
         }
     }
 
-    private Truthness calculateTruthnessForNull(Object left, Object right) {
+    private Truthness calculateNull(Object left, Object right) {
         if(isNull(left) && isNull(right)) {
             return FALSE;
         } else {
