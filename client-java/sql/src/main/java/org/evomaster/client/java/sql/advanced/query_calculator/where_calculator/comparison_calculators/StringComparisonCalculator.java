@@ -16,14 +16,14 @@ public class StringComparisonCalculator {
         return new StringComparisonCalculator(taintHandler);
     }
 
-    public Truthness calculateTruthnessForEquals(String left, String right) {
+    public Truthness calculateEquals(String left, String right) {
         if(taintHandler != null){
             taintHandler.handleTaintForStringEquals(left, right, false);
         }
         return TruthnessUtils.getStringEqualityTruthness(left, right);
     }
 
-    public Truthness calculateTruthnessForNotEquals(String left, String right) {
-        return calculateTruthnessForEquals(left, right).invert();
+    public Truthness calculateNotEquals(String left, String right) {
+        return calculateEquals(left, right).invert();
     }
 }

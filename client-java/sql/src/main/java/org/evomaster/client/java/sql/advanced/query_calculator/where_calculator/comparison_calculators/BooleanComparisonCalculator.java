@@ -17,11 +17,11 @@ public class BooleanComparisonCalculator {
         return new BooleanComparisonCalculator(createDoubleComparisonCalculator());
     }
 
-    public Truthness calculateTruthnessForEquals(Boolean left, Boolean right) {
-        return doubleComparisonCalculator.calculateTruthnessForEquals(convertToDouble(left), convertToDouble(right));
+    public Truthness calculateEquals(Boolean left, Boolean right) {
+        return doubleComparisonCalculator.calculateEquals(convertToDouble(left), convertToDouble(right));
     }
 
-    public Truthness calculateTruthnessForNotEquals(Boolean left, Boolean right) {
-        return doubleComparisonCalculator.calculateTruthnessForNotEquals(convertToDouble(left), convertToDouble(right));
+    public Truthness calculateNotEquals(Boolean left, Boolean right) {
+        return doubleComparisonCalculator.calculateNotEquals(convertToDouble(left), convertToDouble(right));
     }
 }

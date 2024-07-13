@@ -20,7 +20,6 @@ import static org.evomaster.client.java.sql.advanced.AdvancedHeuristic.createAdv
 import static org.evomaster.client.java.sql.advanced.driver.SqlDriver.createSqlDriver;
 import static org.evomaster.client.java.sql.advanced.helpers.dump.JsonFileHelper.loadObject;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public class AdvancedHeuristicTest {
 
@@ -30,8 +29,8 @@ public class AdvancedHeuristicTest {
 
     @ClassRule
     public static DockerComposeContainer<?> environment =
-        new DockerComposeContainer<>(new File("src/test/resources/docker-compose.yml"))
-            .withExposedService("db", DB_PORT);
+            new DockerComposeContainer<>(new File("src/test/resources/docker-compose.yml"))
+                    .withExposedService("db", DB_PORT);
 
     @BeforeClass
     public static void beforeClass() throws SQLException {
@@ -52,7 +51,7 @@ public class AdvancedHeuristicTest {
         AdvancedHeuristic advancedHeuristic = createAdvancedHeuristic(sqlDriver);
         sqlDriver.execute("INSERT INTO customers VALUES (1, 'john', 50)");
         Truthness truthness = advancedHeuristic.calculate("SELECT * FROM customers WHERE age > 25");
-        assertTrue(truthness.isTrue());
+        assertEquals(TRUE, truthness);
     }
 
     @Test
@@ -271,7 +270,7 @@ public class AdvancedHeuristicTest {
         sqlDriver.execute("INSERT INTO orders VALUES (1, 1, 'guitar')");
         AdvancedHeuristic advancedHeuristic = createAdvancedHeuristic(sqlDriver);
         Truthness truthness = advancedHeuristic.calculate("SELECT * FROM customers WHERE " +
-            "EXISTS (SELECT client_id FROM orders WHERE product = 'guita')");
+            "EXISTS (SELECT customer_id FROM orders WHERE product = 'guita')");
         assertEquals(oneRowWith(
             singleCondition(oneRowWith(singleCondition(eq("guitar", "guita"))))), truthness);
     }
@@ -281,7 +280,7 @@ public class AdvancedHeuristicTest {
         sqlDriver.execute("INSERT INTO customers VALUES (1, 'john', 24)");
         AdvancedHeuristic advancedHeuristic = createAdvancedHeuristic(sqlDriver);
         Truthness truthness = advancedHeuristic.calculate("SELECT * FROM customers WHERE " +
-            "EXISTS (SELECT client_id FROM orders WHERE client_id = customers.id)");
+            "EXISTS (SELECT customer_id FROM orders WHERE customer_id = customers.id)");
         assertEquals(oneRowWith(singleCondition(FALSE)), truthness);
     }
 
@@ -291,9 +290,9 @@ public class AdvancedHeuristicTest {
         sqlDriver.execute("INSERT INTO orders VALUES (1, 1, 'guitar')");
         AdvancedHeuristic advancedHeuristic = createAdvancedHeuristic(sqlDriver);
         Truthness truthness = advancedHeuristic.calculate("SELECT * FROM customers WHERE " +
-            "NOT EXISTS (SELECT client_id FROM orders WHERE product = 'guita')");
-        assertEquals(oneRowWith(
-            singleCondition(invert(oneRowWith(singleCondition(eq("guitar", "guita")))))), truthness);
+            "NOT EXISTS (SELECT customer_id FROM orders WHERE product = 'guita') AND name = 'joh'");
+        assertEquals(oneRowWith(andCondition(invert(oneRowWith(singleCondition(eq("guitar", "guita")))),
+            eq("john", "joh"))), truthness);
     }
 
     @Test
@@ -319,7 +318,7 @@ public class AdvancedHeuristicTest {
         sqlDriver.execute("INSERT INTO customers VALUES (1, 'john', 24)");
         AdvancedHeuristic advancedHeuristic = createAdvancedHeuristic(sqlDriver);
         Truthness truthness = advancedHeuristic.calculate("SELECT * FROM customers WHERE " +
-            "id IN (SELECT client_id FROM orders)");
+            "id IN (SELECT customer_id FROM orders)");
         assertEquals(oneRowWith(singleCondition(FALSE)), truthness);
     }
 
@@ -346,8 +345,8 @@ public class AdvancedHeuristicTest {
         sqlDriver.execute("INSERT INTO customers VALUES (1, 'john', 24)");
         AdvancedHeuristic advancedHeuristic = createAdvancedHeuristic(sqlDriver);
         Truthness truthness = advancedHeuristic.calculate("SELECT * FROM customers WHERE " +
-            "id NOT IN (SELECT client_id FROM orders)");
-        assertEquals(oneRowWith(singleCondition(TRUE)), truthness);
+            "id NOT IN (SELECT customer_id FROM orders) AND name = 'joh'");
+        assertEquals(oneRowWith(andCondition(TRUE, eq("john", "joh"))), truthness);
     }
 
     @Test
@@ -373,7 +372,7 @@ public class AdvancedHeuristicTest {
         sqlDriver.execute("INSERT INTO customers VALUES (1, 'john', 24)");
         AdvancedHeuristic advancedHeuristic = createAdvancedHeuristic(sqlDriver);
         Truthness truthness = advancedHeuristic.calculate("SELECT * FROM customers WHERE " +
-            "id = ANY(SELECT client_id FROM orders)");
+            "id = ANY(SELECT customer_id FROM orders)");
         assertEquals(oneRowWith(singleCondition(FALSE)), truthness);
     }
 
@@ -400,8 +399,8 @@ public class AdvancedHeuristicTest {
         sqlDriver.execute("INSERT INTO customers VALUES (1, 'john', 24)");
         AdvancedHeuristic advancedHeuristic = createAdvancedHeuristic(sqlDriver);
         Truthness truthness = advancedHeuristic.calculate("SELECT * FROM customers WHERE " +
-            "id = ALL(SELECT client_id FROM orders)");
-        assertEquals(oneRowWith(singleCondition(TRUE)), truthness);
+            "id = ALL(SELECT customer_id FROM orders) and name = 'joh'");
+        assertEquals(oneRowWith(andCondition(TRUE, eq("john", "joh"))), truthness);
     }
 
     @Test
@@ -530,7 +529,7 @@ public class AdvancedHeuristicTest {
         sqlDriver.execute("INSERT INTO orders VALUES (1, 1, 'guitar')");
         AdvancedHeuristic advancedHeuristic = createAdvancedHeuristic(sqlDriver);
         Truthness truthness = advancedHeuristic.calculate("SELECT * FROM customers c WHERE " +
-            "name = 'joh' AND EXISTS (SELECT client_id FROM orders WHERE client_id = c.id)");
+            "name = 'joh' AND EXISTS (SELECT customer_id FROM orders WHERE customer_id = c.id)");
         assertEquals(oneRowWith(andCondition(eq("john", "joh"), TRUE)), truthness);
     }
 
@@ -540,7 +539,7 @@ public class AdvancedHeuristicTest {
         sqlDriver.execute("INSERT INTO orders VALUES (1, 1, 'guitar')");
         AdvancedHeuristic advancedHeuristic = createAdvancedHeuristic(sqlDriver);
         Truthness truthness = advancedHeuristic.calculate("SELECT * FROM customers AS c " +
-            "WHERE name = 'joh' AND EXISTS (SELECT client_id FROM orders WHERE client_id = c.id)");
+            "WHERE name = 'joh' AND EXISTS (SELECT customer_id FROM orders WHERE customer_id = c.id)");
         assertEquals(oneRowWith(andCondition(eq("john", "joh"), TRUE)), truthness);
     }
 
@@ -550,7 +549,7 @@ public class AdvancedHeuristicTest {
         sqlDriver.execute("INSERT INTO orders VALUES (1, 1, 'guitar')");
         AdvancedHeuristic advancedHeuristic = createAdvancedHeuristic(sqlDriver);
         Truthness truthness = advancedHeuristic.calculate("SELECT * FROM customers " +
-            "WHERE name = 'joh' AND EXISTS (SELECT client_id FROM orders WHERE client_id = customers.id)");
+            "WHERE name = 'joh' AND EXISTS (SELECT customer_id FROM orders WHERE customer_id = customers.id)");
         assertEquals(oneRowWith(andCondition(eq("john", "joh"), TRUE)), truthness);
     }
 
@@ -570,7 +569,7 @@ public class AdvancedHeuristicTest {
         sqlDriver.execute("INSERT INTO orders VALUES (1, 2, 'guitar')");
         AdvancedHeuristic advancedHeuristic = createAdvancedHeuristic(sqlDriver);
         Truthness truthness = advancedHeuristic.calculate("SELECT * FROM customers WHERE " +
-            "EXISTS (SELECT client_id FROM orders WHERE UPPER(name) = 'GEORGE HARRISO')");
+            "EXISTS (SELECT customer_id FROM orders WHERE UPPER(name) = 'GEORGE HARRISO')");
         assertEquals(
             andCondition(rowSet(2),
                 oneRowWith(singleCondition(eq("GEORGE HARRISON", "GEORGE HARRISO")))), truthness);
@@ -671,10 +670,10 @@ public class AdvancedHeuristicTest {
         sqlDriver.execute("INSERT INTO customers VALUES (1, 'john', 24)");
         AdvancedHeuristic advancedHeuristic = createAdvancedHeuristic(sqlDriver);
         Truthness truthness = advancedHeuristic.calculate(
-    "(SELECT * FROM customers WHERE age = 24) UNION ALL (SELECT * FROM customers WHERE age > 24)");
+    "(SELECT * FROM customers WHERE age > 24) UNION ALL (SELECT * FROM customers WHERE age < 24)");
         assertEquals(orAggregation(
-            oneRowWith(singleCondition(eq(24,24))),
-            oneRowWith(singleCondition(gt(24,24)))), truthness);
+            oneRowWith(singleCondition(gt(24,24))),
+            oneRowWith(singleCondition(lt(24,24)))), truthness);
     }
 
     @Test
@@ -711,29 +710,42 @@ public class AdvancedHeuristicTest {
         sqlDriver.execute("INSERT INTO customers VALUES (1, 'john', 24)");
         sqlDriver.execute("INSERT INTO customers VALUES (2, 'paul', 24)");
         sqlDriver.execute("INSERT INTO orders VALUES (1, 1, 'guitar')");
+
         AdvancedHeuristic advancedHeuristic = createAdvancedHeuristic(sqlDriver);
-        Truthness truthness = advancedHeuristic.calculate("SELECT * FROM orders FULL JOIN customers");
-        assertEquals(orAggregation(rowSet(1), rowSet(2)), truthness);
+        Truthness queryTruthness = advancedHeuristic.calculate("SELECT * FROM orders FULL JOIN customers WHERE " +
+            "customers.id = 3");
+        Truthness joinTruthness = orAggregation(rowSet(1), rowSet(2));
+        Truthness conditionTruthness = singleCondition(eq(2, 3));
+
+        assertEquals(andAggregation(joinTruthness, conditionTruthness), queryTruthness);
     }
 
     @Test
     public void testJoin2() { //Left join
         sqlDriver.execute("INSERT INTO customers VALUES (1, 'john', 24)");
         sqlDriver.execute("INSERT INTO customers VALUES (2, 'paul', 24)");
-        sqlDriver.execute("INSERT INTO orders VALUES (1, 1, 'guitar')");
+
         AdvancedHeuristic advancedHeuristic = createAdvancedHeuristic(sqlDriver);
-        Truthness truthness = advancedHeuristic.calculate("SELECT * FROM orders LEFT JOIN customers");
-        assertEquals(rowSet(1), truthness);
+        Truthness queryTruthness = advancedHeuristic.calculate("SELECT * FROM customers LEFT JOIN orders " +
+            "ON orders.customer_id = customers.id WHERE customers.id = 3");
+        Truthness joinTruthness = rowSet(2);
+        Truthness conditionTruthness = singleCondition(eq(2, 3));
+
+        assertEquals(andAggregation(joinTruthness, conditionTruthness), queryTruthness);
     }
 
     @Test
     public void testJoin3() { //Right join
         sqlDriver.execute("INSERT INTO customers VALUES (1, 'john', 24)");
         sqlDriver.execute("INSERT INTO customers VALUES (2, 'paul', 24)");
-        sqlDriver.execute("INSERT INTO orders VALUES (1, 1, 'guitar')");
+
         AdvancedHeuristic advancedHeuristic = createAdvancedHeuristic(sqlDriver);
-        Truthness truthness = advancedHeuristic.calculate("SELECT * FROM orders RIGHT JOIN customers");
-        assertEquals(rowSet(2), truthness);
+        Truthness queryTruthness = advancedHeuristic.calculate("SELECT * FROM orders RIGHT JOIN customers " +
+            "ON orders.customer_id = customers.id WHERE customers.id = 3");
+        Truthness joinTruthness = rowSet(2);
+        Truthness conditionTruthness = singleCondition(eq(2, 3));
+
+        assertEquals(andAggregation(joinTruthness, conditionTruthness), queryTruthness);
     }
 
     @Test
@@ -741,35 +753,43 @@ public class AdvancedHeuristicTest {
         sqlDriver.execute("INSERT INTO customers VALUES (1, 'john', 24)");
         sqlDriver.execute("INSERT INTO customers VALUES (2, 'paul', 24)");
         sqlDriver.execute("INSERT INTO orders VALUES (1, 1, 'guitar')");
+
         AdvancedHeuristic advancedHeuristic = createAdvancedHeuristic(sqlDriver);
-        Truthness truthness = advancedHeuristic.calculate("SELECT * FROM orders CROSS JOIN customers");
-        assertEquals(andAggregation(rowSet(1), rowSet(2)), truthness);
+        Truthness queryTruthness = advancedHeuristic.calculate("SELECT * FROM orders CROSS JOIN customers WHERE " +
+            "customers.id = 3");
+        Truthness joinTruthness = andAggregation(rowSet(1), rowSet(2));
+        Truthness conditionTruthness = singleCondition(eq(2, 3));
+
+        assertEquals(andAggregation(joinTruthness, conditionTruthness), queryTruthness);
     }
 
     @Test
     public void testJoin5() { //Inner join without WHERE clause
         sqlDriver.execute("INSERT INTO customers VALUES (1, 'john', 24)");
-        sqlDriver.execute("INSERT INTO customers VALUES (2, 'paul', 24)");
         sqlDriver.execute("INSERT INTO orders VALUES (1, 1, 'guitar')");
+
         AdvancedHeuristic advancedHeuristic = createAdvancedHeuristic(sqlDriver);
         Truthness queryTruthness = advancedHeuristic.calculate("SELECT * FROM orders INNER JOIN customers " +
-            "ON orders.id = customers.id");
-        Truthness crossJoinTruthness = andAggregation(andAggregation(rowSet(1), rowSet(2)), TRUE);
-        assertEquals(andAggregation(rowSet(1), rowSet(2), crossJoinTruthness), queryTruthness);
+            "ON customers.id = 2");
+        Truthness crossJoinTruthness = andAggregation(andAggregation(rowSet(1), rowSet(1)), singleCondition(eq(1, 2)));
+        Truthness mainJoinTruthness = andAggregation(rowSet(1), rowSet(1), crossJoinTruthness);
+
+        assertEquals(mainJoinTruthness, queryTruthness);
     }
 
     @Test
     public void testJoin6() { //Inner join with WHERE clause
         sqlDriver.execute("INSERT INTO customers VALUES (1, 'john', 24)");
-        sqlDriver.execute("INSERT INTO customers VALUES (2, 'paul', 24)");
         sqlDriver.execute("INSERT INTO orders VALUES (1, 1, 'guitar')");
+
         AdvancedHeuristic advancedHeuristic = createAdvancedHeuristic(sqlDriver);
         Truthness queryTruthness = advancedHeuristic.calculate("SELECT * FROM orders INNER JOIN customers " +
-            "ON orders.id = customers.id WHERE name = 'joh'");
+            "ON orders.id = customers.id WHERE customers.id = 2");
         Truthness crossJoinTruthness = andAggregation(andAggregation(rowSet(1), rowSet(2)), TRUE);
-        Truthness joinTruthness = andAggregation(rowSet(1), rowSet(2), crossJoinTruthness);
-        Truthness conditionTruthness = singleCondition(eq("john", "joh"));
-        assertEquals(andAggregation(joinTruthness, conditionTruthness), queryTruthness);
+        Truthness mainJoinTruthness = andAggregation(rowSet(1), rowSet(1), crossJoinTruthness);
+        Truthness conditionTruthness = singleCondition(eq(1, 2));
+
+        assertEquals(andAggregation(mainJoinTruthness, conditionTruthness), queryTruthness);
     }
 
     @Test
@@ -842,6 +862,15 @@ public class AdvancedHeuristicTest {
         Truthness truthness = advancedHeuristic.calculate("SELECT age_alias FROM (SELECT age AS age_alias FROM customers) t WHERE " +
             "age_alias = 25");
         assertEquals(oneRowWith(singleCondition(eq(24, 25))), truthness);
+    }
+
+    @Test
+    public void testSelectAsValue() {
+        sqlDriver.execute("INSERT INTO customers VALUES (1, 'john', 24)");
+        AdvancedHeuristic advancedHeuristic = createAdvancedHeuristic(sqlDriver);
+        Truthness truthness = advancedHeuristic.calculate("SELECT * FROM customers WHERE " +
+            "age = (SELECT 25) AND (SELECT null) IS TRUE");
+        assertEquals(oneRowWith(andCondition(eq(24, 25), FALSE)), truthness);
     }
 
     @Test

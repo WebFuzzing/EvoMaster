@@ -1,6 +1,7 @@
 package org.evomaster.client.java.sql.advanced.query_calculator;
 
 import org.evomaster.client.java.distance.heuristics.Truthness;
+import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
 import org.evomaster.client.java.sql.advanced.driver.SqlDriver;
 import org.evomaster.client.java.sql.advanced.driver.row.Row;
 import org.evomaster.client.java.sql.advanced.query_calculator.where_calculator.WhereCalculator;
@@ -14,10 +15,12 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.lang.String.format;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.evomaster.client.java.distance.heuristics.Truthness.FALSE;
+import static org.evomaster.client.java.distance.heuristics.Truthness.TRUE;
 import static org.evomaster.client.java.distance.heuristics.TruthnessUtils.*;
-import static org.evomaster.client.java.sql.advanced.query_calculator.CalculationResult.createCalculationResult;
+import static org.evomaster.client.java.sql.advanced.query_calculator.CalculationResult.*;
 import static org.evomaster.client.java.sql.advanced.query_calculator.where_calculator.WhereCalculator.createWhereCalculator;
 import static org.evomaster.client.java.sql.advanced.select_query.SelectQuery.createSelectQuery;
 
@@ -38,29 +41,34 @@ public class QueryCalculator {
   }
 
   public static QueryCalculator createQueryCalculator(String queryString, SqlDriver sqlDriver, TaintHandler taintHandler) {
-    return new QueryCalculator(createSelectQuery(queryString), sqlDriver, taintHandler);
+    return createQueryCalculator(createSelectQuery(queryString), sqlDriver, taintHandler);
   }
 
   public CalculationResult calculate() {
     SimpleLogger.debug(format("Calculating truthness for query: %s", query));
-    if(query.isPlainSelect()){
-      if(query.hasWhere()) {
-        Truthness rowSetTruthness = calculateRowSet().getTruthness();
-        Truthness conditionTruthness = calculateCondition().getTruthness();
-        return createCalculationResult(andAggregation(rowSetTruthness, conditionTruthness));
-      } else {
-        return calculateRowSet();
-      }
-    } else if(query.isUnion()) {
-      return calculateUnion();
+    List<Row> queryRows = sqlDriver.query(query.toString());
+    if(queryRows.isEmpty()){
+      return createCalculationResult(calculateNoResultsQuery(), emptyList());
     } else {
-      throw new UnsupportedOperationException(format("Unsupported query: %s", query.toString()));
+      return createCalculationResult(TRUE, queryRows);
     }
   }
 
-  private CalculationResult calculateCondition() {
-    List<Row> queryRows = sqlDriver.query(query.toString());
-    if(queryRows.isEmpty()) {
+  private Truthness calculateNoResultsQuery() {
+      if(query.isPlainSelect()){
+        if(query.hasWhere()) {
+          return andAggregation(calculateRowSet(), calculateCondition());
+        } else {
+          return calculateRowSet();
+        }
+      } else if(query.isUnion()) {
+        return calculateUnion();
+      } else {
+        throw new UnsupportedOperationException(format("Unsupported query: %s", query.toString()));
+      }
+  }
+
+  private Truthness calculateCondition() {
       SelectQuery queryWithoutWhere = query.removeWhere();
       List<Row> queryWithoutWhereRows = sqlDriver.query(queryWithoutWhere.toString());
       if(!queryWithoutWhereRows.isEmpty()) {
@@ -70,54 +78,55 @@ public class QueryCalculator {
           .map(Truthness::getOfTrue)
           .max(Double::compareTo)
           .orElseThrow(() -> new RuntimeException("Rows must not be empty"));
-        return createCalculationResult(scaleTrue(maxRowTruthness));
+        return scaleTrue(maxRowTruthness);
       } else {
-        return createCalculationResult(FALSE);
+        return FALSE;
       }
-    } else {
-      return createCalculationResult(queryRows);
-    }
   }
 
-  private CalculationResult calculateRowSet() {
+  private Truthness calculateRowSet() {
     if(query.hasFromSubquery()) {
       return calculateFromSubquery();
     } else if(query.hasJoins()){
         return calculateJoins();
-    } else if(query.hasFrom()) {
-        return calculateGenericFrom();
     } else {
-        return calculateNoFrom();
+        return calculateGeneric();
     }
   }
 
-  private CalculationResult calculateFromSubquery() {
+  private Truthness calculateFromSubquery() {
     QueryCalculator queryCalculator = createQueryCalculator(query.getFromSubquery(), sqlDriver, taintHandler);
-    return queryCalculator.calculate();
+    CalculationResult calculationResult = queryCalculator.calculate();
+    return calculationResult.getTruthness();
   }
 
-  private CalculationResult calculateJoins() {
+  private Truthness calculateJoins() {
     if(query.getJoinSelects().size() == 2){
       if(query.isInnerJoin()){
-        return applyOnQueries(
-          Stream.concat(query.getJoinSelects().stream(), Stream.of(query.convertToCrossJoin())).collect(Collectors.toList()),
-          truthnesses -> createCalculationResult(andAggregation(truthnesses)));
-      } else if(query.isFullJoin() || query.isCrossJoin()){
-        return applyOnQueries(query.getJoinSelects(),
-          truthnesses -> createCalculationResult(query.isFullJoin() ? orAggregation(truthnesses) : andAggregation(truthnesses)));
-      } else if(query.isLeftJoin() || query.isRightJoin()){
-        return applyOnQueries(
-          singletonList(query.isLeftJoin() ? query.getJoinSelects().get(0) : query.getJoinSelects().get(1)),
-          truthnesses -> createCalculationResult(truthnesses[0]));
+        List<SelectQuery> selects = Stream.concat(query.getJoinSelects().stream(),
+          Stream.of(query.convertToCrossJoin())).collect(Collectors.toList());
+        return applyOnQueries(selects, TruthnessUtils::andAggregation);
+      } else if(query.isFullJoin()){
+        return applyOnQueries(query.getJoinSelects(), TruthnessUtils::orAggregation);
+      } else if(query.isCrossJoin()){
+        return applyOnQueries(query.getJoinSelects(), TruthnessUtils::andAggregation);
+      } else if(query.isLeftJoin()){
+        return applyOnQueries(singletonList(query.getJoinSelects().get(0)), truthnesses -> truthnesses[0]);
+      } else if(query.isRightJoin()){
+        return applyOnQueries(singletonList(query.getJoinSelects().get(1)), truthnesses -> truthnesses[0]);
       }
     }
-    return calculateGenericFrom();
+    return calculateGeneric();
   }
 
-  private CalculationResult applyOnQueries(List<SelectQuery> queries, Function<Truthness[], CalculationResult> function){
-    return function.apply(calculateQueries(queries).stream()
+  private Truthness applyOnQueries(List<SelectQuery> queries, Function<Truthness[], Truthness> function){
+    return function.apply(mergeTruthness(calculateQueries(queries)));
+  }
+
+  private Truthness[] mergeTruthness(List<CalculationResult> calculationResults) {
+    return calculationResults.stream()
       .map(CalculationResult::getTruthness)
-      .toArray(Truthness[]::new));
+      .toArray(Truthness[]::new);
   }
 
   private List<CalculationResult> calculateQueries(List<SelectQuery> queries){
@@ -127,27 +136,14 @@ public class QueryCalculator {
       .collect(Collectors.toList());
   }
 
-  private CalculationResult calculateGenericFrom() {
+  private Truthness calculateGeneric() {
     SelectQuery queryWithoutWhere = query.removeWhere();
     List<Row> queryWithoutWhereRows = sqlDriver.query(queryWithoutWhere.toString());
-    Truthness truthness = getTruthnessToEmpty(queryWithoutWhereRows.size()).invert();
-    return createCalculationResult(truthness);
+    return getTruthnessToEmpty(queryWithoutWhereRows.size()).invert();
   }
 
-  private CalculationResult calculateNoFrom() {
-    List<Row> rows = sqlDriver.query(query.toString());
-    return createCalculationResult(rows);
-  }
-
-  private CalculationResult calculateUnion() {
+  private Truthness calculateUnion() {
     List<CalculationResult> calculationResults = calculateQueries(query.getSetOperationSelects());
-    return createCalculationResult(
-      orAggregation(calculationResults.stream()
-        .map(CalculationResult::getTruthness)
-        .toArray(Truthness[]::new)),
-      calculationResults.stream()
-        .map(CalculationResult::getRows)
-        .flatMap(List::stream)
-        .collect(Collectors.toList()));
+    return orAggregation(mergeTruthness(calculationResults));
   }
 }

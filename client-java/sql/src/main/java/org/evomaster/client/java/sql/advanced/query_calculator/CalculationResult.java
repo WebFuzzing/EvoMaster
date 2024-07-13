@@ -6,6 +6,7 @@ import org.evomaster.client.java.sql.advanced.driver.row.Row;
 import java.util.List;
 
 import static java.util.Collections.emptyList;
+import static org.evomaster.client.java.distance.heuristics.Truthness.FALSE;
 import static org.evomaster.client.java.distance.heuristics.Truthness.TRUE;
 
 public class CalculationResult {
@@ -20,14 +21,6 @@ public class CalculationResult {
 
     public static CalculationResult createCalculationResult(Truthness truthness, List<Row> rows) {
         return new CalculationResult(truthness, rows);
-    }
-
-    public static CalculationResult createCalculationResult(Truthness truthness) {
-        return createCalculationResult(truthness, emptyList());
-    }
-
-    public static CalculationResult createCalculationResult(List<Row> rows) {
-        return createCalculationResult(TRUE, rows);
     }
 
     public Truthness getTruthness() {
