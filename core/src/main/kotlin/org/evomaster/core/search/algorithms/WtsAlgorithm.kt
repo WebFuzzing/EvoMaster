@@ -20,7 +20,7 @@ import org.evomaster.core.search.service.SearchAlgorithm
  * of search algorithms, and not really something to
  * use regularly in EvoMaster
  */
-class WtsAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
+open class WtsAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
 
     private val population: MutableList<WtsEvalIndividual<T>> = mutableListOf()
@@ -70,7 +70,7 @@ class WtsAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
             population.addAll(nextPop)
     }
 
-    private fun mutate(wts: WtsEvalIndividual<T>) {
+    protected fun mutate(wts: WtsEvalIndividual<T>) {
 
         val op = randomness.choose(listOf("del", "add", "mod"))
         val n = wts.suite.size
@@ -95,7 +95,7 @@ class WtsAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
         }
     }
 
-    private fun selection(): WtsEvalIndividual<T> {
+    protected fun selection(): WtsEvalIndividual<T> {
 
         val x = randomness.choose(population)
         val y = randomness.choose(population)
@@ -128,7 +128,7 @@ class WtsAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
         }
     }
 
-    private fun initPopulation() {
+    protected fun initPopulation() {
 
         val n = config.populationSize
 
