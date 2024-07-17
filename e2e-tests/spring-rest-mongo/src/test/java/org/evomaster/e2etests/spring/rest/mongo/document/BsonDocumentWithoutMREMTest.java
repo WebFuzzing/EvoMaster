@@ -1,8 +1,6 @@
 package org.evomaster.e2etests.spring.rest.mongo.document;
 
 import com.foo.spring.rest.mongo.BsonDocumentAppController;
-import com.mongo.document.BsonDocumentApp;
-import com.mongo.document.BsonDocumentController;
 import org.evomaster.core.EMConfig;
 import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.RestIndividual;

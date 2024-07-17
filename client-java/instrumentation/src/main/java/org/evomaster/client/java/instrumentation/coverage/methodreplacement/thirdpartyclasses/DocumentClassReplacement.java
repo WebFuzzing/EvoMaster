@@ -12,9 +12,6 @@ import java.lang.reflect.Method;
 
 public class DocumentClassReplacement extends ThirdPartyMethodReplacementClass {
 
-
-    private final static DocumentClassReplacement singleton = new DocumentClassReplacement();
-
     public static final String ORG_BSON_DOCUMENT = "org.bson.Document";
 
     @Override
@@ -30,7 +27,7 @@ public class DocumentClassReplacement extends ThirdPartyMethodReplacementClass {
             castTo = "org.bson.Document")
     public static Object parse(String json) {
         // Load the Document class
-        Class<?> documentClass = null;
+        Class<?> documentClass;
         try {
             documentClass = Class.forName("org.bson.Document");
         } catch (ClassNotFoundException e) {
@@ -40,7 +37,7 @@ public class DocumentClassReplacement extends ThirdPartyMethodReplacementClass {
         JsonTaint.handlePossibleJsonTaint(json,documentClass);
 
         // Get the parse method which takes a String as argument
-        Method parseMethod = null;
+        Method parseMethod;
         try {
             parseMethod = documentClass.getDeclaredMethod("parse", String.class);
         } catch (NoSuchMethodException e) {
@@ -49,8 +46,7 @@ public class DocumentClassReplacement extends ThirdPartyMethodReplacementClass {
 
         // Invoke the parse method and get the result
         try {
-            Object document = parseMethod.invoke(null, json);
-            return document;
+            return parseMethod.invoke(null, json);
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {
