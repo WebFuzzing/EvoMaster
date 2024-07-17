@@ -534,8 +534,8 @@ class Main {
                 config.algorithm == EMConfig.Algorithm.MonotonicGA ->
                     Key.get(object : TypeLiteral<MonotonicGeneticAlgorithm<RestIndividual>>() {})
 
-                config.algorithm == EMConfig.Algorithm.Genetic ->
-                    Key.get(object : TypeLiteral<GeneticAlgorithm<RestIndividual>>() {})
+                config.algorithm == EMConfig.Algorithm.SteadyStateGA ->
+                    Key.get(object : TypeLiteral<SteadyStateGeneticAlgorithm<RestIndividual>>() {})
 
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
