@@ -2,7 +2,6 @@ package org.evomaster.core.output.auth
 
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.output.service.ApiTestCaseWriter
 import org.evomaster.core.output.service.HttpWsTestCaseWriter
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.auth.EndpointCallLogin
@@ -73,6 +72,8 @@ object CookieWriter {
         }
     }
 
+
+
     fun addCallCommand(
         lines: Lines,
         k: EndpointCallLogin,
@@ -82,19 +83,9 @@ object CookieWriter {
         targetVariable: String
     ) {
 
-        lines.add(".post(")
-        if (k.externalEndpointURL != null) {
-            lines.append("\"${k.externalEndpointURL}\"")
-        } else {
-            when{
-                format.isJava() || format.isJavaScript() -> lines.append("$baseUrlOfSut + \"")
-                format.isPython() -> lines.append("self.$baseUrlOfSut + \"")
-                else -> lines.append("\"\${$baseUrlOfSut}")
-            }
-            lines.append("${k.endpoint}\"")
+        if(format.isJavaScript() || format.isPython()) {
+            callPost(lines, k, format, baseUrlOfSut)
         }
-        lines.append(")")
-
 
         when {
             format.isJavaOrKotlin() -> lines.add(".contentType(\"${k.contentType.defaultValue}\")")
@@ -118,6 +109,15 @@ object CookieWriter {
             }
         }
 
+        /*
+            For RestAssure, the call to "post" must be last, which is in opposite of what
+            needed in used libraries for Python and JS
+         */
+        if(format.isJavaOrKotlin()) {
+            callPost(lines, k, format, baseUrlOfSut)
+        }
+
+
         //TODO should check specified verb
         if (format.isPython()) {
             lines.add("$targetVariable = requests \\")
@@ -132,5 +132,25 @@ object CookieWriter {
             lines.deindent(2)
         }
 
+    }
+
+    private fun callPost(
+        lines: Lines,
+        k: EndpointCallLogin,
+        format: OutputFormat,
+        baseUrlOfSut: String
+    ) {
+        lines.add(".post(")
+        if (k.externalEndpointURL != null) {
+            lines.append("\"${k.externalEndpointURL}\"")
+        } else {
+            when {
+                format.isJava() || format.isJavaScript() -> lines.append("$baseUrlOfSut + \"")
+                format.isPython() -> lines.append("self.$baseUrlOfSut + \"")
+                else -> lines.append("\"\${$baseUrlOfSut}")
+            }
+            lines.append("${k.endpoint}\"")
+        }
+        lines.append(")")
     }
 }
