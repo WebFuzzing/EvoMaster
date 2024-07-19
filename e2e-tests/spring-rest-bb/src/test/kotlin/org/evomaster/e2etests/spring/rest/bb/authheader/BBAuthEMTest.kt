@@ -76,7 +76,7 @@ class BBAuthEMTest : SpringTestBase() {
         ) { args: MutableList<String> ->
 
             addBlackBoxOptions(args, OutputFormat.KOTLIN_JUNIT_5)
-            setOption(args, "configPath", "src/test/resources/config/bbauth.toml")
+            setOption(args, "configPath", "src/test/resources/config/authheader.toml")
 
             val solution = initAndRun(args)
 
