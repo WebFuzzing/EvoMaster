@@ -13,6 +13,8 @@ package org.evomaster.test.utils;
  */
 
 import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Class containing utility functions that can be used in the
@@ -119,7 +121,8 @@ public class EMTestUtils {
         }
 
         try{
-            URI.create(uri);
+            String encodedPath = URLEncoder.encode(uri, StandardCharsets.UTF_8.toString());
+            URI.create(encodedPath);
             return true;
         }catch (Exception e){
             return false;

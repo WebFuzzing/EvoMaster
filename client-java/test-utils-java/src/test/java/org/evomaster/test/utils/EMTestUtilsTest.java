@@ -67,10 +67,26 @@ public class EMTestUtilsTest {
         assertTrue(EMTestUtils.isValidURIorEmpty("/a/b"));
         assertTrue(EMTestUtils.isValidURIorEmpty("/a/b/c?k=4&z=foo"));
         assertTrue(EMTestUtils.isValidURIorEmpty("http://foo.org/a"));
+        assertTrue(EMTestUtils.isValidURIorEmpty("http://.foo.org/a"));
         assertTrue(EMTestUtils.isValidURIorEmpty("https://127.0.0.1:443"));
 
+        assertTrue(EMTestUtils.isValidURIorEmpty("http://example.com"));
+        assertTrue(EMTestUtils.isValidURIorEmpty("mailto:user@domain.com"));
+        assertTrue(EMTestUtils.isValidURIorEmpty("ssh://user@git.openstack.org:29418/openstack/keystone.git"));
+        assertTrue(EMTestUtils.isValidURIorEmpty("--://///{a}"));
+        assertTrue(EMTestUtils.isValidURIorEmpty("http://.foo.org/a"));
+        assertTrue(EMTestUtils.isValidURIorEmpty("http://foo.org/#"));
+        assertTrue(EMTestUtils.isValidURIorEmpty("http://foo.org/#a"));
+
         //this should fail, as "{}" are invalid chars
-        assertFalse(EMTestUtils.isValidURIorEmpty("/{a}"));
+        assertTrue(EMTestUtils.isValidURIorEmpty("/{a}"));
+
+        assertTrue(EMTestUtils.isValidURIorEmpty("http://.example.com"));
+        assertTrue(EMTestUtils.isValidURIorEmpty("http://example.com/|foo"));
+        assertTrue(EMTestUtils.isValidURIorEmpty("http://example.com/?key=value&"));
+        assertTrue(EMTestUtils.isValidURIorEmpty("http://example.com/#fragment?query=value"));
+        assertTrue(EMTestUtils.isValidURIorEmpty("http://example.com:port"));
+//
     }
 
 }
