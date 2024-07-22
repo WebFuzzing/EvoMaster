@@ -1,0 +1,1 @@
+To simplify making release, the module "test-utils-java" is under module "client-java"

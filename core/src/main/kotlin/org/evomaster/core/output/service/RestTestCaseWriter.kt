@@ -1,16 +1,15 @@
 package org.evomaster.core.output.service
 
 import com.google.inject.Inject
-import org.apache.xpath.operations.Bool
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.SqlWriter
-import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
@@ -19,7 +18,6 @@ import org.evomaster.core.search.gene.utils.GeneUtils
 import org.slf4j.LoggerFactory
 import java.nio.file.Path
 import java.util.*
-import javax.swing.text.StyledEditorKit.BoldAction
 
 class RestTestCaseWriter : HttpWsTestCaseWriter {
 
@@ -52,13 +50,13 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                 || ((call as RestCallAction).saveLocation && !res.stopping)
     }
 
-    override fun handleFieldDeclarations(
+    override fun handleTestInitialization(
         lines: Lines,
         baseUrlOfSut: String,
         ind: EvaluatedIndividual<*>,
         insertionVars: MutableList<Pair<String, String>>
     ) {
-        super.handleFieldDeclarations(lines, baseUrlOfSut, ind, insertionVars)
+        super.handleTestInitialization(lines, baseUrlOfSut, ind, insertionVars)
 
         if (shouldCheckExpectations()) {
             addDeclarationsForExpectations(lines, ind as EvaluatedIndividual<RestIndividual>)
@@ -79,8 +77,8 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
             ind.evaluatedMainActions().asSequence()
                 .map { it.action }
                 .filterIsInstance(RestCallAction::class.java)
-                .filter { it.locationId != null }
-                .map { it.locationId }
+                .filter { it.usePreviousLocationId != null }
+                .map { it.usePreviousLocationId }
                 .distinct()
                 .forEach { id ->
                     val name = locationVar(id!!)
@@ -89,6 +87,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                         format.isKotlin() -> lines.add("var $name : String? = \"\"")
                         format.isJavaScript() -> lines.add("let $name = \"\";")
                         format.isCsharp() -> lines.add("var $name = \"\";")
+                        format.isPython() -> {} // no need to declare variables
                         // should never happen
                         else -> throw IllegalStateException("Unsupported format $format")
                     }
@@ -114,7 +113,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                             format,
                             c.first,
                             lines,
-                            ind.individual.seeDbActions(),
+                            ind.individual.seeSqlDbActions(),
                             groupIndex = index.toString(),
                             insertionVars = insertionVars,
                             skipFailure = config.skipFailureSQLInTestFile
@@ -196,24 +195,23 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
             }
         }
 
-        if (call.locationId != null) {
+        if (call.usePreviousLocationId != null) {
             if (format.isJavaScript()) {
                 lines.append("${TestSuiteWriter.jsImport}.")
             }
 
-            if (format.isCsharp()) {
-                //TODO: double check this
-                lines.append("${locationVar(call.locationId!!)} + $baseUrlOfSut + \"${call.resolvedPath()}\"")
-            } else {
-                lines.append("resolveLocation(${locationVar(call.locationId!!)}, $baseUrlOfSut + \"${call.resolvedPath()}\")")
+            when {
+                format.isCsharp() -> lines.append("${locationVar(call.usePreviousLocationId!!)} + $baseUrlOfSut + \"${call.resolvedPath()}\"")
+                format.isPython() -> lines.append("resolve_location(${locationVar(call.usePreviousLocationId!!)}, self.$baseUrlOfSut + str(\"${call.resolvedPath()}\"))")
+                else -> lines.append("resolveLocation(${locationVar(call.usePreviousLocationId!!)}, $baseUrlOfSut + \"${call.resolvedPath()}\")")
             }
 
         } else {
 
-            if (format.isKotlin()) {
-                lines.append("\"\${$baseUrlOfSut}")
-            } else {
-                lines.append("$baseUrlOfSut + \"")
+            when {
+                format.isKotlin() -> lines.append("\"\${$baseUrlOfSut}")
+                format.isPython() -> lines.append("self.$baseUrlOfSut + \"")
+                else -> lines.append("$baseUrlOfSut + \"")
             }
 
             if (call.path.numberOfUsableQueryParams(call.parameters) <= 1) {
@@ -247,6 +245,15 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                             )
                         }\""
                     )
+                }
+            }
+        }
+
+        if (format.isPython()) {
+            handlePythonVerbEndpoint(call, lines) { action: HttpWsAction ->
+                val bodyParam = action.parameters.find { param -> param is BodyParam } as BodyParam?
+                if (bodyParam != null) {
+                    lines.append(", data=body")
                 }
             }
         }
@@ -304,7 +311,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
 
             if (!res.getHeuristicsForChainedLocation()) {
 
-                val location = locationVar(call.path.lastElement())
+                val location = locationVar(call.postLocationId())
 
                 /*
                     If there is a "location" header, then it must be either empty or a valid URI.
@@ -331,6 +338,11 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                     format.isCsharp() -> {
                         lines.add("Assert.True(Uri.IsWellFormedUriString($location, UriKind.Absolute) || string.IsNullOrEmpty($location));")
                     }
+                    format.isPython() -> {
+                        lines.add("$location = $resVarName.headers['location']")
+                        val validCheck = "is_valid_uri_or_empty($location)"
+                        lines.add("assert $validCheck")
+                    }
                 }
             } else {
 
@@ -338,19 +350,22 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                     format.isKotlin() -> "<Object>"
                     else -> ""
                 }
-                val baseUri: String = if (call.locationId != null) {
+                val baseUri: String = if (call.usePreviousLocationId != null) {
                     /* A variable should NOT be enclosed by quotes */
-                    locationVar(call.locationId!!)
+                    locationVar(call.usePreviousLocationId!!)
                 } else {
                     /* Literals should be enclosed by quotes */
                     "\"${call.path.resolveOnlyPath(call.parameters)}\""
                 }
 
                 //TODO JS and C#
-                val extract =
-                    "$resVarName.extract().body().path$extraTypeInfo(\"${res.getResourceIdName()}\").toString()"
+                //TODO code here should use same algorithm as in res.getResourceId()
+                val extract = when {
+                    format.isPython() -> "str($resVarName.json()['${res.getResourceIdName()}'])"
+                    else -> "$resVarName.extract().body().path$extraTypeInfo(\"${res.getResourceIdName()}\").toString()"
+                }
 
-                lines.add("${locationVar(call.path.lastElement())} = $baseUri + \"/\" + $extract")
+                lines.add("${locationVar(call.postLocationId())} = $baseUri + \"/\" + $extract")
                 lines.appendSemicolon()
             }
         }

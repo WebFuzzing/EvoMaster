@@ -4,8 +4,8 @@ import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto
 import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionDto
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
-import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils.DEFAULT_WM_LOCAL_IP
 import org.evomaster.core.EMConfig
+import org.evomaster.core.Main
 import org.evomaster.core.output.*
 import org.evomaster.core.output.service.TestWriterUtils.Companion.getWireMockVariableName
 import org.evomaster.core.output.service.TestWriterUtils.Companion.handleDefaultStubForAsJavaOrKotlin
@@ -20,6 +20,10 @@ import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.SearchTimeController
+import org.evomaster.test.utils.EMTestUtils
+import org.evomaster.test.utils.SeleniumEMUtils
+import org.evomaster.test.utils.js.JsLoader
+import org.evomaster.test.utils.py.PyLoader
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
@@ -35,6 +39,7 @@ import java.time.ZonedDateTime
 class TestSuiteWriter {
 
     companion object {
+
         const val jsImport = "EM"
 
         /**
@@ -42,13 +47,18 @@ class TestSuiteWriter {
          */
         const val controller = "controller"
         const val driver = "driver"
+
+        private const val pythonUtilsFilenameNoExtension = "em_test_utils"
+        const val pythonUtilsFilename = "$pythonUtilsFilenameNoExtension.py"
+        const val javascriptUtilsFilename = "EMTestUtils.js"
+
+        private val log: Logger = LoggerFactory.getLogger(TestSuiteWriter::class.java)
+
         private const val baseUrlOfSut = "baseUrlOfSut"
         private const val expectationsMasterSwitch = "ems"
         private const val fixtureClass = "ControllerFixture"
         private const val fixture = "_fixture"
         private const val browser = "browser"
-
-        private val log: Logger = LoggerFactory.getLogger(TestSuiteWriter::class.java)
     }
 
     @Inject
@@ -75,6 +85,7 @@ class TestSuiteWriter {
     private var activePartialOracles = mutableMapOf<String, Boolean>()
 
 
+
     fun writeTests(
         solution: Solution<*>,
         controllerName: String?,
@@ -84,7 +95,7 @@ class TestSuiteWriter {
 
         val name = TestSuiteFileName(solution.getFileName())
         val content = convertToCompilableTestCode(solution, name, snapshotTimestamp, controllerName, controllerInput)
-        saveToDisk(content, config, name)
+        saveToDisk(content, getTestSuitePath(name, config))
     }
 
     /**
@@ -228,12 +239,8 @@ class TestSuiteWriter {
 
     private fun saveToDisk(
         testFileContent: String,
-        config: EMConfig,
-        testSuiteFileName: TestSuiteFileName
+        path: Path
     ) {
-
-        val path = getTestSuitePath(testSuiteFileName, config)
-
         Files.createDirectories(path.parent)
         Files.deleteIfExists(path)
         Files.createFile(path)
@@ -376,7 +383,7 @@ class TestSuiteWriter {
         if (format.isJavaOrKotlin()) {
 
             addImport("java.util.List", lines)
-            addImport("org.evomaster.client.java.controller.api.EMTestUtils.*", lines, true)
+            addImport(EMTestUtils::class.java.name +".*", lines, true)
             addImport("org.evomaster.client.java.controller.SutHandler", lines)
 
             if (useRestAssured()) {
@@ -446,13 +453,17 @@ class TestSuiteWriter {
                 addImport("org.testcontainers.containers.BrowserWebDriverContainer", lines)
                 addImport("org.openqa.selenium.chrome.ChromeOptions", lines)
                 addImport("org.openqa.selenium.remote.RemoteWebDriver", lines)
-                addImport("org.evomaster.client.java.controller.api.SeleniumEMUtils.*", lines, true)
+                addImport(SeleniumEMUtils::class.java.name + ".*", lines, true)
             }
         }
 
         if (format.isJavaScript()) {
             lines.add("const superagent = require(\"superagent\");")
-            lines.add("const $jsImport = require(\"evomaster-client-js\").EMTestUtils;")
+
+            val jsUtils = JsLoader::class.java.getResource("/$javascriptUtilsFilename").readText()
+            saveToDisk(jsUtils, Paths.get(config.outputFolder, javascriptUtilsFilename))
+            lines.add("const $jsImport = require(\"./$javascriptUtilsFilename\");")
+
             if (controllerName != null) {
                 lines.add("const $controllerName = require(\"${config.jsControllerPath}\");")
             }
@@ -473,7 +484,22 @@ class TestSuiteWriter {
             addUsing("EvoMaster.Controller", lines)
         }
 
-        lines.addEmpty(4)
+        if (format.isPython()) {
+            lines.add("import json")
+            lines.add("import unittest")
+            lines.add("import requests")
+            if (config.testTimeout > 0) {
+                lines.add("import timeout_decorator")
+            }
+            lines.add("from $pythonUtilsFilenameNoExtension import *")
+            val pythonUtils = PyLoader::class.java.getResource("/$pythonUtilsFilename").readText()
+            saveToDisk(pythonUtils, Paths.get(config.outputFolder, pythonUtilsFilename))
+        }
+
+        when {
+            format.isPython() -> lines.addEmpty(2)
+            else -> lines.addEmpty(4)
+        }
 
         classDescriptionComment(solution, lines, timestamp)
 
@@ -487,7 +513,7 @@ class TestSuiteWriter {
             defineFixture(lines, controllerName)
         }
 
-        if (format.isJavaOrKotlin() || format.isCsharp()) {
+        if (format.isJavaOrKotlin() || format.isCsharp() || format.isPython()) {
             defineClass(name, lines)
             lines.addEmpty()
         }
@@ -542,7 +568,7 @@ class TestSuiteWriter {
             } else {
                 lines.add("private static String $baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\";")
             }
-            if (config.isEnabledExternalServiceMocking()) {
+            if (config.isEnabledExternalServiceMocking() && solution.needWireMockServers()) {
                 wireMockServers
                     .forEach { externalService ->
                         addStatement("private static WireMockServer ${getWireMockVariableName(externalService)}", lines)
@@ -566,7 +592,7 @@ class TestSuiteWriter {
             } else {
                 lines.add("private val $baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\"")
             }
-            if (config.isEnabledExternalServiceMocking()) {
+            if (config.isEnabledExternalServiceMocking() && solution.needWireMockServers()) {
                 wireMockServers
                     .forEach { action ->
                         addStatement("private lateinit var ${getWireMockVariableName(action)}: WireMockServer", lines)
@@ -591,6 +617,10 @@ class TestSuiteWriter {
             }
         } else if (config.outputFormat.isCsharp()) {
             lines.add("private static readonly HttpClient Client = new HttpClient ();")
+        } else if (config.outputFormat.isPython()) {
+            if (config.blackBox) {
+                lines.add("$baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\"")
+            }
         }
 
         testCaseWriter.addExtraStaticVariables(lines)
@@ -701,7 +731,7 @@ class TestSuiteWriter {
             }
 
             val wireMockServers = getActiveWireMockServers()
-            if (config.isEnabledExternalServiceMocking() && wireMockServers.isNotEmpty()) {
+            if (config.isEnabledExternalServiceMocking() && wireMockServers.isNotEmpty() && solution.needWireMockServers()) {
                 if (format.isJavaOrKotlin()) {
                     wireMockServers
                         .forEach { externalService ->
@@ -709,11 +739,11 @@ class TestSuiteWriter {
                             val name = getWireMockVariableName(externalService)
 
                             if (format.isJava()) {
-                                lines.add("${name} = new WireMockServer(new WireMockConfiguration()")
+                                lines.add("$name = new WireMockServer(new WireMockConfiguration()")
                             }
 
                             if (format.isKotlin()) {
-                                lines.add("${name} = WireMockServer(WireMockConfiguration()")
+                                lines.add("$name = WireMockServer(WireMockConfiguration()")
                             }
 
                             lines.indented {
@@ -777,13 +807,15 @@ class TestSuiteWriter {
                         addStatement("$controller.stopSut()", lines)
                         if (format.isJavaOrKotlin()
                             && config.isEnabledExternalServiceMocking()
-                            && solution.needsHostnameReplacement()
                         ) {
-                            getActiveWireMockServers()
-                                .forEach { action ->
-                                    addStatement("${getWireMockVariableName(action)}.stop()", lines)
+                            if(solution.needWireMockServers()) {
+                                getActiveWireMockServers().forEach { action ->
+                                        addStatement("${getWireMockVariableName(action)}.stop()", lines)
                                 }
-                            addStatement("DnsCacheManipulator.clearDnsCache()", lines)
+                            }
+                            if(solution.needsHostnameReplacement()) {
+                                addStatement("DnsCacheManipulator.clearDnsCache()", lines)
+                            }
                         }
                         if(config.problemType == EMConfig.ProblemType.WEBFRONTEND){
                             addStatement("$browser.stop()", lines)
@@ -832,7 +864,7 @@ class TestSuiteWriter {
                 }
                 addStatement("$controller.resetStateOfSUT()", lines)
 
-                if (format.isJavaOrKotlin() && config.isEnabledExternalServiceMocking()) {
+                if (format.isJavaOrKotlin() && config.isEnabledExternalServiceMocking() && solution.needWireMockServers()) {
                     getActiveWireMockServers()
                         .forEach { es ->
                             addStatement("${getWireMockVariableName(es)}.resetAll()", lines)
@@ -916,6 +948,13 @@ class TestSuiteWriter {
             lines.addEmpty(2)
             lines.add("}")
         }
+
+        if (config.outputFormat.isPython()) {
+            lines.addEmpty(2)
+            lines.add("if __name__ == '__main__':")
+            lines.indent()
+            lines.add("unittest.main()")
+        }
     }
 
     private fun defineClass(name: TestSuiteFileName, lines: Lines) {
@@ -930,10 +969,11 @@ class TestSuiteWriter {
             format.isCsharp() -> lines.append("public ")
         }
 
-        if (!format.isCsharp())
-            lines.append("class ${name.getClassName()} {")
-        else
-            lines.append("class ${name.getClassName()} : IClassFixture<$fixtureClass> {")
+        when {
+            format.isCsharp() -> lines.append("class ${name.getClassName()} : IClassFixture<$fixtureClass> {")
+            format.isPython() -> lines.append("class ${name.getClassName()}(unittest.TestCase):")
+            else -> lines.append("class ${name.getClassName()} {")
+        }
     }
 
     private fun addImport(klass: String, lines: Lines, static: Boolean = false) {

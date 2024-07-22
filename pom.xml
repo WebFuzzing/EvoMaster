@@ -28,6 +28,7 @@
         <module>report</module>
         <module>test-old-libraries</module>
         <module>solver</module>
+        <module>test-utils</module>
     </modules>
 
     <issueManagement>
@@ -115,6 +116,7 @@
 
     <properties>
         <addOpens></addOpens> <!-- overridden in profile -->
+        <redirectTestOutputToFile>true</redirectTestOutputToFile>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>1.8</java.version>
         <kotlin.version>1.8.20</kotlin.version>
@@ -145,7 +147,7 @@
             https://www.logicbig.com/tutorials/core-java-tutorial/java-9-changes/multi-release-jars.html
         -->
         <jackson.version>2.14.3</jackson.version>
-        <asm.version>9.2</asm.version>
+        <asm.version>9.7</asm.version>
         <testcontainers.version>1.17.6</testcontainers.version>
         <testcontainers.mockerserver.version>1.17.2</testcontainers.mockerserver.version>
         <mockserver.client.version>5.13.2</mockserver.client.version>
@@ -169,7 +171,7 @@
         <apache.http.client.version>4.5.13</apache.http.client.version>
         <okhttp3.client.version>4.9.3</okhttp3.client.version>
         <okhttp.client.version>2.4.0</okhttp.client.version>
-        <dns.cache.manipulator.version>1.8.0</dns.cache.manipulator.version>
+        <dns.cache.manipulator.version>1.8.2</dns.cache.manipulator.version>
         <jakarta.annotation.version>2.0.0</jakarta.annotation.version>
         <jakarta.validation-api.version>3.0.2</jakarta.validation-api.version>
         <jakarta.persistence-api.version>3.1.0</jakarta.persistence-api.version>
@@ -248,6 +250,26 @@
             <dependency>
                 <groupId>org.evomaster</groupId>
                 <artifactId>evomaster-client-java-distance-heuristics</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.evomaster</groupId>
+                <artifactId>solver</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.evomaster</groupId>
+                <artifactId>evomaster-test-utils-java</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.evomaster</groupId>
+                <artifactId>evomaster-test-utils-js</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.evomaster</groupId>
+                <artifactId>evomaster-test-utils-py</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
@@ -1037,15 +1059,10 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <!--Man: maven 3.6.3 and jdk1.8.0_261.
-                        with 3.0.0-M4, there exist an error
-                         "The forked VM terminated without properly saying goodbye. VM crash or System.exit called?"
-                        then fixed with 3.0.0-M5
-                    -->
-                    <version>3.0.0-M5</version>
+                    <version>3.3.1</version>
                     <configuration>
                         <forkCount>1</forkCount>
-                        <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                        <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>
                         <rerunFailingTestsCount>2</rerunFailingTestsCount>
                         <trimStackTrace>false</trimStackTrace>
                         <!--
@@ -1241,7 +1258,7 @@
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>0.8.7</version>
+                    <version>0.8.12</version>
                     <configuration>
                         <excludes>
                             <!--  Prevent SUTs in E2E to be part of coverage report -->

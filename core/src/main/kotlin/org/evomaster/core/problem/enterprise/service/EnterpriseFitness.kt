@@ -2,7 +2,7 @@ package org.evomaster.core.problem.enterprise.service
 
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.ActionDto
-import org.evomaster.client.java.controller.api.dto.HeuristicEntryDto
+import org.evomaster.client.java.controller.api.dto.ExtraHeuristicEntryDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.StaticCounter
@@ -229,8 +229,8 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
                 val toMinimize = extra.heuristics
                     .filter {
                         it != null
-                                && it.objective == HeuristicEntryDto.Objective.MINIMIZE_TO_ZERO
-                                && it.type == HeuristicEntryDto.Type.SQL
+                                && it.objective == ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO
+                                && it.type == ExtraHeuristicEntryDto.Type.SQL
                     }.map { it.value }
                     .toList()
 
@@ -238,7 +238,9 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
                     fv.setExtraToMinimize(i, toMinimize)
                 }
 
-                fv.setDatabaseExecution(i, DatabaseExecution.fromDto(extra.databaseExecutionDto))
+                fv.setDatabaseExecution(i, DatabaseExecution.fromDto(extra.sqlSqlExecutionsDto))
+
+
             }
 
             fv.aggregateDatabaseData()
@@ -252,7 +254,7 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
              */
             for (i in 0 until dto.extraHeuristics.size) {
                 val extra = dto.extraHeuristics[i]
-                fv.setDatabaseExecution(i, DatabaseExecution.fromDto(extra.databaseExecutionDto))
+                fv.setDatabaseExecution(i, DatabaseExecution.fromDto(extra.sqlSqlExecutionsDto))
             }
         }
 
@@ -261,6 +263,7 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
 
     private fun handleMongoHeuristics(dto: TestResultsDto, fv: FitnessValue) {
         if (configuration.heuristicsForMongo) {
+
 
             for (i in 0 until dto.extraHeuristics.size) {
 
@@ -271,12 +274,25 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
                 val toMinimize = extra.heuristics
                     .filter {
                         it != null
-                                && it.objective == HeuristicEntryDto.Objective.MINIMIZE_TO_ZERO
-                                && it.type == HeuristicEntryDto.Type.MONGO
+                                && it.objective == ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO
+                                && it.type == ExtraHeuristicEntryDto.Type.MONGO
                     }.map { it.value }
                     .toList()
 
                 if (toMinimize.isNotEmpty()) fv.setExtraToMinimize(i, toMinimize)
+
+                extra.heuristics
+                    .filter {
+                        it != null
+                    }.forEach {
+                        if (it.type == ExtraHeuristicEntryDto.Type.MONGO) {
+                            statistics.reportNumberOfEvaluatedDocumentsForMongoHeuristic(it.numberOfEvaluatedRecords)
+                        } else if (it.type==ExtraHeuristicEntryDto.Type.SQL) {
+                            statistics.reportNumberOfEvaluatedRowsForSqlHeuristic(it.numberOfEvaluatedRecords)
+                        }
+                    }
+
+
             }
         }
 
@@ -284,7 +300,7 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
 
             for (i in 0 until dto.extraHeuristics.size) {
                 val extra = dto.extraHeuristics[i]
-                fv.setMongoExecution(i, MongoExecution.fromDto(extra.mongoExecutionDto))
+                fv.setMongoExecution(i, MongoExecution.fromDto(extra.mongoExecutionsDto))
             }
 
             fv.aggregateMongoDatabaseData()

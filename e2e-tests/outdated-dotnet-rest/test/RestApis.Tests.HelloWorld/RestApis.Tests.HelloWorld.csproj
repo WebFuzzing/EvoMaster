@@ -1,0 +1,74 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netcoreapp3.1</TargetFramework>
+
+        <IsPackable>false</IsPackable>
+
+        <!-->TODO</-->
+        <StartupObject>RestApis.Tests.HelloWorld.EmbeddedEvoMasterController</StartupObject>
+    </PropertyGroup>
+
+
+    <ItemGroup>
+
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.2.0"/>
+        <PackageReference Include="xunit" Version="2.4.0"/>
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.4.0"/>
+        <PackageReference Include="coverlet.collector" Version="1.0.1"/>
+        <!--        <PackageReference Include="EvoMaster.Instrumentation" Version="1.1.1-SNAPSHOT"/>-->
+        <!--        <PackageReference Include="EvoMaster.Controller" Version="1.1.1-SNAPSHOT"/>-->
+    </ItemGroup>
+
+    <Target Name="PostClean" AfterTargets="Clean">
+        <RemoveDir Directories="generated"/>
+        <RemoveDir Directories="bin-temp"/>
+    </Target>
+
+    <ItemGroup>
+        <ProjectReference Include="../../src/RestApis.HelloWorld/RestApis.HelloWorld.csproj"/>
+        <ProjectReference Include="../../../../client-dotnet/src/EvoMaster.Controller/EvoMaster.Controller.csproj"/>
+    </ItemGroup>
+
+    <!-- Read all the comments below to get an understanding of what's happening for putting up the scaffolding
+     In Summary, what's happeing here is nothing but the instrumentation of the SUT and creating a new dll for it
+     For more details, read the codes & comments below
+ -->
+    <ItemGroup>
+        <!-- You may only need to modify values for these three items based on the project names -->
+        <Sut Include="RestApis.HelloWorld.dll"/>
+        <!--Do not change the \ to / as it may lead to error on Windows, just change the substring after the \-->
+        <SutPath Include="$(ProjectDir)bin-temp\RestApis.HelloWorld.dll"/>
+        <CurrentRuntimeConfig Include="$(OutputPath)RestApis.Tests.HelloWorld.runtimeconfig.json"/>
+
+        <!-- Don't need to touch these two lines -->
+        <TempDirectory Include="$(ProjectDir)bin-temp"/>
+        <InstrumentationRuntimeConfig Include="$(OutputPath)EvoMaster.Instrumentation.runtimeconfig.json"/>
+    </ItemGroup>
+
+    <Target Name="Instrument" AfterTargets="Build">
+
+        <!-- Remove temp folder in case it exists to make sure everything gets updated -->
+        <RemoveDir Directories="@(TempDirectory)"/>
+        <MakeDir Directories="@(TempDirectory)"/>
+
+        <!-- create a runtimeconfig.json because it is needed for EvoMaster.Instrumentation.dll to be runnable -->
+        <Copy SourceFiles="@(CurrentRuntimeConfig)" DestinationFiles="@(InstrumentationRuntimeConfig)"/>
+
+        <!-- Run the instrumentation and specify bin-temp as output directory -->
+        <Exec Command="cd $(OutputPath)
+        dotnet EvoMaster.Instrumentation.dll @(Sut) @(TempDirectory)"/>
+
+    </Target>
+
+
+    <!--This section is for enabling the test methods pass. The actual instrumentation is done before
+        The instrumented dll is copied into the bin folder and replaces the actual sut
+    -->
+    <Target Name="TestInstrumentation" AfterTargets="Build">
+
+        <Exec Command="cp @(SutPath) $(OutputPath)" Condition="$(OS.Contains('Unix'))"/>
+        <Exec Command="copy @(SutPath) $(OutputPath)" Condition="$(OS.Contains('Windows'))"/>
+    </Target>
+
+</Project>

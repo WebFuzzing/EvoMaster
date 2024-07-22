@@ -1,6 +1,5 @@
 package org.evomaster.e2etests.spring.openapi.v3.expectations
 
-import com.foo.rest.examples.spring.openapi.v3.expectations.ExpectationBasicTestController
 import com.foo.rest.examples.spring.openapi.v3.expectations.ExpectationNumTestController
 import org.evomaster.client.java.instrumentation.shared.ClassName
 import org.evomaster.core.EMConfig
@@ -78,7 +77,7 @@ class ExpectationNumEMTest : SpringTestBase(){
     fun testRunEM_Split_ExpectationsOff() {
         val outputFolderName = "ExpectationsNumEM"
         val className = ClassName("org.foo.ExpectationNumEMOff")
-        val splitType = EMConfig.TestSuiteSplitType.CLUSTER
+        val splitType = EMConfig.TestSuiteSplitType.FAULTS
         testRunEMGeneric(false, splitType, className)
 
         val assertion = generatedCodeAssertion(outputFolderName, "${className.bytecodeName}_faults", OutputFormat.KOTLIN_JUNIT_5, false)

@@ -1,0 +1,8 @@
+auth:
+  - name: foo
+    loginEndpointAuth:
+      payloadRaw: "{\"username\": \"foo\", \"password\": \"123\"}"
+      endpoint: /api/logintoken/login
+      verb: POST
+      contentType: application/json
+      expectCookies: true

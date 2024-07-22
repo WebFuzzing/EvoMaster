@@ -37,11 +37,12 @@ env:
   # third-party libraries, which might do it only in special cases.
   # For some "hilarious" case, see:
   # https://github.com/EMResearch/EvoMaster/issues/447
-  release-jdk: 17
-  latest-jdk: 17
+  release-jdk: 21
+  latest-jdk: 21
   build-jdk: 1.8
   retention-days: 5
-
+  debug: false  # put to true if need to debug a specific test
+  debugTestName: "H2ColumnTypesEMTest" # replace with test to debug
 
 # This build is quite expensive (some hours), so we run it whole only on some JVM versions and OSs.
 # For the moment, we need to support JVM 8 and all following LTS versions (e.g, 11 and  17).
@@ -50,8 +51,44 @@ env:
 
 jobs:
 
+  setup:
+    # what a mess... GA does not allow to refer to "env" in "if" for a job (but can for a step).
+    # so we have to go through this convoluted approach of first running a job that set a variable
+    # via console output...
+    runs-on: ubuntu-latest
+    outputs:
+      debug: ${{ steps.set-output.outputs.debug }}
+    steps:
+     - name: Set skip-jobs variable
+       id: set-output
+       run: echo "debug=${{ env.debug }}" >> $GITHUB_OUTPUT
+
+
+  debug:
+    runs-on: ubuntu-latest
+    needs: setup
+    if: needs.setup.outputs.debug == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup JDK ${{env.build-jdk}}
+        uses: actions/setup-java@v1
+        with:
+          java-version: ${{env.build-jdk}}
+      - name: Cache Maven packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: Debug Test Case
+        env:
+          CI_env: GithubAction
+        run: mvn test  -Dtest=${{env.debugTestName}} -Dsurefire.failIfNoSpecifiedTests=false  -DredirectTestOutputToFile=false
+
   full-build-base:
     runs-on: ubuntu-latest
+    needs: setup
+    if: needs.setup.outputs.debug == 'false'
     steps:
       # Checkout code
       - uses: actions/checkout@v4
@@ -95,22 +132,33 @@ jobs:
         run: echo Skipping upload to CodeCov
       # Only once coverage is uploaded, we try to build with other versions of Java, as "mvn clean" would delete those reports
       # However, the latest LTS is fully built (with tests) on a different job
+      # JDK 11
       - name: Setup JDK 11
         uses: actions/setup-java@v1
         with:
           java-version: 11
       - name: Compile with JDK 11
         run: mvn clean verify -DskipTests
+      #JDK 17
       - name: Setup JDK 17
         uses: actions/setup-java@v1
         with:
           java-version: 17
       - name: Compile with JDK 17
         run: mvn clean verify -DskipTests
+      #JDK 21
+      - name: Setup JDK 21
+        uses: actions/setup-java@v1
+        with:
+          java-version: 21
+      - name: Compile with JDK 21
+        run: mvn clean verify -DskipTests
 
 
   base-build-mac:
     runs-on: macos-latest
+    needs: setup
+    if: needs.setup.outputs.debug == 'false'
     steps:
       - uses: actions/checkout@v4
       - name: Setup JDK ${{env.latest-jdk}}
@@ -130,6 +178,8 @@ jobs:
 
   base-build-windows:
     runs-on: windows-latest
+    needs: setup
+    if: needs.setup.outputs.debug == 'false'
     steps:
       - uses: actions/checkout@v4
       - name: Setup JDK ${{env.latest-jdk}}
@@ -155,6 +205,8 @@ jobs:
     # TODO check this again in the future
     # runs-on: windows-latest
     runs-on: ubuntu-latest
+    needs: setup
+    if: needs.setup.outputs.debug == 'false'
     steps:
       - uses: actions/checkout@v4
       - name: Setup JDK ${{env.latest-jdk}}
@@ -174,74 +226,7 @@ jobs:
           MAVEN_OPTS: "--add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED"
 
 
-  nodejs:
-    needs: full-build-base
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      # Build/test for JavaScript
-      - name: Use Node.js
-        uses: actions/setup-node@v1
-        with:
-          node-version: 14.x
-      - run: npm ci
-        working-directory: ./client-js/evomaster-client-js
-      - run: npm run build
-        working-directory: ./client-js/evomaster-client-js
-      - run: npm run test
-        working-directory: ./client-js/evomaster-client-js
-      - run: npm ci
-        working-directory: ./client-js/integration-tests
-      - run: npm run build
-        working-directory: ./client-js/integration-tests
-      - run: npm run test
-        working-directory: ./client-js/integration-tests
-      - name: Setup JDK ${{env.build-jdk}}
-        uses: actions/setup-java@v1
-        with:
-            java-version: ${{env.build-jdk}}
-      - name: Download fat jar
-        uses: actions/download-artifact@v3
-        with:
-          name: evomaster.jar
-          path: core/target
-      ### NOTE: we no longer run this, as NodeJS for backend no longer supported.
-      ### This started to fail once introduced first version of "minimization", as JS driver would need
-      ### to be updated with new features to support it
-      # E2E for JS. Must be run AFTER the JS and Core builds
-#      - name: E2E for JavaScript
-#        run:  bash ./client-js/e2e-tests/e2e.sh
 
-### TODO currently disabled, as it takes forever on CI (1-2 hours...), compared to few minutes on local machine.
-### Need to find out why
-#  dotnet:
-#    needs: base
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@v2
-#      # Build/test for .Net
-#      - name: Setup .NET Core
-#        uses: actions/setup-dotnet@v1
-#        with:
-#          dotnet-version: 3.1.x
-#      - name: Clean .NET
-#        run: dotnet clean
-#      - name: Build with .NET
-#        run: dotnet build --configuration Release
-#      - name: Unit tests for .NET
-#        run: dotnet test
-#      - name: Setup JDK ${{env.build-jdk}}
-#        uses: actions/setup-java@v1
-#        with:
-#          java-version: ${{env.build-jdk}}
-#      - name: Download fat jar
-#        uses: actions/download-artifact@v2
-#        with:
-#          name: evomaster.jar
-#          path: core/target
-#      # E2E for C#. Must be run AFTER the C# and Core builds
-#      - name: E2E for C#
-#        run:  bash ./e2e-tests/dotnet-rest/scripts/e2e.sh
 
 
 
@@ -312,13 +297,31 @@ jobs:
       - name: Build installation file
         shell: bash
         run: bash makeExecutable.sh DEBIAN
+      - name: Check generated files
+        shell: bash
+        run: ls -l release
       - name: Upload installation file
         uses: actions/upload-artifact@v3
         with:
           name: evomaster.deb
-          path: release/evomaster_${{env.evomaster-version}}-1_amd64.deb
+#          JDK 17 and 21 use different suffixes... doesn't seem configurable :(
+#          path: release/evomaster_${{env.evomaster-version}}-1_amd64.deb
+          path: release/evomaster_${{env.evomaster-version}}_amd64.deb
           retention-days: ${{env.retention-days}}
           if-no-files-found: error
 
 
+  test-utils-js:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+        working-directory: ./test-utils/test-utils-js
+      - run: npm test
+        working-directory: ./test-utils/test-utils-js
 
+# TODO need to do the same for test-utils-py

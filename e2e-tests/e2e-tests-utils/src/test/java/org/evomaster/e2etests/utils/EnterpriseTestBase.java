@@ -42,6 +42,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -198,12 +199,12 @@ public abstract class EnterpriseTestBase {
 
         if(terminations == null || terminations.isEmpty()){
             classNames.add(new ClassName(fullClassName));
-            splitType = "NONE";
+            splitType = EMConfig.TestSuiteSplitType.NONE.name();
         } else {
             for (String termination : terminations) {
                 classNames.add(new ClassName(fullClassName + termination));
             }
-            splitType = "CLUSTER";
+            splitType = EMConfig.TestSuiteSplitType.FAULTS.name();
         }
 
          /*
@@ -371,11 +372,16 @@ public abstract class EnterpriseTestBase {
 
     protected void compile(String outputFolderName){
 
+        long start = System.currentTimeMillis();
+
         CompilerForTestGenerated.INSTANCE.compile(
                 OutputFormat.KOTLIN_JUNIT_5,
                 new File(outputFolderPath(outputFolderName)),
                 new File("target/test-classes")
         );
+
+        int passed = (int)(System.currentTimeMillis() - start) / 1000;
+        System.out.println("Folder compiled in " + passed + " seconds: " + outputFolderName);
     }
 
     protected List<String> getArgsWithCompilation(int iterations, String outputFolderName, ClassName testClassName){
@@ -484,7 +490,7 @@ public abstract class EnterpriseTestBase {
     protected void assertInsertionIntoTable(Solution<? extends ApiWsIndividual> solution, String tableName) {
 
         boolean ok = solution.getIndividuals().stream().anyMatch(
-                ind -> ind.getIndividual().seeDbActions().stream().anyMatch(
+                ind -> ind.getIndividual().seeSqlDbActions().stream().anyMatch(
                         da -> da.getTable().getName().equalsIgnoreCase(tableName))
         );
 
@@ -497,9 +503,33 @@ public abstract class EnterpriseTestBase {
      * @param args - the list of arguments
      * @param outputFormat - the desired output format
      */
+    @Deprecated //use setOption
     protected void setOutputFormat(List<String> args, OutputFormat outputFormat){
         if (outputFormat != null){
             args.replaceAll(s -> s.replace(OutputFormat.KOTLIN_JUNIT_5.name(), outputFormat.name()));
+        }
+    }
+
+    /**
+     * Add or replace the given option to the args list
+     */
+    protected void setOption(List<String> args, String optionName, String optionValue){
+
+        Objects.requireNonNull(optionName);
+        Objects.requireNonNull(optionValue);
+
+        if(optionName.startsWith("-")){
+            throw new IllegalArgumentException("Option name cannot start with '-': " + optionName);
+        }
+
+        String addOption = "--" + optionName;
+        int position = args.indexOf(addOption);
+        if(position < 0){
+            args.add(addOption);
+            args.add(optionValue);
+        } else{
+            args.set(position,addOption);
+            args.set(position+1,optionValue);
         }
     }
 

@@ -2,7 +2,6 @@ package org.evomaster.core.output.auth
 
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.output.service.ApiTestCaseWriter
 import org.evomaster.core.output.service.HttpWsTestCaseWriter
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.auth.EndpointCallLogin
@@ -19,26 +18,26 @@ object CookieWriter {
 
     fun cookiesName(info: EndpointCallLogin): String = "cookies_${info.name}"
 
-
     /**
      *  Return the distinct auth info on cookie-based login in all actions
      *  of this individual
      */
-    fun getCookieLoginAuth(ind: Individual) =  ind.seeAllActions()
-            .filterIsInstance<HttpWsAction>()
-            .filter { it.auth.endpointCallLogin != null && it.auth.endpointCallLogin!!.expectsCookie()}
-            .distinctBy { it.auth.name }
-            .map { it.auth.endpointCallLogin!! }
+    fun getCookieLoginAuth(ind: Individual) = ind.seeAllActions()
+        .filterIsInstance<HttpWsAction>()
+        .filter { it.auth.endpointCallLogin != null && it.auth.endpointCallLogin!!.expectsCookie() }
+        .distinctBy { it.auth.name }
+        .map { it.auth.endpointCallLogin!! }
 
 
-    fun handleGettingCookies(format: OutputFormat,
-                             ind: EvaluatedIndividual<*>,
-                             lines: Lines,
-                             baseUrlOfSut: String,
-                             testCaseWriter: ApiTestCaseWriter
+    fun handleGettingCookies(
+        format: OutputFormat,
+        ind: EvaluatedIndividual<*>,
+        lines: Lines,
+        baseUrlOfSut: String,
+        testCaseWriter: HttpWsTestCaseWriter
     ) {
 
-        val cookiesInfo =  getCookieLoginAuth(ind.individual)
+        val cookiesInfo = getCookieLoginAuth(ind.individual)
 
         if (cookiesInfo.isNotEmpty()) {
             lines.addEmpty()
@@ -49,54 +48,109 @@ object CookieWriter {
             when {
                 format.isJava() -> lines.add("final Map<String,String> ${cookiesName(k)} = ")
                 format.isKotlin() -> lines.add("val ${cookiesName(k)} : Map<String,String> = ")
+                format.isJavaScript() -> lines.add("const ${cookiesName(k)} = (")
+                //TODO Python
             }
 
-            //TODO JS
+            testCaseWriter.startRequest(lines)
+            lines.indent()
+            addCallCommand(lines, k, testCaseWriter, format, baseUrlOfSut, cookiesName(k))
 
-            lines.append("given()")
-            lines.indented {
-                addCallCommand(lines, k, testCaseWriter, format, baseUrlOfSut)
-                lines.add(".then().extract().cookies()") //TODO check response status and cookie headers?
-                lines.appendSemicolon()
-                lines.addEmpty()
+            when {
+                format.isJavaOrKotlin() -> lines.add(".then().extract().cookies()")
+                format.isJavaScript() -> lines.add(").header['set-cookie'][0].split(';')[0]")
+                format.isPython() -> lines.append(".cookies")
+            }
+            //TODO check response status and cookie headers?
+
+            lines.appendSemicolon()
+            lines.addEmpty()
+
+            if (!format.isPython()) {
+                lines.deindent()
             }
         }
     }
 
-     fun addCallCommand(
+
+
+    fun addCallCommand(
         lines: Lines,
         k: EndpointCallLogin,
-        testCaseWriter: ApiTestCaseWriter,
+        testCaseWriter: HttpWsTestCaseWriter,
         format: OutputFormat,
-        baseUrlOfSut: String
+        baseUrlOfSut: String,
+        targetVariable: String
     ) {
-        //TODO check if payload is specified
-        lines.add(".contentType(\"${k.contentType.defaultValue}\")")
-        if (k.contentType == ContentType.X_WWW_FORM_URLENCODED) {
-            if (testCaseWriter is HttpWsTestCaseWriter) { //FIXME
+
+        if(format.isJavaScript() || format.isPython()) {
+            callPost(lines, k, format, baseUrlOfSut)
+        }
+
+        when {
+            format.isJavaOrKotlin() -> lines.add(".contentType(\"${k.contentType.defaultValue}\")")
+            format.isJavaScript() -> lines.add(".set(\"content-type\", \"${k.contentType.defaultValue}\")")
+            format.isPython() -> {
+                lines.add("headers = {}")
+                lines.add("headers[\"content-type\"] = \"${k.contentType.defaultValue}\"")
+            }
+        }
+
+        when (k.contentType) {
+            ContentType.X_WWW_FORM_URLENCODED -> {
                 val send = testCaseWriter.sendBodyCommand()
                 lines.add(".$send(\"${k.payload}\")")
             }
-        } else if (k.contentType == ContentType.JSON) {
-            if (testCaseWriter is HttpWsTestCaseWriter) { //FIXME
+            ContentType.JSON -> {
                 testCaseWriter.printSendJsonBody(k.payload, lines)
             }
-        } else {
-            throw IllegalStateException("Currently not supporting yet ${k.contentType} in login")
+            else -> {
+                throw IllegalStateException("Currently not supporting yet ${k.contentType} in login")
+            }
         }
 
-         //TODO should check specified verb
+        /*
+            For RestAssure, the call to "post" must be last, which is in opposite of what
+            needed in used libraries for Python and JS
+         */
+        if(format.isJavaOrKotlin()) {
+            callPost(lines, k, format, baseUrlOfSut)
+        }
+
+
+        //TODO should check specified verb
+        if (format.isPython()) {
+            lines.add("$targetVariable = requests \\")
+            lines.indent(2)
+        }
+
+        if (format.isPython()) {
+            lines.append(", ")
+            lines.indented {
+                lines.add("headers=headers, data=body")
+            }
+            lines.deindent(2)
+        }
+
+    }
+
+    private fun callPost(
+        lines: Lines,
+        k: EndpointCallLogin,
+        format: OutputFormat,
+        baseUrlOfSut: String
+    ) {
         lines.add(".post(")
         if (k.externalEndpointURL != null) {
-            lines.append("\"${k.externalEndpointURL}\")")
+            lines.append("\"${k.externalEndpointURL}\"")
         } else {
-            if (format.isJava()) {
-                lines.append("$baseUrlOfSut + \"")
-            } else {
-                lines.append("\"\${$baseUrlOfSut}")
+            when {
+                format.isJava() || format.isJavaScript() -> lines.append("$baseUrlOfSut + \"")
+                format.isPython() -> lines.append("self.$baseUrlOfSut + \"")
+                else -> lines.append("\"\${$baseUrlOfSut}")
             }
-            //TODO should check or guarantee that base does not end with a / ?
-            lines.append("${k.endpoint}\")")
+            lines.append("${k.endpoint}\"")
         }
+        lines.append(")")
     }
 }

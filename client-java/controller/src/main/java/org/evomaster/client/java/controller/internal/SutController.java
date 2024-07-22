@@ -15,7 +15,7 @@ import org.evomaster.client.java.controller.api.ControllerConstants;
 import org.evomaster.client.java.controller.api.dto.*;
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto;
 import org.evomaster.client.java.controller.api.dto.constraint.ElementConstraintsDto;
-import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto;
+import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionsDto;
 import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionLogDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto;
@@ -298,11 +298,13 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     public final void initMongoHandler() {
         // This is needed because the replacement use to get this info occurs during the start of the SUT.
+        Object connection = getMongoConnection();
+        mongoHandler.setMongoClient(connection);
 
         List<AdditionalInfo> list = getAdditionalInfoList();
         if(!list.isEmpty()) {
             AdditionalInfo last = list.get(list.size() - 1);
-            last.getMongoCollectionInfoData().forEach(mongoHandler::handle);
+            last.getMongoCollectionTypeData().forEach(mongoHandler::handle);
         }
     }
 
@@ -343,63 +345,73 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
         ExtraHeuristicsDto dto = new ExtraHeuristicsDto();
 
-        computeSQLHeuristics(dto);
-        computeMongoHeuristics(dto);
+        if (isSQLHeuristicsComputationAllowed() || isMongoHeuristicsComputationAllowed()) {
+            List<AdditionalInfo> additionalInfoList = getAdditionalInfoList();
 
+            if (isSQLHeuristicsComputationAllowed()) {
+                computeSQLHeuristics(dto, additionalInfoList);
+            }
+            if (isMongoHeuristicsComputationAllowed()) {
+                computeMongoHeuristics(dto, additionalInfoList);
+            }
+        }
         return dto;
     }
 
-    private void computeSQLHeuristics(ExtraHeuristicsDto dto) {
-        if(sqlHandler.isCalculateHeuristics() || sqlHandler.isExtractSqlExecution()){
-            /*
-                TODO refactor, once we move SQL analysis into Core
-             */
-            List<AdditionalInfo> list = getAdditionalInfoList();
-            if(!list.isEmpty()) {
-                AdditionalInfo last = list.get(list.size() - 1);
-                last.getSqlInfoData().stream().forEach(it -> {
+    private boolean isSQLHeuristicsComputationAllowed() {
+        return sqlHandler.isCalculateHeuristics() || sqlHandler.isExtractSqlExecution();
+    }
+
+    private boolean isMongoHeuristicsComputationAllowed() {
+        return mongoHandler.isCalculateHeuristics() || mongoHandler.isExtractMongoExecution();
+    }
+
+    private void computeSQLHeuristics(ExtraHeuristicsDto dto, List<AdditionalInfo> additionalInfoList) {
+        /*
+        TODO refactor, once we move SQL analysis into Core
+        */
+        if (!additionalInfoList.isEmpty()) {
+            AdditionalInfo last = additionalInfoList.get(additionalInfoList.size() - 1);
+            last.getSqlInfoData().stream().forEach(it -> {
 //                    String sql = it.getCommand();
-                    try {
-                        sqlHandler.handle(new SqlExecutionLogDto(it.getCommand(), it.getExecutionTime()));
-                    } catch (Exception e){
-                        SimpleLogger.error("FAILED TO HANDLE SQL COMMAND: " + it.getCommand());
-                        assert false; //we should try to handle all cases in our tests
-                    }
-                });
-            }
+                try {
+                    sqlHandler.handle(new SqlExecutionLogDto(it.getCommand(), it.getExecutionTime()));
+                } catch (Exception e) {
+                    SimpleLogger.error("FAILED TO HANDLE SQL COMMAND: " + it.getCommand());
+                    assert false; //we should try to handle all cases in our tests
+                }
+            });
         }
 
-        if(sqlHandler.isCalculateHeuristics()) {
-            sqlHandler.getDistances().stream()
+        if (sqlHandler.isCalculateHeuristics()) {
+            sqlHandler.getEvaluatedSqlCommands().stream()
                     .map(p ->
-                            new HeuristicEntryDto(
-                                    HeuristicEntryDto.Type.SQL,
-                                    HeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
+                            new ExtraHeuristicEntryDto(
+                                    ExtraHeuristicEntryDto.Type.SQL,
+                                    ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
                                     p.sqlCommand,
-                                    p.distance
+                                    p.sqlDistanceWithMetrics.sqlDistance,
+                                    p.sqlDistanceWithMetrics.numberOfEvaluatedRows
                             ))
                     .forEach(h -> dto.heuristics.add(h));
         }
-        if (sqlHandler.isCalculateHeuristics() || sqlHandler.isExtractSqlExecution()){
-            ExecutionDto executionDto = sqlHandler.getExecutionDto();
-            dto.databaseExecutionDto = executionDto;
-            // set accessed table
-            if (executionDto != null){
-                accessedTables.addAll(executionDto.deletedData);
-                accessedTables.addAll(executionDto.insertedData.keySet());
-//                accessedTables.addAll(executionDto.queriedData.keySet());
-                accessedTables.addAll(executionDto.insertedData.keySet());
-                accessedTables.addAll(executionDto.updatedData.keySet());
-            }
+
+        SqlExecutionsDto sqlExecutionsDto = sqlHandler.getExecutionDto();
+        dto.sqlSqlExecutionsDto = sqlExecutionsDto;
+        // set accessed table
+        if (sqlExecutionsDto != null) {
+            accessedTables.addAll(sqlExecutionsDto.deletedData);
+            accessedTables.addAll(sqlExecutionsDto.insertedData.keySet());
+            //accessedTables.addAll(executionDto.queriedData.keySet());
+            accessedTables.addAll(sqlExecutionsDto.insertedData.keySet());
+            accessedTables.addAll(sqlExecutionsDto.updatedData.keySet());
         }
     }
 
-    public final void computeMongoHeuristics(ExtraHeuristicsDto dto){
-        List<AdditionalInfo> list = getAdditionalInfoList();
-
+    public final void computeMongoHeuristics(ExtraHeuristicsDto dto, List<AdditionalInfo> additionalInfoList){
         if(mongoHandler.isCalculateHeuristics()){
-            if(!list.isEmpty()) {
-                AdditionalInfo last = list.get(list.size() - 1);
+            if(!additionalInfoList.isEmpty()) {
+                AdditionalInfo last = additionalInfoList.get(additionalInfoList.size() - 1);
                 last.getMongoInfoData().forEach(it -> {
                     try {
                         mongoHandler.handle(it);
@@ -410,23 +422,24 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                 });
             }
 
-            mongoHandler.getDistances().stream()
+            mongoHandler.getEvaluatedMongoCommands().stream()
                     .map(p ->
-                            new HeuristicEntryDto(
-                                    HeuristicEntryDto.Type.MONGO,
-                                    HeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
-                                    p.bson.toString(),
-                                    p.distance
+                            new ExtraHeuristicEntryDto(
+                                    ExtraHeuristicEntryDto.Type.MONGO,
+                                    ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
+                                    p.mongoCommand.toString(),
+                                    p.mongoDistanceWithMetrics.mongoDistance,
+                                    p.mongoDistanceWithMetrics.numberOfEvaluatedDocuments
                             ))
                     .forEach(h -> dto.heuristics.add(h));
         }
 
         if(mongoHandler.isExtractMongoExecution()){
-            if(!list.isEmpty()) {
-                AdditionalInfo last = list.get(list.size() - 1);
-                last.getMongoCollectionInfoData().forEach(mongoHandler::handle);
+            if(!additionalInfoList.isEmpty()) {
+                AdditionalInfo last = additionalInfoList.get(additionalInfoList.size() - 1);
+                last.getMongoCollectionTypeData().forEach(mongoHandler::handle);
             }
-            dto.mongoExecutionDto = mongoHandler.getExecutionDto();
+            dto.mongoExecutionsDto = mongoHandler.getExecutionDto();
         }
     }
 

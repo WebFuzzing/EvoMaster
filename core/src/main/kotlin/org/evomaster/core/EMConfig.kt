@@ -512,7 +512,7 @@ class EMConfig {
         }
 
         // Clustering constraints: the executive summary is not really meaningful without the clustering
-        if (executiveSummary && testSuiteSplitType != TestSuiteSplitType.CLUSTER) {
+        if (executiveSummary && testSuiteSplitType != TestSuiteSplitType.FAULTS) {
             executiveSummary = false
             LoggingUtil.uniqueUserWarn("The option to turn on Executive Summary is only meaningful when clustering is turned on (--testSuiteSplitType CLUSTERING). " +
                     "The option has been deactivated for this run, to prevent a crash.")
@@ -886,12 +886,12 @@ class EMConfig {
             " of the tested application." +
             " You can get better results by combining this option with `--prematureStop`." +
             " For example, something like `--maxTime 24h --prematureStop 1h` will run the search for 24 hours," +
-            " but the it will stop at any point in time in which there has be no improvement in last hour."
+            " but then it will stop at any point in time in which there has be no improvement in the last hour."
     )
     @Regex(timeRegex)
     var maxTime = defaultMaxTime
 
-    @Experimental
+    @Important(1.01)
     @Cfg("Max amount of time the search is going to wait since last improvement (on metrics we optimize for," +
             " like fault finding and code/schema coverage)." +
             " If there is no improvement within this allotted max time, then the search will be prematurely stopped," +
@@ -899,6 +899,14 @@ class EMConfig {
     @Regex("($timeRegex)|(^$)")
     var prematureStop : String = ""
 
+    enum class PrematureStopStrategy{
+        ANY, NEW
+    }
+
+    @Experimental
+    @Cfg("Specify how 'improvement' is defined: either any kind of improvement even if partial (ANY)," +
+            " or at least one new target is fully covered (NEW).")
+    var prematureStopStrategy = PrematureStopStrategy.NEW
 
     @Important(1.1)
     @Cfg("The path directory of where the generated test classes should be saved to")
@@ -1067,21 +1075,20 @@ class EMConfig {
 
     enum class TestSuiteSplitType {
         NONE,
-        CLUSTER,
-        CODE
+        FAULTS
+        //CODE //This was never properly implemented
     }
 
     @Cfg("Instead of generating a single test file, it could be split in several files, according to different strategies")
-    var testSuiteSplitType = TestSuiteSplitType.CLUSTER
+    var testSuiteSplitType = TestSuiteSplitType.FAULTS
 
     @Experimental
     @Cfg("Specify the maximum number of tests to be generated in one test suite. " +
             "Note that a negative number presents no limit per test suite")
     var maxTestsPerTestSuite = -1
 
-    @Cfg("Generate an executive summary, containing an example of each category of potential fault found." +
-            "NOTE: This option is only meaningful when used in conjuction with clustering. " +
-            "This is achieved by turning the option --testSuiteSplitType to CLUSTER")
+    @Cfg("Generate an executive summary, containing an example of each category of potential faults found." +
+            "NOTE: This option is only meaningful when used in conjunction with test suite splitting.")
     var executiveSummary = true
 
     @Cfg("The Distance Metric Last Line may use several values for epsilon." +
@@ -1116,11 +1123,11 @@ class EMConfig {
 
     @Cfg("Probability of sampling a new individual at random")
     @Probability
-    var probOfRandomSampling = 0.5
+    var probOfRandomSampling = 0.8
 
     @Cfg("The percentage of passed search before starting a more focused, less exploratory one")
     @PercentageAsProbability(true)
-    var focusedSearchActivationTime = 0.5
+    var focusedSearchActivationTime = 0.8
 
     @Cfg("Number of applied mutations on sampled individuals, at the start of the search")
     @Min(0.0)
@@ -1258,7 +1265,7 @@ class EMConfig {
     }
 
     @Cfg("Specify whether when we sample from archive we do look at the most promising targets for which we have had a recent improvement")
-    var feedbackDirectedSampling = FeedbackDirectedSampling.LAST
+    var feedbackDirectedSampling = FeedbackDirectedSampling.FOCUSED_QUICKEST
 
     //Warning: this is off in the tests, as it is a source of non-determinism
     @Cfg("Whether to use timestamp info on the execution time of the tests for sampling (e.g., to reward the quickest ones)")
@@ -1336,7 +1343,7 @@ class EMConfig {
 
     @Cfg("When generating SQL data, how many new rows (max) to generate for each specific SQL Select")
     @Min(1.0)
-    var maxSqlInitActionsPerMissingData = 5
+    var maxSqlInitActionsPerMissingData = 1
 
 
     @Cfg("Force filling data of all columns when inserting new row, instead of only minimal required set.")
@@ -1529,7 +1536,7 @@ class EMConfig {
 
     @Cfg("Specify a probability to apply SQL actions for preparing resources for REST Action")
     @Probability
-    var probOfApplySQLActionToCreateResources = 0.5
+    var probOfApplySQLActionToCreateResources = 0.1
 
     @Experimental
     @Cfg("Specify a maximum number of handling (remove/add) resource size at once, e.g., add 3 resource at most")
@@ -1854,7 +1861,7 @@ class EMConfig {
 
     @Cfg("Probability to use input tracking (i.e., a simple base form of taint-analysis) to determine how inputs are used in the SUT")
     @Probability
-    var baseTaintAnalysisProbability = 0.9
+    var baseTaintAnalysisProbability = 0.5
 
     @Cfg("Whether input tracking is used on sampling time, besides mutation time")
     var taintOnSampling = true
@@ -1898,6 +1905,7 @@ class EMConfig {
     var maxLengthForStringsAtSamplingTime = 16
 
 
+    @Deprecated("Should not use this option any more, but rather run proper BB experiments")
     @Cfg("Only used when running experiments for black-box mode, where an EvoMaster Driver would be present, and can reset state after each experiment")
     var bbExperiments = false
 

@@ -18,7 +18,7 @@ import io.swagger.v3.oas.models.parameters.RequestBody
 import io.swagger.v3.oas.models.responses.ApiResponse
 import io.swagger.v3.oas.models.responses.ApiResponses
 import org.evomaster.client.java.controller.api.dto.*
-import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto
+import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionsDto
 import org.evomaster.client.java.controller.api.dto.database.operations.*
 import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto
 import org.evomaster.client.java.sql.SqlScriptRunner
@@ -187,7 +187,7 @@ abstract class RestIndividualTestBase {
             val ind = getSampler().sample()
 
             assertEquals(0, ind.seeInitializingActions().size)
-            if (ind.seeDbActions().isNotEmpty()){
+            if (ind.seeSqlDbActions().isNotEmpty()){
                 // all db actions should be before rest actions
                 ind.getResourceCalls().forEach { r->
                     val dbIndexes = r.getIndexedChildren(SqlAction::class.java).keys
@@ -212,7 +212,7 @@ abstract class RestIndividualTestBase {
         config.maxActionEvaluations = iteration
 
         val ind = getSampler().sample()
-        var eval = getFitnessFunction().calculateCoverage(ind)
+        var eval = getFitnessFunction().calculateCoverage(ind, modifiedSpec = null)
         assertNotNull(eval)
 
         var evaluated = 0
@@ -601,7 +601,7 @@ abstract class RestIndividualTestBase {
                 extraHeuristics = (0 until executedActionCounter).map {
                     ExtraHeuristicsDto().apply {
                         if (employFakeDbHeuristicResult && randomness.nextBoolean()){
-                            databaseExecutionDto = org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto()
+                            sqlSqlExecutionsDto = SqlExecutionsDto()
                                 .apply {
                                 val table = randomness.choose( sqlInsertBuilder!!.getTableNames())
                                 val failed = randomness.choose(sqlInsertBuilder!!.getTable(table,true).columns.map { it.name })

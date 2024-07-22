@@ -122,6 +122,16 @@ class Lines(val format: OutputFormat) {
         }
     }
 
+    fun addSingleCommentLine(line: String) {
+        val commentToken = singleCommentLineToken()
+        add(commentToken + line)
+    }
+
+    fun appendSingleCommentLine(line: String) {
+        val commentToken = singleCommentLineToken()
+        append(commentToken + line)
+    }
+
     override fun toString(): String {
         val s = StringBuffer(buffer.sumOf{it.length + 2})
         buffer.forEach { v -> s.append("$v\n") }
@@ -137,6 +147,10 @@ class Lines(val format: OutputFormat) {
         val buffer = StringBuffer("")
         (1..n).forEach { buffer.append(" ") }
         return buffer.toString()
+    }
+
+    private fun singleCommentLineToken(): String {
+        return if (format.isPython()) "# " else "// "
     }
 
 }

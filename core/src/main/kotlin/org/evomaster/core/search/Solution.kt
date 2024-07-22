@@ -4,7 +4,7 @@ import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.output.Termination
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
-import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
+import org.evomaster.core.search.action.ActionFilter
 
 
 class Solution<T>(
@@ -42,7 +42,12 @@ where T : Individual {
     }
 
     fun needWireMockServers() : Boolean{
-        return individuals.any { ind -> ind.individual.seeInitializingActions().any { a ->  a is HostnameResolutionAction } }
+        return hasAnyHostnameResolutionAction()
+        // The following was wrong... could have SUT connecting to WM without any mocked response,
+        // which would result in no action in the tests
+//        return individuals.any { ind ->
+//            ind.individual.seeActions(ActionFilter.ONLY_EXTERNAL_SERVICE).isNotEmpty()
+//        }
     }
 
     private fun hasAnyHostnameResolutionAction(): Boolean {
@@ -72,7 +77,7 @@ where T : Individual {
      * Add a function which sets the termination criteria
      */
     fun convertSolutionToExecutiveSummary() : Solution<T> {
-        return Solution(individuals, testSuiteNamePrefix, testSuiteNameSuffix, Termination.SUMMARY,
+        return Solution(individuals, testSuiteNamePrefix, testSuiteNameSuffix, Termination.FAULT_REPRESENTATIVES,
             individualsDuringSeeding, targetsDuringSeeding)
     }
 }

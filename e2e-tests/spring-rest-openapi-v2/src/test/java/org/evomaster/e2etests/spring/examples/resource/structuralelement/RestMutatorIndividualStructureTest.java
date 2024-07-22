@@ -4,7 +4,7 @@ import com.google.inject.Injector;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.problem.rest.service.ResourceRestMutator;
 import org.evomaster.core.problem.rest.service.ResourceSampler;
-import org.evomaster.core.problem.rest.service.RestResourceFitness;
+import org.evomaster.core.problem.rest.service.ResourceRestFitness;
 import org.evomaster.core.search.EvaluatedIndividual;
 import org.evomaster.e2etests.spring.examples.resource.ResourceMIOHWTestBase;
 import org.junit.jupiter.api.Test;
@@ -30,12 +30,12 @@ public class RestMutatorIndividualStructureTest extends ResourceMIOHWTestBase {
 
         ResourceSampler sampler = injector.getInstance(ResourceSampler.class);
         ResourceRestMutator mutator = injector.getInstance(ResourceRestMutator.class);
-        RestResourceFitness ff= injector.getInstance(RestResourceFitness.class);
+        ResourceRestFitness ff= injector.getInstance(ResourceRestFitness.class);
 
         for (int i = 0; i < 50; i++){
 
             RestIndividual ind = sampler.sample(false);
-            EvaluatedIndividual<RestIndividual> eind = ff.calculateCoverage(ind, new HashSet<>());
+            EvaluatedIndividual<RestIndividual> eind = ff.calculateCoverage(ind, new HashSet<>(), null);
             assertFalse(ind.getViewOfChildren().isEmpty());
 
 

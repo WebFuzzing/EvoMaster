@@ -3,16 +3,21 @@
 Under development in `master` branch.
 
 ### New Features
+- support for JDK 21
 - body payloads for GET, HEAD and DELETE are not valid in OpenAPI. However, they can be valid in some special cases in HTTP (as of RFC 9110). Now, EvoMaster can test those cases as well, but only for DELETE (for GET it is not possible, as current version of HTTP library in EvoMaster is faulty, i.e., it cannot handle such case).
+- update of internal parameter settings to improve performance, based on large tuning experiments. 
+- --prematureStop option can now be used to stop search prematurely if no improvement has been obtained in the last specified amount of time 
 
 ### Bug Fixes
 - better dealing with reset of SQL tables where names in queries used quotes, and/or table is not accessible in database.
 - fixed issue related to SQL insertion failures preventing all SQL insertions from being part of the generated tests, leading to flaky tests.
+- fixed handling of JsonProperty
 
 ### Addressed GitHub Issues
 - #834: Authentication required when accessing schema
 - #957: Generated test cases fail due to 'checkInstrumentation' 
 - #962: Fail to parse endpoint due to body.content must not be null when requestBody has $ref
+- #988: Is it normal that EvoMaster combined "sucess" and "other" tests into "fault_representatives"?
 
 ---
 # Version: 3.0.0

@@ -4,7 +4,7 @@ import io.restassured.http.ContentType;
 import org.evomaster.client.java.controller.DatabaseTestTemplate;
 import org.evomaster.client.java.controller.InstrumentedSutStarter;
 import org.evomaster.client.java.controller.api.dto.TestResultsDto;
-import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto;
+import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionsDto;
 import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public interface SqlHandlerInDBTest extends DatabaseTestTemplate {
 
-    default ExecutionDto getSqlExecutionDto(int index, String url) {
+    default SqlExecutionsDto getSqlExecutionDto(int index, String url) {
 
         TestResultsDto dto = RestAssured.given().accept(ContentType.JSON)
                 .get(url + ControllerConstants.TEST_RESULTS)
@@ -34,7 +34,7 @@ public interface SqlHandlerInDBTest extends DatabaseTestTemplate {
                 //.extraHeuristics["+index+"].databaseExecutionDto
                 .getObject("data", TestResultsDto.class);
 
-        return dto.extraHeuristics.get(index).databaseExecutionDto;
+        return dto.extraHeuristics.get(index).sqlSqlExecutionsDto;
     }
 
     @Test
@@ -48,7 +48,7 @@ public interface SqlHandlerInDBTest extends DatabaseTestTemplate {
 
         String command = "DELETE FROM Foo";
         try {
-            ExecutionDto dto = executeCommand(starter, command, true);
+            SqlExecutionsDto dto = executeCommand(starter, command, true);
 
             assertNotNull(dto);
             assertNotNull(dto.deletedData);
@@ -73,7 +73,7 @@ public interface SqlHandlerInDBTest extends DatabaseTestTemplate {
         InstrumentedSutStarter starter = getInstrumentedSutStarter();
         String command = "INSERT INTO Foo (x) VALUES (42)";
         try {
-            ExecutionDto dto = executeCommand(starter, command, true);
+            SqlExecutionsDto dto = executeCommand(starter, command, true);
 
             assertNotNull(dto);
             assertNotNull(dto.insertedData);
@@ -97,7 +97,7 @@ public interface SqlHandlerInDBTest extends DatabaseTestTemplate {
         InstrumentedSutStarter starter = getInstrumentedSutStarter();
         String command = "UPDATE Foo SET x = 42";
         try {
-            ExecutionDto dto = executeCommand(starter, command, true);
+            SqlExecutionsDto dto = executeCommand(starter, command, true);
 
             assertNotNull(dto);
             assertNotNull(dto.updatedData);
@@ -113,9 +113,9 @@ public interface SqlHandlerInDBTest extends DatabaseTestTemplate {
     }
 
 
-    default ExecutionDto executeCommand(InstrumentedSutStarter starter, String sqlCommand, boolean instrumented) throws SQLException {
+    default SqlExecutionsDto executeCommand(InstrumentedSutStarter starter, String sqlCommand, boolean instrumented) throws SQLException {
         String url = startInstrumentedSutStarterAndNewTest(starter);
-        ExecutionDto dto = getSqlExecutionDto(0, url);
+        SqlExecutionsDto dto = getSqlExecutionDto(0, url);
 
         assertDataIsEmpty(dto);
 
@@ -126,7 +126,7 @@ public interface SqlHandlerInDBTest extends DatabaseTestTemplate {
         return getSqlExecutionDto(1, url);
     }
 
-    default void assertDataIsEmpty(ExecutionDto dto) {
+    default void assertDataIsEmpty(SqlExecutionsDto dto) {
         assertUpdatedDataIsEmpty(dto);
         assertDeletedDataIsEmpty(dto);
         assertInsertedDataIsEmpty(dto);
@@ -140,15 +140,15 @@ public interface SqlHandlerInDBTest extends DatabaseTestTemplate {
         return url;
     }
 
-    default void assertUpdatedDataIsEmpty(ExecutionDto dto) {
+    default void assertUpdatedDataIsEmpty(SqlExecutionsDto dto) {
         assertTrue(dto == null || dto.updatedData == null || dto.updatedData.isEmpty());
     }
 
-    default void assertDeletedDataIsEmpty(ExecutionDto dto) {
+    default void assertDeletedDataIsEmpty(SqlExecutionsDto dto) {
         assertTrue(dto == null || dto.deletedData == null || dto.deletedData.isEmpty());
     }
 
-    default void assertInsertedDataIsEmpty(ExecutionDto dto) {
+    default void assertInsertedDataIsEmpty(SqlExecutionsDto dto) {
         assertTrue(dto == null || dto.insertedData == null || dto.insertedData.isEmpty());
     }
 }

@@ -1,7 +1,7 @@
 package org.evomaster.client.java.controller.internal.db.sql.h2;
 
 import org.evomaster.client.java.controller.InstrumentedSutStarter;
-import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto;
+import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionsDto;
 import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.evomaster.client.java.controller.internal.SutController;
 import org.evomaster.client.java.controller.internal.db.sql.SqlHandlerInDBTest;
@@ -29,13 +29,13 @@ public class SqlHandlerInH2DBTest extends DatabaseH2TestInit implements SqlHandl
 
         try {
 
-            ExecutionDto dto = executeCommand(starter, "SELECT nextval('foo_id_seq')", true);
+            SqlExecutionsDto dto = executeCommand(starter, "SELECT nextval('foo_id_seq')", true);
 
             assertNotNull(dto);
             assertNotNull(dto.queriedData);
             assertEquals(0, dto.queriedData.size());
 
-            ExecutionDto dto2 = executeCommand(starter, "SELECT currval('foo_id_seq')", true);
+            SqlExecutionsDto dto2 = executeCommand(starter, "SELECT currval('foo_id_seq')", true);
             assertNotNull(dto2);
             assertNotNull(dto2.queriedData);
             assertEquals(0, dto2.queriedData.size());
