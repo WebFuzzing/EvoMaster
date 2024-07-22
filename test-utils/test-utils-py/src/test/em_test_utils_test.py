@@ -37,9 +37,7 @@ class EvoMaster_EM_Test_Utils_Test(unittest.TestCase):
 
         res = resolve_location(location, template)
 
-        # TODO yet another difference between Java and JS handling of URIs... should check specs to see which one is correct
-        # print(res)
-        # assert res == location
+        assert res == "http://localhost:12345/a/%2252%22"
     
 
     def test_is_valid_URI(self):

@@ -1,4 +1,4 @@
-from urllib.parse import urlparse
+from urllib.parse import urlparse, quote
 from rfc3986 import validators, uri_reference
 
 def resolve_location(location_header: str, expected_template: str) -> str:
@@ -6,7 +6,7 @@ def resolve_location(location_header: str, expected_template: str) -> str:
         return expected_template
 
     location_uri = urlparse(location_header)
-    location_path = location_uri.path
+    location_path = quote(location_uri.path)
     location_tokens = location_path.split('/')
 
     normalized_template = expected_template.replace('{', '').replace('}', '')
