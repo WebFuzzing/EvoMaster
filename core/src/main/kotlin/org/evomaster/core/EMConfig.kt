@@ -2406,11 +2406,11 @@ class EMConfig {
 
     /**
      * Check if the used algorithm is MIO.
-     * MIO is the default search algorithm in EM.
+     * MIO is the default search algorithm in EM for white-box testing.
      * Many techniques in EM are defined only for MIO, ie most improvements in EM are
      * done as an extension of MIO.
      */
-    fun isMIO() = algorithm == Algorithm.MIO
+    fun isMIO() = algorithm == Algorithm.MIO || (algorithm == Algorithm.DEFAULT && !blackBox)
 
     fun isEnabledTaintAnalysis() = isMIO() && baseTaintAnalysisProbability > 0
 
