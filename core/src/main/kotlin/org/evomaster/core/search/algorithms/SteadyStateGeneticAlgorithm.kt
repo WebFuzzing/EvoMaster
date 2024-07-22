@@ -9,7 +9,7 @@ import kotlin.math.max
 /**
  * An implementation of the Steady State GA
  */
-class SteadyStateGeneticAlgorithm<T> : WtsAlgorithm<T>() where T : Individual {
+class SteadyStateGeneticAlgorithm<T> : StandardGeneticAlgorithm<T>() where T : Individual {
     private val population: MutableList<WtsEvalIndividual<T>> = mutableListOf()
 
     override fun getType(): EMConfig.Algorithm {

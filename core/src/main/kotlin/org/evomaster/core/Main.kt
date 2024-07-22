@@ -538,6 +538,9 @@ class Main {
                 config.algorithm == EMConfig.Algorithm.MOSA ->
                     Key.get(object : TypeLiteral<MosaAlgorithm<RestIndividual>>() {})
 
+                config.algorithm == EMConfig.Algorithm.StandardGA ->
+                    Key.get(object : TypeLiteral<StandardGeneticAlgorithm<RestIndividual>>() {})
+
                 config.algorithm == EMConfig.Algorithm.MonotonicGA ->
                     Key.get(object : TypeLiteral<MonotonicGeneticAlgorithm<RestIndividual>>() {})
 

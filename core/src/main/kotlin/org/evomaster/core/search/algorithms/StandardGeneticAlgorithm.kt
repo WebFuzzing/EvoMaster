@@ -6,20 +6,9 @@ import org.evomaster.core.search.algorithms.wts.WtsEvalIndividual
 import org.evomaster.core.search.service.SearchAlgorithm
 
 /**
- * An implementation of the Whole Test Suite (WTS) algorithm,
- * as used in EvoSuite.
- * <br>
- * Each individual is a set of test cases (ie a test suite),
- * and we use a population algorithm as Genetic Algorithm (GA).
- * But still use an archive to do not lose best individuals.
- * <br>
- * Note: unless some unknown side-effect, or bug, WTS would be
- * worse than MIO on average.
- * This implementation was written mainly to run experiments on comparisons
- * of search algorithms, and not really something to
- * use regularly in EvoMaster
+ * An implementation of the Standard Genetic algorithm,
  */
-open class WtsAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
+open class StandardGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
 
     private val population: MutableList<WtsEvalIndividual<T>> = mutableListOf()
@@ -69,7 +58,7 @@ open class WtsAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
             population.addAll(nextPop)
     }
 
-    private fun mutate(wts: WtsEvalIndividual<T>) {
+    protected fun mutate(wts: WtsEvalIndividual<T>) {
 
         val op = randomness.choose(listOf("del", "add", "mod"))
         val n = wts.suite.size
@@ -94,7 +83,7 @@ open class WtsAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
         }
     }
 
-    private fun selection(): WtsEvalIndividual<T> {
+    protected fun selection(): WtsEvalIndividual<T> {
 
         val x = randomness.choose(population)
         val y = randomness.choose(population)
@@ -127,7 +116,7 @@ open class WtsAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
         }
     }
 
-    private fun initPopulation() {
+    protected fun initPopulation() {
 
         val n = config.populationSize
 
