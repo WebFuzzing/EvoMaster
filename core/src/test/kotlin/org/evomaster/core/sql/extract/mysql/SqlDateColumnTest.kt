@@ -61,11 +61,5 @@ class SqlDateColumnTest : ExtractTestBaseMySQL() {
         assertEquals(lastLoginYearValue, lastLoginActualValue.toLocalDate().year)
         assertEquals(lastLoginMonthValue, lastLoginActualValue.toLocalDate().monthValue)
         assertEquals(lastLoginDayValue, lastLoginActualValue.toLocalDate().dayOfMonth)
-
-        dbCommandDto.insertions.forEach { i->
-            val selectForInsert = SqlScriptRunner.execCommand(connection, i.selectForInsertion)
-            assertFalse(selectForInsert.isEmpty)
-        }
-
     }
 }

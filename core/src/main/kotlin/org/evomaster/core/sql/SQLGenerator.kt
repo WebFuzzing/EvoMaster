@@ -82,8 +82,7 @@ class SQLGenerator{
                 ColumnDataType.CHARACTER_LARGE_OBJECT,
                 ColumnDataType.CHARACTER_VARYING,
                 ColumnDataType.VARCHAR_IGNORECASE,
-                ColumnDataType.VARCHAR,
-                ColumnDataType.TEXT -> equalCondition(col.name, "\'$value\'")
+                ColumnDataType.VARCHAR -> equalCondition(col.name, "\'$value\'")
                 else -> {
                     ""
                     //TODO("not sure whether to handle the types, i.e., TIMESTAMP, VARBINARY, CLOB, BLOB")
@@ -96,7 +95,7 @@ class SQLGenerator{
         /**
          * select rows of specified columns with constraints, i.e., SELECT * FROM TABLE WHERE CONDITION
          */
-        fun genSelect(col : String, table: Table, condition: String? = null):String {
+        private  fun genSelect(col : String, table: Table, condition: String? = null):String {
             val sql = "${SQLKey.SELECT.key} $col ${SQLKey.FROM} ${table.name}"
             if(condition == null || condition.isBlank()) return sql
             return sql +" " + SQLKey.WHERE.key+ " "+ condition

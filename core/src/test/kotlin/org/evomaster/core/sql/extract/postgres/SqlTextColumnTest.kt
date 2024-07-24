@@ -9,7 +9,6 @@ import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.optional.NullableGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.string.StringGene
-import org.evomaster.core.sql.extract.mysql.ExtractTestBaseMySQL
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
