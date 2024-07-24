@@ -104,6 +104,11 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
 
     /**
+     * record sql insertions which have been executed successfully for initializing data in database
+     */
+    private final List<InsertionDto> successfulInitSqlInsertions = new CopyOnWriteArrayList<>();
+
+    /**
      * a map of table to fk target tables
      */
     private final Map<String, List<String>> fkMap = new ConcurrentHashMap<>();
@@ -570,6 +575,14 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         accessedTables.addAll(tables);
     }
 
+    /**
+     * collect info about init sql insertion which has been executed succesfully
+     * @param insertionDto a dto for sql insertion
+     */
+    public void addSuccessfulInitSqlInsertion(InsertionDto insertionDto){
+        successfulInitSqlInsertions.add(insertionDto);
+    }
+
     private void getTableToClean(List<String> accessedTables, List<String> tablesToClean){
         for (String t: accessedTables){
             if (!findInCollectionIgnoreCase(t, tablesToClean).isPresent()){
@@ -886,6 +899,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
         //clean all accessed table in a test
         accessedTables.clear();
+        successfulInitSqlInsertions.clear();
 
         newTestSpecificHandler();
 

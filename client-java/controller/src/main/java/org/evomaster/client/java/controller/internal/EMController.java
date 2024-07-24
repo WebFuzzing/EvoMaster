@@ -733,14 +733,21 @@ public class EMController {
             }
 
             QueryResult queryResult = null;
-            InsertionResultsDto insertionResultsDto = null;
+            final InsertionResultsDto insertionResultsDto;
 
 
             try {
                 if (dto.command != null) {
+                    insertionResultsDto = null;
                     queryResult = SqlScriptRunner.execCommand(connection, dto.command);
                 } else {
                     insertionResultsDto = SqlScriptRunner.execInsert(connection, dto.insertions);
+                    noKillSwitch(() -> {
+                        for (int i = 0; i < insertionResultsDto.executionResults.size(); i++) {
+                            if (insertionResultsDto.executionResults.get(i))
+                                sutController.addSuccessfulInitSqlInsertion(dto.insertions.get(i));
+                        }
+                    });
                 }
             } catch (Exception e) {
                 String msg = "Failed to execute database command: " + e.getMessage();
