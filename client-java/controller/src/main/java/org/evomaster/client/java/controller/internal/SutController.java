@@ -408,7 +408,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             accessedTables.addAll(sqlExecutionsDto.deletedData);
             accessedTables.addAll(sqlExecutionsDto.insertedData.keySet());
             //accessedTables.addAll(executionDto.queriedData.keySet());
-            accessedTables.addAll(sqlExecutionsDto.insertedData.keySet());
+//            accessedTables.addAll(sqlExecutionsDto.insertedData.keySet());
             accessedTables.addAll(sqlExecutionsDto.updatedData.keySet());
         }
     }
