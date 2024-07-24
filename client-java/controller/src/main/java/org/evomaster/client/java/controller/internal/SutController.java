@@ -899,6 +899,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
         //clean all accessed table in a test
         accessedTables.clear();
+
+        //clean collected info for successful init sql insertion
         successfulInitSqlInsertions.clear();
 
         newTestSpecificHandler();
