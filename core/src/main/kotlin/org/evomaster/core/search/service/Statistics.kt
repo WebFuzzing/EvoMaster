@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Paths
 import javax.annotation.PostConstruct
+import kotlin.Double.Companion.NaN
 
 
 class Statistics : SearchListener {
@@ -28,7 +29,7 @@ class Statistics : SearchListener {
         const val DISTINCT_ACTIONS = "distinctActions"
         const val COVERED_2XX = "covered2xx"
         const val GQL_NO_ERRORS = "gqlNoErrors"
-        const val LAST_ACTION_IMPROVEMENT = "lastActionImprovement";
+        const val LAST_ACTION_IMPROVEMENT = "lastActionImprovement"
         const val EVALUATED_ACTIONS = "evaluatedActions"
     }
 
@@ -62,6 +63,19 @@ class Statistics : SearchListener {
      * How often it was not possible to compute coverage for a test
      */
     private var coverageFailures = 0
+
+    private var sqlHeuristicsEvaluationCount = 0
+
+    fun getSqlHeuristicsEvaluationCount(): Int = sqlHeuristicsEvaluationCount
+
+    private var sqlHeuristicsTotalNumberOfEvaluatedRows = 0
+
+    private var mongoHeuristicsEvaluationCount = 0
+
+    fun getMongoHeuristicsEvaluationCount(): Int = mongoHeuristicsEvaluationCount
+
+    private var mongoHeuristicsTotalNumberOfEvaluatedDocuments = 0
+
 
 
    class Pair(val header: String, val element: String)
@@ -142,6 +156,28 @@ class Statistics : SearchListener {
         coverageFailures++
     }
 
+    fun reportNumberOfEvaluatedRowsForSqlHeuristic(numberOfEvaluatedRows: Int) {
+        sqlHeuristicsTotalNumberOfEvaluatedRows += numberOfEvaluatedRows
+        sqlHeuristicsEvaluationCount ++
+    }
+
+    fun reportNumberOfEvaluatedDocumentsForMongoHeuristic(numberOfEvaluatedDocuments: Int) {
+        mongoHeuristicsTotalNumberOfEvaluatedDocuments += numberOfEvaluatedDocuments
+        mongoHeuristicsEvaluationCount++
+    }
+
+    fun averageNumberOfEvaluatedRowsForSqlHeuristics(): Double = if (sqlHeuristicsEvaluationCount==0) {
+        NaN
+    } else {
+        sqlHeuristicsTotalNumberOfEvaluatedRows.toDouble() / sqlHeuristicsEvaluationCount.toDouble()
+    }
+
+    fun averageNumberOfEvaluatedDocumentsForMongoHeuristics(): Double = if (mongoHeuristicsEvaluationCount==0) {
+        NaN
+    } else {
+        mongoHeuristicsTotalNumberOfEvaluatedDocuments.toDouble() / mongoHeuristicsEvaluationCount.toDouble()
+    }
+
     override fun newActionEvaluated() {
         if (snapshotThreshold <= 0) {
             //not collecting snapshot data
@@ -213,7 +249,7 @@ class Statistics : SearchListener {
             // However, 5xx are not counted here.
             add(Pair("failedOracleExpectations", "" + failedOracle(solution)))
             /**
-             * this is the total of all potential faults, eg distinct500Faults + failedOracleExpectations + any other
+             * this is the total of all potential faults, e.g. distinct500Faults + failedOracleExpectations + any other
              * for RPC, this comprises internal errors, exceptions (declared and unexpected) and customized service errors
              */
             //potential oracle we are going to introduce.
@@ -275,6 +311,15 @@ class Statistics : SearchListener {
             add(Pair("coverageFailures", "$coverageFailures"))
             add(Pair("clusteringTime", "${solution.clusteringTime}"))
             add(Pair("id", config.statisticsColumnId))
+
+            // statistics info for Mongo Heuristics
+            add(Pair("averageNumberOfEvaluatedDocumentsForMongoHeuristics","${averageNumberOfEvaluatedDocumentsForMongoHeuristics()}"))
+            add(Pair("mongoHeuristicsEvaluationCount","$mongoHeuristicsEvaluationCount"))
+
+            // statistics info for SQL Heuristics
+            add(Pair("averageNumberOfEvaluatedRowsForSqlHeuristics","${averageNumberOfEvaluatedRowsForSqlHeuristics()}"))
+            add(Pair("sqlHeuristicsEvaluationCount","$sqlHeuristicsEvaluationCount"))
+
         }
         addConfig(list)
 
@@ -414,4 +459,5 @@ class Statistics : SearchListener {
         }
         return content
     }
+
 }

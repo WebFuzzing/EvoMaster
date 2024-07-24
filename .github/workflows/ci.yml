@@ -42,7 +42,7 @@ env:
   build-jdk: 1.8
   retention-days: 5
   debug: false  # put to true if need to debug a specific test
-  debugTestName: "AuthZeroJacksonEMTest" # replace with test to debug
+  debugTestName: "H2ColumnTypesEMTest" # replace with test to debug
 
 # This build is quite expensive (some hours), so we run it whole only on some JVM versions and OSs.
 # For the moment, we need to support JVM 8 and all following LTS versions (e.g, 11 and  17).
@@ -226,74 +226,7 @@ jobs:
           MAVEN_OPTS: "--add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED"
 
 
-  nodejs:
-    needs: full-build-base
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      # Build/test for JavaScript
-      - name: Use Node.js
-        uses: actions/setup-node@v1
-        with:
-          node-version: 14.x
-      - run: npm ci
-        working-directory: ./client-js/evomaster-client-js
-      - run: npm run build
-        working-directory: ./client-js/evomaster-client-js
-      - run: npm run test
-        working-directory: ./client-js/evomaster-client-js
-      - run: npm ci
-        working-directory: ./client-js/integration-tests
-      - run: npm run build
-        working-directory: ./client-js/integration-tests
-      - run: npm run test
-        working-directory: ./client-js/integration-tests
-      - name: Setup JDK ${{env.build-jdk}}
-        uses: actions/setup-java@v1
-        with:
-            java-version: ${{env.build-jdk}}
-      - name: Download fat jar
-        uses: actions/download-artifact@v3
-        with:
-          name: evomaster.jar
-          path: core/target
-      ### NOTE: we no longer run this, as NodeJS for backend no longer supported.
-      ### This started to fail once introduced first version of "minimization", as JS driver would need
-      ### to be updated with new features to support it
-      # E2E for JS. Must be run AFTER the JS and Core builds
-#      - name: E2E for JavaScript
-#        run:  bash ./client-js/e2e-tests/e2e.sh
 
-### TODO currently disabled, as it takes forever on CI (1-2 hours...), compared to few minutes on local machine.
-### Need to find out why
-#  dotnet:
-#    needs: base
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@v2
-#      # Build/test for .Net
-#      - name: Setup .NET Core
-#        uses: actions/setup-dotnet@v1
-#        with:
-#          dotnet-version: 3.1.x
-#      - name: Clean .NET
-#        run: dotnet clean
-#      - name: Build with .NET
-#        run: dotnet build --configuration Release
-#      - name: Unit tests for .NET
-#        run: dotnet test
-#      - name: Setup JDK ${{env.build-jdk}}
-#        uses: actions/setup-java@v1
-#        with:
-#          java-version: ${{env.build-jdk}}
-#      - name: Download fat jar
-#        uses: actions/download-artifact@v2
-#        with:
-#          name: evomaster.jar
-#          path: core/target
-#      # E2E for C#. Must be run AFTER the C# and Core builds
-#      - name: E2E for C#
-#        run:  bash ./e2e-tests/dotnet-rest/scripts/e2e.sh
 
 
 
@@ -378,4 +311,17 @@ jobs:
           if-no-files-found: error
 
 
+  test-utils-js:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+        working-directory: ./test-utils/test-utils-js
+      - run: npm test
+        working-directory: ./test-utils/test-utils-js
 
+# TODO need to do the same for test-utils-py

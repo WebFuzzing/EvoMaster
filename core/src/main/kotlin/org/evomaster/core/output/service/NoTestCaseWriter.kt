@@ -7,7 +7,7 @@ import org.evomaster.core.search.EvaluatedIndividual
 import java.nio.file.Path
 
 class NoTestCaseWriter : TestCaseWriter() {
-    override fun handleFieldDeclarations(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>) {
+    override fun handleTestInitialization(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>) {
         // empty
     }
 
