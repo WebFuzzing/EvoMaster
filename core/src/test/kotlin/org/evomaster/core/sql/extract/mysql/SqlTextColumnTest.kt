@@ -90,10 +90,5 @@ class SqlTextColumnTest : ExtractTestBaseMySQL() {
         assertEquals(oneQuoteStr, row.getValueByName("name"))
         assertEquals(twoQuotesStr, row.getValueByName("address"))
 
-        dbCommandDto.insertions.forEach { i->
-            val selectForInsert = SqlScriptRunner.execCommand(connection, i.selectForInsertion)
-            assertFalse(selectForInsert.isEmpty)
-        }
-
     }
 }

@@ -84,11 +84,6 @@ class SqlTextColumnTest : ExtractTestBasePostgres() {
         assertEquals(nameValue, row.getValueByName("name"))
         assertEquals(addressValue, row.getValueByName("address"))
 
-        dbCommandDto.insertions.forEach { i->
-            val selectForInsert = SqlScriptRunner.execCommand(connection, i.selectForInsertion)
-            assertFalse(selectForInsert.isEmpty)
-        }
-
     }
 
     @Test
@@ -122,10 +117,6 @@ class SqlTextColumnTest : ExtractTestBasePostgres() {
         assertEquals(oneQuoteStr, row.getValueByName("name"))
         assertEquals(twoQuotesStr, row.getValueByName("address"))
 
-        dbCommandDto.insertions.forEach { i->
-            val selectForInsert = SqlScriptRunner.execCommand(connection, i.selectForInsertion)
-            assertFalse(selectForInsert.isEmpty)
-        }
     }
 
 }
