@@ -2321,6 +2321,9 @@ class EMConfig {
             " This is for white-box (wb) mode")
     var wbProbabilityUseDataPool = 0.2
 
+    @Cfg(description = "Number of elite individuals to be preserved when forming the next population in the genetic algorithm")
+    @Min(0.0)
+    var elitesCount: Int = 1
 
     fun getProbabilityUseDataPool() : Double{
         return if(blackBox){
