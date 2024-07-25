@@ -29,16 +29,11 @@ public class BsonDocumentWithoutMREMTest extends RestTestBase {
                 "org.foo.spring.rest.mongo.document.DocumentEMGeneration",
                 1000,
                 (args) -> {
-                    args.add("--enableWeightBasedMutationRateSelectionForGene");
-                    args.add("false");
-                    args.add("--heuristicsForMongo");
-                    args.add("false");
-                    args.add("--instrumentMR_MONGO");
-                    args.add("false");
-                    args.add("--generateMongoData");
-                    args.add("false");
-                    args.add("--extractMongoExecutionInfo");
-                    args.add("false");
+                    setOption(args,"enableWeightBasedMutationRateSelectionForGene","false");
+                    setOption(args,"heuristicsForMongo","false");
+                    setOption(args,"instrumentMR_MONGO","false");
+                    setOption(args,"generateMongoData","false");
+                    setOption(args,"extractMongoExecutionInfo","false");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 

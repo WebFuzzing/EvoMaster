@@ -6,6 +6,8 @@ import org.evomaster.client.java.instrumentation.AdditionalInfo;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
 import org.evomaster.client.java.instrumentation.shared.TaintInputName;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -20,6 +22,14 @@ public class DocumentClassReplacementTest {
     @BeforeEach
     public void setUp() {
         ExecutionTracer.reset();
+        UnitsInfoRecorder.reset();
+        UnitsInfoRecorder.getInstance().registerClassLoader("org.bson.Document", Document.class.getClassLoader());
+    }
+
+    @AfterEach
+    public void resetTracers() {
+        ExecutionTracer.reset();
+        UnitsInfoRecorder.reset();
     }
 
     @Test

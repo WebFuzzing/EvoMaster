@@ -12,6 +12,8 @@ import java.lang.reflect.Method;
 
 public class DocumentClassReplacement extends ThirdPartyMethodReplacementClass {
 
+    private static final DocumentClassReplacement singleton = new DocumentClassReplacement();
+
     public static final String ORG_BSON_DOCUMENT = "org.bson.Document";
 
     @Override
@@ -24,33 +26,27 @@ public class DocumentClassReplacement extends ThirdPartyMethodReplacementClass {
             id = "Document_parse_String",
             usageFilter = UsageFilter.ANY,
             category = ReplacementCategory.MONGO,
-            castTo = "org.bson.Document")
+            castTo = ORG_BSON_DOCUMENT)
     public static Object parse(String json) {
-        // Load the Document class
-        Class<?> documentClass;
-        try {
-            documentClass = Class.forName("org.bson.Document");
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-
-        JsonTaint.handlePossibleJsonTaint(json,documentClass);
 
         // Get the parse method which takes a String as argument
-        Method parseMethod;
-        try {
-            parseMethod = documentClass.getDeclaredMethod("parse", String.class);
-        } catch (NoSuchMethodException e) {
-            throw new RuntimeException(e);
-        }
+        final Method documentParseMethod = getOriginalStaticMethod(singleton,"Document_parse_String");
+
+        // Get the org.bson.Document class
+        final Class<?> documentClass = documentParseMethod.getDeclaringClass();
+
+        // register the taint for JSON format in this method
+        JsonTaint.handlePossibleJsonTaint(json, documentClass);
 
         // Invoke the parse method and get the result
         try {
-            return parseMethod.invoke(null, json);
+            return documentParseMethod.invoke(null, json);
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {
             throw (RuntimeException) e.getCause();
         }
     }
+
+
 }
