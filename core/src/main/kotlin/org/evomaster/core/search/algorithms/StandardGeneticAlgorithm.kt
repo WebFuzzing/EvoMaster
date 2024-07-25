@@ -23,39 +23,49 @@ open class StandardGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Individu
         initPopulation()
     }
 
+    protected fun formTheNextPopulation(enableElitism: Boolean = true): MutableList<WtsEvalIndividual<T>> {
+
+        val nextPop: MutableList<WtsEvalIndividual<T>> = mutableListOf()
+
+        if (enableElitism) {
+            var sortedPopulation = population.sortedByDescending { it.calculateCombinedFitness() }
+
+            var elites = sortedPopulation.take(config.elitesCount)
+
+            nextPop.addAll(elites)
+        }
+
+        return nextPop
+    }
 
     override fun searchOnce() {
 
-
         val n = config.populationSize
 
+        val nextPop = formTheNextPopulation(enableElitism = true)
 
-            //new generation
+        while (nextPop.size < n) {
 
-            val nextPop: MutableList<WtsEvalIndividual<T>> = mutableListOf()
+            val x = selection()
+            val y = selection()
+            //x and y are copied
 
-            while (nextPop.size < n) {
-
-                val x = selection()
-                val y = selection()
-                //x and y are copied
-
-                if (randomness.nextBoolean(config.xoverProbability)) {
-                    xover(x, y)
-                }
-                mutate(x)
-                mutate(y)
-
-                nextPop.add(x)
-                nextPop.add(y)
-
-                if (!time.shouldContinueSearch()) {
-                    break
-                }
+            if (randomness.nextBoolean(config.xoverProbability)) {
+                xover(x, y)
             }
+            mutate(x)
+            mutate(y)
 
-            population.clear()
-            population.addAll(nextPop)
+            nextPop.add(x)
+            nextPop.add(y)
+
+            if (!time.shouldContinueSearch()) {
+                break
+            }
+        }
+
+        population.clear()
+        population.addAll(nextPop)
     }
 
     protected fun mutate(wts: WtsEvalIndividual<T>) {
@@ -67,18 +77,20 @@ open class StandardGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Individu
                 val i = randomness.nextInt(n)
                 wts.suite.removeAt(i)
             }
+
             "add" -> if (n < config.maxSearchSuiteSize) {
                 ff.calculateCoverage(sampler.sample(), modifiedSpec = null)?.run {
                     archive.addIfNeeded(this)
                     wts.suite.add(this)
                 }
             }
+
             "mod" -> {
                 val i = randomness.nextInt(n)
                 val ind = wts.suite[i]
 
                 getMutatator().mutateAndSave(ind, archive)
-                        ?.let { wts.suite[i] = it }
+                    ?.let { wts.suite[i] = it }
             }
         }
     }
