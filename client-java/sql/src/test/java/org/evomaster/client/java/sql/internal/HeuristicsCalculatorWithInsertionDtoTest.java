@@ -302,38 +302,54 @@ public class HeuristicsCalculatorWithInsertionDtoTest {
 
         checkIncreasingTillCovered("x", Arrays.asList(5), insertions, selectWhereXofFoo, createSchemaDtoWithFooTableAndXColumn("INT"), sql);
     }
-//
-//    @Test
-//    public void testGreaterThanEquals() {
-//
-//        String sql = "select x from Foo where x >= 5";
-//
-//        checkIncreasingTillCovered("x", Arrays.asList(-4, 2, 3), 5, sql);
-//    }
-//
-//    @Test
-//    public void testGreaterThan() {
-//
-//        String sql = "select x from Foo where x > 5";
-//
-//        checkIncreasingTillCovered("x", Arrays.asList(-4, 2, 3, 5), 6, sql);
-//    }
-//
-//    @Test
-//    public void testMinorThan() {
-//
-//        String sql = "select x from Foo where x < 5";
-//
-//        checkIncreasingTillCovered("x", Arrays.asList(10, 7, 6, 5), -2, sql);
-//    }
-//
-//    @Test
-//    public void testMinorThanEquals() {
-//
-//        String sql = "select x from Foo where x <= 5";
-//
-//        checkIncreasingTillCovered("x", Arrays.asList(10, 7, 6), 5, sql);
-//    }
+
+    @Test
+    public void testGreaterThanEquals() {
+
+        String sql = "select x from Foo where x >= 5";
+
+        List<InsertionDto> insertions = sql().insertInto("Foo", 1L)
+                .d("x", "5")
+                .dtos();
+
+        checkIncreasingTillCovered("x", Arrays.asList(-4, 2, 3), insertions, selectWhereXofFoo, createSchemaDtoWithFooTableAndXColumn("INT"), sql);
+    }
+
+    @Test
+    public void testGreaterThan() {
+
+        String sql = "select x from Foo where x > 5";
+
+        List<InsertionDto> insertions = sql().insertInto("Foo", 1L)
+                .d("x", "6")
+                .dtos();
+
+        checkIncreasingTillCovered("x", Arrays.asList(-4, 2, 3, 5), insertions, selectWhereXofFoo, createSchemaDtoWithFooTableAndXColumn("INT"), sql);
+    }
+
+    @Test
+    public void testMinorThan() {
+
+        String sql = "select x from Foo where x < 5";
+
+        List<InsertionDto> insertions = sql().insertInto("Foo", 1L)
+                .d("x", "-2")
+                .dtos();
+
+        checkIncreasingTillCovered("x", Arrays.asList(10, 7, 6, 5), insertions, selectWhereXofFoo, createSchemaDtoWithFooTableAndXColumn("INT"), sql);
+    }
+
+    @Test
+    public void testMinorThanEquals() {
+
+        String sql = "select x from Foo where x <= 5";
+
+        List<InsertionDto> insertions = sql().insertInto("Foo", 1L)
+                .d("x", "5")
+                .dtos();
+
+        checkIncreasingTillCovered("x", Arrays.asList(10, 7, 6), insertions, selectWhereXofFoo, createSchemaDtoWithFooTableAndXColumn("INT"), sql);
+    }
 //
 //
 //    @Test
