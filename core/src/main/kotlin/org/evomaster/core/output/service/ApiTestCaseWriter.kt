@@ -29,14 +29,9 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         return name
     }
 
-    override fun handleFieldDeclarations(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>) {
+    override fun handleTestInitialization(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>) {
 
-        //FIXME this is getting auth, not field declaration
-        CookieWriter.handleGettingCookies(format, ind, lines, baseUrlOfSut, this)
-        TokenWriter.handleGettingTokens(format, ind, lines, baseUrlOfSut, this)
-
-        //FIXME this doing initializations, not field declaration
-        //REFACTOR TO HANDLE MULTIPLE DATABASES
+        //TODO: REFACTOR TO HANDLE MULTIPLE DATABASES
         val initializingSqlActions = ind.individual.seeInitializingActions().filterIsInstance<SqlAction>()
         val initializingSqlActionResults = (ind.seeResults(initializingSqlActions))
         if (initializingSqlActionResults.any { (it as? SqlActionResult) == null })
@@ -47,7 +42,6 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         if (initializingMongoResults.any { (it as? MongoDbActionResult) == null })
             throw IllegalStateException("the type of results are expected as MongoDbActionResults")
 
-        //FIXME this doing initializations, not field declaration
         val initializingHostnameResolutionActions = ind.individual
             .seeInitializingActions()
             .filterIsInstance<HostnameResolutionAction>()

@@ -99,7 +99,7 @@ class PythonTestCaseWriterTest {
             indent()
             add("headers = {}")
             add("headers['Accept'] = \"*/*\"")
-            add("res_0 = requests \\")
+            add("requests \\")
             indent()
             indent()
             add(".get(self.baseUrlOfSut + \"/\",")
