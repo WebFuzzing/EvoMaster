@@ -106,6 +106,23 @@ public class QueryResultTransformer {
         )
             return Double.valueOf(printableValue);
 
+        if (dto.type.equalsIgnoreCase("CHAR")
+                || dto.type.equalsIgnoreCase("CHARACTER")
+                || dto.type.equalsIgnoreCase("CHARACTER_LARGE_OBJECT")
+                || dto.type.equalsIgnoreCase("TINYTEXT")
+                || dto.type.equalsIgnoreCase("TEXT")
+                || dto.type.equalsIgnoreCase("LONGTEXT")
+                || dto.type.equalsIgnoreCase("VARCHAR")
+                || dto.type.equalsIgnoreCase("CHARACTER_VARYING")
+                || dto.type.equalsIgnoreCase("VARCHAR_IGNORECASE")
+                || dto.type.equalsIgnoreCase("CLOB")
+                || dto.type.equalsIgnoreCase("MEDIUMTEXT")
+                || dto.type.equalsIgnoreCase("LONGBLOB")
+                || dto.type.equalsIgnoreCase("MEDIUMBLOB")
+                || dto.type.equalsIgnoreCase("TINYBLOB")
+        )
+                return String.valueOf(printableValue);
+
         return printableValue;
 
     }

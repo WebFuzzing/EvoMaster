@@ -157,6 +157,56 @@ public class HeuristicsCalculatorWithInsertionDtoTest {
         checkIncreasingTillCovered("x", Arrays.asList(9, 3, 6), insertions, selectWhereXofFoo, createSchemaDtoWithFooTableAndXColumn("INT"), sql);
     }
 
+    @Test
+    public void testEqualToNull() {
+        String sql = "select x from Foo where x = NULL";
+
+        List<InsertionDto> insertions = sql().insertInto("Foo", 1L)
+                .d("x", null)
+                .dtos();
+
+        checkIncreasingTillCovered("x", Arrays.asList("foo"), insertions, selectWhereXofFoo, createSchemaDtoWithFooTableAndXColumn("String"), sql);
+    }
+
+    @Test
+    public void testIsNull() {
+        String sql = "select x from Foo where x IS NULL";
+
+        List<InsertionDto> insertions = sql().insertInto("Foo", 1L)
+                .d("x", null)
+                .dtos();
+
+        checkIncreasingTillCovered("x", Arrays.asList("foo"), insertions, selectWhereXofFoo, createSchemaDtoWithFooTableAndXColumn("String"), sql);
+    }
+
+    @Test
+    public void testIsNotNull() {
+        String sql = "select x from Foo where x IS NOT NULL";
+
+        List<Object> list = new ArrayList<>();
+        list.add(null);
+
+        List<InsertionDto> insertions = sql().insertInto("Foo", 1L)
+                .d("x", "foo")
+                .dtos();
+
+        checkIncreasingTillCovered("x", list, insertions, selectWhereXofFoo, createSchemaDtoWithFooTableAndXColumn("String"), sql);
+    }
+
+    @Test
+    public void testDifferentFromNull() {
+        String sql = "select x from Foo where x != NULL";
+
+        List<Object> list = new ArrayList<>();
+        list.add(null);
+
+        List<InsertionDto> insertions = sql().insertInto("Foo", 1L)
+                .d("x", "foo")
+                .dtos();
+
+        checkIncreasingTillCovered("x", list, insertions, selectWhereXofFoo, createSchemaDtoWithFooTableAndXColumn("String"),  sql);
+    }
+
 
 
 }
