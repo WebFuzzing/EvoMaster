@@ -76,6 +76,8 @@ public class QueryResultTransformer {
             might later make org.evomaster.core.sql.schema.ColumnDataType shared with driver side
          */
 
+        if (printableValue == null) return null;
+
         if (dto.type.equalsIgnoreCase("BOOL") || dto.type.equalsIgnoreCase("BOOLEAN"))
             return Boolean.valueOf(printableValue);
 
