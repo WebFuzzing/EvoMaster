@@ -1,7 +1,5 @@
 package org.evomaster.client.java.sql;
 
-import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
-import org.evomaster.client.java.controller.api.dto.database.operations.InsertionEntryDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.QueryResultDto;
 
 import java.lang.reflect.Method;
@@ -87,47 +85,33 @@ public class QueryResult {
         }
     }
 
-    /**
-     * construct QueryResult based on sql insertion which have been executed successfully
-     * @param insertionDtos info for the executed sql insertion
-     */
-    public QueryResult(List<InsertionDto> insertionDtos){
-        if(insertionDtos == null || insertionDtos.isEmpty())
-            return;
-
-        try {
-            for (int i = 0; i < insertionDtos.size(); i ++){
-                List<Object> row = new ArrayList<>();
-                InsertionDto insertionDto = insertionDtos.get(i);
-                for (InsertionEntryDto entry : insertionDto.data) {
-                    /*
-                        construct variableDescriptors based on the first insertion
-                     */
-                    if(i == 0){
-                        VariableDescriptor desc = new VariableDescriptor(
-                                entry.variableName,
-                                entry.variableName,
-                                insertionDto.targetTable
-                        );
-                        variableDescriptors.add(desc);
-                    }
-                    row.add(entry.printableValue);
-                }
-
-                rows.add(new DataRow(variableDescriptors, row));
-            }
-
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
-    }
-
     public void addRow(DataRow row) {
         if (!sameVariableNames(row)) {
             throw new IllegalArgumentException("Variable name mismatch");
         }
         rows.add(row);
+    }
+
+    public void addRow(List<String> columnNames, String tableName, List<Object> row) {
+        if (!sameVariableNames(columnNames, tableName)) {
+            throw new IllegalArgumentException("Specified columnNames do not match variable descriptors");
+        }
+        rows.add(new DataRow(variableDescriptors, row));
+    }
+
+    private boolean sameVariableNames(List<String> columnNames, String tableName) {
+        if (variableDescriptors.size() != columnNames.size()) {
+            return false;
+        }
+        for (int i = 0; i < variableDescriptors.size(); i++) {
+            VariableDescriptor a = variableDescriptors.get(i);
+            String b = columnNames.get(i);
+            if (!a.getColumnName().equalsIgnoreCase(b) && a.getTableName().equalsIgnoreCase(tableName)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public boolean sameVariableNames(DataRow row) {
