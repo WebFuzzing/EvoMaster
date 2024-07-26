@@ -122,4 +122,41 @@ public class HeuristicsCalculatorWithInsertionDtoTest {
         checkIncreasingTillCovered("x", Arrays.asList(false), insertions, selectWhereXofFoo, createSchemaDtoWithFooTableAndXColumn("BOOL"), sql);
     }
 
+    @Test
+    public void testWithParentheses() {
+
+        String sql = "select a from Foo where x = (5)";
+
+        List<InsertionDto> insertions = sql().insertInto("Foo", 1L)
+                .d("x", "5")
+                .dtos();
+
+        checkIncreasingTillCovered("x", Arrays.asList(9, 3, 6), insertions, selectWhereXofFoo, createSchemaDtoWithFooTableAndXColumn("INT"), sql);
+    }
+
+    @Test
+    public void testNegativeWithParentheses() {
+
+        String sql = "select a from Foo where x = (-5)";
+
+        List<InsertionDto> insertions = sql().insertInto("Foo", 1L)
+                .d("x", "-5")
+                .dtos();
+
+        checkIncreasingTillCovered("x", Arrays.asList(9, 3, -7), insertions, selectWhereXofFoo, createSchemaDtoWithFooTableAndXColumn("INT"), sql);
+    }
+
+    @Test
+    public void testEqualInt() {
+
+        String sql = "select x from Foo where x=5";
+        List<InsertionDto> insertions = sql().insertInto("Foo", 1L)
+                .d("x", "5")
+                .dtos();
+
+        checkIncreasingTillCovered("x", Arrays.asList(9, 3, 6), insertions, selectWhereXofFoo, createSchemaDtoWithFooTableAndXColumn("INT"), sql);
+    }
+
+
+
 }
