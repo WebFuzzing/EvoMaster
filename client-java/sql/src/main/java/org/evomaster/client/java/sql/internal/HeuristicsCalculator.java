@@ -44,22 +44,21 @@ public class HeuristicsCalculator {
     }
 
     //only for tests
-    protected static double computeDistance(String statement, QueryResult data) {
-        return computeDistance(statement, data, null, null,false).sqlDistance;
+    protected static double computeDistance(String statement, QueryResult... data) {
+        return computeDistance(statement, null, null, false, data).sqlDistance;
     }
 
     public static SqlDistanceWithMetrics computeDistance(
             String statement,
-            QueryResult data,
-            DbSchemaDto schema,
-            TaintHandler taintHandler,
+            DbSchemaDto schema, TaintHandler taintHandler,
             /**
              * Enable more advance techniques since first SQL support
              */
-            boolean advancedHeuristics
+            boolean advancedHeuristics,
+            QueryResult... data
     ) {
 
-        if (data.isEmpty()) {
+        if (data.length == 0 || Arrays.stream(data).allMatch(QueryResult::isEmpty)){
             //if no data, we have no info whatsoever
             return new SqlDistanceWithMetrics(Double.MAX_VALUE,0);
         }
@@ -81,18 +80,20 @@ public class HeuristicsCalculator {
 
         double minSqlDistance = Double.MAX_VALUE;
         int rowCount = 0;
-        for (DataRow row : data.seeRows()) {
-            rowCount++;
-            try {
-                double dist = calculator.computeExpression(where, row);
-                if (dist == 0.0) {
-                    return new SqlDistanceWithMetrics(0.0, rowCount);
-                } else if (dist < minSqlDistance) {
-                    minSqlDistance = dist;
+        for(QueryResult qr: data){
+            for (DataRow row : qr.seeRows()) {
+                rowCount++;
+                try {
+                    double dist = calculator.computeExpression(where, row);
+                    if (dist == 0.0) {
+                        return new SqlDistanceWithMetrics(0.0, rowCount);
+                    } else if (dist < minSqlDistance) {
+                        minSqlDistance = dist;
+                    }
+                } catch (Exception ex) {
+                    SimpleLogger.uniqueWarn("Failed to compute where expression: " + where + " with data " + row);
+                    return new SqlDistanceWithMetrics(Double.MAX_VALUE, rowCount);
                 }
-            } catch (Exception ex) {
-                SimpleLogger.uniqueWarn("Failed to compute where expression: " + where + " with data " + row);
-                return new SqlDistanceWithMetrics(Double.MAX_VALUE, rowCount);
             }
         }
 
