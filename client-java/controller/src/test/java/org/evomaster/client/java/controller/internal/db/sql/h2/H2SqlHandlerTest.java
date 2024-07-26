@@ -32,9 +32,9 @@ public class H2SqlHandlerTest extends DatabaseH2TestInit {
         SqlHandler sqlHandler = new SqlHandler(null);
         sqlHandler.setConnection(connection);
         sqlHandler.setSchema(schema);
-        assertTrue(sqlHandler.getEvaluatedSqlCommands().isEmpty());
+        assertTrue(sqlHandler.getEvaluatedSqlCommands(null, false).isEmpty());
         sqlHandler.handle("Select * From Person Where Age=15");
-        List<EvaluatedSqlCommand> evaluatedSqlCommands = sqlHandler.getEvaluatedSqlCommands();
+        List<EvaluatedSqlCommand> evaluatedSqlCommands = sqlHandler.getEvaluatedSqlCommands(null, false);
 
         assertEquals(1, evaluatedSqlCommands.size());
         EvaluatedSqlCommand evaluatedSqlCommand = evaluatedSqlCommands.get(0);
@@ -67,9 +67,9 @@ public class H2SqlHandlerTest extends DatabaseH2TestInit {
         SqlHandler sqlHandler = new SqlHandler(null);
         sqlHandler.setConnection(connection);
         sqlHandler.setSchema(schema);
-        assertTrue(sqlHandler.getEvaluatedSqlCommands().isEmpty());
+        assertTrue(sqlHandler.getEvaluatedSqlCommands(null, false).isEmpty());
         sqlHandler.handle("Select * From Person Where Age=15");
-        List<EvaluatedSqlCommand> evaluatedSqlCommands = sqlHandler.getEvaluatedSqlCommands();
+        List<EvaluatedSqlCommand> evaluatedSqlCommands = sqlHandler.getEvaluatedSqlCommands(null, false);
 
         assertEquals(1, evaluatedSqlCommands.size());
         EvaluatedSqlCommand evaluatedSqlCommand = evaluatedSqlCommands.get(0);
