@@ -95,7 +95,7 @@ object BlackBoxUtils {
     fun runPythonTests(folderRelativePath: String) {
         installPythonRequirements()
 
-        val command = listOf("python", "-m", "unittest", "discover", "-s", folderRelativePath, "-p", "'*_Test.py'")
+        val command = listOf("python", "-m", "unittest", "discover", "-s", folderRelativePath, "-p", "*_Test.py")
         runTestsCommand(command, PY_BASE_PATH, "Python")
     }
 }
