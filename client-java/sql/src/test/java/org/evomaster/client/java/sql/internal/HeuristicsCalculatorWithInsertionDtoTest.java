@@ -350,23 +350,31 @@ public class HeuristicsCalculatorWithInsertionDtoTest {
 
         checkIncreasingTillCovered("x", Arrays.asList(10, 7, 6), insertions, selectWhereXofFoo, createSchemaDtoWithFooTableAndXColumn("INT"), sql);
     }
-//
-//
-//    @Test
-//    public void testAnd() {
-//
-//        String sql = "select x from Foo where x > 5 and x < 10";
-//
-//        checkIncreasingTillCovered("x", Arrays.asList(20, -1, 4), 7, sql);
-//    }
-//
-//    @Test
-//    public void testOr() {
-//
-//        String sql = "select x from Foo where x < 0 or x > 100";
-//
-//        checkIncreasingTillCovered("x", Arrays.asList(50, 60, 20, 90, 5), -3, sql);
-//    }
+
+
+    @Test
+    public void testAnd() {
+
+        String sql = "select x from Foo where x > 5 and x < 10";
+
+        List<InsertionDto> insertions = sql().insertInto("Foo", 1L)
+                .d("x", "7")
+                .dtos();
+
+        checkIncreasingTillCovered("x", Arrays.asList(20, -1, 4), insertions, selectWhereXofFoo, createSchemaDtoWithFooTableAndXColumn("INT"),  sql);
+    }
+
+    @Test
+    public void testOr() {
+
+        String sql = "select x from Foo where x < 0 or x > 100";
+
+        List<InsertionDto> insertions = sql().insertInto("Foo", 1L)
+                .d("x", "-3")
+                .dtos();
+
+        checkIncreasingTillCovered("x", Arrays.asList(50, 60, 20, 90, 5), insertions, selectWhereXofFoo, createSchemaDtoWithFooTableAndXColumn("INT"), sql);
+    }
 //
 //    @Test
 //    public void testTimestamp() {
