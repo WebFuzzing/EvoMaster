@@ -68,7 +68,7 @@ object BlackBoxUtils {
     private fun runTestsCommand(command: List<String>, directory: String, technology: String) {
         val builder = ProcessBuilder(command)
         //Surefire does NOT like it... but needed when debugging locally
-        //builder.inheritIO()
+        builder.inheritIO()
         builder.directory(File(directory))
 
         val process = builder.start()
