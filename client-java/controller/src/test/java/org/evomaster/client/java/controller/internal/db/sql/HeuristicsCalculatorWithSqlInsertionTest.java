@@ -132,47 +132,52 @@ public interface HeuristicsCalculatorWithSqlInsertionTest extends DatabaseTestTe
         }
     }
 
-//    @Test
-//    default void testVarNotInSelect() throws Exception {
-//
-//        EMSqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT, y INT)", true);
-//
-//
-//        int y = 42;
-//        String select = "select f.x from Foo f where f.y=" + y;
-//
-//
-//        InstrumentedSutStarter starter = getInstrumentedSutStarter();
-//
-//        try {
-//            String url = start(starter);
-//            url += ControllerConstants.BASE_PATH;
-//
-//            startNewTest(url);
-//
-//            List<InsertionDto> insertions = sql().insertInto("Foo", 1L)
-//                    .d("x", "0")
-//                    .d("y", "0")
-//                    .dtos();
-//            executeSqlCommand(insertions, url);
-////            EMSqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x, y) VALUES (0, 0)", false);
-//
-//            EMSqlScriptRunner.execCommand(getConnection(), select, true);
-//
-//            double a = getFirstAndStartNew(url);
-//            assertTrue(a > 0d);
-//
+    @Test
+    default void testVarNotInSelect() throws Exception {
+
+        EMSqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT, y INT)", true);
+
+
+        int y = 42;
+        String select = "select f.x from Foo f where f.y=" + y;
+
+
+        InstrumentedSutStarter starter = getInstrumentedSutStarter();
+
+        try {
+            String url = start(starter);
+            url += ControllerConstants.BASE_PATH;
+
+            startNewTest(url);
+
+            List<InsertionDto> insertions = sql().insertInto("Foo", 1L)
+                    .d("x", "0")
+                    .d("y", "0")
+                    .dtos();
+            executeSqlCommand(insertions, url);
+//            EMSqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x, y) VALUES (0, 0)", false);
+
+            EMSqlScriptRunner.execCommand(getConnection(), select, true);
+
+            double a = getFirstAndStartNew(url);
+            assertTrue(a > 0d);
+
+            insertions = sql().insertInto("Foo", 1L)
+                    .d("x", "1")
+                    .d("y", ""+y)
+                    .dtos();
+            executeSqlCommand(insertions, url);
 //            EMSqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x, y) VALUES (1, " + y + ")", true);
-//            EMSqlScriptRunner.execCommand(getConnection(), select, true);
-//
-//            double b = getFirstAndStartNew(url);
-//            assertTrue(b < a);
-//            assertEquals(0d, b, 0.0001);
-//
-//        } finally {
-//            starter.stop();
-//        }
-//    }
+            EMSqlScriptRunner.execCommand(getConnection(), select, true);
+
+            double b = getFirstAndStartNew(url);
+            assertTrue(b < a);
+            assertEquals(0d, b, 0.0001);
+
+        } finally {
+            starter.stop();
+        }
+    }
 
 //    @Test
 //    default void testInnerJoin() throws Exception {
@@ -215,21 +220,45 @@ public interface HeuristicsCalculatorWithSqlInsertionTest extends DatabaseTestTe
 //            double a = getFirstAndStartNew(url);
 //            assertTrue(a > 0d);
 //
-//            EMSqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, valueColumn, bar_id) VALUES (1, " + x + ", 0)", true);
+//            insertions = sql().insertInto("Foo", 3L)
+//                    .d("id", "1")
+//                    .d("valueColumn", ""+x)
+//                    .d("bar_id", "0")
+//                    .dtos();
+//            executeSqlCommand(insertions, url);
+////            EMSqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, valueColumn, bar_id) VALUES (1, " + x + ", 0)", true);
 //            EMSqlScriptRunner.execCommand(getConnection(), select, true);
 //
 //            double b = getFirstAndStartNew(url);
 //            assertTrue(b < a);
 //
-//            EMSqlScriptRunner.execCommand(getConnection(), "INSERT INTO Bar (id, valueColumn) VALUES (1, " + y + ")", true);
-//            EMSqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, valueColumn, bar_id) VALUES (2, 0, 1)", true);
+//            insertions = sql().insertInto("Bar", 4L)
+//                    .d("id", "1")
+//                    .d("valueColumn", ""+y)
+//                    .and().insertInto("Foo", 5L)
+//                    .d("id", "2")
+//                    .d("valueColumn", "0")
+//                    .d("bar_id", "1")
+//                    .dtos();
+//            executeSqlCommand(insertions, url);
+////            EMSqlScriptRunner.execCommand(getConnection(), "INSERT INTO Bar (id, valueColumn) VALUES (1, " + y + ")", true);
+////            EMSqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, valueColumn, bar_id) VALUES (2, 0, 1)", true);
 //            EMSqlScriptRunner.execCommand(getConnection(), select, true);
 //
 //            double c = getFirstAndStartNew(url);
 //            assertTrue(c < b);
 //
-//            EMSqlScriptRunner.execCommand(getConnection(), "INSERT INTO Bar (id, valueColumn) VALUES (2, " + y + ")", true);
-//            EMSqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, valueColumn, bar_id) VALUES (3, " + x + ", 2)", true);
+//            insertions = sql().insertInto("Bar", 6L)
+//                    .d("id", "2")
+//                    .d("valueColumn", ""+y)
+//                    .and().insertInto("Foo", 7L)
+//                    .d("id", "3")
+//                    .d("valueColumn", ""+x)
+//                    .d("bar_id", "2")
+//                    .dtos();
+//            executeSqlCommand(insertions, url);
+////            EMSqlScriptRunner.execCommand(getConnection(), "INSERT INTO Bar (id, valueColumn) VALUES (2, " + y + ")", true);
+////            EMSqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, valueColumn, bar_id) VALUES (3, " + x + ", 2)", true);
 //            EMSqlScriptRunner.execCommand(getConnection(), select, true);
 //
 //            double d = getFirstAndStartNew(url);
