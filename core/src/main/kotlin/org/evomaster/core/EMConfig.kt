@@ -1984,9 +1984,8 @@ class EMConfig {
 
 
     @Experimental
-    @Cfg("Specify a maximum number of records of a table in the database to be employed for computing sql heuristics when SQL handling is enabled. " +
-            "Note that a negative number means all data would be fetched for computing sql heuristics")
-    var maxDataInDbToFetchForComputingSqlHeuristic = -1
+    @Cfg("Specify whether insertions should be used to calculate SQL heuristics instead of retrieving data from real databases.")
+    var useInsertionForSqlHeuristics = false
 
     @Debug
     @Cfg("Whether to output executed sql info")

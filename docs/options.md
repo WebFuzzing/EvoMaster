@@ -233,7 +233,6 @@ There are 3 types of options:
 |`initStructureMutationProbability`| __Double__. Probability of applying a mutation that can change the structure of test's initialization if it has. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`instrumentMR_MONGO`| __Boolean__. Execute instrumentation for method replace with category MONGO. Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin on the JVM. *Default value*: `false`.|
 |`instrumentMR_NET`| __Boolean__. Execute instrumentation for method replace with category NET. Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin on the JVM. *Default value*: `false`.|
-|`maxDataInDbToFetchForComputingSqlHeuristic`| __Int__. Specify a maximum number of records of a table in the database to be employed for computing sql heuristics when SQL handling is enabled. Note that a negative number means all data would be fetched for computing sql heuristics. *Default value*: `-1`.|
 |`maxResourceSize`| __Int__. Specify a max size of resources in a test. 0 means the there is no specified restriction on a number of resources. *Constraints*: `min=0.0`. *Default value*: `0`.|
 |`maxSizeDataPool`| __Int__. How much data elements, per key, can be stored in the Data Pool. Once limit is reached, new old will replace old data. *Constraints*: `min=1.0`. *Default value*: `100`.|
 |`maxSizeOfExistingDataToSample`| __Int__. Specify a maximum number of existing data in the database to sample in a test when SQL handling is enabled. Note that a negative number means all existing data would be sampled. *Default value*: `-1`.|
@@ -259,6 +258,7 @@ There are 3 types of options:
 |`testResourcePathToSaveMockedResponse`| __String__. Specify test resource path where to save mocked responses as separated files. *Default value*: `""`.|
 |`thresholdDistanceForDataPool`| __Int__. Threshold of Levenshtein Distance for key-matching in Data Pool. *Constraints*: `min=0.0`. *Default value*: `2`.|
 |`useGlobalTaintInfoProbability`| __Double__. When sampling new individual, check whether to use already existing info on tainted values. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
+|`useInsertionForSqlHeuristics`| __Boolean__. Specify whether insertions should be used to calculate SQL heuristics instead of retrieving data from real databases. *Default value*: `false`.|
 |`useResponseDataPool`| __Boolean__. Enable the collection of response data, to feed new individuals based on field names matching. *Default value*: `false`.|
 |`useWeightedSampling`| __Boolean__. When sampling from archive based on targets, decide whether to use weights based on properties of the targets (e.g., a target likely leading to a flag will be sampled less often). *Default value*: `false`.|
 |`wbProbabilityUseDataPool`| __Double__. Specify the probability of using the data pool when sampling test cases. This is for white-box (wb) mode. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.2`.|
