@@ -377,6 +377,25 @@ public class HeuristicsCalculatorWithInsertionDtoTest {
         checkIncreasingTillCovered("x", Arrays.asList(50, 60, 20, 90, 5), insertions, selectWhereXofFoo, createSchemaDtoWithFooTableAndXColumn("INT"), sql);
     }
 
+
+//
+//    @Test
+//    public void testDeleteBase() {
+//
+//        String sql = "delete from Foo where x=0";
+//
+//        checkIncreasingTillCovered("x", Arrays.asList(10, -5, 2), 0, sql);
+//    }
+//
+//    @Test
+//    public void testUpdateBase() {
+//
+//        String sql = "update Foo set x=42 where x=0";
+//
+//        checkIncreasingTillCovered("x", Arrays.asList(10, -5, 2), 0, sql);
+//    }
+
+
     @Test
     public void testTimestamp() {
 
@@ -414,105 +433,98 @@ public class HeuristicsCalculatorWithInsertionDtoTest {
                 insertions, selectWhereXofFoo, createSchemaDtoWithFooTableAndXColumn("TIMESTAMP"),
                 sql);
     }
-//
-//
-//    @Test
-//    public void testDeleteBase() {
-//
-//        String sql = "delete from Foo where x=0";
-//
-//        checkIncreasingTillCovered("x", Arrays.asList(10, -5, 2), 0, sql);
-//    }
-//
-//    @Test
-//    public void testUpdateBase() {
-//
-//        String sql = "update Foo set x=42 where x=0";
-//
-//        checkIncreasingTillCovered("x", Arrays.asList(10, -5, 2), 0, sql);
-//    }
-//
-//    @Test
-//    public void testTimestampMinorThanEquals() {
-//
-//        String sql = "select x from Foo where x <= TIMESTAMP '2022-11-30 16:00:00.0'";
-//
-//        checkIncreasingTillCovered("x", Arrays.asList(
-//                        Timestamp.valueOf("2023-11-30 00:00:00"),
-//                        Timestamp.valueOf("2023-06-30 16:00:00.0"),
-//                        Timestamp.valueOf("2022-12-30 16:00:00.0"),
-//                        Timestamp.valueOf("2022-11-30 17:00:00.0")
-//                ),
-//                Timestamp.valueOf("2022-11-30 16:00:00.0"),
-//                sql);
-//    }
-//
-//    @Test
-//    public void testTimestampMinorThan() {
-//
-//        String sql = "select x from Foo where x < TIMESTAMP '2022-11-30 16:00:00.0'";
-//
-//        checkIncreasingTillCovered("x", Arrays.asList(
-//                        Timestamp.valueOf("2023-11-30 00:00:00"),
-//                        Timestamp.valueOf("2023-06-30 16:00:00.0"),
-//                        Timestamp.valueOf("2022-12-30 16:00:00.0"),
-//                        Timestamp.valueOf("2022-11-30 17:00:00.0")
-//                ),
-//                Timestamp.valueOf("2022-11-29 16:00:00.0"),
-//                sql);
-//    }
-//
-//    @Test
-//    public void testTimestampGreaterThan() {
-//
-//        String sql = "select x from Foo where x > TIMESTAMP '2022-11-30 16:00:00.0'";
-//
-//        checkIncreasingTillCovered("x", Arrays.asList(
-//                        Timestamp.valueOf("2020-11-30 16:00:00"),
-//                        Timestamp.valueOf("2021-11-30 16:00:00.0"),
-//                        Timestamp.valueOf("2022-11-30 15:00:00.0"),
-//                        Timestamp.valueOf("2022-11-30 16:00:00.0")
-//                ),
-//                Timestamp.valueOf("2022-12-01 16:00:00.0"),
-//                sql);
-//    }
-//
-//    @Test
-//    public void testTimestampGreaterThanEquals() {
-//
-//        String sql = "select x from Foo where x >= TIMESTAMP '2022-11-30 16:00:00.0'";
-//
-//        checkIncreasingTillCovered("x", Arrays.asList(
-//                        Timestamp.valueOf("2020-11-30 16:00:00"),
-//                        Timestamp.valueOf("2021-11-30 16:00:00.0"),
-//                        Timestamp.valueOf("2022-11-30 15:00:00.0")
-//                ),
-//                Timestamp.valueOf("2022-11-30 16:00:00.0"),
-//                sql);
-//    }
-//
-//    @Test
-//    public void testTimestampEqualsTo() {
-//
-//        String sql = "select x from Foo where x = TIMESTAMP '2022-11-30 16:00:00.0'";
-//
-//        checkIncreasingTillCovered("x", Arrays.asList(
-//                        Timestamp.valueOf("2020-11-30 16:00:00"),
-//                        Timestamp.valueOf("2021-11-30 16:00:00.0"),
-//                        Timestamp.valueOf("2022-11-29 16:00:00.0")
-//                ),
-//                Timestamp.valueOf("2022-11-30 16:00:00.0"),
-//                sql);
-//    }
-//
-//
-//    @Test
-//    public void testTimestampWithDoubleQuotesIsInvalidSQL() {
-//        String sql = "select x from Foo where x = TIMESTAMP \"2022-11-30 16:00:00.0\"";
-//        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-//                    ParserUtils.asStatement(sql);
-//                }
-//        );
-//    }
+
+    @Test
+    public void testTimestampMinorThanEquals() {
+
+        String sql = "select x from Foo where x <= TIMESTAMP '2022-11-30 16:00:00.0'";
+
+        List<InsertionDto> insertions = sql().insertInto("Foo", 1L)
+                .d("x", "2022-11-30 16:00:00.0")
+                .dtos();
+
+        checkIncreasingTillCovered("x", Arrays.asList(
+                        Timestamp.valueOf("2023-11-30 00:00:00"),
+                        Timestamp.valueOf("2023-06-30 16:00:00.0"),
+                        Timestamp.valueOf("2022-12-30 16:00:00.0"),
+                        Timestamp.valueOf("2022-11-30 17:00:00.0")
+                ),
+                insertions, selectWhereXofFoo, createSchemaDtoWithFooTableAndXColumn("TIMESTAMP"),
+                sql);
+    }
+
+    @Test
+    public void testTimestampMinorThan() {
+
+        String sql = "select x from Foo where x < TIMESTAMP '2022-11-30 16:00:00.0'";
+
+        List<InsertionDto> insertions = sql().insertInto("Foo", 1L)
+                .d("x", "2022-11-29 16:00:00.0")
+                .dtos();
+
+        checkIncreasingTillCovered("x", Arrays.asList(
+                        Timestamp.valueOf("2023-11-30 00:00:00"),
+                        Timestamp.valueOf("2023-06-30 16:00:00.0"),
+                        Timestamp.valueOf("2022-12-30 16:00:00.0"),
+                        Timestamp.valueOf("2022-11-30 17:00:00.0")
+                ),
+                insertions, selectWhereXofFoo, createSchemaDtoWithFooTableAndXColumn("TIMESTAMP"),
+                sql);
+    }
+
+    @Test
+    public void testTimestampGreaterThan() {
+
+        String sql = "select x from Foo where x > TIMESTAMP '2022-11-30 16:00:00.0'";
+
+        List<InsertionDto> insertions = sql().insertInto("Foo", 1L)
+                .d("x", "2022-12-01 16:00:00.0")
+                .dtos();
+
+        checkIncreasingTillCovered("x", Arrays.asList(
+                        Timestamp.valueOf("2020-11-30 16:00:00"),
+                        Timestamp.valueOf("2021-11-30 16:00:00.0"),
+                        Timestamp.valueOf("2022-11-30 15:00:00.0"),
+                        Timestamp.valueOf("2022-11-30 16:00:00.0")
+                ),
+                insertions, selectWhereXofFoo, createSchemaDtoWithFooTableAndXColumn("TIMESTAMP"),
+                sql);
+    }
+
+    @Test
+    public void testTimestampGreaterThanEquals() {
+
+        String sql = "select x from Foo where x >= TIMESTAMP '2022-11-30 16:00:00.0'";
+
+        List<InsertionDto> insertions = sql().insertInto("Foo", 1L)
+                .d("x", "2022-11-30 16:00:00.0")
+                .dtos();
+
+        checkIncreasingTillCovered("x", Arrays.asList(
+                        Timestamp.valueOf("2020-11-30 16:00:00"),
+                        Timestamp.valueOf("2021-11-30 16:00:00.0"),
+                        Timestamp.valueOf("2022-11-30 15:00:00.0")
+                ),
+                insertions, selectWhereXofFoo, createSchemaDtoWithFooTableAndXColumn("TIMESTAMP"),
+                sql);
+    }
+
+    @Test
+    public void testTimestampEqualsTo() {
+
+        String sql = "select x from Foo where x = TIMESTAMP '2022-11-30 16:00:00.0'";
+
+        List<InsertionDto> insertions = sql().insertInto("Foo", 1L)
+                .d("x", "2022-11-30 16:00:00.0")
+                .dtos();
+
+        checkIncreasingTillCovered("x", Arrays.asList(
+                        Timestamp.valueOf("2020-11-30 16:00:00"),
+                        Timestamp.valueOf("2021-11-30 16:00:00.0"),
+                        Timestamp.valueOf("2022-11-29 16:00:00.0")
+                ),
+                insertions, selectWhereXofFoo, createSchemaDtoWithFooTableAndXColumn("TIMESTAMP"),
+                sql);
+    }
 
 }
