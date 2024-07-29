@@ -6,6 +6,7 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
 import org.evomaster.client.java.sql.QueryResult;
 
+import java.time.Instant;
 import java.util.*;
 
 /**
@@ -107,6 +108,18 @@ public class QueryResultTransformer {
                 || dto.type.equalsIgnoreCase("NUMERIC")
         )
             return Double.valueOf(printableValue);
+
+        if(dto.type.equalsIgnoreCase("TIMESTAMP")
+                || dto.type.equalsIgnoreCase("TIMESTAMPZ")
+                || dto.type.equalsIgnoreCase("TIMETZ")
+                || dto.type.equalsIgnoreCase("DATE")
+                || dto.type.equalsIgnoreCase("DATETIME")
+                || dto.type.equalsIgnoreCase("TIME")
+        ){
+            Instant instant = ColumnTypeParser.getAsInstant(printableValue);
+            if (instant != null) return instant;
+        }
+
 
         if (dto.type.equalsIgnoreCase("CHAR")
                 || dto.type.equalsIgnoreCase("CHARACTER")
