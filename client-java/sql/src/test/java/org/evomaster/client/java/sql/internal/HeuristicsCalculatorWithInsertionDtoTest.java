@@ -377,24 +377,24 @@ public class HeuristicsCalculatorWithInsertionDtoTest {
         checkIncreasingTillCovered("x", Arrays.asList(50, 60, 20, 90, 5), insertions, selectWhereXofFoo, createSchemaDtoWithFooTableAndXColumn("INT"), sql);
     }
 
-//    @Test
-//    public void testTimestamp() {
-//
-//        String sql = "select x from Foo where x > '28-Feb-17'";
-//
-//        List<InsertionDto> insertions = sql().insertInto("Foo", 1L)
-//                .d("x",  "2017-03-01 00:00:00")
-//                .dtos();
-//
-//        checkIncreasingTillCovered("x", Arrays.asList(
-//                        Timestamp.valueOf("1870-01-01 00:00:00"),
-//                        Timestamp.valueOf("1900-01-01 00:00:00"),
-//                        Timestamp.valueOf("2010-03-12 13:21:42"),
-//                        Timestamp.valueOf("2017-02-27 00:00:00")
-//                ),
-//                insertions, selectWhereXofFoo, createSchemaDtoWithFooTableAndXColumn("TIMESTAMP"),
-//                sql);
-//    }
+    @Test
+    public void testTimestamp() {
+
+        String sql = "select x from Foo where x > '28-Feb-17'";
+
+        List<InsertionDto> insertions = sql().insertInto("Foo", 1L)
+                .d("x",  "2017-03-01 00:00:00")
+                .dtos();
+
+        checkIncreasingTillCovered("x", Arrays.asList(
+                        Timestamp.valueOf("1870-01-01 00:00:00"),
+                        Timestamp.valueOf("1900-01-01 00:00:00"),
+                        Timestamp.valueOf("2010-03-12 13:21:42"),
+                        Timestamp.valueOf("2017-02-27 00:00:00")
+                ),
+                insertions, selectWhereXofFoo, createSchemaDtoWithFooTableAndXColumn("TIMESTAMP"),
+                sql);
+    }
 
     @Test
     public void testTimestampBetween() {

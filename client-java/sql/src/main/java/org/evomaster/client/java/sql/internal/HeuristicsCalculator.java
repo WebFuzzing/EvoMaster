@@ -304,7 +304,9 @@ public class HeuristicsCalculator {
         Object left = getValue(exp.getLeftExpression(), data);
         Object right = getValue(exp.getRightExpression(), data);
 
-        if (left instanceof Timestamp || right instanceof Timestamp) {
+
+        if (left instanceof Timestamp || right instanceof Timestamp
+                || left instanceof Instant || right instanceof Instant) {
 
             Instant a = getAsInstant(left);
             Instant b = getAsInstant(right);
