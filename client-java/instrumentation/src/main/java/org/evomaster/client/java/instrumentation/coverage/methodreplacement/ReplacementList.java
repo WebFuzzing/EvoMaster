@@ -34,6 +34,7 @@ public class ReplacementList {
                     new CursorPreparerClassReplacement(),
                     new DateClassReplacement(),
                     new DateFormatClassReplacement(),
+                    new DocumentClassReplacement(),
                     new DoubleClassReplacement(),
                     new EnumClassReplacement(),
                     new FloatClassReplacement(),
