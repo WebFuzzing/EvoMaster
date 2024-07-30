@@ -152,6 +152,8 @@ Migrations/
 /client-java/test-utils-java/target/
 
 /test-utils/test-utils-py/target/
+/test-utils/test-utils-py/src/main/resources/__pycache__/
+/test-utils/test-utils-py/src/test/__pycache__/
 
 /e2e-tests/spring-graphql-bb/javascript/generated/
 /e2e-tests/spring-graphql-bb/javascript/node_modules/

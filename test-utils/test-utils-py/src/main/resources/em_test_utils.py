@@ -1,13 +1,12 @@
-from urllib.parse import urlparse
-import validators
-
+from urllib.parse import urlparse, quote
+from rfc3986 import validators, uri_reference
 
 def resolve_location(location_header: str, expected_template: str) -> str:
     if not location_header:
         return expected_template
 
     location_uri = urlparse(location_header)
-    location_path = location_uri.path
+    location_path = quote(location_uri.path)
     location_tokens = location_path.split('/')
 
     normalized_template = expected_template.replace('{', '').replace('}', '')
@@ -26,10 +25,23 @@ def resolve_location(location_header: str, expected_template: str) -> str:
 
 
 def is_valid_uri_or_empty(uri: str):
-    if uri == "":
+    if uri is None or uri.strip() == "":
         return True
+
+    validated_components = {
+        "scheme": False,
+        "userinfo": False,
+        "host": False,
+        "port": False,
+        "path": False,
+        "query": False,
+        "fragment": False,
+    }
+    
     try:
-        validators.url(uri, r_ve=True)
+        validators.ensure_components_are_valid(uri_reference(uri), validated_components)
     except Exception as e:
         return False
+    
     return True
+    
