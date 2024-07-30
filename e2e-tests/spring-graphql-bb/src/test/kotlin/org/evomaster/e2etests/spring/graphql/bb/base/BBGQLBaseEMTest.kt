@@ -26,7 +26,7 @@ class BBGQLBaseEMTest : SpringTestBase() {
         executeAndEvaluateBBTest(
             outputFormat,
             "base",
-            20,
+            30,
             3,
             listOf("ALL")
         ){ args: MutableList<String> ->
