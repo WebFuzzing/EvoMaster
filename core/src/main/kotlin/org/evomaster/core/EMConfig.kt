@@ -77,6 +77,11 @@ class EMConfig {
 
         private const val externalServiceIPRegex = "$_eip_n$_eip_s$_eip_e"
 
+        private  val defaultAlgorithmForBlackBox = Algorithm.RANDOM
+
+        private  val defaultAlgorithmForWhiteBox = Algorithm.MIO
+
+
         fun validateOptions(args: Array<String>): OptionParser {
 
             val config = EMConfig() // tmp config object used only for validation.
@@ -417,7 +422,7 @@ class EMConfig {
             It is handled directly in Main
          */
         if(algorithm == Algorithm.DEFAULT ){
-            algorithm = if(blackBox) Algorithm.SMARTS else Algorithm.MIO
+            algorithm = if(blackBox) defaultAlgorithmForBlackBox else defaultAlgorithmForWhiteBox
         }
 
 

@@ -32,6 +32,8 @@ class BBChainedLocationEMTest : SpringTestBase() {
             "OK"
         ){ args: MutableList<String> ->
 
+            setOption(args, "algorithm", "SMARTS") //TODO remove once default
+
             val solution = initAndRun(args)
 
             assertTrue(solution.individuals.size >= 1)
