@@ -14,6 +14,7 @@ import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedAction
+import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.slf4j.LoggerFactory
@@ -37,6 +38,26 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         return !(result as HttpWsCallResult).getTimedout()
     }
 
+    fun startRequest(lines: Lines){
+        when {
+            format.isJavaOrKotlin() -> lines.append("given()")
+            format.isJavaScript() -> lines.append("await superagent")
+            format.isCsharp() -> lines.append("await Client")
+            format.isPython() -> lines.append("requests \\")
+        }
+    }
+
+    override fun handleTestInitialization(
+        lines: Lines,
+        baseUrlOfSut: String,
+        ind: EvaluatedIndividual<*>,
+        insertionVars: MutableList<Pair<String, String>>
+    ) {
+        super.handleTestInitialization(lines, baseUrlOfSut, ind, insertionVars)
+
+        CookieWriter.handleGettingCookies(format, ind, lines, baseUrlOfSut, this)
+        TokenWriter.handleGettingTokens(format, ind, lines, baseUrlOfSut, this)
+    }
 
     protected fun handlePreCallSetup(call: HttpWsAction, lines: Lines, res: HttpWsCallResult) {
         /*
@@ -63,6 +84,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 format.isKotlin() -> lines.append("val $resVarName: ValidatableResponse = ")
                 format.isJava() -> lines.append("ValidatableResponse $resVarName = ")
                 format.isJavaScript() -> lines.append("const $resVarName = ")
+                format.isPython() -> lines.append("$resVarName = ")
                 format.isCsharp() -> lines.append("var $resVarName = ")
             }
         }
@@ -71,7 +93,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             format.isJavaOrKotlin() -> lines.append("given()")
             format.isJavaScript() -> lines.append("await superagent")
             format.isCsharp() -> lines.append("await Client")
-            format.isPython() -> lines.append("$resVarName = requests \\")
+            format.isPython() -> lines.append("requests \\")
         }
 
         if (!format.isJavaScript() && !format.isCsharp() && !format.isPython()) {
@@ -183,8 +205,8 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             } else {
                 when {
                     format.isJavaOrKotlin() -> lines.add(".cookies(${CookieWriter.cookiesName(elc)})")
-                    format.isJavaScript() -> lines.add(".set('Cookies', ${CookieWriter.cookiesName(elc)})")
-                    //TODO C#
+                    format.isJavaScript() -> lines.add(".set('Cookie', ${CookieWriter.cookiesName(elc)})")
+                    //TODO Python
                 }
             }
         }

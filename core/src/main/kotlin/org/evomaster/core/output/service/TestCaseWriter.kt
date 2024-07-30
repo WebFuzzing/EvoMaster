@@ -108,7 +108,7 @@ abstract class TestCaseWriter {
             val insertionVars = mutableListOf<Pair<String, String>>()
             // FIXME: HostnameResolutionActions can be a separately, for now it's under
             //  handleFieldDeclarations.
-            handleFieldDeclarations(lines, baseUrlOfSut, ind, insertionVars)
+            handleTestInitialization(lines, baseUrlOfSut, ind, insertionVars)
             handleActionCalls(lines, baseUrlOfSut, ind, insertionVars, testCaseName = test.name, testSuitePath)
         }
 
@@ -176,12 +176,12 @@ abstract class TestCaseWriter {
 
     /**
      * Before starting to make actions (e.g. HTTP calls in web apis), check if we need to declare any field, ie variable,
-     * for this test.
+     * for this test, and other needed setups, like SQL insertions.
      * @param lines are generated lines which save the generated test scripts
      * @param ind is the final individual (ie test) to be generated into the test scripts
      * @param insertionVars contains variable names of sql insertions (Pair.first) with their results (Pair.second).
      */
-    protected abstract fun handleFieldDeclarations(
+    protected abstract fun handleTestInitialization(
         lines: Lines,
         baseUrlOfSut: String,
         ind: EvaluatedIndividual<*>,

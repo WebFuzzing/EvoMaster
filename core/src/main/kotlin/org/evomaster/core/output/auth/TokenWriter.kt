@@ -3,6 +3,7 @@ package org.evomaster.core.output.auth
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.service.ApiTestCaseWriter
+import org.evomaster.core.output.service.HttpWsTestCaseWriter
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.auth.EndpointCallLogin
 import org.evomaster.core.search.EvaluatedIndividual
@@ -29,7 +30,7 @@ object TokenWriter {
                             ind: EvaluatedIndividual<*>,
                             lines: Lines,
                             baseUrlOfSut: String,
-                            testCaseWriter: ApiTestCaseWriter
+                            testCaseWriter: HttpWsTestCaseWriter
     ) {
 
         val tokensInfo = getTokenLoginAuth(ind.individual)

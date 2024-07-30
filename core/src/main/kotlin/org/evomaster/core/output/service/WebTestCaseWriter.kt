@@ -12,7 +12,7 @@ class WebTestCaseWriter : TestCaseWriter() {
 
     private val driver : String = TestSuiteWriter.driver
 
-    override fun handleFieldDeclarations(
+    override fun handleTestInitialization(
         lines: Lines,
         baseUrlOfSut: String,
         ind: EvaluatedIndividual<*>,
