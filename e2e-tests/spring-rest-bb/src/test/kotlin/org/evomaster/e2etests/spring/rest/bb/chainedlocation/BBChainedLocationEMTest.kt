@@ -1,23 +1,24 @@
-package org.evomaster.e2etests.spring.graphql.bb.base
+package org.evomaster.e2etests.spring.rest.bb.chainedlocation
 
-import com.foo.graphql.bb.base.BaseController
+
+import com.foo.rest.examples.bb.chainedlocation.BBChainedLocationController
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.e2etests.spring.graphql.bb.SpringTestBase
+import org.evomaster.core.problem.rest.HttpVerb
+import org.evomaster.e2etests.spring.rest.bb.SpringTestBase
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 
-class BBGQLBaseEMTest : SpringTestBase() {
+class BBChainedLocationEMTest : SpringTestBase() {
 
     companion object {
         @BeforeAll
         @JvmStatic
         fun init() {
-            initClass(BaseController())
+            initClass(BBChainedLocationController())
         }
     }
-
 
     @ParameterizedTest
     @EnumSource(names = ["JS_JEST"]) //TODO add Python
@@ -25,19 +26,19 @@ class BBGQLBaseEMTest : SpringTestBase() {
 
         executeAndEvaluateBBTest(
             outputFormat,
-            "base",
-            30,
+            "chainedlocation",
+            50,
             3,
-            listOf("ALL")
+            "OK"
         ){ args: MutableList<String> ->
+
+            setOption(args, "algorithm", "SMARTS") //TODO remove once default
 
             val solution = initAndRun(args)
 
             assertTrue(solution.individuals.size >= 1)
-            assertHasAtLeastOneResponseWithData(solution)
-            assertValueInDataAtLeastOnce(solution, "Foo")
-            assertNoneWithErrors(solution)
+            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/chainedlocation/x/{idx}/y/{idy}/z/{idz}/value", null)
+
         }
     }
-
 }
