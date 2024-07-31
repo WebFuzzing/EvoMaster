@@ -38,10 +38,10 @@ object BlackBoxUtils {
     }
 
     private fun installPythonRequirements() {
-        val upgradePipCommand = listOf("python", "-m", "pip", "install", "--upgrade", "pip")
+        val upgradePipCommand = listOf("python", "-m", "pip", "install", "--upgrade", "pip", "--user")
         executeInstallShellCommand(upgradePipCommand, PY_BASE_PATH, "pip")
 
-        val installRequirementsCommand = listOf("pip", "install", "-r", "./requirements.txt")
+        val installRequirementsCommand = listOf("pip", "install", "-r", "./requirements.txt", "--user")
         executeInstallShellCommand(installRequirementsCommand, PY_BASE_PATH, "requirements")
     }
 
