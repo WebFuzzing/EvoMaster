@@ -4,10 +4,14 @@ import org.evomaster.client.java.controller.api.dto.database.operations.Insertio
 import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
+import org.evomaster.client.java.sql.DataRow;
 import org.evomaster.client.java.sql.QueryResult;
+import org.evomaster.client.java.sql.VariableDescriptor;
 
+import java.lang.reflect.Array;
 import java.time.Instant;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * This class is used to covert InsertionDto to QueryResult and DataRow
@@ -16,34 +20,143 @@ import java.util.*;
 public class QueryResultTransformer {
 
 
+
     /**
      * @param insertionDtos specifies InsertionDto which indicates data we have been inserted into database or mocked
      * @param columns       specifies WHERE clause using a map from table name to involved column names
      * @param schemaDto     specifies info about schema that is used to parse printable value specified in InsertionDto to Object value
      * @return  extracted an array of QueryResult.
-     * note that, although for the same table, its insertion might be applied to different columns.
-     * To simply conversion from InsertionDtos to QueryResults, we create a QueryResult per InsertionDto
      */
     public static QueryResult[] convertInsertionDtosToQueryResults(List<InsertionDto> insertionDtos, Map<String, Set<String>> columns, DbSchemaDto schemaDto){
         List<QueryResult> results = new ArrayList<>();
 
-        for (String key: columns.keySet()){
-
+        Map<String, List<QueryResult>> maps = new HashMap<>();
+        for (String key : columns.keySet()){
+            List<QueryResult> kresults = new ArrayList<>();
             insertionDtos.stream().filter(d-> d.targetTable.equalsIgnoreCase(key)).forEach(insertionDto -> {
-                QueryResult qr = convertInsertionDtoToQueryResult(insertionDto, key, columns.get(key), schemaDto);
+                QueryResult qr = convertInsertionDtoToQueryResult(insertionDto, key, columns.get(key), schemaDto, kresults);
                 if (qr != null && (!qr.isEmpty()))
-                    results.add(qr);
+                    kresults.add(qr);
             });
-
+            if(!kresults.isEmpty()){
+                maps.put(key, kresults);
+            }
         }
+
+
+
 
         return results.toArray(new QueryResult[results.size()]);
     }
 
-    private static QueryResult convertInsertionDtoToQueryResult(InsertionDto insertionDto, String tableName, Set<String> relatedColumns, DbSchemaDto dto){
+
+//    private static QueryResult mergeQueryResultsByCartesianProductDataRows(QueryResult... queryResults){
+//        Objects.requireNonNull(queryResults);
+//        for (QueryResult qr: queryResults)
+//            Objects.requireNonNull(qr);
+//
+//        if (queryResults.length == 0) return null;
+//        if (queryResults.length == 1) return queryResults[0];
+//
+//        List<VariableDescriptor> variableDescriptors = new ArrayList<>();
+//        int[] counts = new int[queryResults.length];
+//        int[] indexes = new int[counts.length];
+//        int total = 1;
+//        for (int i = 0; i < queryResults.length; i++){
+//            QueryResult qr = queryResults[i];
+//            counts[i] = qr.size() - 1;
+//            if (!qr.isEmpty()){
+//                variableDescriptors.addAll(qr.seeVariableDescriptors());
+//                total = total * qr.size();
+//            }else{
+//                indexes[i] = -1;
+//            }
+//        }
+//
+//        QueryResult merged = new QueryResult(variableDescriptors);
+//        for (int i = 0; i < total; i++){
+//            List<Object> row = new ArrayList<>();
+//            for (int j = 0; j < indexes.length; j ++){
+//                if(indexes[j] != -1){
+//                    row.addAll(queryResults[j].seeRows().get(indexes[j]).seeValues());
+//                }
+//            }
+//            merged.addRow(new DataRow(variableDescriptors, row));
+//
+//            for (int j = indexes.length-1; j >=0 ; j--){
+//                if (indexes[j] == -1)
+//                    continue;
+//                if (indexes[j] < counts[j]){
+//                    indexes[j] = indexes[j] + 1;
+//                    for (int t = j+1; t < indexes.length ; t++){
+//                        if(indexes[t] != -1)
+//                            indexes[t] = 0;
+//                    }
+//                    break;
+//                }
+//            }
+//        }
+//
+//        return merged;
+//    }
+
+
+    /**
+     * implement Cartesian Product
+     * e.g.,  (a,b) * (c,d) = (a,c), (a,d), (b,c), (b,d)
+     * @param values specified a list of sets for n-fold Cartesian Product
+     * @return results of Cartesian Product of the given sets
+     * @param <T> type of values
+     */
+    public static <T> List<List<T>> cartesianProduct(List<List<T>> values){
+        if (values.isEmpty()) return null;
+        values.forEach(s-> {
+            Objects.requireNonNull(s);
+            if (s.isEmpty())
+                throw new IllegalArgumentException("All lists in values must be non-empty.");
+        });
+
+        int[] counts = values.stream().mapToInt(s-> s.size() -1).toArray();
+        int[] indexes = new int[counts.length];
+        List<List<T>> results = new ArrayList<>();
+        boolean isLast = false;
+        while (!isLast){
+            if (Arrays.equals(counts, indexes))
+                isLast = true;
+
+            List<T> row = new ArrayList<>();
+            for (int i = 0; i < counts.length ; i++){
+                row.add(values.get(i).get(indexes[i]));
+            }
+            results.add(row);
+
+            for (int j = indexes.length-1; !isLast && j >=0 ; j--){
+                if (indexes[j] < counts[j]){
+                    indexes[j] = indexes[j] + 1;
+                    for (int t = j+1; t < indexes.length ; t++){
+                        if(indexes[t] != -1)
+                            indexes[t] = 0;
+                    }
+                    break;
+                }
+            }
+        }
+
+        return results;
+    }
+
+
+    private static QueryResult convertInsertionDtoToQueryResult(InsertionDto insertionDto, String tableName, Set<String> relatedColumns, DbSchemaDto dto, List<QueryResult> existingQueryResults){
         List<String> relatedColumnNames = insertionDto.extractColumnNames(relatedColumns);
         if (!relatedColumnNames.isEmpty()){
-            QueryResult qr = new QueryResult(relatedColumnNames, tableName);
+            QueryResult found = null;
+            if (!existingQueryResults.isEmpty())
+                found = existingQueryResults.stream().filter(e-> e.sameVariableNames(relatedColumnNames, tableName)).findAny().orElse(null);
+
+            QueryResult qr = found;
+            if (found == null)
+                qr = new QueryResult(relatedColumnNames, tableName);
+
             Optional<TableDto> foundTableSchema = dto.tables.stream().filter(t-> t.name.equalsIgnoreCase(tableName)).findFirst();
             if (foundTableSchema.isPresent()){
                 TableDto tableDto = foundTableSchema.get();
@@ -65,6 +178,8 @@ public class QueryResultTransformer {
             }else {
                 throw new IllegalArgumentException("Cannot find table schema of "+ tableName);
             }
+
+            if (found == null) return null;
 
             return qr;
         }
