@@ -206,7 +206,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 when {
                     format.isJavaOrKotlin() -> lines.add(".cookies(${CookieWriter.cookiesName(elc)})")
                     format.isJavaScript() -> lines.add(".set('Cookie', ${CookieWriter.cookiesName(elc)})")
-                    //TODO Python
+                    // Python cookies are set alongside the headers and body when performing the request
                 }
             }
         }
