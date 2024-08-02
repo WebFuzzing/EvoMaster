@@ -148,6 +148,7 @@ Migrations/
 /e2e-tests/spring-rest-bb/target/
 /e2e-tests/spring-rest-bb/javascript/node_modules/
 /e2e-tests/spring-rest-bb/javascript/generated/
+/e2e-tests/spring-rest-bb/python/generated/
 
 /client-java/test-utils-java/target/
 
@@ -157,5 +158,6 @@ Migrations/
 
 /e2e-tests/spring-graphql-bb/javascript/generated/
 /e2e-tests/spring-graphql-bb/javascript/node_modules/
+/e2e-tests/spring-graphql-bb/python/generated/
 /e2e-tests/spring-graphql-bb/target/
 
