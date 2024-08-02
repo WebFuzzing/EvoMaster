@@ -341,3 +341,34 @@ jobs:
       - name: Test with unittest
         working-directory: ./test-utils/test-utils-py
         run: python -m unittest discover -s ./src/test/ -p '*_test.py'
+
+  bb-on-different-os:
+    strategy:
+      matrix:
+        # main build is already on ubuntu-latest
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    needs: setup
+    if: needs.setup.outputs.debug == 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup JDK ${{env.latest-jdk}}
+        uses: actions/setup-java@v1
+        with:
+          java-version: ${{env.latest-jdk}}
+      - name: Cache Maven packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: Build with Maven
+        run: mvn clean install -DskipTests
+        env:
+          CI_env: GithubAction
+      - name: Run BB E2E tests
+        # important that what we run here does not use Docker
+        working-directory: e2e-tests/spring-rest-bb
+        run:  mvn clean verify --fae
+        env:
+          CI_env: GithubAction
