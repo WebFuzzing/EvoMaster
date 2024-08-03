@@ -232,6 +232,7 @@ public class SqlHandler {
 
     private SqlDistanceWithMetrics getDistanceForWhereBasedOnInsertion(String command, Map<String, Set<String>> columns, List<InsertionDto> insertionDtos) {
         QueryResult[] data = QueryResultTransformer.convertInsertionDtosToQueryResults(insertionDtos, columns, schema);
+        assert data != null;
         return HeuristicsCalculator.computeDistance(command, schema, taintHandler, advancedHeuristics, data);
     }
 

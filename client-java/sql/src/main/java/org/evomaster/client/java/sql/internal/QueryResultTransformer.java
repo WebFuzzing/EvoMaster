@@ -43,13 +43,13 @@ public class QueryResultTransformer {
 
         // sort maps based on its key, ie, table name
         List<List<QueryResult>> qrPerTable =  cartesianProduct(maps.keySet().stream().sorted().map(maps::get).collect(Collectors.toList()));
-        if (qrPerTable == null || qrPerTable.isEmpty())
+        if (qrPerTable == null)
             return null;
 
 
         return qrPerTable.stream()
                 .map(QueryResultTransformer::mergeQueryResultsByCartesianProductDataRows)
-                .filter(r -> r != null && (!r.isEmpty())).toArray(QueryResult[]::new);
+                .filter(Objects::nonNull).toArray(QueryResult[]::new);
     }
 
 
@@ -74,14 +74,13 @@ public class QueryResultTransformer {
         QueryResult merged = new QueryResult(variableDescriptors);
 
         List<List<DataRow>> results = cartesianProduct(datarowList);
-        if (results == null || results.isEmpty())
-            return null;
-
-        for (List<DataRow> r : results){
-            List<Object> mergedValues = new ArrayList<>();
-            r.forEach(d-> mergedValues.addAll(d.seeValues()));
-            DataRow mdatarow = new DataRow(variableDescriptors, mergedValues);
-            merged.addRow(mdatarow);
+        if (results != null && (!results.isEmpty())){
+            for (List<DataRow> r : results){
+                List<Object> mergedValues = new ArrayList<>();
+                r.forEach(d-> mergedValues.addAll(d.seeValues()));
+                DataRow mdatarow = new DataRow(variableDescriptors, mergedValues);
+                merged.addRow(mdatarow);
+            }
         }
         return merged;
     }
@@ -95,15 +94,11 @@ public class QueryResultTransformer {
      * @param <T> type of values
      */
     public static <T> List<List<T>> cartesianProduct(List<List<T>> values){
-        if (values.isEmpty()) return null;
-        values.forEach(s-> {
-            Objects.requireNonNull(s);
-            if (s.isEmpty())
-                throw new IllegalArgumentException("All lists in values must be non-empty.");
-        });
+        if (values.isEmpty()) return Collections.emptyList();
+        values.forEach(Objects::requireNonNull);
 
         int[] counts = values.stream().mapToInt(s-> s.size() -1).toArray();
-        int[] indexes = new int[counts.length];
+        int[] indexes = values.stream().mapToInt(s-> s.isEmpty()?-1:0).toArray();
         List<List<T>> results = new ArrayList<>();
         boolean isLast = false;
         while (!isLast){
@@ -112,12 +107,13 @@ public class QueryResultTransformer {
 
             List<T> row = new ArrayList<>();
             for (int i = 0; i < counts.length ; i++){
-                row.add(values.get(i).get(indexes[i]));
+                if (indexes[i] >= 0)
+                    row.add(values.get(i).get(indexes[i]));
             }
             results.add(row);
 
             for (int j = indexes.length-1; !isLast && j >=0 ; j--){
-                if (indexes[j] < counts[j]){
+                if (indexes[j] >=0 && indexes[j] < counts[j]){
                     indexes[j] = indexes[j] + 1;
                     for (int t = j+1; t < indexes.length ; t++){
                         if(indexes[t] != -1)
