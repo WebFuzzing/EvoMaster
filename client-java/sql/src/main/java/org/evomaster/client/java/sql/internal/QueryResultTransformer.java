@@ -10,6 +10,7 @@ import org.evomaster.client.java.sql.VariableDescriptor;
 
 import java.time.Instant;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * This class is used to covert InsertionDto to QueryResult and DataRow
@@ -40,7 +41,8 @@ public class QueryResultTransformer {
             }
         }
 
-        List<List<QueryResult>> qrPerTable =  cartesianProduct(new ArrayList<>(maps.values()));
+        // sort maps based on its key, ie, table name
+        List<List<QueryResult>> qrPerTable =  cartesianProduct(maps.keySet().stream().sorted().map(maps::get).collect(Collectors.toList()));
         if (qrPerTable == null || qrPerTable.isEmpty())
             return null;
 

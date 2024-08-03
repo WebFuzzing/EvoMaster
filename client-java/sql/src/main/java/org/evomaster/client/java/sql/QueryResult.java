@@ -21,6 +21,11 @@ public class QueryResult {
     private final List<VariableDescriptor> variableDescriptors = new ArrayList<>();
     private final List<DataRow> rows = new ArrayList<>();
 
+    public QueryResult(List<VariableDescriptor> variableDescriptorList) {
+        Objects.requireNonNull(variableDescriptorList);
+        variableDescriptors.addAll(variableDescriptorList);
+    }
+
     /**
      * WARNING: Constructor only needed for testing
      *
@@ -99,7 +104,7 @@ public class QueryResult {
         rows.add(new DataRow(variableDescriptors, row));
     }
 
-    private boolean sameVariableNames(List<String> columnNames, String tableName) {
+    public boolean sameVariableNames(List<String> columnNames, String tableName) {
         if (variableDescriptors.size() != columnNames.size()) {
             return false;
         }
@@ -131,6 +136,10 @@ public class QueryResult {
 
     public List<DataRow> seeRows() {
         return rows;
+    }
+
+    public List<VariableDescriptor> seeVariableDescriptors(){
+        return variableDescriptors;
     }
 
     public boolean isEmpty() {
