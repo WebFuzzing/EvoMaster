@@ -28,7 +28,6 @@ public class QueryResultTransformer {
      * @return  extracted an array of QueryResult.
      */
     public static QueryResult[] convertInsertionDtosToQueryResults(List<InsertionDto> insertionDtos, Map<String, Set<String>> columns, DbSchemaDto schemaDto){
-        List<QueryResult> results = new ArrayList<>();
 
         Map<String, List<QueryResult>> maps = new HashMap<>();
         for (String key : columns.keySet()){
@@ -43,62 +42,49 @@ public class QueryResultTransformer {
             }
         }
 
+        List<List<QueryResult>> qrPerTable =  cartesianProduct(new ArrayList<>(maps.values()));
+        if (qrPerTable == null || qrPerTable.isEmpty())
+            return null;
 
 
-
-        return results.toArray(new QueryResult[results.size()]);
+        return qrPerTable.stream()
+                .map(QueryResultTransformer::mergeQueryResultsByCartesianProductDataRows)
+                .filter(r -> r != null && (!r.isEmpty())).toArray(QueryResult[]::new);
     }
 
 
-//    private static QueryResult mergeQueryResultsByCartesianProductDataRows(QueryResult... queryResults){
-//        Objects.requireNonNull(queryResults);
-//        for (QueryResult qr: queryResults)
-//            Objects.requireNonNull(qr);
-//
-//        if (queryResults.length == 0) return null;
-//        if (queryResults.length == 1) return queryResults[0];
-//
-//        List<VariableDescriptor> variableDescriptors = new ArrayList<>();
-//        int[] counts = new int[queryResults.length];
-//        int[] indexes = new int[counts.length];
-//        int total = 1;
-//        for (int i = 0; i < queryResults.length; i++){
-//            QueryResult qr = queryResults[i];
-//            counts[i] = qr.size() - 1;
-//            if (!qr.isEmpty()){
-//                variableDescriptors.addAll(qr.seeVariableDescriptors());
-//                total = total * qr.size();
-//            }else{
-//                indexes[i] = -1;
-//            }
-//        }
-//
-//        QueryResult merged = new QueryResult(variableDescriptors);
-//        for (int i = 0; i < total; i++){
-//            List<Object> row = new ArrayList<>();
-//            for (int j = 0; j < indexes.length; j ++){
-//                if(indexes[j] != -1){
-//                    row.addAll(queryResults[j].seeRows().get(indexes[j]).seeValues());
-//                }
-//            }
-//            merged.addRow(new DataRow(variableDescriptors, row));
-//
-//            for (int j = indexes.length-1; j >=0 ; j--){
-//                if (indexes[j] == -1)
-//                    continue;
-//                if (indexes[j] < counts[j]){
-//                    indexes[j] = indexes[j] + 1;
-//                    for (int t = j+1; t < indexes.length ; t++){
-//                        if(indexes[t] != -1)
-//                            indexes[t] = 0;
-//                    }
-//                    break;
-//                }
-//            }
-//        }
-//
-//        return merged;
-//    }
+    private static QueryResult mergeQueryResultsByCartesianProductDataRows(List<QueryResult> queryResults){
+        Objects.requireNonNull(queryResults);
+        for (QueryResult qr: queryResults)
+            Objects.requireNonNull(qr);
+
+        if (queryResults.isEmpty()) return null;
+        if (queryResults.size() == 1) return queryResults.get(0);
+
+        List<VariableDescriptor> variableDescriptors = new ArrayList<>();
+
+        List<List<DataRow>> datarowList = new ArrayList<>();
+        for (QueryResult qr : queryResults) {
+            if (!qr.isEmpty()) {
+                variableDescriptors.addAll(qr.seeVariableDescriptors());
+                datarowList.add(qr.seeRows());
+            }
+        }
+
+        QueryResult merged = new QueryResult(variableDescriptors);
+
+        List<List<DataRow>> results = cartesianProduct(datarowList);
+        if (results == null || results.isEmpty())
+            return null;
+
+        for (List<DataRow> r : results){
+            List<Object> mergedValues = new ArrayList<>();
+            r.forEach(d-> mergedValues.addAll(d.seeValues()));
+            DataRow mdatarow = new DataRow(variableDescriptors, mergedValues);
+            merged.addRow(mdatarow);
+        }
+        return merged;
+    }
 
 
     /**
@@ -179,7 +165,7 @@ public class QueryResultTransformer {
                 throw new IllegalArgumentException("Cannot find table schema of "+ tableName);
             }
 
-            if (found == null) return null;
+            if (found != null) return null;
 
             return qr;
         }
