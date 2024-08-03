@@ -7,19 +7,12 @@ import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
 import org.evomaster.client.java.sql.QueryResult;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.List;
-import java.util.Set;
-import java.util.HashSet;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.evomaster.client.java.sql.dsl.SqlDsl.sql;
 import static org.evomaster.client.java.sql.internal.QueryResultTransformer.convertInsertionDtosToQueryResults;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * created by manzhang on 2024/7/30
@@ -146,6 +139,46 @@ public class QueryResultTransformerTest {
                 "bbb,nmt,bar",
                 "bbb,xyz,foo",
                 "bbb,xyz,bar"
+        );
+
+        assertEquals(expected.size(), results.size());
+
+        for (int i = 0; i < expected.size(); i++){
+            assertEquals(expected.get(i), String.join(",",results.get(i)));
+        }
+
+    }
+
+
+    @Test
+    public void testCartesianProductEmptyList(){
+        List<List<String>> intValues = Collections.emptyList();
+
+        List<List<String>> results = QueryResultTransformer.cartesianProduct(intValues);
+
+        assertTrue(results.isEmpty());
+
+    }
+
+    @Test
+    public void testCartesianProductContainEmptySet(){
+        List<String> setA = Arrays.asList("aaa","bbb");
+        List<String> setB = Arrays.asList("nmt", "xyz");
+        List<String> setC = Collections.emptyList();
+
+        List<List<String>> intValues = new ArrayList<List<String>>(){{
+            add(setA);
+            add(setB);
+            add(setC);
+        }};
+
+        List<List<String>> results = QueryResultTransformer.cartesianProduct(intValues);
+
+        List<String> expected = Arrays.asList(
+                "aaa,nmt",
+                "aaa,xyz",
+                "bbb,nmt",
+                "bbb,xyz"
         );
 
         assertEquals(expected.size(), results.size());
