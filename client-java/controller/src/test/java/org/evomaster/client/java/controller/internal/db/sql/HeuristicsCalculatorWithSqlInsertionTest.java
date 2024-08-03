@@ -115,7 +115,10 @@ public interface HeuristicsCalculatorWithSqlInsertionTest extends DatabaseTestTe
             double a = getFirstAndStartNew(url);
             assertTrue(a > 0d);
 
-            List<InsertionDto> insertions2 = sql().insertInto("Foo", 1L)
+            List<InsertionDto> insertions2 = sql().insertInto("Foo", 2L)
+                    .d("x", "0")
+                    .d("y", "0")
+                    .and().insertInto("Foo", 3L)
                     .d("x", "1")
                     .d("y", ""+y)
                     .dtos();
@@ -155,19 +158,22 @@ public interface HeuristicsCalculatorWithSqlInsertionTest extends DatabaseTestTe
                     .d("y", "0")
                     .dtos();
             executeSqlCommand(insertions, url);
-//            EMSqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x, y) VALUES (0, 0)", false);
 
             EMSqlScriptRunner.execCommand(getConnection(), select, true);
 
             double a = getFirstAndStartNew(url);
             assertTrue(a > 0d);
 
-            insertions = sql().insertInto("Foo", 1L)
+            insertions = sql()
+                    .insertInto("Foo", 2L)
+                    .d("x", "0")
+                    .d("y", "0")
+                    .and().insertInto("Foo", 3L)
                     .d("x", "1")
                     .d("y", ""+y)
                     .dtos();
             executeSqlCommand(insertions, url);
-//            EMSqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x, y) VALUES (1, " + y + ")", true);
+
             EMSqlScriptRunner.execCommand(getConnection(), select, true);
 
             double b = getFirstAndStartNew(url);
@@ -179,96 +185,115 @@ public interface HeuristicsCalculatorWithSqlInsertionTest extends DatabaseTestTe
         }
     }
 
-//    @Test
-//    default void testInnerJoin() throws Exception {
-//
-//        EMSqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Bar(id INT Primary Key, valueColumn INT)", true);
-//        EMSqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(id INT Primary Key, valueColumn INT, bar_id INT, " +
-//                "CONSTRAINT fk FOREIGN KEY (bar_id) REFERENCES Bar(id) )", true);
-//
-//
-//
-//        int x = 10;
-//        int y = 20;
-//
-//        String select = "select f.id, f.valueColumn, f.bar_id  from Foo f inner join Bar b on f.bar_id=b.id " +
-//                "where f.valueColumn=" + x + " and b.valueColumn=" + y + " limit 1";
-//
-//        InstrumentedSutStarter starter = getInstrumentedSutStarter();
-//
-//        try {
-//            String url = start(starter);
-//            url += ControllerConstants.BASE_PATH;
-//
-//            startNewTest(url);
-//
-//
-//            List<InsertionDto> insertions = sql().insertInto("Bar", 1L)
-//                    .d("id", "0")
-//                    .d("valueColumn", "0")
-//                    .and().insertInto("Foo", 2L)
-//                    .d("id", "0")
-//                    .d("valueColumn", "0")
-//                    .d("bar_id", "0")
-//                    .dtos();
-//            executeSqlCommand(insertions, url);
-////            EMSqlScriptRunner.execCommand(getConnection(), "INSERT INTO Bar (id, valueColumn) VALUES (0, 0)", false);
-////            EMSqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, valueColumn, bar_id) VALUES (0, 0, 0)", false);
-//
-//            EMSqlScriptRunner.execCommand(getConnection(), select, true);
-//
-//            double a = getFirstAndStartNew(url);
-//            assertTrue(a > 0d);
-//
-//            insertions = sql().insertInto("Foo", 3L)
-//                    .d("id", "1")
-//                    .d("valueColumn", ""+x)
-//                    .d("bar_id", "0")
-//                    .dtos();
-//            executeSqlCommand(insertions, url);
-////            EMSqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, valueColumn, bar_id) VALUES (1, " + x + ", 0)", true);
-//            EMSqlScriptRunner.execCommand(getConnection(), select, true);
-//
-//            double b = getFirstAndStartNew(url);
-//            assertTrue(b < a);
-//
-//            insertions = sql().insertInto("Bar", 4L)
-//                    .d("id", "1")
-//                    .d("valueColumn", ""+y)
-//                    .and().insertInto("Foo", 5L)
-//                    .d("id", "2")
-//                    .d("valueColumn", "0")
-//                    .d("bar_id", "1")
-//                    .dtos();
-//            executeSqlCommand(insertions, url);
-////            EMSqlScriptRunner.execCommand(getConnection(), "INSERT INTO Bar (id, valueColumn) VALUES (1, " + y + ")", true);
-////            EMSqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, valueColumn, bar_id) VALUES (2, 0, 1)", true);
-//            EMSqlScriptRunner.execCommand(getConnection(), select, true);
-//
-//            double c = getFirstAndStartNew(url);
-//            assertTrue(c < b);
-//
-//            insertions = sql().insertInto("Bar", 6L)
-//                    .d("id", "2")
-//                    .d("valueColumn", ""+y)
-//                    .and().insertInto("Foo", 7L)
-//                    .d("id", "3")
-//                    .d("valueColumn", ""+x)
-//                    .d("bar_id", "2")
-//                    .dtos();
-//            executeSqlCommand(insertions, url);
-////            EMSqlScriptRunner.execCommand(getConnection(), "INSERT INTO Bar (id, valueColumn) VALUES (2, " + y + ")", true);
-////            EMSqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, valueColumn, bar_id) VALUES (3, " + x + ", 2)", true);
-//            EMSqlScriptRunner.execCommand(getConnection(), select, true);
-//
-//            double d = getFirstAndStartNew(url);
-//            assertTrue(d < c);
-//            assertEquals(0d, d, 0.0001);
-//
-//        } finally {
-//            starter.stop();
-//        }
-//    }
+    @Test
+    default void testInnerJoin() throws Exception {
+
+        EMSqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Bar(id INT Primary Key, valueColumn INT)", true);
+        EMSqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(id INT Primary Key, valueColumn INT, bar_id INT, " +
+                "CONSTRAINT fk FOREIGN KEY (bar_id) REFERENCES Bar(id) )", true);
+
+
+
+        int x = 10;
+        int y = 20;
+
+        String select = "select f.id, f.valueColumn, f.bar_id  from Foo f inner join Bar b on f.bar_id=b.id " +
+                "where f.valueColumn=" + x + " and b.valueColumn=" + y + " limit 1";
+
+        InstrumentedSutStarter starter = getInstrumentedSutStarter();
+
+        try {
+            String url = start(starter);
+            url += ControllerConstants.BASE_PATH;
+
+            startNewTest(url);
+
+
+            List<InsertionDto> insertions = sql().insertInto("Bar", 1L)
+                    .d("id", "0")
+                    .d("valueColumn", "0")
+                    .and().insertInto("Foo", 2L)
+                    .d("id", "0")
+                    .d("valueColumn", "0")
+                    .d("bar_id", "0")
+                    .dtos();
+            executeSqlCommand(insertions, url);
+
+            EMSqlScriptRunner.execCommand(getConnection(), select, true);
+
+            double a = getFirstAndStartNew(url);
+            assertTrue(a > 0d);
+
+            insertions = sql().insertInto("Bar", 3L)
+                    .d("id", "0")
+                    .d("valueColumn", "0")
+                    .and().insertInto("Foo", 4L)
+                    .d("id", "0")
+                    .d("valueColumn", "0")
+                    .d("bar_id", "0")
+                    .and().insertInto("Foo", 5L)
+                    .d("id", "1")
+                    .d("valueColumn", ""+x)
+                    .d("bar_id", "0")
+                    .dtos();
+            executeSqlCommand(insertions, url);
+
+            EMSqlScriptRunner.execCommand(getConnection(), select, true);
+
+            double b = getFirstAndStartNew(url);
+            assertTrue(b < a);
+
+            insertions = sql().insertInto("Bar", 6L)
+                    .d("id", "0")
+                    .d("valueColumn", "0")
+                    .and().insertInto("Foo", 7L)
+                    .d("id", "0")
+                    .d("valueColumn", "0")
+                    .d("bar_id", "0")
+                    .and()
+                    .insertInto("Bar", 8L)
+                    .d("id", "1")
+                    .d("valueColumn", ""+y)
+                    .and().insertInto("Foo", 9L)
+                    .d("id", "2")
+                    .d("valueColumn", "0")
+                    .d("bar_id", "1")
+                    .dtos();
+            executeSqlCommand(insertions, url);
+
+            EMSqlScriptRunner.execCommand(getConnection(), select, true);
+
+            double c = getFirstAndStartNew(url);
+            assertTrue(c < b);
+
+            insertions = sql()
+                    .insertInto("Bar", 10L)
+                    .d("id", "0")
+                    .d("valueColumn", "0")
+                    .and().insertInto("Foo", 11L)
+                    .d("id", "0")
+                    .d("valueColumn", "0")
+                    .d("bar_id", "0")
+                    .and().insertInto("Bar", 12L)
+                    .d("id", "2")
+                    .d("valueColumn", ""+y)
+                    .and().insertInto("Foo", 13L)
+                    .d("id", "3")
+                    .d("valueColumn", ""+x)
+                    .d("bar_id", "2")
+                    .dtos();
+            executeSqlCommand(insertions, url);
+
+            EMSqlScriptRunner.execCommand(getConnection(), select, true);
+
+            double d = getFirstAndStartNew(url);
+            assertTrue(d < c);
+            assertEquals(0d, d, 0.0001);
+
+        } finally {
+            starter.stop();
+        }
+    }
 
 
     default Double getFirstAndStartNew(String url) {
