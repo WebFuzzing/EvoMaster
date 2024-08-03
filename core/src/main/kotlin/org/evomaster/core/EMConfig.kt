@@ -77,10 +77,11 @@ class EMConfig {
 
         private const val externalServiceIPRegex = "$_eip_n$_eip_s$_eip_e"
 
-        private  val defaultAlgorithmForBlackBox = Algorithm.RANDOM
+        private val defaultAlgorithmForBlackBox = Algorithm.RANDOM
 
-        private  val defaultAlgorithmForWhiteBox = Algorithm.MIO
+        private val defaultAlgorithmForWhiteBox = Algorithm.MIO
 
+        private val defaultOutputFormatForBlackBox = OutputFormat.PYTHON_UNITTEST
 
         fun validateOptions(args: Array<String>): OptionParser {
 
@@ -416,6 +417,11 @@ class EMConfig {
                         " 'problemType'. The system will default to RESTful API testing.")
                 problemType = ProblemType.REST
             }
+            if (outputFormat == OutputFormat.DEFAULT) {
+                LoggingUtil.uniqueUserWarn("You are doing Black-Box testing, but you did not specify the" +
+                        " 'outputFormat'. The system will default to $defaultOutputFormatForBlackBox.")
+                outputFormat = defaultOutputFormatForBlackBox
+            }
         }
         /*
             the "else" cannot be implemented here, as it will come from the Driver, which has not been called yet.
@@ -445,12 +451,6 @@ class EMConfig {
             }
             if (problemType == ProblemType.GRAPHQL && bbTargetUrl.isNullOrBlank()) {
                 throw ConfigProblemException("In black-box mode for GraphQL APIs, you must set the bbTargetUrl option")
-            }
-            if (outputFormat == OutputFormat.DEFAULT) {
-                /*
-                    TODO in the future, once we support POSTMAN outputs, we should default it here
-                 */
-                throw ConfigProblemException("In black-box mode, you must specify a value for the outputFormat option different from DEFAULT")
             }
         }
 
