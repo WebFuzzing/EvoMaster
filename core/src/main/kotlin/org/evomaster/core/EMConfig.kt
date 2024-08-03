@@ -971,8 +971,8 @@ class EMConfig {
 
     @Important(2.0)
     @Cfg("Specify in which format the tests should be outputted." +
-            " If left on `DEFAULT`, then the value specified in the _EvoMaster Driver_ will be used." +
-            " But a different value must be chosen if doing Black-Box testing.")
+            " If left on `DEFAULT`, for white-box testing then the value specified in the _EvoMaster Driver_ will be used." +
+            " On the other hand, for black-box testing it will default to a predefined type (e.g., Python).")
     var outputFormat = OutputFormat.DEFAULT
 
     @Important(2.1)
