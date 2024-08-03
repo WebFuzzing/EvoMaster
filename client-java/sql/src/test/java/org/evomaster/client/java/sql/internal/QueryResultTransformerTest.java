@@ -1,18 +1,99 @@
 package org.evomaster.client.java.sql.internal;
 
-
+import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
+import org.evomaster.client.java.sql.QueryResult;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.stream.Collectors;
 
+import static org.evomaster.client.java.sql.dsl.SqlDsl.sql;
+import static org.evomaster.client.java.sql.internal.QueryResultTransformer.convertInsertionDtosToQueryResults;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * created by manzhang on 2024/7/30
  */
 public class QueryResultTransformerTest {
+
+
+    private TableDto createTableDate(List<String> columnTypes, List<String> columnNames, String tableName){
+        assertEquals(columnTypes.size(), columnNames.size());
+        TableDto tableDto = new TableDto();
+        tableDto.name = tableName;
+        for (int i = 0; i < columnTypes.size(); i++){
+            ColumnDto dto = new ColumnDto();
+            dto.name = columnNames.get(i);
+            dto.type = columnTypes.get(i);
+            tableDto.columns.add(dto);
+        }
+        return tableDto;
+    }
+
+    @Test
+    public void testConvertInsertionDtosToQueryResults(){
+
+        List<InsertionDto> insertions = sql()
+                .insertInto("FooTable", 1L)
+                .d("fooA", "a1")
+                .d("fooB", "b1")
+                .d("fooC", "c1")
+                .and()
+                .insertInto("FooTable", 2L)
+                .d("fooA", "a2")
+                .d("fooB", "b2")
+                .d("fooC", "c2")
+                .and()
+                .insertInto("BarTable", 3L)
+                .d("barA", "11")
+                .d("barB", "12")
+                .d("barC", "13")
+                .d("barD", "14")
+                .d("barE", "15")
+                .and()
+                .insertInto("BarTable", 4L)
+                .d("barA", "21")
+                .d("barB", "22")
+                .d("barC", "23")
+                .d("barD", "24")
+                .d("barE", "25")
+                .dtos();
+
+
+        Map<String, Set<String>> columns = new HashMap<String, Set<String>>() {{
+            put("FooTable", new HashSet<>(Arrays.asList("fooA", "fooC")));
+            put("BarTable", new HashSet<>(Arrays.asList("barB", "barC", "barD", "barE")));
+        }};
+
+
+        DbSchemaDto schemaDto = new DbSchemaDto();
+        TableDto fooTable = createTableDate(Arrays.asList("CHARACTER","CHARACTER","CHARACTER"), Arrays.asList("fooA","fooB","fooC"), "FooTable");
+        TableDto barTable = createTableDate(Arrays.asList("INT","INT","INT", "INT", "INT"), Arrays.asList("barA","barB","barC", "barD", "barE"), "BarTable");
+        schemaDto.tables.add(fooTable);
+        schemaDto.tables.add(barTable);
+
+        QueryResult[] results = convertInsertionDtosToQueryResults(insertions, columns, schemaDto);
+
+        assertNotNull(results);
+        assertEquals(1, results.length);
+        assertEquals(4, results[0].size());
+
+        assertEquals("12,13,14,15,a1,c1", results[0].seeRows().get(0).seeValues().stream().map(Object::toString).collect(Collectors.joining(",")));
+        assertEquals("12,13,14,15,a2,c2", results[0].seeRows().get(1).seeValues().stream().map(Object::toString).collect(Collectors.joining(",")));
+        assertEquals("22,23,24,25,a1,c1", results[0].seeRows().get(2).seeValues().stream().map(Object::toString).collect(Collectors.joining(",")));
+        assertEquals("22,23,24,25,a2,c2", results[0].seeRows().get(3).seeValues().stream().map(Object::toString).collect(Collectors.joining(",")));
+
+    }
 
 
     @Test
