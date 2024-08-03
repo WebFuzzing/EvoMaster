@@ -73,8 +73,8 @@ class TestWriterUtils {
                 lines.indented {
                     lines.add("aResponse()")
                     lines.indented {
-                        if (connectionHeader != null)
-                            lines.add(".withHeader(\"Connection\",\"${connectionHeader}\")")
+//                        if (connectionHeader != null)
+//                            lines.add(".withHeader(\"Connection\",\"${connectionHeader}\")")
                         if (contentTypeHeader != null)
                             lines.add(".withHeader(\"Content-Type\",\"${contentTypeHeader}\")")
                         lines.add(".withStatus(${status})")
