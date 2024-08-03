@@ -932,7 +932,7 @@ class EMConfig {
     @Important(1.1)
     @Cfg("The path directory of where the generated test classes should be saved to")
     @Folder
-    var outputFolder = "src/em"
+    var outputFolder = "generated_tests"
 
 
     val defaultConfigPath = "em.yaml"
