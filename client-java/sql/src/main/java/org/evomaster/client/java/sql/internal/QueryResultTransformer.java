@@ -8,10 +8,8 @@ import org.evomaster.client.java.sql.DataRow;
 import org.evomaster.client.java.sql.QueryResult;
 import org.evomaster.client.java.sql.VariableDescriptor;
 
-import java.lang.reflect.Array;
 import java.time.Instant;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * This class is used to covert InsertionDto to QueryResult and DataRow
