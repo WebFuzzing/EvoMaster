@@ -2006,7 +2006,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("Specify whether insertions should be used to calculate SQL heuristics instead of retrieving data from real databases.")
-    var useInsertionForSqlHeuristics = false
+    var useInsertionForSqlHeuristics = true
 
     @Debug
     @Cfg("Whether to output executed sql info")
