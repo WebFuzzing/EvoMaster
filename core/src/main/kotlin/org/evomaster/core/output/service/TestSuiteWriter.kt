@@ -354,6 +354,11 @@ class TestSuiteWriter {
 
         val format = config.outputFormat
 
+        if(format.isPython()){
+            lines.add("#!/usr/bin/env python")
+            lines.addEmpty(1)
+        }
+
         if (name.hasPackage() && format.isJavaOrKotlin()) {
             addStatement("package ${name.getPackage()}", lines)
             lines.addEmpty(2)

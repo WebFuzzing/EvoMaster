@@ -3,10 +3,15 @@
 Under development in `master` branch.
 
 ### New Features
+- new fully-supported output formats: Python and JavaScript 
 - support for JDK 21
 - body payloads for GET, HEAD and DELETE are not valid in OpenAPI. However, they can be valid in some special cases in HTTP (as of RFC 9110). Now, EvoMaster can test those cases as well, but only for DELETE (for GET it is not possible, as current version of HTTP library in EvoMaster is faulty, i.e., it cannot handle such case).
 - update of internal parameter settings to improve performance, based on large tuning experiments. 
 - --prematureStop option can now be used to stop search prematurely if no improvement has been obtained in the last specified amount of time 
+
+### Changes
+- output format for black-box testing now defaults to Python instead of throwing an error
+- --outputFolder now defaults to a more meaningful value, i.e., "generated_tests" 
 
 ### Bug Fixes
 - better dealing with reset of SQL tables where names in queries used quotes, and/or table is not accessible in database.

@@ -161,3 +161,4 @@ Migrations/
 /e2e-tests/spring-graphql-bb/python/generated/
 /e2e-tests/spring-graphql-bb/target/
 
+/generated_tests/
