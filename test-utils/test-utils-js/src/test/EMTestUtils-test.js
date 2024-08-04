@@ -34,7 +34,7 @@ test("testGivenAnInvalidLocationHeaderWhenResolveLocationThenTheExpectedTemplate
     const res = EMTestUtils.resolveLocation(location, template);
 
     //TODO yet another difference between Java and JS handling of URIs... should check specs to see which one is correct
-    //expect(res).toBe(location);
+    expect(res).toBe("http://localhost:12345/a/%2252%22");
 });
 
 test("testIsValidURI", () => {
@@ -50,8 +50,15 @@ test("testIsValidURI", () => {
 
     //this should fail, as "{}" are invalid chars
     //TODO here Java and JS libraries do differ... should check specs to see which one is correct
-    //expect(EMTestUtils.isValidURIorEmpty("/{a}")).toBe(false);
-    //expect(EMTestUtils.isValidURIorEmpty("--://///{a}")).toBe(false);
+    expect(EMTestUtils.isValidURIorEmpty("/{a}")).toBe(true);
+    expect(EMTestUtils.isValidURIorEmpty("--://///{a}")).toBe(true);
+    expect(EMTestUtils.isValidURIorEmpty("http://foo.org/#")).toBe(true);
+    expect(EMTestUtils.isValidURIorEmpty("http://foo.org/#a")).toBe(true);
+    expect(EMTestUtils.isValidURIorEmpty("http://foo.org/|foo")).toBe(true);
+    expect(EMTestUtils.isValidURIorEmpty("http://example.com/?key=value&")).toBe(true);
+    expect(EMTestUtils.isValidURIorEmpty("http://example.com/#fragment?query=value")).toBe(true);
+    expect(EMTestUtils.isValidURIorEmpty("http://example.com:port")).toBe(false);
+
 });
 
 test("testResolveLocation_null", () => {

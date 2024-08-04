@@ -77,6 +77,11 @@ class EMConfig {
 
         private const val externalServiceIPRegex = "$_eip_n$_eip_s$_eip_e"
 
+        private  val defaultAlgorithmForBlackBox = Algorithm.RANDOM
+
+        private  val defaultAlgorithmForWhiteBox = Algorithm.MIO
+
+
         fun validateOptions(args: Array<String>): OptionParser {
 
             val config = EMConfig() // tmp config object used only for validation.
@@ -391,6 +396,9 @@ class EMConfig {
         }
     }
 
+    /**
+     * Note: this can have side-effect of updating some DEFAULT settings
+     */
     fun checkMultiFieldConstraints() {
         /*
             Each option field might have specific constraints, setup with @annotations.
@@ -398,6 +406,25 @@ class EMConfig {
             Those are defined here.
             They can be checked only once all fields have been updated
          */
+
+        /*
+            First start from updating DEFAULT
+         */
+        if(blackBox){
+            if (problemType == ProblemType.DEFAULT) {
+                LoggingUtil.uniqueUserWarn("You are doing Black-Box testing, but you did not specify the" +
+                        " 'problemType'. The system will default to RESTful API testing.")
+                problemType = ProblemType.REST
+            }
+        }
+        /*
+            the "else" cannot be implemented here, as it will come from the Driver, which has not been called yet.
+            It is handled directly in Main
+         */
+        if(algorithm == Algorithm.DEFAULT ){
+            algorithm = if(blackBox) defaultAlgorithmForBlackBox else defaultAlgorithmForWhiteBox
+        }
+
 
         if (!blackBox && bbSwaggerUrl.isNotBlank()) {
             throw ConfigProblemException("'bbSwaggerUrl' should be set only in black-box mode")
@@ -412,12 +439,6 @@ class EMConfig {
         }
 
         if (blackBox && !bbExperiments) {
-
-            if (problemType == ProblemType.DEFAULT) {
-                LoggingUtil.uniqueUserWarn("You are doing Black-Box testing, but you did not specify the" +
-                        " 'problemType'. The system will default to RESTful API testing.")
-                problemType = ProblemType.REST
-            }
 
             if (problemType == ProblemType.REST && bbSwaggerUrl.isNullOrBlank()) {
                 throw ConfigProblemException("In black-box mode for REST APIs, you must set the bbSwaggerUrl option")
@@ -1036,11 +1057,11 @@ class EMConfig {
     var avoidNonDeterministicLogs = false
 
     enum class Algorithm {
-        MIO, RANDOM, WTS, MOSA
+        DEFAULT, SMARTS, MIO, RANDOM, WTS, MOSA
     }
 
-    @Cfg("The algorithm used to generate test cases")
-    var algorithm = Algorithm.MIO
+    @Cfg("The algorithm used to generate test cases. The default depends on whether black-box or white-box testing is done.")
+    var algorithm = Algorithm.DEFAULT
 
     /**
      * Workaround for issues with annotations that can not be applied on ENUM values,
@@ -2395,15 +2416,15 @@ class EMConfig {
 
     /**
      * Check if the used algorithm is MIO.
-     * MIO is the default search algorithm in EM.
+     * MIO is the default search algorithm in EM for white-box testing.
      * Many techniques in EM are defined only for MIO, ie most improvements in EM are
      * done as an extension of MIO.
      */
-    fun isMIO() = algorithm == Algorithm.MIO
+    fun isMIO() = algorithm == Algorithm.MIO || (algorithm == Algorithm.DEFAULT && !blackBox)
 
     fun isEnabledTaintAnalysis() = isMIO() && baseTaintAnalysisProbability > 0
 
-    fun isEnabledSmartSampling() = isMIO() && probOfSmartSampling > 0
+    fun isEnabledSmartSampling() = (isMIO() || algorithm == Algorithm.SMARTS) && probOfSmartSampling > 0
 
     fun isEnabledWeightBasedMutation() = isMIO() && weightBasedMutationRate
 

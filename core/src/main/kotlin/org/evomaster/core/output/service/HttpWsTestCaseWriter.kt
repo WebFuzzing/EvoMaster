@@ -206,7 +206,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 when {
                     format.isJavaOrKotlin() -> lines.add(".cookies(${CookieWriter.cookiesName(elc)})")
                     format.isJavaScript() -> lines.add(".set('Cookie', ${CookieWriter.cookiesName(elc)})")
-                    //TODO Python
+                    // Python cookies are set alongside the headers and body when performing the request
                 }
             }
         }
@@ -398,6 +398,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             when {
                 format.isJavaOrKotlin() -> lines.add(".contentType(\"${bodyParam.contentType()}\")")
                 format.isJavaScript() -> lines.add(".set('Content-Type','${bodyParam.contentType()}')")
+                format.isPython() -> lines.add("headers[\"content-type\"] = \"${bodyParam.contentType()}\"")
                 //FIXME
                 //format.isCsharp() -> lines.add("Client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(\"${bodyParam.contentType()}\"));")
             }

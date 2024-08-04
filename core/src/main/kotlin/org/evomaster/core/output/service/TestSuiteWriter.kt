@@ -489,7 +489,23 @@ class TestSuiteWriter {
             lines.add("import unittest")
             lines.add("import requests")
             if (config.testTimeout > 0) {
-                lines.add("import timeout_decorator")
+                //see https://stackoverflow.com/questions/32309683/timeout-decorator-is-it-possible-to-disable-or-make-it-work-on-windows
+                lines.add("import os")
+                lines.add("if os.name == 'nt':")
+                lines.indented {
+                    lines.add("class timeout_decorator:")
+                    lines.indented {
+                        lines.add("@staticmethod")
+                        lines.add("def timeout(*args, **kwargs):")
+                        lines.indented {
+                            lines.add("return lambda f: f # return a no-op decorator")
+                        }
+                    }
+                }
+                lines.add("else:")
+                lines.indented {
+                    lines.add("import timeout_decorator")
+                }
             }
             lines.add("from $pythonUtilsFilenameNoExtension import *")
             val pythonUtils = PyLoader::class.java.getResource("/$pythonUtilsFilename").readText()

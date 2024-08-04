@@ -20,13 +20,13 @@ class BBGQLBaseEMTest : SpringTestBase() {
 
 
     @ParameterizedTest
-    @EnumSource(names = ["JS_JEST"]) //TODO add Python
+    @EnumSource(names = ["JS_JEST", "PYTHON_UNITTEST"])
     fun testBlackBoxOutput(outputFormat: OutputFormat) {
 
         executeAndEvaluateBBTest(
             outputFormat,
             "base",
-            20,
+            30,
             3,
             listOf("ALL")
         ){ args: MutableList<String> ->

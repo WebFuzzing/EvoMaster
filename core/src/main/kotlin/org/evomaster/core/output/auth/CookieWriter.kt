@@ -49,17 +49,33 @@ object CookieWriter {
                 format.isJava() -> lines.add("final Map<String,String> ${cookiesName(k)} = ")
                 format.isKotlin() -> lines.add("val ${cookiesName(k)} : Map<String,String> = ")
                 format.isJavaScript() -> lines.add("const ${cookiesName(k)} = (")
-                //TODO Python
             }
 
-            testCaseWriter.startRequest(lines)
-            lines.indent()
-            addCallCommand(lines, k, testCaseWriter, format, baseUrlOfSut, cookiesName(k))
+            if (!format.isPython()) {
+                testCaseWriter.startRequest(lines)
+                lines.indent()
+            }
+
+            val targetCookieVariable = when {
+                /*
+                 In python, cookies are returned in a CookieJar object which we will name cookies_foo_jar for example.
+                 The CookieJar will then be converted to a dictionary that is passed on to the next request
+                 in cookies=cookies_foo. Passing on the CookieJar to the next request did not seem to work.
+                 */
+                format.isPython() -> "${cookiesName(k)}_jar"
+                else -> cookiesName(k)
+            }
+
+            addCallCommand(lines, k, testCaseWriter, format, baseUrlOfSut, targetCookieVariable)
 
             when {
                 format.isJavaOrKotlin() -> lines.add(".then().extract().cookies()")
                 format.isJavaScript() -> lines.add(").header['set-cookie'][0].split(';')[0]")
                 format.isPython() -> lines.append(".cookies")
+            }
+
+            if (format.isPython()) {
+                lines.add("${cookiesName(k)} = requests.utils.dict_from_cookiejar($targetCookieVariable)")
             }
             //TODO check response status and cookie headers?
 
@@ -83,7 +99,7 @@ object CookieWriter {
         targetVariable: String
     ) {
 
-        if(format.isJavaScript() || format.isPython()) {
+        if(format.isJavaScript()) {
             callPost(lines, k, format, baseUrlOfSut)
         }
 
@@ -99,7 +115,10 @@ object CookieWriter {
         when (k.contentType) {
             ContentType.X_WWW_FORM_URLENCODED -> {
                 val send = testCaseWriter.sendBodyCommand()
-                lines.add(".$send(\"${k.payload}\")")
+                when {
+                    format.isPython() -> lines.add("body = \"${k.payload}\"")
+                    else -> lines.add(".$send(\"${k.payload}\")")
+                }
             }
             ContentType.JSON -> {
                 testCaseWriter.printSendJsonBody(k.payload, lines)
@@ -122,16 +141,13 @@ object CookieWriter {
         if (format.isPython()) {
             lines.add("$targetVariable = requests \\")
             lines.indent(2)
-        }
-
-        if (format.isPython()) {
+            callPost(lines, k, format, baseUrlOfSut)
             lines.append(", ")
             lines.indented {
-                lines.add("headers=headers, data=body")
+                lines.add("headers=headers, data=body)")
             }
             lines.deindent(2)
         }
-
     }
 
     private fun callPost(
@@ -151,6 +167,8 @@ object CookieWriter {
             }
             lines.append("${k.endpoint}\"")
         }
-        lines.append(")")
+        if (!format.isPython()) {
+            lines.append(")")
+        }
     }
 }

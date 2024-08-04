@@ -82,7 +82,7 @@ abstract class SpringTestBase : RestTestBase() {
     ){
         val baseLocation = when {
             outputFormat.isJavaScript() -> BlackBoxUtils.baseLocationForJavaScript
-            // TODO Python here
+            outputFormat.isPython() -> BlackBoxUtils.baseLocationForPython
             else -> throw IllegalArgumentException("Not supported output type $outputFormat")
         }
         runTestForNonJVM(outputFormat, baseLocation, outputFolderName, iterations, timeoutMinutes, lambda)
@@ -92,7 +92,7 @@ abstract class SpringTestBase : RestTestBase() {
 
         when{
             outputFormat.isJavaScript() -> BlackBoxUtils.runNpmTests(BlackBoxUtils.relativePath(outputFolderName))
-            //TODO Python here
+            outputFormat.isPython() -> BlackBoxUtils.runPythonTests(BlackBoxUtils.relativePath(outputFolderName))
             else -> throw IllegalArgumentException("Not supported output type $outputFormat")
         }
     }

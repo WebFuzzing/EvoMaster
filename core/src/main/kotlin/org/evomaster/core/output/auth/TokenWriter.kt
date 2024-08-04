@@ -93,7 +93,7 @@ object TokenWriter {
                 lines.add(".then(res => {${tokenName(k)} += res.body.$path;},")
                 lines.indented { lines.add("error => {console.log(error.response.body); throw Error(\"Auth failed.\")});") }
             } else if (format.isPython()) {
-                lines.add("${tokenName(k)} = ${tokenName(k)} + \" \" + ${responseName(k)}.json()$path")
+                lines.add("${tokenName(k)} = ${tokenName(k)} + ${responseName(k)}.json()$path")
             }else
                 lines.add(".then().extract().response().path(\"$path\")")
 
