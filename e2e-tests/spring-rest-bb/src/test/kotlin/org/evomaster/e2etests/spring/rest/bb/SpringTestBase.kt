@@ -83,6 +83,8 @@ abstract class SpringTestBase : RestTestBase() {
         val baseLocation = when {
             outputFormat.isJavaScript() -> BlackBoxUtils.baseLocationForJavaScript
             outputFormat.isPython() -> BlackBoxUtils.baseLocationForPython
+            outputFormat.isJava() -> BlackBoxUtils.baseLocationForJava
+            //TODO Kotlin
             else -> throw IllegalArgumentException("Not supported output type $outputFormat")
         }
         runTestForNonJVM(outputFormat, baseLocation, outputFolderName, iterations, timeoutMinutes, lambda)
@@ -93,6 +95,7 @@ abstract class SpringTestBase : RestTestBase() {
         when{
             outputFormat.isJavaScript() -> BlackBoxUtils.runNpmTests(BlackBoxUtils.relativePath(outputFolderName))
             outputFormat.isPython() -> BlackBoxUtils.runPythonTests(BlackBoxUtils.relativePath(outputFolderName))
+            outputFormat.isJava() -> BlackBoxUtils.runJavaTests(outputFolderName)
             else -> throw IllegalArgumentException("Not supported output type $outputFormat")
         }
     }
@@ -106,8 +109,11 @@ abstract class SpringTestBase : RestTestBase() {
         timeoutMinutes: Int,
         lambda: Consumer<MutableList<String>>
     ) {
-
-        val folder = Paths.get(rootOutputFolderBasePath, outputFolderName)
+        val folder = if(outputFormat.isJavaOrKotlin()){
+            Paths.get(rootOutputFolderBasePath)
+        } else {
+            Paths.get(rootOutputFolderBasePath, outputFolderName)
+        }
 
         assertTimeoutPreemptively(Duration.ofMinutes(timeoutMinutes.toLong())) {
             FileUtils.deleteDirectory(folder.toFile())
@@ -124,6 +130,10 @@ abstract class SpringTestBase : RestTestBase() {
                 setOption(args, "outputFolder", folder.toString())
                 setOption(args, "testSuiteFileName", "")
                 addBlackBoxOptions(args, outputFormat)
+
+                if(outputFormat.isJavaOrKotlin()){
+                    setOption(args,"outputFilePrefix",BlackBoxUtils.getOutputFilePrefix(outputFolderName))
+                }
 
                 defaultSeed++
                 lambda.accept(ArrayList(args))

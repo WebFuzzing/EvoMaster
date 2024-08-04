@@ -162,3 +162,5 @@ Migrations/
 /e2e-tests/spring-graphql-bb/target/
 
 /generated_tests/
+/e2e-tests/spring-rest-bb/maven/src/
+/e2e-tests/spring-rest-bb/maven/target/

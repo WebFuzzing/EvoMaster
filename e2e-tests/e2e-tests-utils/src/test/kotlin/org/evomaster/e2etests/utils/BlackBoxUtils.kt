@@ -10,10 +10,12 @@ object BlackBoxUtils {
 
     private const val JS_BASE_PATH = "./javascript"
     private const val PY_BASE_PATH = "./python"
+    private const val MAVEN_BASE_PATH = "./maven"
     private const val GENERATED_FOLDER_NAME = "generated"
 
     const val baseLocationForJavaScript = "$JS_BASE_PATH/$GENERATED_FOLDER_NAME"
     const val baseLocationForPython = "$PY_BASE_PATH/$GENERATED_FOLDER_NAME"
+    const val baseLocationForJava = "$MAVEN_BASE_PATH/src/test/java"
 
     fun relativePath(folderName: String) = "$GENERATED_FOLDER_NAME/$folderName"
 
@@ -30,6 +32,8 @@ object BlackBoxUtils {
     }
 
     private fun npm() = if (isWindows()) "npm.cmd" else "npm"
+
+    private fun mvn() = if (isWindows()) "mvn.cmd" else "mvn"
 
     private fun runNpmInstall() {
         val command = listOf(npm(), "ci")
@@ -98,4 +102,12 @@ object BlackBoxUtils {
         val command = listOf("python", "-m", "unittest", "discover", "-s", folderRelativePath, "-p", "*_Test.py")
         runTestsCommand(command, PY_BASE_PATH, "Python")
     }
+
+    fun runJavaTests(outputFolderName: String){
+        val prefix = getOutputFilePrefix(outputFolderName)
+        val command = listOf(mvn(),"clean","test","-Dincludes=$prefix*.java")
+        runTestsCommand(command, MAVEN_BASE_PATH, "Maven")
+    }
+
+    fun getOutputFilePrefix(outputFolderName: String) = "com.$outputFolderName.EM"
 }
