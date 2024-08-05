@@ -2246,11 +2246,11 @@ class EMConfig {
 
     @Cfg("In REST, specify probability of using 'default' values, if any is specified in the schema")
     @Probability(true)
-    var probRestDefault = 0.20
+    var probRestDefault = 0.05
 
     @Cfg("In REST, specify probability of using 'example(s)' values, if any is specified in the schema")
     @Probability(true)
-    var probRestExamples = 0.05
+    var probRestExamples = 0.20
 
 
     //TODO mark as deprecated once we support proper Robustness Testing
