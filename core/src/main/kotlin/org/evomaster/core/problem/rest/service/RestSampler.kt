@@ -76,16 +76,27 @@ class RestSampler : AbstractRestSampler(){
             else -> SampleType.RANDOM
         }
 
-        if (test.isNotEmpty()) {
-            val objInd = RestIndividual(test, sampleType, mutableListOf(),
-                trackOperator = if (config.trackingEnabled()) this else null,
-                index = if (config.trackingEnabled()) time.evaluatedIndividuals else Traceable.DEFAULT_INDEX)
-
-            objInd.doGlobalInitialize(searchGlobalState)
-            return objInd
+        if(test.isEmpty()){
+            return sampleAtRandom()
         }
 
-        return sampleAtRandom()
+        enhanceWithLinksSupport(test)
+
+        val objInd = RestIndividual(test, sampleType, mutableListOf(),
+            trackOperator = if (config.trackingEnabled()) this else null,
+            index = if (config.trackingEnabled()) time.evaluatedIndividuals else Traceable.DEFAULT_INDEX)
+
+        objInd.doGlobalInitialize(searchGlobalState)
+        return objInd
+    }
+
+    private fun enhanceWithLinksSupport(test: MutableList<RestCallAction>) {
+        if(!config.useRestLinks){
+            return
+        }
+        //https://swagger.io/docs/specification/links/
+        val rca = test.last()
+        if(rca)
     }
 
     private fun handleSmartPost(post: RestCallAction, test: MutableList<RestCallAction>): SampleType {

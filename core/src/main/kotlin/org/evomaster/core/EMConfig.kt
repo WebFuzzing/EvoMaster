@@ -2252,6 +2252,9 @@ class EMConfig {
     @Probability(true)
     var probRestExamples = 0.05
 
+    @Experimental
+    @Cfg("In REST, enable the supports of 'links' between resources defined in the OpenAPI schema, if any")
+    var useRestLinks = false
 
     //TODO mark as deprecated once we support proper Robustness Testing
     @Cfg("When generating data, allow in some cases to use invalid values on purpose")
