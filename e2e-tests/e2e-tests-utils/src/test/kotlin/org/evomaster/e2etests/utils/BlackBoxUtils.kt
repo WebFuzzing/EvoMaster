@@ -51,8 +51,8 @@ object BlackBoxUtils {
 
     private fun executeInstallShellCommand(command: List<String>, directory: String, technology: String) {
         val builder = ProcessBuilder(command)
-        //Surefire does NOT like it... but needed when debugging locally
-        //builder.inheritIO()
+        //Surefire does NOT like it if we redirect output to file (Maven ll not work)...
+        builder.inheritIO()
         builder.directory(File(directory))
 
         val process = builder.start()
@@ -71,8 +71,8 @@ object BlackBoxUtils {
 
     private fun runTestsCommand(command: List<String>, directory: String, technology: String) {
         val builder = ProcessBuilder(command)
-        //Surefire does NOT like it... but needed when debugging locally
-        //builder.inheritIO()
+        //Surefire does NOT like it if we redirect output to file (Maven ll not work)...
+        builder.inheritIO()
         builder.directory(File(directory))
 
         val process = builder.start()
