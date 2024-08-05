@@ -9,6 +9,7 @@ import org.evomaster.e2etests.utils.BlackBoxUtils
 import org.evomaster.e2etests.utils.CoveredTargets
 import org.evomaster.e2etests.utils.RestTestBase
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.assertTimeoutPreemptively
 import java.io.File
@@ -63,6 +64,8 @@ abstract class SpringTestBase : RestTestBase() {
         targetLabels: Collection<String>,
         lambda: Consumer<MutableList<String>>
     ){
+        assumeTrue(outputFormat != OutputFormat.DEFAULT)
+
         assertFalse(CoveredTargets.areCovered(targetLabels))
         runBlackBoxEM(outputFormat, outputFolderName, iterations, timeoutMinutes, lambda)
         BlackBoxUtils.checkCoveredTargets(targetLabels)
@@ -84,7 +87,7 @@ abstract class SpringTestBase : RestTestBase() {
             outputFormat.isJavaScript() -> BlackBoxUtils.baseLocationForJavaScript
             outputFormat.isPython() -> BlackBoxUtils.baseLocationForPython
             outputFormat.isJava() -> BlackBoxUtils.baseLocationForJava
-            //TODO Kotlin
+            outputFormat.isKotlin() -> BlackBoxUtils.baseLocationForKotlin
             else -> throw IllegalArgumentException("Not supported output type $outputFormat")
         }
         runTestForNonJVM(outputFormat, baseLocation, outputFolderName, iterations, timeoutMinutes, lambda)
@@ -96,6 +99,7 @@ abstract class SpringTestBase : RestTestBase() {
             outputFormat.isJavaScript() -> BlackBoxUtils.runNpmTests(BlackBoxUtils.relativePath(outputFolderName))
             outputFormat.isPython() -> BlackBoxUtils.runPythonTests(BlackBoxUtils.relativePath(outputFolderName))
             outputFormat.isJava() -> BlackBoxUtils.runJavaTests(outputFolderName)
+            outputFormat.isKotlin() -> BlackBoxUtils.runKotlinTests(outputFolderName)
             else -> throw IllegalArgumentException("Not supported output type $outputFormat")
         }
     }
@@ -131,8 +135,11 @@ abstract class SpringTestBase : RestTestBase() {
                 setOption(args, "testSuiteFileName", "")
                 addBlackBoxOptions(args, outputFormat)
 
-                if(outputFormat.isJavaOrKotlin()){
-                    setOption(args,"outputFilePrefix",BlackBoxUtils.getOutputFilePrefix(outputFolderName))
+                if(outputFormat.isJava()){
+                    setOption(args,"outputFilePrefix",BlackBoxUtils.getOutputFilePrefixJava(outputFolderName))
+                }
+                if(outputFormat.isKotlin()){
+                    setOption(args,"outputFilePrefix",BlackBoxUtils.getOutputFilePrefixKotlin(outputFolderName))
                 }
 
                 defaultSeed++

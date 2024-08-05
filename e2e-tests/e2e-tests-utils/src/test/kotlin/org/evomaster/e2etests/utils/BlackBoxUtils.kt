@@ -16,6 +16,7 @@ object BlackBoxUtils {
     const val baseLocationForJavaScript = "$JS_BASE_PATH/$GENERATED_FOLDER_NAME"
     const val baseLocationForPython = "$PY_BASE_PATH/$GENERATED_FOLDER_NAME"
     const val baseLocationForJava = "$MAVEN_BASE_PATH/src/test/java"
+    const val baseLocationForKotlin = "$MAVEN_BASE_PATH/src/test/kotlin"
 
     fun relativePath(folderName: String) = "$GENERATED_FOLDER_NAME/$folderName"
 
@@ -103,11 +104,23 @@ object BlackBoxUtils {
         runTestsCommand(command, PY_BASE_PATH, "Python")
     }
 
-    fun runJavaTests(outputFolderName: String){
-        val prefix = getOutputFilePrefix(outputFolderName)
-        val command = listOf(mvn(),"clean","test","-Dincludes=$prefix*.java")
+    fun runJavaTests(outputFolderName: String) {
+        val prefix = getOutputFilePrefixJava(outputFolderName)
+        runMavenTests(prefix)
+    }
+
+    fun runKotlinTests(outputFolderName: String){
+        val prefix = getOutputFilePrefixKotlin(outputFolderName)
+        runMavenTests(prefix)
+    }
+
+    private fun runMavenTests(prefix: String){
+        val command = listOf(mvn(),"clean","test","-Dtest=$prefix*")
         runTestsCommand(command, MAVEN_BASE_PATH, "Maven")
     }
 
-    fun getOutputFilePrefix(outputFolderName: String) = "com.$outputFolderName.EM"
+    fun getOutputFilePrefixJava(outputFolderName: String) = "com.java.$outputFolderName.EM"
+
+    fun getOutputFilePrefixKotlin(outputFolderName: String) = "com.kotlin.$outputFolderName.EM"
+
 }

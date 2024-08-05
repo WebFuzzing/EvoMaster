@@ -22,7 +22,7 @@ class BBExamplesEMTest : SpringTestBase() {
     }
 
     @ParameterizedTest
-    @EnumSource(names = ["JS_JEST", "PYTHON_UNITTEST","JAVA_JUNIT_4","JAVA_JUNIT_5"])
+    @EnumSource
     fun testBlackBoxOutput(outputFormat: OutputFormat) {
 
         executeAndEvaluateBBTest(
