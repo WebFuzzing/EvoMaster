@@ -6,13 +6,14 @@
 
 <!--
     IMPORTANT: although there is a parent, it must not be part of project hierarchy.
-    In other words, the parent MUST NOT declare this as a submodule
+    In other words, the parent MUST NOT declare this as a submodule.
+    But this then requires a hack in the version.py script
  -->
     <parent>
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster-e2e-tests</artifactId>
-        <!-- FIXME handle in version script -->
-        <version>3.0.1-SNAPSHOT</version>
+        <!-- WARNING: the marker is used in the version.py script -->
+        <version>3.0.1-SNAPSHOT</version><!--MARKER-->
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
