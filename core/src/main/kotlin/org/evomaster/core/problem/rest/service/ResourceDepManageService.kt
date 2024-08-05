@@ -2,6 +2,7 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
+import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionsDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.sql.SqlAction
@@ -88,7 +89,7 @@ class ResourceDepManageService {
             if (config.doesApplyNameMatching) updateParamInfo(action as RestCallAction, tables)
             // size of extraHeuristics might be less than size of action due to failure of handling rest action
             if (index < dto.extraHeuristics.size) {
-                val dbDto = dto.extraHeuristics[index].databaseExecutionDto
+                val dbDto = dto.extraHeuristics[index].sqlSqlExecutionsDto
                 if (dbDto != null)
                     updateResourceToTable(action as RestCallAction, dbDto, tables, addedMap, removedMap)
             }
@@ -221,7 +222,7 @@ class ResourceDepManageService {
         }
     }
 
-    private fun updateResourceToTable(action: RestCallAction, dto: org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto, tables: Map<String, Table>,
+    private fun updateResourceToTable(action: RestCallAction, dto: SqlExecutionsDto, tables: Map<String, Table>,
                                       addedMap: MutableMap<String, MutableSet<String>>, removedMap: MutableMap<String, MutableSet<String>>) {
 
         dto.insertedData.filter { u -> tables.any { it.key.toLowerCase() == u.key } }.let { added ->
@@ -1132,7 +1133,7 @@ class ResourceDepManageService {
             extractRelatedTablesForCall(c, withSql = c.is2POST).values.flatMap { it.map { g->g.tableName } }.toSet()
         }.toSet()
     }
-    
+
     /**************************************** apply parser to derive ************************************************************************/
 
     /**

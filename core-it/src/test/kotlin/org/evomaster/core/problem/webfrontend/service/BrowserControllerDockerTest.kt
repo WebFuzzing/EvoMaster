@@ -1,6 +1,5 @@
 package org.evomaster.core.problem.webfrontend.service
 
-import org.evomaster.client.java.controller.api.SeleniumEMUtils
 import org.evomaster.core.problem.webfrontend.UserActionType
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals

@@ -20,6 +20,10 @@ import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.SearchTimeController
+import org.evomaster.test.utils.EMTestUtils
+import org.evomaster.test.utils.SeleniumEMUtils
+import org.evomaster.test.utils.js.JsLoader
+import org.evomaster.test.utils.py.PyLoader
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
@@ -35,6 +39,7 @@ import java.time.ZonedDateTime
 class TestSuiteWriter {
 
     companion object {
+
         const val jsImport = "EM"
 
         /**
@@ -42,13 +47,18 @@ class TestSuiteWriter {
          */
         const val controller = "controller"
         const val driver = "driver"
+
+        private const val pythonUtilsFilenameNoExtension = "em_test_utils"
+        const val pythonUtilsFilename = "$pythonUtilsFilenameNoExtension.py"
+        const val javascriptUtilsFilename = "EMTestUtils.js"
+
+        private val log: Logger = LoggerFactory.getLogger(TestSuiteWriter::class.java)
+
         private const val baseUrlOfSut = "baseUrlOfSut"
         private const val expectationsMasterSwitch = "ems"
         private const val fixtureClass = "ControllerFixture"
         private const val fixture = "_fixture"
         private const val browser = "browser"
-
-        private val log: Logger = LoggerFactory.getLogger(TestSuiteWriter::class.java)
     }
 
     @Inject
@@ -74,7 +84,6 @@ class TestSuiteWriter {
 
     private var activePartialOracles = mutableMapOf<String, Boolean>()
 
-    private val pythonUtilsFilename = "em_test_utils.py"
 
 
     fun writeTests(
@@ -345,6 +354,11 @@ class TestSuiteWriter {
 
         val format = config.outputFormat
 
+        if(format.isPython()){
+            lines.add("#!/usr/bin/env python")
+            lines.addEmpty(1)
+        }
+
         if (name.hasPackage() && format.isJavaOrKotlin()) {
             addStatement("package ${name.getPackage()}", lines)
             lines.addEmpty(2)
@@ -374,7 +388,7 @@ class TestSuiteWriter {
         if (format.isJavaOrKotlin()) {
 
             addImport("java.util.List", lines)
-            addImport("org.evomaster.client.java.controller.api.EMTestUtils.*", lines, true)
+            addImport(EMTestUtils::class.java.name +".*", lines, true)
             addImport("org.evomaster.client.java.controller.SutHandler", lines)
 
             if (useRestAssured()) {
@@ -444,13 +458,17 @@ class TestSuiteWriter {
                 addImport("org.testcontainers.containers.BrowserWebDriverContainer", lines)
                 addImport("org.openqa.selenium.chrome.ChromeOptions", lines)
                 addImport("org.openqa.selenium.remote.RemoteWebDriver", lines)
-                addImport("org.evomaster.client.java.controller.api.SeleniumEMUtils.*", lines, true)
+                addImport(SeleniumEMUtils::class.java.name + ".*", lines, true)
             }
         }
 
         if (format.isJavaScript()) {
             lines.add("const superagent = require(\"superagent\");")
-            lines.add("const $jsImport = require(\"evomaster-client-js\").EMTestUtils;")
+
+            val jsUtils = JsLoader::class.java.getResource("/$javascriptUtilsFilename").readText()
+            saveToDisk(jsUtils, Paths.get(config.outputFolder, javascriptUtilsFilename))
+            lines.add("const $jsImport = require(\"./$javascriptUtilsFilename\");")
+
             if (controllerName != null) {
                 lines.add("const $controllerName = require(\"${config.jsControllerPath}\");")
             }
@@ -476,10 +494,26 @@ class TestSuiteWriter {
             lines.add("import unittest")
             lines.add("import requests")
             if (config.testTimeout > 0) {
-                lines.add("import timeout_decorator")
+                //see https://stackoverflow.com/questions/32309683/timeout-decorator-is-it-possible-to-disable-or-make-it-work-on-windows
+                lines.add("import os")
+                lines.add("if os.name == 'nt':")
+                lines.indented {
+                    lines.add("class timeout_decorator:")
+                    lines.indented {
+                        lines.add("@staticmethod")
+                        lines.add("def timeout(*args, **kwargs):")
+                        lines.indented {
+                            lines.add("return lambda f: f # return a no-op decorator")
+                        }
+                    }
+                }
+                lines.add("else:")
+                lines.indented {
+                    lines.add("import timeout_decorator")
+                }
             }
-            lines.add("from em_test_utils import *")
-            val pythonUtils = Main::class.java.getResource("/$pythonUtilsFilename").readText()
+            lines.add("from $pythonUtilsFilenameNoExtension import *")
+            val pythonUtils = PyLoader::class.java.getResource("/$pythonUtilsFilename").readText()
             saveToDisk(pythonUtils, Paths.get(config.outputFolder, pythonUtilsFilename))
         }
 

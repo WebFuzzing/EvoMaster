@@ -3,6 +3,7 @@ package org.evomaster.core.output.auth
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.service.ApiTestCaseWriter
+import org.evomaster.core.output.service.HttpWsTestCaseWriter
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.auth.EndpointCallLogin
 import org.evomaster.core.search.EvaluatedIndividual
@@ -29,7 +30,7 @@ object TokenWriter {
                             ind: EvaluatedIndividual<*>,
                             lines: Lines,
                             baseUrlOfSut: String,
-                            testCaseWriter: ApiTestCaseWriter
+                            testCaseWriter: HttpWsTestCaseWriter
     ) {
 
         val tokensInfo = getTokenLoginAuth(ind.individual)
@@ -92,7 +93,7 @@ object TokenWriter {
                 lines.add(".then(res => {${tokenName(k)} += res.body.$path;},")
                 lines.indented { lines.add("error => {console.log(error.response.body); throw Error(\"Auth failed.\")});") }
             } else if (format.isPython()) {
-                lines.add("${tokenName(k)} = ${tokenName(k)} + \" \" + ${responseName(k)}.json()$path")
+                lines.add("${tokenName(k)} = ${tokenName(k)} + ${responseName(k)}.json()$path")
             }else
                 lines.add(".then().extract().response().path(\"$path\")")
 

@@ -226,74 +226,7 @@ jobs:
           MAVEN_OPTS: "--add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED"
 
 
-  nodejs:
-    needs: full-build-base
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      # Build/test for JavaScript
-      - name: Use Node.js
-        uses: actions/setup-node@v1
-        with:
-          node-version: 14.x
-      - run: npm ci
-        working-directory: ./client-js/evomaster-client-js
-      - run: npm run build
-        working-directory: ./client-js/evomaster-client-js
-      - run: npm run test
-        working-directory: ./client-js/evomaster-client-js
-      - run: npm ci
-        working-directory: ./client-js/integration-tests
-      - run: npm run build
-        working-directory: ./client-js/integration-tests
-      - run: npm run test
-        working-directory: ./client-js/integration-tests
-      - name: Setup JDK ${{env.build-jdk}}
-        uses: actions/setup-java@v1
-        with:
-            java-version: ${{env.build-jdk}}
-      - name: Download fat jar
-        uses: actions/download-artifact@v3
-        with:
-          name: evomaster.jar
-          path: core/target
-      ### NOTE: we no longer run this, as NodeJS for backend no longer supported.
-      ### This started to fail once introduced first version of "minimization", as JS driver would need
-      ### to be updated with new features to support it
-      # E2E for JS. Must be run AFTER the JS and Core builds
-#      - name: E2E for JavaScript
-#        run:  bash ./client-js/e2e-tests/e2e.sh
 
-### TODO currently disabled, as it takes forever on CI (1-2 hours...), compared to few minutes on local machine.
-### Need to find out why
-#  dotnet:
-#    needs: base
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@v2
-#      # Build/test for .Net
-#      - name: Setup .NET Core
-#        uses: actions/setup-dotnet@v1
-#        with:
-#          dotnet-version: 3.1.x
-#      - name: Clean .NET
-#        run: dotnet clean
-#      - name: Build with .NET
-#        run: dotnet build --configuration Release
-#      - name: Unit tests for .NET
-#        run: dotnet test
-#      - name: Setup JDK ${{env.build-jdk}}
-#        uses: actions/setup-java@v1
-#        with:
-#          java-version: ${{env.build-jdk}}
-#      - name: Download fat jar
-#        uses: actions/download-artifact@v2
-#        with:
-#          name: evomaster.jar
-#          path: core/target
-#      # E2E for C#. Must be run AFTER the C# and Core builds
-#      - name: E2E for C#
-#        run:  bash ./e2e-tests/dotnet-rest/scripts/e2e.sh
 
 
 
@@ -378,4 +311,64 @@ jobs:
           if-no-files-found: error
 
 
+  test-utils-js:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+        working-directory: ./test-utils/test-utils-js
+      - run: npm test
+        working-directory: ./test-utils/test-utils-js
 
+
+  test-utils-py:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Install dependencies
+        working-directory: ./test-utils/test-utils-py
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r ./src/main/resources/requirements.txt
+      - name: Test with unittest
+        working-directory: ./test-utils/test-utils-py
+        run: python -m unittest discover -s ./src/test/ -p '*_test.py'
+
+  bb-on-different-os:
+    strategy:
+      matrix:
+        # main build is already on ubuntu-latest
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    needs: setup
+    if: needs.setup.outputs.debug == 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup JDK ${{env.latest-jdk}}
+        uses: actions/setup-java@v1
+        with:
+          java-version: ${{env.latest-jdk}}
+      - name: Cache Maven packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: Build with Maven
+        run: mvn clean install -DskipTests
+        env:
+          CI_env: GithubAction
+      - name: Run BB E2E tests
+        # important that what we run here does not use Docker
+        working-directory: e2e-tests/spring-rest-bb
+        run:  mvn clean verify --fae
+        env:
+          CI_env: GithubAction

@@ -1,7 +1,7 @@
 package org.evomaster.e2etests.spring.web.external;
 
 import com.foo.web.examples.spring.external.ExternalController;
-import org.evomaster.client.java.controller.api.SeleniumEMUtils;
+import org.evomaster.test.utils.SeleniumEMUtils;
 import org.evomaster.core.problem.webfrontend.WebIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.web.SpringTestBase;

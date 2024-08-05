@@ -28,6 +28,8 @@
         <module>spring-rest-h2-column-types</module>
         <module>spring-web</module>
         <module>spring-rest-mongo</module>
+        <module>spring-rest-bb</module>
+        <module>spring-graphql-bb</module>
 
     </modules>
 

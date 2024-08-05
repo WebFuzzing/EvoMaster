@@ -28,6 +28,7 @@
         <module>report</module>
         <module>test-old-libraries</module>
         <module>solver</module>
+        <module>test-utils</module>
     </modules>
 
     <issueManagement>
@@ -256,6 +257,22 @@
                 <artifactId>solver</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.evomaster</groupId>
+                <artifactId>evomaster-test-utils-java</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.evomaster</groupId>
+                <artifactId>evomaster-test-utils-js</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.evomaster</groupId>
+                <artifactId>evomaster-test-utils-py</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
 
             <!-- Kotlin -->
             <dependency>
@@ -1042,7 +1059,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>3.2.5</version>
+                    <version>3.3.1</version>
                     <configuration>
                         <forkCount>1</forkCount>
                         <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>

@@ -34,10 +34,7 @@ import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.remote.service.RemoteControllerImplementation
 import org.evomaster.core.search.Solution
-import org.evomaster.core.search.algorithms.MioAlgorithm
-import org.evomaster.core.search.algorithms.MosaAlgorithm
-import org.evomaster.core.search.algorithms.RandomAlgorithm
-import org.evomaster.core.search.algorithms.WtsAlgorithm
+import org.evomaster.core.search.algorithms.*
 import org.evomaster.core.search.service.*
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
 import org.evomaster.core.search.service.mutator.genemutation.ArchiveImpactSelector
@@ -471,76 +468,68 @@ class Main {
 
         private fun getAlgorithmKeyGraphQL(config: EMConfig): Key<out SearchAlgorithm<GraphQLIndividual>> {
 
-            return when {
-                config.blackBox || config.algorithm == EMConfig.Algorithm.RANDOM ->
+            return when (config.algorithm) {
+                EMConfig.Algorithm.SMARTS ->
+                    Key.get(object : TypeLiteral<SmartsAlgorithm<GraphQLIndividual>>() {})
+                EMConfig.Algorithm.RANDOM ->
                     Key.get(object : TypeLiteral<RandomAlgorithm<GraphQLIndividual>>() {})
-
-                config.algorithm == EMConfig.Algorithm.MIO ->
+                EMConfig.Algorithm.MIO ->
                     Key.get(object : TypeLiteral<MioAlgorithm<GraphQLIndividual>>() {})
-
-                config.algorithm == EMConfig.Algorithm.WTS ->
+                EMConfig.Algorithm.WTS ->
                     Key.get(object : TypeLiteral<WtsAlgorithm<GraphQLIndividual>>() {})
-
-                config.algorithm == EMConfig.Algorithm.MOSA ->
+                EMConfig.Algorithm.MOSA ->
                     Key.get(object : TypeLiteral<MosaAlgorithm<GraphQLIndividual>>() {})
-
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
         }
 
         private fun getAlgorithmKeyRPC(config: EMConfig): Key<out SearchAlgorithm<RPCIndividual>> {
 
-            return when {
-                config.blackBox || config.algorithm == EMConfig.Algorithm.RANDOM ->
+            return when (config.algorithm) {
+                EMConfig.Algorithm.SMARTS ->
+                    Key.get(object : TypeLiteral<SmartsAlgorithm<RPCIndividual>>() {})
+                EMConfig.Algorithm.RANDOM ->
                     Key.get(object : TypeLiteral<RandomAlgorithm<RPCIndividual>>() {})
-
-                config.algorithm == EMConfig.Algorithm.MIO ->
+                EMConfig.Algorithm.MIO ->
                     Key.get(object : TypeLiteral<MioAlgorithm<RPCIndividual>>() {})
-
-                config.algorithm == EMConfig.Algorithm.WTS ->
+                EMConfig.Algorithm.WTS ->
                     Key.get(object : TypeLiteral<WtsAlgorithm<RPCIndividual>>() {})
-
-                config.algorithm == EMConfig.Algorithm.MOSA ->
+                EMConfig.Algorithm.MOSA ->
                     Key.get(object : TypeLiteral<MosaAlgorithm<RPCIndividual>>() {})
-
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
         }
 
         private fun getAlgorithmKeyWeb(config: EMConfig): Key<out SearchAlgorithm<WebIndividual>> {
 
-            return when {
-                config.blackBox || config.algorithm == EMConfig.Algorithm.RANDOM ->
+            return when (config.algorithm) {
+                EMConfig.Algorithm.SMARTS ->
+                    Key.get(object : TypeLiteral<SmartsAlgorithm<WebIndividual>>() {})
+                EMConfig.Algorithm.RANDOM ->
                     Key.get(object : TypeLiteral<RandomAlgorithm<WebIndividual>>() {})
-
-                config.algorithm == EMConfig.Algorithm.MIO ->
+                EMConfig.Algorithm.MIO ->
                     Key.get(object : TypeLiteral<MioAlgorithm<WebIndividual>>() {})
-
-                config.algorithm == EMConfig.Algorithm.WTS ->
+                EMConfig.Algorithm.WTS ->
                     Key.get(object : TypeLiteral<WtsAlgorithm<WebIndividual>>() {})
-
-                config.algorithm == EMConfig.Algorithm.MOSA ->
+                EMConfig.Algorithm.MOSA ->
                     Key.get(object : TypeLiteral<MosaAlgorithm<WebIndividual>>() {})
-
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
         }
 
         private fun getAlgorithmKeyRest(config: EMConfig): Key<out SearchAlgorithm<RestIndividual>> {
 
-            return when {
-                config.blackBox || config.algorithm == EMConfig.Algorithm.RANDOM ->
+            return when (config.algorithm) {
+                EMConfig.Algorithm.SMARTS ->
+                    Key.get(object : TypeLiteral<SmartsAlgorithm<RestIndividual>>() {})
+                EMConfig.Algorithm.RANDOM ->
                     Key.get(object : TypeLiteral<RandomAlgorithm<RestIndividual>>() {})
-
-                config.algorithm == EMConfig.Algorithm.MIO ->
+                EMConfig.Algorithm.MIO ->
                     Key.get(object : TypeLiteral<MioAlgorithm<RestIndividual>>() {})
-
-                config.algorithm == EMConfig.Algorithm.WTS ->
+                EMConfig.Algorithm.WTS ->
                     Key.get(object : TypeLiteral<WtsAlgorithm<RestIndividual>>() {})
-
-                config.algorithm == EMConfig.Algorithm.MOSA ->
+                EMConfig.Algorithm.MOSA ->
                     Key.get(object : TypeLiteral<MosaAlgorithm<RestIndividual>>() {})
-
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
         }
@@ -653,7 +642,7 @@ class Main {
             val writer = injector.getInstance(TestSuiteWriter::class.java)
 
             //TODO: enable splitting for csharp. Currently not enabled due to an error while running generated tests in multiple classes (error in starting the SUT)
-            if (config.problemType == EMConfig.ProblemType.REST && config.outputFormat!=OutputFormat.CSHARP_XUNIT) {
+            if (config.problemType == EMConfig.ProblemType.REST && !config.outputFormat.isCsharp()) {
 
                 val splitResult = TestSuiteSplitter.split(solution, config, writer.getPartialOracles())
 
@@ -690,7 +679,7 @@ class Main {
 
             val writer = injector.getInstance(TestSuiteWriter::class.java)
             //TODO: enable splitting for csharp. Currently not enabled due to an error while running generated tests in multiple classes (error in starting the SUT)
-            if (config.problemType == EMConfig.ProblemType.REST && config.outputFormat!=OutputFormat.CSHARP_XUNIT) {
+            if (config.problemType == EMConfig.ProblemType.REST && !config.outputFormat.isCsharp()) {
 
                 val splitResult = TestSuiteSplitter.split(solution, config, writer.getPartialOracles())
 

@@ -1,6 +1,6 @@
 package org.evomaster.core.problem.webfrontend.service
 
-import org.evomaster.client.java.controller.api.SeleniumEMUtils
+import org.evomaster.test.utils.SeleniumEMUtils
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup

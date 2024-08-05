@@ -6,13 +6,12 @@ import net.sf.jsqlparser.expression.ExpressionVisitorAdapter;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.statement.Statement;
-import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto;
+import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionsDto;
 import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionLogDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.sql.QueryResult;
 import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.evomaster.client.java.utils.SimpleLogger;
-
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
@@ -42,7 +41,7 @@ public class SqlHandler {
     /**
      * The heuristics based on the SQL execution
      */
-    private final List<PairCommandDistance> distances;
+    private final List<EvaluatedSqlCommand> distances;
 
     //see ExecutionDto
     private final Map<String, Set<String>> queriedData;
@@ -144,21 +143,21 @@ public class SqlHandler {
 
     }
 
-    public ExecutionDto getExecutionDto() {
+    public SqlExecutionsDto getExecutionDto() {
 
         if (!calculateHeuristics && !extractSqlExecution) {
             return null;
         }
 
-        ExecutionDto executionDto = new ExecutionDto();
-        executionDto.queriedData.putAll(queriedData);
-        executionDto.failedWhere.putAll(failedWhere);
-        executionDto.insertedData.putAll(insertedData);
-        executionDto.updatedData.putAll(updatedData);
-        executionDto.deletedData.addAll(deletedData);
-        executionDto.numberOfSqlCommands = this.numberOfSqlCommands;
-        executionDto.sqlExecutionLogDtoList.addAll(executedInfo);
-        return executionDto;
+        SqlExecutionsDto sqlExecutionsDto = new SqlExecutionsDto();
+        sqlExecutionsDto.queriedData.putAll(queriedData);
+        sqlExecutionsDto.failedWhere.putAll(failedWhere);
+        sqlExecutionsDto.insertedData.putAll(insertedData);
+        sqlExecutionsDto.updatedData.putAll(updatedData);
+        sqlExecutionsDto.deletedData.addAll(deletedData);
+        sqlExecutionsDto.numberOfSqlCommands = this.numberOfSqlCommands;
+        sqlExecutionsDto.sqlExecutionLogDtoList.addAll(executedInfo);
+        return sqlExecutionsDto;
     }
 
     /**
@@ -167,7 +166,7 @@ public class SqlHandler {
      *
      * @return a list of heuristics for sql commands
      */
-    public List<PairCommandDistance> getDistances() {
+    public List<EvaluatedSqlCommand> getEvaluatedSqlCommands() {
 
         if (connection == null || !calculateHeuristics) {
             return distances;
@@ -176,16 +175,8 @@ public class SqlHandler {
 
         buffer.forEach(sql -> {
                     if (!isSelectOne(sql) && (isSelect(sql) || isDelete(sql) || isUpdate(sql))) {
-                        double dist;
-                        try {
-                            dist = computeDistance(sql);
-                        } catch (Exception e) {
-                            SimpleLogger.error("FAILED TO COMPUTE HEURISTICS FOR SQL: " + sql);
-                            dist = Double.MAX_VALUE;
-                            //assert false; //TODO put back once we update JSqlParser
-                            //return;
-                        }
-                        distances.add(new PairCommandDistance(sql, dist));
+                        SqlDistanceWithMetrics dist = computeDistance(sql);
+                        distances.add(new EvaluatedSqlCommand(sql, dist));
                     }
                 });
 
@@ -195,8 +186,7 @@ public class SqlHandler {
         return distances;
     }
 
-
-    private Double computeDistance(String command) {
+    private SqlDistanceWithMetrics computeDistance(String command) {
 
         if (connection == null) {
             throw new IllegalStateException("Trying to calculate SQL distance with no DB connection");
@@ -207,8 +197,8 @@ public class SqlHandler {
         try {
             statement = CCJSqlParserUtil.parse(command);
         } catch (Exception e) {
-            SimpleLogger.uniqueWarn("Cannot handle command: " + command + "\n" + e);
-            return Double.MAX_VALUE;
+            SimpleLogger.uniqueWarn("Cannot handle SQL command: " + command + "\n" + e);
+            return new SqlDistanceWithMetrics(Double.MAX_VALUE,0);
         }
 
 
@@ -218,22 +208,22 @@ public class SqlHandler {
             even if columns.isEmpty(), we need to check if any data was present
          */
 
-        double dist;
+        SqlDistanceWithMetrics dist;
         if (columns.isEmpty()) {
             //TODO check if table(s) not empty, and give >0 otherwise
-            dist = 0;
+            dist = new SqlDistanceWithMetrics(0.0,0);
         } else {
             dist = getDistanceForWhere(command, columns);
         }
 
-        if (dist > 0) {
+        if (dist.sqlDistance > 0) {
             mergeNewData(failedWhere, columns);
         }
 
         return dist;
     }
 
-    private double getDistanceForWhere(String command, Map<String, Set<String>> columns) {
+    private SqlDistanceWithMetrics getDistanceForWhere(String command, Map<String, Set<String>> columns) {
         String select;
 
         /*
@@ -258,11 +248,11 @@ public class SqlHandler {
         }
 
         QueryResult data;
-
         try {
             data = SqlScriptRunner.execCommand(connection, select);
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            SimpleLogger.uniqueWarn("Failed to execute query for retrieving data for computing SQL heuristics: " + select);
+            return new SqlDistanceWithMetrics(Double.MAX_VALUE, 0);
         }
 
         return HeuristicsCalculator.computeDistance(command, data, schema, taintHandler,advancedHeuristics);

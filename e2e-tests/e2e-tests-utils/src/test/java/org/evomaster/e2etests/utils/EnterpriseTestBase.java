@@ -42,6 +42,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -502,9 +503,33 @@ public abstract class EnterpriseTestBase {
      * @param args - the list of arguments
      * @param outputFormat - the desired output format
      */
+    @Deprecated //use setOption
     protected void setOutputFormat(List<String> args, OutputFormat outputFormat){
         if (outputFormat != null){
             args.replaceAll(s -> s.replace(OutputFormat.KOTLIN_JUNIT_5.name(), outputFormat.name()));
+        }
+    }
+
+    /**
+     * Add or replace the given option to the args list
+     */
+    protected void setOption(List<String> args, String optionName, String optionValue){
+
+        Objects.requireNonNull(optionName);
+        Objects.requireNonNull(optionValue);
+
+        if(optionName.startsWith("-")){
+            throw new IllegalArgumentException("Option name cannot start with '-': " + optionName);
+        }
+
+        String addOption = "--" + optionName;
+        int position = args.indexOf(addOption);
+        if(position < 0){
+            args.add(addOption);
+            args.add(optionValue);
+        } else{
+            args.set(position,addOption);
+            args.set(position+1,optionValue);
         }
     }
 

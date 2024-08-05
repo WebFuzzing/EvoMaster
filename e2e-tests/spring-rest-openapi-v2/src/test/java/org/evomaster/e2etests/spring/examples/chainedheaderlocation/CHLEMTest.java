@@ -16,14 +16,14 @@ public class CHLEMTest extends CHLTestBase {
         runTestHandlingFlakyAndCompilation(
                 "ChlEM",
                 "org.foo.ChlEM",
-                1000,
+                50,
                 (args) -> {
 
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertTrue(solution.getIndividuals().size() >= 1);
 
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200);
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/chl/x/{idx}/y/{idy}/z/{idz}/value",null);
                 });
     }
 }
