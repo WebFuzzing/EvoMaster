@@ -169,7 +169,7 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-failsafe-plugin</artifactId>
+                <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <!--  Otherwise tests using mvn will not work  -->
                     <redirectTestOutputToFile>false</redirectTestOutputToFile>
