@@ -265,7 +265,7 @@ class RPCEndpointsHandler {
         rpcActionDto.mockRPCExternalServiceDtos?.forEachIndexed { index, dto->
 
             if (dto == null)
-                throw IllegalArgumentException("extracted external service dto at $index for ${rpcActionDto.interfaceId}:${rpcActionDto.actionName} is null");
+                throw IllegalArgumentException("extracted external service dto at $index for ${rpcActionDto.interfaceId}:${rpcActionDto.actionName} is null")
 
             if (dto.requestRules!=null && dto.requestRules.isNotEmpty() && dto.requestRules.size != dto.responses.size && dto.responses.size != dto.responseTypes.size)
                 throw IllegalArgumentException("the size of request identifications and responses should same but ${dto.requestRules.size} vs. ${dto.responses.size} vs. ${dto.responseTypes.size}")
@@ -273,8 +273,8 @@ class RPCEndpointsHandler {
 
             (dto.responseFullTypesWithGeneric?:dto.responseTypes).forEachIndexed { index, s ->
 
-                val exkey = RPCExternalServiceAction.getRPCExternalServiceActionName(
-                    dto.interfaceFullName, dto.functionName, dto.requestRules?.get(index), s
+                val exkey = getRPCExternalServiceActionName(
+                    dto.interfaceFullName, dto.functionName, dto.requestRules?.run { if (index < size) get(index) else null}, s
                 )
                 if (!seededExternalServiceCluster.containsKey(exkey)){
                     val responseTypeClass = interfaceDto.identifiedResponseTypes?.find { it.type.fullTypeNameWithGenericType == s || it.type.fullTypeName == s }
