@@ -1341,8 +1341,26 @@ public class RPCEndpointsBuilder {
                                     }
                                 }
                                 RPCActionDto rpcActionDto = copy.getDto();
-                                rpcActionDto.mockRPCExternalServiceDtos = actionDto.mockRPCExternalServiceDtos;
-                                rpcActionDto.mockDatabaseDtos = actionDto.mockDatabaseDtos;
+
+                                if (actionDto.mockRPCExternalServiceDtos != null){
+                                    for (int i = 0; i < actionDto.mockRPCExternalServiceDtos.size(); i++){
+                                        if (actionDto.mockRPCExternalServiceDtos.get(i) == null)
+                                            SimpleLogger.recordErrorMessage(
+                                                    String.format("Seeded Test Error: specify null mockRPCExternalServiceDto at index %d for action %s:%s", i, actionDto.interfaceName, actionDto.functionName)
+                                            );
+                                    }
+                                    rpcActionDto.mockRPCExternalServiceDtos = actionDto.mockRPCExternalServiceDtos.stream().filter(Objects::nonNull).collect(Collectors.toList());
+                                }
+
+                                if (actionDto.mockDatabaseDtos != null){
+                                    for (int i = 0; i < actionDto.mockDatabaseDtos.size(); i++){
+                                        if (actionDto.mockDatabaseDtos.get(i) == null)
+                                            SimpleLogger.recordErrorMessage(
+                                                    String.format("Seeded Test Error: specify null mockDatabaseDto at index %d for action %s:%s", i, actionDto.interfaceName, actionDto.functionName)
+                                            );
+                                    }
+                                    rpcActionDto.mockDatabaseDtos = actionDto.mockDatabaseDtos.stream().filter(Objects::nonNull).collect(Collectors.toList());
+                                }
                                 handleExternalResponses(schema, actionDto, rpcType);
                                 test.add(rpcActionDto);
                             }else {
