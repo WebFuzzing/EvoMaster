@@ -267,6 +267,13 @@ class RPCEndpointsHandler {
             if (dto == null)
                 throw IllegalArgumentException("extracted external service dto at $index for ${rpcActionDto.interfaceId}:${rpcActionDto.actionName} is null")
 
+            if(dto.responses == null || dto.responseTypes == null)
+                throw IllegalArgumentException("error in specified external service dto at $index for ${rpcActionDto.interfaceId}:${rpcActionDto.actionName}: responses or responseTypes are not specified")
+
+            if (dto.responses.isEmpty() || dto.responseTypes.isEmpty())
+                throw IllegalArgumentException("error in specified external service dto at $index for ${rpcActionDto.interfaceId}:${rpcActionDto.actionName}: responses or responseTypes are empty")
+
+
             if (dto.requestRules!=null && dto.requestRules.isNotEmpty() && dto.requestRules.size != dto.responses.size && dto.responses.size != dto.responseTypes.size)
                 throw IllegalArgumentException("the size of request identifications and responses should same but ${dto.requestRules.size} vs. ${dto.responses.size} vs. ${dto.responseTypes.size}")
 
