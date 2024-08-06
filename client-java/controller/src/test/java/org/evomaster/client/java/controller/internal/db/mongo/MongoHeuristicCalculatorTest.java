@@ -252,7 +252,7 @@ class MongoHeuristicCalculatorTest {
         assertEquals(837402.9310023151, distanceNotMatch);
     }
 
-    private static Document convertToDocument(Bson filter) {
+    static Document convertToDocument(Bson filter) {
         BsonDocument bsonDocument = filter.toBsonDocument();
         DocumentCodec documentCodec = new DocumentCodec();
         return documentCodec.decode(bsonDocument.asBsonReader(), DecoderContext.builder().build());

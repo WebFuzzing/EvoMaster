@@ -15,7 +15,7 @@ import org.evomaster.client.java.controller.api.ControllerConstants;
 import org.evomaster.client.java.controller.api.dto.*;
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto;
 import org.evomaster.client.java.controller.api.dto.constraint.ElementConstraintsDto;
-import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto;
+import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionsDto;
 import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionLogDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto;
@@ -298,11 +298,13 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     public final void initMongoHandler() {
         // This is needed because the replacement use to get this info occurs during the start of the SUT.
+        Object connection = getMongoConnection();
+        mongoHandler.setMongoClient(connection);
 
         List<AdditionalInfo> list = getAdditionalInfoList();
         if(!list.isEmpty()) {
             AdditionalInfo last = list.get(list.size() - 1);
-            last.getMongoCollectionInfoData().forEach(mongoHandler::handle);
+            last.getMongoCollectionTypeData().forEach(mongoHandler::handle);
         }
     }
 
@@ -382,26 +384,27 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         }
 
         if (sqlHandler.isCalculateHeuristics()) {
-            sqlHandler.getDistances().stream()
+            sqlHandler.getEvaluatedSqlCommands().stream()
                     .map(p ->
-                            new HeuristicEntryDto(
-                                    HeuristicEntryDto.Type.SQL,
-                                    HeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
+                            new ExtraHeuristicEntryDto(
+                                    ExtraHeuristicEntryDto.Type.SQL,
+                                    ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
                                     p.sqlCommand,
-                                    p.distance
+                                    p.sqlDistanceWithMetrics.sqlDistance,
+                                    p.sqlDistanceWithMetrics.numberOfEvaluatedRows
                             ))
                     .forEach(h -> dto.heuristics.add(h));
         }
 
-        ExecutionDto executionDto = sqlHandler.getExecutionDto();
-        dto.databaseExecutionDto = executionDto;
+        SqlExecutionsDto sqlExecutionsDto = sqlHandler.getExecutionDto();
+        dto.sqlSqlExecutionsDto = sqlExecutionsDto;
         // set accessed table
-        if (executionDto != null) {
-            accessedTables.addAll(executionDto.deletedData);
-            accessedTables.addAll(executionDto.insertedData.keySet());
+        if (sqlExecutionsDto != null) {
+            accessedTables.addAll(sqlExecutionsDto.deletedData);
+            accessedTables.addAll(sqlExecutionsDto.insertedData.keySet());
             //accessedTables.addAll(executionDto.queriedData.keySet());
-            accessedTables.addAll(executionDto.insertedData.keySet());
-            accessedTables.addAll(executionDto.updatedData.keySet());
+            accessedTables.addAll(sqlExecutionsDto.insertedData.keySet());
+            accessedTables.addAll(sqlExecutionsDto.updatedData.keySet());
         }
     }
 
@@ -419,13 +422,14 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                 });
             }
 
-            mongoHandler.getDistances().stream()
+            mongoHandler.getEvaluatedMongoCommands().stream()
                     .map(p ->
-                            new HeuristicEntryDto(
-                                    HeuristicEntryDto.Type.MONGO,
-                                    HeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
-                                    p.bson.toString(),
-                                    p.distance
+                            new ExtraHeuristicEntryDto(
+                                    ExtraHeuristicEntryDto.Type.MONGO,
+                                    ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
+                                    p.mongoCommand.toString(),
+                                    p.mongoDistanceWithMetrics.mongoDistance,
+                                    p.mongoDistanceWithMetrics.numberOfEvaluatedDocuments
                             ))
                     .forEach(h -> dto.heuristics.add(h));
         }
@@ -433,9 +437,9 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         if(mongoHandler.isExtractMongoExecution()){
             if(!additionalInfoList.isEmpty()) {
                 AdditionalInfo last = additionalInfoList.get(additionalInfoList.size() - 1);
-                last.getMongoCollectionInfoData().forEach(mongoHandler::handle);
+                last.getMongoCollectionTypeData().forEach(mongoHandler::handle);
             }
-            dto.mongoExecutionDto = mongoHandler.getExecutionDto();
+            dto.mongoExecutionsDto = mongoHandler.getExecutionDto();
         }
     }
 

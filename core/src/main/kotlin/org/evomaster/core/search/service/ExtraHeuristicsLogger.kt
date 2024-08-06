@@ -5,7 +5,7 @@ import net.sf.jsqlparser.JSQLParserException
 import net.sf.jsqlparser.parser.CCJSqlParserUtil
 import net.sf.jsqlparser.util.deparser.SelectDeParser
 import net.sf.jsqlparser.util.deparser.StatementDeParser
-import org.evomaster.client.java.controller.api.dto.HeuristicEntryDto
+import org.evomaster.client.java.controller.api.dto.ExtraHeuristicEntryDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.sql.ReplaceValuesDeParser
 import java.nio.file.Files
@@ -46,14 +46,14 @@ class ExtraHeuristicsLogger {
 
     private fun getExtraHeuristicsFilePath() = Paths.get(config.extraHeuristicsFile).toAbsolutePath()
 
-    fun writeHeuristics(list: List<HeuristicEntryDto>, actionId: Int) {
+    fun writeHeuristics(list: List<ExtraHeuristicEntryDto>, actionId: Int) {
         if (!config.writeExtraHeuristicsFile) {
             return
         }
 
         val counter = time.evaluatedIndividuals
         val lines = list.map {
-            val group = if (it.type == HeuristicEntryDto.Type.SQL) {
+            val group = if (it.type == ExtraHeuristicEntryDto.Type.SQL) {
                 try {
                     "\"${removeAllConstants(it.id)}\""
                 } catch (ex: JSQLParserException) {
