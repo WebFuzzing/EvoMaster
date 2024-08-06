@@ -262,7 +262,10 @@ class RPCEndpointsHandler {
 
         val actionKey = actionName(rpcActionDto.interfaceId, rpcActionDto.actionName)
 
-        rpcActionDto.mockRPCExternalServiceDtos?.forEach { dto->
+        rpcActionDto.mockRPCExternalServiceDtos?.forEachIndexed { index, dto->
+
+            if (dto == null)
+                throw IllegalArgumentException("extracted external service dto at $index for ${rpcActionDto.interfaceId}:${rpcActionDto.actionName} is null");
 
             if (dto.requestRules!=null && dto.requestRules.isNotEmpty() && dto.requestRules.size != dto.responses.size && dto.responses.size != dto.responseTypes.size)
                 throw IllegalArgumentException("the size of request identifications and responses should same but ${dto.requestRules.size} vs. ${dto.responses.size} vs. ${dto.responseTypes.size}")
