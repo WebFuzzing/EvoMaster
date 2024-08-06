@@ -2,6 +2,7 @@ package org.evomaster.e2etests.spring.rest.bb
 
 
 import org.apache.commons.io.FileUtils
+import org.evomaster.ci.utils.CIUtils
 import org.evomaster.client.java.instrumentation.shared.ClassName
 import org.evomaster.core.EMConfig.TestSuiteSplitType
 import org.evomaster.core.output.OutputFormat
@@ -12,11 +13,9 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.assertTimeoutPreemptively
-import java.io.File
 import java.nio.file.Paths
 import java.time.Duration
 import java.util.*
-import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
 import kotlin.collections.Collection
 
@@ -27,6 +26,11 @@ abstract class SpringTestBase : RestTestBase() {
     @BeforeEach
     fun clearTargets(){
         CoveredTargets.reset()
+
+        /*
+            some weird issue with Surefire plugin, not happening on builds for Win and OSX... weird
+        */
+        CIUtils.skipIfOnLinuxOnGA()
     }
 
     protected fun addBlackBoxOptions(
