@@ -1,10 +1,15 @@
 package org.evomaster.client.java.controller;
 
+import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
+import org.evomaster.client.java.controller.api.ControllerConstants;
 import org.evomaster.client.java.controller.api.dto.SutRunDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
 import org.evomaster.client.java.controller.internal.SutController;
 
 import java.sql.Connection;
+import java.util.List;
 
 import static io.restassured.RestAssured.given;
 import static org.evomaster.client.java.controller.api.ControllerConstants.*;
@@ -68,5 +73,16 @@ public interface DatabaseTestTemplate {
         SutController sutController = getSutController();
         sutController.setControllerPort(0);
         return new InstrumentedSutStarter(sutController);
+    }
+
+    default void executeSqlCommand(List<InsertionDto> insertionDtos, String url){
+        DatabaseCommandDto dto = new DatabaseCommandDto();
+        dto.insertions.addAll(insertionDtos);
+
+        RestAssured.given().contentType(ContentType.JSON)
+                .body(dto)
+                .post(url + ControllerConstants.DATABASE_COMMAND)
+                .then()
+                .statusCode(200);
     }
 }

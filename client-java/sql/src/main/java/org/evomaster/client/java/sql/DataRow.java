@@ -52,6 +52,10 @@ public class DataRow {
         return variableDescriptors;
     }
 
+    public List<Object> seeValues(){
+        return values;
+    }
+
     public Object getValue(int index) {
         Object value =  values.get(index);
         if(value instanceof Clob){

@@ -1,7 +1,6 @@
 package org.evomaster.client.java.controller.api.dto.database.schema;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class TableDto {
 
@@ -39,4 +38,13 @@ public class TableDto {
      */
     public List<TableCheckExpressionDto> tableCheckExpressions = new ArrayList<>();
 
+    /**
+     *
+     * @param columnName specified which ColumnDto should be returned based on its name
+     * @return ColumnDto based on specified columnName
+     */
+    public ColumnDto extractColumnInfo(String columnName){
+        Optional<ColumnDto> op = columns.stream().filter(c-> columnName.equalsIgnoreCase(c.name)).findAny();
+        return op.orElse(null);
+    }
 }

@@ -21,6 +21,11 @@ public class QueryResult {
     private final List<VariableDescriptor> variableDescriptors = new ArrayList<>();
     private final List<DataRow> rows = new ArrayList<>();
 
+    public QueryResult(List<VariableDescriptor> variableDescriptorList) {
+        Objects.requireNonNull(variableDescriptorList);
+        variableDescriptors.addAll(variableDescriptorList);
+    }
+
     /**
      * WARNING: Constructor only needed for testing
      *
@@ -92,6 +97,28 @@ public class QueryResult {
         rows.add(row);
     }
 
+    public void addRow(List<String> columnNames, String tableName, List<Object> row) {
+        if (!sameVariableNames(columnNames, tableName)) {
+            throw new IllegalArgumentException("Specified columnNames do not match variable descriptors");
+        }
+        rows.add(new DataRow(variableDescriptors, row));
+    }
+
+    public boolean sameVariableNames(List<String> columnNames, String tableName) {
+        if (variableDescriptors.size() != columnNames.size()) {
+            return false;
+        }
+        for (int i = 0; i < variableDescriptors.size(); i++) {
+            VariableDescriptor a = variableDescriptors.get(i);
+            String b = columnNames.get(i);
+            if (!a.getColumnName().equalsIgnoreCase(b) && a.getTableName().equalsIgnoreCase(tableName)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public boolean sameVariableNames(DataRow row) {
         if (variableDescriptors.size() != row.getVariableDescriptors().size()) {
             return false;
@@ -109,6 +136,10 @@ public class QueryResult {
 
     public List<DataRow> seeRows() {
         return rows;
+    }
+
+    public List<VariableDescriptor> seeVariableDescriptors(){
+        return variableDescriptors;
     }
 
     public boolean isEmpty() {

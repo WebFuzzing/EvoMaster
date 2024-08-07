@@ -104,6 +104,11 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
 
     /**
+     * record sql insertions which have been executed successfully for initializing data in database
+     */
+    private final List<InsertionDto> successfulInitSqlInsertions = new CopyOnWriteArrayList<>();
+
+    /**
      * a map of table to fk target tables
      */
     private final Map<String, List<String>> fkMap = new ConcurrentHashMap<>();
@@ -332,16 +337,16 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         mongoHandler.reset();
     }
 
-    public final List<ExtraHeuristicsDto> getExtraHeuristics() {
+    public final List<ExtraHeuristicsDto> getExtraHeuristics(boolean queryFromDatabase) {
 
         if (extras.size() == actionIndex) {
-            extras.add(computeExtraHeuristics());
+            extras.add(computeExtraHeuristics(queryFromDatabase));
         }
 
         return new ArrayList<>(extras);
     }
 
-    public final ExtraHeuristicsDto computeExtraHeuristics() {
+    public final ExtraHeuristicsDto computeExtraHeuristics(boolean queryFromDatabase) {
 
         ExtraHeuristicsDto dto = new ExtraHeuristicsDto();
 
@@ -349,7 +354,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             List<AdditionalInfo> additionalInfoList = getAdditionalInfoList();
 
             if (isSQLHeuristicsComputationAllowed()) {
-                computeSQLHeuristics(dto, additionalInfoList);
+                computeSQLHeuristics(dto, additionalInfoList, queryFromDatabase);
             }
             if (isMongoHeuristicsComputationAllowed()) {
                 computeMongoHeuristics(dto, additionalInfoList);
@@ -366,7 +371,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         return mongoHandler.isCalculateHeuristics() || mongoHandler.isExtractMongoExecution();
     }
 
-    private void computeSQLHeuristics(ExtraHeuristicsDto dto, List<AdditionalInfo> additionalInfoList) {
+    private void computeSQLHeuristics(ExtraHeuristicsDto dto, List<AdditionalInfo> additionalInfoList, boolean queryFromDatabase) {
         /*
         TODO refactor, once we move SQL analysis into Core
         */
@@ -384,7 +389,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         }
 
         if (sqlHandler.isCalculateHeuristics()) {
-            sqlHandler.getEvaluatedSqlCommands().stream()
+            sqlHandler.getEvaluatedSqlCommands(successfulInitSqlInsertions, queryFromDatabase).stream()
                     .map(p ->
                             new ExtraHeuristicEntryDto(
                                     ExtraHeuristicEntryDto.Type.SQL,
@@ -403,7 +408,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             accessedTables.addAll(sqlExecutionsDto.deletedData);
             accessedTables.addAll(sqlExecutionsDto.insertedData.keySet());
             //accessedTables.addAll(executionDto.queriedData.keySet());
-            accessedTables.addAll(sqlExecutionsDto.insertedData.keySet());
+//            accessedTables.addAll(sqlExecutionsDto.insertedData.keySet());
             accessedTables.addAll(sqlExecutionsDto.updatedData.keySet());
         }
     }
@@ -568,6 +573,14 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      */
     public void addTableToInserted(List<String> tables){
         accessedTables.addAll(tables);
+    }
+
+    /**
+     * collect info about init sql insertion which has been executed succesfully
+     * @param insertionDto a dto for sql insertion
+     */
+    public void addSuccessfulInitSqlInsertion(InsertionDto insertionDto){
+        successfulInitSqlInsertions.add(insertionDto);
     }
 
     private void getTableToClean(List<String> accessedTables, List<String> tablesToClean){
@@ -887,6 +900,9 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         //clean all accessed table in a test
         accessedTables.clear();
 
+        //clean collected info for successful init sql insertion
+        successfulInitSqlInsertions.clear();
+
         newTestSpecificHandler();
 
         // set executingAction state false for newTest
@@ -900,10 +916,10 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      *
      * @param dto the DTO with the information about the action (eg its index in the test)
      */
-    public final void newAction(ActionDto dto) {
+    public final void newAction(ActionDto dto, boolean queryFromDatabase) {
 
         if (dto.index > extras.size()) {
-            extras.add(computeExtraHeuristics());
+            extras.add(computeExtraHeuristics(queryFromDatabase));
         }
         this.actionIndex = dto.index;
 

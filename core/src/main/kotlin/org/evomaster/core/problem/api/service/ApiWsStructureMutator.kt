@@ -307,10 +307,10 @@ abstract class ApiWsStructureMutator : StructureMutator() {
             /*
                 tmp solution to set maximum size of executing existing data in sql
              */
-            val existing = if (config.maximumExistingDataToSampleInDb > 0
-                && sampler.existingSqlData.size > config.maximumExistingDataToSampleInDb
+            val existing = if (config.maxSizeOfExistingDataToSample > 0
+                && sampler.existingSqlData.size > config.maxSizeOfExistingDataToSample
             ) {
-                randomness.choose(sampler.existingSqlData, config.maximumExistingDataToSampleInDb)
+                randomness.choose(sampler.existingSqlData, config.maxSizeOfExistingDataToSample)
             } else {
                 sampler.existingSqlData
             }.map { it.copy() } as List<EnvironmentAction>
