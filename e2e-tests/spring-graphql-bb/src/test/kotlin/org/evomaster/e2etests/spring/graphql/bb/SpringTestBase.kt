@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.graphql.bb
 
 import org.apache.commons.io.FileUtils
+import org.evomaster.ci.utils.CIUtils
 import org.evomaster.client.java.instrumentation.shared.ClassName
 import org.evomaster.core.EMConfig.TestSuiteSplitType
 import org.evomaster.core.output.OutputFormat
@@ -29,6 +30,11 @@ abstract class SpringTestBase : GraphQLTestBase() {
     @BeforeEach
     fun clearTargets(){
         CoveredTargets.reset()
+
+        /*
+            some weird issue with Surefire plugin, not happening on builds for Win and OSX... weird
+         */
+        CIUtils.skipIfOnLinuxOnGA()
     }
 
     protected fun addBlackBoxOptions(
