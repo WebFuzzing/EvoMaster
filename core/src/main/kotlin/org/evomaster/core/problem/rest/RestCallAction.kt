@@ -53,7 +53,12 @@ class RestCallAction(
     val produces: List<String> = listOf(),
     val responseRefs : MutableMap<String, String> = mutableMapOf(),
     val skipOracleChecks : Boolean = false,
-    val links: List<RestLink> = listOf()
+    /**
+     * unique id defined in the OpenAPI schema. this is optional, though
+     */
+    val operationId: String? = null,
+    val links: List<RestLink> = listOf(),
+    var backwardLinkReference: BackwardLinkReference? = null
 ) : HttpWsAction(auth, parameters) {
 
     var saveLocation : Boolean = saveLocation
@@ -97,7 +102,7 @@ class RestCallAction(
         val p = parameters.asSequence().map(Param::copy).toMutableList()
         return RestCallAction(
             id, verb, path, p, auth, saveLocation, usePreviousLocationId,
-            produces, responseRefs, skipOracleChecks, links)
+            produces, responseRefs, skipOracleChecks, operationId, links, backwardLinkReference)
         //note: immutable objects (eg String and RestLink) do not need to be copied
     }
 

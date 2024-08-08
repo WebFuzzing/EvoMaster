@@ -374,7 +374,8 @@ object RestActionBuilderV3 {
                         server = it.third.server?.toString()
                     )
                 }
-            val action = RestCallAction(actionId, verb, restPath, params, produces = produces, links = links)
+            val action = RestCallAction(actionId, verb, restPath, params, produces = produces,
+                operationId = operation.operationId, links = links)
 
             //TODO update for new parser
 //                        /*This section collects information regarding the types of data that are

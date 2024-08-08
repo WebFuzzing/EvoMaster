@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rest.service
 
 import org.evomaster.core.Lazy
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
@@ -107,11 +108,28 @@ class RestSampler : AbstractRestSampler(){
             use link info.
          */
         val rca = test.last()
-        rca.links
-            .filter { it.canUse() }
-            .forEach {
-                //TODO
+        val links = rca.links.filter { it.canUse() }.toMutableList()
+        randomness.shuffle(links)
+
+        for(l in links){
+            if (test.size >= getMaxTestSizeDuringSampler()) {
+                break
             }
+
+            //TODO will need to support operationRef
+            val x = actionCluster.values.find { it is RestCallAction && it.operationId == l.operationId }
+            if(x == null){
+                LoggingUtil.uniqueWarn(log, "Cannot find operation with id: ${l.operationId}")
+                continue
+            }
+            val copy = x.copy() as RestCallAction
+            copy.doInitialize(randomness)
+            copy.auth = rca.auth
+            copy.backwardLinkReference = BackwardLinkReference(rca.id,l.id)
+            test.add(copy)
+
+            enhanceWithLinksSupport(test)
+        }
     }
 
     private fun handleSmartPost(post: RestCallAction, test: MutableList<RestCallAction>): SampleType {
