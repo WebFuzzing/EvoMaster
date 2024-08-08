@@ -2253,7 +2253,9 @@ class EMConfig {
     var probRestExamples = 0.05
 
     @Experimental
-    @Cfg("In REST, enable the supports of 'links' between resources defined in the OpenAPI schema, if any")
+    @Cfg("In REST, enable the supports of 'links' between resources defined in the OpenAPI schema, if any." +
+            " When sampling a test case, if the last call has links, given this probability new calls are" +
+            " added for the link.")
     @Probability(true)
     var probUseRestLinks = 0.0
 
