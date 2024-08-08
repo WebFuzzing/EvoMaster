@@ -95,8 +95,23 @@ class RestSampler : AbstractRestSampler(){
             return
         }
         //https://swagger.io/docs/specification/links/
+        /*
+            WARNING:
+            we are adding linked actions for last operation X in this test.
+            links are defined based on response status of X.
+            but, at sampling time, test is not evaluated yet, so we cannot know
+            if link can be used.
+            doing partial evaluations would require a major refactoring in EM...
+            not worthy it.
+            so, here we add actions regardless, and then evaluate at runtime if should
+            use link info.
+         */
         val rca = test.last()
-        if(rca)
+        rca.links
+            .filter { it.canUse() }
+            .forEach {
+                //TODO
+            }
     }
 
     private fun handleSmartPost(post: RestCallAction, test: MutableList<RestCallAction>): SampleType {

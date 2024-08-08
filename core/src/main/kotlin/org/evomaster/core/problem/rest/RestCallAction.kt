@@ -52,7 +52,8 @@ class RestCallAction(
     var usePreviousLocationId: String? = null,
     val produces: List<String> = listOf(),
     val responseRefs : MutableMap<String, String> = mutableMapOf(),
-    val skipOracleChecks : Boolean = false
+    val skipOracleChecks : Boolean = false,
+    val links: List<RestLink> = listOf()
 ) : HttpWsAction(auth, parameters) {
 
     var saveLocation : Boolean = saveLocation
@@ -94,7 +95,10 @@ class RestCallAction(
 
     override fun copyContent(): Action {
         val p = parameters.asSequence().map(Param::copy).toMutableList()
-        return RestCallAction(id, verb, path, p, auth, saveLocation, usePreviousLocationId, produces, responseRefs, skipOracleChecks)
+        return RestCallAction(
+            id, verb, path, p, auth, saveLocation, usePreviousLocationId,
+            produces, responseRefs, skipOracleChecks, links)
+        //note: immutable objects (eg String and RestLink) do not need to be copied
     }
 
     override fun getName(): String {
