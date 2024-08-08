@@ -92,7 +92,7 @@ class RestSampler : AbstractRestSampler(){
     }
 
     private fun enhanceWithLinksSupport(test: MutableList<RestCallAction>) {
-        if(!config.useRestLinks){
+        if(randomness.nextBoolean(config.probUseRestLinks)){
             return
         }
         //https://swagger.io/docs/specification/links/

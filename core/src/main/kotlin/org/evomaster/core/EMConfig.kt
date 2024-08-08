@@ -2254,7 +2254,8 @@ class EMConfig {
 
     @Experimental
     @Cfg("In REST, enable the supports of 'links' between resources defined in the OpenAPI schema, if any")
-    var useRestLinks = false
+    @Probability(true)
+    var probUseRestLinks = 0.0
 
     //TODO mark as deprecated once we support proper Robustness Testing
     @Cfg("When generating data, allow in some cases to use invalid values on purpose")
