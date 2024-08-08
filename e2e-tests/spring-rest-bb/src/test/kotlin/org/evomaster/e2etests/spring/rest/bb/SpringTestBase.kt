@@ -28,9 +28,10 @@ abstract class SpringTestBase : RestTestBase() {
         CoveredTargets.reset()
 
         /*
-            some weird issue with Surefire plugin, not happening on builds for Win and OSX... weird
+            some weird issue with Surefire plugin, not happening on builds for Win and OSX... weird.
+            trying to fix it with forkNode option
         */
-        CIUtils.skipIfOnLinuxOnGA()
+        //CIUtils.skipIfOnLinuxOnGA()
     }
 
     protected fun addBlackBoxOptions(
