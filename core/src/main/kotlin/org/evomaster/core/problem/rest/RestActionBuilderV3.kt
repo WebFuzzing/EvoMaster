@@ -361,9 +361,9 @@ object RestActionBuilderV3 {
 
             val actionId = "$verb$restPath"
             val links = operation.responses
-                .filter { it.value.links != null && it.value.links.isNotEmpty() }
-                .flatMap { link->  link.value.links.map { Triple(link.key, it.key, it.value) } }
-                .map {
+                ?.filter { it.value.links != null && it.value.links.isNotEmpty() }
+                ?.flatMap { link->  link.value.links.map { Triple(link.key, it.key, it.value) } }
+                ?.map {
                     RestLink(
                         statusCode = it.first.toInt(),
                         name = it.second,
@@ -373,7 +373,7 @@ object RestActionBuilderV3 {
                         requestBody = it.third.requestBody?.toString(),
                         server = it.third.server?.toString()
                     )
-                }
+                } ?: listOf()
             val action = RestCallAction(actionId, verb, restPath, params, produces = produces,
                 operationId = operation.operationId, links = links)
 
