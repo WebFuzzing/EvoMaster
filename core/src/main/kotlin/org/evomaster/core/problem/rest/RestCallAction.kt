@@ -21,8 +21,9 @@ import java.net.URLEncoder
 
 class RestCallAction(
     /**
-     * Identifier unique within the individual
-     * **/
+     * An identifier for the type of this action, typically the co-ordinates verb:path.
+     * but, in some special cases, we use this id to mark special type of calls
+     **/
     val id:String,
     val verb: HttpVerb,
     val path: RestPath,

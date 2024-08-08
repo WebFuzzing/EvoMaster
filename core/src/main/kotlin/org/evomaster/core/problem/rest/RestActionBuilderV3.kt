@@ -359,7 +359,7 @@ object RestActionBuilderV3 {
                 ?.toList()
                 ?: listOf()
 
-            val actionId = "$verb$restPath${idGenerator.incrementAndGet()}"
+            val actionId = "$verb$restPath"
             val links = operation.responses
                 .filter { it.value.links != null && it.value.links.isNotEmpty() }
                 .flatMap { link->  link.value.links.map { Triple(link.key, it.key, it.value) } }

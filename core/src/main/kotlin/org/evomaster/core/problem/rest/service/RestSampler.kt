@@ -125,7 +125,16 @@ class RestSampler : AbstractRestSampler(){
             val copy = x.copy() as RestCallAction
             copy.doInitialize(randomness)
             copy.auth = rca.auth
-            copy.backwardLinkReference = BackwardLinkReference(rca.id,l.id)
+            /*
+                This is bit tricky... the id does NOT uniquely identify the action inside an
+                individual, but rather its type.
+                For that, would need localId, but that is not set yet! it is done once Individual
+                is fully built.
+                So, technically, this backward link could refer to more than one previous action.
+                but, in theory, should not be a problem, we could just always take the closest one.
+             */
+            val sourceId = rca.id
+            copy.backwardLinkReference = BackwardLinkReference(sourceId,l.id)
             test.add(copy)
 
             enhanceWithLinksSupport(test)
