@@ -61,20 +61,29 @@ public abstract class EnterpriseTestBase {
 
     public final static String TESTS_OUTPUT_ROOT_FOLDER = "target/em-tests/";
 
+    /**
+     * Dirty hack, but could not find any clean way to do disable it for black-box test modules :(
+     * unfortunately, as static, cannot be overridden
+     */
+    public static boolean shouldApplyInstrumentation = true;
+
+
     @BeforeAll
     public static void initInstrumentation(){
+       if(shouldApplyInstrumentation) {
         /*
             Make sure we init agent immediately... this is to avoid classes (eg kotlin library)
             being not instrumented when tests start (as controllers might load them)
          */
-        InstrumentedSutStarter.loadAgent();
+           InstrumentedSutStarter.loadAgent();
 
         /*
             avoid boot-time info across e2e tests
          */
-        ObjectiveRecorder.reset(true);
+           ObjectiveRecorder.reset(true);
 
-        UnitsInfoRecorder.reset();
+           UnitsInfoRecorder.reset();
+       }
     }
 
     @AfterAll

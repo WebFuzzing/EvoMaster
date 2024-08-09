@@ -328,7 +328,6 @@ public class ClassToSchema {
             return fieldArraySchema(klass, pType, nested, allNested, objectFieldsRequired, converters);
         }
 
-        //TOOD Map
         if ((klass != null && Map.class.isAssignableFrom(klass)) || pType != null && Map.class.isAssignableFrom((Class) pType.getRawType())) {
             if (pType != null && pType.getActualTypeArguments().length > 0) {
                 Type keyType = pType.getActualTypeArguments()[0];
@@ -340,7 +339,7 @@ public class ClassToSchema {
             return fieldStringKeyMapSchema(klass, pType, nested, allNested, objectFieldsRequired, converters);
         }
 
-        if (useRefObject) {
+        if (klass!= null && useRefObject) {
             // register this class
             if ((allNested || !UnitsInfoRecorder.isDtoSchemaRegister(klass.getName())) && !nested.contains(klass)) {
                 nested.add(klass);
