@@ -1,7 +1,12 @@
 package org.evomaster.core.problem.rest
 
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.api.param.Param
+import org.evomaster.core.problem.rest.param.HeaderParam
+import org.evomaster.core.problem.rest.param.PathParam
+import org.evomaster.core.problem.rest.param.QueryParam
 import org.slf4j.LoggerFactory
+import javax.ws.rs.CookieParam
 
 class RestLinkParameter(
     nameEntry: String,
@@ -11,7 +16,16 @@ class RestLinkParameter(
     enum class Scope{
         //https://swagger.io/docs/specification/links/
         //path, query, header or cookie
-        PATH, QUERY, HEADER, COOKIE
+        PATH, QUERY, HEADER, COOKIE;
+
+        fun matchType(param: Param): Boolean {
+            return when(this){
+                PATH -> param is PathParam
+                QUERY -> param is QueryParam
+                HEADER -> param is HeaderParam
+                COOKIE -> param is HeaderParam && param.name.equals("cookie", ignoreCase = true)
+            }
+        }
     }
 
     companion object{
@@ -61,6 +75,13 @@ class RestLinkParameter(
     }
 
     fun isBodyField() = value.startsWith(BODY_FIELD)
+
+    fun bodyPointer(): String {
+        if(!isBodyField()){
+            throw IllegalStateException("There is no body pointer to extract")
+        }
+        return value.substringAfter("#")
+    }
 
     fun isConstant() = !value.startsWith("$") && !value.contains("{$")
 }
