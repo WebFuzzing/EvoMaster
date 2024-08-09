@@ -47,9 +47,20 @@ abstract class SpringTestBase : RestTestBase() {
 
         /*
             some weird issue with Surefire plugin, not happening on builds for Win and OSX... weird.
-            trying to fix it with forkNode option
+            trying to fix it with forkNode option.
+
+            Update: still having very weird issues with dependencies not found:
+            -----------
+             Failed to execute goal on project evomaster-e2e-tests-bb-workspace-rest:
+             Could not resolve dependencies for project org.evomaster:evomaster-e2e-tests-bb-workspace-rest:jar:3.0.1-SNAPSHOT:
+             The following artifacts could not be resolved: org.evomaster:evomaster-client-java-dependencies:pom:3.0.1-SNAPSHOT,
+             org.evomaster:evomaster-client-java-controller:jar:3.0.1-SNAPSHOT:
+             Could not find artifact org.evomaster:evomaster-client-java-dependencies:pom:3.0.1-SNAPSHOT -> [Help 1]
+            ------------
+            but it works on Mac and Win???
+            disabling for now...
         */
-        //CIUtils.skipIfOnLinuxOnGA()
+        CIUtils.skipIfOnLinuxOnGA()
     }
 
     protected fun addBlackBoxOptions(
