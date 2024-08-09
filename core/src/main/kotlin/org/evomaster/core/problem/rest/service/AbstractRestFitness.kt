@@ -610,7 +610,14 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             The "id" just represents the type, and there could be several of them in a test.
             So, here we look at previous actions (ie all before "index"), and take the closest to index
          */
-        val previous = all.take(index).find { reference.sourceActionId == it.id }
+        val previous = all.take(index)
+            .find { action ->
+                reference.sourceActionId == action.id
+                // not only must be of right kind, but also return right status code
+                &&
+                (actionResults.find { it.sourceLocalId == action.getLocalId() } as RestCallResult?)
+                    ?.getStatusCode() == reference.statusCode
+            }
             //could happen if mutation (unless we force updating broken links), but never on sampling
             //TODO should handle this
             ?: return
@@ -618,9 +625,8 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             ?: throw IllegalStateException("Bug: endpoint ${previous.id} has no link of type ${reference.sourceLinkId}")
 
         val result = actionResults.find { it.sourceLocalId == previous.getLocalId() } as RestCallResult?
+            // in theory, this branch is unreachable, as otherwise previous would had been null
             ?: throw IllegalArgumentException("No action result for ${previous.getLocalId()}")
-
-        //FIXME previous should have right HTTP status
 
         RestLinkValueUpdater.update(a,link,previous,result)
     }

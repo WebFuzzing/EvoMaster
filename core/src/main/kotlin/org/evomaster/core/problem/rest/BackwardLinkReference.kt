@@ -9,4 +9,6 @@ class BackwardLinkReference(
     val sourceActionId: String,
     val sourceLinkId: String
 ) {
+
+    val statusCode = sourceLinkId.substringBefore(":").toInt()
 }
