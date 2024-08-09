@@ -53,7 +53,7 @@ class BlackBoxRestFitness : RestFitness() {
         //run the test, one action at a time
         for (i in mainActions.indices) {
             val a = mainActions[i]
-            val ok = handleRestCall(a, actionResults, chainState, cookies, tokens)
+            val ok = handleRestCall(a, mainActions, actionResults, chainState, cookies, tokens)
             actionResults[i].stopping = !ok
 
             if (!ok) {

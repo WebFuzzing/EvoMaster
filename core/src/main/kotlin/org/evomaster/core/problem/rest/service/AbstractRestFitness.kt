@@ -433,6 +433,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
      */
     protected fun handleRestCall(
         a: RestCallAction,
+        all: List<RestCallAction>,
         actionResults: MutableList<ActionResult>,
         chainState: MutableMap<String, String>,
         cookies: Map<String, List<NewCookie>>,
@@ -443,6 +444,8 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         val rcr = RestCallResult(a.getLocalId())
         actionResults.add(rcr)
+
+        handleLinks(a, all,actionResults)
 
         val response = try {
             createInvocation(a, chainState, cookies, tokens).invoke()
@@ -589,6 +592,37 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         if (!handleSaveLocation(a, response, rcr, chainState)) return false
 
         return true
+    }
+
+    private fun handleLinks(a: RestCallAction, all: List<RestCallAction>, actionResults: List<ActionResult>) {
+        val index = all.indexOfFirst { it.getLocalId() == a.getLocalId() }
+        if(index < 0){
+            throw IllegalStateException("Bug: input REST call action is not present in 'all' list")
+        }
+
+        val reference = a.backwardLinkReference
+            //nothing to do
+            ?: return
+
+        /*
+            Recall we cannot use localId to specify the backward link (as those are not defined yet when links are
+            created).
+            The "id" just represents the type, and there could be several of them in a test.
+            So, here we look at previous actions (ie all before "index"), and take the closest to index
+         */
+        val previous = all.take(index).find { reference.sourceActionId == it.id }
+            //could happen if mutation (unless we force updating broken links), but never on sampling
+            //TODO should handle this
+            ?: return
+        val link = previous.links.find { it.id == reference.sourceLinkId }
+            ?: throw IllegalStateException("Bug: endpoint ${previous.id} has no link of type ${reference.sourceLinkId}")
+
+        val result = actionResults.find { it.sourceLocalId == previous.getLocalId() } as RestCallResult?
+            ?: throw IllegalArgumentException("No action result for ${previous.getLocalId()}")
+
+        //FIXME previous should have right HTTP status
+
+        RestLinkValueUpdater.update(a,link,previous,result)
     }
 
 

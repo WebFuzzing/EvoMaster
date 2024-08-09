@@ -16,6 +16,8 @@ class RestLinkParameter(
 
     companion object{
         private val log = LoggerFactory.getLogger(RestLink::class.java)
+
+        private const val BODY_FIELD = "\$response.body#"
     }
 
 
@@ -55,7 +57,10 @@ class RestLinkParameter(
          */
 
         //TODO should handle all cases
-        return value.startsWith("\$response.body#")
+        return isBodyField() || isConstant()
     }
 
+    fun isBodyField() = value.startsWith(BODY_FIELD)
+
+    fun isConstant() = !value.startsWith("$") && !value.contains("{$")
 }
