@@ -48,20 +48,13 @@ class BlackBoxRestFitness : RestFitness() {
 
         //used for things like chaining "location" paths
         val chainState = mutableMapOf<String, String>()
+        val mainActions = individual.seeMainExecutableActions()
 
         //run the test, one action at a time
-        for (i in 0 until individual.seeAllActions().size) {
-
-            val a = individual.seeAllActions()[i]
-
-            var ok = false
-
-            if (a is RestCallAction) {
-                ok = handleRestCall(a, actionResults, chainState, cookies, tokens)
-                actionResults[i].stopping = !ok
-            } else {
-                throw IllegalStateException("Cannot handle: ${a.javaClass}")
-            }
+        for (i in mainActions.indices) {
+            val a = mainActions[i]
+            val ok = handleRestCall(a, actionResults, chainState, cookies, tokens)
+            actionResults[i].stopping = !ok
 
             if (!ok) {
                 break

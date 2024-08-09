@@ -48,11 +48,12 @@ open class RestFitness : AbstractRestFitness() {
 
         //used for things like chaining "location" paths
         val chainState = mutableMapOf<String, String>()
+        val mainActions = individual.seeMainExecutableActions()
 
         //run the test, one action at a time
-        for (i in 0 until individual.seeMainExecutableActions().size) {
+        for (i in mainActions.indices) {
 
-            val a = individual.seeMainExecutableActions()[i] as RestCallAction
+            val a = mainActions[i]
 
             if (log.isTraceEnabled){
                 log.trace("handle rest action at index {}, and the action is {}, and the genes are",
@@ -72,19 +73,13 @@ open class RestFitness : AbstractRestFitness() {
 
             registerNewAction(a, i)
 
-            var ok = false
-
-            if (a is RestCallAction) {
-                ok = handleRestCall(a, actionResults, chainState, cookies, tokens)
-                /*
-                    the action might be stopped due to e.g., timeout (see [handleRestCall]),
-                    but the property of [stopping] is not handle.
-                    we can also handle the property inside [handleRestCall]
-                 */
-                actionResults.filterIsInstance<RestCallResult>()[i].stopping = !ok
-            } else {
-                throw IllegalStateException("Cannot handle: ${a.javaClass}")
-            }
+            val ok = handleRestCall(a, actionResults, chainState, cookies, tokens)
+            /*
+                the action might be stopped due to e.g., timeout (see [handleRestCall]),
+                but the property of [stopping] is not handle.
+                we can also handle the property inside [handleRestCall]
+             */
+            actionResults.filterIsInstance<RestCallResult>()[i].stopping = !ok
 
             if (!ok) {
                 break
