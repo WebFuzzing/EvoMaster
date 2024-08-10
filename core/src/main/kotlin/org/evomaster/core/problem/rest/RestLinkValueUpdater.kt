@@ -10,8 +10,20 @@ object RestLinkValueUpdater {
      */
     fun update(target: RestCallAction, link: RestLink, source: RestCallAction, sourceResults: RestCallResult){
 
-        //TODO validation of inputs
-
+        val blr = target.backwardLinkReference
+            ?: throw IllegalArgumentException("target action does not have a backward link reference")
+        if(blr.sourceLinkId != link.id){
+            throw IllegalArgumentException("Not matching ids for link: ${blr.sourceLinkId} != ${link.id}")
+        }
+        if(link.statusCode != sourceResults.getStatusCode()){
+            throw IllegalArgumentException("Not matching status code: ${link.statusCode} != ${sourceResults.getStatusCode()}")
+        }
+        if(source.getLocalId() != sourceResults.sourceLocalId){
+            throw IllegalArgumentException("Source action ${source.getLocalId()} not matching result for ${sourceResults.sourceLocalId}")
+        }
+        if(source.links.none { it.id == link.id }){
+            throw IllegalArgumentException("Input link not part of the source action")
+        }
 
         for (p in link.parameters) {
             val value = extractValue(p, sourceResults)
@@ -30,7 +42,7 @@ object RestLinkValueUpdater {
             val gene = chosen.primaryGene()
             val ok = gene.setFromStringValue(value)
             if(!ok){
-                //TODO possibly a bug?
+                //TODO possibly a bug? eg a string value does not match a pattern constraint
             }
         }
     }
