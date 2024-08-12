@@ -44,7 +44,7 @@ class RestLinkParameter(
             scope = null
             nameEntry
         } else {
-            scope = Scope.valueOf(nameEntry.substringBefore("."))
+            scope = Scope.valueOf(nameEntry.substringBefore(".").uppercase())
             nameEntry.substringAfter(".")
         }
 
