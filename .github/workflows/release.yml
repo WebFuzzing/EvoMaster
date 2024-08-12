@@ -8,7 +8,7 @@ on:
       - "v*"
 
 env:
-  evomaster-version: 3.0.1
+  evomaster-version: 3.1.1
   jdk: 21
   retention-days: 1
 ## Doesn't work, ie, use env in env
@@ -116,7 +116,9 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: evomaster.deb
-          path: release/evomaster_${{env.evomaster-version}}-1_amd64.deb
+          #          JDK 17 and 21 use different suffixes... doesn't seem configurable :(
+          #          path: release/evomaster_${{env.evomaster-version}}-1_amd64.deb
+          path: release/evomaster_${{env.evomaster-version}}_amd64.deb
           retention-days: ${{env.retention-days}}
           if-no-files-found: error
 
@@ -145,7 +147,7 @@ jobs:
           name: evomaster.msi
 
 
-## Doesn't seem any longer mantained... plus usability issues
+## Doesn't seem any longer maintained... plus usability issues
 #      - uses: "marvinpinto/action-automatic-releases@latest"
 #        with:
 #          repo_token: "${{ secrets.GITHUB_TOKEN }}"
@@ -166,6 +168,6 @@ jobs:
           files: |
             evomaster.jar
             evomaster-${{env.evomaster-version}}.msi
-            evomaster-${{env.evomaster-version}}.dmg
-            evomaster_${{env.evomaster-version}}-1_amd64.deb
-
+            evomaster-${{env.evomaster-version}}.dmg           
+            evomaster_${{env.evomaster-version}}_amd64.deb
+          #   JDK 17 and 21 use different suffixes... doesn't seem configurable :(
