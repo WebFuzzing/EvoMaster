@@ -35,6 +35,7 @@ import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.DataPool
+import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -437,7 +438,8 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         actionResults: MutableList<ActionResult>,
         chainState: MutableMap<String, String>,
         cookies: Map<String, List<NewCookie>>,
-        tokens: Map<String, String>
+        tokens: Map<String, String>,
+        fv: FitnessValue
     ): Boolean {
 
         searchTimeController.waitForRateLimiter()
@@ -445,7 +447,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         val rcr = RestCallResult(a.getLocalId())
         actionResults.add(rcr)
 
-        handleLinks(a, all,actionResults)
+        val appliedLink = handleLinks(a, all,actionResults)
 
         val response = try {
             createInvocation(a, chainState, cookies, tokens).invoke()
@@ -539,6 +541,14 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         rcr.setStatusCode(response.status)
 
+        if(appliedLink){
+            //create objectives to keep track of followed links
+            fv.coverTarget(idMapper.handleLocalTarget("LINK_FOLLOWED_${a.id}"))
+            if(StatusGroup.G_2xx.isInGroup(response.status)) {
+                fv.coverTarget(idMapper.handleLocalTarget("LINK_FOLLOWED_SUCCESS_${a.id}"))
+            }
+        }
+
         handlePossibleConnectionClose(response)
 
         try {
@@ -594,7 +604,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         return true
     }
 
-    private fun handleLinks(a: RestCallAction, all: List<RestCallAction>, actionResults: List<ActionResult>) {
+    private fun handleLinks(
+        a: RestCallAction,
+        all: List<RestCallAction>,
+        actionResults: List<ActionResult>
+    ) : Boolean {
         val index = all.indexOfFirst { it.getLocalId() == a.getLocalId() }
         if(index < 0){
             throw IllegalStateException("Bug: input REST call action is not present in 'all' list")
@@ -602,7 +616,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         val reference = a.backwardLinkReference
             //nothing to do
-            ?: return
+            ?: return false
 
         /*
             Recall we cannot use localId to specify the backward link (as those are not defined yet when links are
@@ -620,7 +634,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             }
             //could happen if mutation (unless we force updating broken links), but never on sampling
             //TODO should handle this
-            ?: return
+            ?: return false
         val link = previous.links.find { it.id == reference.sourceLinkId }
             ?: throw IllegalStateException("Bug: endpoint ${previous.id} has no link of type ${reference.sourceLinkId}")
 
@@ -628,7 +642,8 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             // in theory, this branch is unreachable, as otherwise previous would had been null
             ?: throw IllegalArgumentException("No action result for ${previous.getLocalId()}")
 
-        RestLinkValueUpdater.update(a,link,previous,result)
+        val modified = RestLinkValueUpdater.update(a,link,previous,result)
+        return modified
     }
 
 

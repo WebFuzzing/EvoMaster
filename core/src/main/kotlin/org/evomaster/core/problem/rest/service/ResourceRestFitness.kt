@@ -169,7 +169,7 @@ class ResourceRestFitness : AbstractRestFitness() {
         //TODO handling of inputVariables
         registerNewAction(restCallAction, indexOfAction)
 
-        val ok = handleRestCall(restCallAction, mainActions, actionResults, chainState, cookies, tokens)
+        val ok = handleRestCall(restCallAction, mainActions, actionResults, chainState, cookies, tokens, fv)
         // update creation of resources regarding response status
         val restActionResult = actionResults.filterIsInstance<RestCallResult>()[indexOfAction]
 

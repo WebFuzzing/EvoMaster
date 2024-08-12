@@ -73,7 +73,7 @@ open class RestFitness : AbstractRestFitness() {
 
             registerNewAction(a, i)
 
-            val ok = handleRestCall(a, mainActions, actionResults, chainState, cookies, tokens)
+            val ok = handleRestCall(a, mainActions, actionResults, chainState, cookies, tokens, fv)
             /*
                 the action might be stopped due to e.g., timeout (see [handleRestCall]),
                 but the property of [stopping] is not handle.

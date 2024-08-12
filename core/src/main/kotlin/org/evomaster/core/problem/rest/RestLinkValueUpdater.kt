@@ -8,7 +8,12 @@ object RestLinkValueUpdater {
     /**
      * Update the genes of the [target] action based on the [link] pointing to the given [source].
      */
-    fun update(target: RestCallAction, link: RestLink, source: RestCallAction, sourceResults: RestCallResult){
+    fun update(
+        target: RestCallAction,
+        link: RestLink,
+        source: RestCallAction,
+        sourceResults: RestCallResult
+    ) : Boolean {
 
         val blr = target.backwardLinkReference
             ?: throw IllegalArgumentException("target action does not have a backward link reference")
@@ -24,6 +29,8 @@ object RestLinkValueUpdater {
         if(source.links.none { it.id == link.id }){
             throw IllegalArgumentException("Input link not part of the source action")
         }
+
+        var anyModification = false
 
         for (p in link.parameters) {
             val value = extractValue(p, sourceResults)
@@ -44,7 +51,10 @@ object RestLinkValueUpdater {
             if(!ok){
                 //TODO possibly a bug? eg a string value does not match a pattern constraint
             }
+            anyModification = anyModification || ok
         }
+
+        return anyModification
     }
 
 
