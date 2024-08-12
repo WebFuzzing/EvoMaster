@@ -147,7 +147,7 @@ jobs:
           name: evomaster.msi
 
 
-## Doesn't seem any longer mantained... plus usability issues
+## Doesn't seem any longer maintained... plus usability issues
 #      - uses: "marvinpinto/action-automatic-releases@latest"
 #        with:
 #          repo_token: "${{ secrets.GITHUB_TOKEN }}"
@@ -168,6 +168,6 @@ jobs:
           files: |
             evomaster.jar
             evomaster-${{env.evomaster-version}}.msi
-            evomaster-${{env.evomaster-version}}.dmg
-            evomaster_${{env.evomaster-version}}-1_amd64.deb
-
+            evomaster-${{env.evomaster-version}}.dmg           
+            evomaster_${{env.evomaster-version}}_amd64.deb
+          #   JDK 17 and 21 use different suffixes... doesn't seem configurable :(
