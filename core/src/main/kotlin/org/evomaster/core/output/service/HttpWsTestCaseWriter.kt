@@ -423,7 +423,11 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                             lines.append("new StringContent(\"$body\", Encoding.UTF8, \"${bodyParam.contentType()}\")")
                         }
                         format.isPython() -> {
-                            lines.add("body = \"$body\"")
+                            if (body.trim().isNullOrBlank()) {
+                                lines.add("body = \"\"")
+                            } else {
+                                lines.add("body = $body")
+                            }
                         }
                         else -> lines.add(".$send($body)")
                     }

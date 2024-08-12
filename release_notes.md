@@ -2,6 +2,9 @@
 
 Under development in `master` branch.
 
+---
+# Version: 3.1.0
+
 ### New Features
 - new fully-supported output formats: Python and JavaScript 
 - support for JDK 21
