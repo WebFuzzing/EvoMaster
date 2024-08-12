@@ -116,7 +116,9 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: evomaster.deb
-          path: release/evomaster_${{env.evomaster-version}}-1_amd64.deb
+          #          JDK 17 and 21 use different suffixes... doesn't seem configurable :(
+          #          path: release/evomaster_${{env.evomaster-version}}-1_amd64.deb
+          path: release/evomaster_${{env.evomaster-version}}_amd64.deb
           retention-days: ${{env.retention-days}}
           if-no-files-found: error
 
