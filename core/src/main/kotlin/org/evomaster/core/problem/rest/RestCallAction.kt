@@ -21,8 +21,9 @@ import java.net.URLEncoder
 
 class RestCallAction(
     /**
-     * Identifier unique within the individual
-     * **/
+     * An identifier for the type of this action, typically the co-ordinates verb:path.
+     * but, in some special cases, we use this id to mark special type of calls
+     **/
     val id:String,
     val verb: HttpVerb,
     val path: RestPath,
@@ -52,7 +53,13 @@ class RestCallAction(
     var usePreviousLocationId: String? = null,
     val produces: List<String> = listOf(),
     val responseRefs : MutableMap<String, String> = mutableMapOf(),
-    val skipOracleChecks : Boolean = false
+    val skipOracleChecks : Boolean = false,
+    /**
+     * unique id defined in the OpenAPI schema. this is optional, though
+     */
+    val operationId: String? = null,
+    val links: List<RestLink> = listOf(),
+    var backwardLinkReference: BackwardLinkReference? = null
 ) : HttpWsAction(auth, parameters) {
 
     var saveLocation : Boolean = saveLocation
@@ -94,7 +101,10 @@ class RestCallAction(
 
     override fun copyContent(): Action {
         val p = parameters.asSequence().map(Param::copy).toMutableList()
-        return RestCallAction(id, verb, path, p, auth, saveLocation, usePreviousLocationId, produces, responseRefs, skipOracleChecks)
+        return RestCallAction(
+            id, verb, path, p, auth, saveLocation, usePreviousLocationId,
+            produces, responseRefs, skipOracleChecks, operationId, links, backwardLinkReference)
+        //note: immutable objects (eg String and RestLink) do not need to be copied
     }
 
     override fun getName(): String {

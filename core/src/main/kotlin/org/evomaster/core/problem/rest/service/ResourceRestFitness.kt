@@ -17,6 +17,7 @@ import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
+import org.evomaster.core.search.Individual
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.ws.rs.core.NewCookie
@@ -160,6 +161,7 @@ class ResourceRestFitness : AbstractRestFitness() {
 
         val externalServiceActions = handleExternalActionsBeforeMainActionExecution(enterpriseActionGroup)
         val restCallAction = enterpriseActionGroup.getMainAction()
+        val mainActions = (restCallAction.getRoot() as Individual).seeMainExecutableActions()  as List<RestCallAction>
 
         if(restCallAction !is RestCallAction)
             throw IllegalStateException("Cannot handle: ${restCallAction.javaClass}")
@@ -167,7 +169,7 @@ class ResourceRestFitness : AbstractRestFitness() {
         //TODO handling of inputVariables
         registerNewAction(restCallAction, indexOfAction)
 
-        val ok = handleRestCall(restCallAction, actionResults, chainState, cookies, tokens)
+        val ok = handleRestCall(restCallAction, mainActions, actionResults, chainState, cookies, tokens, fv)
         // update creation of resources regarding response status
         val restActionResult = actionResults.filterIsInstance<RestCallResult>()[indexOfAction]
 

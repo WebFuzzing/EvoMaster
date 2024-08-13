@@ -359,8 +359,23 @@ object RestActionBuilderV3 {
                 ?.toList()
                 ?: listOf()
 
-            val actionId = "$verb$restPath${idGenerator.incrementAndGet()}"
-            val action = RestCallAction(actionId, verb, restPath, params, produces = produces)
+            val actionId = "$verb$restPath"
+            val links = operation.responses
+                ?.filter { it.value.links != null && it.value.links.isNotEmpty() }
+                ?.flatMap { link->  link.value.links.map { Triple(link.key, it.key, it.value) } }
+                ?.map {
+                    RestLink(
+                        statusCode = it.first.toInt(),
+                        name = it.second,
+                        operationId = it.third.operationId,
+                        operationRef = it.third.operationRef,
+                        parameterDefinitions = it.third.parameters ?: mapOf(),
+                        requestBody = it.third.requestBody?.toString(),
+                        server = it.third.server?.toString()
+                    )
+                } ?: listOf()
+            val action = RestCallAction(actionId, verb, restPath, params, produces = produces,
+                operationId = operation.operationId, links = links)
 
             //TODO update for new parser
 //                        /*This section collects information regarding the types of data that are
