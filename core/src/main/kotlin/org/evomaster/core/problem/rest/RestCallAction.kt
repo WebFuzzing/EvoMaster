@@ -83,9 +83,6 @@ class RestCallAction(
     val tokens : MutableMap<String, ActionRToken> = mutableMapOf()
 
 
-    override fun shouldCountForFitnessEvaluations(): Boolean = true
-
-
     /**
      * @return a string representing an id to use when setting "saveLocation".
      *  following REST call can use such id to refer to the dynamically generated resource.
