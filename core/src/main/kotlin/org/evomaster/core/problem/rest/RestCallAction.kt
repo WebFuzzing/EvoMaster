@@ -103,8 +103,9 @@ class RestCallAction(
         val p = parameters.asSequence().map(Param::copy).toMutableList()
         return RestCallAction(
             id, verb, path, p, auth, saveLocation, usePreviousLocationId,
-            produces, responseRefs, skipOracleChecks, operationId, links, backwardLinkReference)
-        //note: immutable objects (eg String and RestLink) do not need to be copied
+            produces, responseRefs, skipOracleChecks, operationId, links,
+            backwardLinkReference?.copy())
+        //note: immutable objects (eg String) do not need to be copied
     }
 
     override fun getName(): String {
