@@ -303,11 +303,6 @@ abstract class TestCaseWriter {
     }
 
 
-    protected fun capitalizeFirstChar(name: String): String {
-        return name[0].uppercaseChar() + name.substring(1)
-    }
-
-
     protected fun clusterComment(lines: Lines, test: TestCase) {
         if (test.test.clusterAssignments.size > 0) {
             lines.startCommentBlock()

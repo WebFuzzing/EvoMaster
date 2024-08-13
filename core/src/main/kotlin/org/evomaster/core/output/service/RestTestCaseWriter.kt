@@ -15,6 +15,7 @@ import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.utils.StringUtils
 import org.slf4j.LoggerFactory
 import java.nio.file.Path
 import java.util.*
@@ -185,7 +186,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         val verb = call.verb.name.lowercase(Locale.getDefault())
 
         if (format.isCsharp()) {
-            lines.append(".${capitalizeFirstChar(verb)}Async(")
+            lines.append(".${StringUtils.capitalization(verb)}Async(")
         } else {
             if (verb == "trace" && format.isJavaOrKotlin()) {
                 //currently, RestAssured does not have a trace() method
