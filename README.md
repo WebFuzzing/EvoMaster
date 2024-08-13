@@ -56,7 +56,7 @@ __Key features__:
 * _Schema_: REST APIs must provide a schema in [OpenAPI/Swagger](https://swagger.io)
   format (either _v2_ or _v3_).
 
-* _Output_: the tool generates _JUnit_ (version 4 or 5) tests, written in either Java or Kotlin, as well as test suites in Python and JavaScript. For complete list, see the documentation for the CLI parameter [--outputFormat](docs/options.md).
+* _Output_: the tool generates _JUnit_ (version 4 or 5) tests, written in either Java or Kotlin, as well as test suites in Python and JavaScript. For a complete list, see the documentation for the CLI parameter [--outputFormat](docs/options.md).
 
 * _Fault detection_: _EvoMaster_ can generate tests cases that reveal faults/bugs in the tested applications.
   Different heuristics are employed, like checking for 500 status codes and mismatches from the API schemas.
