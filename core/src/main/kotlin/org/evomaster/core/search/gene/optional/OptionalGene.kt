@@ -82,6 +82,14 @@ class OptionalGene(name: String,
         )
     }
 
+    override fun setFromStringValue(value: String) : Boolean{
+        val modified = gene.setFromStringValue(value)
+        if(modified){
+            isActive = true
+        }
+        return modified
+    }
+
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is OptionalGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
