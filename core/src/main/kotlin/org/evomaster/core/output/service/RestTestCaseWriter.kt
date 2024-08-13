@@ -49,10 +49,14 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         val k = call as RestCallAction
 
         return super.needsResponseVariable(call, res)
+                // FIXME remove once expectations removed
                 || (config.expectationsActive && partialOracles.generatesExpectation(call as RestCallAction, res))
                 || (!res.stopping && k.saveLocation)
                 || (!res.stopping && k.getFollowingMainActions().any{
-                    (it as RestCallAction).backwardLinkReference?.actualSourceActionLocalId == k.getLocalId()
+                    val blr = (it as RestCallAction).backwardLinkReference
+                    blr != null
+                            && blr.actualSourceActionLocalId == k.getLocalId()
+                            && (k.links.find { link -> link.id == blr.sourceLinkId }?.needsToUseResponse() ?: false)
                 })
     }
 
