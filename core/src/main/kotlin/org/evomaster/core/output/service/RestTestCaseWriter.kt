@@ -46,8 +46,8 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
      */
     override fun needsResponseVariable(call: HttpWsAction, res: HttpWsCallResult): Boolean {
 
-        return super.needsResponseVariable(call, res) ||
-                (config.expectationsActive && partialOracles.generatesExpectation(call as RestCallAction, res))
+        return super.needsResponseVariable(call, res)
+                || (config.expectationsActive && partialOracles.generatesExpectation(call as RestCallAction, res))
                 || ((call as RestCallAction).saveLocation && !res.stopping)
     }
 

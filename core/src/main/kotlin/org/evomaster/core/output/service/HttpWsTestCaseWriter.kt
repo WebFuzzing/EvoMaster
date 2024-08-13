@@ -140,8 +140,8 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
           Bit tricky... when using RestAssured on JVM, we can assert directly on the call...
           but that is not the case for the other libraries used for example in JS and C#
          */
-        return config.outputFormat == OutputFormat.JS_JEST
-                || config.outputFormat == OutputFormat.PYTHON_UNITTEST
+        return config.enableBasicAssertions &&
+                (config.outputFormat == OutputFormat.JS_JEST || config.outputFormat == OutputFormat.PYTHON_UNITTEST)
     }
 
     protected fun handleHeaders(call: HttpWsAction, lines: Lines) {
