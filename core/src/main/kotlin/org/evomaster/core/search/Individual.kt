@@ -217,10 +217,10 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
      * of the test cases (regardless of the other initializing actions).
      * All these actions are under the child group [ActionFilter.MAIN_EXECUTABLE]
      *
-     * This method can be overridden to return the concrete action type and not the abstract [Action]
+     * This method can be overridden to return the concrete action type and not the abstract [MainAction]
      */
-    open fun seeMainExecutableActions() : List<Action>{
-        val list = seeActions(ActionFilter.MAIN_EXECUTABLE)
+    open fun seeMainExecutableActions() : List<MainAction>{
+        val list = seeActions(ActionFilter.MAIN_EXECUTABLE) as List<MainAction>
         org.evomaster.core.Lazy.assert { list.all { it.shouldCountForFitnessEvaluations() } }
         return list
     }

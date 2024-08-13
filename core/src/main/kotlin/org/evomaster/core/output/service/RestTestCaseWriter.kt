@@ -46,9 +46,14 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
      */
     override fun needsResponseVariable(call: HttpWsAction, res: HttpWsCallResult): Boolean {
 
+        val k = call as RestCallAction
+
         return super.needsResponseVariable(call, res)
                 || (config.expectationsActive && partialOracles.generatesExpectation(call as RestCallAction, res))
-                || ((call as RestCallAction).saveLocation && !res.stopping)
+                || (!res.stopping && k.saveLocation)
+                || (!res.stopping && k.getFollowingMainActions().any{
+                    (it as RestCallAction).backwardLinkReference?.actualSourceActionLocalId == k.getLocalId()
+                })
     }
 
     override fun handleTestInitialization(

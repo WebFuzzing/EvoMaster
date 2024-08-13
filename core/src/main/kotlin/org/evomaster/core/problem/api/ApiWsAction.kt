@@ -2,8 +2,7 @@ package org.evomaster.core.problem.api
 
 import org.evomaster.core.problem.enterprise.auth.AuthenticationInfo
 import org.evomaster.core.problem.api.param.Param
-import org.evomaster.core.problem.enterprise.EnterpriseMainAction
-import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.MainAction
 
 /**
  * an action for handling API
@@ -17,7 +16,7 @@ abstract class ApiWsAction(
      * a list of param could be manipulated by evomaster
      */
     parameters: List<Param>
-) : EnterpriseMainAction(parameters){
+) : MainAction(parameters){
 
     val parameters : List<Param>
         get() { return children as List<Param>}

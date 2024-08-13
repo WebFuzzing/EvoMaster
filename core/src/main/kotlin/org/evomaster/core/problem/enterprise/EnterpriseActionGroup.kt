@@ -12,7 +12,7 @@ import org.evomaster.core.search.*
  * The dependent actions are related ONLY to the MAIN action.
  * Deleting the MAIN action would imply it is 100% safe to remove the dependent ones.
  */
-class EnterpriseActionGroup<T: EnterpriseMainAction>(
+class EnterpriseActionGroup<T: MainAction>(
     children: MutableList<out Action>,
     private val mainClass : Class<T>,
     //Kotlin does not like a reference of input val in the lambda, resulting in null when call super constructor
