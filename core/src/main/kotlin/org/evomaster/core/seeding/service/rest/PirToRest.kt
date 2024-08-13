@@ -7,6 +7,8 @@ import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.service.AbstractRestSampler
+import org.evomaster.core.search.gene.optional.NullableGene
+import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.seeding.service.PirToIndividual
 import org.slf4j.Logger
@@ -42,7 +44,10 @@ class PirToRest: PirToIndividual(){
     /**
      *  From components of a string representation, create an action, based on existing template
      */
-    fun fromVerbPath(verb: String, path: String, queryParams : Map<String,String> = mapOf()) : RestCallAction?{
+    fun fromVerbPath(verb: String, path: String, queryParams : Map<String,String> = mapOf(),
+                     optionalParams: MutableList<String> = mutableListOf<String>(),
+                     nullableParams: MutableList<String> = mutableListOf<String>()
+                     ) : RestCallAction?{
 
         val v = try{HttpVerb.valueOf(verb.uppercase())}
         catch (e: IllegalArgumentException){
@@ -86,8 +91,15 @@ class PirToRest: PirToIndividual(){
                     if(queryParams.containsKey(name)){
                         p.getGeneForQuery().setFromStringValue(queryParams[name]!!)
                     } else {
-                        //TODO check if optional. is so, deactivate. if not, outdate info, issue warning.
-                        //TODO also check nulllable genes
+                        //TODO check if optional. If so, deactivate. if not, outdated info, issue warning.
+                        if (optionalParams.contains(p.name)) {
+                            p.getGeneForQuery().copyValueFrom(OptionalGene(p.name, p.getGeneForQuery(), isActive = false))
+                        }
+                        //TODO also check nullable genes
+                        if (nullableParams.contains(p.name)){
+                            p.getGeneForQuery().copyValueFrom(NullableGene(p.name, p.getGeneForQuery(), isActive = true))
+                        }
+
                     }
                 }
                 else -> {
