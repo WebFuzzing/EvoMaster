@@ -44,10 +44,7 @@ class PirToRest: PirToIndividual(){
     /**
      *  From components of a string representation, create an action, based on existing template
      */
-    fun fromVerbPath(verb: String, path: String, queryParams : Map<String,String> = mapOf(),
-                     optionalParams: MutableList<String> = mutableListOf<String>(),
-                     nullableParams: MutableList<String> = mutableListOf<String>()
-                     ) : RestCallAction?{
+    fun fromVerbPath(verb: String, path: String, queryParams : Map<String,String> = mapOf()) : RestCallAction?{
 
         val v = try{HttpVerb.valueOf(verb.uppercase())}
         catch (e: IllegalArgumentException){
@@ -87,19 +84,30 @@ class PirToRest: PirToIndividual(){
                     }
                 }
                 is QueryParam ->{
+                    /*
+                     * when dealing with queries, several different scenarios could happen:
+                     * 1: it is there as input (-> change value)
+                     * 2: it is not there, possibly because optional (-> deactivate)
+                     * 3: it is not there in the template, because the param does not exist any more,
+                     *    eg seed is not in sync (-> ignore)
+                     * 4: existing required param is not in the input (-> ignore)
+                     */
                     val name = p.name
+                    val gene = p.getGeneForQuery()
                     if(queryParams.containsKey(name)){
-                        p.getGeneForQuery().setFromStringValue(queryParams[name]!!)
+                        gene.setFromStringValue(queryParams[name]!!)
                     } else {
-                        //TODO check if optional. If so, deactivate. if not, outdated info, issue warning.
-                        if (optionalParams.contains(p.name)) {
-                            p.getGeneForQuery().copyValueFrom(OptionalGene(p.name, p.getGeneForQuery(), isActive = false))
-                        }
                         //TODO also check nullable genes
-                        if (nullableParams.contains(p.name)){
-                            p.getGeneForQuery().copyValueFrom(NullableGene(p.name, p.getGeneForQuery(), isActive = true))
+                        if(gene is OptionalGene){
+                            //simply deactivate it
+                            gene.isActive = false
+                        } else {
+                            // this means it is required, but not present in the seed
+                            // as such, just leave it as randomized
+                            log.warn("Required query parameter $name is not in the input seed." +
+                                    " This could happen if schema has changed since the seed was created.")
+                            //nothing to do further
                         }
-
                     }
                 }
                 else -> {
