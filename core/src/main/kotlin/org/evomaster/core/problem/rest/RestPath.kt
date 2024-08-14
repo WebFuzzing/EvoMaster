@@ -348,6 +348,10 @@ class RestPath(path: String) {
             }
         }
 
+        if(endsWithSlash){
+            path.append("/")
+        }
+
         /*
            reserved characters need to be encoded
            https://tools.ietf.org/html/rfc3986#section-2.2
@@ -355,12 +359,20 @@ class RestPath(path: String) {
            why not using URI also for Query part???
            it seems unclear how to properly build it as a single string...
          */
-
-        if(endsWithSlash){
-            path.append("/")
-        }
-
         return URI(null, null, path.toString(), null, null).rawPath
+    }
+
+
+    /**
+     * TODO
+     */
+    fun dynamicResolutionOnlyPathData(
+        params: List<Param>,
+        variables: Map<String,RestLinkParameter>
+    ) : List<Pair<String,Boolean>>{
+
+        FIXME
+        return listOf() //TODO
     }
 
 
@@ -504,4 +516,6 @@ class RestPath(path: String) {
 
         return noQualifier
     }
+
+
 }

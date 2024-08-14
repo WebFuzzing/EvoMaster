@@ -9,6 +9,7 @@ import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.RestLinkParameter
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
@@ -266,53 +267,60 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
 
         } else {
 
+            //map from variable name to link parameter object definition
+            val replacements = if (call.backwardLinkReference?.isInUse() == true) {
+                val ref = call.getReferenceLinkInfo()
+                val dynamic = ref.first.parameters.filter { it.isBodyField() }
+                val index = ref.second.positionAmongMainActions()
+                dynamic.associateBy { getLinkName(index, it.bodyPointer()) }
+            } else {
+                mapOf()
+            }
+
             when {
                 format.isKotlin() -> lines.append("\"\${$baseUrlOfSut}")
                 format.isPython() -> lines.append("self.$baseUrlOfSut + \"")
                 else -> lines.append("$baseUrlOfSut + \"")
             }
+            //here, we are inside an open " string
 
             //TODO links
-            if(call.backwardLinkReference?.actualSourceActionLocalId != null){
-
-                FIXME
+            if(replacements.isEmpty()) {
+                val path = call.path.resolveOnlyPath(call.parameters)
+                lines.append(escapePathElement(path))
+            } else {
+                val tokens = call.path.dynamicResolutionOnlyPathData(call.parameters, replacements)
+                val path = tokens.joinToString {
+                    if(it.second) {
+                        if(format.isKotlin()) {
+                            "\${$it}"
+                        } else {
+                            "\" + $it + \""
+                        }
+                    } else {
+                        escapePathElement(it.first)
+                    }
+                }
+                lines.append(path)
             }
 
-            if (call.path.numberOfUsableQueryParams(call.parameters) <= 1) {
-                val uri = call.path.resolve(call.parameters)
-                lines.append("${GeneUtils.applyEscapes(uri, mode = GeneUtils.EscapeMode.URI, format = format)}\"")
-            } else {
+            val elements = call.path.resolveOnlyQuery(call.parameters)
+
+            if (elements.size == 1) {
+                lines.append("?${handleQuery(elements[0], replacements)}")
+            } else if (elements.size > 1) {
                 //several query parameters. lets have them one per line
-                val path = call.path.resolveOnlyPath(call.parameters)
-                val elements = call.path.resolveOnlyQuery(call.parameters)
-
-                lines.append("$path?\" + ")
-
+                lines.append("?\" + ")
                 lines.indented {
-                    (0 until elements.lastIndex).forEach { i ->
-                        lines.add(
-                            "\"${
-                                GeneUtils.applyEscapes(
-                                    elements[i],
-                                    //FIXME why the heck is this SQL mode?????????
-                                    mode = GeneUtils.EscapeMode.SQL,
-                                    format = format
-                                )
-                            }&\" + "
-                        )
+                    (0 until elements.lastIndex).forEach {
+                        lines.add("\"${handleQuery(elements[it], replacements)}&\" + ")
                     }
-                    lines.add(
-                        "\"${
-                            GeneUtils.applyEscapes(
-                                elements.last(),
-                                //FIXME why the heck is this SQL mode?????????
-                                mode = GeneUtils.EscapeMode.SQL,
-                                format = format
-                            )
-                        }\""
-                    )
+                    lines.add("\"${handleQuery(elements.last(), replacements)}")
                 }
             }
+
+            lines.append("\"")
+
         }
 
         if (format.isPython()) {
@@ -324,15 +332,36 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
             }
         }
 
-        if (format.isCsharp()) {
-            if (isVerbWithPossibleBodyPayload(verb)) {
-                lines.append(", ")
-                handleBody(call, lines)
-            }
-            lines.append(");")
-        } else {
-            lines.append(")")
+//        if (format.isCsharp()) {
+//            if (isVerbWithPossibleBodyPayload(verb)) {
+//                lines.append(", ")
+//                handleBody(call, lines)
+//            }
+//            lines.append(");")
+//        } else {
+
+        lines.append(")")
+//        }
+    }
+
+    private fun handleQuery(queryPair: String, replacements: Map<String, RestLinkParameter>) : String{
+
+        val name = queryPair.substringBefore("=")
+        val rep = replacements.entries.find { it.value.name == name && (it.value.scope == null || it.value.scope == RestLinkParameter.Scope.QUERY) }
+        if(rep == null){
+            return escapeQueryElement(queryPair)
         }
+
+        return escapeQueryElement(name) + "=\" + " + rep.key +"\""
+    }
+
+    private fun escapePathElement(x: String) : String{
+        return GeneUtils.applyEscapes(x, mode = GeneUtils.EscapeMode.URI, format = format)
+    }
+
+    private fun escapeQueryElement(x: String) : String{
+        //FIXME why the heck is this SQL mode?????????
+        return GeneUtils.applyEscapes(x, mode = GeneUtils.EscapeMode.SQL, format = format)
     }
 
     override fun getAcceptHeader(call: HttpWsAction, res: HttpWsCallResult): String {

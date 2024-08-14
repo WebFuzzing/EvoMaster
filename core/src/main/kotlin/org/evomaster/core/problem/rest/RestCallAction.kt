@@ -272,4 +272,19 @@ class RestCallAction(
                     && (this.links.find { link -> link.id == blr.sourceLinkId }?.needsToUseResponse() ?: false)
         }
     }
+
+    fun getReferenceLinkInfo() : Pair<RestLink, RestCallAction> {
+        val blr = backwardLinkReference
+            ?: throw IllegalStateException("No backward link reference is defined for this action")
+        if(!blr.isInUse()){
+            throw IllegalStateException("Backward link reference is not in use")
+        }
+        val previous = getPreviousMainActions().find { it.getLocalId() == backwardLinkReference!!.actualSourceActionLocalId }
+            as RestCallAction?
+            ?: throw IllegalStateException("No previous action with local id ${backwardLinkReference!!.actualSourceActionLocalId}")
+
+        val link = previous.links.find { it.id == blr.sourceLinkId }
+            ?: throw IllegalStateException("No link with id ${blr.sourceLinkId} in action ${previous.id}")
+        return Pair(link, previous)
+    }
 }
