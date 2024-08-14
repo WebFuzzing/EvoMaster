@@ -23,11 +23,11 @@ open class StandardGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Individu
         initPopulation()
     }
 
-    protected fun formTheNextPopulation(enableElitism: Boolean = true): MutableList<WtsEvalIndividual<T>> {
+    protected fun formTheNextPopulation(population: MutableList<WtsEvalIndividual<T>>, enableElitism: Boolean = true): MutableList<WtsEvalIndividual<T>> {
 
         val nextPop: MutableList<WtsEvalIndividual<T>> = mutableListOf()
 
-        if (enableElitism) {
+        if (enableElitism && population.isNotEmpty()) {
             var sortedPopulation = population.sortedByDescending { it.calculateCombinedFitness() }
 
             var elites = sortedPopulation.take(config.elitesCount)
@@ -42,7 +42,7 @@ open class StandardGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Individu
 
         val n = config.populationSize
 
-        val nextPop = formTheNextPopulation(enableElitism = true)
+        val nextPop = formTheNextPopulation(population, enableElitism = true)
 
         while (nextPop.size < n) {
 
