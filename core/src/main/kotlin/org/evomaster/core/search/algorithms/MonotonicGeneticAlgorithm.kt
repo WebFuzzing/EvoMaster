@@ -3,7 +3,6 @@ package org.evomaster.core.search.algorithms
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.algorithms.wts.WtsEvalIndividual
-import org.evomaster.core.search.service.SearchAlgorithm
 import kotlin.math.max
 
 /**
@@ -13,6 +12,7 @@ class MonotonicGeneticAlgorithm<T> : StandardGeneticAlgorithm<T>() where T : Ind
 
 
     private val population: MutableList<WtsEvalIndividual<T>> = mutableListOf()
+    private var highestFitness: Double = Double.MIN_VALUE
 
     override fun getType(): EMConfig.Algorithm {
         return EMConfig.Algorithm.MonotonicGA
@@ -26,13 +26,9 @@ class MonotonicGeneticAlgorithm<T> : StandardGeneticAlgorithm<T>() where T : Ind
 
     override fun searchOnce() {
 
-
         val n = config.populationSize
 
-
-        //new generation
-
-        val nextPop: MutableList<WtsEvalIndividual<T>> = mutableListOf()
+        val nextPop = formTheNextPopulation(population, enableElitism = true)
 
         while (nextPop.size < n) {
             val p1 = selection()
@@ -70,6 +66,15 @@ class MonotonicGeneticAlgorithm<T> : StandardGeneticAlgorithm<T>() where T : Ind
             }
         }
 
+        var newHighestFitness =
+            (population.maxByOrNull { it -> it.calculateCombinedFitness() }?.calculateCombinedFitness() ?: highestFitness)
+
+        assert(newHighestFitness>=highestFitness)
+
+        highestFitness = newHighestFitness
+
+        println("Population Size: ${population.size}, Highest Fitness: $highestFitness")
+
         population.clear()
         population.addAll(nextPop)
     }
@@ -95,5 +100,9 @@ class MonotonicGeneticAlgorithm<T> : StandardGeneticAlgorithm<T>() where T : Ind
         }
 
         return Pair(offspring1, offspring2)
+    }
+
+    fun getPopulationSize(): Int{
+        return population.size
     }
 }
