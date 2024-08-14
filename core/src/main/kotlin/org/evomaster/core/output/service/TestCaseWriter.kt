@@ -320,4 +320,13 @@ abstract class TestCaseWriter {
     open fun additionalTestHandling(tests: List<TestCase>) {
         // do nothing
     }
+
+    /**
+     * Some character shouldn't be used for variable names, as it would lead to compilation/runtime errors.
+     * Those are replaced with safe ones
+     */
+    protected fun safeVariableName(name: String) : String{
+
+        return name.replace(Regex("[ /$%.:!?&#@(){}]"), "_")
+    }
 }

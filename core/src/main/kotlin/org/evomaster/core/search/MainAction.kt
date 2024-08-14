@@ -16,7 +16,7 @@ abstract class MainAction(children: List<StructuralElement>) : Action(children) 
         return otherMainActions(false)
     }
 
-    private fun otherMainActions(before: Boolean) : List<MainAction> {
+    fun positionAmongMainActions(): Int{
         if(!hasLocalId()){
             throw IllegalStateException("No local id defined for this main action")
         }
@@ -31,6 +31,13 @@ abstract class MainAction(children: List<StructuralElement>) : Action(children) 
         if(index < 0){
             throw IllegalStateException("Current action with local id ${getLocalId()} not found among main actions")
         }
+        return index
+    }
+
+    private fun otherMainActions(before: Boolean) : List<MainAction> {
+        val index = positionAmongMainActions()
+        val all = (getRoot() as Individual).seeMainExecutableActions()
+
         if(before){
             if(index == 0){
                 return listOf()

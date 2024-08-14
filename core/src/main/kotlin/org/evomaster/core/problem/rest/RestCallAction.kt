@@ -259,4 +259,17 @@ class RestCallAction(
     override fun shouldSkipAssertionsOnResponseBody(): Boolean {
         return id == AbstractRestSampler.CALL_TO_SWAGGER_ID
     }
+
+    /**
+     * Check if any following action is using any link defined in this action that requires this action's HTTP
+     * response results
+     */
+    fun hasFollowedBackwardLink() : Boolean{
+        return getFollowingMainActions().any{
+            val blr = (it as RestCallAction).backwardLinkReference
+            blr != null
+                    && blr.actualSourceActionLocalId == this.getLocalId()
+                    && (this.links.find { link -> link.id == blr.sourceLinkId }?.needsToUseResponse() ?: false)
+        }
+    }
 }

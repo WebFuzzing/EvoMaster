@@ -52,12 +52,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                 // FIXME remove once expectations removed
                 || (config.expectationsActive && partialOracles.generatesExpectation(call as RestCallAction, res))
                 || (!res.stopping && k.saveLocation)
-                || (!res.stopping && k.getFollowingMainActions().any{
-                    val blr = (it as RestCallAction).backwardLinkReference
-                    blr != null
-                            && blr.actualSourceActionLocalId == k.getLocalId()
-                            && (k.links.find { link -> link.id == blr.sourceLinkId }?.needsToUseResponse() ?: false)
-                })
+                || (!res.stopping && k.hasFollowedBackwardLink())
     }
 
     override fun handleTestInitialization(
@@ -81,6 +76,8 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                 We declare all such variables at the beginning of the test.
 
                 TODO: rather declare variable first time we access it?
+                Yes! can use location index for unique name
+                FIXME: refactor
              */
             lines.addEmpty()
 
@@ -177,15 +174,66 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         handleLocationHeader(call, res, responseVariableName, lines)
         handleResponseAfterTheCall(call, res, responseVariableName, lines)
 
+        handleLinkInfo(call, res, responseVariableName, lines)
+
         if (shouldCheckExpectations() && !res.failedCall()) {
             handleExpectationSpecificLines(call, lines, res, responseVariableName)
         }
     }
 
+    private fun handleLinkInfo(call: RestCallAction, res: RestCallResult, responseVariableName: String, lines: Lines) {
+
+        if(!call.hasFollowedBackwardLink()){
+            return // nothing to do
+        }
+
+        val link = call.links.find { it.statusCode == res.getStatusCode() }
+        if(link == null)   {
+            assert(false) // shouldn't happen, unless bug. still, don't want to crash EM for this
+            return
+        }
+
+        link.parameters.forEach {
+            //TODO do all cases, when implemented
+            when{
+                it.isBodyField() -> {
+                    addExtractBodyVariable(call, res, responseVariableName, lines,  it.bodyPointer())
+                }
+            }
+        }
+    }
+
+    private fun getLinkName(indexOfSourceAction: Int, jsonPointer: String) =
+        safeVariableName("link_${indexOfSourceAction}_$jsonPointer")
+
+    private fun addExtractBodyVariable(
+        call: RestCallAction,
+        res: RestCallResult,
+        responseVariableName: String,
+        lines: Lines,
+        jsonPointer: String
+    ) {
+
+        val index = call.positionAmongMainActions()
+        val name = getLinkName(index, jsonPointer)
+        val extracted = extractValueFromJsonResponse(responseVariableName, jsonPointer)
+
+        when {
+            format.isJava() -> lines.add("String $name = ")
+            format.isKotlin() -> lines.add("val $name : String? = ")
+            format.isJavaScript() -> lines.add("const $name = ")
+            format.isPython() -> {lines.add("$name = ")}
+            // should never happen
+            else -> throw IllegalStateException("Unsupported format $format")
+        }
+
+        lines.append(extracted)
+        lines.appendSemicolon()
+    }
+
 
     private fun shouldCheckExpectations() =
     //for now Expectations are only supported on the JVM
-        //TODO C# (and maybe JS as well???)
         config.expectationsActive && config.outputFormat.isJavaOrKotlin()
 
 
@@ -224,6 +272,12 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                 else -> lines.append("$baseUrlOfSut + \"")
             }
 
+            //TODO links
+            if(call.backwardLinkReference?.actualSourceActionLocalId != null){
+
+                FIXME
+            }
+
             if (call.path.numberOfUsableQueryParams(call.parameters) <= 1) {
                 val uri = call.path.resolve(call.parameters)
                 lines.append("${GeneUtils.applyEscapes(uri, mode = GeneUtils.EscapeMode.URI, format = format)}\"")
@@ -240,6 +294,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                             "\"${
                                 GeneUtils.applyEscapes(
                                     elements[i],
+                                    //FIXME why the heck is this SQL mode?????????
                                     mode = GeneUtils.EscapeMode.SQL,
                                     format = format
                                 )
@@ -250,6 +305,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                         "\"${
                             GeneUtils.applyEscapes(
                                 elements.last(),
+                                //FIXME why the heck is this SQL mode?????????
                                 mode = GeneUtils.EscapeMode.SQL,
                                 format = format
                             )
@@ -321,6 +377,8 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
 
             if (!res.getHeuristicsForChainedLocation()) {
 
+                //using what present in the "location" HTTP header
+
                 val location = locationVar(call.postLocationId())
 
                 /*
@@ -356,6 +414,8 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                 }
             } else {
 
+                //trying to infer linked ids from HTTP response
+
                 val extraTypeInfo = when {
                     format.isKotlin() -> "<Object>"
                     else -> ""
@@ -368,8 +428,9 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                     "\"${call.path.resolveOnlyPath(call.parameters)}\""
                 }
 
-                //TODO JS and C#
+                //TODO JS
                 //TODO code here should use same algorithm as in res.getResourceId()
+                //TODO this is quite limited, would need proper refactoring
                 val extract = when {
                     format.isPython() -> "str($resVarName.json()['${res.getResourceIdName()}'])"
                     else -> "$resVarName.extract().body().path$extraTypeInfo(\"${res.getResourceIdName()}\").toString()"

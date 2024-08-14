@@ -146,8 +146,9 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
     protected fun handleHeaders(call: HttpWsAction, lines: Lines) {
 
+        //TODO handle REST links
+
         if (format.isCsharp()) {
-            //FIXME
             log.warn("Currently not handling headers in C#")
             return
         }
@@ -158,7 +159,6 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             format.isJavaOrKotlin() -> "header"
             format.isJavaScript() -> "set"
             format.isPython() -> "headers = {}"
-            //TODO C#
             else -> throw IllegalArgumentException("Not supported format: $format")
         }
 
@@ -399,8 +399,6 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 format.isJavaOrKotlin() -> lines.add(".contentType(\"${bodyParam.contentType()}\")")
                 format.isJavaScript() -> lines.add(".set('Content-Type','${bodyParam.contentType()}')")
                 format.isPython() -> lines.add("headers[\"content-type\"] = \"${bodyParam.contentType()}\"")
-                //FIXME
-                //format.isCsharp() -> lines.add("Client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(\"${bodyParam.contentType()}\"));")
             }
 
             if (bodyParam.isJson()) {
@@ -690,6 +688,20 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         //TODO what was the reason for this?
         if (!format.isCsharp() && !format.isPython()) {
             lines.deindent(2)
+        }
+    }
+
+    protected fun extractValueFromJsonResponse(resVarName: String, jsonPointer: String) : String{
+
+        val extraTypeInfo = when {
+            format.isKotlin() -> "<Object>"
+            else -> ""
+        }
+
+        return when {
+            format.isPython() -> "str($resVarName.json()['$jsonPointer'])"
+            //TODO JS
+            else -> "$resVarName.extract().body().path$extraTypeInfo(\"$jsonPointer\").toString()"
         }
     }
 }
