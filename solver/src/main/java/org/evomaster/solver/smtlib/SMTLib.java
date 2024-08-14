@@ -57,7 +57,7 @@ public class SMTLib {
      */
     @Override
     public int hashCode() {
-        return Objects.hashCode(nodes);
+        return Objects.hashCode(nodes.toString());
     }
 
     /**
