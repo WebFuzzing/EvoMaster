@@ -66,7 +66,7 @@ public class Z3DockerExecutor implements AutoCloseable {
             // Check if the solver returned any output
             if (stdout == null || stdout.isEmpty()) {
                 String stderr = result.getStderr();
-                throw new RuntimeException(stderr);
+                throw new RuntimeException("No result after solving file " + stderr);
             }
 
             // Parse the solver output and return the result
