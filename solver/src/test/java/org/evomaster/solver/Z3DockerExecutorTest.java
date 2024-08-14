@@ -7,13 +7,13 @@ import org.evomaster.solver.smtlib.value.StructValue;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -96,21 +96,20 @@ public class Z3DockerExecutorTest {
         assertTrue(response.isPresent(), "Response should be present for composed_types.smt");
 
         assertTrue(response.get().containsKey("users1"), "Response should contain users1");
-        Map<String, SMTLibValue> users1Expected = ImmutableMap.of(
-                "ID", new IntValue(3),
-                "NAME", new StringValue("agus"),
-                "AGE", new IntValue(31),
-                "POINTS", new IntValue(7)
-        );
+        Map<String, SMTLibValue> users1Expected = new HashMap<>();
+        users1Expected.put("ID", new IntValue(3));
+        users1Expected.put("NAME", new StringValue("agus"));
+        users1Expected.put("AGE", new IntValue(31));
+        users1Expected.put("POINTS", new IntValue(7));
+
         assertEquals(new StructValue(users1Expected), response.get().get("users1"), "The value for users1 is incorrect");
 
         assertTrue(response.get().containsKey("users2"), "Response should contain users2");
-        Map<String, SMTLibValue> users2Expected = ImmutableMap.of(
-                "ID", new IntValue(3),
-                "NAME", new StringValue("agus"),
-                "AGE", new IntValue(31),
-                "POINTS", new IntValue(7)
-        );
+        Map<String, SMTLibValue> users2Expected = new HashMap<>();
+        users2Expected.put("ID", new IntValue(3));
+        users2Expected.put("NAME", new StringValue("agus"));
+        users2Expected.put("AGE", new IntValue(31));
+        users2Expected.put("POINTS", new IntValue(7));
         assertEquals(new StructValue(users2Expected), response.get().get("users2"), "The value for users2 is incorrect");
     }
 
@@ -118,23 +117,21 @@ public class Z3DockerExecutorTest {
      * Test solving with an invalid file to ensure proper error handling
      */
     @Test
-    public void invalidFile() {
-        try {
-            executor.solveFromFile("invalid.smt");
-        } catch (Exception e) {
-            assertEquals("No result after solving file ", e.getMessage(), "Exception message should be 'error: file is empty'");
-        }
+    public void whenSolvingInvalidFileItFails() {
+        assertThrows(
+                RuntimeException.class,
+                () -> executor.solveFromFile("invalid.smt")
+        );
     }
 
     /**
      * Test handling an empty file
      */
     @Test
-    public void emptyFile() {
-        try {
-            executor.solveFromFile("empty.smt");
-        } catch (Exception e) {
-            assertEquals("No result after solving file ", e.getMessage(), "Exception message should be 'error: file is empty'");
-        }
+    public void whenSolvingEmptyFileItFails() {
+        assertThrows(
+                RuntimeException.class,
+                () -> executor.solveFromFile("empty.smt")
+        );
     }
 }

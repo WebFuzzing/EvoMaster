@@ -1,8 +1,8 @@
 package org.evomaster.solver.smtlib;
 
 import org.junit.jupiter.api.Test;
-import org.testcontainers.shaded.com.google.common.collect.ImmutableList;
 
+import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -16,13 +16,13 @@ public class SMTLibTest {
         SMTLib smtLib2 = new SMTLib();
 
         // Add the same nodes to both SMTLib instances
-        smtLib1.addNode(new DeclareDatatypeSMTNode("Person", ImmutableList.of(
+        smtLib1.addNode(new DeclareDatatypeSMTNode("Person", Arrays.asList(
                 new DeclareConstSMTNode("name", "String"),
                 new DeclareConstSMTNode("age", "Int")
         )));
         smtLib1.addNode(new DeclareConstSMTNode("person1", "Person"));
 
-        smtLib2.addNode(new DeclareDatatypeSMTNode("Person", ImmutableList.of(
+        smtLib2.addNode(new DeclareDatatypeSMTNode("Person", Arrays.asList(
                 new DeclareConstSMTNode("name", "String"),
                 new DeclareConstSMTNode("age", "Int")
         )));
@@ -45,13 +45,13 @@ public class SMTLibTest {
         SMTLib smtLib1 = new SMTLib();
         SMTLib smtLib2 = new SMTLib();
 
-        smtLib1.addNode(new DeclareDatatypeSMTNode("Person", ImmutableList.of(
+        smtLib1.addNode(new DeclareDatatypeSMTNode("Person", Arrays.asList(
                 new DeclareConstSMTNode("name", "String"),
                 new DeclareConstSMTNode("age", "Int")
         )));
         smtLib1.addNode(new DeclareConstSMTNode("person1", "Person"));
 
-        smtLib2.addNode(new DeclareDatatypeSMTNode("Person", ImmutableList.of(
+        smtLib2.addNode(new DeclareDatatypeSMTNode("Person", Arrays.asList(
                 new DeclareConstSMTNode("name", "String"),
                 new DeclareConstSMTNode("age", "Int")
         )));
@@ -64,7 +64,7 @@ public class SMTLibTest {
 
     @Test
     public void testDeclareDatatypeSMTNode() {
-        DeclareDatatypeSMTNode node = new DeclareDatatypeSMTNode("Person", ImmutableList.of(
+        DeclareDatatypeSMTNode node = new DeclareDatatypeSMTNode("Person", Arrays.asList(
                 new DeclareConstSMTNode("name", "String"),
                 new DeclareConstSMTNode("age", "Int")
         ));
@@ -76,12 +76,12 @@ public class SMTLibTest {
     @Test
     public void testSMTLibWithMultipleNodes() {
         SMTLib smtLib = new SMTLib();
-        smtLib.addNode(new DeclareDatatypeSMTNode("Person", ImmutableList.of(
+        smtLib.addNode(new DeclareDatatypeSMTNode("Person", Arrays.asList(
                 new DeclareConstSMTNode("name", "String"),
                 new DeclareConstSMTNode("age", "Int")
         )));
 
-        List<SMTNode> newNodes = ImmutableList.of(
+        List<SMTNode> newNodes = Arrays.asList(
                 new DeclareConstSMTNode("person1", "Person"),
                 new DeclareConstSMTNode("person2", "Person"),
                 new CheckSatSMTNode(),
