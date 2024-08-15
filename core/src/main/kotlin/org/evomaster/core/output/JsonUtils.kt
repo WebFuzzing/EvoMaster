@@ -6,7 +6,7 @@ object JsonUtils {
      * Convert a JSON Pointer (RFC6901) into a JSON Path
      */
     fun fromPointerToPath(pointer: String) : String{
-        if(pointer.isNullOrBlank()){
+        if(pointer.isBlank()){
             return pointer
         }
 
@@ -19,5 +19,24 @@ object JsonUtils {
          */
 
         return pointer.substringAfter("/").replace("/",".")
+    }
+
+    /**
+     * Convert a JSON Pointer (RFC6901) into a dictionary access ['x']['y']...['z']
+     */
+    fun fromPointerToDictionaryAccess(pointer: String) : String{
+
+        if(pointer.isBlank()){
+            return pointer
+        }
+
+        if(!pointer.startsWith("/")){
+            throw IllegalArgumentException("Input pointer does not start with /")
+        }
+
+        return pointer
+            .split("/")
+            .filter { it.isNotBlank() }
+            .joinToString("") { "['$it']" }
     }
 }

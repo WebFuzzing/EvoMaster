@@ -702,7 +702,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         val jsonPath = JsonUtils.fromPointerToPath(jsonPointer)
 
         return when {
-            format.isPython() -> "str($resVarName.json()['$jsonPointer'])"
+            format.isPython() -> "str($resVarName.json()${JsonUtils.fromPointerToDictionaryAccess(jsonPointer)})"
             format.isJavaScript() -> "$resVarName.body.$jsonPath.toString()"
             format.isJavaOrKotlin() -> "$resVarName.extract().body().path$extraTypeInfo(\"$jsonPath\").toString()"
             else -> throw IllegalStateException("Unsupported format $format")
