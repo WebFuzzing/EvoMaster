@@ -195,10 +195,11 @@ class RestIndividual(
     /**
      * remove location id among actions used for minimization phase
      */
-    fun removeLocationId(){
+    fun removeAllLinks(){
         seeMainExecutableActions().forEach { a->
             a.usePreviousLocationId = null
             a.saveLocation = false
+            a.backwardLinkReference = null
         }
     }
 

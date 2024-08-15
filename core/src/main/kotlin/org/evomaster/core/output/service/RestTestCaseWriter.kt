@@ -352,7 +352,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
             return escapeQueryElement(queryPair)
         }
 
-        return escapeQueryElement(name) + "=\" + " + rep.key +"\""
+        return escapeQueryElement(name) + "=\" + " + rep.key +" + \""
     }
 
     private fun escapePathElement(x: String) : String{
