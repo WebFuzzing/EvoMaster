@@ -36,33 +36,6 @@
                   "$ref": "#/components/schemas/BBLinksMultiDto"
                 }
               }
-            },
-            "links": {
-              "LinkToY": {
-                "operationId": "y",
-                "parameters": {
-                  "first": "$response.body#/a",
-                  "second": "$response.body#/b"
-                }
-              }
-            }
-          },
-          "201": {
-            "description": "CREATED",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/BBLinksMultiDto"
-                }
-              }
-            },
-            "links": {
-              "LinkToZ": {
-                "operationId": "z",
-                "parameters": {
-                  "data": "$response.body#/a"
-                }
-              }
             }
           }
         }
@@ -138,6 +111,33 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/BBLinksMultiDto"
+                }
+              }
+            },
+            "links": {
+              "LinkToY": {
+                "operationId": "y",
+                "parameters": {
+                  "first": "$response.body#/a",
+                  "second": "$response.body#/b"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "CREATED",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BBLinksMultiDto"
+                }
+              }
+            },
+            "links": {
+              "LinkToZ": {
+                "operationId": "z",
+                "parameters": {
+                  "data": "$response.body#/a"
                 }
               }
             }

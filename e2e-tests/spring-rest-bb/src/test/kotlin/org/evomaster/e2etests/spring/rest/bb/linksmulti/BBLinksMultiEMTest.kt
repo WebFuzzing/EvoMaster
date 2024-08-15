@@ -34,16 +34,16 @@ class BBLinksMultiEMTest : SpringTestBase() {
 
             setOption(args, "bbSwaggerUrl", "$baseUrlOfSut/openapi-linksmulti.json")
             setOption(args, "algorithm", "SMARTS")
-            setOption(args, "probUseRestLinks", "0.5")
+            setOption(args, "probUseRestLinks", "0.9")
 
             val solution = initAndRun(args)
 
             assertTrue(solution.individuals.size >= 1)
-            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/linksmulti/x", null)
             assertHasAtLeastOne(solution, HttpVerb.POST, 400, "/api/linksmulti/y", null)
+            assertHasAtLeastOne(solution, HttpVerb.POST, 400, "/api/linksmulti/z", null)
+            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/linksmulti/x", null)
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/linksmulti/y", null)
             assertHasAtLeastOne(solution, HttpVerb.POST, 201, "/api/linksmulti/x", null)
-            assertHasAtLeastOne(solution, HttpVerb.POST, 400, "/api/linksmulti/z", null)
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/linksmulti/z", null)
         }
     }
