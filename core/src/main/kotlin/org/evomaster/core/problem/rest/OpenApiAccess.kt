@@ -3,12 +3,14 @@ package org.evomaster.core.problem.rest
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.parser.OpenAPIV3Parser
 import io.swagger.v3.parser.core.models.SwaggerParseResult
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.enterprise.auth.AuthenticationInfo
 import org.evomaster.core.problem.httpws.auth.AuthUtils
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
 import org.evomaster.core.remote.AuthenticationRequiredException
 import org.evomaster.core.remote.SutProblemException
+import org.slf4j.LoggerFactory
 import java.net.ConnectException
 import java.net.URI
 import java.net.URL
@@ -21,6 +23,8 @@ import javax.ws.rs.core.Response
  * Created by arcuri82 on 22-Jan-20.
  */
 object OpenApiAccess {
+
+    private val log = LoggerFactory.getLogger(OpenApiAccess::class.java)
 
     fun getOpenApi(schemaText: String): OpenAPI {
 
@@ -37,8 +41,18 @@ object OpenApiAccess {
             }
         }
 
-        return parseResults!!.openAPI
+        val schema =  parseResults!!.openAPI
                 ?: throw SutProblemException("Failed to parse OpenApi schema: " + parseResults.messages.joinToString("\n"))
+
+        if(parseResults.messages.isNotEmpty()){
+            LoggingUtil.getInfoLogger().warn("There are ${parseResults.messages.size} validation errors and warnings when parsing the schema." +
+                    " It is strongly recommended to fix these issues to enable EvoMaster to achieve better results." +
+                    " Errors/warnings:")
+            parseResults.messages.forEachIndexed{ i, m ->
+                LoggingUtil.getInfoLogger().warn("$i: $m")
+            }
+        }
+        return schema
     }
 
     fun getOpenAPIFromURL(openApiUrl: String, authentication : AuthenticationInfo = HttpWsNoAuth() ): OpenAPI {
