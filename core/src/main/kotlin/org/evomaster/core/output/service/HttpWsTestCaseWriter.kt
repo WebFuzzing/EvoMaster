@@ -1,6 +1,7 @@
 package org.evomaster.core.output.service
 
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.output.JsonUtils
 import org.evomaster.core.output.auth.CookieWriter
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
@@ -698,10 +699,12 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             else -> ""
         }
 
+        val jsonPath = JsonUtils.fromPointerToPath(jsonPointer)
+
         return when {
             format.isPython() -> "str($resVarName.json()['$jsonPointer'])"
             //TODO JS
-            else -> "$resVarName.extract().body().path$extraTypeInfo(\"$jsonPointer\").toString()"
+            else -> "$resVarName.extract().body().path$extraTypeInfo(\"$jsonPath\").toString()"
         }
     }
 }

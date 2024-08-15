@@ -284,18 +284,18 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
             }
             //here, we are inside an open " string
 
-            //TODO links
             if(replacements.isEmpty()) {
                 val path = call.path.resolveOnlyPath(call.parameters)
                 lines.append(escapePathElement(path))
             } else {
                 val tokens = call.path.dynamicResolutionOnlyPathData(call.parameters, replacements)
-                val path = tokens.joinToString {
+                val path = tokens.joinToString(separator = "" +
+                        "") {
                     if(it.second) {
                         if(format.isKotlin()) {
-                            "\${$it}"
+                            "\${${it.first}}"
                         } else {
-                            "\" + $it + \""
+                            "\" + ${it.first} + \""
                         }
                     } else {
                         escapePathElement(it.first)
