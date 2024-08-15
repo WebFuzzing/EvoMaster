@@ -703,8 +703,9 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
         return when {
             format.isPython() -> "str($resVarName.json()['$jsonPointer'])"
-            //TODO JS
-            else -> "$resVarName.extract().body().path$extraTypeInfo(\"$jsonPath\").toString()"
+            format.isJavaScript() -> "$resVarName.body.$jsonPath.toString()"
+            format.isJavaOrKotlin() -> "$resVarName.extract().body().path$extraTypeInfo(\"$jsonPath\").toString()"
+            else -> throw IllegalStateException("Unsupported format $format")
         }
     }
 }
