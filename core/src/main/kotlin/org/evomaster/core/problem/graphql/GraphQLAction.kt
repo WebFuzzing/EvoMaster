@@ -38,9 +38,6 @@ class GraphQLAction(
         return GraphQLAction(id, methodName, methodType, parameters.map { it.copy() }.toMutableList(), auth)
     }
 
-    override fun shouldCountForFitnessEvaluations(): Boolean {
-        return true
-    }
 
     override fun toString(): String {
         return "$methodType $methodName, auth=${auth.name}"

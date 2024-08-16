@@ -23,10 +23,8 @@ class BBLinksEMTest : SpringTestBase() {
         }
     }
 
-    @Disabled //TODO need to handle dynamic responses in generated tests
     @ParameterizedTest
-//    @EnumSource //FIXME put back once at least working for Java
-    @EnumSource(names = ["JAVA_JUNIT_5"])
+    @EnumSource
     fun testBlackBoxOutput(outputFormat: OutputFormat) {
 
         executeAndEvaluateBBTest(

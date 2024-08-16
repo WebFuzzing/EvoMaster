@@ -7,8 +7,19 @@ package org.evomaster.core.problem.rest
  */
 class BackwardLinkReference(
     val sourceActionId: String,
-    val sourceLinkId: String
+    val sourceLinkId: String,
+
+    /**
+     * In current EM architecture, local ids would unfortunately not be available yet when this object is created.
+     * Furthermore, the update might fail (eg input not satisfying a constraint).
+     * As such, we use this variable to infer if a link is usable
+     */
+    var actualSourceActionLocalId: String? = null
 ) {
 
     val statusCode = sourceLinkId.substringBefore(":").toInt()
+
+    fun isInUse() = actualSourceActionLocalId != null
+
+    fun copy() = BackwardLinkReference(sourceActionId, sourceLinkId, actualSourceActionLocalId)
 }
