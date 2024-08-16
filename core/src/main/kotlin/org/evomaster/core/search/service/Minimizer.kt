@@ -7,13 +7,10 @@ import org.evomaster.core.problem.enterprise.EnterpriseIndividual
 import org.evomaster.core.problem.gui.GuiIndividual
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.HttpWsCallResult
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.service.mutator.StructureMutator
 import org.evomaster.core.sql.SqlAction
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -194,7 +191,7 @@ class Minimizer<T: Individual> {
         ind.fixGeneBindingsIfNeeded()
 
         if(ind is RestIndividual){
-            ind.removeLocationId()
+            ind.removeAllLinks()
         }
     }
 
