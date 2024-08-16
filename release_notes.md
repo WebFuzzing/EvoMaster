@@ -2,6 +2,9 @@
 
 Under development in `master` branch.
 
+### New Features
+- schema validation for OpenAPI schemas, with summary of issues printed in the console logs
+
 ---
 # Version: 3.1.0
 
