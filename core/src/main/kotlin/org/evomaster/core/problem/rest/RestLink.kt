@@ -84,4 +84,9 @@ class RestLink(
 
         return true
     }
+
+    fun needsToUseResponse() : Boolean{
+        //TODO expand when supporting other types as well
+        return parameters.any { it.isBodyField() }
+    }
 }

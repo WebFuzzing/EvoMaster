@@ -643,6 +643,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             ?: throw IllegalArgumentException("No action result for ${previous.getLocalId()}")
 
         val modified = RestLinkValueUpdater.update(a,link,previous,result)
+        if(modified){
+            reference.actualSourceActionLocalId = previous.getLocalId()
+        }
         return modified
     }
 

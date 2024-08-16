@@ -212,7 +212,7 @@ abstract class EnterpriseIndividual(
     }
 
 
-    fun addMainActionInEmptyEnterpriseGroup(relativePosition: Int = -1, action: Action){
+    fun addMainActionInEmptyEnterpriseGroup(relativePosition: Int = -1, action: MainAction){
         val main = GroupsOfChildren.MAIN
         val g = EnterpriseActionGroup(mutableListOf(action), action.javaClass)
 
