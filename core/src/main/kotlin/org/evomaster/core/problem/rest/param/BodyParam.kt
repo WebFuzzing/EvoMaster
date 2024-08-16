@@ -24,13 +24,11 @@ class BodyParam(gene: Gene,
 
     val contenTypeGene : EnumGene<String>
 
+    val notSupportedContentTypes : List<String>
 
     init {
-        typeGene.values.forEach {
-            if (!isSupportedType(it)) {
-                LoggingUtil.uniqueWarn(log, "Not supported data type: $it")
-            }
-        }
+
+        notSupportedContentTypes = typeGene.values.filter { !isSupportedType(it)}
 
         val options = typeGene.values.filter { isSupportedType(it) }.toMutableList()
         if(options.isEmpty()){
@@ -62,7 +60,6 @@ class BodyParam(gene: Gene,
         if (typeGene.hasLocalId()) contenTypeGene.setLocalId(typeGene.getLocalId())
         addChild(contenTypeGene)
     }
-
 
     override fun copyContent(): Param {
         return BodyParam(gene.copy(), contenTypeGene.copy() as EnumGene<String>)

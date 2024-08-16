@@ -3,6 +3,7 @@ package org.evomaster.core.problem.rest
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.parser.OpenAPIV3Parser
 import io.swagger.v3.parser.core.models.SwaggerParseResult
+import org.evomaster.core.AnsiColor
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.enterprise.auth.AuthenticationInfo
 import org.evomaster.core.problem.httpws.auth.AuthUtils
@@ -45,11 +46,12 @@ object OpenApiAccess {
                 ?: throw SutProblemException("Failed to parse OpenApi schema: " + parseResults.messages.joinToString("\n"))
 
         if(parseResults.messages.isNotEmpty()){
-            LoggingUtil.getInfoLogger().warn("There are ${parseResults.messages.size} validation errors and warnings when parsing the schema." +
+            LoggingUtil.getInfoLogger().warn(
+                AnsiColor.inRed("There are ${parseResults.messages.size} validation errors and warnings when parsing the schema." +
                     " It is strongly recommended to fix these issues to enable EvoMaster to achieve better results." +
-                    " Errors/warnings:")
+                    " Errors/warnings:"))
             parseResults.messages.forEachIndexed{ i, m ->
-                LoggingUtil.getInfoLogger().warn("$i: $m")
+                LoggingUtil.getInfoLogger().warn(AnsiColor.inYellow("$i: $m"))
             }
         }
         return schema
