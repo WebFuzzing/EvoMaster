@@ -5,6 +5,7 @@ import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.Operation
 import io.swagger.v3.oas.models.examples.Example
+import io.swagger.v3.oas.models.links.Link
 import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.JsonSchema
 import io.swagger.v3.oas.models.media.MediaType
@@ -372,17 +373,39 @@ object RestActionBuilderV3 {
             val actionId = "$verb$restPath"
             val links = operation.responses
                 ?.filter { it.value.links != null && it.value.links.isNotEmpty() }
-                ?.flatMap { link->  link.value.links.map { Triple(link.key, it.key, it.value) } }
-                ?.map {
-                    RestLink(
-                        statusCode = it.first.toInt(),
-                        name = it.second,
-                        operationId = it.third.operationId,
-                        operationRef = it.third.operationRef,
-                        parameterDefinitions = it.third.parameters ?: mapOf(),
-                        requestBody = it.third.requestBody?.toString(),
-                        server = it.third.server?.toString()
-                    )
+                ?.flatMap { res ->  res.value.links.map {
+                        Triple(
+                            res.key, // the status code, used as key to identify the response object
+                            it.key,  // the name of the link
+                            it.value) // the actual link definition
+                    }
+                }
+                ?.mapNotNull {
+                    try {
+                        val ref = it.third.`$ref`
+                        val link = if (ref.isNullOrBlank()) {
+                            it.third
+                        } else {
+                            getReferenceLink(swagger, ref, messages)
+                        }
+                        if (link == null) {
+                            null
+                        } else {
+                            RestLink(
+                                statusCode = it.first.toInt(),
+                                name = it.second,
+                                operationId = link.operationId,
+                                operationRef = link.operationRef,
+                                parameterDefinitions = link.parameters ?: mapOf(),
+                                requestBody = link.requestBody?.toString(),
+                                server = link.server?.toString()
+                            )
+                        }
+                    }
+                    catch (e: Exception){
+                        messages.add("Failed to handle link definition ${it.second}: ${e.message}")
+                        null
+                    }
                 } ?: listOf()
             val action = RestCallAction(actionId, verb, restPath, params, produces = produces,
                 operationId = operation.operationId, links = links)
@@ -415,6 +438,14 @@ object RestActionBuilderV3 {
         }
     }
 
+    private fun getReferenceLink(swagger: OpenAPI, reference: String, messages: MutableList<String>) : Link?{
+        val name = extractReferenceName(reference)
+        val link =  swagger.components.links[name]
+        if(link == null){
+            messages.add("Cannot find reference to link: $reference")
+        }
+        return link
+    }
 
     private fun extractParams(
             verb: HttpVerb,
