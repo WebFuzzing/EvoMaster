@@ -6,8 +6,8 @@ import org.evomaster.client.java.controller.api.dto.database.operations.MongoIns
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.*
-import org.evomaster.core.output.TestWriterUtils.Companion.getWireMockVariableName
-import org.evomaster.core.output.TestWriterUtils.Companion.handleDefaultStubForAsJavaOrKotlin
+import org.evomaster.core.output.TestWriterUtils.getWireMockVariableName
+import org.evomaster.core.output.TestWriterUtils.handleDefaultStubForAsJavaOrKotlin
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
