@@ -131,6 +131,12 @@ object TestWriterUtils {
      */
     fun safeVariableName(name: String): String {
 
-        return name.replace(Regex("[ /$%.:!?&#@(){}]"), "_")
+        val safe = name.replace(Regex("[^0-9a-zA-Z_]"), "_")
+        val first = safe.codePointAt(0)
+        if(first >= '0'.code && first <= '9'.code ) {
+            //can't start a variable name with a number
+            return "_$safe"
+        }
+        return safe
     }
 }
