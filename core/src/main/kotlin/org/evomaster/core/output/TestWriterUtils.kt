@@ -1,10 +1,7 @@
-package org.evomaster.core.output.service
+package org.evomaster.core.output
 
-import org.evomaster.core.output.Lines
-import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.formatter.OutputFormatter
 import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
-import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.param.HttpWsResponseParam
 import org.evomaster.core.search.gene.utils.GeneUtils
 
@@ -23,7 +20,11 @@ class TestWriterUtils {
 
             //needed as JSON uses ""
             return body.split("\n").map { s ->
-                "\"$extraSpace" + GeneUtils.applyEscapes(s.trim(), mode = GeneUtils.EscapeMode.BODY, format = outputFormat) + "$extraSpace\""
+                "\"$extraSpace" + GeneUtils.applyEscapes(
+                    s.trim(),
+                    mode = GeneUtils.EscapeMode.BODY,
+                    format = outputFormat
+                ) + "$extraSpace\""
             }
         }
 

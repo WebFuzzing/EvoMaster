@@ -5,8 +5,9 @@ import org.evomaster.core.output.JsonUtils
 import org.evomaster.core.output.auth.CookieWriter
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.output.TestWriterUtils
 import org.evomaster.core.output.auth.TokenWriter
-import org.evomaster.core.output.service.TestWriterUtils.Companion.formatJsonWithEscapes
+import org.evomaster.core.output.TestWriterUtils.Companion.formatJsonWithEscapes
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.httpws.HttpWsAction
