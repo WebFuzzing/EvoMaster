@@ -2,6 +2,7 @@ package org.evomaster.core.output.auth
 
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.output.TestWriterUtils
 import org.evomaster.core.output.service.ApiTestCaseWriter
 import org.evomaster.core.output.service.HttpWsTestCaseWriter
 import org.evomaster.core.problem.httpws.HttpWsAction
@@ -11,9 +12,11 @@ import org.evomaster.core.search.Individual
 
 object TokenWriter {
 
-    fun tokenName(info: EndpointCallLogin) = "token_${info.name}"
+    fun tokenName(info: EndpointCallLogin) =
+        TestWriterUtils.safeVariableName("token_${info.name}")
 
-    fun responseName(info: EndpointCallLogin): String = "res_${info.name}"
+    fun responseName(info: EndpointCallLogin): String =
+        TestWriterUtils.safeVariableName("res_${info.name}")
 
     /**
      *  Return the distinct auth info on token-based login in all actions

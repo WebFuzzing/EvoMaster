@@ -2,6 +2,7 @@ package org.evomaster.core.output.auth
 
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.output.TestWriterUtils
 import org.evomaster.core.output.service.HttpWsTestCaseWriter
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.auth.EndpointCallLogin
@@ -16,7 +17,8 @@ import org.evomaster.core.search.Individual
  */
 object CookieWriter {
 
-    fun cookiesName(info: EndpointCallLogin): String = "cookies_${info.name}"
+    fun cookiesName(info: EndpointCallLogin): String =
+        TestWriterUtils.safeVariableName("cookies_${info.name}")
 
     /**
      *  Return the distinct auth info on cookie-based login in all actions
