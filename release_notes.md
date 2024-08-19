@@ -7,6 +7,7 @@ Under development in `master` branch.
 
 ### Addressed GitHub Issues
 
+- #989: TestCaseWriter login cookie variable name
 - #1055: Unable to start EVoMaster in public petstore API
 
 ---
