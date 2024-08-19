@@ -379,7 +379,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             val gene = it.getGeneForQuery()
             val present = gene !is OptionalGene || gene.isActive
             val root = "QUERY_PARAM"
-            val id = "${present}_${it.name}_${call.path}"
+            val id = "${present}_${it.name}_${call.id}"
 
             //up to 4 targets
             fv.coverTarget(idMapper.handleLocalTarget("${root}_${id}"))
@@ -398,7 +398,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                     TODO could be something to empirical investigate
                  */
 
-                val root = "INPUT_${p.javaClass.simpleName}_${p.name}"
+                val root = "INPUT_${call.id}_${p.javaClass.simpleName}_${p.name}"
 
                 val genes = if(p is BodyParam) {
                     listOf(p.contenTypeGene) // ie, ignore the payload
@@ -426,7 +426,8 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                     }
             }
 
-        // TODO body payload type in output...
+        //body payload type in response
+        fv.coverTarget(idMapper.handleLocalTarget("RESPONSE_BODY_PAYLOAD_${call.id}_${result.getBodyType()}"))
     }
 
 
