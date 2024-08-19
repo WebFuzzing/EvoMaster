@@ -2,6 +2,13 @@
 
 Under development in `master` branch.
 
+### New Features
+- schema validation for OpenAPI schemas, with summary of issues printed in the console logs
+
+### Addressed GitHub Issues
+
+- #1055: Unable to start EVoMaster in public petstore API
+
 ---
 # Version: 3.1.0
 

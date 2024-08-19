@@ -9,12 +9,14 @@ import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.RestLinkParameter
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.utils.StringUtils
 import org.slf4j.LoggerFactory
 import java.nio.file.Path
 import java.util.*
@@ -45,9 +47,13 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
      */
     override fun needsResponseVariable(call: HttpWsAction, res: HttpWsCallResult): Boolean {
 
-        return super.needsResponseVariable(call, res) ||
-                (config.expectationsActive && partialOracles.generatesExpectation(call as RestCallAction, res))
-                || ((call as RestCallAction).saveLocation && !res.stopping)
+        val k = call as RestCallAction
+
+        return super.needsResponseVariable(call, res)
+                // FIXME remove once expectations removed
+                || (config.expectationsActive && partialOracles.generatesExpectation(call as RestCallAction, res))
+                || (!res.stopping && k.saveLocation)
+                || (!res.stopping && k.hasFollowedBackwardLink())
     }
 
     override fun handleTestInitialization(
@@ -71,6 +77,8 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                 We declare all such variables at the beginning of the test.
 
                 TODO: rather declare variable first time we access it?
+                Yes! can use location index for unique name
+                FIXME: refactor
              */
             lines.addEmpty()
 
@@ -167,15 +175,66 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         handleLocationHeader(call, res, responseVariableName, lines)
         handleResponseAfterTheCall(call, res, responseVariableName, lines)
 
+        handleLinkInfo(call, res, responseVariableName, lines)
+
         if (shouldCheckExpectations() && !res.failedCall()) {
             handleExpectationSpecificLines(call, lines, res, responseVariableName)
         }
     }
 
+    private fun handleLinkInfo(call: RestCallAction, res: RestCallResult, responseVariableName: String, lines: Lines) {
+
+        if(!call.hasFollowedBackwardLink()){
+            return // nothing to do
+        }
+
+        val link = call.links.find { it.statusCode == res.getStatusCode() }
+        if(link == null)   {
+            assert(false) // shouldn't happen, unless bug. still, don't want to crash EM for this
+            return
+        }
+
+        link.parameters.forEach {
+            //TODO do all cases, when implemented
+            when{
+                it.isBodyField() -> {
+                    addExtractBodyVariable(call, res, responseVariableName, lines,  it.bodyPointer())
+                }
+            }
+        }
+    }
+
+    private fun getLinkName(indexOfSourceAction: Int, jsonPointer: String) =
+        safeVariableName("link_${indexOfSourceAction}_$jsonPointer")
+
+    private fun addExtractBodyVariable(
+        call: RestCallAction,
+        res: RestCallResult,
+        responseVariableName: String,
+        lines: Lines,
+        jsonPointer: String
+    ) {
+
+        val index = call.positionAmongMainActions()
+        val name = getLinkName(index, jsonPointer)
+        val extracted = extractValueFromJsonResponse(responseVariableName, jsonPointer)
+
+        when {
+            format.isJava() -> lines.add("String $name = ")
+            format.isKotlin() -> lines.add("val $name : String? = ")
+            format.isJavaScript() -> lines.add("const $name = ")
+            format.isPython() -> {lines.add("$name = ")}
+            // should never happen
+            else -> throw IllegalStateException("Unsupported format $format")
+        }
+
+        lines.append(extracted)
+        lines.appendSemicolon()
+    }
+
 
     private fun shouldCheckExpectations() =
     //for now Expectations are only supported on the JVM
-        //TODO C# (and maybe JS as well???)
         config.expectationsActive && config.outputFormat.isJavaOrKotlin()
 
 
@@ -185,7 +244,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         val verb = call.verb.name.lowercase(Locale.getDefault())
 
         if (format.isCsharp()) {
-            lines.append(".${capitalizeFirstChar(verb)}Async(")
+            lines.append(".${StringUtils.capitalization(verb)}Async(")
         } else {
             if (verb == "trace" && format.isJavaOrKotlin()) {
                 //currently, RestAssured does not have a trace() method
@@ -208,45 +267,60 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
 
         } else {
 
+            //map from variable name to link parameter object definition
+            val replacements = if (call.backwardLinkReference?.isInUse() == true) {
+                val ref = call.getReferenceLinkInfo()
+                val dynamic = ref.first.parameters.filter { it.isBodyField() }
+                val index = ref.second.positionAmongMainActions()
+                dynamic.associateBy { getLinkName(index, it.bodyPointer()) }
+            } else {
+                mapOf()
+            }
+
             when {
                 format.isKotlin() -> lines.append("\"\${$baseUrlOfSut}")
                 format.isPython() -> lines.append("self.$baseUrlOfSut + \"")
                 else -> lines.append("$baseUrlOfSut + \"")
             }
+            //here, we are inside an open " string
 
-            if (call.path.numberOfUsableQueryParams(call.parameters) <= 1) {
-                val uri = call.path.resolve(call.parameters)
-                lines.append("${GeneUtils.applyEscapes(uri, mode = GeneUtils.EscapeMode.URI, format = format)}\"")
-            } else {
-                //several query parameters. lets have them one per line
+            if(replacements.isEmpty()) {
                 val path = call.path.resolveOnlyPath(call.parameters)
-                val elements = call.path.resolveOnlyQuery(call.parameters)
-
-                lines.append("$path?\" + ")
-
-                lines.indented {
-                    (0 until elements.lastIndex).forEach { i ->
-                        lines.add(
-                            "\"${
-                                GeneUtils.applyEscapes(
-                                    elements[i],
-                                    mode = GeneUtils.EscapeMode.SQL,
-                                    format = format
-                                )
-                            }&\" + "
-                        )
+                lines.append(escapePathElement(path))
+            } else {
+                val tokens = call.path.dynamicResolutionOnlyPathData(call.parameters, replacements)
+                val path = tokens.joinToString(separator = "" +
+                        "") {
+                    if(it.second) {
+                        if(format.isKotlin()) {
+                            "\${${it.first}}"
+                        } else {
+                            "\" + ${it.first} + \""
+                        }
+                    } else {
+                        escapePathElement(it.first)
                     }
-                    lines.add(
-                        "\"${
-                            GeneUtils.applyEscapes(
-                                elements.last(),
-                                mode = GeneUtils.EscapeMode.SQL,
-                                format = format
-                            )
-                        }\""
-                    )
+                }
+                lines.append(path)
+            }
+
+            val elements = call.path.resolveOnlyQuery(call.parameters)
+
+            if (elements.size == 1) {
+                lines.append("?${handleQuery(elements[0], replacements)}")
+            } else if (elements.size > 1) {
+                //several query parameters. lets have them one per line
+                lines.append("?\" + ")
+                lines.indented {
+                    (0 until elements.lastIndex).forEach {
+                        lines.add("\"${handleQuery(elements[it], replacements)}&\" + ")
+                    }
+                    lines.add("\"${handleQuery(elements.last(), replacements)}")
                 }
             }
+
+            lines.append("\"")
+
         }
 
         if (format.isPython()) {
@@ -258,15 +332,36 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
             }
         }
 
-        if (format.isCsharp()) {
-            if (isVerbWithPossibleBodyPayload(verb)) {
-                lines.append(", ")
-                handleBody(call, lines)
-            }
-            lines.append(");")
-        } else {
-            lines.append(")")
+//        if (format.isCsharp()) {
+//            if (isVerbWithPossibleBodyPayload(verb)) {
+//                lines.append(", ")
+//                handleBody(call, lines)
+//            }
+//            lines.append(");")
+//        } else {
+
+        lines.append(")")
+//        }
+    }
+
+    private fun handleQuery(queryPair: String, replacements: Map<String, RestLinkParameter>) : String{
+
+        val name = queryPair.substringBefore("=")
+        val rep = replacements.entries.find { it.value.name == name && (it.value.scope == null || it.value.scope == RestLinkParameter.Scope.QUERY) }
+        if(rep == null){
+            return escapeQueryElement(queryPair)
         }
+
+        return escapeQueryElement(name) + "=\" + " + rep.key +" + \""
+    }
+
+    private fun escapePathElement(x: String) : String{
+        return GeneUtils.applyEscapes(x, mode = GeneUtils.EscapeMode.URI, format = format)
+    }
+
+    private fun escapeQueryElement(x: String) : String{
+        //FIXME why the heck is this SQL mode?????????
+        return GeneUtils.applyEscapes(x, mode = GeneUtils.EscapeMode.SQL, format = format)
     }
 
     override fun getAcceptHeader(call: HttpWsAction, res: HttpWsCallResult): String {
@@ -311,6 +406,8 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
 
             if (!res.getHeuristicsForChainedLocation()) {
 
+                //using what present in the "location" HTTP header
+
                 val location = locationVar(call.postLocationId())
 
                 /*
@@ -346,6 +443,8 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                 }
             } else {
 
+                //trying to infer linked ids from HTTP response
+
                 val extraTypeInfo = when {
                     format.isKotlin() -> "<Object>"
                     else -> ""
@@ -358,8 +457,9 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                     "\"${call.path.resolveOnlyPath(call.parameters)}\""
                 }
 
-                //TODO JS and C#
+                //TODO JS
                 //TODO code here should use same algorithm as in res.getResourceId()
+                //TODO this is quite limited, would need proper refactoring
                 val extract = when {
                     format.isPython() -> "str($resVarName.json()['${res.getResourceIdName()}'])"
                     else -> "$resVarName.extract().body().path$extraTypeInfo(\"${res.getResourceIdName()}\").toString()"

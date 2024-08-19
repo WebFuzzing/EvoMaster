@@ -83,9 +83,6 @@ class RestCallAction(
     val tokens : MutableMap<String, ActionRToken> = mutableMapOf()
 
 
-    override fun shouldCountForFitnessEvaluations(): Boolean = true
-
-
     /**
      * @return a string representing an id to use when setting "saveLocation".
      *  following REST call can use such id to refer to the dynamically generated resource.
@@ -103,8 +100,9 @@ class RestCallAction(
         val p = parameters.asSequence().map(Param::copy).toMutableList()
         return RestCallAction(
             id, verb, path, p, auth, saveLocation, usePreviousLocationId,
-            produces, responseRefs, skipOracleChecks, operationId, links, backwardLinkReference)
-        //note: immutable objects (eg String and RestLink) do not need to be copied
+            produces, responseRefs, skipOracleChecks, operationId, links,
+            backwardLinkReference?.copy())
+        //note: immutable objects (eg String) do not need to be copied
     }
 
     override fun getName(): String {
@@ -260,5 +258,33 @@ class RestCallAction(
 
     override fun shouldSkipAssertionsOnResponseBody(): Boolean {
         return id == AbstractRestSampler.CALL_TO_SWAGGER_ID
+    }
+
+    /**
+     * Check if any following action is using any link defined in this action that requires this action's HTTP
+     * response results
+     */
+    fun hasFollowedBackwardLink() : Boolean{
+        return getFollowingMainActions().any{
+            val blr = (it as RestCallAction).backwardLinkReference
+            blr != null
+                    && blr.actualSourceActionLocalId == this.getLocalId()
+                    && (this.links.find { link -> link.id == blr.sourceLinkId }?.needsToUseResponse() ?: false)
+        }
+    }
+
+    fun getReferenceLinkInfo() : Pair<RestLink, RestCallAction> {
+        val blr = backwardLinkReference
+            ?: throw IllegalStateException("No backward link reference is defined for this action")
+        if(!blr.isInUse()){
+            throw IllegalStateException("Backward link reference is not in use")
+        }
+        val previous = getPreviousMainActions().find { it.getLocalId() == backwardLinkReference!!.actualSourceActionLocalId }
+            as RestCallAction?
+            ?: throw IllegalStateException("No previous action with local id ${backwardLinkReference!!.actualSourceActionLocalId}")
+
+        val link = previous.links.find { it.id == blr.sourceLinkId }
+            ?: throw IllegalStateException("No link with id ${blr.sourceLinkId} in action ${previous.id}")
+        return Pair(link, previous)
     }
 }

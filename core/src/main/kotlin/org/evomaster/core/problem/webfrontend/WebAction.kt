@@ -61,9 +61,6 @@ class WebAction(
         return  children as List<out Gene>
     }
 
-    override fun shouldCountForFitnessEvaluations(): Boolean {
-        return true
-    }
 
     override fun copyContent(): StructuralElement {
         return WebAction(
