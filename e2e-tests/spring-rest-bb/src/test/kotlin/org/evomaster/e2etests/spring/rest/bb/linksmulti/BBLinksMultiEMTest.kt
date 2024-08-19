@@ -35,6 +35,7 @@ class BBLinksMultiEMTest : SpringTestBase() {
             setOption(args, "bbSwaggerUrl", "$baseUrlOfSut/openapi-linksmulti.json")
             setOption(args, "algorithm", "SMARTS")
             setOption(args, "probUseRestLinks", "0.9")
+            setOption(args, "advancedBlackBoxCoverage", "true")
 
             val solution = initAndRun(args)
 

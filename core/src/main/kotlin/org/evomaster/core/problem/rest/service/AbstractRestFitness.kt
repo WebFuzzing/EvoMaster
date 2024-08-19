@@ -541,7 +541,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         rcr.setStatusCode(response.status)
 
-        if(appliedLink){
+        if(appliedLink && config.advancedBlackBoxCoverage){
             //create objectives to keep track of followed links
             fv.coverTarget(idMapper.handleLocalTarget("LINK_FOLLOWED_${a.id}"))
             if(StatusGroup.G_2xx.isInGroup(response.status)) {

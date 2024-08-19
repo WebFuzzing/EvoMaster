@@ -39,6 +39,7 @@ class BBLinksEMTest : SpringTestBase() {
             setOption(args, "algorithm", "SMARTS")
             setOption(args, "probUseRestLinks", "0.5")
             setOption(args, "enableBasicAssertions", "false") //due to dynamic "code" field which would lead to flakyness
+            setOption(args, "advancedBlackBoxCoverage", "true")
 
             val solution = initAndRun(args)
 
