@@ -1025,5 +1025,47 @@ abstract class Gene(
         return true
 
     }
+
+    /**
+     * Verify if this gene does have any influence on the phenotype.
+     * If so, any modification in it would have no influence on fitness.
+     * For example, a gene inside a deactivated OptionalGene would have no impact.
+     * Typical, whether it has impact will depend on its ancestors' state.
+     *
+     * Note: such check is only based on _static_ information.
+     * Dynamic information, which would require a test to be executed, are not considered here.
+     * For example, such actions could be skipped if previous one is marked as "stopped".
+     * Their genes would all be having no effect.
+     * But this would not be considered here in this check.
+     */
+    fun staticCheckIfImpactPhenotype() : Boolean{
+
+        if(parent == null || parent !is Gene){
+            //top genes are always impacting, as used directly
+            return true
+        }
+
+        val p = parent as Gene
+
+        if(!p.isChildUsed(this)){
+            //clearly not in use
+            return false
+        }
+
+        return p.staticCheckIfImpactPhenotype()
+    }
+
+    open fun isChildUsed(child: Gene) : Boolean{
+        verifyChild(child)
+        //in most cases, it would be true.
+        //only for few special genes this function would be overridden
+        return true
+    }
+
+    fun verifyChild(child: Gene) {
+        if(! children.contains(child)){
+            throw IllegalArgumentException("Not a child of current gene: $child - $this")
+        }
+    }
 }
 

@@ -31,6 +31,7 @@ import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.EnumGene
+import org.evomaster.core.search.gene.numeric.NumberGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
@@ -390,18 +391,40 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         //Values in queries/paths
         //These will include examples/defaults
         call.parameters
-            /*
-                This filter choice is arguable... might lead to big test suites with no benefit,
-                eg if just data saved on database with no impact on control flow...
-                TODO could be something to empirical investigate
-             */
-            .filter{ it !is BodyParam} //FIXME use enum body type
-//            .forEach { p ->
-//                p.seeGenes()
-        //TODO need phenotype check in Gene
-//                    .filter { g -> g. }
-//                    .forEach { g -> }
-//            }
+            .forEach { p ->
+                /*
+                    This choice is arguable... otherwise might lead to big test suites with no benefit,
+                    eg if just data saved on database with no impact on control flow...
+                    TODO could be something to empirical investigate
+                 */
+
+                val root = "INPUT_${p.javaClass.simpleName}_${p.name}"
+
+                val genes = if(p is BodyParam) {
+                    listOf(p.contenTypeGene) // ie, ignore the payload
+                } else {
+                    p.seeGenes()
+                }
+                genes.flatMap { g -> g.flatView() }
+                    .filter { g -> g.staticCheckIfImpactPhenotype() }
+                    .forEach { g ->
+                        if(g is EnumGene<*> || g is BooleanGene || g is NumberGene<*>) {
+                            val prefix = "${root}_${g.name}"
+                            val suffix = when (g) {
+                                is EnumGene<*>, is BooleanGene -> g.getValueAsRawString()
+                                is NumberGene<*> -> {
+                                    val negative = g.getValueAsRawString().startsWith("-")
+                                    if(negative) "negative" else "positive"
+                                }
+                                else -> throw IllegalStateException("Not handled type: ${g.javaClass}")
+                            }
+                            fv.coverTarget(idMapper.handleLocalTarget("${prefix}_${suffix}"))
+                            if(success){
+                                fv.coverTarget(idMapper.handleLocalTarget("${prefix}_SUCCESS_${suffix}"))
+                            }
+                        }
+                    }
+            }
 
         // TODO body payload type in output...
     }

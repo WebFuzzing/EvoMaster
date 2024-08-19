@@ -162,5 +162,8 @@ class OptionalGene(name: String,
         return ParamUtil.getValueGene(this).bindValueBasedOn(ParamUtil.getValueGene(gene))
     }
 
-
+    override fun isChildUsed(child: Gene) : Boolean {
+        verifyChild(child)
+        return isActive
+    }
 }
