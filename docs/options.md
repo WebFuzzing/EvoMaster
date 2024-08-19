@@ -211,6 +211,7 @@ There are 3 types of options:
 |Options|Description|
 |---|---|
 |`abstractInitializationGeneToMutate`| __Boolean__. During mutation, whether to abstract genes for repeated SQL actions. *Default value*: `false`.|
+|`advancedBlackBoxCoverage`| __Boolean__. Apply more advanced coverage criteria for black-box testing. This can result in larger generated test suites. *Default value*: `false`.|
 |`bbProbabilityUseDataPool`| __Double__. Specify the probability of using the data pool when sampling test cases. This is for black-box (bb) mode. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.8`.|
 |`discoveredInfoRewardedInFitness`| __Boolean__. If there is new discovered information from a test execution, reward it in the fitness function. *Default value*: `false`.|
 |`dpcTargetTestSize`| __Int__. Specify a max size of a test to be targeted when either DPC_INCREASING or DPC_DECREASING is enabled. *Default value*: `1`.|
