@@ -4,6 +4,7 @@ import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.SqlWriter
+import org.evomaster.core.output.TestWriterUtils
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.RestCallAction
@@ -205,7 +206,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
     }
 
     private fun getLinkName(indexOfSourceAction: Int, jsonPointer: String) =
-        safeVariableName("link_${indexOfSourceAction}_$jsonPointer")
+        TestWriterUtils.safeVariableName("link_${indexOfSourceAction}_$jsonPointer")
 
     private fun addExtractBodyVariable(
         call: RestCallAction,

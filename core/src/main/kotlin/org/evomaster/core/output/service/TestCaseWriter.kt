@@ -5,7 +5,8 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestCase
-import org.evomaster.core.output.service.TestWriterUtils.Companion.getWireMockVariableName
+import org.evomaster.core.output.TestWriterUtils
+import org.evomaster.core.output.TestWriterUtils.getWireMockVariableName
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.param.HttpWsResponseParam
@@ -321,12 +322,5 @@ abstract class TestCaseWriter {
         // do nothing
     }
 
-    /**
-     * Some character shouldn't be used for variable names, as it would lead to compilation/runtime errors.
-     * Those are replaced with safe ones
-     */
-    protected fun safeVariableName(name: String) : String{
 
-        return name.replace(Regex("[ /$%.:!?&#@(){}]"), "_")
-    }
 }
