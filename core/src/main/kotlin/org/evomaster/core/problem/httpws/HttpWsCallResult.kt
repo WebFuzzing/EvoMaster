@@ -23,6 +23,7 @@ abstract class HttpWsCallResult : ActionResult {
         const val TIMEDOUT = "TIMEDOUT"
         const val LAST_STATEMENT_WHEN_500 = "LAST_STATEMENT_WHEN_500"
         const val TCP_PROBLEM = "TCP_PROBLEM"
+        const val APPLIED_LINK = "APPLIED_LINK"
     }
 
     /**
@@ -105,4 +106,7 @@ abstract class HttpWsCallResult : ActionResult {
 
     fun setTcpProblem(tcpProblem: Boolean) = addResultValue(TCP_PROBLEM, tcpProblem.toString())
     fun getTcpProblem() : Boolean = getResultValue(TCP_PROBLEM)?.toBoolean() ?: false
+
+    fun setAppliedLink(applied: Boolean) = addResultValue(APPLIED_LINK, applied.toString())
+    fun getAppliedLink(): Boolean = getResultValue(APPLIED_LINK)?.toBoolean() ?: false
 }

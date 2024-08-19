@@ -319,8 +319,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         additionalInfoList: List<AdditionalInfoDto>
     ) {
 
-        (0 until actionResults.size)
-            .filter { actions[it] is RestCallAction }
+        actionResults.indices
             .filter { actionResults[it] is RestCallResult }
             .forEach {
                 val result = actionResults[it] as RestCallResult
@@ -331,8 +330,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 val statusId = idMapper.handleLocalTarget("$status:$name")
                 fv.updateTarget(statusId, 1.0, it)
 
-                val location5xx: String? = getlocation5xx(status, additionalInfoList, it, result, name)
+                handleAdvancedBlackBoxCriteria(fv, actions[it], result)
 
+                val location5xx: String? = getlocation5xx(status, additionalInfoList, it, result, name)
                 handleAdditionalStatusTargetDescription(fv, status, name, it, location5xx)
 
                 if (config.expectationsActive) {
@@ -353,6 +353,57 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                     fv.updateTarget(unauthorizedId, 1.0, it)
                 }
             }
+    }
+
+    private fun handleAdvancedBlackBoxCriteria(fv: FitnessValue, call: RestCallAction, result: RestCallResult) {
+
+        if(!config.advancedBlackBoxCoverage){
+            return
+        }
+        val status = result.getStatusCode()
+        val success = StatusGroup.G_2xx.isInGroup(status)
+
+        //Links
+        if(result.getAppliedLink()){
+            //create objectives to keep track of followed links
+            val root = "LINK_FOLLOWED"
+            fv.coverTarget(idMapper.handleLocalTarget("${root}_${call.id}"))
+            if(success) {
+                fv.coverTarget(idMapper.handleLocalTarget("${root}_SUCCESS_${call.id}"))
+            }
+        }
+
+        //Presence of query params
+        call.parameters.filterIsInstance<QueryParam>().forEach {
+            val gene = it.getGeneForQuery()
+            val present = gene !is OptionalGene || gene.isActive
+            val root = "QUERY_PARAM"
+            val id = "${present}_${it.name}_${call.path}"
+
+            //up to 4 targets
+            fv.coverTarget(idMapper.handleLocalTarget("${root}_${id}"))
+            if(success){
+                fv.coverTarget(idMapper.handleLocalTarget("${root}_SUCCESS_${id}"))
+            }
+        }
+
+        //Values in queries/paths
+        //These will include examples/defaults
+        call.parameters
+            /*
+                This filter choice is arguable... might lead to big test suites with no benefit,
+                eg if just data saved on database with no impact on control flow...
+                TODO could be something to empirical investigate
+             */
+            .filter{ it !is BodyParam} //FIXME use enum body type
+//            .forEach { p ->
+//                p.seeGenes()
+        //TODO need phenotype check in Gene
+//                    .filter { g -> g. }
+//                    .forEach { g -> }
+//            }
+
+        // TODO body payload type in output...
     }
 
 
@@ -540,14 +591,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         }
 
         rcr.setStatusCode(response.status)
-
-        if(appliedLink && config.advancedBlackBoxCoverage){
-            //create objectives to keep track of followed links
-            fv.coverTarget(idMapper.handleLocalTarget("LINK_FOLLOWED_${a.id}"))
-            if(StatusGroup.G_2xx.isInGroup(response.status)) {
-                fv.coverTarget(idMapper.handleLocalTarget("LINK_FOLLOWED_SUCCESS_${a.id}"))
-            }
-        }
+        rcr.setAppliedLink(appliedLink)
 
         handlePossibleConnectionClose(response)
 
