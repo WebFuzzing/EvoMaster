@@ -167,9 +167,11 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                     return
                 }
 
+                /*
+                    Note: for JS, this will not work, as call would crash due to invalid JSON
+                    payload (Java and Python don't seem to have such issue)
+                 */
                 lines.add(bodyIsString(s, GeneUtils.EscapeMode.BODY, responseVariableName))
-
-//                throw IllegalStateException("Cannot parse: $s")
             }
             else -> throw IllegalStateException("Format not supported yet: $format")
         }
