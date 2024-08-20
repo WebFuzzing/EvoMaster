@@ -22,12 +22,12 @@ public class SMTResultParser {
     public static Map<String, SMTLibValue> parseZ3Response(String z3Response) {
         Map<String, SMTLibValue> results = new HashMap<>();
 
-        // Regular expression for matching simple value assignments
-        // example: (id_1 2) or (name_1 "example")
-        String simpleValuePattern = "\\d+|\"[^\"]*\"|[+-]?([0-9]*[.])?[0-9]+";
+        // Regular expression for matching simple value assignments, including negative numbers
+        // example: (id_1 2), (x (- 4)), or (name_1 "example")
+        String simpleValuePattern = "(- )?\\d+|\"[^\"]*\"|[+-]?([0-9]*[.])?[0-9]+";
         // Pattern for matching value assignments
         // example: ((variableName value)) where value can be an integer, string, or real number
-        Pattern valuePattern = Pattern.compile("\\(\\((\\w+) (" + simpleValuePattern + ")\\)\\)");
+        Pattern valuePattern = Pattern.compile("\\(\\((\\w+) \\(?(" + simpleValuePattern + ")\\)?\\)\\)");
 
         // Regular expression for matching composed types or structures
         // example: ((variableName (field1 value1 field2 value2 ...)))
@@ -40,7 +40,10 @@ public class SMTResultParser {
         String[] lines = z3Response.split("\n");
 
         for (String line : lines) {
-            if (line.trim().isEmpty()) {
+            if (line.startsWith("unsat")) {
+                throw new RuntimeException("Unsatisfiable problem");
+            }
+            if (line.trim().isEmpty() || line.startsWith("sat")) {
                 continue; // Skip empty lines
             }
 
@@ -67,6 +70,10 @@ public class SMTResultParser {
             else if (valueMatcher.find()) {
                 String variableName = valueMatcher.group(1);
                 String value = valueMatcher.group(2);
+                // Handle cases where the value is wrapped in parentheses, like (- 4)
+                if (value.startsWith("(") && value.endsWith(")")) {
+                    value = value.substring(1, value.length() - 1).trim(); // Remove parentheses
+                }
                 results.put(variableName, parseValue(value)); // Parse and store the simple value
             }
         }
@@ -85,6 +92,9 @@ public class SMTResultParser {
             return new StringValue(value.substring(1, value.length() - 1)); // Remove quotes
         }
         try {
+            if (value.matches("- \\d+")) {
+                value = value.replaceFirst("- ", "-"); // Remove space after negative sign
+            }
             // Try to parse the value as an integer
             return new IntValue(Integer.parseInt(value));
         } catch (NumberFormatException e) {
