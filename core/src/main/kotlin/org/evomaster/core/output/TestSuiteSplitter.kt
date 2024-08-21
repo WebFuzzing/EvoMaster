@@ -205,39 +205,39 @@ object TestSuiteSplitter {
      * The individual selected is the shortest (by action count) or random.
      */
 
-    private fun execSummary(clusters: MutableMap<String, MutableList<MutableList<HttpWsCallResult>>>,
-                            solution: Solution<ApiWsIndividual>,
-                            oracles: PartialOracles,
-                            splitResult: SplitResult
-    ): Solution<ApiWsIndividual> {
-
-        // MutableSet is used here to ensure the uniqueness of TestCases selected for the executive summary.
-        val execSol = mutableSetOf<EvaluatedIndividual<ApiWsIndividual>>()
-        clusters.values.forEach {
-            it.forEachIndexed { index, clu ->
-                val inds = solution.individuals.filter { ind ->
-                    ind.evaluatedMainActions().any { ac -> clu.contains(ac.result as HttpWsCallResult) }
-                }.toMutableList()
-                inds.sortBy { it.individual.seeAllActions().size }
-                inds.firstOrNull { execSol.add(it) }
-            }
-        }
-
-        val oracleInds = oracles.failByOracle(solution.individuals)
-        oracleInds.forEach { key, ind ->
-            ind.firstOrNull { execSol.add(it) }
-        }
-
-        val execSolList = execSol.toMutableList()
-        return Solution(
-                execSolList,
-                solution.testSuiteNamePrefix,
-                solution.testSuiteNameSuffix,
-                Termination.FAULT_REPRESENTATIVES,
-                listOf(),
-                listOf()
-        )
-    }
+//    private fun execSummary(clusters: MutableMap<String, MutableList<MutableList<HttpWsCallResult>>>,
+//                            solution: Solution<ApiWsIndividual>,
+//                            oracles: PartialOracles,
+//                            splitResult: SplitResult
+//    ): Solution<ApiWsIndividual> {
+//
+//        // MutableSet is used here to ensure the uniqueness of TestCases selected for the executive summary.
+//        val execSol = mutableSetOf<EvaluatedIndividual<ApiWsIndividual>>()
+//        clusters.values.forEach {
+//            it.forEachIndexed { index, clu ->
+//                val inds = solution.individuals.filter { ind ->
+//                    ind.evaluatedMainActions().any { ac -> clu.contains(ac.result as HttpWsCallResult) }
+//                }.toMutableList()
+//                inds.sortBy { it.individual.seeAllActions().size }
+//                inds.firstOrNull { execSol.add(it) }
+//            }
+//        }
+//
+//        val oracleInds = oracles.failByOracle(solution.individuals)
+//        oracleInds.forEach { key, ind ->
+//            ind.firstOrNull { execSol.add(it) }
+//        }
+//
+//        val execSolList = execSol.toMutableList()
+//        return Solution(
+//                execSolList,
+//                solution.testSuiteNamePrefix,
+//                solution.testSuiteNameSuffix,
+//                Termination.FAULT_REPRESENTATIVES,
+//                listOf(),
+//                listOf()
+//        )
+//    }
 
 
     /**

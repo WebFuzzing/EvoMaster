@@ -124,7 +124,7 @@ class TestSuiteWriter {
         val lines = Lines(config.outputFormat)
         val testSuiteOrganizer = TestSuiteOrganizer()
 
-        activePartialOracles = partialOracles.activeOracles(solution.individuals)
+       // activePartialOracles = partialOracles.activeOracles(solution.individuals)
 
         header(solution, testSuiteFileName, lines, timestamp, controllerName)
 

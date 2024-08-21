@@ -247,7 +247,7 @@ class Statistics : SearchListener {
             add(Pair("distinct500Faults", "" + solution.overall.potential500Faults(idMapper).size ))
             // failedOracleExpectations - the number of calls in the individual that fail one active partial oracle.
             // However, 5xx are not counted here.
-            add(Pair("failedOracleExpectations", "" + failedOracle(solution)))
+            //add(Pair("failedOracleExpectations", "" + failedOracle(solution)))
             /**
              * this is the total of all potential faults, e.g. distinct500Faults + failedOracleExpectations + any other
              * for RPC, this comprises internal errors, exceptions (declared and unexpected) and customized service errors
@@ -355,22 +355,22 @@ class Statistics : SearchListener {
                 .count()
     }
 
-    private fun failedOracle(solution: Solution<*>): Int {
-
-        //count the distinct number of API paths for which we have a failed oracle
-        // NOTE: calls with an error code (5xx) are excluded from this count.
-        return solution.individuals
-                .flatMap { it.evaluatedMainActions() }
-                .filter {
-                    it.result is HttpWsCallResult
-                            && it.action is RestCallAction
-                            && !(it.result as HttpWsCallResult).hasErrorCode()
-                            && oracles.activeOracles(it.action as RestCallAction, it.result as HttpWsCallResult).any { or -> or.value }
-                }
-                .map { it.action.getName() }
-                .distinct()
-                .count()
-    }
+//    private fun failedOracle(solution: Solution<*>): Int {
+//
+//        //count the distinct number of API paths for which we have a failed oracle
+//        // NOTE: calls with an error code (5xx) are excluded from this count.
+//        return solution.individuals
+//                .flatMap { it.evaluatedMainActions() }
+//                .filter {
+//                    it.result is HttpWsCallResult
+//                            && it.action is RestCallAction
+//                            && !(it.result as HttpWsCallResult).hasErrorCode()
+//                            //&& oracles.activeOracles(it.action as RestCallAction, it.result as HttpWsCallResult).any { or -> or.value }
+//                }
+//                .map { it.action.getName() }
+//                .distinct()
+//                .count()
+//    }
 
     private fun covered2xxEndpoints(solution: Solution<*>) : Int {
 

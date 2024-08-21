@@ -471,28 +471,28 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         }
     }
 
-    private fun addDeclarationsForExpectations(lines: Lines, individual: EvaluatedIndividual<RestIndividual>) {
-        if (!partialOracles.generatesExpectation(individual)) {
-            return
-        }
-
-        if (!format.isJavaOrKotlin()) {
-            //TODO will need to see if going to support JS and C# as well
-            return
-        }
-
-        lines.addEmpty()
-        when {
-            format.isJava() -> lines.append("ExpectationHandler expectationHandler = expectationHandler()")
-            format.isKotlin() -> lines.append("val expectationHandler: ExpectationHandler = expectationHandler()")
-        }
-        lines.appendSemicolon()
-    }
-
-    private fun handleExpectationSpecificLines(call: RestCallAction, lines: Lines, res: RestCallResult, name: String) {
-        lines.addEmpty()
-        if (partialOracles.generatesExpectation(call, res)) {
-            partialOracles.addExpectations(call, lines, res, name, format)
-        }
-    }
+//    private fun addDeclarationsForExpectations(lines: Lines, individual: EvaluatedIndividual<RestIndividual>) {
+//        if (!partialOracles.generatesExpectation(individual)) {
+//            return
+//        }
+//
+//        if (!format.isJavaOrKotlin()) {
+//            //TODO will need to see if going to support JS and C# as well
+//            return
+//        }
+//
+//        lines.addEmpty()
+//        when {
+//            format.isJava() -> lines.append("ExpectationHandler expectationHandler = expectationHandler()")
+//            format.isKotlin() -> lines.append("val expectationHandler: ExpectationHandler = expectationHandler()")
+//        }
+//        lines.appendSemicolon()
+//    }
+//
+//    private fun handleExpectationSpecificLines(call: RestCallAction, lines: Lines, res: RestCallResult, name: String) {
+//        lines.addEmpty()
+//        if (partialOracles.generatesExpectation(call, res)) {
+//            partialOracles.addExpectations(call, lines, res, name, format)
+//        }
+//    }
 }
