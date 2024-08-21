@@ -130,4 +130,9 @@ class NullableGene(name: String,
         if (gene is NullableGene) isActive = gene.isActive
         return ParamUtil.getValueGene(gene).bindValueBasedOn(ParamUtil.getValueGene(gene))
     }
+
+    override fun isChildUsed(child: Gene) : Boolean {
+        verifyChild(child)
+        return isActive
+    }
 }

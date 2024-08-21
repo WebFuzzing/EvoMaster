@@ -2278,6 +2278,11 @@ class EMConfig {
     @Cfg("Extra checks on HTTP properties in returned responses, used as automated oracles to detect faults.")
     var httpOracles = false
 
+
+    @Experimental
+    @Cfg("Apply more advanced coverage criteria for black-box testing. This can result in larger generated test suites.")
+    var advancedBlackBoxCoverage = false
+
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
             return maxTimeInSeconds

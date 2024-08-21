@@ -31,6 +31,7 @@ import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.EnumGene
+import org.evomaster.core.search.gene.numeric.NumberGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
@@ -319,8 +320,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         additionalInfoList: List<AdditionalInfoDto>
     ) {
 
-        (0 until actionResults.size)
-            .filter { actions[it] is RestCallAction }
+        actionResults.indices
             .filter { actionResults[it] is RestCallResult }
             .forEach {
                 val result = actionResults[it] as RestCallResult
@@ -331,8 +331,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 val statusId = idMapper.handleLocalTarget("$status:$name")
                 fv.updateTarget(statusId, 1.0, it)
 
-                val location5xx: String? = getlocation5xx(status, additionalInfoList, it, result, name)
+                handleAdvancedBlackBoxCriteria(fv, actions[it], result)
 
+                val location5xx: String? = getlocation5xx(status, additionalInfoList, it, result, name)
                 handleAdditionalStatusTargetDescription(fv, status, name, it, location5xx)
 
                 if (config.expectationsActive) {
@@ -353,6 +354,80 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                     fv.updateTarget(unauthorizedId, 1.0, it)
                 }
             }
+    }
+
+    private fun handleAdvancedBlackBoxCriteria(fv: FitnessValue, call: RestCallAction, result: RestCallResult) {
+
+        if(!config.advancedBlackBoxCoverage){
+            return
+        }
+        val status = result.getStatusCode()
+        val success = StatusGroup.G_2xx.isInGroup(status)
+
+        //Links
+        if(result.getAppliedLink()){
+            //create objectives to keep track of followed links
+            val root = "LINK_FOLLOWED"
+            fv.coverTarget(idMapper.handleLocalTarget("${root}_${call.id}"))
+            if(success) {
+                fv.coverTarget(idMapper.handleLocalTarget("${root}_SUCCESS_${call.id}"))
+            }
+        }
+
+        //Presence of query params
+        call.parameters.filterIsInstance<QueryParam>().forEach {
+            val gene = it.getGeneForQuery()
+            val present = gene !is OptionalGene || gene.isActive
+            val root = "QUERY_PARAM"
+            val id = "${present}_${it.name}_${call.id}"
+
+            //up to 4 targets
+            fv.coverTarget(idMapper.handleLocalTarget("${root}_${id}"))
+            if(success){
+                fv.coverTarget(idMapper.handleLocalTarget("${root}_SUCCESS_${id}"))
+            }
+        }
+
+        //Values in queries/paths
+        //These will include examples/defaults
+        call.parameters
+            .forEach { p ->
+                /*
+                    This choice is arguable... otherwise might lead to big test suites with no benefit,
+                    eg if just data saved on database with no impact on control flow...
+                    TODO could be something to empirical investigate
+                 */
+
+                val root = "INPUT_${call.id}_${p.javaClass.simpleName}_${p.name}"
+
+                val genes = if(p is BodyParam) {
+                    listOf(p.contenTypeGene) // ie, ignore the payload
+                } else {
+                    p.seeGenes()
+                }
+                genes.flatMap { g -> g.flatView() }
+                    .filter { g -> g.staticCheckIfImpactPhenotype() }
+                    .forEach { g ->
+                        if(g is EnumGene<*> || g is BooleanGene || g is NumberGene<*>) {
+                            val prefix = "${root}_${g.name}"
+                            val suffix = when (g) {
+                                is EnumGene<*>, is BooleanGene -> g.getValueAsRawString()
+                                is NumberGene<*> -> {
+                                    val negative = g.getValueAsRawString().startsWith("-")
+                                    if(negative) "negative" else "positive"
+                                }
+                                else -> throw IllegalStateException("Not handled type: ${g.javaClass}")
+                            }
+                            fv.coverTarget(idMapper.handleLocalTarget("${prefix}_${suffix}"))
+                            if(success){
+                                fv.coverTarget(idMapper.handleLocalTarget("${prefix}_SUCCESS_${suffix}"))
+                            }
+                        }
+                    }
+            }
+
+        //body payload type in response
+        fv.coverTarget(idMapper.handleLocalTarget("RESPONSE_BODY_PAYLOAD_${call.id}_${result.getBodyType()}"))
     }
 
 
@@ -540,14 +615,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         }
 
         rcr.setStatusCode(response.status)
-
-        if(appliedLink){
-            //create objectives to keep track of followed links
-            fv.coverTarget(idMapper.handleLocalTarget("LINK_FOLLOWED_${a.id}"))
-            if(StatusGroup.G_2xx.isInGroup(response.status)) {
-                fv.coverTarget(idMapper.handleLocalTarget("LINK_FOLLOWED_SUCCESS_${a.id}"))
-            }
-        }
+        rcr.setAppliedLink(appliedLink)
 
         handlePossibleConnectionClose(response)
 

@@ -5,6 +5,9 @@ Under development in `master` branch.
 ### New Features
 - schema validation for OpenAPI schemas, with summary of issues printed in the console logs
 
+### Bug Fixes
+- fixed issue in Python and JavaScript output for when JSON responses are wrongly free text (e.g., unquoted strings)
+
 ### Addressed GitHub Issues
 
 - #989: TestCaseWriter login cookie variable name
