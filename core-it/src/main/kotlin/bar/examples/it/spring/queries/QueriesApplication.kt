@@ -1,5 +1,6 @@
 package bar.examples.it.spring.queries
 
+import io.swagger.v3.oas.annotations.Parameter
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
@@ -24,7 +25,7 @@ open class QueriesApplication {
     @GetMapping("/queries/string")
     open fun getString(
         @RequestParam("x", required = false) x: String?,
-        @RequestParam("y", required = true) y: String?,
+        @RequestParam("y", required = true) @Parameter(required=true) y: String?,
     ) : ResponseEntity<String> {
 
         if(x == "FOO" && y == "BAR") {
@@ -37,8 +38,8 @@ open class QueriesApplication {
     @GetMapping("/queries/numbers")
     open fun getNumbers(
         @RequestParam("a", required = false) a: Int?,
-        @RequestParam("b", required = true)  b: Double?,
-        @RequestParam("c", required = true)  c: Boolean?,
+        @RequestParam("b", required = true) @Parameter(required=true)  b: Double?,
+        @RequestParam("c", required = true) @Parameter(required=true)  c: Boolean?,
     ) : ResponseEntity<String> {
 
         if(a==42 && b!!<0 && c!!){
