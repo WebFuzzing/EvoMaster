@@ -26,8 +26,6 @@ class IdMapper {
          */
         const val LOCAL_OBJECTIVE_KEY = "Local"
 
-        private const val FAULT_DESCRIPTIVE_ID_PREFIX = "${FAULT_OBJECTIVE_PREFIX}_"
-
         /**
          * all prefixes used for defining testing objectives
          */
@@ -59,13 +57,7 @@ class IdMapper {
 
         private const val FAULT_PARTIAL_ORACLE = "PartialOracle_"
 
-        private const val GQL_ERRORS_PREFIX = "GQL_ERRORS_ACTION"
-
-        private const val GQL_ERRORS_LINE_PREFIX = "GQL_ERRORS_LINE"
-
         private const val GQL_NO_ERRORS = "GQL_NO_ERRORS"
-
-        private const val WEB_FAULT = "WebFault_"
 
         private const val MALFORMED_HTML_ERROR = "MALFORMED_HTML_ERROR_"
 
@@ -73,10 +65,9 @@ class IdMapper {
 
         private const val BROKEN_LINK = "BROKEN_LINK_"
 
-        fun isFault(descriptiveId: String) =
-            descriptiveId.startsWith(FAULT_DESCRIPTIVE_ID_PREFIX)
-                    || isGQLErrors(descriptiveId, true)
-                    || descriptiveId.startsWith(WEB_FAULT)
+        fun isFault(descriptiveId: String) = descriptiveId.startsWith(FAULT_OBJECTIVE_PREFIX)
+
+
 
         fun isFault500(descriptiveId: String) = descriptiveId.startsWith(FAULT_DESCRIPTIVE_ID_PREFIX+ FAULT_500)
 
@@ -128,12 +119,12 @@ class IdMapper {
 
         fun isGQLNoErrors(descriptiveId: String) = descriptiveId.startsWith(GQL_NO_ERRORS)
 
-        fun faultInfo(descriptiveId: String) : String{
-            if(! isFault(descriptiveId)){
-                throw IllegalArgumentException("Invalid non-fault input id: $descriptiveId")
-            }
-            return descriptiveId.substring(FAULT_DESCRIPTIVE_ID_PREFIX.length)
-        }
+//        fun faultInfo(descriptiveId: String) : String{
+//            if(! isFault(descriptiveId)){
+//                throw IllegalArgumentException("Invalid non-fault input id: $descriptiveId")
+//            }
+//            return descriptiveId.substring(FAULT_DESCRIPTIVE_ID_PREFIX.length)
+//        }
 
         fun isLocal(id: Int): Boolean = id < 0
 
@@ -169,15 +160,15 @@ class IdMapper {
     }
 
     fun getFaultDescriptiveIdForMalformedHtml(postfix: String): String{
-        return WEB_FAULT + MALFORMED_HTML_ERROR + postfix
+        return FAULT_OBJECTIVE_PREFIX + MALFORMED_HTML_ERROR + postfix
     }
 
     fun getFaultDescriptiveIdForMalformedURI(postfix: String) : String {
-        return WEB_FAULT + MALFORMED_URI + postfix
+        return FAULT_OBJECTIVE_PREFIX + MALFORMED_URI + postfix
     }
 
     fun getFaultDescriptiveIdForBrokenLink(postfix: String) : String {
-        return WEB_FAULT + BROKEN_LINK + postfix
+        return FAULT_OBJECTIVE_PREFIX + BROKEN_LINK + postfix
     }
 
     fun getFaultDescriptiveIdFor500(postfix: String): String {
@@ -232,9 +223,13 @@ class IdMapper {
         return RPC_HANDLED_ERROR + postfix
     }
 
+
+
     fun isFault(id: Int) : Boolean = mapping[id]?.let{ isFault(it)} ?: false
 
     fun isFault500(id: Int): Boolean = mapping[id]?.let {isFault500(it)} ?: false
+
+
 
     fun isFaultExpectation(id: Int): Boolean = mapping[id]?.let{ isFaultPartialOracle(it) } ?:false
 
