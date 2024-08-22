@@ -650,10 +650,10 @@ class Main {
                 splitResult.splitOutcome.filter { !it.individuals.isNullOrEmpty() }
                     .forEach { writer.writeTests(it, controllerInfoDto?.fullName, controllerInfoDto?.executableFullPath, snapshotTimestamp) }
 
-                if (config.executiveSummary) {
-                    writeExecSummary(injector, controllerInfoDto, splitResult, snapshotTimestamp)
-                    //writeExecutiveSummary(injector, solution, controllerInfoDto, partialOracles)
-                }
+//                if (config.executiveSummary) {
+//                    writeExecSummary(injector, controllerInfoDto, splitResult, snapshotTimestamp)
+//                    //writeExecutiveSummary(injector, solution, controllerInfoDto, partialOracles)
+//                }
             } else {
                 /*
                     TODO refactor all the PartialOracle stuff that is meant for only REST
@@ -694,18 +694,19 @@ class Main {
                     }
                     .forEach { writer.writeTests(it, controllerInfoDto?.fullName,controllerInfoDto?.executableFullPath, snapshot) }
 
-                if (config.executiveSummary) {
-
-                    // Onur - if there are fault cases, executive summary makes sense
-                    if ( splitResult.splitOutcome.any{ it.individuals.isNotEmpty()
-                                && it.termination != Termination.SUCCESSES}) {
-                        writeExecSummary(injector, controllerInfoDto, splitResult)
-                    }
-
-                    //writeExecSummary(injector, controllerInfoDto, splitResult)
-                    //writeExecutiveSummary(injector, solution, controllerInfoDto, partialOracles)
-                }
-            } else if (config.problemType == EMConfig.ProblemType.RPC){
+//                if (config.executiveSummary) {
+//
+//                    // Onur - if there are fault cases, executive summary makes sense
+//                    if ( splitResult.splitOutcome.any{ it.individuals.isNotEmpty()
+//                                && it.termination != Termination.SUCCESSES}) {
+//                        writeExecSummary(injector, controllerInfoDto, splitResult)
+//                    }
+//
+//                    //writeExecSummary(injector, controllerInfoDto, splitResult)
+//                    //writeExecutiveSummary(injector, solution, controllerInfoDto, partialOracles)
+//                }
+            } else
+                if (config.problemType == EMConfig.ProblemType.RPC){
 
                 // Man: only enable for RPC as it lacks of unit tests
                 writer.writeTestsDuringSeeding(solution, controllerInfoDto?.fullName, controllerInfoDto?.executableFullPath)

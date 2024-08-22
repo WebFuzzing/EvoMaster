@@ -51,8 +51,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         val k = call as RestCallAction
 
         return super.needsResponseVariable(call, res)
-                // FIXME remove once expectations removed
-                || (config.expectationsActive && partialOracles.generatesExpectation(call as RestCallAction, res))
+                //|| (config.expectationsActive && partialOracles.generatesExpectation(call as RestCallAction, res))
                 || (!res.stopping && k.saveLocation)
                 || (!res.stopping && k.hasFollowedBackwardLink())
     }
@@ -65,10 +64,10 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
     ) {
         super.handleTestInitialization(lines, baseUrlOfSut, ind, insertionVars)
 
-        if (shouldCheckExpectations()) {
-            addDeclarationsForExpectations(lines, ind as EvaluatedIndividual<RestIndividual>)
-            //TODO: -> also check expectation generation before adding declarations
-        }
+//        if (shouldCheckExpectations()) {
+//            addDeclarationsForExpectations(lines, ind as EvaluatedIndividual<RestIndividual>)
+//            //TODO: -> also check expectation generation before adding declarations
+//        }
 
         if (hasChainedLocations(ind.individual)) {
             assert(ind.individual is RestIndividual)
@@ -178,9 +177,9 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
 
         handleLinkInfo(call, res, responseVariableName, lines)
 
-        if (shouldCheckExpectations() && !res.failedCall()) {
-            handleExpectationSpecificLines(call, lines, res, responseVariableName)
-        }
+//        if (shouldCheckExpectations() && !res.failedCall()) {
+//            handleExpectationSpecificLines(call, lines, res, responseVariableName)
+//        }
     }
 
     private fun handleLinkInfo(call: RestCallAction, res: RestCallResult, responseVariableName: String, lines: Lines) {
@@ -234,9 +233,9 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
     }
 
 
-    private fun shouldCheckExpectations() =
-    //for now Expectations are only supported on the JVM
-        config.expectationsActive && config.outputFormat.isJavaOrKotlin()
+//    private fun shouldCheckExpectations() =
+//    //for now Expectations are only supported on the JVM
+//        config.expectationsActive && config.outputFormat.isJavaOrKotlin()
 
 
     override fun handleVerbEndpoint(baseUrlOfSut: String, _call: HttpWsAction, lines: Lines) {
@@ -472,28 +471,28 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         }
     }
 
-    private fun addDeclarationsForExpectations(lines: Lines, individual: EvaluatedIndividual<RestIndividual>) {
-        if (!partialOracles.generatesExpectation(individual)) {
-            return
-        }
-
-        if (!format.isJavaOrKotlin()) {
-            //TODO will need to see if going to support JS and C# as well
-            return
-        }
-
-        lines.addEmpty()
-        when {
-            format.isJava() -> lines.append("ExpectationHandler expectationHandler = expectationHandler()")
-            format.isKotlin() -> lines.append("val expectationHandler: ExpectationHandler = expectationHandler()")
-        }
-        lines.appendSemicolon()
-    }
-
-    private fun handleExpectationSpecificLines(call: RestCallAction, lines: Lines, res: RestCallResult, name: String) {
-        lines.addEmpty()
-        if (partialOracles.generatesExpectation(call, res)) {
-            partialOracles.addExpectations(call, lines, res, name, format)
-        }
-    }
+//    private fun addDeclarationsForExpectations(lines: Lines, individual: EvaluatedIndividual<RestIndividual>) {
+//        if (!partialOracles.generatesExpectation(individual)) {
+//            return
+//        }
+//
+//        if (!format.isJavaOrKotlin()) {
+//            //TODO will need to see if going to support JS and C# as well
+//            return
+//        }
+//
+//        lines.addEmpty()
+//        when {
+//            format.isJava() -> lines.append("ExpectationHandler expectationHandler = expectationHandler()")
+//            format.isKotlin() -> lines.append("val expectationHandler: ExpectationHandler = expectationHandler()")
+//        }
+//        lines.appendSemicolon()
+//    }
+//
+//    private fun handleExpectationSpecificLines(call: RestCallAction, lines: Lines, res: RestCallResult, name: String) {
+//        lines.addEmpty()
+//        if (partialOracles.generatesExpectation(call, res)) {
+//            partialOracles.addExpectations(call, lines, res, name, format)
+//        }
+//    }
 }

@@ -20,7 +20,7 @@ class PythonTestCaseWriterTest {
     private fun getConfig(format: OutputFormat): EMConfig {
         val config = EMConfig()
         config.outputFormat = format
-        config.expectationsActive = false
+        //config.expectationsActive = false
         config.testTimeout = -1
         return config
     }
@@ -83,7 +83,7 @@ class PythonTestCaseWriterTest {
         val results = listOf(result)
         val ei = EvaluatedIndividual<RestIndividual>(fitnessVal, individual, results)
         val config = getConfig(format)
-        config.expectationsActive = true
+        //config.expectationsActive = true
 
         val test = TestCase(test = ei, name = "test")
 

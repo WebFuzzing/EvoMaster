@@ -336,10 +336,12 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 val location5xx: String? = getlocation5xx(status, additionalInfoList, it, result, name)
                 handleAdditionalStatusTargetDescription(fv, status, name, it, location5xx)
 
-                if (config.expectationsActive) {
-                    //TODO refactor
-                    handleAdditionalOracleTargetDescription(fv, actions, result, name, it)
-                }
+                //TODO missing oracles from expectations
+
+//                if (config.expectationsActive) {
+//                    //TODO refactor
+//                    handleAdditionalOracleTargetDescription(fv, actions, result, name, it)
+//                }
 
                 val unauthorized = !AuthUtils.checkUnauthorizedWithAuth(status, actions[it])
                 if (unauthorized) {
@@ -431,27 +433,27 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     }
 
 
-    fun handleAdditionalOracleTargetDescription(
-        fv: FitnessValue,
-        actions: List<RestCallAction>,
-        result: RestCallResult,
-        name: String,
-        indexOfAction: Int
-    ) {
-        /*
-           Objectives for the two partial oracles implemented thus far.
-        */
-        val call = actions[indexOfAction] as RestCallAction
-        if(call.skipOracleChecks){
-            return
-        }
-        val oracles = writer.getPartialOracles().activeOracles(call, result)
-        oracles.filter { it.value }.forEach { entry ->
-            val oracleId = idMapper.getFaultDescriptiveIdForPartialOracle("${entry.key} $name")
-            val bugId = idMapper.handleLocalTarget(oracleId)
-            fv.updateTarget(bugId, 1.0, indexOfAction)
-        }
-    }
+//    fun handleAdditionalOracleTargetDescription(
+//        fv: FitnessValue,
+//        actions: List<RestCallAction>,
+//        result: RestCallResult,
+//        name: String,
+//        indexOfAction: Int
+//    ) {
+//        /*
+//           Objectives for the two partial oracles implemented thus far.
+//        */
+//        val call = actions[indexOfAction] as RestCallAction
+//        if(call.skipOracleChecks){
+//            return
+//        }
+//        val oracles = writer.getPartialOracles().activeOracles(call, result)
+//        oracles.filter { it.value }.forEach { entry ->
+//            val oracleId = idMapper.getFaultDescriptiveIdForPartialOracle("${entry.key} $name")
+//            val bugId = idMapper.handleLocalTarget(oracleId)
+//            fv.updateTarget(bugId, 1.0, indexOfAction)
+//        }
+//    }
 
 
     fun handleAdditionalStatusTargetDescription(

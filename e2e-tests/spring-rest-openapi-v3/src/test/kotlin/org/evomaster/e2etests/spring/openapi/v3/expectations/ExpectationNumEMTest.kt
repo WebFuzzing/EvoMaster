@@ -7,14 +7,13 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.evomaster.e2etests.utils.RestTestBase
-import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertTimeoutPreemptively
+import org.junit.jupiter.api.*
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.Duration
 
+// expectations are removed
+@Disabled
 class ExpectationNumEMTest : SpringTestBase(){
     companion object{
         @BeforeAll

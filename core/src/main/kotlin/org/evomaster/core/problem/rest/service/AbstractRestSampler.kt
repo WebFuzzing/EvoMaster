@@ -133,10 +133,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
         updateConfigBasedOnSutInfoDto(infoDto)
 
-        /*
-            TODO this would had been better handled with optional injection, but Guice seems pretty buggy :(
-         */
-        partialOracles.setupForRest(swagger, config)
+        //partialOracles.setupForRest(swagger, config)
 
         log.debug("Done initializing {}", AbstractRestSampler::class.simpleName)
     }
@@ -320,10 +317,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
             initSeededTests()
 
 
-        /*
-            TODO this would had been better handled with optional injection, but Guice seems pretty buggy :(
-         */
-        partialOracles.setupForRest(swagger, config)
+        //partialOracles.setupForRest(swagger, config)
 
         log.debug("Done initializing {}", AbstractRestSampler::class.simpleName)
     }
