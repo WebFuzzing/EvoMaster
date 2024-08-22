@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.webfrontend.service
 
+import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.core.Lazy
 import org.evomaster.core.sql.SqlAction
@@ -193,11 +194,13 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
             try{
                 URI(it)
             } catch (e: URISyntaxException){
+                //FIXME URI should not be used in Java, as implementing deprecated specs
                 webGlobalState.addMalformedUri(it, urlOfHtmlPage)
                 issues = true
 
-                val id = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveIdForMalformedURI(it))
-                fv.updateTarget(id, 1.0)
+                //TODO this will need thinking, eg, rather check that not getting 404 if following it
+//                val id = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveIdForMalformedURI(it))
+//                fv.updateTarget(id, 1.0)
 
                 return@forEach
             }
@@ -216,7 +219,7 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
                     if(!found){
                         issues = true
 
-                        val id = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveIdForBrokenLink(it))
+                        val id = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(FaultCategory.WEB_BROKEN_LINK,it))
                         fv.updateTarget(id, 1.0)
                     }
                     webGlobalState.addExternalLink(url, found, urlOfHtmlPage)

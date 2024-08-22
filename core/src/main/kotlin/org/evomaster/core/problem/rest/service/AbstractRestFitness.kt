@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
+import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.test.utils.EMTestUtils
 import org.evomaster.client.java.controller.api.dto.ActionDto
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
@@ -498,7 +499,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 location5xx != null || config.blackBox
             }
             val postfix = if (location5xx == null) name else "${location5xx!!} $name"
-            val descriptiveId = idMapper.getFaultDescriptiveIdFor500(postfix)
+            val descriptiveId = idMapper.getFaultDescriptiveId(FaultCategory.HTTP_STATUS_500,postfix)
             val bugId = idMapper.handleLocalTarget(descriptiveId)
             fv.updateTarget(bugId, 1.0, indexOfAction)
         }

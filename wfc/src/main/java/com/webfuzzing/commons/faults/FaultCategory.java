@@ -12,13 +12,24 @@ public enum FaultCategory {
     INVALID_RESPONSE(201, "Invalid HTTP Response Object"),
 
     //3xx: GraphQL
-    ERROR_FIELD(301, "Error Field"),
+    GQL_ERROR_FIELD(301, "Error Field"),
 
     //4xx: RPC
+    // RPC internal error, eg thrift application internal error exception
+    RPC_INTERNAL_ERROR(400, "Internal Error"),
+    // RPC service error which is customized by user
+    RPC_SERVICE_ERROR(401, "Service Error"),
+    // exception for RPC
+    RPC_DECLARED_EXCEPTION(402, "Declared Exception"),
+    // unexpected exception for RPC
+    RPC_UNEXPECTED_EXCEPTION(403,"Unexpected Exception"),
+    // an RPC call which fails to achieve a successful business logic
+    RPC_HANDLED_ERROR(404,"Business Logic Error"),
+
     //5xx: Web Frontend
+    WEB_BROKEN_LINK(500, "Broken Link"),
     //6xx: mobile
 
-    //7xx: robustness
     //8xx: security
     //9xx: undefined
     ;
