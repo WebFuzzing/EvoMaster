@@ -5,7 +5,10 @@ import org.evomaster.core.problem.enterprise.auth.AuthSettings
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.param.PathParam
+import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.service.AbstractRestSampler
+import org.evomaster.core.search.gene.optional.NullableGene
+import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.seeding.service.PirToIndividual
 import org.slf4j.Logger
@@ -38,7 +41,10 @@ class PirToRest: PirToIndividual(){
     }
 
 
-    fun fromVerbPath(verb: String, path: String) : RestCallAction?{
+    /**
+     *  From components of a string representation, create an action, based on existing template
+     */
+    fun fromVerbPath(verb: String, path: String, queryParams : Map<String,String> = mapOf()) : RestCallAction?{
 
         val v = try{HttpVerb.valueOf(verb.uppercase())}
         catch (e: IllegalArgumentException){
@@ -61,6 +67,12 @@ class PirToRest: PirToIndividual(){
         val x = candidates[0].copy() as RestCallAction
         x.doInitialize(randomness)
 
+        /*
+         * looking at all existing parameters in the candidate template.
+         * note that input info might be missing data, if such is optional.
+         * for example, if a query parameter is optional, that might be missing in the input to this function,
+         * which would mean it must be off here
+         */
         x.parameters.forEach { p ->
             when(p){
                 is PathParam -> {
@@ -69,6 +81,33 @@ class PirToRest: PirToIndividual(){
                     if(!isSet){
                         log.warn("Failed to update path parameter ${p.name} with value: $toSeed")
                         return null
+                    }
+                }
+                is QueryParam ->{
+                    /*
+                     * when dealing with queries, several different scenarios could happen:
+                     * 1: it is there as input (-> change value)
+                     * 2: it is not there, possibly because optional (-> deactivate)
+                     * 3: it is not there in the template, because the param does not exist any more,
+                     *    eg seed is not in sync (-> ignore)
+                     * 4: existing required param is not in the input (-> ignore)
+                     */
+                    val name = p.name
+                    val gene = p.getGeneForQuery()
+                    if(queryParams.containsKey(name)){
+                        gene.setFromStringValue(queryParams[name]!!)
+                    } else {
+                        //TODO also check nullable genes
+                        if(gene is OptionalGene){
+                            //simply deactivate it
+                            gene.isActive = false
+                        } else {
+                            // this means it is required, but not present in the seed
+                            // as such, just leave it as randomized
+                            log.warn("Required query parameter $name is not in the input seed." +
+                                    " This could happen if schema has changed since the seed was created.")
+                            //nothing to do further
+                        }
                     }
                 }
                 else -> {

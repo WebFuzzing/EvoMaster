@@ -1,12 +1,12 @@
 package org.evomaster.core.problem.gui
 
-import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.MainAction
 import org.evomaster.core.search.StructuralElement
 
 
 abstract class GuiAction(
     children: List<StructuralElement>
-): Action(children) {
+): MainAction(children) {
 
 
     /**

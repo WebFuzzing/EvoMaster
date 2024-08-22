@@ -171,5 +171,17 @@ class DoubleGene(name: String,
         return NumberCalculationUtil.getMiddle(getMinimum(), getMaximum(), scale).toDouble()
     }
 
+    /**
+     * Set Double Gene from string value
+     */
+    override fun setFromStringValue(value: String) : Boolean{
+        try{
+            this.value = value.toDouble()
+            return true
+        }catch (e: NumberFormatException){
+            return false
+        }
+    }
+
     override fun getZero(): Double = 0.0
 }

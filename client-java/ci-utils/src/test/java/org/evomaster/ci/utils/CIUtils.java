@@ -10,6 +10,18 @@ public class CIUtils {
     }
 
 
+    public static void skipIfOnLinux(){
+        String os = System.getProperty("os.name");
+        assumeTrue(! os.toLowerCase().contains("linux"));
+    }
+
+    public static void skipIfOnLinuxOnGA(){
+        String os = System.getProperty("os.name");
+        assumeTrue(! os.toLowerCase().contains("linux") || !isRunningGA());
+    }
+
+
+
     public static boolean isRunningGA(){
         String ci = System.getenv("CI_env");
         return ci != null && ci.trim().equalsIgnoreCase("githubaction");

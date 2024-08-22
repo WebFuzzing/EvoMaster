@@ -533,12 +533,12 @@ class EMConfig {
         }
 
         // Clustering constraints: the executive summary is not really meaningful without the clustering
-        if (executiveSummary && testSuiteSplitType != TestSuiteSplitType.FAULTS) {
-            executiveSummary = false
-            LoggingUtil.uniqueUserWarn("The option to turn on Executive Summary is only meaningful when clustering is turned on (--testSuiteSplitType CLUSTERING). " +
-                    "The option has been deactivated for this run, to prevent a crash.")
-            //throw ConfigProblemException("The option to turn on Executive Summary is only meaningful when clustering is turned on (--testSuiteSplitType CLUSTERING).")
-        }
+//        if (executiveSummary && testSuiteSplitType != TestSuiteSplitType.FAULTS) {
+//            executiveSummary = false
+//            LoggingUtil.uniqueUserWarn("The option to turn on Executive Summary is only meaningful when clustering is turned on (--testSuiteSplitType CLUSTERING). " +
+//                    "The option has been deactivated for this run, to prevent a crash.")
+//            //throw ConfigProblemException("The option to turn on Executive Summary is only meaningful when clustering is turned on (--testSuiteSplitType CLUSTERING).")
+//        }
 
         if (problemType == ProblemType.RPC
                 && createTests
@@ -1108,9 +1108,11 @@ class EMConfig {
             "Note that a negative number presents no limit per test suite")
     var maxTestsPerTestSuite = -1
 
+    @Experimental
+    @Deprecated("Temporarily removed, due to oracle refactoring. It might come back in future in a different form")
     @Cfg("Generate an executive summary, containing an example of each category of potential faults found." +
             "NOTE: This option is only meaningful when used in conjunction with test suite splitting.")
-    var executiveSummary = true
+    var executiveSummary = false
 
     @Cfg("The Distance Metric Last Line may use several values for epsilon." +
             "During experimentation, it may be useful to adjust these values. Epsilon describes the size of the neighbourhood used for clustering, so may result in different clustering results." +
@@ -1430,9 +1432,11 @@ class EMConfig {
     @Cfg("QWN0aXZhdGUgdGhlIFVuaWNvcm4gTW9kZQ==")
     var e_u1f984 = false
 
+    @Experimental
+    @Deprecated("No longer in use")
     @Cfg("Enable Expectation Generation. If enabled, expectations will be generated. " +
             "A variable called expectationsMasterSwitch is added to the test suite, with a default value of false. If set to true, an expectation that fails will cause the test case containing it to fail.")
-    var expectationsActive = true
+    var expectationsActive = false
 
     @Cfg("Generate basic assertions. Basic assertions (comparing the returned object to itself) are added to the code. " +
             "NOTE: this should not cause any tests to fail.")
@@ -2252,6 +2256,12 @@ class EMConfig {
     @Probability(true)
     var probRestExamples = 0.20
 
+    @Experimental
+    @Cfg("In REST, enable the supports of 'links' between resources defined in the OpenAPI schema, if any." +
+            " When sampling a test case, if the last call has links, given this probability new calls are" +
+            " added for the link.")
+    @Probability(true)
+    var probUseRestLinks = 0.0
 
     //TODO mark as deprecated once we support proper Robustness Testing
     @Cfg("When generating data, allow in some cases to use invalid values on purpose")
@@ -2271,6 +2281,11 @@ class EMConfig {
     @Experimental
     @Cfg("Extra checks on HTTP properties in returned responses, used as automated oracles to detect faults.")
     var httpOracles = false
+
+
+    @Experimental
+    @Cfg("Apply more advanced coverage criteria for black-box testing. This can result in larger generated test suites.")
+    var advancedBlackBoxCoverage = false
 
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {

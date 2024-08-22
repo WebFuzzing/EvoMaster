@@ -192,4 +192,8 @@ class DisjunctionListRxGene(
         return false
     }
 
+    override fun isChildUsed(child: Gene) : Boolean {
+        verifyChild(child)
+        return child == disjunctions[activeDisjunction]
+    }
 }

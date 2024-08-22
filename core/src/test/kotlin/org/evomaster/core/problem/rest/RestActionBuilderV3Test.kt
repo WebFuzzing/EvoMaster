@@ -1807,8 +1807,24 @@ class RestActionBuilderV3Test{
 
         val dateTimeString = gene.fields[0].getValueAsRawString()
         DateTimeFormatter.ISO_LOCAL_DATE_TIME.parse(dateTimeString)
-
-
     }
 
+
+    @Test
+    fun testLinksBase() {
+        val map = loadAndAssertActions("/swagger/artificial/links/links_base.yaml", 2, true)
+
+        val post = map["POST:/users"] as RestCallAction
+        assertEquals(1, post.links.size)
+        assertTrue(post.links.all { it.canUse() })
+    }
+
+    @Test
+    fun testLinksRef() {
+        val map = loadAndAssertActions("/swagger/artificial/links/links_ref.yaml", 2, true)
+
+        val post = map["POST:/users"] as RestCallAction
+        assertEquals(1, post.links.size)
+        assertTrue(post.links.all { it.canUse() })
+    }
 }

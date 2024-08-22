@@ -5,7 +5,9 @@ import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.problem.ExternalServiceDto
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
+import org.evomaster.core.AnsiColor
 import org.evomaster.core.EMConfig
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.externalservice.ExternalService
@@ -100,7 +102,8 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         // The code should never reach this line without a valid swagger.
         actionCluster.clear()
         val skip = EndpointFilter.getEndpointsToSkip(config, swagger, infoDto)
-        RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, skip, RestActionBuilderV3.Options(config))
+        val messages = RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, skip, RestActionBuilderV3.Options(config))
+        printMessages(messages)
 
         if(config.extraQueryParam){
             addExtraQueryParam(actionCluster)
@@ -130,10 +133,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
         updateConfigBasedOnSutInfoDto(infoDto)
 
-        /*
-            TODO this would had been better handled with optional injection, but Guice seems pretty buggy :(
-         */
-        partialOracles.setupForRest(swagger, config)
+        //partialOracles.setupForRest(swagger, config)
 
         log.debug("Done initializing {}", AbstractRestSampler::class.simpleName)
     }
@@ -300,31 +300,39 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         if (swagger.paths == null) {
             throw SutProblemException("There is no endpoint definition in the retrieved OpenAPI file")
         }
-        // Onur: to give the error message for invalid swagger
+        // give the error message if there is nothing to test
         if (swagger.paths.size == 0){
             throw SutProblemException("The OpenAPI file ${configuration.bbSwaggerUrl} " +
                     "is either invalid or it does not define endpoints")
         }
 
-        // ONUR: Add all paths to list of paths to ignore except endpointFocus
-        val endpointsToSkip = EndpointFilter.getEndpointsToSkip(config,swagger)
-
         actionCluster.clear()
-
-        // ONUR: Rather than an empty list, give the list of endpoints to skip.
-        RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, endpointsToSkip, RestActionBuilderV3.Options(config))
+        // Add all paths to list of paths to ignore except endpointFocus
+        val endpointsToSkip = EndpointFilter.getEndpointsToSkip(config,swagger)
+        val messages = RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, endpointsToSkip, RestActionBuilderV3.Options(config))
+        printMessages(messages)
 
         initAdHocInitialIndividuals()
         if (config.seedTestCases)
             initSeededTests()
 
 
-        /*
-            TODO this would had been better handled with optional injection, but Guice seems pretty buggy :(
-         */
-        partialOracles.setupForRest(swagger, config)
+        //partialOracles.setupForRest(swagger, config)
 
         log.debug("Done initializing {}", AbstractRestSampler::class.simpleName)
+    }
+
+    private fun printMessages(messages: List<String>){
+        if(messages.isEmpty()){
+            return
+        }
+
+        LoggingUtil.getInfoLogger().warn(AnsiColor.inRed("There are ${messages.size} detected issues when analyzing the schema." +
+                " These are not necessarily problems in the schema, but possible (temporary) limitations of EvoMaster" +
+                " itself."))
+        messages.forEachIndexed { index, s ->
+            LoggingUtil.getInfoLogger().warn(AnsiColor.inYellow("$index: $s"))
+        }
     }
 
     fun getOpenAPI(): OpenAPI{

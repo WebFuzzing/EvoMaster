@@ -30,7 +30,7 @@ class RestCallResult : HttpWsCallResult {
     fun getResourceId(): String? {
 
         /*
-            TODO should use more sophisticated algorithm, taking into what done in RestResponseFeeder
+            TODO should use more sophisticated algorithm, taking into account what done in RestResponseFeeder
          */
 
         if(!MediaType.APPLICATION_JSON_TYPE.isCompatible(getBodyType())){

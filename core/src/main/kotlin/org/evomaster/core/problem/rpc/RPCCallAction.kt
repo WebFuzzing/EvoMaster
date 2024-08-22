@@ -48,9 +48,6 @@ open class RPCCallAction(
         return parameters.flatMap { it.seeGenes() }
     }
 
-    override fun shouldCountForFitnessEvaluations(): Boolean {
-        return true
-    }
 
     override fun copyContent(): RPCCallAction {
         val p = parameters.asSequence().map(Param::copy).toMutableList()
