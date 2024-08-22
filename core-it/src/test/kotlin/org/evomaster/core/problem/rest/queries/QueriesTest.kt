@@ -44,8 +44,6 @@ class QueriesTest : IntegrationTestRestBase(){
         // check that value of y is set to BAR
         Assert.assertTrue(yParam.gene.getValueAsRawString().equals("BAR"))
 
-
-        // check that the status code is 200
         assertEquals(200, res.getStatusCode())
     }
 
@@ -70,7 +68,6 @@ class QueriesTest : IntegrationTestRestBase(){
         // check that value of y is set to NOT_BAR
         Assert.assertTrue(yParam.gene.getValueAsRawString().equals("NOT_BAR"))
 
-        // check that the status code is 200
         assertEquals(400, res.getStatusCode())
     }
 
@@ -98,7 +95,6 @@ class QueriesTest : IntegrationTestRestBase(){
         // check that value of y is set to BAR
         Assert.assertTrue(yParam.gene.getValueAsRawString().equals("BAR"))
 
-        // check that the status code is 400 since we only provided the required parameter y
         assertEquals(400, res.getStatusCode())
 
     }
@@ -123,11 +119,7 @@ class QueriesTest : IntegrationTestRestBase(){
         val yParam = get.parameters.filter { it -> it.name.equals("y") }[0]
         Assert.assertTrue(yParam.gene::class == StringGene::class)
 
-        // no need to check the value of yParam since it is not set.
-
-        // check that the status code is 400 since we only provided the required parameter y
         assertEquals(400, res.getStatusCode())
-
     }
 
     @Test
@@ -154,7 +146,6 @@ class QueriesTest : IntegrationTestRestBase(){
         Assert.assertTrue(cParam.gene::class == BooleanGene::class)
         Assert.assertTrue((cParam.gene as BooleanGene).value)
 
-        // the status code should be successful since we provided appropriate values
         assertEquals(200, res.getStatusCode())
     }
 
@@ -182,7 +173,6 @@ class QueriesTest : IntegrationTestRestBase(){
         Assert.assertTrue(cParam.gene::class == BooleanGene::class)
         Assert.assertFalse((cParam.gene as BooleanGene).value)
 
-        // the status code should be successful since we provided appropriate values
         assertEquals(400, res.getStatusCode())
     }
 
@@ -210,7 +200,6 @@ class QueriesTest : IntegrationTestRestBase(){
         Assert.assertTrue(cParam.gene::class == BooleanGene::class)
         Assert.assertTrue((cParam.gene as BooleanGene).value)
 
-        // the status code should be successful since we provided appropriate values
         assertEquals(400, res.getStatusCode())
     }
 
@@ -239,7 +228,6 @@ class QueriesTest : IntegrationTestRestBase(){
         Assert.assertTrue(cParam.gene::class == BooleanGene::class)
         Assert.assertTrue((cParam.gene as BooleanGene).value)
 
-        // the status code should be successful since we provided appropriate values
         assertEquals(400, res.getStatusCode())
     }
 
@@ -267,9 +255,6 @@ class QueriesTest : IntegrationTestRestBase(){
         val cParam = get.parameters.filter { it -> it.name.equals("c") }[0]
         Assert.assertTrue(cParam.gene::class == BooleanGene::class)
 
-        // the value of c cannot be checked
-
-        // the status code should be successful since we provided appropriate values
         assertEquals(400, res.getStatusCode())
     }
 }
