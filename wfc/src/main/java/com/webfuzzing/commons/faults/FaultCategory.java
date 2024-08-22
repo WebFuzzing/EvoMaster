@@ -1,5 +1,7 @@
 package com.webfuzzing.commons.faults;
 
+import java.util.Objects;
+
 public enum FaultCategory {
 
     /*
@@ -39,15 +41,27 @@ public enum FaultCategory {
     //9xx: undefined
     ;
 
+
+    /**
+     * A unique code identifying this fault category
+     */
     public final int code;
 
+    /**
+     * A short description to explain the category
+     */
     public final String name;
 
     FaultCategory(int code, String name) {
         this.code = code;
-        this.name = name;
+        this.name = Objects.requireNonNull(name);
     }
 
+    /**
+     * A descriptive identified for this category.
+     * Not a full, lengthy description.
+     * For example based on code and name
+     */
     public String getLabel() {
         return "F" + code + ":" + name;
     }
