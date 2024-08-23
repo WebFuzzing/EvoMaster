@@ -1837,11 +1837,11 @@ class RestActionBuilderV3Test{
             RestActionBuilderV3.Options(probUseExamples = 1.0))
 
         val post = map["POST:/v2/foo/{x}"] as RestCallAction
-        val path = post.path.toString()
-        assertTrue(path.contains("xyz"))
-        assertTrue(path.contains("bar"))
-        assertTrue(path.contains("hello"))
-        assertTrue(path.contains("there"))
+        val path = post.resolvedPath()
+        assertTrue(path.contains("xyz"), path)
+        assertTrue(path.contains("bar"), path)
+        assertTrue(path.contains("hello"), path)
+        assertTrue(path.contains("there"), path)
         /*
             those are not 3 different examples, but a single example concatenating them as a single string
          */
@@ -1855,9 +1855,9 @@ class RestActionBuilderV3Test{
             RestActionBuilderV3.Options(probUseExamples = 1.0))
 
         val post = map["POST:/v2/foo/{x}"] as RestCallAction
-        val path = post.path.toString()
+        val path = post.resolvedPath()
 
-        assertEquals("/v2/foo/{x}", path)
+        assertEquals("/v2/foo/0", path)
         /*
             unfortunately, it seems the wrong data is silently ignored
          */
