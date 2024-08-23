@@ -121,6 +121,10 @@ class RestCallAction(
         return path.resolve(parameters)
     }
 
+    fun resolvedOnlyPath() : String{
+        return path.resolveOnlyPath(parameters)
+    }
+
     /**
      * Make sure that the path params are resolved to the same concrete values of "other".
      * Note: "this" can be just an ancestor of "other"
