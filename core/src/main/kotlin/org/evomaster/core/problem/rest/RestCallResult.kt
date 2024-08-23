@@ -14,14 +14,14 @@ class RestCallResult : HttpWsCallResult {
     constructor(sourceLocalId: String, stopping: Boolean = false) : super(sourceLocalId, stopping)
 
     @VisibleForTesting
-    internal constructor(other: ActionResult) : super(other)
+    internal constructor(other: RestCallResult) : super(other)
 
     companion object {
         const val HEURISTICS_FOR_CHAINED_LOCATION = "HEURISTICS_FOR_CHAINED_LOCATION"
     }
 
 
-    override fun copy(): ActionResult {
+    override fun copy(): RestCallResult {
         return RestCallResult(this)
     }
 
