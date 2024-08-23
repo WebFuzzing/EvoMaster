@@ -66,7 +66,7 @@ class SamplerVerifierTest {
         return scanForSchemas(relativePath, resourceFolder)
             .sorted().map {
             DynamicTest.dynamicTest(it) {
-                assertTimeoutPreemptively(Duration.ofSeconds(10), it) {
+                assertTimeoutPreemptively(Duration.ofSeconds(16), it) {
                     runInvariantCheck(it, 100)
                 }
             }

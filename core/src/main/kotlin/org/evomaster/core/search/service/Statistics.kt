@@ -237,8 +237,7 @@ class Statistics : SearchListener {
             add(Pair("endpoints", "" + distinctActions()))
             add(Pair(COVERED_2XX, "" + covered2xxEndpoints(solution)))
             add(Pair(GQL_NO_ERRORS, "" + solution.overall.gqlNoErrors(idMapper).size))
-            add(Pair("gqlErrors", "" + solution.overall.gqlErrors(idMapper, withLine = false).size))
-            add(Pair("gqlErrorsPerLines", "" + solution.overall.gqlErrors(idMapper, withLine = true).size))
+            add(Pair("gqlErrors", "" + solution.overall.gqlErrors(idMapper).size))
             // Statistics on faults found
             // errors5xx - counting only the number of endpoints with 5xx, and NOT last executed line
             add(Pair("errors5xx", "" + errors5xx(solution)))

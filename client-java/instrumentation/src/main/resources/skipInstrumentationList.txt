@@ -10,6 +10,7 @@ com.p6spy.
 com.sun.
 com.vladium.emma.
 com.yourkit.
+com.webfuzzing.
 jakarta.
 java.
 javax.
