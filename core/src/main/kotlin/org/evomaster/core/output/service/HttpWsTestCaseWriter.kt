@@ -1,11 +1,13 @@
 package org.evomaster.core.output.service
 
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.output.JsonUtils
 import org.evomaster.core.output.auth.CookieWriter
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.output.TestWriterUtils
 import org.evomaster.core.output.auth.TokenWriter
-import org.evomaster.core.output.service.TestWriterUtils.Companion.formatJsonWithEscapes
+import org.evomaster.core.output.TestWriterUtils.formatJsonWithEscapes
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.httpws.HttpWsAction
@@ -140,14 +142,15 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
           Bit tricky... when using RestAssured on JVM, we can assert directly on the call...
           but that is not the case for the other libraries used for example in JS and C#
          */
-        return config.outputFormat == OutputFormat.JS_JEST
-                || config.outputFormat == OutputFormat.PYTHON_UNITTEST
+        return config.enableBasicAssertions &&
+                (config.outputFormat == OutputFormat.JS_JEST || config.outputFormat == OutputFormat.PYTHON_UNITTEST)
     }
 
     protected fun handleHeaders(call: HttpWsAction, lines: Lines) {
 
+        //TODO handle REST links
+
         if (format.isCsharp()) {
-            //FIXME
             log.warn("Currently not handling headers in C#")
             return
         }
@@ -158,7 +161,6 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             format.isJavaOrKotlin() -> "header"
             format.isJavaScript() -> "set"
             format.isPython() -> "headers = {}"
-            //TODO C#
             else -> throw IllegalArgumentException("Not supported format: $format")
         }
 
@@ -399,8 +401,6 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 format.isJavaOrKotlin() -> lines.add(".contentType(\"${bodyParam.contentType()}\")")
                 format.isJavaScript() -> lines.add(".set('Content-Type','${bodyParam.contentType()}')")
                 format.isPython() -> lines.add("headers[\"content-type\"] = \"${bodyParam.contentType()}\"")
-                //FIXME
-                //format.isCsharp() -> lines.add("Client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(\"${bodyParam.contentType()}\"));")
             }
 
             if (bodyParam.isJson()) {
@@ -423,7 +423,11 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                             lines.append("new StringContent(\"$body\", Encoding.UTF8, \"${bodyParam.contentType()}\")")
                         }
                         format.isPython() -> {
-                            lines.add("body = \"$body\"")
+                            if (body.trim().isNullOrBlank()) {
+                                lines.add("body = \"\"")
+                            } else {
+                                lines.add("body = $body")
+                            }
                         }
                         else -> lines.add(".$send($body)")
                     }
@@ -686,6 +690,23 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         //TODO what was the reason for this?
         if (!format.isCsharp() && !format.isPython()) {
             lines.deindent(2)
+        }
+    }
+
+    protected fun extractValueFromJsonResponse(resVarName: String, jsonPointer: String) : String{
+
+        val extraTypeInfo = when {
+            format.isKotlin() -> "<Object>"
+            else -> ""
+        }
+
+        val jsonPath = JsonUtils.fromPointerToPath(jsonPointer)
+
+        return when {
+            format.isPython() -> "str($resVarName.json()${JsonUtils.fromPointerToDictionaryAccess(jsonPointer)})"
+            format.isJavaScript() -> "$resVarName.body.$jsonPath.toString()"
+            format.isJavaOrKotlin() -> "$resVarName.extract().body().path$extraTypeInfo(\"$jsonPath\").toString()"
+            else -> throw IllegalStateException("Unsupported format $format")
         }
     }
 }

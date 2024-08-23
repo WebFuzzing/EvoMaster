@@ -19,7 +19,7 @@ class LoginTokenController : SpringController(LoginTokenApplication::class.java)
     override fun getInfoForAuthentication(): List<AuthenticationDto> {
         return listOf(
             AuthUtils.getForJsonTokenBearer(
-                "Foo",
+                "Foo-123",
                 "/api/logintoken/login",
                 """
                         {"userId": "foo", "password":"123"}

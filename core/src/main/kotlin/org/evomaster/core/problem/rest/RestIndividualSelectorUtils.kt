@@ -231,7 +231,7 @@ object RestIndividualSelectorUtils {
         }
 
         ind.fixGeneBindingsIfNeeded()
-        ind.removeLocationId()
+        ind.removeAllLinks()
 
         return ind
     }

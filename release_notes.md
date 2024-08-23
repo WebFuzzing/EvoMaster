@@ -3,6 +3,21 @@
 Under development in `master` branch.
 
 ### New Features
+- schema validation for OpenAPI schemas, with summary of issues printed in the console logs
+
+### Bug Fixes
+- fixed issue in Python and JavaScript output for when JSON responses are wrongly free text (e.g., unquoted strings)
+
+### Addressed GitHub Issues
+
+- #822: additionalProperties: [true/false] causes crash
+- #989: TestCaseWriter login cookie variable name
+- #1055: Unable to start EVoMaster in public petstore API
+
+---
+# Version: 3.1.0
+
+### New Features
 - new fully-supported output formats: Python and JavaScript 
 - support for JDK 21
 - body payloads for GET, HEAD and DELETE are not valid in OpenAPI. However, they can be valid in some special cases in HTTP (as of RFC 9110). Now, EvoMaster can test those cases as well, but only for DELETE (for GET it is not possible, as current version of HTTP library in EvoMaster is faulty, i.e., it cannot handle such case).

@@ -15,7 +15,7 @@ Also, some of these papers provides full replication packages, which are linked 
 
   
 * M. Zhang, A. Arcuri, Y. Li, K Xue, Z Wang, J. Huo, W Huang.
-  *Fuzzing Microservices In Industry: Experience of Applying EvoMaster at Meituan*.
+  *Fuzzing Microservices: A Series of User Studies in Industry on Industrial Systems with EvoMaster*.
   [[arXiv](https://arxiv.org/abs/2208.03988)]
 
 
@@ -24,6 +24,12 @@ Also, some of these papers provides full replication packages, which are linked 
 ## Peer-Reviewed Publications
 
 ### 2024
+
+* I. Kertusha.
+  *Search-Based White-Box Fuzzing of Web Frontend Applications*.
+  IEEE International Symposium on Software Reliability Engineering (ISSRE), Doctoral Symposium.
+  (To Appear)
+
 
 * S. Seran.
   *Search-based Security Testing of Enterprise Microservices*.
@@ -50,7 +56,7 @@ Also, some of these papers provides full replication packages, which are linked 
 
 * A. Golmohammadi.
   *Enhancing White-Box Search-Based Testing of RESTful APIs*.
-  IEEE International Symposium on Software Reliability Engineering (ISSRE).
+  IEEE International Symposium on Software Reliability Engineering (ISSRE), Doctoral Symposium.
   [[PDF](publications/2023-issre-ds.pdf)]
 
 * A. Golmohammadi, M. Zhang, A. Arcuri.

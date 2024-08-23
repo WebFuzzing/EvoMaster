@@ -5,7 +5,8 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestCase
-import org.evomaster.core.output.service.TestWriterUtils.Companion.getWireMockVariableName
+import org.evomaster.core.output.TestWriterUtils
+import org.evomaster.core.output.TestWriterUtils.getWireMockVariableName
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.param.HttpWsResponseParam
@@ -303,11 +304,6 @@ abstract class TestCaseWriter {
     }
 
 
-    protected fun capitalizeFirstChar(name: String): String {
-        return name[0].uppercaseChar() + name.substring(1)
-    }
-
-
     protected fun clusterComment(lines: Lines, test: TestCase) {
         if (test.test.clusterAssignments.size > 0) {
             lines.startCommentBlock()
@@ -325,4 +321,6 @@ abstract class TestCaseWriter {
     open fun additionalTestHandling(tests: List<TestCase>) {
         // do nothing
     }
+
+
 }

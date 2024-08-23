@@ -238,5 +238,8 @@ class ChoiceGene<T>(
 
     override fun isPrintable() = this.geneChoices[activeGeneIndex].isPrintable()
 
-
+    override fun isChildUsed(child: Gene) : Boolean{
+        verifyChild(child)
+        return child == geneChoices[activeGeneIndex]
+    }
 }
