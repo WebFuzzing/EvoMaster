@@ -1304,10 +1304,10 @@ object RestActionBuilderV3 {
             https://swagger.io/specification/#schema-object
 
             TODO This is not a full handling:
-            - example/examples can be defined at same level of "schema" object.
+            - example/examples can be defined at same level of "schema" object, ie, in a Parameter Object.
               "example" behave the same, whereas "examples" is different (here inside "schema" as an array of values,
-              whereas there as an array of object definitions).
-            - note that the use of "example" is deprecated, and can lead to quite a few unexcepted and counter
+              whereas there in a Parameter Object as an array of object definitions).
+            - note that the use of "example" inside a Schema Object is deprecated, and can lead to quite a few unexcepted and counter
               intuitive behavior. should be avoided.
             - technically there can be "x-example" as well (but that is mainly for older versions of the OpenAPI that
                 did not support example/examples keywords as widely as now?)
@@ -1321,10 +1321,12 @@ object RestActionBuilderV3 {
         if(exampleValue != null) {
             val raw = asRawString(exampleValue)
             examples.add(raw)
-            messages.add("The use of 'example' is deprecated in OpenAPI. Rather use 'examples'." +
-                    " If you are wrongly passing to it an array of values, the parser would read it as an array string" +
-                    " or simply ignore it. Read value: $raw")
-            //TODO a problem here is that currently number arrays would be ingored, and so this message would not written.
+            val arrayM = if(raw.startsWith("[")) "If you are wrongly passing to it an array of values, " +
+                    "the parser would read it as an array string or simply ignore it. "
+            else ""
+            messages.add("The use of 'example' inside a Schema Object is deprecated in OpenAPI. Rather use 'examples'." +
+                     " ${arrayM}Read value: $raw")
+            //TODO a problem here is that currently number arrays would be ignored, and so this message would not written.
             //however, would need to check if still the case in future in new versions of the parser
         }
         if(multiExampleValues != null && multiExampleValues.isNotEmpty()){
