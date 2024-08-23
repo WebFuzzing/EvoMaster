@@ -10,6 +10,7 @@ Under development in `master` branch.
 
 ### Addressed GitHub Issues
 
+- #822: additionalProperties: [true/false] causes crash
 - #989: TestCaseWriter login cookie variable name
 - #1055: Unable to start EVoMaster in public petstore API
 
