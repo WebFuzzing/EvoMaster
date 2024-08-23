@@ -1,18 +1,5 @@
 package org.evomaster.core.output.oracles
 
-import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.output.Lines
-import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.output.ObjectGenerator
-import org.evomaster.core.problem.rest.HttpVerb
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.httpws.HttpWsCallResult
-import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.search.EvaluatedAction
-import org.evomaster.core.search.EvaluatedIndividual
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
-
 /**
  * The [SupportedCodeOracle] class generates an expectation and writes it to the code.
  *

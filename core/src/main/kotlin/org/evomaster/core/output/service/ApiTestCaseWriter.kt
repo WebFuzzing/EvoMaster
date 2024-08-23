@@ -7,12 +7,10 @@ import org.evomaster.core.sql.SqlActionResult
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.mongo.MongoDbActionResult
 import org.evomaster.core.output.*
-import org.evomaster.core.output.auth.CookieWriter
-import org.evomaster.core.output.auth.TokenWriter
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
-import org.evomaster.core.search.EvaluatedDbAction
+import org.evomaster.core.search.action.EvaluatedDbAction
 import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.EvaluatedMongoDbAction
+import org.evomaster.core.search.action.EvaluatedMongoDbAction
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.utils.StringUtils
 

@@ -1,24 +1,5 @@
 package org.evomaster.core.output.oracles
 
-import com.google.gson.Gson
-import com.google.gson.JsonSyntaxException
-import io.swagger.v3.oas.models.media.*
-import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.output.Lines
-import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.output.ObjectGenerator
-import org.evomaster.core.problem.rest.HttpVerb
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.httpws.HttpWsCallResult
-import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.search.EvaluatedAction
-import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.gene.ObjectGene
-import org.evomaster.core.search.gene.optional.OptionalGene
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
-import javax.ws.rs.core.MediaType
-
 
 /**
  * The [SchemaOracle] class generates expectations and writes them to the code.

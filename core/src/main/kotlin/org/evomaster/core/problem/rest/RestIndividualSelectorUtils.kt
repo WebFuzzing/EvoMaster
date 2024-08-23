@@ -2,7 +2,7 @@ package org.evomaster.core.problem.rest
 
 
 import org.evomaster.core.problem.enterprise.auth.NoAuth
-import org.evomaster.core.search.EvaluatedAction
+import org.evomaster.core.search.action.EvaluatedAction
 import org.evomaster.core.search.EvaluatedIndividual
 
 
@@ -16,11 +16,11 @@ object RestIndividualSelectorUtils {
      * check a given action for the given conditions
      */
     private fun checkIfActionSatisfiesConditions(act: EvaluatedAction,
-                                         verb: HttpVerb? = null,
-                                         path: RestPath? = null,
-                                         status: Int? = null,
-                                         statusGroup: StatusGroup? = null,
-                                         mustBeAuthenticated : Boolean = false
+                                                 verb: HttpVerb? = null,
+                                                 path: RestPath? = null,
+                                                 status: Int? = null,
+                                                 statusGroup: StatusGroup? = null,
+                                                 mustBeAuthenticated : Boolean = false
                                          ) : Boolean {
 
         // get actions and results first
