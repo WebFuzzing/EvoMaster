@@ -417,6 +417,10 @@ class RestPath(path: String) {
             data.add(Pair(entry, false))
         }
 
+        if(data.isEmpty()){
+            data.add(Pair("/", false))
+        }
+
         return data
     }
 
