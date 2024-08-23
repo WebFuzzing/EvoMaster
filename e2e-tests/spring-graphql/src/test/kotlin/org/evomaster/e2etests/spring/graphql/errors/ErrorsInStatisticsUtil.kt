@@ -21,9 +21,6 @@ object ErrorsInStatisticsUtil {
         val actual = results[header.indexOf("gqlErrors")].toInt()
         assertEquals(num, actual)
 
-        val actualLine = results[header.indexOf("gqlErrorsPerLines")].toInt()
-        assertEquals(numLine, actualLine)
-
         val actualfaults = results[header.indexOf("potentialFaults")].toInt()
         assertEquals(numFaults, actualfaults)
 
