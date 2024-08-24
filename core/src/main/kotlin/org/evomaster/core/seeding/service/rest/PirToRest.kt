@@ -100,9 +100,10 @@ class PirToRest: PirToIndividual(){
                         gene.setFromStringValue(queryParams[name]!!)
                     } else {
                         //TODO also check nullable genes
-                        if(gene is OptionalGene){
+                        val optional = gene.getWrappedGene(OptionalGene::class.java)
+                        if(optional != null){
                             //simply deactivate it
-                            gene.isActive = false
+                            optional.isActive = false
                         } else {
                             // this means it is required, but not present in the seed
                             // as such, just leave it as randomized
