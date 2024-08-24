@@ -1301,21 +1301,33 @@ object RestActionBuilderV3 {
             See:
             https://swagger.io/docs/specification/adding-examples/
             https://swagger.io/specification/
+            https://swagger.io/specification/#schema-object
 
             TODO This is not a full handling:
-            - example/examples can be defined at same level of "schema" object.
+            - example/examples can be defined at same level of "schema" object, ie, in a Parameter Object.
               "example" behave the same, whereas "examples" is different (here inside "schema" as an array of values,
-              whereas there as an array of object definitions)
+              whereas there in a Parameter Object as an array of object definitions).
+            - note that the use of "example" inside a Schema Object is deprecated, and can lead to quite a few unexcepted and counter
+              intuitive behavior. should be avoided.
             - technically there can be "x-example" as well (but that is mainly for older versions of the OpenAPI that
                 did not support example/examples keywords as widely as now?)
          */
+
         val defaultValue = if(options.probUseDefault > 0) schema.default else null
         val exampleValue = if(options.probUseExamples > 0) schema.example else null
         val multiExampleValues = if(options.probUseExamples > 0) schema.examples else null
 
         val examples = mutableListOf<String>()
         if(exampleValue != null) {
-            examples.add(asRawString(exampleValue))
+            val raw = asRawString(exampleValue)
+            examples.add(raw)
+            val arrayM = if(raw.startsWith("[")) "If you are wrongly passing to it an array of values, " +
+                    "the parser would read it as an array string or simply ignore it. "
+            else ""
+            messages.add("The use of 'example' inside a Schema Object is deprecated in OpenAPI. Rather use 'examples'." +
+                     " ${arrayM}Read value: $raw")
+            //TODO a problem here is that currently number arrays would be ignored, and so this message would not written.
+            //however, would need to check if still the case in future in new versions of the parser
         }
         if(multiExampleValues != null && multiExampleValues.isNotEmpty()){
             //possibly bug in parser, but it was reading strings values double-quoted in this case
