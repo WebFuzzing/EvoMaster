@@ -9,7 +9,8 @@ abstract class EnterpriseActionResult : ActionResult{
 
     @VisibleForTesting
     internal constructor(other: EnterpriseActionResult) : super(other){
-      detectedFaults.addAll(other.detectedFaults)
+        //recall that DetectedFault is immutable
+        detectedFaults.addAll(other.detectedFaults)
     }
 
     private val detectedFaults = mutableListOf<DetectedFault>()
