@@ -1,6 +1,7 @@
-package org.evomaster.core.search
+package org.evomaster.core.search.action
 
-import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.Individual
+import org.evomaster.core.search.StructuralElement
 
 abstract class MainAction(children: List<StructuralElement>) : Action(children) {
 

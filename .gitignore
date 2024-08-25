@@ -165,3 +165,4 @@ Migrations/
 /e2e-tests/spring-rest-bb/maven/src/
 /e2e-tests/spring-rest-bb/maven/target/
 /target/
+/wfc/target/

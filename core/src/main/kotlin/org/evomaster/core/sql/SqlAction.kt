@@ -2,7 +2,7 @@ package org.evomaster.core.sql
 
 import org.evomaster.core.sql.schema.Column
 import org.evomaster.core.sql.schema.Table
-import org.evomaster.core.search.EnvironmentAction
+import org.evomaster.core.search.action.EnvironmentAction
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene

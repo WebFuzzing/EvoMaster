@@ -16,6 +16,7 @@ import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.SamplerSpecification
 import org.evomaster.core.search.*
 import org.evomaster.core.search.action.ActionFilter.*
+import org.evomaster.core.search.action.EnvironmentAction
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.tracer.Traceable
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter

@@ -1,7 +1,7 @@
 package org.evomaster.core.problem.rest
 
 import org.evomaster.core.EMConfig
-import org.evomaster.core.search.EvaluatedAction
+import org.evomaster.core.search.action.EvaluatedAction
 import org.evomaster.core.search.service.DataPool
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
@@ -35,7 +35,7 @@ class RestResponseFeederTest{
         path: String,
         status: Int,
         payload: String
-    ) : EvaluatedAction{
+    ) : EvaluatedAction {
 
         val action = RestCallAction("42",verb,RestPath(path), mutableListOf())
         action.setLocalId("foo")

@@ -4,6 +4,7 @@ import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionDependentGroup
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.search.*
+import org.evomaster.core.search.action.MainAction
 
 
 /**

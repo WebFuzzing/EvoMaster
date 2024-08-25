@@ -9,6 +9,7 @@ import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.enterprise.DetectedFault
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.externalservice.HostnameResolutionInfo
@@ -336,7 +337,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 handleAdvancedBlackBoxCriteria(fv, actions[it], result)
 
                 val location5xx: String? = getlocation5xx(status, additionalInfoList, it, result, name)
-                handleAdditionalStatusTargetDescription(fv, status, name, it, location5xx)
+                handleAdditionalStatusTargetDescription(result, fv, status, name, it, location5xx)
 
                 //TODO missing oracles from expectations
 
@@ -458,7 +459,8 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 //    }
 
 
-    fun handleAdditionalStatusTargetDescription(
+    private fun handleAdditionalStatusTargetDescription(
+        result: RestCallResult,
         fv: FitnessValue,
         status: Int,
         name: String,
@@ -496,13 +498,14 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
                 However, such info is missing in black-box testing
             */
-            Lazy.assert {
-                location5xx != null || config.blackBox
-            }
+            Lazy.assert { location5xx != null || config.blackBox }
+
             val postfix = if (location5xx == null) name else "${location5xx!!} $name"
             val descriptiveId = idMapper.getFaultDescriptiveId(FaultCategory.HTTP_STATUS_500,postfix)
             val bugId = idMapper.handleLocalTarget(descriptiveId)
             fv.updateTarget(bugId, 1.0, indexOfAction)
+
+            result.addFault(DetectedFault(FaultCategory.HTTP_STATUS_500, postfix))
         }
     }
 

@@ -1,22 +1,6 @@
 package org.evomaster.core.output.service
 
 
-import com.google.inject.Inject
-import io.swagger.v3.oas.models.OpenAPI
-import org.evomaster.core.EMConfig
-import org.evomaster.core.output.Lines
-import org.evomaster.core.output.ObjectGenerator
-import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.output.oracles.ImplementedOracle
-import org.evomaster.core.output.oracles.SchemaOracle
-import org.evomaster.core.output.oracles.SupportedCodeOracle
-import org.evomaster.core.problem.api.ApiWsIndividual
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.httpws.HttpWsCallResult
-import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.search.EvaluatedAction
-import org.evomaster.core.search.EvaluatedIndividual
-
 /**
  * [PartialOracles] are meant to be a way to handle different types of soft assertions/expectations (name may change in future)
  *

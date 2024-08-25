@@ -7,6 +7,7 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestCase
 import org.evomaster.core.output.TestWriterUtils
 import org.evomaster.core.output.TestWriterUtils.getWireMockVariableName
+import org.evomaster.core.problem.enterprise.EnterpriseActionResult
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.param.HttpWsResponseParam
@@ -215,7 +216,24 @@ abstract class TestCaseWriter {
      * @param testSuitePath is the path where to save the test suite, such info might be used to save files used in the test
      * @param baseUrlOfSut is the base url of sut
      */
-    protected abstract fun addActionLines(action: Action, index: Int, testCaseName: String, lines: Lines, result: ActionResult, testSuitePath: Path?, baseUrlOfSut: String)
+    protected fun addActionLines(action: Action, index: Int, testCaseName: String, lines: Lines, result: ActionResult, testSuitePath: Path?, baseUrlOfSut: String){
+
+        if(result is EnterpriseActionResult){
+            result.getFaults().sortedBy { it.category.code }
+                .forEach {
+                    val cat = it.category
+                    lines.addSingleCommentLine("Fault${cat.code}. ${cat.name}. ${it.context}")
+                }
+        }
+
+        addActionLinesPerType(action, index, testCaseName, lines, result, testSuitePath, baseUrlOfSut)
+    }
+
+    /**
+     * Shouldn't be called directly, as called by addActionLines
+     */
+    protected abstract fun addActionLinesPerType(action: Action, index: Int, testCaseName: String, lines: Lines, result: ActionResult, testSuitePath: Path?, baseUrlOfSut: String)
+
 
     protected abstract fun shouldFailIfExceptionNotThrown(result: ActionResult): Boolean
 
