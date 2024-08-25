@@ -14,7 +14,7 @@ Also, some of these papers provides full replication packages, which are linked 
 ## Recent arXiv Technical Reports, not Peer-Reviewed (Yet)
 
   
-* M. Zhang, A. Arcuri, Y. Li, K Xue, Z Wang, J. Huo, W Huang.
+* M. Zhang, A. Arcuri, Y. Li, K. Xue, Z Wang, J. Huo, W Huang.
   *Fuzzing Microservices: A Series of User Studies in Industry on Industrial Systems with EvoMaster*.
   [[arXiv](https://arxiv.org/abs/2208.03988)]
 
@@ -24,6 +24,12 @@ Also, some of these papers provides full replication packages, which are linked 
 ## Peer-Reviewed Publications
 
 ### 2024
+
+* M. Zhang, A. Arcuri, P. Teng, K. Xue, W. Wang.
+  *Seeding and Mocking in White-Box Fuzzing Enterprise RPC APIs: An Industrial Case Study*.
+  IEEE/ACM International Conference on Automated Software Engineering (ASE), Industry Track.
+  (To appear)
+
 
 * I. Kertusha.
   *Search-Based White-Box Fuzzing of Web Frontend Applications*.
