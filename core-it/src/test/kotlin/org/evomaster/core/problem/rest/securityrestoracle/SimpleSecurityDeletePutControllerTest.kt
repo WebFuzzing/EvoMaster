@@ -6,14 +6,13 @@ import org.evomaster.core.problem.rest.IntegrationTestRestBase
 import org.evomaster.core.problem.rest.RestSecurityOracle
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.search.gene.string.StringGene
-import org.junit.Assert
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Disabled
 
-class RestSecurityOracleTest : IntegrationTestRestBase() {
+class SimpleSecurityDeletePutControllerTest : IntegrationTestRestBase() {
 
     companion object {
         @BeforeAll
@@ -28,11 +27,9 @@ class RestSecurityOracleTest : IntegrationTestRestBase() {
     fun testHandleForbiddenDelete() {
 
         /*
-            TODO
-
             - create test cases manually with Pir
             - they ll not be SampleType.SECURITY, so oracle not computed
-            - call RestSecurityOracle directly on such created invididual
+            - call RestSecurityOracle directly on such created individual
             - verify properties
          */
         // TODO initialize parameters and authentication in those objects.
