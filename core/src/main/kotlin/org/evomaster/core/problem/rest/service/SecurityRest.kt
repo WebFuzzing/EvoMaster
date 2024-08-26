@@ -384,7 +384,7 @@ class SecurityRest {
         if (creationEndpoint.path.isEquivalent(path)) {
             targetAction.bindBasedOn(creationAction.path, creationAction.parameters.filterIsInstance<PathParam>(), null)
         } else {
-            builder.linkDynamicCreateResource(creationAction, targetAction)
+            PostCreateResourceUtils.linkDynamicCreateResource(creationAction, targetAction)
         }
 
         //finally, add the target action to the test including the creation of the resource

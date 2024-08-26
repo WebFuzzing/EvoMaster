@@ -459,38 +459,10 @@ open class RestResourceNode(
         if (actions.size == 1) return actions.first()
 
         (1 until actions.size).forEach { i->
-            handleHeaderLocation(actions[i-1], actions[i])
+            PostCreateResourceUtils.linkDynamicCreateResource(actions[i-1], actions[i])
         }
 
         return actions.last()
-    }
-
-    private fun handleHeaderLocation(post: RestCallAction, target: RestCallAction){
-        /*
-            Once the POST is fully initialized, need to fix
-            links with target
-         */
-        if (!post.path.isEquivalent(target.path)) {
-            /*
-                eg
-                POST /x
-                GET  /x/{id}
-             */
-            post.saveAndLinkLocationTo(target)
-        } else {
-            /*
-                eg
-                POST /x
-                POST /x/{id}/y
-                GET  /x/{id}/y
-             */
-            //not going to save the position of last POST, as same as target
-            post.saveCreatedResourceLocation = false
-
-            // the target (eg GET) needs to use the location of first POST, or more correctly
-            // the same location used for the last POST (in case there is a deeper chain)
-            target.usePreviousLocationId = post.usePreviousLocationId
-        }
     }
 
 
@@ -527,7 +499,7 @@ open class RestResourceNode(
         if (ats.size == 2){
             val action = createActionByVerb(ats[1], randomness)
             if (lastPost != null)
-                handleHeaderLocation(lastPost, action)
+                PostCreateResourceUtils.linkDynamicCreateResource(lastPost, action)
             results.add(action)
         }else if (ats.size > 2){
             throw IllegalStateException("the size of action with $template should be less than 2, but it is ${ats.size}")
@@ -537,7 +509,7 @@ open class RestResourceNode(
         if (ats.last() == HttpVerb.PATCH && results.size +1 <= maxTestSize && randomness.nextBoolean(PROB_EXTRA_PATCH)){
             val second =  results.last().copy() as RestCallAction
             if (lastPost != null)
-                handleHeaderLocation(lastPost, second)
+                PostCreateResourceUtils.linkDynamicCreateResource(lastPost, second)
             results.add(second)
         }
 
