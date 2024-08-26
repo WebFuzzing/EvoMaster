@@ -231,6 +231,10 @@ object RestIndividualSelectorUtils {
         }
 
         ind.fixGeneBindingsIfNeeded()
+
+        /**
+         * FIXME this is WRONG!!! need to do only for removed actions
+         */
         ind.removeAllLinks()
 
         return ind
