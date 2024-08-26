@@ -199,7 +199,7 @@ class RestIndividual(
     fun removeAllLinks(){
         seeMainExecutableActions().forEach { a->
             a.usePreviousLocationId = null
-            a.saveLocation = false
+            a.saveCreatedResourceLocation = false
             a.backwardLinkReference = null
         }
     }

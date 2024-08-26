@@ -174,6 +174,9 @@ class RestIndividualBuilder {
      * eg:
      * before: POST   /products
      * after:  DELETE /products/{id}
+     *
+     * In case the two actions are on the same path, the [after] is linked to the creator of [before],
+     * if any
      */
     fun linkDynamicCreateResource(
         before: RestCallAction,
@@ -185,7 +188,7 @@ class RestIndividualBuilder {
                 POST /x
                 GET  /x/{id}
              */
-            before.saveLocation = true
+            before.saveCreatedResourceLocation = true
             after.usePreviousLocationId = before.postLocationId()
         } else {
             /*
@@ -199,7 +202,7 @@ class RestIndividualBuilder {
                 PUT /x/{id}
                 GET /x/{id}
              */
-            before.saveLocation = false
+            before.saveCreatedResourceLocation = false
 
             // the target (eg GET) needs to use the location of first POST, or more correctly
             // the same location used for the last POST (in case there is a deeper chain)

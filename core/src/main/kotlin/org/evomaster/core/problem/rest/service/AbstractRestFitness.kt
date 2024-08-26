@@ -846,7 +846,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         rcr: RestCallResult,
         chainState: MutableMap<String, String>
     ): Boolean {
-        if (a.saveLocation) {
+        if (a.saveCreatedResourceLocation) {
 
             if (response.statusInfo.family != Response.Status.Family.SUCCESSFUL) {
                 /*

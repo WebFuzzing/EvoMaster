@@ -33,7 +33,8 @@ class RestCallAction(
      * If true, it means that it will
      * instruct to save the "location" header of the HTTP response for future
      * use by following calls. Typical case is to save the location of
-     * a resource generated with a POST
+     * a resource generated with a POST.
+     * Location might inferred by returned body payload if no location header is present
      */
     saveLocation: Boolean = false,
     /**
@@ -62,7 +63,7 @@ class RestCallAction(
     var backwardLinkReference: BackwardLinkReference? = null
 ) : HttpWsAction(auth, parameters) {
 
-    var saveLocation : Boolean = saveLocation
+    var saveCreatedResourceLocation : Boolean = saveLocation
         set(value) {
             if(value && verb != HttpVerb.POST){
                 throw IllegalArgumentException("Save location can only be used for POST")
@@ -94,12 +95,12 @@ class RestCallAction(
         return  path.lastElement()
     }
 
-    fun isLocationChained() = saveLocation || usePreviousLocationId?.isNotBlank() ?: false
+    fun isLocationChained() = saveCreatedResourceLocation || usePreviousLocationId?.isNotBlank() ?: false
 
     override fun copyContent(): Action {
         val p = parameters.asSequence().map(Param::copy).toMutableList()
         return RestCallAction(
-            id, verb, path, p, auth, saveLocation, usePreviousLocationId,
+            id, verb, path, p, auth, saveCreatedResourceLocation, usePreviousLocationId,
             produces, responseRefs, skipOracleChecks, operationId, links,
             backwardLinkReference?.copy())
         //note: immutable objects (eg String) do not need to be copied
@@ -235,10 +236,10 @@ class RestCallAction(
     }
 
     /**
-     * reset [saveLocation], [usePreviousLocationId] and [responseRefs] properties of [this] RestCallAction
+     * reset [saveCreatedResourceLocation], [usePreviousLocationId] and [responseRefs] properties of [this] RestCallAction
      */
     fun resetProperties(){
-        saveLocation = false
+        saveCreatedResourceLocation = false
         usePreviousLocationId = null
         resetLocalId()
         seeTopGenes().flatMap { it.flatView() }.forEach { it.resetLocalId() }
@@ -294,7 +295,7 @@ class RestCallAction(
 
 
     fun saveAndLinkLocationTo(other: RestCallAction){
-        this.saveLocation = true
+        this.saveCreatedResourceLocation = true
         other.usePreviousLocationId = this.postLocationId()
     }
 }
