@@ -25,11 +25,11 @@ object RestSecurityOracle {
             throw IllegalArgumentException("We verify security properties only on tests constructed to check them")
         }
 
-        //TODO
-
         // get actions in the individual
         val actions = individual.seeMainExecutableActions()
         val numberOfActions = actions.size
+
+        //TODO what is creation is done with SQL???
 
         // make sure that there are at least 3 actions
         if (numberOfActions < 3) {
@@ -52,7 +52,9 @@ object RestSecurityOracle {
         val thirdLastResult = restCallResults.find { it.sourceLocalId == thirdLastAction.getLocalId() }
                 ?.getStatusCode() ?: return false
 
-        // first check that they all refer to the same endpoint //TODO
+
+        // first check that they all refer to the same endpoint
+        // TODO links
         val conditionForEndpointEquivalence =
                 lastAction.resolvedOnlyPath() == secondLastAction.resolvedOnlyPath() &&
                         secondLastAction.resolvedOnlyPath() == thirdLastAction.resolvedOnlyPath()
@@ -60,10 +62,7 @@ object RestSecurityOracle {
         if (!conditionForEndpointEquivalence) {
             return false
         }
-
-
-        // meaning the first put, the second delete and the last put.
-        // also check that authentication information TODO
+        // meaning the first put/post, the second delete and the last put/patch, all on same resource
 
         // if the authentication of last and the authentication of second last are not the same
         // return null
@@ -71,27 +70,33 @@ object RestSecurityOracle {
             return false
         }
 
-        // if the authentication of third last and the authentication of first last are the same
-        // return null
+        // if the authentication of third last and the authentication of first/second last are the same,
+        // ie, they all use same auth, then return null
         if (!thirdLastAction.auth.isDifferentFrom(secondLastAction.auth)) {
             return false
         }
 
-        // last action should be a PUT action with statusCode
-        // lastAction.verb == HttpVerb.PUT && lastResult.
         var firstCondition = false
         var secondCondition = false
         var thirdCondition = false
 
-        if (lastAction.verb == HttpVerb.PUT && StatusGroup.G_2xx.isInGroup(lastResult)) {
+        // last action should be a PUT/PATCH action with wrong success statusCode instead of forbidden as DELETE
+        if (
+            (lastAction.verb == HttpVerb.PUT || lastAction.verb == HttpVerb.PATCH)
+            && StatusGroup.G_2xx.isInGroup(lastResult)) {
             firstCondition = true
         }
 
+        // forbidden DELETE for auth
         if (secondLastAction.verb == HttpVerb.DELETE && secondLastResult == HttpStatus.SC_FORBIDDEN) {
             secondCondition = true
         }
 
-        if (thirdLastAction.verb == HttpVerb.PUT && StatusGroup.G_2xx.isInGroup(thirdLastResult)) {
+        //creation operation with different auth
+        if (
+            (thirdLastAction.verb == HttpVerb.PUT || thirdLastAction.verb == HttpVerb.POST)
+            && StatusGroup.G_2xx.isInGroup(thirdLastResult)
+            ) {
             thirdCondition = true
         }
 
