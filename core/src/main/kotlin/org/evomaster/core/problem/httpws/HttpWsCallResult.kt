@@ -3,15 +3,16 @@ package org.evomaster.core.problem.httpws
 import com.google.common.annotations.VisibleForTesting
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
+import org.evomaster.core.problem.enterprise.EnterpriseActionResult
 import org.evomaster.core.search.action.ActionResult
 import javax.ws.rs.core.MediaType
 
-abstract class HttpWsCallResult : ActionResult {
+abstract class HttpWsCallResult : EnterpriseActionResult {
 
     constructor(sourceLocalId: String, stopping: Boolean = false) : super(sourceLocalId,stopping)
 
     @VisibleForTesting
-    internal constructor(other: ActionResult) : super(other)
+    internal constructor(other: HttpWsCallResult) : super(other)
 
     companion object {
         const val STATUS_CODE = "STATUS_CODE"

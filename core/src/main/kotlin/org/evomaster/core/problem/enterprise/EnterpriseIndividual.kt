@@ -1,9 +1,6 @@
 package org.evomaster.core.problem.enterprise
 
 import org.evomaster.core.Lazy
-import org.evomaster.core.search.action.Action
-import org.evomaster.core.search.action.ActionComponent
-import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.SqlActionUtils
 import org.evomaster.core.mongo.MongoDbAction
@@ -11,6 +8,7 @@ import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.search.*
+import org.evomaster.core.search.action.*
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.tracer.TrackOperator

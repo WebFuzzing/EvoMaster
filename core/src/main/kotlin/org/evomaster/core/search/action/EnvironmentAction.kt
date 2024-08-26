@@ -1,7 +1,6 @@
-package org.evomaster.core.search
+package org.evomaster.core.search.action
 
-import org.evomaster.core.search.action.Action
-
+import org.evomaster.core.search.StructuralElement
 
 /**
  * An action used to set up the environment of a test: eg databases and external services

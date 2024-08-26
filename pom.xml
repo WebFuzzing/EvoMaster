@@ -29,6 +29,7 @@
         <module>test-old-libraries</module>
         <module>solver</module>
         <module>test-utils</module>
+        <module>wfc</module> <!-- TODO remove once moved in own repository-->
     </modules>
 
     <issueManagement>

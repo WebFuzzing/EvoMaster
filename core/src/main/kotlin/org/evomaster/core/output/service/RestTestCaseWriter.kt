@@ -159,7 +159,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
     }
 
 
-    override fun addActionLines(action: Action, index: Int, testCaseName: String, lines: Lines, result: ActionResult, testSuitePath: Path?, baseUrlOfSut: String) {
+    override fun addActionLinesPerType(action: Action, index: Int, testCaseName: String, lines: Lines, result: ActionResult, testSuitePath: Path?, baseUrlOfSut: String) {
         addRestCallLines(action as RestCallAction, lines, result as RestCallResult, baseUrlOfSut)
     }
 

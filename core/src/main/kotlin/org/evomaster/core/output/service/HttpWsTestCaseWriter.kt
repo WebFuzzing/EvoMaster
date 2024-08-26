@@ -15,7 +15,7 @@ import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.search.action.ActionResult
-import org.evomaster.core.search.EvaluatedAction
+import org.evomaster.core.search.action.EvaluatedAction
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.gene.utils.GeneUtils
@@ -266,13 +266,13 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
     }
 
     protected fun handleSingleCall(
-            evaluatedAction: EvaluatedAction,
-            index: Int,
-            fv: FitnessValue,
-            lines: Lines,
-            testCaseName: String,
-            testSuitePath: Path?,
-            baseUrlOfSut: String
+        evaluatedAction: EvaluatedAction,
+        index: Int,
+        fv: FitnessValue,
+        lines: Lines,
+        testCaseName: String,
+        testSuitePath: Path?,
+        baseUrlOfSut: String
     ) {
 
         val exActions = mutableListOf<HttpExternalServiceAction>()

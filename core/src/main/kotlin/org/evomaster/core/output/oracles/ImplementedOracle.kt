@@ -1,19 +1,5 @@
 package org.evomaster.core.output.oracles
 
-import io.swagger.v3.oas.models.PathItem
-import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.output.Lines
-import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.output.ObjectGenerator
-import org.evomaster.core.output.TestCase
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.httpws.HttpWsCallResult
-import org.evomaster.core.problem.rest.RestActionBuilderV3
-import org.evomaster.core.search.EvaluatedAction
-import org.evomaster.core.search.EvaluatedIndividual
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
-
 @Deprecated("No longer used")
 abstract class ImplementedOracle {
 

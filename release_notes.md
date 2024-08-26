@@ -4,12 +4,14 @@ Under development in `master` branch.
 
 ### New Features
 - schema validation for OpenAPI schemas, with summary of issues printed in the console logs
+- Generated tests that detect faults have now comments highlighting those faults. 
 
 ### Bug Fixes
 - fixed issue in Python and JavaScript output for when JSON responses are wrongly free text (e.g., unquoted strings)
 
 ### Addressed GitHub Issues
 
+- #822: additionalProperties: [true/false] causes crash
 - #989: TestCaseWriter login cookie variable name
 - #1055: Unable to start EVoMaster in public petstore API
 

@@ -1,10 +1,11 @@
 package org.evomaster.core.problem.webfrontend
 
+import org.evomaster.core.problem.enterprise.EnterpriseActionResult
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 import java.net.URL
 
-class WebResult : ActionResult {
+class WebResult : EnterpriseActionResult {
 
     companion object{
         //Note: use WebPageIdentifier to retrieve shape from id
@@ -21,9 +22,9 @@ class WebResult : ActionResult {
 
     constructor(sourceLocalId: String, stopping: Boolean = false) : super(sourceLocalId, stopping)
 
-    internal constructor(other: ActionResult) : super(other)
+    internal constructor(other: WebResult) : super(other)
 
-    override fun copy(): ActionResult {
+    override fun copy(): WebResult {
         return WebResult(this)
     }
 

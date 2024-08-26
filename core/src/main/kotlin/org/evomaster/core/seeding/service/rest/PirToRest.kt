@@ -1,6 +1,7 @@
 package org.evomaster.core.seeding.service.rest
 
 import com.google.inject.Inject
+import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.enterprise.auth.AuthSettings
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
@@ -9,6 +10,7 @@ import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.service.AbstractRestSampler
 import org.evomaster.core.search.gene.optional.NullableGene
 import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.seeding.service.PirToIndividual
 import org.slf4j.Logger
@@ -98,9 +100,10 @@ class PirToRest: PirToIndividual(){
                         gene.setFromStringValue(queryParams[name]!!)
                     } else {
                         //TODO also check nullable genes
-                        if(gene is OptionalGene){
+                        val optional = gene.getWrappedGene(OptionalGene::class.java)
+                        if(optional != null){
                             //simply deactivate it
-                            gene.isActive = false
+                            optional.isActive = false
                         } else {
                             // this means it is required, but not present in the seed
                             // as such, just leave it as randomized

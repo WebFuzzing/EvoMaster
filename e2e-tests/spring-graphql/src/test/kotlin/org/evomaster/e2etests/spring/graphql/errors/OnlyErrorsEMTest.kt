@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.graphql.errors
 
 import com.foo.graphql.onlyerrors.OnlyErrorsController
+import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.core.EMConfig
 import org.evomaster.e2etests.spring.graphql.SpringTestBase
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -58,7 +59,7 @@ class OnlyErrorsEMTest : SpringTestBase() {
         assertTrue(file.exists())
 
         val targets = file.readText()
-        assertTrue(targets.contains("GQL_ERRORS_ACTION:") && targets.contains("GQL_ERRORS_LINE"), targets)
+        assertTrue(targets.contains(FaultCategory.GQL_ERROR_FIELD.code.toString()))
     }
 
 }

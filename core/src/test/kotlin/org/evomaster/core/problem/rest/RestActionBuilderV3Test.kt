@@ -1827,4 +1827,42 @@ class RestActionBuilderV3Test{
         assertEquals(1, post.links.size)
         assertTrue(post.links.all { it.canUse() })
     }
+
+
+    @Test
+    fun testWrongArrayExampleString() {
+        val map = loadAndAssertActions(
+            "/swagger/artificial/defaultandexamples/wrong_array_example_string.yaml",
+            1,
+            RestActionBuilderV3.Options(probUseExamples = 1.0))
+
+        val post = map["POST:/v2/foo/{x}"] as RestCallAction
+        val path = post.resolvedPath()
+        assertTrue(path.contains("xyz"), path)
+        assertTrue(path.contains("bar"), path)
+        assertTrue(path.contains("hello"), path)
+        assertTrue(path.contains("there"), path)
+        /*
+            those are not 3 different examples, but a single example concatenating them as a single string
+         */
+    }
+
+    @Test
+    fun testWrongArrayExampleInt() {
+        val map = loadAndAssertActions(
+            "/swagger/artificial/defaultandexamples/wrong_array_example_int.yaml",
+            1,
+            RestActionBuilderV3.Options(probUseExamples = 1.0))
+
+        val post = map["POST:/v2/foo/{x}"] as RestCallAction
+        val path = post.resolvedPath()
+
+        assertEquals("/v2/foo/0", path)
+        /*
+            unfortunately, it seems the wrong data is silently ignored
+         */
+    }
+
+
+
 }
