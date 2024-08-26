@@ -56,7 +56,7 @@ object RestSecurityOracle {
 
         // first check that they all refer to the same endpoint
         val conditionForEndpointEquivalence =
-                lastAction.resolvedOnlyPath() == secondLastAction.resolvedOnlyPath()
+                PostCreateResourceUtils.resolveToSamePath(lastAction, secondLastAction)
                         //&& secondLastAction.resolvedOnlyPath() == thirdLastAction.resolvedOnlyPath()
 
         if (!conditionForEndpointEquivalence) {

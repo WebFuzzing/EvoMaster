@@ -210,6 +210,7 @@ class SecurityRest {
                     it.resetLocalId()
                     //make sure using same auth
                     it.auth = lastAction.auth
+                    it.usePreviousLocationId = lastAction.usePreviousLocationId
 
                     //create new individual where this action on same path and auth that led to 403 is added
                     val finalIndividual = individualToChooseForTest.copy() as RestIndividual

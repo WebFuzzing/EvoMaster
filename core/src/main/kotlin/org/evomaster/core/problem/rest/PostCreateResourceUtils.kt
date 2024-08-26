@@ -61,4 +61,25 @@ object PostCreateResourceUtils {
             after.usePreviousLocationId = before.usePreviousLocationId
         }
     }
+
+
+    /**
+     * Check if two actions are on same resource.
+     * This is not necessarily simple, as path resolution might depend on dynamic info
+     * coming from previous actions (e.g., a POST create)
+     */
+    fun resolveToSamePath(a: RestCallAction, b: RestCallAction) : Boolean {
+
+        if(a.usePreviousLocationId == null && b.usePreviousLocationId == null) {
+            return a.resolvedOnlyPath() == b.resolvedOnlyPath()
+        }
+
+        if(a.usePreviousLocationId != b.usePreviousLocationId) {
+            //different dynamic info
+            return false
+        }
+
+        //TODO this might need more thinking... eg, how handled variables resolutions in chained calls???
+        return true
+    }
 }

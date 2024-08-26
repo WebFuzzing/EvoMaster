@@ -48,8 +48,9 @@ open class SecurityForbiddenOperationApplication {
         }
 
         data[counter] = auth!!
+        val res = ResponseEntity.created(URI.create("/api/resources/${counter}")).build<Any>()
         counter++
-        return ResponseEntity.created(URI.create("/api/users/${counter}")).build()
+        return res
     }
 
     private fun checkAuth(auth: String?) = auth != null && (auth == "FOO" || auth == "BAR")

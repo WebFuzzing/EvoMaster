@@ -5,6 +5,7 @@ import bar.examples.it.spring.securityforbiddenoperation.SecurityForbiddenOperat
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.rest.IntegrationTestRestBase
+import org.evomaster.core.problem.rest.PostCreateResourceUtils
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestSecurityOracle
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -60,7 +61,6 @@ class SecurityForbiddenOperationTest : IntegrationTestRestBase() {
     }
 
 
-    @Disabled // TODO finish/fix implementation
     @Test
     fun testDeletePut(){
 
@@ -68,9 +68,9 @@ class SecurityForbiddenOperationTest : IntegrationTestRestBase() {
 
         val a = pirTest.fromVerbPath("POST", "/api/resources")!!
         val b = pirTest.fromVerbPath("DELETE", "/api/resources/1234")!!
-        a.saveAndLinkLocationTo(b) //FIXME should be in PirToRest
-        val c = pirTest.fromVerbPath("PUT", "/api/resources/0")!!
-        //TODO should link c as well? or handled by gene binding?
+        PostCreateResourceUtils.linkDynamicCreateResource(a,b)//FIXME should be in PirToRest
+        val c = pirTest.fromVerbPath("PUT", "/api/resources/333")!!
+        PostCreateResourceUtils.linkDynamicCreateResource(a,c)//FIXME should be in PirToRest
 
         val auth = controller.getInfoForAuthentication()
         val foo = HttpWsAuthenticationInfo.fromDto(auth.find { it.name == "FOO" }!!)
