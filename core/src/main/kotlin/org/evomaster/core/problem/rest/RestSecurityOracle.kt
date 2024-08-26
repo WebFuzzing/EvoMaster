@@ -2,10 +2,7 @@ package org.evomaster.core.problem.rest
 
 import org.apache.http.HttpStatus
 import org.evomaster.core.problem.enterprise.SampleType
-import org.evomaster.core.problem.httpws.auth.AuthUtils
-import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.action.ActionResult
-import org.evomaster.core.search.service.IdMapper
 
 object RestSecurityOracle {
 
@@ -18,11 +15,11 @@ object RestSecurityOracle {
      *
      * if so, a new "fault" target is added to the fitness function
      *
-     * @return the name chosen for the found fault, if any. null otherwise
+     * @return true if test detect such fault
      */
-    fun handleForbiddenDelete(individual: RestIndividual,
-                              actionResults: List<ActionResult>
-    ) : String?{
+    fun hasForbiddenDelete(individual: RestIndividual,
+                           actionResults: List<ActionResult>
+    ) : Boolean{
 
         if(individual.sampleType != SampleType.SECURITY){
             throw IllegalArgumentException("We verify security properties only on tests constructed to check them")
@@ -36,7 +33,7 @@ object RestSecurityOracle {
 
         // make sure that there are at least 3 actions
         if (numberOfActions < 3) {
-            return null
+            return false
         }
 
 
@@ -49,11 +46,11 @@ object RestSecurityOracle {
 
         // last 3 results
         val lastResult = restCallResults.find { it.sourceLocalId == lastAction.getLocalId() }
-                ?.getStatusCode() ?: return null
+                ?.getStatusCode() ?: return false
         val secondLastResult = restCallResults.find { it.sourceLocalId == secondLastAction.getLocalId() }
-                ?.getStatusCode() ?: return null
+                ?.getStatusCode() ?: return false
         val thirdLastResult = restCallResults.find { it.sourceLocalId == thirdLastAction.getLocalId() }
-                ?.getStatusCode() ?: return null
+                ?.getStatusCode() ?: return false
 
         // first check that they all refer to the same endpoint //TODO
         val conditionForEndpointEquivalence =
@@ -61,7 +58,7 @@ object RestSecurityOracle {
                         secondLastAction.resolvedOnlyPath() == thirdLastAction.resolvedOnlyPath()
 
         if (!conditionForEndpointEquivalence) {
-            return null
+            return false
         }
 
 
@@ -71,13 +68,13 @@ object RestSecurityOracle {
         // if the authentication of last and the authentication of second last are not the same
         // return null
         if (lastAction.auth.isDifferentFrom(secondLastAction.auth)) {
-            return null
+            return false
         }
 
         // if the authentication of third last and the authentication of first last are the same
         // return null
         if (!thirdLastAction.auth.isDifferentFrom(secondLastAction.auth)) {
-            return null
+            return false
         }
 
         // last action should be a PUT action with statusCode
@@ -99,12 +96,10 @@ object RestSecurityOracle {
         }
 
         if ( !(firstCondition && secondCondition && thirdCondition) ) {
-            return null
+            return false
         }
 
-        //val name = IdMapper.getFaultDescriptiveIdSecurity("forbiddenDelete_${secondLastAction.path}")
-
-        return "TestingTargetAccessControl"
+        return true
     }
 
 }

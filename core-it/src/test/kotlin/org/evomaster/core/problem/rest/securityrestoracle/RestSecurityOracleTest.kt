@@ -1,15 +1,13 @@
 package org.evomaster.core.problem.rest.securityrestoracle
 
-import bar.examples.it.spring.multipleendpoints.MultipleEndpointsController
 import bar.examples.it.spring.simplesecuritydeleteput.SimpleSecurityDeletePutController
-import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.IntegrationTestRestBase
 import org.evomaster.core.problem.rest.RestSecurityOracle
 import org.evomaster.core.problem.rest.param.QueryParam
-import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.gene.string.StringGene
 import org.junit.Assert
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 import org.junit.jupiter.api.BeforeAll
@@ -59,10 +57,8 @@ class RestSecurityOracleTest : IntegrationTestRestBase() {
 
         val sampleInd = createIndividual(listOf(action1Ind1, action2Ind1, action3Ind1, action4Ind1, action5Ind1), SampleType.SECURITY)
 
-        val testCovered = RestSecurityOracle.handleForbiddenDelete(sampleInd.individual, sampleInd.seeResults() )
+        val testCovered = RestSecurityOracle.hasForbiddenDelete(sampleInd.individual, sampleInd.seeResults() )
 
-        Assert.assertNull(testCovered)
-
-
+        assertTrue(testCovered)
     }
 }

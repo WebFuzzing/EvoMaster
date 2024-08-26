@@ -39,7 +39,6 @@ import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.DataPool
-import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -986,9 +985,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             fv: FitnessValue
     ){
         //TODO the other cases
-        val fault = RestSecurityOracle.handleForbiddenDelete(individual,actionResults)
-        if(fault != null){
-            val scenarioId = idMapper.handleLocalTarget(fault)
+
+        if(RestSecurityOracle.hasForbiddenDelete(individual,actionResults)){
+            val scenarioId = idMapper.handleLocalTarget(
+                idMapper.getFaultDescriptiveId(FaultCategory.SECURITY_FORBIDDEN_DELETE, ""))
             fv.updateTarget(scenarioId, 1.0)
         }
     }
