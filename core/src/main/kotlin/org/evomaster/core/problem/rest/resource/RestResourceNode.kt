@@ -476,8 +476,7 @@ open class RestResourceNode(
                 POST /x
                 GET  /x/{id}
              */
-            post.saveLocation = true
-            target.usePreviousLocationId = post.postLocationId()
+            post.saveAndLinkLocationTo(target)
         } else {
             /*
                 eg

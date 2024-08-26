@@ -291,4 +291,10 @@ class RestCallAction(
             ?: throw IllegalStateException("No link with id ${blr.sourceLinkId} in action ${previous.id}")
         return Pair(link, previous)
     }
+
+
+    fun saveAndLinkLocationTo(other: RestCallAction){
+        this.saveLocation = true
+        other.usePreviousLocationId = this.postLocationId()
+    }
 }

@@ -29,7 +29,7 @@ class SecurityForbiddenOperationTest : IntegrationTestRestBase() {
     }
 
     @Test
-    fun testDelete(){
+    fun testDeletePatch(){
 
         val pirTest = getPirToRest()
 
@@ -48,6 +48,37 @@ class SecurityForbiddenOperationTest : IntegrationTestRestBase() {
         c.auth = bar
 
         SecurityForbiddenOperationApplication.disabledCheckPatch = true
+
+        val ind = createIndividual(listOf(a,b,c), SampleType.SECURITY)
+        assertEquals(201, (ind.evaluatedMainActions()[0].result as RestCallResult).getStatusCode())
+        assertEquals(403, (ind.evaluatedMainActions()[1].result as RestCallResult).getStatusCode())
+        assertEquals(204, (ind.evaluatedMainActions()[2].result as RestCallResult).getStatusCode())
+
+        val faultDetected = RestSecurityOracle.hasForbiddenDelete(ind.individual, ind.seeResults())
+        assertTrue(faultDetected)
+    }
+
+
+    @Test
+    fun testDeletePut(){
+
+        val pirTest = getPirToRest()
+
+        val a = pirTest.fromVerbPath("POST", "/api/resources")!!
+        val b = pirTest.fromVerbPath("DELETE", "/api/resources/1234")!!
+        a.saveAndLinkLocationTo(b)
+        val c = pirTest.fromVerbPath("PUT", "/api/resources/0")!!
+        //TODO should link c as well? or handled by gene binding?
+
+        val auth = controller.getInfoForAuthentication()
+        val foo = HttpWsAuthenticationInfo.fromDto(auth.find { it.name == "FOO" }!!)
+        val bar = HttpWsAuthenticationInfo.fromDto(auth.find { it.name == "BAR" }!!)
+
+        a.auth = foo
+        b.auth = bar
+        c.auth = bar
+
+        SecurityForbiddenOperationApplication.disabledCheckPut = true
 
         val ind = createIndividual(listOf(a,b,c), SampleType.SECURITY)
         assertEquals(201, (ind.evaluatedMainActions()[0].result as RestCallResult).getStatusCode())
