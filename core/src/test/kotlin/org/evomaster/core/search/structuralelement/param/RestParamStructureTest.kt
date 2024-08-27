@@ -24,7 +24,7 @@ class BodyParamStructureTest : StructuralElementBaseTest() {
         EnumGene("contentType", listOf("application/json"))
     )
 
-    override fun getExpectedChildrenSize(): Int  = 2
+    override fun getExpectedChildrenSize(): Int  = 3
 
     @Test
     fun testTraverseBackIndex(){
