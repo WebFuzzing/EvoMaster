@@ -221,6 +221,7 @@ class SecurityRest {
                         )
                     )
                     finalIndividual.modifySampleType(SampleType.SECURITY)
+                    finalIndividual.ensureFlattenedStructure()
 
                     val evaluatedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(finalIndividual)
                     if (evaluatedIndividual == null) {

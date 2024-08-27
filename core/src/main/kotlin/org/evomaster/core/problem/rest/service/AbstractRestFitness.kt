@@ -996,9 +996,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 ?: return
 
             val scenarioId = idMapper.handleLocalTarget(
-                idMapper.getFaultDescriptiveId(faultCategory, "${action.path}"))
+                idMapper.getFaultDescriptiveId(faultCategory, action.getName()))
             fv.updateTarget(scenarioId, 1.0, actionIndex)
-            result.addFault(DetectedFault(faultCategory,"${action.path}"))
+            result.addFault(DetectedFault(faultCategory, action.getName()))
         }
     }
 
