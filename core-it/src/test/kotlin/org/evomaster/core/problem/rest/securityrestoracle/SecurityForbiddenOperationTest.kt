@@ -31,7 +31,7 @@ class SecurityForbiddenOperationTest : IntegrationTestRestBase() {
 
     @BeforeEach
     fun initializeTest(){
-
+        SecurityForbiddenOperationApplication.reset()
     }
 
     @Test

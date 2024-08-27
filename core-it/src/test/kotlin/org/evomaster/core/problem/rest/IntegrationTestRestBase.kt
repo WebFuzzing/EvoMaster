@@ -22,7 +22,8 @@ abstract class IntegrationTestRestBase : RestTestBase() {
     fun initInjector(){
         val args = listOf(
             "--sutControllerPort", "" + controllerPort,
-            "--createConfigPathIfMissing", "false"
+            "--createConfigPathIfMissing", "false",
+            "--seed", "42"
         )
         injector = init(args)
     }
