@@ -121,11 +121,10 @@ class SecurityRest {
 
         // quite a few rules here that can be defined
         handleForbiddenOperationButOKOthers(HttpVerb.DELETE)
-        //handleForbiddenDeleteButOkPutOrPatch()
-        //handleForbiddenPutButOkDeleteOrPatch()
+        handleForbiddenOperationButOKOthers(HttpVerb.PUT)
+        handleForbiddenOperationButOKOthers(HttpVerb.PATCH)
 
-        //TODO other rules
-        //eg, ok PATCH but not DELETE or PUT
+        //TODO other rules. See FaultCategory
         // eg 401/403 info leakage
         //etc.
     }
@@ -184,13 +183,7 @@ class SecurityRest {
         }
     }
 
-    private fun otherWriteOperationOnSameResource(verb: HttpVerb) : List<HttpVerb>{
-        val write = listOf(HttpVerb.PUT, HttpVerb.DELETE, HttpVerb.PATCH)
-        if(!write.contains(verb)){
-            throw IllegalArgumentException("Not valid verb: $verb")
-        }
-        return write.filter { it != verb }
-    }
+
 
     private fun addWronglySuccessOperation(
         individualWith403LastCall: RestIndividual,
@@ -202,7 +195,7 @@ class SecurityRest {
         val lastAction = individualWith403LastCall.seeMainExecutableActions().last()
         assert(lastAction.verb == verb)
 
-        val actions = otherWriteOperationOnSameResource(verb)
+        val actions = HttpVerb.otherWriteOperationsOnSameResourcePath(verb)
             .mapNotNull {
                 RestIndividualSelectorUtils.findAction(
                     individualsInSolution,
@@ -340,7 +333,6 @@ class SecurityRest {
             return null
         }
 
-        //TODO what is target is a PUT?
         //start from base test in which resource is created
         val (creationIndividual, creationEndpoint) = RestIndividualSelectorUtils
             .findIndividualWithEndpointCreationForResource(
@@ -367,7 +359,7 @@ class SecurityRest {
         // create a new target action on same path,
         // but then change auth
         val targetInd = successIndividuals.first().individual
-        val targetActionIndex = targetInd.getActionIndex(HttpVerb.DELETE, path)
+        val targetActionIndex = targetInd.getActionIndex(verb, path)
         val targetAction = targetInd.seeMainExecutableActions()[targetActionIndex].copy() as RestCallAction
         assert(targetAction.verb == verb && targetAction.path.isEquivalent(path))
         targetAction.resetLocalIdRecursively()

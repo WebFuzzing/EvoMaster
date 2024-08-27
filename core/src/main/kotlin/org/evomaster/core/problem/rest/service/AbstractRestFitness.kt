@@ -986,9 +986,20 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     ){
         //TODO the other cases
 
-        if(RestSecurityOracle.hasForbiddenDelete(individual,actionResults)){
-            val faultCategory = FaultCategory.SECURITY_FORBIDDEN_DELETE
-            val actionIndex = individual.size()-1
+        handleForbiddenOperation(HttpVerb.DELETE, FaultCategory.SECURITY_FORBIDDEN_DELETE, individual, actionResults, fv)
+        handleForbiddenOperation(HttpVerb.PUT, FaultCategory.SECURITY_FORBIDDEN_PUT, individual, actionResults, fv)
+        handleForbiddenOperation(HttpVerb.PATCH, FaultCategory.SECURITY_FORBIDDEN_PATCH, individual, actionResults, fv)
+    }
+
+    private fun handleForbiddenOperation(
+        verb: HttpVerb,
+        faultCategory: FaultCategory,
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        if (RestSecurityOracle.hasForbiddenOperation(verb, individual, actionResults)) {
+           val actionIndex = individual.size() - 1
             val action = individual.seeMainExecutableActions()[actionIndex]
             val result = actionResults
                 .filterIsInstance<RestCallResult>()
@@ -996,7 +1007,8 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 ?: return
 
             val scenarioId = idMapper.handleLocalTarget(
-                idMapper.getFaultDescriptiveId(faultCategory, action.getName()))
+                idMapper.getFaultDescriptiveId(faultCategory, action.getName())
+            )
             fv.updateTarget(scenarioId, 1.0, actionIndex)
             result.addFault(DetectedFault(faultCategory, action.getName()))
         }

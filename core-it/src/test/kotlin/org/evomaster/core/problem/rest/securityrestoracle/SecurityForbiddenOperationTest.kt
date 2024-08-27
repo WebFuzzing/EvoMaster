@@ -7,16 +7,12 @@ import org.evomaster.core.JdkIssue
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
-import org.evomaster.core.problem.rest.IntegrationTestRestBase
-import org.evomaster.core.problem.rest.PostCreateResourceUtils
-import org.evomaster.core.problem.rest.RestCallResult
-import org.evomaster.core.problem.rest.RestSecurityOracle
+import org.evomaster.core.problem.rest.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 class SecurityForbiddenOperationTest : IntegrationTestRestBase() {
@@ -68,7 +64,7 @@ class SecurityForbiddenOperationTest : IntegrationTestRestBase() {
         assertEquals(403, (ind.evaluatedMainActions()[1].result as RestCallResult).getStatusCode())
         assertEquals(204, (ind.evaluatedMainActions()[2].result as RestCallResult).getStatusCode())
 
-        val faultDetected = RestSecurityOracle.hasForbiddenDelete(ind.individual, ind.seeResults())
+        val faultDetected = RestSecurityOracle.hasForbiddenOperation(HttpVerb.DELETE,ind.individual, ind.seeResults())
         assertTrue(faultDetected)
     }
 
@@ -99,13 +95,13 @@ class SecurityForbiddenOperationTest : IntegrationTestRestBase() {
         assertEquals(403, (ind.evaluatedMainActions()[1].result as RestCallResult).getStatusCode())
         assertEquals(204, (ind.evaluatedMainActions()[2].result as RestCallResult).getStatusCode())
 
-        val faultDetected = RestSecurityOracle.hasForbiddenDelete(ind.individual, ind.seeResults())
+        val faultDetected = RestSecurityOracle.hasForbiddenOperation(HttpVerb.DELETE,ind.individual, ind.seeResults())
         assertTrue(faultDetected)
     }
 
 
     @Test
-    fun testReuseTest(){
+    fun testReuseTestFaultyPut(){
 
         val pirTest = getPirToRest()
         val archive = getArchive()
@@ -146,4 +142,94 @@ class SecurityForbiddenOperationTest : IntegrationTestRestBase() {
         assertEquals("/api/resources/$id", target.individual.seeMainExecutableActions()[1].resolvedPath())
         assertEquals("/api/resources/$id", target.individual.seeMainExecutableActions()[2].resolvedPath())
     }
+
+
+    @Test
+    fun testReuseTestFaultyDelete(){
+
+        val pirTest = getPirToRest()
+        val archive = getArchive()
+        val security = getSecurityRest()
+        val config = getEMConfig()
+
+        config.security = true
+
+        val id = 42
+        val a = pirTest.fromVerbPath("PUT", "/api/resources/$id")!!
+        val b = pirTest.fromVerbPath("PUT", "/api/resources/$id")!!
+
+        val auth = controller.getInfoForAuthentication()
+        val foo = HttpWsAuthenticationInfo.fromDto(auth.find { it.name == "FOO" }!!)
+        val bar = HttpWsAuthenticationInfo.fromDto(auth.find { it.name == "BAR" }!!)
+        a.auth = foo
+        b.auth = bar
+
+        SecurityForbiddenOperationApplication.disabledCheckDelete = true
+
+        val ind = createIndividual(listOf(a,b), SampleType.SECURITY)
+        assertEquals(201, (ind.evaluatedMainActions()[0].result as RestCallResult).getStatusCode())
+        assertEquals(403, (ind.evaluatedMainActions()[1].result as RestCallResult).getStatusCode())
+
+        val added = archive.addIfNeeded(ind)
+        assertTrue(added)
+
+        val solution = security.applySecurityPhase()
+
+        val target = solution.individuals.find { it.hasAnyPotentialFault() }!!
+
+        val faults = DetectedFaultUtils.getDetectedFaultCategories(target)
+        assertEquals(1, faults.size)
+        assertEquals(FaultCategory.SECURITY_FORBIDDEN_PUT, faults.first())
+
+        assertEquals(3, target.individual.size())
+        assertEquals("/api/resources/$id", target.individual.seeMainExecutableActions()[0].resolvedPath())
+        assertEquals("/api/resources/$id", target.individual.seeMainExecutableActions()[1].resolvedPath())
+        assertEquals("/api/resources/$id", target.individual.seeMainExecutableActions()[2].resolvedPath())
+    }
+
+
+    @Test
+    fun testReuseTestFaultyPutAndDelete(){
+
+        val pirTest = getPirToRest()
+        val archive = getArchive()
+        val security = getSecurityRest()
+        val config = getEMConfig()
+
+        config.security = true
+
+        val id = 42
+        val a = pirTest.fromVerbPath("PUT", "/api/resources/$id")!!
+        val b = pirTest.fromVerbPath("PATCH", "/api/resources/$id")!!
+
+        val auth = controller.getInfoForAuthentication()
+        val foo = HttpWsAuthenticationInfo.fromDto(auth.find { it.name == "FOO" }!!)
+        val bar = HttpWsAuthenticationInfo.fromDto(auth.find { it.name == "BAR" }!!)
+        a.auth = foo
+        b.auth = bar
+
+        SecurityForbiddenOperationApplication.disabledCheckDelete = true
+        SecurityForbiddenOperationApplication.disabledCheckPut = true
+
+        val ind = createIndividual(listOf(a,b), SampleType.SECURITY)
+        assertEquals(201, (ind.evaluatedMainActions()[0].result as RestCallResult).getStatusCode())
+        assertEquals(403, (ind.evaluatedMainActions()[1].result as RestCallResult).getStatusCode())
+
+        val added = archive.addIfNeeded(ind)
+        assertTrue(added)
+
+        val solution = security.applySecurityPhase()
+
+        val target = solution.individuals.find { it.hasAnyPotentialFault() }!!
+
+        val faults = DetectedFaultUtils.getDetectedFaultCategories(target)
+        assertEquals(1, faults.size)
+        assertEquals(FaultCategory.SECURITY_FORBIDDEN_PATCH, faults.first())
+
+        assertEquals(3, target.individual.size())
+        assertEquals("/api/resources/$id", target.individual.seeMainExecutableActions()[0].resolvedPath())
+        assertEquals("/api/resources/$id", target.individual.seeMainExecutableActions()[1].resolvedPath())
+        assertEquals("/api/resources/$id", target.individual.seeMainExecutableActions()[2].resolvedPath())
+    }
+
 }

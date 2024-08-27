@@ -2,6 +2,7 @@ package org.evomaster.core.problem.rest.securityrestoracle
 
 import bar.examples.it.spring.simplesecuritydeleteput.SimpleSecurityDeletePutController
 import org.evomaster.core.problem.enterprise.SampleType
+import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.IntegrationTestRestBase
 import org.evomaster.core.problem.rest.RestSecurityOracle
 import org.evomaster.core.problem.rest.param.QueryParam
@@ -54,7 +55,7 @@ class SimpleSecurityDeletePutControllerTest : IntegrationTestRestBase() {
 
         val sampleInd = createIndividual(listOf(action1Ind1, action2Ind1, action3Ind1, action4Ind1, action5Ind1), SampleType.SECURITY)
 
-        val testCovered = RestSecurityOracle.hasForbiddenDelete(sampleInd.individual, sampleInd.seeResults() )
+        val testCovered = RestSecurityOracle.hasForbiddenOperation(HttpVerb.DELETE,sampleInd.individual, sampleInd.seeResults() )
 
         assertTrue(testCovered)
     }
