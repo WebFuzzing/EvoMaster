@@ -35,13 +35,12 @@ import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.numeric.NumberGene
+import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.DataPool
-import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.taint.TaintAnalysis
-import org.evomaster.core.utils.StringUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.URL
@@ -243,11 +242,13 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                  */
                 if (action.parameters.none { it is BodyParam }) {
 
-                    val obj = ObjectGene("body", listOf()).apply { doInitialize(randomness) }
-
-                    val body = BodyParam(obj,
-                        // TODO could look at "Accept" header instead of defaulting to JSON
-                        EnumGene("contentType", listOf("application/json")).apply { doInitialize(randomness) })
+                    val obj = ObjectGene("body", listOf())
+                    // TODO could look at "Accept" header instead of defaulting to JSON
+                    val enumGene = EnumGene("contentType", listOf("application/json"))
+                    val sendUnquoteJsonString =  CustomMutationRateGene("sendUnquoteJsonStringWrapper",
+                        BooleanGene("sendUnquoteJsonString", false), 0.0)
+                    val body = BodyParam(obj,enumGene, sendUnquoteJsonString)
+                    body.seeGenes().forEach { it.doInitialize(randomness) }
 
                     val update = UpdateForBodyParam(body)
 
@@ -283,10 +284,12 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                     LoggingUtil.uniqueWarn(log, "More than 1 DTO option: [${dtoNames.sorted().joinToString(", ")}]")
                 }
                 val name = dtoNames.first()
-                val obj = getObjectGeneForDto(name).apply { doInitialize(randomness) }
-
-                val body = BodyParam(obj,
-                    EnumGene("contentType", listOf("application/json")).apply { doInitialize(randomness) })
+                val obj = getObjectGeneForDto(name)
+                val enumGene = EnumGene("contentType", listOf("application/json"))
+                val sendUnquoteJsonString =  CustomMutationRateGene("sendUnquoteJsonStringWrapper",
+                    BooleanGene("sendUnquoteJsonString", false), 0.0)
+                val body = BodyParam(obj,enumGene, sendUnquoteJsonString)
+                body.seeGenes().forEach { it.doInitialize(randomness) }
                 val update = UpdateForBodyParam(body)
                 action.addParam(update)
             }
