@@ -207,7 +207,7 @@ class SecurityRest {
 
             listOf(put, patch).forEach putpath@{
                 if (it != null) {
-                    it.resetLocalId()
+                    it.resetLocalIdRecursively()
                     //make sure using same auth
                     it.auth = lastAction.auth
                     it.usePreviousLocationId = lastAction.usePreviousLocationId

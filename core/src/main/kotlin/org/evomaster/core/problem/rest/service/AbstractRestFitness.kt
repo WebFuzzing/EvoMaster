@@ -987,9 +987,18 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         //TODO the other cases
 
         if(RestSecurityOracle.hasForbiddenDelete(individual,actionResults)){
+            val faultCategory = FaultCategory.SECURITY_FORBIDDEN_DELETE
+            val actionIndex = individual.size()-1
+            val action = individual.seeMainExecutableActions()[actionIndex]
+            val result = actionResults
+                .filterIsInstance<RestCallResult>()
+                .find { it.sourceLocalId == action.getLocalId() }
+                ?: return
+
             val scenarioId = idMapper.handleLocalTarget(
-                idMapper.getFaultDescriptiveId(FaultCategory.SECURITY_FORBIDDEN_DELETE, ""))
-            fv.updateTarget(scenarioId, 1.0)
+                idMapper.getFaultDescriptiveId(faultCategory, "${action.path}"))
+            fv.updateTarget(scenarioId, 1.0, actionIndex)
+            result.addFault(DetectedFault(faultCategory,"${action.path}"))
         }
     }
 

@@ -2,7 +2,9 @@ package org.evomaster.core.problem.rest.securityrestoracle
 
 import bar.examples.it.spring.securityforbiddenoperation.SecurityForbiddenOperationApplication
 import bar.examples.it.spring.securityforbiddenoperation.SecurityForbiddenOperationController
+import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.core.JdkIssue
+import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.rest.IntegrationTestRestBase
@@ -99,5 +101,49 @@ class SecurityForbiddenOperationTest : IntegrationTestRestBase() {
 
         val faultDetected = RestSecurityOracle.hasForbiddenDelete(ind.individual, ind.seeResults())
         assertTrue(faultDetected)
+    }
+
+
+    @Test
+    fun testReuseTest(){
+
+        val pirTest = getPirToRest()
+        val archive = getArchive()
+        val security = getSecurityRest()
+        val config = getEMConfig()
+
+        config.security = true
+
+        val id = 42
+        val a = pirTest.fromVerbPath("PUT", "/api/resources/$id")!!
+        val b = pirTest.fromVerbPath("DELETE", "/api/resources/$id")!!
+
+        val auth = controller.getInfoForAuthentication()
+        val foo = HttpWsAuthenticationInfo.fromDto(auth.find { it.name == "FOO" }!!)
+        val bar = HttpWsAuthenticationInfo.fromDto(auth.find { it.name == "BAR" }!!)
+        a.auth = foo
+        b.auth = bar
+
+        SecurityForbiddenOperationApplication.disabledCheckPut = true
+
+        val ind = createIndividual(listOf(a,b), SampleType.SECURITY)
+        assertEquals(201, (ind.evaluatedMainActions()[0].result as RestCallResult).getStatusCode())
+        assertEquals(403, (ind.evaluatedMainActions()[1].result as RestCallResult).getStatusCode())
+
+        val added = archive.addIfNeeded(ind)
+        assertTrue(added)
+
+        val solution = security.applySecurityPhase()
+
+        val target = solution.individuals.find { it.hasAnyPotentialFault() }!!
+
+        val faults = DetectedFaultUtils.getDetectedFaultCategories(target)
+        assertEquals(1, faults.size)
+        assertEquals(FaultCategory.SECURITY_FORBIDDEN_DELETE, faults.first())
+
+        assertEquals(3, target.individual.size())
+        assertEquals("/api/resources/$id", target.individual.seeMainExecutableActions()[0].resolvedPath())
+        assertEquals("/api/resources/$id", target.individual.seeMainExecutableActions()[1].resolvedPath())
+        assertEquals("/api/resources/$id", target.individual.seeMainExecutableActions()[2].resolvedPath())
     }
 }
