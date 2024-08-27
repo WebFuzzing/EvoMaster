@@ -112,7 +112,7 @@ class BodyParam(gene: Gene,
 
     fun isMultipartForm() = isContentTypeMultipartForm(contentType())
 
-    private fun removeQuotes() = contentRemoveQuotesGene.gene.value
+    private fun removeQuotes() = contentRemoveQuotesGene.gene.value && isJson()
 
     fun getValueAsPrintableString(mode: GeneUtils.EscapeMode? = null, targetFormat: OutputFormat? =null): String {
         val originalValueAsPrintableString =
