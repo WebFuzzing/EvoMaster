@@ -377,7 +377,7 @@ class SecurityRest {
         val targetActionIndex = targetInd.getActionIndex(HttpVerb.DELETE, path)
         val targetAction = targetInd.seeMainExecutableActions()[targetActionIndex].copy() as RestCallAction
         assert(targetAction.verb == verb && targetAction.path.isEquivalent(path))
-        targetAction.resetLocalId()
+        targetAction.resetLocalIdRecursively()
         targetAction.auth =
             authSettings.getDifferentOne(creationAction.auth.name, HttpWsAuthenticationInfo::class.java, randomness)
 
