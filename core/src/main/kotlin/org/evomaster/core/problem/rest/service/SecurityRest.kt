@@ -299,7 +299,7 @@ class SecurityRest {
             )
 
             // slice the individual in a way that delete all calls after the chosen verb request
-            return builder.sliceAllCallsInIndividualAfterAction(
+            return RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
                 currentIndividualWith403.individual,
                 actionIndex
             )
@@ -365,7 +365,7 @@ class SecurityRest {
         assert(creationAction.auth !is NoAuth)
 
         //we don't need anything after the creation action
-        val sliced = builder.sliceAllCallsInIndividualAfterAction(
+        val sliced = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
             creationIndividual.individual,
             actionIndexForCreation
         )

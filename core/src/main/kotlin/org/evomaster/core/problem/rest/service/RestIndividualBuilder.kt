@@ -18,6 +18,42 @@ class RestIndividualBuilder {
     private lateinit var randomness: Randomness
 
 
+    companion object{
+
+        /**
+         * Create a copy of [restIndividual], where all main actions after index are removed
+         */
+        fun sliceAllCallsInIndividualAfterAction(restIndividual: RestIndividual, actionIndex: Int) : RestIndividual {
+
+            // we need to check that the index is within the range
+            if (actionIndex < 0 || actionIndex > restIndividual.size() -1) {
+                throw IllegalArgumentException("Action index has to be between 0 and ${restIndividual.size()}")
+            }
+
+            val ind = restIndividual.copy() as RestIndividual
+
+            val n = ind.seeMainExecutableActions().size
+
+            /*
+                We start from last, going backward.
+                So, actionIndex stays the same
+             */
+            for(i in n-1 downTo actionIndex+1){
+                ind.removeMainExecutableAction(i)
+            }
+
+            ind.fixGeneBindingsIfNeeded()
+
+            /**
+             * FIXME this is WRONG!!! need to do only for removed actions
+             */
+            ind.removeAllLinks()
+
+            return ind
+        }
+    }
+
+
     /**
      * Based on a given [template], create a new action for it.
      * Such new action will have the same path resolution of [target], using same auth.
@@ -170,14 +206,7 @@ class RestIndividualBuilder {
 
 
 
-    /**
-     * Create a copy of [restIndividual], where all main actions after index are removed
-     */
-    fun sliceAllCallsInIndividualAfterAction(restIndividual: RestIndividual, actionIndex: Int) : RestIndividual {
 
-        //TODO move code here
-        return RestIndividualSelectorUtils.sliceAllCallsInIndividualAfterAction(restIndividual, actionIndex)
-    }
 
     /**
      * Check in the schema if there is any action which is a direct child of [a] and last path element is a parameter
