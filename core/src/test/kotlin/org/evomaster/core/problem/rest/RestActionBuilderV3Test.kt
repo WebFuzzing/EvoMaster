@@ -45,7 +45,7 @@ class RestActionBuilderV3Test{
         val a = map.values.first() as RestCallAction
 
         val topGenes = a.seeTopGenes()
-        assertEquals(4, topGenes.size)
+        assertEquals(5, topGenes.size)
         assertTrue(topGenes.any { it is IntegerGene})
         assertTrue(topGenes.any { it.getWrappedGene(BooleanGene::class.java) != null })
         assertTrue(topGenes.any {
@@ -979,7 +979,7 @@ class RestActionBuilderV3Test{
     @ValueSource(booleans = [true, false])
     fun testCyclotron(enableConstraintHandling : Boolean){
         val map = loadAndAssertActions("/swagger/sut/cyclotron.json", 50, enableConstraintHandling = enableConstraintHandling)
-        checkNumOfRootGene(map, listOf(),50, 87, 16, 71, 11)
+        checkNumOfRootGene(map, listOf(),50, 100, 16, 84, 11)
         checkNumResource(map, listOf(), 40, 18)
     }
 
@@ -1020,7 +1020,7 @@ class RestActionBuilderV3Test{
     @ValueSource(booleans = [true, false])
     fun testGestaoHospital(enableConstraintHandling : Boolean){
         val map = loadAndAssertActions("/swagger/sut/gestaohospital.json", 20, enableConstraintHandling = enableConstraintHandling)
-        checkNumOfRootGene(map, listOf(),20, 43, 14, 29, 6)
+        checkNumOfRootGene(map, listOf(),20, 51, 14, 37, 6)
         checkNumResource(map, listOf(), 13, 0)
 
     }
@@ -1037,7 +1037,7 @@ class RestActionBuilderV3Test{
     @ValueSource(booleans = [true, false])
     fun testRealWorld(enableConstraintHandling : Boolean){
         val map = loadAndAssertActions("/swagger/sut/realworld_app.json", 19, enableConstraintHandling = enableConstraintHandling)
-        checkNumOfRootGene(map, listOf(),19, 31, 6, 25, 6)
+        checkNumOfRootGene(map, listOf(),19, 37, 6, 31, 6)
         checkNumResource(map, listOf(), 11, 2)
     }
 
@@ -1045,7 +1045,7 @@ class RestActionBuilderV3Test{
     @ValueSource(booleans = [true, false])
     fun testSpaceX(enableConstraintHandling : Boolean){
         val map = loadAndAssertActions("/swagger/sut/spacex_api.json", 94, enableConstraintHandling = enableConstraintHandling)
-        checkNumOfRootGene(map, listOf(),94, 102, 29, 73, 29)
+        checkNumOfRootGene(map, listOf(),94, 131, 29, 102, 29)
         checkNumResource(map, listOf(), 52, 5)
     }
 
@@ -1057,7 +1057,7 @@ class RestActionBuilderV3Test{
         val map = loadAndAssertActions("/swagger/sut/news.json", 7, enableConstraintHandling = enableConstraintHandling)
 
         val create = map["POST:/news"] as RestCallAction
-        assertEquals(2, create.seeTopGenes().size)
+        assertEquals(3, create.seeTopGenes().size)
         val bodyNews = create.seeTopGenes().find { it.name == "body" }
         assertNotNull(bodyNews)
         assertNotNull(bodyNews is OptionalGene)
@@ -1065,7 +1065,7 @@ class RestActionBuilderV3Test{
         assertNotNull((bodyNews.gene as ObjectGene).refType)
         assertEquals("NewsDto", (bodyNews.gene as ObjectGene).refType)
 
-        checkNumOfRootGene(map, listOf(),7, 12, 3, 9, 2)
+        checkNumOfRootGene(map, listOf(),7, 15, 3, 12, 2)
         checkNumResource(map, listOf(), 4, 1)
 
     }
@@ -1077,14 +1077,14 @@ class RestActionBuilderV3Test{
         val map = loadAndAssertActions("/swagger/sut/catwatch.json", 23, enableConstraintHandling = enableConstraintHandling)
 
         val postScoring = map["POST:/config/scoring.project"] as RestCallAction
-        assertEquals(3, postScoring.seeTopGenes().size)
+        assertEquals(4, postScoring.seeTopGenes().size)
         val bodyPostScoring = postScoring.seeTopGenes().find { it.name == "body" }
         assertNotNull(bodyPostScoring)
         assertTrue(bodyPostScoring is OptionalGene)
         assertTrue((bodyPostScoring as OptionalGene).gene is StringGene)
 
         val skipInEM = listOf("/fetch", "/health", "/health.json", "/error")
-        checkNumOfRootGene(map,skipInEM ,13, 36, 4, 32, 1)
+        checkNumOfRootGene(map,skipInEM ,13, 38, 4, 34, 1)
         checkNumResource(map, skipInEM, 13, 11)
     }
 
@@ -1124,7 +1124,7 @@ class RestActionBuilderV3Test{
             "/metrics", "/metrics.json", "/metrics/{name}",
             "/trace", "/trace.json"
         )
-        checkNumOfRootGene(map, skipInEM, 74, 82,22, 60, 14)
+        checkNumOfRootGene(map, skipInEM, 74, 100,22, 78, 14)
 
         checkNumResource(map, skipInEM, 56, 25)
 
@@ -1163,7 +1163,7 @@ class RestActionBuilderV3Test{
     @ValueSource(booleans = [true, false])
     fun testFeaturesServices(enableConstraintHandling : Boolean){
         val map = loadAndAssertActions("/swagger/sut/features_service.json", 18, enableConstraintHandling = enableConstraintHandling)
-        checkNumOfRootGene(map, listOf(),18, 37, 4, 33, 4)
+        checkNumOfRootGene(map, listOf(),18, 41, 4, 37, 4)
         checkNumResource(map, listOf(), 11, 0)
     }
 
@@ -1171,7 +1171,7 @@ class RestActionBuilderV3Test{
     @ValueSource(booleans = [true, false])
     fun testScoutApi(enableConstraintHandling : Boolean){
         val map = loadAndAssertActions("/swagger/sut/scout-api.json", 49, enableConstraintHandling = enableConstraintHandling)
-        checkNumOfRootGene(map, listOf(),49, 127, 19, 108, 19)
+        checkNumOfRootGene(map, listOf(),49, 146, 19, 127, 19)
         checkNumResource(map, listOf(), 21, 2)
     }
 
@@ -1179,7 +1179,7 @@ class RestActionBuilderV3Test{
     @ValueSource(booleans = [true, false])
     fun testLanguageTool(enableConstraintHandling : Boolean){
         val map = loadAndAssertActions("/swagger/sut/languagetool.json", 2, enableConstraintHandling = enableConstraintHandling)
-        checkNumOfRootGene(map, listOf(),2, 2, 1, 1, 1)
+        checkNumOfRootGene(map, listOf(),2, 3, 1, 2, 1)
         checkNumResource(map, listOf(), 2, 1)
     }
 
@@ -1195,7 +1195,7 @@ class RestActionBuilderV3Test{
     @ValueSource(booleans = [true, false])
     fun testCwaVerification(enableConstraintHandling : Boolean){
         val map = loadAndAssertActions("/swagger/sut/cwa_verification.json", 5, enableConstraintHandling = enableConstraintHandling)
-        checkNumOfRootGene(map, listOf(),5, 12, 4, 8, 5)
+        checkNumOfRootGene(map, listOf(),5, 16, 4, 12, 5)
         checkNumResource(map, listOf(), 5, 0)
     }
 
