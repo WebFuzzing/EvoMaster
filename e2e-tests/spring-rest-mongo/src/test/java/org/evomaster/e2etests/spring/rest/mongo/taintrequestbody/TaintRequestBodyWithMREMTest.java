@@ -27,10 +27,9 @@ public class TaintRequestBodyWithMREMTest extends RestTestBase {
         runTestHandlingFlaky(
                 "TaintRequestBodyWithMREM",
                 "org.foo.spring.rest.mongo.TaintRequestBodyEMGeneration",
-                100,
+                1000,
                 true,
                 (args) -> {
-                    setOption(args,"enableWeightBasedMutationRateSelectionForGene","false");
                     setOption(args,"heuristicsForMongo","false");
                     setOption(args,"instrumentMR_MONGO","true");
                     setOption(args,"generateMongoData","false");
@@ -39,10 +38,8 @@ public class TaintRequestBodyWithMREMTest extends RestTestBase {
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertFalse(solution.getIndividuals().isEmpty());
-                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/taintrequestbody/getTaintRequestDto", null);
-                    assertHasAtLeastOne(solution, HttpVerb.POST, 400, "/taintrequestbody/parseRequestBody", null);
-
-                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/taintrequestbody/parseRequestBody", null);
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 400, "/taintrequestbody/getStringRequestBody", null);
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/taintrequestbody/getStringRequestBody", null);
                 });
     }
 
@@ -54,7 +51,6 @@ public class TaintRequestBodyWithMREMTest extends RestTestBase {
                 "org.foo.spring.rest.mongo.TaintRequestBodyEMGeneration",
                 100,
                 (args) -> {
-                    setOption(args,"enableWeightBasedMutationRateSelectionForGene","false");
                     setOption(args,"heuristicsForMongo","false");
                     setOption(args,"instrumentMR_MONGO","true");
                     setOption(args,"generateMongoData","false");
@@ -63,10 +59,8 @@ public class TaintRequestBodyWithMREMTest extends RestTestBase {
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertFalse(solution.getIndividuals().isEmpty());
-                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/taintrequestbody/getTaintRequestDto", null);
-                    assertHasAtLeastOne(solution, HttpVerb.POST, 400, "/taintrequestbody/parseRequestBody", null);
-
-                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/taintrequestbody/parseRequestBody", null);
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 400, "/taintrequestbody/getStringRequestBody", null);
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/taintrequestbody/getStringRequestBody", null);
                 });
     }
 

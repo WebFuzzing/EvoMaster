@@ -41,6 +41,7 @@ import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.DataPool
 import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.taint.TaintAnalysis
+import org.evomaster.core.utils.StringUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.URL
@@ -791,8 +792,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 body.isTextPlain() -> GeneUtils.EscapeMode.TEXT
                 else -> throw IllegalStateException("Cannot handle body type: " + body.contentType())
             }
+
+            val stringToBeSent = body.getValueAsPrintableString(mode = mode, targetFormat = configuration.outputFormat)
             Entity.entity(
-                body.gene.getValueAsPrintableString(mode = mode, targetFormat = configuration.outputFormat),
+                stringToBeSent,
                 body.contentType()
             )
         } else if (forms != null) {

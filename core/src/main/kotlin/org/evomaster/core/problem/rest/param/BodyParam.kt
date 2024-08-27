@@ -1,21 +1,28 @@
 package org.evomaster.core.problem.rest.param
 
-import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.api.param.Param
-import org.evomaster.core.problem.util.HttpWsUtil
 import org.evomaster.core.problem.util.HttpWsUtil.isContentTypeForm
 import org.evomaster.core.problem.util.HttpWsUtil.isContentTypeJson
 import org.evomaster.core.problem.util.HttpWsUtil.isContentTypeMultipartForm
 import org.evomaster.core.problem.util.HttpWsUtil.isContentTypeTextPlain
 import org.evomaster.core.problem.util.HttpWsUtil.isContentTypeXml
+import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.optional.CustomMutationRateGene
+import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 
 class BodyParam(gene: Gene,
-                typeGene: EnumGene<String>
+                typeGene: EnumGene<String>,
+                /* this gene is meant to allow the BodyParam to present incorrect (i.e. unquoted)
+                  string bodies.
+                 */
+                removeQuotesGene: CustomMutationRateGene<BooleanGene>? = null
 ) : Param("body", gene) {
 
     companion object {
@@ -25,6 +32,8 @@ class BodyParam(gene: Gene,
     val contenTypeGene : EnumGene<String>
 
     val notSupportedContentTypes : List<String>
+
+    val contentRemoveQuotesGene: CustomMutationRateGene<BooleanGene>
 
     init {
 
@@ -59,13 +68,29 @@ class BodyParam(gene: Gene,
         // local id of typeGene needs to be assigned for the newly created contenTypeGene since it is from copy
         if (typeGene.hasLocalId()) contenTypeGene.setLocalId(typeGene.getLocalId())
         addChild(contenTypeGene)
+
+        contentRemoveQuotesGene = removeQuotesGene
+            ?: if (isJson() && primaryGene() is StringGene) {
+                CustomMutationRateGene(
+                    "sendUnquoteJsonStringWrapper",
+                    BooleanGene("sendUnquoteJsonString", false), 0.25
+                )
+            } else {
+                CustomMutationRateGene(
+                    "sendUnquoteJsonStringWrapper",
+                    BooleanGene("sendUnquoteJsonString", false), 0.0
+                )
+            }
+
+        addChild(contentRemoveQuotesGene)
+
     }
 
     override fun copyContent(): Param {
-        return BodyParam(gene.copy(), contenTypeGene.copy() as EnumGene<String>)
+        return BodyParam(primaryGene().copy(), contenTypeGene.copy() as EnumGene<String>, contentRemoveQuotesGene.copy() as CustomMutationRateGene<BooleanGene>)
     }
 
-    override fun seeGenes() = listOf(gene, contenTypeGene)
+    override fun seeGenes() = listOf(primaryGene(), contenTypeGene, contentRemoveQuotesGene)
 
     fun contentType() = contenTypeGene.getValueAsRawString().trim()
 
@@ -86,4 +111,17 @@ class BodyParam(gene: Gene,
     fun isForm() = isContentTypeForm(contentType())
 
     fun isMultipartForm() = isContentTypeMultipartForm(contentType())
+
+    private fun removeQuotes() = contentRemoveQuotesGene.gene.value
+
+    fun getValueAsPrintableString(mode: GeneUtils.EscapeMode? = null, targetFormat: OutputFormat? =null): String {
+        val originalValueAsPrintableString =
+            primaryGene().getValueAsPrintableString( mode= mode, targetFormat= targetFormat )
+        val valueAsPrintableString = if (removeQuotes()) {
+            GeneUtils.removeEnclosedQuotationMarks(originalValueAsPrintableString)
+        } else {
+            originalValueAsPrintableString
+        }
+        return valueAsPrintableString
+    }
 }

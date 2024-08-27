@@ -25,4 +25,19 @@ class TestWriterUtilsTest{
 
     }
 
+    @Test
+    fun testRemoveStartingAndEndingQuotesInJsonBody() {
+        // no change
+        assertEquals(listOf("Hello World"), TestWriterUtils.removeStartingAndEndingQuotesInJsonBody(listOf("Hello World")))
+        assertEquals(listOf("Hello","World"), TestWriterUtils.removeStartingAndEndingQuotesInJsonBody(listOf("Hello","World")))
+        assertEquals(listOf<String>(), TestWriterUtils.removeStartingAndEndingQuotesInJsonBody(listOf()))
+
+        // changed
+        assertEquals(listOf("\"Hello World\""), TestWriterUtils.removeStartingAndEndingQuotesInJsonBody(listOf("\" \\\"Hello World\\\" \"")))
+        assertEquals(listOf("\"Hello New World\""), TestWriterUtils.removeStartingAndEndingQuotesInJsonBody(listOf("\" \\\"Hello New World\\\" \"")))
+        assertEquals(listOf("\"Hello", "New", "World\""), TestWriterUtils.removeStartingAndEndingQuotesInJsonBody(listOf("\" \\\"Hello" ,"New", "World\\\" \"")))
+    }
+
+
+
 }

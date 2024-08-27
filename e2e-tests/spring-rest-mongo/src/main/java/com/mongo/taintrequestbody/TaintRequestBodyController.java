@@ -21,17 +21,6 @@ public class TaintRequestBodyController {
         return ResponseEntity.status(status).build();
     }
 
-    @PostMapping("getTaintRequestDtoRequestBody")
-    public ResponseEntity<Void> getTaintRequestDtoRequestBody(@RequestBody TaintRequestDto dto) {
-        int status;
-        if (dto!=null) {
-            status = 200;
-        } else {
-            status = 400;
-        }
-        return ResponseEntity.status(status).build();
-    }
-
 }
 
 

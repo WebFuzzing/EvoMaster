@@ -2,26 +2,27 @@ package org.evomaster.core.output.service
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.JsonUtils
-import org.evomaster.core.output.auth.CookieWriter
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestWriterUtils
-import org.evomaster.core.output.auth.TokenWriter
 import org.evomaster.core.output.TestWriterUtils.formatJsonWithEscapes
+import org.evomaster.core.output.auth.CookieWriter
+import org.evomaster.core.output.auth.TokenWriter
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
-import org.evomaster.core.search.action.ActionResult
-import org.evomaster.core.search.action.EvaluatedAction
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
+import org.evomaster.core.search.action.ActionResult
+import org.evomaster.core.search.action.EvaluatedAction
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.slf4j.LoggerFactory
 import java.nio.file.Path
 import javax.ws.rs.core.MediaType
+
 
 abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
@@ -410,9 +411,9 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 }
 
                 val json =
-                        bodyParam.gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = format)
+                        bodyParam.primaryGene().getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = format)
 
-                printSendJsonBody(json, lines)
+                printSendJsonBody(json, lines, sendUnquotedJsonBody = bodyParam.contentRemoveQuotesGene.gene.value)
 
             } else if (bodyParam.isTextPlain()) {
                 val body =
@@ -468,11 +469,21 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         }
     }
 
-    fun printSendJsonBody(json: String, lines: Lines) {
+    fun printSendJsonBody(json: String, lines: Lines, sendUnquotedJsonBody: Boolean = false) {
 
         val send = sendBodyCommand()
 
-        val bodyLines = formatJsonWithEscapes(json, format)
+        val JsonEscapedBodyLines = formatJsonWithEscapes(json, format)
+
+        // This handling of sending unquoted json bodies is UGLY (with
+        // uppercase) but seems to be the only  solution due to the
+        // permisiveness of the Gson parser that is used in
+        // OutputFormatter.JSON_FORMATTER.isValid(json)
+        val bodyLines = if (sendUnquotedJsonBody) {
+            TestWriterUtils.removeStartingAndEndingQuotesInJsonBody(JsonEscapedBodyLines)
+        } else {
+            JsonEscapedBodyLines
+        }
 
         if (bodyLines.size == 1) {
             when {
