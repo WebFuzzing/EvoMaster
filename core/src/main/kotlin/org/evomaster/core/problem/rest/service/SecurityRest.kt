@@ -382,10 +382,9 @@ class SecurityRest {
             authSettings.getDifferentOne(creationAction.auth.name, HttpWsAuthenticationInfo::class.java, randomness)
 
         //    Bind the creation operation and new target action based on their path
+        PostCreateResourceUtils.linkDynamicCreateResource(creationAction, targetAction)
         if (creationEndpoint.path.isEquivalent(path)) {
             targetAction.bindBasedOn(creationAction.path, creationAction.parameters.filterIsInstance<PathParam>(), null)
-        } else {
-            PostCreateResourceUtils.linkDynamicCreateResource(creationAction, targetAction)
         }
 
         //finally, add the target action to the test including the creation of the resource

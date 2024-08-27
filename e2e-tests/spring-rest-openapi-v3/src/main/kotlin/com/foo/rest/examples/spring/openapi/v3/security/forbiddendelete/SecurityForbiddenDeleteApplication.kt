@@ -6,6 +6,9 @@ import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfi
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import java.net.URI
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentMap
+import java.util.concurrent.atomic.AtomicInteger
 
 
 @SpringBootApplication(exclude = [SecurityAutoConfiguration::class])
@@ -19,11 +22,11 @@ open class SecurityForbiddenDeleteApplication {
             SpringApplication.run(SecurityForbiddenDeleteApplication::class.java, *args)
         }
 
-        private val data = mutableMapOf<Int, String>()
-        private var counter = 0
+        private val data = ConcurrentHashMap<Int, String>()
+        private val counter = AtomicInteger(0)
 
         fun reset(){
-            counter = 0
+            counter.set(0)
             data.clear()
         }
     }
@@ -38,9 +41,9 @@ open class SecurityForbiddenDeleteApplication {
             return ResponseEntity.status(401).build()
         }
 
-        data[counter] = auth!!
+        data[counter.get()] = auth!!
         val res = ResponseEntity.created(URI.create("/api/forbiddendelete/resources/${counter}")).build<Any>()
-        counter++
+        counter.getAndIncrement()
         return res
     }
 

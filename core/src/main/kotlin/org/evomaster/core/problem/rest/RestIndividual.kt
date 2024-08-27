@@ -204,6 +204,30 @@ class RestIndividual(
         }
     }
 
+    fun fixResourceForwardLinks(){
+
+        val actions = seeMainExecutableActions()
+
+        for(i in 0 until actions.size-1){
+            val a = actions[i]
+            if(a.saveCreatedResourceLocation){
+                //anyone after using it?
+                var using = false
+                for(j in (i+1) until actions.size){
+                    if(actions[j].usePreviousLocationId == a.postLocationId()){
+                        using = true
+                        break
+                    }
+                }
+                if(!using){
+                    //no point in keeping it if none use it
+                    a.saveCreatedResourceLocation = false
+                }
+            }
+        }
+
+    }
+
     //FIXME refactor
     override fun verifyInitializationActions(): Boolean {
         return SqlActionUtils.verifyActions(seeInitializingActions().filterIsInstance<SqlAction>())

@@ -43,11 +43,7 @@ class RestIndividualBuilder {
             }
 
             ind.fixGeneBindingsIfNeeded()
-
-            /**
-             * FIXME this is WRONG!!! need to do only for removed actions
-             */
-            ind.removeAllLinks()
+            ind.fixResourceForwardLinks()
 
             return ind
         }

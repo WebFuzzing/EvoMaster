@@ -30,8 +30,8 @@ object PostCreateResourceUtils {
         before: RestCallAction,
         after: RestCallAction
     ) {
-        if(before.verb != HttpVerb.POST){
-            throw IllegalArgumentException("Before action is not a POST. It is a ${before.verb}")
+        if(before.verb != HttpVerb.POST && before.verb != HttpVerb.PUT){
+            throw IllegalArgumentException("Before action is neither a POST nor a PUT. It is a ${before.verb}")
         }
 
         if (!before.path.isEquivalent(after.path)) {
