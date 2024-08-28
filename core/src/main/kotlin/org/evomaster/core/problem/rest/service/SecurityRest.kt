@@ -211,6 +211,7 @@ class SecurityRest {
             //make sure using same auth
             it.auth = lastAction.auth
             it.usePreviousLocationId = lastAction.usePreviousLocationId
+            it.bindBasedOn(lastAction.path, lastAction.parameters.filterIsInstance<PathParam>(), null)
 
             //create new individual where this action on same path and auth that led to 403 is added
             val finalIndividual = individualWith403LastCall.copy() as RestIndividual
@@ -367,10 +368,7 @@ class SecurityRest {
             authSettings.getDifferentOne(creationAction.auth.name, HttpWsAuthenticationInfo::class.java, randomness)
 
         //    Bind the creation operation and new target action based on their path
-        PostCreateResourceUtils.linkDynamicCreateResource(creationAction, targetAction)
-        if (creationEndpoint.path.isEquivalent(path)) {
-            targetAction.bindBasedOn(creationAction.path, creationAction.parameters.filterIsInstance<PathParam>(), null)
-        }
+        linkAndBindActions(creationAction, targetAction)
 
         //finally, add the target action to the test including the creation of the resource
         sliced.addResourceCall(
@@ -381,6 +379,16 @@ class SecurityRest {
         )
 
         return sliced
+    }
+
+    private fun linkAndBindActions(
+        creationAction: RestCallAction,
+        targetAction: RestCallAction
+    ) {
+        PostCreateResourceUtils.linkDynamicCreateResource(creationAction, targetAction)
+        if (creationAction.path.isEquivalent(targetAction.path)) {
+            targetAction.bindBasedOn(creationAction.path, creationAction.parameters.filterIsInstance<PathParam>(), null)
+        }
     }
 
     /**

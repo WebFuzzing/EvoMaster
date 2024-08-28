@@ -169,9 +169,22 @@ class SecurityForbiddenOperationTest : IntegrationTestRestBase() {
         val ind = createIndividual(listOf(a,b), SampleType.SECURITY)
         assertEquals(201, (ind.evaluatedMainActions()[0].result as RestCallResult).getStatusCode())
         assertEquals(403, (ind.evaluatedMainActions()[1].result as RestCallResult).getStatusCode())
-
         val added = archive.addIfNeeded(ind)
         assertTrue(added)
+
+        //we need at least a DELETE or PATCH in the archive, as cannot
+        //reuse the same test for a PUT
+        val otherID = id + 123
+        val c = pirTest.fromVerbPath("PUT", "/api/resources/$otherID")!!
+        val d = pirTest.fromVerbPath("DELETE", "/api/resources/$otherID")!!
+        c.auth = foo
+        d.auth = foo
+        val other = createIndividual(listOf(c,d), SampleType.RANDOM)
+        assertEquals(201, (other.evaluatedMainActions()[0].result as RestCallResult).getStatusCode())
+        assertEquals(204, (other.evaluatedMainActions()[1].result as RestCallResult).getStatusCode())
+        val otherAdded = archive.addIfNeeded(other)
+        assertTrue(otherAdded)
+
 
         val solution = security.applySecurityPhase()
 
@@ -190,6 +203,8 @@ class SecurityForbiddenOperationTest : IntegrationTestRestBase() {
 
     @Test
     fun testReuseTestFaultyPutAndDelete(){
+
+        assumeTrue(JdkIssue.getJDKVersion() >= 9)
 
         val pirTest = getPirToRest()
         val archive = getArchive()
