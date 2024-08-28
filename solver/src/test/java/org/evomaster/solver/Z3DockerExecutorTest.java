@@ -1,6 +1,6 @@
 package org.evomaster.solver;
 
-import org.evomaster.solver.smtlib.value.IntValue;
+import org.evomaster.solver.smtlib.value.LongValue;
 import org.evomaster.solver.smtlib.value.SMTLibValue;
 import org.evomaster.solver.smtlib.value.StringValue;
 import org.evomaster.solver.smtlib.value.StructValue;
@@ -48,8 +48,8 @@ public class Z3DockerExecutorTest {
         assertTrue(response.isPresent());
         assertEquals(2, response.get().size());
 
-        assertEquals(new IntValue(0), response.get().get("y"));
-        assertEquals(new IntValue(-4), response.get().get("x"));
+        assertEquals(new LongValue(0L), response.get().get("y"));
+        assertEquals(new LongValue((long) -4), response.get().get("x"));
     }
 
     /**
@@ -82,8 +82,8 @@ public class Z3DockerExecutorTest {
         Optional<Map<String, SMTLibValue>> response = executor.solveFromFile("unique_uint.smt");
 
         assertTrue(response.isPresent(), "Response should be present for unique_uint.smt");
-        assertEquals(new IntValue(2), response.get().get("id_1"), "The value for id_1 should be 2");
-        assertEquals(new IntValue(3), response.get().get("id_2"), "The value for id_2 should be 3");
+        assertEquals(new LongValue(2L), response.get().get("id_1"), "The value for id_1 should be 2");
+        assertEquals(new LongValue(3L), response.get().get("id_2"), "The value for id_2 should be 3");
     }
 
     /**
@@ -97,19 +97,19 @@ public class Z3DockerExecutorTest {
 
         assertTrue(response.get().containsKey("users1"), "Response should contain users1");
         Map<String, SMTLibValue> users1Expected = new HashMap<>();
-        users1Expected.put("ID", new IntValue(3));
+        users1Expected.put("ID", new LongValue(3L));
         users1Expected.put("NAME", new StringValue("agus"));
-        users1Expected.put("AGE", new IntValue(31));
-        users1Expected.put("POINTS", new IntValue(7));
+        users1Expected.put("AGE", new LongValue(31L));
+        users1Expected.put("POINTS", new LongValue(7L));
 
         assertEquals(new StructValue(users1Expected), response.get().get("users1"), "The value for users1 is incorrect");
 
         assertTrue(response.get().containsKey("users2"), "Response should contain users2");
         Map<String, SMTLibValue> users2Expected = new HashMap<>();
-        users2Expected.put("ID", new IntValue(3));
+        users2Expected.put("ID", new LongValue(3L));
         users2Expected.put("NAME", new StringValue("agus"));
-        users2Expected.put("AGE", new IntValue(31));
-        users2Expected.put("POINTS", new IntValue(7));
+        users2Expected.put("AGE", new LongValue(31L));
+        users2Expected.put("POINTS", new LongValue(7L));
         assertEquals(new StructValue(users2Expected), response.get().get("users2"), "The value for users2 is incorrect");
     }
 

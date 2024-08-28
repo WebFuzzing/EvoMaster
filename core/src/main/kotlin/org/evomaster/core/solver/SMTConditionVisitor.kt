@@ -90,8 +90,8 @@ class SMTConditionVisitor(
         return when {
             operand.contains(".") -> { // Handle column references with aliases
                 val parts = operand.split(".")
-                val tableName = tableAliases[parts[0]] ?: parts[0]
-                val columnName = parts[1]
+                val tableName = tableAliases[parts[0]] ?: defaultTableName
+                val columnName = parts[parts.lastIndex]
                 getColumnReference(tableName, columnName)
             }
             isAColumn(operand) -> { // Handle direct column references
@@ -135,6 +135,37 @@ class SMTConditionVisitor(
         }
     }
 
+    override fun visit(condition: SqlInCondition, parameter: Void?): SMTNode {
+        val b = condition.sqlColumn.toString();
+        val left = getVariableAndLiteral(b)
+        val conditions = condition.literalList.sqlConditionExpressions
+            .map {
+                AssertSMTNode(EqualsAssertion(listOf(left, asLiteral(it))))
+            }
+        return AssertSMTNode(OrAssertion(conditions.map { it.assertion }))
+    }
+
+    private fun asLiteral(expression: SqlCondition?): String {
+        if (expression is SqlStringLiteralValue) {
+            return expression.toString().replace("'", "\"")
+        } else if (expression is SqlBigDecimalLiteralValue) {
+            return expression.toString()
+        } else if (expression is SqlBigIntegerLiteralValue) {
+            return expression.toString()
+        } else if (expression is SqlBooleanLiteralValue) {
+            return expression.toString()
+        } else if (expression is SqlBinaryDataLiteralValue) {
+            return expression.toString()
+        } else {
+            throw IllegalArgumentException(
+                "Unsupported literal type: ${
+                    expression?.javaClass?.simpleName
+                        ?: "null"
+                }"
+            )
+        }
+    }
+
     // Placeholder methods for other SQL conditions; to be implemented as needed
     override fun visit(condition: SqlBigDecimalLiteralValue, parameter: Void?): SMTNode {
         return SMTNode() // TODO: implement
@@ -161,10 +192,6 @@ class SMTConditionVisitor(
     }
 
     override fun visit(condition: SqlConditionList, parameter: Void?): SMTNode {
-        return SMTNode() // TODO: implement
-    }
-
-    override fun visit(condition: SqlInCondition, parameter: Void?): SMTNode {
         return SMTNode() // TODO: implement
     }
 

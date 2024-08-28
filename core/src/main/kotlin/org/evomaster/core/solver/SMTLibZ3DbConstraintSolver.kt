@@ -10,6 +10,7 @@ import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.schema.Column
@@ -85,13 +86,13 @@ class SMTLibZ3DbConstraintSolver(
      */
     private fun toSqlActionList(z3Response: Optional<MutableMap<String, SMTLibValue>>): List<SqlAction> {
         if (!z3Response.isPresent) {
-            return emptyList() // Return empty list if no response
+            return emptyList() // Return an empty list if no response
         }
 
         val actions = mutableListOf<SqlAction>()
 
         for (row in z3Response.get()) {
-            val tableName = getTableName(row.key) // Extract table name from key
+            val tableName = getTableName(row.key) // Extract table name from the key
             val columns = row.value as StructValue
 
             // Find table from schema and create SQL actions
@@ -99,19 +100,23 @@ class SMTLibZ3DbConstraintSolver(
 
             // Create the list of genes with the values
             val genes = mutableListOf<Gene>()
-            for (columnName in columns.getFields()) {
-                val columnValue = columns.getField(columnName)
-                when (columnValue) {
+            for (columnName in columns.fields) {
+                when (val columnValue = columns.getField(columnName)) {
                     is StringValue -> {
-                        val gene = StringGene(columnName, columnValue.getValue())
+                        val gene = StringGene(columnName, columnValue.value)
                         genes.add(gene)
                     }
-                    is IntValue -> {
-                        val gene = IntegerGene(columnName, columnValue.getValue())
-                        genes.add(gene)
+                    is LongValue -> {
+                        if (isTimestamp(table, columnName)) {
+                            val gene = LongGene(columnName, columnValue.value.toLong())
+                            genes.add(gene)
+                        } else {
+                            val gene = IntegerGene(columnName, columnValue.value.toInt())
+                            genes.add(gene)
+                        }
                     }
                     is RealValue -> {
-                        val gene = DoubleGene(columnName, columnValue.getValue())
+                        val gene = DoubleGene(columnName, columnValue.value)
                         genes.add(gene)
                     }
                 }
@@ -122,6 +127,11 @@ class SMTLibZ3DbConstraintSolver(
         }
 
         return actions
+    }
+
+    private fun isTimestamp(table: Table, columnName: String?): Boolean {
+        val col = table.columns.first { it.name == columnName }
+        return col.type == ColumnDataType.TIMESTAMP
     }
 
     /**
@@ -233,6 +243,7 @@ class SMTLibZ3DbConstraintSolver(
             "INTEGER" -> ColumnDataType.INTEGER
             "FLOAT" -> ColumnDataType.FLOAT
             "DOUBLE" -> ColumnDataType.DOUBLE
+            "TIMESTAMP" -> ColumnDataType.TIMESTAMP
             "CHARACTER VARYING" -> ColumnDataType.CHARACTER_VARYING
             "CHAR" -> ColumnDataType.CHAR
             else -> ColumnDataType.CHARACTER_VARYING // Default type

@@ -149,15 +149,6 @@ class SmtLibGeneratorTest {
         )
     }
 
-    val satConstraints = arrayOf(
-        CheckSatSMTNode(),
-        GetValueSMTNode("products1"),
-        GetValueSMTNode("products2"),
-        GetValueSMTNode("users1"),
-        GetValueSMTNode("users2")
-    )
-
-
     companion object {
         private lateinit var generator: SmtLibGenerator
         private lateinit var connection: Connection
@@ -222,9 +213,18 @@ class SmtLibGeneratorTest {
                 )
             )
         )
+
+        val satConstraints = arrayOf(
+            CheckSatSMTNode(),
+            GetValueSMTNode("users1"),
+            GetValueSMTNode("users2")
+        )
+
         for (constraint in satConstraints) {
             expected.addNode(constraint)
         }
+
+
 
         assertEquals(expected, response)
     }
@@ -261,6 +261,13 @@ class SmtLibGeneratorTest {
                 )
             )
         )
+
+        val satConstraints = arrayOf(
+            CheckSatSMTNode(),
+            GetValueSMTNode("users1"),
+            GetValueSMTNode("users2")
+        )
+
         for (constraint in satConstraints) {
             expected.addNode(constraint)
         }
@@ -334,10 +341,20 @@ class SmtLibGeneratorTest {
             )
         )
 
+        val satConstraints = arrayOf(
+            CheckSatSMTNode(),
+            GetValueSMTNode("products1"),
+            GetValueSMTNode("products2"),
+            GetValueSMTNode("users1"),
+            GetValueSMTNode("users2")
+        )
+
         for (constraint in satConstraints) {
             expected.addNode(constraint)
         }
 
         assertEquals(expected, response)
     }
+
+    // TODO: Add a test with timestamp
 }
