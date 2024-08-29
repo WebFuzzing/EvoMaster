@@ -63,7 +63,7 @@
                 https://youtrack.jetbrains.com/issue/KT-56137#focus=Comments-27-6800445.0-0
             -->
             <properties>
-                <addOpens> --add-opens java.base/sun.net.www.protocol.https=ALL-UNNAMED  --add-opens java.base/java.time=ALL-UNNAMED  --add-opens java.base/java.io=ALL-UNNAMED --add-opens java.logging/java.util.logging=ALL-UNNAMED --add-opens  java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.util.regex=ALL-UNNAMED --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED</addOpens>
+                <addOpens> --add-opens java.base/sun.net.www.protocol.https=ALL-UNNAMED --add-opens java.base/sun.net.www.protocol.https=ALL-UNNAMED  --add-opens java.base/java.time=ALL-UNNAMED  --add-opens java.base/java.io=ALL-UNNAMED --add-opens java.logging/java.util.logging=ALL-UNNAMED --add-opens  java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.util.regex=ALL-UNNAMED --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED</addOpens>
             </properties>
         </profile>
         <profile>
