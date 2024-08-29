@@ -72,6 +72,11 @@ object JdkIssue {
 
 
         val original = field.get(null) as Array<String>
+
+        if(original.any { it == "PATCH" }){
+            return //nothing to do, already fixed
+        }
+
         val index = original.indexOfFirst { it == "TRACE" }
         // I feel so dirty... fuck you JDK 17+
         original[index] = "PATCH"
