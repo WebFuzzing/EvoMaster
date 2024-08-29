@@ -87,7 +87,7 @@ class RestStructureMutator : ApiWsStructureMutator() {
                         one simple way to distinguish the POST on collection is that
                         they are not chaining a location, as GET is on same endpoint
                     */
-                    !a.saveLocation && a.verb == HttpVerb.POST
+                    !a.saveCreatedResourceLocation && a.verb == HttpVerb.POST
                 }
 
         if (indices.isEmpty()) {
@@ -128,7 +128,7 @@ class RestStructureMutator : ApiWsStructureMutator() {
             val idx = indices.last()
 
             val postTemplate = ind.seeMainExecutableActions()[idx]
-            Lazy.assert{postTemplate.verb == HttpVerb.POST && !postTemplate.saveLocation}
+            Lazy.assert{postTemplate.verb == HttpVerb.POST && !postTemplate.saveCreatedResourceLocation}
 
             val post = builder.createBoundActionFor(postTemplate, ind.seeAllActions().last() as RestCallAction)
 

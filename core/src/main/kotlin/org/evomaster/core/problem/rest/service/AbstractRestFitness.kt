@@ -849,7 +849,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         rcr: RestCallResult,
         chainState: MutableMap<String, String>
     ): Boolean {
-        if (a.saveLocation) {
+        if (a.saveCreatedResourceLocation) {
 
             if (response.statusInfo.family != Response.Status.Family.SUCCESSFUL) {
                 /*
@@ -988,10 +988,32 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             fv: FitnessValue
     ){
         //TODO the other cases
-        val fault = RestSecurityOracle.handleForbiddenDelete(individual,actionResults)
-        if(fault != null){
-            val scenarioId = idMapper.handleLocalTarget(fault)
-            fv.updateTarget(scenarioId, 1.0)
+
+        handleForbiddenOperation(HttpVerb.DELETE, FaultCategory.SECURITY_FORBIDDEN_DELETE, individual, actionResults, fv)
+        handleForbiddenOperation(HttpVerb.PUT, FaultCategory.SECURITY_FORBIDDEN_PUT, individual, actionResults, fv)
+        handleForbiddenOperation(HttpVerb.PATCH, FaultCategory.SECURITY_FORBIDDEN_PATCH, individual, actionResults, fv)
+    }
+
+    private fun handleForbiddenOperation(
+        verb: HttpVerb,
+        faultCategory: FaultCategory,
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        if (RestSecurityOracle.hasForbiddenOperation(verb, individual, actionResults)) {
+           val actionIndex = individual.size() - 1
+            val action = individual.seeMainExecutableActions()[actionIndex]
+            val result = actionResults
+                .filterIsInstance<RestCallResult>()
+                .find { it.sourceLocalId == action.getLocalId() }
+                ?: return
+
+            val scenarioId = idMapper.handleLocalTarget(
+                idMapper.getFaultDescriptiveId(faultCategory, action.getName())
+            )
+            fv.updateTarget(scenarioId, 1.0, actionIndex)
+            result.addFault(DetectedFault(faultCategory, action.getName()))
         }
     }
 
