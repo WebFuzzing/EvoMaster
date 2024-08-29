@@ -3,6 +3,8 @@ package org.evomaster.core
 import org.evomaster.core.AnsiColor.Companion.inBlue
 import org.evomaster.core.AnsiColor.Companion.inRed
 import org.evomaster.core.logging.LoggingUtil
+import java.lang.reflect.Field
+import java.lang.reflect.Modifier
 import java.net.HttpURLConnection
 
 object JdkIssue {
@@ -34,6 +36,56 @@ object JdkIssue {
 
             return false
         }
-
     }
+
+    fun getJDKVersion() : Int {
+        //from https://stackoverflow.com/questions/2591083/getting-java-version-at-runtime
+        var version = System.getProperty("java.version")
+        if (version.startsWith("1.")) {
+            version = version.substring(2, 3)
+        } else {
+            val dot = version.indexOf(".")
+            if (dot != -1) {
+                version = version.substring(0, dot)
+            }
+        }
+        return version.toInt()
+    }
+
+
+    /**
+     * This is a shitshow.
+     * JDK has ancient implementation of HTTP, not supporting PATCH method... yep, WTF!?!?!?
+     * Frameworks like Jersey fixes things at runtime via reflection.
+     * There are --add-opens challenges for JDK 16+, but those can be handled.
+     * Somehow, though, this fails on GA, even for JDK 8... no idea what the heck is going on :(
+     * So we force a hack here
+     *
+     * https://github.com/eclipse-ee4j/jersey/issues/4825
+     */
+    fun fixPatchMethod(){
+
+        //val methods = arrayOf("GET", "POST", "HEAD", "OPTIONS", "PUT", "DELETE", "TRACE", "PATCH");
+
+        val field = HttpURLConnection::class.java.getDeclaredField("methods")
+        field.isAccessible = true
+
+
+        val original = field.get(null) as Array<String>
+
+        if(original.any { it == "PATCH" }){
+            return //nothing to do, already fixed
+        }
+
+        val index = original.indexOfFirst { it == "TRACE" }
+        // I feel so dirty... fuck you JDK 17+
+        original[index] = "PATCH"
+
+        //Unfortunately, this does not work with recent JDK versions :(
+//        val modifiersField = Field::class.java.getDeclaredField("modifiers")
+//        modifiersField.isAccessible = true
+//        modifiersField.setInt(field, field.modifiers and Modifier.FINAL.inv())
+//        field.set(null, methods)
+    }
+
 }
