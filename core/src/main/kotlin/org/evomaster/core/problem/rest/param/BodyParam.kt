@@ -29,10 +29,15 @@ class BodyParam(gene: Gene,
         val log: Logger = LoggerFactory.getLogger(BodyParam::class.java)
     }
 
-    val contenTypeGene : EnumGene<String>
+    val contentTypeGene : EnumGene<String>
 
     val notSupportedContentTypes : List<String>
 
+    /**
+     * This is to handle a very common bug in few Java REST frameworks.
+     * They might declare to take as input a JSON string when OpenAPI schema is automatically
+     * generated, but then they actually handle the body payload as a TEXT
+     */
     val contentRemoveQuotesGene: CustomMutationRateGene<BooleanGene>
 
     init {
@@ -63,36 +68,32 @@ class BodyParam(gene: Gene,
             }
         }
 
-        contenTypeGene = EnumGene(typeGene.name, options, typeGene.index)
-        if(typeGene.initialized) contenTypeGene.markAllAsInitialized()
+        contentTypeGene = EnumGene(typeGene.name, options, typeGene.index)
+        if(typeGene.initialized) contentTypeGene.markAllAsInitialized()
         // local id of typeGene needs to be assigned for the newly created contenTypeGene since it is from copy
-        if (typeGene.hasLocalId()) contenTypeGene.setLocalId(typeGene.getLocalId())
-        addChild(contenTypeGene)
+        if (typeGene.hasLocalId()) contentTypeGene.setLocalId(typeGene.getLocalId())
+        addChild(contentTypeGene)
 
         contentRemoveQuotesGene = removeQuotesGene
-            ?: if (isJson() && primaryGene() is StringGene) {
-                CustomMutationRateGene(
+            ?: CustomMutationRateGene(
                     "sendUnquoteJsonStringWrapper",
-                    BooleanGene("sendUnquoteJsonString", false), 0.25
-                )
-            } else {
-                CustomMutationRateGene(
-                    "sendUnquoteJsonStringWrapper",
+                    //this should be set once randomized, but then not changed during search via mutation
                     BooleanGene("sendUnquoteJsonString", false), 0.0
                 )
-            }
-
         addChild(contentRemoveQuotesGene)
+    }
 
+    fun isJsonString() : Boolean{
+        return isJson() && primaryGene().getWrappedGene(StringGene::class.java) != null
     }
 
     override fun copyContent(): Param {
-        return BodyParam(primaryGene().copy(), contenTypeGene.copy() as EnumGene<String>, contentRemoveQuotesGene.copy() as CustomMutationRateGene<BooleanGene>)
+        return BodyParam(primaryGene().copy(), contentTypeGene.copy() as EnumGene<String>, contentRemoveQuotesGene.copy() as CustomMutationRateGene<BooleanGene>)
     }
 
-    override fun seeGenes() = listOf(primaryGene(), contenTypeGene, contentRemoveQuotesGene)
+    override fun seeGenes() = listOf(primaryGene(), contentTypeGene, contentRemoveQuotesGene)
 
-    fun contentType() = contenTypeGene.getValueAsRawString().trim()
+    fun contentType() = contentTypeGene.getValueAsRawString().trim()
 
     private fun isSupportedType(s: String) = isContentTypeJson(s) || isContentTypeXml(s) || isContentTypeTextPlain(s) || isContentTypeForm(s)
 
@@ -112,16 +113,21 @@ class BodyParam(gene: Gene,
 
     fun isMultipartForm() = isContentTypeMultipartForm(contentType())
 
-    private fun removeQuotes() = contentRemoveQuotesGene.gene.value && isJson()
+    fun shouldRemoveQuotesInJsonString() = contentRemoveQuotesGene.gene.value && isJsonString()
 
     fun getValueAsPrintableString(mode: GeneUtils.EscapeMode? = null, targetFormat: OutputFormat? =null): String {
+
         val originalValueAsPrintableString =
             primaryGene().getValueAsPrintableString( mode= mode, targetFormat= targetFormat )
-        val valueAsPrintableString = if (removeQuotes()) {
-            GeneUtils.removeEnclosedQuotationMarks(originalValueAsPrintableString)
-        } else {
-            originalValueAsPrintableString
+
+        if(shouldRemoveQuotesInJsonString()){
+            org.evomaster.core.Lazy.assert{originalValueAsPrintableString.startsWith("\"")
+                    && originalValueAsPrintableString.endsWith("\"")
+                    && originalValueAsPrintableString.length >= 2
+            }
+            return GeneUtils.removeEnclosedQuotationMarks(originalValueAsPrintableString)
         }
-        return valueAsPrintableString
+
+        return originalValueAsPrintableString
     }
 }

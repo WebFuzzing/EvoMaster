@@ -126,6 +126,14 @@ class CustomMutationRateGene<out T>(
 
     override fun isMutable() = probability > 0 && gene.isMutable()
 
+    override fun requiresRandomInitialization(): Boolean {
+        /*
+            even if this gene is not mutable, its initialization
+            at random might still be required
+         */
+        return gene.requiresRandomInitialization()
+    }
+
     override fun isPrintable() = gene.isPrintable()
 
     override fun copyValueFrom(other: Gene): Boolean {
