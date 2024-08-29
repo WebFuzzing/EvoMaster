@@ -21,6 +21,8 @@ class SecurityForbiddenOperationTest : IntegrationTestRestBase() {
         @BeforeAll
         @JvmStatic
         fun init() {
+            JdkIssue.fixPatchMethod()
+
             initClass(SecurityForbiddenOperationController())
         }
     }
@@ -32,14 +34,6 @@ class SecurityForbiddenOperationTest : IntegrationTestRestBase() {
 
     @Test
     fun testDeletePatch(){
-
-        /*
-            This makes no sense... seems like PATCH not handled on JDK 8, failing on GitHub Actions...
-            but it works locally???
-            WTF?
-            but, if so, why would BBDataPoolEMTest pass???
-         */
-        assumeTrue(JdkIssue.getJDKVersion() >= 9)
 
         val pirTest = getPirToRest()
 
@@ -203,8 +197,6 @@ class SecurityForbiddenOperationTest : IntegrationTestRestBase() {
 
     @Test
     fun testReuseTestFaultyPutAndDelete(){
-
-        assumeTrue(JdkIssue.getJDKVersion() >= 9)
 
         val pirTest = getPirToRest()
         val archive = getArchive()
