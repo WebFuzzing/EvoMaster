@@ -16,12 +16,6 @@ public class MongoTemplateController {
     @Autowired
     private MongoTemplate mongoTemplate;
 
-    @PostMapping("saveData")
-    public ResponseEntity<Void> saveData() {
-        mongoTemplate.save(new MongoTemplateData("myData"), "mongoTemplateDataCollection");
-        return ResponseEntity.status(200).build();
-    }
-
     @GetMapping("findData")
     public ResponseEntity<Void> findData() {
         MongoTemplateData rv = mongoTemplate.findOne(new Query(), MongoTemplateData.class, "mongoTemplateDataCollection");

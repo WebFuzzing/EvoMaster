@@ -36,7 +36,6 @@ public class MongoTemplateEMTest extends RestTestBase {
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertTrue(solution.getIndividuals().size() >= 1);
-                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/mongotemplate/saveData", null);
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/mongotemplate/findData", null);
                     assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/mongotemplate/findData", null);
                 });

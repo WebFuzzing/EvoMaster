@@ -2,14 +2,22 @@ package com.mongo.template;
 
 import org.springframework.data.annotation.Id;
 
+import javax.validation.constraints.NotNull;
+
 public class MongoTemplateData {
 
     @Id
     public String id;
 
-    public String data;
+    @NotNull
+    public String name;
 
-    public MongoTemplateData(String data) {
-        this.data = data;
+    @NotNull
+    public int age;
+
+    @NotNull
+    public String address;
+
+    public MongoTemplateData() {
     }
 }
