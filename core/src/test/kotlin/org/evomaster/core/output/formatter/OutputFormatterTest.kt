@@ -37,7 +37,7 @@ class OutputFormatterTest {
                 }
                 """
 
-        assertThrows<MismatchedFormatException>{
+        assertThrows<Exception>{
             OutputFormatter.JSON_FORMATTER.getFormatted(body)
         }
     }
@@ -142,8 +142,9 @@ class OutputFormatterTest {
      Unquoted strings are not valid JSON. But
      the GSON parser does not implement the standard.
      This should be eventually fixed.
+     Fixed by switching to Jackson for validation
      */
-    @Test @Disabled
+    @Test
     fun testInvalidUnquotedStringWithoutBlanks() {
         val json = "HelloWorld"
         val isValid = OutputFormatter.JSON_FORMATTER.isValid(json)
