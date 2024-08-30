@@ -10,6 +10,8 @@ import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.search.action.*
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.optional.CustomMutationRateGene
+import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.SearchGlobalState
@@ -129,6 +131,13 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
         if(this is EnterpriseIndividual && this.sampleType != SampleType.SEEDED && this.sampleType != SampleType.PREDEFINED) {
             seeGenes().forEach { it.doGlobalInitialize() }
         }
+
+        //make sure to disable those genes when initializing a new individual
+        val time = searchGlobalState.time.percentageUsedBudget()
+        seeGenes().filterIsInstance<OptionalGene>()
+            .filter { time > it.searchPercentageActive }
+            .forEach { it.forbidSelection() }
+
 
         computeTransitiveBindingGenes()
     }
@@ -587,6 +596,7 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
      */
     fun numberOfDiscoveredInfoFromTestExecution() : Int {
         return seeGenes().filterIsInstance<StringGene>()
+            .filter { it.staticCheckIfImpactPhenotype() } //in case disabled since then
             .count { it.selectionUpdatedSinceLastMutation }
         //TODO other info like discovered query-parameters/headers
     }
