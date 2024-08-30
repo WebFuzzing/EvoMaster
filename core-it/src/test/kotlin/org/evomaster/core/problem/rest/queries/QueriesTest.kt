@@ -32,17 +32,17 @@ class QueriesTest : IntegrationTestRestBase(){
         val res = x.evaluatedMainActions()[0].result as RestCallResult
 
         // check that x is OptionalGene, and it is active (since we have provided x)
-        val xParam = get.parameters.filter { it -> it.name.equals("x") }[0]
-        Assert.assertTrue(xParam.gene::class == OptionalGene::class)
-        Assert.assertTrue((xParam.gene as OptionalGene).isActive)
+        val xParam = get.parameters.filter { it.name == "x" }[0]
+        Assert.assertTrue(xParam.primaryGene()::class == OptionalGene::class)
+        Assert.assertTrue((xParam.primaryGene() as OptionalGene).isActive)
 
 
         // check that y is StringGene
-        val yParam = get.parameters.filter { it -> it.name.equals("y") }[0]
-        Assert.assertTrue(yParam.gene::class == StringGene::class)
+        val yParam = get.parameters.filter { it.name == "y" }[0]
+        Assert.assertTrue(yParam.primaryGene()::class == StringGene::class)
 
         // check that value of y is set to BAR
-        Assert.assertTrue(yParam.gene.getValueAsRawString().equals("BAR"))
+        Assert.assertTrue(yParam.primaryGene().getValueAsRawString() == "BAR")
 
         assertEquals(200, res.getStatusCode())
     }
