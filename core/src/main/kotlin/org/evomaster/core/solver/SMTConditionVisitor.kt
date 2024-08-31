@@ -100,6 +100,8 @@ class SMTConditionVisitor(
             operand.startsWith("'") && operand.endsWith("'") -> { // Handle string literals
                 operand.replace("'", "\"")
             }
+            operand.equals("TRUE", ignoreCase = true) -> "\"True\""
+            operand.equals("FALSE", ignoreCase = true) -> "\"False\""
             else -> operand // Return as is for other cases
         }
     }

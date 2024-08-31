@@ -7,6 +7,7 @@ import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
+import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
@@ -103,8 +104,13 @@ class SMTLibZ3DbConstraintSolver(
             for (columnName in columns.fields) {
                 when (val columnValue = columns.getField(columnName)) {
                     is StringValue -> {
-                        val gene = StringGene(columnName, columnValue.value)
-                        genes.add(gene)
+                        if (isBoolean(table, columnName)) {
+                            val gene = BooleanGene(columnName, toBoolean(columnValue.value))
+                            genes.add(gene)
+                        } else {
+                            val gene = StringGene(columnName, columnValue.value)
+                            genes.add(gene)
+                        }
                     }
                     is LongValue -> {
                         if (isTimestamp(table, columnName)) {
@@ -127,6 +133,15 @@ class SMTLibZ3DbConstraintSolver(
         }
 
         return actions
+    }
+
+    private fun toBoolean(value: String?): Boolean {
+        return value.equals("True", ignoreCase = true)
+    }
+
+    private fun isBoolean(table: Table, columnName: String?): Boolean {
+        val col = schemaDto.tables.first { it.name == table.name }.columns.first { it.name == columnName }
+        return col.type == "BOOLEAN"
     }
 
     private fun isTimestamp(table: Table, columnName: String?): Boolean {
