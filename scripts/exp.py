@@ -218,11 +218,12 @@ print("BASE_DIR: " + str(BASE_DIR))
 print("MIN_SEED: " + str(MIN_SEED))
 print("MAX_SEED: " + str(MAX_SEED))
 print("BUDGET: " + str(BUDGET))
-print("njobs: " + str(NJOBS))
-print("seed: " + str(BASE_SEED))
-print("timeout: " + str(TIMEOUT_MINUTES))
-print("configfilter: " + str(CONFIGFILTER))
-print("sutfilter: " + str(SUTFILTER))
+print(LABEL_njobs + ": " + str(NJOBS))
+print(LABEL_seed + ": " + str(BASE_SEED))
+print(LABEL_timeout + ": " + str(TIMEOUT_MINUTES))
+print(LABEL_configfilter + ": " + str(CONFIGFILTER))
+print(LABEL_sutfilter + ": " + str(SUTFILTER))
+print(LABEL_jacoco + ":" + str(JACOCO))
 
 
 if not os.path.isdir(BASE_DIR):
