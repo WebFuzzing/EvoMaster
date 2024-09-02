@@ -92,7 +92,8 @@ LABEL_timeout = "timeout"
 LABEL_njobs = "njobs"
 LABEL_configfilter = "configfilter"
 LABEL_sutfilter = "sutfilter"
-LABELS = [LABEL_cluster,LABEL_seed,LABEL_timeout,LABEL_njobs,LABEL_configfilter,LABEL_sutfilter]
+LABEL_jacoco = "jacoco"
+LABELS = [LABEL_cluster,LABEL_seed,LABEL_timeout,LABEL_njobs,LABEL_configfilter,LABEL_sutfilter,LABEL_jacoco]
 
 
 if len(sys.argv) < 5:
@@ -162,7 +163,6 @@ NJOBS = 100
 # Default is None.
 CONFIGFILTER = None
 
-#
 # An optional string to filter SUTs to be included based on their names
 # A string could refer to multiple SUTs separated by a `,` like a,b
 # Note that
@@ -171,6 +171,10 @@ CONFIGFILTER = None
 # Default is None
 SUTFILTER = None
 
+# Whether the generated tests have JaCoCo configured to collect code coverage.
+# This requires some environment variables to be setup to point to whether Agent and CLI
+# jar files of JaCoCo are located on local machine.
+JACOCO = False
 
 ### Derived named variables ###
 if len(sys.argv) > 5:
@@ -198,6 +202,9 @@ if len(sys.argv) > 5:
 
     if LABEL_sutfilter in kv:
         SUTFILTER = kv[LABEL_sutfilter]
+
+    if LABEL_jacoco in kv:
+        JACOCO = kv[LABEL_jacoco].lower() in ("yes", "true", "t")
 
     for key in kv:
         if key not in LABELS:
@@ -372,6 +379,24 @@ else:
     JAVA_HOME_17 = os.environ.get("JAVA_HOME_17", "")
     if JAVA_HOME_17 == "":
         raise Exception("You must specify a JAVA_HOME_17 env variable specifying where JDK 17 is installed")
+
+
+JACOCO_AGENT = "not-defined"
+JACOCO_CLI = "not-defined"
+
+if JACOCO:
+
+    JACOCO_LOCATION = os.environ.get("JACOCO_LOCATION", "")
+    if JACOCO_LOCATION == "":
+        raise Exception("If you want to use JaCoCo, must setup JACOCO_LOCATION env variable pointing to their folder")
+
+    JACOCO_AGENT = os.path.join(JACOCO_LOCATION, "jacocoagent.jar")
+    JACOCO_CLI   = os.path.join(JACOCO_LOCATION, "jacococli.jar")
+
+    if not os.path.exists(JACOCO_AGENT):
+        raise Exception("JaCoCo Agent JAR not existing at location: " + JACOCO_AGENT)
+    if not os.path.exists(JACOCO_CLI):
+        raise Exception("JaCoCo Agent CLI not existing at location: " + JACOCO_CLI)
 
 
 # How to run EvoMaster
@@ -752,7 +777,14 @@ def addJobBody(port, sut, seed, setting, configName):
     params += " --probOfHarvestingResponsesFromActualExternalServices=0"  # this adds way too much noise to results
     params += " --createConfigPathIfMissing=false"
 
-    JAVA = getJavaCommand(sut)
+    if JACOCO:
+        params += " --jaCoCoAgentLocation="+JACOCO_AGENT
+        params += " --jaCoCoCliLocation="+JACOCO_CLI
+        params += " --jaCoCoOutputFile="+str(pathlib.PurePath(os.path.abspath("./exec/"+sut.name+"__wb__"+str(port)+"__jacoco.exec")).as_posix())
+        params += " --enableBasicAssertions=false" # TODO remove once dealt with flakiness
+
+
+JAVA = getJavaCommand(sut)
     command = JAVA + EVOMASTER_JAVA_OPTIONS + params + " >> " + em_log + " 2>&1"
 
     if not CLUSTER:
