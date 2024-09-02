@@ -4,6 +4,7 @@ import bar.examples.it.spring.multipleendpoints.MultipleEndpointsController
 import org.evomaster.core.problem.httpws.auth.AuthenticationHeader
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.rest.*
+import org.evomaster.core.problem.rest.service.RestIndividualBuilder
 import org.evomaster.core.search.EvaluatedIndividual
 import org.junit.Assert
 import org.junit.jupiter.api.Assertions
@@ -458,7 +459,7 @@ class RestIndividualSelectorUtilsTest : IntegrationTestRestBase() {
     fun testSliceAllCallsInIndividualAfterAction() {
         val listOfIndividuals = initializeIndividuals()
 
-        val newIndividual = RestIndividualSelectorUtils.sliceAllCallsInIndividualAfterAction(
+        val newIndividual = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
             listOfIndividuals[1].individual, 2)
 
         // now check actions in the newIndividual
@@ -476,7 +477,7 @@ class RestIndividualSelectorUtilsTest : IntegrationTestRestBase() {
 
 
         // now try from index 1
-        val newIndividualSecond = RestIndividualSelectorUtils.sliceAllCallsInIndividualAfterAction(
+        val newIndividualSecond = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
             listOfIndividuals[1].individual, 1)
 
         // now check actions in the newIndividual
@@ -498,12 +499,12 @@ class RestIndividualSelectorUtilsTest : IntegrationTestRestBase() {
         val listOfIndividuals = initializeIndividuals()
 
         Assert.assertThrows(IllegalArgumentException::class.java) {
-            RestIndividualSelectorUtils.sliceAllCallsInIndividualAfterAction(
+            RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
                 listOfIndividuals[1].individual, 10)
         }
 
         Assert.assertThrows(IllegalArgumentException::class.java) {
-            RestIndividualSelectorUtils.sliceAllCallsInIndividualAfterAction(
+            RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
                 listOfIndividuals[1].individual, -10)
         }
 

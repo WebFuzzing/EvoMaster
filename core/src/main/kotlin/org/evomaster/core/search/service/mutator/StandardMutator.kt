@@ -340,8 +340,10 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             Lazy.assert { mutatedIndividual.verifyBindingGenes() }
         }
 
-        if (mutatedIndividual is RestIndividual)
+        if (mutatedIndividual is RestIndividual) {
             mutatedIndividual.repairDbActionsInCalls()
+            mutatedIndividual.fixResourceForwardLinks()
+        }
 
         // update MutatedGeneSpecification after the post-handling
         if(mutated?.repairInitAndDbSpecification(mutatedIndividual) == true){

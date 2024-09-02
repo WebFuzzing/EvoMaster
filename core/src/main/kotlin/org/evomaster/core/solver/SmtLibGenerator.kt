@@ -14,9 +14,7 @@ import org.evomaster.dbconstraint.ast.SqlCondition
 import org.evomaster.dbconstraint.parser.SqlConditionParserException
 import org.evomaster.dbconstraint.parser.jsql.JSqlConditionParser
 import org.evomaster.solver.smtlib.*
-import org.evomaster.solver.smtlib.assertion.DistinctAssertion
-import org.evomaster.solver.smtlib.assertion.EqualsAssertion
-import org.evomaster.solver.smtlib.assertion.OrAssertion
+import org.evomaster.solver.smtlib.assertion.*
 import java.util.*
 
 /**
@@ -41,8 +39,10 @@ class SmtLibGenerator(private val schema: DbSchemaDto, private val numberOfRows:
         appendTableDefinitions(smt)
         appendTableConstraints(smt)
         appendKeyConstraints(smt)
+        appendTimestampConstraints(smt)
+        appendBooleanConstraints(smt)
         appendQueryConstraints(smt, sqlQuery)
-        appendGetValues(smt)
+        appendGetValuesFromQuery(smt, sqlQuery)
 
         return smt
     }
@@ -161,6 +161,66 @@ class SmtLibGenerator(private val schema: DbSchemaDto, private val numberOfRows:
         }
     }
 
+    private fun appendBooleanConstraints(smt: SMTLib) {
+        for (table in schema.tables) {
+            val tableName = table.name.lowercase(Locale.getDefault())
+            for (column in table.columns) {
+                if (column.type.equals("BOOLEAN", ignoreCase = true)) {
+                    val columnName = column.name.uppercase()
+                    for (i in 1..numberOfRows) {
+                        smt.addNode(
+                            AssertSMTNode(
+                                OrAssertion(
+                                    listOf(
+                                        EqualsAssertion(listOf("($columnName $tableName$i)", "\"true\"")),
+                                        EqualsAssertion(listOf("($columnName $tableName$i)", "\"True\"")),
+                                        EqualsAssertion(listOf("($columnName $tableName$i)", "\"TRUE\"")),
+                                        EqualsAssertion(listOf("($columnName $tableName$i)", "\"false\"")),
+                                        EqualsAssertion(listOf("($columnName $tableName$i)", "\"False\"")),
+                                        EqualsAssertion(listOf("($columnName $tableName$i)", "\"FALSE\""))
+                                    )
+                                )
+                            )
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    private fun appendTimestampConstraints(smt: SMTLib) {
+        for (table in schema.tables) {
+            val tableName = table.name.lowercase(Locale.getDefault())
+            for (column in table.columns) {
+                if (column.type.equals("TIMESTAMP", ignoreCase = true)) {
+                    val columnName = column.name.uppercase()
+                    val lowerBound = 0 // Example for Unix epoch start
+                    val upperBound = 32503680000 // Example for year 3000 in seconds
+
+                    for (i in 1..numberOfRows) {
+                        smt.addNode(
+                            AssertSMTNode(
+                                GreaterThanOrEqualsAssertion(
+                                    "($columnName $tableName$i)",
+                                    lowerBound.toString()
+                                )
+                            )
+                        )
+                        smt.addNode(
+                            AssertSMTNode(
+                                LessThanOrEqualsAssertion(
+                                    "($columnName $tableName$i)",
+                                    upperBound.toString()
+                                )
+                            )
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+
     /**
      * Appends primary key constraints for each table to the SMT-LIB.
      *
@@ -251,7 +311,11 @@ class SmtLibGenerator(private val schema: DbSchemaDto, private val numberOfRows:
                     )
                 )
             }
-            nodes.add(AssertSMTNode(OrAssertion(conditions)))
+            if (conditions.size == 1) {
+                nodes.add(AssertSMTNode(conditions[0]))
+            } else {
+                nodes.add(AssertSMTNode(OrAssertion(conditions)))
+            }
         }
         return nodes
     }
@@ -291,6 +355,7 @@ class SmtLibGenerator(private val schema: DbSchemaDto, private val numberOfRows:
      */
     private fun appendQueryConstraints(smt: SMTLib, sqlQuery: Statement) {
         val tableAliases = extractTableAliases(sqlQuery)
+
         appendJoinConstraints(smt, sqlQuery, tableAliases)
 
         if (sqlQuery is Select) { // TODO: Handle other queries
@@ -377,17 +442,48 @@ class SmtLibGenerator(private val schema: DbSchemaDto, private val numberOfRows:
     }
 
     /**
-     * Appends value checking constraints to the SMT-LIB.
+     * Appends value checking constraints to the SMT-LIB only from the tables mentioned in the select
      *
      * @param smt The SMT-LIB object to which value checking constraints are added.
      */
-    private fun appendGetValues(smt: SMTLib) {
+    private fun appendGetValuesFromQuery(smt: SMTLib, sqlQuery: Statement) {
         smt.addNode(CheckSatSMTNode())
 
+        // Find the tables mentioned in the query
+        val tablesMentioned = mutableSetOf<String>()
+        val tablesFinder = TablesNamesFinder()
+
+        // Add tables from the FROM clause
+        for (tableName in tablesFinder.getTables(sqlQuery)){
+            tablesMentioned.add(tableName.lowercase())
+        }
+
+        // Add tables from JOINs and WHERE clause if they exist
+        if (sqlQuery is Select) {
+            val plainSelect = sqlQuery.selectBody as PlainSelect
+
+            // Add tables from JOINs
+            plainSelect.joins?.forEach { join ->
+                join.rightItem?.let {
+                    tablesMentioned.add(it.toString().lowercase())
+                }
+            }
+
+            // Add tables from WHERE clause
+            if (plainSelect.where != null) {
+                for (tableName in TablesNamesFinder().getTables(sqlQuery as Statement)) {
+                    tablesMentioned.add(tableName.lowercase())
+                }
+            }
+        }
+
+        // Only add GetValueSMTNode for the mentioned tables
         for (table in schema.tables) {
             val tableNameLower = table.name.lowercase(Locale.getDefault())
-            for (i in 1..numberOfRows) {
-                smt.addNode(GetValueSMTNode("$tableNameLower$i"))
+            if (tablesMentioned.contains(tableNameLower)) {
+                for (i in 1..numberOfRows) {
+                    smt.addNode(GetValueSMTNode("$tableNameLower$i"))
+                }
             }
         }
     }
@@ -406,14 +502,17 @@ class SmtLibGenerator(private val schema: DbSchemaDto, private val numberOfRows:
     }
 
     companion object {
-        // Maps database column types to SMT-LIB types.
+        // Maps database column types to SMT-LIB types
         private val TYPE_MAP = mapOf(
             "BIGINT" to "Int",
             "INTEGER" to "Int",
+            "TIMESTAMP" to "Int",
             "FLOAT" to "Real",
             "DOUBLE" to "Real",
             "CHARACTER VARYING" to "String",
-            "CHAR" to "String"
+            "CHAR" to "String",
+            "CHARACTER LARGE OBJECT" to "String",
+            "BOOLEAN" to "String", // TODO: Check this
         )
     }
 }

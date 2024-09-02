@@ -38,6 +38,13 @@ public enum FaultCategory {
     //6xx: mobile
 
     //8xx: security
+    SECURITY_EXISTENCE_LEAKAGE(800, "Leakage Information Existence of Protected Resource"),
+    SECURITY_NOT_RECOGNIZED_AUTHENTICATED(801, "Wrongly Not Recognized as Authenticated"),
+    SECURITY_FORBIDDEN_DELETE(802, "Forbidden Delete But Allowed Modifications"),
+    SECURITY_FORBIDDEN_PUT(803, "Forbidden Replacement But Allowed Modifications"),
+    SECURITY_FORBIDDEN_PATCH(804, "Forbidden Updates But Allowed Modifications"),
+    SECURITY_ALLOW_MODIFICATION_BY_ALL(805, "Resource Created By An User Can Be Modified By All Other Users")
+
     //9xx: undefined
     ;
 
