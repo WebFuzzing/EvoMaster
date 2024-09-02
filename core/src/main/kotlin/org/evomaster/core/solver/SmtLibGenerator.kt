@@ -311,7 +311,11 @@ class SmtLibGenerator(private val schema: DbSchemaDto, private val numberOfRows:
                     )
                 )
             }
-            nodes.add(AssertSMTNode(OrAssertion(conditions)))
+            if (conditions.size == 1) {
+                nodes.add(AssertSMTNode(conditions[0]))
+            } else {
+                nodes.add(AssertSMTNode(OrAssertion(conditions)))
+            }
         }
         return nodes
     }
