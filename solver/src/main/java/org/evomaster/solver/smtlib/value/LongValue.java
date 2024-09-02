@@ -2,15 +2,15 @@ package org.evomaster.solver.smtlib.value;
 
 import java.util.Objects;
 
-public class IntValue extends SMTLibValue {
-    private final int value;
+public class LongValue extends SMTLibValue {
+    private final Long value;
 
-    public IntValue(int value) {
+    public LongValue(Long value) {
         this.value = value;
     }
 
     @Override
-    public Integer getValue() {
+    public Long getValue() {
         return value;
     }
 
@@ -23,8 +23,8 @@ public class IntValue extends SMTLibValue {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        IntValue intValue = (IntValue) o;
-        return getValue().equals(intValue.getValue());
+        LongValue longValue = (LongValue) o;
+        return getValue().equals(longValue.getValue());
     }
 
     @Override
