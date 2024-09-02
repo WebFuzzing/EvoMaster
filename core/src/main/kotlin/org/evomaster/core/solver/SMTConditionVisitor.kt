@@ -3,6 +3,7 @@ package org.evomaster.core.solver
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
 import org.evomaster.dbconstraint.ast.*
 import org.evomaster.solver.smtlib.AssertSMTNode
+import org.evomaster.solver.smtlib.EmptySMTNode
 import org.evomaster.solver.smtlib.SMTNode
 import org.evomaster.solver.smtlib.assertion.*
 import java.util.*
@@ -168,52 +169,52 @@ class SMTConditionVisitor(
         }
     }
 
+    override fun visit(condition: SqlIsNotNullCondition, parameter: Void?): SMTNode {
+        return EmptySMTNode()
+    }
+
     // Placeholder methods for other SQL conditions; to be implemented as needed
     override fun visit(condition: SqlBigDecimalLiteralValue, parameter: Void?): SMTNode {
-        return SMTNode() // TODO: implement
+        return EmptySMTNode() // TODO: implement
     }
 
     override fun visit(condition: SqlBigIntegerLiteralValue, parameter: Void?): SMTNode {
-        return SMTNode() // TODO: implement
+        return EmptySMTNode() // TODO: implement
     }
 
     override fun visit(condition: SqlBooleanLiteralValue, parameter: Void?): SMTNode {
-        return SMTNode() // TODO: implement
+        return EmptySMTNode() // TODO: implement
     }
 
     override fun visit(condition: SqlColumn, parameter: Void?): SMTNode {
-        return SMTNode() // TODO: implement
+        return EmptySMTNode() // TODO: implement
     }
 
     override fun visit(condition: SqlNullLiteralValue, parameter: Void?): SMTNode {
-        return SMTNode() // TODO: implement
+        return EmptySMTNode() // TODO: implement
     }
 
     override fun visit(condition: SqlStringLiteralValue, parameter: Void?): SMTNode {
-        return SMTNode() // TODO: implement
+        return EmptySMTNode() // TODO: implement
     }
 
     override fun visit(condition: SqlConditionList, parameter: Void?): SMTNode {
-        return SMTNode() // TODO: implement
-    }
-
-    override fun visit(condition: SqlIsNotNullCondition, parameter: Void?): SMTNode {
-        return SMTNode() // TODO: implement
+        return EmptySMTNode() // TODO: implement
     }
 
     override fun visit(condition: SqlBinaryDataLiteralValue, parameter: Void?): SMTNode {
-        return SMTNode() // TODO: implement
+        return EmptySMTNode() // TODO: implement
     }
 
     override fun visit(condition: SqlSimilarToCondition, parameter: Void?): SMTNode {
-        return SMTNode() // TODO: implement
+        return EmptySMTNode() // TODO: implement
     }
 
     override fun visit(condition: SqlIsNullCondition, parameter: Void?): SMTNode {
-        return SMTNode() // TODO: implement
+        return EmptySMTNode() // TODO: implement
     }
 
     override fun visit(condition: SqlLikeCondition, parameter: Void?): SMTNode {
-        return SMTNode() // TODO: implement
+        return EmptySMTNode() // TODO: implement
     }
 }

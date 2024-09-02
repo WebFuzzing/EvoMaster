@@ -1,4 +1,4 @@
-package org.evomaster.core.solver
+package org.evomaster.core.solver.cs
 
 import net.sf.jsqlparser.JSQLParserException
 import org.apache.commons.io.FileUtils
@@ -7,6 +7,7 @@ import org.evomaster.client.java.sql.SqlScriptRunner
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.solver.SMTLibZ3DbConstraintSolver
 import org.evomaster.solver.smtlib.*
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.*
@@ -56,9 +57,9 @@ class CatWatchCaseStudySMTLibZ3DbConstraintSolverTest {
             SqlScriptRunner.execCommand(connection, migration6)
             val schemaDto = SchemaExtractor.extract(connection)
 
-            this.resourcesFolder = tmpResourcesFolder()
-            createFolder(this.resourcesFolder)
-            solver = SMTLibZ3DbConstraintSolver(schemaDto, this.resourcesFolder)
+            Companion.resourcesFolder = tmpResourcesFolder()
+            createFolder(Companion.resourcesFolder)
+            solver = SMTLibZ3DbConstraintSolver(schemaDto, Companion.resourcesFolder)
         }
 
         @JvmStatic
