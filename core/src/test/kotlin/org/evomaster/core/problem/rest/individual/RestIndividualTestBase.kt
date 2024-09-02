@@ -210,6 +210,7 @@ abstract class RestIndividualTestBase {
     fun testMutatedIndividual(iteration: Int, numResource: Int){
         initResourceNode(numResource, 5)
         config.maxActionEvaluations = iteration
+        searchTimeController.startSearch()
 
         val ind = getSampler().sample()
         var eval = getFitnessFunction().calculateCoverage(ind, modifiedSpec = null)
