@@ -785,7 +785,7 @@ def addJobBody(port, sut, seed, setting, configName):
         params += " --enableBasicAssertions=false" # TODO remove once dealt with flakiness
 
 
-JAVA = getJavaCommand(sut)
+    JAVA = getJavaCommand(sut)
     command = JAVA + EVOMASTER_JAVA_OPTIONS + params + " >> " + em_log + " 2>&1"
 
     if not CLUSTER:
