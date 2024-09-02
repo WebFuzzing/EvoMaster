@@ -40,6 +40,7 @@ class SmtLibGenerator(private val schema: DbSchemaDto, private val numberOfRows:
         appendTableConstraints(smt)
         appendKeyConstraints(smt)
         appendTimestampConstraints(smt)
+        appendBooleanConstraints(smt)
         appendQueryConstraints(smt, sqlQuery)
         appendGetValuesFromQuery(smt, sqlQuery)
 
@@ -157,6 +158,33 @@ class SmtLibGenerator(private val schema: DbSchemaDto, private val numberOfRows:
         for (table in schema.tables) {
             appendPrimaryKeyConstraints(smt, table)
             appendForeignKeyConstraints(smt, table)
+        }
+    }
+
+    private fun appendBooleanConstraints(smt: SMTLib) {
+        for (table in schema.tables) {
+            val tableName = table.name.lowercase(Locale.getDefault())
+            for (column in table.columns) {
+                if (column.type.equals("BOOLEAN", ignoreCase = true)) {
+                    val columnName = column.name.uppercase()
+                    for (i in 1..numberOfRows) {
+                        smt.addNode(
+                            AssertSMTNode(
+                                OrAssertion(
+                                    listOf(
+                                        EqualsAssertion(listOf("($columnName $tableName$i)", "\"true\"")),
+                                        EqualsAssertion(listOf("($columnName $tableName$i)", "\"True\"")),
+                                        EqualsAssertion(listOf("($columnName $tableName$i)", "\"TRUE\"")),
+                                        EqualsAssertion(listOf("($columnName $tableName$i)", "\"false\"")),
+                                        EqualsAssertion(listOf("($columnName $tableName$i)", "\"False\"")),
+                                        EqualsAssertion(listOf("($columnName $tableName$i)", "\"FALSE\""))
+                                    )
+                                )
+                            )
+                        )
+                    }
+                }
+            }
         }
     }
 
@@ -283,7 +311,11 @@ class SmtLibGenerator(private val schema: DbSchemaDto, private val numberOfRows:
                     )
                 )
             }
-            nodes.add(AssertSMTNode(OrAssertion(conditions)))
+            if (conditions.size == 1) {
+                nodes.add(AssertSMTNode(conditions[0]))
+            } else {
+                nodes.add(AssertSMTNode(OrAssertion(conditions)))
+            }
         }
         return nodes
     }
@@ -456,7 +488,6 @@ class SmtLibGenerator(private val schema: DbSchemaDto, private val numberOfRows:
         }
     }
 
-
     /**
      * Gets the constructors for a table's columns to be used in SMT-LIB.
      *
@@ -471,7 +502,7 @@ class SmtLibGenerator(private val schema: DbSchemaDto, private val numberOfRows:
     }
 
     companion object {
-        // Maps database column types to SMT-LIB types.
+        // Maps database column types to SMT-LIB types
         private val TYPE_MAP = mapOf(
             "BIGINT" to "Int",
             "INTEGER" to "Int",
@@ -481,6 +512,7 @@ class SmtLibGenerator(private val schema: DbSchemaDto, private val numberOfRows:
             "CHARACTER VARYING" to "String",
             "CHAR" to "String",
             "CHARACTER LARGE OBJECT" to "String",
+            "BOOLEAN" to "String", // TODO: Check this
         )
     }
 }
