@@ -2,26 +2,27 @@ package org.evomaster.core.output.service
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.JsonUtils
-import org.evomaster.core.output.auth.CookieWriter
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestWriterUtils
-import org.evomaster.core.output.auth.TokenWriter
 import org.evomaster.core.output.TestWriterUtils.formatJsonWithEscapes
+import org.evomaster.core.output.auth.CookieWriter
+import org.evomaster.core.output.auth.TokenWriter
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
-import org.evomaster.core.search.action.ActionResult
-import org.evomaster.core.search.action.EvaluatedAction
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
+import org.evomaster.core.search.action.ActionResult
+import org.evomaster.core.search.action.EvaluatedAction
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.slf4j.LoggerFactory
 import java.nio.file.Path
 import javax.ws.rs.core.MediaType
+
 
 abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
@@ -382,11 +383,9 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         }
     }
 
-    //TODO: check again for C#, especially when not json
     protected open fun handleBody(call: HttpWsAction, lines: Lines) {
 
         val bodyParam = call.parameters.find { p -> p is BodyParam } as BodyParam?
-
 
         if (format.isCsharp() && bodyParam == null) {
             lines.append("null")
@@ -409,14 +408,13 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                     lines.add("body = {}")
                 }
 
-                val json =
-                        bodyParam.gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = format)
+                val json = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = format)
 
                 printSendJsonBody(json, lines)
 
             } else if (bodyParam.isTextPlain()) {
-                val body =
-                        bodyParam.gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.TEXT, targetFormat = format)
+
+                val body = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.TEXT, targetFormat = format)
                 if (body != "\"\"") {
                     when {
                         format.isCsharp() -> {

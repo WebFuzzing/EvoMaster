@@ -275,6 +275,10 @@ class SearchTimeController {
      */
     fun percentageUsedBudget() : Double{
 
+        if(!searchStarted){
+            return 0.0
+        }
+
         return when(configuration.stoppingCriterion){
             EMConfig.StoppingCriterion.FITNESS_EVALUATIONS ->
                 evaluatedActions.toDouble() / configuration.maxActionEvaluations.toDouble()

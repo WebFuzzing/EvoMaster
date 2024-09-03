@@ -3,9 +3,9 @@ package org.evomaster.core.output.formatter
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.gene.string.StringGene
-import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.assertThrows
 
 
@@ -37,7 +37,7 @@ class OutputFormatterTest {
                 }
                 """
 
-        assertThrows<MismatchedFormatException>{
+        assertThrows<Exception>{
             OutputFormatter.JSON_FORMATTER.getFormatted(body)
         }
     }
@@ -124,5 +124,32 @@ class OutputFormatterTest {
         """.trimIndent()
         assertEquals(expected, formatted)
     }
+
+    @Test
+    fun testValidQuotedString() {
+        val json = "\"Hello World\""
+        val isValid = OutputFormatter.JSON_FORMATTER.isValid(json)
+        assertTrue(isValid)
+    }
+    @Test
+    fun testInvalidUnquotedString() {
+        val json = "Hello World"
+        val isValid = OutputFormatter.JSON_FORMATTER.isValid(json)
+        assertFalse(isValid)
+    }
+
+    /*
+     Unquoted strings are not valid JSON. But
+     the GSON parser does not implement the standard.
+     This should be eventually fixed.
+     Fixed by switching to Jackson for validation
+     */
+    @Test
+    fun testInvalidUnquotedStringWithoutBlanks() {
+        val json = "HelloWorld"
+        val isValid = OutputFormatter.JSON_FORMATTER.isValid(json)
+        assertFalse(isValid)
+    }
+
 
 }

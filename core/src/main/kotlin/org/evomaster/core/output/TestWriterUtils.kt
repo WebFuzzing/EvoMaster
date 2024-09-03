@@ -139,4 +139,50 @@ object TestWriterUtils {
         }
         return safe
     }
+
+    private const val START_QUOTE_PATTERN = "\" \\\""
+    private const val END_QUOTE_PATTERN = "\\\" \""
+    private const val REPLACEMENT_QUOTE = "\""
+
+    /**
+     * Processes a list of strings representing lines of a JSON body to remove extraneous
+     * starting and ending quotes from the first and last lines, if they are present.
+     *
+     * This function checks if the first line starts with a specific quote pattern and if the
+     * last line ends with another quote pattern. If both conditions are met, it removes the
+     * extra quotes from these lines and returns a new list with the modified lines. If the
+     * conditions are not met, the function returns the original list unchanged.
+     *
+     * @param originalBodyLines The list of strings representing lines of the JSON body.
+     * @return A new list of strings with the extraneous quotes removed from the first and
+     *         last lines, or the original list if no quotes were removed.
+     *
+     * @see START_QUOTE_PATTERN for the pattern used to identify starting quotes.
+     * @see END_QUOTE_PATTERN for the pattern used to identify ending quotes.
+     * @see REPLACEMENT_QUOTE for the replacement quote used in the modification.
+     */
+    fun removeStartingAndEndingQuotesInJsonBody(originalBodyLines: List<String>):List<String> {
+        if (originalBodyLines.isEmpty()) {
+            return originalBodyLines
+        } else {
+            val isFirstLineQuoted = originalBodyLines.first().startsWith(START_QUOTE_PATTERN)
+            val isLastLineQuoted = originalBodyLines.last().endsWith(END_QUOTE_PATTERN)
+
+            if (isFirstLineQuoted && isLastLineQuoted) {
+                val modifiedBodyLines = originalBodyLines.toMutableList()
+
+                // Remove extra quotes from the first line
+                modifiedBodyLines[0] = modifiedBodyLines[0].replaceFirst(START_QUOTE_PATTERN, REPLACEMENT_QUOTE)
+                // Remove extra quotes from the last line
+                modifiedBodyLines[modifiedBodyLines.size - 1] = modifiedBodyLines[modifiedBodyLines.size - 1].substring(
+                    0,
+                    modifiedBodyLines[modifiedBodyLines.size - 1].lastIndexOf(END_QUOTE_PATTERN)
+                ) + REPLACEMENT_QUOTE
+
+                return modifiedBodyLines.toList()
+            } else {
+                return originalBodyLines
+            }
+        }
+    }
 }

@@ -35,6 +35,7 @@ import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.numeric.NumberGene
+import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
@@ -241,11 +242,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                  */
                 if (action.parameters.none { it is BodyParam }) {
 
-                    val obj = ObjectGene("body", listOf()).apply { doInitialize(randomness) }
-
-                    val body = BodyParam(obj,
-                        // TODO could look at "Accept" header instead of defaulting to JSON
-                        EnumGene("contentType", listOf("application/json")).apply { doInitialize(randomness) })
+                    val obj = ObjectGene("body", listOf())
+                    // TODO could look at "Accept" header instead of defaulting to JSON
+                    val enumGene = EnumGene("contentType", listOf("application/json"))
+                    val body = BodyParam(obj,enumGene)
+                    body.seeGenes().forEach { it.doInitialize(randomness) }
 
                     val update = UpdateForBodyParam(body)
 
@@ -281,10 +282,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                     LoggingUtil.uniqueWarn(log, "More than 1 DTO option: [${dtoNames.sorted().joinToString(", ")}]")
                 }
                 val name = dtoNames.first()
-                val obj = getObjectGeneForDto(name).apply { doInitialize(randomness) }
-
-                val body = BodyParam(obj,
-                    EnumGene("contentType", listOf("application/json")).apply { doInitialize(randomness) })
+                val obj = getObjectGeneForDto(name)
+                val enumGene = EnumGene("contentType", listOf("application/json"))
+                val body = BodyParam(obj,enumGene)
+                body.seeGenes().forEach { it.doInitialize(randomness) }
                 val update = UpdateForBodyParam(body)
                 action.addParam(update)
             }
@@ -405,7 +406,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 val root = "INPUT_${call.id}_${p.javaClass.simpleName}_${p.name}"
 
                 val genes = if(p is BodyParam) {
-                    listOf(p.contenTypeGene) // ie, ignore the payload
+                    listOf(p.contentTypeGene) // ie, ignore the payload
                 } else {
                     p.seeGenes()
                 }
@@ -790,8 +791,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 body.isTextPlain() -> GeneUtils.EscapeMode.TEXT
                 else -> throw IllegalStateException("Cannot handle body type: " + body.contentType())
             }
+
+            val stringToBeSent = body.getValueAsPrintableString(mode = mode, targetFormat = configuration.outputFormat)
             Entity.entity(
-                body.gene.getValueAsPrintableString(mode = mode, targetFormat = configuration.outputFormat),
+                stringToBeSent,
                 body.contentType()
             )
         } else if (forms != null) {

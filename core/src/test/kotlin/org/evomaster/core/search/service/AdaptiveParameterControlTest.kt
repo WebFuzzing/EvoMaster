@@ -31,6 +31,7 @@ internal class AdaptiveParameterControlTest{
 
         config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
         config.focusedSearchActivationTime = 0.5
+        time.startSearch()
     }
 
     @Test

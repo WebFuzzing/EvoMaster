@@ -165,6 +165,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             individual.seeGenes()
                 .filterIsInstance<StringGene>()
                 .filter { it.selectionUpdatedSinceLastMutation }
+                .filter { it.staticCheckIfImpactPhenotype() }
                 .forEach {
                     if(!toMutate.contains(it)){
                         toMutate.add(it)

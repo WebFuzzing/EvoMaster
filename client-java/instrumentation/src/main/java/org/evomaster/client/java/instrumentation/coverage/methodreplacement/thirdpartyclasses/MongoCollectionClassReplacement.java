@@ -32,23 +32,23 @@ public class MongoCollectionClassReplacement extends MongoOperationClassReplacem
     }
 
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "findBson", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.FindIterable")
-    public static Object find(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object bson) {
-        return handleFind("findBson", mongoCollection, Arrays.asList(bson), bson);
+    public static Object find(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter) {
+        return handleFind("findBson", mongoCollection, Arrays.asList(filter), filter);
     }
 
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "findBsonResultClass", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.FindIterable")
-    public static <TResult> Object find(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object bson, Class<TResult> resultClass) {
-        return handleFind("findBsonResultClass", mongoCollection, Arrays.asList(bson, resultClass), bson);
+    public static <TResult> Object find(Object mongoCollection, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, Class<TResult> resultClass) {
+        return handleFind("findBsonResultClass", mongoCollection, Arrays.asList(filter, resultClass), filter);
     }
 
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "findClientSessionBson", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.FindIterable")
-    public static Object find(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object bson) {
-        return handleFind("findClientSessionBson", mongoCollection, Arrays.asList(clientSession, bson), bson);
+    public static Object find(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter) {
+        return handleFind("findClientSessionBson", mongoCollection, Arrays.asList(clientSession, filter), filter);
     }
 
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "findClientSessionBsonResultClass", usageFilter = UsageFilter.ANY, category = ReplacementCategory.MONGO, castTo = "com.mongodb.client.FindIterable")
-    public static <TResult> Object find(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object bson, Class<TResult> resultClass) {
-        return handleFind("findClientSessionBsonResultClass", mongoCollection, Arrays.asList(clientSession, bson, resultClass), bson);
+    public static <TResult> Object find(Object mongoCollection, @ThirdPartyCast(actualType = "com.mongodb.client.ClientSession") Object clientSession, @ThirdPartyCast(actualType = "org.bson.conversions.Bson") Object filter, Class<TResult> resultClass) {
+        return handleFind("findClientSessionBsonResultClass", mongoCollection, Arrays.asList(clientSession, filter, resultClass), filter);
     }
 
     private static Object handleFind(String id, Object mongoCollection, List<Object> args, Object query) {
