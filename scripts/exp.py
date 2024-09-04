@@ -670,25 +670,35 @@ def createOneJob(state, sut, seed, setting, configName):
     state.generated += 1
     return code
 
-
-def getJavaCommand(sut):
+def getJavaExe(sut):
 
     if not isJava(sut):
         raise Exception("ERROR: not a recognized JVM SUT: " + sut.platform)
 
-    JAVA = "java "
+    JAVA = "java"
     if not CLUSTER:
         if sut.platform == JDK_8:
-            JAVA = "\"" + JAVA_HOME_8 +"\"/bin/java "
+            JAVA = JAVA_HOME_8 +"/bin/java"
         elif sut.platform == JDK_11:
-            JAVA = "\"" + JAVA_HOME_11 +"\"/bin/java "
+            JAVA = JAVA_HOME_11 +"/bin/java"
         elif sut.platform == JDK_17:
-            JAVA = "\"" + JAVA_HOME_17 +"\"/bin/java --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED "
+            JAVA = JAVA_HOME_17 +"/bin/java"
         else:
             raise Exception("ERROR: unhandled JVM version: " + sut.platform)
 
+    JAVA = str(pathlib.PurePath(JAVA).as_posix())
+
     return JAVA
 
+
+def getJavaCommand(sut):
+
+    JAVA = getJavaExe(sut)
+    if sut.platform == JDK_17:
+        JAVA = JAVA + " --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED"
+    JAVA = JAVA + " "
+
+    return JAVA
 
 last_generated_ip = "127.0.0.2"
 def generate_ip():
@@ -777,6 +787,8 @@ def addJobBody(port, sut, seed, setting, configName):
     params += " --externalServiceIP=" + generate_ip()
     params += " --probOfHarvestingResponsesFromActualExternalServices=0"  # this adds way too much noise to results
     params += " --createConfigPathIfMissing=false"
+    params += " --javaCommand="+str(pathlib.PurePath(getJavaExe(sut)).as_posix())
+
 
     if JACOCO:
         params += " --jaCoCoAgentLocation="+str(pathlib.PurePath(os.path.abspath(JACOCO_AGENT)).as_posix())
