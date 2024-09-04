@@ -779,9 +779,9 @@ def addJobBody(port, sut, seed, setting, configName):
     params += " --createConfigPathIfMissing=false"
 
     if JACOCO:
-        params += " --jaCoCoAgentLocation="+JACOCO_AGENT
-        params += " --jaCoCoCliLocation="+JACOCO_CLI
-        params += " --jaCoCoOutputFile="+str(pathlib.PurePath(os.path.abspath("./exec/"+sut.name+"__wb__"+str(port)+"__jacoco.exec")).as_posix())
+        params += " --jaCoCoAgentLocation="+str(pathlib.PurePath(os.path.abspath(JACOCO_AGENT)).as_posix())
+        params += " --jaCoCoCliLocation="+str(pathlib.PurePath(os.path.abspath(JACOCO_CLI)).as_posix())
+        params += " --jaCoCoOutputFile="+str(pathlib.PurePath(os.path.abspath("./exec/"+configName+"__"+sut.name+"__wb__"+str(port)+"__jacoco.exec")).as_posix())
         params += " --enableBasicAssertions=false" # TODO remove once dealt with flakiness
 
 
