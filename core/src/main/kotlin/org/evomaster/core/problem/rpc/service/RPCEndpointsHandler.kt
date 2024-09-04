@@ -311,7 +311,7 @@ class RPCEndpointsHandler {
                         functionName = dto.functionName,
                         descriptiveInfo = dto.appKey,
                         inputParamTypes = dto.inputParameterTypes,
-                        requestRuleIdentifier = dto.requestRules?.run { if (isEmpty()) null else get(index) },
+                        requestRuleIdentifier = dto.requestRules?.getOrNull(index),
                         responseParam = response)
                     Lazy.assert { exkey == externalAction.getName() }
                     seededExternalServiceCluster[exkey] = externalAction
