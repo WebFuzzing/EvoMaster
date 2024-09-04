@@ -432,7 +432,7 @@ timeGraphs <- function(
 
 #################################################################################################################
 #################################################################################################################
-# creacte all tables and figures for this analysys
+# create all tables and figures for this analysis
 all <- function(){
 
   # configuration labels, as present in labelForExperimentConfigs
