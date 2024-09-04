@@ -1,9 +1,11 @@
 package org.evomaster.core.output.formatter
 
+import com.fasterxml.jackson.core.JsonProcessingException
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.gson.GsonBuilder
-import com.google.gson.Gson
 import com.google.gson.JsonParser
-import com.google.gson.JsonSyntaxException
+import javax.ws.rs.client.Entity.json
+
 
 /**
  * @javatypes: manzhang
@@ -33,14 +35,27 @@ open abstract class OutputFormatter (val name: String) {
 
         val JSON_FORMATTER = object : OutputFormatter("JSON_FORMATTER"){
             val gson = GsonBuilder().setPrettyPrinting().create()
+            val objectMapper  = ObjectMapper()
 
             override fun isValid(content: String): Boolean{
-                return try{
-                    gson.fromJson(content, Object::class.java)
+
+                return try {
+                    objectMapper.readTree(content)
                     true
-                }catch (e : JsonSyntaxException ) {
+                } catch (e: JsonProcessingException) {
                     false
                 }
+                /*
+                    GSON does not follow standard for JSON.
+                    Should not be used for validation.
+                    https://stackoverflow.com/questions/43233898/how-to-check-if-json-is-valid-in-java-using-gson
+                 */
+//                return try{
+//                    gson.fromJson(content, Object::class.java)
+//                    true
+//                }catch (e : JsonSyntaxException ) {
+//                    false
+//                }
 
             }
             override fun getFormatted(content: String): String{

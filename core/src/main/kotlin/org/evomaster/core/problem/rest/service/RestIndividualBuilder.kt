@@ -18,6 +18,38 @@ class RestIndividualBuilder {
     private lateinit var randomness: Randomness
 
 
+    companion object{
+
+        /**
+         * Create a copy of [restIndividual], where all main actions after index are removed
+         */
+        fun sliceAllCallsInIndividualAfterAction(restIndividual: RestIndividual, actionIndex: Int) : RestIndividual {
+
+            // we need to check that the index is within the range
+            if (actionIndex < 0 || actionIndex > restIndividual.size() -1) {
+                throw IllegalArgumentException("Action index has to be between 0 and ${restIndividual.size()}")
+            }
+
+            val ind = restIndividual.copy() as RestIndividual
+
+            val n = ind.seeMainExecutableActions().size
+
+            /*
+                We start from last, going backward.
+                So, actionIndex stays the same
+             */
+            for(i in n-1 downTo actionIndex+1){
+                ind.removeMainExecutableAction(i)
+            }
+
+            ind.fixGeneBindingsIfNeeded()
+            ind.fixResourceForwardLinks()
+
+            return ind
+        }
+    }
+
+
     /**
      * Based on a given [template], create a new action for it.
      * Such new action will have the same path resolution of [target], using same auth.
@@ -162,60 +194,15 @@ class RestIndividualBuilder {
             Once the create is fully initialized, need to fix
             links with target
          */
-        linkDynamicCreateResource(create, target)
+        PostCreateResourceUtils.linkDynamicCreateResource(create, target)
 
         return true
     }
 
-    /**
-     * Given two actions in sequence, [before] and [after], setup a creation link.
-     * This means that [before] is supposed to create a resource dynamically, which is then used
-     * by [after].
-     * eg:
-     * before: POST   /products
-     * after:  DELETE /products/{id}
-     */
-    fun linkDynamicCreateResource(
-        before: RestCallAction,
-        after: RestCallAction
-    ) {
-        if (!before.path.isEquivalent(after.path)) {
-            /*
-                eg
-                POST /x
-                GET  /x/{id}
-             */
-            before.saveLocation = true
-            after.usePreviousLocationId = before.postLocationId()
-        } else {
-            /*
-                eg
-                POST /x
-                POST /x/{id}/y
-                GET  /x/{id}/y
-                not going to save the position of last POST, as same as target
-
-                however, might also be in the case of:
-                PUT /x/{id}
-                GET /x/{id}
-             */
-            before.saveLocation = false
-
-            // the target (eg GET) needs to use the location of first POST, or more correctly
-            // the same location used for the last POST (in case there is a deeper chain)
-            after.usePreviousLocationId = before.usePreviousLocationId
-        }
-    }
 
 
-    /**
-     * Create a copy of [restIndividual], where all main actions after index are removed
-     */
-    fun sliceAllCallsInIndividualAfterAction(restIndividual: RestIndividual, actionIndex: Int) : RestIndividual {
 
-        //TODO move code here
-        return RestIndividualSelectorUtils.sliceAllCallsInIndividualAfterAction(restIndividual, actionIndex)
-    }
+
 
     /**
      * Check in the schema if there is any action which is a direct child of [a] and last path element is a parameter

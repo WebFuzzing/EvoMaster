@@ -206,33 +206,4 @@ object RestIndividualSelectorUtils {
 
         return -1
     }
-
-    /**
-     * Create a copy of individual, where all main actions after index are removed
-     */
-    @Deprecated("Rather use implementation in RestIndividualBuilder")
-    fun sliceAllCallsInIndividualAfterAction(restIndividual: RestIndividual, actionIndex: Int) : RestIndividual {
-
-        // we need to check that the index is within the range
-        if (actionIndex < 0 || actionIndex > restIndividual.size() -1) {
-            throw IllegalArgumentException("Action index has to be between 0 and ${restIndividual.size()}")
-        }
-
-        val ind = restIndividual.copy() as RestIndividual
-
-        val n = ind.seeMainExecutableActions().size
-
-        /*
-            We start from last, going backward.
-            So, actionIndex stays the same
-         */
-        for(i in n-1 downTo actionIndex+1){
-            ind.removeMainExecutableAction(i)
-        }
-
-        ind.fixGeneBindingsIfNeeded()
-        ind.removeAllLinks()
-
-        return ind
-    }
 }

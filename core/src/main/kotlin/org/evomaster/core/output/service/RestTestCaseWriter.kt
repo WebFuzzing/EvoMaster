@@ -52,7 +52,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
 
         return super.needsResponseVariable(call, res)
                 //|| (config.expectationsActive && partialOracles.generatesExpectation(call as RestCallAction, res))
-                || (!res.stopping && k.saveLocation)
+                || (!res.stopping && k.saveCreatedResourceLocation)
                 || (!res.stopping && k.hasFollowedBackwardLink())
     }
 
@@ -402,7 +402,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
 
 
     private fun handleLocationHeader(call: RestCallAction, res: RestCallResult, resVarName: String, lines: Lines) {
-        if (call.saveLocation && !res.stopping) {
+        if (call.saveCreatedResourceLocation && !res.stopping) {
 
             if (!res.getHeuristicsForChainedLocation()) {
 

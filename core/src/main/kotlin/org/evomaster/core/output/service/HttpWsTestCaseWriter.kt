@@ -383,11 +383,9 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         }
     }
 
-    //TODO: check again for C#, especially when not json
     protected open fun handleBody(call: HttpWsAction, lines: Lines) {
 
         val bodyParam = call.parameters.find { p -> p is BodyParam } as BodyParam?
-
 
         if (format.isCsharp() && bodyParam == null) {
             lines.append("null")
@@ -410,14 +408,13 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                     lines.add("body = {}")
                 }
 
-                val json =
-                        bodyParam.primaryGene().getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = format)
+                val json = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = format)
 
-                printSendJsonBody(json, lines, sendUnquotedJsonBody = bodyParam.contentRemoveQuotesGene.gene.value)
+                printSendJsonBody(json, lines)
 
             } else if (bodyParam.isTextPlain()) {
-                val body =
-                        bodyParam.gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.TEXT, targetFormat = format)
+
+                val body = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.TEXT, targetFormat = format)
                 if (body != "\"\"") {
                     when {
                         format.isCsharp() -> {
@@ -469,21 +466,11 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         }
     }
 
-    fun printSendJsonBody(json: String, lines: Lines, sendUnquotedJsonBody: Boolean = false) {
+    fun printSendJsonBody(json: String, lines: Lines) {
 
         val send = sendBodyCommand()
 
-        val JsonEscapedBodyLines = formatJsonWithEscapes(json, format)
-
-        // This handling of sending unquoted json bodies is UGLY (with
-        // uppercase) but seems to be the only  solution due to the
-        // permisiveness of the Gson parser that is used in
-        // OutputFormatter.JSON_FORMATTER.isValid(json)
-        val bodyLines = if (sendUnquotedJsonBody) {
-            TestWriterUtils.removeStartingAndEndingQuotesInJsonBody(JsonEscapedBodyLines)
-        } else {
-            JsonEscapedBodyLines
-        }
+        val bodyLines = formatJsonWithEscapes(json, format)
 
         if (bodyLines.size == 1) {
             when {

@@ -169,7 +169,7 @@ abstract class Gene(
         if(initialized){
             throw IllegalStateException("Gene already initialized")
         }
-        if(rand != null && isMutable()) {
+        if(rand != null && requiresRandomInitialization()) {
             randomize(rand, false)
         }
         markAllAsInitialized()
@@ -398,6 +398,12 @@ abstract class Gene(
      * Typically, it will be true, apart from some special cases.
      */
     open fun isMutable() = true
+
+    /**
+     * When the gene is sampled, check if it should be randomized.
+     * Typically this depends on whether the gene is mutable or not
+     */
+    open fun requiresRandomInitialization() = isMutable()
 
     /**
      * Specify if this gene should be printed in the output test.

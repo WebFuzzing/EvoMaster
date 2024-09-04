@@ -118,6 +118,8 @@ jobs:
       - name: Publish Test Report
         if: success() || failure()
         uses: mikepenz/action-junit-report@v4
+        env:
+          NODE_OPTIONS: "--max_old_space_size=4096"
         with:
           report_paths: '**/target/surefire-reports/TEST-*.xml'
       # Upload coverage results

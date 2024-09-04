@@ -245,9 +245,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                     val obj = ObjectGene("body", listOf())
                     // TODO could look at "Accept" header instead of defaulting to JSON
                     val enumGene = EnumGene("contentType", listOf("application/json"))
-                    val sendUnquoteJsonString =  CustomMutationRateGene("sendUnquoteJsonStringWrapper",
-                        BooleanGene("sendUnquoteJsonString", false), 0.0)
-                    val body = BodyParam(obj,enumGene, sendUnquoteJsonString)
+                    val body = BodyParam(obj,enumGene)
                     body.seeGenes().forEach { it.doInitialize(randomness) }
 
                     val update = UpdateForBodyParam(body)
@@ -286,9 +284,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 val name = dtoNames.first()
                 val obj = getObjectGeneForDto(name)
                 val enumGene = EnumGene("contentType", listOf("application/json"))
-                val sendUnquoteJsonString =  CustomMutationRateGene("sendUnquoteJsonStringWrapper",
-                    BooleanGene("sendUnquoteJsonString", false), 0.0)
-                val body = BodyParam(obj,enumGene, sendUnquoteJsonString)
+                val body = BodyParam(obj,enumGene)
                 body.seeGenes().forEach { it.doInitialize(randomness) }
                 val update = UpdateForBodyParam(body)
                 action.addParam(update)
@@ -410,7 +406,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 val root = "INPUT_${call.id}_${p.javaClass.simpleName}_${p.name}"
 
                 val genes = if(p is BodyParam) {
-                    listOf(p.contenTypeGene) // ie, ignore the payload
+                    listOf(p.contentTypeGene) // ie, ignore the payload
                 } else {
                     p.seeGenes()
                 }
@@ -853,7 +849,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         rcr: RestCallResult,
         chainState: MutableMap<String, String>
     ): Boolean {
-        if (a.saveLocation) {
+        if (a.saveCreatedResourceLocation) {
 
             if (response.statusInfo.family != Response.Status.Family.SUCCESSFUL) {
                 /*
@@ -992,10 +988,32 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             fv: FitnessValue
     ){
         //TODO the other cases
-        val fault = RestSecurityOracle.handleForbiddenDelete(individual,actionResults)
-        if(fault != null){
-            val scenarioId = idMapper.handleLocalTarget(fault)
-            fv.updateTarget(scenarioId, 1.0)
+
+        handleForbiddenOperation(HttpVerb.DELETE, FaultCategory.SECURITY_FORBIDDEN_DELETE, individual, actionResults, fv)
+        handleForbiddenOperation(HttpVerb.PUT, FaultCategory.SECURITY_FORBIDDEN_PUT, individual, actionResults, fv)
+        handleForbiddenOperation(HttpVerb.PATCH, FaultCategory.SECURITY_FORBIDDEN_PATCH, individual, actionResults, fv)
+    }
+
+    private fun handleForbiddenOperation(
+        verb: HttpVerb,
+        faultCategory: FaultCategory,
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        if (RestSecurityOracle.hasForbiddenOperation(verb, individual, actionResults)) {
+           val actionIndex = individual.size() - 1
+            val action = individual.seeMainExecutableActions()[actionIndex]
+            val result = actionResults
+                .filterIsInstance<RestCallResult>()
+                .find { it.sourceLocalId == action.getLocalId() }
+                ?: return
+
+            val scenarioId = idMapper.handleLocalTarget(
+                idMapper.getFaultDescriptiveId(faultCategory, action.getName())
+            )
+            fv.updateTarget(scenarioId, 1.0, actionIndex)
+            result.addFault(DetectedFault(faultCategory, action.getName()))
         }
     }
 
