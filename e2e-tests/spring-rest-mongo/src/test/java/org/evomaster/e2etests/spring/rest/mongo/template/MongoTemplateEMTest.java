@@ -26,7 +26,7 @@ public class MongoTemplateEMTest extends RestTestBase {
         runTestHandlingFlakyAndCompilation(
                 "MongoTemplateEMTest",
                 "org.foo.spring.rest.mongo.MongoTemplateEMTest",
-                500,
+                1000,
                 (args) -> {
                     setOption(args,"heuristicsForMongo","true");
                     setOption(args,"instrumentMR_MONGO","true");

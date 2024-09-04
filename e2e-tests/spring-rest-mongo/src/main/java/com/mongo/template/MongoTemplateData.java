@@ -16,7 +16,7 @@ public class MongoTemplateData {
     public int age;
 
     @NotNull
-    public String address;
+    public String city;
 
     public MongoTemplateData() {
     }
