@@ -6,6 +6,7 @@ import org.bson.codecs.DecoderContext;
 import org.bson.codecs.DocumentCodec;
 import org.bson.conversions.Bson;
 import org.evomaster.client.java.controller.mongo.MongoHeuristicsCalculator;
+import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -104,7 +105,8 @@ class MongoHeuristicCalculatorTest {
         Double distanceMatch = new MongoHeuristicsCalculator().computeExpression(convertToDocument(bsonTrue), doc);
         Double distanceNotMatch = new MongoHeuristicsCalculator().computeExpression(convertToDocument(bsonFalse), doc);
         assertEquals(0.0, distanceMatch);
-        assertEquals(4.0, distanceNotMatch);
+        Double expectedDistanceNotMatch = TruthnessUtils.normalizeValue(1.0) + TruthnessUtils.normalizeValue(3.0);
+        assertEquals(expectedDistanceNotMatch, distanceNotMatch);
     }
 
     @Test
@@ -115,7 +117,8 @@ class MongoHeuristicCalculatorTest {
         Double distanceMatch = new MongoHeuristicsCalculator().computeExpression(convertToDocument(bsonTrue), doc);
         Double distanceNotMatch = new MongoHeuristicsCalculator().computeExpression(convertToDocument(bsonFalse), doc);
         assertEquals(0.0, distanceMatch);
-        assertEquals(1.0, distanceNotMatch);
+        Double expectedDistanceNotMatch = TruthnessUtils.normalizeValue(1.0) + TruthnessUtils.normalizeValue(0.0);
+        assertEquals(expectedDistanceNotMatch, distanceNotMatch);
     }
 
     @Test
