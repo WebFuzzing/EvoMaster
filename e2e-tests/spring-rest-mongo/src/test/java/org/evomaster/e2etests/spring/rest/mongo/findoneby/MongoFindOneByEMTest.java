@@ -10,7 +10,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 public class MongoFindOneByEMTest extends RestTestBase {
 
@@ -43,7 +43,7 @@ public class MongoFindOneByEMTest extends RestTestBase {
 
                     Solution<RestIndividual> solution = initAndRun(args);
 
-                    assertTrue(solution.getIndividuals().size() >= 1);
+                    assertFalse(solution.getIndividuals().isEmpty());
                     assertHasAtLeastOne(solution, HttpVerb.GET, 400, endpoint, null);
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, endpoint, null);
                 });

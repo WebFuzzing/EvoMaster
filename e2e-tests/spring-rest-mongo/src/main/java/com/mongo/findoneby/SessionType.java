@@ -8,5 +8,5 @@ public enum SessionType {
     settings,
     custom_data,
     genomic_chart,
-    custom_gene_list;
+    custom_gene_list
 }
