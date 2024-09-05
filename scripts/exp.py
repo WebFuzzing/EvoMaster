@@ -696,7 +696,7 @@ def getJavaCommand(sut):
     JAVA = getJavaExe(sut)
     if sut.platform == JDK_17:
         JAVA = JAVA + " --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED"
-    JAVA = JAVA + " "
+    JAVA = "\"" + JAVA + "\" "
 
     return JAVA
 
