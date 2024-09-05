@@ -110,6 +110,23 @@ class MongoHeuristicCalculatorTest {
     }
 
     @Test
+    public void testNorReturnsTrue() {
+        Document doc = new Document().append("age", 25);
+        Bson bsonTrue = Filters.nor(Filters.gt("age", 30), Filters.lt("age", 18));
+        Double distanceMatch = new MongoHeuristicsCalculator().computeExpression(convertToDocument(bsonTrue), doc);
+        assertEquals(0.0, distanceMatch);
+    }
+
+    @Test
+    public void testNorReturnsFalse() {
+        Document doc = new Document().append("age", 35);
+        Bson bsonFalse = Filters.nor(Filters.gt("age", 30), Filters.lt("age", 18));
+        Double distanceNotMatch = new MongoHeuristicsCalculator().computeExpression(convertToDocument(bsonFalse), doc);
+        Double expectedDistanceNotMatch = TruthnessUtils.normalizeValue(5.0) + TruthnessUtils.normalizeValue(0.0);
+        assertEquals(expectedDistanceNotMatch, distanceNotMatch);
+    }
+
+    @Test
     public void testImplicitAnd() {
         Document doc = new Document().append("age", 10).append("kg", 50);
         Bson bsonTrue = BsonDocument.parse("{age: 10, kg: {$gt: 40}}");
@@ -151,7 +168,8 @@ class MongoHeuristicCalculatorTest {
         Double distanceMatch = new MongoHeuristicsCalculator().computeExpression(convertToDocument(bsonTrue), doc);
         Double distanceNotMatch = new MongoHeuristicsCalculator().computeExpression(convertToDocument(bsonFalse), doc);
         assertEquals(0.0, distanceMatch);
-        assertEquals(3.0, distanceNotMatch);
+        Double expectedDistanceNotMatch = TruthnessUtils.normalizeValue(0) + TruthnessUtils.normalizeValue(1) + TruthnessUtils.normalizeValue(2);
+        assertEquals(expectedDistanceNotMatch, distanceNotMatch);
     }
 
     @Test

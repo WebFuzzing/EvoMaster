@@ -178,7 +178,11 @@ public class MongoHeuristicsCalculator {
         Object actualValues = getValue(doc, operation.getFieldName());
 
         if (actualValues instanceof Iterable<?>) {
-            return expectedValues.stream().mapToDouble(value -> distanceToClosestElem((List<?>) actualValues, value)).sum();
+            return expectedValues
+                    .stream()
+                    .mapToDouble(value ->
+                            TruthnessUtils.normalizeValue(distanceToClosestElem((List<?>) actualValues, value)))
+                    .sum();
         } else {
             return Double.MAX_VALUE;
         }
@@ -289,7 +293,11 @@ public class MongoHeuristicsCalculator {
     }
 
     private double calculateDistanceForNor(NorOperation operation, Object doc) {
-        return operation.getConditions().stream().mapToDouble(condition -> calculateDistance(invertOperation(condition), doc)).sum();
+        return operation.getConditions()
+                .stream()
+                .mapToDouble(condition ->
+                        TruthnessUtils.normalizeValue(calculateDistance(invertOperation(condition), doc)))
+                .sum();
     }
 
     private double calculateDistanceForType(TypeOperation operation, Object doc) {
