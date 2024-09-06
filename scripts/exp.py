@@ -155,7 +155,7 @@ TIMEOUT_MINUTES = -1
 # WARNING: if experiments rely on applying different kinds of instrumentations,
 # then the value of nJobs MUST be greater than the number of experiment runs, to GUARANTEE that no more than
 # one experiment is run per bash script job (once a SUT is instrumented, we cannot change its instrumentation again).
-NJOBS = 100
+NJOBS = 1000
 
 # String to filter CONFIGS to be included.
 # A string could refer to multiple CONFIGS separated by a `,` like a,b
@@ -694,9 +694,10 @@ def getJavaExe(sut):
 def getJavaCommand(sut):
 
     JAVA = getJavaExe(sut)
-    if sut.platform == JDK_17:
-        JAVA = JAVA + " --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED"
+    # due to possible spaces in Windows folder paths
     JAVA = "\"" + JAVA + "\" "
+    if sut.platform == JDK_17:
+        JAVA = JAVA + " --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED "
 
     return JAVA
 
