@@ -3,6 +3,7 @@ package org.evomaster.client.java.controller.mongo;
 import org.evomaster.client.java.controller.mongo.operations.*;
 import org.evomaster.client.java.controller.mongo.operations.synthetic.*;
 import org.evomaster.client.java.distance.heuristics.DistanceHelper;
+import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
 import org.evomaster.client.java.sql.internal.TaintHandler;
 
 import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.*;
@@ -55,30 +56,41 @@ public class MongoHeuristicsCalculator {
             return calculateDistanceForLessThan((LessThanOperation<?>) operation, doc);
         if (operation instanceof LessThanEqualsOperation<?>)
             return calculateDistanceForLessEqualsThan((LessThanEqualsOperation<?>) operation, doc);
-        if (operation instanceof AndOperation) return calculateDistanceForAnd((AndOperation) operation, doc);
-        if (operation instanceof OrOperation) return calculateDistanceForOr((OrOperation) operation, doc);
-        if (operation instanceof NorOperation) return calculateDistanceForNor((NorOperation) operation, doc);
-        if (operation instanceof InOperation<?>) return calculateDistanceForIn((InOperation<?>) operation, doc);
+        if (operation instanceof AndOperation)
+            return calculateDistanceForAnd((AndOperation) operation, doc);
+        if (operation instanceof OrOperation)
+            return calculateDistanceForOr((OrOperation) operation, doc);
+        if (operation instanceof NorOperation)
+            return calculateDistanceForNor((NorOperation) operation, doc);
+        if (operation instanceof InOperation<?>)
+            return calculateDistanceForIn((InOperation<?>) operation, doc);
         if (operation instanceof NotInOperation<?>)
             return calculateDistanceForNotIn((NotInOperation<?>) operation, doc);
-        if (operation instanceof AllOperation<?>) return calculateDistanceForAll((AllOperation<?>) operation, doc);
+        if (operation instanceof AllOperation<?>)
+            return calculateDistanceForAll((AllOperation<?>) operation, doc);
         if (operation instanceof InvertedAllOperation<?>)
             return calculateDistanceForInvertedAll((InvertedAllOperation<?>) operation, doc);
-        if (operation instanceof SizeOperation) return calculateDistanceForSize((SizeOperation) operation, doc);
+        if (operation instanceof SizeOperation)
+            return calculateDistanceForSize((SizeOperation) operation, doc);
         if (operation instanceof InvertedSizeOperation)
             return calculateDistanceForInvertedSize((InvertedSizeOperation) operation, doc);
         if (operation instanceof ElemMatchOperation)
             return calculateDistanceForElemMatch((ElemMatchOperation) operation, doc);
-        if (operation instanceof ExistsOperation) return calculateDistanceForExists((ExistsOperation) operation, doc);
-        if (operation instanceof ModOperation) return calculateDistanceForMod((ModOperation) operation, doc);
+        if (operation instanceof ExistsOperation)
+            return calculateDistanceForExists((ExistsOperation) operation, doc);
+        if (operation instanceof ModOperation)
+            return calculateDistanceForMod((ModOperation) operation, doc);
         if (operation instanceof InvertedModOperation)
             return calculateDistanceForInvertedMod((InvertedModOperation) operation, doc);
-        if (operation instanceof NotOperation) return calculateDistanceForNot((NotOperation) operation, doc);
-        if (operation instanceof TypeOperation) return calculateDistanceForType((TypeOperation) operation, doc);
+        if (operation instanceof NotOperation)
+            return calculateDistanceForNot((NotOperation) operation, doc);
+        if (operation instanceof TypeOperation)
+            return calculateDistanceForType((TypeOperation) operation, doc);
         if (operation instanceof InvertedTypeOperation)
             return calculateDistanceForInvertedType((InvertedTypeOperation) operation, doc);
         if (operation instanceof NearSphereOperation)
             return calculateDistanceForNearSphere((NearSphereOperation) operation, doc);
+
         return Double.MAX_VALUE;
     }
 
@@ -128,7 +140,11 @@ public class MongoHeuristicsCalculator {
     }
 
     private double calculateDistanceForAnd(AndOperation operation, Object doc) {
-        return operation.getConditions().stream().mapToDouble(condition -> calculateDistance(condition, doc)).sum();
+        return operation.getConditions()
+                .stream()
+                .mapToDouble(condition ->
+                        TruthnessUtils.normalizeValue(calculateDistance(condition, doc)))
+                .sum();
     }
 
     private double calculateDistanceForIn(InOperation<?> operation, Object doc) {
@@ -162,7 +178,11 @@ public class MongoHeuristicsCalculator {
         Object actualValues = getValue(doc, operation.getFieldName());
 
         if (actualValues instanceof Iterable<?>) {
-            return expectedValues.stream().mapToDouble(value -> distanceToClosestElem((List<?>) actualValues, value)).sum();
+            return expectedValues
+                    .stream()
+                    .mapToDouble(value ->
+                            TruthnessUtils.normalizeValue(distanceToClosestElem((List<?>) actualValues, value)))
+                    .sum();
         } else {
             return Double.MAX_VALUE;
         }
@@ -273,7 +293,11 @@ public class MongoHeuristicsCalculator {
     }
 
     private double calculateDistanceForNor(NorOperation operation, Object doc) {
-        return operation.getConditions().stream().mapToDouble(condition -> calculateDistance(invertOperation(condition), doc)).sum();
+        return operation.getConditions()
+                .stream()
+                .mapToDouble(condition ->
+                        TruthnessUtils.normalizeValue(calculateDistance(invertOperation(condition), doc)))
+                .sum();
     }
 
     private double calculateDistanceForType(TypeOperation operation, Object doc) {
