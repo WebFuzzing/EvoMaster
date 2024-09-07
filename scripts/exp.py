@@ -670,6 +670,7 @@ def createOneJob(state, sut, seed, setting, configName):
     state.generated += 1
     return code
 
+
 def getJavaExe(sut):
 
     if not isJava(sut):
@@ -758,7 +759,7 @@ def addJobBody(port, sut, seed, setting, configName):
             else:
                 label += "_" + str(ps[1])
 
-    params += " --testSuiteFileName=EM_" + label + "_" + str(seed) + "_Test"
+    params += " --testSuiteFileName=EM_" + sut.name.replace("-","_") + label + "_" + str(seed) + "_Test"
     params += " --labelForExperiments=" + label
     params += " --labelForExperimentConfigs=" + configName
 
@@ -788,7 +789,7 @@ def addJobBody(port, sut, seed, setting, configName):
     params += " --externalServiceIP=" + generate_ip()
     params += " --probOfHarvestingResponsesFromActualExternalServices=0"  # this adds way too much noise to results
     params += " --createConfigPathIfMissing=false"
-    params += " --javaCommand="+str(pathlib.PurePath(getJavaExe(sut)).as_posix())
+    params += " --javaCommand=\""+str(pathlib.PurePath(getJavaExe(sut)).as_posix())+"\""
 
 
     if JACOCO:
