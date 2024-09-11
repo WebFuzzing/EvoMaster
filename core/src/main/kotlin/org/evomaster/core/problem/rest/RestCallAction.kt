@@ -136,11 +136,11 @@ class RestCallAction(
             throw IllegalArgumentException("Cannot bind 2 different unrelated paths to the same path resolution: " +
                     "${this.path} vs ${other.path}")
         }
-        for (i in 0 until parameters.size) {
+        for (i in parameters.indices) {
             val target = parameters[i]
             if (target is PathParam) {
                 val k = other.parameters.find { p -> p is PathParam && p.name == target.name }!!
-                parameters[i].gene.copyValueFrom(k.gene)
+                parameters[i].primaryGene().copyValueFrom(k.primaryGene())
             }
         }
     }
