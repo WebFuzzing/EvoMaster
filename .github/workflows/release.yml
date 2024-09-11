@@ -9,7 +9,8 @@ on:
 
 env:
   evomaster-version: 3.1.1
-  jdk: 21
+  jdk-jar: 1.8
+  jdk-jpackage: 21
   retention-days: 1
 ## Doesn't work, ie, use env in env
 #  installer-windows: evomaster-${evomaster-version}.msi
@@ -22,10 +23,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Setup JDK ${{env.jdk}}
+      - name: Setup JDK ${{env.jdk-jar}}
         uses: actions/setup-java@v1
         with:
-          java-version: ${{env.jdk}}
+          java-version: ${{env.jdk-jar}}
       - name: Cache Maven packages
         uses: actions/cache@v3
         with:
@@ -50,10 +51,10 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Setup JDK ${{env.jdk}}
+      - name: Setup JDK ${{env.jdk-jpackage}}
         uses: actions/setup-java@v1
         with:
-          java-version: ${{env.jdk}}
+          java-version: ${{env.jdk-jpackage}}
       - name: Download fat jar
         uses: actions/download-artifact@v3
         with:
@@ -75,10 +76,10 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Setup JDK ${{env.jdk}}
+      - name: Setup JDK ${{env.jdk-jpackage}}
         uses: actions/setup-java@v1
         with:
-          java-version: ${{env.jdk}}
+          java-version: ${{env.jdk-jpackage}}
       - name: Download fat jar
         uses: actions/download-artifact@v3
         with:
@@ -100,10 +101,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Setup JDK ${{env.jdk}}
+      - name: Setup JDK ${{env.jdk-jpackage}}
         uses: actions/setup-java@v1
         with:
-          java-version: ${{env.jdk}}
+          java-version: ${{env.jdk-jpackage}}
       - name: Download fat jar
         uses: actions/download-artifact@v3
         with:

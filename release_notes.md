@@ -7,6 +7,7 @@ Under development in `master` branch.
 - Generated tests that detect faults have now comments highlighting those faults. 
 
 ### Bug Fixes
+- fixed release of JAR requiring JDK 21 by mistake
 - fixed issue in Python and JavaScript output for when JSON responses are wrongly free text (e.g., unquoted strings)
 
 ### Addressed GitHub Issues
@@ -14,6 +15,7 @@ Under development in `master` branch.
 - #822: additionalProperties: [true/false] causes crash
 - #989: TestCaseWriter login cookie variable name
 - #1055: Unable to start EVoMaster in public petstore API
+- #1069: Error in EvoMaster 3.1.0: Black-Box Testing Initialization Failure with InvocationTargetException and NoSuchMethodError
 
 ---
 # Version: 3.1.0
