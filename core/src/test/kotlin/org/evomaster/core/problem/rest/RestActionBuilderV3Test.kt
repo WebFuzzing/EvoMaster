@@ -1881,7 +1881,7 @@ class RestActionBuilderV3Test{
         assertTrue(isSet)
 
         parent.bindToSamePathResolution(child)
-        assertEquals("/api/$target", parent.resolvedPath())
+        assertEquals("/v2/api/$target", parent.resolvedPath())
     }
 
     @Test
@@ -1900,7 +1900,7 @@ class RestActionBuilderV3Test{
         assertTrue(isSet)
 
         parent.bindToSamePathResolution(child)
-        assertEquals("/api/$target", parent.resolvedPath())
+        assertEquals("/v2/api/$target", parent.resolvedPath())
     }
 
 }
