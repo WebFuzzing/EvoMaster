@@ -22,6 +22,7 @@ import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.interfaces.ComparableGene
 import org.evomaster.core.search.gene.interfaces.TaintableGene
 import org.evomaster.core.search.gene.numeric.*
+import org.evomaster.core.search.gene.optional.ChoiceGene
 import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
 import org.evomaster.core.search.gene.root.CompositeGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
@@ -857,6 +858,12 @@ class StringGene(
     }
 
     override fun copyValueFrom(other: Gene): Boolean {
+
+        if(other is ChoiceGene<*>){
+            val x = other.activeGene()
+            return this.copyValueFrom(x)
+        }
+
         if (other !is StringGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }

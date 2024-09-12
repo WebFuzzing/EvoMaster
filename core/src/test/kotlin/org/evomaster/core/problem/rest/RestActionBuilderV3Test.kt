@@ -5,6 +5,7 @@ import org.evomaster.client.java.instrumentation.shared.ClassToSchemaUtils.OPENA
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.FormParam
+import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.resource.ResourceCluster
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.action.Action
@@ -1864,5 +1865,42 @@ class RestActionBuilderV3Test{
     }
 
 
+    @Test
+    fun testExamplesPathChildBinding(){
+
+        val path = "/swagger/artificial/defaultandexamples/examples_path_child.yaml"
+        val actions = loadAndAssertActions(path, 2, RestActionBuilderV3.Options(probUseExamples = 1.0))
+
+        val parent = actions["GET:/v2/api/{x}"] as RestCallAction
+        val child = actions["GET:/v2/api/{x}/data"] as RestCallAction //has example
+
+        val target = "foo"
+
+        val x = child.parameters.find { it is PathParam }!!.primaryGene().getWrappedGene(ChoiceGene::class.java)!!
+        val isSet = x.setFromStringValue(target)
+        assertTrue(isSet)
+
+        parent.bindToSamePathResolution(child)
+        assertEquals("/v2/api/$target", parent.resolvedPath())
+    }
+
+    @Test
+    fun testExamplesPathParentBinding(){
+
+        val path = "/swagger/artificial/defaultandexamples/examples_path_parent.yaml"
+        val actions = loadAndAssertActions(path, 2, RestActionBuilderV3.Options(probUseExamples = 1.0))
+
+        val parent = actions["GET:/v2/api/{x}"] as RestCallAction  //has example
+        val child = actions["GET:/v2/api/{x}/data"] as RestCallAction
+
+        val target = "foo"
+
+        val x = child.parameters.find { it is PathParam }!!.primaryGene().getWrappedGene(StringGene::class.java)!!
+        val isSet = x.setFromStringValue(target)
+        assertTrue(isSet)
+
+        parent.bindToSamePathResolution(child)
+        assertEquals("/v2/api/$target", parent.resolvedPath())
+    }
 
 }

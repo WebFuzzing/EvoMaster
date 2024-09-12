@@ -1,0 +1,31 @@
+---
+openapi: 3.1.0
+info:
+  title: examples_path
+  version: 1.0.0
+servers:
+  - url: "/v2"
+paths:
+  "/api/{x}":
+    get:
+      parameters:
+        - in: path
+          name: x
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+  "/api/{x}/data":
+    get:
+      parameters:
+        - in: path
+          name: x
+          required: true
+          schema:
+            type: string
+            example: A
+      responses:
+        '200':
+          description: OK

@@ -136,11 +136,17 @@ class RestCallAction(
             throw IllegalArgumentException("Cannot bind 2 different unrelated paths to the same path resolution: " +
                     "${this.path} vs ${other.path}")
         }
-        for (i in 0 until parameters.size) {
+        for (i in parameters.indices) {
             val target = parameters[i]
             if (target is PathParam) {
                 val k = other.parameters.find { p -> p is PathParam && p.name == target.name }!!
-                parameters[i].gene.copyValueFrom(k.gene)
+                /*
+                    Note: even if they are referring to same path variable, it does not mean that
+                    necessarily they are represented with the same type of gene, eg., typically a StringGene.
+                    For example, they could be a ChoiceGene when dealing with "examples" or Regex when having patterns
+                    only defined on some endpoints
+                 */
+                parameters[i].primaryGene().copyValueFrom(k.primaryGene())
             }
         }
     }
