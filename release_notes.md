@@ -3,8 +3,9 @@
 Under development in `master` branch.
 
 ### New Features
+- when running JAR file with JDK 17+, no longer need to manually specify --add-opens commands
 - schema validation for OpenAPI schemas, with summary of issues printed in the console logs
-- Generated tests that detect faults have now comments highlighting those faults. 
+- generated tests that detect faults have now comments highlighting those faults. 
 
 ### Bug Fixes
 - fixed release of JAR requiring JDK 21 by mistake

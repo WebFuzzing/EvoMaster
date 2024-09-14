@@ -328,6 +328,10 @@
                                     <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                                     <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
                                 </manifest>
+                                <manifestEntries>
+                                    <!-- needs to be kept in sync with JdkIssue -->
+                                    <Add-Opens>java.base/java.net java.base/java.util</Add-Opens>
+                                </manifestEntries>
                             </archive>
                             <finalName>evomaster</finalName>
                             <appendAssemblyId>false</appendAssemblyId>
