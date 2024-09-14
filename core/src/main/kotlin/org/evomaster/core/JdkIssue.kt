@@ -22,15 +22,17 @@ object JdkIssue {
             return true
         }catch (e: Exception){
 
-            //This needs to be kept in sync with makeExecutable.sh
+            //This needs to be kept in sync with core/pom.xml -> maven-assembly-plugin
             val command = "--add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED"
 
             LoggingUtil.getInfoLogger().error(inRed("It looks like you are running EvoMaster with JDK 17+," +
                     " but did not setup '--add-opens'." +
                     " Unfortunately, Java has broken a lot of backward compatibility in its recent versions." +
                     " You should use the EvoMaster OS installers (e.g., .msi and .dmg files)." +
-                    " If you want to use the JAR file directly, you need to either upgrade to JDK 8 or 11, or" +
-                    " setup --add-opens JVM option manually on the command-line" +
+                    " If you use the JAR file directly," +
+                    " --add-opens are now set directly in the manifest file." +
+                    " But this is not the case if you run EvoMaster directly from inside an IDE." +
+                    " You would need to set JVM options manually in the IDE" +
                     "  (or in the JDK_JAVA_OPTIONS environment variable):\n") +
                     inBlue("$command"))
 
