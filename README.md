@@ -42,13 +42,15 @@ __Key features__:
   JVM (e.g., Java and Kotlin). _EvoMaster_ analyses the bytecode of the tested applications, and uses
   several heuristics such as _testability transformations_ and _taint analysis_ to be able to generate
   more effective test cases. We support JDK __8__ and the major LTS versions after that (currently JDK __21__). Might work on other JVM versions, but we provide __NO__ support for it.
-  Note: there was initial support for other languages as well, like for example JavaScript/TypeScript and C#, but they are not in a stable, feature-complete state. The support for those languages for white-box testing has been dropped, at least for the time being. 
+  Note: there was initial support for other languages as well, like for example JavaScript/TypeScript and C#, but they were not in a stable, feature-complete state. The support for those languages for white-box testing has been dropped, at least for the time being. 
 
 * _Installation_: we provide installers for the main operating systems: _Windows_ (`.msi`),
   _OSX_ (`.dmg`) and _Linux_ (`.deb`). We also provide an uber-fat JAR file.
   To download them, see the [Release page](https://github.com/WebFuzzing/EvoMaster/releases).
   Release notes are present in the file [release_notes.md](https://github.com/WebFuzzing/EvoMaster/blob/master/release_notes.md).
-  If you are using JDK 17 or later, it is recommended to use one of the installers, instead of using directly the uber-fat JAR (otherwise you will need to deal with the [usability limitations](docs/jdks.md) of the latest JDKs). 
+  If you are using the uber-fat JAR, it should work with any major LTS version (from JDK 8 on).
+   Whereas for the client library, needed for white-box testing, we will support JDK 8 likely for a long, long while, be warned that future versions of the executable JAR might start to require higher versions of the JDK in a non-so-distant future.
+   If that is going to be higher than your current version of the JVM, if you cannot upgrade or have 2 different JDKs on your machine, then you should not use the uber-jar but rather one of the installers. 
    When you use one of the installers, keep in mind that currently they do not update the `PATH` variable. This needs to be done manually, [see documentation](docs/download.md). 
 
 * _State-of-the-art_: an [independent study (2022)](https://arxiv.org/abs/2204.08348), comparing 10 fuzzers on 20 RESTful APIs, shows that _EvoMaster_ gives the best results.
