@@ -2,6 +2,10 @@
 
 Under development in `master` branch.
 
+### New Features
+
+- MongoDB support. For white-box heuristics, can analyze all queries done toward MongoDB databases, as well as being able to insert data directly as part of the generated test cases. 
+
 
 # Version: 3.2.0
 
