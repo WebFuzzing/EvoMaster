@@ -134,6 +134,7 @@ In the last few years, several few tools have been proposed in the academic lite
 You can read more details in this [2023 survey](docs/publications/2023_tosem_survey.pdf) on REST API testing.
 
 Existing open-source tools for REST API fuzzing are for example (in alphabetic order):
+[CATS](https://github.com/Endava/cats),
 [Dredd](https://github.com/apiaryio/dredd),
 [Fuzz-lightyear](https://github.com/Yelp/fuzz-lightyear),
 [ResTest](https://github.com/isa-group/RESTest),
