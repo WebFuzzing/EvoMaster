@@ -30,7 +30,7 @@ on:
 #      - "**"
 
 env:
-  evomaster-version: 3.1.1
+  evomaster-version: 3.2.0
   # Unfortunately, to use JPackage we need JDK 17 or above :(
   # Which is really bad due to the madness of --add-opens.
   # Even if hunt down all cases of reflections in EM, there is still the problem of

@@ -2,6 +2,9 @@
 
 Under development in `master` branch.
 
+
+# Version: 3.2.0
+
 ### New Features
 - when running JAR file with JDK 17+, no longer need to manually specify --add-opens commands
 - schema validation for OpenAPI schemas, with summary of issues printed in the console logs
