@@ -14,6 +14,7 @@ import org.evomaster.core.config.ConfigUtil
 import org.evomaster.core.config.ConfigsFromFile
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.output.service.naming.NamingStrategy
 import org.evomaster.core.search.impact.impactinfocollection.GeneMutationSelectionMethod
 import org.evomaster.core.search.service.IdMapper
 import org.slf4j.LoggerFactory
@@ -82,6 +83,8 @@ class EMConfig {
         private val defaultAlgorithmForWhiteBox = Algorithm.MIO
 
         private val defaultOutputFormatForBlackBox = OutputFormat.PYTHON_UNITTEST
+
+        private val defaultTestCaseNamingStrategy = NamingStrategy.NUMBERED
 
         fun validateOptions(args: Array<String>): OptionParser {
 
@@ -579,6 +582,10 @@ class EMConfig {
             throw ConfigProblemException("The use of 'prematureStop' is meaningful only if the stopping criterion" +
                     " 'stoppingCriterion' is based on time")
         }
+
+        if (namingStrategy == NamingStrategy.DEFAULT) {
+            namingStrategy = defaultTestCaseNamingStrategy
+        }
     }
 
     private fun checkPropertyConstraints(m: KMutableProperty<*>) {
@@ -980,6 +987,10 @@ class EMConfig {
             " This feature might not be supported in all frameworks." +
             " If 0 or negative, the timeout is not applied.")
     var testTimeout = 60
+
+    @Important(2.2)
+    @Cfg("Specify the naming strategy for test cases. If left on `DEFAULT`, Numbered strategy will be used naming tests for example as `test_1`, `test_2`.")
+    var namingStrategy = NamingStrategy.DEFAULT
 
     @Important(3.0)
     @Cfg("Use EvoMaster in black-box mode. This does not require an EvoMaster Driver up and running. However, you will need to provide further option to specify how to connect to the SUT")

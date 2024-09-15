@@ -3,6 +3,7 @@ package org.evomaster.core
 import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.core.config.ConfigProblemException
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.output.service.naming.NamingStrategy
 import org.evomaster.core.search.service.IdMapper
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -573,6 +574,27 @@ internal class EMConfigTest{
 
         var options = parser.parse("--outputFormat", "PYTHON_UNITTEST")
         assertThrows(Exception::class.java, {config.updateProperties(options)})
+    }
+
+    @Test
+    fun testDefaultNamingStrategyIsNumbered() {
+        val parser = EMConfig.getOptionParser()
+        val config = EMConfig()
+        val options = parser.parse("--namingStrategy", "DEFAULT")
+
+        config.updateProperties(options)
+
+        assertEquals(NamingStrategy.NUMBERED, config.namingStrategy)
+    }
+
+    @Test
+    fun testNoNamingStrategyDefaultsToNumbered() {
+        val parser = EMConfig.getOptionParser()
+        val config = EMConfig()
+
+        config.updateProperties(parser.parse())
+
+        assertEquals(NamingStrategy.NUMBERED, config.namingStrategy)
     }
 
 }
