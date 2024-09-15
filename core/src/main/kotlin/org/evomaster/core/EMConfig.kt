@@ -1334,16 +1334,14 @@ class EMConfig {
     @Cfg("If using SQL heuristics, enable more advanced version")
     var heuristicsForSQLAdvanced = false
 
-    @Experimental
     @Cfg("Tracking of Mongo commands to improve test generation")
-    var heuristicsForMongo = false
+    var heuristicsForMongo = true
 
     @Cfg("Enable extracting SQL execution info")
     var extractSqlExecutionInfo = true
 
-    @Experimental
     @Cfg("Enable extracting Mongo execution info")
-    var extractMongoExecutionInfo = false
+    var extractMongoExecutionInfo = true
 
     @Experimental
     @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use Dynamic Symbolic Execution")
@@ -1352,9 +1350,8 @@ class EMConfig {
     @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use a search algorithm")
     var generateSqlDataWithSearch = true
 
-    @Experimental
     @Cfg("Enable EvoMaster to generate Mongo data with direct accesses to the database")
-    var generateMongoData = false
+    var generateMongoData = true
 
     @Cfg("When generating SQL data, how many new rows (max) to generate for each specific SQL Select")
     @Min(1.0)
@@ -1465,11 +1462,10 @@ class EMConfig {
             " on the JVM.")
     var instrumentMR_EXT_0 = true
 
-    @Experimental
     @Cfg("Execute instrumentation for method replace with category MONGO." +
             " Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin" +
             " on the JVM.")
-    var instrumentMR_MONGO = false
+    var instrumentMR_MONGO = true
 
 
     @Cfg("Execute instrumentation for method replace with category NET." +
