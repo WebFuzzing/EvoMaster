@@ -187,6 +187,9 @@ object RestIndividualSelectorUtils {
     }
 
 
+    /**
+     * @return a negative value if no action with the given properties is found in the individual.
+     */
     fun getIndexOfAction(individual: EvaluatedIndividual<RestIndividual>,
                          verb: HttpVerb,
                          path: RestPath,

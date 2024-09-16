@@ -215,4 +215,12 @@ class RestIndividualBuilder {
     }
 
 
+    /**
+     * Create a new individual, based on [first] followed by [second].
+     * Initialization action are properly taken care of.
+     */
+    fun merge(first: RestIndividual, second: RestIndividual): RestIndividual {
+
+        return first //TODO
+    }
 }

@@ -1,9 +1,11 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
+import com.webfuzzing.commons.faults.FaultCategory
 import javax.annotation.PostConstruct
 
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.enterprise.DetectedFault
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.enterprise.auth.AuthSettings
 import org.evomaster.core.problem.enterprise.auth.NoAuth
@@ -124,9 +126,104 @@ class SecurityRest {
         handleForbiddenOperationButOKOthers(HttpVerb.PUT)
         handleForbiddenOperationButOKOthers(HttpVerb.PATCH)
 
+        // getting 404 instead of 403
+        handleExistenceLeakage()
+
         //TODO other rules. See FaultCategory
-        // eg 401/403 info leakage
         //etc.
+    }
+
+
+    /**
+     * Accessing a protected GET endpoint with id with not authorized should return 403, even if not exists.
+     * otherwise, if returning 404, we can find out that the resource does not exist.
+     */
+    private fun handleExistenceLeakage(){
+
+        val getOperations = RestIndividualSelectorUtils.getAllActionDefinitions(actionDefinitions, HttpVerb.GET)
+
+        getOperations.forEach { get ->
+
+            val inds403 = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution,
+                HttpVerb.GET,
+                get.path,
+                status = 403
+                )
+            if(inds403.isEmpty()){
+                return@forEach
+            }
+
+            val inds404 = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution,
+                HttpVerb.GET,
+                get.path,
+                status = 404
+            )
+            if(inds404.isEmpty()){
+                return@forEach
+            }
+
+            //found the bug.
+            val forbidden = inds403.minBy { it.individual.size() }
+            val notfound = inds404.maxBy { it.individual.size() }
+
+            //needs slicing to minimize the newly generated test
+            val index403 = RestIndividualSelectorUtils.getIndexOfAction(
+                forbidden,
+                HttpVerb.GET,
+                get.path,
+                403
+            )
+            // slice the individual in a way that delete all calls after the chosen verb request
+            val first = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(forbidden.individual, index403)
+
+            val index404 = RestIndividualSelectorUtils.getIndexOfAction(
+                notfound,
+                HttpVerb.GET,
+                get.path,
+                404
+            )
+            // slice the individual in a way that delete all calls after the chosen verb request
+            val second = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(notfound.individual, index404)
+
+            val final = builder.merge(first, second)
+
+            final.modifySampleType(SampleType.SECURITY)
+            final.ensureFlattenedStructure()
+
+            val evaluatedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(final)
+            if (evaluatedIndividual == null) {
+                log.warn("Failed to evaluate constructed individual in handleExistenceLeakage")
+                return@forEach
+            }
+
+            //verify if newly constructed individual still find the bug
+            val check403 = RestIndividualSelectorUtils.getIndexOfAction(
+                evaluatedIndividual,
+                HttpVerb.GET,
+                get.path,
+                403
+            )
+            val check404 = RestIndividualSelectorUtils.getIndexOfAction(
+                evaluatedIndividual,
+                HttpVerb.GET,
+                get.path,
+                404
+            )
+            //fitness function should have detected the fault
+            val faults = (evaluatedIndividual.evaluatedMainActions().last().result as RestCallResult).getFaults()
+
+            if(check403 < 0 || check404 < 0 || faults.none { it.category == FaultCategory.SECURITY_EXISTENCE_LEAKAGE }){
+                //if this happens, it is a bug in the merge... or flakiness
+                log.warn("Failed to construct new test showing the 403 vs 404 security leakage issue")
+                return@forEach
+            }
+
+            val added = archive.addIfNeeded(evaluatedIndividual)
+            //if we arrive here, should always be added, because we are creating a new testing target
+            assert(added)
+        }
     }
 
 
@@ -389,35 +486,6 @@ class SecurityRest {
         if (creationAction.path.isEquivalent(targetAction.path)) {
             targetAction.bindBasedOn(creationAction.path, creationAction.parameters.filterIsInstance<PathParam>(), null)
         }
-    }
-
-    /**
-     * Information leakage
-     * accessing endpoint with id with not authorized should return 403, even if not exists.
-     * otherwise, if returning 404, we can find out that the resource does not exist.
-     */
-    fun handleNotAuthorizedResourceExistenceLeakage() {
-
-        //TODO
-
-        // There has to be at least two authenticated users
-        if (!checkForAtLeastNumberOfAuthenticatedUsers(2)) {
-            // nothing to test if there are not at least 2 users
-            LoggingUtil.getInfoLogger().debug(
-                "Security test handleNotAuthorizedInAnyCase requires at least 2 authenticated users"
-            )
-            return
-        }
-
-        // get all endpoints each user has access to (this can be a function since we need this often)
-
-        // among endpoints userA has access, those endpoints should give 2xx as response
-
-        // find an endpoint userA does not have access but another user has access, this should give 403
-
-        // try with an endpoint that does not exist, this should give 403 as well, not 404.
-
-
     }
 
 
