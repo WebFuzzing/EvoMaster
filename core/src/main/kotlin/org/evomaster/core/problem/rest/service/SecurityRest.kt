@@ -187,7 +187,7 @@ class SecurityRest {
             // slice the individual in a way that delete all calls after the chosen verb request
             val second = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(notfound.individual, index404)
 
-            val final = builder.merge(first, second)
+            val final = RestIndividualBuilder.merge(first, second)
 
             final.modifySampleType(SampleType.SECURITY)
             final.ensureFlattenedStructure()

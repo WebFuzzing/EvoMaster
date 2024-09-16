@@ -49,6 +49,38 @@ class RestIndividualBuilder {
 
             return ind
         }
+
+        /**
+         * Create a new individual, based on [first] followed by [second].
+         * Initialization actions are properly taken care of.
+         */
+        fun merge(first: RestIndividual, second: RestIndividual): RestIndividual {
+
+            val before = first.seeAllActions().size + second.seeAllActions().size
+
+            val base = first.copy() as RestIndividual
+            val other = second.copy() as RestIndividual
+            other.ensureFlattenedStructure()
+
+            base.addInitializingActions(base.seeInitializingActions().map { it.copy() as EnvironmentAction })
+
+            other.getFlattenMainEnterpriseActionGroup()!!.forEach { group ->
+                base.addMainEnterpriseActionGroup(group.copy() as EnterpriseActionGroup<*>)
+            }
+
+            /*
+                TODO are links properly handled in such a merge???
+                would need assertions here, as well as test cases
+             */
+
+            val after = base.seeAllActions().size
+            //merge shouldn't lose any actions
+            assert(before == after) { "$after!=$before" }
+
+            base.verifyValidity()
+
+            return base
+        }
     }
 
 
@@ -213,35 +245,5 @@ class RestIndividualBuilder {
     }
 
 
-    /**
-     * Create a new individual, based on [first] followed by [second].
-     * Initialization actions are properly taken care of.
-     */
-    fun merge(first: RestIndividual, second: RestIndividual): RestIndividual {
 
-        val before = first.seeAllActions().size + second.seeAllActions().size
-
-        val base = first.copy() as RestIndividual
-        val other = second.copy() as RestIndividual
-        other.ensureFlattenedStructure()
-
-        base.addInitializingActions(base.seeInitializingActions().map { it.copy() as EnvironmentAction })
-
-        other.getFlattenMainEnterpriseActionGroup()!!.forEach { group ->
-            base.addMainEnterpriseActionGroup(group.copy() as EnterpriseActionGroup<*>)
-        }
-
-        /*
-            TODO are links properly handled in such a merge???
-            would need assertions here, as well as test cases
-         */
-
-        val after = base.seeAllActions().size
-        //merge shouldn't lose any actions
-        assert(before == after) { "$after!=$before" }
-
-        base.verifyValidity()
-
-        return base
-    }
 }
