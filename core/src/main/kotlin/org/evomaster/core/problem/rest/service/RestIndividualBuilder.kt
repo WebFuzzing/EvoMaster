@@ -59,6 +59,7 @@ class RestIndividualBuilder {
             val before = first.seeAllActions().size + second.seeAllActions().size
 
             val base = first.copy() as RestIndividual
+            base.ensureFlattenedStructure()
             val other = second.copy() as RestIndividual
             other.ensureFlattenedStructure()
 
@@ -76,6 +77,9 @@ class RestIndividualBuilder {
             val after = base.seeAllActions().size
             //merge shouldn't lose any actions
             assert(before == after) { "$after!=$before" }
+
+            base.resetLocalIdRecursively()
+            base.doInitializeLocalId()
 
             base.verifyValidity()
 

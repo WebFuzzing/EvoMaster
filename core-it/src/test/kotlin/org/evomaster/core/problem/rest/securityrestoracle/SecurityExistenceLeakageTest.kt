@@ -30,6 +30,7 @@ class SecurityExistenceLeakageTest: IntegrationTestRestBase()  {
     @BeforeEach
     fun initializeTest(){
         ExistenceLeakageApplication.reset()
+        getEMConfig().security = true
     }
 
     @Test

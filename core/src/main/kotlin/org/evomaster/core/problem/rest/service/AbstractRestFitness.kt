@@ -720,6 +720,8 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         val modified = RestLinkValueUpdater.update(a,link,previous,result)
         if(modified){
             reference.actualSourceActionLocalId = previous.getLocalId()
+        } else{
+            reference.actualSourceActionLocalId = null
         }
         return modified
     }
