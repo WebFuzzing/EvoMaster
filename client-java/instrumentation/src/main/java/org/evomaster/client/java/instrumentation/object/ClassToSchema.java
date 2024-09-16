@@ -53,6 +53,7 @@ public class ClassToSchema {
         localDate           string  local-date      A date without a time-zone in the ISO-8601 calendar system
         localDateTime       string  local-date-time A date-time without a time-zone in the ISO-8601 calendar system
         localTime           string  local-time      A time without a time-zone in the ISO-8601 calendar system
+        char                string  char            A 16-bit character
          */
 
     /**
@@ -280,6 +281,9 @@ public class ClassToSchema {
 
             if (Byte.class.isAssignableFrom(klass) || Byte.TYPE == klass) {
                 return fieldSchema("integer", "int8");
+            }
+            if (Character.class.isAssignableFrom(klass) || Character.TYPE == klass) {
+                return fieldSchema("string", "char");
             }
             if (Short.class.isAssignableFrom(klass) || Short.TYPE == klass) {
                 return fieldSchema("integer", "int16");
