@@ -25,6 +25,7 @@ import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.impact.impactinfocollection.ImpactsOfIndividual
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.mutator.StructureMutator
+import org.evomaster.core.solver.SMTLibZ3DbConstraintSolver
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import kotlin.math.max
@@ -292,6 +293,41 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         mutatedGenes: MutatedGeneSpecification?, sampler: ApiWsSampler<T>
     ): MutableList<List<SqlAction>>? {
 
+        if (config.generateSqlDataWithSearch) {
+            return handleSearch(ind, sampler, mutatedGenes, fw)
+        }
+        
+        if (config.generateSqlDataWithDSE) {
+            return handleDSE(sampler, fw)
+        }
+
+        return mutableListOf()
+    }
+
+    private fun <T : ApiWsIndividual> handleDSE(sampler: ApiWsSampler<T>, fw: Map<String, Set<String>>): MutableList<List<SqlAction>> {
+        // TODO: Use one solver, instead of creating one each time?
+        val resourcesFolder = "/tmp";
+        val schemaDto = sampler.sqlInsertBuilder?.schemaDto
+            ?: throw IllegalStateException("No DB schema is available")
+        val solver = SMTLibZ3DbConstraintSolver(schemaDto, resourcesFolder)
+
+        val newActions = mutableListOf<List<SqlAction>>()
+        for ((_, queries) in fw) {
+            for (query in queries) {
+                val newActionsForQuery = solver.solve(query)
+                newActions.addAll(mutableListOf(newActionsForQuery))
+            }
+        }
+
+        return newActions
+    }
+
+    private fun <T : ApiWsIndividual> handleSearch(
+        ind: T,
+        sampler: ApiWsSampler<T>,
+        mutatedGenes: MutatedGeneSpecification?,
+        fw: Map<String, Set<String>>
+    ): MutableList<List<SqlAction>>? {
         /*
             because there might exist representExistingData in db actions which are in between rest actions,
             we use seeDbActions() instead of seeInitializingActions() here
@@ -319,7 +355,9 @@ abstract class ApiWsStructureMutator : StructureMutator() {
             ind.addInitializingDbActions(0, existing)
 
             //record newly added existing sql data
-            mutatedGenes?.addedExistingDataInInitialization?.getOrPut(ImpactsOfIndividual.SQL_ACTION_KEY, { mutableListOf() })?.addAll(0, existing)
+            mutatedGenes?.addedExistingDataInInitialization?.getOrPut(
+                ImpactsOfIndividual.SQL_ACTION_KEY,
+                { mutableListOf() })?.addAll(0, existing)
 
             if (log.isTraceEnabled)
                 log.trace("{} existingSqlData are added", existing)
@@ -333,7 +371,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 
         val addedSqlInsertions = if (mutatedGenes != null) mutableListOf<List<SqlAction>>() else null
 
-        while (!missing.isEmpty()) {
+        while (missing.isNotEmpty()) {
 
             val first = missing.entries.first()
 
@@ -363,11 +401,6 @@ abstract class ApiWsStructureMutator : StructureMutator() {
              */
             missing = findMissing(fw, ind.seeInitializingActions().filterIsInstance<SqlAction>())
         }
-
-        if (config.generateSqlDataWithDSE) {
-            //TODO DSE could be plugged in here
-        }
-
         return addedSqlInsertions
     }
 
