@@ -83,7 +83,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
     }
 
     override fun genesToMutation(individual: T, evi: EvaluatedIndividual<T>, targets: Set<Int>): List<Gene> {
-        val filterMutate = if (config.generateSqlDataWithSearch) ALL else NO_SQL
+        val filterMutate = if (config.shouldGenerateSqlData()) ALL else NO_SQL
         val genes = individual.seeGenes(filterMutate).filter { it.isMutable() }
         return genes
     }
