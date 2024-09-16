@@ -240,6 +240,8 @@ class RestIndividualBuilder {
         //merge shouldn't lose any actions
         assert(before == after) { "$after!=$before" }
 
+        base.verifyValidity()
+
         return base
     }
 }
