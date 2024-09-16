@@ -76,13 +76,11 @@ class SecurityExistenceLeakageTest: IntegrationTestRestBase()  {
         assertEquals(201, r0.getStatusCode())
         assertEquals(403, r1.getStatusCode())
         assertEquals(404, r2.getStatusCode())
-        //TODO likely failing due to local id that are not unique. add check to verifyValidity()
-
 
         val faultDetected = RestSecurityOracle.hasExistenceLeakage(RestPath("/api/resources/{id}"),ei.individual, ei.seeResults())
         assertTrue(faultDetected)
 
-        //should be put on 404
+        //fault should be put on 404
         assertEquals(0, r0.getFaults().size)
         assertEquals(0, r1.getFaults().size)
         assertEquals(1, r2.getFaults().size)
