@@ -36,6 +36,12 @@ class SecurityExistenceLeakageEMTest : SpringTestBase(){
             val solution = initAndRun(args)
 
             assertTrue(solution.individuals.size >= 1)
+
+            assertHasAtLeastOne(solution, HttpVerb.PUT, 201, "/api/resources/{id}", null)
+            assertHasAtLeastOne(solution, HttpVerb.GET, 404, "/api/resources/{id}", null)
+            assertHasAtLeastOne(solution, HttpVerb.GET, 403, "/api/resources/{id}", null)
+
+
             val faults = DetectedFaultUtils.getDetectedFaultCategories(solution)
             assertEquals(1, faults.size)
             assertEquals(FaultCategory.SECURITY_EXISTENCE_LEAKAGE, faults.first())
