@@ -148,7 +148,7 @@ class TestSuiteWriter {
             if (solution.individuals.any { it.individual is RPCIndividual }) {
                 namingStrategy.getTestCases()
             } else
-                testSuiteOrganizer.sortTests(solution, config.customNaming)
+                testSuiteOrganizer.sortTests(solution)
         } catch (ex: Exception) {
             log.warn(
                 "A failure has occurred with the test sorting. Reverting to default settings. \n"

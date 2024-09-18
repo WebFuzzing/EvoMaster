@@ -31,7 +31,7 @@ class TestSuiteOrganizer {
     fun sortTests(solution: Solution<*>, customNaming: Boolean = false): List<TestCase> {
         //sortingHelper.selectCriteriaByIndex(defaultSorting)
         //TODO here in the future we will have something a bit smarter
-        return sortingHelper.sort(solution, namingHelper, customNaming)
+        return sortingHelper.sort(solution, namingHelper)
     }
 
 //    fun setPartialOracles(partialOracles: PartialOracles){
@@ -271,11 +271,8 @@ class SortingHelper {
         return solution.individuals.map { ind -> TestCase(ind, "test" + (counter++)) }
     }
 
-    fun sort(solution: Solution<*>, namingHelper: NamingHelper = NamingHelper(), customNaming: Boolean = false): List<TestCase> {
-        val newSort = if (customNaming){
-            sortByComparatorList(solution, namingHelper, comparatorList)
-        }
-        else naiveSorting(solution)
+    fun sort(solution: Solution<*>, namingHelper: NamingHelper = NamingHelper()): List<TestCase> {
+        val newSort = sortByComparatorList(solution, namingHelper, comparatorList)
 
         Lazy.assert { solution.individuals.toSet() == newSort.map { it.test }.toSet()}
         return newSort
