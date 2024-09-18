@@ -107,6 +107,9 @@ class RestIndividualBuilder {
         }
 
         val res = template.copy() as RestCallAction
+
+        res.resetLocalIdRecursively()
+
         if(res.isInitialized()){
             res.seeTopGenes().forEach { it.randomize(randomness, false) }
         } else {
