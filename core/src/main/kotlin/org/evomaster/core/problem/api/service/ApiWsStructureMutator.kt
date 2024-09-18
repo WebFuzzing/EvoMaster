@@ -5,27 +5,26 @@ import org.evomaster.client.java.controller.api.dto.database.execution.MongoFail
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
-import org.evomaster.core.sql.SqlAction
-import org.evomaster.core.sql.SqlActionUtils
-import org.evomaster.core.sql.SqlInsertBuilder
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
-import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
-import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.param.HttpWsResponseParam
-import org.evomaster.core.search.action.EnvironmentAction
+import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
+import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.action.EnvironmentAction
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.impact.impactinfocollection.ImpactsOfIndividual
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.mutator.StructureMutator
-import org.evomaster.core.solver.SMTLibZ3DbConstraintSolver
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.sql.SqlActionUtils
+import org.evomaster.core.sql.SqlInsertBuilder
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import kotlin.math.max
@@ -304,11 +303,6 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         return mutableListOf()
     }
 
-    private fun <T : ApiWsIndividual> handleDSE(sampler: ApiWsSampler<T>, fw: Map<String, Set<String>>): MutableList<List<SqlAction>> {
-        // TODO:
-        return mutableListOf<List<SqlAction>>()
-    }
-
     private fun <T : ApiWsIndividual> handleSearch(
         ind: T,
         sampler: ApiWsSampler<T>,
@@ -389,6 +383,11 @@ abstract class ApiWsStructureMutator : StructureMutator() {
             missing = findMissing(fw, ind.seeInitializingActions().filterIsInstance<SqlAction>())
         }
         return addedSqlInsertions
+    }
+
+    private fun <T : ApiWsIndividual> handleDSE(sampler: ApiWsSampler<T>, fw: Map<String, Set<String>>): MutableList<List<SqlAction>> {
+        /* TODO: DSE should be plugged in here */
+        return mutableListOf()
     }
 
     private fun <T : ApiWsIndividual> handleFailedFind(

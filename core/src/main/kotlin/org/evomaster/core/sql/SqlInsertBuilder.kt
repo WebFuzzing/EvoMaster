@@ -17,7 +17,7 @@ import org.evomaster.core.logging.LoggingUtil
 
 
 class SqlInsertBuilder(
-    public val schemaDto: DbSchemaDto,
+    schemaDto: DbSchemaDto,
     private val dbExecutor: DatabaseExecutor? = null
 ) {
 
