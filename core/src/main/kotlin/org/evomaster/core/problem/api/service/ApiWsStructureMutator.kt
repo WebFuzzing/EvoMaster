@@ -305,21 +305,8 @@ abstract class ApiWsStructureMutator : StructureMutator() {
     }
 
     private fun <T : ApiWsIndividual> handleDSE(sampler: ApiWsSampler<T>, fw: Map<String, Set<String>>): MutableList<List<SqlAction>> {
-        // TODO: Use one solver, instead of creating one each time?
-        val resourcesFolder = "/tmp";
-        val schemaDto = sampler.sqlInsertBuilder?.schemaDto
-            ?: throw IllegalStateException("No DB schema is available")
-        val solver = SMTLibZ3DbConstraintSolver(schemaDto, resourcesFolder)
-
-        val newActions = mutableListOf<List<SqlAction>>()
-        for ((_, queries) in fw) {
-            for (query in queries) {
-                val newActionsForQuery = solver.solve(query)
-                newActions.addAll(mutableListOf(newActionsForQuery))
-            }
-        }
-
-        return newActions
+        // TODO:
+        return mutableListOf<List<SqlAction>>()
     }
 
     private fun <T : ApiWsIndividual> handleSearch(
