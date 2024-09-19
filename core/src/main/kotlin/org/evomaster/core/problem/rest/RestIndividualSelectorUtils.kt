@@ -196,17 +196,31 @@ object RestIndividualSelectorUtils {
                          statusCode: Int
     ) : Int {
 
-        val actions = individual.evaluatedMainActions()
+        return getIndexOfAction(individual, verb, path, statusCode)
+    }
 
-        for(index in actions.indices){
-            val a = actions[index].action as RestCallAction
-            val r = actions[index].result as RestCallResult
+    /**
+     * @return a negative value if no action with the given properties is found in the individual.
+     */
+    fun getIndexOfAction(
+        individual: EvaluatedIndividual<RestIndividual>,
+        verb: HttpVerb? = null,
+        path: RestPath? = null,
+        status: Int? = null,
+        statusGroup: StatusGroup? = null,
+        authenticated: Boolean = false
+    ): Int {
 
-            if(a.verb == verb && a.path.isEquivalent(path) && r.getStatusCode() == statusCode){
-                return index
-            }
+        if(status != null && statusGroup!= null){
+            throw IllegalArgumentException("Shouldn't specify both status and status group")
         }
 
+        individual.evaluatedMainActions().forEachIndexed { index, a ->
+                if(checkIfActionSatisfiesConditions(a, verb, path, status, statusGroup, authenticated)){
+                    return index
+                }
+        }
         return -1
     }
+
 }

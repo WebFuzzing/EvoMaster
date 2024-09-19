@@ -88,6 +88,10 @@ class SecurityRest {
         val archivedSolution: Solution<RestIndividual> = this.archive.extractSolution()
         individualsInSolution = archivedSolution.individuals
 
+        expandWithForbidden()
+        //recompute due to possible new tests we might need
+        individualsInSolution = archivedSolution.individuals
+
 
         // we can see what is available from the schema, and then check if already existing a test for it in archive
         // newly generated tests will be added back to archive
@@ -98,6 +102,108 @@ class SecurityRest {
         // just return the archive for solutions including the security tests.
         return archive.extractSolution()
     }
+
+
+    /**
+     * During the search, we do not explicitly try different users in the same test case.
+     * as such, getting tests with 403 might be tricky.
+     * but having such tests might be necessary for some types of oracles we designed
+     */
+    private fun expandWithForbidden() {
+
+        val getOperations = RestIndividualSelectorUtils.getAllActionDefinitions(actionDefinitions, HttpVerb.GET)
+
+        getOperations.forEach { get ->
+
+            val forbidden = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution,
+                HttpVerb.GET,
+                get.path,
+                status = 403
+            )
+            if(forbidden.isNotEmpty()){
+                //we already have it, so nothing to do
+                return@forEach
+            }
+
+            val unauthorized = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution,
+                HttpVerb.GET,
+                get.path,
+                status = 401
+            )
+            if(unauthorized.isEmpty()){
+                //there is no 401, so does not seem auth is applied to this endpoint.
+                //note: getting 401 during search should be simple, as we do send requests without
+                // auth, given a certain probability
+                return@forEach
+            }
+
+            val candidates = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution,
+                HttpVerb.GET,
+                get.path,
+                statusGroup = StatusGroup.G_2xx,
+                authenticated = true
+            )
+
+            if (candidates.isNotEmpty()){
+                handleCandidatesForGet403(get.path, candidates)
+            }
+        }
+    }
+
+    private fun handleCandidatesForGet403(path: RestPath, candidates: List<EvaluatedIndividual<RestIndividual>>){
+
+        /*
+            we have no idea of the access policy for each user.
+            for example, an admin will not get any 403.
+            so, we need to check each possible user for which we got a 2xx
+         */
+        candidates.mapNotNull {
+            //first make copy and slice off all after the 2xx
+            val index = RestIndividualSelectorUtils.getIndexOfAction(
+                it,
+                HttpVerb.GET,
+                path,
+                statusGroup = StatusGroup.G_2xx,
+                authenticated = true
+            )
+            if (index < 0) {
+                //can this ever happen?
+                log.warn("Failed to identify authenticated GET action with 2xx")
+                null
+            } else {
+                val copy = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(it.individual, index)
+                copy
+            }
+        }
+            // then, just take 1 test per user
+            .distinctBy { it.seeMainExecutableActions().last().auth.name }
+            .forEach { ind ->
+                //finally, evaluate all of those with a different auth
+                val lastCall = ind.seeMainExecutableActions().last()
+                val otherUsers = authSettings.getAllOthers(lastCall.auth.name, HttpWsAuthenticationInfo::class.java)
+
+                //try each of them
+                otherUsers.forEach { otherAuth ->
+                    val copy = ind.copy() as RestIndividual
+                    copy.seeMainExecutableActions().last().auth = otherAuth
+
+                    val ei = fitness.computeWholeAchievedCoverageForPostProcessing(copy)
+                    if(ei != null) {
+                        archive.addIfNeeded(ei)
+                        val res = ei.evaluatedMainActions().last().result as RestCallResult
+                        if(res.getStatusCode() == 403){
+                            //we are done
+                            return
+                        }
+                    }
+                }
+            }
+
+    }
+
 
     private fun addForAccessControl() {
 
