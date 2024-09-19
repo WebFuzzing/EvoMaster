@@ -39,6 +39,7 @@ class SecurityExistenceLeakageEMTest : SpringTestBase(){
 
             assertHasAtLeastOne(solution, HttpVerb.PUT, 201, "/api/resources/{id}", null)
             assertHasAtLeastOne(solution, HttpVerb.GET, 404, "/api/resources/{id}", null)
+            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/resources/{id}", null)
             assertHasAtLeastOne(solution, HttpVerb.GET, 403, "/api/resources/{id}", null)
 
 
