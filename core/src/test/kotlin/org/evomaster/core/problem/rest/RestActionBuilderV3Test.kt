@@ -1866,6 +1866,23 @@ class RestActionBuilderV3Test{
 
 
     @Test
+    fun testBindingPathChildEnum(){
+
+        val path = "/swagger/artificial/binding/binding_path_child_enum.yaml"
+        val actions = loadAndAssertActions(path, 2, RestActionBuilderV3.Options(probUseExamples = 1.0))
+
+        val parent = actions["GET:/v2/api/{x}"] as RestCallAction
+        val child = actions["GET:/v2/api/{x}/data"] as RestCallAction //using enum
+
+        // only 1 option in the enum
+        assertEquals("/v2/api/foo/data", child.resolvedPath())
+
+        parent.bindToSamePathResolution(child)
+        assertEquals("/v2/api/foo", parent.resolvedPath())
+    }
+
+
+    @Test
     fun testExamplesPathChildBinding(){
 
         val path = "/swagger/artificial/defaultandexamples/examples_path_child.yaml"
