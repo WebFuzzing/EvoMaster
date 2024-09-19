@@ -1370,7 +1370,11 @@ public class RPCEndpointsBuilder {
                             SimpleLogger.recordErrorMessage("Seeded Test Error: cannot find the interface "+ actionDto.interfaceName);
                         }
                     }
-                    results.put( String.format("%s_INDEX_%d", (dto.testName != null)?dto.testName:"untitled", seedRPCTests.indexOf(dto)), test);
+                    String testKey = String.format("%s_INDEX_%d", (dto.testName != null)?dto.testName:"untitled", seedRPCTests.indexOf(dto));
+                    if (!test.isEmpty())
+                        results.put( testKey, test);
+                    else
+                        SimpleLogger.recordErrorMessage("Seeded Test Error: fail to load the seeded test "+ testKey);
                 }catch (RuntimeException e){
                     SimpleLogger.recordErrorMessage("Fail to handle specified seeded test: "+ ((dto.testName != null)? dto.testName:"index_"+seedRPCTests.indexOf(dto)));
                     StringBuilder msg = new StringBuilder("Fail to handle specified seeded test " + e.getMessage());
