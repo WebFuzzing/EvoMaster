@@ -864,28 +864,32 @@ class StringGene(
             return this.copyValueFrom(x)
         }
 
-        if (other !is StringGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
         val current = this.value
-        this.value = other.value
+
+        when(other){
+            is StringGene -> this.value = other.value
+            is EnumGene<*> -> this.value = other.getValueAsRawString()
+            else -> throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
 
         if (!isLocallyValid()){
             this.value = current
             return false
         }
-        this.selectedSpecialization = other.selectedSpecialization
 
-        this.specializations.clear()
-        this.specializations.addAll(other.specializations)
+        if(other is StringGene) {
+            this.selectedSpecialization = other.selectedSpecialization
 
-        killAllChildren()
-        addChildren(other.specializationGenes.map { it.copy() })
+            this.specializations.clear()
+            this.specializations.addAll(other.specializations)
 
-        this.tainted = other.tainted
+            killAllChildren()
+            addChildren(other.specializationGenes.map { it.copy() })
 
-        this.bindingIds.clear()
-        this.bindingIds.addAll(other.bindingIds)
+            this.tainted = other.tainted
+            this.bindingIds.clear()
+            this.bindingIds.addAll(other.bindingIds)
+        }
 
         return true
     }
