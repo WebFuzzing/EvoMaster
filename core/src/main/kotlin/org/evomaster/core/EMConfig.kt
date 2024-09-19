@@ -1036,7 +1036,7 @@ class EMConfig {
     var avoidNonDeterministicLogs = false
 
     enum class Algorithm {
-        MIO, RANDOM, WTS, MOSA, StandardGA
+        MIO, RANDOM, WTS, MOSA, STANDARD_GA
     }
 
     @Cfg("The algorithm used to generate test cases")
@@ -1281,13 +1281,9 @@ class EMConfig {
     @Min(1.0)
     var populationSize = 30
 
-    @Cfg("Cross over rate for Genetic Algorithms")
+    @Cfg("Fixed mutation rate")
     @Probability
-    var crossoverRate = 0.7
-
-    @Cfg("Mutation rate for Genetic Algorithms")
-    @Probability
-    var mutationRate = 0.04
+    var fixedRateMutation = 0.04
 
     @Cfg("Define the maximum number of tests in a suite in the search algorithms that evolve whole suites, e.g. WTS")
     @Min(1.0)
@@ -2321,7 +2317,7 @@ class EMConfig {
             " This is for white-box (wb) mode")
     var wbProbabilityUseDataPool = 0.2
 
-    @Cfg(description = "Number of elite individuals to be preserved when forming the next population in the genetic algorithm")
+    @Cfg(description = "Number of elite individuals to be preserved when forming the next population in population-based search algorithms that do not use an archive, like for example Genetic Algorithms")
     @Min(0.0)
     var elitesCount: Int = 1
 

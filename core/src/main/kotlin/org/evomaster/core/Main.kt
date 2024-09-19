@@ -12,7 +12,6 @@ import org.evomaster.core.AnsiColor.Companion.inRed
 import org.evomaster.core.AnsiColor.Companion.inYellow
 import org.evomaster.core.config.ConfigProblemException
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.Termination
 import org.evomaster.core.output.TestSuiteSplitter
 import org.evomaster.core.output.clustering.SplitResult
@@ -481,6 +480,9 @@ class Main {
                 config.algorithm == EMConfig.Algorithm.MOSA ->
                     Key.get(object : TypeLiteral<MosaAlgorithm<GraphQLIndividual>>() {})
 
+                config.algorithm == EMConfig.Algorithm.STANDARD_GA ->
+                    Key.get(object : TypeLiteral<StandardGeneticAlgorithm<GraphQLIndividual>>() {})
+
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
         }
@@ -499,6 +501,9 @@ class Main {
 
                 config.algorithm == EMConfig.Algorithm.MOSA ->
                     Key.get(object : TypeLiteral<MosaAlgorithm<RPCIndividual>>() {})
+
+                config.algorithm == EMConfig.Algorithm.STANDARD_GA ->
+                    Key.get(object : TypeLiteral<StandardGeneticAlgorithm<RPCIndividual>>() {})
 
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
@@ -519,6 +524,9 @@ class Main {
                 config.algorithm == EMConfig.Algorithm.MOSA ->
                     Key.get(object : TypeLiteral<MosaAlgorithm<WebIndividual>>() {})
 
+                config.algorithm == EMConfig.Algorithm.STANDARD_GA ->
+                    Key.get(object : TypeLiteral<StandardGeneticAlgorithm<WebIndividual>>() {})
+
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
         }
@@ -538,7 +546,7 @@ class Main {
                 config.algorithm == EMConfig.Algorithm.MOSA ->
                     Key.get(object : TypeLiteral<MosaAlgorithm<RestIndividual>>() {})
 
-                config.algorithm == EMConfig.Algorithm.StandardGA ->
+                config.algorithm == EMConfig.Algorithm.STANDARD_GA ->
                     Key.get(object : TypeLiteral<StandardGeneticAlgorithm<RestIndividual>>() {})
 
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")

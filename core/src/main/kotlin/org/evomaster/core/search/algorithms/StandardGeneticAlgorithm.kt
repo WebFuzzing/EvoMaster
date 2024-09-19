@@ -14,7 +14,7 @@ open class StandardGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Individu
     private val population: MutableList<WtsEvalIndividual<T>> = mutableListOf()
 
     override fun getType(): EMConfig.Algorithm {
-        return EMConfig.Algorithm.WTS
+        return EMConfig.Algorithm.STANDARD_GA
     }
 
     override fun setupBeforeSearch() {
@@ -23,11 +23,11 @@ open class StandardGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Individu
         initPopulation()
     }
 
-    protected fun formTheNextPopulation(population: MutableList<WtsEvalIndividual<T>>, enableElitism: Boolean = true): MutableList<WtsEvalIndividual<T>> {
+    protected fun formTheNextPopulation(population: MutableList<WtsEvalIndividual<T>>): MutableList<WtsEvalIndividual<T>> {
 
         val nextPop: MutableList<WtsEvalIndividual<T>> = mutableListOf()
 
-        if (enableElitism && population.isNotEmpty()) {
+        if (config.elitesCount > 0 && population.isNotEmpty()) {
             var sortedPopulation = population.sortedByDescending { it.calculateCombinedFitness() }
 
             var elites = sortedPopulation.take(config.elitesCount)
@@ -42,7 +42,7 @@ open class StandardGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Individu
 
         val n = config.populationSize
 
-        val nextPop = formTheNextPopulation(population, enableElitism = true)
+        val nextPop = formTheNextPopulation(population)
 
         while (nextPop.size < n) {
 
@@ -53,6 +53,8 @@ open class StandardGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Individu
             if (randomness.nextBoolean(config.xoverProbability)) {
                 xover(x, y)
             }
+
+            //TODO: check config.fixedRateMutation
             mutate(x)
             mutate(y)
 
@@ -67,6 +69,9 @@ open class StandardGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Individu
         population.clear()
         population.addAll(nextPop)
     }
+
+
+
 
     protected fun mutate(wts: WtsEvalIndividual<T>) {
 
