@@ -16,7 +16,6 @@ import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceActi
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.rest.BlackBoxUtils
 import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.Sampler
@@ -145,10 +144,7 @@ class TestSuiteWriter {
         //catch any sorting problems (see NPE is SortingHelper on Trello)
         val tests = try {
             // TODO skip to sort RPC for the moment
-            if (solution.individuals.any { it.individual is RPCIndividual }) {
-                namingStrategy.getTestCases()
-            } else
-                testSuiteOrganizer.sortTests(solution)
+                testSuiteOrganizer.sortTests(solution, namingStrategy)
         } catch (ex: Exception) {
             log.warn(
                 "A failure has occurred with the test sorting. Reverting to default settings. \n"
