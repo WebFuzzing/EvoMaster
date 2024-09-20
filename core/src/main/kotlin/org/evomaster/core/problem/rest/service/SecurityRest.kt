@@ -233,8 +233,103 @@ class SecurityRest {
         // getting 404 instead of 403
         handleExistenceLeakage()
 
+        //authenticated, but wrongly getting 401 (eg instead of 403)
+        handleNotRecognizedAuthenticated()
+
         //TODO other rules. See FaultCategory
         //etc.
+    }
+
+
+    /**
+     * Authenticated user A accesses endpoint X, but get 401 (instead of 403).
+     * In theory, a bug. But, could be false positive if A is misconfigured.
+     * How to check it?
+     * See if on any other endpoint Y we get a 2xx with A.
+     * But, maybe Y does not need authentication...
+     * so, check if there is any test case for which on Y we get a 401 or 403.
+     * if yes, then X is buggy, as should had rather returned 403 for A.
+     */
+    private fun handleNotRecognizedAuthenticated() {
+
+        mainloop@ for(action in actionDefinitions){
+
+            val suspicious = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution,
+                action.verb,
+                action.path,
+                status = 401,
+                authenticated = true
+            ).map { RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
+                it,
+                action.verb,
+                action.path,
+                status = 401,
+                authenticated = true
+                )
+            }.distinctBy { it.seeMainExecutableActions().last().auth.name }
+
+            if(suspicious.isEmpty()){
+                continue
+            }
+
+            for(target in suspicious) {
+
+                val user = target.seeMainExecutableActions().last().auth.name
+
+                val ok = RestIndividualSelectorUtils.findIndividuals(
+                    individualsInSolution,
+                    statusGroup = StatusGroup.G_2xx,
+                    authenticatedWith = user
+                ).map { RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
+                    it,
+                    statusGroup = StatusGroup.G_2xx,
+                    authenticatedWith = user)
+                }.distinctBy { it.seeMainExecutableActions().last().getName() }
+
+                if(ok.isEmpty()){
+                    continue
+                }
+
+                //so, the given suspicious user that got 401 can get a 2xx on an endpoint.
+                // has anyone got a 401 or 403 on this endpoint?
+                for(success in ok){
+                    val last = success.seeMainExecutableActions().last()
+                    val with401or403 = RestIndividualSelectorUtils.findIndividuals(
+                        individualsInSolution,
+                        verb = last.verb,
+                        path = last.path,
+                        statusCodes = listOf(401,403)
+                    ).map {
+                        RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
+                            it,
+                            verb = last.verb,
+                            path = last.path,
+                            statusCodes = listOf(401,403)
+                        )
+                    }
+                    if(with401or403.isEmpty()){
+                        continue
+                    }
+                    // if reach here, we got a bug
+                    val auth = with401or403.minBy { it.size() }
+
+                    val final = RestIndividualBuilder.merge(auth,success,target)
+                    final.modifySampleType(SampleType.SECURITY)
+                    final.ensureFlattenedStructure()
+
+                    val evaluatedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(final)
+                    if (evaluatedIndividual == null) {
+                        log.warn("Failed to evaluate constructed individual in handleNotRecognizedAuthenticated")
+                        continue
+                    }
+
+                    val added = archive.addIfNeeded(evaluatedIndividual)
+                    assert(added)
+                    continue@mainloop
+                }
+            }
+        }
     }
 
 
