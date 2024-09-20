@@ -207,7 +207,7 @@ open class RestResourceNode(
         }
 
 
-        verbs[verbs.size - 1] = verbs[RestResourceTemplateHandler.getIndexOfHttpVerb(HttpVerb.POST)] || verbs[RestResourceTemplateHandler.getIndexOfHttpVerb(HttpVerb.PUT)]
+        verbs[verbs.size - 1] = verbs[RestResourceTemplateHandler.getIndexOfHttpVerb(HttpVerb.POST)]
     }
 
     private fun initTemplates(){
