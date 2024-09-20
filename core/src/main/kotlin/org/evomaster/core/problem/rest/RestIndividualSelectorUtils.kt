@@ -190,19 +190,19 @@ object RestIndividualSelectorUtils {
     /**
      * @return a negative value if no action with the given properties is found in the individual.
      */
+    @Deprecated(message = "Use findIndexOfAction")
     fun getIndexOfAction(individual: EvaluatedIndividual<RestIndividual>,
                          verb: HttpVerb,
                          path: RestPath,
                          statusCode: Int
     ) : Int {
-
-        return getIndexOfAction(individual, verb, path, statusCode)
+        return findIndexOfAction(individual, verb, path, statusCode)
     }
 
     /**
      * @return a negative value if no action with the given properties is found in the individual.
      */
-    fun getIndexOfAction(
+    fun findIndexOfAction(
         individual: EvaluatedIndividual<RestIndividual>,
         verb: HttpVerb? = null,
         path: RestPath? = null,

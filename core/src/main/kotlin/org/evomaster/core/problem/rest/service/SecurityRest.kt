@@ -5,7 +5,6 @@ import com.webfuzzing.commons.faults.FaultCategory
 import javax.annotation.PostConstruct
 
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.problem.enterprise.DetectedFault
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.enterprise.auth.AuthSettings
 import org.evomaster.core.problem.enterprise.auth.NoAuth
@@ -85,12 +84,11 @@ class SecurityRest {
     fun applySecurityPhase(): Solution<RestIndividual> {
 
         // extract individuals from the archive
-        val archivedSolution: Solution<RestIndividual> = this.archive.extractSolution()
-        individualsInSolution = archivedSolution.individuals
+        individualsInSolution = this.archive.extractSolution().individuals
 
         expandWithForbidden()
         //recompute due to possible new tests we might need
-        individualsInSolution = archivedSolution.individuals
+        individualsInSolution = this.archive.extractSolution().individuals
 
 
         // we can see what is available from the schema, and then check if already existing a test for it in archive
@@ -162,7 +160,7 @@ class SecurityRest {
          */
         candidates.mapNotNull {
             //first make copy and slice off all after the 2xx
-            val index = RestIndividualSelectorUtils.getIndexOfAction(
+            val index = RestIndividualSelectorUtils.findIndexOfAction(
                 it,
                 HttpVerb.GET,
                 path,
