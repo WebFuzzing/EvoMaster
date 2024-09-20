@@ -419,7 +419,7 @@ class RestIndividualSelectorUtilsTest : IntegrationTestRestBase() {
      * Test getting indices of actions in individuals.
      */
     @Test
-    fun testGetIndexOfAction() {
+    fun testFindIndexOfAction() {
 
         val listOfIndividuals = initializeIndividuals()
 
@@ -439,7 +439,7 @@ class RestIndividualSelectorUtilsTest : IntegrationTestRestBase() {
      * Test getting indices of actions in individuals.
      */
     @Test
-    fun testGetIndexOfActionNonExistent() {
+    fun testFindIndexOfActionNonExistent() {
 
         val listOfIndividuals = initializeIndividuals()
 

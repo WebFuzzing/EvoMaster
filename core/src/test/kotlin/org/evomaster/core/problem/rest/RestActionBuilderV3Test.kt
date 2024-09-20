@@ -1127,7 +1127,7 @@ class RestActionBuilderV3Test{
         )
         checkNumOfRootGene(map, skipInEM, 74, 100,22, 78, 14)
 
-        checkNumResource(map, skipInEM, 56, 25)
+        checkNumResource(map, skipInEM, 56, 20)
 
     }
 

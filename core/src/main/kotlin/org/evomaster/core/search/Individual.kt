@@ -10,7 +10,6 @@ import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.search.action.*
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.service.Randomness
@@ -168,6 +167,10 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
                     throw IllegalStateException("Invalid gene ${g.name} in action ${a.getName()}")
                 }
             }
+        }
+
+        if(!areAllValidLocalIds()){
+            throw IllegalStateException("There are invalid local ids")
         }
     }
 
@@ -457,18 +460,37 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
     /**
      * @return whether all action components are assigned with valid local ids
      */
-    fun areValidLocalIds() : Boolean{
+    fun areValidActionLocalIds() : Boolean{
         return areAllLocalIdsAssigned()
                 && flatView().run { this.map { it.getLocalId() }.toSet().size == this.size }
+    }
+
+    fun areAllValidLocalIds() : Boolean{
+        val all = flatViewAllStructuralElements()
+        val ids = all.map { it.getLocalId() }.toSet() //make it unique
+        if(ids.contains(NONE_LOCAL_ID)){
+            return false
+        }
+        //check for duplicates
+        return all.size == ids.size
+    }
+
+
+    private fun flatViewAllStructuralElements() : List<StructuralElement>{
+        return flatView().flatMap {
+            if(it !is Action) {
+                listOf(it)
+            } else {
+                it.seeTopGenes().flatMap {g ->  g.flatView() }
+            }
+        }
     }
 
     /**
      * @return if local ids are not initialized
      */
     private fun areAllLocalIdsNotInitialized() : Boolean{
-        return flatView().all { !it.hasLocalId ()
-                && (it !is Action || it.seeTopGenes().all { g-> g.flatView().all { i-> !i.hasLocalId() }})
-        }
+        return flatViewAllStructuralElements().all { !it.hasLocalId ()}
     }
 
     private fun flatView() : List<ActionComponent>{
@@ -477,9 +499,7 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
     }
 
     private fun areAllLocalIdsAssigned() : Boolean{
-        return  flatView().all { it.hasLocalId()
-                && (it !is Action || it.seeTopGenes().all { g-> g.flatView().all { i-> i.hasLocalId() }})
-        }
+        return flatViewAllStructuralElements().all { it.hasLocalId ()}
     }
 
     /**
