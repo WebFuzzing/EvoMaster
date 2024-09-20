@@ -46,15 +46,15 @@ open class StandardGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Individu
 
         while (nextPop.size < n) {
 
-            val x = selection()
-            val y = selection()
+            val x = tournamentSelection()
+            val y = tournamentSelection()
             //x and y are copied
 
             if (randomness.nextBoolean(config.xoverProbability)) {
                 xover(x, y)
             }
 
-            //TODO: check config.fixedRateMutation
+            //TODO: check config.fixedRateMutation (preferrably inside the function)
             mutate(x)
             mutate(y)
 
@@ -72,7 +72,7 @@ open class StandardGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Individu
 
 
 
-
+    //TODO: to be removed
     protected fun mutate(wts: WtsEvalIndividual<T>) {
 
         val op = randomness.choose(listOf("del", "add", "mod"))
@@ -100,6 +100,13 @@ open class StandardGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Individu
         }
     }
 
+    protected fun tournamentSelection(): WtsEvalIndividual<T>{
+        val selectedIndividuals = randomness.choose(population, config.tournamentSize)
+        val bestIndividual = selectedIndividuals.maxByOrNull { it.calculateCombinedFitness() }
+        return bestIndividual ?: randomness.choose(population)
+    }
+
+    //TODO: replace this
     protected fun selection(): WtsEvalIndividual<T> {
 
         val x = randomness.choose(population)
