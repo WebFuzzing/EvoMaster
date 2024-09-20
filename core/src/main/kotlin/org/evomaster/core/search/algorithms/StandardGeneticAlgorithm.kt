@@ -153,6 +153,7 @@ open class StandardGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Individu
         }
     }
 
+    //TODO: fix this as there shouldn't be any archive
     private fun sampleSuite(): WtsEvalIndividual<T> {
 
         val n = 1 + randomness.nextInt(config.maxSearchSuiteSize)
