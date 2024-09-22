@@ -100,6 +100,13 @@ git push origin v<x.y.z>
 This will trigger a special build on GitHub Action (see `.github/workflows/release.yml`).
 If everything goes correctly, then after that action is completed the new release should be available on the [release page](https://github.com/EMResearch/EvoMaster/releases).
 
+In case of problems, will need to remove the created (locally and remotely), before trying again:
+
+```
+git tag  --delete v<x.y.z>
+git push --delete origin v<x.y.z>
+```
+
 ## GitHub Release (OLD MANUAL VERSION) 
 
 Push the version changes in the `pom.xml` files on Git.

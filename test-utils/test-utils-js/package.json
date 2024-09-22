@@ -1,0 +1,23 @@
+{
+  "name": "evomaster-test-utils-js",
+  "description": "Utility functions used in the generated test cases in JavaScript format",
+  "repository": {},
+  "author": "EvoMaster Team",
+  "license": "LGPL-3.0-only",
+  "dependencies": {
+    "urijs": "1.19.6"
+  },
+  "devDependencies": {
+    "jest": "29.7.0"
+  },
+  "scripts": {
+    "test": "jest --coverage"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testRegex": "src/test/.*-test\\.js$",
+    "collectCoverageFrom": [
+      "src/main/**/.*js"
+    ]
+  }
+}

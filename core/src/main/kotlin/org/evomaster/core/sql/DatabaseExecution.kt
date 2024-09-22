@@ -1,7 +1,6 @@
 package org.evomaster.core.sql
 
-import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto
-import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionLogDto
+import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionsDto
 
 /**
  * When a test case is executed, and the SUT does access a SQL database,
@@ -55,7 +54,7 @@ class DatabaseExecution(
 
     companion object {
 
-        fun fromDto(dto: org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto?): DatabaseExecution {
+        fun fromDto(dto: SqlExecutionsDto?): DatabaseExecution {
 
             /*
                 Dealing with quotes in table names is tricky... could be to handle reserved words or case sensitivity.

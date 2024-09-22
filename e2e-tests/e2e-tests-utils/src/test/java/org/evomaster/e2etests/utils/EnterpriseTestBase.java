@@ -42,6 +42,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -60,20 +61,29 @@ public abstract class EnterpriseTestBase {
 
     public final static String TESTS_OUTPUT_ROOT_FOLDER = "target/em-tests/";
 
+    /**
+     * Dirty hack, but could not find any clean way to do disable it for black-box test modules :(
+     * unfortunately, as static, cannot be overridden
+     */
+    public static boolean shouldApplyInstrumentation = true;
+
+
     @BeforeAll
     public static void initInstrumentation(){
+       if(shouldApplyInstrumentation) {
         /*
             Make sure we init agent immediately... this is to avoid classes (eg kotlin library)
             being not instrumented when tests start (as controllers might load them)
          */
-        InstrumentedSutStarter.loadAgent();
+           InstrumentedSutStarter.loadAgent();
 
         /*
             avoid boot-time info across e2e tests
          */
-        ObjectiveRecorder.reset(true);
+           ObjectiveRecorder.reset(true);
 
-        UnitsInfoRecorder.reset();
+           UnitsInfoRecorder.reset();
+       }
     }
 
     @AfterAll
@@ -502,9 +512,33 @@ public abstract class EnterpriseTestBase {
      * @param args - the list of arguments
      * @param outputFormat - the desired output format
      */
+    @Deprecated //use setOption
     protected void setOutputFormat(List<String> args, OutputFormat outputFormat){
         if (outputFormat != null){
             args.replaceAll(s -> s.replace(OutputFormat.KOTLIN_JUNIT_5.name(), outputFormat.name()));
+        }
+    }
+
+    /**
+     * Add or replace the given option to the args list
+     */
+    protected void setOption(List<String> args, String optionName, String optionValue){
+
+        Objects.requireNonNull(optionName);
+        Objects.requireNonNull(optionValue);
+
+        if(optionName.startsWith("-")){
+            throw new IllegalArgumentException("Option name cannot start with '-': " + optionName);
+        }
+
+        String addOption = "--" + optionName;
+        int position = args.indexOf(addOption);
+        if(position < 0){
+            args.add(addOption);
+            args.add(optionValue);
+        } else{
+            args.set(position,addOption);
+            args.set(position+1,optionValue);
         }
     }
 

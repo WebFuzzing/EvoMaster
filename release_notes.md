@@ -3,7 +3,41 @@
 Under development in `master` branch.
 
 ### New Features
+
+- MongoDB support. For white-box heuristics, can analyze all queries done toward MongoDB databases, as well as being able to insert data directly as part of the generated test cases. 
+
+
+# Version: 3.2.0
+
+### New Features
+- when running JAR file with JDK 17+, no longer need to manually specify --add-opens commands
+- schema validation for OpenAPI schemas, with summary of issues printed in the console logs
+- generated tests that detect faults have now comments highlighting those faults. 
+
+### Bug Fixes
+- fixed release of JAR requiring JDK 21 by mistake
+- fixed issue in Python and JavaScript output for when JSON responses are wrongly free text (e.g., unquoted strings)
+
+### Addressed GitHub Issues
+
+- #822: additionalProperties: [true/false] causes crash
+- #989: TestCaseWriter login cookie variable name
+- #1055: Unable to start EVoMaster in public petstore API
+- #1069: Error in EvoMaster 3.1.0: Black-Box Testing Initialization Failure with InvocationTargetException and NoSuchMethodError
+
+---
+# Version: 3.1.0
+
+### New Features
+- new fully-supported output formats: Python and JavaScript 
+- support for JDK 21
 - body payloads for GET, HEAD and DELETE are not valid in OpenAPI. However, they can be valid in some special cases in HTTP (as of RFC 9110). Now, EvoMaster can test those cases as well, but only for DELETE (for GET it is not possible, as current version of HTTP library in EvoMaster is faulty, i.e., it cannot handle such case).
+- update of internal parameter settings to improve performance, based on large tuning experiments. 
+- --prematureStop option can now be used to stop search prematurely if no improvement has been obtained in the last specified amount of time 
+
+### Changes
+- output format for black-box testing now defaults to Python instead of throwing an error
+- --outputFolder now defaults to a more meaningful value, i.e., "generated_tests" 
 
 ### Bug Fixes
 - better dealing with reset of SQL tables where names in queries used quotes, and/or table is not accessible in database.

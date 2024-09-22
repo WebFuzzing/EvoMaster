@@ -1,24 +1,28 @@
 package org.evomaster.core.output.service
 
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.output.auth.CookieWriter
+import org.evomaster.core.output.JsonUtils
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.output.TestWriterUtils
+import org.evomaster.core.output.TestWriterUtils.formatJsonWithEscapes
+import org.evomaster.core.output.auth.CookieWriter
 import org.evomaster.core.output.auth.TokenWriter
-import org.evomaster.core.output.service.TestWriterUtils.Companion.formatJsonWithEscapes
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
-import org.evomaster.core.search.action.ActionResult
-import org.evomaster.core.search.EvaluatedAction
+import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
+import org.evomaster.core.search.action.ActionResult
+import org.evomaster.core.search.action.EvaluatedAction
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.slf4j.LoggerFactory
 import java.nio.file.Path
 import javax.ws.rs.core.MediaType
+
 
 abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
@@ -37,6 +41,26 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         return !(result as HttpWsCallResult).getTimedout()
     }
 
+    fun startRequest(lines: Lines){
+        when {
+            format.isJavaOrKotlin() -> lines.append("given()")
+            format.isJavaScript() -> lines.append("await superagent")
+            format.isCsharp() -> lines.append("await Client")
+            format.isPython() -> lines.append("requests \\")
+        }
+    }
+
+    override fun handleTestInitialization(
+        lines: Lines,
+        baseUrlOfSut: String,
+        ind: EvaluatedIndividual<*>,
+        insertionVars: MutableList<Pair<String, String>>
+    ) {
+        super.handleTestInitialization(lines, baseUrlOfSut, ind, insertionVars)
+
+        CookieWriter.handleGettingCookies(format, ind, lines, baseUrlOfSut, this)
+        TokenWriter.handleGettingTokens(format, ind, lines, baseUrlOfSut, this)
+    }
 
     protected fun handlePreCallSetup(call: HttpWsAction, lines: Lines, res: HttpWsCallResult) {
         /*
@@ -63,6 +87,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 format.isKotlin() -> lines.append("val $resVarName: ValidatableResponse = ")
                 format.isJava() -> lines.append("ValidatableResponse $resVarName = ")
                 format.isJavaScript() -> lines.append("const $resVarName = ")
+                format.isPython() -> lines.append("$resVarName = ")
                 format.isCsharp() -> lines.append("var $resVarName = ")
             }
         }
@@ -71,7 +96,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             format.isJavaOrKotlin() -> lines.append("given()")
             format.isJavaScript() -> lines.append("await superagent")
             format.isCsharp() -> lines.append("await Client")
-            format.isPython() -> lines.append("$resVarName = requests \\")
+            format.isPython() -> lines.append("requests \\")
         }
 
         if (!format.isJavaScript() && !format.isCsharp() && !format.isPython()) {
@@ -118,15 +143,15 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
           Bit tricky... when using RestAssured on JVM, we can assert directly on the call...
           but that is not the case for the other libraries used for example in JS and C#
          */
-        return config.outputFormat == OutputFormat.JS_JEST
-                || config.outputFormat == OutputFormat.CSHARP_XUNIT
-                || config.outputFormat == OutputFormat.PYTHON_UNITTEST
+        return config.enableBasicAssertions &&
+                (config.outputFormat == OutputFormat.JS_JEST || config.outputFormat == OutputFormat.PYTHON_UNITTEST)
     }
 
     protected fun handleHeaders(call: HttpWsAction, lines: Lines) {
 
+        //TODO handle REST links
+
         if (format.isCsharp()) {
-            //FIXME
             log.warn("Currently not handling headers in C#")
             return
         }
@@ -137,7 +162,6 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             format.isJavaOrKotlin() -> "header"
             format.isJavaScript() -> "set"
             format.isPython() -> "headers = {}"
-            //TODO C#
             else -> throw IllegalArgumentException("Not supported format: $format")
         }
 
@@ -176,13 +200,16 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
             if (!elc.expectsCookie()) {
                 val tokenHeader = elc.token!!.httpHeaderName
-                lines.add(".$set(\"$tokenHeader\", ${TokenWriter.tokenName(elc)}) // ${call.auth.name}")
+                if (format.isPython()) {
+                    lines.add("headers[\"$tokenHeader\"] = ${TokenWriter.tokenName(elc)} # ${call.auth.name}")
+                } else {
+                    lines.add(".$set(\"$tokenHeader\", ${TokenWriter.tokenName(elc)}) // ${call.auth.name}")
+                }
             } else {
                 when {
                     format.isJavaOrKotlin() -> lines.add(".cookies(${CookieWriter.cookiesName(elc)})")
-                    format.isJavaScript() -> lines.add(".set('Cookies', ${CookieWriter.cookiesName(elc)})")
-                    //TODO C#
-                    // TODO Python
+                    format.isJavaScript() -> lines.add(".set('Cookie', ${CookieWriter.cookiesName(elc)})")
+                    // Python cookies are set alongside the headers and body when performing the request
                 }
             }
         }
@@ -228,11 +255,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         handleLastStatementComment(res, lines)
 
         if (config.enableBasicAssertions && !call.shouldSkipAssertionsOnResponseBody()) {
-            if (format.isPython()) {
-                handlePythonResponseContents(lines, res, responseVariableName)
-            } else {
-                handleResponseAssertions(lines, res, responseVariableName)
-            }
+            handleResponseAssertions(lines, res, responseVariableName)
         }
     }
 
@@ -244,13 +267,13 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
     }
 
     protected fun handleSingleCall(
-            evaluatedAction: EvaluatedAction,
-            index: Int,
-            fv: FitnessValue,
-            lines: Lines,
-            testCaseName: String,
-            testSuitePath: Path?,
-            baseUrlOfSut: String
+        evaluatedAction: EvaluatedAction,
+        index: Int,
+        fv: FitnessValue,
+        lines: Lines,
+        testCaseName: String,
+        testSuitePath: Path?,
+        baseUrlOfSut: String
     ) {
 
         val exActions = mutableListOf<HttpExternalServiceAction>()
@@ -360,11 +383,9 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         }
     }
 
-    //TODO: check again for C#, especially when not json
     protected open fun handleBody(call: HttpWsAction, lines: Lines) {
 
         val bodyParam = call.parameters.find { p -> p is BodyParam } as BodyParam?
-
 
         if (format.isCsharp() && bodyParam == null) {
             lines.append("null")
@@ -375,34 +396,36 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
             val send = sendBodyCommand()
 
-            if (format.isPython()) {
-                lines.add("body = {}")
-            }
-
             when {
                 format.isJavaOrKotlin() -> lines.add(".contentType(\"${bodyParam.contentType()}\")")
                 format.isJavaScript() -> lines.add(".set('Content-Type','${bodyParam.contentType()}')")
-                //FIXME
-                //format.isCsharp() -> lines.add("Client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(\"${bodyParam.contentType()}\"));")
+                format.isPython() -> lines.add("headers[\"content-type\"] = \"${bodyParam.contentType()}\"")
             }
 
             if (bodyParam.isJson()) {
 
-                val json =
-                        bodyParam.gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = format)
+                if (format.isPython()) {
+                    lines.add("body = {}")
+                }
+
+                val json = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = format)
 
                 printSendJsonBody(json, lines)
 
             } else if (bodyParam.isTextPlain()) {
-                val body =
-                        bodyParam.gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.TEXT, targetFormat = format)
+
+                val body = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.TEXT, targetFormat = format)
                 if (body != "\"\"") {
                     when {
                         format.isCsharp() -> {
                             lines.append("new StringContent(\"$body\", Encoding.UTF8, \"${bodyParam.contentType()}\")")
                         }
                         format.isPython() -> {
-                            lines.add("body = $body")
+                            if (body.trim().isNullOrBlank()) {
+                                lines.add("body = \"\"")
+                            } else {
+                                lines.add("body = $body")
+                            }
                         }
                         else -> lines.add(".$send($body)")
                     }
@@ -412,7 +435,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                             lines.append("new StringContent(\"${"""\"\""""}\", Encoding.UTF8, \"${bodyParam.contentType()}\")")
                         }
                         format.isPython() -> {
-                            lines.add("body = $body")
+                            lines.add("body = \"\"")
                         }
                         else -> lines.add(".$send(\"${"""\"\""""}\")")
                     }
@@ -432,7 +455,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                         lines.append("new StringContent(\"$body\", Encoding.UTF8, \"${bodyParam.contentType()}\")")
                     }
                     format.isPython() -> {
-                        lines.add("body = $body")
+                        lines.add("body = \"$body\"")
                     }
                     else -> lines.add(".$send(\"$body\")")
                 }
@@ -548,7 +571,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         }
 
         if (res.getTooLargeBody()) {
-            lines.add("// the response payload was too large, above the threshold of ${config.maxResponseByteSize} bytes." +
+            lines.addSingleCommentLine("the response payload was too large, above the threshold of ${config.maxResponseByteSize} bytes." +
                     " No assertion on it is therefore generated.")
             return
         }
@@ -573,6 +596,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                     "expect($responseVariableName.header[\"content-type\"].startsWith(\"$bodyTypeSimplified\")).toBe(true);"
 
                 format.isCsharp() -> "Assert.Contains(\"$bodyTypeSimplified\", $responseVariableName.Content.Headers.GetValues(\"Content-Type\").First());"
+                format.isPython() -> "assert \"$bodyTypeSimplified\" in $responseVariableName.headers[\"content-type\"]"
                 else -> throw IllegalStateException("Unsupported format $format")
             }
             lines.add(instruction)
@@ -613,22 +637,17 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         }
     }
 
-    private fun handlePythonResponseContents(lines: Lines, res: HttpWsCallResult, resVarName: String) {
-        val bodyString = res.getBody()
-        if (bodyString.isNullOrBlank()) {
-            lines.add("assert not $resVarName.text")
-        } else {
-            val type = res.getBodyType()!!
-            val escapedText = GeneUtils.applyEscapes(bodyString, mode = GeneUtils.EscapeMode.TEXT, format = format)
-            if (type.isCompatible(MediaType.APPLICATION_JSON_TYPE) || type.toString().toLowerCase().contains("json")) {
-                // TODO PhG: handle assertions for python properly
-                lines.add("assert $resVarName.json() == json.loads(\"$escapedText\")")
-            } else if (type.isCompatible(MediaType.TEXT_PLAIN_TYPE)) {
-                lines.add("assert \"$escapedText\" in $resVarName.text")
+    protected fun handlePythonVerbEndpoint(call: HttpWsAction, lines: Lines, appendBodyArgument: (HttpWsAction) -> Unit) {
+        lines.append(",")
+        lines.indented {
+            lines.add("headers=headers")
+            val elc = call.auth.endpointCallLogin
+            if (elc != null && elc.expectsCookie()) {
+                lines.append(", cookies=${CookieWriter.cookiesName(elc)}")
             }
+            appendBodyArgument(call)
         }
     }
-
 
     protected fun handleLastLine(call: HttpWsAction, res: HttpWsCallResult, lines: Lines, resVarName: String) {
 
@@ -669,6 +688,23 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         //TODO what was the reason for this?
         if (!format.isCsharp() && !format.isPython()) {
             lines.deindent(2)
+        }
+    }
+
+    protected fun extractValueFromJsonResponse(resVarName: String, jsonPointer: String) : String{
+
+        val extraTypeInfo = when {
+            format.isKotlin() -> "<Object>"
+            else -> ""
+        }
+
+        val jsonPath = JsonUtils.fromPointerToPath(jsonPointer)
+
+        return when {
+            format.isPython() -> "str($resVarName.json()${JsonUtils.fromPointerToDictionaryAccess(jsonPointer)})"
+            format.isJavaScript() -> "$resVarName.body.$jsonPath.toString()"
+            format.isJavaOrKotlin() -> "$resVarName.extract().body().path$extraTypeInfo(\"$jsonPath\").toString()"
+            else -> throw IllegalStateException("Unsupported format $format")
         }
     }
 }

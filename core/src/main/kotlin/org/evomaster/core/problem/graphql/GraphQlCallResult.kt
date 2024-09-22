@@ -14,10 +14,10 @@ class GraphQlCallResult : HttpWsCallResult {
     constructor(sourceLocalId: String, stopping: Boolean = false) : super(sourceLocalId, stopping)
 
     @VisibleForTesting
-    internal constructor(other: ActionResult) : super(other)
+    internal constructor(other: GraphQlCallResult) : super(other)
 
 
-    override fun copy(): ActionResult {
+    override fun copy(): GraphQlCallResult {
         return GraphQlCallResult(this)
     }
 

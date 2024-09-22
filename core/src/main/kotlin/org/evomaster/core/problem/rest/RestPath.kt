@@ -24,6 +24,8 @@ class RestPath(path: String) {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(RestPath::class.java)
+
+        private const val DEFAULT_FOR_EMPTY_PATH_ELEMENT = "1"
     }
 
 
@@ -60,6 +62,7 @@ class RestPath(path: String) {
 
     private val endsWithSlash : Boolean
 
+
     /**
      * The qualifying name for this resource endpoint.
      * Typically, it would be the last element of the path.
@@ -84,17 +87,19 @@ class RestPath(path: String) {
             throw IllegalArgumentException("Empty path definition")
         }
 
-        endsWithSlash = path.endsWith("/")
+        endsWithSlash = path.endsWith("/") && path != "/"
 
         elements = path.split("/")
             .filter { it.isNotBlank() }
             .map { extractElement(it) }
 
-        computedToString = "/" + elements.joinToString("/") + if(endsWithSlash) "/" else ""
+        computedToString = doComputeToString(elements, endsWithSlash)
 
         nameQualifier = computeNameQualifier()
     }
 
+    private fun doComputeToString(elements: List<Element>, endsWithSlash : Boolean)
+        = "/" + elements.joinToString("/") + if(endsWithSlash) "/" else ""
 
     private fun extractElement(s: String): Element {
 
@@ -316,6 +321,41 @@ class RestPath(path: String) {
      * all variables are replaced with the values in the input parameters
      */
     fun resolveOnlyPath(params: List<Param>): String {
+        /*
+            if there is no variable, then dynamic resolution should return only 1 entry
+         */
+        val data = dynamicResolutionOnlyPathData(params, mapOf())
+        assert(data.size == 1)
+        assert(!data[0].second)
+        return data[0].first
+    }
+
+
+    /**
+     * This is tricky...
+     * at times, we want to resolve an endpoint path, but some of its variables could be dynamic.
+     * This is the case when "links" in OpenAPI schema are used.
+     * For example, a path like
+     *
+     * /api/{x}/{y}
+     *
+     * could be resolved as:
+     *
+     * "/api/" + storedResponseFieldFromAPreviousCall + "/42"
+     *
+     * but we can't really build such string here, as escaping rules could vary based on context
+     * and format (eg Kotlin vs Java for string interpolation)  :(
+     *
+     * @return a list of pairs: string representation and whether it represents a variable.
+     * In the previous example, it would be:
+     * ("/api/", false) , ("storedResponseFieldFromAPreviousCall", true), ("/42", false)
+     */
+    fun dynamicResolutionOnlyPathData(
+        params: List<Param>,
+        variables: Map<String,RestLinkParameter>
+    ) : List<Pair<String,Boolean>>{
+
+        val data = mutableListOf<Pair<String,Boolean>>()
 
         val path = StringBuffer()
 
@@ -327,40 +367,61 @@ class RestPath(path: String) {
                 if (!t.isParameter) {
                     path.append(t.name)
                 } else {
-                    val p = params.find { p -> p is PathParam && p.name == t.name }
-                        ?: throw IllegalArgumentException("Cannot resolve path parameter '${t.name}'")
 
-                    var value = p.gene.getValueAsRawString()
+                    val variable = variables.entries.find {
+                        it.value.name == t.name && (it.value.scope == null || it.value.scope == RestLinkParameter.Scope.PATH)
+                    }?.key
 
-                    if (value.isBlank()) {
+                    if(variable != null){
                         /*
-                        We should avoid having path params that are blank,
-                        as they would easily lead to useless 404/405 errors
+                            reserved characters need to be encoded
+                            https://tools.ietf.org/html/rfc3986#section-2.2
 
-                        TODO handle this case better, eg avoid having blank in
-                        the first place
-                     */
-                        value = "1"
+                            why not using URI also for Query part???
+                            it seems unclear how to properly build it as a single string...
+                         */
+                        val entry = URI(null, null, path.toString(), null, null).rawPath
+                        data.add(Pair(entry, false))
+                        path.setLength(0) // clear it
+                        data.add(Pair(variable, true))
+                    } else {
+
+                        val p = params.find { p -> p is PathParam && p.name == t.name }
+                            ?: throw IllegalArgumentException("Cannot resolve path parameter '${t.name}'")
+
+                        var value = p.primaryGene().getValueAsRawString()
+
+                        if (value.isBlank()) {
+                            /*
+                            We should avoid having path params that are blank,
+                            as they would easily lead to useless 404/405 errors.
+                            This shouldn't really happen, as we have length constraints on
+                            the query genes...
+                            but we might miss something (eg length constraints on regex are not supported, yet).
+                        */
+                            value = DEFAULT_FOR_EMPTY_PATH_ELEMENT
+                        }
+
+                        path.append(value)
                     }
-
-                    path.append(value)
                 }
             }
         }
-
-        /*
-           reserved characters need to be encoded
-           https://tools.ietf.org/html/rfc3986#section-2.2
-
-           why not using URI also for Query part???
-           it seems unclear how to properly build it as a single string...
-         */
 
         if(endsWithSlash){
             path.append("/")
         }
 
-        return URI(null, null, path.toString(), null, null).rawPath
+        if(path.isNotEmpty()){
+            val entry = URI(null, null, path.toString(), null, null).rawPath
+            data.add(Pair(entry, false))
+        }
+
+        if(data.isEmpty()){
+            data.add(Pair("/", false))
+        }
+
+        return data
     }
 
 
@@ -503,5 +564,21 @@ class RestPath(path: String) {
         }
 
         return noQualifier
+    }
+
+    fun isRoot() = levels() == 0
+
+    fun parentPath() : RestPath {
+        if(isRoot()){
+            throw IllegalStateException("Root has no parent")
+        }
+
+        if(endsWithSlash){
+            return RestPath(doComputeToString(elements, false))
+        }
+
+        val reduced = elements.subList(0, elements.lastIndex)
+        val path = doComputeToString(reduced, false)
+        return RestPath(path)
     }
 }

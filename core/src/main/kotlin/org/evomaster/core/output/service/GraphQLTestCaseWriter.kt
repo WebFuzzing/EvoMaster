@@ -33,7 +33,7 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
         }
     }
 
-    override fun addActionLines(action: Action, index: Int, testCaseName: String, lines: Lines, result: ActionResult, testSuitePath: Path?, baseUrlOfSut: String) {
+    override fun addActionLinesPerType(action: Action, index: Int, testCaseName: String, lines: Lines, result: ActionResult, testSuitePath: Path?, baseUrlOfSut: String) {
         addGraphQlCallLines(action as GraphQLAction, lines, result as GraphQlCallResult, baseUrlOfSut)
     }
 
@@ -52,6 +52,7 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
         when {
             format.isJavaOrKotlin() -> lines.add(".contentType(\"application/json\")")
             format.isJavaScript() -> lines.add(".set('Content-Type','application/json')")
+            format.isPython() -> lines.add("headers[\"content-type\"] = \"application/json\"")
            // format.isCsharp() -> lines.add("Client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(\"application/json\"));")
         }
 
@@ -88,7 +89,7 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
         val gql = res as GraphQlCallResult
 
         if (code != 500 && gql.hasLastStatementWhenGQLError()) {
-            lines.append(" // " + gql.getLastStatementWhenGQLErrors())
+            lines.appendSingleCommentLine(gql.getLastStatementWhenGQLErrors() ?: "")
         }
     }
 
@@ -103,10 +104,10 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
                 in BB, the baseUrl is actually the full endpoint
              */
 
-            if (format.isKotlin()) {
-                lines.append("\"\${$baseUrlOfSut}\"")
-            } else {
-                lines.append("$baseUrlOfSut")
+            when {
+                format.isKotlin() -> lines.append("\"\${$baseUrlOfSut}\"")
+                format.isPython() -> lines.append("self.$baseUrlOfSut")
+                else -> lines.append("$baseUrlOfSut")
             }
         } else {
 
@@ -121,6 +122,12 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
               // infoDto.graphQLProblem?.endpoint
 
             lines.append("${path?.let { GeneUtils.applyEscapes(it, mode = GeneUtils.EscapeMode.NONE, format = format) }}\"")
+        }
+
+        if (format.isPython()) {
+            handlePythonVerbEndpoint(_call as GraphQLAction, lines) {
+                lines.append(", data=body")
+            }
         }
 
         lines.append(")")

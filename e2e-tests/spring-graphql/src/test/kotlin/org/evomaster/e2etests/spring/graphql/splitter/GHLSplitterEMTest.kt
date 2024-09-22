@@ -53,7 +53,7 @@ class GHLSplitterEMTest : SpringTestBase() {
             val em = EMConfig()
 
             em.testSuiteSplitType = EMConfig.TestSuiteSplitType.FAULTS
-            em.executiveSummary = false
+            //em.executiveSummary = false
 
 
             val splits = TestSuiteSplitter.split(solution, em)

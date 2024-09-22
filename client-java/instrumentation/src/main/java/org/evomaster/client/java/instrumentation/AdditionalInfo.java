@@ -104,32 +104,32 @@ public class AdditionalInfo implements Serializable {
 
     private final Set<SqlInfo> sqlInfoData = new CopyOnWriteArraySet<>();
 
-    private final Set<MongoInfo> mongoInfoData = new CopyOnWriteArraySet<>();
+    private final Set<MongoFindCommand> mongoFindCommandData = new CopyOnWriteArraySet<>();
 
-    private final Set<MongoCollectionInfo> mongoCollectionInfoData = new CopyOnWriteArraySet<>();
+    private final Set<MongoCollectionSchema> mongoCollectionSchemaData = new CopyOnWriteArraySet<>();
 
     public Set<SqlInfo> getSqlInfoData(){
         return Collections.unmodifiableSet(sqlInfoData);
     }
 
-    public Set<MongoInfo> getMongoInfoData(){
-        return Collections.unmodifiableSet(mongoInfoData);
+    public Set<MongoFindCommand> getMongoInfoData(){
+        return Collections.unmodifiableSet(mongoFindCommandData);
     }
 
-    public Set<MongoCollectionInfo> getMongoCollectionInfoData(){
-        return Collections.unmodifiableSet(mongoCollectionInfoData);
+    public Set<MongoCollectionSchema> getMongoCollectionTypeData(){
+        return Collections.unmodifiableSet(mongoCollectionSchemaData);
     }
 
     public void addSqlInfo(SqlInfo info){
         sqlInfoData.add(info);
     }
 
-    public void addMongoInfo(MongoInfo info){
-        mongoInfoData.add(info);
+    public void addMongoInfo(MongoFindCommand info){
+        mongoFindCommandData.add(info);
     }
 
-    public void addMongoCollectionInfo(MongoCollectionInfo info){
-        mongoCollectionInfoData.add(info);
+    public void addMongoCollectionType(MongoCollectionSchema mongoCollectionSchema){
+        mongoCollectionSchemaData.add(mongoCollectionSchema);
     }
 
     public Set<String> getParsedDtoNamesView(){

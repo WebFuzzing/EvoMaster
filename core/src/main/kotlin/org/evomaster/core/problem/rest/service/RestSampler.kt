@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rest.service
 
 import org.evomaster.core.Lazy
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
@@ -76,16 +77,68 @@ class RestSampler : AbstractRestSampler(){
             else -> SampleType.RANDOM
         }
 
-        if (test.isNotEmpty()) {
-            val objInd = RestIndividual(test, sampleType, mutableListOf(),
-                trackOperator = if (config.trackingEnabled()) this else null,
-                index = if (config.trackingEnabled()) time.evaluatedIndividuals else Traceable.DEFAULT_INDEX)
-
-            objInd.doGlobalInitialize(searchGlobalState)
-            return objInd
+        if(test.isEmpty()){
+            return sampleAtRandom()
         }
 
-        return sampleAtRandom()
+        enhanceWithLinksSupport(test)
+
+        val objInd = RestIndividual(test, sampleType, mutableListOf(),
+            trackOperator = if (config.trackingEnabled()) this else null,
+            index = if (config.trackingEnabled()) time.evaluatedIndividuals else Traceable.DEFAULT_INDEX)
+
+        objInd.doGlobalInitialize(searchGlobalState)
+        return objInd
+    }
+
+    private fun enhanceWithLinksSupport(test: MutableList<RestCallAction>) {
+        if(randomness.nextBoolean(config.probUseRestLinks)){
+            return
+        }
+        //https://swagger.io/docs/specification/links/
+        /*
+            WARNING:
+            we are adding linked actions for last operation X in this test.
+            links are defined based on response status of X.
+            but, at sampling time, test is not evaluated yet, so we cannot know
+            if link can be used.
+            doing partial evaluations would require a major refactoring in EM...
+            not worthy it.
+            so, here we add actions regardless, and then evaluate at runtime if should
+            use link info.
+         */
+        val rca = test.last()
+        val links = rca.links.filter { it.canUse() }.toMutableList()
+        randomness.shuffle(links)
+
+        for(l in links){
+            if (test.size >= getMaxTestSizeDuringSampler()) {
+                break
+            }
+
+            //TODO will need to support operationRef
+            val x = actionCluster.values.find { it is RestCallAction && it.operationId == l.operationId }
+            if(x == null){
+                LoggingUtil.uniqueWarn(log, "Cannot find operation with id: ${l.operationId}")
+                continue
+            }
+            val copy = x.copy() as RestCallAction
+            copy.doInitialize(randomness)
+            copy.auth = rca.auth
+            /*
+                This is bit tricky... the id does NOT uniquely identify the action inside an
+                individual, but rather its type.
+                For that, would need localId, but that is not set yet! it is done once Individual
+                is fully built.
+                So, technically, this backward link could refer to more than one previous action.
+                but, in theory, should not be a problem, we could just always take the closest one.
+             */
+            val sourceId = rca.id
+            copy.backwardLinkReference = BackwardLinkReference(sourceId,l.id)
+            test.add(copy)
+
+            enhanceWithLinksSupport(test)
+        }
     }
 
     private fun handleSmartPost(post: RestCallAction, test: MutableList<RestCallAction>): SampleType {

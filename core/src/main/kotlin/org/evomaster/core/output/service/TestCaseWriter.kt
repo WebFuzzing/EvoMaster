@@ -5,7 +5,9 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestCase
-import org.evomaster.core.output.service.TestWriterUtils.Companion.getWireMockVariableName
+import org.evomaster.core.output.TestWriterUtils
+import org.evomaster.core.output.TestWriterUtils.getWireMockVariableName
+import org.evomaster.core.problem.enterprise.EnterpriseActionResult
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.param.HttpWsResponseParam
@@ -85,6 +87,10 @@ abstract class TestCaseWriter {
             }
         }
 
+        if (format.isPython() && config.testTimeout > 0) {
+            lines.add("@timeout_decorator.timeout(${config.testTimeout})")
+        }
+
         //TODO: check xUnit instead
         if (format.isCsharp()) {
             lines.add("[Fact]")
@@ -104,7 +110,7 @@ abstract class TestCaseWriter {
             val insertionVars = mutableListOf<Pair<String, String>>()
             // FIXME: HostnameResolutionActions can be a separately, for now it's under
             //  handleFieldDeclarations.
-            handleFieldDeclarations(lines, baseUrlOfSut, ind, insertionVars)
+            handleTestInitialization(lines, baseUrlOfSut, ind, insertionVars)
             handleActionCalls(lines, baseUrlOfSut, ind, insertionVars, testCaseName = test.name, testSuitePath)
         }
 
@@ -172,12 +178,12 @@ abstract class TestCaseWriter {
 
     /**
      * Before starting to make actions (e.g. HTTP calls in web apis), check if we need to declare any field, ie variable,
-     * for this test.
+     * for this test, and other needed setups, like SQL insertions.
      * @param lines are generated lines which save the generated test scripts
      * @param ind is the final individual (ie test) to be generated into the test scripts
      * @param insertionVars contains variable names of sql insertions (Pair.first) with their results (Pair.second).
      */
-    protected abstract fun handleFieldDeclarations(
+    protected abstract fun handleTestInitialization(
         lines: Lines,
         baseUrlOfSut: String,
         ind: EvaluatedIndividual<*>,
@@ -210,7 +216,24 @@ abstract class TestCaseWriter {
      * @param testSuitePath is the path where to save the test suite, such info might be used to save files used in the test
      * @param baseUrlOfSut is the base url of sut
      */
-    protected abstract fun addActionLines(action: Action, index: Int, testCaseName: String, lines: Lines, result: ActionResult, testSuitePath: Path?, baseUrlOfSut: String)
+    protected fun addActionLines(action: Action, index: Int, testCaseName: String, lines: Lines, result: ActionResult, testSuitePath: Path?, baseUrlOfSut: String){
+
+        if(result is EnterpriseActionResult){
+            result.getFaults().sortedBy { it.category.code }
+                .forEach {
+                    val cat = it.category
+                    lines.addSingleCommentLine("Fault${cat.code}. ${cat.name}. ${it.context}")
+                }
+        }
+
+        addActionLinesPerType(action, index, testCaseName, lines, result, testSuitePath, baseUrlOfSut)
+    }
+
+    /**
+     * Shouldn't be called directly, as called by addActionLines
+     */
+    protected abstract fun addActionLinesPerType(action: Action, index: Int, testCaseName: String, lines: Lines, result: ActionResult, testSuitePath: Path?, baseUrlOfSut: String)
+
 
     protected abstract fun shouldFailIfExceptionNotThrown(result: ActionResult): Boolean
 
@@ -299,11 +322,6 @@ abstract class TestCaseWriter {
     }
 
 
-    protected fun capitalizeFirstChar(name: String): String {
-        return name[0].uppercaseChar() + name.substring(1)
-    }
-
-
     protected fun clusterComment(lines: Lines, test: TestCase) {
         if (test.test.clusterAssignments.size > 0) {
             lines.startCommentBlock()
@@ -321,4 +339,6 @@ abstract class TestCaseWriter {
     open fun additionalTestHandling(tests: List<TestCase>) {
         // do nothing
     }
+
+
 }

@@ -194,6 +194,20 @@ public abstract class ThirdPartyMethodReplacementClass implements MethodReplacem
 
     protected abstract String getNameOfThirdPartyTargetClass();
 
+    public static Method getOriginalStaticMethod(ThirdPartyMethodReplacementClass singleton, String id) {
+        if (id == null || id.isEmpty()) {
+            throw new IllegalArgumentException("Invalid empty id");
+        }
+
+        String callerName = singleton.getTargetClassName();
+        final StateInfo info = getStateInfo(singleton, callerName);
+        Method original = info.methods.get(id);
+        if (original == null) {
+            throw new IllegalArgumentException("No method exists with id: " + id);
+        }
+        return original;
+    }
+
     /**
      * @param singleton a reference to an instance of the subclass. As reflection is expensive,
      *                  we suggest to create it only once, and save it in final static field
@@ -208,7 +222,6 @@ public abstract class ThirdPartyMethodReplacementClass implements MethodReplacem
         Objects.requireNonNull(obj);
         ClassLoader loader = obj.getClass().getClassLoader();
         StateInfo info = singleton.classInfoPerClassLoader.get(loader);
-
         if (info == null) {
             info = initializeClassInfo(singleton, loader);
         }
@@ -253,14 +266,24 @@ public abstract class ThirdPartyMethodReplacementClass implements MethodReplacem
             throw new IllegalStateException("No access to last caller class");
         }
 
-        /*
-            TODO what if more than 1 classloader available ???
+        final StateInfo info = getStateInfo(singleton, callerName);
 
-            This is tricky... originally, we went directly for classloader of caller class, to avoid possible issues
-            of class not been initialized yet.
-            however, that didn't work in some cases (eg reservations-api).
-            so, we go directly to the original class, and, if no info for it, we fallback on caller class
-         */
+        Constructor original = info.constructors.get(id);
+        if (original == null) {
+            throw new IllegalArgumentException("No constructor exists with id: " + id);
+        }
+        return original;
+    }
+
+    private static StateInfo getStateInfo(ThirdPartyMethodReplacementClass singleton, String callerName) {
+    /*
+        TODO what if more than 1 classloader available ???
+
+        This is tricky... originally, we went directly for classloader of caller class, to avoid possible issues
+        of class not been initialized yet.
+        however, that didn't work in some cases (eg reservations-api).
+        so, we go directly to the original class, and, if no info for it, we fallback on caller class
+     */
         ClassLoader loader = UnitsInfoRecorder.getInstance().getFirstClassLoader(singleton.getTargetClassName());
         if(loader == null) {
             //might have to store last one in use for caller class
@@ -272,12 +295,7 @@ public abstract class ThirdPartyMethodReplacementClass implements MethodReplacem
         if (info == null) {
             info = initializeClassInfo(singleton, loader);
         }
-
-        Constructor original = info.constructors.get(id);
-        if (original == null) {
-            throw new IllegalArgumentException("No constructor exists with id: " + id);
-        }
-        return original;
+        return info;
     }
 
     private Class<?> tryLoadingClass(ClassLoader classLoader) {

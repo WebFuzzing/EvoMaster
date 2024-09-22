@@ -12,7 +12,7 @@ class WebTestCaseWriter : TestCaseWriter() {
 
     private val driver : String = TestSuiteWriter.driver
 
-    override fun handleFieldDeclarations(
+    override fun handleTestInitialization(
         lines: Lines,
         baseUrlOfSut: String,
         ind: EvaluatedIndividual<*>,
@@ -63,7 +63,7 @@ class WebTestCaseWriter : TestCaseWriter() {
         return comment
     }
 
-    override fun addActionLines(action: Action, index: Int, testCaseName: String, lines: Lines, result: ActionResult, testSuitePath: Path?, baseUrlOfSut: String) {
+    override fun addActionLinesPerType(action: Action, index: Int, testCaseName: String, lines: Lines, result: ActionResult, testSuitePath: Path?, baseUrlOfSut: String) {
 
         //TODO add possible wait on CSS selector. if not, stop test???
 

@@ -5,13 +5,25 @@
     <parent>
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster</artifactId>
-        <version>3.0.1-SNAPSHOT</version>
+        <version>3.2.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>evomaster-core</artifactId>
     <packaging>jar</packaging>
 
     <dependencies>
+        <dependency>
+            <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-test-utils-java</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-test-utils-js</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-test-utils-py</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.evomaster</groupId>
             <artifactId>evomaster-client-java-controller-api</artifactId>
@@ -37,6 +49,17 @@
             <version>${project.version}</version>
             <type>test-jar</type>
         </dependency>
+
+
+        <dependency>
+            <groupId>com.webfuzzing</groupId>
+            <artifactId>commons</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+
+
+
+
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
@@ -305,6 +328,10 @@
                                     <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                                     <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
                                 </manifest>
+                                <manifestEntries>
+                                    <!-- needs to be kept in sync with JdkIssue -->
+                                    <Add-Opens>java.base/java.net java.base/java.util</Add-Opens>
+                                </manifestEntries>
                             </archive>
                             <finalName>evomaster</finalName>
                             <appendAssemblyId>false</appendAssemblyId>

@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster</artifactId>
-        <version>3.0.1-SNAPSHOT</version>
+        <version>3.2.1-SNAPSHOT</version>
     </parent>
 
     <groupId>org.evomaster</groupId>
@@ -23,6 +23,7 @@
         <module>sql</module>
         <module>sql-dto</module>
         <module>distance-heuristics</module>
+        <module>test-utils-java</module>
     </modules>
 
     <dependencyManagement>

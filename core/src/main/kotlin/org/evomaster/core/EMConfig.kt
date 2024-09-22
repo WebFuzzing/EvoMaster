@@ -77,6 +77,12 @@ class EMConfig {
 
         private const val externalServiceIPRegex = "$_eip_n$_eip_s$_eip_e"
 
+        private val defaultAlgorithmForBlackBox = Algorithm.RANDOM
+
+        private val defaultAlgorithmForWhiteBox = Algorithm.MIO
+
+        private val defaultOutputFormatForBlackBox = OutputFormat.PYTHON_UNITTEST
+
         fun validateOptions(args: Array<String>): OptionParser {
 
             val config = EMConfig() // tmp config object used only for validation.
@@ -391,6 +397,9 @@ class EMConfig {
         }
     }
 
+    /**
+     * Note: this can have side-effect of updating some DEFAULT settings
+     */
     fun checkMultiFieldConstraints() {
         /*
             Each option field might have specific constraints, setup with @annotations.
@@ -398,6 +407,30 @@ class EMConfig {
             Those are defined here.
             They can be checked only once all fields have been updated
          */
+
+        /*
+            First start from updating DEFAULT
+         */
+        if(blackBox){
+            if (problemType == ProblemType.DEFAULT) {
+                LoggingUtil.uniqueUserWarn("You are doing Black-Box testing, but you did not specify the" +
+                        " 'problemType'. The system will default to RESTful API testing.")
+                problemType = ProblemType.REST
+            }
+            if (outputFormat == OutputFormat.DEFAULT) {
+                LoggingUtil.uniqueUserWarn("You are doing Black-Box testing, but you did not specify the" +
+                        " 'outputFormat'. The system will default to $defaultOutputFormatForBlackBox.")
+                outputFormat = defaultOutputFormatForBlackBox
+            }
+        }
+        /*
+            the "else" cannot be implemented here, as it will come from the Driver, which has not been called yet.
+            It is handled directly in Main
+         */
+        if(algorithm == Algorithm.DEFAULT ){
+            algorithm = if(blackBox) defaultAlgorithmForBlackBox else defaultAlgorithmForWhiteBox
+        }
+
 
         if (!blackBox && bbSwaggerUrl.isNotBlank()) {
             throw ConfigProblemException("'bbSwaggerUrl' should be set only in black-box mode")
@@ -413,23 +446,11 @@ class EMConfig {
 
         if (blackBox && !bbExperiments) {
 
-            if (problemType == ProblemType.DEFAULT) {
-                LoggingUtil.uniqueUserWarn("You are doing Black-Box testing, but you did not specify the" +
-                        " 'problemType'. The system will default to RESTful API testing.")
-                problemType = ProblemType.REST
-            }
-
             if (problemType == ProblemType.REST && bbSwaggerUrl.isNullOrBlank()) {
                 throw ConfigProblemException("In black-box mode for REST APIs, you must set the bbSwaggerUrl option")
             }
             if (problemType == ProblemType.GRAPHQL && bbTargetUrl.isNullOrBlank()) {
                 throw ConfigProblemException("In black-box mode for GraphQL APIs, you must set the bbTargetUrl option")
-            }
-            if (outputFormat == OutputFormat.DEFAULT) {
-                /*
-                    TODO in the future, once we support POSTMAN outputs, we should default it here
-                 */
-                throw ConfigProblemException("In black-box mode, you must specify a value for the outputFormat option different from DEFAULT")
             }
         }
 
@@ -512,12 +533,12 @@ class EMConfig {
         }
 
         // Clustering constraints: the executive summary is not really meaningful without the clustering
-        if (executiveSummary && testSuiteSplitType != TestSuiteSplitType.FAULTS) {
-            executiveSummary = false
-            LoggingUtil.uniqueUserWarn("The option to turn on Executive Summary is only meaningful when clustering is turned on (--testSuiteSplitType CLUSTERING). " +
-                    "The option has been deactivated for this run, to prevent a crash.")
-            //throw ConfigProblemException("The option to turn on Executive Summary is only meaningful when clustering is turned on (--testSuiteSplitType CLUSTERING).")
-        }
+//        if (executiveSummary && testSuiteSplitType != TestSuiteSplitType.FAULTS) {
+//            executiveSummary = false
+//            LoggingUtil.uniqueUserWarn("The option to turn on Executive Summary is only meaningful when clustering is turned on (--testSuiteSplitType CLUSTERING). " +
+//                    "The option has been deactivated for this run, to prevent a crash.")
+//            //throw ConfigProblemException("The option to turn on Executive Summary is only meaningful when clustering is turned on (--testSuiteSplitType CLUSTERING).")
+//        }
 
         if (problemType == ProblemType.RPC
                 && createTests
@@ -886,12 +907,12 @@ class EMConfig {
             " of the tested application." +
             " You can get better results by combining this option with `--prematureStop`." +
             " For example, something like `--maxTime 24h --prematureStop 1h` will run the search for 24 hours," +
-            " but the it will stop at any point in time in which there has be no improvement in last hour."
+            " but then it will stop at any point in time in which there has be no improvement in the last hour."
     )
     @Regex(timeRegex)
     var maxTime = defaultMaxTime
 
-    @Experimental
+    @Important(1.01)
     @Cfg("Max amount of time the search is going to wait since last improvement (on metrics we optimize for," +
             " like fault finding and code/schema coverage)." +
             " If there is no improvement within this allotted max time, then the search will be prematurely stopped," +
@@ -911,7 +932,7 @@ class EMConfig {
     @Important(1.1)
     @Cfg("The path directory of where the generated test classes should be saved to")
     @Folder
-    var outputFolder = "src/em"
+    var outputFolder = "generated_tests"
 
 
     val defaultConfigPath = "em.yaml"
@@ -950,8 +971,8 @@ class EMConfig {
 
     @Important(2.0)
     @Cfg("Specify in which format the tests should be outputted." +
-            " If left on `DEFAULT`, then the value specified in the _EvoMaster Driver_ will be used." +
-            " But a different value must be chosen if doing Black-Box testing.")
+            " If left on `DEFAULT`, for white-box testing then the value specified in the _EvoMaster Driver_ will be used." +
+            " On the other hand, for black-box testing it will default to a predefined type (e.g., Python).")
     var outputFormat = OutputFormat.DEFAULT
 
     @Important(2.1)
@@ -1036,11 +1057,11 @@ class EMConfig {
     var avoidNonDeterministicLogs = false
 
     enum class Algorithm {
-        MIO, RANDOM, WTS, MOSA
+        DEFAULT, SMARTS, MIO, RANDOM, WTS, MOSA
     }
 
-    @Cfg("The algorithm used to generate test cases")
-    var algorithm = Algorithm.MIO
+    @Cfg("The algorithm used to generate test cases. The default depends on whether black-box or white-box testing is done.")
+    var algorithm = Algorithm.DEFAULT
 
     /**
      * Workaround for issues with annotations that can not be applied on ENUM values,
@@ -1087,9 +1108,11 @@ class EMConfig {
             "Note that a negative number presents no limit per test suite")
     var maxTestsPerTestSuite = -1
 
+    @Experimental
+    @Deprecated("Temporarily removed, due to oracle refactoring. It might come back in future in a different form")
     @Cfg("Generate an executive summary, containing an example of each category of potential faults found." +
             "NOTE: This option is only meaningful when used in conjunction with test suite splitting.")
-    var executiveSummary = true
+    var executiveSummary = false
 
     @Cfg("The Distance Metric Last Line may use several values for epsilon." +
             "During experimentation, it may be useful to adjust these values. Epsilon describes the size of the neighbourhood used for clustering, so may result in different clustering results." +
@@ -1123,11 +1146,11 @@ class EMConfig {
 
     @Cfg("Probability of sampling a new individual at random")
     @Probability
-    var probOfRandomSampling = 0.5
+    var probOfRandomSampling = 0.8
 
     @Cfg("The percentage of passed search before starting a more focused, less exploratory one")
     @PercentageAsProbability(true)
-    var focusedSearchActivationTime = 0.5
+    var focusedSearchActivationTime = 0.8
 
     @Cfg("Number of applied mutations on sampled individuals, at the start of the search")
     @Min(0.0)
@@ -1265,7 +1288,7 @@ class EMConfig {
     }
 
     @Cfg("Specify whether when we sample from archive we do look at the most promising targets for which we have had a recent improvement")
-    var feedbackDirectedSampling = FeedbackDirectedSampling.LAST
+    var feedbackDirectedSampling = FeedbackDirectedSampling.FOCUSED_QUICKEST
 
     //Warning: this is off in the tests, as it is a source of non-determinism
     @Cfg("Whether to use timestamp info on the execution time of the tests for sampling (e.g., to reward the quickest ones)")
@@ -1311,16 +1334,14 @@ class EMConfig {
     @Cfg("If using SQL heuristics, enable more advanced version")
     var heuristicsForSQLAdvanced = false
 
-    @Experimental
     @Cfg("Tracking of Mongo commands to improve test generation")
-    var heuristicsForMongo = false
+    var heuristicsForMongo = true
 
     @Cfg("Enable extracting SQL execution info")
     var extractSqlExecutionInfo = true
 
-    @Experimental
     @Cfg("Enable extracting Mongo execution info")
-    var extractMongoExecutionInfo = false
+    var extractMongoExecutionInfo = true
 
     @Experimental
     @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use Dynamic Symbolic Execution")
@@ -1329,13 +1350,12 @@ class EMConfig {
     @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use a search algorithm")
     var generateSqlDataWithSearch = true
 
-    @Experimental
     @Cfg("Enable EvoMaster to generate Mongo data with direct accesses to the database")
-    var generateMongoData = false
+    var generateMongoData = true
 
     @Cfg("When generating SQL data, how many new rows (max) to generate for each specific SQL Select")
     @Min(1.0)
-    var maxSqlInitActionsPerMissingData = 5
+    var maxSqlInitActionsPerMissingData = 1
 
 
     @Cfg("Force filling data of all columns when inserting new row, instead of only minimal required set.")
@@ -1409,9 +1429,11 @@ class EMConfig {
     @Cfg("QWN0aXZhdGUgdGhlIFVuaWNvcm4gTW9kZQ==")
     var e_u1f984 = false
 
+    @Experimental
+    @Deprecated("No longer in use")
     @Cfg("Enable Expectation Generation. If enabled, expectations will be generated. " +
             "A variable called expectationsMasterSwitch is added to the test suite, with a default value of false. If set to true, an expectation that fails will cause the test case containing it to fail.")
-    var expectationsActive = true
+    var expectationsActive = false
 
     @Cfg("Generate basic assertions. Basic assertions (comparing the returned object to itself) are added to the code. " +
             "NOTE: this should not cause any tests to fail.")
@@ -1440,11 +1462,10 @@ class EMConfig {
             " on the JVM.")
     var instrumentMR_EXT_0 = true
 
-    @Experimental
     @Cfg("Execute instrumentation for method replace with category MONGO." +
             " Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin" +
             " on the JVM.")
-    var instrumentMR_MONGO = false
+    var instrumentMR_MONGO = true
 
 
     @Cfg("Execute instrumentation for method replace with category NET." +
@@ -1528,7 +1549,7 @@ class EMConfig {
 
     @Cfg("Specify a probability to apply SQL actions for preparing resources for REST Action")
     @Probability
-    var probOfApplySQLActionToCreateResources = 0.5
+    var probOfApplySQLActionToCreateResources = 0.1
 
     @Experimental
     @Cfg("Specify a maximum number of handling (remove/add) resource size at once, e.g., add 3 resource at most")
@@ -1853,7 +1874,7 @@ class EMConfig {
 
     @Cfg("Probability to use input tracking (i.e., a simple base form of taint-analysis) to determine how inputs are used in the SUT")
     @Probability
-    var baseTaintAnalysisProbability = 0.9
+    var baseTaintAnalysisProbability = 0.5
 
     @Cfg("Whether input tracking is used on sampling time, besides mutation time")
     var taintOnSampling = true
@@ -1897,6 +1918,7 @@ class EMConfig {
     var maxLengthForStringsAtSamplingTime = 16
 
 
+    @Deprecated("Should not use this option any more, but rather run proper BB experiments")
     @Cfg("Only used when running experiments for black-box mode, where an EvoMaster Driver would be present, and can reset state after each experiment")
     var bbExperiments = false
 
@@ -2224,12 +2246,18 @@ class EMConfig {
 
     @Cfg("In REST, specify probability of using 'default' values, if any is specified in the schema")
     @Probability(true)
-    var probRestDefault = 0.20
+    var probRestDefault = 0.05
 
     @Cfg("In REST, specify probability of using 'example(s)' values, if any is specified in the schema")
     @Probability(true)
-    var probRestExamples = 0.05
+    var probRestExamples = 0.20
 
+    @Experimental
+    @Cfg("In REST, enable the supports of 'links' between resources defined in the OpenAPI schema, if any." +
+            " When sampling a test case, if the last call has links, given this probability new calls are" +
+            " added for the link.")
+    @Probability(true)
+    var probUseRestLinks = 0.0
 
     //TODO mark as deprecated once we support proper Robustness Testing
     @Cfg("When generating data, allow in some cases to use invalid values on purpose")
@@ -2249,6 +2277,11 @@ class EMConfig {
     @Experimental
     @Cfg("Extra checks on HTTP properties in returned responses, used as automated oracles to detect faults.")
     var httpOracles = false
+
+
+    @Experimental
+    @Cfg("Apply more advanced coverage criteria for black-box testing. This can result in larger generated test suites.")
+    var advancedBlackBoxCoverage = false
 
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
@@ -2389,15 +2422,15 @@ class EMConfig {
 
     /**
      * Check if the used algorithm is MIO.
-     * MIO is the default search algorithm in EM.
+     * MIO is the default search algorithm in EM for white-box testing.
      * Many techniques in EM are defined only for MIO, ie most improvements in EM are
      * done as an extension of MIO.
      */
-    fun isMIO() = algorithm == Algorithm.MIO
+    fun isMIO() = algorithm == Algorithm.MIO || (algorithm == Algorithm.DEFAULT && !blackBox)
 
     fun isEnabledTaintAnalysis() = isMIO() && baseTaintAnalysisProbability > 0
 
-    fun isEnabledSmartSampling() = isMIO() && probOfSmartSampling > 0
+    fun isEnabledSmartSampling() = (isMIO() || algorithm == Algorithm.SMARTS) && probOfSmartSampling > 0
 
     fun isEnabledWeightBasedMutation() = isMIO() && weightBasedMutationRate
 

@@ -33,7 +33,7 @@ public class SqlComparisonCondition extends SqlCondition {
 
     @Override
     public String toSql() {
-        return leftOperand.toString() + " " + sqlComparisonOperator.toString() + " " + rightOperand.toString();
+        return leftOperand + " " + sqlComparisonOperator + " " + rightOperand;
     }
 
     @Override
