@@ -22,7 +22,11 @@ import org.slf4j.LoggerFactory
 
 
 /**
- * Service class used to do security testing after the search phase
+ * Service class used to do security testing after the search phase.
+ *
+ * This class can add new test cases to the archive that, by construction, do reveal a security fault.
+ * But, the actual check if a test indeed finds a fault is in [RestSecurityOracle]
+ * called in the fitness function, and not directly here.
  */
 class SecurityRest {
 
