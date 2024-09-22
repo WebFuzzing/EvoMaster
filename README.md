@@ -34,20 +34,23 @@ __Key features__:
 
 * _Web APIs_: At the moment, _EvoMaster_ can generate test cases for __REST__, __GraphQL__ and __RPC__ (e.g., __gRPC__ and __Thrift__) APIs.
 
-* _Blackbox_ testing mode: can run on any API (regardless of its programming language, e.g., Python and Go).
-  However, results for blackbox testing will be worse than whitebox testing (e.g., due to lack of code analysis).
+* _Black-Box_ testing mode: can run on any API (regardless of its programming language, e.g., Python and Go).
+  However, results for black-box testing will be worse than white-box testing (e.g., due to lack of code analysis).
+  Default test case output is in Python, but other formats are available as well. 
 
-* _Whitebox_ testing mode: can be used for APIs compiled to
+* _White-Box_ testing mode: can be used for APIs compiled to
   JVM (e.g., Java and Kotlin). _EvoMaster_ analyses the bytecode of the tested applications, and uses
   several heuristics such as _testability transformations_ and _taint analysis_ to be able to generate
   more effective test cases. We support JDK __8__ and the major LTS versions after that (currently JDK __21__). Might work on other JVM versions, but we provide __NO__ support for it.
-  Note: there was initial support for other languages as well, like for example JavaScript/TypeScript and C#, but they are not in a stable, feature-complete state. The support for those languages has been dropped, at least for the time being. 
+  Note: there was initial support for other languages as well, like for example JavaScript/TypeScript and C#, but they were not in a stable, feature-complete state. The support for those languages for white-box testing has been dropped, at least for the time being. 
 
 * _Installation_: we provide installers for the main operating systems: _Windows_ (`.msi`),
   _OSX_ (`.dmg`) and _Linux_ (`.deb`). We also provide an uber-fat JAR file.
   To download them, see the [Release page](https://github.com/WebFuzzing/EvoMaster/releases).
   Release notes are present in the file [release_notes.md](https://github.com/WebFuzzing/EvoMaster/blob/master/release_notes.md).
-  If you are using JDK 17 or later, it is recommended to use one of the installers, instead of using directly the uber-fat JAR (otherwise you will need to deal with the [usability limitations](docs/jdks.md) of the latest JDKs). 
+  If you are using the uber-fat JAR, it should work with any major LTS version (from JDK 8 on).
+   Whereas for the client library, needed for white-box testing, we will support JDK 8 likely for a long, long while, be warned that future versions of the executable JAR might start to require higher versions of the JDK in a non-so-distant future.
+   If that is going to be higher than your current version of the JVM, if you cannot upgrade or have 2 different JDKs on your machine, then you should not use the uber-jar but rather one of the installers. 
    When you use one of the installers, keep in mind that currently they do not update the `PATH` variable. This needs to be done manually, [see documentation](docs/download.md). 
 
 * _State-of-the-art_: an [independent study (2022)](https://arxiv.org/abs/2204.08348), comparing 10 fuzzers on 20 RESTful APIs, shows that _EvoMaster_ gives the best results.
@@ -55,17 +58,21 @@ __Key features__:
 * _Schema_: REST APIs must provide a schema in [OpenAPI/Swagger](https://swagger.io)
   format (either _v2_ or _v3_).
 
-* _Output_: the tool generates _JUnit_ (version 4 or 5) tests, written in either Java or Kotlin. There is initial support for other formats. For complete list, see the documentation for the CLI parameter [--outputFormat](docs/options.md).
+* _Output_: the tool generates _JUnit_ (version 4 or 5) tests, written in either Java or Kotlin, as well as test suites in Python and JavaScript. For a complete list, see the documentation for the CLI parameter [--outputFormat](docs/options.md). 
+  Some examples are: PYTHON_UNITTEST, KOTLIN_JUNIT_5, JAVA_JUNIT_4 and JS_JEST.
+  Note that the generated tests rely on third-party libraries (e.g., to make HTTP calls). 
+  These will need to be setup in your projects, [see documentation](docs/library_dependencies.md).
 
 * _Fault detection_: _EvoMaster_ can generate tests cases that reveal faults/bugs in the tested applications.
   Different heuristics are employed, like checking for 500 status codes and mismatches from the API schemas.
 
-* _Self-contained tests_: the generated tests do start/stop the application, binding to an ephemeral port.
+* _Self-contained tests_: for white-box testing, the generated tests do start/stop the application, binding to an ephemeral port.
   This means that the generated tests can be used for _regression testing_ (e.g., added to the Git repository
   of the application, and run with any build tool such as Maven and Gradle).
+  For black-box testing, you will need to make sure the application is up and running before executing the tests. 
 
 
-* _SQL handling_: _EvoMaster_ can intercept and analyse all communications done with SQL databases, and use
+* _SQL handling_: for white-box testing, _EvoMaster_ can intercept and analyse all communications done with SQL databases, and use
   such information to generate higher code coverage test cases. Furthermore, it can generate data directly
   into the databases, and have such initialization automatically added in the generated tests.
   At the moment, _EvoMaster_ supports _Postgres_, _MySQL_ and _H2_  databases.
@@ -77,11 +84,11 @@ __Key features__:
 
 __Known limitations__:
 
-* _Driver_: to be used for _whitebox_ testing, users need to write a [driver manually](docs/write_driver.md).
-  We recommend to try _blackbox_ mode first (should just need a few minutes to get it up and running) to get
+* _Driver_: to be used for _white-box_ testing, users need to write a [driver manually](docs/write_driver.md).
+  We recommend to try _black-box_ mode first (should just need a few minutes to get it up and running) to get
   an idea of what _EvoMaster_ can do for you.
 
-* _JDK 9+_: whitebox testing requires bytecode manipulation. 
+* _JDK 9+_: white-box testing requires bytecode manipulation. 
             Each new release of the JDK makes doing this harder and harder. 
             Dealing with JDKs above __8__ is doable, but it requires some settings.
             [See documentation](docs/jdks.md).
@@ -132,6 +139,7 @@ In the last few years, several few tools have been proposed in the academic lite
 You can read more details in this [2023 survey](docs/publications/2023_tosem_survey.pdf) on REST API testing.
 
 Existing open-source tools for REST API fuzzing are for example (in alphabetic order):
+[CATS](https://github.com/Endava/cats),
 [Dredd](https://github.com/apiaryio/dredd),
 [Fuzz-lightyear](https://github.com/Yelp/fuzz-lightyear),
 [ResTest](https://github.com/isa-group/RESTest),
@@ -221,6 +229,7 @@ For a list of code directly imported (and then possibly modified/updated) from
 other open-source projects, see [here](./docs/reused_code.md).
 
 
+<!--
 ### ![](https://www.yourkit.com/images/yklogo.png)
 
 YourKit supports open source projects with its full-featured Java Profiler.
@@ -229,5 +238,5 @@ YourKit, LLC is the creator of
 and
 <a href="https://www.yourkit.com/.net/profiler/">YourKit .NET Profiler</a>,
 innovative and intelligent tools for profiling Java and .NET applications.
-
+-->
 

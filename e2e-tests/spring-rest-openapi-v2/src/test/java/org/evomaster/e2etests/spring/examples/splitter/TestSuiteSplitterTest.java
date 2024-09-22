@@ -33,10 +33,10 @@ public class TestSuiteSplitterTest extends SplitterTestBase {
         testRunEMMulti(EMConfig.TestSuiteSplitType.FAULTS, false);
     }
 
-    @Test
-    public void testRunEM_CLUSTERING_SUMMARY() throws Throwable{
-        testRunEMMulti(EMConfig.TestSuiteSplitType.FAULTS, true);
-    }
+//    @Test
+//    public void testRunEM_CLUSTERING_SUMMARY() throws Throwable{
+//        testRunEMMulti(EMConfig.TestSuiteSplitType.FAULTS, true);
+//    }
 
     private void testRunEMMulti(EMConfig.TestSuiteSplitType splitType, Boolean executiveSummary) throws Throwable {
         List<String> terminations = Arrays.asList();
@@ -58,7 +58,7 @@ public class TestSuiteSplitterTest extends SplitterTestBase {
 
         EMConfig em = new EMConfig();
         em.setTestSuiteSplitType(splitType);
-        em.setExecutiveSummary(executiveSummary);
+        //em.setExecutiveSummary(executiveSummary);
 
         String outputFolderName = "SplitterEM";
         String fullClassName = "org.bar.splitter.Split_" + splitType;

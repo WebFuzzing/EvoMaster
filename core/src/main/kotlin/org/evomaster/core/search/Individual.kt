@@ -1,10 +1,6 @@
 package org.evomaster.core.search
 
 import org.evomaster.core.EMConfig
-import org.evomaster.core.search.action.Action
-import org.evomaster.core.search.action.ActionComponent
-import org.evomaster.core.search.action.ActionFilter
-import org.evomaster.core.search.action.ActionTree
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.SqlActionUtils
 import org.evomaster.core.logging.LoggingUtil
@@ -12,7 +8,9 @@ import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.enterprise.EnterpriseIndividual
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
+import org.evomaster.core.search.action.*
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.SearchGlobalState
@@ -133,6 +131,13 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
             seeGenes().forEach { it.doGlobalInitialize() }
         }
 
+        //make sure to disable those genes when initializing a new individual
+        val time = searchGlobalState.time.percentageUsedBudget()
+        seeGenes().filterIsInstance<OptionalGene>()
+            .filter { time > it.searchPercentageActive }
+            .forEach { it.forbidSelection() }
+
+
         computeTransitiveBindingGenes()
     }
 
@@ -162,6 +167,10 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
                     throw IllegalStateException("Invalid gene ${g.name} in action ${a.getName()}")
                 }
             }
+        }
+
+        if(!areAllValidLocalIds()){
+            throw IllegalStateException("There are invalid local ids")
         }
     }
 
@@ -217,10 +226,10 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
      * of the test cases (regardless of the other initializing actions).
      * All these actions are under the child group [ActionFilter.MAIN_EXECUTABLE]
      *
-     * This method can be overridden to return the concrete action type and not the abstract [Action]
+     * This method can be overridden to return the concrete action type and not the abstract [MainAction]
      */
-    open fun seeMainExecutableActions() : List<Action>{
-        val list = seeActions(ActionFilter.MAIN_EXECUTABLE)
+    open fun seeMainExecutableActions() : List<MainAction>{
+        val list = seeActions(ActionFilter.MAIN_EXECUTABLE) as List<MainAction>
         org.evomaster.core.Lazy.assert { list.all { it.shouldCountForFitnessEvaluations() } }
         return list
     }
@@ -451,18 +460,37 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
     /**
      * @return whether all action components are assigned with valid local ids
      */
-    fun areValidLocalIds() : Boolean{
+    fun areValidActionLocalIds() : Boolean{
         return areAllLocalIdsAssigned()
                 && flatView().run { this.map { it.getLocalId() }.toSet().size == this.size }
+    }
+
+    fun areAllValidLocalIds() : Boolean{
+        val all = flatViewAllStructuralElements()
+        val ids = all.map { it.getLocalId() }.toSet() //make it unique
+        if(ids.contains(NONE_LOCAL_ID)){
+            return false
+        }
+        //check for duplicates
+        return all.size == ids.size
+    }
+
+
+    private fun flatViewAllStructuralElements() : List<StructuralElement>{
+        return flatView().flatMap {
+            if(it !is Action) {
+                listOf(it)
+            } else {
+                it.seeTopGenes().flatMap {g ->  g.flatView() }
+            }
+        }
     }
 
     /**
      * @return if local ids are not initialized
      */
     private fun areAllLocalIdsNotInitialized() : Boolean{
-        return flatView().all { !it.hasLocalId ()
-                && (it !is Action || it.seeTopGenes().all { g-> g.flatView().all { i-> !i.hasLocalId() }})
-        }
+        return flatViewAllStructuralElements().all { !it.hasLocalId ()}
     }
 
     private fun flatView() : List<ActionComponent>{
@@ -471,9 +499,7 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
     }
 
     private fun areAllLocalIdsAssigned() : Boolean{
-        return  flatView().all { it.hasLocalId()
-                && (it !is Action || it.seeTopGenes().all { g-> g.flatView().all { i-> i.hasLocalId() }})
-        }
+        return flatViewAllStructuralElements().all { it.hasLocalId ()}
     }
 
     /**
@@ -590,6 +616,7 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
      */
     fun numberOfDiscoveredInfoFromTestExecution() : Int {
         return seeGenes().filterIsInstance<StringGene>()
+            .filter { it.staticCheckIfImpactPhenotype() } //in case disabled since then
             .count { it.selectionUpdatedSinceLastMutation }
         //TODO other info like discovered query-parameters/headers
     }

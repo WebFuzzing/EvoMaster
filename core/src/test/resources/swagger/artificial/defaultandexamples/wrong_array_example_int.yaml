@@ -1,0 +1,24 @@
+---
+openapi: 3.0.3
+info:
+  title: example_int
+  description: example_int
+  version: 1.0.0
+servers:
+  - url: "/v2"
+paths:
+  "/foo/{x}":
+    post:
+      parameters:
+        - in: path
+          name: x
+          required: true
+          schema:
+            type: integer
+            example:
+              - 42
+              - 66
+              - 123
+      responses:
+        '200':
+          description: OK

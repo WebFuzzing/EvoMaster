@@ -470,4 +470,8 @@ class Randomness {
         log.trace("Random IP bit: {}", k)
         return k
     }
+
+    fun shuffle(list: MutableList<*>) {
+        list.shuffle(random)
+    }
 }

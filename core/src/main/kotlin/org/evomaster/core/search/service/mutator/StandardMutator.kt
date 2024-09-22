@@ -165,6 +165,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             individual.seeGenes()
                 .filterIsInstance<StringGene>()
                 .filter { it.selectionUpdatedSinceLastMutation }
+                .filter { it.staticCheckIfImpactPhenotype() }
                 .forEach {
                     if(!toMutate.contains(it)){
                         toMutate.add(it)
@@ -340,8 +341,10 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             Lazy.assert { mutatedIndividual.verifyBindingGenes() }
         }
 
-        if (mutatedIndividual is RestIndividual)
+        if (mutatedIndividual is RestIndividual) {
             mutatedIndividual.repairDbActionsInCalls()
+            mutatedIndividual.fixResourceForwardLinks()
+        }
 
         // update MutatedGeneSpecification after the post-handling
         if(mutated?.repairInitAndDbSpecification(mutatedIndividual) == true){

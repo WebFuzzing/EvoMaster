@@ -7,9 +7,11 @@ import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
+import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.schema.Column
@@ -19,7 +21,6 @@ import org.evomaster.core.sql.schema.Table
 import org.evomaster.solver.Z3DockerExecutor
 import org.evomaster.solver.smtlib.SMTLib
 import org.evomaster.solver.smtlib.value.*
-import org.slf4j.LoggerFactory
 import java.io.IOException
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -27,75 +28,101 @@ import java.nio.file.Paths
 import java.util.*
 
 /**
- * A smt2 solver implementation using Z3 in a Docker container.
- * It generates the SMT problem from the database schema and the query
- * and then executes Z3 to get values and returns the necessary list of SqlActions
+ * An SMT solver implementation using Z3 in a Docker container.
+ * It generates the SMT problem from the database schema and the SQL query,
+ * then executes Z3 to get values and returns the necessary list of SqlActions
  * to satisfy the query.
  */
-class SMTLibZ3DbConstraintSolver(private val schemaDto: DbSchemaDto, private val resourcesFolder: String, private val numberOfRows: Int = 2) : DbConstraintSolver {
+class SMTLibZ3DbConstraintSolver(
+    private val schemaDto: DbSchemaDto, // Database schema
+    private val resourcesFolder: String, // Folder for temporary resources
+    numberOfRows: Int = 2 // Number of rows to generate
+) : DbConstraintSolver {
 
     private val generator: SmtLibGenerator = SmtLibGenerator(schemaDto, numberOfRows)
     private val executor: Z3DockerExecutor = Z3DockerExecutor(resourcesFolder)
 
     /**
-     * Deletes the tmp folder with all its content and then stops the Z3 Docker container.
+     * Closes the Z3 Docker executor and cleans up temporary files.
      */
     override fun close() {
         executor.close()
     }
 
     /**
-     * From the database schema and the query, it generates the SMT problem to make the query return a value
-     * Then executes Z3 to get values and returns the necessary list of SqlActions
-     * @param sqlQuery the SQL query to solve
-     * @return a list of SQL actions that can be executed to satisfy the query
+     * Generates the SMT problem from the SQL query, solves it using Z3,
+     * and returns a list of SqlActions that satisfy the query.
+     *
+     * @param sqlQuery The SQL query to solve.
+     * @return A list of SQL actions that can be executed to satisfy the query.
      */
     override fun solve(sqlQuery: String): List<SqlAction> {
-        val queryStatement = parseStatement(sqlQuery)
-        val smtLib = this.generator.generateSMT(queryStatement)
-        val fileName = storeToTmpFile(smtLib)
-        val z3Response = executor.solveFromFile(fileName)
+        val queryStatement = parseStatement(sqlQuery) // Parse SQL query
+        val smtLib = this.generator.generateSMT(queryStatement) // Generate SMTLib problem
+        val fileName = storeToTmpFile(smtLib) // Store SMTLib to a temporary file
+        val z3Response = executor.solveFromFile(fileName) // Solve using Z3
 
-        return toSqlActionList(z3Response)
+        return toSqlActionList(z3Response) // Convert Z3 response to SQL actions
     }
 
+    /**
+     * Parses the SQL query into a JSQLParser Statement.
+     *
+     * @param sqlQuery The SQL query string.
+     * @return The parsed SQL statement.
+     */
     private fun parseStatement(sqlQuery: String): Statement {
         return try {
-            CCJSqlParserUtil.parse(sqlQuery)
+            CCJSqlParserUtil.parse(sqlQuery) // Parse query using JSQLParser
         } catch (e: JSQLParserException) {
-            throw RuntimeException(e)
+            throw RuntimeException(e) // Rethrow exception if parsing fails
         }
     }
 
+    /**
+     * Converts Z3's response to a list of SqlActions.
+     *
+     * @param z3Response The response from Z3.
+     * @return A list of SQL actions.
+     */
     private fun toSqlActionList(z3Response: Optional<MutableMap<String, SMTLibValue>>): List<SqlAction> {
-
         if (!z3Response.isPresent) {
-            return emptyList()
+            return emptyList() // Return an empty list if no response
         }
 
         val actions = mutableListOf<SqlAction>()
 
         for (row in z3Response.get()) {
-            val tableName = getTableName(row.key)
+            val tableName = getTableName(row.key) // Extract table name from the key
             val columns = row.value as StructValue
 
-            var table = findTableByName(schemaDto, tableName)
+            // Find table from schema and create SQL actions
+            val table = findTableByName(schemaDto, tableName)
 
             // Create the list of genes with the values
-            var genes = mutableListOf<Gene>()
-            for (columnName in columns.getFields()) {
-                val columnValue = columns.getField(columnName)
-                when (columnValue) {
+            val genes = mutableListOf<Gene>()
+            for (columnName in columns.fields) {
+                when (val columnValue = columns.getField(columnName)) {
                     is StringValue -> {
-                        val gene = StringGene(columnName, columnValue.getValue())
-                        genes.add(gene)
+                        if (isBoolean(table, columnName)) {
+                            val gene = BooleanGene(columnName, toBoolean(columnValue.value))
+                            genes.add(gene)
+                        } else {
+                            val gene = StringGene(columnName, columnValue.value)
+                            genes.add(gene)
+                        }
                     }
-                    is IntValue -> {
-                        val gene = IntegerGene(columnName, columnValue.getValue())
-                        genes.add(gene)
+                    is LongValue -> {
+                        if (isTimestamp(table, columnName)) {
+                            val gene = LongGene(columnName, columnValue.value.toLong())
+                            genes.add(gene)
+                        } else {
+                            val gene = IntegerGene(columnName, columnValue.value.toInt())
+                            genes.add(gene)
+                        }
                     }
                     is RealValue -> {
-                        val gene = DoubleGene(columnName, columnValue.getValue())
+                        val gene = DoubleGene(columnName, columnValue.value)
                         genes.add(gene)
                     }
                 }
@@ -108,34 +135,66 @@ class SMTLibZ3DbConstraintSolver(private val schemaDto: DbSchemaDto, private val
         return actions
     }
 
-    /*
-        Remove the suffix that is the index of the variable.
-        As the variable name is the table name, we can get the table name by removing the last character,
-        And the last character is the index of the variable which is 1 or 2
-    */
-    private fun getTableName(key: String): String {
-        return key.substring(0, key.length - 1)
+    private fun toBoolean(value: String?): Boolean {
+        return value.equals("True", ignoreCase = true)
     }
 
+    private fun isBoolean(table: Table, columnName: String?): Boolean {
+        val col = schemaDto.tables.first { it.name == table.name }.columns.first { it.name == columnName }
+        return col.type == "BOOLEAN"
+    }
+
+    private fun isTimestamp(table: Table, columnName: String?): Boolean {
+        val col = table.columns.first { it.name == columnName }
+        return col.type == ColumnDataType.TIMESTAMP
+    }
+
+    /**
+     * Extracts the table name from the key by removing the last character (index).
+     *
+     * @param key The key containing the table name and index.
+     * @return The extracted table name.
+     */
+    private fun getTableName(key: String): String {
+        return key.substring(0, key.length - 1) // Remove last character
+    }
+
+    /**
+     * Finds a table by its name from the schema and constructs a Table object.
+     *
+     * @param schema The database schema.
+     * @param tableName The name of the table to find.
+     * @return The Table object.
+     */
     private fun findTableByName(schema: DbSchemaDto, tableName: String): Table {
         val tableDto = schema.tables.find { it.name.equals(tableName, ignoreCase = true) }
             ?: throw RuntimeException("Table not found: $tableName")
-        val name = tableDto.name
-        val columns = findColumns(tableDto)
-        val foreignKeys = findForeignKeys(tableDto)
-        return Table(name, columns, foreignKeys) // TODO: Calculate constraints
+        return Table(
+            tableDto.name,
+            findColumns(tableDto), // Convert columns from DTO
+            findForeignKeys(tableDto) // TODO: Implement this method
+        )
     }
 
+    /**
+     * Converts a list of ColumnDto to a set of Column objects.
+     *
+     * @param tableDto The table DTO containing column definitions.
+     * @return A set of Column objects.
+     */
     private fun findColumns(tableDto: TableDto): Set<Column> {
-        val columnsDto = tableDto.columns
-        val columns = mutableSetOf<Column>()
-        val databaseType = schemaDto.databaseType
-        for (columnDto in columnsDto) {
-            columns.add(toColumnFromDto(columnDto, databaseType))
-        }
-        return columns
+        return tableDto.columns.map { columnDto ->
+            toColumnFromDto(columnDto, schemaDto.databaseType)
+        }.toSet()
     }
 
+    /**
+     * Converts ColumnDto to a Column object.
+     *
+     * @param columnDto The column DTO.
+     * @param databaseType The type of the database.
+     * @return The Column object.
+     */
     private fun toColumnFromDto(
         columnDto: ColumnDto,
         databaseType: DatabaseType
@@ -187,41 +246,45 @@ class SMTLibZ3DbConstraintSolver(private val schemaDto: DbSchemaDto, private val
         return column
     }
 
+    /**
+     * Maps column types to ColumnDataType.
+     *
+     * @param type The column type as a string.
+     * @return The corresponding ColumnDataType.
+     */
     private fun getColumnDataType(type: String): ColumnDataType {
         return when (type) {
             "BIGINT" -> ColumnDataType.BIGINT
             "INTEGER" -> ColumnDataType.INTEGER
             "FLOAT" -> ColumnDataType.FLOAT
             "DOUBLE" -> ColumnDataType.DOUBLE
+            "TIMESTAMP" -> ColumnDataType.TIMESTAMP
             "CHARACTER VARYING" -> ColumnDataType.CHARACTER_VARYING
             "CHAR" -> ColumnDataType.CHAR
-            else -> ColumnDataType.CHARACTER_VARYING
+            else -> ColumnDataType.CHARACTER_VARYING // Default type
         }
     }
 
-    // TODO: Implement
+    // TODO: Implement this method
     private fun findForeignKeys(tableDto: TableDto): Set<ForeignKey> {
-        return emptySet()
+        return emptySet() // Placeholder
     }
 
     /**
-     * Stores the SMTLib problem to a file in the tmp folder
-     * @param smtLib the SMTLib problem
-     * @return the file name as it's the one needed for the Z3 Docker to run
+     * Stores the SMTLib problem to a file in the resources folder.
+     *
+     * @param smtLib The SMTLib problem.
+     * @return The filename of the stored SMTLib problem.
      */
     private fun storeToTmpFile(smtLib: SMTLib): String {
-        val fileName = "smt2_" + System.currentTimeMillis() + ".smt2"
+        val fileName = "smt2_${System.currentTimeMillis()}.smt2"
         val filePath = this.resourcesFolder + fileName
 
         try {
             Files.write(Paths.get(filePath), smtLib.toString().toByteArray(StandardCharsets.UTF_8))
         } catch (e: IOException) {
-            throw RuntimeException(e)
+            throw RuntimeException("Error writing SMTLib to file", e)
         }
         return fileName
-    }
-
-    companion object {
-        private val log = LoggerFactory.getLogger(SMTLibZ3DbConstraintSolver::class.java.name)
     }
 }

@@ -63,7 +63,7 @@ class WebTestCaseWriter : TestCaseWriter() {
         return comment
     }
 
-    override fun addActionLines(action: Action, index: Int, testCaseName: String, lines: Lines, result: ActionResult, testSuitePath: Path?, baseUrlOfSut: String) {
+    override fun addActionLinesPerType(action: Action, index: Int, testCaseName: String, lines: Lines, result: ActionResult, testSuitePath: Path?, baseUrlOfSut: String) {
 
         //TODO add possible wait on CSS selector. if not, stop test???
 

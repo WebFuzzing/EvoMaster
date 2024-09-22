@@ -12,11 +12,9 @@ class Lines(val format: OutputFormat) {
     var indentation = 0
         private set
 
-    //TODO what about C#???
     fun shouldUseSemicolon() = format.isJava() || format.isJavaScript() || format.isCsharp()
 
     fun appendSemicolon() {
-
         if (shouldUseSemicolon()) {
             append(";")
         }

@@ -92,7 +92,8 @@ LABEL_timeout = "timeout"
 LABEL_njobs = "njobs"
 LABEL_configfilter = "configfilter"
 LABEL_sutfilter = "sutfilter"
-LABELS = [LABEL_cluster,LABEL_seed,LABEL_timeout,LABEL_njobs,LABEL_configfilter,LABEL_sutfilter]
+LABEL_jacoco = "jacoco"
+LABELS = [LABEL_cluster,LABEL_seed,LABEL_timeout,LABEL_njobs,LABEL_configfilter,LABEL_sutfilter,LABEL_jacoco]
 
 
 if len(sys.argv) < 5:
@@ -154,7 +155,7 @@ TIMEOUT_MINUTES = -1
 # WARNING: if experiments rely on applying different kinds of instrumentations,
 # then the value of nJobs MUST be greater than the number of experiment runs, to GUARANTEE that no more than
 # one experiment is run per bash script job (once a SUT is instrumented, we cannot change its instrumentation again).
-NJOBS = 100
+NJOBS = 1000
 
 # String to filter CONFIGS to be included.
 # A string could refer to multiple CONFIGS separated by a `,` like a,b
@@ -162,7 +163,6 @@ NJOBS = 100
 # Default is None.
 CONFIGFILTER = None
 
-#
 # An optional string to filter SUTs to be included based on their names
 # A string could refer to multiple SUTs separated by a `,` like a,b
 # Note that
@@ -171,6 +171,10 @@ CONFIGFILTER = None
 # Default is None
 SUTFILTER = None
 
+# Whether the generated tests have JaCoCo configured to collect code coverage.
+# This requires some environment variables to be setup to point to whether Agent and CLI
+# jar files of JaCoCo are located on local machine.
+JACOCO = False
 
 ### Derived named variables ###
 if len(sys.argv) > 5:
@@ -199,6 +203,9 @@ if len(sys.argv) > 5:
     if LABEL_sutfilter in kv:
         SUTFILTER = kv[LABEL_sutfilter]
 
+    if LABEL_jacoco in kv:
+        JACOCO = kv[LABEL_jacoco].lower() in ("yes", "true", "t")
+
     for key in kv:
         if key not in LABELS:
             print("Undefined option: '" + key +"'. Available options: ")
@@ -211,11 +218,12 @@ print("BASE_DIR: " + str(BASE_DIR))
 print("MIN_SEED: " + str(MIN_SEED))
 print("MAX_SEED: " + str(MAX_SEED))
 print("BUDGET: " + str(BUDGET))
-print("njobs: " + str(NJOBS))
-print("seed: " + str(BASE_SEED))
-print("timeout: " + str(TIMEOUT_MINUTES))
-print("configfilter: " + str(CONFIGFILTER))
-print("sutfilter: " + str(SUTFILTER))
+print(LABEL_njobs + ": " + str(NJOBS))
+print(LABEL_seed + ": " + str(BASE_SEED))
+print(LABEL_timeout + ": " + str(TIMEOUT_MINUTES))
+print(LABEL_configfilter + ": " + str(CONFIGFILTER))
+print(LABEL_sutfilter + ": " + str(SUTFILTER))
+print(LABEL_jacoco + ":" + str(JACOCO))
 
 
 if not os.path.isdir(BASE_DIR):
@@ -372,6 +380,24 @@ else:
     JAVA_HOME_17 = os.environ.get("JAVA_HOME_17", "")
     if JAVA_HOME_17 == "":
         raise Exception("You must specify a JAVA_HOME_17 env variable specifying where JDK 17 is installed")
+
+
+JACOCO_AGENT = "not-defined"
+JACOCO_CLI = "not-defined"
+
+if JACOCO:
+
+    JACOCO_LOCATION = os.environ.get("JACOCO_LOCATION", "")
+    if JACOCO_LOCATION == "":
+        raise Exception("If you want to use JaCoCo, must setup JACOCO_LOCATION env variable pointing to their folder")
+
+    JACOCO_AGENT = os.path.join(JACOCO_LOCATION, "jacocoagent.jar")
+    JACOCO_CLI   = os.path.join(JACOCO_LOCATION, "jacococli.jar")
+
+    if not os.path.exists(JACOCO_AGENT):
+        raise Exception("JaCoCo Agent JAR not existing at location: " + JACOCO_AGENT)
+    if not os.path.exists(JACOCO_CLI):
+        raise Exception("JaCoCo Agent CLI not existing at location: " + JACOCO_CLI)
 
 
 # How to run EvoMaster
@@ -645,24 +671,36 @@ def createOneJob(state, sut, seed, setting, configName):
     return code
 
 
-def getJavaCommand(sut):
+def getJavaExe(sut):
 
     if not isJava(sut):
         raise Exception("ERROR: not a recognized JVM SUT: " + sut.platform)
 
-    JAVA = "java "
+    JAVA = "java"
     if not CLUSTER:
         if sut.platform == JDK_8:
-            JAVA = "\"" + JAVA_HOME_8 +"\"/bin/java "
+            JAVA = JAVA_HOME_8 +"/bin/java"
         elif sut.platform == JDK_11:
-            JAVA = "\"" + JAVA_HOME_11 +"\"/bin/java "
+            JAVA = JAVA_HOME_11 +"/bin/java"
         elif sut.platform == JDK_17:
-            JAVA = "\"" + JAVA_HOME_17 +"\"/bin/java --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED "
+            JAVA = JAVA_HOME_17 +"/bin/java"
         else:
             raise Exception("ERROR: unhandled JVM version: " + sut.platform)
 
+    JAVA = str(pathlib.PurePath(JAVA).as_posix())
+
     return JAVA
 
+
+def getJavaCommand(sut):
+
+    JAVA = getJavaExe(sut)
+    # due to possible spaces in Windows folder paths
+    JAVA = "\"" + JAVA + "\" "
+    if sut.platform == JDK_17:
+        JAVA = JAVA + " --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED "
+
+    return JAVA
 
 last_generated_ip = "127.0.0.2"
 def generate_ip():
@@ -721,7 +759,7 @@ def addJobBody(port, sut, seed, setting, configName):
             else:
                 label += "_" + str(ps[1])
 
-    params += " --testSuiteFileName=EM_" + label + "_" + str(seed) + "_Test"
+    params += " --testSuiteFileName=EM_" + sut.name.replace("-","_") + label + "_" + str(seed) + "_Test"
     params += " --labelForExperiments=" + label
     params += " --labelForExperimentConfigs=" + configName
 
@@ -751,6 +789,15 @@ def addJobBody(port, sut, seed, setting, configName):
     params += " --externalServiceIP=" + generate_ip()
     params += " --probOfHarvestingResponsesFromActualExternalServices=0"  # this adds way too much noise to results
     params += " --createConfigPathIfMissing=false"
+    params += " --javaCommand=\""+str(pathlib.PurePath(getJavaExe(sut)).as_posix())+"\""
+
+
+    if JACOCO:
+        params += " --jaCoCoAgentLocation="+str(pathlib.PurePath(os.path.abspath(JACOCO_AGENT)).as_posix())
+        params += " --jaCoCoCliLocation="+str(pathlib.PurePath(os.path.abspath(JACOCO_CLI)).as_posix())
+        params += " --jaCoCoOutputFile="+str(pathlib.PurePath(os.path.abspath("./exec/"+sut.name+"__wb"+configName+"__"+str(port)+"__jacoco.exec")).as_posix())
+        params += " --enableBasicAssertions=false" # TODO remove once dealt with flakiness
+
 
     JAVA = getJavaCommand(sut)
     command = JAVA + EVOMASTER_JAVA_OPTIONS + params + " >> " + em_log + " 2>&1"

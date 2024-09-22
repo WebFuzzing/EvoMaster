@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.examples.resource.db;
 
 import com.google.inject.Injector;
+import org.evomaster.core.EMConfig;
 import org.evomaster.core.sql.SqlAction;
 import org.evomaster.core.problem.rest.resource.RestResourceCalls;
 import org.evomaster.core.problem.rest.resource.RestResourceNode;
@@ -27,9 +28,10 @@ public class ResourceDbMIOBasicTest extends ResourceMIOHWTestBase {
         adaptiveMutation(args, 0.0);
         defaultResourceConfig(args, true);
         args.add("--probOfApplySQLActionToCreateResources");
-        args.add("0.1");
+        args.add("0.1");//this leads to flaky tests
 
         Injector injector = init(args);
+        EMConfig config = injector.getInstance(EMConfig.class);
 
         ResourceManageService rmanger = injector.getInstance(ResourceManageService.class);
 
@@ -40,6 +42,7 @@ public class ResourceDbMIOBasicTest extends ResourceMIOHWTestBase {
             assertEquals(keysToTemplate.get(key), node.getTemplates().keySet(), key);
         }
 
+        config.setProbOfApplySQLActionToCreateResources(0d);
         String raKey = "/api/rA";
         String raPostTemplate = "POST-POST";
         List<RestResourceCalls> calls = new ArrayList<>();
@@ -48,6 +51,7 @@ public class ResourceDbMIOBasicTest extends ResourceMIOHWTestBase {
         assertEquals(2, calls.get(0).seeGenes(GeneFilter.ALL).stream().filter(s-> !BindingBuilder.INSTANCE.isExtraTaintParam(s.getName()) && s.isMutable()).count());
         checkingBinding(calls.get(0), "POST-POST", raKey, false);
 
+        config.setProbOfApplySQLActionToCreateResources(0d);
         String raIdKey = "/api/rA/{rAId}";
         String raIdPostTemplate = "POST-GET";
         calls.clear();
@@ -57,6 +61,7 @@ public class ResourceDbMIOBasicTest extends ResourceMIOHWTestBase {
         checkingBinding(calls.get(0), raIdPostTemplate, raIdKey, false);
 
         // SQL-GET
+        config.setProbOfApplySQLActionToCreateResources(0.1d);
         calls.clear();
         rmanger.sampleCall(raIdKey, true, calls, 10, true, Collections.emptyList(), "GET");
         assertEquals(2, calls.get(0).seeActions(ActionFilter.ALL).size());

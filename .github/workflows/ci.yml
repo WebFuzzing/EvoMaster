@@ -30,7 +30,7 @@ on:
 #      - "**"
 
 env:
-  evomaster-version: 3.0.1
+  evomaster-version: 3.2.1
   # Unfortunately, to use JPackage we need JDK 17 or above :(
   # Which is really bad due to the madness of --add-opens.
   # Even if hunt down all cases of reflections in EM, there is still the problem of
@@ -118,6 +118,8 @@ jobs:
       - name: Publish Test Report
         if: success() || failure()
         uses: mikepenz/action-junit-report@v4
+        env:
+          NODE_OPTIONS: "--max_old_space_size=4096"
         with:
           report_paths: '**/target/surefire-reports/TEST-*.xml'
       # Upload coverage results

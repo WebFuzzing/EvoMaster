@@ -40,7 +40,7 @@ class CookieLoginController : SpringController(CookieLoginApplication::class.jav
 
     override fun getInfoForAuthentication(): List<AuthenticationDto> {
         return listOf(
-            AuthenticationDto("Foo")
+            AuthenticationDto("42Foo")
                 .apply {
                     loginEndpointAuth = LoginEndpointDto()
                         .apply {
@@ -56,7 +56,7 @@ class CookieLoginController : SpringController(CookieLoginApplication::class.jav
                             expectCookies = true
                         }
                 },
-            AuthenticationDto("Bar")
+            AuthenticationDto("B-a-r")
                 .apply {
                     loginEndpointAuth = LoginEndpointDto()
                         .apply {

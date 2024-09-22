@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
+import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.test.utils.EMTestUtils
 import org.evomaster.client.java.controller.api.dto.ActionDto
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
@@ -8,6 +9,8 @@ import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.enterprise.DetectedFault
+import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.externalservice.HostnameResolutionInfo
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
@@ -31,6 +34,8 @@ import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.EnumGene
+import org.evomaster.core.search.gene.numeric.NumberGene
+import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
@@ -237,11 +242,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                  */
                 if (action.parameters.none { it is BodyParam }) {
 
-                    val obj = ObjectGene("body", listOf()).apply { doInitialize(randomness) }
-
-                    val body = BodyParam(obj,
-                        // TODO could look at "Accept" header instead of defaulting to JSON
-                        EnumGene("contentType", listOf("application/json")).apply { doInitialize(randomness) })
+                    val obj = ObjectGene("body", listOf())
+                    // TODO could look at "Accept" header instead of defaulting to JSON
+                    val enumGene = EnumGene("contentType", listOf("application/json"))
+                    val body = BodyParam(obj,enumGene)
+                    body.seeGenes().forEach { it.doInitialize(randomness) }
 
                     val update = UpdateForBodyParam(body)
 
@@ -277,10 +282,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                     LoggingUtil.uniqueWarn(log, "More than 1 DTO option: [${dtoNames.sorted().joinToString(", ")}]")
                 }
                 val name = dtoNames.first()
-                val obj = getObjectGeneForDto(name).apply { doInitialize(randomness) }
-
-                val body = BodyParam(obj,
-                    EnumGene("contentType", listOf("application/json")).apply { doInitialize(randomness) })
+                val obj = getObjectGeneForDto(name)
+                val enumGene = EnumGene("contentType", listOf("application/json"))
+                val body = BodyParam(obj,enumGene)
+                body.seeGenes().forEach { it.doInitialize(randomness) }
                 val update = UpdateForBodyParam(body)
                 action.addParam(update)
             }
@@ -318,8 +323,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         additionalInfoList: List<AdditionalInfoDto>
     ) {
 
-        (0 until actionResults.size)
-            .filter { actions[it] is RestCallAction }
+        actionResults.indices
             .filter { actionResults[it] is RestCallResult }
             .forEach {
                 val result = actionResults[it] as RestCallResult
@@ -330,14 +334,17 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 val statusId = idMapper.handleLocalTarget("$status:$name")
                 fv.updateTarget(statusId, 1.0, it)
 
+                handleAdvancedBlackBoxCriteria(fv, actions[it], result)
+
                 val location5xx: String? = getlocation5xx(status, additionalInfoList, it, result, name)
+                handleAdditionalStatusTargetDescription(result, fv, status, name, it, location5xx)
 
-                handleAdditionalStatusTargetDescription(fv, status, name, it, location5xx)
+                //TODO missing oracles from expectations
 
-                if (config.expectationsActive) {
-                    //TODO refactor
-                    handleAdditionalOracleTargetDescription(fv, actions, result, name, it)
-                }
+//                if (config.expectationsActive) {
+//                    //TODO refactor
+//                    handleAdditionalOracleTargetDescription(fv, actions, result, name, it)
+//                }
 
                 val unauthorized = !AuthUtils.checkUnauthorizedWithAuth(status, actions[it])
                 if (unauthorized) {
@@ -354,31 +361,106 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             }
     }
 
+    private fun handleAdvancedBlackBoxCriteria(fv: FitnessValue, call: RestCallAction, result: RestCallResult) {
 
-    fun handleAdditionalOracleTargetDescription(
-        fv: FitnessValue,
-        actions: List<RestCallAction>,
-        result: RestCallResult,
-        name: String,
-        indexOfAction: Int
-    ) {
-        /*
-           Objectives for the two partial oracles implemented thus far.
-        */
-        val call = actions[indexOfAction] as RestCallAction
-        if(call.skipOracleChecks){
+        if(!config.advancedBlackBoxCoverage){
             return
         }
-        val oracles = writer.getPartialOracles().activeOracles(call, result)
-        oracles.filter { it.value }.forEach { entry ->
-            val oracleId = idMapper.getFaultDescriptiveIdForPartialOracle("${entry.key} $name")
-            val bugId = idMapper.handleLocalTarget(oracleId)
-            fv.updateTarget(bugId, 1.0, indexOfAction)
+        val status = result.getStatusCode()
+        val success = StatusGroup.G_2xx.isInGroup(status)
+
+        //Links
+        if(result.getAppliedLink()){
+            //create objectives to keep track of followed links
+            val root = "LINK_FOLLOWED"
+            fv.coverTarget(idMapper.handleLocalTarget("${root}_${call.id}"))
+            if(success) {
+                fv.coverTarget(idMapper.handleLocalTarget("${root}_SUCCESS_${call.id}"))
+            }
         }
+
+        //Presence of query params
+        call.parameters.filterIsInstance<QueryParam>().forEach {
+            val gene = it.getGeneForQuery()
+            val present = gene !is OptionalGene || gene.isActive
+            val root = "QUERY_PARAM"
+            val id = "${present}_${it.name}_${call.id}"
+
+            //up to 4 targets
+            fv.coverTarget(idMapper.handleLocalTarget("${root}_${id}"))
+            if(success){
+                fv.coverTarget(idMapper.handleLocalTarget("${root}_SUCCESS_${id}"))
+            }
+        }
+
+        //Values in queries/paths
+        //These will include examples/defaults
+        call.parameters
+            .forEach { p ->
+                /*
+                    This choice is arguable... otherwise might lead to big test suites with no benefit,
+                    eg if just data saved on database with no impact on control flow...
+                    TODO could be something to empirical investigate
+                 */
+
+                val root = "INPUT_${call.id}_${p.javaClass.simpleName}_${p.name}"
+
+                val genes = if(p is BodyParam) {
+                    listOf(p.contentTypeGene) // ie, ignore the payload
+                } else {
+                    p.seeGenes()
+                }
+                genes.flatMap { g -> g.flatView() }
+                    .filter { g -> g.staticCheckIfImpactPhenotype() }
+                    .forEach { g ->
+                        if(g is EnumGene<*> || g is BooleanGene || g is NumberGene<*>) {
+                            val prefix = "${root}_${g.name}"
+                            val suffix = when (g) {
+                                is EnumGene<*>, is BooleanGene -> g.getValueAsRawString()
+                                is NumberGene<*> -> {
+                                    val negative = g.getValueAsRawString().startsWith("-")
+                                    if(negative) "negative" else "positive"
+                                }
+                                else -> throw IllegalStateException("Not handled type: ${g.javaClass}")
+                            }
+                            fv.coverTarget(idMapper.handleLocalTarget("${prefix}_${suffix}"))
+                            if(success){
+                                fv.coverTarget(idMapper.handleLocalTarget("${prefix}_SUCCESS_${suffix}"))
+                            }
+                        }
+                    }
+            }
+
+        //body payload type in response
+        fv.coverTarget(idMapper.handleLocalTarget("RESPONSE_BODY_PAYLOAD_${call.id}_${result.getBodyType()}"))
     }
 
 
-    fun handleAdditionalStatusTargetDescription(
+//    fun handleAdditionalOracleTargetDescription(
+//        fv: FitnessValue,
+//        actions: List<RestCallAction>,
+//        result: RestCallResult,
+//        name: String,
+//        indexOfAction: Int
+//    ) {
+//        /*
+//           Objectives for the two partial oracles implemented thus far.
+//        */
+//        val call = actions[indexOfAction] as RestCallAction
+//        if(call.skipOracleChecks){
+//            return
+//        }
+//        val oracles = writer.getPartialOracles().activeOracles(call, result)
+//        oracles.filter { it.value }.forEach { entry ->
+//            val oracleId = idMapper.getFaultDescriptiveIdForPartialOracle("${entry.key} $name")
+//            val bugId = idMapper.handleLocalTarget(oracleId)
+//            fv.updateTarget(bugId, 1.0, indexOfAction)
+//        }
+//    }
+
+
+    private fun handleAdditionalStatusTargetDescription(
+        result: RestCallResult,
         fv: FitnessValue,
         status: Int,
         name: String,
@@ -416,13 +498,14 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
                 However, such info is missing in black-box testing
             */
-            Lazy.assert {
-                location5xx != null || config.blackBox
-            }
+            Lazy.assert { location5xx != null || config.blackBox }
+
             val postfix = if (location5xx == null) name else "${location5xx!!} $name"
-            val descriptiveId = idMapper.getFaultDescriptiveIdFor500(postfix)
+            val descriptiveId = idMapper.getFaultDescriptiveId(FaultCategory.HTTP_STATUS_500,postfix)
             val bugId = idMapper.handleLocalTarget(descriptiveId)
             fv.updateTarget(bugId, 1.0, indexOfAction)
+
+            result.addFault(DetectedFault(FaultCategory.HTTP_STATUS_500, postfix))
         }
     }
 
@@ -433,16 +516,20 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
      */
     protected fun handleRestCall(
         a: RestCallAction,
+        all: List<RestCallAction>,
         actionResults: MutableList<ActionResult>,
         chainState: MutableMap<String, String>,
         cookies: Map<String, List<NewCookie>>,
-        tokens: Map<String, String>
+        tokens: Map<String, String>,
+        fv: FitnessValue
     ): Boolean {
 
         searchTimeController.waitForRateLimiter()
 
         val rcr = RestCallResult(a.getLocalId())
         actionResults.add(rcr)
+
+        val appliedLink = handleLinks(a, all,actionResults)
 
         val response = try {
             createInvocation(a, chainState, cookies, tokens).invoke()
@@ -535,6 +622,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         }
 
         rcr.setStatusCode(response.status)
+        rcr.setAppliedLink(appliedLink)
 
         handlePossibleConnectionClose(response)
 
@@ -589,6 +677,53 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         if (!handleSaveLocation(a, response, rcr, chainState)) return false
 
         return true
+    }
+
+    private fun handleLinks(
+        a: RestCallAction,
+        all: List<RestCallAction>,
+        actionResults: List<ActionResult>
+    ) : Boolean {
+        val index = all.indexOfFirst { it.getLocalId() == a.getLocalId() }
+        if(index < 0){
+            throw IllegalStateException("Bug: input REST call action is not present in 'all' list")
+        }
+
+        val reference = a.backwardLinkReference
+            //nothing to do
+            ?: return false
+
+        /*
+            Recall we cannot use localId to specify the backward link (as those are not defined yet when links are
+            created).
+            The "id" just represents the type, and there could be several of them in a test.
+            So, here we look at previous actions (ie all before "index"), and take the closest to index
+         */
+        val previous = all.take(index)
+            .find { action ->
+                reference.sourceActionId == action.id
+                // not only must be of right kind, but also return right status code
+                &&
+                (actionResults.find { it.sourceLocalId == action.getLocalId() } as RestCallResult?)
+                    ?.getStatusCode() == reference.statusCode
+            }
+            //could happen if mutation (unless we force updating broken links), but never on sampling
+            //TODO should handle this
+            ?: return false
+        val link = previous.links.find { it.id == reference.sourceLinkId }
+            ?: throw IllegalStateException("Bug: endpoint ${previous.id} has no link of type ${reference.sourceLinkId}")
+
+        val result = actionResults.find { it.sourceLocalId == previous.getLocalId() } as RestCallResult?
+            // in theory, this branch is unreachable, as otherwise previous would had been null
+            ?: throw IllegalArgumentException("No action result for ${previous.getLocalId()}")
+
+        val modified = RestLinkValueUpdater.update(a,link,previous,result)
+        if(modified){
+            reference.actualSourceActionLocalId = previous.getLocalId()
+        } else{
+            reference.actualSourceActionLocalId = null
+        }
+        return modified
     }
 
 
@@ -658,8 +793,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 body.isTextPlain() -> GeneUtils.EscapeMode.TEXT
                 else -> throw IllegalStateException("Cannot handle body type: " + body.contentType())
             }
+
+            val stringToBeSent = body.getValueAsPrintableString(mode = mode, targetFormat = configuration.outputFormat)
             Entity.entity(
-                body.gene.getValueAsPrintableString(mode = mode, targetFormat = configuration.outputFormat),
+                stringToBeSent,
                 body.contentType()
             )
         } else if (forms != null) {
@@ -714,7 +851,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         rcr: RestCallResult,
         chainState: MutableMap<String, String>
     ): Boolean {
-        if (a.saveLocation) {
+        if (a.saveCreatedResourceLocation) {
 
             if (response.statusInfo.family != Response.Status.Family.SUCCESSFUL) {
                 /*
@@ -840,8 +977,78 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             recordResponseData(individual, actionResults.filterIsInstance<RestCallResult>())
         }
 
+        if(config.security && individual.sampleType == SampleType.SECURITY){
+            analyzeSecurityProperties(individual,actionResults,fv)
+        }
+
         return dto
     }
+
+    private fun analyzeSecurityProperties(
+            individual: RestIndividual,
+            actionResults: List<ActionResult>,
+            fv: FitnessValue
+    ){
+        //TODO the other cases
+
+        handleForbiddenOperation(HttpVerb.DELETE, FaultCategory.SECURITY_FORBIDDEN_DELETE, individual, actionResults, fv)
+        handleForbiddenOperation(HttpVerb.PUT, FaultCategory.SECURITY_FORBIDDEN_PUT, individual, actionResults, fv)
+        handleForbiddenOperation(HttpVerb.PATCH, FaultCategory.SECURITY_FORBIDDEN_PATCH, individual, actionResults, fv)
+        handleExistenceLeakage(individual,actionResults,fv)
+    }
+
+    private fun handleExistenceLeakage(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        val getPaths = individual.seeMainExecutableActions()
+            .filter { it.verb == HttpVerb.GET }
+            .map { it.path }
+            .toSet()
+
+        val faultyPaths = getPaths.filter {RestSecurityOracle.hasExistenceLeakage(it, individual, actionResults)  }
+        if(faultyPaths.isEmpty()){
+            return
+        }
+
+        for(index in individual.seeMainExecutableActions().indices){
+            val a = individual.seeMainExecutableActions()[index]
+            val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as RestCallResult
+
+            if(a.verb == HttpVerb.GET && faultyPaths.contains(a.path) && r.getStatusCode() == 404){
+                val scenarioId = idMapper.handleLocalTarget(
+                    idMapper.getFaultDescriptiveId(FaultCategory.SECURITY_EXISTENCE_LEAKAGE, a.getName())
+                )
+                fv.updateTarget(scenarioId, 1.0, index)
+                r.addFault(DetectedFault(FaultCategory.SECURITY_EXISTENCE_LEAKAGE, a.getName()))
+            }
+        }
+    }
+
+    private fun handleForbiddenOperation(
+        verb: HttpVerb,
+        faultCategory: FaultCategory,
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        if (RestSecurityOracle.hasForbiddenOperation(verb, individual, actionResults)) {
+           val actionIndex = individual.size() - 1
+            val action = individual.seeMainExecutableActions()[actionIndex]
+            val result = actionResults
+                .filterIsInstance<RestCallResult>()
+                .find { it.sourceLocalId == action.getLocalId() }
+                ?: return
+
+            val scenarioId = idMapper.handleLocalTarget(
+                idMapper.getFaultDescriptiveId(faultCategory, action.getName())
+            )
+            fv.updateTarget(scenarioId, 1.0, actionIndex)
+            result.addFault(DetectedFault(faultCategory, action.getName()))
+        }
+    }
+
 
     protected fun recordResponseData(individual: RestIndividual, actionResults: List<RestCallResult>) {
 

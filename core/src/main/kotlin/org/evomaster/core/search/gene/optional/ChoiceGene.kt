@@ -67,30 +67,32 @@ class ChoiceGene<T>(
             an inconsistent state
          */
         if(!initialized){
-        geneChoices
-            .filter { it.isMutable() }
-            .forEach { it.randomize(randomness, tryToForceNewValue) }
+            geneChoices
+                .filter { it.isMutable() }
+                .forEach { it.randomize(randomness, tryToForceNewValue) }
         } else {
-            val g = geneChoices[activeGeneIndex]
+            val g = activeGene()
             if(g.isMutable()){
                 g.randomize(randomness, tryToForceNewValue)
             }
         }
     }
 
+    fun activeGene() = geneChoices[activeGeneIndex]
+
     /**
      * TODO This method must be implemented to reflect usage
      * of the selectionStrategy and the additionalGeneMutationInfo
      */
     override fun mutablePhenotypeChildren(): List<Gene> {
-        return listOf(geneChoices[activeGeneIndex])
+        return listOf(activeGene())
     }
 
     override fun <T> getWrappedGene(klass: Class<T>) : T?  where T : Gene{
         if(this.javaClass == klass){
             return this as T
         }
-        return geneChoices[activeGeneIndex].getWrappedGene(klass)
+        return activeGene().getWrappedGene(klass)
     }
 
 
@@ -143,7 +145,7 @@ class ChoiceGene<T>(
         targetFormat: OutputFormat?,
         extraCheck: Boolean
     ): String {
-        return geneChoices[activeGeneIndex]
+        return activeGene()
             .getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
     }
 
@@ -151,35 +153,55 @@ class ChoiceGene<T>(
      * Returns the value of the active gene as a raw string
      */
     override fun getValueAsRawString(): String {
-        return geneChoices[activeGeneIndex]
+        return activeGene()
             .getValueAsRawString()
     }
 
     /**
      * Copies the value of the other gene. The other gene
-     * has to be a [ChoiceGene] with the same number
-     * of gene choices. The value of each gene choice
-     * is also copied.
+     * does not have to be [ChoiceGene].
      */
     override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is ChoiceGene<*>) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        } else if (geneChoices.size != other.geneChoices.size) {
-            throw IllegalArgumentException("Cannot copy value from another choice gene with  ${other.geneChoices.size} choices (current gene has ${geneChoices.size} choices)")
+
+        val x = if(other is ChoiceGene<*>){
+            other.activeGene()
         } else {
-            return updateValueOnlyIfValid(
-                {
-                    this.activeGeneIndex = other.activeGeneIndex
-                    var ok = true
-                    for (i in geneChoices.indices) {
-                        // short circuit if ok is false
-                        ok =  ok && this.geneChoices[i].copyValueFrom(other.geneChoices[i])
-                    }
-                    ok
-                }, true
-            )
+            other
         }
+
+        for(i in geneChoices.indices){
+            val g = geneChoices[i]
+            /*
+                TODO this is bit limited... what about if there are wrapper genes involved?
+             */
+            if(g.javaClass == x.javaClass){
+                val updated = updateValueOnlyIfValid(
+                    {
+                        this.activeGeneIndex = i
+                        g.copyValueFrom(x)
+                    }, true
+                )
+                if(updated){
+                    return true
+                }
+            }
+        }
+
+        return false
     }
+
+    override fun setFromStringValue(value: String): Boolean {
+        for(i in geneChoices.indices){
+            val g = geneChoices[i]
+            val updated = g.setFromStringValue(value)
+            if(updated){
+                activeGeneIndex = i
+                return true
+            }
+        }
+        return false
+    }
+
 
     /**
      * Checks that the other gene is another ChoiceGene,
@@ -238,5 +260,8 @@ class ChoiceGene<T>(
 
     override fun isPrintable() = this.geneChoices[activeGeneIndex].isPrintable()
 
-
+    override fun isChildUsed(child: Gene) : Boolean{
+        verifyChild(child)
+        return child == geneChoices[activeGeneIndex]
+    }
 }

@@ -21,7 +21,7 @@ class BBChainedLocationEMTest : SpringTestBase() {
     }
 
     @ParameterizedTest
-    @EnumSource(names = ["JS_JEST", "PYTHON_UNITTEST"])
+    @EnumSource
     fun testBlackBoxOutput(outputFormat: OutputFormat) {
 
         executeAndEvaluateBBTest(

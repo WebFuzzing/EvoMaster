@@ -16,6 +16,7 @@ import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.SamplerSpecification
 import org.evomaster.core.search.*
 import org.evomaster.core.search.action.ActionFilter.*
+import org.evomaster.core.search.action.EnvironmentAction
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.tracer.Traceable
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
@@ -195,11 +196,36 @@ class RestIndividual(
     /**
      * remove location id among actions used for minimization phase
      */
-    fun removeLocationId(){
+    fun removeAllLinks(){
         seeMainExecutableActions().forEach { a->
             a.usePreviousLocationId = null
-            a.saveLocation = false
+            a.saveCreatedResourceLocation = false
+            a.backwardLinkReference = null
         }
+    }
+
+    fun fixResourceForwardLinks(){
+
+        val actions = seeMainExecutableActions()
+
+        for(i in 0 until actions.size-1){
+            val a = actions[i]
+            if(a.saveCreatedResourceLocation){
+                //anyone after using it?
+                var using = false
+                for(j in (i+1) until actions.size){
+                    if(actions[j].usePreviousLocationId == a.postLocationId()){
+                        using = true
+                        break
+                    }
+                }
+                if(!using){
+                    //no point in keeping it if none use it
+                    a.saveCreatedResourceLocation = false
+                }
+            }
+        }
+
     }
 
     //FIXME refactor

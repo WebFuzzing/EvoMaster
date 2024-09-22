@@ -3,6 +3,7 @@ package org.evomaster.core.problem.graphql.service
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.core.Lazy
 import org.evomaster.core.sql.SqlAction
@@ -148,7 +149,8 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
         result: GraphQlCallResult,
         additionalInfoList: List<AdditionalInfoDto>
     ) {
-        val errorId = idMapper.handleLocalTarget(idMapper.getGQLErrorsDescriptiveWithMethodName(name))
+        // REFACTORED OUT, to make it consistent with handling of HTTP 500
+        //val errorId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(FaultCategory.GQL_ERROR_FIELD, name))
         val okId = idMapper.handleLocalTarget(idMapper.getGQLNoErrors(name))
 
         val anyError = hasErrors(result)
@@ -156,7 +158,7 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
         if (anyError) {
 
 
-            fv.updateTarget(errorId, 1.0, actionIndex)
+            // fv.updateTarget(errorId, 1.0, actionIndex)
             fv.updateTarget(okId, 0.5, actionIndex)
             val graphQlError = getGraphQLErrorWithLineInfo(additionalInfoList, actionIndex, result, name)
             if (graphQlError != null) {
@@ -166,7 +168,7 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
         } else {
             fv.updateTarget(okId, 1.0, actionIndex)
-            fv.updateTarget(errorId, 0.5, actionIndex)
+            //fv.updateTarget(errorId, 0.5, actionIndex)
         }
     }
 
@@ -184,10 +186,7 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
         val last = additionalInfoList[indexOfAction].lastExecutedStatement ?: DEFAULT_FAULT_CODE
         result.setLastStatementWhenGQLErrors(last)
         // shall we add additional target with last?
-        return idMapper.getGQLErrorsDescriptiveWithMethodNameAndLine(
-            line = last,
-            method = name
-        )
+        return idMapper.getFaultDescriptiveId(FaultCategory.GQL_ERROR_FIELD, "${name}_$last")
     }
 
     private fun hasErrors(result: GraphQlCallResult): Boolean {
@@ -248,7 +247,7 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
                 So, we create new targets for it.
             */
             val postfix = if(location5xx==null) name else "${location5xx!!} $name"
-            val descriptiveId = idMapper.getFaultDescriptiveIdFor500(postfix)
+            val descriptiveId = idMapper.getFaultDescriptiveId(FaultCategory.HTTP_STATUS_500,postfix)
             val bugId = idMapper.handleLocalTarget(descriptiveId)
             fv.updateTarget(bugId, 1.0, indexOfAction)
 

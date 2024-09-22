@@ -24,7 +24,7 @@ class WriteJsonTest {
     private fun getConfig(format: OutputFormat): EMConfig {
         val config = EMConfig()
         config.outputFormat = format
-        config.expectationsActive = false
+        //config.expectationsActive = false
         config.testTimeout  = -1
         return config
     }

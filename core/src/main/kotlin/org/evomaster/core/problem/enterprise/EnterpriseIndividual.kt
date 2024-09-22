@@ -1,9 +1,6 @@
 package org.evomaster.core.problem.enterprise
 
 import org.evomaster.core.Lazy
-import org.evomaster.core.search.action.Action
-import org.evomaster.core.search.action.ActionComponent
-import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.SqlActionUtils
 import org.evomaster.core.mongo.MongoDbAction
@@ -11,6 +8,7 @@ import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.search.*
+import org.evomaster.core.search.action.*
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.tracer.TrackOperator
@@ -212,7 +210,12 @@ abstract class EnterpriseIndividual(
     }
 
 
-    fun addMainActionInEmptyEnterpriseGroup(relativePosition: Int = -1, action: Action){
+    fun addMainEnterpriseActionGroup(group: EnterpriseActionGroup<*>){
+        val main = GroupsOfChildren.MAIN
+        addChildToGroup(group, main)
+    }
+
+    fun addMainActionInEmptyEnterpriseGroup(relativePosition: Int = -1, action: MainAction){
         val main = GroupsOfChildren.MAIN
         val g = EnterpriseActionGroup(mutableListOf(action), action.javaClass)
 
@@ -221,6 +224,7 @@ abstract class EnterpriseIndividual(
         } else{
             val base = groupsView()!!.startIndexForGroupInsertionInclusive(main)
             val position = base + relativePosition
+            //TODO is this correct??? adding action instead of g
             addChildToGroup(position, action, main)
         }
     }
@@ -321,6 +325,22 @@ abstract class EnterpriseIndividual(
 
     private fun getFirstIndexOfHostnameResolutionActionToAdd(): Int =
         groupsView()!!.startIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_DNS)
+
+
+
+    fun addInitializingActions(actions: List<EnvironmentAction>){
+
+        val invalid = actions.filter { it !is SqlAction && it !is MongoDbAction && it !is HostnameResolutionAction }
+        if(invalid.isNotEmpty()){
+            throw IllegalArgumentException("Invalid ${invalid.size} environment actions of type:" +
+                    " ${invalid.map { it::class.java.simpleName }.toSet().joinToString(", ")}")
+        }
+
+        addInitializingDbActions(actions = actions.filterIsInstance<SqlAction>())
+        addInitializingMongoDbActions(actions = actions.filterIsInstance<MongoDbAction>())
+        addInitializingHostnameResolutionActions(actions = actions.filterIsInstance<HostnameResolutionAction>())
+    }
+
 
     /**
      * add [actions] at [relativePosition]

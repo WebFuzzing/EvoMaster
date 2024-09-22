@@ -5,10 +5,9 @@ import org.evomaster.client.java.controller.api.dto.database.operations.Insertio
 import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionDto
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
 import org.evomaster.core.EMConfig
-import org.evomaster.core.Main
 import org.evomaster.core.output.*
-import org.evomaster.core.output.service.TestWriterUtils.Companion.getWireMockVariableName
-import org.evomaster.core.output.service.TestWriterUtils.Companion.handleDefaultStubForAsJavaOrKotlin
+import org.evomaster.core.output.TestWriterUtils.getWireMockVariableName
+import org.evomaster.core.output.TestWriterUtils.handleDefaultStubForAsJavaOrKotlin
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
@@ -125,7 +124,7 @@ class TestSuiteWriter {
         val lines = Lines(config.outputFormat)
         val testSuiteOrganizer = TestSuiteOrganizer()
 
-        activePartialOracles = partialOracles.activeOracles(solution.individuals)
+       // activePartialOracles = partialOracles.activeOracles(solution.individuals)
 
         header(solution, testSuiteFileName, lines, timestamp, controllerName)
 
@@ -354,6 +353,11 @@ class TestSuiteWriter {
 
         val format = config.outputFormat
 
+        if(format.isPython()){
+            lines.add("#!/usr/bin/env python")
+            lines.addEmpty(1)
+        }
+
         if (name.hasPackage() && format.isJavaOrKotlin()) {
             addStatement("package ${name.getPackage()}", lines)
             lines.addEmpty(2)
@@ -439,15 +443,15 @@ class TestSuiteWriter {
                 addImport("org.evomaster.client.java.controller.contentMatchers.SubStringMatcher.*", lines, true)
             }
 
-            if (config.expectationsActive) {
-                addImport("org.evomaster.client.java.controller.expect.ExpectationHandler.expectationHandler", lines, true)
-                addImport("org.evomaster.client.java.controller.expect.ExpectationHandler", lines)
-
-                if (useRestAssured()) {
-                    addImport("io.restassured.path.json.JsonPath", lines)
-                }
-                addImport("java.util.Arrays", lines)
-            }
+//            if (config.expectationsActive) {
+//                addImport("org.evomaster.client.java.controller.expect.ExpectationHandler.expectationHandler", lines, true)
+//                addImport("org.evomaster.client.java.controller.expect.ExpectationHandler", lines)
+//
+//                if (useRestAssured()) {
+//                    addImport("io.restassured.path.json.JsonPath", lines)
+//                }
+//                addImport("java.util.Arrays", lines)
+//            }
 
             if (config.problemType == EMConfig.ProblemType.WEBFRONTEND){
                 addImport("org.testcontainers.containers.BrowserWebDriverContainer", lines)
@@ -641,25 +645,25 @@ class TestSuiteWriter {
 
         testCaseWriter.addExtraStaticVariables(lines)
 
-        if (config.expectationsActive) {
-            if (config.outputFormat.isJavaOrKotlin()) {
-                //TODO JS and C#
-                if (activePartialOracles.any { it.value }) {
-                    lines.add(
-                        "/** [$expectationsMasterSwitch] - expectations master switch - is the variable that activates/deactivates expectations " +
-                                "individual test cases"
-                    )
-                    lines.add(("* by default, expectations are turned off. The variable needs to be set to [true] to enable expectations"))
-                    lines.add("*/")
-                    if (config.outputFormat.isJava()) {
-                        lines.add("private static boolean $expectationsMasterSwitch = false;")
-                    } else if (config.outputFormat.isKotlin()) {
-                        lines.add("private val $expectationsMasterSwitch = false")
-                    }
-                }
-                partialOracles?.variableDeclaration(lines, config.outputFormat, activePartialOracles)
-            }
-        }
+//        if (config.expectationsActive) {
+//            if (config.outputFormat.isJavaOrKotlin()) {
+//                //TODO JS and C#
+//                if (activePartialOracles.any { it.value }) {
+//                    lines.add(
+//                        "/** [$expectationsMasterSwitch] - expectations master switch - is the variable that activates/deactivates expectations " +
+//                                "individual test cases"
+//                    )
+//                    lines.add(("* by default, expectations are turned off. The variable needs to be set to [true] to enable expectations"))
+//                    lines.add("*/")
+//                    if (config.outputFormat.isJava()) {
+//                        lines.add("private static boolean $expectationsMasterSwitch = false;")
+//                    } else if (config.outputFormat.isKotlin()) {
+//                        lines.add("private val $expectationsMasterSwitch = false")
+//                    }
+//                }
+//                partialOracles?.variableDeclaration(lines, config.outputFormat, activePartialOracles)
+//            }
+//        }
         //Note: ${config.expectationsActive} can be used to get the active setting, but the default
         // for generated code should be false.
     }

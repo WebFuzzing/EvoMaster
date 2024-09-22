@@ -41,6 +41,11 @@ open class RestBaseModule : AbstractModule() {
 
         bind(object : TypeLiteral<Archive<*>>() {})
             .to(object : TypeLiteral<Archive<RestIndividual>>() {})
+            .asEagerSingleton()
+
+        bind(Archive::class.java)
+            .to(object : TypeLiteral<Archive<RestIndividual>>() {})
+            .asEagerSingleton()
 
     }
 }

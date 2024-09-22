@@ -1,0 +1,168 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "OpenAPI definition",
+    "version": "v0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Generated server url"
+    }
+  ],
+  "paths": {
+    "/api/linksmulti/z": {
+      "post": {
+        "tags": [
+          "bb-links-multi-application"
+        ],
+        "operationId": "z",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BBLinksMultiDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/linksmulti/y": {
+      "post": {
+        "tags": [
+          "bb-links-multi-application"
+        ],
+        "operationId": "y",
+        "parameters": [
+          {
+            "name": "first",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "second",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BBLinksMultiDto"
+                }
+              }
+            },
+            "links": {
+              "LinkToX": {
+                "operationId": "x",
+                "parameters": {
+                  "code": "$response.body#/c"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/linksmulti/x": {
+      "post": {
+        "tags": [
+          "bb-links-multi-application"
+        ],
+        "operationId": "x",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BBLinksMultiDto"
+                }
+              }
+            },
+            "links": {
+              "LinkToY": {
+                "operationId": "y",
+                "parameters": {
+                  "first": "$response.body#/a",
+                  "second": "$response.body#/b"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "CREATED",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BBLinksMultiDto"
+                }
+              }
+            },
+            "links": {
+              "LinkToZ": {
+                "operationId": "z",
+                "parameters": {
+                  "data": "$response.body#/a"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "BBLinksMultiDto": {
+        "type": "object",
+        "properties": {
+          "a": {
+            "type": "string"
+          },
+          "b": {
+            "type": "string"
+          },
+          "c": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      }
+    }
+  }
+}
