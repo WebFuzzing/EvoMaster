@@ -285,10 +285,23 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
                     .filter {
                         it != null
                     }.forEach {
-                        if (it.type == ExtraHeuristicEntryDto.Type.MONGO) {
-                            statistics.reportNumberOfEvaluatedDocumentsForMongoHeuristic(it.numberOfEvaluatedRecords)
-                        } else if (it.type==ExtraHeuristicEntryDto.Type.SQL) {
-                            statistics.reportNumberOfEvaluatedRowsForSqlHeuristic(it.numberOfEvaluatedRecords)
+                        when (it.type) {
+                            ExtraHeuristicEntryDto.Type.MONGO -> {
+                                statistics.reportNumberOfEvaluatedDocumentsForMongoHeuristic(it.numberOfEvaluatedRecords)
+                                if (it.extraHeuristicEvaluationFailure) {
+                                    statistics.reportMongoHeuristicEvaluationSuccess()
+                                } else {
+                                    statistics.reportMongoHeuristicEvaluationFailure()
+                                }
+                            }
+                            ExtraHeuristicEntryDto.Type.SQL -> {
+                                statistics.reportNumberOfEvaluatedRowsForSqlHeuristic(it.numberOfEvaluatedRecords)
+                                if (it.extraHeuristicEvaluationFailure) {
+                                    statistics.reportSqlHeuristicEvaluationSuccess()
+                                } else {
+                                    statistics.reportSqlHeuristicEvaluationFailure()
+                                }
+                            }
                         }
                     }
 

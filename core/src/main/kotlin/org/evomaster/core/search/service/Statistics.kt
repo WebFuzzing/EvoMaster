@@ -5,7 +5,6 @@ import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.PartialOracles
-import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
@@ -14,7 +13,6 @@ import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Paths
 import javax.annotation.PostConstruct
-import kotlin.Double.Companion.NaN
 
 
 class Statistics : SearchListener {
@@ -64,19 +62,15 @@ class Statistics : SearchListener {
      */
     private var coverageFailures = 0
 
-    private var sqlHeuristicsEvaluationCount = 0
+    // sql heuristic evaluation statistics
+    private var sqlHeuristicEvaluationSuccessCount = 0;
+    private var sqlHeuristicEvaluationFailureCount = 0;
+    private val sqlRowsAverageCalculator = AverageCalculator()
 
-    fun getSqlHeuristicsEvaluationCount(): Int = sqlHeuristicsEvaluationCount
-
-    private var sqlHeuristicsTotalNumberOfEvaluatedRows = 0
-
-    private var mongoHeuristicsEvaluationCount = 0
-
-    fun getMongoHeuristicsEvaluationCount(): Int = mongoHeuristicsEvaluationCount
-
-    private var mongoHeuristicsTotalNumberOfEvaluatedDocuments = 0
-
-
+    // mongo heuristic evaluation statistic
+    private var mongoHeuristicEvaluationSuccessCount = 0
+    private var mongoHeuristicEvaluationFailureCount = 0
+    private val mongoDocumentsAverageCalculator = AverageCalculator()
 
    class Pair(val header: String, val element: String)
 
@@ -157,26 +151,36 @@ class Statistics : SearchListener {
     }
 
     fun reportNumberOfEvaluatedRowsForSqlHeuristic(numberOfEvaluatedRows: Int) {
-        sqlHeuristicsTotalNumberOfEvaluatedRows += numberOfEvaluatedRows
-        sqlHeuristicsEvaluationCount ++
+        sqlRowsAverageCalculator.add(numberOfEvaluatedRows)
     }
 
     fun reportNumberOfEvaluatedDocumentsForMongoHeuristic(numberOfEvaluatedDocuments: Int) {
-        mongoHeuristicsTotalNumberOfEvaluatedDocuments += numberOfEvaluatedDocuments
-        mongoHeuristicsEvaluationCount++
+        mongoDocumentsAverageCalculator.add(numberOfEvaluatedDocuments)
     }
 
-    fun averageNumberOfEvaluatedRowsForSqlHeuristics(): Double = if (sqlHeuristicsEvaluationCount==0) {
-        NaN
-    } else {
-        sqlHeuristicsTotalNumberOfEvaluatedRows.toDouble() / sqlHeuristicsEvaluationCount.toDouble()
+    fun reportSqlHeuristicEvaluationSuccess() {
+        sqlHeuristicEvaluationSuccessCount++
     }
 
-    fun averageNumberOfEvaluatedDocumentsForMongoHeuristics(): Double = if (mongoHeuristicsEvaluationCount==0) {
-        NaN
-    } else {
-        mongoHeuristicsTotalNumberOfEvaluatedDocuments.toDouble() / mongoHeuristicsEvaluationCount.toDouble()
+    fun reportSqlHeuristicEvaluationFailure() {
+        sqlHeuristicEvaluationFailureCount++
     }
+
+    fun reportMongoHeuristicEvaluationSuccess() {
+        mongoHeuristicEvaluationSuccessCount++
+    }
+
+    fun reportMongoHeuristicEvaluationFailure() {
+        mongoHeuristicEvaluationFailureCount++
+    }
+
+    fun getMongoHeuristicsEvaluationCount(): Int = mongoHeuristicEvaluationSuccessCount + mongoHeuristicEvaluationFailureCount
+
+    fun getSqlHeuristicsEvaluationCount(): Int = sqlHeuristicEvaluationSuccessCount + sqlHeuristicEvaluationFailureCount
+
+    fun averageNumberOfEvaluatedRowsForSqlHeuristics(): Double = sqlRowsAverageCalculator.getAverage()
+
+    fun averageNumberOfEvaluatedDocumentsForMongoHeuristics(): Double = mongoDocumentsAverageCalculator.getAverage()
 
     override fun newActionEvaluated() {
         if (snapshotThreshold <= 0) {
@@ -313,11 +317,11 @@ class Statistics : SearchListener {
 
             // statistics info for Mongo Heuristics
             add(Pair("averageNumberOfEvaluatedDocumentsForMongoHeuristics","${averageNumberOfEvaluatedDocumentsForMongoHeuristics()}"))
-            add(Pair("mongoHeuristicsEvaluationCount","$mongoHeuristicsEvaluationCount"))
+            add(Pair("mongoHeuristicsEvaluationCount","${getMongoHeuristicsEvaluationCount()}"))
 
             // statistics info for SQL Heuristics
             add(Pair("averageNumberOfEvaluatedRowsForSqlHeuristics","${averageNumberOfEvaluatedRowsForSqlHeuristics()}"))
-            add(Pair("sqlHeuristicsEvaluationCount","$sqlHeuristicsEvaluationCount"))
+            add(Pair("sqlHeuristicsEvaluationCount","${getSqlHeuristicsEvaluationCount()}"))
 
         }
         addConfig(list)

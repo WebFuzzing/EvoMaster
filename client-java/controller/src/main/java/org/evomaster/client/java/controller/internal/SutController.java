@@ -391,7 +391,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                                     ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
                                     p.sqlCommand,
                                     p.sqlDistanceWithMetrics.sqlDistance,
-                                    p.sqlDistanceWithMetrics.numberOfEvaluatedRows
+                                    p.sqlDistanceWithMetrics.numberOfEvaluatedRows,
+                                    p.sqlDistanceWithMetrics.sqlDistanceEvaluationFailure
                             ))
                     .forEach(h -> dto.heuristics.add(h));
         }
@@ -429,7 +430,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                                     ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
                                     p.mongoCommand.toString(),
                                     p.mongoDistanceWithMetrics.mongoDistance,
-                                    p.mongoDistanceWithMetrics.numberOfEvaluatedDocuments
+                                    p.mongoDistanceWithMetrics.numberOfEvaluatedDocuments,
+                                    false
                             ))
                     .forEach(h -> dto.heuristics.add(h));
         }

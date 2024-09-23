@@ -40,6 +40,7 @@ public class H2SqlHandlerTest extends DatabaseH2TestInit {
         EvaluatedSqlCommand evaluatedSqlCommand = evaluatedSqlCommands.get(0);
         assertEquals(0, evaluatedSqlCommand.sqlDistanceWithMetrics.numberOfEvaluatedRows);
         assertEquals(Double.MAX_VALUE, evaluatedSqlCommand.sqlDistanceWithMetrics.sqlDistance);
+        assertEquals(false, evaluatedSqlCommand.sqlDistanceWithMetrics.sqlDistanceEvaluationFailure);
 
     }
 
@@ -75,6 +76,7 @@ public class H2SqlHandlerTest extends DatabaseH2TestInit {
         EvaluatedSqlCommand evaluatedSqlCommand = evaluatedSqlCommands.get(0);
         assertEquals(2, evaluatedSqlCommand.sqlDistanceWithMetrics.numberOfEvaluatedRows);
         assertEquals(Math.abs(28-15), evaluatedSqlCommand.sqlDistanceWithMetrics.sqlDistance);
+        assertEquals(false, evaluatedSqlCommand.sqlDistanceWithMetrics.sqlDistanceEvaluationFailure);
 
     }
 
