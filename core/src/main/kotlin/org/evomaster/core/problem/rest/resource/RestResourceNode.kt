@@ -9,6 +9,7 @@ import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.resource.dependency.*
+import org.evomaster.core.problem.rest.resource.dependency.PostCreationChain.Companion.CONFIG_POTENTIAL_REST_ACTION_FOR_CREATION
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.rest.util.ParserUtil
 import org.evomaster.core.problem.util.RestResourceTemplateHandler
@@ -38,8 +39,6 @@ open class RestResourceNode(
     companion object {
         private const val PROB_EXTRA_PATCH = 0.8
         val log: Logger = LoggerFactory.getLogger(RestResourceNode::class.java)
-
-        private val CONFIG_POTENTIAL_REST_ACTION_FOR_CREATION = mapOf(HttpVerb.POST to 0.8, HttpVerb.PUT to 0.2)
     }
 
     /**
@@ -250,29 +249,33 @@ open class RestResourceNode(
     private fun initCreationPoints(){
 
         val postCreation = PostCreationChain(mutableListOf())
-        val posts = mutableListOf<RestCallAction>()
+        val posts = mutableMapOf<String, List<RestCallAction>>()
 
-        val currentPost = actions.filter { it.verb == HttpVerb.POST}
-        if (currentPost.size > 1){
-            LoggingUtil.uniqueWarn(log, "more than POST Actions for resource node $path")
-            posts.add(currentPost.first())
-        }else
-            posts.addAll(currentPost)
+        val currentPost = actions.filter { isPotentialRestActionForCreation(it.verb)}
+        if (currentPost.isNotEmpty()){
+            posts[currentPost.first().path.toString()] = currentPost.groupBy { it.verb }.map { (t, u) ->
+                if (u.size > 1){
+                    LoggingUtil.uniqueWarn(log, "more than ${t.name} Actions for resource node $path")
+                }
+                u.first()
+            }
+        }
+
 
         if (posts.isEmpty()){
             val siblingPost = getSiblingPostAction()
-            if (siblingPost != null)
-                posts.add(siblingPost)
+            if (siblingPost != null && siblingPost.isNotEmpty())
+                posts[siblingPost.first().path.toString()] = siblingPost
             else{
-                val ancestorPosts = chooseAllClosestAncestor(path, listOf(HttpVerb.POST))
-                if (ancestorPosts != null) posts.addAll(ancestorPosts)
+                val ancestorPosts = chooseAllClosestAncestor(path, CONFIG_POTENTIAL_REST_ACTION_FOR_CREATION.keys)
+                if (ancestorPosts != null) posts[ancestorPosts.first().path.toString()] = ancestorPosts
             }
 
         }
 
         if (posts.isNotEmpty()){
-            postCreation.addActions(0, posts)
-            for (post in posts){
+            postCreation.addActions(0, posts.values.flatten())
+            for (post in posts.values.map { it.first() }){
                 if ((post).path.hasVariablePathParameters() &&
                     (!post.path.isLastElementAParameter()) ||
                     post.path.getVariableNames().size >= 2) {
@@ -289,18 +292,18 @@ open class RestResourceNode(
 
         postCreation.prioritizePostChain()
 
-        if (postCreation.actions.isNotEmpty())
+        if (postCreation.hasAnyAction())
             creations.add(postCreation)
     }
 
-    private fun getSiblingPostAction() : RestCallAction?{
-        return otherPostResourceNode.find { it.path.isSiblingForPreparingResource(this.path) }?.getActionByHttpVerb(HttpVerb.POST)
+    private fun getSiblingPostAction() : List<RestCallAction>?{
+        return otherPostResourceNode.find { it.path.isSiblingForPreparingResource(this.path) }?.getPotentialRestActionForCreation()
     }
 
     private fun isPotentialRestActionForCreation(verb: HttpVerb) : Boolean = CONFIG_POTENTIAL_REST_ACTION_FOR_CREATION.containsKey(verb)
 
     private fun nextCreationPoints(path:RestPath, postCreationChain: PostCreationChain){
-        val posts = chooseAllClosestAncestor(path, listOf(HttpVerb.POST))?.map { it.copy() as RestCallAction }
+        val posts = chooseAllClosestAncestor(path, CONFIG_POTENTIAL_REST_ACTION_FOR_CREATION.keys)?.map { it.copy() as RestCallAction }
         if(!posts.isNullOrEmpty()){
             val newPosts = posts.filter { !postCreationChain.hasAction(it) }
             postCreationChain.addActions(0, newPosts)
@@ -597,7 +600,7 @@ open class RestResourceNode(
     }
 
 
-    private fun chooseOneClosestAncestor(path: RestPath, verbs: List<HttpVerb>): RestCallAction? {
+    private fun chooseOneClosestAncestor(path: RestPath, verbs: Set<HttpVerb>): RestCallAction? {
         val ar = if(path.toString() == this.path.toString()){
             this
         }else{
@@ -611,7 +614,7 @@ open class RestResourceNode(
         return null
     }
 
-    private fun chooseAllClosestAncestor(path: RestPath, verbs: List<HttpVerb>): List<RestCallAction>? {
+    private fun chooseAllClosestAncestor(path: RestPath, verbs: Set<HttpVerb>): List<RestCallAction>? {
         val ar = if(path.toString() == this.path.toString()){
             this
         }else{
@@ -625,7 +628,7 @@ open class RestResourceNode(
         return null
     }
 
-    private fun hasWithVerbs(actions: List<RestCallAction>, verbs: List<HttpVerb>): List<RestCallAction> {
+    private fun hasWithVerbs(actions: List<RestCallAction>, verbs: Set<HttpVerb>): List<RestCallAction> {
         return actions.filter { a ->
             verbs.contains(a.verb)
         }
