@@ -61,7 +61,7 @@ public class HeuristicsCalculator {
 
         if (data.isEmpty()) {
             //if no data, we have no info whatsoever
-            return new SqlDistanceWithMetrics(Double.MAX_VALUE,0);
+            return new SqlDistanceWithMetrics(Double.MAX_VALUE,0, false);
         }
 
         Statement stmt = ParserUtils.asStatement(statement);
@@ -69,7 +69,7 @@ public class HeuristicsCalculator {
         Expression where = getWhere(stmt);
         if (where == null) {
             //no constraint and at least one data point
-            return new SqlDistanceWithMetrics(0.0,0);
+            return new SqlDistanceWithMetrics(0.0,0, false);
         }
 
 
@@ -86,17 +86,17 @@ public class HeuristicsCalculator {
             try {
                 double dist = calculator.computeExpression(where, row);
                 if (dist == 0.0) {
-                    return new SqlDistanceWithMetrics(0.0, rowCount);
+                    return new SqlDistanceWithMetrics(0.0, rowCount, false);
                 } else if (dist < minSqlDistance) {
                     minSqlDistance = dist;
                 }
             } catch (Exception ex) {
                 SimpleLogger.uniqueWarn("Failed to compute where expression: " + where + " with data " + row);
-                return new SqlDistanceWithMetrics(Double.MAX_VALUE, rowCount);
+                return new SqlDistanceWithMetrics(Double.MAX_VALUE, rowCount, true);
             }
         }
 
-        return new SqlDistanceWithMetrics(minSqlDistance,rowCount);
+        return new SqlDistanceWithMetrics(minSqlDistance, rowCount, false);
     }
 
     /**

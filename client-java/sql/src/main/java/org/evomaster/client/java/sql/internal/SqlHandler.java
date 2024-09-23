@@ -198,7 +198,7 @@ public class SqlHandler {
             statement = CCJSqlParserUtil.parse(command);
         } catch (Exception e) {
             SimpleLogger.uniqueWarn("Cannot handle SQL command: " + command + "\n" + e);
-            return new SqlDistanceWithMetrics(Double.MAX_VALUE,0);
+            return new SqlDistanceWithMetrics(Double.MAX_VALUE,0, true);
         }
 
 
@@ -211,7 +211,7 @@ public class SqlHandler {
         SqlDistanceWithMetrics dist;
         if (columns.isEmpty()) {
             //TODO check if table(s) not empty, and give >0 otherwise
-            dist = new SqlDistanceWithMetrics(0.0,0);
+            dist = new SqlDistanceWithMetrics(0.0,0,false);
         } else {
             dist = getDistanceForWhere(command, columns);
         }
@@ -252,7 +252,7 @@ public class SqlHandler {
             data = SqlScriptRunner.execCommand(connection, select);
         } catch (SQLException e) {
             SimpleLogger.uniqueWarn("Failed to execute query for retrieving data for computing SQL heuristics: " + select);
-            return new SqlDistanceWithMetrics(Double.MAX_VALUE, 0);
+            return new SqlDistanceWithMetrics(Double.MAX_VALUE, 0, true);
         }
 
         return HeuristicsCalculator.computeDistance(command, data, schema, taintHandler,advancedHeuristics);
