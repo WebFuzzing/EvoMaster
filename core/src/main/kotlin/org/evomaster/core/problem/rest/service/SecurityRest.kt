@@ -303,13 +303,15 @@ class SecurityRest {
                         individualsInSolution,
                         verb = last.verb,
                         path = last.path,
-                        statusCodes = listOf(401,403)
+                        statusCodes = listOf(401,403),
+                        authenticated = true
                     ).map {
                         RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
                             it,
                             verb = last.verb,
                             path = last.path,
-                            statusCodes = listOf(401,403)
+                            statusCodes = listOf(401,403),
+                            authenticated = true
                         )
                     }
                     if(with401or403.isEmpty()){

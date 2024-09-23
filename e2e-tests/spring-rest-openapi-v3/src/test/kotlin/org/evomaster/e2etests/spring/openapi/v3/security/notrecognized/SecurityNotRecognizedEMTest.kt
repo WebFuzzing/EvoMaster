@@ -29,7 +29,7 @@ class SecurityNotRecognizedEMTest : SpringTestBase(){
 
         runTestHandlingFlakyAndCompilation(
                 "SecurityNotRecognizedEM",
-                100
+                200
         ) { args: MutableList<String> ->
 
             setOption(args, "security", "true")
