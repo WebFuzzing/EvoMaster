@@ -224,9 +224,24 @@ class RestIndividualBuilder {
                      " ${test.joinToString(" , ") { it.getName() }}")
          }
 
-        val template = chooseClosestAncestor(target, listOf(HttpVerb.POST))
-            ?: (if(target.verb != HttpVerb.PUT) findTemplate(target.path, HttpVerb.PUT) else null)
-                ?: return false
+        val postTemplate = chooseClosestAncestor(target, listOf(HttpVerb.POST))
+        val putTemplate = if(target.verb != HttpVerb.PUT) findTemplate(target.path, HttpVerb.PUT) else null
+
+        if(postTemplate == null && putTemplate == null) {
+            return false
+        }
+        val template : RestCallAction = if(putTemplate == null){
+            postTemplate!!
+        } else if(postTemplate == null){
+            putTemplate
+        } else {
+           if(randomness.nextBoolean(0.8)){
+               //prefer POST if both are available
+               postTemplate
+           } else {
+               putTemplate
+           }
+        }
 
         val create = createBoundActionFor(template, target)
 
