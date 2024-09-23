@@ -1,7 +1,9 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
+import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.rest.*
+import org.evomaster.core.search.action.EnvironmentAction
 import org.evomaster.core.search.service.Randomness
 
 
@@ -47,6 +49,42 @@ class RestIndividualBuilder {
 
             return ind
         }
+
+        /**
+         * Create a new individual, based on [first] followed by [second].
+         * Initialization actions are properly taken care of.
+         */
+        fun merge(first: RestIndividual, second: RestIndividual): RestIndividual {
+
+            val before = first.seeAllActions().size + second.seeAllActions().size
+
+            val base = first.copy() as RestIndividual
+            base.ensureFlattenedStructure()
+            val other = second.copy() as RestIndividual
+            other.ensureFlattenedStructure()
+
+            base.addInitializingActions(base.seeInitializingActions().map { it.copy() as EnvironmentAction })
+
+            other.getFlattenMainEnterpriseActionGroup()!!.forEach { group ->
+                base.addMainEnterpriseActionGroup(group.copy() as EnterpriseActionGroup<*>)
+            }
+
+            /*
+                TODO are links properly handled in such a merge???
+                would need assertions here, as well as test cases
+             */
+
+            val after = base.seeAllActions().size
+            //merge shouldn't lose any actions
+            assert(before == after) { "$after!=$before" }
+
+            base.resetLocalIdRecursively()
+            base.doInitializeLocalId()
+
+            base.verifyValidity()
+
+            return base
+        }
     }
 
 
@@ -69,6 +107,9 @@ class RestIndividualBuilder {
         }
 
         val res = template.copy() as RestCallAction
+
+        res.resetLocalIdRecursively()
+
         if(res.isInitialized()){
             res.seeTopGenes().forEach { it.randomize(randomness, false) }
         } else {
@@ -200,10 +241,6 @@ class RestIndividualBuilder {
     }
 
 
-
-
-
-
     /**
      * Check in the schema if there is any action which is a direct child of [a] and last path element is a parameter
      */
@@ -213,6 +250,7 @@ class RestIndividualBuilder {
             .map { it.path }
             .any { it.isDirectChildOf(a.path) && it.isLastElementAParameter() }
     }
+
 
 
 }
