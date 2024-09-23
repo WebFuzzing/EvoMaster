@@ -38,6 +38,8 @@ open class RestResourceNode(
     companion object {
         private const val PROB_EXTRA_PATCH = 0.8
         val log: Logger = LoggerFactory.getLogger(RestResourceNode::class.java)
+
+        private val CONFIG_POTENTIAL_REST_ACTION_FOR_CREATION = mapOf(HttpVerb.POST to 0.8, HttpVerb.PUT to 0.2)
     }
 
     /**
@@ -140,7 +142,7 @@ open class RestResourceNode(
             if(!r.path.isEquivalent(this.path) && r.path.isDirectOrPossibleAncestorOf(this.path))
                 ancestors.add(r)
             else{
-                if (r.getActionByHttpVerb(HttpVerb.POST) != null)
+                if(r.getPotentialRestActionForCreation().isNotEmpty())
                     otherPostResourceNode.add(r)
             }
         }
@@ -294,6 +296,8 @@ open class RestResourceNode(
     private fun getSiblingPostAction() : RestCallAction?{
         return otherPostResourceNode.find { it.path.isSiblingForPreparingResource(this.path) }?.getActionByHttpVerb(HttpVerb.POST)
     }
+
+    private fun isPotentialRestActionForCreation(verb: HttpVerb) : Boolean = CONFIG_POTENTIAL_REST_ACTION_FOR_CREATION.containsKey(verb)
 
     private fun nextCreationPoints(path:RestPath, postCreationChain: PostCreationChain){
         val posts = chooseAllClosestAncestor(path, listOf(HttpVerb.POST))?.map { it.copy() as RestCallAction }
@@ -566,6 +570,8 @@ open class RestResourceNode(
     private fun getActionByHttpVerb(verb : HttpVerb) : RestCallAction? {
         return actions.find { a -> a.verb == verb }
     }
+
+    private fun getPotentialRestActionForCreation() : List<RestCallAction> = actions.filter { isPotentialRestActionForCreation(it.verb) }
 
     private fun chooseOneLongestPath(actions: List<RestCallAction>, randomness: Randomness? = null): RestCallAction {
 
