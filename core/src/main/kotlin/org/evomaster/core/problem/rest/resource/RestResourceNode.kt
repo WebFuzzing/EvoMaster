@@ -205,6 +205,8 @@ open class RestResourceNode(
                     verbs[it] = true
             }
         }
+
+
         verbs[verbs.size - 1] = verbs[RestResourceTemplateHandler.getIndexOfHttpVerb(HttpVerb.POST)]
     }
 

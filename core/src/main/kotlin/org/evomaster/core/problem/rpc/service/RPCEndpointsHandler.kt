@@ -262,7 +262,17 @@ class RPCEndpointsHandler {
 
         val actionKey = actionName(rpcActionDto.interfaceId, rpcActionDto.actionName)
 
-        rpcActionDto.mockRPCExternalServiceDtos?.forEach { dto->
+        rpcActionDto.mockRPCExternalServiceDtos?.forEachIndexed { index, dto->
+
+            if (dto == null)
+                throw IllegalArgumentException("extracted external service dto at $index for ${rpcActionDto.interfaceId}:${rpcActionDto.actionName} is null")
+
+            if(dto.responses == null || dto.responseTypes == null)
+                throw IllegalArgumentException("error in specified external service dto at $index for ${rpcActionDto.interfaceId}:${rpcActionDto.actionName}: responses or responseTypes are not specified")
+
+            if (dto.responses.isEmpty() || dto.responseTypes.isEmpty())
+                throw IllegalArgumentException("error in specified external service dto at $index for ${rpcActionDto.interfaceId}:${rpcActionDto.actionName}: responses or responseTypes are empty")
+
 
             if (dto.requestRules!=null && dto.requestRules.isNotEmpty() && dto.requestRules.size != dto.responses.size && dto.responses.size != dto.responseTypes.size)
                 throw IllegalArgumentException("the size of request identifications and responses should same but ${dto.requestRules.size} vs. ${dto.responses.size} vs. ${dto.responseTypes.size}")
@@ -270,8 +280,8 @@ class RPCEndpointsHandler {
 
             (dto.responseFullTypesWithGeneric?:dto.responseTypes).forEachIndexed { index, s ->
 
-                val exkey = RPCExternalServiceAction.getRPCExternalServiceActionName(
-                    dto.interfaceFullName, dto.functionName, dto.requestRules?.get(index), s
+                val exkey = getRPCExternalServiceActionName(
+                    dto.interfaceFullName, dto.functionName, dto.requestRules?.run { if (index < size) get(index) else null}, s
                 )
                 if (!seededExternalServiceCluster.containsKey(exkey)){
                     val responseTypeClass = interfaceDto.identifiedResponseTypes?.find { it.type.fullTypeNameWithGenericType == s || it.type.fullTypeName == s }
@@ -301,7 +311,7 @@ class RPCEndpointsHandler {
                         functionName = dto.functionName,
                         descriptiveInfo = dto.appKey,
                         inputParamTypes = dto.inputParameterTypes,
-                        requestRuleIdentifier = dto.requestRules?.get(index),
+                        requestRuleIdentifier = dto.requestRules?.getOrNull(index),
                         responseParam = response)
                     Lazy.assert { exkey == externalAction.getName() }
                     seededExternalServiceCluster[exkey] = externalAction

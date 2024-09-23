@@ -7,6 +7,34 @@ import org.evomaster.core.search.action.ActionResult
 object RestSecurityOracle {
 
 
+    fun hasExistenceLeakage(
+        path: RestPath,
+        individual: RestIndividual,
+        actionResults: List<ActionResult>
+    ): Boolean{
+
+        if(individual.sampleType != SampleType.SECURITY){
+            throw IllegalArgumentException("We verify security properties only on tests constructed to check them")
+        }
+
+        val a403 = individual.seeMainExecutableActions()
+            .filter {
+                it.verb == HttpVerb.GET
+                        && it.path == path
+                        && (actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult)
+                    .getStatusCode() == 403
+            }
+        val a404 = individual.seeMainExecutableActions()
+            .filter {
+                it.verb == HttpVerb.GET
+                        && it.path == path
+                        && (actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult)
+                    .getStatusCode() == 404
+            }
+
+        return a403.isNotEmpty() && a404.isNotEmpty()
+    }
+
     /**
      * For example verb target DELETE,
      * check if the last 2 actions represent the following scenario:

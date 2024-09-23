@@ -187,23 +187,40 @@ object RestIndividualSelectorUtils {
     }
 
 
+    /**
+     * @return a negative value if no action with the given properties is found in the individual.
+     */
+    @Deprecated(message = "Use findIndexOfAction")
     fun getIndexOfAction(individual: EvaluatedIndividual<RestIndividual>,
                          verb: HttpVerb,
                          path: RestPath,
                          statusCode: Int
     ) : Int {
+        return findIndexOfAction(individual, verb, path, statusCode)
+    }
 
-        val actions = individual.evaluatedMainActions()
+    /**
+     * @return a negative value if no action with the given properties is found in the individual.
+     */
+    fun findIndexOfAction(
+        individual: EvaluatedIndividual<RestIndividual>,
+        verb: HttpVerb? = null,
+        path: RestPath? = null,
+        status: Int? = null,
+        statusGroup: StatusGroup? = null,
+        authenticated: Boolean = false
+    ): Int {
 
-        for(index in actions.indices){
-            val a = actions[index].action as RestCallAction
-            val r = actions[index].result as RestCallResult
-
-            if(a.verb == verb && a.path.isEquivalent(path) && r.getStatusCode() == statusCode){
-                return index
-            }
+        if(status != null && statusGroup!= null){
+            throw IllegalArgumentException("Shouldn't specify both status and status group")
         }
 
+        individual.evaluatedMainActions().forEachIndexed { index, a ->
+                if(checkIfActionSatisfiesConditions(a, verb, path, status, statusGroup, authenticated)){
+                    return index
+                }
+        }
         return -1
     }
+
 }

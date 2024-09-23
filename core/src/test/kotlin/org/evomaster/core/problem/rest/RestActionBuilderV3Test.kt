@@ -1127,7 +1127,7 @@ class RestActionBuilderV3Test{
         )
         checkNumOfRootGene(map, skipInEM, 74, 100,22, 78, 14)
 
-        checkNumResource(map, skipInEM, 56, 25)
+        checkNumResource(map, skipInEM, 56, 20)
 
     }
 
@@ -1862,6 +1862,23 @@ class RestActionBuilderV3Test{
         /*
             unfortunately, it seems the wrong data is silently ignored
          */
+    }
+
+
+    @Test
+    fun testBindingPathChildEnum(){
+
+        val path = "/swagger/artificial/binding/binding_path_child_enum.yaml"
+        val actions = loadAndAssertActions(path, 2, RestActionBuilderV3.Options(probUseExamples = 1.0))
+
+        val parent = actions["GET:/v2/api/{x}"] as RestCallAction
+        val child = actions["GET:/v2/api/{x}/data"] as RestCallAction //using enum
+
+        // only 1 option in the enum
+        assertEquals("/v2/api/foo/data", child.resolvedPath())
+
+        parent.bindToSamePathResolution(child)
+        assertEquals("/v2/api/foo", parent.resolvedPath())
     }
 
 

@@ -335,7 +335,7 @@ class SamplerVerifierTest {
     private fun checkInvariant(ind: Individual){
 
         assertTrue(ind.isInitialized(), "Sampled individual is not initialized")
-        assertTrue(ind.areValidLocalIds(), "Sampled individual should have action components which have valid local ids")
+        assertTrue(ind.areValidActionLocalIds(), "Sampled individual should have action components which have valid local ids")
 
         val actions = ind.seeAllActions()
 
