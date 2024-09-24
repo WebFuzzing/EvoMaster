@@ -38,13 +38,5 @@ public class TableDto {
      */
     public List<TableCheckExpressionDto> tableCheckExpressions = new ArrayList<>();
 
-    /**
-     *
-     * @param columnName specified which ColumnDto should be returned based on its name
-     * @return ColumnDto based on specified columnName
-     */
-    public ColumnDto extractColumnInfo(String columnName){
-        Optional<ColumnDto> op = columns.stream().filter(c-> columnName.equalsIgnoreCase(c.name)).findAny();
-        return op.orElse(null);
-    }
+
 }

@@ -129,7 +129,7 @@ public class QueryResultTransformer {
 
 
     private static QueryResult convertInsertionDtoToQueryResult(InsertionDto insertionDto, String tableName, Set<String> relatedColumns, DbSchemaDto dto, List<QueryResult> existingQueryResults){
-        List<String> relatedColumnNames = insertionDto.extractColumnNames(relatedColumns);
+        List<String> relatedColumnNames = SqlDatabaseDtoUtils.extractColumnNames(insertionDto, relatedColumns);
         if (!relatedColumnNames.isEmpty()){
             QueryResult found = null;
             if (!existingQueryResults.isEmpty())
@@ -143,13 +143,13 @@ public class QueryResultTransformer {
             if (foundTableSchema.isPresent()){
                 TableDto tableDto = foundTableSchema.get();
 
-                List<String> printableValue = insertionDto.extractColumnPrintableValues(relatedColumns);
+                List<String> printableValue = SqlDatabaseDtoUtils.extractColumnPrintableValues(insertionDto, relatedColumns);
                 assert printableValue.size() == relatedColumnNames.size();
 
                 List<Object> values = new ArrayList<>();
 
                 for (int i = 0; i < printableValue.size(); i++){
-                    ColumnDto columnDto = tableDto.extractColumnInfo(relatedColumnNames.get(i));
+                    ColumnDto columnDto = SqlDatabaseDtoUtils.extractColumnInfo(tableDto, relatedColumnNames.get(i));
                     if (columnDto == null)
                         throw new IllegalArgumentException("Cannot find column schema of "+ relatedColumnNames.get(i) + " in Table "+ tableName);
                     values.add(getColumnValueBasedOnPrintableValue(printableValue.get(i), columnDto));

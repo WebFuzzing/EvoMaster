@@ -20,21 +20,5 @@ public class InsertionDto {
 
     public List<InsertionEntryDto> data = new ArrayList<>();
 
-    /**
-     *
-     * @param filter specifies which column should be returned, null means all columns should be returned
-     * @return name of columns based on specified filter
-     */
-    public List<String> extractColumnNames(Set<String> filter){
-        return data.stream().filter(i-> (filter == null) || filter.stream().anyMatch(f-> i.variableName.equalsIgnoreCase(f))).map(i-> i.variableName).collect(Collectors.toList());
-    }
 
-    /**
-     *
-     * @param filter specifies which column should be returned, null means all columns should be returned
-     * @return printable value of columns based on specified filter
-     */
-    public List<String> extractColumnPrintableValues(Set<String> filter){
-        return data.stream().filter(i-> (filter == null) || filter.stream().anyMatch(f-> i.variableName.equalsIgnoreCase(f))).map(i-> i.printableValue).collect(Collectors.toList());
-    }
 }
