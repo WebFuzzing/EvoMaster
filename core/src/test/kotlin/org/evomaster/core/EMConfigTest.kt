@@ -577,10 +577,10 @@ internal class EMConfigTest{
     }
 
     @Test
-    fun testDefaultNamingStrategyIsNumbered() {
+    fun testSetNumberedAsNamingStrategyIsNumbered() {
         val parser = EMConfig.getOptionParser()
         val config = EMConfig()
-        val options = parser.parse("--namingStrategy", "DEFAULT")
+        val options = parser.parse("--namingStrategy", "NUMBERED")
 
         config.updateProperties(options)
 
