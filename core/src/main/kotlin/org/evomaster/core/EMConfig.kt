@@ -487,6 +487,9 @@ class EMConfig {
             throw ConfigProblemException("Cannot generate SQL data if you not enable " +
                     "collecting heuristics with 'heuristicsForSQL'")
         }
+        if (generateSqlDataWithDSE && generateSqlDataWithSearch) {
+            throw ConfigProblemException("Cannot generate SQL data with both DSE and search")
+        }
 
         if (heuristicsForSQL && !extractSqlExecutionInfo) {
             throw ConfigProblemException("Cannot collect heuristics SQL data if you not enable " +
