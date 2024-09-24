@@ -2,7 +2,6 @@ package org.evomaster.core.output.service.naming
 
 enum class NamingStrategy {
 
-    DEFAULT,
     NUMBERED
     ;
 

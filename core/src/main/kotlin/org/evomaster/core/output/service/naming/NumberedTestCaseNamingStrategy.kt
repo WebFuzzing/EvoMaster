@@ -6,8 +6,8 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
 
 class NumberedTestCaseNamingStrategy(
-    val solution: Solution<*>
-) : TestCaseNamingStrategy {
+    solution: Solution<*>
+) : TestCaseNamingStrategy(solution) {
 
     override fun getTestCases(): List<TestCase> {
         var counter = 0

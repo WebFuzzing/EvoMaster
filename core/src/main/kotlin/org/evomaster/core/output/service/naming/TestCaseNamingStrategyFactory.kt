@@ -10,6 +10,6 @@ class TestCaseNamingStrategyFactory(
         if (namingStrategy.isNumbered()) {
             return NumberedTestCaseNamingStrategy(solution)
         }
-        return NumberedTestCaseNamingStrategy(solution)
+        throw IllegalStateException("Unrecognized naming strategy " + namingStrategy)
     }
 }
