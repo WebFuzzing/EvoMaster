@@ -337,6 +337,12 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         mongoHandler.reset();
     }
 
+    /**
+     *
+     * @param queryFromDatabase specifies whether to compute extra heuristics by retrieving data from database.
+     *                          if true, computing such heuristics will query all data in the related databases.
+     * @return a list of dto representing computed extra heuristic
+     */
     public final List<ExtraHeuristicsDto> getExtraHeuristics(boolean queryFromDatabase) {
 
         if (extras.size() == actionIndex) {
