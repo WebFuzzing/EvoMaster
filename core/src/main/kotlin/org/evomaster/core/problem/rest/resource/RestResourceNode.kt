@@ -9,7 +9,6 @@ import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.resource.dependency.*
-import org.evomaster.core.problem.rest.resource.dependency.PostCreationChain.Companion.CONFIG_POTENTIAL_REST_ACTION_FOR_CREATION
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.rest.util.ParserUtil
 import org.evomaster.core.problem.util.RestResourceTemplateHandler
@@ -251,7 +250,7 @@ open class RestResourceNode(
         val postCreation = PostCreationChain(mutableListOf())
         val posts = mutableMapOf<String, List<RestCallAction>>()
 
-        val currentPost = actions.filter { isPotentialRestActionForCreation(it.verb)}
+        val currentPost = actions.filter { it.isPotentialActionForCreation()}
         if (currentPost.isNotEmpty()){
             posts[currentPost.first().path.toString()] = currentPost.groupBy { it.verb }.map { (t, u) ->
                 if (u.size > 1){
@@ -267,7 +266,7 @@ open class RestResourceNode(
             if (siblingPost != null && siblingPost.isNotEmpty())
                 posts[siblingPost.first().path.toString()] = siblingPost
             else{
-                val ancestorPosts = chooseAllClosestAncestor(path, CONFIG_POTENTIAL_REST_ACTION_FOR_CREATION.keys)
+                val ancestorPosts = chooseAllClosestAncestor(path, RestCallAction.CONFIG_POTENTIAL_VERB_FOR_CREATION)
                 if (ancestorPosts != null) posts[ancestorPosts.first().path.toString()] = ancestorPosts
             }
 
@@ -300,10 +299,9 @@ open class RestResourceNode(
         return otherPostResourceNode.find { it.path.isSiblingForPreparingResource(this.path) }?.getPotentialRestActionForCreation()
     }
 
-    private fun isPotentialRestActionForCreation(verb: HttpVerb) : Boolean = CONFIG_POTENTIAL_REST_ACTION_FOR_CREATION.containsKey(verb)
 
     private fun nextCreationPoints(path:RestPath, postCreationChain: PostCreationChain){
-        val posts = chooseAllClosestAncestor(path, CONFIG_POTENTIAL_REST_ACTION_FOR_CREATION.keys)?.map { it.copy() as RestCallAction }
+        val posts = chooseAllClosestAncestor(path, RestCallAction.CONFIG_POTENTIAL_VERB_FOR_CREATION)?.map { it.copy() as RestCallAction }
         if(!posts.isNullOrEmpty()){
             val newPosts = posts.filter { !postCreationChain.hasAction(it) }
             postCreationChain.addActions(0, newPosts)
@@ -574,7 +572,7 @@ open class RestResourceNode(
         return actions.find { a -> a.verb == verb }
     }
 
-    private fun getPotentialRestActionForCreation() : List<RestCallAction> = actions.filter { isPotentialRestActionForCreation(it.verb) }
+    private fun getPotentialRestActionForCreation() : List<RestCallAction> = actions.filter { it.isPotentialActionForCreation() }
 
     private fun chooseOneLongestPath(actions: List<RestCallAction>, randomness: Randomness? = null): RestCallAction {
 
@@ -600,7 +598,7 @@ open class RestResourceNode(
     }
 
 
-    private fun chooseOneClosestAncestor(path: RestPath, verbs: Set<HttpVerb>): RestCallAction? {
+    private fun chooseOneClosestAncestor(path: RestPath, verbs: List<HttpVerb>): RestCallAction? {
         val ar = if(path.toString() == this.path.toString()){
             this
         }else{
@@ -614,7 +612,7 @@ open class RestResourceNode(
         return null
     }
 
-    private fun chooseAllClosestAncestor(path: RestPath, verbs: Set<HttpVerb>): List<RestCallAction>? {
+    private fun chooseAllClosestAncestor(path: RestPath, verbs: List<HttpVerb>): List<RestCallAction>? {
         val ar = if(path.toString() == this.path.toString()){
             this
         }else{
@@ -628,7 +626,7 @@ open class RestResourceNode(
         return null
     }
 
-    private fun hasWithVerbs(actions: List<RestCallAction>, verbs: Set<HttpVerb>): List<RestCallAction> {
+    private fun hasWithVerbs(actions: List<RestCallAction>, verbs: List<HttpVerb>): List<RestCallAction> {
         return actions.filter { a ->
             verbs.contains(a.verb)
         }

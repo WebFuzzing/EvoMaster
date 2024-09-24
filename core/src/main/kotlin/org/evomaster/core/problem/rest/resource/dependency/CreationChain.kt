@@ -37,7 +37,7 @@ abstract class CreationChain(
 class PostCreationChain(val actions: MutableList<RestCallAction>, private var failToCreate : Boolean = false) : CreationChain(){
 
     companion object{
-        val CONFIG_POTENTIAL_REST_ACTION_FOR_CREATION = mapOf(HttpVerb.POST to 0.8, HttpVerb.PUT to 0.2)
+        private val CONFIG_POTENTIAL_REST_ACTION_FOR_CREATION = mapOf(HttpVerb.POST to 0.8, HttpVerb.PUT to 0.2)
     }
     fun confirmFailure(){
         failToCreate = true
@@ -48,7 +48,8 @@ class PostCreationChain(val actions: MutableList<RestCallAction>, private var fa
             val creation = if (v.size > 2) {
                 throw IllegalStateException("more than 2 potential rest actions (i.e., ${v.size}) for creating $k resource")
             }else if (v.size == 2){
-                if (randomness.nextBoolean(CONFIG_POTENTIAL_REST_ACTION_FOR_CREATION[v.first().verb]!!)){
+                val prob = CONFIG_POTENTIAL_REST_ACTION_FOR_CREATION[v.first().verb]?:throw IllegalArgumentException("cannot find a probability for a Rest Action with ${v.first().verb} verb to create a resource")
+                if (randomness.nextBoolean(prob)){
                     v.first()
                 }else
                     v.last()
