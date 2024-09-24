@@ -275,9 +275,11 @@ open class RestResourceNode(
         if (posts.isNotEmpty()){
             postCreation.addActions(0, posts.values.flatten())
             for (post in posts.values.map { it.first() }){
-                if ((post).path.hasVariablePathParameters() &&
-                    (!post.path.isLastElementAParameter()) ||
-                    post.path.getVariableNames().size >= 2) {
+                /*
+                    in terms of eg, /v3/api/rfoo/{rfooId}
+                    if the verb is PUT, it is still needed to check its ancestor for preparing resources
+                 */
+                if ((post.path.hasVariablePathParameters() && (post.verb == HttpVerb.PUT || !post.path.isLastElementAParameter())) || post.path.getVariableNames().size >= 2) {
                     nextCreationPoints(post.path, postCreation)
                 }else
                     postCreation.confirmComplete()
