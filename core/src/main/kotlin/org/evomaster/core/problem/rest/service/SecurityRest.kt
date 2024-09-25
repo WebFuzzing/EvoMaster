@@ -295,8 +295,12 @@ class SecurityRest {
                     continue
                 }
 
-                //so, the given suspicious user that got 401 can get a 2xx on an endpoint.
-                // has anyone got a 401 or 403 on this endpoint?
+                /*
+                    so, the given suspicious user that got 401 can get a 2xx on an endpoint.
+                    has anyone got a 401 or 403 on this endpoint?
+                    actually, could even be same user, eg when trying to access resource of
+                    another user could get a 403
+                */
                 for(success in ok){
                     val last = success.seeMainExecutableActions().last()
                     val with401or403 = RestIndividualSelectorUtils.findIndividuals(

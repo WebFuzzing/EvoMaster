@@ -31,19 +31,21 @@ object RestSecurityOracle {
         val wasOk = individual.seeMainExecutableActions()
             .filter { !it.auth.isDifferentFrom(action.auth)
                     && StatusGroup.G_2xx.isInGroup(
-                (actionResults.find { r -> r.sourceLocalId == action.getLocalId() } as RestCallResult).getStatusCode())}
+                (actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult).getStatusCode())}
             .map { it.getName() }
         if(wasOk.isEmpty()){
             return false
         }
 
+        /*
+            to check if endpoint needs auth, need either a 401 or 403, regardless of user.
+            it can be the same user, eg, accessing resource created by another user
+         */
         return individual.seeMainExecutableActions().any {
-            //other authenticated user
-            it.auth.isDifferentFrom(action.auth)
                     // checking endpoint in which target user got a 2xx
-                    && wasOk.contains(it.getName())
+                    wasOk.contains(it.getName())
                     //but here this other user got a 401 or 403, so the endpoint requires auth
-                    && listOf(401,403).contains((actionResults.find { r -> r.sourceLocalId == action.getLocalId() } as RestCallResult)
+                    && listOf(401,403).contains((actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult)
                         .getStatusCode())
         }
     }
