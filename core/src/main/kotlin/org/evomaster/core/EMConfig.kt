@@ -14,6 +14,7 @@ import org.evomaster.core.config.ConfigUtil
 import org.evomaster.core.config.ConfigsFromFile
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.output.naming.NamingStrategy
 import org.evomaster.core.search.impact.impactinfocollection.GeneMutationSelectionMethod
 import org.evomaster.core.search.service.IdMapper
 import org.slf4j.LoggerFactory
@@ -82,6 +83,8 @@ class EMConfig {
         private val defaultAlgorithmForWhiteBox = Algorithm.MIO
 
         private val defaultOutputFormatForBlackBox = OutputFormat.PYTHON_UNITTEST
+
+        private val defaultTestCaseNamingStrategy = NamingStrategy.NUMBERED
 
         fun validateOptions(args: Array<String>): OptionParser {
 
@@ -1423,6 +1426,7 @@ class EMConfig {
     @Min(-1.0)
     var maxLengthOfTraces = 10
 
+    @Deprecated("No longer in use")
     @Cfg("Enable custom naming and sorting criteria")
     var customNaming = true
 
@@ -2347,6 +2351,9 @@ class EMConfig {
     @Cfg("Specify the probability of using the data pool when sampling test cases." +
             " This is for white-box (wb) mode")
     var wbProbabilityUseDataPool = 0.2
+
+    @Cfg("Specify the naming strategy for test cases.")
+    var namingStrategy = defaultTestCaseNamingStrategy
 
 
     fun getProbabilityUseDataPool() : Double{
