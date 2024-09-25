@@ -11,6 +11,7 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.enterprise.DetectedFault
 import org.evomaster.core.problem.enterprise.SampleType
+import org.evomaster.core.problem.enterprise.auth.NoAuth
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.externalservice.HostnameResolutionInfo
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
@@ -995,6 +996,32 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         handleForbiddenOperation(HttpVerb.PUT, FaultCategory.SECURITY_FORBIDDEN_PUT, individual, actionResults, fv)
         handleForbiddenOperation(HttpVerb.PATCH, FaultCategory.SECURITY_FORBIDDEN_PATCH, individual, actionResults, fv)
         handleExistenceLeakage(individual,actionResults,fv)
+        handleNotRecognizedAuthenticated(individual, actionResults, fv)
+    }
+
+    private fun handleNotRecognizedAuthenticated(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        val notRecognized = individual.seeMainExecutableActions()
+            .filter { it.auth !is NoAuth
+                    && (actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult)
+                .getStatusCode() == 401
+            }
+            .filter { RestSecurityOracle.hasNotRecognizedAuthenticated(it, individual, actionResults) }
+        if(notRecognized.isEmpty()){
+            return
+        }
+
+        notRecognized.forEach {
+            val scenarioId = idMapper.handleLocalTarget(
+                idMapper.getFaultDescriptiveId(FaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED, it.getName())
+            )
+            fv.updateTarget(scenarioId, 1.0, it.positionAmongMainActions())
+            val r = actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult
+            r.addFault(DetectedFault(FaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED, it.getName()))
+        }
     }
 
     private fun handleExistenceLeakage(

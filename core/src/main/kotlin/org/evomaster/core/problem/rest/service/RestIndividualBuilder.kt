@@ -3,6 +3,7 @@ package org.evomaster.core.problem.rest.service
 import com.google.inject.Inject
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.rest.*
+import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.action.EnvironmentAction
 import org.evomaster.core.search.service.Randomness
 
@@ -21,6 +22,24 @@ class RestIndividualBuilder {
 
 
     companion object{
+
+        fun sliceAllCallsInIndividualAfterAction(
+            evaluatedIndividual: EvaluatedIndividual<RestIndividual>,
+            verb: HttpVerb? = null,
+            path: RestPath? = null,
+            status: Int? = null,
+            statusGroup: StatusGroup? = null,
+            statusCodes: List<Int>? = null,
+            authenticated: Boolean? = null,
+            authenticatedWith: String? = null
+        ) : RestIndividual{
+
+            val index = RestIndividualSelectorUtils.findIndexOfAction(
+                evaluatedIndividual, verb, path, status, statusGroup, statusCodes, authenticated, authenticatedWith)
+
+            return sliceAllCallsInIndividualAfterAction(evaluatedIndividual.individual, index)
+        }
+
 
         /**
          * Create a copy of [restIndividual], where all main actions after index are removed
@@ -48,6 +67,11 @@ class RestIndividualBuilder {
             ind.fixResourceForwardLinks()
 
             return ind
+        }
+
+
+        fun merge(first: RestIndividual, second: RestIndividual, third: RestIndividual): RestIndividual {
+            return merge(merge(first, second), third)
         }
 
         /**
@@ -200,9 +224,24 @@ class RestIndividualBuilder {
                      " ${test.joinToString(" , ") { it.getName() }}")
          }
 
-        val template = chooseClosestAncestor(target, listOf(HttpVerb.POST))
-            ?: (if(target.verb != HttpVerb.PUT) findTemplate(target.path, HttpVerb.PUT) else null)
-                ?: return false
+        val postTemplate = chooseClosestAncestor(target, listOf(HttpVerb.POST))
+        val putTemplate = if(target.verb != HttpVerb.PUT) findTemplate(target.path, HttpVerb.PUT) else null
+
+        if(postTemplate == null && putTemplate == null) {
+            return false
+        }
+        val template : RestCallAction = if(putTemplate == null){
+            postTemplate!!
+        } else if(postTemplate == null){
+            putTemplate
+        } else {
+           if(randomness.nextBoolean(0.8)){
+               //prefer POST if both are available
+               postTemplate
+           } else {
+               putTemplate
+           }
+        }
 
         val create = createBoundActionFor(template, target)
 

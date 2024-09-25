@@ -63,10 +63,17 @@ class RestCallAction(
     var backwardLinkReference: BackwardLinkReference? = null
 ) : HttpWsAction(auth, parameters) {
 
+    companion object{
+        /**
+         * defining potential verb for creating resources
+         */
+        val CONFIG_POTENTIAL_VERB_FOR_CREATION = listOf(HttpVerb.PUT, HttpVerb.POST)
+    }
+
     var saveCreatedResourceLocation : Boolean = saveLocation
         set(value) {
-            if(value && verb != HttpVerb.POST){
-                throw IllegalArgumentException("Save location can only be used for POST")
+            if(value && !CONFIG_POTENTIAL_VERB_FOR_CREATION.contains(verb)){
+                throw IllegalArgumentException("Save location can only be used for ${CONFIG_POTENTIAL_VERB_FOR_CREATION.joinToString(",")}")
             }
             field = value
         }
@@ -89,11 +96,13 @@ class RestCallAction(
      *  following REST call can use such id to refer to the dynamically generated resource.
      */
     fun postLocationId() : String {
-        if(verb != HttpVerb.POST){
+        if(!CONFIG_POTENTIAL_VERB_FOR_CREATION.contains(verb)){
             throw IllegalStateException("Location Ids are meaningful only for POST operations")
         }
         return  path.lastElement()
     }
+
+    fun isPotentialActionForCreation() = CONFIG_POTENTIAL_VERB_FOR_CREATION.contains(verb)
 
     fun isLocationChained() = saveCreatedResourceLocation || usePreviousLocationId?.isNotBlank() ?: false
 
