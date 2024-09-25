@@ -3,6 +3,7 @@ package org.evomaster.core.search
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.output.Termination
+import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.search.action.ActionFilter
 
@@ -79,5 +80,11 @@ where T : Individual {
     fun convertSolutionToExecutiveSummary() : Solution<T> {
         return Solution(individuals, testSuiteNamePrefix, testSuiteNameSuffix, Termination.FAULT_REPRESENTATIVES,
             individualsDuringSeeding, targetsDuringSeeding)
+    }
+
+    fun distinctDetectedFaultTypes(): Set<Int> {
+        return DetectedFaultUtils.getDetectedFaultCategories(this)
+            .map { it.code }
+            .toSet()
     }
 }

@@ -244,16 +244,12 @@ class Statistics : SearchListener {
             //distinct500Faults - counts the number of 500 (and NOT the other in 5xx), per endpoint, and distinct based on the last
             //executed line
             add(Pair("distinct500Faults", "" + solution.overall.potential500Faults(idMapper).size ))
-            // failedOracleExpectations - the number of calls in the individual that fail one active partial oracle.
-            // However, 5xx are not counted here.
-            //add(Pair("failedOracleExpectations", "" + failedOracle(solution)))
             /**
              * this is the total of all potential faults, e.g. distinct500Faults + failedOracleExpectations + any other
              * for RPC, this comprises internal errors, exceptions (declared and unexpected) and customized service errors
              */
-            //potential oracle we are going to introduce.
-            //Note: that 500 (and 5xx in general) MUST not be counted in failedOracles
             add(Pair("potentialFaults", "" + solution.overall.potentialFoundFaults(idMapper).size))
+            add(Pair("potentialFaultCategories", "" + solution.distinctDetectedFaultTypes().toList().sorted().joinToString("|")))
 
             // RPC statistics of sut and seeded tests
             add(Pair("numberOfRPCInterfaces", "${rpcInfo?.schemas?.size?:0}"))
