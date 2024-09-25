@@ -5,27 +5,27 @@ import org.evomaster.client.java.controller.api.dto.database.execution.MongoFail
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
-import org.evomaster.core.sql.SqlAction
-import org.evomaster.core.sql.SqlActionUtils
-import org.evomaster.core.sql.SqlInsertBuilder
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
-import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
-import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.param.HttpWsResponseParam
-import org.evomaster.core.search.action.EnvironmentAction
+import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
+import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.action.EnvironmentAction
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.impact.impactinfocollection.ImpactsOfIndividual
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.mutator.StructureMutator
 import org.evomaster.core.solver.SMTLibZ3DbConstraintSolver
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.sql.SqlActionUtils
+import org.evomaster.core.sql.SqlInsertBuilder
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import kotlin.math.max
@@ -343,10 +343,10 @@ abstract class ApiWsStructureMutator : StructureMutator() {
             /*
                 tmp solution to set maximum size of executing existing data in sql
              */
-            val existing = if (config.maximumExistingDataToSampleInDb > 0
-                && sampler.existingSqlData.size > config.maximumExistingDataToSampleInDb
+            val existing = if (config.maxSizeOfExistingDataToSample > 0
+                && sampler.existingSqlData.size > config.maxSizeOfExistingDataToSample
             ) {
-                randomness.choose(sampler.existingSqlData, config.maximumExistingDataToSampleInDb)
+                randomness.choose(sampler.existingSqlData, config.maxSizeOfExistingDataToSample)
             } else {
                 sampler.existingSqlData
             }.map { it.copy() } as List<EnvironmentAction>

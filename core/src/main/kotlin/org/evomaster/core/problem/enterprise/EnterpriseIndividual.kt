@@ -210,6 +210,11 @@ abstract class EnterpriseIndividual(
     }
 
 
+    fun addMainEnterpriseActionGroup(group: EnterpriseActionGroup<*>){
+        val main = GroupsOfChildren.MAIN
+        addChildToGroup(group, main)
+    }
+
     fun addMainActionInEmptyEnterpriseGroup(relativePosition: Int = -1, action: MainAction){
         val main = GroupsOfChildren.MAIN
         val g = EnterpriseActionGroup(mutableListOf(action), action.javaClass)
@@ -219,6 +224,7 @@ abstract class EnterpriseIndividual(
         } else{
             val base = groupsView()!!.startIndexForGroupInsertionInclusive(main)
             val position = base + relativePosition
+            //TODO is this correct??? adding action instead of g
             addChildToGroup(position, action, main)
         }
     }
@@ -319,6 +325,22 @@ abstract class EnterpriseIndividual(
 
     private fun getFirstIndexOfHostnameResolutionActionToAdd(): Int =
         groupsView()!!.startIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_DNS)
+
+
+
+    fun addInitializingActions(actions: List<EnvironmentAction>){
+
+        val invalid = actions.filter { it !is SqlAction && it !is MongoDbAction && it !is HostnameResolutionAction }
+        if(invalid.isNotEmpty()){
+            throw IllegalArgumentException("Invalid ${invalid.size} environment actions of type:" +
+                    " ${invalid.map { it::class.java.simpleName }.toSet().joinToString(", ")}")
+        }
+
+        addInitializingDbActions(actions = actions.filterIsInstance<SqlAction>())
+        addInitializingMongoDbActions(actions = actions.filterIsInstance<MongoDbAction>())
+        addInitializingHostnameResolutionActions(actions = actions.filterIsInstance<HostnameResolutionAction>())
+    }
+
 
     /**
      * add [actions] at [relativePosition]

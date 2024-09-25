@@ -27,7 +27,7 @@ class ResourceRestMutator : StandardMutator<RestIndividual>() {
             GeneFilter.NO_SQL
         ) }.filter(Gene::isMutable)
 
-        if (!config.generateSqlDataWithSearch)
+        if (!config.shouldGenerateSqlData())
             return restGenes
 
         return individual.seeInitializingActions().flatMap { it.seeTopGenes() }.filter(Gene::isMutable)

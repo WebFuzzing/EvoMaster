@@ -226,8 +226,7 @@ class RestIndividualSelectorUtilsTest : IntegrationTestRestBase() {
 
         // in the beginning all the individuals are selected since each has GET request
         val selectedIndividuals = RestIndividualSelectorUtils.findIndividuals(
-            listOfIndividuals, null,
-            null, null, null, true
+            listOfIndividuals, authenticated = true
         )
 
         // Only 1 individual has a request with the path "/api/endpoint5/setStatus/{status}"
@@ -344,8 +343,7 @@ class RestIndividualSelectorUtilsTest : IntegrationTestRestBase() {
         val listOfIndividuals = initializeIndividuals()
 
         val selectedIndividuals = RestIndividualSelectorUtils.findIndividuals(
-            listOfIndividuals, null, null, null,
-            null, true)
+            listOfIndividuals, authenticated = true)
 
         Assertions.assertTrue(selectedIndividuals.size == 3)
 
@@ -357,8 +355,7 @@ class RestIndividualSelectorUtilsTest : IntegrationTestRestBase() {
         val listOfIndividuals = initializeIndividuals()
 
         val selectedIndividuals = RestIndividualSelectorUtils.findIndividuals(
-            listOfIndividuals, null, null, null,
-            null, false)
+            listOfIndividuals, authenticated = false)
 
         Assertions.assertTrue(selectedIndividuals.size == 4)
 
@@ -419,7 +416,7 @@ class RestIndividualSelectorUtilsTest : IntegrationTestRestBase() {
      * Test getting indices of actions in individuals.
      */
     @Test
-    fun testGetIndexOfAction() {
+    fun testFindIndexOfAction() {
 
         val listOfIndividuals = initializeIndividuals()
 
@@ -439,7 +436,7 @@ class RestIndividualSelectorUtilsTest : IntegrationTestRestBase() {
      * Test getting indices of actions in individuals.
      */
     @Test
-    fun testGetIndexOfActionNonExistent() {
+    fun testFindIndexOfActionNonExistent() {
 
         val listOfIndividuals = initializeIndividuals()
 

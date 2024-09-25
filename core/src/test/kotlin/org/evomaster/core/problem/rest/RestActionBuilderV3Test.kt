@@ -1127,7 +1127,7 @@ class RestActionBuilderV3Test{
         )
         checkNumOfRootGene(map, skipInEM, 74, 100,22, 78, 14)
 
-        checkNumResource(map, skipInEM, 56, 25)
+        checkNumResource(map, skipInEM, 56, 20)
 
     }
 
@@ -1866,6 +1866,23 @@ class RestActionBuilderV3Test{
 
 
     @Test
+    fun testBindingPathChildEnum(){
+
+        val path = "/swagger/artificial/binding/binding_path_child_enum.yaml"
+        val actions = loadAndAssertActions(path, 2, RestActionBuilderV3.Options(probUseExamples = 1.0))
+
+        val parent = actions["GET:/v2/api/{x}"] as RestCallAction
+        val child = actions["GET:/v2/api/{x}/data"] as RestCallAction //using enum
+
+        // only 1 option in the enum
+        assertEquals("/v2/api/foo/data", child.resolvedPath())
+
+        parent.bindToSamePathResolution(child)
+        assertEquals("/v2/api/foo", parent.resolvedPath())
+    }
+
+
+    @Test
     fun testExamplesPathChildBinding(){
 
         val path = "/swagger/artificial/defaultandexamples/examples_path_child.yaml"
@@ -1903,4 +1920,41 @@ class RestActionBuilderV3Test{
         assertEquals("/v2/api/$target", parent.resolvedPath())
     }
 
+    @Test
+    fun testPropertyStringTypeAndCharFormat(){
+        val dtoSchemaName = "foo.com.BarDto"
+        val dtoSchema = """
+            "$dtoSchemaName":{
+                "type":"object",
+                "properties": {
+                    "char_field":{
+                        "type":"string", 
+                        "format":"char"
+                    }
+                },
+                "required": [
+                    "char_field"
+                    
+                ]
+            }
+            """.trimIndent()
+
+        val allSchemas = "\"${dtoSchemaName}\":{${dtoSchema}}"
+
+        val gene = RestActionBuilderV3.createGeneForDTO(
+            dtoSchemaName,
+            allSchemas,
+            RestActionBuilderV3.Options(enableConstraintHandling = true)
+        )
+
+        assertTrue(gene is ObjectGene)
+        (gene as ObjectGene).apply {
+            assertEquals(1, gene.fields.size)
+            assertEquals("char_field", gene.fields[0].name)
+            assertTrue(gene.fields[0] is StringGene)
+            val stringGene = gene.fields[0] as StringGene
+            assertEquals(1, stringGene.minLength)
+            assertEquals(1, stringGene.maxLength)
+        }
+    }
 }

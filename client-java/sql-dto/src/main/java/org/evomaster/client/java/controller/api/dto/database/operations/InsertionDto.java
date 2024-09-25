@@ -2,6 +2,8 @@ package org.evomaster.client.java.controller.api.dto.database.operations;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class InsertionDto {
 
@@ -17,4 +19,6 @@ public class InsertionDto {
     public String targetTable;
 
     public List<InsertionEntryDto> data = new ArrayList<>();
+
+
 }

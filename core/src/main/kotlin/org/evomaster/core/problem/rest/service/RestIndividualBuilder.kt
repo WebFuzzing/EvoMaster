@@ -1,7 +1,10 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
+import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.rest.*
+import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.action.EnvironmentAction
 import org.evomaster.core.search.service.Randomness
 
 
@@ -19,6 +22,24 @@ class RestIndividualBuilder {
 
 
     companion object{
+
+        fun sliceAllCallsInIndividualAfterAction(
+            evaluatedIndividual: EvaluatedIndividual<RestIndividual>,
+            verb: HttpVerb? = null,
+            path: RestPath? = null,
+            status: Int? = null,
+            statusGroup: StatusGroup? = null,
+            statusCodes: List<Int>? = null,
+            authenticated: Boolean? = null,
+            authenticatedWith: String? = null
+        ) : RestIndividual{
+
+            val index = RestIndividualSelectorUtils.findIndexOfAction(
+                evaluatedIndividual, verb, path, status, statusGroup, statusCodes, authenticated, authenticatedWith)
+
+            return sliceAllCallsInIndividualAfterAction(evaluatedIndividual.individual, index)
+        }
+
 
         /**
          * Create a copy of [restIndividual], where all main actions after index are removed
@@ -47,6 +68,47 @@ class RestIndividualBuilder {
 
             return ind
         }
+
+
+        fun merge(first: RestIndividual, second: RestIndividual, third: RestIndividual): RestIndividual {
+            return merge(merge(first, second), third)
+        }
+
+        /**
+         * Create a new individual, based on [first] followed by [second].
+         * Initialization actions are properly taken care of.
+         */
+        fun merge(first: RestIndividual, second: RestIndividual): RestIndividual {
+
+            val before = first.seeAllActions().size + second.seeAllActions().size
+
+            val base = first.copy() as RestIndividual
+            base.ensureFlattenedStructure()
+            val other = second.copy() as RestIndividual
+            other.ensureFlattenedStructure()
+
+            base.addInitializingActions(base.seeInitializingActions().map { it.copy() as EnvironmentAction })
+
+            other.getFlattenMainEnterpriseActionGroup()!!.forEach { group ->
+                base.addMainEnterpriseActionGroup(group.copy() as EnterpriseActionGroup<*>)
+            }
+
+            /*
+                TODO are links properly handled in such a merge???
+                would need assertions here, as well as test cases
+             */
+
+            val after = base.seeAllActions().size
+            //merge shouldn't lose any actions
+            assert(before == after) { "$after!=$before" }
+
+            base.resetLocalIdRecursively()
+            base.doInitializeLocalId()
+
+            base.verifyValidity()
+
+            return base
+        }
     }
 
 
@@ -69,6 +131,9 @@ class RestIndividualBuilder {
         }
 
         val res = template.copy() as RestCallAction
+
+        res.resetLocalIdRecursively()
+
         if(res.isInitialized()){
             res.seeTopGenes().forEach { it.randomize(randomness, false) }
         } else {
@@ -159,9 +224,24 @@ class RestIndividualBuilder {
                      " ${test.joinToString(" , ") { it.getName() }}")
          }
 
-        val template = chooseClosestAncestor(target, listOf(HttpVerb.POST))
-            ?: (if(target.verb != HttpVerb.PUT) findTemplate(target.path, HttpVerb.PUT) else null)
-                ?: return false
+        val postTemplate = chooseClosestAncestor(target, listOf(HttpVerb.POST))
+        val putTemplate = if(target.verb != HttpVerb.PUT) findTemplate(target.path, HttpVerb.PUT) else null
+
+        if(postTemplate == null && putTemplate == null) {
+            return false
+        }
+        val template : RestCallAction = if(putTemplate == null){
+            postTemplate!!
+        } else if(postTemplate == null){
+            putTemplate
+        } else {
+           if(randomness.nextBoolean(0.8)){
+               //prefer POST if both are available
+               postTemplate
+           } else {
+               putTemplate
+           }
+        }
 
         val create = createBoundActionFor(template, target)
 
@@ -200,10 +280,6 @@ class RestIndividualBuilder {
     }
 
 
-
-
-
-
     /**
      * Check in the schema if there is any action which is a direct child of [a] and last path element is a parameter
      */
@@ -213,6 +289,7 @@ class RestIndividualBuilder {
             .map { it.path }
             .any { it.isDirectChildOf(a.path) && it.isLastElementAParameter() }
     }
+
 
 
 }

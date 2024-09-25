@@ -2,10 +2,80 @@ package org.evomaster.core.problem.rest
 
 import org.apache.http.HttpStatus
 import org.evomaster.core.problem.enterprise.SampleType
+import org.evomaster.core.problem.enterprise.auth.NoAuth
 import org.evomaster.core.search.action.ActionResult
 
 object RestSecurityOracle {
 
+    private fun verifySampleType(individual: RestIndividual){
+        if(individual.sampleType != SampleType.SECURITY){
+            throw IllegalArgumentException("We verify security properties only on tests constructed to check them")
+        }
+    }
+
+    fun hasNotRecognizedAuthenticated(
+        action: RestCallAction,
+        individual: RestIndividual,
+        actionResults: List<ActionResult>
+    ): Boolean{
+        verifySampleType(individual)
+
+        if(action.auth is NoAuth){
+            return false
+        }
+        if((actionResults.find { it.sourceLocalId == action.getLocalId() } as RestCallResult).getStatusCode() != 401){
+            return false
+        }
+
+        //got a 2xx on other endpoint
+        val wasOk = individual.seeMainExecutableActions()
+            .filter { !it.auth.isDifferentFrom(action.auth)
+                    && StatusGroup.G_2xx.isInGroup(
+                (actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult).getStatusCode())}
+            .map { it.getName() }
+        if(wasOk.isEmpty()){
+            return false
+        }
+
+        /*
+            to check if endpoint needs auth, need either a 401 or 403, regardless of user.
+            it can be the same user, eg, accessing resource created by another user
+         */
+        return individual.seeMainExecutableActions().any {
+                    // checking endpoint in which target user got a 2xx
+                    wasOk.contains(it.getName())
+                    //but here this other user got a 401 or 403, so the endpoint requires auth
+                    && listOf(401,403).contains((actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult)
+                        .getStatusCode())
+        }
+    }
+
+
+    fun hasExistenceLeakage(
+        path: RestPath,
+        individual: RestIndividual,
+        actionResults: List<ActionResult>
+    ): Boolean{
+
+        verifySampleType(individual)
+
+        val a403 = individual.seeMainExecutableActions()
+            .filter {
+                it.verb == HttpVerb.GET
+                        && it.path == path
+                        && (actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult)
+                    .getStatusCode() == 403
+            }
+        val a404 = individual.seeMainExecutableActions()
+            .filter {
+                it.verb == HttpVerb.GET
+                        && it.path == path
+                        && (actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult)
+                    .getStatusCode() == 404
+            }
+
+        return a403.isNotEmpty() && a404.isNotEmpty()
+    }
 
     /**
      * For example verb target DELETE,
@@ -27,9 +97,7 @@ object RestSecurityOracle {
         actionResults: List<ActionResult>
     ) : Boolean{
 
-        if(individual.sampleType != SampleType.SECURITY){
-            throw IllegalArgumentException("We verify security properties only on tests constructed to check them")
-        }
+        verifySampleType(individual)
 
         // get actions in the individual
         val actions = individual.seeMainExecutableActions()

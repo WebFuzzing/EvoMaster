@@ -11,6 +11,7 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.enterprise.DetectedFault
 import org.evomaster.core.problem.enterprise.SampleType
+import org.evomaster.core.problem.enterprise.auth.NoAuth
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.externalservice.HostnameResolutionInfo
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
@@ -720,6 +721,8 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         val modified = RestLinkValueUpdater.update(a,link,previous,result)
         if(modified){
             reference.actualSourceActionLocalId = previous.getLocalId()
+        } else{
+            reference.actualSourceActionLocalId = null
         }
         return modified
     }
@@ -992,6 +995,62 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         handleForbiddenOperation(HttpVerb.DELETE, FaultCategory.SECURITY_FORBIDDEN_DELETE, individual, actionResults, fv)
         handleForbiddenOperation(HttpVerb.PUT, FaultCategory.SECURITY_FORBIDDEN_PUT, individual, actionResults, fv)
         handleForbiddenOperation(HttpVerb.PATCH, FaultCategory.SECURITY_FORBIDDEN_PATCH, individual, actionResults, fv)
+        handleExistenceLeakage(individual,actionResults,fv)
+        handleNotRecognizedAuthenticated(individual, actionResults, fv)
+    }
+
+    private fun handleNotRecognizedAuthenticated(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        val notRecognized = individual.seeMainExecutableActions()
+            .filter { it.auth !is NoAuth
+                    && (actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult)
+                .getStatusCode() == 401
+            }
+            .filter { RestSecurityOracle.hasNotRecognizedAuthenticated(it, individual, actionResults) }
+        if(notRecognized.isEmpty()){
+            return
+        }
+
+        notRecognized.forEach {
+            val scenarioId = idMapper.handleLocalTarget(
+                idMapper.getFaultDescriptiveId(FaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED, it.getName())
+            )
+            fv.updateTarget(scenarioId, 1.0, it.positionAmongMainActions())
+            val r = actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult
+            r.addFault(DetectedFault(FaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED, it.getName()))
+        }
+    }
+
+    private fun handleExistenceLeakage(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        val getPaths = individual.seeMainExecutableActions()
+            .filter { it.verb == HttpVerb.GET }
+            .map { it.path }
+            .toSet()
+
+        val faultyPaths = getPaths.filter {RestSecurityOracle.hasExistenceLeakage(it, individual, actionResults)  }
+        if(faultyPaths.isEmpty()){
+            return
+        }
+
+        for(index in individual.seeMainExecutableActions().indices){
+            val a = individual.seeMainExecutableActions()[index]
+            val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as RestCallResult
+
+            if(a.verb == HttpVerb.GET && faultyPaths.contains(a.path) && r.getStatusCode() == 404){
+                val scenarioId = idMapper.handleLocalTarget(
+                    idMapper.getFaultDescriptiveId(FaultCategory.SECURITY_EXISTENCE_LEAKAGE, a.getName())
+                )
+                fv.updateTarget(scenarioId, 1.0, index)
+                r.addFault(DetectedFault(FaultCategory.SECURITY_EXISTENCE_LEAKAGE, a.getName()))
+            }
+        }
     }
 
     private fun handleForbiddenOperation(

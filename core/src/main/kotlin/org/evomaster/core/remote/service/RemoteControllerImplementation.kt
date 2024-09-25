@@ -327,6 +327,7 @@ class RemoteControllerImplementation() : RemoteController{
                     .queryParam("ids", queryParam)
                     .queryParam("killSwitch", !ignoreKillSwitch && config.killSwitch)
                     .queryParam("allCovered", allCovered)
+                    .queryParam("queryFromDatabase", !config.useInsertionForSqlHeuristics)
                     .request(MediaType.APPLICATION_JSON_TYPE)
                     .get()
         }
@@ -364,6 +365,7 @@ class RemoteControllerImplementation() : RemoteController{
         val response = makeHttpCall {
             getWebTarget()
                     .path(ControllerConstants.NEW_ACTION)
+                    .queryParam("queryFromDatabase", !config.useInsertionForSqlHeuristics)
                     .request()
                     .put(Entity.entity(actionDto, MediaType.APPLICATION_JSON_TYPE))
         }

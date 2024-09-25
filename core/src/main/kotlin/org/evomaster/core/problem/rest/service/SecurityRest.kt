@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
+import com.webfuzzing.commons.faults.FaultCategory
 import javax.annotation.PostConstruct
 
 import org.evomaster.core.logging.LoggingUtil
@@ -21,7 +22,11 @@ import org.slf4j.LoggerFactory
 
 
 /**
- * Service class used to do security testing after the search phase
+ * Service class used to do security testing after the search phase.
+ *
+ * This class can add new test cases to the archive that, by construction, do reveal a security fault.
+ * But, the actual check if a test indeed finds a fault is in [RestSecurityOracle]
+ * called in the fitness function, and not directly here.
  */
 class SecurityRest {
 
@@ -83,8 +88,11 @@ class SecurityRest {
     fun applySecurityPhase(): Solution<RestIndividual> {
 
         // extract individuals from the archive
-        val archivedSolution: Solution<RestIndividual> = this.archive.extractSolution()
-        individualsInSolution = archivedSolution.individuals
+        individualsInSolution = this.archive.extractSolution().individuals
+
+        expandWithForbidden()
+        //recompute due to possible new tests we might need
+        individualsInSolution = this.archive.extractSolution().individuals
 
 
         // we can see what is available from the schema, and then check if already existing a test for it in archive
@@ -96,6 +104,108 @@ class SecurityRest {
         // just return the archive for solutions including the security tests.
         return archive.extractSolution()
     }
+
+
+    /**
+     * During the search, we do not explicitly try different users in the same test case.
+     * as such, getting tests with 403 might be tricky.
+     * but having such tests might be necessary for some types of oracles we designed
+     */
+    private fun expandWithForbidden() {
+
+        val getOperations = RestIndividualSelectorUtils.getAllActionDefinitions(actionDefinitions, HttpVerb.GET)
+
+        getOperations.forEach { get ->
+
+            val forbidden = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution,
+                HttpVerb.GET,
+                get.path,
+                status = 403
+            )
+            if(forbidden.isNotEmpty()){
+                //we already have it, so nothing to do
+                return@forEach
+            }
+
+            val unauthorized = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution,
+                HttpVerb.GET,
+                get.path,
+                status = 401
+            )
+            if(unauthorized.isEmpty()){
+                //there is no 401, so does not seem auth is applied to this endpoint.
+                //note: getting 401 during search should be simple, as we do send requests without
+                // auth, given a certain probability
+                return@forEach
+            }
+
+            val candidates = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution,
+                HttpVerb.GET,
+                get.path,
+                statusGroup = StatusGroup.G_2xx,
+                authenticated = true
+            )
+
+            if (candidates.isNotEmpty()){
+                handleCandidatesForGet403(get.path, candidates)
+            }
+        }
+    }
+
+    private fun handleCandidatesForGet403(path: RestPath, candidates: List<EvaluatedIndividual<RestIndividual>>){
+
+        /*
+            we have no idea of the access policy for each user.
+            for example, an admin will not get any 403.
+            so, we need to check each possible user for which we got a 2xx
+         */
+        candidates.mapNotNull {
+            //first make copy and slice off all after the 2xx
+            val index = RestIndividualSelectorUtils.findIndexOfAction(
+                it,
+                HttpVerb.GET,
+                path,
+                statusGroup = StatusGroup.G_2xx,
+                authenticated = true
+            )
+            if (index < 0) {
+                //can this ever happen?
+                log.warn("Failed to identify authenticated GET action with 2xx")
+                null
+            } else {
+                val copy = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(it.individual, index)
+                copy
+            }
+        }
+            // then, just take 1 test per user
+            .distinctBy { it.seeMainExecutableActions().last().auth.name }
+            .forEach { ind ->
+                //finally, evaluate all of those with a different auth
+                val lastCall = ind.seeMainExecutableActions().last()
+                val otherUsers = authSettings.getAllOthers(lastCall.auth.name, HttpWsAuthenticationInfo::class.java)
+
+                //try each of them
+                otherUsers.forEach { otherAuth ->
+                    val copy = ind.copy() as RestIndividual
+                    copy.seeMainExecutableActions().last().auth = otherAuth
+
+                    val ei = fitness.computeWholeAchievedCoverageForPostProcessing(copy)
+                    if(ei != null) {
+                        archive.addIfNeeded(ei)
+                        val res = ei.evaluatedMainActions().last().result as RestCallResult
+                        if(res.getStatusCode() == 403){
+                            //we are done
+                            return
+                        }
+                    }
+                }
+            }
+
+    }
+
 
     private fun addForAccessControl() {
 
@@ -124,9 +234,205 @@ class SecurityRest {
         handleForbiddenOperationButOKOthers(HttpVerb.PUT)
         handleForbiddenOperationButOKOthers(HttpVerb.PATCH)
 
+        // getting 404 instead of 403
+        handleExistenceLeakage()
+
+        //authenticated, but wrongly getting 401 (eg instead of 403)
+        handleNotRecognizedAuthenticated()
+
         //TODO other rules. See FaultCategory
-        // eg 401/403 info leakage
         //etc.
+    }
+
+
+    /**
+     * Authenticated user A accesses endpoint X, but get 401 (instead of 403).
+     * In theory, a bug. But, could be false positive if A is misconfigured.
+     * How to check it?
+     * See if on any other endpoint Y we get a 2xx with A.
+     * But, maybe Y does not need authentication...
+     * so, check if there is any test case for which on Y we get a 401 or 403.
+     * if yes, then X is buggy, as should had rather returned 403 for A.
+     */
+    private fun handleNotRecognizedAuthenticated() {
+
+        mainloop@ for(action in actionDefinitions){
+
+            val suspicious = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution,
+                action.verb,
+                action.path,
+                status = 401,
+                authenticated = true
+            ).map { RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
+                it,
+                action.verb,
+                action.path,
+                status = 401,
+                authenticated = true
+                )
+            }.distinctBy { it.seeMainExecutableActions().last().auth.name }
+
+            if(suspicious.isEmpty()){
+                continue
+            }
+
+            for(target in suspicious) {
+
+                val user = target.seeMainExecutableActions().last().auth.name
+
+                val ok = RestIndividualSelectorUtils.findIndividuals(
+                    individualsInSolution,
+                    statusGroup = StatusGroup.G_2xx,
+                    authenticatedWith = user
+                ).map { RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
+                    it,
+                    statusGroup = StatusGroup.G_2xx,
+                    authenticatedWith = user)
+                }.distinctBy { it.seeMainExecutableActions().last().getName() }
+
+                if(ok.isEmpty()){
+                    continue
+                }
+
+                /*
+                    so, the given suspicious user that got 401 can get a 2xx on an endpoint.
+                    has anyone got a 401 or 403 on this endpoint?
+                    actually, could even be same user, eg when trying to access resource of
+                    another user could get a 403
+                */
+                for(success in ok){
+                    val last = success.seeMainExecutableActions().last()
+                    val with401or403 = RestIndividualSelectorUtils.findIndividuals(
+                        individualsInSolution,
+                        verb = last.verb,
+                        path = last.path,
+                        statusCodes = listOf(401,403),
+                        authenticated = true
+                    ).map {
+                        RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
+                            it,
+                            verb = last.verb,
+                            path = last.path,
+                            statusCodes = listOf(401,403),
+                            authenticated = true
+                        )
+                    }
+                    if(with401or403.isEmpty()){
+                        continue
+                    }
+                    // if reach here, we got a bug
+                    val auth = with401or403.minBy { it.size() }
+
+                    val final = RestIndividualBuilder.merge(auth,success,target)
+                    final.modifySampleType(SampleType.SECURITY)
+                    final.ensureFlattenedStructure()
+
+                    val evaluatedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(final)
+                    if (evaluatedIndividual == null) {
+                        log.warn("Failed to evaluate constructed individual in handleNotRecognizedAuthenticated")
+                        continue
+                    }
+
+                    val added = archive.addIfNeeded(evaluatedIndividual)
+                    assert(added)
+                    continue@mainloop
+                }
+            }
+        }
+    }
+
+
+    /**
+     * Accessing a protected GET endpoint with id with not authorized should return 403, even if not exists.
+     * otherwise, if returning 404, we can find out that the resource does not exist.
+     */
+    private fun handleExistenceLeakage(){
+
+        val getOperations = RestIndividualSelectorUtils.getAllActionDefinitions(actionDefinitions, HttpVerb.GET)
+
+        getOperations.forEach { get ->
+
+            val inds403 = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution,
+                HttpVerb.GET,
+                get.path,
+                status = 403
+                )
+            if(inds403.isEmpty()){
+                return@forEach
+            }
+
+            val inds404 = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution,
+                HttpVerb.GET,
+                get.path,
+                status = 404
+            )
+            if(inds404.isEmpty()){
+                return@forEach
+            }
+
+            //found the bug.
+            val forbidden = inds403.minBy { it.individual.size() }
+            val notfound = inds404.maxBy { it.individual.size() }
+
+            //needs slicing to minimize the newly generated test
+            val index403 = RestIndividualSelectorUtils.getIndexOfAction(
+                forbidden,
+                HttpVerb.GET,
+                get.path,
+                403
+            )
+            // slice the individual in a way that delete all calls after the chosen verb request
+            val first = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(forbidden.individual, index403)
+
+            val index404 = RestIndividualSelectorUtils.getIndexOfAction(
+                notfound,
+                HttpVerb.GET,
+                get.path,
+                404
+            )
+            // slice the individual in a way that delete all calls after the chosen verb request
+            val second = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(notfound.individual, index404)
+
+            val final = RestIndividualBuilder.merge(first, second)
+
+            final.modifySampleType(SampleType.SECURITY)
+            final.ensureFlattenedStructure()
+
+            val evaluatedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(final)
+            if (evaluatedIndividual == null) {
+                log.warn("Failed to evaluate constructed individual in handleExistenceLeakage")
+                return@forEach
+            }
+
+            //verify if newly constructed individual still find the bug
+            val check403 = RestIndividualSelectorUtils.getIndexOfAction(
+                evaluatedIndividual,
+                HttpVerb.GET,
+                get.path,
+                403
+            )
+            val check404 = RestIndividualSelectorUtils.getIndexOfAction(
+                evaluatedIndividual,
+                HttpVerb.GET,
+                get.path,
+                404
+            )
+            //fitness function should have detected the fault
+            val faults = (evaluatedIndividual.evaluatedMainActions().last().result as RestCallResult).getFaults()
+
+            if(check403 < 0 || check404 < 0 || faults.none { it.category == FaultCategory.SECURITY_EXISTENCE_LEAKAGE }){
+                //if this happens, it is a bug in the merge... or flakiness
+                log.warn("Failed to construct new test showing the 403 vs 404 security leakage issue")
+                return@forEach
+            }
+
+            val added = archive.addIfNeeded(evaluatedIndividual)
+            //if we arrive here, should always be added, because we are creating a new testing target
+            assert(added)
+        }
     }
 
 
@@ -389,35 +695,6 @@ class SecurityRest {
         if (creationAction.path.isEquivalent(targetAction.path)) {
             targetAction.bindBasedOn(creationAction.path, creationAction.parameters.filterIsInstance<PathParam>(), null)
         }
-    }
-
-    /**
-     * Information leakage
-     * accessing endpoint with id with not authorized should return 403, even if not exists.
-     * otherwise, if returning 404, we can find out that the resource does not exist.
-     */
-    fun handleNotAuthorizedResourceExistenceLeakage() {
-
-        //TODO
-
-        // There has to be at least two authenticated users
-        if (!checkForAtLeastNumberOfAuthenticatedUsers(2)) {
-            // nothing to test if there are not at least 2 users
-            LoggingUtil.getInfoLogger().debug(
-                "Security test handleNotAuthorizedInAnyCase requires at least 2 authenticated users"
-            )
-            return
-        }
-
-        // get all endpoints each user has access to (this can be a function since we need this often)
-
-        // among endpoints userA has access, those endpoints should give 2xx as response
-
-        // find an endpoint userA does not have access but another user has access, this should give 403
-
-        // try with an endpoint that does not exist, this should give 403 as well, not 404.
-
-
     }
 
 
