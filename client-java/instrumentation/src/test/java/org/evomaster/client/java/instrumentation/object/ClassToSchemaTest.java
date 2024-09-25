@@ -266,6 +266,12 @@ public class ClassToSchemaTest {
         checkDtoCollection(obj);
     }
 
+    @Test
+    public void testNoSQLEntity() {
+        String schema = ClassToSchema.getOrDeriveNonNestedSchema(NoSQLEntity.class);
+        System.out.println(schema);
+
+    }
 
     private void checkDtoArray(JsonObject obj){
         assertEquals(5, obj.get("properties").getAsJsonObject().entrySet().size());
@@ -326,5 +332,14 @@ public class ClassToSchemaTest {
     private void verifyRefOfFieldInProperties(JsonObject obj, String expected, String fieldName){
         assertEquals(expected, obj.get("properties").getAsJsonObject()
                 .get(fieldName).getAsJsonObject().get("$ref").getAsString());
+    }
+
+    @Test
+    public void testChar(){
+        String schema = ClassToSchema.getOrDeriveNonNestedSchema(DtoChar.class);
+        JsonObject json = parse(schema);
+        JsonObject obj = json.get(DtoChar.class.getName()).getAsJsonObject();
+        assertEquals(1, obj.get("properties").getAsJsonObject().entrySet().size());
+        verifyTypeAndFormatOfFieldInProperties(obj, "string", "char", "foo");
     }
 }

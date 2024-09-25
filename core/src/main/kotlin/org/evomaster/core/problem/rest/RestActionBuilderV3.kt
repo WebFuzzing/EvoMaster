@@ -756,6 +756,7 @@ object RestActionBuilderV3 {
 
         //first check for "optional" format
         when (format?.lowercase()) {
+            "char" -> return buildStringGeneForChar(name, isInPath)
             "int8","int16","int32" -> return createNonObjectGeneWithSchemaConstraints(schema, name, IntegerGene::class.java, options, null, isInPath, examples,format, messages)//IntegerGene(name)
             "int64" -> return createNonObjectGeneWithSchemaConstraints(schema, name, LongGene::class.java, options, null, isInPath, examples, messages = messages) //LongGene(name)
             "double" -> return createNonObjectGeneWithSchemaConstraints(schema, name, DoubleGene::class.java, options, null, isInPath, examples, messages = messages)//DoubleGene(name)
@@ -1404,6 +1405,23 @@ object RestActionBuilderV3 {
         if(s.startsWith("\"") && s.endsWith("\""))
             return s.substring(1, s.length - 1)
         return s
+    }
+
+    /**
+     * Buils a StringGene that represents a char value.
+     * Char values are modelled as string of fixed size 1.
+     */
+    private fun buildStringGeneForChar(
+        name: String,
+        isInPath: Boolean
+    ): StringGene {
+
+        return StringGene(
+            name,
+            minLength = 1,
+            maxLength = 1,
+            invalidChars = if(isInPath) listOf('/','.') else listOf()
+        )
     }
 
     private fun buildStringGene(
