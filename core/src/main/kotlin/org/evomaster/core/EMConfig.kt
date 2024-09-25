@@ -2006,9 +2006,14 @@ class EMConfig {
 
 
     @Experimental
-    @Cfg("Specify a maximum number of existing data in the database to sample when SQL handling is enabled. " +
+    @Cfg("Specify a maximum number of existing data in the database to sample in a test when SQL handling is enabled. " +
             "Note that a negative number means all existing data would be sampled")
-    var maximumExistingDataToSampleInDb = -1
+    var maxSizeOfExistingDataToSample = -1
+
+
+    @Experimental
+    @Cfg("Specify whether insertions should be used to calculate SQL heuristics instead of retrieving data from real databases.")
+    var useInsertionForSqlHeuristics = false
 
     @Debug
     @Cfg("Whether to output executed sql info")
