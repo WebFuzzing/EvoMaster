@@ -41,7 +41,7 @@ class SecurityNotRecognizedEMTest : SpringTestBase(){
             assertHasAtLeastOne(solution, HttpVerb.PUT, 201, "/api/resources/{id}", null)
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/resources/{id}", null)
             assertHasAtLeastOne(solution, HttpVerb.GET, 403, "/api/resources/{id}", null)
-            assertHasAtLeastOne(solution, HttpVerb.POST, 401, "/api/resources", null)
+            assertHasAtLeastOne(solution, HttpVerb.POST, 401, "/api/resources/", null)
 
 
             val faults = DetectedFaultUtils.getDetectedFaultCategories(solution)
