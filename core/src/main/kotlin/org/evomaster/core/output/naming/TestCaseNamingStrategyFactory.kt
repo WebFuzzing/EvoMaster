@@ -1,4 +1,4 @@
-package org.evomaster.core.output.service.naming
+package org.evomaster.core.output.naming
 
 import org.evomaster.core.search.Solution
 

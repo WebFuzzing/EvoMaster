@@ -8,8 +8,8 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.output.*
 import org.evomaster.core.output.TestWriterUtils.getWireMockVariableName
 import org.evomaster.core.output.TestWriterUtils.handleDefaultStubForAsJavaOrKotlin
-import org.evomaster.core.output.service.naming.NumberedTestCaseNamingStrategy
-import org.evomaster.core.output.service.naming.TestCaseNamingStrategyFactory
+import org.evomaster.core.output.naming.NumberedTestCaseNamingStrategy
+import org.evomaster.core.output.naming.TestCaseNamingStrategyFactory
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction

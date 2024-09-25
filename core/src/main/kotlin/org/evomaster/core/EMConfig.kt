@@ -14,7 +14,7 @@ import org.evomaster.core.config.ConfigUtil
 import org.evomaster.core.config.ConfigsFromFile
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.output.service.naming.NamingStrategy
+import org.evomaster.core.output.naming.NamingStrategy
 import org.evomaster.core.search.impact.impactinfocollection.GeneMutationSelectionMethod
 import org.evomaster.core.search.service.IdMapper
 import org.slf4j.LoggerFactory
@@ -1422,6 +1422,10 @@ class EMConfig {
             "Note that the value should be specified with a non-negative number or -1 (for tracking all history)")
     @Min(-1.0)
     var maxLengthOfTraces = 10
+
+    @Deprecated("No longer in use")
+    @Cfg("Enable custom naming and sorting criteria")
+    var customNaming = true
 
     /*
         You need to decode it if you want to know what it says...
