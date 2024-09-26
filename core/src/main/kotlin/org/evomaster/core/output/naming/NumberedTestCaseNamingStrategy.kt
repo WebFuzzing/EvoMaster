@@ -8,22 +8,8 @@ open class NumberedTestCaseNamingStrategy(
     solution: Solution<*>
 ) : TestCaseNamingStrategy(solution) {
 
-
-    override fun generateNames(individuals: List<EvaluatedIndividual<*>>) {
-        var counter = 0
-        individuals.forEach { ind ->
-            testCaseNames[ind] = "test_${counter++}${expandName(ind)}"
-        }
-    }
-
-    // numbered strategy will not expand the name unless it is using the namingHelper
-    override fun expandName(individual: EvaluatedIndividual<*>): String {
-        return ""
-    }
-
     override fun getTestCases(): List<TestCase> {
-        generateNames(solution.individuals)
-        return testCaseNames.map { entry -> TestCase(entry.key, entry.value) }
+        return generateNames(solution.individuals)
     }
 
     override fun getSortedTestCases(comparators: List<Comparator<EvaluatedIndividual<*>>>): List<TestCase> {
@@ -31,8 +17,21 @@ open class NumberedTestCaseNamingStrategy(
         comparators.asReversed().forEach {
             inds.sortWith(it)
         }
-        generateNames(inds)
-        return testCaseNames.map { entry -> TestCase(entry.key, entry.value) }
+        return generateNames(inds)
+    }
+
+    // numbered strategy will not expand the name unless it is using the namingHelper
+    override fun expandName(individual: EvaluatedIndividual<*>): String {
+        return ""
+    }
+
+    private fun getName(counter: Int, individual: EvaluatedIndividual<*>): String {
+        return "test_${counter}${expandName(individual)}"
+    }
+
+    private fun generateNames(individuals: List<EvaluatedIndividual<*>>) : List<TestCase> {
+        var counter = 0
+        return individuals.map { ind -> TestCase(ind, getName(counter++, ind)) }
     }
 
 }

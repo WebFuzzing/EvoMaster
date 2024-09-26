@@ -12,12 +12,6 @@ abstract class TestCaseNamingStrategy(
     protected val solution: Solution<*>
 ) {
 
-    protected var testCaseNames = mutableMapOf<EvaluatedIndividual<*>, String>()
-
-    protected abstract fun generateNames(individuals: List<EvaluatedIndividual<*>>)
-
-    protected abstract fun expandName(individual: EvaluatedIndividual<*>): String
-
     /**
      * @return the list of TestCase with the generated name given the naming strategy
      */
@@ -29,5 +23,7 @@ abstract class TestCaseNamingStrategy(
      * @return the list of sorted TestCase with the generated name given the naming strategy
      */
     abstract fun getSortedTestCases(comparators: List<Comparator<EvaluatedIndividual<*>>>): List<TestCase>
+
+    protected abstract fun expandName(individual: EvaluatedIndividual<*>): String
 
 }
