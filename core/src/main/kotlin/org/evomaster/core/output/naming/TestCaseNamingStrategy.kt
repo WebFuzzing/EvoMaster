@@ -24,6 +24,11 @@ abstract class TestCaseNamingStrategy(
      */
     abstract fun getSortedTestCases(comparators: List<Comparator<EvaluatedIndividual<*>>>): List<TestCase>
 
+    /**
+     * @param individual containing information for the test about to be named
+     *
+     * @return a String with extra information that will be included in the test name, regarding the EvaluatedIndividual
+     */
     protected abstract fun expandName(individual: EvaluatedIndividual<*>): String
 
 }
