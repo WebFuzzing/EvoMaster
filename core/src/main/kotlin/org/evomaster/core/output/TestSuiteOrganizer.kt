@@ -24,7 +24,6 @@ import kotlin.reflect.KFunction1
 class TestSuiteOrganizer {
 
     private val sortingHelper = SortingHelper()
-    private val namingHelper = NamingHelper()
     private var partialOracles = PartialOracles()
 
     private val defaultSorting = listOf(0, 1)
@@ -32,7 +31,7 @@ class TestSuiteOrganizer {
     fun sortTests(solution: Solution<*>, namingStrategy: TestCaseNamingStrategy): List<TestCase> {
         //sortingHelper.selectCriteriaByIndex(defaultSorting)
         //TODO here in the future we will have something a bit smarter
-        return sortingHelper.sort(solution, namingHelper, namingStrategy)
+        return sortingHelper.sort(solution, namingStrategy)
     }
 
 //    fun setPartialOracles(partialOracles: PartialOracles){
@@ -228,8 +227,7 @@ class SortingHelper {
     /**
      *Sorting is done according to the comparator list. If no list is provided, individuals are sorted by max status.
      */
-    private fun sortByComparatorList (namingHelper: NamingHelper,
-                              comparators: List<Comparator<EvaluatedIndividual<*>>> = listOf(statusCode),
+    private fun sortByComparatorList (comparators: List<Comparator<EvaluatedIndividual<*>>> = listOf(statusCode),
                               namingStrategy: TestCaseNamingStrategy
 
     ): List<TestCase> {
@@ -250,12 +248,12 @@ class SortingHelper {
          * that have the same code, the ones with the most covered targets will be at the top (among their sub-group).
          */
 
-        return namingStrategy.getSortedTestCases(comparators, namingHelper)
+        return namingStrategy.getSortedTestCases(comparators)
 
     }
 
-    fun sort(solution: Solution<*>, namingHelper: NamingHelper = NamingHelper(), namingStrategy: TestCaseNamingStrategy): List<TestCase> {
-        val newSort = sortByComparatorList(namingHelper, comparatorList, namingStrategy)
+    fun sort(solution: Solution<*>, namingStrategy: TestCaseNamingStrategy): List<TestCase> {
+        val newSort = sortByComparatorList(comparatorList, namingStrategy)
 
         Lazy.assert { solution.individuals.toSet() == newSort.map { it.test }.toSet()}
         return newSort

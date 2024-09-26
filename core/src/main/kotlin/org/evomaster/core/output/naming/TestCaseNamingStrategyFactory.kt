@@ -8,8 +8,10 @@ class TestCaseNamingStrategyFactory(
 
     fun create(solution: Solution<*>): TestCaseNamingStrategy {
         if (namingStrategy.isNumbered()) {
-            return NumberedTestCaseNamingStrategy(solution)
+            return NamingHelperNumberedTestCaseNamingStrategy(solution)
+        } else if (namingStrategy.isAction()) {
+            return ActionTestCaseNamingStrategy(solution)
         }
-        throw IllegalStateException("Unrecognized naming strategy " + namingStrategy)
+        throw IllegalStateException("Unrecognized naming strategy $namingStrategy")
     }
 }
