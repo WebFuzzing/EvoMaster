@@ -20,7 +20,9 @@ object RestIndividualSelectorUtils {
                                                  path: RestPath? = null,
                                                  status: Int? = null,
                                                  statusGroup: StatusGroup? = null,
-                                                 mustBeAuthenticated : Boolean = false
+                                                 statusCodes: Collection<Int>? = null,
+                                                 mustBeAuthenticated : Boolean? = null,
+                                                 authenticatedWith: String? = null
                                          ) : Boolean {
 
         // get actions and results first
@@ -48,8 +50,16 @@ object RestIndividualSelectorUtils {
             return false
         }
 
+        if(!statusCodes.isNullOrEmpty() && !statusCodes.contains(resultOfAction.getStatusCode())) {
+            return false
+        }
+
         // authenticated or not
-        if(mustBeAuthenticated && action.auth is NoAuth){
+        if(mustBeAuthenticated == true && action.auth is NoAuth){
+            return false
+        }
+
+        if(authenticatedWith != null && action.auth.name != authenticatedWith){
             return false
         }
 
@@ -85,7 +95,7 @@ object RestIndividualSelectorUtils {
 
         individualsInSolution.forEach {ind ->
             ind.evaluatedMainActions().forEach { a ->
-                if(checkIfActionSatisfiesConditions(a, verb, path, status, statusGroup, authenticated)){
+                if(checkIfActionSatisfiesConditions(a, verb, path, status, statusGroup, null, authenticated)){
                     return a
                 }
             }
@@ -104,16 +114,21 @@ object RestIndividualSelectorUtils {
         path: RestPath? = null,
         status: Int? = null,
         statusGroup: StatusGroup? = null,
-        authenticated: Boolean = false
+        statusCodes: Collection<Int>? = null,
+        authenticated: Boolean? = null,
+        authenticatedWith: String? = null
     ): List<EvaluatedIndividual<RestIndividual>> {
 
         if(status != null && statusGroup!= null){
             throw IllegalArgumentException("Shouldn't specify both status and status group")
         }
+        if(authenticated == false && authenticatedWith != null){
+            throw IllegalArgumentException("Cannot specify no authentication but then ask for a specific authenticated user")
+        }
 
         return individualsInSolution.filter {ind ->
             ind.evaluatedMainActions().any { a ->
-                checkIfActionSatisfiesConditions(a, verb, path, status, statusGroup, authenticated)
+                checkIfActionSatisfiesConditions(a, verb, path, status, statusGroup, statusCodes, authenticated, authenticatedWith)
             }
         }
     }
@@ -151,7 +166,7 @@ object RestIndividualSelectorUtils {
             resourcePath,
             201, //if PUT, must be 201
             statusGroup = null,
-            mustBeAuthenticated
+            authenticated = mustBeAuthenticated
         )
 
         if(existingPuts.isNotEmpty()){
@@ -208,7 +223,9 @@ object RestIndividualSelectorUtils {
         path: RestPath? = null,
         status: Int? = null,
         statusGroup: StatusGroup? = null,
-        authenticated: Boolean = false
+        statusCodes: Collection<Int>? = null,
+        authenticated: Boolean? = null,
+        authenticatedWith: String? = null
     ): Int {
 
         if(status != null && statusGroup!= null){
@@ -216,7 +233,7 @@ object RestIndividualSelectorUtils {
         }
 
         individual.evaluatedMainActions().forEachIndexed { index, a ->
-                if(checkIfActionSatisfiesConditions(a, verb, path, status, statusGroup, authenticated)){
+                if(checkIfActionSatisfiesConditions(a, verb, path, status, statusGroup, statusCodes, authenticated, authenticatedWith)){
                     return index
                 }
         }

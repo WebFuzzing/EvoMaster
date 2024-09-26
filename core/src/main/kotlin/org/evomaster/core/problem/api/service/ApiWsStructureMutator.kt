@@ -5,26 +5,26 @@ import org.evomaster.client.java.controller.api.dto.database.execution.MongoFail
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
-import org.evomaster.core.sql.SqlAction
-import org.evomaster.core.sql.SqlActionUtils
-import org.evomaster.core.sql.SqlInsertBuilder
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
-import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
-import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.param.HttpWsResponseParam
-import org.evomaster.core.search.action.EnvironmentAction
+import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
+import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.action.EnvironmentAction
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.impact.impactinfocollection.ImpactsOfIndividual
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.mutator.StructureMutator
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.sql.SqlActionUtils
+import org.evomaster.core.sql.SqlInsertBuilder
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import kotlin.math.max
@@ -292,6 +292,23 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         mutatedGenes: MutatedGeneSpecification?, sampler: ApiWsSampler<T>
     ): MutableList<List<SqlAction>>? {
 
+        if (config.generateSqlDataWithSearch) {
+            return handleSearch(ind, sampler, mutatedGenes, fw)
+        }
+        
+        if (config.generateSqlDataWithDSE) {
+            return handleDSE(sampler, fw)
+        }
+
+        return mutableListOf()
+    }
+
+    private fun <T : ApiWsIndividual> handleSearch(
+        ind: T,
+        sampler: ApiWsSampler<T>,
+        mutatedGenes: MutatedGeneSpecification?,
+        fw: Map<String, Set<String>>
+    ): MutableList<List<SqlAction>>? {
         /*
             because there might exist representExistingData in db actions which are in between rest actions,
             we use seeDbActions() instead of seeInitializingActions() here
@@ -307,10 +324,10 @@ abstract class ApiWsStructureMutator : StructureMutator() {
             /*
                 tmp solution to set maximum size of executing existing data in sql
              */
-            val existing = if (config.maximumExistingDataToSampleInDb > 0
-                && sampler.existingSqlData.size > config.maximumExistingDataToSampleInDb
+            val existing = if (config.maxSizeOfExistingDataToSample > 0
+                && sampler.existingSqlData.size > config.maxSizeOfExistingDataToSample
             ) {
-                randomness.choose(sampler.existingSqlData, config.maximumExistingDataToSampleInDb)
+                randomness.choose(sampler.existingSqlData, config.maxSizeOfExistingDataToSample)
             } else {
                 sampler.existingSqlData
             }.map { it.copy() } as List<EnvironmentAction>
@@ -319,7 +336,9 @@ abstract class ApiWsStructureMutator : StructureMutator() {
             ind.addInitializingDbActions(0, existing)
 
             //record newly added existing sql data
-            mutatedGenes?.addedExistingDataInInitialization?.getOrPut(ImpactsOfIndividual.SQL_ACTION_KEY, { mutableListOf() })?.addAll(0, existing)
+            mutatedGenes?.addedExistingDataInInitialization?.getOrPut(
+                ImpactsOfIndividual.SQL_ACTION_KEY,
+                { mutableListOf() })?.addAll(0, existing)
 
             if (log.isTraceEnabled)
                 log.trace("{} existingSqlData are added", existing)
@@ -333,7 +352,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 
         val addedSqlInsertions = if (mutatedGenes != null) mutableListOf<List<SqlAction>>() else null
 
-        while (!missing.isEmpty()) {
+        while (missing.isNotEmpty()) {
 
             val first = missing.entries.first()
 
@@ -363,12 +382,12 @@ abstract class ApiWsStructureMutator : StructureMutator() {
              */
             missing = findMissing(fw, ind.seeInitializingActions().filterIsInstance<SqlAction>())
         }
-
-        if (config.generateSqlDataWithDSE) {
-            //TODO DSE could be plugged in here
-        }
-
         return addedSqlInsertions
+    }
+
+    private fun <T : ApiWsIndividual> handleDSE(sampler: ApiWsSampler<T>, fw: Map<String, Set<String>>): MutableList<List<SqlAction>> {
+        /* TODO: DSE should be plugged in here */
+        return mutableListOf()
     }
 
     private fun <T : ApiWsIndividual> handleFailedFind(

@@ -140,7 +140,7 @@ open class RestResourceNode(
             if(!r.path.isEquivalent(this.path) && r.path.isDirectOrPossibleAncestorOf(this.path))
                 ancestors.add(r)
             else{
-                if (r.getActionByHttpVerb(HttpVerb.POST) != null)
+                if(r.getPotentialRestActionForCreation().isNotEmpty())
                     otherPostResourceNode.add(r)
             }
         }
@@ -248,32 +248,38 @@ open class RestResourceNode(
     private fun initCreationPoints(){
 
         val postCreation = PostCreationChain(mutableListOf())
-        val posts = mutableListOf<RestCallAction>()
+        val posts = mutableMapOf<String, List<RestCallAction>>()
 
-        val currentPost = actions.filter { it.verb == HttpVerb.POST}
-        if (currentPost.size > 1){
-            LoggingUtil.uniqueWarn(log, "more than POST Actions for resource node $path")
-            posts.add(currentPost.first())
-        }else
-            posts.addAll(currentPost)
+        val currentPost = actions.filter { it.isPotentialActionForCreation()}
+        if (currentPost.isNotEmpty()){
+            posts[currentPost.first().path.toString()] = currentPost.groupBy { it.verb }.map { (t, u) ->
+                if (u.size > 1){
+                    LoggingUtil.uniqueWarn(log, "more than ${t.name} Actions for resource node $path")
+                }
+                u.first()
+            }
+        }
+
 
         if (posts.isEmpty()){
             val siblingPost = getSiblingPostAction()
-            if (siblingPost != null)
-                posts.add(siblingPost)
+            if (siblingPost != null && siblingPost.isNotEmpty())
+                posts[siblingPost.first().path.toString()] = siblingPost
             else{
-                val ancestorPosts = chooseAllClosestAncestor(path, listOf(HttpVerb.POST))
-                if (ancestorPosts != null) posts.addAll(ancestorPosts)
+                val ancestorPosts = chooseAllClosestAncestor(path, RestCallAction.CONFIG_POTENTIAL_VERB_FOR_CREATION)
+                if (ancestorPosts != null) posts[ancestorPosts.first().path.toString()] = ancestorPosts
             }
 
         }
 
         if (posts.isNotEmpty()){
-            postCreation.addActions(0, posts)
-            for (post in posts){
-                if ((post).path.hasVariablePathParameters() &&
-                    (!post.path.isLastElementAParameter()) ||
-                    post.path.getVariableNames().size >= 2) {
+            postCreation.addActions(0, posts.values.flatten())
+            for (post in posts.values.map { it.first() }){
+                /*
+                    in terms of eg, /v3/api/rfoo/{rfooId}
+                    if the verb is PUT, it is still needed to check its ancestor for preparing resources
+                 */
+                if ((post.path.hasVariablePathParameters() && (post.verb == HttpVerb.PUT || !post.path.isLastElementAParameter())) || post.path.getVariableNames().size >= 2) {
                     nextCreationPoints(post.path, postCreation)
                 }else
                     postCreation.confirmComplete()
@@ -287,16 +293,17 @@ open class RestResourceNode(
 
         postCreation.prioritizePostChain()
 
-        if (postCreation.actions.isNotEmpty())
+        if (postCreation.hasAnyAction())
             creations.add(postCreation)
     }
 
-    private fun getSiblingPostAction() : RestCallAction?{
-        return otherPostResourceNode.find { it.path.isSiblingForPreparingResource(this.path) }?.getActionByHttpVerb(HttpVerb.POST)
+    private fun getSiblingPostAction() : List<RestCallAction>?{
+        return otherPostResourceNode.find { it.path.isSiblingForPreparingResource(this.path) }?.getPotentialRestActionForCreation()
     }
 
+
     private fun nextCreationPoints(path:RestPath, postCreationChain: PostCreationChain){
-        val posts = chooseAllClosestAncestor(path, listOf(HttpVerb.POST))?.map { it.copy() as RestCallAction }
+        val posts = chooseAllClosestAncestor(path, RestCallAction.CONFIG_POTENTIAL_VERB_FOR_CREATION)?.map { it.copy() as RestCallAction }
         if(!posts.isNullOrEmpty()){
             val newPosts = posts.filter { !postCreationChain.hasAction(it) }
             postCreationChain.addActions(0, newPosts)
@@ -566,6 +573,8 @@ open class RestResourceNode(
     private fun getActionByHttpVerb(verb : HttpVerb) : RestCallAction? {
         return actions.find { a -> a.verb == verb }
     }
+
+    private fun getPotentialRestActionForCreation() : List<RestCallAction> = actions.filter { it.isPotentialActionForCreation() }
 
     private fun chooseOneLongestPath(actions: List<RestCallAction>, randomness: Randomness? = null): RestCallAction {
 

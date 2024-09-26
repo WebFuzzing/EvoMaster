@@ -8,6 +8,7 @@ import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.statement.Statement;
 import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionsDto;
 import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionLogDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.sql.QueryResult;
 import org.evomaster.client.java.sql.SqlScriptRunner;
@@ -17,6 +18,7 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 
 import static org.evomaster.client.java.sql.internal.ParserUtils.*;
 
@@ -166,7 +168,7 @@ public class SqlHandler {
      *
      * @return a list of heuristics for sql commands
      */
-    public List<EvaluatedSqlCommand> getEvaluatedSqlCommands() {
+    public List<EvaluatedSqlCommand> getEvaluatedSqlCommands(List<InsertionDto> successfulInitSqlInsertions, boolean queryFromDatabase) {
 
         if (connection == null || !calculateHeuristics) {
             return distances;
@@ -175,7 +177,7 @@ public class SqlHandler {
 
         buffer.forEach(sql -> {
                     if (!isSelectOne(sql) && (isSelect(sql) || isDelete(sql) || isUpdate(sql))) {
-                        SqlDistanceWithMetrics dist = computeDistance(sql);
+                        SqlDistanceWithMetrics dist = computeDistance(sql, successfulInitSqlInsertions, queryFromDatabase);
                         distances.add(new EvaluatedSqlCommand(sql, dist));
                     }
                 });
@@ -186,7 +188,7 @@ public class SqlHandler {
         return distances;
     }
 
-    private SqlDistanceWithMetrics computeDistance(String command) {
+    private SqlDistanceWithMetrics computeDistance(String command, List<InsertionDto> successfulInitSqlInsertions, boolean queryFromDatabase) {
 
         if (connection == null) {
             throw new IllegalStateException("Trying to calculate SQL distance with no DB connection");
@@ -213,7 +215,11 @@ public class SqlHandler {
             //TODO check if table(s) not empty, and give >0 otherwise
             dist = new SqlDistanceWithMetrics(0.0,0,false);
         } else {
-            dist = getDistanceForWhere(command, columns);
+            if(queryFromDatabase)
+                dist = getDistanceForWhere(command, columns);
+            else{
+                dist = getDistanceForWhereBasedOnInsertion(command, columns, successfulInitSqlInsertions);
+            }
         }
 
         if (dist.sqlDistance > 0) {
@@ -221,6 +227,13 @@ public class SqlHandler {
         }
 
         return dist;
+    }
+
+
+    private SqlDistanceWithMetrics getDistanceForWhereBasedOnInsertion(String command, Map<String, Set<String>> columns, List<InsertionDto> insertionDtos) {
+        QueryResult[] data = QueryResultTransformer.convertInsertionDtosToQueryResults(insertionDtos, columns, schema);
+        assert data != null;
+        return HeuristicsCalculator.computeDistance(command, schema, taintHandler, advancedHeuristics, data);
     }
 
     private SqlDistanceWithMetrics getDistanceForWhere(String command, Map<String, Set<String>> columns) {
@@ -255,7 +268,7 @@ public class SqlHandler {
             return new SqlDistanceWithMetrics(Double.MAX_VALUE, 0, true);
         }
 
-        return HeuristicsCalculator.computeDistance(command, data, schema, taintHandler,advancedHeuristics);
+        return HeuristicsCalculator.computeDistance(command, schema, taintHandler, advancedHeuristics, data);
     }
 
     private String createSelectForSingleTable(String tableName, Set<String> columns) {

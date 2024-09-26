@@ -1920,4 +1920,41 @@ class RestActionBuilderV3Test{
         assertEquals("/v2/api/$target", parent.resolvedPath())
     }
 
+    @Test
+    fun testPropertyStringTypeAndCharFormat(){
+        val dtoSchemaName = "foo.com.BarDto"
+        val dtoSchema = """
+            "$dtoSchemaName":{
+                "type":"object",
+                "properties": {
+                    "char_field":{
+                        "type":"string", 
+                        "format":"char"
+                    }
+                },
+                "required": [
+                    "char_field"
+                    
+                ]
+            }
+            """.trimIndent()
+
+        val allSchemas = "\"${dtoSchemaName}\":{${dtoSchema}}"
+
+        val gene = RestActionBuilderV3.createGeneForDTO(
+            dtoSchemaName,
+            allSchemas,
+            RestActionBuilderV3.Options(enableConstraintHandling = true)
+        )
+
+        assertTrue(gene is ObjectGene)
+        (gene as ObjectGene).apply {
+            assertEquals(1, gene.fields.size)
+            assertEquals("char_field", gene.fields[0].name)
+            assertTrue(gene.fields[0] is StringGene)
+            val stringGene = gene.fields[0] as StringGene
+            assertEquals(1, stringGene.minLength)
+            assertEquals(1, stringGene.maxLength)
+        }
+    }
 }

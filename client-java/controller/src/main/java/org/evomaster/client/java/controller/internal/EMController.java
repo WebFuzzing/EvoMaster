@@ -442,6 +442,8 @@ public class EMController {
             boolean killSwitch,
             @QueryParam("allCovered") @DefaultValue("false")
             boolean allCovered,
+            @QueryParam("queryFromDatabase") @DefaultValue("true")
+            boolean queryFromDatabase,
             @Context HttpServletRequest httpServletRequest) {
 
         if(allCovered && !idList.isEmpty()){
@@ -516,7 +518,7 @@ public class EMController {
                 TODO: actually ended up fixing it for External. but still need to decide if
                 refactoring everything into core
              */
-                dto.extraHeuristics = noKillSwitch(() -> sutController.getExtraHeuristics());
+                dto.extraHeuristics = noKillSwitch(() -> sutController.getExtraHeuristics(queryFromDatabase));
 
                 List<AdditionalInfo> additionalInfos = noKillSwitch(() -> sutController.getAdditionalInfoList());
                 if (additionalInfos != null) {
@@ -606,7 +608,12 @@ public class EMController {
     @Path(ControllerConstants.NEW_ACTION)
     @Consumes(MediaType.APPLICATION_JSON)
     @PUT
-    public Response newAction(ActionDto dto, @Context HttpServletRequest httpServletRequest) {
+    public Response newAction(
+            ActionDto dto,
+            @QueryParam("queryFromDatabase")
+            @DefaultValue("true")
+            boolean queryFromDatabase,
+            @Context HttpServletRequest httpServletRequest) {
         // notify that the action is executing
         noKillSwitch(() -> sutController.setExecutingAction(true));
 
@@ -625,7 +632,7 @@ public class EMController {
             assert trackRequestSource(httpServletRequest);
 
             //this MUST not be inside a noKillSwitch, as it sets to false
-            sutController.newAction(dto);
+            sutController.newAction(dto, queryFromDatabase);
 
             if (dto.rpcCall != null) {
                 ActionResponseDto authResponseDto = null;
@@ -733,14 +740,21 @@ public class EMController {
             }
 
             QueryResult queryResult = null;
-            InsertionResultsDto insertionResultsDto = null;
+            final InsertionResultsDto insertionResultsDto;
 
 
             try {
                 if (dto.command != null) {
+                    insertionResultsDto = null;
                     queryResult = SqlScriptRunner.execCommand(connection, dto.command);
                 } else {
                     insertionResultsDto = SqlScriptRunner.execInsert(connection, dto.insertions);
+                    noKillSwitch(() -> {
+                        for (int i = 0; i < insertionResultsDto.executionResults.size(); i++) {
+                            if (insertionResultsDto.executionResults.get(i))
+                                sutController.addSuccessfulInitSqlInsertion(dto.insertions.get(i));
+                        }
+                    });
                 }
             } catch (Exception e) {
                 String msg = "Failed to execute database command: " + e.getMessage();

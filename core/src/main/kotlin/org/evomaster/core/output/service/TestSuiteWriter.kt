@@ -8,13 +8,14 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.output.*
 import org.evomaster.core.output.TestWriterUtils.getWireMockVariableName
 import org.evomaster.core.output.TestWriterUtils.handleDefaultStubForAsJavaOrKotlin
+import org.evomaster.core.output.naming.NumberedTestCaseNamingStrategy
+import org.evomaster.core.output.naming.TestCaseNamingStrategyFactory
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.rest.BlackBoxUtils
 import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.Sampler
@@ -123,6 +124,7 @@ class TestSuiteWriter {
 
         val lines = Lines(config.outputFormat)
         val testSuiteOrganizer = TestSuiteOrganizer()
+        val namingStrategy = TestCaseNamingStrategyFactory(config.namingStrategy).create(solution)
 
        // activePartialOracles = partialOracles.activeOracles(solution.individuals)
 
@@ -142,19 +144,15 @@ class TestSuiteWriter {
         //catch any sorting problems (see NPE is SortingHelper on Trello)
         val tests = try {
             // TODO skip to sort RPC for the moment
-            if (solution.individuals.any { it.individual is RPCIndividual }) {
-                var counter = 0
-                solution.individuals.map { ind -> TestCase(ind, "test_${counter++}") }
-            } else
-                testSuiteOrganizer.sortTests(solution, config.customNaming)
+                testSuiteOrganizer.sortTests(solution, namingStrategy)
         } catch (ex: Exception) {
-            var counter = 0
             log.warn(
                 "A failure has occurred with the test sorting. Reverting to default settings. \n"
                         + "Exception: ${ex.localizedMessage} \n"
                         + "At ${ex.stackTrace.joinToString(separator = " \n -> ")}. "
             )
-            solution.individuals.map { ind -> TestCase(ind, "test_${counter++}") }
+            // fallback to numbered naming strategy upon failure
+            NumberedTestCaseNamingStrategy(solution).getTestCases()
         }
 
         val testSuitePath = getTestSuitePath(testSuiteFileName, config)

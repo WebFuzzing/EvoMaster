@@ -14,6 +14,7 @@ import org.evomaster.core.config.ConfigUtil
 import org.evomaster.core.config.ConfigsFromFile
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.output.naming.NamingStrategy
 import org.evomaster.core.search.impact.impactinfocollection.GeneMutationSelectionMethod
 import org.evomaster.core.search.service.IdMapper
 import org.slf4j.LoggerFactory
@@ -82,6 +83,8 @@ class EMConfig {
         private val defaultAlgorithmForWhiteBox = Algorithm.MIO
 
         private val defaultOutputFormatForBlackBox = OutputFormat.PYTHON_UNITTEST
+
+        private val defaultTestCaseNamingStrategy = NamingStrategy.NUMBERED
 
         fun validateOptions(args: Array<String>): OptionParser {
 
@@ -486,6 +489,9 @@ class EMConfig {
         if (shouldGenerateSqlData() && !heuristicsForSQL) {
             throw ConfigProblemException("Cannot generate SQL data if you not enable " +
                     "collecting heuristics with 'heuristicsForSQL'")
+        }
+        if (generateSqlDataWithDSE && generateSqlDataWithSearch) {
+            throw ConfigProblemException("Cannot generate SQL data with both DSE and search")
         }
 
         if (heuristicsForSQL && !extractSqlExecutionInfo) {
@@ -1420,6 +1426,7 @@ class EMConfig {
     @Min(-1.0)
     var maxLengthOfTraces = 10
 
+    @Deprecated("No longer in use")
     @Cfg("Enable custom naming and sorting criteria")
     var customNaming = true
 
@@ -1999,9 +2006,14 @@ class EMConfig {
 
 
     @Experimental
-    @Cfg("Specify a maximum number of existing data in the database to sample when SQL handling is enabled. " +
+    @Cfg("Specify a maximum number of existing data in the database to sample in a test when SQL handling is enabled. " +
             "Note that a negative number means all existing data would be sampled")
-    var maximumExistingDataToSampleInDb = -1
+    var maxSizeOfExistingDataToSample = -1
+
+
+    @Experimental
+    @Cfg("Specify whether insertions should be used to calculate SQL heuristics instead of retrieving data from real databases.")
+    var useInsertionForSqlHeuristics = false
 
     @Debug
     @Cfg("Whether to output executed sql info")
@@ -2344,6 +2356,9 @@ class EMConfig {
     @Cfg("Specify the probability of using the data pool when sampling test cases." +
             " This is for white-box (wb) mode")
     var wbProbabilityUseDataPool = 0.2
+
+    @Cfg("Specify the naming strategy for test cases.")
+    var namingStrategy = defaultTestCaseNamingStrategy
 
 
     fun getProbabilityUseDataPool() : Double{
