@@ -211,112 +211,109 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
 
     protected fun handleExtra(dto: TestResultsDto, fv: FitnessValue) {
 
-        if(!config.isMIO()){
+        if (!config.isMIO()) {
             return
         }
 
         if (configuration.heuristicsForSQL) {
-
-            for (i in 0 until dto.extraHeuristics.size) {
-
-                val extra = dto.extraHeuristics[i]
-
-                //TODO handling of toMaximize as well
-                //TODO refactoring when will have other heuristics besides for SQL
-
-                extraHeuristicsLogger.writeHeuristics(extra.heuristics, i)
-
-                val toMinimize = extra.heuristics
-                    .filter {
-                        it != null
-                                && it.objective == ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO
-                                && it.type == ExtraHeuristicEntryDto.Type.SQL
-                    }.map { it.value }
-                    .toList()
-
-                if (!toMinimize.isEmpty()) {
-                    fv.setExtraToMinimize(i, toMinimize)
-                }
-
-                fv.setDatabaseExecution(i, DatabaseExecution.fromDto(extra.sqlSqlExecutionsDto))
-
-
-            }
-
-            fv.aggregateDatabaseData()
-
-            if (!fv.getViewOfAggregatedFailedWhere().isEmpty()) {
-                searchTimeController.newIndividualsWithSqlFailedWhere()
-            }
-        } else if (configuration.extractSqlExecutionInfo) {
-            /*
-                this code here is done in previous block as well
-             */
-            for (i in 0 until dto.extraHeuristics.size) {
-                val extra = dto.extraHeuristics[i]
-                fv.setDatabaseExecution(i, DatabaseExecution.fromDto(extra.sqlSqlExecutionsDto))
-            }
+            handleSqlHeuristics(dto, fv)
         }
 
-        handleMongoHeuristics(dto, fv)
-    }
-
-    private fun handleMongoHeuristics(dto: TestResultsDto, fv: FitnessValue) {
-        if (configuration.heuristicsForMongo) {
-
-
+        if (configuration.extractSqlExecutionInfo) {
             for (i in 0 until dto.extraHeuristics.size) {
-
                 val extra = dto.extraHeuristics[i]
-
-                extraHeuristicsLogger.writeHeuristics(extra.heuristics, i)
-
-                val toMinimize = extra.heuristics
-                    .filter {
-                        it != null
-                                && it.objective == ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO
-                                && it.type == ExtraHeuristicEntryDto.Type.MONGO
-                    }.map { it.value }
-                    .toList()
-
-                if (toMinimize.isNotEmpty()) fv.setExtraToMinimize(i, toMinimize)
-
-                extra.heuristics
-                    .filter {
-                        it != null
-                    }.forEach {
-                        when (it.type) {
-                            ExtraHeuristicEntryDto.Type.MONGO -> {
-                                statistics.reportNumberOfEvaluatedDocumentsForMongoHeuristic(it.numberOfEvaluatedRecords)
-                                if (it.extraHeuristicEvaluationFailure) {
-                                    statistics.reportMongoHeuristicEvaluationSuccess()
-                                } else {
-                                    statistics.reportMongoHeuristicEvaluationFailure()
-                                }
-                            }
-                            ExtraHeuristicEntryDto.Type.SQL -> {
-                                statistics.reportNumberOfEvaluatedRowsForSqlHeuristic(it.numberOfEvaluatedRecords)
-                                if (it.extraHeuristicEvaluationFailure) {
-                                    statistics.reportSqlHeuristicEvaluationSuccess()
-                                } else {
-                                    statistics.reportSqlHeuristicEvaluationFailure()
-                                }
-                            }
-                        }
-                    }
-
-
+                fv.setDatabaseExecution(i, DatabaseExecution.fromDto(extra.sqlSqlExecutionsDto))
             }
+            fv.aggregateDatabaseData()
+            if (fv.getViewOfAggregatedFailedWhere().isNotEmpty()) {
+                searchTimeController.newIndividualsWithSqlFailedWhere()
+            }
+
+        }
+
+        if (configuration.heuristicsForMongo) {
+            handleMongoHeuristics(dto, fv)
         }
 
         if (configuration.extractMongoExecutionInfo) {
-
             for (i in 0 until dto.extraHeuristics.size) {
                 val extra = dto.extraHeuristics[i]
                 fv.setMongoExecution(i, MongoExecution.fromDto(extra.mongoExecutionsDto))
             }
-
             fv.aggregateMongoDatabaseData()
+        }
+    }
+
+    private fun handleSqlHeuristics(
+        dto: TestResultsDto,
+        fv: FitnessValue,
+    ) {
+        for (i in 0 until dto.extraHeuristics.size) {
+
+            val extra = dto.extraHeuristics[i]
+
+            //TODO handling of toMaximize as well
+            //TODO refactoring when will have other heuristics besides for SQL
+
+            extraHeuristicsLogger.writeHeuristics(extra.heuristics, i)
+
+            val toMinimize = extra.heuristics
+                .filter {
+                    it != null
+                            && it.objective == ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO
+                            && it.type == ExtraHeuristicEntryDto.Type.SQL
+                }.map { it.value }
+                .toList()
+
+            if (!toMinimize.isEmpty()) {
+                fv.setExtraToMinimize(i, toMinimize)
+            }
+
+            extra.heuristics
+                .filterNotNull().forEach {
+                    if (it.type == ExtraHeuristicEntryDto.Type.SQL) {
+                        statistics.reportNumberOfEvaluatedRowsForSqlHeuristic(it.numberOfEvaluatedRecords)
+                        if (it.extraHeuristicEvaluationFailure) {
+                            statistics.reportSqlHeuristicEvaluationFailure()
+                        } else {
+                            statistics.reportSqlHeuristicEvaluationSuccess()
+                        }
+                    }
+                }
+        }
+
+    }
+
+    private fun handleMongoHeuristics(dto: TestResultsDto, fv: FitnessValue) {
+        for (i in 0 until dto.extraHeuristics.size) {
+
+            val extra = dto.extraHeuristics[i]
+
+            extraHeuristicsLogger.writeHeuristics(extra.heuristics, i)
+
+            val toMinimize = extra.heuristics
+                .filter {
+                    it != null
+                            && it.objective == ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO
+                            && it.type == ExtraHeuristicEntryDto.Type.MONGO
+                }.map { it.value }
+                .toList()
+
+            if (toMinimize.isNotEmpty()) {
+                fv.setExtraToMinimize(i, toMinimize)
+            }
+
+            extra.heuristics
+                .filterNotNull().forEach {
+                    if (it.type == ExtraHeuristicEntryDto.Type.MONGO) {
+                        statistics.reportNumberOfEvaluatedDocumentsForMongoHeuristic(it.numberOfEvaluatedRecords)
+                        if (it.extraHeuristicEvaluationFailure) {
+                            statistics.reportMongoHeuristicEvaluationFailure()
+                        } else {
+                            statistics.reportMongoHeuristicEvaluationSuccess()
+                        }
+                    }
+                }
         }
     }
 }

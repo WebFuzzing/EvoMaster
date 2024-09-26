@@ -321,7 +321,7 @@ class Statistics : SearchListener {
 
             // statistics info for SQL Heuristics
             add(Pair("averageNumberOfEvaluatedRowsForSqlHeuristics","${averageNumberOfEvaluatedRowsForSqlHeuristics()}"))
-            add(Pair("sqlHeuristicEvaluationFailures","${sqlHeuristicEvaluationFailureCount}" ))
+            add(Pair("sqlHeuristicsEvaluationFailures","$sqlHeuristicEvaluationFailureCount" ))
             add(Pair("sqlHeuristicsEvaluationCount","${getSqlHeuristicsEvaluationCount()}"))
 
         }
