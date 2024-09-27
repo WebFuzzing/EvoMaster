@@ -180,6 +180,9 @@ If you are trying to use _EvoMaster_, but the instructions in this documentation
 Also, feel free to start new discussion topics in the [Discussions forum](https://github.com/WebFuzzing/EvoMaster/discussions).
 If you have time, please consider answering the polls there.
 
+If you are working on an open-source API, you can drop us a message if you have problems using EvoMaster on it. 
+Otherwise, if you are working in industry on closed-source APIs, we have options for academia-industry collaborations ([see more info here](docs/contribute.md)).  
+
 
 * [Example of generated tests](docs/example.md)
 * [Download and Install EvoMaster](docs/download.md)
@@ -190,6 +193,7 @@ If you have time, please consider answering the polls there.
 * [Using EvoMaster for White-Box Testing (harder to setup, but better results)](docs/whitebox.md)
   * [Write an EvoMaster Driver for White-Box Testing](docs/write_driver.md)
   * [Dealing with JDKs above version 8](docs/jdks.md)
+* [Configuring authentication](docs/auth.md)  
 * [Console output](docs/console_output.md)
 * [Library dependencies for the generated tests](docs/library_dependencies.md)
 * [How to contribute](docs/contribute.md)

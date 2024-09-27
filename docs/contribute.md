@@ -44,7 +44,9 @@ the [issues](https://github.com/EMResearch/EvoMaster/issues) page:
     
     1. getting priority on new features and bug fixing.
     2. "free" human resources (MSc/PhD students and researchers) that try to break your systems and
-        find faults in them.    
+        find faults in them.
+    
+  If this can be of interest for you, drop us a message.  
     
 * *Academic Collaborations*: we are keen to hear from students and researchers that want to 
   collaborate on topics in which _EvoMaster_ can be used on, or extended for.
