@@ -49,7 +49,28 @@ public class SqlHandlerTest {
         assertFalse(canParseSqlStatement);
     }
 
+    @Test
+    public void testNoWhere() throws Exception {
 
+        String select = "SELECT * FROM Table v";
+
+        Statement stmt = CCJSqlParserUtil.parse(select);
+
+        Map<String, Set<String>> columns = new SqlHandler(null).extractColumnsInvolvedInWhere(stmt);
+        assertTrue(columns.isEmpty());
+    }
+
+
+    @Test
+    public void testNoFromNoWhere() throws Exception {
+
+        String select = "SELECT 1";
+
+        Statement stmt = CCJSqlParserUtil.parse(select);
+
+        Map<String, Set<String>> columns = new SqlHandler(null).extractColumnsInvolvedInWhere(stmt);
+        assertTrue(columns.isEmpty());
+    }
 
 
 

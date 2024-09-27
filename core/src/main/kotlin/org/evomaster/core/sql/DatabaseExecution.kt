@@ -119,7 +119,7 @@ class DatabaseExecution(
                 return listOf()
             }
 
-            return data.map { SqlExecutionInfo(it.command, it.executionTime) }
+            return data.map { SqlExecutionInfo(it.sqlCommand, it.threwSqlExeception, it.executionTime) }
         }
 
         private fun cloneData(data: Map<String, Set<String>>?): Map<String, Set<String>> {

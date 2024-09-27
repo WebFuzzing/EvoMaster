@@ -413,7 +413,7 @@ public class ExecutionTracer {
         getCurrentAdditionalInfo().addSpecialization(taintInputName, info);
     }
 
-    public static void addSqlInfo(SqlInfo info) {
+    public static void addSqlInfo(ExecutedSqlCommand info) {
         if (!executingInitSql)
             getCurrentAdditionalInfo().addSqlInfo(info);
     }

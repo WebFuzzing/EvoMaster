@@ -386,9 +386,10 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             last.getSqlInfoData().stream().forEach(it -> {
 //                    String sql = it.getCommand();
                 try {
-                    sqlHandler.handle(new SqlExecutionLogDto(it.getCommand(), it.getExecutionTime()));
+                    final SqlExecutionLogDto sqlExecutionLogDto = new SqlExecutionLogDto(it.getSqlCommand(), it.hasThrownSqlException(), it.getExecutionTime());
+                    sqlHandler.handle(sqlExecutionLogDto);
                 } catch (Exception e) {
-                    SimpleLogger.error("FAILED TO HANDLE SQL COMMAND: " + it.getCommand());
+                    SimpleLogger.error("FAILED TO HANDLE SQL COMMAND: " + it.getSqlCommand());
                     assert false; //we should try to handle all cases in our tests
                 }
             });

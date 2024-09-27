@@ -18,7 +18,6 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.stream.Collectors;
 
 import static org.evomaster.client.java.sql.internal.ParserUtils.*;
 
@@ -110,15 +109,15 @@ public class SqlHandler {
     /**
      * handle executed sql info
      *
-     * @param sql to be handled
+     * @param sqlExecutionLogDto to be handled
      */
-    public void handle(SqlExecutionLogDto sql) {
-        executedInfo.add(sql);
-        handle(sql.command);
+    public void handle(SqlExecutionLogDto sqlExecutionLogDto) {
+        executedInfo.add(sqlExecutionLogDto);
+        handle(sqlExecutionLogDto.sqlCommand);
     }
 
-    public void handle(String sql) {
-        Objects.requireNonNull(sql);
+    public void handle(String sqlCommand) {
+        Objects.requireNonNull(sqlCommand);
 
         if (!calculateHeuristics && !extractSqlExecution) {
             return;
@@ -126,21 +125,21 @@ public class SqlHandler {
 
         numberOfSqlCommands++;
 
-        if (!ParserUtils.canParseSqlStatement(sql)) {
-            SimpleLogger.warn("Cannot parse SQL statement: " + sql);
+        if (!ParserUtils.canParseSqlStatement(sqlCommand)) {
+            SimpleLogger.warn("Cannot parse SQL statement: " + sqlCommand);
             return;
         }
 
-        buffer.add(sql);
+        buffer.add(sqlCommand);
 
-        if (isSelect(sql)) {
-            mergeNewData(queriedData, ColumnTableAnalyzer.getSelectReadDataFields(sql));
-        } else if (isDelete(sql)) {
-            deletedData.addAll(ColumnTableAnalyzer.getDeletedTables(sql));
-        } else if (isInsert(sql)) {
-            mergeNewData(insertedData, ColumnTableAnalyzer.getInsertedDataFields(sql));
-        } else if (isUpdate(sql)) {
-            mergeNewData(updatedData, ColumnTableAnalyzer.getUpdatedDataFields(sql));
+        if (isSelect(sqlCommand)) {
+            mergeNewData(queriedData, ColumnTableAnalyzer.getSelectReadDataFields(sqlCommand));
+        } else if (isDelete(sqlCommand)) {
+            deletedData.addAll(ColumnTableAnalyzer.getDeletedTables(sqlCommand));
+        } else if (isInsert(sqlCommand)) {
+            mergeNewData(insertedData, ColumnTableAnalyzer.getInsertedDataFields(sqlCommand));
+        } else if (isUpdate(sqlCommand)) {
+            mergeNewData(updatedData, ColumnTableAnalyzer.getUpdatedDataFields(sqlCommand));
         }
 
     }
@@ -188,7 +187,7 @@ public class SqlHandler {
         return distances;
     }
 
-    private SqlDistanceWithMetrics computeDistance(String command, List<InsertionDto> successfulInitSqlInsertions, boolean queryFromDatabase) {
+    private SqlDistanceWithMetrics computeDistance(String sqlCommand, List<InsertionDto> successfulInitSqlInsertions, boolean queryFromDatabase) {
 
         if (connection == null) {
             throw new IllegalStateException("Trying to calculate SQL distance with no DB connection");
@@ -197,9 +196,9 @@ public class SqlHandler {
         Statement statement;
 
         try {
-            statement = CCJSqlParserUtil.parse(command);
+            statement = CCJSqlParserUtil.parse(sqlCommand);
         } catch (Exception e) {
-            SimpleLogger.uniqueWarn("Cannot handle SQL command: " + command + "\n" + e);
+            SimpleLogger.uniqueWarn("Cannot handle SQL command: " + sqlCommand + "\n" + e);
             return new SqlDistanceWithMetrics(Double.MAX_VALUE,0, true);
         }
 
@@ -216,9 +215,9 @@ public class SqlHandler {
             dist = new SqlDistanceWithMetrics(0.0,0,false);
         } else {
             if(queryFromDatabase)
-                dist = getDistanceForWhere(command, columns);
+                dist = getDistanceForWhere(sqlCommand, columns);
             else{
-                dist = getDistanceForWhereBasedOnInsertion(command, columns, successfulInitSqlInsertions);
+                dist = getDistanceForWhereBasedOnInsertion(sqlCommand, columns, successfulInitSqlInsertions);
             }
         }
 

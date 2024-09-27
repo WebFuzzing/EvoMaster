@@ -2,7 +2,7 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement.cla
 
 import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
-import org.evomaster.client.java.instrumentation.SqlInfo;
+import org.evomaster.client.java.instrumentation.ExecutedSqlCommand;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
@@ -21,7 +21,7 @@ public class StatementClassReplacement implements MethodReplacementClass {
         return Statement.class;
     }
 
-    static void handleSql(String sql, boolean exception, long executionTime){
+    static void handleSql(String sqlCommand, boolean threwSqlException, long executionTime){
         /*
             TODO need to provide proper info data here.
             Bit tricky, need to check actual DB implementations, see:
@@ -30,10 +30,11 @@ public class StatementClassReplacement implements MethodReplacementClass {
             Anyway, not needed till we support constraint solving for DB data, as then
             we can skip the branch distance computation
 
-            Man: skip null sql for e.g., "com.zaxxer.hikari.pool"
+            Man: skip null sqlCommand for e.g., "com.zaxxer.hikari.pool"
          */
-        if(sql != null){
-            SqlInfo info = new SqlInfo(formatSql(sql), false, exception, executionTime);
+        if(sqlCommand != null){
+            final String formattedSqlCommand = formatSql(sqlCommand);
+            ExecutedSqlCommand info = new ExecutedSqlCommand(formattedSqlCommand, threwSqlException, executionTime);
             ExecutionTracer.addSqlInfo(info);
         }
 
@@ -123,7 +124,7 @@ public class StatementClassReplacement implements MethodReplacementClass {
             return result;
         }catch (SQLException e){
             // trace sql anyway, set exception true and executionTime FAILURE_EXTIME
-            handleSql(sql, true, SqlInfo.FAILURE_EXTIME);
+            handleSql(sql, true, ExecutedSqlCommand.FAILURE_EXECUTION_TIME);
             throw e;
         }
     }

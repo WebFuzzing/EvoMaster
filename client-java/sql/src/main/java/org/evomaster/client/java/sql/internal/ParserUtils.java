@@ -68,12 +68,12 @@ public class ParserUtils {
         }
     }
 
-    public static Statement asStatement(String statement) {
+    public static Statement asStatement(String sqlCommand) {
         Statement stmt;
         try {
-            stmt = CCJSqlParserUtil.parse(statement);
+            stmt = CCJSqlParserUtil.parse(sqlCommand);
         } catch (Exception e) {
-            throw new IllegalArgumentException("Invalid SQL statement: " + statement + "\n" + e.getMessage(), e);
+            throw new IllegalArgumentException("Invalid SQL statement: " + sqlCommand + "\n" + e.getMessage(), e);
         }
         return stmt;
     }

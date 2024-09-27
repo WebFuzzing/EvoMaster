@@ -58,7 +58,7 @@ public interface SqlHandlerInDBTest extends DatabaseTestTemplate {
             // check info of executed sql
             assertNotNull(dto.sqlExecutionLogDtoList);
             Assertions.assertEquals(1, dto.sqlExecutionLogDtoList.size());
-            Assertions.assertEquals(command, dto.sqlExecutionLogDtoList.get(0).command);
+            Assertions.assertEquals(command, dto.sqlExecutionLogDtoList.get(0).sqlCommand);
 
         } finally {
             starter.stop();
@@ -82,7 +82,7 @@ public interface SqlHandlerInDBTest extends DatabaseTestTemplate {
             // check info of executed sql
             assertNotNull(dto.sqlExecutionLogDtoList);
             Assertions.assertEquals(1, dto.sqlExecutionLogDtoList.size());
-            Assertions.assertEquals(command, dto.sqlExecutionLogDtoList.get(0).command);
+            Assertions.assertEquals(command, dto.sqlExecutionLogDtoList.get(0).sqlCommand);
         } finally {
             starter.stop();
         }
@@ -106,7 +106,7 @@ public interface SqlHandlerInDBTest extends DatabaseTestTemplate {
             // check info of executed sql
             assertNotNull(dto.sqlExecutionLogDtoList);
             Assertions.assertEquals(1, dto.sqlExecutionLogDtoList.size());
-            Assertions.assertEquals(command, dto.sqlExecutionLogDtoList.get(0).command);
+            Assertions.assertEquals(command, dto.sqlExecutionLogDtoList.get(0).sqlCommand);
         } finally {
             starter.stop();
         }
