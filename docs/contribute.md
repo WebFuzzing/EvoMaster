@@ -50,7 +50,11 @@ the [issues](https://github.com/EMResearch/EvoMaster/issues) page:
     
 * *Academic Collaborations*: we are keen to hear from students and researchers that want to 
   collaborate on topics in which _EvoMaster_ can be used on, or extended for.
-  For example, it is possible to have visiting PhD students in our lab.
+  For example, it is possible to have visiting PhD students in our lab in Oslo, Norway.
   However, all communications about academic collaborations should not be done here on GitHub,
   but rather by email, directly to Prof. A. Arcuri. 
+  Note that in Norway we are no longer allowed to have visitors or new employees from China, Iran, North Korea and Russia. 
+  This is political, and has nothing to do with this project. 
+  It is out of our control. 
+  If you are a citizen of China or Iran, and would like to be an academic visitor collaborating on EvoMaster, we have academic collaborators in China and Argentina that might accept visitors. 
 
