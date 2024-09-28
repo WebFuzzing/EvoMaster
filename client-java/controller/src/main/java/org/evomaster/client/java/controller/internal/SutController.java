@@ -396,7 +396,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         }
 
         if (sqlHandler.isCalculateHeuristics()) {
-            sqlHandler.getEvaluatedSqlCommands(successfulInitSqlInsertions, queryFromDatabase).stream()
+            sqlHandler.getSqlDistances(successfulInitSqlInsertions, queryFromDatabase).stream()
                     .map(p ->
                             new ExtraHeuristicEntryDto(
                                     ExtraHeuristicEntryDto.Type.SQL,

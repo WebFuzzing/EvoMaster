@@ -37,12 +37,12 @@ public class SqlHandler {
      * further queries. So, we buffer them, and execute them only
      * if needed (ie, lazy initialization)
      */
-    private final List<String> buffer;
+    private final List<SqlExecutionLogDto> bufferedSqlCommands;
 
     /**
      * The heuristics based on the SQL execution
      */
-    private final List<EvaluatedSqlCommand> distances;
+    private final List<SqlCommandWithDistance> distances;
 
     //see ExecutionDto
     private final Map<String, Set<String>> queriedData;
@@ -50,7 +50,7 @@ public class SqlHandler {
     private final Map<String, Set<String>> insertedData;
     private final Map<String, Set<String>> failedWhere;
     private final List<String> deletedData;
-    private final List<SqlExecutionLogDto> executedInfo;
+    private final List<SqlExecutionLogDto> executedSqlCommands;
 
     private int numberOfSqlCommands;
 
@@ -72,28 +72,28 @@ public class SqlHandler {
 
         this.taintHandler = taintHandler;
 
-        buffer = new CopyOnWriteArrayList<>();
+        bufferedSqlCommands = new CopyOnWriteArrayList<>();
         distances = new ArrayList<>();
         queriedData = new ConcurrentHashMap<>();
         updatedData = new ConcurrentHashMap<>();
         insertedData = new ConcurrentHashMap<>();
         failedWhere = new ConcurrentHashMap<>();
         deletedData = new CopyOnWriteArrayList<>();
-        executedInfo = new CopyOnWriteArrayList<>();
+        executedSqlCommands = new CopyOnWriteArrayList<>();
 
         calculateHeuristics = true;
         numberOfSqlCommands = 0;
     }
 
     public void reset() {
-        buffer.clear();
+        bufferedSqlCommands.clear();
         distances.clear();
         queriedData.clear();
         updatedData.clear();
         insertedData.clear();
         failedWhere.clear();
         deletedData.clear();
-        executedInfo.clear();
+        executedSqlCommands.clear();
 
         numberOfSqlCommands = 0;
     }
@@ -112,11 +112,8 @@ public class SqlHandler {
      * @param sqlExecutionLogDto to be handled
      */
     public void handle(SqlExecutionLogDto sqlExecutionLogDto) {
-        executedInfo.add(sqlExecutionLogDto);
-        handle(sqlExecutionLogDto.sqlCommand);
-    }
-
-    public void handle(String sqlCommand) {
+        executedSqlCommands.add(sqlExecutionLogDto);
+        final String sqlCommand = sqlExecutionLogDto.sqlCommand;
         Objects.requireNonNull(sqlCommand);
 
         if (!calculateHeuristics && !extractSqlExecution) {
@@ -130,7 +127,7 @@ public class SqlHandler {
             return;
         }
 
-        buffer.add(sqlCommand);
+        bufferedSqlCommands.add(sqlExecutionLogDto);
 
         if (isSelect(sqlCommand)) {
             mergeNewData(queriedData, ColumnTableAnalyzer.getSelectReadDataFields(sqlCommand));
@@ -157,8 +154,16 @@ public class SqlHandler {
         sqlExecutionsDto.updatedData.putAll(updatedData);
         sqlExecutionsDto.deletedData.addAll(deletedData);
         sqlExecutionsDto.numberOfSqlCommands = this.numberOfSqlCommands;
-        sqlExecutionsDto.sqlExecutionLogDtoList.addAll(executedInfo);
+        sqlExecutionsDto.sqlExecutionLogDtoList.addAll(executedSqlCommands);
         return sqlExecutionsDto;
+    }
+
+    /**
+     * Check if the SQL command is valid for distance computation.
+     */
+    private boolean isValidSqlCommandForDistanceEvaluation(String sqlCommand) {
+        return !isSelectOne(sqlCommand) &&
+                (isSelect(sqlCommand) || isDelete(sqlCommand) || isUpdate(sqlCommand));
     }
 
     /**
@@ -167,22 +172,27 @@ public class SqlHandler {
      *
      * @return a list of heuristics for sql commands
      */
-    public List<EvaluatedSqlCommand> getEvaluatedSqlCommands(List<InsertionDto> successfulInitSqlInsertions, boolean queryFromDatabase) {
+    public List<SqlCommandWithDistance> getSqlDistances(List<InsertionDto> successfulInitSqlInsertions, boolean queryFromDatabase) {
 
         if (connection == null || !calculateHeuristics) {
             return distances;
         }
 
+        // compute buffered Sql Commands and clear buffer
+        if (!bufferedSqlCommands.isEmpty()) {
+            bufferedSqlCommands.forEach(sqlExecutionLogDto -> {
+                String sqlCommand = sqlExecutionLogDto.sqlCommand;
 
-        buffer.forEach(sql -> {
-                    if (!isSelectOne(sql) && (isSelect(sql) || isDelete(sql) || isUpdate(sql))) {
-                        SqlDistanceWithMetrics dist = computeDistance(sql, successfulInitSqlInsertions, queryFromDatabase);
-                        distances.add(new EvaluatedSqlCommand(sql, dist));
-                    }
-                });
+                if (sqlExecutionLogDto.threwSqlExeception==false
+                        && isValidSqlCommandForDistanceEvaluation(sqlCommand)) {
+                    SqlDistanceWithMetrics sqlDistance = computeDistance(sqlCommand, successfulInitSqlInsertions, queryFromDatabase);
+                    distances.add(new SqlCommandWithDistance(sqlCommand, sqlDistance));
+                }
+            });
 
-        //side effects on buffer is not important, as it is just a cache
-        buffer.clear();
+            //side effects on buffer is not important, as it is just a cache
+            bufferedSqlCommands.clear();
+        }
 
         return distances;
     }

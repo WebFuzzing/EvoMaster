@@ -3,7 +3,7 @@ package org.evomaster.client.java.controller.internal.db.sql.h2;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.sql.SchemaExtractor;
 import org.evomaster.client.java.sql.SqlScriptRunner;
-import org.evomaster.client.java.sql.internal.EvaluatedSqlCommand;
+import org.evomaster.client.java.sql.internal.SqlCommandWithDistance;
 import org.evomaster.client.java.sql.internal.SqlHandler;
 import org.junit.jupiter.api.Test;
 
@@ -32,15 +32,15 @@ public class H2SqlHandlerTest extends DatabaseH2TestInit {
         SqlHandler sqlHandler = new SqlHandler(null);
         sqlHandler.setConnection(connection);
         sqlHandler.setSchema(schema);
-        assertTrue(sqlHandler.getEvaluatedSqlCommands(null, true).isEmpty());
+        assertTrue(sqlHandler.getSqlDistances(null, true).isEmpty());
         sqlHandler.handle("Select * From Person Where Age=15");
-        List<EvaluatedSqlCommand> evaluatedSqlCommands = sqlHandler.getEvaluatedSqlCommands(null, true);
+        List<SqlCommandWithDistance> sqlCommandWithDistances = sqlHandler.getSqlDistances(null, true);
 
-        assertEquals(1, evaluatedSqlCommands.size());
-        EvaluatedSqlCommand evaluatedSqlCommand = evaluatedSqlCommands.get(0);
-        assertEquals(0, evaluatedSqlCommand.sqlDistanceWithMetrics.numberOfEvaluatedRows);
-        assertEquals(Double.MAX_VALUE, evaluatedSqlCommand.sqlDistanceWithMetrics.sqlDistance);
-        assertEquals(false, evaluatedSqlCommand.sqlDistanceWithMetrics.sqlDistanceEvaluationFailure);
+        assertEquals(1, sqlCommandWithDistances.size());
+        SqlCommandWithDistance sqlCommandWithDistance = sqlCommandWithDistances.get(0);
+        assertEquals(0, sqlCommandWithDistance.sqlDistanceWithMetrics.numberOfEvaluatedRows);
+        assertEquals(Double.MAX_VALUE, sqlCommandWithDistance.sqlDistanceWithMetrics.sqlDistance);
+        assertEquals(false, sqlCommandWithDistance.sqlDistanceWithMetrics.sqlDistanceEvaluationFailure);
 
     }
 
@@ -68,15 +68,15 @@ public class H2SqlHandlerTest extends DatabaseH2TestInit {
         SqlHandler sqlHandler = new SqlHandler(null);
         sqlHandler.setConnection(connection);
         sqlHandler.setSchema(schema);
-        assertTrue(sqlHandler.getEvaluatedSqlCommands(null, true).isEmpty());
+        assertTrue(sqlHandler.getSqlDistances(null, true).isEmpty());
         sqlHandler.handle("Select * From Person Where Age=15");
-        List<EvaluatedSqlCommand> evaluatedSqlCommands = sqlHandler.getEvaluatedSqlCommands(null, true);
+        List<SqlCommandWithDistance> sqlCommandWithDistances = sqlHandler.getSqlDistances(null, true);
 
-        assertEquals(1, evaluatedSqlCommands.size());
-        EvaluatedSqlCommand evaluatedSqlCommand = evaluatedSqlCommands.get(0);
-        assertEquals(2, evaluatedSqlCommand.sqlDistanceWithMetrics.numberOfEvaluatedRows);
-        assertEquals(Math.abs(28-15), evaluatedSqlCommand.sqlDistanceWithMetrics.sqlDistance);
-        assertEquals(false, evaluatedSqlCommand.sqlDistanceWithMetrics.sqlDistanceEvaluationFailure);
+        assertEquals(1, sqlCommandWithDistances.size());
+        SqlCommandWithDistance sqlCommandWithDistance = sqlCommandWithDistances.get(0);
+        assertEquals(2, sqlCommandWithDistance.sqlDistanceWithMetrics.numberOfEvaluatedRows);
+        assertEquals(Math.abs(28-15), sqlCommandWithDistance.sqlDistanceWithMetrics.sqlDistance);
+        assertEquals(false, sqlCommandWithDistance.sqlDistanceWithMetrics.sqlDistanceEvaluationFailure);
 
     }
 
