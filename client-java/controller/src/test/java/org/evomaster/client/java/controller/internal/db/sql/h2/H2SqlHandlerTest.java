@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.internal.db.sql.h2;
 
+import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionLogDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.sql.SchemaExtractor;
 import org.evomaster.client.java.sql.SqlScriptRunner;
@@ -33,7 +34,9 @@ public class H2SqlHandlerTest extends DatabaseH2TestInit {
         sqlHandler.setConnection(connection);
         sqlHandler.setSchema(schema);
         assertTrue(sqlHandler.getSqlDistances(null, true).isEmpty());
-        sqlHandler.handle("Select * From Person Where Age=15");
+        String sqlCommand = "Select * From Person Where Age=15";
+        SqlExecutionLogDto sqlExecutionLogDto = new SqlExecutionLogDto(sqlCommand,false,10L);
+        sqlHandler.handle(sqlExecutionLogDto);
         List<SqlCommandWithDistance> sqlCommandWithDistances = sqlHandler.getSqlDistances(null, true);
 
         assertEquals(1, sqlCommandWithDistances.size());
@@ -69,7 +72,9 @@ public class H2SqlHandlerTest extends DatabaseH2TestInit {
         sqlHandler.setConnection(connection);
         sqlHandler.setSchema(schema);
         assertTrue(sqlHandler.getSqlDistances(null, true).isEmpty());
-        sqlHandler.handle("Select * From Person Where Age=15");
+        String sqlCommand = "Select * From Person Where Age=15";
+        SqlExecutionLogDto sqlExecutionLogDto = new SqlExecutionLogDto(sqlCommand,false,10L);
+        sqlHandler.handle(sqlExecutionLogDto);
         List<SqlCommandWithDistance> sqlCommandWithDistances = sqlHandler.getSqlDistances(null, true);
 
         assertEquals(1, sqlCommandWithDistances.size());
