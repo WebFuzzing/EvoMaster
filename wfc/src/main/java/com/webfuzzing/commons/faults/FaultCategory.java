@@ -63,7 +63,7 @@ public enum FaultCategory {
     public final String name;
 
     /**
-     * A short label to be used in test case naming when a fault is found
+     * A short label to be used in test case naming when a single fault is found
      */
     public final String testCaseLabel;
 
@@ -82,13 +82,4 @@ public enum FaultCategory {
         return "F" + code + ":" + name;
     }
 
-    /**
-     * A camelCase label for this category, to be used in test case naming.
-     * This will enable tests to have more descriptive names and easy detection of tests with faults
-     *
-     * @return the test case label
-     */
-    public String getTestCaseLabel() {
-        return testCaseLabel;
-    }
 }

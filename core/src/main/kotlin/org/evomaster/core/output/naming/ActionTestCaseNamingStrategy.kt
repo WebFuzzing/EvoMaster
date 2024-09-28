@@ -37,7 +37,12 @@ open class ActionTestCaseNamingStrategy(
     }
 
     private fun fault(faults: Set<FaultCategory>): String {
-        return faults.first().getTestCaseLabel()
+        if (faults.size > 1) {
+            var faultCodes = StringBuilder("showsFaults")
+            faults.sortedBy { it.code }.forEach { fault -> faultCodes.append("_${fault.code}") }
+            return faultCodes.toString()
+        }
+        return faults.first().testCaseLabel
     }
 
     private fun statusCode(evaluatedAction: EvaluatedAction): String {

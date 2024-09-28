@@ -55,6 +55,20 @@ class ActionNamingStrategyTest {
         assertEquals("test_0_GET_on_items_causes500_internalServerError", testCases[0].name)
     }
 
+    @Test
+    fun testResponseNamedWithMultipleFaults() {
+        val faults = listOf(DetectedFault(FaultCategory.GQL_ERROR_FIELD, "items"), DetectedFault(FaultCategory.HTTP_INVALID_LOCATION, "items"), DetectedFault(FaultCategory.HTTP_STATUS_500, "items"))
+        val eIndividual = getEvaluatedIndividualWithFaults("/items", 500, faults)
+
+        val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
+
+        val namingStrategy = ActionTestCaseNamingStrategy(solution)
+
+        val testCases = namingStrategy.getTestCases()
+        assertEquals(1, testCases.size)
+        assertEquals("test_0_GET_on_items_showsFaults_100_102_301", testCases[0].name)
+    }
+
     private fun getEvaluatedIndividualWith(path: String, statusCode: Int = 200): EvaluatedIndividual<RestIndividual> {
         return getEvaluatedIndividualWithFaults(path, statusCode, emptyList())
     }
