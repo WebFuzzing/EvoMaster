@@ -269,17 +269,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         return actionIndex;
     }
 
-    /**
-     * Calculate heuristics based on intercepted SQL commands
-     *
-     * @param sql command as a string
-     */
-    @Deprecated
-    public final void handleSql(String sql) {
-        Objects.requireNonNull(sql);
 
-        sqlHandler.handle(sql);
-    }
 
     public final void enableComputeSqlHeuristicsOrExtractExecution(
             boolean enableSqlHeuristics,
