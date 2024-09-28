@@ -26,7 +26,7 @@ public class ColumnTableAnalyzer {
         }
 
         Set<String> set = new HashSet<>();
-        Delete stmt = (Delete) SqlParserUtils.asStatement(delete);
+        Delete stmt = (Delete) SqlParserUtils.parseSqlCommand(delete);
 
         Table table = stmt.getTable();
         if(table != null){
@@ -48,7 +48,7 @@ public class ColumnTableAnalyzer {
 
         Map<String, Set<String>> map = new HashMap<>();
 
-        Insert stmt = (Insert) SqlParserUtils.asStatement(insert);
+        Insert stmt = (Insert) SqlParserUtils.parseSqlCommand(insert);
 
         Table table = stmt.getTable();
         if(table != null){
@@ -70,7 +70,7 @@ public class ColumnTableAnalyzer {
 
         Map<String, Set<String>> map = new HashMap<>();
 
-        Update stmt = (Update) SqlParserUtils.asStatement(update);
+        Update stmt = (Update) SqlParserUtils.parseSqlCommand(update);
 
         Table table = stmt.getTable();
         if(table!=null){
@@ -107,7 +107,7 @@ public class ColumnTableAnalyzer {
             But, we should look at actual read columns.
          */
 
-        Select stmt = (Select) SqlParserUtils.asStatement(select);
+        Select stmt = (Select) SqlParserUtils.parseSqlCommand(select);
         PlainSelect plainSelect = stmt.getPlainSelect();
 
         FromItem fromItem = plainSelect.getFromItem();

@@ -401,7 +401,7 @@ public class HeuristicsCalculatorTest {
     public void testTimestampWithDoubleQuotesIsInvalidSQL() {
         String sql = "select x from Foo where x = TIMESTAMP \"2022-11-30 16:00:00.0\"";
         Assertions.assertThrows(IllegalArgumentException.class, () -> {
-                    SqlParserUtils.asStatement(sql);
+                    SqlParserUtils.parseSqlCommand(sql);
                 }
         );
     }

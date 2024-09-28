@@ -420,7 +420,7 @@ public class SqlScriptRunner {
         Map<String, List<String>> tableSqlMap = new HashMap<>();
         for (String command: commands){
             if (SqlParserUtils.isInsert(command)){
-                Insert stmt = (Insert) SqlParserUtils.asStatement(command);
+                Insert stmt = (Insert) SqlParserUtils.parseSqlCommand(command);
                 Table table = stmt.getTable();
                 tableSqlMap.putIfAbsent(table.getName(), new ArrayList<>());
                 String end = "";
@@ -458,7 +458,7 @@ public class SqlScriptRunner {
     private static boolean shouldExecuteInsert(String command, List<String> tablesToInsert){
         if (!SqlParserUtils.isInsert(command)) return true;
         if (tablesToInsert == null || tablesToInsert.isEmpty()) return false;
-        Insert stmt = (Insert) SqlParserUtils.asStatement(command);
+        Insert stmt = (Insert) SqlParserUtils.parseSqlCommand(command);
         Table table = stmt.getTable();
         return table!= null && tablesToInsert.stream().anyMatch(t-> t.equalsIgnoreCase(table.getName()));
     }

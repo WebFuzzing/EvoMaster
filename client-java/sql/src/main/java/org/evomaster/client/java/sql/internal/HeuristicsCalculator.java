@@ -55,7 +55,7 @@ public class HeuristicsCalculator {
             return new SqlDistanceWithMetrics(Double.MAX_VALUE,0, false);
         }
 
-        Statement stmt = SqlParserUtils.asStatement(sqlCommand);
+        Statement stmt = SqlParserUtils.parseSqlCommand(sqlCommand);
 
         Expression where = getWhere(stmt);
         if (where == null) {

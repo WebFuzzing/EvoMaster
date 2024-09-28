@@ -61,6 +61,6 @@ public class SqlParserUtilsTest {
 
     @Test
     public void testOnConflictPostgresql(){
-        SqlParserUtils.asStatement("INSERT INTO vets VALUES (1, 'James', 'Carter') ON CONFLICT DO NOTHING;");
+        SqlParserUtils.parseSqlCommand("INSERT INTO vets VALUES (1, 'James', 'Carter') ON CONFLICT DO NOTHING;");
     }
 }

@@ -1,10 +1,8 @@
 package org.evomaster.client.java.sql.internal;
 
-import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.ExpressionVisitor;
 import net.sf.jsqlparser.expression.ExpressionVisitorAdapter;
-import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.statement.Statement;
 import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionsDto;
@@ -133,6 +131,7 @@ public class SqlHandler {
             return;
         }
 
+        // all SQL statements added to bufferedSqlCommands can be parsed
         bufferedSqlCommands.add(sqlExecutionLogDto);
 
         if (isSelect(sqlCommand)) {
@@ -193,18 +192,18 @@ public class SqlHandler {
                 if (sqlExecutionLogDto.threwSqlExeception!=true
                         && isValidSqlCommandForDistanceEvaluation(sqlCommand)) {
 
-                    try {
-                        Statement parsedStatement = CCJSqlParserUtil.parse(sqlCommand);
-                        SqlDistanceWithMetrics sqlDistance = computeDistance(sqlCommand,
-                                parsedStatement,
-                                successfulInitSqlInsertions,
-                                queryFromDatabase);
-                        distances.add(new SqlCommandWithDistance(sqlCommand, sqlDistance));
-                    } catch (JSQLParserException e) {
-                        // we do not compute SQL distances for SQL commands that can't be parsed
-                        SimpleLogger.uniqueWarn("Cannot parse SQL command: " + sqlCommand + "\n" + e);
-                    }
-
+                    /*
+                     * All SQL commands that were saved to bufferedSqlCommands
+                     * were previously parsed with SqlParserUtils.canParseSqlStatement().
+                     * Therefore, we can assume that they can be successfully
+                     * parsed again.
+                     */
+                    Statement parsedStatement = SqlParserUtils.parseSqlCommand(sqlCommand);
+                    SqlDistanceWithMetrics sqlDistance = computeDistance(sqlCommand,
+                            parsedStatement,
+                            successfulInitSqlInsertions,
+                            queryFromDatabase);
+                    distances.add(new SqlCommandWithDistance(sqlCommand, sqlDistance));
                 }
             });
 

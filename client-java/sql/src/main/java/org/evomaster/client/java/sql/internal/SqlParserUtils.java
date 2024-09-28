@@ -15,23 +15,23 @@ public class SqlParserUtils {
      * We only use the selects that refer to objects in the database that are meaningful for testing purposes,
      * when code access to a sequence for example when getting the next id for a new object in the table,
      * then we don't want to use that select as a target.
-     * @param sql
+     * @param sqlCommand
      * @return
      */
-    public static boolean isSelect(String sql) {
-        return startsWithIgnoreCase(sql, "select") && !isASequence(sql);
+    public static boolean isSelect(String sqlCommand) {
+        return startsWithIgnoreCase(sqlCommand, "select") && !isASequence(sqlCommand);
     }
 
-    public static boolean isDelete(String sql) {
-        return startsWithIgnoreCase(sql, "delete");
+    public static boolean isDelete(String sqlCommand) {
+        return startsWithIgnoreCase(sqlCommand, "delete");
     }
 
-    public static boolean isUpdate(String sql) {
-        return startsWithIgnoreCase(sql, "update");
+    public static boolean isUpdate(String sqlCommand) {
+        return startsWithIgnoreCase(sqlCommand, "update");
     }
 
-    public static boolean isInsert(String sql) {
-        return startsWithIgnoreCase(sql, "insert");
+    public static boolean isInsert(String sqlCommand) {
+        return startsWithIgnoreCase(sqlCommand, "insert");
     }
 
     private static boolean startsWithIgnoreCase(String input, String prefix){
@@ -49,23 +49,23 @@ public class SqlParserUtils {
      *
      * https://stackoverflow.com/questions/3668506/efficient-sql-test-query-or-validation-query-that-will-work-across-all-or-most
      */
-    public static boolean isSelectOne(String sql) {
-        return sql!= null && sql.trim().toLowerCase().matches("select\\s+1\\s*;?");
+    public static boolean isSelectOne(String sqlCommand) {
+        return sqlCommand!= null && sqlCommand.trim().toLowerCase().matches("select\\s+1\\s*;?");
     }
 
 
-    public static Expression getWhere(Statement statement) {
+    public static Expression getWhere(Statement parsedStatement) {
 
-        if (statement instanceof Select) {
-            Select select = (Select) statement;
+        if (parsedStatement instanceof Select) {
+            Select select = (Select) parsedStatement;
             PlainSelect plainSelect = select.getPlainSelect();
             return plainSelect.getWhere();
-        } else if(statement instanceof Delete){
-            return ((Delete) statement).getWhere();
-        } else if(statement instanceof Update){
-            return ((Update) statement).getWhere();
+        } else if(parsedStatement instanceof Delete){
+            return ((Delete) parsedStatement).getWhere();
+        } else if(parsedStatement instanceof Update){
+            return ((Update) parsedStatement).getWhere();
         } else {
-            throw new IllegalArgumentException("Cannot handle statement: " + statement.toString());
+            throw new IllegalArgumentException("Cannot handle statement: " + parsedStatement.toString());
         }
     }
 
@@ -75,7 +75,7 @@ public class SqlParserUtils {
      * @param sqlCommand to be parsed
      * @return the AST root node
      */
-    public static Statement asStatement(String sqlCommand) {
+    public static Statement parseSqlCommand(String sqlCommand) {
         try {
             Statement stmt = CCJSqlParserUtil.parse(sqlCommand);
             return stmt;
@@ -84,13 +84,12 @@ public class SqlParserUtils {
         }
     }
 
-    public static boolean canParseSqlStatement(String statement){
+    public static boolean canParseSqlStatement(String sqlCommand){
         try {
-            CCJSqlParserUtil.parse(statement);
+            CCJSqlParserUtil.parse(sqlCommand);
+            return true;
         } catch (Exception e) {
             return false;
         }
-
-        return true;
     }
 }
