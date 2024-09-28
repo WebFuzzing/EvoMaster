@@ -28,10 +28,6 @@ public class ExecutedSqlCommand implements Serializable {
     private final long executionTime;
 
 
-    public ExecutedSqlCommand(String sqlCommand, boolean threwSqlException) {
-        this(sqlCommand, threwSqlException, FAILURE_EXECUTION_TIME);
-    }
-
     public ExecutedSqlCommand(String sqlCommand, boolean threwSqlException, long executionTime) {
         this.sqlCommand = sqlCommand;
         this.threwSqlException = threwSqlException;

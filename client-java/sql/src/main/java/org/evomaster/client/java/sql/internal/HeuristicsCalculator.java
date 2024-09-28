@@ -13,19 +13,11 @@ import org.evomaster.client.java.distance.heuristics.DistanceHelper;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.sql.Timestamp;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.*;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
-import java.time.format.DateTimeParseException;
 import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
-import java.util.function.Function;
 
-import static org.evomaster.client.java.sql.internal.ParserUtils.getWhere;
+import static org.evomaster.client.java.sql.internal.SqlParserUtils.getWhere;
 
 public class HeuristicsCalculator {
 
@@ -49,7 +41,7 @@ public class HeuristicsCalculator {
     }
 
     public static SqlDistanceWithMetrics computeDistance(
-            String statement,
+            String sqlCommand,
             DbSchemaDto schema, TaintHandler taintHandler,
             /**
              * Enable more advance techniques since first SQL support
@@ -63,7 +55,7 @@ public class HeuristicsCalculator {
             return new SqlDistanceWithMetrics(Double.MAX_VALUE,0, false);
         }
 
-        Statement stmt = ParserUtils.asStatement(statement);
+        Statement stmt = SqlParserUtils.asStatement(sqlCommand);
 
         Expression where = getWhere(stmt);
         if (where == null) {

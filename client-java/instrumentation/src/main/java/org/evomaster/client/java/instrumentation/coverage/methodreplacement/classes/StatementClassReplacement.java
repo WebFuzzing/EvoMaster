@@ -33,7 +33,7 @@ public class StatementClassReplacement implements MethodReplacementClass {
             Man: skip null sqlCommand for e.g., "com.zaxxer.hikari.pool"
          */
         if(sqlCommand != null){
-            final String formattedSqlCommand = formatSql(sqlCommand);
+            final String formattedSqlCommand = formatSqlCommand(sqlCommand);
             ExecutedSqlCommand info = new ExecutedSqlCommand(formattedSqlCommand, threwSqlException, executionTime);
             ExecutionTracer.addSqlInfo(info);
         }
@@ -141,14 +141,14 @@ public class StatementClassReplacement implements MethodReplacementClass {
 
     /**
      *
-     * @param sql to format
+     * @param sqlCommand to format
      * @return a formatted sql, e.g., removing comments
      *
      * Man: actually comments of prepared statement have been removed, this might be redundant for them.
      *      TODO need to refactor the sql handling a bit
      *
      */
-    private static String formatSql(String sql){
+    private static String formatSqlCommand(String sqlCommand){
         /*
            JP: In JSQLParser >= 4.9 empty strings are now successfully parsed to "null".
            Therefore, instead of a JSQLParserException, a NullPointerException was
@@ -156,9 +156,9 @@ public class StatementClassReplacement implements MethodReplacementClass {
            avoid parsing the "", and continue supporting the formatting of the "" sql
            command.
          */
-        if (!sql.equals("")) {
+        if (!sqlCommand.equals("")) {
             try {
-                return CCJSqlParserUtil.parse(sql).toString();
+                return CCJSqlParserUtil.parse(sqlCommand).toString();
             } catch (JSQLParserException e) {
             /*
                 Man: skip error log here since the sql would be checked when SqlHandler.computeDistance.
@@ -167,7 +167,7 @@ public class StatementClassReplacement implements MethodReplacementClass {
                 //SimpleLogger.error("SQL ERROR. Could not handle "+ sql + " with JSQLParserException, and the error message :"+e.getMessage());
             }
         }
-        return sql;
+        return sqlCommand;
 
     }
 

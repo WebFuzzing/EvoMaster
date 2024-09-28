@@ -63,6 +63,7 @@ class Statistics : SearchListener {
     private var coverageFailures = 0
 
     // sql heuristic evaluation statistics
+    private var sqlParsingFailureCount = 0;
     private var sqlHeuristicEvaluationSuccessCount = 0;
     private var sqlHeuristicEvaluationFailureCount = 0;
     private val sqlRowsAverageCalculator = AverageCalculator()
@@ -156,6 +157,13 @@ class Statistics : SearchListener {
 
     fun reportNumberOfEvaluatedDocumentsForMongoHeuristic(numberOfEvaluatedDocuments: Int) {
         mongoDocumentsAverageCalculator.add(numberOfEvaluatedDocuments)
+    }
+
+    fun reportSqlParsingFailures(numberOfParsingFailures: Int) {
+        if (numberOfParsingFailures<0) {
+            throw IllegalArgumentException("Invalid number of parsing failures: $numberOfParsingFailures")
+        }
+        sqlParsingFailureCount++;
     }
 
     fun reportSqlHeuristicEvaluationSuccess() {
@@ -320,6 +328,7 @@ class Statistics : SearchListener {
             add(Pair("mongoHeuristicsEvaluationCount","${getMongoHeuristicsEvaluationCount()}"))
 
             // statistics info for SQL Heuristics
+            add(Pair("sqlParsingFailureCount","$sqlParsingFailureCount"))
             add(Pair("averageNumberOfEvaluatedRowsForSqlHeuristics","${averageNumberOfEvaluatedRowsForSqlHeuristics()}"))
             add(Pair("sqlHeuristicsEvaluationFailures","$sqlHeuristicEvaluationFailureCount" ))
             add(Pair("sqlHeuristicsEvaluationCount","${getSqlHeuristicsEvaluationCount()}"))

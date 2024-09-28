@@ -1,5 +1,6 @@
 package org.evomaster.client.java.sql.internal;
 
+import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.statement.Statement;
@@ -8,7 +9,7 @@ import net.sf.jsqlparser.statement.select.PlainSelect;
 import net.sf.jsqlparser.statement.select.Select;
 import net.sf.jsqlparser.statement.update.Update;
 
-public class ParserUtils {
+public class SqlParserUtils {
 
     /**
      * We only use the selects that refer to objects in the database that are meaningful for testing purposes,
@@ -68,14 +69,19 @@ public class ParserUtils {
         }
     }
 
+    /**
+     * This method assumes that the SQL command can be successfully parsed.
+     *
+     * @param sqlCommand to be parsed
+     * @return the AST root node
+     */
     public static Statement asStatement(String sqlCommand) {
-        Statement stmt;
         try {
-            stmt = CCJSqlParserUtil.parse(sqlCommand);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Invalid SQL statement: " + sqlCommand + "\n" + e.getMessage(), e);
+            Statement stmt = CCJSqlParserUtil.parse(sqlCommand);
+            return stmt;
+        } catch (JSQLParserException e) {
+            throw new IllegalArgumentException("Cannot parse SQL command: " + sqlCommand + "\n" + e.getMessage(), e);
         }
-        return stmt;
     }
 
     public static boolean canParseSqlStatement(String statement){

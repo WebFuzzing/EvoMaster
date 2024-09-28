@@ -11,16 +11,16 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class ParserUtilsTest {
+public class SqlParserUtilsTest {
 
     //TODO see https://github.com/JSQLParser/JSqlParser/issues/420
     @Test
     public void testEscapeInput(){
 
-        assertTrue(ParserUtils.canParseSqlStatement("SELECT * FROM Foo WHERE x LIKE '$a' ESCAPE '$'"));
-        assertTrue(ParserUtils.canParseSqlStatement("SELECT * FROM Foo WHERE x LIKE  ?1 ESCAPE '$'"));
-        assertTrue(ParserUtils.canParseSqlStatement("SELECT * FROM Foo WHERE x LIKE '$a' ESCAPE ?1"));
-        assertTrue(ParserUtils.canParseSqlStatement("SELECT * FROM Foo WHERE x LIKE ?1 ESCAPE ?2"));
+        assertTrue(SqlParserUtils.canParseSqlStatement("SELECT * FROM Foo WHERE x LIKE '$a' ESCAPE '$'"));
+        assertTrue(SqlParserUtils.canParseSqlStatement("SELECT * FROM Foo WHERE x LIKE  ?1 ESCAPE '$'"));
+        assertTrue(SqlParserUtils.canParseSqlStatement("SELECT * FROM Foo WHERE x LIKE '$a' ESCAPE ?1"));
+        assertTrue(SqlParserUtils.canParseSqlStatement("SELECT * FROM Foo WHERE x LIKE ?1 ESCAPE ?2"));
     }
 
      //TODO see https://github.com/JSQLParser/JSqlParser/issues/1405
@@ -29,7 +29,7 @@ public class ParserUtilsTest {
 
         String sql = "ALTER SEQUENCE SYSTEM_SEQUENCE_40560F88_80C4_4F3B_BDAA_D18CC8D5C5AA RESTART WITH 1";
 
-        boolean parsed = ParserUtils.canParseSqlStatement(sql);
+        boolean parsed = SqlParserUtils.canParseSqlStatement(sql);
 
         assertTrue(parsed);
     }
@@ -43,7 +43,7 @@ public class ParserUtilsTest {
          */
         String sql = "INSERT INTO Foo() VALUES()";
 
-        boolean parsed = ParserUtils.canParseSqlStatement(sql);
+        boolean parsed = SqlParserUtils.canParseSqlStatement(sql);
 
         assertFalse(parsed);
     }
@@ -53,14 +53,14 @@ public class ParserUtilsTest {
     public void testSelectOne(String sql) throws JSQLParserException {
         Statement s = CCJSqlParserUtil.parse(sql);
         assertNotNull(s);
-        Expression where = ParserUtils.getWhere(s);
+        Expression where = SqlParserUtils.getWhere(s);
         assertNull(where);
-        boolean isSelectOne = ParserUtils.isSelectOne(sql);
+        boolean isSelectOne = SqlParserUtils.isSelectOne(sql);
         assertTrue(isSelectOne);
     }
 
     @Test
     public void testOnConflictPostgresql(){
-        ParserUtils.asStatement("INSERT INTO vets VALUES (1, 'James', 'Carter') ON CONFLICT DO NOTHING;");
+        SqlParserUtils.asStatement("INSERT INTO vets VALUES (1, 'James', 'Carter') ON CONFLICT DO NOTHING;");
     }
 }

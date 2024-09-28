@@ -252,6 +252,8 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
 
             val extra = dto.extraHeuristics[i]
 
+            statistics.reportSqlParsingFailures(extra.sqlSqlExecutionsDto.sqlParseFailureCount)
+
             //TODO handling of toMaximize as well
             //TODO refactoring when will have other heuristics besides for SQL
 
@@ -272,6 +274,7 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
             extra.heuristics
                 .filterNotNull().forEach {
                     if (it.type == ExtraHeuristicEntryDto.Type.SQL) {
+
                         statistics.reportNumberOfEvaluatedRowsForSqlHeuristic(it.numberOfEvaluatedRecords)
                         if (it.extraHeuristicEvaluationFailure) {
                             statistics.reportSqlHeuristicEvaluationFailure()

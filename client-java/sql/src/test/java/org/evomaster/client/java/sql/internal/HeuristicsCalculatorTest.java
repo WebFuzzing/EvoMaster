@@ -2,9 +2,6 @@ package org.evomaster.client.java.sql.internal;
 
 import org.evomaster.client.java.sql.DataRow;
 import org.evomaster.client.java.sql.QueryResult;
-import org.evomaster.client.java.sql.internal.HeuristicsCalculator;
-import org.evomaster.client.java.sql.internal.ParserUtils;
-import org.evomaster.client.java.sql.internal.SqlNameContext;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -404,7 +401,7 @@ public class HeuristicsCalculatorTest {
     public void testTimestampWithDoubleQuotesIsInvalidSQL() {
         String sql = "select x from Foo where x = TIMESTAMP \"2022-11-30 16:00:00.0\"";
         Assertions.assertThrows(IllegalArgumentException.class, () -> {
-                    ParserUtils.asStatement(sql);
+                    SqlParserUtils.asStatement(sql);
                 }
         );
     }
