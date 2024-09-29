@@ -222,7 +222,11 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
         if (configuration.extractSqlExecutionInfo) {
             for (i in 0 until dto.extraHeuristics.size) {
                 val extra = dto.extraHeuristics[i]
-                fv.setDatabaseExecution(i, DatabaseExecution.fromDto(extra.sqlSqlExecutionsDto))
+                val databaseExecution = DatabaseExecution.fromDto(extra.sqlSqlExecutionsDto)
+                fv.setDatabaseExecution(i, databaseExecution)
+                if (databaseExecution.sqlParseFailureCount>0) {
+                    statistics.reportSqlParsingFailures(databaseExecution.sqlParseFailureCount)
+                }
             }
             fv.aggregateDatabaseData()
             if (fv.getViewOfAggregatedFailedWhere().isNotEmpty()) {
@@ -251,8 +255,6 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
         for (i in 0 until dto.extraHeuristics.size) {
 
             val extra = dto.extraHeuristics[i]
-
-            statistics.reportSqlParsingFailures(extra.sqlSqlExecutionsDto.sqlParseFailureCount)
 
             //TODO handling of toMaximize as well
             //TODO refactoring when will have other heuristics besides for SQL

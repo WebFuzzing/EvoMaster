@@ -70,6 +70,15 @@ public class SqlHandlerTest {
     }
 
 
+    @Test
+    public void testWhereButNoColumns() throws Exception {
 
+        String select = "SELECT * FROM table WHERE 1 = 1";
+
+        Statement stmt = CCJSqlParserUtil.parse(select);
+
+        Map<String, Set<String>> columns = new SqlHandler(null).extractColumnsInvolvedInWhere(stmt);
+        assertTrue(columns.isEmpty());
+    }
 
 }

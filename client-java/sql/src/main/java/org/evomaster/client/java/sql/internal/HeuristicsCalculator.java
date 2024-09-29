@@ -42,7 +42,8 @@ public class HeuristicsCalculator {
 
     public static SqlDistanceWithMetrics computeDistance(
             String sqlCommand,
-            DbSchemaDto schema, TaintHandler taintHandler,
+            DbSchemaDto schema,
+            TaintHandler taintHandler,
             /**
              * Enable more advance techniques since first SQL support
              */
