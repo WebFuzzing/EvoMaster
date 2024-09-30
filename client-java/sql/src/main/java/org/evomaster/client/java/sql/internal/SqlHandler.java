@@ -230,15 +230,11 @@ public class SqlHandler {
          */
 
         SqlDistanceWithMetrics dist;
-        if (columns.isEmpty()) {
-            //TODO check if table(s) not empty, and give >0 otherwise
-            dist = new SqlDistanceWithMetrics(0.0,0,false);
+        if (columns.isEmpty() || queryFromDatabase) {
+            dist = getDistanceForWhere(sqlCommand, columns);
         } else {
-            if(queryFromDatabase)
-                dist = getDistanceForWhere(sqlCommand, columns);
-            else{
-                dist = getDistanceForWhereBasedOnInsertion(sqlCommand, columns, successfulInitSqlInsertions);
-            }
+            // !columns.isEmpty() && !queryFromDatabase
+            dist = getDistanceForWhereBasedOnInsertion(sqlCommand, columns, successfulInitSqlInsertions);
         }
 
         if (dist.sqlDistance > 0) {
@@ -254,6 +250,7 @@ public class SqlHandler {
         assert data != null;
         return HeuristicsCalculator.computeDistance(sqlCommand, schema, taintHandler, advancedHeuristics, data);
     }
+
 
     private SqlDistanceWithMetrics getDistanceForWhere(String sqlCommand, Map<String, Set<String>> columns) {
         String select;
