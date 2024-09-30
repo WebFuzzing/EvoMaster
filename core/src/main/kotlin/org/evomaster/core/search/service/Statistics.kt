@@ -158,6 +158,7 @@ class Statistics : SearchListener {
 
     fun reportNumberOfEvaluatedDocumentsForMongoHeuristic(numberOfEvaluatedDocuments: Int) {
         mongoDocumentsAverageCalculator.addValue(numberOfEvaluatedDocuments)
+        mongoDocumentsAverageCalculator.addValue(numberOfEvaluatedDocuments)
     }
 
     fun reportSqlParsingFailures(numberOfParsingFailures: Int) {
