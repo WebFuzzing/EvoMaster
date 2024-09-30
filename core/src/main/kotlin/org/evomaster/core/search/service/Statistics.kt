@@ -8,6 +8,7 @@ import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
+import org.evomaster.core.utils.IncrementalAverage
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
@@ -66,12 +67,12 @@ class Statistics : SearchListener {
     private var sqlParsingFailureCount = 0;
     private var sqlHeuristicEvaluationSuccessCount = 0;
     private var sqlHeuristicEvaluationFailureCount = 0;
-    private val sqlRowsAverageCalculator = AverageCalculator()
+    private val sqlRowsAverageCalculator = IncrementalAverage()
 
     // mongo heuristic evaluation statistic
     private var mongoHeuristicEvaluationSuccessCount = 0
     private var mongoHeuristicEvaluationFailureCount = 0
-    private val mongoDocumentsAverageCalculator = AverageCalculator()
+    private val mongoDocumentsAverageCalculator = IncrementalAverage()
 
    class Pair(val header: String, val element: String)
 
@@ -152,11 +153,11 @@ class Statistics : SearchListener {
     }
 
     fun reportNumberOfEvaluatedRowsForSqlHeuristic(numberOfEvaluatedRows: Int) {
-        sqlRowsAverageCalculator.add(numberOfEvaluatedRows)
+        sqlRowsAverageCalculator.addValue(numberOfEvaluatedRows)
     }
 
     fun reportNumberOfEvaluatedDocumentsForMongoHeuristic(numberOfEvaluatedDocuments: Int) {
-        mongoDocumentsAverageCalculator.add(numberOfEvaluatedDocuments)
+        mongoDocumentsAverageCalculator.addValue(numberOfEvaluatedDocuments)
     }
 
     fun reportSqlParsingFailures(numberOfParsingFailures: Int) {
@@ -186,9 +187,9 @@ class Statistics : SearchListener {
 
     fun getSqlHeuristicsEvaluationCount(): Int = sqlHeuristicEvaluationSuccessCount + sqlHeuristicEvaluationFailureCount
 
-    fun averageNumberOfEvaluatedRowsForSqlHeuristics(): Double = sqlRowsAverageCalculator.getAverage()
+    fun averageNumberOfEvaluatedRowsForSqlHeuristics(): Double = sqlRowsAverageCalculator.mean
 
-    fun averageNumberOfEvaluatedDocumentsForMongoHeuristics(): Double = mongoDocumentsAverageCalculator.getAverage()
+    fun averageNumberOfEvaluatedDocumentsForMongoHeuristics(): Double = mongoDocumentsAverageCalculator.mean
 
     override fun newActionEvaluated() {
         if (snapshotThreshold <= 0) {
