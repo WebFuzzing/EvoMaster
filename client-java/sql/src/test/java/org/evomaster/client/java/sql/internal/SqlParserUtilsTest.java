@@ -63,4 +63,15 @@ public class SqlParserUtilsTest {
     public void testOnConflictPostgresql(){
         SqlParserUtils.parseSqlCommand("INSERT INTO vets VALUES (1, 'James', 'Carter') ON CONFLICT DO NOTHING;");
     }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"SELECT -42;", "SELECT -1;", "Select 10;", "Select -0;", "SELECT 0;"})
+    public void testMoreThanSelectOne(String sql) throws JSQLParserException {
+        Statement s = CCJSqlParserUtil.parse(sql);
+        assertNotNull(s);
+        Expression where = SqlParserUtils.getWhere(s);
+        assertNull(where);
+        boolean isSelectOne = SqlParserUtils.isSelectOne(sql);
+        assertTrue(isSelectOne);
+    }
 }

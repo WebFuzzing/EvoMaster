@@ -50,7 +50,7 @@ public class SqlParserUtils {
      * https://stackoverflow.com/questions/3668506/efficient-sql-test-query-or-validation-query-that-will-work-across-all-or-most
      */
     public static boolean isSelectOne(String sqlCommand) {
-        return sqlCommand!= null && sqlCommand.trim().toLowerCase().matches("select\\s+1\\s*;?");
+        return sqlCommand!= null && sqlCommand.trim().toLowerCase().matches("select\\s+-?\\d+\\s*;?");
     }
 
 

@@ -11,7 +11,11 @@ import java.util.Objects;
 public class ExecutedSqlCommand implements Serializable {
 
 
-    public static transient long FAILURE_EXECUTION_TIME = -1L;
+    /**
+     * A constant to represent that execution time could not be obtained.
+     */
+    public static final long FAILURE_EXECUTION_TIME = -1L;
+
     /**
      * The actual SQL string with the command that was executed
      */
