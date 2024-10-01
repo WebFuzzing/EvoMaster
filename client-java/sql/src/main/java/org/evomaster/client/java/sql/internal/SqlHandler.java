@@ -253,6 +253,9 @@ public class SqlHandler {
 
 
     private SqlDistanceWithMetrics getDistanceForWhere(String sqlCommand, Map<String, Set<String>> columns) {
+        if (!isSelect(sqlCommand) && !isDelete(sqlCommand) && !isUpdate(sqlCommand)) {
+            throw new IllegalArgumentException("Cannot compute distance for sql command: " + sqlCommand);
+        }
         String select;
 
         /*
@@ -272,8 +275,36 @@ public class SqlHandler {
             if (columns.size() > 1) {
                 SimpleLogger.uniqueWarn("Cannot analyze: " + sqlCommand);
             }
-            Map.Entry<String, Set<String>> mapping = columns.entrySet().iterator().next();
-            select = createSelectForSingleTable(mapping.getKey(), mapping.getValue());
+            final String tableName;
+            final Set<String> columnNames;
+            if (columns.isEmpty()) {
+                if (isUpdate(sqlCommand)) {
+                    Map<String, Set<String>> mapping = ColumnTableAnalyzer.getUpdatedDataFields(sqlCommand);
+                    if (mapping.size() != 1) {
+                        //TODO need to handle special cases of multi-tables with JOINs
+                        throw new IllegalArgumentException("Cannot handle delete: " + sqlCommand);
+                    } else {
+                        tableName= mapping.entrySet().iterator().next().getKey();
+                        columnNames = Collections.singleton("*");
+                    }
+                } else if (isDelete(sqlCommand)) {
+                    Set<String> deletedTables = ColumnTableAnalyzer.getDeletedTables(sqlCommand);
+                    if (deletedTables.size()!=1) {
+                        //TODO need to handle special cases of multi-tables with JOINs
+                        throw new IllegalArgumentException("Cannot handle delete: " + sqlCommand);
+                    } else {
+                        tableName = deletedTables.iterator().next();
+                        columnNames = Collections.singleton("*");
+                    }
+                } else {
+                    throw new IllegalStateException("SQL command should only be SELECT, UPDATE or DELETE");
+                }
+            } else{
+                Map.Entry<String, Set<String>> tableToColumns = columns.entrySet().iterator().next();
+                tableName = tableToColumns.getKey();
+                columnNames = tableToColumns.getValue();
+            }
+            select = createSelectForSingleTable(tableName, columnNames);
         }
 
         QueryResult data;

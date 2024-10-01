@@ -38,7 +38,7 @@ public interface SqlHandlerInDBTest extends DatabaseTestTemplate {
     }
 
     @Test
-    public default void testDeleteTable() throws Exception {
+    public default void testDeleteTableNoWhereClause() throws Exception {
 
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT)");
 
@@ -60,13 +60,14 @@ public interface SqlHandlerInDBTest extends DatabaseTestTemplate {
             Assertions.assertEquals(1, dto.sqlExecutionLogDtoList.size());
             Assertions.assertEquals(command, dto.sqlExecutionLogDtoList.get(0).sqlCommand);
 
+
         } finally {
             starter.stop();
         }
     }
 
     @Test
-    public default void testInsertTable() throws Exception {
+    public default void testInsertTableNoWhereClause() throws Exception {
 
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT)");
 
@@ -90,7 +91,7 @@ public interface SqlHandlerInDBTest extends DatabaseTestTemplate {
 
 
     @Test
-    public default void testUpdateTable() throws Exception {
+    public default void testUpdateTableNoWhereClause() throws Exception {
 
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT)");
 
@@ -151,4 +152,58 @@ public interface SqlHandlerInDBTest extends DatabaseTestTemplate {
     default void assertInsertedDataIsEmpty(SqlExecutionsDto dto) {
         assertTrue(dto == null || dto.insertedData == null || dto.insertedData.isEmpty());
     }
+
+    @Test
+    public default void testDeleteTableWhereClauseWithNoColumns() throws Exception {
+
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT)");
+
+        InstrumentedSutStarter starter = getInstrumentedSutStarter();
+
+        System.setOut(new PrintStream(new ByteArrayOutputStream()));
+
+        String command = "DELETE FROM Foo WHERE 1 = 1";
+        try {
+            SqlExecutionsDto dto = executeCommand(starter, command, true);
+
+            assertNotNull(dto);
+            assertNotNull(dto.deletedData);
+            Assertions.assertEquals(1, dto.deletedData.size());
+            Assertions.assertTrue(dto.deletedData.contains("Foo"));
+
+            // check info of executed sql
+            assertNotNull(dto.sqlExecutionLogDtoList);
+            Assertions.assertEquals(1, dto.sqlExecutionLogDtoList.size());
+            Assertions.assertEquals(command, dto.sqlExecutionLogDtoList.get(0).sqlCommand);
+
+        } finally {
+            starter.stop();
+        }
+    }
+
+
+    @Test
+    public default void testUpdateTableWhereClauseWithNoColumns() throws Exception {
+
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT)");
+
+        InstrumentedSutStarter starter = getInstrumentedSutStarter();
+        String command = "UPDATE Foo SET x = 42 WHERE 1 = 1";
+        try {
+            SqlExecutionsDto dto = executeCommand(starter, command, true);
+
+            assertNotNull(dto);
+            assertNotNull(dto.updatedData);
+            Assertions.assertEquals(1, dto.updatedData.size());
+            Assertions.assertTrue(dto.updatedData.containsKey("Foo"));
+            // check info of executed sql
+            assertNotNull(dto.sqlExecutionLogDtoList);
+            Assertions.assertEquals(1, dto.sqlExecutionLogDtoList.size());
+            Assertions.assertEquals(command, dto.sqlExecutionLogDtoList.get(0).sqlCommand);
+        } finally {
+            starter.stop();
+        }
+    }
+
+
 }
