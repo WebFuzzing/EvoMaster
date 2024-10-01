@@ -10,7 +10,8 @@ import org.evomaster.core.search.Solution
 import org.evomaster.core.search.action.EvaluatedAction
 
 open class ActionTestCaseNamingStrategy(
-    solution: Solution<*>
+    solution: Solution<*>,
+    private val languageConventionFormatter: LanguageConventionFormatter
 ) : NumberedTestCaseNamingStrategy(solution)  {
 
 
@@ -18,7 +19,7 @@ open class ActionTestCaseNamingStrategy(
         var evaluatedAction = individual.evaluatedMainActions().last()
         var action = evaluatedAction.action as RestCallAction
 
-        return "_${action.verb}_on_${getPath(action.path.nameQualifier)}_${addResult(individual)}"
+        return "_${languageConventionFormatter.formatName(listOf(action.verb.toString(), "on", getPath(action.path.nameQualifier), addResult(individual)))}"
     }
 
     private fun getPath(nameQualifier: String): String {
