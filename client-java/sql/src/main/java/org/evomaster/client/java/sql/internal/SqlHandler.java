@@ -3,7 +3,6 @@ package org.evomaster.client.java.sql.internal;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.ExpressionVisitor;
 import net.sf.jsqlparser.expression.ExpressionVisitorAdapter;
-import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.statement.Statement;
 import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionsDto;
@@ -18,9 +17,8 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.stream.Collectors;
 
-import static org.evomaster.client.java.sql.internal.ParserUtils.*;
+import static org.evomaster.client.java.sql.internal.SqlParserUtils.*;
 
 /**
  * Class used to act upon SQL commands executed by the SUT
@@ -38,12 +36,12 @@ public class SqlHandler {
      * further queries. So, we buffer them, and execute them only
      * if needed (ie, lazy initialization)
      */
-    private final List<String> buffer;
+    private final List<SqlExecutionLogDto> bufferedSqlCommands;
 
     /**
      * The heuristics based on the SQL execution
      */
-    private final List<EvaluatedSqlCommand> distances;
+    private final List<SqlCommandWithDistance> distances;
 
     //see ExecutionDto
     private final Map<String, Set<String>> queriedData;
@@ -51,9 +49,11 @@ public class SqlHandler {
     private final Map<String, Set<String>> insertedData;
     private final Map<String, Set<String>> failedWhere;
     private final List<String> deletedData;
-    private final List<SqlExecutionLogDto> executedInfo;
+    private final List<SqlExecutionLogDto> executedSqlCommands;
 
     private int numberOfSqlCommands;
+
+    private int sqlParseFailureCount;
 
     private volatile Connection connection;
 
@@ -73,30 +73,32 @@ public class SqlHandler {
 
         this.taintHandler = taintHandler;
 
-        buffer = new CopyOnWriteArrayList<>();
+        bufferedSqlCommands = new CopyOnWriteArrayList<>();
         distances = new ArrayList<>();
         queriedData = new ConcurrentHashMap<>();
         updatedData = new ConcurrentHashMap<>();
         insertedData = new ConcurrentHashMap<>();
         failedWhere = new ConcurrentHashMap<>();
         deletedData = new CopyOnWriteArrayList<>();
-        executedInfo = new CopyOnWriteArrayList<>();
+        executedSqlCommands = new CopyOnWriteArrayList<>();
 
         calculateHeuristics = true;
         numberOfSqlCommands = 0;
+        sqlParseFailureCount = 0;
     }
 
     public void reset() {
-        buffer.clear();
+        bufferedSqlCommands.clear();
         distances.clear();
         queriedData.clear();
         updatedData.clear();
         insertedData.clear();
         failedWhere.clear();
         deletedData.clear();
-        executedInfo.clear();
+        executedSqlCommands.clear();
 
         numberOfSqlCommands = 0;
+        sqlParseFailureCount = 0;
     }
 
     public void setConnection(Connection connection) {
@@ -110,15 +112,12 @@ public class SqlHandler {
     /**
      * handle executed sql info
      *
-     * @param sql to be handled
+     * @param sqlExecutionLogDto to be handled
      */
-    public void handle(SqlExecutionLogDto sql) {
-        executedInfo.add(sql);
-        handle(sql.command);
-    }
-
-    public void handle(String sql) {
-        Objects.requireNonNull(sql);
+    public void handle(SqlExecutionLogDto sqlExecutionLogDto) {
+        executedSqlCommands.add(sqlExecutionLogDto);
+        final String sqlCommand = sqlExecutionLogDto.sqlCommand;
+        Objects.requireNonNull(sqlCommand);
 
         if (!calculateHeuristics && !extractSqlExecution) {
             return;
@@ -126,21 +125,23 @@ public class SqlHandler {
 
         numberOfSqlCommands++;
 
-        if (!ParserUtils.canParseSqlStatement(sql)) {
-            SimpleLogger.warn("Cannot parse SQL statement: " + sql);
+        if (!SqlParserUtils.canParseSqlStatement(sqlCommand)) {
+            sqlParseFailureCount++;
+            SimpleLogger.warn("Cannot parse SQL statement: " + sqlCommand);
             return;
         }
 
-        buffer.add(sql);
+        // all SQL statements added to bufferedSqlCommands can be parsed
+        bufferedSqlCommands.add(sqlExecutionLogDto);
 
-        if (isSelect(sql)) {
-            mergeNewData(queriedData, ColumnTableAnalyzer.getSelectReadDataFields(sql));
-        } else if (isDelete(sql)) {
-            deletedData.addAll(ColumnTableAnalyzer.getDeletedTables(sql));
-        } else if (isInsert(sql)) {
-            mergeNewData(insertedData, ColumnTableAnalyzer.getInsertedDataFields(sql));
-        } else if (isUpdate(sql)) {
-            mergeNewData(updatedData, ColumnTableAnalyzer.getUpdatedDataFields(sql));
+        if (isSelect(sqlCommand)) {
+            mergeNewData(queriedData, ColumnTableAnalyzer.getSelectReadDataFields(sqlCommand));
+        } else if (isDelete(sqlCommand)) {
+            deletedData.addAll(ColumnTableAnalyzer.getDeletedTables(sqlCommand));
+        } else if (isInsert(sqlCommand)) {
+            mergeNewData(insertedData, ColumnTableAnalyzer.getInsertedDataFields(sqlCommand));
+        } else if (isUpdate(sqlCommand)) {
+            mergeNewData(updatedData, ColumnTableAnalyzer.getUpdatedDataFields(sqlCommand));
         }
 
     }
@@ -158,8 +159,17 @@ public class SqlHandler {
         sqlExecutionsDto.updatedData.putAll(updatedData);
         sqlExecutionsDto.deletedData.addAll(deletedData);
         sqlExecutionsDto.numberOfSqlCommands = this.numberOfSqlCommands;
-        sqlExecutionsDto.sqlExecutionLogDtoList.addAll(executedInfo);
+        sqlExecutionsDto.sqlParseFailureCount = this.sqlParseFailureCount;
+        sqlExecutionsDto.sqlExecutionLogDtoList.addAll(executedSqlCommands);
         return sqlExecutionsDto;
+    }
+
+    /**
+     * Check if the SQL command is valid for distance computation.
+     */
+    private boolean isValidSqlCommandForDistanceEvaluation(String sqlCommand) {
+        return !isSelectOne(sqlCommand) &&
+                (isSelect(sqlCommand) || isDelete(sqlCommand) || isUpdate(sqlCommand));
     }
 
     /**
@@ -168,43 +178,52 @@ public class SqlHandler {
      *
      * @return a list of heuristics for sql commands
      */
-    public List<EvaluatedSqlCommand> getEvaluatedSqlCommands(List<InsertionDto> successfulInitSqlInsertions, boolean queryFromDatabase) {
+    public List<SqlCommandWithDistance> getSqlDistances(List<InsertionDto> successfulInitSqlInsertions, boolean queryFromDatabase) {
 
         if (connection == null || !calculateHeuristics) {
             return distances;
         }
 
+        // compute buffered Sql Commands and clear buffer
+        if (!bufferedSqlCommands.isEmpty()) {
+            bufferedSqlCommands.forEach(sqlExecutionLogDto -> {
+                String sqlCommand = sqlExecutionLogDto.sqlCommand;
 
-        buffer.forEach(sql -> {
-                    if (!isSelectOne(sql) && (isSelect(sql) || isDelete(sql) || isUpdate(sql))) {
-                        SqlDistanceWithMetrics dist = computeDistance(sql, successfulInitSqlInsertions, queryFromDatabase);
-                        distances.add(new EvaluatedSqlCommand(sql, dist));
-                    }
-                });
+                if (sqlExecutionLogDto.threwSqlExeception!=true
+                        && isValidSqlCommandForDistanceEvaluation(sqlCommand)) {
 
-        //side effects on buffer is not important, as it is just a cache
-        buffer.clear();
+                    /*
+                     * All SQL commands that were saved to bufferedSqlCommands
+                     * were previously parsed with SqlParserUtils.canParseSqlStatement().
+                     * Therefore, we can assume that they can be successfully
+                     * parsed again.
+                     */
+                    Statement parsedStatement = SqlParserUtils.parseSqlCommand(sqlCommand);
+                    SqlDistanceWithMetrics sqlDistance = computeDistance(sqlCommand,
+                            parsedStatement,
+                            successfulInitSqlInsertions,
+                            queryFromDatabase);
+                    distances.add(new SqlCommandWithDistance(sqlCommand, sqlDistance));
+                }
+            });
+
+            //side effects on buffer is not important, as it is just a cache
+            bufferedSqlCommands.clear();
+        }
 
         return distances;
     }
 
-    private SqlDistanceWithMetrics computeDistance(String command, List<InsertionDto> successfulInitSqlInsertions, boolean queryFromDatabase) {
+    private SqlDistanceWithMetrics computeDistance(String sqlCommand,
+                                                   Statement parsedStatement,
+                                                   List<InsertionDto> successfulInitSqlInsertions,
+                                                   boolean queryFromDatabase) {
 
         if (connection == null) {
             throw new IllegalStateException("Trying to calculate SQL distance with no DB connection");
         }
 
-        Statement statement;
-
-        try {
-            statement = CCJSqlParserUtil.parse(command);
-        } catch (Exception e) {
-            SimpleLogger.uniqueWarn("Cannot handle SQL command: " + command + "\n" + e);
-            return new SqlDistanceWithMetrics(Double.MAX_VALUE,0);
-        }
-
-
-        Map<String, Set<String>> columns = extractColumnsInvolvedInWhere(statement);
+        Map<String, Set<String>> columns = extractColumnsInvolvedInWhere(parsedStatement);
 
         /*
             even if columns.isEmpty(), we need to check if any data was present
@@ -213,12 +232,12 @@ public class SqlHandler {
         SqlDistanceWithMetrics dist;
         if (columns.isEmpty()) {
             //TODO check if table(s) not empty, and give >0 otherwise
-            dist = new SqlDistanceWithMetrics(0.0,0);
+            dist = new SqlDistanceWithMetrics(0.0,0,false);
         } else {
             if(queryFromDatabase)
-                dist = getDistanceForWhere(command, columns);
+                dist = getDistanceForWhere(sqlCommand, columns);
             else{
-                dist = getDistanceForWhereBasedOnInsertion(command, columns, successfulInitSqlInsertions);
+                dist = getDistanceForWhereBasedOnInsertion(sqlCommand, columns, successfulInitSqlInsertions);
             }
         }
 
@@ -230,13 +249,13 @@ public class SqlHandler {
     }
 
 
-    private SqlDistanceWithMetrics getDistanceForWhereBasedOnInsertion(String command, Map<String, Set<String>> columns, List<InsertionDto> insertionDtos) {
+    private SqlDistanceWithMetrics getDistanceForWhereBasedOnInsertion(String sqlCommand, Map<String, Set<String>> columns, List<InsertionDto> insertionDtos) {
         QueryResult[] data = QueryResultTransformer.convertInsertionDtosToQueryResults(insertionDtos, columns, schema);
         assert data != null;
-        return HeuristicsCalculator.computeDistance(command, schema, taintHandler, advancedHeuristics, data);
+        return HeuristicsCalculator.computeDistance(sqlCommand, schema, taintHandler, advancedHeuristics, data);
     }
 
-    private SqlDistanceWithMetrics getDistanceForWhere(String command, Map<String, Set<String>> columns) {
+    private SqlDistanceWithMetrics getDistanceForWhere(String sqlCommand, Map<String, Set<String>> columns) {
         String select;
 
         /*
@@ -248,13 +267,13 @@ public class SqlHandler {
 
            TODO: we need a general solution
          */
-        if (isSelect(command)) {
-            select = SelectTransformer.addFieldsToSelect(command);
+        if (isSelect(sqlCommand)) {
+            select = SelectTransformer.addFieldsToSelect(sqlCommand);
             select = SelectTransformer.removeConstraints(select);
             select = SelectTransformer.removeOperations(select);
         } else {
             if (columns.size() > 1) {
-                SimpleLogger.uniqueWarn("Cannot analyze: " + command);
+                SimpleLogger.uniqueWarn("Cannot analyze: " + sqlCommand);
             }
             Map.Entry<String, Set<String>> mapping = columns.entrySet().iterator().next();
             select = createSelectForSingleTable(mapping.getKey(), mapping.getValue());
@@ -265,10 +284,10 @@ public class SqlHandler {
             data = SqlScriptRunner.execCommand(connection, select);
         } catch (SQLException e) {
             SimpleLogger.uniqueWarn("Failed to execute query for retrieving data for computing SQL heuristics: " + select);
-            return new SqlDistanceWithMetrics(Double.MAX_VALUE, 0);
+            return new SqlDistanceWithMetrics(Double.MAX_VALUE, 0, true);
         }
 
-        return HeuristicsCalculator.computeDistance(command, schema, taintHandler, advancedHeuristics, data);
+        return HeuristicsCalculator.computeDistance(sqlCommand, schema, taintHandler, advancedHeuristics, data);
     }
 
     private String createSelectForSingleTable(String tableName, Set<String> columns) {
@@ -300,7 +319,7 @@ public class SqlHandler {
         Map<String, Set<String>> data = new HashMap<>();
 
         // move getWhere before SqlNameContext, otherwise null where would cause exception in new SqlNameContext
-        Expression where = ParserUtils.getWhere(statement);
+        Expression where = SqlParserUtils.getWhere(statement);
         if (where == null) {
             return data;
         }

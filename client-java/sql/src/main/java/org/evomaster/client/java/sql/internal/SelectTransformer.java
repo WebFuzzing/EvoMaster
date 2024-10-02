@@ -117,7 +117,7 @@ public class SelectTransformer {
     }
 
     private static Select asSelectStatement(String select) {
-        Statement stmt = ParserUtils.asStatement(select);
+        Statement stmt = SqlParserUtils.parseSqlCommand(select);
         if(! (stmt instanceof Select)){
             throw new IllegalArgumentException("SQL statement is not a SELECT: " + select);
         }
