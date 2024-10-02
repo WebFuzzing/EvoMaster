@@ -102,14 +102,14 @@ public class AdditionalInfo implements Serializable {
 
     private String lastExecutingThread = null;
 
-    private final Set<SqlInfo> sqlInfoData = new CopyOnWriteArraySet<>();
+    private final Set<ExecutedSqlCommand> executedSqlCommandData = new CopyOnWriteArraySet<>();
 
     private final Set<MongoFindCommand> mongoFindCommandData = new CopyOnWriteArraySet<>();
 
     private final Set<MongoCollectionSchema> mongoCollectionSchemaData = new CopyOnWriteArraySet<>();
 
-    public Set<SqlInfo> getSqlInfoData(){
-        return Collections.unmodifiableSet(sqlInfoData);
+    public Set<ExecutedSqlCommand> getSqlInfoData(){
+        return Collections.unmodifiableSet(executedSqlCommandData);
     }
 
     public Set<MongoFindCommand> getMongoInfoData(){
@@ -120,8 +120,8 @@ public class AdditionalInfo implements Serializable {
         return Collections.unmodifiableSet(mongoCollectionSchemaData);
     }
 
-    public void addSqlInfo(SqlInfo info){
-        sqlInfoData.add(info);
+    public void addSqlInfo(ExecutedSqlCommand info){
+        executedSqlCommandData.add(info);
     }
 
     public void addMongoInfo(MongoFindCommand info){

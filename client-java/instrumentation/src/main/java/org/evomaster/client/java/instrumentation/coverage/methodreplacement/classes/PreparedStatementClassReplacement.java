@@ -104,7 +104,7 @@ public class PreparedStatementClassReplacement implements MethodReplacementClass
 
     /**
      * inspired by this example from https://stackoverflow.com/questions/46890089/how-can-i-purify-a-sql-query-and-replace-all-parameters-with-using-regex
-     * @param sql is an original sql command which might contain comments or be dynamic sql with parameters
+     * @param sqlCommand is an original sql command which might contain comments or be dynamic sql with parameters
      * @param params are parameters which exists in the [sql]
      * @return a interpolated sql.
      * note that if the sql could not be handled, we return the original one since such info is still useful for e.g., industrial partner
@@ -112,10 +112,10 @@ public class PreparedStatementClassReplacement implements MethodReplacementClass
      * note that comments could also be removed with this function.
      *
      */
-    public static String interpolateSqlStringWithJSqlParser(String sql, List<String> params) {
+    public static String interpolateSqlStringWithJSqlParser(String sqlCommand, List<String> params) {
         if (params.isEmpty()) {
             // if no params, return the same sql without visiting
-            return sql;
+            return sqlCommand;
         }
 
         StringBuilder sqlbuffer = new StringBuilder();
@@ -133,13 +133,13 @@ public class PreparedStatementClassReplacement implements MethodReplacementClass
             expDeParser.setBuffer(sqlbuffer);
             StatementDeParser stmtDeparser = new StatementDeParser(expDeParser, selectDeparser, sqlbuffer);
 
-            Statement stmt = CCJSqlParserUtil.parse(sql);
+            Statement stmt = CCJSqlParserUtil.parse(sqlCommand);
             stmt.accept(stmtDeparser);
             return stmtDeparser.getBuffer().toString();
         } catch (Exception e) {
             // catch all kinds of exception here since there might exist problems in processing params
-            SimpleLogger.error("EvoMaster ERROR. Could not handle "+ sql + " with an error message :"+e.getMessage());
-            return sql;
+            SimpleLogger.error("EvoMaster ERROR. Could not handle "+ sqlCommand + " with an error message :"+e.getMessage());
+            return sqlCommand;
         }
     }
 

@@ -269,17 +269,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         return actionIndex;
     }
 
-    /**
-     * Calculate heuristics based on intercepted SQL commands
-     *
-     * @param sql command as a string
-     */
-    @Deprecated
-    public final void handleSql(String sql) {
-        Objects.requireNonNull(sql);
 
-        sqlHandler.handle(sql);
-    }
 
     public final void enableComputeSqlHeuristicsOrExtractExecution(
             boolean enableSqlHeuristics,
@@ -386,23 +376,25 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             last.getSqlInfoData().stream().forEach(it -> {
 //                    String sql = it.getCommand();
                 try {
-                    sqlHandler.handle(new SqlExecutionLogDto(it.getCommand(), it.getExecutionTime()));
+                    final SqlExecutionLogDto sqlExecutionLogDto = new SqlExecutionLogDto(it.getSqlCommand(), it.hasThrownSqlException(), it.getExecutionTime());
+                    sqlHandler.handle(sqlExecutionLogDto);
                 } catch (Exception e) {
-                    SimpleLogger.error("FAILED TO HANDLE SQL COMMAND: " + it.getCommand());
+                    SimpleLogger.error("FAILED TO HANDLE SQL COMMAND: " + it.getSqlCommand());
                     assert false; //we should try to handle all cases in our tests
                 }
             });
         }
 
         if (sqlHandler.isCalculateHeuristics()) {
-            sqlHandler.getEvaluatedSqlCommands(successfulInitSqlInsertions, queryFromDatabase).stream()
+            sqlHandler.getSqlDistances(successfulInitSqlInsertions, queryFromDatabase).stream()
                     .map(p ->
                             new ExtraHeuristicEntryDto(
                                     ExtraHeuristicEntryDto.Type.SQL,
                                     ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
                                     p.sqlCommand,
                                     p.sqlDistanceWithMetrics.sqlDistance,
-                                    p.sqlDistanceWithMetrics.numberOfEvaluatedRows
+                                    p.sqlDistanceWithMetrics.numberOfEvaluatedRows,
+                                    p.sqlDistanceWithMetrics.sqlDistanceEvaluationFailure
                             ))
                     .forEach(h -> dto.heuristics.add(h));
         }
@@ -440,7 +432,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                                     ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
                                     p.mongoCommand.toString(),
                                     p.mongoDistanceWithMetrics.mongoDistance,
-                                    p.mongoDistanceWithMetrics.numberOfEvaluatedDocuments
+                                    p.mongoDistanceWithMetrics.numberOfEvaluatedDocuments,
+                                    false
                             ))
                     .forEach(h -> dto.heuristics.add(h));
         }

@@ -1,9 +1,10 @@
 package org.evomaster.client.java.controller.internal.db.sql.h2;
 
+import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionLogDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.sql.SchemaExtractor;
 import org.evomaster.client.java.sql.SqlScriptRunner;
-import org.evomaster.client.java.sql.internal.EvaluatedSqlCommand;
+import org.evomaster.client.java.sql.internal.SqlCommandWithDistance;
 import org.evomaster.client.java.sql.internal.SqlHandler;
 import org.junit.jupiter.api.Test;
 
@@ -32,14 +33,17 @@ public class H2SqlHandlerTest extends DatabaseH2TestInit {
         SqlHandler sqlHandler = new SqlHandler(null);
         sqlHandler.setConnection(connection);
         sqlHandler.setSchema(schema);
-        assertTrue(sqlHandler.getEvaluatedSqlCommands(null, true).isEmpty());
-        sqlHandler.handle("Select * From Person Where Age=15");
-        List<EvaluatedSqlCommand> evaluatedSqlCommands = sqlHandler.getEvaluatedSqlCommands(null, true);
+        assertTrue(sqlHandler.getSqlDistances(null, true).isEmpty());
+        String sqlCommand = "Select * From Person Where Age=15";
+        SqlExecutionLogDto sqlExecutionLogDto = new SqlExecutionLogDto(sqlCommand,false,10L);
+        sqlHandler.handle(sqlExecutionLogDto);
+        List<SqlCommandWithDistance> sqlCommandWithDistances = sqlHandler.getSqlDistances(null, true);
 
-        assertEquals(1, evaluatedSqlCommands.size());
-        EvaluatedSqlCommand evaluatedSqlCommand = evaluatedSqlCommands.get(0);
-        assertEquals(0, evaluatedSqlCommand.sqlDistanceWithMetrics.numberOfEvaluatedRows);
-        assertEquals(Double.MAX_VALUE, evaluatedSqlCommand.sqlDistanceWithMetrics.sqlDistance);
+        assertEquals(1, sqlCommandWithDistances.size());
+        SqlCommandWithDistance sqlCommandWithDistance = sqlCommandWithDistances.get(0);
+        assertEquals(0, sqlCommandWithDistance.sqlDistanceWithMetrics.numberOfEvaluatedRows);
+        assertEquals(Double.MAX_VALUE, sqlCommandWithDistance.sqlDistanceWithMetrics.sqlDistance);
+        assertEquals(false, sqlCommandWithDistance.sqlDistanceWithMetrics.sqlDistanceEvaluationFailure);
 
     }
 
@@ -67,15 +71,274 @@ public class H2SqlHandlerTest extends DatabaseH2TestInit {
         SqlHandler sqlHandler = new SqlHandler(null);
         sqlHandler.setConnection(connection);
         sqlHandler.setSchema(schema);
-        assertTrue(sqlHandler.getEvaluatedSqlCommands(null, true).isEmpty());
-        sqlHandler.handle("Select * From Person Where Age=15");
-        List<EvaluatedSqlCommand> evaluatedSqlCommands = sqlHandler.getEvaluatedSqlCommands(null, true);
+        assertTrue(sqlHandler.getSqlDistances(null, true).isEmpty());
+        String sqlCommand = "Select * From Person Where Age=15";
+        SqlExecutionLogDto sqlExecutionLogDto = new SqlExecutionLogDto(sqlCommand,false,10L);
+        sqlHandler.handle(sqlExecutionLogDto);
+        List<SqlCommandWithDistance> sqlCommandWithDistances = sqlHandler.getSqlDistances(null, true);
 
-        assertEquals(1, evaluatedSqlCommands.size());
-        EvaluatedSqlCommand evaluatedSqlCommand = evaluatedSqlCommands.get(0);
-        assertEquals(2, evaluatedSqlCommand.sqlDistanceWithMetrics.numberOfEvaluatedRows);
-        assertEquals(Math.abs(28-15), evaluatedSqlCommand.sqlDistanceWithMetrics.sqlDistance);
+        assertEquals(1, sqlCommandWithDistances.size());
+        SqlCommandWithDistance sqlCommandWithDistance = sqlCommandWithDistances.get(0);
+        assertEquals(2, sqlCommandWithDistance.sqlDistanceWithMetrics.numberOfEvaluatedRows);
+        assertEquals(Math.abs(28-15), sqlCommandWithDistance.sqlDistanceWithMetrics.sqlDistance);
+        assertEquals(false, sqlCommandWithDistance.sqlDistanceWithMetrics.sqlDistanceEvaluationFailure);
 
+    }
+
+    @Test
+    public void testHandleNoWhereClause() throws Exception {
+        // setup
+        SqlScriptRunner.execCommand(connection,"CREATE TABLE Person (\n" +
+                "    person_id INT PRIMARY KEY,\n" +
+                "    first_name VARCHAR(50),\n" +
+                "    last_name VARCHAR(50),\n" +
+                "    age INT,\n" +
+                "    email VARCHAR(100)\n" +
+                ");");
+        SchemaExtractor schemaExtractor = new SchemaExtractor();
+        DbSchemaDto schema = schemaExtractor.extract(connection);
+        SqlHandler sqlHandler = new SqlHandler(null);
+        sqlHandler.setConnection(connection);
+        sqlHandler.setSchema(schema);
+        assertTrue(sqlHandler.getSqlDistances(null, true).isEmpty());
+        String sqlCommand = "Select * From Person";
+        SqlExecutionLogDto sqlExecutionLogDto = new SqlExecutionLogDto(sqlCommand,false,10L);
+        sqlHandler.handle(sqlExecutionLogDto);
+
+        // exercise
+        List<SqlCommandWithDistance> sqlCommandWithDistances = sqlHandler.getSqlDistances(null, true);
+
+        // check
+        assertEquals(1, sqlCommandWithDistances.size());
+        SqlCommandWithDistance sqlCommandWithDistance = sqlCommandWithDistances.get(0);
+        assertEquals(0, sqlCommandWithDistance.sqlDistanceWithMetrics.numberOfEvaluatedRows);
+        assertEquals(Double.MAX_VALUE, sqlCommandWithDistance.sqlDistanceWithMetrics.sqlDistance);
+        assertEquals(false, sqlCommandWithDistance.sqlDistanceWithMetrics.sqlDistanceEvaluationFailure);
+    }
+
+    @Test
+    public void testHandleWhereNoColumns() throws Exception {
+        // Setup
+        SqlScriptRunner.execCommand(connection,"CREATE TABLE Person (\n" +
+                "    person_id INT PRIMARY KEY,\n" +
+                "    first_name VARCHAR(50),\n" +
+                "    last_name VARCHAR(50),\n" +
+                "    age INT,\n" +
+                "    email VARCHAR(100)\n" +
+                ");");
+        SchemaExtractor schemaExtractor = new SchemaExtractor();
+        DbSchemaDto schema = schemaExtractor.extract(connection);
+        SqlHandler sqlHandler = new SqlHandler(null);
+        sqlHandler.setConnection(connection);
+        sqlHandler.setSchema(schema);
+        String sqlCommand = "Select * From Person Where 1=1";
+        SqlExecutionLogDto sqlExecutionLogDto = new SqlExecutionLogDto(sqlCommand,false,10L);
+        sqlHandler.handle(sqlExecutionLogDto);
+
+        // Exercise
+        List<SqlCommandWithDistance> sqlCommandWithDistances = sqlHandler.getSqlDistances(null, true);
+
+        // check
+        assertEquals(1, sqlCommandWithDistances.size());
+        SqlCommandWithDistance sqlCommandWithDistance = sqlCommandWithDistances.get(0);
+        assertEquals(0, sqlCommandWithDistance.sqlDistanceWithMetrics.numberOfEvaluatedRows);
+        assertEquals(Double.MAX_VALUE, sqlCommandWithDistance.sqlDistanceWithMetrics.sqlDistance);
+        assertEquals(false, sqlCommandWithDistance.sqlDistanceWithMetrics.sqlDistanceEvaluationFailure);
+    }
+
+    @Test
+    public void testHandleWhereNoColumnsWithOneRow() throws Exception {
+        // Setup
+        SqlScriptRunner.execCommand(connection,"CREATE TABLE Person (\n" +
+                "    person_id INT PRIMARY KEY,\n" +
+                "    first_name VARCHAR(50),\n" +
+                "    last_name VARCHAR(50),\n" +
+                "    age INT,\n" +
+                "    email VARCHAR(100)\n" +
+                ");");
+        SqlScriptRunner.execCommand(connection, "INSERT INTO Person (person_id, first_name, last_name, age, email)\n" +
+                "VALUES (1, 'John', 'Doe', 30, 'john.doe@example.com');");
+
+        SchemaExtractor schemaExtractor = new SchemaExtractor();
+        DbSchemaDto schema = schemaExtractor.extract(connection);
+        SqlHandler sqlHandler = new SqlHandler(null);
+        sqlHandler.setConnection(connection);
+        sqlHandler.setSchema(schema);
+        String sqlCommand = "Select * From Person Where 1=1";
+        SqlExecutionLogDto sqlExecutionLogDto = new SqlExecutionLogDto(sqlCommand,false,10L);
+        sqlHandler.handle(sqlExecutionLogDto);
+
+        // Exercise
+        List<SqlCommandWithDistance> sqlCommandWithDistances = sqlHandler.getSqlDistances(null, true);
+
+        // check
+        assertEquals(1, sqlCommandWithDistances.size());
+        SqlCommandWithDistance sqlCommandWithDistance = sqlCommandWithDistances.get(0);
+        assertEquals(1, sqlCommandWithDistance.sqlDistanceWithMetrics.numberOfEvaluatedRows);
+        assertEquals(0, sqlCommandWithDistance.sqlDistanceWithMetrics.sqlDistance);
+        assertEquals(false, sqlCommandWithDistance.sqlDistanceWithMetrics.sqlDistanceEvaluationFailure);
+    }
+
+    @Test
+    public void testHandleNoWhereClauseWithOneRow() throws Exception {
+        // setup
+        SqlScriptRunner.execCommand(connection,"CREATE TABLE Person (\n" +
+                "    person_id INT PRIMARY KEY,\n" +
+                "    first_name VARCHAR(50),\n" +
+                "    last_name VARCHAR(50),\n" +
+                "    age INT,\n" +
+                "    email VARCHAR(100)\n" +
+                ");");
+        SqlScriptRunner.execCommand(connection, "INSERT INTO Person (person_id, first_name, last_name, age, email)\n" +
+                "VALUES (1, 'John', 'Doe', 30, 'john.doe@example.com');");
+
+        SchemaExtractor schemaExtractor = new SchemaExtractor();
+        DbSchemaDto schema = schemaExtractor.extract(connection);
+        SqlHandler sqlHandler = new SqlHandler(null);
+        sqlHandler.setConnection(connection);
+        sqlHandler.setSchema(schema);
+        assertTrue(sqlHandler.getSqlDistances(null, true).isEmpty());
+        String sqlCommand = "Select * From Person";
+        SqlExecutionLogDto sqlExecutionLogDto = new SqlExecutionLogDto(sqlCommand,false,10L);
+        sqlHandler.handle(sqlExecutionLogDto);
+
+        // exercise
+        List<SqlCommandWithDistance> sqlCommandWithDistances = sqlHandler.getSqlDistances(null, true);
+
+        // check
+        assertEquals(1, sqlCommandWithDistances.size());
+        SqlCommandWithDistance sqlCommandWithDistance = sqlCommandWithDistances.get(0);
+        assertEquals(0, sqlCommandWithDistance.sqlDistanceWithMetrics.numberOfEvaluatedRows);
+        assertEquals(0, sqlCommandWithDistance.sqlDistanceWithMetrics.sqlDistance);
+        assertEquals(false, sqlCommandWithDistance.sqlDistanceWithMetrics.sqlDistanceEvaluationFailure);
+    }
+
+    @Test
+    public void testHandleDeleteNoWhereClause() throws Exception {
+        // setup
+        SqlScriptRunner.execCommand(connection,"CREATE TABLE Person (\n" +
+                "    person_id INT PRIMARY KEY,\n" +
+                "    first_name VARCHAR(50),\n" +
+                "    last_name VARCHAR(50),\n" +
+                "    age INT,\n" +
+                "    email VARCHAR(100)\n" +
+                ");");
+
+        SchemaExtractor schemaExtractor = new SchemaExtractor();
+        DbSchemaDto schema = schemaExtractor.extract(connection);
+        SqlHandler sqlHandler = new SqlHandler(null);
+        sqlHandler.setConnection(connection);
+        sqlHandler.setSchema(schema);
+        assertTrue(sqlHandler.getSqlDistances(null, true).isEmpty());
+        String sqlCommand = "DELETE FROM Person";
+        SqlExecutionLogDto sqlExecutionLogDto = new SqlExecutionLogDto(sqlCommand,false,10L);
+        sqlHandler.handle(sqlExecutionLogDto);
+
+        // exercise
+        List<SqlCommandWithDistance> sqlCommandWithDistances = sqlHandler.getSqlDistances(null, true);
+
+        // check
+        assertEquals(1, sqlCommandWithDistances.size());
+        SqlCommandWithDistance sqlCommandWithDistance = sqlCommandWithDistances.get(0);
+        assertEquals(0, sqlCommandWithDistance.sqlDistanceWithMetrics.numberOfEvaluatedRows);
+        assertEquals(Double.MAX_VALUE, sqlCommandWithDistance.sqlDistanceWithMetrics.sqlDistance);
+        assertEquals(false, sqlCommandWithDistance.sqlDistanceWithMetrics.sqlDistanceEvaluationFailure);
+    }
+
+    @Test
+    public void testHandleUpdateNoWhereClause() throws Exception {
+        // setup
+        SqlScriptRunner.execCommand(connection,"CREATE TABLE Person (\n" +
+                "    person_id INT PRIMARY KEY,\n" +
+                "    first_name VARCHAR(50),\n" +
+                "    last_name VARCHAR(50),\n" +
+                "    age INT,\n" +
+                "    email VARCHAR(100)\n" +
+                ");");
+
+        SchemaExtractor schemaExtractor = new SchemaExtractor();
+        DbSchemaDto schema = schemaExtractor.extract(connection);
+        SqlHandler sqlHandler = new SqlHandler(null);
+        sqlHandler.setConnection(connection);
+        sqlHandler.setSchema(schema);
+        assertTrue(sqlHandler.getSqlDistances(null, true).isEmpty());
+        String sqlCommand = "UPDATE Person SET age = 15";
+        SqlExecutionLogDto sqlExecutionLogDto = new SqlExecutionLogDto(sqlCommand,false,10L);
+        sqlHandler.handle(sqlExecutionLogDto);
+
+        // exercise
+        List<SqlCommandWithDistance> sqlCommandWithDistances = sqlHandler.getSqlDistances(null, true);
+
+        // check
+        assertEquals(1, sqlCommandWithDistances.size());
+        SqlCommandWithDistance sqlCommandWithDistance = sqlCommandWithDistances.get(0);
+        assertEquals(0, sqlCommandWithDistance.sqlDistanceWithMetrics.numberOfEvaluatedRows);
+        assertEquals(Double.MAX_VALUE, sqlCommandWithDistance.sqlDistanceWithMetrics.sqlDistance);
+        assertEquals(false, sqlCommandWithDistance.sqlDistanceWithMetrics.sqlDistanceEvaluationFailure);
+    }
+
+    @Test
+    public void testHandleDeleteWhereClauseWithNoColumns() throws Exception {
+        // setup
+        SqlScriptRunner.execCommand(connection,"CREATE TABLE Person (\n" +
+                "    person_id INT PRIMARY KEY,\n" +
+                "    first_name VARCHAR(50),\n" +
+                "    last_name VARCHAR(50),\n" +
+                "    age INT,\n" +
+                "    email VARCHAR(100)\n" +
+                ");");
+
+        SchemaExtractor schemaExtractor = new SchemaExtractor();
+        DbSchemaDto schema = schemaExtractor.extract(connection);
+        SqlHandler sqlHandler = new SqlHandler(null);
+        sqlHandler.setConnection(connection);
+        sqlHandler.setSchema(schema);
+        assertTrue(sqlHandler.getSqlDistances(null, true).isEmpty());
+        String sqlCommand = "DELETE FROM Person WHERE 1 = 1";
+        SqlExecutionLogDto sqlExecutionLogDto = new SqlExecutionLogDto(sqlCommand,false,10L);
+        sqlHandler.handle(sqlExecutionLogDto);
+
+        // exercise
+        List<SqlCommandWithDistance> sqlCommandWithDistances = sqlHandler.getSqlDistances(null, true);
+
+        // check
+        assertEquals(1, sqlCommandWithDistances.size());
+        SqlCommandWithDistance sqlCommandWithDistance = sqlCommandWithDistances.get(0);
+        assertEquals(0, sqlCommandWithDistance.sqlDistanceWithMetrics.numberOfEvaluatedRows);
+        assertEquals(Double.MAX_VALUE, sqlCommandWithDistance.sqlDistanceWithMetrics.sqlDistance);
+        assertEquals(false, sqlCommandWithDistance.sqlDistanceWithMetrics.sqlDistanceEvaluationFailure);
+    }
+
+    @Test
+    public void testHandleUpdateWhereClauseWithNoColumns() throws Exception {
+        // setup
+        SqlScriptRunner.execCommand(connection,"CREATE TABLE Person (\n" +
+                "    person_id INT PRIMARY KEY,\n" +
+                "    first_name VARCHAR(50),\n" +
+                "    last_name VARCHAR(50),\n" +
+                "    age INT,\n" +
+                "    email VARCHAR(100)\n" +
+                ");");
+
+        SchemaExtractor schemaExtractor = new SchemaExtractor();
+        DbSchemaDto schema = schemaExtractor.extract(connection);
+        SqlHandler sqlHandler = new SqlHandler(null);
+        sqlHandler.setConnection(connection);
+        sqlHandler.setSchema(schema);
+        assertTrue(sqlHandler.getSqlDistances(null, true).isEmpty());
+        String sqlCommand = "UPDATE Person SET age = 15 WHERE 1 = 1";
+        SqlExecutionLogDto sqlExecutionLogDto = new SqlExecutionLogDto(sqlCommand,false,10L);
+        sqlHandler.handle(sqlExecutionLogDto);
+
+        // exercise
+        List<SqlCommandWithDistance> sqlCommandWithDistances = sqlHandler.getSqlDistances(null, true);
+
+        // check
+        assertEquals(1, sqlCommandWithDistances.size());
+        SqlCommandWithDistance sqlCommandWithDistance = sqlCommandWithDistances.get(0);
+        assertEquals(0, sqlCommandWithDistance.sqlDistanceWithMetrics.numberOfEvaluatedRows);
+        assertEquals(Double.MAX_VALUE, sqlCommandWithDistance.sqlDistanceWithMetrics.sqlDistance);
+        assertEquals(false, sqlCommandWithDistance.sqlDistanceWithMetrics.sqlDistanceEvaluationFailure);
     }
 
 }
