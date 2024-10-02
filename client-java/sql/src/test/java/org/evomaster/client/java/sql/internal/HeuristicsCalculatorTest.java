@@ -49,6 +49,7 @@ public class HeuristicsCalculatorTest {
         assertEquals(0d, dist);
     }
 
+
     private void checkIncreasingTillCovered(String name,
                                             List<Object> values,
                                             Object solution,
@@ -406,5 +407,22 @@ public class HeuristicsCalculatorTest {
         );
     }
 
+
+    @Test
+    public void testWhereWithNoColumns() {
+
+        String sql = "select x from Foo Where 1=1";
+
+        QueryResult data = new QueryResult(Arrays.asList("x"), "Foo");
+
+        double dist = HeuristicsCalculator.computeDistance(sql, data);
+        assertTrue(dist > 0);
+
+        DataRow row = new DataRow("x", "9", "Foo");
+        data.addRow(row);
+
+        dist = HeuristicsCalculator.computeDistance(sql, data);
+        assertEquals(0d, dist);
+    }
 
 }
