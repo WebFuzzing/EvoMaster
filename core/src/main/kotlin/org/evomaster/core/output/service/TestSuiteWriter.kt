@@ -124,7 +124,7 @@ class TestSuiteWriter {
 
         val lines = Lines(config.outputFormat)
         val testSuiteOrganizer = TestSuiteOrganizer()
-        val namingStrategy = TestCaseNamingStrategyFactory(config.namingStrategy).create(solution)
+        val namingStrategy = TestCaseNamingStrategyFactory(config).create(solution)
 
        // activePartialOracles = partialOracles.activeOracles(solution.individuals)
 
