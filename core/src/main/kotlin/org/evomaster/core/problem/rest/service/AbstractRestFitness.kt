@@ -957,7 +957,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             actionResults.forEach { it.deathSentence = true }
         }
 
-        if (!allCovered) {
+        if (!allCovered) { //FIXME wrong, should be based on phase being SEARCH
             if (config.expandRestIndividuals) {
                 expandIndividual(individual, dto.additionalInfoList, actionResults)
             }

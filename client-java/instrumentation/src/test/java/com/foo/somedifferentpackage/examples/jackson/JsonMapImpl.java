@@ -10,6 +10,18 @@ import java.util.Map;
 public class JsonMapImpl implements JsonMap {
 
 
+    public int castLongToInt(long l) {
+        return (int) l;
+    }
+
+    public Integer castIntToInteger(int i) {
+        return (Integer) i;
+    }
+
+    public int castIntegerToInt(Integer i) {
+        return (int) i;
+    }
+
     public List castToList(String json) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
         Map map = mapper.readValue(json, Map.class);

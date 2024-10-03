@@ -12,6 +12,7 @@ public class CheckCastMethodVisitor extends MethodVisitor {
         super(Constants.ASM, mv);
     }
 
+
     @Override
     public void visitTypeInsn(int opcode, String type) {
         if (opcode == Opcodes.CHECKCAST) {

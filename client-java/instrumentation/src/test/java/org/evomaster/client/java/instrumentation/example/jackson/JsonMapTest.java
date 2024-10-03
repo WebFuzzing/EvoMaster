@@ -146,4 +146,20 @@ public class JsonMapTest {
         assertEquals(StringSpecialization.CAST_TO_TYPE, ssi.getStringSpecialization());
         assertEquals("[I", ssi.getValue());
     }
+
+    @Test
+    public void testNoCheckCast() throws Exception{
+        JsonMap sut = getInstance();
+        //those should throw no exception
+        sut.castIntToInteger(4);
+        sut.castIntegerToInt(5);
+        sut.castLongToInt(5L);
+    }
+
+
+    /*
+        TODO
+        public Integer assignedToTypedList(String json) throws Exception {
+        public int castIntFromFunction(String json) throws Exception {
+     */
 }
