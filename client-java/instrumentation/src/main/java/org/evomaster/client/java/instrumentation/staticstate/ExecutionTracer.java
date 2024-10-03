@@ -610,6 +610,24 @@ public class ExecutionTracer {
     }
 
 
+    public static final String EXECUTING_CHECKCAST_METHOD_NAME = "executingCheckCast";
+    public static final String EXECUTING_CHECKCAST_DESCRIPTOR = "(Ljava/lang/Object;)Ljava/lang/Object;";
+
+
+    /**
+     *  Analyze the current top stack, and then add it back.
+     *  Here, we would check for taint analysis
+     */
+    public static Object executingCheckCast(Object value, String classType){
+        if(value instanceof String && isTaintInput((String) value)){
+           addStringSpecialization((String)value,
+                   new StringSpecializationInfo(StringSpecialization.CAST_TO_TYPE,classType));
+        }
+
+        return value;
+    }
+
+
     //---- branch-jump methods --------------------------
 
     private static void updateBranch(String className, int line, int branchId, Truthness t) {

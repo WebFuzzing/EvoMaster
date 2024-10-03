@@ -132,7 +132,17 @@ public enum StringSpecialization implements Serializable {
      * JSON has no concept of Map. It has Object, where fields can be dynamically changed.
      * Its "keys" are always strings (you cannot have a Map of integers in JSON for example)
      */
-    JSON_MAP
+    JSON_MAP,
+
+    /**
+     * The tainted string is not supposed to be a string, but rather a different type.
+     * Note that
+     * "42"
+     * is a string, whereas
+     * 42
+     * is NOT a string.
+     */
+    CAST_TO_TYPE
 
     ;
 
