@@ -7,11 +7,14 @@ import org.evomaster.core.search.gene.interfaces.TaintableGene
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.optional.FlexibleGene
 import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
+import org.slf4j.LoggerFactory
+import sun.jvm.hotspot.oops.CellTypeState.value
 
 /**
  * Representing a tainted map, ie, a Map object was fields and their type is discovered at runtime through
@@ -26,6 +29,10 @@ class TaintedMapGene(
     PairGene("TaintedMapTemplate", StringGene("key"), FlexibleGene("value", StringGene("value"), null), false),
     elements = elements
 ){
+
+    companion object{
+        private val log = LoggerFactory.getLogger(TaintedMapGene::class.java)
+    }
 
     init {
         if(elements.isEmpty()){
@@ -98,7 +105,34 @@ class TaintedMapGene(
 
     private fun inferGeneFromValueType(valueType: String, name: String) : Gene{
 
-        return StringGene(name) //TODO
+        if(valueType.startsWith("[")){
+            //dealing with an array
+            //TODO
+        }
+
+        if(!valueType.startsWith("java")){
+            /*
+                not part of JDK... would a deserializer for a Map do that?
+                eg, maybe using a library class? still feel weird, would need to double-check if this happens
+             */
+            log.warn("In TaintedMap $taintId cannot handle valueType $valueType for field $name")
+            return StringGene(name) // defaulting to string
+        }
+
+        val className = valueType.replace("/",".")
+        val type = try{
+            this::class.java.classLoader.loadClass(className)
+        } catch (e: ClassNotFoundException) {
+            log.warn("Unable to load class $className when inferring type for valueType $value in tainted map $taintId for field $name")
+            return StringGene(name)
+        }
+
+        val gene = GeneUtils.getBasicGeneBasedOnJavaType(type, name)
+        if(gene == null){
+            log.warn("Cannot handle $className in tainted map $taintId for field $name")
+            return StringGene(name)
+        }
+        return gene
     }
 
     override fun isLocallyValid(): Boolean {
