@@ -1,29 +1,40 @@
 package org.evomaster.core.output.naming
 
-import org.evomaster.core.problem.enterprise.DetectedFaultUtils
-import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.output.TestWriterUtils
+import org.evomaster.core.problem.rpc.RPCCallAction
+import org.evomaster.core.problem.rpc.RPCCallResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
+import org.evomaster.core.search.action.EvaluatedAction
 
 open class RPCActionTestCaseNamingStrategy(
     solution: Solution<*>,
     languageConventionFormatter: LanguageConventionFormatter
 ) : ActionTestCaseNamingStrategy(solution, languageConventionFormatter)  {
 
-
     override fun expandName(individual: EvaluatedIndividual<*>): String {
         var evaluatedAction = individual.evaluatedMainActions().last()
-        var action = evaluatedAction.action as RestCallAction
+        var action = evaluatedAction.action as RPCCallAction
 
-        return "_${languageConventionFormatter.formatName(listOf(action.verb.toString(), "on", getPath(action.path.nameQualifier), addResult(individual)))}"
+        nameTokens.add(action.interfaceId)
+        nameTokens.add(action.id)
+        addResult(individual)
+
+        return formatName()
     }
 
-    private fun addResult(individual: EvaluatedIndividual<*>): String {
-        val detectedFaults = DetectedFaultUtils.getDetectedFaultCategories(individual)
-        if (detectedFaults.isNotEmpty()) {
-            return fault(detectedFaults)
+    override fun addActionResult(evaluatedAction: EvaluatedAction) {
+        val result = evaluatedAction.result as RPCCallResult
+        if (result.hasPotentialFault()) {
+            nameTokens.add(throws)
+            nameTokens.add(TestWriterUtils.safeVariableName(result.getExceptionInfo()))
+        } else {
+            nameTokens.add(returns)
+            nameTokens.add(when {
+                result.failedCall() -> error
+                else -> success
+            })
         }
-        return statusCode(individual.evaluatedMainActions().last())
     }
 
 }

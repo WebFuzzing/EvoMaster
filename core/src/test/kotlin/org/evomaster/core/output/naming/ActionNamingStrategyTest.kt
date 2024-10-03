@@ -24,7 +24,7 @@ class ActionNamingStrategyTest {
 
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = ActionTestCaseNamingStrategy(solution, languageConventionFormatter)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, languageConventionFormatter)
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(1, testCases.size)
@@ -38,7 +38,7 @@ class ActionNamingStrategyTest {
 
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = ActionTestCaseNamingStrategy(solution, languageConventionFormatter)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, languageConventionFormatter)
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(1, testCases.size)
@@ -52,7 +52,7 @@ class ActionNamingStrategyTest {
 
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = ActionTestCaseNamingStrategy(solution, languageConventionFormatter)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, languageConventionFormatter)
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(1, testCases.size)
@@ -67,7 +67,7 @@ class ActionNamingStrategyTest {
 
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = ActionTestCaseNamingStrategy(solution, languageConventionFormatter)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, languageConventionFormatter)
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(1, testCases.size)

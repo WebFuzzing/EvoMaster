@@ -1,6 +1,5 @@
 package org.evomaster.core.output.naming
 
-import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.search.EvaluatedIndividual
@@ -12,25 +11,22 @@ open class RestActionTestCaseNamingStrategy(
     languageConventionFormatter: LanguageConventionFormatter
 ) : ActionTestCaseNamingStrategy(solution, languageConventionFormatter)  {
 
-
     override fun expandName(individual: EvaluatedIndividual<*>): String {
         var evaluatedAction = individual.evaluatedMainActions().last()
         var action = evaluatedAction.action as RestCallAction
 
-        return "_${languageConventionFormatter.formatName(listOf(action.verb.toString(), "on", getPath(action.path.nameQualifier), addResult(individual)))}"
+        nameTokens.add(action.verb.toString())
+        nameTokens.add(on)
+        nameTokens.add(getPath(action.path.nameQualifier))
+        addResult(individual)
+
+        return formatName()
     }
 
-    private fun addResult(individual: EvaluatedIndividual<*>): String {
-        val detectedFaults = DetectedFaultUtils.getDetectedFaultCategories(individual)
-        if (detectedFaults.isNotEmpty()) {
-            return fault(detectedFaults)
-        }
-        return statusCode(individual.evaluatedMainActions().last())
-    }
-
-    private fun statusCode(evaluatedAction: EvaluatedAction): String {
+    override fun addActionResult(evaluatedAction: EvaluatedAction) {
         var result = evaluatedAction.result as HttpWsCallResult
-        return "returns_${result.getStatusCode()}"
+        nameTokens.add(returns)
+        nameTokens.add(result.getStatusCode().toString())
     }
 
 }
