@@ -151,7 +151,7 @@ There are 3 types of options:
 |`minimizeTimeout`| __Int__. Maximum number of minutes that will be dedicated to the minimization phase. A negative number mean no timeout is considered. A value of 0 means minimization will be skipped, even if minimize=true. *Default value*: `5`.|
 |`minimumSizeControl`| __Int__. Specify minimum size when bloatControlForSecondaryObjective. *Constraints*: `min=0.0`. *Default value*: `2`.|
 |`mutatedGeneFile`| __String__. Specify a path to save mutation details which is useful for debugging mutation. *DEBUG option*. *Default value*: `mutatedGeneInfo.csv`.|
-|`namingStrategy`| __Enum__. Specify the naming strategy for test cases. *Valid values*: `NUMBERED`. *Default value*: `NUMBERED`.|
+|`namingStrategy`| __Enum__. Specify the naming strategy for test cases. *Valid values*: `NUMBERED, ACTION`. *Default value*: `NUMBERED`.|
 |`outputExecutedSQL`| __Enum__. Whether to output executed sql info. *DEBUG option*. *Valid values*: `NONE, ALL_AT_END, ONCE_EXECUTED`. *Default value*: `NONE`.|
 |`populationSize`| __Int__. Define the population size in the search algorithms that use populations (e.g., Genetic Algorithms, but not MIO). *Constraints*: `min=1.0`. *Default value*: `30`.|
 |`probOfApplySQLActionToCreateResources`| __Double__. Specify a probability to apply SQL actions for preparing resources for REST Action. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.1`.|

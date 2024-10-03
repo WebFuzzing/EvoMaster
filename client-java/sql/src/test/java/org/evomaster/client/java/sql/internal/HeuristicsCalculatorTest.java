@@ -2,9 +2,6 @@ package org.evomaster.client.java.sql.internal;
 
 import org.evomaster.client.java.sql.DataRow;
 import org.evomaster.client.java.sql.QueryResult;
-import org.evomaster.client.java.sql.internal.HeuristicsCalculator;
-import org.evomaster.client.java.sql.internal.ParserUtils;
-import org.evomaster.client.java.sql.internal.SqlNameContext;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -51,6 +48,7 @@ public class HeuristicsCalculatorTest {
         dist = HeuristicsCalculator.computeDistance(sql, data);
         assertEquals(0d, dist);
     }
+
 
     private void checkIncreasingTillCovered(String name,
                                             List<Object> values,
@@ -404,10 +402,27 @@ public class HeuristicsCalculatorTest {
     public void testTimestampWithDoubleQuotesIsInvalidSQL() {
         String sql = "select x from Foo where x = TIMESTAMP \"2022-11-30 16:00:00.0\"";
         Assertions.assertThrows(IllegalArgumentException.class, () -> {
-                    ParserUtils.asStatement(sql);
+                    SqlParserUtils.parseSqlCommand(sql);
                 }
         );
     }
 
+
+    @Test
+    public void testWhereWithNoColumns() {
+
+        String sql = "select x from Foo Where 1=1";
+
+        QueryResult data = new QueryResult(Arrays.asList("x"), "Foo");
+
+        double dist = HeuristicsCalculator.computeDistance(sql, data);
+        assertTrue(dist > 0);
+
+        DataRow row = new DataRow("x", "9", "Foo");
+        data.addRow(row);
+
+        dist = HeuristicsCalculator.computeDistance(sql, data);
+        assertEquals(0d, dist);
+    }
 
 }

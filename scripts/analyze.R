@@ -152,14 +152,22 @@ checkData <- function() {
 ##################################################################################################
 checkProject <- function(dt,mask){
 
-  data = dt$coveredLines[mask]
   seconds = dt$elapsedSeconds[mask]
+  lines = dt$coveredLines[mask]
+  faults = dt$potentialFaults[mask]
+  categoryCodes = dt$potentialFaultCategories[mask]
+
+  # each run can have several codes divided by a |, eg, "100|200|205"
+  # need to extract all codes, and then take the set from all runs (ie to remove duplicates)
+  codes = as.numeric(unlist(strsplit(categoryCodes,split='\\|')))
+  codes = sort(codes[!duplicated(codes)]) # remove duplicates, and then sort resulting list
 
   cat("Time (seconds):", mean(seconds), "\n")
   cat("Evaluated actions:", mean(dt$evaluatedActions[mask]), "\n")
   cat("Runs: ", length(seconds), "\n")
-  cat("Coverage (lines): ", mean(data), "(", min(data), "-", max(data), ") \n")
-  cat("\traw values: [",sort(data),"]\n")
+  cat("Coverage (lines): ", mean(lines), "(", min(lines), "-", max(lines), ") \n")
+  cat("\traw values: [",sort(lines),"]\n")
+  cat("Faults (avg): ", mean(faults), " , codes: ", codes, "\n")
   cat("\n\n")
 }
 

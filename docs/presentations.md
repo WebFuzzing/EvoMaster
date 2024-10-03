@@ -1,5 +1,9 @@
 # Seminars/Presentations
 
+* 2024: *Fuzzing Web APIs: Overview of Existing Tools*.
+  Presentation given at Odin 2024.
+  [[PDF](slides/2024_odin.pdf)]
+
 * 2023: *Evolutionary Testing of Web APIs with
   EvoMaster*.
   Keynote at VST 2023.

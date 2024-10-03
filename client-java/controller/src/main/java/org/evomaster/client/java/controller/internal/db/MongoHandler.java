@@ -33,7 +33,7 @@ public class MongoHandler {
     /**
      * The heuristics based on the Mongo execution
      */
-    private final List<EvaluatedMongoCommand> evaluatedMongoCommands;
+    private final List<MongoCommandWithDistance> mongoCommandWithDistances;
 
     /**
      * Whether to calculate heuristics based on execution or not
@@ -60,7 +60,7 @@ public class MongoHandler {
     private final MongoHeuristicsCalculator calculator = new MongoHeuristicsCalculator(new TaintHandlerExecutionTracer());
 
     public MongoHandler() {
-        evaluatedMongoCommands = new ArrayList<>();
+        mongoCommandWithDistances = new ArrayList<>();
         operations = new ArrayList<>();
         emptyCollections = new ArrayList<>();
         collectionSchemas = new HashMap<>();
@@ -70,7 +70,7 @@ public class MongoHandler {
 
     public void reset() {
         operations.clear();
-        evaluatedMongoCommands.clear();
+        mongoCommandWithDistances.clear();
         emptyCollections.clear();
         // collectionInfo is not cleared to avoid losing the info as it's retrieved while SUT is starting
     }
@@ -103,15 +103,15 @@ public class MongoHandler {
         }
     }
 
-    public List<EvaluatedMongoCommand> getEvaluatedMongoCommands() {
+    public List<MongoCommandWithDistance> getEvaluatedMongoCommands() {
 
         operations.stream().filter(info -> info.getQuery() != null).forEach(mongoInfo -> {
             MongoDistanceWithMetrics distanceWithMetrics = computeFindDistance(mongoInfo);
-            evaluatedMongoCommands.add(new EvaluatedMongoCommand(mongoInfo.getQuery(), distanceWithMetrics));
+            mongoCommandWithDistances.add(new MongoCommandWithDistance(mongoInfo.getQuery(), distanceWithMetrics));
         });
         operations.clear();
 
-        return evaluatedMongoCommands;
+        return mongoCommandWithDistances;
     }
 
     public MongoExecutionsDto getExecutionDto() {

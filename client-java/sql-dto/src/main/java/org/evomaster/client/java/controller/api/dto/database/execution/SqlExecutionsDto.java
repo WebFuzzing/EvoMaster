@@ -66,6 +66,11 @@ public class SqlExecutionsDto {
     public int numberOfSqlCommands = 0;
 
     /**
+     * The number of SQL command that could not be parsed
+     */
+    public int sqlParseFailureCount = 0;
+
+    /**
      * log of a list of sql commands that were executed
      */
     public List<SqlExecutionLogDto> sqlExecutionLogDtoList = new ArrayList<>();

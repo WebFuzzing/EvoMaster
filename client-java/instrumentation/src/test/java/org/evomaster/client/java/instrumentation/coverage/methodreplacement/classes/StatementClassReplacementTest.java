@@ -33,6 +33,6 @@ public class StatementClassReplacementTest {
 
         assertEquals(1, ExecutionTracer.exposeAdditionalInfoList().size());
         assertEquals(1, ExecutionTracer.exposeAdditionalInfoList().get(0).getSqlInfoData().size());
-        assertEquals("", ExecutionTracer.exposeAdditionalInfoList().get(0).getSqlInfoData().iterator().next().getCommand());
+        assertEquals("", ExecutionTracer.exposeAdditionalInfoList().get(0).getSqlInfoData().iterator().next().getSqlCommand());
     }
 }
