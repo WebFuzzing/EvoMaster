@@ -116,6 +116,66 @@ object TaintAnalysis {
             handleMultiGenes(specsMap, allTaintableGenes, randomness, inputVariables, enableConstraintHandling)
 
             handleTaintedArrays(specsMap, allTaintableGenes, randomness, inputVariables, enableConstraintHandling)
+
+            handleTaintedMaps(specsMap, allTaintableGenes)
+        }
+    }
+
+    private fun handleTaintedMaps(
+        specsMap: Map<String, List<StringSpecializationInfo>>,
+        allTaintableGenes: List<TaintableGene>
+    ) {
+
+        val taintedMaps = allTaintableGenes.filterIsInstance<TaintedMapGene>()
+        if(taintedMaps.isEmpty()) {
+            return // nothing to do
+        }
+        val stringGenes = allTaintableGenes.filterIsInstance<StringGene>()
+
+
+        for (entry in specsMap.entries) {
+
+            val taintedInput = entry.key
+            val specs = entry.value
+
+            if (specs.isEmpty()) {
+                throw IllegalArgumentException("No specialization info for value $taintedInput")
+            }
+
+            val identifiedMaps = taintedMaps.filter { it.getPossiblyTaintedValue().equals(taintedInput, true) }
+            if (identifiedMaps.isEmpty()) {
+                continue
+            } // could be more than 1, eg, when action copied might not change the taintId
+
+
+            //discover new fields in the map.
+            //the tainted value points to the Map, so can be accessed through identifiedMaps
+            specs.filter { it.stringSpecialization == StringSpecialization.JSON_MAP_FIELD }
+                .forEach { field ->
+                    identifiedMaps.forEach { g ->
+                        if(g.hasKeyByName(field.value)){
+                            g.addNewKey(field.value)
+                        }
+                    }
+                }
+
+            /*
+                here is different... the taintedInput would point to the StringGene inside the TaintedMapGene,
+                but we want to modify this latter and not the former
+             */
+            specs.filter { it.stringSpecialization == StringSpecialization.CAST_TO_TYPE }
+                .forEach { cast ->
+                    val identifiedFields = stringGenes
+                        .filter { it.getPossiblyTaintedValue() == taintedInput }
+                    if(identifiedFields.isEmpty()){
+                        log.warn("Cannot find StringGene with taint: $taintedInput")
+                    }
+                    identifiedFields.forEach { field ->
+                        val tmap = field.getFirstParent(TaintedMapGene::class.java)
+                        //hmmm... in theory a null could happen if SUT cast a String to something else
+                        tmap?.specifyValueTypeForKey(field.name, cast.value)
+                    }
+                }
         }
     }
 
