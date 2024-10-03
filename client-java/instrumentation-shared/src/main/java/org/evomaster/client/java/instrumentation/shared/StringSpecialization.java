@@ -135,6 +135,11 @@ public enum StringSpecialization implements Serializable {
     JSON_MAP,
 
     /**
+     * Representing that a tainted JSON Map has a field of the given name
+     */
+    JSON_MAP_FIELD,
+
+    /**
      * The tainted string is not supposed to be a string, but rather a different type.
      * Note that
      * "42"

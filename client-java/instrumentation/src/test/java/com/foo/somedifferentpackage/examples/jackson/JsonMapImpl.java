@@ -1,12 +1,13 @@
 package com.foo.somedifferentpackage.examples.jackson;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.evomaster.client.java.instrumentation.example.jackson.JsonMap;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class JsonMapImpl {
+public class JsonMapImpl implements JsonMap {
 
 
     public List castToList(String json) throws Exception {
@@ -15,6 +16,14 @@ public class JsonMapImpl {
         List matches = (ArrayList) map.get("matches");
         return matches;
     }
+
+    public int castToIntArray(String json) throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        Map map = mapper.readValue(json, Map.class);
+        int[] matches = (int[]) map.get("matches");
+        return matches[0];
+    }
+
 
     public Integer assignedToTypedList(String json) throws Exception {
         ObjectMapper mapper = new ObjectMapper();

@@ -4,8 +4,7 @@ import org.evomaster.client.java.distance.heuristics.DistanceHelper;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.*;
 import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
-import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
-import org.evomaster.client.java.instrumentation.shared.ReplacementType;
+import org.evomaster.client.java.instrumentation.shared.*;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
 import java.lang.reflect.Method;
@@ -52,6 +51,44 @@ public class MapClassReplacement implements MethodReplacementClass {
         }
         return isLinear;
     }
+
+    /**
+     * Check if this map instance is a tainted Json Map.
+     * If so, if there is any request for an unknown key, we can inform the search.
+     */
+    private static void handleTaintedJsonMap(Map map, Object checkedKey){
+
+        if(! (checkedKey instanceof String)){
+            return;
+        }
+        Set<Map.Entry<Object,Object>> entries;
+        try{
+           entries = map.entrySet();
+        } catch (Exception e) {
+            return;
+        }
+
+        String taintId = null;
+        boolean found = false;
+        for(Map.Entry<Object,Object> entry : entries){
+            //all keys must be string
+            if(! (entry.getKey() instanceof String)){
+                return;
+            }
+            if(entry.getKey().equals(checkedKey)){
+                found = true;
+            }
+            if(entry.getKey().equals(TaintInputName.TAINTED_MAP_EM_LABEL_IDENTIFIER)){
+                taintId = entry.getValue().toString();
+            }
+        }
+
+        if(taintId != null && !found){
+            ExecutionTracer.addStringSpecialization(taintId,
+                    new StringSpecializationInfo(StringSpecialization.JSON_MAP_FIELD, checkedKey.toString()));
+        }
+    }
+
 
     @Override
     public Class<?> getTargetClass() {
@@ -117,6 +154,7 @@ public class MapClassReplacement implements MethodReplacementClass {
             return c.containsKey(o);
         }
 
+        handleTaintedJsonMap(c, o);
         CollectionsDistanceUtils.evaluateTaint(keyCollection, o);
 
         /*
