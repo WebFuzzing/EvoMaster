@@ -167,6 +167,7 @@ object TaintAnalysis {
                 .forEach { cast ->
                     val identifiedFields = stringGenes
                         .filter { it.getPossiblyTaintedValue() == taintedInput }
+                        .filter { it.name != TaintInputName.TAINTED_MAP_EM_LABEL_IDENTIFIER }
                     if(identifiedFields.isEmpty()){
                         log.warn("Cannot find StringGene with taint: $taintedInput")
                     }
