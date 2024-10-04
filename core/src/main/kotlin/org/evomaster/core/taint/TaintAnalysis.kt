@@ -148,19 +148,22 @@ object TaintAnalysis {
             } // could be more than 1, eg, when action copied might not change the taintId
 
 
-            //discover new fields in the map.
-            //the tainted value points to the Map, so can be accessed through identifiedMaps
+            /*
+                discover new fields in the map.
+                the tainted value X points to the Map (ie {"taint_id": "X"} ), so can be accessed through identifiedMaps.
+                the value here is the new key K that is accessed, ie M.get("key")
+            */
             specs.filter { it.stringSpecialization == StringSpecialization.JSON_MAP_FIELD }
                 .forEach { field ->
                     identifiedMaps.forEach { g ->
-                        if(g.hasKeyByName(field.value)){
+                        if(!g.hasKeyByName(field.value)){
                             g.addNewKey(field.value)
                         }
                     }
                 }
 
             /*
-                here is different... the taintedInput would point to the StringGene inside the TaintedMapGene,
+                here is different... the taintedInput X would point to the StringGene inside the TaintedMapGene,
                 but we want to modify this latter and not the former
              */
             specs.filter { it.stringSpecialization == StringSpecialization.CAST_TO_TYPE }
@@ -390,7 +393,9 @@ object TaintAnalysis {
                 //FIXME possible bug in binding handling.
 //                assert(false)
             }
-            genes.forEach { it.addSpecializations(taintedInput, specializations, randomness, enableConstraintHandling = enableConstraintHandling) }
+            genes
+                .filter { it.name != TaintInputName.TAINTED_MAP_EM_LABEL_IDENTIFIER /* should never be modified */ }
+                .forEach { it.addSpecializations(taintedInput, specializations, randomness, enableConstraintHandling = enableConstraintHandling) }
         }
     }
 }

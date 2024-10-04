@@ -506,7 +506,7 @@ object GeneSamplerForTests {
                 name = "rand PairGene",
                 first = sample(rand.choose(selection), rand),
                 second = sample(rand.choose(selection), rand),
-                isFirstMutable = rand.nextBoolean()
+                allowedToMutateFirst = rand.nextBoolean()
         )
     }
 
@@ -518,7 +518,7 @@ object GeneSamplerForTests {
             name = "rand PairGene",
             first = samplePrintableTemplate(selection, rand),
             second = samplePrintableTemplate(selection, rand),
-            isFirstMutable = rand.nextBoolean()
+            allowedToMutateFirst = rand.nextBoolean()
         )
     }
 
@@ -530,7 +530,7 @@ object GeneSamplerForTests {
             name = "rand PairGene",
             first = samplePrintableTemplate(selection, rand),
             second = samplePrintableFlexibleGene(rand),
-            isFirstMutable = rand.nextBoolean()
+            allowedToMutateFirst = rand.nextBoolean()
         )
     }
     fun samplePrintableFlexibleGene(rand: Randomness): FlexibleGene {
