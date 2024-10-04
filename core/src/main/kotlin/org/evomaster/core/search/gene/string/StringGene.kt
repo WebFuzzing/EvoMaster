@@ -665,8 +665,20 @@ class StringGene(
         }
 
         if(toAddSpecs.any { it.stringSpecialization == StringSpecialization.JSON_MAP }){
-            val mapGene = TaintedMapGene(name,TaintInputName.getTaintName(StaticCounter.getAndIncrease()))
+
+            val pempty = getSearchGlobalState()?.apc?.getExploratoryValue(0.5, 0.0) ?: 0.1
+
+            val mapGene = if(getSearchGlobalState()?.randomness?.nextBoolean(pempty) != false){
+                FixedMapGene("template", StringGene("keyTemplate"), StringGene("valueTemplate"), maxSize = 0)
+                    .apply { template.first.forceTaintedValue() }
+            } else {
+                //best scenario, but map will never be empty
+                TaintedMapGene(name,TaintInputName.getTaintName(StaticCounter.getAndIncrease()))
+            }
+
             toAddGenes.add(mapGene)
+
+
             log.trace("JSON_MAP, added specification size: {}", toAddGenes.size)
         }
 
