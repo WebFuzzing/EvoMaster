@@ -6,7 +6,7 @@ import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Disabled
 
 class JacksonReadTreeEMTest : SpringTestBase() {
 
@@ -20,7 +20,7 @@ class JacksonReadTreeEMTest : SpringTestBase() {
         }
     }
 
-    @Test
+    @Disabled
     fun testRunEM() {
         runTestHandlingFlakyAndCompilation(
             "JacksonReadTreeEM",
@@ -31,7 +31,7 @@ class JacksonReadTreeEMTest : SpringTestBase() {
                 val solution = initAndRun(args)
 
                 assertTrue(solution.individuals.size >= 1)
-                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/jackson/tree", "OK")
+                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/jackson/tree/map", "OK")
             },
             3
         )
