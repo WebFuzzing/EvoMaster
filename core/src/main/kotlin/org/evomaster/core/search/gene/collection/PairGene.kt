@@ -45,7 +45,7 @@ class PairGene<F,S>(
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
-        if(first.isMutable()) {
+        if(first.isMutable()  && (allowedToMutateFirst || !first.initialized)) {
             first.randomize(randomness, tryToForceNewValue)
         }
         if(second.isMutable()) {
