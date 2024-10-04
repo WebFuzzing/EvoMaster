@@ -31,7 +31,7 @@ class JacksonReadTreeEMTest : SpringTestBase() {
                 val solution = initAndRun(args)
 
                 assertTrue(solution.individuals.size >= 1)
-                assertHasAtLeastOne(solution, HttpVerb.GET, 418, "/api/jackson/tree/map", "Bingo!")
+                assertHasAtLeastOne(solution, HttpVerb.POST, 418, "/api/jackson/tree/map", "Bingo!")
             },
             3
         )

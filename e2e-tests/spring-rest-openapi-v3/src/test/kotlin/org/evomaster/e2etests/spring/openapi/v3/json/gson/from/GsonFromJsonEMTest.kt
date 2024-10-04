@@ -31,7 +31,8 @@ class GsonFromJsonEMTest : SpringTestBase() {
                 val solution = initAndRun(args)
 
                 assertTrue(solution.individuals.size >= 1)
-                assertHasAtLeastOne(solution, HttpVerb.GET, 418, "/api/gson/from", "Bingo!")
+                assertHasAtLeastOne(solution, HttpVerb.POST, 418, "/api/gson/from/class", "Bingo!")
+                assertHasAtLeastOne(solution, HttpVerb.POST, 418, "/api/gson/from/type", "Bingo!")
             },
             3
         )

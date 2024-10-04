@@ -15,13 +15,13 @@ class JacksonReadValueEndpoints {
 
     @PostMapping(path = ["/map"])
     fun postMap(@RequestBody json : String?) : ResponseEntity<String> {
-        // Sample JSON: {"name" : "teapot"}
+        // Sample JSON: {"name":"teapot"}
         return try {
             val mapper = ObjectMapper()
 
-            val result = mapper.readValue(json, Map::class.java)
+            val map = mapper.readValue(json, Map::class.java)
 
-            if (result.containsValue("teapot")) {
+            if (map.containsValue("teapot")) {
                 return ResponseEntity.status(HttpStatus.I_AM_A_TEAPOT).body("Bingo!")
             }
 
@@ -37,9 +37,9 @@ class JacksonReadValueEndpoints {
         return try {
             val mapper = ObjectMapper()
 
-            val result = mapper.readValue(json, ArrayList::class.java)
+            val arrayList = mapper.readValue(json, ArrayList::class.java)
 
-            if (result.contains("teapot")) {
+            if (arrayList.contains("teapot")) {
                 return ResponseEntity.status(HttpStatus.I_AM_A_TEAPOT).body("Bingo!")
             }
 
@@ -55,9 +55,9 @@ class JacksonReadValueEndpoints {
         return try {
             val mapper = ObjectMapper()
 
-            val result = mapper.readValue(json, object : TypeReference<ArrayList<TestDto>>() {})
+            val arrayList = mapper.readValue(json, object : TypeReference<ArrayList<TestDto>>() {})
 
-            if (result.any { it.name == "teapot" }) {
+            if (arrayList.any { it.name == "teapot" }) {
                 return ResponseEntity.status(HttpStatus.I_AM_A_TEAPOT).body("Bingo!")
             }
 

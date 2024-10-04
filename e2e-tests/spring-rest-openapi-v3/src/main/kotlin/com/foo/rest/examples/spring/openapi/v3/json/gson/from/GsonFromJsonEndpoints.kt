@@ -1,6 +1,7 @@
 package com.foo.rest.examples.spring.openapi.v3.json.gson.from
 
 import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
@@ -12,15 +13,32 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping(path = ["/api/gson/from"])
 class GsonFromJsonEndpoints {
 
-    @PostMapping(path = [""])
-    fun post(@RequestBody json : String?) : ResponseEntity<String> {
+    @PostMapping(path = ["/class"])
+    fun classOfT(@RequestBody json : String?) : ResponseEntity<String> {
+        // Sample JSON: {"name":"teapot"}
         return try {
-            val json = Gson().fromJson(json, Map::class.java)
+            val map = Gson().fromJson(json, Map::class.java)
 
-            if (json.containsValue("teapot")) {
+            if (map.containsValue("teapot")) {
                 return ResponseEntity.status(HttpStatus.I_AM_A_TEAPOT).body("Bingo!")
             }
 
+
+            ResponseEntity.ok("OK")
+        } catch (ex: Exception) {
+            ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()
+        }
+    }
+
+    @PostMapping(path = ["/type"])
+    fun type(@RequestBody json : String?) : ResponseEntity<String> {
+        // Sample JSON: [{"name":"teapot"}]
+        return try {
+            val arrayList : ArrayList<TestDto> = Gson().fromJson(json, object : TypeToken<ArrayList<TestDto>>() {}.type)
+
+            if (arrayList.any { it.name == "teapot" }) {
+                return ResponseEntity.status(HttpStatus.I_AM_A_TEAPOT).body("Bingo!")
+            }
 
             ResponseEntity.ok("OK")
         } catch (ex: Exception) {

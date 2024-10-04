@@ -18,9 +18,9 @@ class JacksonConvertValueEndpoints {
         return try {
             val mapper = ObjectMapper()
 
-            val car = mapper.readValue(json, Map::class.java)
+            val map = mapper.readValue(json, Map::class.java)
 
-            val result = mapper.convertValue(car, TestDto::class.java)
+            val result = mapper.convertValue(map, TestDto::class.java)
 
             if (result.name == "teapot") {
                 return ResponseEntity.status(HttpStatus.I_AM_A_TEAPOT).build()

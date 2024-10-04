@@ -17,9 +17,9 @@ class JacksonReadTreeEndpoints {
         return try {
             val mapper = ObjectMapper()
 
-            val result = mapper.readTree(json)
+            val jsonNode = mapper.readTree(json)
 
-            if (result.get("name").asText() == "teapot") {
+            if (jsonNode.get("name").asText() == "teapot") {
                 return ResponseEntity.status(HttpStatus.I_AM_A_TEAPOT).body("Bingo!")
             }
 
