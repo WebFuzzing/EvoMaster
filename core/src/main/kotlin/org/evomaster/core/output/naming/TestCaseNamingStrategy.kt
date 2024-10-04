@@ -26,6 +26,7 @@ abstract class TestCaseNamingStrategy(
 
     /**
      * @param individual containing information for the test about to be named
+     * @param nameTokens list to collect the identifiers which will be formatted into the test case name
      *
      * @return a String with extra information that will be included in the test name, regarding the EvaluatedIndividual
      */

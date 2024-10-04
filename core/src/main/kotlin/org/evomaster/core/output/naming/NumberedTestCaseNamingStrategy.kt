@@ -25,6 +25,7 @@ open class NumberedTestCaseNamingStrategy(
         return ""
     }
 
+    // kicking off with an empty mutableListOf for each test case to accumulate their own name tokens
     private fun getName(counter: Int, individual: EvaluatedIndividual<*>): String {
         return "test_${counter}${expandName(individual, mutableListOf())}"
     }
