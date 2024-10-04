@@ -38,7 +38,7 @@ public class MessageBodyReaderClassReplacement extends ThirdPartyMethodReplaceme
         Objects.requireNonNull(caller);
 
         String className = caller.getClass().getName();
-        if(className.contains(".jackson.")){
+        if(className.contains(".jackson.") && !type.getName().startsWith("org.evomaster")){
            entityStream = JsonUtils.analyzeClass(entityStream, type);
         }
 
