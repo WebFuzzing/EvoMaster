@@ -16,8 +16,8 @@ open class RPCActionTestCaseNamingStrategy(
         var evaluatedAction = individual.evaluatedMainActions().last()
         var action = evaluatedAction.action as RPCCallAction
 
-        nameTokens.add(action.interfaceId)
-        nameTokens.add(action.id)
+//        nameTokens.add(TestWriterUtils.safeVariableName(action.interfaceId))
+        nameTokens.add(TestWriterUtils.safeVariableName(action.id))
         addResult(individual, nameTokens)
 
         return formatName(nameTokens)
