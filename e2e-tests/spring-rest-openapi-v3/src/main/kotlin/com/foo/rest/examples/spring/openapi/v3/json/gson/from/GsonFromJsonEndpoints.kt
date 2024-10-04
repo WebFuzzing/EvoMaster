@@ -18,7 +18,7 @@ class GsonFromJsonEndpoints {
             val json = Gson().fromJson(json, Map::class.java)
 
             if (json.containsValue("teapot")) {
-                return ResponseEntity.status(HttpStatus.I_AM_A_TEAPOT).build()
+                return ResponseEntity.status(HttpStatus.I_AM_A_TEAPOT).body("Bingo!")
             }
 
 

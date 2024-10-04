@@ -14,16 +14,13 @@ class JacksonConvertValueEndpoints {
 
     @PostMapping(path = ["/map"])
     fun post(@RequestBody json : String?) : ResponseEntity<String> {
+        // Sample JSON: { "name": "teapot", "model" : "x"}
         return try {
             val mapper = ObjectMapper()
-//            val c = mapOf(
-//                "name" to "teapot",
-//                "model" to "x"
-//            )
 
             val car = mapper.readValue(json, Map::class.java)
 
-            val result = mapper.convertValue(car, CarDto::class.java)
+            val result = mapper.convertValue(car, TestDto::class.java)
 
             if (result.name == "teapot") {
                 return ResponseEntity.status(HttpStatus.I_AM_A_TEAPOT).build()
