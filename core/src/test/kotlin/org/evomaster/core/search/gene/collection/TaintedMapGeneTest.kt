@@ -22,6 +22,7 @@ class TaintedMapGeneTest{
     fun testAddElement(){
 
         val gene = TaintedMapGene("foo", TaintInputName.getTaintName(42))
+        gene.doInitialize()
         assertEquals(1, gene.getSizeOfElements())
 
         var json = gene.getValueAsPrintableString(mode= GeneUtils.EscapeMode.JSON)

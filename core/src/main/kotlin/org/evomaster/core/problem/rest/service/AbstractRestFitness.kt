@@ -795,7 +795,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 else -> throw IllegalStateException("Cannot handle body type: " + body.contentType())
             }
 
-            val stringToBeSent = body.getValueAsPrintableString(mode = mode, targetFormat = configuration.outputFormat)
+            val stringToBeSent = body.getRawStringToBeSent(mode = mode, targetFormat = configuration.outputFormat)
             Entity.entity(
                 stringToBeSent,
                 body.contentType()

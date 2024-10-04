@@ -1,6 +1,7 @@
 package org.evomaster.core.search.gene.collection
 
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
+import org.evomaster.core.Lazy
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.interfaces.TaintableGene
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
@@ -35,7 +36,8 @@ class TaintedMapGene(
     init {
         if(elements.isEmpty()){
             val key = StringGene(TaintInputName.TAINTED_MAP_EM_LABEL_IDENTIFIER,
-                TaintInputName.TAINTED_MAP_EM_LABEL_IDENTIFIER)
+                value = TaintInputName.TAINTED_MAP_EM_LABEL_IDENTIFIER)
+            key.doInitialize() // do not want to get its value modified during map initialization
 
             val value = CustomMutationRateGene(
                 TaintInputName.TAINTED_MAP_EM_LABEL_IDENTIFIER,
@@ -71,7 +73,9 @@ class TaintedMapGene(
 
         val keyGene = StringGene(key, key)
         val valueGene = FlexibleGene(key, StringGene(key).apply { forceTaintedValue() }, null)
-        val element = PairGene(key, keyGene, valueGene, false)
+        val element = PairGene(key, keyGene, valueGene, false).apply { doInitialize() }
+
+        Lazy.assert { element.isLocallyValid() }
 
         addElement(element)
     }
@@ -95,6 +99,7 @@ class TaintedMapGene(
             //nothing to do, already a string
             return
         }
+        gene.doInitialize(getSearchGlobalState()?.randomness)
 
         val entry = elements.first { it.name == key }
         (entry.second as FlexibleGene).replaceGeneTo(gene)
@@ -135,10 +140,20 @@ class TaintedMapGene(
 
     override fun isLocallyValid(): Boolean {
 
+        //among the pairs key-value, there must be only one related to taint id
         val taints = elements.filter { it.name == TaintInputName.TAINTED_MAP_EM_LABEL_IDENTIFIER }
         if(taints.size != 1){
             return false
         }
+
+        // the key must have a specific name that must never be changed
+        val key = taints[0].first
+        if(key.name != TaintInputName.TAINTED_MAP_EM_LABEL_IDENTIFIER
+            || key.value != TaintInputName.TAINTED_MAP_EM_LABEL_IDENTIFIER){
+            return false
+        }
+
+        //the "value" element of the key-value pair must be equal to taint id
         val x = taints[0].second.getWrappedGene(StringGene::class.java)?.value
             ?: return false
         if(x != taintId){
