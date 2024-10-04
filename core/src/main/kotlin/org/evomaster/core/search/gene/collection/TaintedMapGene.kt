@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.collection
 
-import org.evomaster.client.java.instrumentation.shared.ClassName
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.interfaces.TaintableGene
@@ -14,7 +13,6 @@ import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.LoggerFactory
-import sun.jvm.hotspot.oops.CellTypeState.value
 
 /**
  * Representing a tainted map, ie, a Map object was fields and their type is discovered at runtime through
@@ -123,7 +121,7 @@ class TaintedMapGene(
         val type = try{
             this::class.java.classLoader.loadClass(className)
         } catch (e: ClassNotFoundException) {
-            log.warn("Unable to load class $className when inferring type for valueType $value in tainted map $taintId for field $name")
+            log.warn("Unable to load class $className when inferring type for valueType $valueType in tainted map $taintId for field $name")
             return StringGene(name)
         }
 
