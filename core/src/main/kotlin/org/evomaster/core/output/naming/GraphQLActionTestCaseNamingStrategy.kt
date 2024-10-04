@@ -12,19 +12,19 @@ open class GraphQLActionTestCaseNamingStrategy(
 ) : ActionTestCaseNamingStrategy(solution, languageConventionFormatter)  {
 
 
-    override fun expandName(individual: EvaluatedIndividual<*>): String {
+    override fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>): String {
         var evaluatedAction = individual.evaluatedMainActions().last()
         var action = evaluatedAction.action as GraphQLAction
 
         nameTokens.add(action.methodType.toString())
         nameTokens.add(on)
         nameTokens.add(getPath(action.methodName))
-        addResult(individual)
+        addResult(individual, nameTokens)
 
-        return formatName()
+        return formatName(nameTokens)
     }
 
-    override fun addActionResult(evaluatedAction: EvaluatedAction) {
+    override fun addActionResult(evaluatedAction: EvaluatedAction, nameTokens: MutableList<String>) {
         val result = evaluatedAction.result as GraphQlCallResult
         nameTokens.add(returns)
         nameTokens.add(

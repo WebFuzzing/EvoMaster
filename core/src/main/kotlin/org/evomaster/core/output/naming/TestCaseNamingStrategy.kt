@@ -29,6 +29,6 @@ abstract class TestCaseNamingStrategy(
      *
      * @return a String with extra information that will be included in the test name, regarding the EvaluatedIndividual
      */
-    protected abstract fun expandName(individual: EvaluatedIndividual<*>): String
+    protected abstract fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>): String
 
 }

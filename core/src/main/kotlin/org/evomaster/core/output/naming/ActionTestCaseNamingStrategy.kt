@@ -10,7 +10,6 @@ import org.evomaster.core.search.action.EvaluatedAction
 abstract class ActionTestCaseNamingStrategy(
     solution: Solution<*>,
     private val languageConventionFormatter: LanguageConventionFormatter,
-    protected var nameTokens: MutableList<String> = mutableListOf(),
 ) : NumberedTestCaseNamingStrategy(solution)  {
 
     protected val on = "on"
@@ -21,7 +20,7 @@ abstract class ActionTestCaseNamingStrategy(
     protected val data = "data"
     protected val empty = "empty"
 
-    protected fun formatName(): String {
+    protected fun formatName(nameTokens: MutableList<String>): String {
         return "_${languageConventionFormatter.formatName(nameTokens)}"
     }
 
@@ -45,15 +44,15 @@ abstract class ActionTestCaseNamingStrategy(
         return faults.first().testCaseLabel
     }
 
-    protected fun addResult(individual: EvaluatedIndividual<*>) {
+    protected fun addResult(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>) {
         val detectedFaults = DetectedFaultUtils.getDetectedFaultCategories(individual)
         if (detectedFaults.isNotEmpty()) {
             nameTokens.add(fault(detectedFaults))
         } else {
-            addActionResult(individual.evaluatedMainActions().last())
+            addActionResult(individual.evaluatedMainActions().last(), nameTokens)
         }
     }
 
-    protected abstract fun addActionResult(evaluatedAction: EvaluatedAction)
+    protected abstract fun addActionResult(evaluatedAction: EvaluatedAction, nameTokens: MutableList<String>)
 
 }

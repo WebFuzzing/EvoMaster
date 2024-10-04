@@ -12,18 +12,18 @@ open class RPCActionTestCaseNamingStrategy(
     languageConventionFormatter: LanguageConventionFormatter
 ) : ActionTestCaseNamingStrategy(solution, languageConventionFormatter)  {
 
-    override fun expandName(individual: EvaluatedIndividual<*>): String {
+    override fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>): String {
         var evaluatedAction = individual.evaluatedMainActions().last()
         var action = evaluatedAction.action as RPCCallAction
 
         nameTokens.add(action.interfaceId)
         nameTokens.add(action.id)
-        addResult(individual)
+        addResult(individual, nameTokens)
 
-        return formatName()
+        return formatName(nameTokens)
     }
 
-    override fun addActionResult(evaluatedAction: EvaluatedAction) {
+    override fun addActionResult(evaluatedAction: EvaluatedAction, nameTokens: MutableList<String>) {
         val result = evaluatedAction.result as RPCCallResult
         if (result.hasPotentialFault()) {
             nameTokens.add(throws)

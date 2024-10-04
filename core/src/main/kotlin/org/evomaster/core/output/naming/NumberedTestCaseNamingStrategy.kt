@@ -21,12 +21,12 @@ open class NumberedTestCaseNamingStrategy(
     }
 
     // numbered strategy will not expand the name unless it is using the namingHelper
-    override fun expandName(individual: EvaluatedIndividual<*>): String {
+    override fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>): String {
         return ""
     }
 
     private fun getName(counter: Int, individual: EvaluatedIndividual<*>): String {
-        return "test_${counter}${expandName(individual)}"
+        return "test_${counter}${expandName(individual, mutableListOf())}"
     }
 
     private fun generateNames(individuals: List<EvaluatedIndividual<*>>) : List<TestCase> {
