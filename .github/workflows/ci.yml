@@ -41,8 +41,8 @@ env:
   latest-jdk: 21
   build-jdk: 1.8
   retention-days: 5
-  debug: false  # put to true if need to debug a specific test
-  debugTestName: "H2ColumnTypesEMTest" # replace with test to debug
+  debug: true  # put to true if need to debug a specific test
+  debugTestName: "CatwatchResourceBasedTest" # replace with test to debug
 
 # This build is quite expensive (some hours), so we run it whole only on some JVM versions and OSs.
 # For the moment, we need to support JVM 8 and all following LTS versions (e.g, 11 and  17).
