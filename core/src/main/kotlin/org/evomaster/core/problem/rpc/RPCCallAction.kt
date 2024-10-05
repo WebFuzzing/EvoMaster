@@ -55,6 +55,31 @@ open class RPCCallAction(
     }
 
     /**
+     * RPC is only available for Java or Kotlin.
+     * Therefore, it will assume JVM like package naming structure to find the class name.
+     *
+     * @return the simple class name of a Java or Kotlin class representing the service
+     */
+    fun getSimpleClassName(): String {
+        return extractSimpleClass(id.split(":")[0])
+    }
+
+    private fun extractSimpleClass(fullyQualifiedName: String) : String {
+        if (fullyQualifiedName.isNullOrEmpty()) return ""
+
+        // Replace $ with . and then split by . to handle inner classes
+        val parts = fullyQualifiedName.replace('$', '.').split(".")
+        return parts.last()
+    }
+
+    /**
+     * @return the function name being executed
+     */
+    fun getExecutedFunctionName(): String {
+        return id.split(":")[1]
+    }
+
+    /**
      * reset response info
      */
     fun resetResponse() {
