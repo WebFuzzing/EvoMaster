@@ -13,8 +13,8 @@ open class RPCActionTestCaseNamingStrategy(
 ) : ActionTestCaseNamingStrategy(solution, languageConventionFormatter)  {
 
     override fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>): String {
-        var evaluatedAction = individual.evaluatedMainActions().last()
-        var action = evaluatedAction.action as RPCCallAction
+        val evaluatedAction = individual.evaluatedMainActions().last()
+        val action = evaluatedAction.action as RPCCallAction
 
         nameTokens.add(TestWriterUtils.safeVariableName(action.getSimpleClassName()))
         nameTokens.add(on)

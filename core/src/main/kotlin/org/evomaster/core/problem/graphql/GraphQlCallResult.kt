@@ -11,7 +11,7 @@ class GraphQlCallResult : HttpWsCallResult {
 
     companion object{
         const val LAST_STATEMENT_WHEN_GQL_ERRORS = "LAST_STATEMENT_WHEN_GQL_ERRORS"
-        private val mapper: ObjectMapper = ObjectMapper()
+        private val mapper = ObjectMapper()
     }
 
     constructor(sourceLocalId: String, stopping: Boolean = false) : super(sourceLocalId, stopping)

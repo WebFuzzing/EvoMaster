@@ -13,8 +13,8 @@ open class GraphQLActionTestCaseNamingStrategy(
 
 
     override fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>): String {
-        var evaluatedAction = individual.evaluatedMainActions().last()
-        var action = evaluatedAction.action as GraphQLAction
+        val evaluatedAction = individual.evaluatedMainActions().last()
+        val action = evaluatedAction.action as GraphQLAction
 
         nameTokens.add(action.methodType.toString())
         nameTokens.add(on)

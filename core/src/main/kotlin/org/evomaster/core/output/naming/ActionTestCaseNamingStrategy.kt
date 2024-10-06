@@ -20,7 +20,7 @@ abstract class ActionTestCaseNamingStrategy(
     protected val data = "data"
     protected val empty = "empty"
 
-    protected fun formatName(nameTokens: MutableList<String>): String {
+    protected fun formatName(nameTokens: List<String>): String {
         return "_${languageConventionFormatter.formatName(nameTokens)}"
     }
 

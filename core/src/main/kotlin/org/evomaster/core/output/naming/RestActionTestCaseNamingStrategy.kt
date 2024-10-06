@@ -12,8 +12,8 @@ open class RestActionTestCaseNamingStrategy(
 ) : ActionTestCaseNamingStrategy(solution, languageConventionFormatter)  {
 
     override fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>): String {
-        var evaluatedAction = individual.evaluatedMainActions().last()
-        var action = evaluatedAction.action as RestCallAction
+        val evaluatedAction = individual.evaluatedMainActions().last()
+        val action = evaluatedAction.action as RestCallAction
 
         nameTokens.add(action.verb.toString())
         nameTokens.add(on)
@@ -24,7 +24,7 @@ open class RestActionTestCaseNamingStrategy(
     }
 
     override fun addActionResult(evaluatedAction: EvaluatedAction, nameTokens: MutableList<String>) {
-        var result = evaluatedAction.result as HttpWsCallResult
+        val result = evaluatedAction.result as HttpWsCallResult
         nameTokens.add(returns)
         nameTokens.add(result.getStatusCode().toString())
     }
