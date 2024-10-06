@@ -45,6 +45,7 @@ import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.URL
+import javax.annotation.PostConstruct
 import javax.ws.rs.ProcessingException
 import javax.ws.rs.client.Entity
 import javax.ws.rs.client.Invocation
@@ -67,6 +68,15 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
     @Inject
     protected lateinit var builder: RestIndividualBuilder
+
+    private lateinit var schemaOracles: RestSchemaOracles
+
+    @PostConstruct
+    fun initBean(){
+        //FIXME
+        schemaOracles = RestSchemaOracles((sampler as AbstractRestSampler).swagger.openapi)
+    }
+
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(AbstractRestFitness::class.java)
@@ -677,8 +687,13 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         if (!handleSaveLocation(a, response, rcr, chainState)) return false
 
+        if(config.schemaOracles) {
+            schemaOracles.handleSchemaOracles(a.resolvedPath(), a.verb, rcr, fv)
+        }
+
         return true
     }
+
 
     private fun handleLinks(
         a: RestCallAction,

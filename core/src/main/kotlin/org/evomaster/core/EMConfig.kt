@@ -2290,6 +2290,9 @@ class EMConfig {
     @Cfg("Extra checks on HTTP properties in returned responses, used as automated oracles to detect faults.")
     var httpOracles = false
 
+    @Experimental
+    @Cfg("Validate responses against their schema, to check for inconsistencies. Those are treated as faults.")
+    var schemaOracles = false
 
     @Experimental
     @Cfg("Apply more advanced coverage criteria for black-box testing. This can result in larger generated test suites.")

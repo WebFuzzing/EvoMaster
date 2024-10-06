@@ -705,7 +705,11 @@
                 <artifactId>swagger-parser</artifactId>
                 <version>${swagger.parser-v3.version}</version>
             </dependency>
-
+            <dependency>
+                <groupId>com.atlassian.oai</groupId>
+                <artifactId>swagger-request-validator-core</artifactId>
+                <version>2.42.0</version>
+            </dependency>
 
             <!-- databases -->
             <dependency>
