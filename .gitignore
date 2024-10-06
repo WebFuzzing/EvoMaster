@@ -123,6 +123,7 @@ Migrations/
 /e2e-tests/spring-rest-mysql-column-types/target/
 /e2e-tests/spring-rest-postgres-column-types/target/
 /e2e-tests/spring-rest-h2-column-types/target/
+/e2e-tests/spring-rest-h2-z3solver/target/
 /test-old-libraries/target/
 /e2e-tests/spring-web/target/
 /e2e-tests/spring-rest-mongo/target/
