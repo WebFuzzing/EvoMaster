@@ -278,7 +278,7 @@ class SMTLibZ3DbConstraintSolver(
      */
     private fun storeToTmpFile(smtLib: SMTLib): String {
         val fileName = "smt2_${System.currentTimeMillis()}.smt2"
-        val filePath = this.resourcesFolder + fileName
+        val filePath = leadingBarResourcesFolder() + fileName
 
         try {
             Files.write(Paths.get(filePath), smtLib.toString().toByteArray(StandardCharsets.UTF_8))
@@ -287,4 +287,6 @@ class SMTLibZ3DbConstraintSolver(
         }
         return fileName
     }
+
+    private fun leadingBarResourcesFolder() = if (resourcesFolder.endsWith("/")) resourcesFolder else "$resourcesFolder/"
 }

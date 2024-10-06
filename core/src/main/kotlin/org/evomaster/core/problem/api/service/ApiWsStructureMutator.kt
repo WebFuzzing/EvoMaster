@@ -269,7 +269,8 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 
         val oldSqlActions = mutableListOf<EnvironmentAction>().plus(ind.seeInitializingActions())
 
-        val addedSqlInsertions = handleFailedWhereSQL(ind, fw, mutatedGenes, sampler)
+        val failedWhereQueries = evaluatedIndividual.fitness.getViewOfAggregatedFailedWhereQueries()
+        val addedSqlInsertions = handleFailedWhereSQL(ind, fw, failedWhereQueries, mutatedGenes, sampler)
 
         ind.repairInitializationActions(randomness)
         // update impact based on added genes
@@ -290,6 +291,10 @@ abstract class ApiWsStructureMutator : StructureMutator() {
          * Map of FAILED WHERE clauses. from table name key to column name values
          */
         fw: Map<String, Set<String>>,
+        /**
+         * List queries with FAILED WHERE clauses
+         */
+        failedWhereQueries: List<String>,
         mutatedGenes: MutatedGeneSpecification?, sampler: ApiWsSampler<T>
     ): MutableList<List<SqlAction>>? {
 
@@ -298,25 +303,23 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         }
         
         if (config.generateSqlDataWithDSE) {
-            return handleDSE(sampler, fw)
+            return handleDSE(sampler, failedWhereQueries)
         }
 
         return mutableListOf()
     }
 
-    private fun <T : ApiWsIndividual> handleDSE(sampler: ApiWsSampler<T>, fw: Map<String, Set<String>>): MutableList<List<SqlAction>> {
+    private fun <T : ApiWsIndividual> handleDSE(sampler: ApiWsSampler<T>, failedWhereQueries: List<String>): MutableList<List<SqlAction>> {
         // TODO: Use one solver, instead of creating one each time?
-        val resourcesFolder = "/tmp";
+        val resourcesFolder = System.getProperty("user.dir") + "/target/tmp";
         val schemaDto = sampler.sqlInsertBuilder?.schemaDto
             ?: throw IllegalStateException("No DB schema is available")
-        val solver = SMTLibZ3DbConstraintSolver(schemaDto, resourcesFolder)
+        val solver = SMTLibZ3DbConstraintSolver(schemaDto, resourcesFolder, 1)
 
         val newActions = mutableListOf<List<SqlAction>>()
-        for ((_, queries) in fw) {
-            for (query in queries) {
-                val newActionsForQuery = solver.solve(query)
-                newActions.addAll(mutableListOf(newActionsForQuery))
-            }
+        for (query in failedWhereQueries) {
+            val newActionsForQuery = solver.solve(query)
+            newActions.addAll(mutableListOf(newActionsForQuery))
         }
 
         return newActions

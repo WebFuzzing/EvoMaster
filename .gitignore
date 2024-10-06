@@ -166,3 +166,5 @@ Migrations/
 /e2e-tests/spring-rest-bb/maven/target/
 /target/
 /wfc/target/
+
+*.DS_Store
