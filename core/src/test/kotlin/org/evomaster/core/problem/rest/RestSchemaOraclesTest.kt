@@ -1,7 +1,6 @@
 package org.evomaster.core.problem.rest
 
 import com.atlassian.oai.validator.report.ValidationReport
-import io.swagger.parser.OpenAPIParser
 import org.evomaster.core.search.FitnessValue
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Disabled
@@ -20,15 +19,13 @@ class RestSchemaOraclesTest{
 
         val schema = RestSchemaOraclesTest::class.java.getResource("/swagger/artificial/branches.json").readText()
 
-        val oracles = RestSchemaOracles(schema)
+        val oracles = RestSchemaOracle(schema)
 
-        val fv = FitnessValue(1.0)
         val response = RestCallResult("id",false)
         response.setStatusCode(401)
 
-        val report = oracles.handleSchemaOracles("/api/branches/eq", HttpVerb.POST, response, fv)
+        val report = oracles.handleSchemaOracles("/api/branches/eq", HttpVerb.POST, response)
         checkNoError(report)
-        //TODO other checks
     }
 
 
@@ -36,24 +33,21 @@ class RestSchemaOraclesTest{
     fun testWrongStatusInBranches(){
 
         val schema = RestSchemaOraclesTest::class.java.getResource("/swagger/artificial/branches.json").readText()
-        val oracles = RestSchemaOracles(schema)
-        val fv = FitnessValue(1.0)
+        val oracles = RestSchemaOracle(schema)
         val response = RestCallResult("id",false)
 
         response.setStatusCode(204) // not declared
 
-        val report = oracles.handleSchemaOracles("/api/branches/eq", HttpVerb.POST, response, fv)
+        val report = oracles.handleSchemaOracles("/api/branches/eq", HttpVerb.POST, response)
         assertTrue(report.hasErrors())
         assertEquals(1, report.messages.count())
-        //TODO other checks
     }
 
     @Test
     fun testValidBodyInBranches(){
 
         val schema = RestSchemaOraclesTest::class.java.getResource("/swagger/artificial/branches.json").readText()
-        val oracles = RestSchemaOracles(schema)
-        val fv = FitnessValue(1.0)
+        val oracles = RestSchemaOracle(schema)
         val response = RestCallResult("id",false)
 
         response.setStatusCode(200)
@@ -62,10 +56,8 @@ class RestSchemaOraclesTest{
             {"value": 42}
         """.trimIndent())
 
-        val report = oracles.handleSchemaOracles("/api/branches/eq", HttpVerb.POST, response, fv)
+        val report = oracles.handleSchemaOracles("/api/branches/eq", HttpVerb.POST, response)
         checkNoError(report)
-        //TODO other checks
-
     }
 
 
@@ -73,17 +65,15 @@ class RestSchemaOraclesTest{
     fun testMissingBodyInBranches(){
 
         val schema = RestSchemaOraclesTest::class.java.getResource("/swagger/artificial/branches.json").readText()
-        val oracles = RestSchemaOracles(schema)
-        val fv = FitnessValue(1.0)
+        val oracles = RestSchemaOracle(schema)
         val response = RestCallResult("id",false)
 
         response.setStatusCode(200)
 
 
-        val report = oracles.handleSchemaOracles("/api/branches/eq", HttpVerb.POST, response, fv)
+        val report = oracles.handleSchemaOracles("/api/branches/eq", HttpVerb.POST, response)
         assertTrue(report.hasErrors())
         assertEquals(1, report.messages.count())
-        //TODO other checks
     }
 
 
@@ -98,8 +88,7 @@ class RestSchemaOraclesTest{
     fun testExtraParamBodyInBranches(){
 
         val schema = RestSchemaOraclesTest::class.java.getResource("/swagger/artificial/branches.json").readText()
-        val oracles = RestSchemaOracles(schema)
-        val fv = FitnessValue(1.0)
+        val oracles = RestSchemaOracle(schema)
         val response = RestCallResult("id",false)
 
         response.setStatusCode(200)
@@ -111,22 +100,20 @@ class RestSchemaOraclesTest{
             }
         """.trimIndent())
 
-        val report = oracles.handleSchemaOracles("/api/branches/eq", HttpVerb.POST, response, fv)
+        val report = oracles.handleSchemaOracles("/api/branches/eq", HttpVerb.POST, response)
         checkNoError(report)
-        //TODO other checks
     }
 
     @Test
     fun testRequiredParam(){
 
         val schema = RestSchemaOraclesTest::class.java.getResource("/swagger/artificial/openapi-validation.yaml").readText()
-        val oracles = RestSchemaOracles(schema)
-        val fv = FitnessValue(1.0)
+        val oracles = RestSchemaOracle(schema)
         val response = RestCallResult("id",false)
 
         response.setStatusCode(200)
 
-        val report = oracles.handleSchemaOracles("/api/x", HttpVerb.GET, response, fv)
+        val report = oracles.handleSchemaOracles("/api/x", HttpVerb.GET, response)
         //no check on inputs (ie robustness testing), but only responses
         checkNoError(report)
     }

@@ -36,7 +36,6 @@ import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.numeric.NumberGene
-import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
@@ -69,12 +68,12 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     @Inject
     protected lateinit var builder: RestIndividualBuilder
 
-    private lateinit var schemaOracles: RestSchemaOracles
+    private lateinit var schemaOracles: RestSchemaOracle
 
     @PostConstruct
     fun initBean(){
         //FIXME
-        schemaOracles = RestSchemaOracles((sampler as AbstractRestSampler).swagger.openapi)
+        schemaOracles = RestSchemaOracle((sampler as AbstractRestSampler).swagger.openapi)
     }
 
 
@@ -688,7 +687,16 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         if (!handleSaveLocation(a, response, rcr, chainState)) return false
 
         if(config.schemaOracles) {
-            schemaOracles.handleSchemaOracles(a.resolvedPath(), a.verb, rcr, fv)
+            val report = schemaOracles.handleSchemaOracles(a.resolvedPath(), a.verb, rcr)
+
+            report.messages.forEach {
+                val discriminant = a.getName() + "_" + it.message
+                val scenarioId = idMapper.handleLocalTarget(
+                    idMapper.getFaultDescriptiveId(FaultCategory.SCHEMA_INVALID_RESPONSE, discriminant)
+                )
+                fv.updateTarget(scenarioId, 1.0, a.positionAmongMainActions())
+                rcr.addFault(DetectedFault(FaultCategory.SCHEMA_INVALID_RESPONSE, discriminant))
+            }
         }
 
         return true
