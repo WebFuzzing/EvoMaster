@@ -61,6 +61,14 @@ public class MapClassReplacement implements MethodReplacementClass {
         if(! (checkedKey instanceof String)){
             return;
         }
+        if(map.size() > 30){
+            /*
+                We cannot check key with map's methods, as it can lead to infinite recursions when the map is
+                a wrapper. in theory, even "size()" could be problematic.
+                anyway, if map is too large, for sure it is not a tainted map
+             */
+            return;
+        }
         Set<Map.Entry<Object,Object>> entries;
         try{
            entries = map.entrySet();
