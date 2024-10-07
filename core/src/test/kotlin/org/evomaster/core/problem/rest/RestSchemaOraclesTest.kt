@@ -1,7 +1,6 @@
 package org.evomaster.core.problem.rest
 
 import com.atlassian.oai.validator.report.ValidationReport
-import org.evomaster.core.search.FitnessValue
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test

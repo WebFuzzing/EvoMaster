@@ -68,12 +68,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     @Inject
     protected lateinit var builder: RestIndividualBuilder
 
-    private lateinit var schemaOracles: RestSchemaOracle
+    private lateinit var schemaOracle: RestSchemaOracle
 
     @PostConstruct
     fun initBean(){
-        //FIXME
-        schemaOracles = RestSchemaOracle((sampler as AbstractRestSampler).swagger.openapi)
+        schemaOracle = RestSchemaOracle((sampler as AbstractRestSampler).swagger.schemaRaw)
     }
 
 
@@ -687,7 +686,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         if (!handleSaveLocation(a, response, rcr, chainState)) return false
 
         if(config.schemaOracles) {
-            val report = schemaOracles.handleSchemaOracles(a.resolvedPath(), a.verb, rcr)
+            val report = schemaOracle.handleSchemaOracles(a.resolvedPath(), a.verb, rcr)
 
             report.messages.forEach {
                 val discriminant = a.getName() + "_" + it.message
