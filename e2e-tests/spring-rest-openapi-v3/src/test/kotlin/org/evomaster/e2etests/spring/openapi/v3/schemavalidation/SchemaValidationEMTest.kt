@@ -95,4 +95,31 @@ class SchemaValidationEMTest : SpringTestBase(){
         }
     }
 
+    @Test
+    fun testRunEM_500() {
+
+        runTestHandlingFlakyAndCompilation(
+            "SchemaValidation500EM",
+            10
+        ) { args: MutableList<String> ->
+
+            Constants.statusCodeToReturn = 500
+
+            setOption(args, "schemaOracles", "true")
+
+            val solution = initAndRun(args)
+
+            assertTrue(solution.individuals.size >= 1)
+
+            assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/schemavalidation", null)
+
+            val faults = DetectedFaultUtils.getDetectedFaultCategories(solution)
+            //if 500 is not declared, should be a schema validation error as well
+            assertEquals(2, faults.size)
+            assertTrue(faults.contains(FaultCategory.HTTP_STATUS_500))
+            assertTrue(faults.contains(FaultCategory.SCHEMA_INVALID_RESPONSE))
+        }
+    }
+
+
 }
