@@ -24,6 +24,7 @@ import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.param.UpdateForBodyParam
+import org.evomaster.core.problem.rest.service.AbstractRestSampler.Companion.CALL_TO_SWAGGER_ID
 import org.evomaster.core.problem.util.ParserDtoUtil
 import org.evomaster.core.remote.HttpClientFactory
 import org.evomaster.core.remote.SutProblemException
@@ -685,11 +686,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         if (!handleSaveLocation(a, response, rcr, chainState)) return false
 
-        if(config.schemaOracles) {
-            val report = schemaOracle.handleSchemaOracles(a.resolvedPath(), a.verb, rcr)
+        if(config.schemaOracles && schemaOracle.canValidate() && a.id != CALL_TO_SWAGGER_ID) {
+            val report = schemaOracle.handleSchemaOracles(a.resolvedOnlyPath(), a.verb, rcr)
 
             report.messages.forEach {
-                val discriminant = a.getName() + "_" + it.message
+                val discriminant = a.getName() + " -> " + it.message
                 val scenarioId = idMapper.handleLocalTarget(
                     idMapper.getFaultDescriptiveId(FaultCategory.SCHEMA_INVALID_RESPONSE, discriminant)
                 )

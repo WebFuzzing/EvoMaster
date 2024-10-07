@@ -4,15 +4,32 @@ import com.atlassian.oai.validator.OpenApiInteractionValidator
 import com.atlassian.oai.validator.model.Request
 import com.atlassian.oai.validator.model.SimpleResponse
 import com.atlassian.oai.validator.report.ValidationReport
+import org.slf4j.LoggerFactory
 
 
 class RestSchemaOracle(
     schema: String
 ) {
 
-    private val validator = OpenApiInteractionValidator.createFor(schema).build()
+    companion object{
+        private val log = LoggerFactory.getLogger(RestSchemaOracle::class.java)
+    }
+
+    private val validator : OpenApiInteractionValidator? =
+        try{
+            OpenApiInteractionValidator.createForInlineApiSpecification(schema).build()
+        }catch (e: Exception){
+            log.error("Failed to parse OpenAPI schema for response validation: " + e.message)
+            null
+        }
+
+    fun canValidate() = validator != null
 
     fun handleSchemaOracles(path: String, verb: HttpVerb, rcr: RestCallResult) : ValidationReport {
+
+        if(validator == null){
+            throw IllegalStateException("Cannot handle oracles on schema with issues")
+        }
 
         val res = SimpleResponse.Builder(rcr.getStatusCode()!!)
             .withBody(rcr.getBody())
