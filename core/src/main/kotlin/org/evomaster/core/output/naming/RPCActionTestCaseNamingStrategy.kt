@@ -1,5 +1,6 @@
 package org.evomaster.core.output.naming
 
+import org.evomaster.core.EMConfig
 import org.evomaster.core.output.TestWriterUtils
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCCallResult
@@ -9,8 +10,9 @@ import org.evomaster.core.search.action.EvaluatedAction
 
 open class RPCActionTestCaseNamingStrategy(
     solution: Solution<*>,
-    languageConventionFormatter: LanguageConventionFormatter
-) : ActionTestCaseNamingStrategy(solution, languageConventionFormatter)  {
+    languageConventionFormatter: LanguageConventionFormatter,
+    config: EMConfig,
+) : ActionTestCaseNamingStrategy(solution, languageConventionFormatter, config)  {
 
     override fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>): String {
         val evaluatedAction = individual.evaluatedMainActions().last()

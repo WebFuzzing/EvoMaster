@@ -1,6 +1,7 @@
 package org.evomaster.core.output.naming
 
 import com.webfuzzing.commons.faults.FaultCategory
+import org.evomaster.core.EMConfig
 import org.evomaster.core.TestUtils
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.Termination
@@ -31,7 +32,7 @@ class GraphQLActionNamingStrategyTest {
 
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = GraphQLActionTestCaseNamingStrategy(solution, languageConventionFormatter)
+        val namingStrategy = GraphQLActionTestCaseNamingStrategy(solution, languageConventionFormatter, EMConfig())
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(1, testCases.size)
@@ -45,7 +46,7 @@ class GraphQLActionNamingStrategyTest {
 
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = GraphQLActionTestCaseNamingStrategy(solution, languageConventionFormatter)
+        val namingStrategy = GraphQLActionTestCaseNamingStrategy(solution, languageConventionFormatter, EMConfig())
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(1, testCases.size)
@@ -59,7 +60,7 @@ class GraphQLActionNamingStrategyTest {
 
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = GraphQLActionTestCaseNamingStrategy(solution, languageConventionFormatter)
+        val namingStrategy = GraphQLActionTestCaseNamingStrategy(solution, languageConventionFormatter, EMConfig())
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(1, testCases.size)
