@@ -1,15 +1,24 @@
 package org.evomaster.core.output.naming
 
 import com.webfuzzing.commons.faults.FaultCategory
+import org.evomaster.core.EMConfig
 import org.evomaster.core.TestUtils
+import org.evomaster.core.TestUtils.generateFakeDbAction
+import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.Termination
 import org.evomaster.core.problem.enterprise.DetectedFault
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.*
+import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Solution
+import org.evomaster.core.search.action.ActionComponent
+import org.evomaster.core.search.action.ActionResult
+import org.evomaster.core.search.tracer.Traceable
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.sql.SqlActionResult
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.util.Collections.singletonList
@@ -24,7 +33,7 @@ class RestActionNamingStrategyTest {
 
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, languageConventionFormatter)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, languageConventionFormatter, EMConfig())
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(1, testCases.size)
@@ -38,7 +47,7 @@ class RestActionNamingStrategyTest {
 
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, languageConventionFormatter)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, languageConventionFormatter, EMConfig())
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(1, testCases.size)
@@ -53,7 +62,7 @@ class RestActionNamingStrategyTest {
 
         val solution = Solution(mutableListOf(rootIndividual, itemsIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, languageConventionFormatter)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, languageConventionFormatter, EMConfig())
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(2, testCases.size)
@@ -68,7 +77,7 @@ class RestActionNamingStrategyTest {
 
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, languageConventionFormatter)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, languageConventionFormatter, EMConfig())
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(1, testCases.size)
@@ -82,7 +91,7 @@ class RestActionNamingStrategyTest {
 
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, languageConventionFormatter)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, languageConventionFormatter, EMConfig())
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(1, testCases.size)
@@ -97,29 +106,89 @@ class RestActionNamingStrategyTest {
 
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, languageConventionFormatter)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, languageConventionFormatter, EMConfig())
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(1, testCases.size)
         assertEquals("test_0_GET_on_items_showsFaults_100_102_301", testCases[0].name)
     }
 
-    private fun getEvaluatedIndividualWith(path: String, statusCode: Int = 200): EvaluatedIndividual<RestIndividual> {
-        return getEvaluatedIndividualWithFaults(path, statusCode, emptyList())
+    @Test
+    fun testIndividualUsingSql() {
+        val eIndividual = getEvaluatedIndividualWith("/items", 200, true)
+        val languageConventionFormatter = LanguageConventionFormatter(OutputFormat.JAVA_JUNIT_4)
+
+        val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
+
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, languageConventionFormatter, EMConfig())
+
+        val testCases = namingStrategy.getTestCases()
+        assertEquals(1, testCases.size)
+        assertEquals("test_0_getOnItemsReturns200UsingSql", testCases[0].name)
     }
 
-    private fun getEvaluatedIndividualWithFaults(path: String, statusCode: Int, faults: List<DetectedFault>): EvaluatedIndividual<RestIndividual> {
-        val sampleType = SampleType.RANDOM
-        val action = RestCallAction("1", HttpVerb.GET, RestPath(path), mutableListOf())
-        val restActions = listOf(action).toMutableList()
-        val individual = RestIndividual(restActions, sampleType)
+    private fun getEvaluatedIndividualWith(path: String, statusCode: Int = 200, withSql: Boolean = false, withMongo: Boolean = false): EvaluatedIndividual<RestIndividual> {
+        return getEvaluatedIndividualWithFaults(path, statusCode, emptyList(), withSql, withMongo)
+    }
+
+    private fun getEvaluatedIndividualWithFaults(path: String, statusCode: Int, faults: List<DetectedFault>, withSql: Boolean = false, withMongo: Boolean = false): EvaluatedIndividual<RestIndividual> {
+        val restAction = getRestCallAction(path)
+        val sqlAction = getSqlAction()
+        val mongoDbAction = getMongoDbAction()
+
+        val restResourceCall = RestResourceCalls(actions= listOf(restAction), sqlActions = listOf())
+
+        val actions = mutableListOf<ActionComponent>()
+        var sqlSize = 0
+        if (withSql) {
+            actions.add(sqlAction)
+            sqlSize++
+        }
+
+        actions.add(restResourceCall)
+
+        val individual = RestIndividual(
+            SampleType.RANDOM,
+            null,
+            null,
+            Traceable.DEFAULT_INDEX,
+            actions,
+            1,
+            sqlSize,
+            0,
+            0
+        )
+
         TestUtils.doInitializeIndividualForTesting(individual)
 
         val fitnessVal = FitnessValue(0.0)
-        val result = RestCallResult(action.getLocalId())
-        result.setStatusCode(statusCode)
-        faults.forEach { fault -> result.addFault(fault) }
-        val results = listOf(result)
+        val restResult = RestCallResult(restAction.getLocalId())
+        restResult.setStatusCode(statusCode)
+        faults.forEach { fault -> restResult.addFault(fault) }
+
+        val results = mutableListOf<ActionResult>(restResult)
+        if (withSql) results.add(SqlActionResult(sqlAction.getLocalId()))
+
         return EvaluatedIndividual<RestIndividual>(fitnessVal, individual, results)
     }
+
+    private fun getRestCallAction(path: String): RestCallAction {
+        return RestCallAction("1", HttpVerb.GET, RestPath(path), mutableListOf())
+    }
+
+    private fun getSqlAction(): SqlAction {
+        return generateFakeDbAction(12345L, 1001L, "Foo", 0)
+    }
+
+    private fun getMongoDbAction(): MongoDbAction {
+        return MongoDbAction(
+            "someDatabase",
+            "someCollection",
+            "\"CustomType\":{\"CustomType\":{\"type\":\"object\", \"properties\": {\"aField\":{\"type\":\"integer\"}}, \"required\": [\"aField\"]}}"
+        )
+    }
+
+//    private fun getWireMockAction(): HostnameResolutionAction {
+//
+//    }
 }

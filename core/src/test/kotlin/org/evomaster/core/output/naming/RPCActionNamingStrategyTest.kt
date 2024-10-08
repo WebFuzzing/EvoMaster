@@ -1,5 +1,6 @@
 package org.evomaster.core.output.naming
 
+import org.evomaster.core.EMConfig
 import org.evomaster.core.output.EvaluatedIndividualBuilder
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.Termination
@@ -16,7 +17,7 @@ class RPCActionNamingStrategyTest {
         val languageConventionFormatter = LanguageConventionFormatter(outputFormat)
         val solution = getSolution(outputFormat)
 
-        val namingStrategy = RPCActionTestCaseNamingStrategy(solution, languageConventionFormatter)
+        val namingStrategy = RPCActionTestCaseNamingStrategy(solution, languageConventionFormatter, EMConfig())
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(1, testCases.size)

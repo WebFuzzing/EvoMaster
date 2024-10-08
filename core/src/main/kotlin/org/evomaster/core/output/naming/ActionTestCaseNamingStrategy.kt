@@ -1,15 +1,22 @@
 package org.evomaster.core.output.naming
 
 import com.webfuzzing.commons.faults.FaultCategory
+import org.evomaster.core.EMConfig
+import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.output.TestWriterUtils
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
+import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
+import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.action.EnvironmentAction
 import org.evomaster.core.search.action.EvaluatedAction
+import org.evomaster.core.sql.SqlAction
 
 abstract class ActionTestCaseNamingStrategy(
     solution: Solution<*>,
     private val languageConventionFormatter: LanguageConventionFormatter,
+    private val config: EMConfig,
 ) : NumberedTestCaseNamingStrategy(solution)  {
 
     protected val on = "on"
@@ -19,6 +26,10 @@ abstract class ActionTestCaseNamingStrategy(
     protected val success = "success"
     protected val data = "data"
     protected val empty = "empty"
+    protected val using = "using"
+    protected val sql = "sql"
+    protected val mongo = "mongo"
+    protected val wiremock = "wireMock"
 
     protected fun formatName(nameTokens: List<String>): String {
         return "_${languageConventionFormatter.formatName(nameTokens)}"
@@ -51,6 +62,34 @@ abstract class ActionTestCaseNamingStrategy(
         } else {
             addActionResult(individual.evaluatedMainActions().last(), nameTokens)
         }
+        addEnvironmentActions(individual, nameTokens)
+    }
+
+    private fun addEnvironmentActions(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>) {
+        val initializingActions = individual.individual.seeInitializingActions()
+        val allActions = individual.individual.seeAllActions()
+
+        val initActionNames = mutableListOf<String>()
+        if (hasSqlAction(initializingActions)) initActionNames.add(sql)
+        if (hasMongoAction(initializingActions)) initActionNames.add(mongo)
+        if (usesWireMock(allActions)) initActionNames.add(wiremock)
+
+        if (initActionNames.isNotEmpty()) {
+            nameTokens.add(using)
+            nameTokens.addAll(initActionNames)
+        }
+    }
+
+    private fun hasSqlAction(actions: List<EnvironmentAction>): Boolean {
+        return actions.any { it is SqlAction }
+    }
+
+    private fun hasMongoAction(actions: List<EnvironmentAction>): Boolean {
+        return actions.any { it is MongoDbAction }
+    }
+
+    private fun usesWireMock(actions: List<Action>): Boolean {
+        return config.isEnabledExternalServiceMocking() && actions.any { it is HostnameResolutionAction }
     }
 
     protected abstract fun addActionResult(evaluatedAction: EvaluatedAction, nameTokens: MutableList<String>)

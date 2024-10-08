@@ -1,5 +1,6 @@
 package org.evomaster.core.output.naming
 
+import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.search.EvaluatedIndividual
@@ -8,8 +9,9 @@ import org.evomaster.core.search.action.EvaluatedAction
 
 open class RestActionTestCaseNamingStrategy(
     solution: Solution<*>,
-    languageConventionFormatter: LanguageConventionFormatter
-) : ActionTestCaseNamingStrategy(solution, languageConventionFormatter)  {
+    languageConventionFormatter: LanguageConventionFormatter,
+    config: EMConfig,
+) : ActionTestCaseNamingStrategy(solution, languageConventionFormatter, config)  {
 
     override fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>): String {
         val evaluatedAction = individual.evaluatedMainActions().last()
