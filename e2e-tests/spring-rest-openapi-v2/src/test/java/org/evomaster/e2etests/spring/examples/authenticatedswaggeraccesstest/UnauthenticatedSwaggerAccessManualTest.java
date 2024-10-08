@@ -25,7 +25,9 @@ public class UnauthenticatedSwaggerAccessManualTest extends SpringTestBase {
     public void accessSwaggerUnauthenticatedShouldSucceed() {
 
         // get all paths from the swagger
-        OpenAPI swagger = OpenApiAccess.INSTANCE.getOpenAPIFromURL(baseUrlOfSut + "/v2/api-docs", new HttpWsNoAuth());
+        OpenAPI swagger = OpenApiAccess.INSTANCE
+                .getOpenAPIFromURL(baseUrlOfSut + "/v2/api-docs", new HttpWsNoAuth())
+                .getSchemaParsed();
 
         // api paths should not be null
         Assertions.assertNotNull(swagger.getPaths());

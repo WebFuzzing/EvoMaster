@@ -6,7 +6,7 @@ import org.evomaster.core.search.Solution
 
 object DetectedFaultUtils {
 
-    fun getDetectedFaultCategories(ei: EvaluatedIndividual<*>) : Set<FaultCategory> {
+    fun getDetectedFaults(ei: EvaluatedIndividual<*>) : Set<DetectedFault> {
 
         if(ei.individual !is EnterpriseIndividual){
             throw IllegalArgumentException("Not an Enterprise Individual")
@@ -15,7 +15,18 @@ object DetectedFaultUtils {
         return ei.seeResults()
             .filterIsInstance<EnterpriseActionResult>()
             .flatMap { it.getFaults() }
-            .map { it.category }
+            .toSet()
+    }
+
+    fun getDetectedFaultCategories(ei: EvaluatedIndividual<*>) : Set<FaultCategory> {
+        return getDetectedFaults(ei).map { it.category }.toSet()
+    }
+
+
+    fun getDetectedFaults(solution: Solution<*>) : Set<DetectedFault> {
+
+        return solution.individuals
+            .flatMap { getDetectedFaults(it) }
             .toSet()
     }
 

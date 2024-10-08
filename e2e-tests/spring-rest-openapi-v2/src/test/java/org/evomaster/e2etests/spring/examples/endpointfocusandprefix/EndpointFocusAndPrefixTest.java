@@ -62,7 +62,9 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
                     assertAllSolutionsHavePathFocusOrPrefixList(solution, pathsToCheck, false);
 
                     // get all paths from the swagger
-                    OpenAPI swagger = OpenApiAccess.INSTANCE.getOpenAPIFromURL(baseUrlOfSut + "/v2/api-docs", new HttpWsNoAuth());
+                    OpenAPI swagger = OpenApiAccess.INSTANCE
+                            .getOpenAPIFromURL(baseUrlOfSut + "/v2/api-docs", new HttpWsNoAuth())
+                            .getSchemaParsed();
 
                     // api paths
                     Paths apiPaths = swagger.getPaths();
