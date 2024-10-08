@@ -17,9 +17,8 @@ public enum FaultCategory {
     HTTP_INVALID_PAYLOAD_SYNTAX(101, "Invalid Payload Syntax", "rejectedWithInvalidPayloadSyntax"),
     HTTP_INVALID_LOCATION(102, "Invalid Location HTTP Header", "returnsInvalidLocationHeader"),
 
-    //2xx: REST/OpenAPI
-    OPENAPI_UNDECLARED_STATUS(200, "Undeclared Returned HTTP Status Code In The Schema", "returnsUndeclaredStatusCode"),
-    OPENAPI_INVALID_RESPONSE(201, "Invalid HTTP Response Object According To The Schema", "returnsMismatchedHttpResponse"),
+    //2xx: API
+    SCHEMA_INVALID_RESPONSE(200, "Received A Response From API That Is Not Valid According To Its Schema", "returnsSchemaInvalidResponse"),
 
     //3xx: GraphQL
     GQL_ERROR_FIELD(301, "Error Field", "returnedErrors"),
