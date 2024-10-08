@@ -29,7 +29,7 @@ abstract class ActionTestCaseNamingStrategy(
     protected val using = "using"
     protected val sql = "sql"
     protected val mongo = "mongo"
-    protected val wiremock = "wireMock"
+    protected val wiremock = "wiremock"
 
     protected fun formatName(nameTokens: List<String>): String {
         return "_${languageConventionFormatter.formatName(nameTokens)}"

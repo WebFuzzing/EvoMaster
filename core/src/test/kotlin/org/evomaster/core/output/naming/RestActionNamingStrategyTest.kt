@@ -5,10 +5,12 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.TestUtils
 import org.evomaster.core.TestUtils.generateFakeDbAction
 import org.evomaster.core.mongo.MongoDbAction
+import org.evomaster.core.mongo.MongoDbActionResult
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.Termination
 import org.evomaster.core.problem.enterprise.DetectedFault
 import org.evomaster.core.problem.enterprise.SampleType
+import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.search.EvaluatedIndividual
@@ -127,14 +129,61 @@ class RestActionNamingStrategyTest {
         assertEquals("test_0_getOnItemsReturns200UsingSql", testCases[0].name)
     }
 
-    private fun getEvaluatedIndividualWith(path: String, statusCode: Int = 200, withSql: Boolean = false, withMongo: Boolean = false): EvaluatedIndividual<RestIndividual> {
-        return getEvaluatedIndividualWithFaults(path, statusCode, emptyList(), withSql, withMongo)
+    //    @Test// TODO check PhG Gene#isLocallyValid with JP/AA
+    fun testIndividualUsingMongo() {
+        val eIndividual = getEvaluatedIndividualWith("/items", 200, false, true)
+        val languageConventionFormatter = LanguageConventionFormatter(OutputFormat.JAVA_JUNIT_4)
+
+        val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
+
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, languageConventionFormatter, EMConfig())
+
+        val testCases = namingStrategy.getTestCases()
+        assertEquals(1, testCases.size)
+        assertEquals("test_0_getOnItemsReturns200UsingMongo", testCases[0].name)
     }
 
-    private fun getEvaluatedIndividualWithFaults(path: String, statusCode: Int, faults: List<DetectedFault>, withSql: Boolean = false, withMongo: Boolean = false): EvaluatedIndividual<RestIndividual> {
+    @Test
+    fun testIndividualUsingWireMock() {
+        val eIndividual = getEvaluatedIndividualWith("/items", 200, false, false, true)
+        val languageConventionFormatter = LanguageConventionFormatter(OutputFormat.JAVA_JUNIT_4)
+
+        val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
+
+        val config = EMConfig()
+        config.externalServiceIPSelectionStrategy = EMConfig.ExternalServiceIPSelectionStrategy.DEFAULT
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, languageConventionFormatter, config)
+
+        val testCases = namingStrategy.getTestCases()
+        assertEquals(1, testCases.size)
+        assertEquals("test_0_getOnItemsReturns200UsingWiremock", testCases[0].name)
+    }
+
+    @Test
+    fun testIndividualUsingSqlWireMock() {
+        val eIndividual = getEvaluatedIndividualWith("/items", 200, true, false, true)
+        val languageConventionFormatter = LanguageConventionFormatter(OutputFormat.JAVA_JUNIT_4)
+
+        val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
+
+        val config = EMConfig()
+        config.externalServiceIPSelectionStrategy = EMConfig.ExternalServiceIPSelectionStrategy.DEFAULT
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, languageConventionFormatter, config)
+
+        val testCases = namingStrategy.getTestCases()
+        assertEquals(1, testCases.size)
+        assertEquals("test_0_getOnItemsReturns200UsingSqlWiremock", testCases[0].name)
+    }
+
+    private fun getEvaluatedIndividualWith(path: String, statusCode: Int = 200, withSql: Boolean = false, withMongo: Boolean = false, withWireMock: Boolean = false): EvaluatedIndividual<RestIndividual> {
+        return getEvaluatedIndividualWithFaults(path, statusCode, emptyList(), withSql, withMongo, withWireMock)
+    }
+
+    private fun getEvaluatedIndividualWithFaults(path: String, statusCode: Int, faults: List<DetectedFault>, withSql: Boolean = false, withMongo: Boolean = false, withWireMock: Boolean = false): EvaluatedIndividual<RestIndividual> {
         val restAction = getRestCallAction(path)
         val sqlAction = getSqlAction()
         val mongoDbAction = getMongoDbAction()
+        val wireMockAction = getWireMockAction()
 
         val restResourceCall = RestResourceCalls(actions= listOf(restAction), sqlActions = listOf())
 
@@ -143,6 +192,18 @@ class RestActionNamingStrategyTest {
         if (withSql) {
             actions.add(sqlAction)
             sqlSize++
+        }
+
+        var mongoSize = 0
+        if (withMongo) {
+            actions.add(mongoDbAction)
+            mongoSize++
+        }
+
+        var wireMockSize = 0
+        if (withWireMock) {
+            actions.add(wireMockAction)
+            wireMockSize++
         }
 
         actions.add(restResourceCall)
@@ -155,8 +216,8 @@ class RestActionNamingStrategyTest {
             actions,
             1,
             sqlSize,
-            0,
-            0
+            mongoSize,
+            wireMockSize
         )
 
         TestUtils.doInitializeIndividualForTesting(individual)
@@ -168,6 +229,7 @@ class RestActionNamingStrategyTest {
 
         val results = mutableListOf<ActionResult>(restResult)
         if (withSql) results.add(SqlActionResult(sqlAction.getLocalId()))
+        if (withMongo) results.add(MongoDbActionResult(mongoDbAction.getLocalId()))
 
         return EvaluatedIndividual<RestIndividual>(fitnessVal, individual, results)
     }
@@ -184,11 +246,11 @@ class RestActionNamingStrategyTest {
         return MongoDbAction(
             "someDatabase",
             "someCollection",
-            "\"CustomType\":{\"CustomType\":{\"type\":\"object\", \"properties\": {\"aField\":{\"type\":\"integer\"}}, \"required\": [\"aField\"]}}"
+            "\"CustomType\":{\"CustomType\":{\"type\":\"object\", \"properties\": {\"aField\":{\"type\":\"integer\"}}, \"required\": []}}"
         )
     }
 
-//    private fun getWireMockAction(): HostnameResolutionAction {
-//
-//    }
+    private fun getWireMockAction(): HostnameResolutionAction {
+        return HostnameResolutionAction("localhost", "127.0.0.1")
+    }
 }
