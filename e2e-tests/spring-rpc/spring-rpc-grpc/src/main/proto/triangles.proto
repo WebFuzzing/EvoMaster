@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.foo.rpc.grpc.examples.spring.branches.generated.triangle";
+
+
+service CheckTriangleGRPCService {
+  rpc checkTriangle(TriangleRequest) returns (DtoResponse) {}
+
+}
+
+message TriangleRequest{
+  int32 a = 1;
+  int32 b = 2;
+  int32 c = 3;
+}
+
+message DtoResponse {
+  int32 resultAsInt = 1;
+  double resultAsDouble = 2;
+}
