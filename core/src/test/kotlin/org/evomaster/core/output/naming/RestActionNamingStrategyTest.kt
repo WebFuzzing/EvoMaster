@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test
 import java.util.Collections.singletonList
 
 
-class ActionNamingStrategyTest {
+class RestActionNamingStrategyTest {
 
     @Test
     fun testGetOnRootPathIsIncludedInName() {
@@ -24,7 +24,7 @@ class ActionNamingStrategyTest {
 
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = ActionTestCaseNamingStrategy(solution, languageConventionFormatter)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, languageConventionFormatter)
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(1, testCases.size)
@@ -38,11 +38,41 @@ class ActionNamingStrategyTest {
 
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = ActionTestCaseNamingStrategy(solution, languageConventionFormatter)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, languageConventionFormatter)
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(1, testCases.size)
         assertEquals("test_0_GET_on_items_returns_200", testCases[0].name)
+    }
+
+    @Test
+    fun testTwoDifferentIndividualsGetDifferentNames() {
+        val rootIndividual = getEvaluatedIndividualWith("/")
+        val itemsIndividual = getEvaluatedIndividualWith("/items")
+        val languageConventionFormatter = LanguageConventionFormatter(OutputFormat.PYTHON_UNITTEST)
+
+        val solution = Solution(mutableListOf(rootIndividual, itemsIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
+
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, languageConventionFormatter)
+
+        val testCases = namingStrategy.getTestCases()
+        assertEquals(2, testCases.size)
+        assertEquals("test_0_GET_on_root_returns_200", testCases[0].name)
+        assertEquals("test_1_GET_on_items_returns_200", testCases[1].name)
+    }
+
+    @Test
+    fun testGetOnItemReturnsSingularPathInName() {
+        val eIndividual = getEvaluatedIndividualWith("/items/{itemId}")
+        val languageConventionFormatter = LanguageConventionFormatter(OutputFormat.PYTHON_UNITTEST)
+
+        val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
+
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, languageConventionFormatter)
+
+        val testCases = namingStrategy.getTestCases()
+        assertEquals(1, testCases.size)
+        assertEquals("test_0_GET_on_item_returns_200", testCases[0].name)
     }
 
     @Test
@@ -52,7 +82,7 @@ class ActionNamingStrategyTest {
 
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = ActionTestCaseNamingStrategy(solution, languageConventionFormatter)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, languageConventionFormatter)
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(1, testCases.size)
@@ -67,7 +97,7 @@ class ActionNamingStrategyTest {
 
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = ActionTestCaseNamingStrategy(solution, languageConventionFormatter)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, languageConventionFormatter)
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(1, testCases.size)

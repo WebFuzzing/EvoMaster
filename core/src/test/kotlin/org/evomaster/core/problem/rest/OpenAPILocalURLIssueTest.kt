@@ -30,7 +30,7 @@ class OpenAPILocalURLIssueTest {
         private var executionPath :String = System.getProperty("user.dir")
 
         // swagger object
-        private lateinit var swagger: OpenAPI
+        private lateinit var swagger: SchemaOpenAPI
 
         // swagger test directory to find test files
         private lateinit var swaggerTestDirectory: String
@@ -76,7 +76,7 @@ class OpenAPILocalURLIssueTest {
         swagger = OpenApiAccess.getOpenAPIFromURL(urlToTest)
 
         // a valid swagger is created with 13 endpoints
-        Assertions.assertTrue(swagger.paths.size == 13)
+        Assertions.assertTrue(swagger.schemaParsed.paths.size == 13)
     }
 
     /*
@@ -267,7 +267,7 @@ class OpenAPILocalURLIssueTest {
         swagger = OpenApiAccess.getOpenAPIFromURL(urlToTest)
 
         //An empty swagger should be created
-        Assertions.assertTrue(swagger.paths.size == 0)
+        Assertions.assertTrue(swagger.schemaParsed.paths.size == 0)
     }
 
     /*

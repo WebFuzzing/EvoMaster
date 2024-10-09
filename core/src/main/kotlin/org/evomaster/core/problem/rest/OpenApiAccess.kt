@@ -27,7 +27,7 @@ object OpenApiAccess {
 
     private val log = LoggerFactory.getLogger(OpenApiAccess::class.java)
 
-    fun getOpenApi(schemaText: String): OpenAPI {
+    fun getOpenApi(schemaText: String): SchemaOpenAPI {
 
         var parseResults: SwaggerParseResult? = null
 
@@ -54,10 +54,10 @@ object OpenApiAccess {
                 LoggingUtil.getInfoLogger().warn(AnsiColor.inYellow("$i: $m"))
             }
         }
-        return schema
+        return SchemaOpenAPI(schemaText, schema)
     }
 
-    fun getOpenAPIFromURL(openApiUrl: String, authentication : AuthenticationInfo = HttpWsNoAuth() ): OpenAPI {
+    fun getOpenAPIFromURL(openApiUrl: String, authentication : AuthenticationInfo = HttpWsNoAuth() ): SchemaOpenAPI {
 
         //could be either JSON or YAML
        val data = if(openApiUrl.startsWith("http", true)){

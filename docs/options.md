@@ -251,6 +251,7 @@ There are 3 types of options:
 |`probOfSmartInitStructureMutator`| __Double__. Specify a probability of applying a smart structure mutator for initialization of the individual. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`probUseRestLinks`| __Double__. In REST, enable the supports of 'links' between resources defined in the OpenAPI schema, if any. When sampling a test case, if the last call has links, given this probability new calls are added for the link. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`saveMockedResponseAsSeparatedFile`| __Boolean__. Whether to save mocked responses as separated files. *Default value*: `false`.|
+|`schemaOracles`| __Boolean__. Validate responses against their schema, to check for inconsistencies. Those are treated as faults. *Default value*: `false`.|
 |`security`| __Boolean__. Apply a security testing phase after functional test cases have been generated. *Default value*: `false`.|
 |`seedTestCases`| __Boolean__. Whether to seed EvoMaster with some initial test cases. These test cases will be used and evolved throughout the search process. *Default value*: `false`.|
 |`seedTestCasesFormat`| __Enum__. Format of the test cases seeded to EvoMaster. *Valid values*: `POSTMAN`. *Default value*: `POSTMAN`.|
