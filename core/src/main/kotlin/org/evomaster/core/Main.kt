@@ -2,6 +2,7 @@ package org.evomaster.core
 
 import com.google.inject.Injector
 import com.google.inject.Key
+import com.google.inject.Provides
 import com.google.inject.TypeLiteral
 import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.client.java.controller.api.dto.ControllerInfoDto

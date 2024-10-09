@@ -48,6 +48,7 @@ public class SqlHandler {
     private final Map<String, Set<String>> updatedData;
     private final Map<String, Set<String>> insertedData;
     private final Map<String, Set<String>> failedWhere;
+    private final List<String> failedWhereQueries;
     private final List<String> deletedData;
     private final List<SqlExecutionLogDto> executedSqlCommands;
 
@@ -79,6 +80,7 @@ public class SqlHandler {
         updatedData = new ConcurrentHashMap<>();
         insertedData = new ConcurrentHashMap<>();
         failedWhere = new ConcurrentHashMap<>();
+        failedWhereQueries = new CopyOnWriteArrayList<>();
         deletedData = new CopyOnWriteArrayList<>();
         executedSqlCommands = new CopyOnWriteArrayList<>();
 
@@ -94,6 +96,7 @@ public class SqlHandler {
         updatedData.clear();
         insertedData.clear();
         failedWhere.clear();
+        failedWhereQueries.clear();
         deletedData.clear();
         executedSqlCommands.clear();
 
@@ -155,6 +158,7 @@ public class SqlHandler {
         SqlExecutionsDto sqlExecutionsDto = new SqlExecutionsDto();
         sqlExecutionsDto.queriedData.putAll(queriedData);
         sqlExecutionsDto.failedWhere.putAll(failedWhere);
+        sqlExecutionsDto.failedWhereQueries.addAll(failedWhereQueries);
         sqlExecutionsDto.insertedData.putAll(insertedData);
         sqlExecutionsDto.updatedData.putAll(updatedData);
         sqlExecutionsDto.deletedData.addAll(deletedData);
@@ -239,6 +243,7 @@ public class SqlHandler {
 
         if (dist.sqlDistance > 0) {
             mergeNewData(failedWhere, columns);
+            failedWhereQueries.add(sqlCommand);
         }
 
         return dist;
