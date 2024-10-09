@@ -1,16 +1,23 @@
 package org.evomaster.core.search.gene.utils
 
 import org.apache.commons.text.StringEscapeUtils
+import org.evomaster.client.java.instrumentation.shared.TaintInputName
+import org.evomaster.core.StaticCounter
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.gene.collection.ArrayGene
-import org.evomaster.core.search.gene.collection.TupleGene
+import org.evomaster.core.search.gene.collection.*
+import org.evomaster.core.search.gene.collection.TaintedMapGene.Companion
+import org.evomaster.core.search.gene.numeric.DoubleGene
+import org.evomaster.core.search.gene.numeric.FloatGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.gene.optional.*
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.placeholder.LimitObjectGene
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
@@ -780,6 +787,25 @@ object GeneUtils {
             return getWrappedValueGene(gene.gene)
         }
         return gene
+    }
+
+    fun getBasicGeneBasedOnJavaType(type: Class<*>, name: String): Gene? {
+
+        return when{
+            String::class.java.isAssignableFrom(type) -> StringGene(name)
+            Integer::class.java.isAssignableFrom(type) -> IntegerGene(name)
+            Double::class.java.isAssignableFrom(type) -> DoubleGene(name)
+            Boolean::class.java.isAssignableFrom(type) -> BooleanGene(name)
+            Float::class.java.isAssignableFrom(type) -> FloatGene(name)
+            Long::class.java.isAssignableFrom(type) -> LongGene(name)
+            Map::class.java.isAssignableFrom(type) -> TaintedMapGene(name, TaintInputName.getTaintName(StaticCounter.getAndIncrease()))
+            //TODO
+//            List::class.java.isAssignableFrom(type) ||
+//                Set::class.java.isAssignableFrom(type) -> TaintedArrayGene(name, )
+            else -> {
+                null
+            }
+        }
     }
 
 }

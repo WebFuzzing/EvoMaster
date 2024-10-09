@@ -343,19 +343,9 @@ public abstract class RestTestBase  extends EnterpriseTestBase {
         boolean ok = solution.getIndividuals().stream().noneMatch(
                 ind -> hasAtLeastOne(ind, verb, expectedStatusCode));
 
-        assertOK(solution, ok);
-    }
+        String errorMsg = "Found call with verb " + verb + " and status  " + expectedStatusCode + "\n";
 
-    private static void assertOK(Solution<RestIndividual> solution, boolean ok) {
-        StringBuffer msg = new StringBuffer("REST calls:\n");
-        if (!ok) {
-            solution.getIndividuals().stream().flatMap(ind -> ind.evaluatedMainActions().stream())
-                    .map(ea -> ea.getAction())
-                    .filter(a -> a instanceof RestCallAction)
-                    .forEach(a -> msg.append(a.toString() + "\n"));
-        }
-
-        assertTrue(ok, msg.toString());
+        assertTrue(ok, errorMsg + restActions(solution));
     }
 
     protected void assertNone(Solution<RestIndividual> solution,
@@ -367,7 +357,9 @@ public abstract class RestTestBase  extends EnterpriseTestBase {
         boolean ok = solution.getIndividuals().stream().noneMatch(
                 ind -> hasAtLeastOne(ind, verb, expectedStatusCode, path, inResponse));
 
-        assertOK(solution, ok);
+        String errorMsg = "Found call with  " + verb + ":"+ path +" and status  " + expectedStatusCode + " and in response -> " + inResponse + "\n";
+
+        assertTrue(ok, errorMsg + restActions(solution));
     }
 
 }

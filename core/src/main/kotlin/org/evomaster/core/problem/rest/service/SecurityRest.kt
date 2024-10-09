@@ -113,14 +113,12 @@ class SecurityRest {
      */
     private fun expandWithForbidden() {
 
-        val getOperations = RestIndividualSelectorUtils.getAllActionDefinitions(actionDefinitions, HttpVerb.GET)
-
-        getOperations.forEach { get ->
+        actionDefinitions.forEach { op ->
 
             val forbidden = RestIndividualSelectorUtils.findIndividuals(
                 individualsInSolution,
-                HttpVerb.GET,
-                get.path,
+                op.verb,
+                op.path,
                 status = 403
             )
             if(forbidden.isNotEmpty()){
@@ -130,8 +128,8 @@ class SecurityRest {
 
             val unauthorized = RestIndividualSelectorUtils.findIndividuals(
                 individualsInSolution,
-                HttpVerb.GET,
-                get.path,
+                op.verb,
+                op.path,
                 status = 401
             )
             if(unauthorized.isEmpty()){
@@ -143,19 +141,19 @@ class SecurityRest {
 
             val candidates = RestIndividualSelectorUtils.findIndividuals(
                 individualsInSolution,
-                HttpVerb.GET,
-                get.path,
+                op.verb,
+                op.path,
                 statusGroup = StatusGroup.G_2xx,
                 authenticated = true
             )
 
             if (candidates.isNotEmpty()){
-                handleCandidatesForGet403(get.path, candidates)
+                handleCandidatesFor403(op.verb, op.path, candidates)
             }
         }
     }
 
-    private fun handleCandidatesForGet403(path: RestPath, candidates: List<EvaluatedIndividual<RestIndividual>>){
+    private fun handleCandidatesFor403(verb: HttpVerb, path: RestPath, candidates: List<EvaluatedIndividual<RestIndividual>>){
 
         /*
             we have no idea of the access policy for each user.
@@ -166,7 +164,7 @@ class SecurityRest {
             //first make copy and slice off all after the 2xx
             val index = RestIndividualSelectorUtils.findIndexOfAction(
                 it,
-                HttpVerb.GET,
+                verb,
                 path,
                 statusGroup = StatusGroup.G_2xx,
                 authenticated = true

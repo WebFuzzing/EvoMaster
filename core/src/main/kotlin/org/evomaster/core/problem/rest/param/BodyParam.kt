@@ -115,12 +115,26 @@ class BodyParam(gene: Gene,
 
     fun shouldRemoveQuotesInJsonString() = contentRemoveQuotesGene.gene.value && isJsonString()
 
+    fun isStringUsedAsText(mode: GeneUtils.EscapeMode?): Boolean{
+        return mode == GeneUtils.EscapeMode.TEXT && primaryGene().getWrappedGene(StringGene::class.java) != null
+    }
+
+    fun getRawStringToBeSent(mode: GeneUtils.EscapeMode? = null, targetFormat: OutputFormat? =null) : String{
+        val s = getValueAsPrintableString(mode = mode, targetFormat = targetFormat)
+        //FIXME
+//        if(isStringUsedAsText(mode)){
+//            return GeneUtils.removeEnclosedQuotationMarks(s)
+//        }
+        return s
+    }
+
     fun getValueAsPrintableString(mode: GeneUtils.EscapeMode? = null, targetFormat: OutputFormat? =null): String {
 
         val originalValueAsPrintableString =
             primaryGene().getValueAsPrintableString( mode= mode, targetFormat= targetFormat )
 
-        if(shouldRemoveQuotesInJsonString()){
+
+        if(shouldRemoveQuotesInJsonString()){ // || isStringUsedAsText(mode)){
             org.evomaster.core.Lazy.assert{originalValueAsPrintableString.startsWith("\"")
                     && originalValueAsPrintableString.endsWith("\"")
                     && originalValueAsPrintableString.length >= 2

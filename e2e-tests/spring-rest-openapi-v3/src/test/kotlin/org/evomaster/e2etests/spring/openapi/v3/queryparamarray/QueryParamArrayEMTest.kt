@@ -29,7 +29,10 @@ class QueryParamArrayEMTest : SpringTestBase() {
 
             Assertions.assertTrue(solution.individuals.size >= 1)
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/queryparamarray", "[")
-            assertNone(solution, HttpVerb.GET, 400)
+            assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/queryparamarray", null)
+
+            //after refactoring/fixes, sending empty list seems possible now
+            //assertNone(solution, HttpVerb.GET, 400)
         }
     }
 }

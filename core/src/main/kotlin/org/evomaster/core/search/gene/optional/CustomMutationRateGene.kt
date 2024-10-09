@@ -76,7 +76,13 @@ class CustomMutationRateGene<out T>(
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
-        gene.randomize(randomness, tryToForceNewValue)
+        /*
+            randomize can be used for mutation... but, if gene is not initialized yet, we should
+            randomize anyway, to make sure wrapped gene is going to be locally valid
+         */
+        if(!initialized || randomness.nextBoolean(probability)) {
+            gene.randomize(randomness, tryToForceNewValue)
+        }
     }
 
     override fun customShouldApplyShallowMutation(

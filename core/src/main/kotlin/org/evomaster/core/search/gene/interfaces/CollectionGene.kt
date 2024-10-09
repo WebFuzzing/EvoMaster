@@ -82,7 +82,7 @@ interface CollectionGene {
      * @param filterMutable represents if only consider mutable genes
      * @return a size of elements existing in the collection gene
      */
-    fun getSizeOfElements(filterMutable: Boolean) : Int
+    fun getSizeOfElements(filterMutable: Boolean = false) : Int
 
     fun getGeneName() : String
 

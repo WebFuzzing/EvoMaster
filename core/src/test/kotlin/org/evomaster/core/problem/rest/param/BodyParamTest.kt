@@ -53,27 +53,52 @@ class BodyParamTest {
 
     @Test
     fun testEventuallySendUnquoteJsonString() {
-        val stringGene = StringGene("stringGene")
-        val enumGene = EnumGene("contentType", listOf("application/json"))
-        stringGene.value = "Hello World"
-        enumGene.index = 0
-        val bodyParam = BodyParam(gene = stringGene, typeGene = enumGene)
 
-        val restPath = RestPath("/foo/bar")
-        val restCallAction =
-            RestCallAction(id = "post", verb = HttpVerb.POST, path = restPath, parameters = mutableListOf(bodyParam))
+        /*
+            this test was making wrong assumption.
+            once the choice of quoted/unquoted is made at sampling, it should
+            never be changed via mutation.
+         */
 
-        assertFalse(bodyParam.contentRemoveQuotesGene.gene.value)
-        val randomness = Randomness()
-        restCallAction.doInitialize(randomness)
-        var sendUnquoteJsonStringValue = false
-        repeat(1_000) {
-            restCallAction.randomize(randomness, forceNewValue = true)
-            sendUnquoteJsonStringValue =
-                sendUnquoteJsonStringValue || bodyParam.contentRemoveQuotesGene.gene.value
+        var caseTrue = false
+        var caseFalse = false
+        var counter = 0L
+
+        repeat(100) {
+            val stringGene = StringGene("stringGene")
+            val enumGene = EnumGene("contentType", listOf("application/json"))
+            stringGene.value = "Hello World"
+            enumGene.index = 0
+            val bodyParam = BodyParam(gene = stringGene, typeGene = enumGene)
+
+            val restPath = RestPath("/foo/bar")
+            val restCallAction =
+                RestCallAction(
+                    id = "post",
+                    verb = HttpVerb.POST,
+                    path = restPath,
+                    parameters = mutableListOf(bodyParam)
+                )
+
+            assertFalse(bodyParam.contentRemoveQuotesGene.gene.value)
+            val randomness = Randomness().apply { updateSeed(counter++) }
+            restCallAction.doInitialize(randomness)
+            val sendUnquoteJsonStringValue = bodyParam.contentRemoveQuotesGene.gene.value
+            if (sendUnquoteJsonStringValue) {
+                caseTrue = true
+            } else {
+                caseFalse = true
+            }
+
+            repeat(100) {
+                restCallAction.randomize(randomness, forceNewValue = true)
+                //must not change once set
+                assertEquals(sendUnquoteJsonStringValue, bodyParam.contentRemoveQuotesGene.gene.value)
+            }
         }
-        // tossing the coin 1,000 times should show at least one ``true'' value in bodyParam.contentSendUnquoteJsonStringGene
-        assertTrue(sendUnquoteJsonStringValue)
+        // tossing the coin 100 times should show at least one ``true'' value in bodyParam.contentSendUnquoteJsonStringGene
+        assertTrue(caseTrue)
+        assertTrue(caseFalse)
     }
 
 
