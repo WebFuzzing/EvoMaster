@@ -25,8 +25,8 @@ public class Z3SolverEMTest extends SpringTestBase {
                 "com.foo.spring.rest.h2.z3solver.Z3SolverEvoMaster",
                 2,
                 (args) -> {
-                    args.add("--enableWeightBasedMutationRateSelectionForGene");
-                    args.add("false");
+                    args.add("--heuristicsForSQL");
+                    args.add("true");
                     args.add("--generateSqlDataWithSearch");
                     args.add("false");
                     args.add("--generateSqlDataWithDSE");
@@ -40,7 +40,7 @@ public class Z3SolverEMTest extends SpringTestBase {
 //                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/h2/z3solver/products", null);
 
                     assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/h2/z3solver/products-1", null);
-//                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/h2/z3solver/products-1", null);
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/h2/z3solver/products-1", null);
                 });
     }
 }

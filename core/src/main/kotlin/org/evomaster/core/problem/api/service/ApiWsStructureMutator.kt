@@ -47,6 +47,9 @@ abstract class ApiWsStructureMutator : StructureMutator() {
     @Inject
     protected lateinit var harvestResponseHandler: HarvestActualHttpWsResponseHandler
 
+    @Inject
+    protected lateinit var z3Solver: SMTLibZ3DbConstraintSolver
+
     override fun addAndHarvestExternalServiceActions(
         individual: EvaluatedIndividual<*>,
         /**
@@ -303,23 +306,22 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         }
         
         if (config.generateSqlDataWithDSE) {
-            return handleDSE(sampler, failedWhereQueries)
+            return handleDSE(ind, sampler, failedWhereQueries)
         }
 
         return mutableListOf()
     }
 
-    private fun <T : ApiWsIndividual> handleDSE(sampler: ApiWsSampler<T>, failedWhereQueries: List<String>): MutableList<List<SqlAction>> {
+    private fun <T : ApiWsIndividual> handleDSE(ind: T, sampler: ApiWsSampler<T>, failedWhereQueries: List<String>): MutableList<List<SqlAction>> {
         // TODO: Use one solver, instead of creating one each time?
-        val resourcesFolder = System.getProperty("user.dir") + "/target/tmp";
         val schemaDto = sampler.sqlInsertBuilder?.schemaDto
             ?: throw IllegalStateException("No DB schema is available")
-        val solver = SMTLibZ3DbConstraintSolver(schemaDto, resourcesFolder, 1)
 
         val newActions = mutableListOf<List<SqlAction>>()
         for (query in failedWhereQueries) {
-            val newActionsForQuery = solver.solve(query)
+            val newActionsForQuery = z3Solver.solve(schemaDto, query)
             newActions.addAll(mutableListOf(newActionsForQuery))
+            ind.addInitializingDbActions(actions = newActionsForQuery)
         }
 
         return newActions

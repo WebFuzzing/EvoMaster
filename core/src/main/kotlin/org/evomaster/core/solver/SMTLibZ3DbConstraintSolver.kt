@@ -33,13 +33,8 @@ import java.util.*
  * then executes Z3 to get values and returns the necessary list of SqlActions
  * to satisfy the query.
  */
-class SMTLibZ3DbConstraintSolver(
-    private val schemaDto: DbSchemaDto, // Database schema
-    private val resourcesFolder: String, // Folder for temporary resources
-    numberOfRows: Int = 2 // Number of rows to generate
-) : DbConstraintSolver {
-
-    private val generator: SmtLibGenerator = SmtLibGenerator(schemaDto, numberOfRows)
+class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
+    private val resourcesFolder = System.getProperty("user.dir") + "/target/tmp";
     private val executor: Z3DockerExecutor = Z3DockerExecutor(resourcesFolder)
 
     /**
@@ -56,13 +51,16 @@ class SMTLibZ3DbConstraintSolver(
      * @param sqlQuery The SQL query to solve.
      * @return A list of SQL actions that can be executed to satisfy the query.
      */
-    override fun solve(sqlQuery: String): List<SqlAction> {
+    override fun solve(schemaDto: DbSchemaDto, sqlQuery: String, numberOfRows: Int): List<SqlAction> {
+        // TODO: Use memoized, if it's the same schema and query, return the same result and don't do any calculation
+
+        val generator = SmtLibGenerator(schemaDto, numberOfRows)
         val queryStatement = parseStatement(sqlQuery) // Parse SQL query
-        val smtLib = this.generator.generateSMT(queryStatement) // Generate SMTLib problem
+        val smtLib = generator.generateSMT(queryStatement) // Generate SMTLib problem
         val fileName = storeToTmpFile(smtLib) // Store SMTLib to a temporary file
         val z3Response = executor.solveFromFile(fileName) // Solve using Z3
 
-        return toSqlActionList(z3Response) // Convert Z3 response to SQL actions
+        return toSqlActionList(schemaDto, z3Response) // Convert Z3 response to SQL actions
     }
 
     /**
@@ -85,7 +83,7 @@ class SMTLibZ3DbConstraintSolver(
      * @param z3Response The response from Z3.
      * @return A list of SQL actions.
      */
-    private fun toSqlActionList(z3Response: Optional<MutableMap<String, SMTLibValue>>): List<SqlAction> {
+    private fun toSqlActionList(schemaDto: DbSchemaDto, z3Response: Optional<MutableMap<String, SMTLibValue>>): List<SqlAction> {
         if (!z3Response.isPresent) {
             return emptyList() // Return an empty list if no response
         }
@@ -102,30 +100,28 @@ class SMTLibZ3DbConstraintSolver(
             // Create the list of genes with the values
             val genes = mutableListOf<Gene>()
             for (columnName in columns.fields) {
+                var gene: Gene = IntegerGene(columnName, 0)
                 when (val columnValue = columns.getField(columnName)) {
                     is StringValue -> {
-                        if (isBoolean(table, columnName)) {
-                            val gene = BooleanGene(columnName, toBoolean(columnValue.value))
-                            genes.add(gene)
+                        if (isBoolean(schemaDto, table, columnName)) {
+                            gene =  BooleanGene(columnName, toBoolean(columnValue.value))
                         } else {
-                            val gene = StringGene(columnName, columnValue.value)
-                            genes.add(gene)
+                            gene = StringGene(columnName, columnValue.value)
                         }
                     }
                     is LongValue -> {
                         if (isTimestamp(table, columnName)) {
-                            val gene = LongGene(columnName, columnValue.value.toLong())
-                            genes.add(gene)
+                            gene = LongGene(columnName, columnValue.value.toLong())
                         } else {
-                            val gene = IntegerGene(columnName, columnValue.value.toInt())
-                            genes.add(gene)
+                            gene = IntegerGene(columnName, columnValue.value.toInt())
                         }
                     }
                     is RealValue -> {
-                        val gene = DoubleGene(columnName, columnValue.value)
-                        genes.add(gene)
+                        gene = DoubleGene(columnName, columnValue.value)
                     }
                 }
+                gene.markAllAsInitialized()
+                genes.add(gene)
             }
 
             val sqlAction = SqlAction(table, table.columns, -1, genes.toList())
@@ -139,7 +135,7 @@ class SMTLibZ3DbConstraintSolver(
         return value.equals("True", ignoreCase = true)
     }
 
-    private fun isBoolean(table: Table, columnName: String?): Boolean {
+    private fun isBoolean(schemaDto: DbSchemaDto, table: Table, columnName: String?): Boolean {
         val col = schemaDto.tables.first { it.name == table.name }.columns.first { it.name == columnName }
         return col.type == "BOOLEAN"
     }
@@ -171,7 +167,7 @@ class SMTLibZ3DbConstraintSolver(
             ?: throw RuntimeException("Table not found: $tableName")
         return Table(
             tableDto.name,
-            findColumns(tableDto), // Convert columns from DTO
+            findColumns(schema, tableDto), // Convert columns from DTO
             findForeignKeys(tableDto) // TODO: Implement this method
         )
     }
@@ -182,7 +178,7 @@ class SMTLibZ3DbConstraintSolver(
      * @param tableDto The table DTO containing column definitions.
      * @return A set of Column objects.
      */
-    private fun findColumns(tableDto: TableDto): Set<Column> {
+    private fun findColumns(schemaDto: DbSchemaDto, tableDto: TableDto): Set<Column> {
         return tableDto.columns.map { columnDto ->
             toColumnFromDto(columnDto, schemaDto.databaseType)
         }.toSet()
