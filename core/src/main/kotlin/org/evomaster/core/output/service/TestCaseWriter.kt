@@ -98,8 +98,10 @@ abstract class TestCaseWriter {
             }
             lines.addSingleCommentLine("\t\t\tGenes:")
             ac.seeTopGenes().forEach { gene ->
-                if (gene !is SqlAutoIncrementGene) {
+                try {
                     lines.addSingleCommentLine("\t\t\t\t${gene.javaClass.kotlin.qualifiedName} = ${gene.getVariableName()}:${gene.getValueAsRawString()}")
+                } catch (e: Exception) {
+                    lines.appendSingleCommentLine("\t\t\t\tError trying to print ${gene.javaClass.kotlin.qualifiedName} information: ${e.localizedMessage}")
                 }
             }
         }
