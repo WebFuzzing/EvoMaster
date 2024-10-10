@@ -481,7 +481,7 @@ class Main {
                     Key.get(object : TypeLiteral<MosaAlgorithm<GraphQLIndividual>>() {})
 
                 config.algorithm == EMConfig.Algorithm.STANDARD_GA ->
-                    Key.get(object : TypeLiteral<StandardGeneticAlgorithm<GraphQLIndividual>>() {})
+                    Key.get(object : TypeLiteral<StandardAbstractGeneticAlgorithm<GraphQLIndividual>>() {})
 
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
@@ -503,7 +503,7 @@ class Main {
                     Key.get(object : TypeLiteral<MosaAlgorithm<RPCIndividual>>() {})
 
                 config.algorithm == EMConfig.Algorithm.STANDARD_GA ->
-                    Key.get(object : TypeLiteral<StandardGeneticAlgorithm<RPCIndividual>>() {})
+                    Key.get(object : TypeLiteral<StandardAbstractGeneticAlgorithm<RPCIndividual>>() {})
 
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
@@ -525,7 +525,7 @@ class Main {
                     Key.get(object : TypeLiteral<MosaAlgorithm<WebIndividual>>() {})
 
                 config.algorithm == EMConfig.Algorithm.STANDARD_GA ->
-                    Key.get(object : TypeLiteral<StandardGeneticAlgorithm<WebIndividual>>() {})
+                    Key.get(object : TypeLiteral<StandardAbstractGeneticAlgorithm<WebIndividual>>() {})
 
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
@@ -547,7 +547,7 @@ class Main {
                     Key.get(object : TypeLiteral<MosaAlgorithm<RestIndividual>>() {})
 
                 config.algorithm == EMConfig.Algorithm.STANDARD_GA ->
-                    Key.get(object : TypeLiteral<StandardGeneticAlgorithm<RestIndividual>>() {})
+                    Key.get(object : TypeLiteral<StandardAbstractGeneticAlgorithm<RestIndividual>>() {})
 
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
