@@ -13,41 +13,41 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping(path = ["/api/jackson/read"])
 class JacksonReadValueEndpoints {
 
-    @PostMapping(path = ["/map"])
-    fun postMap(@RequestBody json : String?) : ResponseEntity<String> {
-        // Sample JSON: {"name":"teapot"}
-        return try {
-            val mapper = ObjectMapper()
-
-            val map = mapper.readValue(json, Map::class.java)
-
-            if (map.containsValue("teapot")) {
-                return ResponseEntity.status(HttpStatus.I_AM_A_TEAPOT).body("Bingo!")
-            }
-
-            ResponseEntity.ok("OK")
-        } catch (e: Exception) {
-            ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()
-        }
-    }
-
-    @PostMapping(path = ["/list"])
-    fun postList(@RequestBody json : String?) : ResponseEntity<String> {
-        // Sample JSON: ["teapot","cup"]
-        return try {
-            val mapper = ObjectMapper()
-
-            val arrayList = mapper.readValue(json, ArrayList::class.java)
-
-            if (arrayList.contains("teapot")) {
-                return ResponseEntity.status(HttpStatus.I_AM_A_TEAPOT).body("Bingo!")
-            }
-
-            ResponseEntity.ok("OK")
-        } catch (e: Exception) {
-            ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.message)
-        }
-    }
+//    @PostMapping(path = ["/map"])
+//    fun postMap(@RequestBody json : String?) : ResponseEntity<String> {
+//        // Sample JSON: {"name":"teapot"}
+//        return try {
+//            val mapper = ObjectMapper()
+//
+//            val map = mapper.readValue(json, Map::class.java)
+//
+//            if (map.containsValue("teapot")) {
+//                return ResponseEntity.status(HttpStatus.I_AM_A_TEAPOT).body("Bingo!")
+//            }
+//
+//            ResponseEntity.ok("OK")
+//        } catch (e: Exception) {
+//            ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()
+//        }
+//    }
+//
+//    @PostMapping(path = ["/list"])
+//    fun postList(@RequestBody json : String?) : ResponseEntity<String> {
+//        // Sample JSON: ["teapot","cup"]
+//        return try {
+//            val mapper = ObjectMapper()
+//
+//            val arrayList = mapper.readValue(json, ArrayList::class.java)
+//
+//            if (arrayList.contains("teapot")) {
+//                return ResponseEntity.status(HttpStatus.I_AM_A_TEAPOT).body("Bingo!")
+//            }
+//
+//            ResponseEntity.ok("OK")
+//        } catch (e: Exception) {
+//            ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.message)
+//        }
+//    }
 
     @PostMapping(path = ["/dto"])
     fun postListWithDTO(@RequestBody json : String?) : ResponseEntity<String> {
