@@ -66,12 +66,12 @@ abstract class AbstractGeneticAlgorithm<T>: SearchAlgorithm<T>() where T : Indiv
 
         val n = 1 + randomness.nextInt(config.maxSearchSuiteSize)
 
-        val wts = WtsEvalIndividual<T>(mutableListOf())
+        val suite = WtsEvalIndividual<T>(mutableListOf())
 
         for (i in 1..n) {
             ff.calculateCoverage(sampler.sample(), modifiedSpec = null)?.run {
                 archive.addIfNeeded(this)
-                wts.suite.add(this)
+                suite.suite.add(this)
             }
 
             if (!time.shouldContinueSearch()) {
@@ -79,6 +79,6 @@ abstract class AbstractGeneticAlgorithm<T>: SearchAlgorithm<T>() where T : Indiv
             }
         }
 
-        return wts
+        return suite
     }
 }
