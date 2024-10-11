@@ -7,7 +7,7 @@ import org.evomaster.core.search.algorithms.wts.WtsEvalIndividual
 /**
  * An implementation of the Standard Genetic algorithm,
  */
-open class StandardAbstractGeneticAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T : Individual {
+open class StandardGeneticAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T : Individual {
 
 
     private val population: MutableList<WtsEvalIndividual<T>> = mutableListOf()
