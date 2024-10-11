@@ -45,7 +45,7 @@ class JacksonReadValueEndpoints {
 
             ResponseEntity.ok("OK")
         } catch (e: Exception) {
-            ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.message)
+            ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()
         }
     }
 
@@ -63,7 +63,7 @@ class JacksonReadValueEndpoints {
 
             ResponseEntity.ok("OK")
         } catch (e: Exception) {
-            ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.message)
+            ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()
         }
     }
 }
