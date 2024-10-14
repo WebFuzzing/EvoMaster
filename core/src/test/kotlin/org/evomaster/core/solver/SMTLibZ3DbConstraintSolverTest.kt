@@ -1,7 +1,6 @@
 package org.evomaster.core.solver
 
 import net.sf.jsqlparser.JSQLParserException
-import org.apache.commons.io.FileUtils
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto
 import org.evomaster.client.java.sql.SchemaExtractor
 import org.evomaster.client.java.sql.SqlScriptRunner
@@ -13,14 +12,9 @@ import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
-import java.io.File
-import java.io.IOException
-import java.nio.file.Files
-import java.nio.file.Paths
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.SQLException
-import java.time.Instant
 
 
 class SMTLibZ3DbConstraintSolverTest {
@@ -47,28 +41,6 @@ class SMTLibZ3DbConstraintSolverTest {
             connection.close()
             if (this::solver.isInitialized) {
                 solver.close()
-            }
-        }
-
-        private fun tmpResourcesFolder(): String {
-            val instant = Instant.now().epochSecond.toString()
-            val tmpFolderPath = "tmp-solver$instant/"
-            return System.getProperty("user.dir") + "/src/test/resources/" + tmpFolderPath
-        }
-
-        private fun createFolder(folderPath: String) {
-            try {
-                Files.createDirectories(Paths.get(folderPath))
-            } catch (e: IOException) {
-                throw RuntimeException("Error creating tmp folder '$folderPath'. ", e)
-            }
-        }
-
-        private fun removeFolder(folderPath: String) {
-            try {
-                FileUtils.deleteDirectory(File(folderPath))
-            } catch (e: IOException) {
-                throw RuntimeException("Error deleting tmp folder '$folderPath'. ", e)
             }
         }
     }

@@ -3,6 +3,7 @@ package org.evomaster.core.solver
 import net.sf.jsqlparser.JSQLParserException
 import net.sf.jsqlparser.parser.CCJSqlParserUtil
 import net.sf.jsqlparser.statement.Statement
+import org.apache.commons.io.FileUtils
 import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto
@@ -21,6 +22,7 @@ import org.evomaster.core.sql.schema.Table
 import org.evomaster.solver.Z3DockerExecutor
 import org.evomaster.solver.smtlib.SMTLib
 import org.evomaster.solver.smtlib.value.*
+import java.io.File
 import java.io.IOException
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -42,6 +44,11 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
      */
     override fun close() {
         executor.close()
+        try {
+            FileUtils.cleanDirectory(File(resourcesFolder))
+        } catch (e: IOException) {
+            throw RuntimeException("Error cleaning up resources folder", e)
+        }
     }
 
     /**
@@ -55,12 +62,12 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         // TODO: Use memoized, if it's the same schema and query, return the same result and don't do any calculation
 
         val generator = SmtLibGenerator(schemaDto, numberOfRows)
-        val queryStatement = parseStatement(sqlQuery) // Parse SQL query
-        val smtLib = generator.generateSMT(queryStatement) // Generate SMTLib problem
-        val fileName = storeToTmpFile(smtLib) // Store SMTLib to a temporary file
-        val z3Response = executor.solveFromFile(fileName) // Solve using Z3
+        val queryStatement = parseStatement(sqlQuery)
+        val smtLib = generator.generateSMT(queryStatement)
+        val fileName = storeToTmpFile(smtLib)
+        val z3Response = executor.solveFromFile(fileName)
 
-        return toSqlActionList(schemaDto, z3Response) // Convert Z3 response to SQL actions
+        return toSqlActionList(schemaDto, z3Response)
     }
 
     /**
@@ -71,9 +78,9 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
      */
     private fun parseStatement(sqlQuery: String): Statement {
         return try {
-            CCJSqlParserUtil.parse(sqlQuery) // Parse query using JSQLParser
+            CCJSqlParserUtil.parse(sqlQuery)
         } catch (e: JSQLParserException) {
-            throw RuntimeException(e) // Rethrow exception if parsing fails
+            throw RuntimeException(e)
         }
     }
 
@@ -85,13 +92,13 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
      */
     private fun toSqlActionList(schemaDto: DbSchemaDto, z3Response: Optional<MutableMap<String, SMTLibValue>>): List<SqlAction> {
         if (!z3Response.isPresent) {
-            return emptyList() // Return an empty list if no response
+            return emptyList()
         }
 
         val actions = mutableListOf<SqlAction>()
 
         for (row in z3Response.get()) {
-            val tableName = getTableName(row.key) // Extract table name from the key
+            val tableName = getTableName(row.key)
             val columns = row.value as StructValue
 
             // Find table from schema and create SQL actions
@@ -103,17 +110,17 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
                 var gene: Gene = IntegerGene(columnName, 0)
                 when (val columnValue = columns.getField(columnName)) {
                     is StringValue -> {
-                        if (isBoolean(schemaDto, table, columnName)) {
-                            gene =  BooleanGene(columnName, toBoolean(columnValue.value))
+                        gene = if (isBoolean(schemaDto, table, columnName)) {
+                            BooleanGene(columnName, toBoolean(columnValue.value))
                         } else {
-                            gene = StringGene(columnName, columnValue.value)
+                            StringGene(columnName, columnValue.value)
                         }
                     }
                     is LongValue -> {
-                        if (isTimestamp(table, columnName)) {
-                            gene = LongGene(columnName, columnValue.value.toLong())
+                        gene = if (isTimestamp(table, columnName)) {
+                            LongGene(columnName, columnValue.value.toLong())
                         } else {
-                            gene = IntegerGene(columnName, columnValue.value.toInt())
+                            IntegerGene(columnName, columnValue.value.toInt())
                         }
                     }
                     is RealValue -> {
@@ -267,7 +274,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     }
 
     /**
-     * Stores the SMTLib problem to a file in the resources folder.
+     * Stores the SMTLib problem to a file in the resources' folder.
      *
      * @param smtLib The SMTLib problem.
      * @return The filename of the stored SMTLib problem.
