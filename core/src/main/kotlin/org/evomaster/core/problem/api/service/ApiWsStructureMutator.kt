@@ -48,6 +48,8 @@ abstract class ApiWsStructureMutator : StructureMutator() {
     protected lateinit var harvestResponseHandler: HarvestActualHttpWsResponseHandler
 
     // TODO: This should only be initialized when config.generateSqlDataWithDSE is enabled
+    // TODO: Also, z3solver.close() should be invoked
+    // when the application is shutting down to stop the Docker container and clean the tmp folder
     @Inject
     protected lateinit var z3Solver: SMTLibZ3DbConstraintSolver
 

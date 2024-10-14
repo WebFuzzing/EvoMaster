@@ -13,6 +13,7 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.numeric.LongGene
+import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.schema.Column
@@ -38,6 +39,7 @@ import java.util.*
 class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     private val resourcesFolder = System.getProperty("user.dir") + "/target/tmp";
     private val executor: Z3DockerExecutor = Z3DockerExecutor(resourcesFolder)
+    private var idCounter: Long = 0L
 
     /**
      * Closes the Z3 Docker executor and cleans up temporary files.
@@ -127,11 +129,16 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
                         gene = DoubleGene(columnName, columnValue.value)
                     }
                 }
+                val currentColumn = table.columns.firstOrNull(){ it.name == columnName}
+                if (currentColumn != null &&  currentColumn.primaryKey) {
+                    gene = SqlPrimaryKeyGene(columnName, tableName, gene, 1) // Whats uniqueId?
+                }
                 gene.markAllAsInitialized()
                 genes.add(gene)
             }
 
-            val sqlAction = SqlAction(table, table.columns, -1, genes.toList())
+            val sqlAction = SqlAction(table, table.columns, idCounter, genes.toList())
+            idCounter++
             actions.add(sqlAction)
         }
 
