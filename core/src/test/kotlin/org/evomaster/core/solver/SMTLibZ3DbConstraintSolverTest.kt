@@ -6,6 +6,7 @@ import org.evomaster.client.java.sql.SchemaExtractor
 import org.evomaster.client.java.sql.SqlScriptRunner
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.solver.smtlib.*
 import org.junit.jupiter.api.AfterAll
@@ -64,8 +65,9 @@ class SMTLibZ3DbConstraintSolverTest {
         for (gene in genesInsert1) {
             when (gene.name) {
                 "ID" -> {
-                    assertTrue(gene is IntegerGene)
-                    assertEquals(0, (gene as IntegerGene).value)
+                    assertTrue(gene is SqlPrimaryKeyGene)
+                    val child = gene.getViewOfChildren().first()
+                    assertEquals(0, (child as IntegerGene).value)
                 }
                 "NAME" -> {
                     assertTrue(gene is StringGene)
@@ -92,8 +94,9 @@ class SMTLibZ3DbConstraintSolverTest {
         for (gene in genesInsert2) {
             when (gene.name) {
                 "ID" -> {
-                    assertTrue(gene is IntegerGene)
-                    assertEquals(1, (gene as IntegerGene).value)
+                    assertTrue(gene is SqlPrimaryKeyGene)
+                    val child = gene.getViewOfChildren().first()
+                    assertEquals(1, (child as IntegerGene).value)
                 }
                 "NAME" -> {
                     assertTrue(gene is StringGene)
