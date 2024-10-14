@@ -131,7 +131,8 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
                 }
                 val currentColumn = table.columns.firstOrNull(){ it.name == columnName}
                 if (currentColumn != null &&  currentColumn.primaryKey) {
-                    gene = SqlPrimaryKeyGene(columnName, tableName, gene, 1) // Whats uniqueId?
+                    gene = SqlPrimaryKeyGene(columnName, tableName, gene, idCounter)
+                    idCounter++
                 }
                 gene.markAllAsInitialized()
                 genes.add(gene)

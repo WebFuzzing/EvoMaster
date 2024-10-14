@@ -43,9 +43,9 @@ public class Z3SolverEMTest extends SpringTestBase {
                     assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/h2/z3solver/products-1", null);
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/h2/z3solver/products-1", null);
 
-//                    // TODO: This is currently not supported
-//                    assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/h2/z3solver/products-2/{id}", null);
-//                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/h2/z3solver/products-2/{id}", null);
+                    // TODO: This is currently not supported
+                    // assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/h2/z3solver/products-2/{id}", null);
+                    // assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/h2/z3solver/products-2/{id}", null);
 
                     assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/h2/z3solver/products-3", null);
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/h2/z3solver/products-3", null);
