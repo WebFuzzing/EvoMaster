@@ -18,6 +18,7 @@ import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.action.ActionComponent
 import org.evomaster.core.search.action.ActionResult
+import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.tracer.Traceable
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.SqlActionResult
@@ -235,7 +236,7 @@ class RestActionNamingStrategyTest {
         assertEquals("test_0_getOnItemsReturnsEmptyUsingSql", testCases[0].name)
     }
 
-    //    @Test// TODO check PhG Gene#isLocallyValid with JP/AA
+    @Test
     fun testIndividualUsingMongo() {
         val restAction = getRestCallAction()
         val eIndividual = getEvaluatedIndividualWith(restAction, false, true)
@@ -245,7 +246,7 @@ class RestActionNamingStrategyTest {
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(1, testCases.size)
-        assertEquals("test_0_getOnItemsReturns200UsingMongo", testCases[0].name)
+        assertEquals("test_0_getOnItemsReturnsEmptyUsingMongo", testCases[0].name)
     }
 
     @Test
@@ -334,7 +335,7 @@ class RestActionNamingStrategyTest {
             wireMockSize
         )
 
-        TestUtils.doInitializeIndividualForTesting(individual)
+        TestUtils.doInitializeIndividualForTesting(individual, Randomness())
 
         val restResult = getRestCallResult(restAction.getLocalId(), statusCode, resultBodyString, resultBodyType)
         faults.forEach { fault -> restResult.addFault(fault) }
