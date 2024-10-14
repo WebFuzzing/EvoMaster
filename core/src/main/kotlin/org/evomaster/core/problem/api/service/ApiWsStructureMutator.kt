@@ -47,6 +47,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
     @Inject
     protected lateinit var harvestResponseHandler: HarvestActualHttpWsResponseHandler
 
+    // TODO: This should only be initialized when config.generateSqlDataWithDSE is enabled
     @Inject
     protected lateinit var z3Solver: SMTLibZ3DbConstraintSolver
 
@@ -312,21 +313,6 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         return mutableListOf()
     }
 
-    private fun <T : ApiWsIndividual> handleDSE(ind: T, sampler: ApiWsSampler<T>, failedWhereQueries: List<String>): MutableList<List<SqlAction>> {
-        // TODO: Use one solver, instead of creating one each time?
-        val schemaDto = sampler.sqlInsertBuilder?.schemaDto
-            ?: throw IllegalStateException("No DB schema is available")
-
-        val newActions = mutableListOf<List<SqlAction>>()
-        for (query in failedWhereQueries) {
-            val newActionsForQuery = z3Solver.solve(schemaDto, query)
-            newActions.addAll(mutableListOf(newActionsForQuery))
-            ind.addInitializingDbActions(actions = newActionsForQuery)
-        }
-
-        return newActions
-    }
-
     private fun <T : ApiWsIndividual> handleSearch(
         ind: T,
         sampler: ApiWsSampler<T>,
@@ -407,6 +393,20 @@ abstract class ApiWsStructureMutator : StructureMutator() {
             missing = findMissing(fw, ind.seeInitializingActions().filterIsInstance<SqlAction>())
         }
         return addedSqlInsertions
+    }
+
+    private fun <T : ApiWsIndividual> handleDSE(ind: T, sampler: ApiWsSampler<T>, failedWhereQueries: List<String>): MutableList<List<SqlAction>> {
+        val schemaDto = sampler.sqlInsertBuilder?.schemaDto
+            ?: throw IllegalStateException("No DB schema is available")
+
+        val newActions = mutableListOf<List<SqlAction>>()
+        for (query in failedWhereQueries) {
+            val newActionsForQuery = z3Solver.solve(schemaDto, query)
+            newActions.addAll(mutableListOf(newActionsForQuery))
+            ind.addInitializingDbActions(actions = newActionsForQuery)
+        }
+
+        return newActions
     }
 
     private fun <T : ApiWsIndividual> handleFailedFind(

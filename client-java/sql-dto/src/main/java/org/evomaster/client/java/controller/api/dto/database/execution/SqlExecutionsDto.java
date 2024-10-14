@@ -61,16 +61,6 @@ public class SqlExecutionsDto {
     public Map<String, Set<String>> failedWhere = new HashMap<>();
 
     /**
-     * Every time there is a WHERE clause which "failed" (ie, resulted in false),
-     * we keep track of which tables/columns where involved in determining the
-     * result of the WHERE.
-     * If there is no WHERE, but still no data was returned, we consider it
-     * as a failed WHERE
-     * The list includes the SQL queries that failed
-     */
-    public List<String> failedWhereQueries = new ArrayList<>();
-
-    /**
      * The total Number of SQL commands (e.g., SELECT and UPDATE) executed
      */
     public int numberOfSqlCommands = 0;
