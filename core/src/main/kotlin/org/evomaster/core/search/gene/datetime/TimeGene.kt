@@ -4,6 +4,7 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
@@ -29,6 +30,7 @@ class TimeGene(
     val second: IntegerGene = IntegerGene("second", 0, MIN_SECOND, MAX_SECOND),
     val timeGeneFormat: TimeGeneFormat = TimeGeneFormat.TIME_WITH_MILLISECONDS,
     val onlyValidTimes: Boolean = false //TODO refactor once dealing with Robustness Testing
+    val millisecond: OptionalGene = OptionalGene("millisecond", IntegerGene("millisecond", 0, 0, 999))
 ) : Comparable<TimeGene>, CompositeFixedGene(name, listOf(hour, minute, second)) {
 
     companion object {
@@ -70,7 +72,8 @@ class TimeGene(
         minute.copy() as IntegerGene,
         second.copy() as IntegerGene,
         timeGeneFormat = this.timeGeneFormat,
-        onlyValidTimes = this.onlyValidTimes
+        onlyValidTimes = this.onlyValidTimes,
+        millisecond = this.millisecond.copy() as OptionalGene
     )
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
@@ -78,6 +81,7 @@ class TimeGene(
             hour.randomize(randomness, tryToForceNewValue)
             minute.randomize(randomness, tryToForceNewValue)
             second.randomize(randomness, tryToForceNewValue)
+            millisecond.randomize(randomness, tryToForceNewValue)
         } while (onlyValidTimes && !isValidTime())
     }
 
@@ -96,6 +100,7 @@ class TimeGene(
                 hour to additionalGeneMutationInfo.impact.hourGeneImpact,
                 minute to additionalGeneMutationInfo.impact.minuteGeneImpact,
                 second to additionalGeneMutationInfo.impact.secondGeneImpact
+                // TODO millisecond
             )
             return mwc.selectSubGene(
                 internalGenes,
@@ -120,26 +125,16 @@ class TimeGene(
     }
 
     override fun getValueAsRawString(): String {
+
+       FIXME from here on, also do TimeZone
+
         return when (timeGeneFormat) {
             TimeGeneFormat.ISO_LOCAL_DATE_FORMAT -> {
-                GeneUtils.let {
-                    "${GeneUtils.padded(hour.value, 2)}:${
-                        GeneUtils.padded(
-                            minute.value,
-                            2
-                        )
-                    }:${GeneUtils.padded(second.value, 2)}"
-                }
+                "${GeneUtils.padded(hour.value, 2)}:${GeneUtils.padded(minute.value, 2)}:${GeneUtils.padded(second.value, 2)}"
+
             }
             TimeGeneFormat.TIME_WITH_MILLISECONDS -> {
-                GeneUtils.let {
-                    "${GeneUtils.padded(hour.value, 2)}:${
-                        GeneUtils.padded(
-                            minute.value,
-                            2
-                        )
-                    }:${GeneUtils.padded(second.value, 2)}.000Z"
-                }
+                "${GeneUtils.padded(hour.value, 2)}:${GeneUtils.padded(minute.value, 2)}:${GeneUtils.padded(second.value, 2)}.000Z"
             }
         }
     }
