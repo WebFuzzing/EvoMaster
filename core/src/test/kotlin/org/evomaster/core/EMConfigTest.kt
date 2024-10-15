@@ -167,11 +167,15 @@ internal class EMConfigTest{
 
         val wrong = "foobar"
         options = parser.parse("--$name", wrong, "--blackBox","true","--outputFormat","JAVA_JUNIT_4")
-        //assertThrows(Exception::class.java, {config.updateProperties(options)})
+        //assertThrows(Exception::class.java, {
+        config.updateProperties(options)
+        //})
 
         val noProtocol = "localhost:8080"
         options = parser.parse("--$name", noProtocol, "--blackBox","true","--outputFormat","JAVA_JUNIT_4")
-        //assertThrows(Exception::class.java, {config.updateProperties(options)})
+        //assertThrows(Exception::class.java, {
+        config.updateProperties(options)
+        //})
 
         /*
             note: we no longer treat bbSwaggerUrl as only a URL, but also as a possible path.
