@@ -4,8 +4,12 @@ Under development in `master` branch.
 
 ### New Features
 
-- MongoDB support. For white-box heuristics, can analyze all queries done toward MongoDB databases, as well as being able to insert data directly as part of the generated test cases. 
+- MongoDB support. For white-box heuristics, can analyze all queries done toward MongoDB databases, as well as being able to insert data directly as part of the generated test cases.
+- improved fault detection for OpenAPI schema faults, in particular regarding the structure of the received responses, which are now validated. 
 
+### Bug Fixes
+
+- bbSwaggerUrl now works when using a local path instead of URL (as was stated in documentation).
 
 # Version: 3.2.0
 
