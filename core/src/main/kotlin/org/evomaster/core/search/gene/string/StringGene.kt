@@ -678,7 +678,6 @@ class StringGene(
 
             toAddGenes.add(mapGene)
 
-
             log.trace("JSON_MAP, added specification size: {}", toAddGenes.size)
         }
 

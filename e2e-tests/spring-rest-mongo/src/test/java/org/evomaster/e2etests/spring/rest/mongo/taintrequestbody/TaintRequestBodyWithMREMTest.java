@@ -30,6 +30,10 @@ public class TaintRequestBodyWithMREMTest extends RestTestBase {
                 1000,
                 true,
                 (args) -> {
+                    setOption(args, "taintForceSelectionOfGenesWithSpecialization", "true");
+                    setOption(args,"discoveredInfoRewardedInFitness", "true");
+
+
                     setOption(args,"heuristicsForMongo","false");
                     setOption(args,"instrumentMR_MONGO","true");
                     setOption(args,"generateMongoData","false");
