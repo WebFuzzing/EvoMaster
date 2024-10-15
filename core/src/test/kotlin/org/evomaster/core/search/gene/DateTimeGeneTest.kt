@@ -4,8 +4,37 @@ import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
+import java.time.Instant
 
 class DateTimeGeneTest {
+
+    @Test
+    fun validateInstant(){
+
+        val s = "1906-02-17T23:06:07"
+        val z = "${s}Z"
+
+        assertThrows<Exception> { Instant.parse(s) }
+        Instant.parse(z)
+
+        val gene = DateTimeGene("dateTime")
+        gene.date.apply {
+            year.value = 1906
+            month.value = 2
+            day.value = 17
+        }
+        gene.time.apply {
+            hour.value = 23
+            minute.value = 6
+            second.value = 7
+        }
+        val x = gene.getValueAsRawString()
+
+        Instant.parse(x)
+        assertEquals(z,x)
+    }
+
 
     @Test
     fun testDefaultFormat() {
