@@ -88,7 +88,7 @@ class EnumGene<T : Comparable<T>>(
         }
     }
 
-    override fun isLocallyValid() : Boolean{
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
         return (index >= 0 && index < values.size) || values.isEmpty()
     }
 

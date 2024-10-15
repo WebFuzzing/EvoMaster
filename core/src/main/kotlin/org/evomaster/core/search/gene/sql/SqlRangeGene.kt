@@ -47,9 +47,8 @@ class SqlRangeGene<T>(
         repairGeneIfNeeded()
     }
 
-    override fun isLocallyValid() : Boolean{
-        return getViewOfChildren().all { it.isLocallyValid() }
-                && left <= right
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
+        return left <= right
     }
 
     private fun swapLeftRightValues() {

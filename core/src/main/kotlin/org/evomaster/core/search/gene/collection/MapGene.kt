@@ -52,7 +52,7 @@ abstract class MapGene<K, V>(
         fun isStringMap(gene: MapGene<*, *>) = gene.template.first is StringGene && gene.template.second is StringGene
     }
 
-    override fun isLocallyValid(): Boolean {
+    override fun checkForLocallyValidIgnoringChildren(): Boolean {
         return (minSize == null || elements.size >= minSize) && (maxSize == null || elements.size <= maxSize)
     }
 

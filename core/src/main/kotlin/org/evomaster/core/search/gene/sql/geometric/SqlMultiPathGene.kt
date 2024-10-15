@@ -37,7 +37,7 @@ class SqlMultiPathGene(
         paths = paths.copy() as ArrayGene<SqlPathGene>
     )
 
-    override fun isLocallyValid() = paths.isLocallyValid()
+    override fun checkForLocallyValidIgnoringChildren() = true
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         paths.randomize(randomness, tryToForceNewValue)

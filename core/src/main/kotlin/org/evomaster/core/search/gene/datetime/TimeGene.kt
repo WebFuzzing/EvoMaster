@@ -55,8 +55,8 @@ class TimeGene(
         TIME_WITH_MILLISECONDS
     }
 
-    override fun isLocallyValid() : Boolean{
-        return getViewOfChildren().all { it.isLocallyValid() }
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
+        return true
     }
 
     /*
