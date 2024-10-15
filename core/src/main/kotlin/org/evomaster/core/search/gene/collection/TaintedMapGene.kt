@@ -138,7 +138,7 @@ class TaintedMapGene(
         return gene
     }
 
-    override fun isLocallyValid(): Boolean {
+    override fun checkForLocallyValidIgnoringChildren(): Boolean {
 
         //among the pairs key-value, there must be only one related to taint id
         val taints = elements.filter { it.name == TaintInputName.TAINTED_MAP_EM_LABEL_IDENTIFIER }
@@ -160,7 +160,7 @@ class TaintedMapGene(
             return false
         }
 
-        return super.isLocallyValid()
+        return true
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
