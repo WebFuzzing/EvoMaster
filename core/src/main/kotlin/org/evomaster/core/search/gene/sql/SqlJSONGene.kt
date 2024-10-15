@@ -29,8 +29,8 @@ class SqlJSONGene(name: String,
         return objectGene.isMutable()
     }
 
-    override fun isLocallyValid() : Boolean{
-        return getViewOfChildren().all { it.isLocallyValid() }
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
+        return true
     }
 
     override fun copyContent(): Gene = SqlJSONGene(

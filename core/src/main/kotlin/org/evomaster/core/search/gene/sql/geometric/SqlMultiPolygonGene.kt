@@ -48,7 +48,7 @@ class SqlMultiPolygonGene(
             polygons = polygons.copy() as ArrayGene<SqlPolygonGene>
     )
 
-    override fun isLocallyValid() = polygons.isLocallyValid()
+    override fun checkForLocallyValidIgnoringChildren() = true
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         polygons.randomize(randomness, tryToForceNewValue)

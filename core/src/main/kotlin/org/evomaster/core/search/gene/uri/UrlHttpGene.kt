@@ -57,9 +57,8 @@ class UrlHttpGene(
         )
     }
 
-    override fun isLocallyValid(): Boolean {
-        return getViewOfChildren().all { it.isLocallyValid() }
-                && try{URL(getValueAsRawString()); true}catch (e: Exception){false}
+    override fun checkForLocallyValidIgnoringChildren(): Boolean {
+        return  try{URL(getValueAsRawString()); true}catch (e: Exception){false}
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {

@@ -86,8 +86,8 @@ class FlexibleGene(name: String,
         return FlexibleGene(name, gene.copy(), valueClasses, replaceable)
     }
 
-    override fun isLocallyValid(): Boolean {
-        return gene.isLocallyValid()
+    override fun checkForLocallyValidIgnoringChildren(): Boolean {
+        return true
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {

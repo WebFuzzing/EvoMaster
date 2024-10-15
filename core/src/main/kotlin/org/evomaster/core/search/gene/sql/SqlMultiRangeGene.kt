@@ -38,8 +38,8 @@ class SqlMultiRangeGene<T>(
         val log: Logger = LoggerFactory.getLogger(SqlMultiRangeGene::class.java)
     }
 
-    override fun isLocallyValid() : Boolean{
-        return getViewOfChildren().all { it.isLocallyValid() }
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
+        return true
     }
 
     override fun copyContent(): Gene {

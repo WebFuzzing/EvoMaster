@@ -50,8 +50,8 @@ class UriGene(name: String,
        return UriGene(name, gene.copy() as ChoiceGene<Gene>)
     }
 
-    override fun isLocallyValid(): Boolean {
-        return gene.isLocallyValid()
+    override fun checkForLocallyValidIgnoringChildren(): Boolean {
+        return true
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {

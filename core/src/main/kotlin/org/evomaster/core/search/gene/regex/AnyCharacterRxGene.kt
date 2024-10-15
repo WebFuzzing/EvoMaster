@@ -27,7 +27,7 @@ class AnyCharacterRxGene : RxAtom, SimpleGene("."){
 
     var value: Char = 'a'
 
-    override fun isLocallyValid() : Boolean{
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
         return true
     }
 
