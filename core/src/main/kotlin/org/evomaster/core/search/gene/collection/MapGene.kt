@@ -56,9 +56,8 @@ abstract class MapGene<K, V>(
     fun hasKeyByName(key: String) = elements.any { it.first.name == key }
 
 
-    override fun isLocallyValid(): Boolean {
+    override fun checkForLocallyValidIgnoringChildren(): Boolean {
         return (minSize == null || elements.size >= minSize) && (maxSize == null || elements.size <= maxSize)
-                && getViewOfChildren().all { it.isLocallyValid() }
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {

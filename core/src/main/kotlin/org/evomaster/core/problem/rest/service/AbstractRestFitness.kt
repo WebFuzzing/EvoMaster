@@ -24,6 +24,7 @@ import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.param.UpdateForBodyParam
+import org.evomaster.core.problem.rest.service.AbstractRestSampler.Companion.CALL_TO_SWAGGER_ID
 import org.evomaster.core.problem.util.ParserDtoUtil
 import org.evomaster.core.remote.HttpClientFactory
 import org.evomaster.core.remote.SutProblemException
@@ -36,7 +37,6 @@ import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.numeric.NumberGene
-import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
@@ -45,6 +45,7 @@ import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.URL
+import javax.annotation.PostConstruct
 import javax.ws.rs.ProcessingException
 import javax.ws.rs.client.Entity
 import javax.ws.rs.client.Invocation
@@ -67,6 +68,14 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
     @Inject
     protected lateinit var builder: RestIndividualBuilder
+
+    private lateinit var schemaOracle: RestSchemaOracle
+
+    @PostConstruct
+    fun initBean(){
+        schemaOracle = RestSchemaOracle((sampler as AbstractRestSampler).swagger.schemaRaw)
+    }
+
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(AbstractRestFitness::class.java)
@@ -677,8 +686,22 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         if (!handleSaveLocation(a, response, rcr, chainState)) return false
 
+        if(config.schemaOracles && schemaOracle.canValidate() && a.id != CALL_TO_SWAGGER_ID) {
+            val report = schemaOracle.handleSchemaOracles(a.resolvedOnlyPath(), a.verb, rcr)
+
+            report.messages.forEach {
+                val discriminant = a.getName() + " -> " + it.message
+                val scenarioId = idMapper.handleLocalTarget(
+                    idMapper.getFaultDescriptiveId(FaultCategory.SCHEMA_INVALID_RESPONSE, discriminant)
+                )
+                fv.updateTarget(scenarioId, 1.0, a.positionAmongMainActions())
+                rcr.addFault(DetectedFault(FaultCategory.SCHEMA_INVALID_RESPONSE, discriminant))
+            }
+        }
+
         return true
     }
+
 
     private fun handleLinks(
         a: RestCallAction,

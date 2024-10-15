@@ -192,7 +192,7 @@ class BigIntegerGene(
         value = BigInteger.valueOf(longValue)
     }
 
-    override fun isLocallyValid(): Boolean {
+    override fun checkForLocallyValidIgnoringChildren(): Boolean {
         if (max != null && value > max)
             return false
         if (min != null && value < min)

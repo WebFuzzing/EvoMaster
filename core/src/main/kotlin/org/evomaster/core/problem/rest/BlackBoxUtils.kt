@@ -33,7 +33,7 @@ object BlackBoxUtils {
                 EMConfig.ProblemType.GRAPHQL -> throw IllegalStateException("BUG: no target for GQL is defined")
                 EMConfig.ProblemType.REST -> {
                     //https://swagger.io/docs/specification/api-host-and-base-path/
-                    val schema = (sampler as AbstractRestSampler).swagger
+                    val schema = (sampler as AbstractRestSampler).swagger.schemaParsed
                     return if (schema.servers == null || schema.servers.isEmpty()) {
                         /*
                             Schema has no info on where the API is, eg 'host' in v2 and 'servers' in v3.

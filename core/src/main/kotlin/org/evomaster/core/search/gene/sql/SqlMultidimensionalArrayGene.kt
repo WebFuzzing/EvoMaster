@@ -158,7 +158,7 @@ class SqlMultidimensionalArrayGene<T>(
      * Check that the nested arraygenes equal the number of dimensions, check that each
      * dimension length is preserved.
      */
-    override fun isLocallyValid(): Boolean {
+    override fun checkForLocallyValidIgnoringChildren(): Boolean {
         return if (this.children.size != 1) {
             false
         } else {

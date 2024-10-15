@@ -74,9 +74,9 @@ class QuantifierRxGene(
         }
     }
 
-    override fun isLocallyValid() : Boolean{
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
         val n = getViewOfChildren().size
-        return n in min..limitedMax &&  getViewOfChildren().all { it.isLocallyValid() }
+        return n in min..limitedMax
     }
 
     override fun copyContent(): Gene {

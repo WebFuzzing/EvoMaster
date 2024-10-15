@@ -10,7 +10,7 @@ class NamingHelperNumberedTestCaseNamingStrategy(
 
     private val namingHelper = NamingHelper()
 
-    override fun expandName(individual: EvaluatedIndividual<*>): String {
+    override fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>): String {
         return namingHelper.suggestName(individual)
     }
 }

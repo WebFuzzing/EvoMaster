@@ -44,7 +44,7 @@ class SqlGeometryCollectionGene(
         )
     }
 
-    override fun isLocallyValid()= elements.isLocallyValid()
+    override fun checkForLocallyValidIgnoringChildren()= true
 
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {

@@ -325,7 +325,7 @@ abstract class Gene(
      *  "Locally" here means that the constraints are based only on the current gene and all its children,
      *  but not genes up in the hierarchy and in other actions.
      *
-     * Note that the method is only used for debugging and testing purposes.
+     * Note that the method is mainly used for debugging and testing purposes.
      *  e.g., for NumberGene, if min and max are specified, the value should be within min..max.
      *        for FloatGene with precision 2, the value 10.222 would not be considered as a valid gene.
      * Sampling a gene at random until is valid could end up in an infinite loop, so should be avoided.
@@ -335,12 +335,22 @@ abstract class Gene(
      *
      * Note that, if a gene is valid, then all of its children must be valid as well, regardless of whether
      * they are having any effect on the phenotype.
-     *
-     * A default implementation could be:
-     *        return getViewOfChildren().all { it.isLocallyValid() }
-     * but here we want to force new genes to explicitly write this method
      */
-    abstract fun isLocallyValid() : Boolean
+    fun isLocallyValid() : Boolean{
+
+        if(!checkForLocallyValidIgnoringChildren()){
+            return false
+        }
+
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
+
+    /**
+     * Force each gene to implement this method.
+     * This MUST not check its children.
+     */
+    protected abstract fun checkForLocallyValidIgnoringChildren() : Boolean
+
 
     /**
      *  Verify all constraints (including locals).
@@ -363,6 +373,10 @@ abstract class Gene(
         //TODO in future will deal with FK as well here
     }
 
+    /**
+     * We don't force each gene to implement this method, as only a few would have
+     * global constraints
+     */
     protected open fun checkForGloballyValid() = true
 
     /**

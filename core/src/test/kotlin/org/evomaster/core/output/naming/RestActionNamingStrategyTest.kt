@@ -2,6 +2,7 @@ package org.evomaster.core.output.naming
 
 import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.core.TestUtils
+import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.Termination
 import org.evomaster.core.problem.enterprise.DetectedFault
 import org.evomaster.core.problem.enterprise.SampleType
@@ -14,15 +15,16 @@ import org.junit.jupiter.api.Test
 import java.util.Collections.singletonList
 
 
-class ActionNamingStrategyTest {
+class RestActionNamingStrategyTest {
 
     @Test
     fun testGetOnRootPathIsIncludedInName() {
         val eIndividual = getEvaluatedIndividualWith("/")
+        val languageConventionFormatter = LanguageConventionFormatter(OutputFormat.PYTHON_UNITTEST)
 
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = ActionTestCaseNamingStrategy(solution)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, languageConventionFormatter)
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(1, testCases.size)
@@ -32,10 +34,11 @@ class ActionNamingStrategyTest {
     @Test
     fun testGetOnItemsPathIsIncludedInName() {
         val eIndividual = getEvaluatedIndividualWith("/items")
+        val languageConventionFormatter = LanguageConventionFormatter(OutputFormat.PYTHON_UNITTEST)
 
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = ActionTestCaseNamingStrategy(solution)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, languageConventionFormatter)
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(1, testCases.size)
@@ -43,12 +46,43 @@ class ActionNamingStrategyTest {
     }
 
     @Test
-    fun test500ResponseNamedWithInternalServerError() {
-        val eIndividual = getEvaluatedIndividualWithFaults("/items", 500, singletonList(DetectedFault(FaultCategory.HTTP_STATUS_500, "items")))
+    fun testTwoDifferentIndividualsGetDifferentNames() {
+        val rootIndividual = getEvaluatedIndividualWith("/")
+        val itemsIndividual = getEvaluatedIndividualWith("/items")
+        val languageConventionFormatter = LanguageConventionFormatter(OutputFormat.PYTHON_UNITTEST)
+
+        val solution = Solution(mutableListOf(rootIndividual, itemsIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
+
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, languageConventionFormatter)
+
+        val testCases = namingStrategy.getTestCases()
+        assertEquals(2, testCases.size)
+        assertEquals("test_0_GET_on_root_returns_200", testCases[0].name)
+        assertEquals("test_1_GET_on_items_returns_200", testCases[1].name)
+    }
+
+    @Test
+    fun testGetOnItemReturnsSingularPathInName() {
+        val eIndividual = getEvaluatedIndividualWith("/items/{itemId}")
+        val languageConventionFormatter = LanguageConventionFormatter(OutputFormat.PYTHON_UNITTEST)
 
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = ActionTestCaseNamingStrategy(solution)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, languageConventionFormatter)
+
+        val testCases = namingStrategy.getTestCases()
+        assertEquals(1, testCases.size)
+        assertEquals("test_0_GET_on_item_returns_200", testCases[0].name)
+    }
+
+    @Test
+    fun test500ResponseNamedWithInternalServerError() {
+        val eIndividual = getEvaluatedIndividualWithFaults("/items", 500, singletonList(DetectedFault(FaultCategory.HTTP_STATUS_500, "items")))
+        val languageConventionFormatter = LanguageConventionFormatter(OutputFormat.PYTHON_UNITTEST)
+
+        val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
+
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, languageConventionFormatter)
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(1, testCases.size)
@@ -59,10 +93,11 @@ class ActionNamingStrategyTest {
     fun testResponseNamedWithMultipleFaults() {
         val faults = listOf(DetectedFault(FaultCategory.GQL_ERROR_FIELD, "items"), DetectedFault(FaultCategory.HTTP_INVALID_LOCATION, "items"), DetectedFault(FaultCategory.HTTP_STATUS_500, "items"))
         val eIndividual = getEvaluatedIndividualWithFaults("/items", 500, faults)
+        val languageConventionFormatter = LanguageConventionFormatter(OutputFormat.PYTHON_UNITTEST)
 
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = ActionTestCaseNamingStrategy(solution)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, languageConventionFormatter)
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(1, testCases.size)
