@@ -3,6 +3,7 @@ package org.evomaster.core.output.naming
 import org.evomaster.core.output.TestCase
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
+import org.evomaster.core.search.action.Action
 
 /**
  * A naming strategy will help provide names to the generated test cases.
@@ -30,6 +31,9 @@ abstract class TestCaseNamingStrategy(
      *
      * @return a String with extra information that will be included in the test name, regarding the EvaluatedIndividual
      */
-    protected abstract fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>): String
+    protected abstract fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>, ambiguitySolver: ((Action) -> String)? = null): String
+//    protected abstract fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>): String
+
+    protected abstract fun resolveAmbiguity(individualToName: MutableMap<EvaluatedIndividual<*>, String>, inds: Set<EvaluatedIndividual<*>>)
 
 }

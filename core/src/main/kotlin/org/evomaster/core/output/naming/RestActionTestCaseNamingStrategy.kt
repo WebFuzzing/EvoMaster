@@ -7,6 +7,7 @@ import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.EvaluatedAction
 import javax.ws.rs.core.MediaType
 
@@ -15,13 +16,17 @@ open class RestActionTestCaseNamingStrategy(
     languageConventionFormatter: LanguageConventionFormatter
 ) : ActionTestCaseNamingStrategy(solution, languageConventionFormatter)  {
 
-    override fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>): String {
+    override fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>, ambiguitySolver: ((Action) -> String)?): String {
         val evaluatedAction = individual.evaluatedMainActions().last()
         val action = evaluatedAction.action as RestCallAction
 
         nameTokens.add(action.verb.toString().lowercase())
         nameTokens.add(on)
+        if (ambiguitySolver != null) {
+            nameTokens.add(ambiguitySolver(action))
+        }
         nameTokens.add(getPath(action.path.nameQualifier))
+
         addResult(individual, nameTokens)
 
         return formatName(nameTokens)
@@ -35,6 +40,31 @@ open class RestActionTestCaseNamingStrategy(
         } else {
             nameTokens.add(result.getStatusCode().toString())
         }
+    }
+
+    /**
+     * In REST Individuals. Ambiguity will be resolved with the following filters:
+     * 1. if any test has a different path, then add previous segment to them to make them differ
+     * 2. if any test uses URI params, add withUriParams{listOfParamValues} to name
+     * 3. if any test uses query params, add withQueryParams{listOfParamValues} to name
+     * 4. if any test uses headers, add withHeaders{listOfHeaderValues} to name
+     *
+     * Whenever an ambiguity is solved, then it should remove that test from the cycle. There is no need to execute the
+     * following filters
+     */
+    override fun resolveAmbiguity(individualToName: MutableMap<EvaluatedIndividual<*>, String>, inds: Set<EvaluatedIndividual<*>>) {
+        val groupByPath = inds.groupBy {
+            (it.evaluatedMainActions().last().action as RestCallAction).path.toString()
+        }.filter { it.value.size == 1 }
+
+        groupByPath.forEach { entry ->
+            val eInd = entry.value[0]
+            individualToName[eInd] = expandName(eInd, mutableListOf(), ::pathAmbiguitySolver)
+        }
+    }
+
+    fun pathAmbiguitySolver(action: Action): String {
+        return (action as RestCallAction).path.parentPath().nameQualifier
     }
 
     private fun isGetCall(evaluatedAction: EvaluatedAction): Boolean {
