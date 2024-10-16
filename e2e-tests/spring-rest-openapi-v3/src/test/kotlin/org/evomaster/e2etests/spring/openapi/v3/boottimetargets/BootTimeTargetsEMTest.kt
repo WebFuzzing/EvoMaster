@@ -64,7 +64,7 @@ class BootTimeTargetsEMTest : SpringTestBase() {
         assertTrue(targets.contains("Class_com.foo.rest.examples.spring.openapi.v3.SpringController") &&
                 targets.contains("Class_com.foo.rest.examples.spring.openapi.v3.boottimetargets.BootTimeTargetsApplication") &&
                 targets.contains("Line_at_com.foo.rest.examples.spring.openapi.v3.boottimetargets.BootTimeTargetsRest_00014") &&
-                targets.contains("Branch_at_com.foo.rest.examples.spring.openapi.v3.boottimetargets.BootTimeTargetsRest_at_line_00040_position_0_falseBranch"), targets)
+                targets.contains("Branch_at_com.foo.rest.examples.spring.openapi.v3.boottimetargets.BootTimeTargetsRest_at_line_00040_position_0_falseBranch_154"), targets)
     }
 
 }
