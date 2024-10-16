@@ -95,7 +95,7 @@ abstract class NumberGene<T : Number>(name: String,
     /**
      * @return whether the [value] is between [min] and [max] if they are specified
      */
-    override fun isLocallyValid() : Boolean{
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
         if (max != null && max !is BigDecimal && max !is BigInteger && value.toDouble() > max.toDouble())
             return false
         if (min != null && max !is BigDecimal && max !is BigInteger && value.toDouble() < min.toDouble())

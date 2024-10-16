@@ -9,7 +9,7 @@ import org.evomaster.core.search.service.Randomness
 
 class SqlAutoIncrementGene(name: String) : SimpleGene(name) {
 
-    override fun isLocallyValid() : Boolean{
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
         return true
     }
 

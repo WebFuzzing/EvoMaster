@@ -53,8 +53,8 @@ class TupleGene(
         val log: Logger = LoggerFactory.getLogger(TupleGene::class.java)
     }
 
-    override fun isLocallyValid(): Boolean {
-        return getViewOfChildren().all { it.isLocallyValid() }
+    override fun checkForLocallyValidIgnoringChildren(): Boolean {
+        return true
     }
 
     /*

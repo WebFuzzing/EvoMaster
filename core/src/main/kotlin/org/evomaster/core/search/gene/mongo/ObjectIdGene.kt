@@ -31,8 +31,8 @@ class ObjectIdGene(
         val log: Logger = LoggerFactory.getLogger(ObjectIdGene::class.java)
     }
 
-    override fun isLocallyValid(): Boolean {
-        return id.isLocallyValid()
+    override fun checkForLocallyValidIgnoringChildren(): Boolean {
+        return true
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {

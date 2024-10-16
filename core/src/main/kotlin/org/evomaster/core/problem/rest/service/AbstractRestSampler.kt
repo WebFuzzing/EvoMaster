@@ -53,7 +53,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
     protected val adHocInitialIndividuals: MutableList<RestIndividual> = mutableListOf()
 
-    lateinit var swagger: OpenAPI
+    lateinit var swagger: SchemaOpenAPI
         protected set
 
     private lateinit var infoDto: SutInfoDto
@@ -101,8 +101,8 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
         // The code should never reach this line without a valid swagger.
         actionCluster.clear()
-        val skip = EndpointFilter.getEndpointsToSkip(config, swagger, infoDto)
-        val messages = RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, skip, RestActionBuilderV3.Options(config))
+        val skip = EndpointFilter.getEndpointsToSkip(config, swagger.schemaParsed, infoDto)
+        val messages = RestActionBuilderV3.addActionsFromSwagger(swagger.schemaParsed, actionCluster, skip, RestActionBuilderV3.Options(config))
         printMessages(messages)
 
         if(config.extraQueryParam){
@@ -297,19 +297,19 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         // retrieve the swagger
         retrieveSwagger(configuration.bbSwaggerUrl)
 
-        if (swagger.paths == null) {
+        if (swagger.schemaParsed.paths == null) {
             throw SutProblemException("There is no endpoint definition in the retrieved OpenAPI file")
         }
         // give the error message if there is nothing to test
-        if (swagger.paths.size == 0){
+        if (swagger.schemaParsed.paths.size == 0){
             throw SutProblemException("The OpenAPI file ${configuration.bbSwaggerUrl} " +
                     "is either invalid or it does not define endpoints")
         }
 
         actionCluster.clear()
         // Add all paths to list of paths to ignore except endpointFocus
-        val endpointsToSkip = EndpointFilter.getEndpointsToSkip(config,swagger)
-        val messages = RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, endpointsToSkip, RestActionBuilderV3.Options(config))
+        val endpointsToSkip = EndpointFilter.getEndpointsToSkip(config,swagger.schemaParsed)
+        val messages = RestActionBuilderV3.addActionsFromSwagger(swagger.schemaParsed, actionCluster, endpointsToSkip, RestActionBuilderV3.Options(config))
         printMessages(messages)
 
         initAdHocInitialIndividuals()
@@ -335,7 +335,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         }
     }
 
-    fun getOpenAPI(): OpenAPI{
+    fun getOpenAPI(): SchemaOpenAPI{
         return swagger
     }
 
@@ -374,7 +374,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
     private fun getParser(): Parser {
         return when(config.seedTestCasesFormat) {
-            EMConfig.SeedTestCasesFormat.POSTMAN -> PostmanParser(seeAvailableActions().filterIsInstance<RestCallAction>(), swagger)
+            EMConfig.SeedTestCasesFormat.POSTMAN -> PostmanParser(seeAvailableActions().filterIsInstance<RestCallAction>(), swagger.schemaParsed)
         }
     }
 

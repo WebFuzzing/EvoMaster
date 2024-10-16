@@ -19,7 +19,7 @@ There is no much point in implementing such feature, as JDK __17__ broke more st
 To use JDK __17__, besides passing `-Djdk.attach.allowAttachSelf=true`, you will also need to setup a few `--add-opens` commands.
 In particular, you will need:
 
-`-Djdk.attach.allowAttachSelf=true --add-opens java.base/java.util.regex=ALL-UNNAMED --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED`
+`-Djdk.attach.allowAttachSelf=true  --add-opens java.base/java.util=ALL-UNNAMED  --add-opens java.base/java.util.regex=ALL-UNNAMED --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED`
 
 isn't it lovely? 
 

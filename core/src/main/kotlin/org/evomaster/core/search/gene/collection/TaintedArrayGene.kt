@@ -60,7 +60,7 @@ class TaintedArrayGene(
         return TaintedArrayGene(name, taintedValue, isActive, arrayGene?.copy() as ArrayGene<*>? )
     }
 
-    override fun isLocallyValid(): Boolean {
+    override fun checkForLocallyValidIgnoringChildren(): Boolean {
         return TaintInputName.isTaintInput(taintedValue) && (arrayGene == null || arrayGene!!.isLocallyValid())
     }
 

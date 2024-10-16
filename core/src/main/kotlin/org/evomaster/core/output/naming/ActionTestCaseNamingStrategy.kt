@@ -3,51 +3,56 @@ package org.evomaster.core.output.naming
 import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.core.output.TestWriterUtils
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
-import org.evomaster.core.problem.httpws.HttpWsCallResult
-import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.action.EvaluatedAction
 
-open class ActionTestCaseNamingStrategy(
-    solution: Solution<*>
+abstract class ActionTestCaseNamingStrategy(
+    solution: Solution<*>,
+    private val languageConventionFormatter: LanguageConventionFormatter,
 ) : NumberedTestCaseNamingStrategy(solution)  {
 
+    protected val on = "on"
+    protected val throws = "throws"
+    protected val returns = "returns"
+    protected val error = "error"
+    protected val success = "success"
+    protected val data = "data"
+    protected val empty = "empty"
 
-    override fun expandName(individual: EvaluatedIndividual<*>): String {
-        var evaluatedAction = individual.evaluatedMainActions().last()
-        var action = evaluatedAction.action as RestCallAction
-
-        return "_${action.verb}_on_${getPath(action.path.nameQualifier)}_${addResult(individual)}"
+    protected fun formatName(nameTokens: List<String>): String {
+        return "_${languageConventionFormatter.formatName(nameTokens)}"
     }
 
-    private fun getPath(nameQualifier: String): String {
+    protected fun getPath(nameQualifier: String): String {
         if (nameQualifier == "/") {
             return "root"
         }
         return TestWriterUtils.safeVariableName(nameQualifier)
     }
 
-    private fun addResult(individual: EvaluatedIndividual<*>): String {
-        val detectedFaults = DetectedFaultUtils.getDetectedFaultCategories(individual)
-        if (detectedFaults.isNotEmpty()) {
-            return fault(detectedFaults)
-        }
-        return statusCode(individual.evaluatedMainActions().last())
-    }
-
     private fun fault(faults: Set<FaultCategory>): String {
         if (faults.size > 1) {
-            var faultCodes = StringBuilder("showsFaults")
+            val faultCodes = StringBuilder("showsFaults")
+            /*
+              For better readability, multiple faults will be concatenated in a string separated by underscore
+              to help understand it is a list of codes. Regardless of the outputFormat and language conventions.
+             */
             faults.sortedBy { it.code }.forEach { fault -> faultCodes.append("_${fault.code}") }
             return faultCodes.toString()
         }
         return faults.first().testCaseLabel
     }
 
-    private fun statusCode(evaluatedAction: EvaluatedAction): String {
-        var result = evaluatedAction.result as HttpWsCallResult
-        return "returns_${result.getStatusCode()}"
+    protected fun addResult(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>) {
+        val detectedFaults = DetectedFaultUtils.getDetectedFaultCategories(individual)
+        if (detectedFaults.isNotEmpty()) {
+            nameTokens.add(fault(detectedFaults))
+        } else {
+            addActionResult(individual.evaluatedMainActions().last(), nameTokens)
+        }
     }
+
+    protected abstract fun addActionResult(evaluatedAction: EvaluatedAction, nameTokens: MutableList<String>)
 
 }
