@@ -5,6 +5,7 @@ import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.GraphQlCallResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.EvaluatedAction
 
 open class GraphQLActionTestCaseNamingStrategy(
@@ -14,7 +15,7 @@ open class GraphQLActionTestCaseNamingStrategy(
 ) : ActionTestCaseNamingStrategy(solution, languageConventionFormatter, config)  {
 
 
-    override fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>): String {
+    override fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>, ambiguitySolver: ((Action) -> String)?): String {
         val evaluatedAction = individual.evaluatedMainActions().last()
         val action = evaluatedAction.action as GraphQLAction
 
