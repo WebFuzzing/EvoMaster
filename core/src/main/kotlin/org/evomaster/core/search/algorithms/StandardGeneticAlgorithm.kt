@@ -22,7 +22,7 @@ open class StandardGeneticAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T :
 
         val nextPop = formTheNextPopulation(population)
 
-        while (nextPop.size < n) {
+         while (nextPop.size < n) {
 
             val sizeBefore = nextPop.size
 
@@ -33,18 +33,17 @@ open class StandardGeneticAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T :
                 xover(x, y)
             }
 
-            if(randomness.nextDouble()< config.fixedRateMutation){
-                getMutatator().mutate(x.suite.random())
+            if(randomness.nextBoolean(config.fixedRateMutation)){
+                mutate(x)
             }
 
-            if(randomness.nextDouble()< config.fixedRateMutation){
-                getMutatator().mutate(y.suite.random())
+            if(randomness.nextBoolean(config.fixedRateMutation)){
+                mutate(y)
             }
 
             nextPop.add(x)
             nextPop.add(y)
 
-            //TODO: double check
             assert(nextPop.size == sizeBefore + 2)
 
             if (!time.shouldContinueSearch()) {

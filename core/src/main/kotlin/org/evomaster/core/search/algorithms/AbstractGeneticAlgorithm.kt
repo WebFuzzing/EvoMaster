@@ -42,6 +42,31 @@ abstract class AbstractGeneticAlgorithm<T>: SearchAlgorithm<T>() where T : Indiv
         return nextPop
     }
 
+    protected fun mutate(wts: WtsEvalIndividual<T>) {
+
+        val op = randomness.choose(listOf("del", "add", "mod"))
+        val n = wts.suite.size
+        when (op) {
+            "del" -> if (n > 1) {
+                val i = randomness.nextInt(n)
+                wts.suite.removeAt(i)
+            }
+            "add" -> if (n < config.maxSearchSuiteSize) {
+                ff.calculateCoverage(sampler.sample(), modifiedSpec = null)?.run {
+                    archive.addIfNeeded(this)
+                    wts.suite.add(this)
+                }
+            }
+            "mod" -> {
+                val i = randomness.nextInt(n)
+                val ind = wts.suite[i]
+
+                getMutatator().mutateAndSave(ind, archive)
+                    ?.let { wts.suite[i] = it }
+            }
+        }
+    }
+
     protected fun xover(x: WtsEvalIndividual<T>, y: WtsEvalIndividual<T>) {
 
         val nx = x.suite.size
