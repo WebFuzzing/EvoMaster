@@ -126,16 +126,20 @@ class TimeGene(
 
     override fun getValueAsRawString(): String {
 
-       FIXME from here on, also do TimeZone
+        val h = GeneUtils.padded(hour.value, 2)
+        val m = GeneUtils.padded(minute.value, 2)
+        val s = GeneUtils.padded(second.value, 2)
+        val ms = if(millisecond.isActive) {
+            val x = (millisecond.gene as IntegerGene).value
+            val padded = GeneUtils.padded(x,3)
+            ".$padded"
+        } else {
+            ""
+        }
 
         return when (timeGeneFormat) {
-            TimeGeneFormat.ISO_LOCAL_DATE_FORMAT -> {
-                "${GeneUtils.padded(hour.value, 2)}:${GeneUtils.padded(minute.value, 2)}:${GeneUtils.padded(second.value, 2)}"
-
-            }
-            TimeGeneFormat.TIME_WITH_MILLISECONDS -> {
-                "${GeneUtils.padded(hour.value, 2)}:${GeneUtils.padded(minute.value, 2)}:${GeneUtils.padded(second.value, 2)}.000Z"
-            }
+            TimeGeneFormat.ISO_LOCAL_DATE_FORMAT -> "$h:$m:$s"
+            TimeGeneFormat.TIME_WITH_MILLISECONDS -> "$h:$m:$s${ms}Z"
         }
     }
 
