@@ -393,8 +393,8 @@ class BigDecimalGene(
         return NumberCalculationUtil.valueWithPrecisionAndScale(getMaxUsedInSearch().toString(), scale)
     }
 
-    override fun isLocallyValid(): Boolean {
-        if (!super.isLocallyValid())
+    override fun checkForLocallyValidIgnoringChildren(): Boolean {
+        if (!super.checkForLocallyValidIgnoringChildren())
             return false
         if (max != null && value > getMaximum())
             return false

@@ -56,9 +56,9 @@ class NumericStringGene(
     )
 
 
-    override fun isLocallyValid() : Boolean{
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
         //TODO minLength does not seem to be used...
-        return getViewOfChildren().all { it.isLocallyValid() }
+        return true
     }
 
     override fun copyContent(): Gene {

@@ -103,6 +103,7 @@ class SecurityForbiddenOperationTest : IntegrationTestRestBase() {
         val config = getEMConfig()
 
         config.security = true
+        config.schemaOracles = false
 
         val id = 42
         val a = pirTest.fromVerbPath("PUT", "/api/resources/$id")!!
@@ -147,6 +148,7 @@ class SecurityForbiddenOperationTest : IntegrationTestRestBase() {
         val config = getEMConfig()
 
         config.security = true
+        config.schemaOracles = false
 
         val id = 42
         val a = pirTest.fromVerbPath("PUT", "/api/resources/$id")!!
@@ -204,6 +206,7 @@ class SecurityForbiddenOperationTest : IntegrationTestRestBase() {
         val config = getEMConfig()
 
         config.security = true
+        config.schemaOracles = false
 
         val id = 42
         val a = pirTest.fromVerbPath("PUT", "/api/resources/$id")!!

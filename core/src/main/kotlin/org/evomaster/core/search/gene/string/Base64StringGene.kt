@@ -22,8 +22,8 @@ class Base64StringGene(
         val log : Logger = LoggerFactory.getLogger(Base64StringGene::class.java)
     }
 
-    override fun isLocallyValid() : Boolean{
-        return getViewOfChildren().all { it.isLocallyValid() }
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
+        return true
     }
 
     override fun copyContent(): Gene = Base64StringGene(name, data.copy() as StringGene)

@@ -48,7 +48,7 @@ class CharacterRangeRxGene(
      */
     val ranges = ranges.map { Pair(min(it.first.code,it.second.code).toChar(), max(it.first.code, it.second.code).toChar()) }
 
-    override fun isLocallyValid() : Boolean{
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
         //TODO negated
         return ranges.any { value.code >= it.first.code && value.code <= it.second.code }
     }
