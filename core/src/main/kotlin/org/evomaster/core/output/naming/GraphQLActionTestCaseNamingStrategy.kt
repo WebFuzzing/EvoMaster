@@ -1,6 +1,5 @@
 package org.evomaster.core.output.naming
 
-import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.GraphQlCallResult
 import org.evomaster.core.search.EvaluatedIndividual

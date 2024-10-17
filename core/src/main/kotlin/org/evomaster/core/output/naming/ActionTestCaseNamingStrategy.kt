@@ -1,7 +1,6 @@
 package org.evomaster.core.output.naming
 
 import com.webfuzzing.commons.faults.FaultCategory
-import org.evomaster.core.EMConfig
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.output.TestWriterUtils
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils

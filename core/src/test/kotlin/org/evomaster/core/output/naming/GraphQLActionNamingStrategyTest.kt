@@ -1,7 +1,6 @@
 package org.evomaster.core.output.naming
 
 import com.webfuzzing.commons.faults.FaultCategory
-import org.evomaster.core.EMConfig
 import org.evomaster.core.TestUtils
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.Termination

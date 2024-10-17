@@ -2,7 +2,6 @@ package org.evomaster.core.output.naming
 
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
-import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult

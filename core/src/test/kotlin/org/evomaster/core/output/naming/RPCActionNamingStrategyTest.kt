@@ -1,6 +1,5 @@
 package org.evomaster.core.output.naming
 
-import org.evomaster.core.EMConfig
 import org.evomaster.core.output.EvaluatedIndividualBuilder
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.Termination
