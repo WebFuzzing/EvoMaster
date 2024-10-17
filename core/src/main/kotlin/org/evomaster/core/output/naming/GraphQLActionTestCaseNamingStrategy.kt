@@ -6,7 +6,6 @@ import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.GraphQlCallResult
 import org.evomaster.core.problem.graphql.param.GQInputParam
 import org.evomaster.core.problem.graphql.param.GQReturnParam
-import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.action.Action
@@ -49,7 +48,6 @@ open class GraphQLActionTestCaseNamingStrategy(
     override fun resolveAmbiguity(individualToName: MutableMap<EvaluatedIndividual<*>, String>, inds: MutableSet<EvaluatedIndividual<*>>) {
         inds.forEach { ind ->
             individualToName[ind] = expandName(ind, mutableListOf(), ::paramsAmbiguitySolver)
-            inds.remove(ind)
         }
     }
 
@@ -62,7 +60,10 @@ open class GraphQLActionTestCaseNamingStrategy(
         val withParams = StringBuilder(param)
         if (params.size > 1) withParams.append("s")
 
-        params.forEach { param -> withParams.append("_${safeVariableName(param.primaryGene().getValueAsRawString())}") }
+        params.forEach { param ->
+            val paramValue = param.primaryGene().getValueAsRawString()
+            if (!paramValue.isNullOrEmpty()) withParams.append("_${safeVariableName(paramValue)}")
+        }
 
         result.add(withParams.append("_").toString())
         return result
