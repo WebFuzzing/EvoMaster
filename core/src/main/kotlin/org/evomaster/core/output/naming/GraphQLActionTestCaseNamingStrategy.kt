@@ -1,7 +1,10 @@
 package org.evomaster.core.output.naming
 
+import org.evomaster.core.output.TestWriterUtils.safeVariableName
 import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.GraphQlCallResult
+import org.evomaster.core.problem.graphql.param.GQInputParam
+import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.action.Action
@@ -20,6 +23,9 @@ open class GraphQLActionTestCaseNamingStrategy(
         nameTokens.add(action.methodType.toString())
         nameTokens.add(on)
         nameTokens.add(getPath(action.methodName))
+        if (ambiguitySolver != null) {
+            nameTokens.addAll(ambiguitySolver(action))
+        }
         addResult(individual, nameTokens)
 
         return formatName(nameTokens)
@@ -35,6 +41,28 @@ open class GraphQLActionTestCaseNamingStrategy(
                 else -> empty
             }
         )
+    }
+
+    override fun resolveAmbiguity(individualToName: MutableMap<EvaluatedIndividual<*>, String>, inds: MutableSet<EvaluatedIndividual<*>>) {
+        inds.forEach { ind ->
+            individualToName[ind] = expandName(ind, mutableListOf(), ::paramsAmbiguitySolver)
+            inds.remove(ind)
+        }
+    }
+
+    private fun paramsAmbiguitySolver(action: Action): List<String> {
+        val graphQLAction = action as GraphQLAction
+        val result = mutableListOf<String>()
+
+        val params = graphQLAction.parameters.filter { p -> p is GQInputParam || p is GQReturnParam }
+        result.add(with)
+        val withParams = StringBuilder(param)
+        if (params.size > 1) withParams.append("s")
+
+        params.forEach { param -> withParams.append("_${safeVariableName(param.primaryGene().getValueAsRawString())}") }
+
+        result.add(withParams.append("_").toString())
+        return result
     }
 
 }
