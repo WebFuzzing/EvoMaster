@@ -128,7 +128,7 @@ public class ObjectiveNaming {
 
     private static final Map<String, Map<Integer, Map<Integer, Map<Boolean, String>>>> branchCache = new ConcurrentHashMap<>(10_000);
 
-    public static String branchObjectiveName(String className, int line, int branchId, boolean thenBranch) {
+    public static String branchObjectiveName(String className, int line, int branchId, boolean thenBranch, int opcode) {
 
         Map<Integer, Map<Integer, Map<Boolean, String>>> m0 = branchCache.computeIfAbsent(className, k -> new ConcurrentHashMap<>(10_000));
         Map<Integer, Map<Boolean, String>> m1 = m0.computeIfAbsent(line, k -> new ConcurrentHashMap<>(10));
@@ -143,6 +143,7 @@ public class ObjectiveNaming {
             } else {
                 name += FALSE_BRANCH;
             }
+            name += "_" + opcode;
             return name;
         });
 
