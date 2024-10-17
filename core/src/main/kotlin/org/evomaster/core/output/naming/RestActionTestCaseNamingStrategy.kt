@@ -114,7 +114,10 @@ open class RestActionTestCaseNamingStrategy(
         val withParams = StringBuilder(uriParam)
         if (uriParams.size > 1) withParams.append("s")
 
-        uriParams.forEach { param -> withParams.append("_${safeVariableName(param.primaryGene().getValueAsRawString())}") }
+        uriParams.forEach { param ->
+            val paramValue = param.primaryGene().getValueAsRawString()
+            if (!paramValue.isNullOrEmpty()) withParams.append("_${safeVariableName(paramValue)}")
+        }
 
         result.add(withParams.append("_").toString())
         return result
@@ -145,7 +148,10 @@ open class RestActionTestCaseNamingStrategy(
           For better readability, multiple faults will be concatenated in a string separated by underscore
           to help understand it is a list of codes. Regardless of the outputFormat and language conventions.
          */
-        queryParams.forEach { param -> withParams.append("_${safeVariableName(param.primaryGene().getValueAsRawString())}") }
+        queryParams.forEach { param ->
+            val paramValue = param.primaryGene().getValueAsRawString()
+            if (!paramValue.isNullOrEmpty()) withParams.append("_${safeVariableName(paramValue)}")
+        }
         result.add(withParams.append("_").toString())
         return result
     }

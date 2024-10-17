@@ -49,7 +49,6 @@ open class RPCActionTestCaseNamingStrategy(
     override fun resolveAmbiguity(individualToName: MutableMap<EvaluatedIndividual<*>, String>, inds: MutableSet<EvaluatedIndividual<*>>) {
         inds.forEach { ind ->
             individualToName[ind] = expandName(ind, mutableListOf(), ::paramsAmbiguitySolver)
-            inds.remove(ind)
         }
     }
 
@@ -60,9 +59,14 @@ open class RPCActionTestCaseNamingStrategy(
         val params = rpcCallAction.parameters.filterIsInstance<RPCParam>()
         result.add(with)
         val withParams = StringBuilder(param)
-        if (params.size > 1) withParams.append("s")
+        if (params.size > 1) {
+            withParams.append("s")
+        }
 
-        params.forEach { param -> withParams.append("_${safeVariableName(param.primaryGene().getValueAsRawString())}") }
+        params.forEach { param ->
+            val paramValue = param.primaryGene().getValueAsRawString()
+            if (!paramValue.isNullOrEmpty()) withParams.append("_${safeVariableName(paramValue)}")
+        }
 
         result.add(withParams.append("_").toString())
         return result
