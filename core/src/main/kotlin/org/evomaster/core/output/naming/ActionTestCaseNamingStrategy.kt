@@ -5,7 +5,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.output.TestWriterUtils
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
-import org.evomaster.core.problem.externalservice.HostnameResolutionAction
+import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.action.Action
@@ -89,7 +89,7 @@ abstract class ActionTestCaseNamingStrategy(
     }
 
     private fun usesWireMock(actions: List<Action>): Boolean {
-        return config.isEnabledExternalServiceMocking() && actions.any { it is HostnameResolutionAction }
+        return config.isEnabledExternalServiceMocking() && actions.any { it is HttpExternalServiceAction }
     }
 
     protected abstract fun addActionResult(evaluatedAction: EvaluatedAction, nameTokens: MutableList<String>)

@@ -10,11 +10,15 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.Termination
 import org.evomaster.core.problem.enterprise.DetectedFault
 import org.evomaster.core.problem.enterprise.SampleType
-import org.evomaster.core.problem.externalservice.HostnameResolutionAction
+import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
+import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceInfo
+import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceRequest
+import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
+import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.action.ActionComponent
 import org.evomaster.core.search.action.ActionResult
@@ -24,6 +28,7 @@ import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.SqlActionResult
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import java.util.*
 import java.util.Collections.singletonList
 import javax.ws.rs.core.MediaType
 
@@ -239,7 +244,7 @@ class RestActionNamingStrategyTest {
     @Test
     fun testIndividualUsingMongo() {
         val restAction = getRestCallAction()
-        val eIndividual = getEvaluatedIndividualWith(restAction, false, true)
+        val eIndividual = getEvaluatedIndividualWith(restAction, withMongo = true)
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
         val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, EMConfig())
@@ -252,7 +257,7 @@ class RestActionNamingStrategyTest {
     @Test
     fun testIndividualUsingWireMock() {
         val restAction = getRestCallAction("/items", HttpVerb.PUT)
-        val eIndividual = getEvaluatedIndividualWith(restAction, 201, false, false, true)
+        val eIndividual = getEvaluatedIndividualWith(restAction, 201, withWireMock = true)
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
         val config = EMConfig()
@@ -267,7 +272,7 @@ class RestActionNamingStrategyTest {
     @Test
     fun testIndividualUsingSqlWireMock() {
         val restAction = getRestCallAction("/items", HttpVerb.POST)
-        val eIndividual = getEvaluatedIndividualWith(restAction, true, false, true)
+        val eIndividual = getEvaluatedIndividualWith(restAction, withSql = true, withWireMock = true)
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
         val config = EMConfig()
@@ -315,12 +320,6 @@ class RestActionNamingStrategyTest {
             mongoSize++
         }
 
-        var wireMockSize = 0
-        if (withWireMock) {
-            actions.add(wireMockAction)
-            wireMockSize++
-        }
-
         actions.add(restResourceCall)
 
         val individual = RestIndividual(
@@ -332,10 +331,11 @@ class RestActionNamingStrategyTest {
             1,
             sqlSize,
             mongoSize,
-            wireMockSize
+            0
         )
 
         TestUtils.doInitializeIndividualForTesting(individual, Randomness())
+
 
         val restResult = getRestCallResult(restAction.getLocalId(), statusCode, resultBodyString, resultBodyType)
         faults.forEach { fault -> restResult.addFault(fault) }
@@ -343,6 +343,14 @@ class RestActionNamingStrategyTest {
         val results = mutableListOf<ActionResult>(restResult)
         if (withSql) results.add(SqlActionResult(sqlAction.getLocalId()))
         if (withMongo) results.add(MongoDbActionResult(mongoDbAction.getLocalId()))
+        if (withWireMock) {
+            val parentAction = individual.seeMainExecutableActions()[0].parent
+            if (parentAction != null) {
+                wireMockAction.doInitialize(Randomness())
+                parentAction.addChildrenToGroup(singletonList(wireMockAction), GroupsOfChildren.EXTERNAL_SERVICES)
+                results.add(getRestCallResult(parentAction.getLocalId(), statusCode, resultBodyString, resultBodyType))
+            }
+        }
 
         return EvaluatedIndividual<RestIndividual>(FitnessValue(0.0), individual, results)
     }
@@ -371,7 +379,12 @@ class RestActionNamingStrategyTest {
         )
     }
 
-    private fun getWireMockAction(): HostnameResolutionAction {
-        return HostnameResolutionAction("localhost", "127.0.0.1")
+    private fun getWireMockAction(): HttpExternalServiceAction {
+        val request = HttpExternalServiceRequest(
+            UUID.randomUUID(),"GET","http://noname.local:12354/api/mock","http://noname.local:12354/api/mock",true,
+            UUID.randomUUID().toString(),"http://noname.local:12354/api/mock", mapOf(),null)
+        val serviceInfo = HttpExternalServiceInfo("HTTP", "noname.local", 12354)
+        val service = HttpWsExternalService(serviceInfo, "localhost")
+        return HttpExternalServiceAction(request, "", service, 1L)
     }
 }
