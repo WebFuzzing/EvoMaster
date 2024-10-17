@@ -1,9 +1,12 @@
 package org.evomaster.core.output.naming
 
 import org.evomaster.core.EMConfig
-import org.evomaster.core.output.TestWriterUtils
+import org.evomaster.core.output.TestWriterUtils.safeVariableName
+import org.evomaster.core.problem.graphql.param.GQInputParam
+import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCCallResult
+import org.evomaster.core.problem.rpc.param.RPCParam
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.action.Action
@@ -20,9 +23,12 @@ open class RPCActionTestCaseNamingStrategy(
         val evaluatedAction = individual.evaluatedMainActions().last()
         val action = evaluatedAction.action as RPCCallAction
 
-        nameTokens.add(TestWriterUtils.safeVariableName(action.getSimpleClassName()))
+        nameTokens.add(safeVariableName(action.getSimpleClassName()))
         nameTokens.add(on)
-        nameTokens.add(TestWriterUtils.safeVariableName(action.getExecutedFunctionName()))
+        nameTokens.add(safeVariableName(action.getExecutedFunctionName()))
+        if (ambiguitySolver != null) {
+            nameTokens.addAll(ambiguitySolver(action))
+        }
         addResult(individual, nameTokens)
 
         return formatName(nameTokens)
@@ -33,7 +39,7 @@ open class RPCActionTestCaseNamingStrategy(
         if (result.hasPotentialFault()) {
             nameTokens.add(throws)
             val thrownException = StringUtils.extractSimpleClass(result.getExceptionTypeName()?: "")
-            nameTokens.add(TestWriterUtils.safeVariableName(thrownException))
+            nameTokens.add(safeVariableName(thrownException))
         } else {
             nameTokens.add(returns)
             nameTokens.add(when {
@@ -41,6 +47,28 @@ open class RPCActionTestCaseNamingStrategy(
                 else -> success
             })
         }
+    }
+
+    override fun resolveAmbiguity(individualToName: MutableMap<EvaluatedIndividual<*>, String>, inds: MutableSet<EvaluatedIndividual<*>>) {
+        inds.forEach { ind ->
+            individualToName[ind] = expandName(ind, mutableListOf(), ::paramsAmbiguitySolver)
+            inds.remove(ind)
+        }
+    }
+
+    private fun paramsAmbiguitySolver(action: Action): List<String> {
+        val rpcCallAction = action as RPCCallAction
+        val result = mutableListOf<String>()
+
+        val params = rpcCallAction.parameters.filterIsInstance<RPCParam>()
+        result.add(with)
+        val withParams = StringBuilder(param)
+        if (params.size > 1) withParams.append("s")
+
+        params.forEach { param -> withParams.append("_${safeVariableName(param.primaryGene().getValueAsRawString())}") }
+
+        result.add(withParams.append("_").toString())
+        return result
     }
 
 }

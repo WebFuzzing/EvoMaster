@@ -82,7 +82,7 @@ open class RestActionTestCaseNamingStrategy(
         }
     }
 
-    fun pathAmbiguitySolver(action: Action): List<String> {
+    private fun pathAmbiguitySolver(action: Action): List<String> {
         val restAction = action as RestCallAction
         val lastPath = restAction.path
         var parentPath = restAction.path.parentPath()
@@ -105,7 +105,7 @@ open class RestActionTestCaseNamingStrategy(
         }
     }
 
-    fun uriParamsAmbiguitySolver(action: Action): List<String> {
+    private fun uriParamsAmbiguitySolver(action: Action): List<String> {
         val restAction = action as RestCallAction
         val result = mutableListOf<String>()
         result.add(getPath(restAction.path.nameQualifier))
@@ -133,7 +133,7 @@ open class RestActionTestCaseNamingStrategy(
         }
     }
 
-    fun queryParamsAmbiguitySolver(action: Action): List<String> {
+    private fun queryParamsAmbiguitySolver(action: Action): List<String> {
         val restAction = action as RestCallAction
         val result = mutableListOf<String>()
         result.add(getPath(restAction.path.nameQualifier))
