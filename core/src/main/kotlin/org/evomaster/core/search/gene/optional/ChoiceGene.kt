@@ -256,7 +256,7 @@ class ChoiceGene<T>(
     /**
      * Checks that the active gene is the one locally valid
      */
-    override fun isLocallyValid() = geneChoices.all { it.isLocallyValid() }
+    override fun checkForLocallyValidIgnoringChildren() = true
 
     override fun isPrintable() = this.geneChoices[activeGeneIndex].isPrintable()
 

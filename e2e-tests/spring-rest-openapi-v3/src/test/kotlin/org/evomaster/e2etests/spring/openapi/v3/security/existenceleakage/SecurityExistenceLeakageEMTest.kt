@@ -32,6 +32,7 @@ class SecurityExistenceLeakageEMTest : SpringTestBase(){
         ) { args: MutableList<String> ->
 
             setOption(args, "security", "true")
+            setOption(args, "schemaOracles", "false")
 
             val solution = initAndRun(args)
 

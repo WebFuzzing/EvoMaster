@@ -7,11 +7,16 @@ import com.webfuzzing.commons.faults.FaultCategory
  */
 class DetectedFault(
     val category: FaultCategory,
-    val context: String
+    _context: String
 ) {
 
+    //otherwise issues when printing in comments
+    val context = _context.replace('\n',' ')
+
+    private val _toString = "Detected ${category.label}. $context}"
+
     override fun toString(): String {
-        return "Detected ${category.label}. $context"
+        return _toString
     }
 
     override fun equals(other: Any?): Boolean {

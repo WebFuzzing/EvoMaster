@@ -37,7 +37,7 @@ class ImmutableDataHolderGene(
 
     override fun isPrintable() = true
 
-    override fun isLocallyValid() : Boolean{
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
         return true
     }
 

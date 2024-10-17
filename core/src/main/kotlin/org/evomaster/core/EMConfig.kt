@@ -992,7 +992,6 @@ class EMConfig {
     var blackBox = false
 
     @Important(3.2)
-    @Url
     @Cfg("When in black-box mode for REST APIs, specify the URL of where the OpenAPI/Swagger schema can be downloaded from." +
             " If the schema is on the local machine, you can use a URL starting with 'file://'." +
             " If the given URL is neither starting with 'file' nor 'http', then it will be treated as a local file path.")
@@ -2290,9 +2289,8 @@ class EMConfig {
     @Cfg("Extra checks on HTTP properties in returned responses, used as automated oracles to detect faults.")
     var httpOracles = false
 
-    @Experimental
     @Cfg("Validate responses against their schema, to check for inconsistencies. Those are treated as faults.")
-    var schemaOracles = false
+    var schemaOracles = true
 
     @Experimental
     @Cfg("Apply more advanced coverage criteria for black-box testing. This can result in larger generated test suites.")

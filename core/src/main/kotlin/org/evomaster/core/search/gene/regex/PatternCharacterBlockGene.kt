@@ -22,7 +22,7 @@ class PatternCharacterBlockGene(
         return false
     }
 
-    override fun isLocallyValid() : Boolean{
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
         return true
     }
 

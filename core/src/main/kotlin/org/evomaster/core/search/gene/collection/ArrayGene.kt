@@ -109,9 +109,8 @@ class ArrayGene<T>(
         killAllChildren()
     }
 
-    override fun isLocallyValid() : Boolean{
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
         return elements.size >= (minSize ?: 0) && elements.size <= (maxSize ?: Int.MAX_VALUE)
-                && elements.all { it.isLocallyValid() }
     }
 
     override fun copyContent(): Gene {

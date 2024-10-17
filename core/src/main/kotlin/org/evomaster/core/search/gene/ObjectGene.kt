@@ -100,8 +100,8 @@ class ObjectGene(
         return ObjectGene(name, fixedFields.map(Gene::copy), refType, isFixed, template, additionalFields?.map {it.copy() as PairGene<StringGene, Gene> }?.toMutableList())
     }
 
-    override fun isLocallyValid(): Boolean {
-        return getViewOfChildren().all { it.isLocallyValid() }
+    override fun checkForLocallyValidIgnoringChildren(): Boolean {
+        return true
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {

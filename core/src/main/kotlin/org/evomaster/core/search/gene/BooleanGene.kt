@@ -22,7 +22,7 @@ class BooleanGene(
         private val log : Logger = LoggerFactory.getLogger(BooleanGene::class.java)
     }
 
-    override fun isLocallyValid() : Boolean{
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
         return true
     }
     override fun copyContent(): Gene {
