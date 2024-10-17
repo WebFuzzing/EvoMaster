@@ -31,9 +31,9 @@ abstract class TestCaseNamingStrategy(
      *
      * @return a String with extra information that will be included in the test name, regarding the EvaluatedIndividual
      */
-    protected abstract fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>, ambiguitySolver: ((Action) -> String)? = null): String
+    protected abstract fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>, ambiguitySolver: ((Action) -> List<String>)? = null): String
 //    protected abstract fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>): String
 
-    protected abstract fun resolveAmbiguity(individualToName: MutableMap<EvaluatedIndividual<*>, String>, inds: Set<EvaluatedIndividual<*>>)
+    protected abstract fun resolveAmbiguity(individualToName: MutableMap<EvaluatedIndividual<*>, String>, inds: MutableSet<EvaluatedIndividual<*>>)
 
 }
