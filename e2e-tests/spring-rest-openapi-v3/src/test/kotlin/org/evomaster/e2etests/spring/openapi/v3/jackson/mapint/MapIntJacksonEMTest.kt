@@ -19,7 +19,6 @@ class MapIntJacksonEMTest : SpringTestBase() {
         }
     }
 
-    @Disabled //working on it
     @Test
     fun basicEMTest() {
         runTestHandlingFlakyAndCompilation(
