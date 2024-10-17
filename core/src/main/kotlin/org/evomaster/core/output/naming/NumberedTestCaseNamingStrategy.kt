@@ -22,11 +22,11 @@ open class NumberedTestCaseNamingStrategy(
     }
 
     // numbered strategy will not expand the name unless it is using the namingHelper
-    override fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>, ambiguitySolver: ((Action) -> String)?): String {
+    override fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>, ambiguitySolver: ((Action) -> List<String>)?): String {
         return ""
     }
 
-    override fun resolveAmbiguity(individualToName: MutableMap<EvaluatedIndividual<*>, String>, inds: Set<EvaluatedIndividual<*>>) {
+    override fun resolveAmbiguity(individualToName: MutableMap<EvaluatedIndividual<*>, String>, inds: MutableSet<EvaluatedIndividual<*>>) {
         // do nothing, plain numbered strategy will never have duplicate names
     }
 
@@ -48,7 +48,7 @@ open class NumberedTestCaseNamingStrategy(
         return individualToName.map { entry -> TestCase(entry.key, concatName(counter++, entry.value)) }
     }
 
-    private fun getDuplicateNames(individualToName: Map<EvaluatedIndividual<*>, String>): Map<String, Set<EvaluatedIndividual<*>>> {
+    private fun getDuplicateNames(individualToName: MutableMap<EvaluatedIndividual<*>, String>): MutableMap<String, MutableSet<EvaluatedIndividual<*>>> {
         val result = mutableMapOf<String, MutableSet<EvaluatedIndividual<*>>>()
         individualToName.forEach { entry ->
             val testName = entry.value

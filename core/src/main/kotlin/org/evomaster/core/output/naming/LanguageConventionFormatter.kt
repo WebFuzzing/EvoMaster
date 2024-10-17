@@ -36,7 +36,13 @@ class LanguageConventionFormatter(
     }
 
     private fun formatSnakeCase(testKeywords: List<String>): String {
-        return testKeywords.joinToString("_") { it }
+        return testKeywords.fold("") { acc, word ->
+            if (acc.isNotEmpty() && acc.last() != '_' && word.first() != '_') {
+                acc + "_" + word
+            } else {
+                acc + word
+            }
+        }
     }
 
     private fun formatPascalCase(testKeywords: List<String>): String {
