@@ -1,11 +1,43 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.search.gene.datetime.DateTimeGene
+import org.evomaster.core.search.gene.datetime.FormatForDatesAndTimes
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
+import java.time.Instant
 
 class DateTimeGeneTest {
+
+    @Test
+    fun validateInstant(){
+
+        val s = "1906-02-17T23:06:07"
+        val z = "${s}Z"
+
+        assertThrows<Exception> { Instant.parse(s) }
+        Instant.parse(z)
+
+        val gene = DateTimeGene("dateTime", format = FormatForDatesAndTimes.RFC3339)
+        gene.date.apply {
+            year.value = 1906
+            month.value = 2
+            day.value = 17
+        }
+        gene.time.apply {
+            hour.value = 23
+            minute.value = 6
+            second.value = 7
+            useMilliseconds(false)
+            selectZ()
+        }
+        val x = gene.getValueAsRawString()
+
+        Instant.parse(x)
+        assertEquals(z,x)
+    }
+
 
     @Test
     fun testDefaultFormat() {
@@ -29,7 +61,7 @@ class DateTimeGeneTest {
     @Test
     fun testISOLocalDateTimeFormat() {
         val gene = DateTimeGene("dateTime",
-                dateTimeGeneFormat = DateTimeGene.DateTimeGeneFormat.ISO_LOCAL_DATE_TIME_FORMAT
+                format = FormatForDatesAndTimes.ISO_LOCAL
         )
         gene.date.apply {
             year.value = 1978
@@ -50,7 +82,7 @@ class DateTimeGeneTest {
     @Test
     fun testDefaultDateTimeFormat() {
         val gene = DateTimeGene("dateTime",
-                dateTimeGeneFormat = DateTimeGene.DateTimeGeneFormat.DEFAULT_DATE_TIME
+                format = FormatForDatesAndTimes.DATETIME
         )
         gene.date.apply {
             year.value = 1978
@@ -71,7 +103,7 @@ class DateTimeGeneTest {
     @Test
     fun testCopyOfGeneDefaultTimeFormat() {
         val gene0 = DateTimeGene("dateTime",
-                dateTimeGeneFormat = DateTimeGene.DateTimeGeneFormat.DEFAULT_DATE_TIME
+                format = FormatForDatesAndTimes.DATETIME
         )
         val copyOfGene0 = gene0.copy()
         assertEquals(copyOfGene0.name, gene0.name)
@@ -95,15 +127,15 @@ class DateTimeGeneTest {
 
         }
         assertEquals(
-                DateTimeGene.DateTimeGeneFormat.DEFAULT_DATE_TIME,
-                copyOfGene0.dateTimeGeneFormat
+                FormatForDatesAndTimes.DATETIME,
+                copyOfGene0.format
         )
     }
 
     @Test
     fun testCopyOfGeneISOLocalTimeFormat() {
         val gene0 = DateTimeGene("dateTime",
-                dateTimeGeneFormat = DateTimeGene.DateTimeGeneFormat.ISO_LOCAL_DATE_TIME_FORMAT
+                format = FormatForDatesAndTimes.ISO_LOCAL
         )
         val copyOfGene0 = gene0.copy()
         assertEquals(copyOfGene0.name, gene0.name)
@@ -127,8 +159,8 @@ class DateTimeGeneTest {
 
         }
         assertEquals(
-                DateTimeGene.DateTimeGeneFormat.ISO_LOCAL_DATE_TIME_FORMAT,
-                copyOfGene0.dateTimeGeneFormat
+                FormatForDatesAndTimes.ISO_LOCAL,
+                copyOfGene0.format
         )
     }
 
@@ -136,18 +168,18 @@ class DateTimeGeneTest {
     @Test
     fun testCopyValueFrom() {
         val gene0 = DateTimeGene("dateTime",
-                dateTimeGeneFormat = DateTimeGene.DateTimeGeneFormat.ISO_LOCAL_DATE_TIME_FORMAT
+                format = FormatForDatesAndTimes.ISO_LOCAL
         )
         val gene1 = DateTimeGene("dateTime",
-                dateTimeGeneFormat = DateTimeGene.DateTimeGeneFormat.DEFAULT_DATE_TIME
+                format = FormatForDatesAndTimes.DATETIME
         )
         gene1.copyValueFrom(gene0)
 
         assertEquals(
-            DateTimeGene.DateTimeGeneFormat.ISO_LOCAL_DATE_TIME_FORMAT,
-                gene0.dateTimeGeneFormat)
+            FormatForDatesAndTimes.ISO_LOCAL,
+                gene0.format)
         assertEquals(
-            DateTimeGene.DateTimeGeneFormat.DEFAULT_DATE_TIME,
-                gene1.dateTimeGeneFormat)
+            FormatForDatesAndTimes.DATETIME,
+                gene1.format)
     }
 }

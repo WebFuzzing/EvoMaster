@@ -54,6 +54,13 @@ class ChoiceGene<T>(
     }
 
 
+    fun selectActiveGene(index: Int){
+        if (index < 0 || index >= geneChoices.size) {
+            throw IllegalArgumentException("Index $index must be between 0 and ${geneChoices.size - 1}")
+        }
+        activeGeneIndex = index
+    }
+
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
 
         activeGeneIndex = if(probabilities != null){
