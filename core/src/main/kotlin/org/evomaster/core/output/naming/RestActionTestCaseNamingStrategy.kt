@@ -14,8 +14,7 @@ import javax.ws.rs.core.MediaType
 open class RestActionTestCaseNamingStrategy(
     solution: Solution<*>,
     languageConventionFormatter: LanguageConventionFormatter,
-    config: EMConfig,
-) : ActionTestCaseNamingStrategy(solution, languageConventionFormatter, config)  {
+) : ActionTestCaseNamingStrategy(solution, languageConventionFormatter)  {
 
     override fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>): String {
         val evaluatedAction = individual.evaluatedMainActions().last()

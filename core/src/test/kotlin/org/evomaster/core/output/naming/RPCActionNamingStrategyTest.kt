@@ -17,7 +17,7 @@ class RPCActionNamingStrategyTest {
         val languageConventionFormatter = LanguageConventionFormatter(outputFormat)
         val solution = getSolution(outputFormat)
 
-        val namingStrategy = RPCActionTestCaseNamingStrategy(solution, languageConventionFormatter, EMConfig())
+        val namingStrategy = RPCActionTestCaseNamingStrategy(solution, languageConventionFormatter)
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(1, testCases.size)

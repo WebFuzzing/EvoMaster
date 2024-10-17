@@ -11,8 +11,7 @@ import org.evomaster.core.search.action.EvaluatedAction
 open class RPCActionTestCaseNamingStrategy(
     solution: Solution<*>,
     languageConventionFormatter: LanguageConventionFormatter,
-    config: EMConfig,
-) : ActionTestCaseNamingStrategy(solution, languageConventionFormatter, config)  {
+) : ActionTestCaseNamingStrategy(solution, languageConventionFormatter)  {
 
     override fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>): String {
         val evaluatedAction = individual.evaluatedMainActions().last()

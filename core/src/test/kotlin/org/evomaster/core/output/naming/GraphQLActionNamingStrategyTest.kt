@@ -32,7 +32,7 @@ class GraphQLActionNamingStrategyTest {
 
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = GraphQLActionTestCaseNamingStrategy(solution, languageConventionFormatter, EMConfig())
+        val namingStrategy = GraphQLActionTestCaseNamingStrategy(solution, languageConventionFormatter)
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(1, testCases.size)
@@ -46,7 +46,7 @@ class GraphQLActionNamingStrategyTest {
 
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = GraphQLActionTestCaseNamingStrategy(solution, languageConventionFormatter, EMConfig())
+        val namingStrategy = GraphQLActionTestCaseNamingStrategy(solution, languageConventionFormatter)
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(1, testCases.size)
@@ -60,7 +60,7 @@ class GraphQLActionNamingStrategyTest {
 
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = GraphQLActionTestCaseNamingStrategy(solution, languageConventionFormatter, EMConfig())
+        val namingStrategy = GraphQLActionTestCaseNamingStrategy(solution, languageConventionFormatter)
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(1, testCases.size)

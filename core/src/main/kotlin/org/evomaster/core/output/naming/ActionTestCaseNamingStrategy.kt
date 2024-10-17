@@ -16,7 +16,6 @@ import org.evomaster.core.sql.SqlAction
 abstract class ActionTestCaseNamingStrategy(
     solution: Solution<*>,
     private val languageConventionFormatter: LanguageConventionFormatter,
-    private val config: EMConfig,
 ) : NumberedTestCaseNamingStrategy(solution)  {
 
     protected val on = "on"
@@ -89,7 +88,7 @@ abstract class ActionTestCaseNamingStrategy(
     }
 
     private fun usesWireMock(actions: List<Action>): Boolean {
-        return config.isEnabledExternalServiceMocking() && actions.any { it is HttpExternalServiceAction }
+        return actions.any { it is HttpExternalServiceAction }
     }
 
     protected abstract fun addActionResult(evaluatedAction: EvaluatedAction, nameTokens: MutableList<String>)
