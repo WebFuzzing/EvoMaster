@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory
 
 class TestCaseNamingStrategyFactory(
     private val namingStrategy: NamingStrategy,
-    private val languageConventionFormatter: LanguageConventionFormatter,
+    private val languageConventionFormatter: LanguageConventionFormatter
 ) {
 
     constructor(config: EMConfig): this(config.namingStrategy, LanguageConventionFormatter(config.outputFormat))
@@ -31,7 +31,7 @@ class TestCaseNamingStrategyFactory(
     private fun actionBasedNamingStrategy(solution: Solution<*>): NumberedTestCaseNamingStrategy {
         val individuals = solution.individuals
         return when {
-            individuals.any { it.individual is RestIndividual } -> return RestActionTestCaseNamingStrategy(solution, languageConventionFormatter,)
+            individuals.any { it.individual is RestIndividual } -> return RestActionTestCaseNamingStrategy(solution, languageConventionFormatter)
             individuals.any { it.individual is GraphQLIndividual } -> return GraphQLActionTestCaseNamingStrategy(solution, languageConventionFormatter)
             individuals.any { it.individual is RPCIndividual } -> return RPCActionTestCaseNamingStrategy(solution, languageConventionFormatter)
             individuals.any { it.individual is WebIndividual } -> {

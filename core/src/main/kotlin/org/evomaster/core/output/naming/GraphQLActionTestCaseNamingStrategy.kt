@@ -8,7 +8,7 @@ import org.evomaster.core.search.action.EvaluatedAction
 
 open class GraphQLActionTestCaseNamingStrategy(
     solution: Solution<*>,
-    languageConventionFormatter: LanguageConventionFormatter,
+    languageConventionFormatter: LanguageConventionFormatter
 ) : ActionTestCaseNamingStrategy(solution, languageConventionFormatter)  {
 
 

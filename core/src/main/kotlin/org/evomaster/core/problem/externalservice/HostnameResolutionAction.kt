@@ -5,8 +5,7 @@ import org.evomaster.core.search.Individual
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 
-class
-HostnameResolutionAction(
+class HostnameResolutionAction(
     val hostname: String,
     val localIPAddress: String
 ) : EnvironmentAction(listOf()) {
