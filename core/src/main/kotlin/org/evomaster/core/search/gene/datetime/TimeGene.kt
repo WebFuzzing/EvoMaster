@@ -28,11 +28,15 @@ class TimeGene(
     val hour: IntegerGene = IntegerGene("hour", 0, MIN_HOUR, MAX_HOUR),
     val minute: IntegerGene = IntegerGene("minute", 0, MIN_MINUTE, MAX_MINUTE),
     val second: IntegerGene = IntegerGene("second", 0, MIN_SECOND, MAX_SECOND),
-    val format: FormatForDatesAndTimes = FormatForDatesAndTimes.RFC3339,
+    val format: FormatForDatesAndTimes = FormatForDatesAndTimes.ISO_LOCAL,
     val onlyValidTimes: Boolean = false, //TODO refactor once dealing with Robustness Testing
     val millisecond: OptionalGene = OptionalGene("millisecond", IntegerGene("millisecond", 0, 0, 999)),
     val offset: TimeOffsetGene = TimeOffsetGene("offset")
-) : Comparable<TimeGene>, CompositeFixedGene(name, listOf(hour, minute, second)) {
+) : Comparable<TimeGene>,
+    CompositeFixedGene(name,
+        if(format == FormatForDatesAndTimes.RFC3339) listOf(hour, minute, second, millisecond, offset)
+        else listOf(hour, minute, second)
+    ) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(TimeGene::class.java)

@@ -829,13 +829,15 @@ class SqlActionGeneBuilder {
                         year = IntegerGene("year", 2016, minYear, maxYear),
                         month = IntegerGene("month", 3, 1, 12),
                         day = IntegerGene("day", 12, 1, 31),
-                        onlyValidDates = true
+                        onlyValidDates = true,
+                        format = FormatForDatesAndTimes.DATETIME
                 ),
                 time = TimeGene(
                         "time",
                         hour = IntegerGene("hour", 0, 0, 23),
                         minute = IntegerGene("minute", 0, 0, 59),
-                        second = IntegerGene("second", 0, 0, 59)
+                        second = IntegerGene("second", 0, 0, 59),
+                        format = FormatForDatesAndTimes.DATETIME
                 ),
                 format = FormatForDatesAndTimes.DATETIME
         )

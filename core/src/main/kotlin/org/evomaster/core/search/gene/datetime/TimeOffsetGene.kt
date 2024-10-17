@@ -25,7 +25,7 @@ class TimeOffsetGene(
     val type: ChoiceGene<*> = ChoiceGene(
         "type",
         listOf(
-            EnumGene("Z", listOf("Z")),
+            EnumGene("Z", listOf("Z"), treatAsNotString = true),
             TimeNumOffsetGene("numoffset")
         )
     )
