@@ -7,15 +7,17 @@ import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Thir
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
 import org.evomaster.client.java.instrumentation.object.ClassToSchema;
 
-
 import java.io.IOException;
 import java.io.Reader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
-import java.nio.CharBuffer;
+
 
 public class GsonClassReplacement extends ThirdPartyMethodReplacementClass {
+
+    // TODO: Gson has few more methods, which use their custom JsonReader.
+    //  Those are not supported yet.
 
     private static final GsonClassReplacement singleton = new GsonClassReplacement();
 
@@ -23,8 +25,6 @@ public class GsonClassReplacement extends ThirdPartyMethodReplacementClass {
     protected String getNameOfThirdPartyTargetClass() {
         return "com.google.gson.Gson";
     }
-
-    // TODO all versions of fromJson
 
     @Replacement(replacingStatic = false,
             type = ReplacementType.TRACKER,
@@ -64,7 +64,6 @@ public class GsonClassReplacement extends ThirdPartyMethodReplacementClass {
         }
 
         Class<?> klass = (Class<?>) typeOfT;
-
         ClassToSchema.registerSchemaIfNeeded(klass);
         JsonTaint.handlePossibleJsonTaint(json, klass);
 
@@ -124,7 +123,7 @@ public class GsonClassReplacement extends ThirdPartyMethodReplacementClass {
         Method original = getOriginal(singleton, "fromJson_reader_type", caller);
 
         try {
-            return original.invoke(caller, json, klass);
+            return original.invoke(caller, json, typeOfT);
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {

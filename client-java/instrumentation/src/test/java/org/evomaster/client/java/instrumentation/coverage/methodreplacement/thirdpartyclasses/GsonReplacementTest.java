@@ -98,4 +98,23 @@ public class GsonReplacementTest {
         assertTrue(parsedDto.containsKey(GsonTestDto.class.getName()));
         assertTrue(infoList.contains(GsonTestDto.class.getName()));
     }
+
+    @Test
+    public void testFromJsonTypeGeneric() throws Throwable {
+        String json = "{\n\"color\": \"red\"\n}";
+
+        Gson gson = new Gson();
+        Type dtoType = new TypeToken<GsonTestDto>() {}.getType();
+        GsonClassReplacement.fromJson(gson, json, dtoType);
+
+        Map<String, String> parsedDto = UnitsInfoRecorder.getInstance().getParsedDtos();
+        List<AdditionalInfo> additionalInfoList = ExecutionTracer.exposeAdditionalInfoList();
+
+        Set<String> infoList = new HashSet<>();
+        additionalInfoList.forEach(info -> {
+            infoList.addAll(info.getParsedDtoNamesView());
+        });
+        assertTrue(parsedDto.containsKey(GsonTestDto.class.getName()));
+        assertTrue(infoList.contains(GsonTestDto.class.getName()));
+    }
 }
