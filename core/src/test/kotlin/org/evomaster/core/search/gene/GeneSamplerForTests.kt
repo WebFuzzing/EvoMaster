@@ -95,6 +95,7 @@ object GeneSamplerForTests {
              */
             TimeNumOffsetGene::class -> sampleTimeNumOffsetGene(rand) as T
             TimeOffsetGene::class -> sampleTimeOffsetGene(rand) as T
+            TaintedMapGene::class -> sampleTaintedMapGene(rand) as T
             TaintedArrayGene::class -> sampleTaintedArrayGene(rand) as T
             ArrayGene::class -> sampleArrayGene(rand) as T
             Base64StringGene::class -> sampleBase64StringGene(rand) as T
@@ -512,7 +513,7 @@ object GeneSamplerForTests {
                 name = "rand PairGene",
                 first = sample(rand.choose(selection), rand),
                 second = sample(rand.choose(selection), rand),
-                isFirstMutable = rand.nextBoolean()
+                allowedToMutateFirst = rand.nextBoolean()
         )
     }
 
@@ -524,7 +525,7 @@ object GeneSamplerForTests {
             name = "rand PairGene",
             first = samplePrintableTemplate(selection, rand),
             second = samplePrintableTemplate(selection, rand),
-            isFirstMutable = rand.nextBoolean()
+            allowedToMutateFirst = rand.nextBoolean()
         )
     }
 
@@ -536,7 +537,7 @@ object GeneSamplerForTests {
             name = "rand PairGene",
             first = samplePrintableTemplate(selection, rand),
             second = samplePrintableFlexibleGene(rand),
-            isFirstMutable = rand.nextBoolean()
+            allowedToMutateFirst = rand.nextBoolean()
         )
     }
     fun samplePrintableFlexibleGene(rand: Randomness): FlexibleGene {
@@ -849,6 +850,12 @@ object GeneSamplerForTests {
         return chosen
     }
 
+    private fun sampleTaintedMapGene(rand: Randomness): TaintedMapGene{
+
+        val id = rand.nextInt(0, 10000)
+
+        return TaintedMapGene("tainted array $id", TaintInputName.getTaintName(id))
+    }
 
     private fun sampleTaintedArrayGene(rand: Randomness): TaintedArrayGene {
 
