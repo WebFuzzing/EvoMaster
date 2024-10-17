@@ -28,9 +28,10 @@ class TimeGene(
     val hour: IntegerGene = IntegerGene("hour", 0, MIN_HOUR, MAX_HOUR),
     val minute: IntegerGene = IntegerGene("minute", 0, MIN_MINUTE, MAX_MINUTE),
     val second: IntegerGene = IntegerGene("second", 0, MIN_SECOND, MAX_SECOND),
-    val timeGeneFormat: TimeGeneFormat = TimeGeneFormat.TIME_WITH_MILLISECONDS,
-    val onlyValidTimes: Boolean = false //TODO refactor once dealing with Robustness Testing
-    val millisecond: OptionalGene = OptionalGene("millisecond", IntegerGene("millisecond", 0, 0, 999))
+    val format: FormatForDatesAndTimes = FormatForDatesAndTimes.RFC3339,
+    val onlyValidTimes: Boolean = false, //TODO refactor once dealing with Robustness Testing
+    val millisecond: OptionalGene = OptionalGene("millisecond", IntegerGene("millisecond", 0, 0, 999)),
+    val offset: TimeOffsetGene = TimeOffsetGene("offset")
 ) : Comparable<TimeGene>, CompositeFixedGene(name, listOf(hour, minute, second)) {
 
     companion object {
@@ -46,15 +47,15 @@ class TimeGene(
             .comparing(TimeGene::hour)
             .thenBy(TimeGene::minute)
             .thenBy(TimeGene::second)
-
+            //TODO ms and offset
     }
 
-    enum class TimeGeneFormat {
-        // format HH:MM:SS
-        ISO_LOCAL_DATE_FORMAT,
+    fun selectZ(){
+        offset.selectZ()
+    }
 
-        // HH:MM:SS.000Z
-        TIME_WITH_MILLISECONDS
+    fun useMilliseconds(b: Boolean){
+        millisecond.isActive = b
     }
 
     override fun checkForLocallyValidIgnoringChildren() : Boolean{
@@ -71,9 +72,10 @@ class TimeGene(
         hour.copy() as IntegerGene,
         minute.copy() as IntegerGene,
         second.copy() as IntegerGene,
-        timeGeneFormat = this.timeGeneFormat,
+        format = this.format,
         onlyValidTimes = this.onlyValidTimes,
-        millisecond = this.millisecond.copy() as OptionalGene
+        millisecond = this.millisecond.copy() as OptionalGene,
+        offset = this.offset.copy() as TimeOffsetGene
     )
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
@@ -82,6 +84,7 @@ class TimeGene(
             minute.randomize(randomness, tryToForceNewValue)
             second.randomize(randomness, tryToForceNewValue)
             millisecond.randomize(randomness, tryToForceNewValue)
+            offset.randomize(randomness, tryToForceNewValue)
         } while (onlyValidTimes && !isValidTime())
     }
 
@@ -100,7 +103,7 @@ class TimeGene(
                 hour to additionalGeneMutationInfo.impact.hourGeneImpact,
                 minute to additionalGeneMutationInfo.impact.minuteGeneImpact,
                 second to additionalGeneMutationInfo.impact.secondGeneImpact
-                // TODO millisecond
+                // TODO millisecond and offset
             )
             return mwc.selectSubGene(
                 internalGenes,
@@ -136,10 +139,12 @@ class TimeGene(
         } else {
             ""
         }
+        val offset = offset.getValueAsRawString()
 
-        return when (timeGeneFormat) {
-            TimeGeneFormat.ISO_LOCAL_DATE_FORMAT -> "$h:$m:$s"
-            TimeGeneFormat.TIME_WITH_MILLISECONDS -> "$h:$m:$s${ms}Z"
+        return when (format) {
+            FormatForDatesAndTimes.ISO_LOCAL,
+            FormatForDatesAndTimes.DATETIME -> "$h:$m:$s"
+            FormatForDatesAndTimes.RFC3339 -> "$h:$m:$s${ms}${offset}"
         }
     }
 
@@ -151,7 +156,10 @@ class TimeGene(
         return updateValueOnlyIfValid(
             {this.hour.copyValueFrom(other.hour)
                     && this.minute.copyValueFrom(other.minute)
-                    && this.second.copyValueFrom(other.second)}, true
+                    && this.second.copyValueFrom(other.second)
+                    && this.millisecond.copyValueFrom(other.millisecond)
+                    && this.offset.copyValueFrom(other.offset)
+            }, true
         )
     }
 
@@ -162,6 +170,8 @@ class TimeGene(
         return this.hour.containsSameValueAs(other.hour)
                 && this.minute.containsSameValueAs(other.minute)
                 && this.second.containsSameValueAs(other.second)
+                && this.millisecond.containsSameValueAs(other.millisecond)
+                && this.offset.containsSameValueAs(other.offset)
     }
 
 

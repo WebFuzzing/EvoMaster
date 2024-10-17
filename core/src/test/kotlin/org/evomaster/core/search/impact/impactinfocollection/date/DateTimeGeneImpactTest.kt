@@ -3,6 +3,7 @@ package org.evomaster.core.search.impact.impactinfocollection.date
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
+import org.evomaster.core.search.gene.datetime.FormatForDatesAndTimes
 import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
@@ -20,7 +21,7 @@ class DateTimeGeneImpactTest : GeneImpactTest() {
     override fun getGene(): Gene {
         val date = DateGene("d", year = IntegerGene("y", 2019), month = IntegerGene("m", 10), day = IntegerGene("d", 9))
         val time = TimeGene("t", hour = IntegerGene("h", 16), minute = IntegerGene("m", 36), second = IntegerGene("s", 9))
-        return DateTimeGene("dt", date, time)
+        return DateTimeGene("dt", FormatForDatesAndTimes.DATETIME, date, time)
     }
 
     override fun checkImpactType(impact: GeneImpact) {

@@ -32,6 +32,10 @@ class TimeOffsetGene(
 )
  : CompositeFixedGene(name, listOf(type)){
 
+     fun selectZ(){
+         type.selectActiveGene(0)
+     }
+
 
     override fun copyContent(): Gene {
         return TimeOffsetGene(name, type.copy() as ChoiceGene<*>)

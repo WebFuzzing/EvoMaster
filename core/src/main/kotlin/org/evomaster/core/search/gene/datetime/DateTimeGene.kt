@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.datetime
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
@@ -24,18 +23,10 @@ import org.slf4j.LoggerFactory
  */
 open class DateTimeGene(
     name: String,
-    val date: DateGene = DateGene("date"),
-    val time: TimeGene = TimeGene("time"),
-    val dateTimeGeneFormat: DateTimeGeneFormat = DateTimeGeneFormat.ISO_LOCAL_DATE_TIME_FORMAT
+    val format: FormatForDatesAndTimes = FormatForDatesAndTimes.ISO_LOCAL,
+    val date: DateGene = DateGene("date", format = format),
+    val time: TimeGene = TimeGene("time", format = format),
 ) : ComparableGene, CompositeFixedGene(name, listOf(date, time)) {
-
-    enum class DateTimeGeneFormat {
-        // YYYY-MM-DDTHH:SS:MM
-        ISO_LOCAL_DATE_TIME_FORMAT,
-
-        // YYYY-MM-DD HH:SS:MM
-        DEFAULT_DATE_TIME
-    }
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(DateTimeGene::class.java)
@@ -44,15 +35,24 @@ open class DateTimeGene(
             .thenBy { it.time }
     }
 
+    init {
+        if(format != date.format){
+            throw IllegalArgumentException("Mismatched format for date: $format != ${date.format}")
+        }
+        if(format != time.format){
+            throw IllegalArgumentException("Mismatched format for time: $format != ${time.format}")
+        }
+    }
+
     override fun checkForLocallyValidIgnoringChildren() : Boolean{
         return true
     }
 
     override fun copyContent(): Gene = DateTimeGene(
         name,
+        format,
         date.copy() as DateGene,
         time.copy() as TimeGene,
-        dateTimeGeneFormat = this.dateTimeGeneFormat
     )
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
@@ -104,29 +104,17 @@ open class DateTimeGene(
     }
 
     override fun getValueAsRawString(): String {
-        val formattedDate = GeneUtils.let {
-            "${GeneUtils.padded(date.year.value, 4)}-${
-                GeneUtils.padded(
-                    date.month.value,
-                    2
-                )
-            }-${GeneUtils.padded(date.day.value, 2)}"
-        }
-        val formattedTime = GeneUtils.let {
-            "${GeneUtils.padded(time.hour.value, 2)}:${
-                GeneUtils.padded(
-                    time.minute.value,
-                    2
-                )
-            }:${GeneUtils.padded(time.second.value, 2)}"
-        }
-        return when (dateTimeGeneFormat) {
-            DateTimeGeneFormat.ISO_LOCAL_DATE_TIME_FORMAT -> {
+
+        val formattedDate = date.getValueAsRawString()
+        val formattedTime = time.getValueAsRawString()
+
+        return when (format) {
+            FormatForDatesAndTimes.ISO_LOCAL, FormatForDatesAndTimes.RFC3339-> {
                 "${formattedDate}T${formattedTime}"
             }
 
-            DateTimeGeneFormat.DEFAULT_DATE_TIME -> {
-                "${formattedDate} ${formattedTime}"
+            FormatForDatesAndTimes.DATETIME-> {
+                "$formattedDate $formattedTime"
             }
         }
 
