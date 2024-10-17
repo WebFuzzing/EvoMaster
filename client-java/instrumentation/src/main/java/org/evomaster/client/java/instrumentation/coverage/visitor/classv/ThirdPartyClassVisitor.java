@@ -1,5 +1,6 @@
 package org.evomaster.client.java.instrumentation.coverage.visitor.classv;
 
+import org.evomaster.client.java.instrumentation.coverage.visitor.methodv.CheckCastMethodVisitor;
 import org.evomaster.client.java.instrumentation.coverage.visitor.methodv.MethodReplacementMethodVisitor;
 import org.evomaster.client.java.instrumentation.coverage.visitor.methodv.ScheduledMethodVisitor;
 import org.objectweb.asm.commons.JSRInlinerAdapter;
@@ -45,6 +46,7 @@ public class ThirdPartyClassVisitor extends ClassVisitor {
         }
 
         mv = new ScheduledMethodVisitor(mv);
+        mv = new CheckCastMethodVisitor(mv);
         mv = new MethodReplacementMethodVisitor(false, false, mv, bytecodeClassName, name, descriptor);
 
         return mv;

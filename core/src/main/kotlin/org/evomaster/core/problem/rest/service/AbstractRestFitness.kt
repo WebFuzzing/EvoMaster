@@ -818,7 +818,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 else -> throw IllegalStateException("Cannot handle body type: " + body.contentType())
             }
 
-            val stringToBeSent = body.getValueAsPrintableString(mode = mode, targetFormat = configuration.outputFormat)
+            val stringToBeSent = body.getRawStringToBeSent(mode = mode, targetFormat = configuration.outputFormat)
             Entity.entity(
                 stringToBeSent,
                 body.contentType()
@@ -980,7 +980,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             actionResults.forEach { it.deathSentence = true }
         }
 
-        if (!allCovered) {
+        if (!allCovered) { //FIXME wrong, should be based on phase being SEARCH
             if (config.expandRestIndividuals) {
                 expandIndividual(individual, dto.additionalInfoList, actionResults)
             }

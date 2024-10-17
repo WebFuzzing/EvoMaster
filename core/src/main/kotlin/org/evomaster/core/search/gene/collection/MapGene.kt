@@ -52,6 +52,10 @@ abstract class MapGene<K, V>(
         fun isStringMap(gene: MapGene<*, *>) = gene.template.first is StringGene && gene.template.second is StringGene
     }
 
+
+    fun hasKeyByName(key: String) = elements.any { it.first.name == key }
+
+
     override fun checkForLocallyValidIgnoringChildren(): Boolean {
         return (minSize == null || elements.size >= minSize) && (maxSize == null || elements.size <= maxSize)
     }

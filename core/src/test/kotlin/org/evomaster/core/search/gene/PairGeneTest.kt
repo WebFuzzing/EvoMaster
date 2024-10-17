@@ -30,9 +30,9 @@ class PairGeneTest {
         val intGene = IntegerGene("int1", 1)
         val pairGene = PairGene.createStringPairGene(intGene, true)
 
-        assertFalse(pairGene.isFirstMutable)
+        assertFalse(pairGene.allowedToMutateFirst)
 
         val copy = pairGene.copy() as PairGene<StringGene, IntegerGene>
-        assertFalse(copy.isFirstMutable)
+        assertFalse(copy.allowedToMutateFirst)
     }
 }
