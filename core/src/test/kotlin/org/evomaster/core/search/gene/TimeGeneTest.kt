@@ -11,15 +11,17 @@ class TimeGeneTest {
 
     @Test
     fun testDefaultTimeGeneFormat() {
-        val gene = TimeGene("time")
+        val gene = TimeGene("time", format = FormatForDatesAndTimes.RFC3339)
 
         gene.apply {
             hour.value = 3
             minute.value = 4
             second.value = 5
+            selectZ()
+            useMilliseconds(false)
         }
         assertEquals(
-                "03:04:05.000Z",
+                "03:04:05Z",
                 gene.getValueAsRawString()
         )
         assertEquals(
