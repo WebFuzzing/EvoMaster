@@ -6,6 +6,7 @@ import org.evomaster.core.problem.rpc.RPCCallResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.action.EvaluatedAction
+import org.evomaster.core.utils.StringUtils
 
 open class RPCActionTestCaseNamingStrategy(
     solution: Solution<*>,
@@ -28,7 +29,8 @@ open class RPCActionTestCaseNamingStrategy(
         val result = evaluatedAction.result as RPCCallResult
         if (result.hasPotentialFault()) {
             nameTokens.add(throws)
-            nameTokens.add(TestWriterUtils.safeVariableName(result.getExceptionInfo()))
+            val thrownException = StringUtils.extractSimpleClass(result.getExceptionTypeName()?: "")
+            nameTokens.add(TestWriterUtils.safeVariableName(thrownException))
         } else {
             nameTokens.add(returns)
             nameTokens.add(when {

@@ -50,7 +50,7 @@ class RestActionNamingStrategyTest {
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(1, testCases.size)
-        assertEquals("test_0_GET_on_root_returns_empty", testCases[0].name)
+        assertEquals("test_0_get_on_root_returns_empty", testCases[0].name)
     }
 
     @Test
@@ -63,7 +63,7 @@ class RestActionNamingStrategyTest {
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(1, testCases.size)
-        assertEquals("test_0_GET_on_items_returns_empty", testCases[0].name)
+        assertEquals("test_0_get_on_items_returns_empty", testCases[0].name)
     }
 
     @Test
@@ -79,8 +79,8 @@ class RestActionNamingStrategyTest {
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(2, testCases.size)
-        assertEquals("test_0_GET_on_root_returns_empty", testCases[0].name)
-        assertEquals("test_1_GET_on_items_returns_empty", testCases[1].name)
+        assertEquals("test_0_get_on_root_returns_empty", testCases[0].name)
+        assertEquals("test_1_get_on_items_returns_empty", testCases[1].name)
     }
 
     @Test
@@ -93,7 +93,7 @@ class RestActionNamingStrategyTest {
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(1, testCases.size)
-        assertEquals("test_0_GET_on_item_returns_empty", testCases[0].name)
+        assertEquals("test_0_get_on_item_returns_empty", testCases[0].name)
     }
 
     @Test
@@ -106,7 +106,7 @@ class RestActionNamingStrategyTest {
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(1, testCases.size)
-        assertEquals("test_0_GET_on_items_returns_content", testCases[0].name)
+        assertEquals("test_0_get_on_items_returns_content", testCases[0].name)
     }
 
     @Test
@@ -119,7 +119,7 @@ class RestActionNamingStrategyTest {
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(1, testCases.size)
-        assertEquals("test_0_GET_on_items_returns_empty_list", testCases[0].name)
+        assertEquals("test_0_get_on_items_returns_empty_list", testCases[0].name)
     }
 
     @Test
@@ -132,7 +132,7 @@ class RestActionNamingStrategyTest {
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(1, testCases.size)
-        assertEquals("test_0_GET_on_items_returns_1_element", testCases[0].name)
+        assertEquals("test_0_get_on_items_returns_1_element", testCases[0].name)
     }
 
     @Test
@@ -145,7 +145,7 @@ class RestActionNamingStrategyTest {
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(1, testCases.size)
-        assertEquals("test_0_GET_on_items_returns_3_elements", testCases[0].name)
+        assertEquals("test_0_get_on_items_returns_3_elements", testCases[0].name)
     }
 
     @Test
@@ -158,7 +158,7 @@ class RestActionNamingStrategyTest {
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(1, testCases.size)
-        assertEquals("test_0_GET_on_items_returns_empty_object", testCases[0].name)
+        assertEquals("test_0_get_on_items_returns_empty_object", testCases[0].name)
     }
 
     @Test
@@ -171,7 +171,7 @@ class RestActionNamingStrategyTest {
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(1, testCases.size)
-        assertEquals("test_0_GET_on_items_returns_object", testCases[0].name)
+        assertEquals("test_0_get_on_items_returns_object", testCases[0].name)
     }
 
     @Test
@@ -184,7 +184,7 @@ class RestActionNamingStrategyTest {
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(1, testCases.size)
-        assertEquals("test_0_GET_on_item_returns_string", testCases[0].name)
+        assertEquals("test_0_get_on_item_returns_string", testCases[0].name)
     }
 
     @Test
@@ -197,7 +197,7 @@ class RestActionNamingStrategyTest {
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(1, testCases.size)
-        assertEquals("test_0_GET_on_item_returns_401", testCases[0].name)
+        assertEquals("test_0_get_on_item_returns_401", testCases[0].name)
     }
 
     @Test
@@ -210,7 +210,7 @@ class RestActionNamingStrategyTest {
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(1, testCases.size)
-        assertEquals("test_0_GET_on_items_causes500_internalServerError", testCases[0].name)
+        assertEquals("test_0_get_on_items_causes500_internalServerError", testCases[0].name)
     }
 
     @Test
@@ -224,7 +224,7 @@ class RestActionNamingStrategyTest {
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(1, testCases.size)
-        assertEquals("test_0_GET_on_items_showsFaults_100_102_301", testCases[0].name)
+        assertEquals("test_0_get_on_items_showsFaults_100_102_301", testCases[0].name)
     }
 
     @Test
@@ -263,7 +263,7 @@ class RestActionNamingStrategyTest {
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(1, testCases.size)
-        assertEquals("test_0_putOnItemsReturns201UsingWiremock", testCases[0].name)
+        assertEquals("test_0_putOnItemsReturns201UsingWireMock", testCases[0].name)
     }
 
     @Test
@@ -276,7 +276,7 @@ class RestActionNamingStrategyTest {
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(1, testCases.size)
-        assertEquals("test_0_postOnItemsReturns200UsingSqlWiremock", testCases[0].name)
+        assertEquals("test_0_postOnItemsReturns200UsingSqlWireMock", testCases[0].name)
     }
 
     private fun getEvaluatedIndividualWith(restAction: RestCallAction): EvaluatedIndividual<RestIndividual> {

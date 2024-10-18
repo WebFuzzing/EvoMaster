@@ -8,7 +8,7 @@ class LanguageConventionFormatterTest {
 
     @Test
     fun testFormatToCamelCase() {
-        val testKeywords = listOf("GET", "on", "root", "returns", "200")
+        val testKeywords = listOf("get", "on", "root", "returns", "200")
         val languageConventionFormatter = LanguageConventionFormatter(OutputFormat.JAVA_JUNIT_4)
 
         assertEquals("getOnRootReturns200", languageConventionFormatter.formatName(testKeywords))
