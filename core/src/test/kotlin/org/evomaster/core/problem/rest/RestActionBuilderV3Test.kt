@@ -1280,6 +1280,7 @@ class RestActionBuilderV3Test{
         RestActionBuilderV3.getModelsFromSwagger(schema, map, RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling))
 
         assertEquals(3, map.size)
+        assertTrue(map.containsKey("Iterable«Item»"), "Not found key Iterable«Item». Current keys: ${map.keys.joinToString(", ")}.")
         val x = map["Iterable«Item»"] as ObjectGene //this is due to bug in SpringFox that does not handle Iterable<T>
         assertEquals(0, x.fields.size)
     }
