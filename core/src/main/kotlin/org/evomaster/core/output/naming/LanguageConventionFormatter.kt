@@ -26,6 +26,11 @@ class LanguageConventionFormatter(
 
     }
 
+    /*  
+        Using replaceFirstChar instead of StringUtils.capitalization, since the latter would lowercase the whole string but the first char.
+        This caused exceptions and other words with capitals in the middle to be lowercased, returning strings like: Statusruntimeexception
+        which do not favour readability.
+     */ 
     private fun formatCamelCase(testKeywords: List<String>): String {
         return testKeywords.joinToString("") { testToken -> testToken.replaceFirstChar { if (it.isLowerCase()) it.titlecase(ENGLISH) else it.toString() } }.decapitalize()
     }
