@@ -86,9 +86,9 @@ public class TestabilityWithSeedTestEMTest extends SpringRPCTestBase {
 
         List<String> targets = null;
         List<String> expectedTargets = Arrays.asList(
-                "Branch_at_com.foo.rpc.examples.spring.testability.TestabilityServiceImp_at_line_00019_position_0_trueBranch",
-                "Branch_at_com.foo.rpc.examples.spring.testability.TestabilityServiceImp_at_line_00019_position_1_trueBranch",
-                "Branch_at_com.foo.rpc.examples.spring.testability.TestabilityServiceImp_at_line_00019_position_2_trueBranch",
+                "Branch_at_com.foo.rpc.examples.spring.testability.TestabilityServiceImp_at_line_00019_position_0_trueBranch_160",
+                "Branch_at_com.foo.rpc.examples.spring.testability.TestabilityServiceImp_at_line_00019_position_1_trueBranch_160",
+                "Branch_at_com.foo.rpc.examples.spring.testability.TestabilityServiceImp_at_line_00019_position_2_trueBranch_153",
                 "Line_at_com.foo.rpc.examples.spring.testability.TestabilityServiceImp_00020"
         );
         try {
