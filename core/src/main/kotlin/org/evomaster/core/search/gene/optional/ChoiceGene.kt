@@ -92,7 +92,7 @@ class ChoiceGene<T>(
      * of the selectionStrategy and the additionalGeneMutationInfo
      */
     override fun mutablePhenotypeChildren(): List<Gene> {
-        return listOf(activeGene())
+        return listOf(activeGene()).filter { it.isMutable() }
     }
 
     override fun <T> getWrappedGene(klass: Class<T>) : T?  where T : Gene{
