@@ -92,8 +92,8 @@ class SearchProcessMonitor: SearchListener {
         private val strategy: ExclusionStrategy = object : ExclusionStrategy {
             //TODO systematic way to configure the skipped field
             override fun shouldSkipField(field: FieldAttributes): Boolean {
-                return field.name == "parent" || field.name == "bindingGenes" || field.name == "searchGlobalState"
-                        || field.name == "trackOperator"
+                return field.name == "parent" || field.name == "bindingGenes" ||
+                        field.name == "searchGlobalState" || field.name == "trackOperator"
             }
 
             //skip abstract StructuralElement element
