@@ -238,9 +238,18 @@ public abstract class EnterpriseTestBase {
     protected void runTestHandlingFlakyAndCompilation(
             String label,
             int iterations,
+            int timeoutMinutes,
             Consumer<List<String>> lambda) throws Throwable {
 
-        runTestHandlingFlakyAndCompilation(label, "org.bar."+label, iterations, lambda);
+        runTestHandlingFlakyAndCompilation(label, "org.bar."+label, null,  iterations, true, lambda, timeoutMinutes);
+    }
+
+    protected void runTestHandlingFlakyAndCompilation(
+            String label,
+            int iterations,
+            Consumer<List<String>> lambda) throws Throwable {
+
+        runTestHandlingFlakyAndCompilation(label, iterations, 3, lambda);
     }
 
 

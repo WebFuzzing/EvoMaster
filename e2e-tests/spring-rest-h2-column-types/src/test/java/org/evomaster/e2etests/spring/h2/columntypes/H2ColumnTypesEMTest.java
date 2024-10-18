@@ -22,6 +22,7 @@ public class H2ColumnTypesEMTest extends SpringTestBase {
     @Test
     public void testRunEM() throws Throwable {
 
+        defaultSeed = 67; //otherwise compilation error due to \\$
 
         runTestHandlingFlakyAndCompilation(
                 "H2ColumnTypesEM",
