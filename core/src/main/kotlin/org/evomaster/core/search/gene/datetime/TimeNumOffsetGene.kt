@@ -62,7 +62,7 @@ class TimeNumOffsetGene(
         targetFormat: OutputFormat?,
         extraCheck: Boolean
     ): String {
-        return "\"${getValueAsRawString()}\""
+        return getValueAsRawString()
     }
 
     override fun getValueAsRawString(): String {

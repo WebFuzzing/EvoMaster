@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.FormatForDatesAndTimes
+import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -9,6 +10,22 @@ import org.junit.jupiter.api.assertThrows
 import java.time.Instant
 
 class DateTimeGeneTest {
+
+    @Test
+    fun testRandomizeRFC3339(){
+
+        val random = Randomness()
+
+        val gene = DateTimeGene("dateTime", format = FormatForDatesAndTimes.RFC3339, onlyValid = true)
+
+        repeat(100){
+            gene.randomize(random, tryToForceNewValue = true)
+            gene.time.selectZ() // Instant is not RFC3339 compliant
+            val s = gene.getValueAsRawString()
+            Instant.parse(s) // must not throw exception
+        }
+    }
+
 
     @Test
     fun validateInstant(){

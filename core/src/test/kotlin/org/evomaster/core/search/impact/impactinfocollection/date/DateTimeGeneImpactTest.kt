@@ -22,7 +22,7 @@ class DateTimeGeneImpactTest : GeneImpactTest() {
         val format = FormatForDatesAndTimes.DATETIME
         val date = DateGene("d", year = IntegerGene("y", 2019), month = IntegerGene("m", 10), day = IntegerGene("d", 9), format = format)
         val time = TimeGene("t", hour = IntegerGene("h", 16), minute = IntegerGene("m", 36), second = IntegerGene("s", 9), format = format)
-        return DateTimeGene("dt", format, date, time)
+        return DateTimeGene("dt", false,format, date, time)
     }
 
     override fun checkImpactType(impact: GeneImpact) {

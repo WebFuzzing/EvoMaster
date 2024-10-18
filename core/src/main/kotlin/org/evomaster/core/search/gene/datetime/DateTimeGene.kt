@@ -23,9 +23,10 @@ import org.slf4j.LoggerFactory
  */
 open class DateTimeGene(
     name: String,
+    val onlyValid : Boolean = false, //TODO refactor once dealing with Robustness Testing
     val format: FormatForDatesAndTimes = FormatForDatesAndTimes.ISO_LOCAL,
-    val date: DateGene = DateGene("date", format = format),
-    val time: TimeGene = TimeGene("time", format = format),
+    val date: DateGene = DateGene("date", format = format, onlyValidDates = onlyValid),
+    val time: TimeGene = TimeGene("time", format = format, onlyValidTimes = onlyValid),
 ) : ComparableGene, CompositeFixedGene(name, listOf(date, time)) {
 
     companion object {
@@ -42,6 +43,9 @@ open class DateTimeGene(
         if(format != time.format){
             throw IllegalArgumentException("Mismatched format for time: $format != ${time.format}")
         }
+        if(onlyValid && (!date.onlyValidDates || !time.onlyValidTimes)) {
+            throw IllegalArgumentException("Marked as onlyValid, but date=${date.onlyValidDates} and time=${time.onlyValidTimes}")
+        }
     }
 
     override fun checkForLocallyValidIgnoringChildren() : Boolean{
@@ -50,6 +54,7 @@ open class DateTimeGene(
 
     override fun copyContent(): Gene = DateTimeGene(
         name,
+        onlyValid,
         format,
         date.copy() as DateGene,
         time.copy() as TimeGene,
