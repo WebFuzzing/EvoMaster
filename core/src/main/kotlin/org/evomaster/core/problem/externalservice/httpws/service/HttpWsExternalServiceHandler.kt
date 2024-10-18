@@ -95,7 +95,7 @@ class HttpWsExternalServiceHandler {
      * TODO: No longer needed
      */
     private fun initDefaultWM() {
-        if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
+        if (config.isEnabledExternalServiceMocking()) {
             if (!isDefaultInitialized) {
                 addHostname(HostnameResolutionInfo(ExternalServiceSharedUtils.DEFAULT_WM_DUMMY_HOSTNAME, ""))
                 registerHttpExternalServiceInfo(DefaultHttpExternalServiceInfo.createDefaultHttps())
@@ -114,14 +114,14 @@ class HttpWsExternalServiceHandler {
      * @return whether there was side effect of starting new instance of WireMock
      */
     fun addExternalService(externalServiceInfo: HttpExternalServiceInfo) : Boolean {
-        if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
+        if (config.isEnabledExternalServiceMocking()) {
             return  registerHttpExternalServiceInfo(externalServiceInfo)
         }
         return false
     }
 
     fun addHostname(hostnameResolutionInfo: HostnameResolutionInfo) {
-        if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
+        if (config.isEnabledExternalServiceMocking()) {
             // Additional validation to prevent local IP as a DNS entry
             if (!hostnameLocalAddressMapping.containsKey(hostnameResolutionInfo.remoteHostName)
                 && !hostnameLocalAddressMapping.containsValue(hostnameResolutionInfo.remoteHostName)
