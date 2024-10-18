@@ -30,12 +30,10 @@ import org.junit.jupiter.api.Test
 import javax.ws.rs.core.MediaType
 
 class TestCaseWriterTest {
-    //TODO: BMR- changed the tests to not use expectationsActive. This may require updating.
 
     private fun getConfig(format: OutputFormat): EMConfig {
         val config = EMConfig()
         config.outputFormat = format
-        //config.expectationsActive = false
         config.testTimeout = -1
         return config
     }

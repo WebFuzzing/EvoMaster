@@ -2,9 +2,7 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.search.gene.collection.*
-import org.evomaster.core.search.gene.datetime.DateGene
-import org.evomaster.core.search.gene.datetime.DateTimeGene
-import org.evomaster.core.search.gene.datetime.TimeGene
+import org.evomaster.core.search.gene.datetime.*
 import org.evomaster.core.search.gene.interfaces.ComparableGene
 import org.evomaster.core.search.gene.mongo.ObjectIdGene
 import org.evomaster.core.search.gene.regex.*
@@ -95,6 +93,8 @@ object GeneSamplerForTests {
 
                 when genes need input genes, we sample those at random as well
              */
+            TimeNumOffsetGene::class -> sampleTimeNumOffsetGene(rand) as T
+            TimeOffsetGene::class -> sampleTimeOffsetGene(rand) as T
             TaintedMapGene::class -> sampleTaintedMapGene(rand) as T
             TaintedArrayGene::class -> sampleTaintedArrayGene(rand) as T
             ArrayGene::class -> sampleArrayGene(rand) as T
@@ -178,6 +178,13 @@ object GeneSamplerForTests {
         }
     }
 
+    private fun sampleTimeNumOffsetGene(rand: Randomness): TimeNumOffsetGene {
+        return TimeNumOffsetGene("rand TimeNumOffsetGene ${rand.nextInt()}")
+    }
+
+    private fun sampleTimeOffsetGene(rand: Randomness): TimeOffsetGene {
+        return TimeOffsetGene("rand TimeOffsetGene ${rand.nextInt()}")
+    }
 
 
     private fun sampleUrlDataGene(rand: Randomness): UriDataGene {
@@ -231,11 +238,11 @@ object GeneSamplerForTests {
     }
 
     private fun sampleSqlTimeIntervalGene(rand: Randomness): SqlTimeIntervalGene {
-        val timeGeneFormats = listOf(TimeGene.TimeGeneFormat.ISO_LOCAL_DATE_FORMAT,
-                TimeGene.TimeGeneFormat.TIME_WITH_MILLISECONDS)
+        val timeGeneFormats = listOf(FormatForDatesAndTimes.ISO_LOCAL,
+                FormatForDatesAndTimes.RFC3339)
         val timeGeneFormat = rand.choose(timeGeneFormats)
         return SqlTimeIntervalGene("rand SqlTimeIntervalGene",
-                time = TimeGene("hoursMinutesAndSeconds", timeGeneFormat = timeGeneFormat))
+                time = TimeGene("hoursMinutesAndSeconds", format = timeGeneFormat))
     }
 
     private fun sampleSqlLineSegmentGene(rand: Randomness): SqlLineSegmentGene {
