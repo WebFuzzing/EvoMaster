@@ -474,7 +474,7 @@ abstract class Gene(
             throw IllegalArgumentException("Trying adaptive weight selection, but with no info as input")
         }
 
-        if(children.none { it.isMutable() }){
+        if(mutablePhenotypeChildren().isEmpty()){
             //no mutable child, so always apply shallow mutate
             return true
         }
