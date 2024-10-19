@@ -6,6 +6,7 @@ import org.evomaster.core.problem.rpc.auth.RPCAuthenticationInfo
 import org.evomaster.core.problem.rpc.auth.RPCNoAuth
 import org.evomaster.core.problem.rpc.param.RPCParam
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.utils.StringUtils
 
 /**
  * a RPC call
@@ -61,15 +62,7 @@ open class RPCCallAction(
      * @return the simple class name of a Java or Kotlin class representing the service
      */
     fun getSimpleClassName(): String {
-        return extractSimpleClass(id.split(":")[0])
-    }
-
-    private fun extractSimpleClass(fullyQualifiedName: String) : String {
-        if (fullyQualifiedName.isNullOrEmpty()) return ""
-
-        // Replace $ with . and then split by . to handle inner classes
-        val parts = fullyQualifiedName.replace('$', '.').split(".")
-        return parts.last()
+        return StringUtils.extractSimpleClass(id.split(":")[0])
     }
 
     /**
