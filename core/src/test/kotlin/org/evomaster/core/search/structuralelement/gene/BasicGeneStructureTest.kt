@@ -259,7 +259,7 @@ class DateGeneStructureTest: GeneStructuralElementBaseTest() {
     fun sameFormat(){
         val template = getStructuralElementAndIdentifyAsRoot() as DateGene
         val copy = template.copy()
-        assertEquals(template.dateGeneFormat, (copy as DateGene).dateGeneFormat)
+        assertEquals(template.format, (copy as DateGene).format)
     }
 }
 
