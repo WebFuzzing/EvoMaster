@@ -104,12 +104,11 @@ public class ClassToSchema {
                 List<Class<?>> embedded = new ArrayList<>();
                 String schema = ClassToSchema.getOrDeriveSchema(valueType, embedded, objectFieldsRequired, converters);
                 UnitsInfoRecorder.registerNewParsedDto(name, schema);
-                ExecutionTracer.addParsedDtoName(name);
                 if (!embedded.isEmpty()){
                     embedded.forEach(e -> registerSchemaIfNeeded(e, objectFieldsRequired, converters));
                 }
-
             }
+            ExecutionTracer.addParsedDtoName(name);
         } catch (Exception e) {
             SimpleLogger.warn("Fail to get schema for Class:" + valueType.getName(), e);
             /*
