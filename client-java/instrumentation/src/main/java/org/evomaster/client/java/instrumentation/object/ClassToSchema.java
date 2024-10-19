@@ -461,7 +461,9 @@ public class ClassToSchema {
         String value;
 
         if (klass != null) {
-            value = getSchema(String.class, true, embedded, allEmbedded, objectFieldsRequired, converters);
+            //value = getSchema(String.class, true, embedded, allEmbedded, objectFieldsRequired, converters);
+            //if no info on generic type, allow adding any kind of data
+            value = "true";
         } else {
             Type generic = pType.getActualTypeArguments()[1];
             value = getSchema(generic, true, embedded, allEmbedded, objectFieldsRequired, converters);

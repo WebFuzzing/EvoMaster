@@ -292,7 +292,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                     LoggingUtil.uniqueWarn(log, "More than 1 DTO option: [${dtoNames.sorted().joinToString(", ")}]")
                 }
                 val name = dtoNames.first()
-                val obj = getObjectGeneForDto(name)
+                val obj = getGeneForDto(name)
                 val enumGene = EnumGene("contentType", listOf("application/json"))
                 val body = BodyParam(obj,enumGene)
                 body.seeGenes().forEach { it.doInitialize(randomness) }
@@ -302,7 +302,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         }
     }
 
-    private fun getObjectGeneForDto(name: String): Gene {
+    private fun getGeneForDto(name: String): Gene {
 
         if (!infoDto.unitsInfoDto.parsedDtos.containsKey(name)) {
             /*
