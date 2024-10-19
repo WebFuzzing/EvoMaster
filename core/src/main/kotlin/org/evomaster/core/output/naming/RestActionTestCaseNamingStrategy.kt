@@ -19,7 +19,7 @@ open class RestActionTestCaseNamingStrategy(
         val evaluatedAction = individual.evaluatedMainActions().last()
         val action = evaluatedAction.action as RestCallAction
 
-        nameTokens.add(action.verb.toString())
+        nameTokens.add(action.verb.toString().lowercase())
         nameTokens.add(on)
         nameTokens.add(getPath(action.path.nameQualifier))
         addResult(individual, nameTokens)
