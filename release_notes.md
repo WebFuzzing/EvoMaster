@@ -10,6 +10,7 @@ Under development in `master` branch.
 ### Bug Fixes
 
 - bbSwaggerUrl now works when using a local path instead of URL (as was stated in documentation).
+- fixed wrong handling of "date-time" format in OpenAPI schemas. 
 
 # Version: 3.2.0
 

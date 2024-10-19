@@ -6,6 +6,7 @@ import org.evomaster.client.java.sql.SqlScriptRunner
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
+import org.evomaster.core.search.gene.datetime.FormatForDatesAndTimes
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.numeric.LongGene
@@ -200,7 +201,7 @@ class SqlInsertBuilderTest {
         assertTrue(genes[0] is DateTimeGene)
 
         val dateTimeGene = genes[0] as DateTimeGene
-        assertEquals(DateTimeGene.DateTimeGeneFormat.DEFAULT_DATE_TIME, dateTimeGene.dateTimeGeneFormat)
+        assertEquals(FormatForDatesAndTimes.DATETIME, dateTimeGene.format)
         assertTrue(dateTimeGene.date.onlyValidDates)
         assertTrue(dateTimeGene.time.onlyValidHours)
     }
@@ -303,7 +304,7 @@ class SqlInsertBuilderTest {
         assertTrue(genes[0] is DateTimeGene)
 
         val dateTimeGene = genes[0] as DateTimeGene
-        assertEquals(DateTimeGene.DateTimeGeneFormat.DEFAULT_DATE_TIME, dateTimeGene.dateTimeGeneFormat)
+        assertEquals(FormatForDatesAndTimes.DATETIME, dateTimeGene.format)
         assertTrue(dateTimeGene.date.onlyValidDates)
         assertTrue(dateTimeGene.time.onlyValidHours)
     }
