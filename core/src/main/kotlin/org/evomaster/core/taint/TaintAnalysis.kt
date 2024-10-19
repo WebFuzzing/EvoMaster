@@ -142,44 +142,47 @@ object TaintAnalysis {
                 throw IllegalArgumentException("No specialization info for value $taintedInput")
             }
 
+            //FIXME following modify the phenotype!!! need to apply same as StringGene
+
             val identifiedMaps = taintedMaps.filter { it.getPossiblyTaintedValue().equals(taintedInput, true) }
-            if (identifiedMaps.isEmpty()) {
-                continue
-            } // could be more than 1, eg, when action copied might not change the taintId
+            if (identifiedMaps.isNotEmpty()) {
+                // could be more than 1, eg, when action copied might not change the taintId
 
-
-            /*
+                /*
                 discover new fields in the map.
                 the tainted value X points to the Map (ie {"taint_id": "X"} ), so can be accessed through identifiedMaps.
                 the value here is the new key K that is accessed, ie M.get("key")
-            */
-            specs.filter { it.stringSpecialization == StringSpecialization.JSON_MAP_FIELD }
-                .forEach { field ->
-                    identifiedMaps.forEach { g ->
-                        if(!g.hasKeyByName(field.value)){
-                            g.addNewKey(field.value)
+                */
+                specs.filter { it.stringSpecialization == StringSpecialization.JSON_MAP_FIELD }
+                    .forEach { field ->
+                        identifiedMaps.forEach { g ->
+                            if(!g.hasKeyByName(field.value)){
+                                g.addNewKey(field.value)
+                            }
                         }
                     }
-                }
 
-            /*
-                here is different... the taintedInput X would point to the StringGene inside the TaintedMapGene,
-                but we want to modify this latter and not the former
-             */
-            specs.filter { it.stringSpecialization == StringSpecialization.CAST_TO_TYPE }
-                .forEach { cast ->
-                    val identifiedFields = stringGenes
-                        .filter { it.getPossiblyTaintedValue() == taintedInput }
-                        .filter { it.name != TaintInputName.TAINTED_MAP_EM_LABEL_IDENTIFIER }
-                    if(identifiedFields.isEmpty()){
-                        log.warn("Cannot find StringGene with taint: $taintedInput")
-                    }
-                    identifiedFields.forEach { field ->
-                        val tmap = field.getFirstParent(TaintedMapGene::class.java)
-                        //hmmm... in theory a null could happen if SUT cast a String to something else
-                        tmap?.specifyValueTypeForKey(field.name, cast.value)
-                    }
+            } else {
+                val identifiedFields = stringGenes
+                    .filter { it.getPossiblyTaintedValue() == taintedInput }
+                    .filter { it.name != TaintInputName.TAINTED_MAP_EM_LABEL_IDENTIFIER }
+                if(identifiedFields.isEmpty()){
+                    log.warn("Cannot find StringGene with taint: $taintedInput")
+                    return
                 }
+                /*
+                    here is different... the taintedInput X would point to the StringGene inside the TaintedMapGene,
+                    but we want to modify this latter and not the former
+                 */
+                specs.filter { it.stringSpecialization == StringSpecialization.CAST_TO_TYPE }
+                    .forEach { cast ->
+                        identifiedFields.forEach { field ->
+                            val tmap = field.getFirstParent(TaintedMapGene::class.java)
+                            //hmmm... in theory a null could happen if SUT cast a String to something else
+                            tmap?.specifyValueTypeForKey(field.name, cast.value)
+                        }
+                    }
+            }
         }
     }
 

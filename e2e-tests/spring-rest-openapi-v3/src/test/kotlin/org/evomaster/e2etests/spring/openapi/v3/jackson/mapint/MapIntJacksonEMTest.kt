@@ -21,6 +21,7 @@ class MapIntJacksonEMTest : SpringTestBase() {
     fun basicEMTest() {
         runTestHandlingFlakyAndCompilation(
             "MapIntJacksonEM",
+            500,
             500
         ) { args: List<String> ->
 
