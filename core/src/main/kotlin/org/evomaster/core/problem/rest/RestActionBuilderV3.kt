@@ -31,6 +31,7 @@ import org.evomaster.core.search.gene.collection.FixedMapGene
 import org.evomaster.core.search.gene.collection.PairGene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
+import org.evomaster.core.search.gene.datetime.FormatForDatesAndTimes
 import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.gene.numeric.*
 import org.evomaster.core.search.gene.optional.ChoiceGene
@@ -765,9 +766,19 @@ object RestActionBuilderV3 {
             "binary" -> return createNonObjectGeneWithSchemaConstraints(schema, name, StringGene::class.java, options, null, isInPath, examples, messages = messages)//StringGene(name) //does it need to be treated specially?
             "byte" -> return createNonObjectGeneWithSchemaConstraints(schema, name, Base64StringGene::class.java, options, null, isInPath, examples, messages = messages)//Base64StringGene(name)
             "date", "local-date" -> return DateGene(name, onlyValidDates = !options.invalidData)
-            "date-time", "local-date-time" -> return DateTimeGene(name,
-                date = DateGene("date", onlyValidDates = !options.invalidData),
-                time =  TimeGene("time", onlyValidTimes = !options.invalidData))
+            "date-time", "local-date-time" -> {
+                val f = if(format?.lowercase() == "date-time"){
+                    FormatForDatesAndTimes.RFC3339
+                } else {
+                    FormatForDatesAndTimes.ISO_LOCAL
+                }
+                return DateTimeGene(
+                    name,
+                    format = f,
+                    date = DateGene("date", onlyValidDates = !options.invalidData, format = f),
+                    time = TimeGene("time", onlyValidTimes = !options.invalidData, format = f)
+                )
+            }
             else -> if (format != null) {
                 messages.add("Unhandled format '$format' for '$name'")
             }

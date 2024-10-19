@@ -35,7 +35,7 @@ class DateGene(
     val month: IntegerGene = IntegerGene("month", 3, MIN_MONTH, MAX_MONTH),
     val day: IntegerGene = IntegerGene("day", 12, MIN_DAY, MAX_DAY),
     val onlyValidDates: Boolean = false, //TODO refactor once dealing with Robustness Testing
-    val dateGeneFormat: DateGeneFormat = DateGeneFormat.ISO_LOCAL_DATE_FORMAT
+    val format: FormatForDatesAndTimes = FormatForDatesAndTimes.ISO_LOCAL
 ) : ComparableGene, CompositeFixedGene(name, listOf(year, month, day)) {
 
     companion object {
@@ -53,9 +53,6 @@ class DateGene(
 
     }
 
-    enum class DateGeneFormat {
-        ISO_LOCAL_DATE_FORMAT
-    }
 
     override fun checkForLocallyValidIgnoringChildren() : Boolean{
         return true
@@ -66,7 +63,7 @@ class DateGene(
         year.copy() as IntegerGene,
         month.copy() as IntegerGene,
         day.copy() as IntegerGene,
-        dateGeneFormat = this.dateGeneFormat,
+        format = this.format,
         onlyValidDates = this.onlyValidDates
     )
 
@@ -125,15 +122,9 @@ class DateGene(
     }
 
     override fun getValueAsRawString(): String {
-        return when (dateGeneFormat) {
-            DateGeneFormat.ISO_LOCAL_DATE_FORMAT -> GeneUtils.let {
-                "${GeneUtils.padded(year.value, 4)}-${GeneUtils.padded(month.value, 2)}-${
-                    GeneUtils.padded(
-                        day.value,
-                        2
-                    )
-                }"
-            }
+        return when (format) {
+             FormatForDatesAndTimes.ISO_LOCAL, FormatForDatesAndTimes.DATETIME, FormatForDatesAndTimes.RFC3339->
+                "${GeneUtils.padded(year.value, 4)}-${GeneUtils.padded(month.value, 2)}-${GeneUtils.padded(day.value, 2)}"
         }
     }
 
