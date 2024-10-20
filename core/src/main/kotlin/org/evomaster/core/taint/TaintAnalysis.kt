@@ -5,6 +5,7 @@ import org.evomaster.client.java.instrumentation.shared.StringSpecialization
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.client.java.instrumentation.shared.TaintType
+import org.evomaster.core.Lazy
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.rest.RestActionBuilderV3
@@ -82,6 +83,11 @@ object TaintAnalysis {
     Currently, embedded and external behaves differently. See HeuristicsCalculator
          */
 
+        //taint changes genotype, but must not change phenotype
+        val phenotype = org.evomaster.core.Lazy.compute{
+            getPhenotype(individual)
+        }
+
         val allTaintableGenes: List<TaintableGene> =
                 individual.seeAllActions()
                         .flatMap { a ->
@@ -119,7 +125,20 @@ object TaintAnalysis {
 
             handleTaintedMaps(specsMap, allTaintableGenes)
         }
+
+        //phenotype must not have changed
+        Lazy.assert {
+            val before = phenotype!!
+            val after = getPhenotype(individual)
+            val same = after.size == before.size
+                    && after.keys.all{before.containsKey(it) && after[it] == before[it]}
+            same
+        }
     }
+
+    private fun getPhenotype(individual: Individual) = individual.seeAllActions()
+        .flatMap { a -> a.seeTopGenes() }
+        .associateBy({ it.name }, { it.getValueAsRawString() })
 
     private fun handleTaintedMaps(
         specsMap: Map<String, List<StringSpecializationInfo>>,
@@ -141,6 +160,12 @@ object TaintAnalysis {
             if (specs.isEmpty()) {
                 throw IllegalArgumentException("No specialization info for value $taintedInput")
             }
+
+            /*
+                FIXME following is modifying phenotype!!!
+                should rather just modify genotype, and update phenotype with a call from
+                StandardMutator.mutationPreProcessing()
+             */
 
             val identifiedMaps = taintedMaps.filter { it.getPossiblyTaintedValue().equals(taintedInput, true) }
             if (identifiedMaps.isNotEmpty()) {

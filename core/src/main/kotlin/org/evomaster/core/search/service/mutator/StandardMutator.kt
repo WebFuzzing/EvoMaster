@@ -163,6 +163,8 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
         if(config.taintForceSelectionOfGenesWithSpecialization){
             individual.seeGenes()
+                .asSequence()
+                .flatMap { it.flatView() }
                 .filterIsInstance<StringGene>()
                 .filter { it.selectionUpdatedSinceLastMutation }
                 .filter { it.staticCheckIfImpactPhenotype() }
