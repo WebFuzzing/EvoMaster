@@ -142,8 +142,6 @@ object TaintAnalysis {
                 throw IllegalArgumentException("No specialization info for value $taintedInput")
             }
 
-            //FIXME following modify the phenotype!!! need to apply same as StringGene
-
             val identifiedMaps = taintedMaps.filter { it.getPossiblyTaintedValue().equals(taintedInput, true) }
             if (identifiedMaps.isNotEmpty()) {
                 // could be more than 1, eg, when action copied might not change the taintId

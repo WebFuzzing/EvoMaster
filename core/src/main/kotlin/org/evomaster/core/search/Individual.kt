@@ -615,7 +615,10 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
      * @return counter of new discovered info
      */
     fun numberOfDiscoveredInfoFromTestExecution() : Int {
-        return seeGenes().filterIsInstance<StringGene>()
+        return seeGenes()
+            .asSequence()
+            .flatMap { it.flatView() }
+            .filterIsInstance<StringGene>()
             .filter { it.staticCheckIfImpactPhenotype() } //in case disabled since then
             .count { it.selectionUpdatedSinceLastMutation }
         //TODO other info like discovered query-parameters/headers
