@@ -262,5 +262,9 @@ class TaintedMapGene(
         return taintId
     }
 
+    override fun hasDormantGenes(): Boolean {
+        return learnedKeys.isNotEmpty() || learnedTypes.isNotEmpty()
+    }
+
 
 }
