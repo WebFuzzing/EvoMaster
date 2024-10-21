@@ -7,6 +7,7 @@ import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.mongo.MongoDbActionResult
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.Termination
+import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.enterprise.DetectedFault
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
@@ -14,6 +15,8 @@ import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceInfo
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceRequest
 import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
 import org.evomaster.core.problem.rest.*
+import org.evomaster.core.problem.rest.param.PathParam
+import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
@@ -22,6 +25,8 @@ import org.evomaster.core.search.Solution
 import org.evomaster.core.search.action.ActionComponent
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.gene.optional.CustomMutationRateGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.tracer.Traceable
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.SqlActionResult
@@ -279,6 +284,85 @@ class RestActionNamingStrategyTest {
         assertEquals("test_0_postOnItemsReturns200UsingSqlWireMock", testCases[0].name)
     }
 
+    @Test
+    fun restDisambiguationPython() {
+        val rootAction = getRestCallAction("/my/funny/path")
+        val rootIndividual = getEvaluatedIndividualWith(rootAction)
+
+        val itemsAction = getRestCallAction("/my/funniest/path")
+        val itemsIndividual = getEvaluatedIndividualWith(itemsAction)
+
+        val funnyWithUriParamAction = getRestCallAction("/my/funny/path/{dayname}", HttpVerb.GET, singletonList(PathParam("dayname", CustomMutationRateGene("dayname", StringGene("dayname"), 1.0))))
+        val funnyWithUriParamIndividual = getEvaluatedIndividualWith(funnyWithUriParamAction)
+
+        val funnyWithQueryParamAction = getRestCallAction("/my/funny/path", HttpVerb.GET, singletonList(QueryParam("dayname", CustomMutationRateGene("dayname", StringGene("dayname"), 1.0))))
+        val funnyWithQueryParamIndividual = getEvaluatedIndividualWith(funnyWithQueryParamAction)
+
+
+        val solution = Solution(mutableListOf(rootIndividual, itemsIndividual, funnyWithUriParamIndividual, funnyWithQueryParamIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
+
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, pythonFormatter)
+
+        val testCases = namingStrategy.getTestCases()
+        assertEquals(4, testCases.size)
+        assertEquals("test_0_get_on_path_returns_empty", testCases[0].name)
+        assertEquals("test_1_get_on_funniest_path_returns_empty", testCases[1].name)
+        assertEquals("test_2_get_on_path_with_uriParam_foo_returns_empty", testCases[2].name)
+        assertEquals("test_3_get_on_path_with_queryParam_foo_returns_empty", testCases[3].name)
+    }
+
+    @Test
+    fun restDisambiguationChildPaths() {
+        val productParam1 = PathParam("productName", CustomMutationRateGene("productName", StringGene("productName"), 1.0))
+        val configurationParam = PathParam("configurationName", CustomMutationRateGene("configurationName", StringGene("configurationName"), 1.0))
+        val featureParam1 = PathParam("featureName", CustomMutationRateGene("featureName", StringGene("featureName"), 1.0))
+
+        val configurationFeatureAction = getRestCallAction("/products/{productName}/configurations/{configurationName}/features/{featureName}", HttpVerb.GET, mutableListOf(productParam1, configurationParam, featureParam1))
+        val configurationFeatureIndividual = getEvaluatedIndividualWith(configurationFeatureAction)
+
+        val productParam2 = PathParam("productName", CustomMutationRateGene("productName", StringGene("productName"), 1.0))
+        val featureParam2 = PathParam("featureName", CustomMutationRateGene("featureName", StringGene("featureName"), 1.0))
+
+        val productFeatureAction = getRestCallAction("/products/{productName}/features/{featureName}", HttpVerb.GET, mutableListOf(productParam2, featureParam2))
+        val productFeatureIndividual = getEvaluatedIndividualWith(productFeatureAction)
+
+        val solution = Solution(mutableListOf(configurationFeatureIndividual, productFeatureIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
+
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, pythonFormatter)
+
+        val testCases = namingStrategy.getTestCases()
+        assertEquals(2, testCases.size)
+        assertEquals("test_0_get_on_configur_featur_returns_empty", testCases[0].name)
+        assertEquals("test_1_get_on_product_featur_returns_empty", testCases[1].name)
+    }
+
+    @Test
+    fun restDisambiguationJava() {
+        val rootAction = getRestCallAction("/my/funny/path")
+        val rootIndividual = getEvaluatedIndividualWith(rootAction)
+
+        val itemsAction = getRestCallAction("/my/funniest/path")
+        val itemsIndividual = getEvaluatedIndividualWith(itemsAction)
+
+        val funnyWithUriParamAction = getRestCallAction("/my/funny/path/{dayname}", HttpVerb.GET, singletonList(PathParam("dayname", CustomMutationRateGene("dayname", StringGene("dayname"), 1.0))))
+        val funnyWithUriParamIndividual = getEvaluatedIndividualWith(funnyWithUriParamAction)
+
+        val funnyWithQueryParamAction = getRestCallAction("/my/funny/path", HttpVerb.GET, singletonList(QueryParam("dayname", CustomMutationRateGene("dayname", StringGene("dayname"), 1.0))))
+        val funnyWithQueryParamIndividual = getEvaluatedIndividualWith(funnyWithQueryParamAction)
+
+
+        val solution = Solution(mutableListOf(rootIndividual, itemsIndividual, funnyWithUriParamIndividual, funnyWithQueryParamIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
+
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter)
+
+        val testCases = namingStrategy.getTestCases()
+        assertEquals(4, testCases.size)
+        assertEquals("test_0_getOnPathReturnsEmpty", testCases[0].name)
+        assertEquals("test_1_getOnFunniestPathReturnsEmpty", testCases[1].name)
+        assertEquals("test_2_getOnPathWithUriParam_foo_ReturnsEmpty", testCases[2].name)
+        assertEquals("test_3_getOnPathWithQueryParam_foo_ReturnsEmpty", testCases[3].name)
+    }
+
     private fun getEvaluatedIndividualWith(restAction: RestCallAction): EvaluatedIndividual<RestIndividual> {
         return getEvaluatedIndividualWith(restAction, 200, "", MediaType.TEXT_PLAIN_TYPE)
     }
@@ -350,8 +434,8 @@ class RestActionNamingStrategyTest {
         return EvaluatedIndividual<RestIndividual>(FitnessValue(0.0), individual, results)
     }
 
-    private fun getRestCallAction(path: String = "/items", verb: HttpVerb = HttpVerb.GET): RestCallAction {
-        return RestCallAction("1", verb, RestPath(path), mutableListOf())
+    private fun getRestCallAction(path: String = "/items", verb: HttpVerb = HttpVerb.GET, parameters: MutableList<Param> = mutableListOf()): RestCallAction {
+        return RestCallAction("1", verb, RestPath(path), parameters)
     }
 
     private fun getRestCallResult(sourceLocalId: String, statusCode: Int, resultBodyString: String, bodyType: MediaType): RestCallResult {
