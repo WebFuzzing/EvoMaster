@@ -1115,6 +1115,11 @@ object RestActionBuilderV3 {
             if(schema.additionalProperties == null || (schema.additionalProperties is Boolean && schema.additionalProperties == true)) {
                 //default is true
                 return TaintedMapGene(name, TaintInputName.getTaintName(StaticCounter.getAndIncrease()))
+            } else {
+                /*
+                    If we get here, it is really something wrong with the schema...
+                 */
+                return FixedMapGene(name, PairGene.createStringPairGene(StringGene(name + "_field"), isFixedFirst = true))
             }
         }
 
@@ -1598,6 +1603,7 @@ object RestActionBuilderV3 {
     }
 
 
+    @Deprecated("should be removed, no longer used")
     fun getModelsFromSwagger(swagger: OpenAPI,
                              modelCluster: MutableMap<String, ObjectGene>,
                             options: Options
