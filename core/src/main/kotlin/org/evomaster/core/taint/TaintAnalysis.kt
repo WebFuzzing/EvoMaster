@@ -34,6 +34,40 @@ object TaintAnalysis {
                 .map { it.getSpecializationGene()!!.getValueAsRawString() }
     }
 
+
+    /**
+     * TODO Ideally, this should not be needed, as should be handled in evolveIndividual
+     */
+    fun dormantGenes(individual: Individual) : List<StringGene> = individual.seeGenes()
+        .asSequence()
+        .flatMap { it.flatView() }
+        .filterIsInstance<StringGene>()
+        .filter { it.selectionUpdatedSinceLastMutation }
+        .filter { it.staticCheckIfImpactPhenotype() }
+        .toList()
+
+    /**
+     * If individual as any latent genotype related to taint analysis, do activate them.
+     * Note that individuals are not evolved immediately, as execution of fitness function should not
+     * change the phenotype
+     */
+    fun evolveIndividual(individual: Individual) {
+
+        /*
+            TODO ideally, StringGene specializations should be handled here as well,
+            but that would need quite a bit of refactoring... :(
+            especially in mutation code of StringGene.
+            a technical debt for another day...
+         */
+
+        val allGenes = individual.seeGenes().flatMap { it.flatView() }
+
+        allGenes.filterIsInstance<TaintedArrayGene>()
+            .filter{!it.isActive && it.isResolved()}
+            .forEach { it.activate() }
+    }
+
+
     /**
      *   Analyze if any tainted value was used in the SUT in some special way.
      *   If that happened, then such info would end up in the AdditionalInfoDto.
