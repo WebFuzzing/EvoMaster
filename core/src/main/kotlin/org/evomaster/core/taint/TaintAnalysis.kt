@@ -65,6 +65,9 @@ object TaintAnalysis {
         allGenes.filterIsInstance<TaintedArrayGene>()
             .filter{!it.isActive && it.isResolved()}
             .forEach { it.activate() }
+
+        allGenes.filterIsInstance<TaintedMapGene>()
+            .forEach { it.evolve() }
     }
 
 
@@ -214,7 +217,7 @@ object TaintAnalysis {
                     .forEach { field ->
                         identifiedMaps.forEach { g ->
                             if(!g.hasKeyByName(field.value)){
-                                g.addNewKey(field.value)
+                                g.registerKey(field.value)
                             }
                         }
                     }
@@ -236,7 +239,7 @@ object TaintAnalysis {
                         identifiedFields.forEach { field ->
                             val tmap = field.getFirstParent(TaintedMapGene::class.java)
                             //hmmm... in theory a null could happen if SUT cast a String to something else
-                            tmap?.specifyValueTypeForKey(field.name, cast.value)
+                            tmap?.registerNewType(field.name, cast.value)
                         }
                     }
             }
