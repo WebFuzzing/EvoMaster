@@ -16,7 +16,7 @@ class JacksonReadValueEMTest : SpringTestBase() {
         @JvmStatic
         fun init() {
             val config = EMConfig()
-            config.instrumentMR_NET = true
+            config.instrumentMR_EXT_0 = true
             initClass(JacksonReadValueController(), config)
         }
     }
