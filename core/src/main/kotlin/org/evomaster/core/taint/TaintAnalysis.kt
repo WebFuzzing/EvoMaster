@@ -174,8 +174,17 @@ object TaintAnalysis {
     }
 
     private fun getPhenotype(individual: Individual) = individual.seeAllActions()
-        .flatMap { a -> a.seeTopGenes() }
-        .associateBy({ it.name }, { it.getValueAsRawString() })
+        .flatMap { it.seeTopGenes() }
+        .filter { it.staticCheckIfImpactPhenotype() && it.isPrintable() }
+        .associateBy({ it.name }, {
+            /*
+                FIXME should never throw exception... but it does for FKs... :(
+                anyway, as those need to be fully refactored, no point fixing now.
+                need to refactor that first
+             */
+            try{it.getValueAsRawString()}catch (e: Exception){"EXCEPTION"}
+        }
+        )
 
     private fun handleTaintedMaps(
         specsMap: Map<String, List<StringSpecializationInfo>>,
