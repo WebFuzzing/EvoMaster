@@ -162,6 +162,10 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         }
 
         if(config.taintForceSelectionOfGenesWithSpecialization){
+            /*
+                FIXME this should be removed, and rather handled with an "evolve".
+                but need refactoring of StringGene mutation
+             */
             TaintAnalysis.dormantGenes(individual)
                 .forEach {
                     if(!toMutate.contains(it)){

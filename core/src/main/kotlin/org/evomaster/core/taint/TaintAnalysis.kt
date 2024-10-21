@@ -40,7 +40,7 @@ object TaintAnalysis {
      */
     fun dormantGenes(individual: Individual) : List<StringGene> = individual.seeGenes()
         .asSequence()
-        .flatMap { it.flatView() }
+        //.flatMap { it.flatView() }  // FIXME this is problematic, as Mutator expect top genes only
         .filterIsInstance<StringGene>()
         .filter { it.selectionUpdatedSinceLastMutation }
         .filter { it.staticCheckIfImpactPhenotype() }
