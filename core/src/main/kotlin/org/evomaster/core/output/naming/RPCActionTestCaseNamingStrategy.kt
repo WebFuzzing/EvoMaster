@@ -1,6 +1,5 @@
 package org.evomaster.core.output.naming
 
-import org.evomaster.core.output.TestWriterUtils
 import org.evomaster.core.output.TestWriterUtils.safeVariableName
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCCallResult

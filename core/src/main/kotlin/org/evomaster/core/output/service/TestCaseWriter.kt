@@ -7,7 +7,6 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestCase
 import org.evomaster.core.output.TestWriterUtils
 import org.evomaster.core.output.TestWriterUtils.getWireMockVariableName
-import org.evomaster.core.problem.api.ApiWsAction
 import org.evomaster.core.problem.enterprise.EnterpriseActionResult
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
@@ -15,7 +14,6 @@ import org.evomaster.core.problem.externalservice.httpws.param.HttpWsResponsePar
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.sql.SqlAction
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Path
@@ -76,37 +74,6 @@ abstract class TestCaseWriter {
         ) {
             clusterComment(lines, test)
         }
-
-        lines.addSingleCommentLine("Individual:")
-        lines.addSingleCommentLine("\tActions:")
-        test.test.individual.seeAllActions().forEach { ac ->
-            lines.addSingleCommentLine("\t\t${ac.javaClass.kotlin.qualifiedName}: ${ac.getName()}")
-            lines.addSingleCommentLine("\t\t\tAction parameters:")
-            if (ac is ApiWsAction) {
-                ac.parameters.forEach { acParam ->
-                    lines.addSingleCommentLine(
-                        "\t\t\t\t${acParam.name}: '${
-                            acParam.primaryGene().getValueAsRawString()
-                        }'"
-                    )
-                }
-            } else if (ac is SqlAction) {
-                lines.addSingleCommentLine("\t\t\t\t${ac.getResolvedName()}")
-            }
-            lines.addSingleCommentLine("\t\t\tGenes:")
-            ac.seeTopGenes().forEach { gene ->
-                try {
-                    lines.addSingleCommentLine("\t\t\t\t${gene.javaClass.kotlin.qualifiedName} = ${gene.getVariableName()}:'${gene.getValueAsRawString()}'")
-                } catch (e: Exception) {
-                    lines.appendSingleCommentLine("\t\t\t\tError trying to print ${gene.javaClass.kotlin.qualifiedName} information: ${e.localizedMessage}")
-                }
-            }
-        }
-        lines.addSingleCommentLine("\tEvaluated Actions:")
-        test.test.evaluatedMainActions().forEach { eAc ->
-            lines.addSingleCommentLine("\t\t${eAc.action.javaClass.kotlin.qualifiedName}: ${eAc.action.getName()}")
-        }
-
 
         if (format.isJUnit()) {
             if (config.testTimeout <= 0) {

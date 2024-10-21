@@ -2,8 +2,6 @@ package org.evomaster.core.output.naming
 
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
-import org.evomaster.core.EMConfig
-import org.evomaster.core.output.TestWriterUtils
 import org.evomaster.core.output.TestWriterUtils.safeVariableName
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
@@ -14,7 +12,6 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.EvaluatedAction
-import java.util.Collections.singletonList
 import javax.ws.rs.core.MediaType
 
 open class RestActionTestCaseNamingStrategy(
