@@ -620,7 +620,12 @@ public class ExecutionTracer {
      *  Here, then, we can check for taint analysis
      */
     public static Object executingCheckCast(Object value, String classType){
-        if(value instanceof String && isTaintInput((String) value)){
+        if(value instanceof String
+                && isTaintInput((String) value)
+                && !classType.equals("java/lang/String")
+                && !classType.equals("java/lang/CharSequence")
+                && !classType.equals("java/lang/Object")
+        ){
            addStringSpecialization((String)value,
                    new StringSpecializationInfo(StringSpecialization.CAST_TO_TYPE,classType));
         }

@@ -22,7 +22,6 @@ import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.Individual.GeneFilter.ALL
 import org.evomaster.core.search.Individual.GeneFilter.NO_SQL
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.gene.collection.TaintedArrayGene
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
@@ -31,6 +30,7 @@ import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.EvaluatedInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
+import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import kotlin.math.max
@@ -162,10 +162,11 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         }
 
         if(config.taintForceSelectionOfGenesWithSpecialization){
-            individual.seeGenes()
-                .filterIsInstance<StringGene>()
-                .filter { it.selectionUpdatedSinceLastMutation }
-                .filter { it.staticCheckIfImpactPhenotype() }
+            /*
+                FIXME this should be removed, and rather handled with an "evolve".
+                but need refactoring of StringGene mutation
+             */
+            TaintAnalysis.dormantGenes(individual)
                 .forEach {
                     if(!toMutate.contains(it)){
                         toMutate.add(it)
@@ -177,6 +178,8 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
     }
 
     private fun mutationPreProcessing(individual: T) {
+
+        TaintAnalysis.evolveIndividual(individual)
 
         for(a in individual.seeAllActions()){
             val update =if(a is ApiWsAction) {
@@ -197,10 +200,6 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             allGenes.filterIsInstance<OptionalGene>()
                 .filter { it.selectable && it.requestSelection }
                 .forEach { it.isActive = true; it.requestSelection = false }
-
-            allGenes.filterIsInstance<TaintedArrayGene>()
-                .filter{!it.isActive && it.isResolved()}
-                .forEach { it.activate() }
 
             //disable genes that should no longer be mutated
             val state = individual.searchGlobalState

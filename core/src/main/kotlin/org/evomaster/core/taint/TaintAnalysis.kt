@@ -5,6 +5,7 @@ import org.evomaster.client.java.instrumentation.shared.StringSpecialization
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.client.java.instrumentation.shared.TaintType
+import org.evomaster.core.Lazy
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.rest.RestActionBuilderV3
@@ -32,6 +33,43 @@ object TaintAnalysis {
                 .filter { it.getSpecializationGene() != null && it.getSpecializationGene() is RegexGene }
                 .map { it.getSpecializationGene()!!.getValueAsRawString() }
     }
+
+
+    /**
+     * TODO Ideally, this should not be needed, as should be handled in evolveIndividual
+     */
+    fun dormantGenes(individual: Individual) : List<StringGene> = individual.seeGenes()
+        .asSequence()
+        //.flatMap { it.flatView() }  // FIXME this is problematic, as Mutator expect top genes only
+        .filterIsInstance<StringGene>()
+        .filter { it.selectionUpdatedSinceLastMutation }
+        .filter { it.staticCheckIfImpactPhenotype() }
+        .toList()
+
+    /**
+     * If individual as any latent genotype related to taint analysis, do activate them.
+     * Note that individuals are not evolved immediately, as execution of fitness function should not
+     * change the phenotype
+     */
+    fun evolveIndividual(individual: Individual) {
+
+        /*
+            TODO ideally, StringGene specializations should be handled here as well,
+            but that would need quite a bit of refactoring... :(
+            especially in mutation code of StringGene.
+            a technical debt for another day...
+         */
+
+        val allGenes = individual.seeGenes().flatMap { it.flatView() }
+
+        allGenes.filterIsInstance<TaintedArrayGene>()
+            .filter{!it.isActive && it.isResolved()}
+            .forEach { it.activate() }
+
+        allGenes.filterIsInstance<TaintedMapGene>()
+            .forEach { it.evolve() }
+    }
+
 
     /**
      *   Analyze if any tainted value was used in the SUT in some special way.
@@ -82,6 +120,11 @@ object TaintAnalysis {
     Currently, embedded and external behaves differently. See HeuristicsCalculator
          */
 
+        //taint changes genotype, but must not change phenotype
+        val phenotype = org.evomaster.core.Lazy.compute{
+            getPhenotype(individual)
+        }
+
         val allTaintableGenes: List<TaintableGene> =
                 individual.seeAllActions()
                         .flatMap { a ->
@@ -119,7 +162,29 @@ object TaintAnalysis {
 
             handleTaintedMaps(specsMap, allTaintableGenes)
         }
+
+        //phenotype must not have changed
+        Lazy.assert {
+            val before = phenotype!!
+            val after = getPhenotype(individual)
+            val same = after.size == before.size
+                    && after.keys.all{before.containsKey(it) && after[it] == before[it]}
+            same
+        }
     }
+
+    private fun getPhenotype(individual: Individual) = individual.seeAllActions()
+        .flatMap { it.seeTopGenes() }
+        .filter { it.staticCheckIfImpactPhenotype() && it.isPrintable() }
+        .associateBy({ it.name }, {
+            /*
+                FIXME should never throw exception... but it does for FKs... :(
+                anyway, as those need to be fully refactored, no point fixing now.
+                need to refactor that first
+             */
+            try{it.getValueAsRawString()}catch (e: Exception){"EXCEPTION"}
+        }
+        )
 
     private fun handleTaintedMaps(
         specsMap: Map<String, List<StringSpecializationInfo>>,
@@ -142,44 +207,51 @@ object TaintAnalysis {
                 throw IllegalArgumentException("No specialization info for value $taintedInput")
             }
 
-            val identifiedMaps = taintedMaps.filter { it.getPossiblyTaintedValue().equals(taintedInput, true) }
-            if (identifiedMaps.isEmpty()) {
-                continue
-            } // could be more than 1, eg, when action copied might not change the taintId
-
-
             /*
+                FIXME following is modifying phenotype!!!
+                should rather just modify genotype, and update phenotype with a call from
+                StandardMutator.mutationPreProcessing()
+             */
+
+            val identifiedMaps = taintedMaps.filter { it.getPossiblyTaintedValue().equals(taintedInput, true) }
+            if (identifiedMaps.isNotEmpty()) {
+                // could be more than 1, eg, when action copied might not change the taintId
+
+                /*
                 discover new fields in the map.
                 the tainted value X points to the Map (ie {"taint_id": "X"} ), so can be accessed through identifiedMaps.
                 the value here is the new key K that is accessed, ie M.get("key")
-            */
-            specs.filter { it.stringSpecialization == StringSpecialization.JSON_MAP_FIELD }
-                .forEach { field ->
-                    identifiedMaps.forEach { g ->
-                        if(!g.hasKeyByName(field.value)){
-                            g.addNewKey(field.value)
+                */
+                specs.filter { it.stringSpecialization == StringSpecialization.JSON_MAP_FIELD }
+                    .forEach { field ->
+                        identifiedMaps.forEach { g ->
+                            if(!g.hasKeyByName(field.value)){
+                                g.registerKey(field.value)
+                            }
                         }
                     }
-                }
 
-            /*
-                here is different... the taintedInput X would point to the StringGene inside the TaintedMapGene,
-                but we want to modify this latter and not the former
-             */
-            specs.filter { it.stringSpecialization == StringSpecialization.CAST_TO_TYPE }
-                .forEach { cast ->
-                    val identifiedFields = stringGenes
-                        .filter { it.getPossiblyTaintedValue() == taintedInput }
-                        .filter { it.name != TaintInputName.TAINTED_MAP_EM_LABEL_IDENTIFIER }
-                    if(identifiedFields.isEmpty()){
-                        log.warn("Cannot find StringGene with taint: $taintedInput")
-                    }
-                    identifiedFields.forEach { field ->
-                        val tmap = field.getFirstParent(TaintedMapGene::class.java)
-                        //hmmm... in theory a null could happen if SUT cast a String to something else
-                        tmap?.specifyValueTypeForKey(field.name, cast.value)
-                    }
+            } else {
+                val identifiedFields = stringGenes
+                    .filter { it.getPossiblyTaintedValue() == taintedInput }
+                    .filter { it.name != TaintInputName.TAINTED_MAP_EM_LABEL_IDENTIFIER }
+                if(identifiedFields.isEmpty()){
+                    log.warn("Cannot find StringGene with taint: $taintedInput")
+                    return
                 }
+                /*
+                    here is different... the taintedInput X would point to the StringGene inside the TaintedMapGene,
+                    but we want to modify this latter and not the former
+                 */
+                specs.filter { it.stringSpecialization == StringSpecialization.CAST_TO_TYPE }
+                    .forEach { cast ->
+                        identifiedFields.forEach { field ->
+                            val tmap = field.getFirstParent(TaintedMapGene::class.java)
+                            //hmmm... in theory a null could happen if SUT cast a String to something else
+                            tmap?.registerNewType(field.name, cast.value)
+                        }
+                    }
+            }
         }
     }
 

@@ -22,7 +22,9 @@ import org.slf4j.LoggerFactory
 class TaintedMapGene(
     name: String,
     val taintId : String,
-    elements: MutableList<PairGene<StringGene, Gene>> = mutableListOf()
+    elements: MutableList<PairGene<StringGene, Gene>> = mutableListOf(),
+    private val learnedKeys: MutableSet<String> = mutableSetOf(),
+    private val learnedTypes: MutableMap<String,String> = mutableMapOf()
 ) : TaintableGene, MapGene<StringGene, Gene>(
     name,
     PairGene("TaintedMapTemplate", StringGene("key"), FlexibleGene("value", StringGene("value"), null), false),
@@ -54,19 +56,36 @@ class TaintedMapGene(
             addElement(idGene)
 
         } else if(elements.none { it.name == TaintInputName.TAINTED_MAP_EM_LABEL_IDENTIFIER }){
-
             throw IllegalArgumentException("No taint id gene in input")
         }
 
+        val alreadyKnown = learnedKeys.filter { hasKeyByName(it) }
+        if(alreadyKnown.isNotEmpty()){
+            throw IllegalArgumentException("Already known keys: ${alreadyKnown.joinToString(", ")}")
+        }
+        val missingKeys = learnedTypes.keys.filter { !hasKeyByName(it) }
+        if(missingKeys.isNotEmpty()){
+            throw IllegalArgumentException("Missing keys for defined types: ${missingKeys.joinToString(", ")}")
+        }
     }
 
+    fun evolve(){
+        learnedKeys.forEach { addNewKey(it) }
+        learnedKeys.clear()
+        learnedTypes.entries.forEach { specifyValueTypeForKey(it.key, it.value) }
+        learnedTypes.clear()
+    }
+
+    fun registerKey(key: String){
+        learnedKeys.add(key)
+    }
 
     /**
      * Create and add a new key-value pair.
      * The value will be a tainted string, so that at next step of the search
      * we can infer its type based on how it is cast
      */
-    fun addNewKey(key: String) {
+    private fun addNewKey(key: String) {
         if(hasKeyByName(key)){
             throw IllegalArgumentException("Key with name $key already exists")
         }
@@ -80,13 +99,16 @@ class TaintedMapGene(
         addElement(element)
     }
 
+    fun registerNewType(key: String, valueType: String){
+        learnedTypes[key] = valueType
+    }
 
     /**
      * for the given [key], replace its value gene with a new valid gene with given [valueType].
      *
      * @param valueType in same format as what used in CHECKCAST
      */
-    fun specifyValueTypeForKey(key: String, valueType: String){
+    private fun specifyValueTypeForKey(key: String, valueType: String){
         if(!hasKeyByName(key)){
             throw IllegalArgumentException("Key with name $key does not exist")
         }
@@ -212,7 +234,9 @@ class TaintedMapGene(
         return TaintedMapGene(
             name,
             taintId,
-            elements.map { it.copy() as PairGene<StringGene, Gene>}.toMutableList()
+            elements.map { it.copy() as PairGene<StringGene, Gene>}.toMutableList(),
+            learnedKeys.toMutableSet(),
+            learnedTypes.toMutableMap()
         )
     }
 
@@ -236,6 +260,10 @@ class TaintedMapGene(
 
     override fun getPossiblyTaintedValue(): String {
         return taintId
+    }
+
+    override fun hasDormantGenes(): Boolean {
+        return learnedKeys.isNotEmpty() || learnedTypes.isNotEmpty()
     }
 
 

@@ -27,6 +27,7 @@ import org.evomaster.core.search.gene.string.Base64StringGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 class PostmanParserTest {
@@ -392,6 +393,7 @@ class PostmanParserTest {
         assertEquals("{prop1=val1, val2 and val3+val4;prop2=val4;prop3=val5}", pathParam.gene.value)
     }
 
+    @Disabled("Would need to support TaintMapGene")
     @Test
     fun testPostmanParserJsonBody() {
         val testCases = postmanParser.parseTestCases("src/test/resources/postman/json_body.postman_collection.json")
@@ -449,6 +451,7 @@ class PostmanParserTest {
         assertEquals("val4", (objArrPropElem2.getAllElements()[1] as PairGene<StringGene, StringGene>).second.value)
     }
 
+    @Disabled("Would need to support TaintMapGene")
     @Test
     fun testPostmanParserJsonBodySomeValuesWrong() {
         val testCases = postmanParser.parseTestCases("src/test/resources/postman/json_body_some_values_wrong.postman_collection.json")

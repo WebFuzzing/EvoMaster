@@ -10,6 +10,7 @@ import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.search.action.*
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.interfaces.TaintableGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.service.Randomness
@@ -615,9 +616,12 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
      * @return counter of new discovered info
      */
     fun numberOfDiscoveredInfoFromTestExecution() : Int {
-        return seeGenes().filterIsInstance<StringGene>()
-            .filter { it.staticCheckIfImpactPhenotype() } //in case disabled since then
-            .count { it.selectionUpdatedSinceLastMutation }
+        return seeGenes()
+            .asSequence()
+            .flatMap { it.flatView() }
+            .filterIsInstance<TaintableGene>()
+            .filter { it is Gene && it.staticCheckIfImpactPhenotype() } //in case disabled since then
+            .count { it.hasDormantGenes() }
         //TODO other info like discovered query-parameters/headers
     }
 }

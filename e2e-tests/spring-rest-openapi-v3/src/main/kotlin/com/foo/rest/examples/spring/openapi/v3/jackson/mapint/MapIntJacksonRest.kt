@@ -18,7 +18,7 @@ class MapIntJacksonRest {
 
     private val mapper = jacksonObjectMapper()
 
-    @PostMapping(consumes = [MediaType.TEXT_PLAIN_VALUE])
+    @PostMapping(consumes = [MediaType.APPLICATION_JSON_VALUE])
     fun post(request: HttpServletRequest): ResponseEntity<String> {
 
         val json = IOUtils.toString(request.inputStream, StandardCharsets.UTF_8)

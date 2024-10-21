@@ -16,8 +16,10 @@ import io.swagger.v3.oas.models.parameters.RequestBody
 import io.swagger.v3.oas.models.responses.ApiResponse
 import org.evomaster.client.java.instrumentation.shared.ClassToSchemaUtils.OPENAPI_COMPONENT_NAME
 import org.evomaster.client.java.instrumentation.shared.ClassToSchemaUtils.OPENAPI_SCHEMA_NAME
+import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
+import org.evomaster.core.StaticCounter
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.problem.api.param.Param
@@ -25,10 +27,7 @@ import org.evomaster.core.problem.rest.param.*
 import org.evomaster.core.problem.util.ActionBuilderUtil
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.gene.collection.ArrayGene
-import org.evomaster.core.search.gene.collection.EnumGene
-import org.evomaster.core.search.gene.collection.FixedMapGene
-import org.evomaster.core.search.gene.collection.PairGene
+import org.evomaster.core.search.gene.collection.*
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.FormatForDatesAndTimes
@@ -1112,8 +1111,16 @@ object RestActionBuilderV3 {
                 return FixedMapGene(name, additionalFieldTemplate)
 
             messages.add("No fields for object definition: $name")
-            // here, the first of pairgene should not be mutable
-            return FixedMapGene(name, PairGene.createStringPairGene(StringGene(name + "_field"), isFixedFirst = true))
+
+            if(schema.additionalProperties == null || (schema.additionalProperties is Boolean && schema.additionalProperties == true)) {
+                //default is true
+                return TaintedMapGene(name, TaintInputName.getTaintName(StaticCounter.getAndIncrease()))
+            } else {
+                /*
+                    If we get here, it is really something wrong with the schema...
+                 */
+                return FixedMapGene(name, PairGene.createStringPairGene(StringGene(name + "_field"), isFixedFirst = true))
+            }
         }
 
 
@@ -1596,6 +1603,7 @@ object RestActionBuilderV3 {
     }
 
 
+    @Deprecated("should be removed, no longer used")
     fun getModelsFromSwagger(swagger: OpenAPI,
                              modelCluster: MutableMap<String, ObjectGene>,
                             options: Options

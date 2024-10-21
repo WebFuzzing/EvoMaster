@@ -84,9 +84,7 @@ class UpdateForBodyParamStructureTest : StructuralElementBaseTest() {
     @Test
     fun testChildType(){
         val update = getStructuralElement()
-        assertNotNull(update.body)
-        //due to refactoring. TODO need to check for side-effects
         assertFalse(update.getViewOfChildren().first() is BodyParam)
-        //assertTrue(update.getViewOfChildren().first() is BodyParam)
+        assertTrue(update.getViewOfChildren().first() is ObjectGene)
     }
 }

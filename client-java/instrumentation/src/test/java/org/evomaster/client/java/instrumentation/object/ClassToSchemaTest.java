@@ -169,7 +169,7 @@ public class ClassToSchemaTest {
         String schema = ClassToSchema.getOrDeriveSchemaWithItsRef(Map.class);
         JsonObject all = parse(schema);
         JsonObject jvmMap = all.get(Map.class.getName()).getAsJsonObject().get(Map.class.getName()).getAsJsonObject();
-        verifyMapField(jvmMap, "string", false);
+        verifyUnconstrainedMap(jvmMap);
     }
 
     @Test
@@ -304,6 +304,15 @@ public class ClassToSchemaTest {
         JsonObject field = obj.get("properties").getAsJsonObject()
                 .get(fieldName).getAsJsonObject();
         verifyMapField(field, valueType, isRef);
+    }
+
+
+    private void verifyUnconstrainedMap(JsonObject field){
+        assertEquals("object", field.get("type").getAsString());
+        assertTrue(field.has("additionalProperties"));
+        assertFalse(field.has("properties"));
+        boolean ap = Boolean.parseBoolean(field.get("additionalProperties").getAsString());
+        assertTrue(ap);
     }
 
     private void verifyMapField(JsonObject field, String valueType, boolean isRef){
