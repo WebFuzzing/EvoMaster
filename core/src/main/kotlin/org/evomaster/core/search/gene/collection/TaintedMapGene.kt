@@ -130,31 +130,9 @@ class TaintedMapGene(
 
     private fun inferGeneFromValueType(valueType: String, name: String) : Gene{
 
-        if(valueType.startsWith("[")){
-            //dealing with an array
-            //TODO
-        }
-
-        if(!valueType.startsWith("java")){
-            /*
-                not part of JDK... would a deserializer for a Map do that?
-                eg, maybe using a library class? still feel weird, would need to double-check if this happens
-             */
-            log.warn("In TaintedMap $taintId cannot handle valueType $valueType for field $name")
-            return StringGene(name) // defaulting to string
-        }
-
-        val className = valueType.replace("/",".")
-        val type = try{
-            this::class.java.classLoader.loadClass(className)
-        } catch (e: ClassNotFoundException) {
-            log.warn("Unable to load class $className when inferring type for valueType $valueType in tainted map $taintId for field $name")
-            return StringGene(name)
-        }
-
-        val gene = GeneUtils.getBasicGeneBasedOnJavaType(type, name)
+        val gene = GeneUtils.getBasicGeneBasedOnBytecodeType(valueType, name)
         if(gene == null){
-            log.warn("Cannot handle $className in tainted map $taintId for field $name")
+            log.warn("Cannot handle $valueType in tainted map $taintId for field $name")
             return StringGene(name)
         }
         return gene

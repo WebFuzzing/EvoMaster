@@ -17,6 +17,9 @@ class TaintedMapGeneTest{
         val y : String? = null
     )
 
+    private open class ArrayDto(
+        val x : Array<Int>? = null
+    )
 
     @Test
     fun testAddElement(){
@@ -50,4 +53,32 @@ class TaintedMapGeneTest{
         assertNotNull(dto.x)
         assertNotNull(dto.y)
     }
+
+
+    @Test
+    fun testIntArray(){
+
+        val gene = TaintedMapGene("foo", TaintInputName.getTaintName(42))
+        gene.doInitialize()
+        gene.registerKey("x")
+        gene.evolve()
+
+        gene.registerNewType("x", "[I")
+        gene.evolve()
+
+        val json = gene.getValueAsPrintableString(mode= GeneUtils.EscapeMode.JSON)
+        val dto = mapper.readValue(json, ArrayDto::class.java)
+        assertNotNull(dto.x)
+    }
+
+
+    /*
+        TODO
+        testIntegerArray
+        testBooleanArray
+        testArrayArray
+        testMapArray
+        testDoubleList
+        testMapList
+     */
 }
