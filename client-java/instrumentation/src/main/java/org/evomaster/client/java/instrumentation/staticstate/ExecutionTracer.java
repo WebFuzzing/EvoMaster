@@ -610,9 +610,28 @@ public class ExecutionTracer {
     }
 
 
+    public static final String EXECUTING_CHECKCAST_METHOD_NAME = "executingCheckCast";
+    public static final String EXECUTING_CHECKCAST_DESCRIPTOR = "(Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;";
+
+
+    /**
+     *  Analyze the current top stack, and then add it back.
+     *  This assumes that the instrumentation first push the type of CHECKCAST on stack first.
+     *  Here, then, we can check for taint analysis
+     */
+    public static Object executingCheckCast(Object value, String classType){
+        if(value instanceof String && isTaintInput((String) value)){
+           addStringSpecialization((String)value,
+                   new StringSpecializationInfo(StringSpecialization.CAST_TO_TYPE,classType));
+        }
+
+        return value;
+    }
+
+
     //---- branch-jump methods --------------------------
 
-    private static void updateBranch(String className, int line, int branchId, Truthness t) {
+    private static void updateBranch(String className, int line, int branchId, Truthness t, int opcode) {
 
         /*
             Note: when we have
@@ -623,8 +642,8 @@ public class ExecutionTracer {
             x <= 0
          */
 
-        String forThen = ObjectiveNaming.branchObjectiveName(className, line, branchId, true);
-        String forElse = ObjectiveNaming.branchObjectiveName(className, line, branchId, false);
+        String forThen = ObjectiveNaming.branchObjectiveName(className, line, branchId, true, opcode);
+        String forElse = ObjectiveNaming.branchObjectiveName(className, line, branchId, false, opcode);
 
         updateObjective(forElse, t.getOfTrue());
         updateObjective(forThen, t.getOfFalse());
@@ -640,7 +659,7 @@ public class ExecutionTracer {
 
         Truthness t = HeuristicsForJumps.getForSingleValueJump(value, opcode);
 
-        updateBranch(className, line, branchId, t);
+        updateBranch(className, line, branchId, t, opcode);
     }
 
 
@@ -651,7 +670,7 @@ public class ExecutionTracer {
 
         Truthness t = HeuristicsForJumps.getForValueComparison(firstValue, secondValue, opcode);
 
-        updateBranch(className, line, branchId, t);
+        updateBranch(className, line, branchId, t, opcode);
     }
 
     public static final String JUMP_DESC_OBJECTS =
@@ -662,7 +681,7 @@ public class ExecutionTracer {
 
         Truthness t = HeuristicsForJumps.getForObjectComparison(first, second, opcode);
 
-        updateBranch(className, line, branchId, t);
+        updateBranch(className, line, branchId, t, opcode);
     }
 
 
@@ -674,7 +693,7 @@ public class ExecutionTracer {
 
         Truthness t = HeuristicsForJumps.getForNullComparison(obj, opcode);
 
-        updateBranch(className, line, branchId, t);
+        updateBranch(className, line, branchId, t, opcode);
     }
 
     /**

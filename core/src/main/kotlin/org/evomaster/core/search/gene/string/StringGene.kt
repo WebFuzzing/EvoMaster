@@ -664,14 +664,16 @@ class StringGene(
         }
 
         if(toAddSpecs.any { it.stringSpecialization == StringSpecialization.JSON_MAP }){
-            val mapGene = FixedMapGene("template", StringGene("keyTemplate"), StringGene("valueTemplate"))
-            /*
-                for Map, we currently only handle them as string key with string value
-                TODO handle generic type if they have
 
-                set tainted input for key of template if the key is string type
-             */
-            mapGene.template.first.forceTaintedValue()
+            val pempty = getSearchGlobalState()?.apc?.getExploratoryValue(0.5, 0.0) ?: 0.1
+
+            val mapGene = if(getSearchGlobalState()?.randomness?.nextBoolean(pempty) != false){
+                FixedMapGene("template", StringGene("keyTemplate"), StringGene("valueTemplate"), maxSize = 0)
+                    .apply { template.first.forceTaintedValue() }
+            } else {
+                //best scenario, but map will never be empty
+                TaintedMapGene(name,TaintInputName.getTaintName(StaticCounter.getAndIncrease()))
+            }
 
             toAddGenes.add(mapGene)
 

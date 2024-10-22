@@ -248,7 +248,8 @@ abstract class Gene(
         if (copy !is Gene)
             throw IllegalStateException("mismatched type: the type should be Gene, but it is ${this::class.java.simpleName}")
         copy.initialized = initialized
-        copy.flatView().forEach{it.initialized = initialized}
+        //this was incorrect, as subchildren might had different init state compared to this
+        //copy.flatView().forEach{it.initialized = initialized}
         return copy
     }
 
@@ -473,7 +474,7 @@ abstract class Gene(
             throw IllegalArgumentException("Trying adaptive weight selection, but with no info as input")
         }
 
-        if(children.none { it.isMutable() }){
+        if(mutablePhenotypeChildren().isEmpty()){
             //no mutable child, so always apply shallow mutate
             return true
         }

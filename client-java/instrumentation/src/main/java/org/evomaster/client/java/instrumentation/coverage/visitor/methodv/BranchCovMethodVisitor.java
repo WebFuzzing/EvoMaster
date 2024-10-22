@@ -55,9 +55,9 @@ public class BranchCovMethodVisitor extends MethodVisitor {
 
         UnitsInfoRecorder.markNewBranchPair();
         ObjectiveRecorder.registerTarget(
-                ObjectiveNaming.branchObjectiveName(className, latestVisitLine, branchId, true));
+                ObjectiveNaming.branchObjectiveName(className, latestVisitLine, branchId, true, opcode));
         ObjectiveRecorder.registerTarget(
-                ObjectiveNaming.branchObjectiveName(className, latestVisitLine, branchId, false));
+                ObjectiveNaming.branchObjectiveName(className, latestVisitLine, branchId, false, opcode));
 
         switch (opcode) {
             //comparisons with 0

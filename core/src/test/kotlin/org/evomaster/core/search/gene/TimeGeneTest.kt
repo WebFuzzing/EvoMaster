@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.search.gene.datetime.FormatForDatesAndTimes
 import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -10,15 +11,17 @@ class TimeGeneTest {
 
     @Test
     fun testDefaultTimeGeneFormat() {
-        val gene = TimeGene("time")
+        val gene = TimeGene("time", format = FormatForDatesAndTimes.RFC3339)
 
         gene.apply {
             hour.value = 3
             minute.value = 4
             second.value = 5
+            selectZ()
+            useMilliseconds(false)
         }
         assertEquals(
-                "03:04:05.000Z",
+                "03:04:05Z",
                 gene.getValueAsRawString()
         )
         assertEquals(
@@ -30,7 +33,7 @@ class TimeGeneTest {
     @Test
     fun testTimeWithMillisFormat() {
         val gene = TimeGene("time",
-                timeGeneFormat = TimeGene.TimeGeneFormat.TIME_WITH_MILLISECONDS
+                format = FormatForDatesAndTimes.RFC3339
         )
         gene.apply {
             hour.value = 3
@@ -49,9 +52,7 @@ class TimeGeneTest {
 
     @Test
     fun testDefaultDateTimeFormat() {
-        val gene = TimeGene("time",
-                timeGeneFormat = TimeGene.TimeGeneFormat.ISO_LOCAL_DATE_FORMAT
-        )
+        val gene = TimeGene("time", format = FormatForDatesAndTimes.ISO_LOCAL)
         gene.apply {
             hour.value = 3
             minute.value = 4
@@ -70,7 +71,7 @@ class TimeGeneTest {
     @Test
     fun testCopyOfISOLocalTimeFormat() {
         val gene = TimeGene("time",
-                timeGeneFormat = TimeGene.TimeGeneFormat.ISO_LOCAL_DATE_FORMAT
+                format = FormatForDatesAndTimes.ISO_LOCAL
         )
         gene.apply {
             hour.value = 3
@@ -85,7 +86,7 @@ class TimeGeneTest {
             assertEquals(3, hour.value)
             assertEquals(4, minute.value)
             assertEquals(5, second.value)
-            assertEquals(TimeGene.TimeGeneFormat.ISO_LOCAL_DATE_FORMAT, timeGeneFormat)
+            assertEquals(FormatForDatesAndTimes.ISO_LOCAL, format)
             assertEquals(false, onlyValidTimes)
         }
     }
@@ -93,7 +94,7 @@ class TimeGeneTest {
     @Test
     fun testCopyOfTimeWithMillisFormat() {
         val gene = TimeGene("time",
-                timeGeneFormat = TimeGene.TimeGeneFormat.TIME_WITH_MILLISECONDS
+                format = FormatForDatesAndTimes.RFC3339
         )
         gene.apply {
             hour.value = 3
@@ -108,14 +109,14 @@ class TimeGeneTest {
             assertEquals(3, hour.value)
             assertEquals(4, minute.value)
             assertEquals(5, second.value)
-            assertEquals(TimeGene.TimeGeneFormat.TIME_WITH_MILLISECONDS, timeGeneFormat)
+            assertEquals(FormatForDatesAndTimes.RFC3339, format)
             assertEquals(false, onlyValidTimes)
         }
     }
     @Test
     fun testCopyValueFrom() {
         val gene0 = TimeGene("time",
-                timeGeneFormat = TimeGene.TimeGeneFormat.TIME_WITH_MILLISECONDS
+                format = FormatForDatesAndTimes.RFC3339
         )
         gene0.apply {
             hour.value = 3
@@ -123,7 +124,7 @@ class TimeGeneTest {
             second.value = 5
         }
         val gene1 = TimeGene("time",
-                timeGeneFormat = TimeGene.TimeGeneFormat.ISO_LOCAL_DATE_FORMAT
+                format = FormatForDatesAndTimes.ISO_LOCAL
         )
         gene1.copyValueFrom(gene0)
 
@@ -131,7 +132,7 @@ class TimeGeneTest {
             assertEquals(3, hour.value)
             assertEquals(4, minute.value)
             assertEquals(5, second.value)
-            assertEquals(TimeGene.TimeGeneFormat.ISO_LOCAL_DATE_FORMAT, timeGeneFormat)
+            assertEquals(FormatForDatesAndTimes.ISO_LOCAL, format)
             assertEquals(false, onlyValidTimes)
         }
     }

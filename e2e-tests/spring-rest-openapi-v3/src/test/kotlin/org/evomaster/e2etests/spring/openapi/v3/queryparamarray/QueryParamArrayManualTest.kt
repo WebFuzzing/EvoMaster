@@ -24,8 +24,13 @@ class QueryParamArrayManualTest : SpringTestBase() {
 
         //RestAssured.enableLoggingOfRequestAndResponseIfValidationFails()
 
+        given().accept("*/*")
+            .get("$baseUrlOfSut/api/queryparamarray?x=")
+            .then()
+            .statusCode(400)
+
         var body = given().accept("*/*")
-            .get(baseUrlOfSut + "/api/queryparamarray?x=1")
+            .get("$baseUrlOfSut/api/queryparamarray?x=1")
             .then()
             .statusCode(200)
             .extract().asString()
@@ -33,21 +38,21 @@ class QueryParamArrayManualTest : SpringTestBase() {
 
 
         body = given().accept("*/*")
-            .get(baseUrlOfSut + "/api/queryparamarray?x=1&x=2")
+            .get("$baseUrlOfSut/api/queryparamarray?x=1&x=2")
             .then()
             .statusCode(200)
             .extract().asString()
         assertEquals("[1,2]", body)
 
         body = given().accept("*/*")
-            .get(baseUrlOfSut + "/api/queryparamarray?x=1&x=1")
+            .get("$baseUrlOfSut/api/queryparamarray?x=1&x=1")
             .then()
             .statusCode(200)
             .extract().asString()
         assertEquals("[1,1]", body)
 
         body = given().accept("*/*")
-            .get(baseUrlOfSut + "/api/queryparamarray?x=1,2")
+            .get("$baseUrlOfSut/api/queryparamarray?x=1,2")
             .then()
             .statusCode(200)
             .extract().asString()

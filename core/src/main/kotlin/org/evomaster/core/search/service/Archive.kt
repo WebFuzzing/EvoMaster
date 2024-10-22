@@ -197,8 +197,13 @@ class Archive<T> where T : Individual {
         /*
             If possible avoid sampling tests that did timeout
          */
-        val chosen = if (!notTimedOut.isEmpty()) {
-            randomness.choose(notTimedOut)
+        val chosen = if (notTimedOut.isNotEmpty()) {
+            val discoveringTaint = notTimedOut.filter { it.individual.numberOfDiscoveredInfoFromTestExecution() > 0 }
+            if(config.discoveredInfoRewardedInFitness && discoveringTaint.isNotEmpty()){
+                randomness.choose(discoveringTaint)
+            } else {
+                randomness.choose(notTimedOut)
+            }
         } else {
             randomness.choose(candidates)
         }
