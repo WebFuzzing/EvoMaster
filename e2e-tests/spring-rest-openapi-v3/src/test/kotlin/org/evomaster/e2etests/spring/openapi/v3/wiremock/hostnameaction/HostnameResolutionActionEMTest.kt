@@ -65,7 +65,7 @@ class HostnameResolutionActionEMTest: SpringTestBase() {
             "--seed", "42",
             "--sutControllerPort", "" + controllerPort,
             "--maxActionEvaluations", "1",
-            "--stoppingCriterion", "FITNESS_EVALUATIONS",
+            "--stoppingCriterion", "ACTION_EVALUATIONS",
             "--executiveSummary", "false",
             "--expectationsActive", "true",
             "--outputFormat", "JAVA_JUNIT_5",

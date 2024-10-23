@@ -55,7 +55,7 @@ class MutatorWithOneMaxTest {
         config.mutationTargetsSelectionStrategy = strategy
 
         config.maxActionEvaluations = budget
-        config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
+        config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
 
         config.saveMutationInfo = true
         config.mutatedGeneFile = "target/MutatorWithOneMaxTest/targets${n}And${improve}ImproveMutationAnd${strategy}First.csv"
