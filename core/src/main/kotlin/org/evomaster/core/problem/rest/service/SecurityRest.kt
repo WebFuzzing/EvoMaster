@@ -188,7 +188,23 @@ class SecurityRest {
                 //try each of them
                 otherUsers.forEach { otherAuth ->
                     val copy = ind.copy() as RestIndividual
+
+                    if(lastCall.verb == HttpVerb.PUT){
+                        /*
+                            a PUT might create the resource, so need to duplicate before changing auth. ie
+                            from
+                            PUT /x FOO
+                            to
+                            PUT /x FOO
+                            PUT /x BAR
+                         */
+                        val repeat = lastCall.copy() as RestCallAction
+                        copy.addMainActionInEmptyEnterpriseGroup(action = repeat)
+                        copy.resetLocalIdRecursively()
+                        copy.doInitializeLocalId()
+                    }
                     copy.seeMainExecutableActions().last().auth = otherAuth
+                    org.evomaster.core.Lazy.assert {copy.verifyValidity(); true}
 
                     val ei = fitness.computeWholeAchievedCoverageForPostProcessing(copy)
                     if(ei != null) {
