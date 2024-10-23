@@ -3,6 +3,7 @@ package org.evomaster.core.docs
 import org.evomaster.core.EMConfig
 import java.io.File
 import java.nio.charset.Charset
+import java.util.*
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.jvm.javaType
 
@@ -156,7 +157,7 @@ object ConfigToMarkdown {
         val typeName = if(type.isEnum){
             "Enum"
         } else {
-            type.simpleName.capitalize()
+            type.simpleName.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ENGLISH) else it.toString() }
         }
 
         val description = EMConfig.getDescription(opt)
