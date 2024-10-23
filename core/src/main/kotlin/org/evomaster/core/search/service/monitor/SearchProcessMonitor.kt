@@ -90,10 +90,11 @@ class SearchProcessMonitor: SearchListener {
         )
 
         private val strategy: ExclusionStrategy = object : ExclusionStrategy {
-            //TODO systematic way to configure the skipped field
+            /*
+                now can employ ProcessMonitorExcludeField to skip field
+             */
             override fun shouldSkipField(field: FieldAttributes): Boolean {
-                return field.name == "parent" || field.name == "bindingGenes"
-//                        || field.name == "searchGlobalState" || field.name == "trackOperator"
+                return field.getAnnotation(ProcessMonitorExcludeField::class.java) != null
             }
 
             //skip abstract StructuralElement element
@@ -133,8 +134,9 @@ class SearchProcessMonitor: SearchListener {
             if(config.processInterval == 0.0 || time.percentageUsedBudget() >= tb * config.processInterval/100.0){
                 when(config.processFormat){
                     EMConfig.ProcessDataFormat.JSON_ALL->{
-                        //TODO check if occurred any side effect
-                        if(evalInd != eval) throw IllegalStateException("Mismatched evaluated individual under monitor")
+
+                        if(evalInd != eval && evalInd.index != (eval as EvaluatedIndividual<T>).index)
+                            throw IllegalStateException("Mismatched evaluated individual under monitor")
                         /*
                             step is assigned when an individual is evaluated (part of calculateCoverage of FitnessFunction),
                             but in order to record if the evaluated individual added into Archive, we need to save it after executing addIfNeeded in Archive
