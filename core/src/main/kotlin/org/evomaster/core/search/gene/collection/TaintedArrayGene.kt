@@ -161,4 +161,8 @@ class TaintedArrayGene(
     override fun hasDormantGenes(): Boolean {
         return isResolved() && !isActive //TODO double-check
     }
+
+    override fun forceNewTaintId() {
+        //TODO
+    }
 }

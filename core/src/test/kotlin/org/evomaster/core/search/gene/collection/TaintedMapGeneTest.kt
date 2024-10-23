@@ -4,8 +4,10 @@ import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.fail
 import java.lang.Exception
 
 class TaintedMapGeneTest{
@@ -18,7 +20,13 @@ class TaintedMapGeneTest{
     )
 
     private open class ArrayDto(
-        val x : Array<Int>? = null
+        val x : Array<Int>? = null,
+        val y: Array<java.lang.Integer>? = null,
+        val b: Array<Boolean>? = null,
+        val a: Array<Array<Float>>? = null,
+        val m: Array<Map<String,Any>>? = null,
+        val l: List<Double>? = null,
+        val k: List<Map<String,Any>>? = null
     )
 
     @Test
@@ -55,29 +63,60 @@ class TaintedMapGeneTest{
     }
 
 
-    @Test
-    fun testIntArray(){
+    private fun verifyCollection(key: String, type: String, lambda: (ArrayDto) -> Array<*>?){
 
         val gene = TaintedMapGene("foo", TaintInputName.getTaintName(42))
         gene.doInitialize()
-        gene.registerKey("x")
+        gene.registerKey(key)
+        gene.evolve()
+        gene.registerNewType(key, type)
         gene.evolve()
 
-        gene.registerNewType("x", "[I")
-        gene.evolve()
+        var json = gene.getValueAsPrintableString(mode= GeneUtils.EscapeMode.JSON)
+        var dto = mapper.readValue(json, ArrayDto::class.java)
+        assertNotNull(lambda.invoke(dto))
 
-        val json = gene.getValueAsPrintableString(mode= GeneUtils.EscapeMode.JSON)
-        val dto = mapper.readValue(json, ArrayDto::class.java)
-        assertNotNull(dto.x)
+        val random = Randomness()
+        repeat(10){
+            gene.randomize(random, true)
+            json = gene.getValueAsPrintableString(mode= GeneUtils.EscapeMode.JSON)
+            dto = mapper.readValue(json, ArrayDto::class.java)
+            assertNotNull(lambda.invoke(dto))
+            if(lambda.invoke(dto)!!.isNotEmpty()){
+                return
+            }
+        }
+        fail("Target collection was always empty after randomization")
+    }
+
+    @Test
+    fun testIntArray(){
+        verifyCollection("x", "[I"){it.x}
+    }
+
+    @Test
+    fun testIntegerArray(){
+        verifyCollection("y", "[Ljava/lang/Integer;"){it.y}
+    }
+
+    @Test
+    fun testBooleanArray(){
+        verifyCollection("b", "[Z"){it.b}
+    }
+
+    @Test
+    fun testArrayArray(){
+        verifyCollection("a", "[[F"){it.a}
+    }
+
+    @Test
+    fun testMapArray(){
+        verifyCollection("m", "[Ljava/util/Map;"){it.m}
     }
 
 
     /*
         TODO
-        testIntegerArray
-        testBooleanArray
-        testArrayArray
-        testMapArray
         testDoubleList
         testMapList
      */

@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene.collection
 
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.Lazy
+import org.evomaster.core.StaticCounter
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.interfaces.TaintableGene
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
@@ -21,7 +22,7 @@ import org.slf4j.LoggerFactory
  */
 class TaintedMapGene(
     name: String,
-    val taintId : String,
+    taintId : String,
     elements: MutableList<PairGene<StringGene, Gene>> = mutableListOf(),
     private val learnedKeys: MutableSet<String> = mutableSetOf(),
     private val learnedTypes: MutableMap<String,String> = mutableMapOf()
@@ -30,6 +31,9 @@ class TaintedMapGene(
     PairGene("TaintedMapTemplate", StringGene("key"), FlexibleGene("value", StringGene("value"), null), false),
     elements = elements
 ){
+
+    var taintId: String = taintId
+        private set
 
     companion object{
         private val log = LoggerFactory.getLogger(TaintedMapGene::class.java)
@@ -242,6 +246,14 @@ class TaintedMapGene(
 
     override fun hasDormantGenes(): Boolean {
         return learnedKeys.isNotEmpty() || learnedTypes.isNotEmpty()
+    }
+
+    override fun forceNewTaintId() {
+
+        taintId = TaintInputName.getTaintName(StaticCounter.getAndIncrease())
+
+        val idGene = elements.first { it.name == TaintInputName.TAINTED_MAP_EM_LABEL_IDENTIFIER }
+        idGene.second.getWrappedGene(StringGene::class.java)?.value = taintId
     }
 
 
