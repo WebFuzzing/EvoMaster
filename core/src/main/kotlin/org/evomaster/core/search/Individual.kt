@@ -14,6 +14,7 @@ import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.SearchGlobalState
+import org.evomaster.core.search.service.monitor.ProcessMonitorExcludeField
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.tracer.Traceable
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
@@ -33,11 +34,13 @@ import org.slf4j.LoggerFactory
  * @param children specify the children of the individual with the constructor
  *
  */
-abstract class Individual(override var trackOperator: TrackOperator? = null,
-                          override var index: Int = Traceable.DEFAULT_INDEX,
-                          children: MutableList<out ActionComponent>,
-                          childTypeVerifier: (Class<*>) -> Boolean = {k -> ActionComponent::class.java.isAssignableFrom(k)},
-                          groups : GroupsOfChildren<StructuralElement>? = null
+abstract class Individual(
+    @ProcessMonitorExcludeField
+    override var trackOperator: TrackOperator? = null,
+    override var index: Int = Traceable.DEFAULT_INDEX,
+    children: MutableList<out ActionComponent>,
+    childTypeVerifier: (Class<*>) -> Boolean = {k -> ActionComponent::class.java.isAssignableFrom(k)},
+    groups : GroupsOfChildren<StructuralElement>? = null
 ) : Traceable,
     StructuralElement(
         children,
@@ -70,6 +73,7 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
      * Note that if the evalutedIndividual is tracked (i.e., [EMConfig.enableTrackEvaluatedIndividual]),
      * we do not recommend to track the individual
      */
+    @ProcessMonitorExcludeField
     override var tracking: TrackingHistory<out Traceable>? = null
 
     /**
@@ -87,6 +91,7 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
      *
      * However, when running actual search with MIO, its presence is checked
      */
+    @ProcessMonitorExcludeField
     var searchGlobalState : SearchGlobalState? = null
         private set
 
