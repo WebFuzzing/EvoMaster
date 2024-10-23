@@ -31,7 +31,7 @@ public class GsonClassReplacement extends ThirdPartyMethodReplacementClass {
             type = ReplacementType.TRACKER,
             id = "fromJson_string_class",
             usageFilter = UsageFilter.ANY,
-            category = ReplacementCategory.BASE)
+            category = ReplacementCategory.EXT_0)
     public static Object fromJson(Object caller, String json, Class<?> classOfT) {
 
         if (caller == null) {
@@ -57,7 +57,7 @@ public class GsonClassReplacement extends ThirdPartyMethodReplacementClass {
             type = ReplacementType.TRACKER,
             id = "fromJson_string_type",
             usageFilter = UsageFilter.ANY,
-            category = ReplacementCategory.BASE
+            category = ReplacementCategory.EXT_0
     )
     public static Object fromJson(Object caller, String json, Type typeOfT) {
         if (caller == null) {
@@ -84,7 +84,7 @@ public class GsonClassReplacement extends ThirdPartyMethodReplacementClass {
             type = ReplacementType.TRACKER,
             id = "fromJson_reader_class",
             usageFilter = UsageFilter.ANY,
-            category = ReplacementCategory.BASE
+            category = ReplacementCategory.EXT_0
     )
     public static Object fromJson(Object caller, Reader json, Class<?> classOfT) {
         if (caller == null) {
@@ -110,7 +110,7 @@ public class GsonClassReplacement extends ThirdPartyMethodReplacementClass {
             type = ReplacementType.TRACKER,
             id = "fromJson_reader_type",
             usageFilter = UsageFilter.ANY,
-            category = ReplacementCategory.BASE
+            category = ReplacementCategory.EXT_0
     )
     public static Object fromJson(Object caller, Reader json, Type typeOfT) {
         if (caller == null) {

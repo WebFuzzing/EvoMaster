@@ -4,8 +4,10 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
 
 import java.io.Reader;
 import java.io.StringReader;
@@ -18,6 +20,13 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class GsonReplacementTest {
+
+    @BeforeEach
+    public void initTest() throws Exception {
+        UnitsInfoRecorder.reset();
+        ObjectiveRecorder.reset(true);
+        ExecutionTracer.reset();
+    }
 
     @Test
     public void testFromJsonClassOfT() {
