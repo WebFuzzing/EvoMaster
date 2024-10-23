@@ -20,66 +20,36 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class GsonReplacementTest {
 
     @Test
-    public void testFromJsonClassOfT() throws Throwable {
+    public void testFromJsonClassOfT() {
         String json = "{\n\"color\": \"red\"\n}";
 
         Gson gson = new Gson();
         GsonClassReplacement.fromJson(gson, json, GsonTestDto.class);
-
-        Map<String, String> parsedDto = UnitsInfoRecorder.getInstance().getParsedDtos();
-        List<AdditionalInfo> additionalInfoList = ExecutionTracer.exposeAdditionalInfoList();
-
-        Set<String> infoList = new HashSet<>();
-        additionalInfoList.forEach(info -> {
-            infoList.addAll(info.getParsedDtoNamesView());
-        });
-        assertTrue(parsedDto.containsKey(GsonTestDto.class.getName()));
-        assertTrue(infoList.contains(GsonTestDto.class.getName()));
-
+        validate();
     }
 
     @Test
-    public void testFromJsonType() throws Throwable {
+    public void testFromJsonType() {
         String json = "{\n\"color\": \"red\"\n}";
 
         Gson gson = new Gson();
         Type dtoType = new TypeToken<GsonTestDto>() {}.getType();
         GsonClassReplacement.fromJson(gson, json, dtoType);
-
-        Map<String, String> parsedDto = UnitsInfoRecorder.getInstance().getParsedDtos();
-        List<AdditionalInfo> additionalInfoList = ExecutionTracer.exposeAdditionalInfoList();
-
-        Set<String> infoList = new HashSet<>();
-        additionalInfoList.forEach(info -> {
-            infoList.addAll(info.getParsedDtoNamesView());
-        });
-        assertTrue(parsedDto.containsKey(GsonTestDto.class.getName()));
-        assertTrue(infoList.contains(GsonTestDto.class.getName()));
+        validate();
     }
 
     @Test
-    public void testFromJsonReaderClassOfT() throws Throwable {
+    public void testFromJsonReaderClassOfT() {
         String json = "{\n\"color\": \"red\"\n}";
 
         Reader reader = new StringReader(json);
-
         Gson gson = new Gson();
-
         GsonClassReplacement.fromJson(gson, reader, GsonTestDto.class);
-
-        Map<String, String> parsedDto = UnitsInfoRecorder.getInstance().getParsedDtos();
-        List<AdditionalInfo> additionalInfoList = ExecutionTracer.exposeAdditionalInfoList();
-
-        Set<String> infoList = new HashSet<>();
-        additionalInfoList.forEach(info -> {
-            infoList.addAll(info.getParsedDtoNamesView());
-        });
-        assertTrue(parsedDto.containsKey(GsonTestDto.class.getName()));
-        assertTrue(infoList.contains(GsonTestDto.class.getName()));
+        validate();
     }
 
     @Test
-    public void testFromJsonReaderType() throws Throwable {
+    public void testFromJsonReaderType() {
         String json = "{\n\"color\": \"red\"\n}";
 
         Reader reader = new StringReader(json);
@@ -88,32 +58,15 @@ public class GsonReplacementTest {
         Type dtoType = new TypeToken<GsonTestDto>() {}.getType();
         GsonClassReplacement.fromJson(gson, reader, dtoType);
 
-        Map<String, String> parsedDto = UnitsInfoRecorder.getInstance().getParsedDtos();
-        List<AdditionalInfo> additionalInfoList = ExecutionTracer.exposeAdditionalInfoList();
-
-        Set<String> infoList = new HashSet<>();
-        additionalInfoList.forEach(info -> {
-            infoList.addAll(info.getParsedDtoNamesView());
-        });
-        assertTrue(parsedDto.containsKey(GsonTestDto.class.getName()));
-        assertTrue(infoList.contains(GsonTestDto.class.getName()));
+        validate();
     }
 
-    @Test
-    public void testFromJsonTypeGeneric() throws Throwable {
-        String json = "{\n\"color\": \"red\"\n}";
-
-        Gson gson = new Gson();
-        Type dtoType = new TypeToken<GsonTestDto>() {}.getType();
-        GsonClassReplacement.fromJson(gson, json, dtoType);
-
+    private void validate() {
         Map<String, String> parsedDto = UnitsInfoRecorder.getInstance().getParsedDtos();
         List<AdditionalInfo> additionalInfoList = ExecutionTracer.exposeAdditionalInfoList();
 
         Set<String> infoList = new HashSet<>();
-        additionalInfoList.forEach(info -> {
-            infoList.addAll(info.getParsedDtoNamesView());
-        });
+        additionalInfoList.forEach(info -> infoList.addAll(info.getParsedDtoNamesView()));
         assertTrue(parsedDto.containsKey(GsonTestDto.class.getName()));
         assertTrue(infoList.contains(GsonTestDto.class.getName()));
     }

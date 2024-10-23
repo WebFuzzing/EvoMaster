@@ -16,7 +16,8 @@ import java.lang.reflect.Type;
 
 public class GsonClassReplacement extends ThirdPartyMethodReplacementClass {
 
-    // TODO: Gson has few more methods, which use their custom JsonReader.
+    // TODO: Gson has three more methods, which use their custom classes
+    //  JsonReader and JsonElement.
     //  Those are not supported yet.
 
     private static final GsonClassReplacement singleton = new GsonClassReplacement();
@@ -132,18 +133,18 @@ public class GsonClassReplacement extends ThirdPartyMethodReplacementClass {
     }
 
     private static String getStringFromReader(Reader reader) {
-        String s = "";
+        StringBuilder s = new StringBuilder();
         int character;
 
         try {
             while ((character = reader.read()) != -1) {
-                s += (char) character;
+                s.append((char) character);
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
-        return s;
+        return s.toString();
     }
 
 }
