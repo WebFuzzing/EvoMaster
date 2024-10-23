@@ -8,10 +8,7 @@ import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.*
 import org.evomaster.core.search.gene.collection.TaintedMapGene.Companion
-import org.evomaster.core.search.gene.numeric.DoubleGene
-import org.evomaster.core.search.gene.numeric.FloatGene
-import org.evomaster.core.search.gene.numeric.IntegerGene
-import org.evomaster.core.search.gene.numeric.LongGene
+import org.evomaster.core.search.gene.numeric.*
 import org.evomaster.core.search.gene.optional.*
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.placeholder.LimitObjectGene
@@ -819,8 +816,19 @@ object GeneUtils {
 
     fun getBasicGeneBasedOnJavaType(type: Class<*>, name: String): Gene? {
 
+        /*
+            Note we could end up dealing with Number when having code like:
+
+            INVOKEINTERFACE java/util/List.get (I)Ljava/lang/Object; (itf)
+            CHECKCAST java/lang/Number
+            INVOKEVIRTUAL java/lang/Number.intValue ()I
+
+            in this case, just using an Int should "hopefully" be fine, regardless of which xValue() is called afterwards
+         */
+
         return when{
             String::class.java.isAssignableFrom(type) -> StringGene(name)
+            Number::class.java.isAssignableFrom(type) -> IntegerGene(name)
             Integer::class.java.isAssignableFrom(type) -> IntegerGene(name)
             Double::class.java.isAssignableFrom(type) -> DoubleGene(name)
             Boolean::class.java.isAssignableFrom(type) -> BooleanGene(name)
