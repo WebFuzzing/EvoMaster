@@ -25,8 +25,7 @@ class TaintedMapGeneTest{
         val b: Array<Boolean>? = null,
         val a: Array<Array<Float>>? = null,
         val m: Array<Map<String,Any>>? = null,
-        val l: List<Double>? = null,
-        val k: List<Map<String,Any>>? = null
+        val l: List<String>? = null,
     )
 
     @Test
@@ -63,7 +62,7 @@ class TaintedMapGeneTest{
     }
 
 
-    private fun verifyCollection(key: String, type: String, lambda: (ArrayDto) -> Array<*>?){
+    private fun verifyCollection(key: String, type: String, lambda: (ArrayDto) -> Any?){
 
         val gene = TaintedMapGene("foo", TaintInputName.getTaintName(42))
         gene.doInitialize()
@@ -81,8 +80,14 @@ class TaintedMapGeneTest{
             gene.randomize(random, true)
             json = gene.getValueAsPrintableString(mode= GeneUtils.EscapeMode.JSON)
             dto = mapper.readValue(json, ArrayDto::class.java)
-            assertNotNull(lambda.invoke(dto))
-            if(lambda.invoke(dto)!!.isNotEmpty()){
+
+            val collection = lambda.invoke(dto)
+            assertNotNull(collection)
+
+            if(collection is Array<*> && collection.isNotEmpty()){
+                return
+            }
+            if(collection is Collection<*> && collection.isNotEmpty()){
                 return
             }
         }
@@ -114,10 +119,9 @@ class TaintedMapGeneTest{
         verifyCollection("m", "[Ljava/util/Map;"){it.m}
     }
 
+    @Test
+    fun testList(){
+        verifyCollection("l", "Ljava/util/List;"){it.l}
+    }
 
-    /*
-        TODO
-        testDoubleList
-        testMapList
-     */
 }
