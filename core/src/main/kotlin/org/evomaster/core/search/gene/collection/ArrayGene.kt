@@ -315,8 +315,7 @@ class ArrayGene<T>(
             gene.randomize(randomness, false)
         }
 
-        //TODO force unique id
-        //gene.getWrappedGene(TaintableGene::class.java)
+        gene.getWrappedGene(TaintableGene::class.java)?.forceNewTaintId()
 
         if (uniqueElements && doesExist(gene)){
             gene.randomize(randomness, true)
