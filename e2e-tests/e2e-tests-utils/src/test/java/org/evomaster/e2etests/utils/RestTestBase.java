@@ -44,7 +44,7 @@ public abstract class RestTestBase  extends EnterpriseTestBase {
                 "--avoidNonDeterministicLogs", "true",
                 "--sutControllerPort", "" + controllerPort,
                 "--maxActionEvaluations", "" + iterations,
-                "--stoppingCriterion", "FITNESS_EVALUATIONS",
+                "--stoppingCriterion", "ACTION_EVALUATIONS",
                 "--useTimeInFeedbackSampling" , "false",
                 "--createConfigPathIfMissing", "false"
         ));

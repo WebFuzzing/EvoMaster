@@ -16,6 +16,7 @@ import org.evomaster.core.search.gene.collection.*
 import org.evomaster.core.search.gene.interfaces.TaintableGene
 import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -295,20 +296,16 @@ object TaintAnalysis {
                 val t = schema.subSequence(0, schema.indexOf(":")).trim().toString()
                 val ref = t.subSequence(1, t.length - 1).toString()
                 RestActionBuilderV3.createGeneForDTO(ref, schema, RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling) )
+            } else if(s.stringSpecialization == StringSpecialization.CAST_TO_TYPE ) {
+                GeneUtils.getBasicGeneBasedOnBytecodeType(s.value, "element")
+                    ?: StringGene("element")
             } else {
-                /*
-                    TODO this could be more sophisticated, like considering numeric and boolean arrays as well,
-                    and already initializing the values in array with some of taints.
-                    but, as this "likely" would be rare (ie JSON array of non-objects as root element in parsing),
-                    no need for now.
-                 */
+                log.warn("Cannot handle string specialization in taint analysis of arrays: ${s.stringSpecialization}")
                 StringGene("element")
             }
 
             genes.forEach {
-                it.resolveTaint(
-                        ArrayGene(it.name, template.copy()).apply { doInitialize(randomness) }
-                )
+                it.resolveTaint(ArrayGene(it.name, template.copy()).apply { doInitialize(randomness) })
             }
         }
     }

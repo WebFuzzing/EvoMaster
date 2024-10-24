@@ -48,7 +48,7 @@ class IntegerGeneMutationUpdateTest {
 
         config = injector.getInstance(EMConfig::class.java)
         config.maxActionEvaluations = budget
-        config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
+        config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
         config.probOfRandomSampling = 0.0
 
         sampler = injector.getInstance(PrimitiveTypeMatchSampler::class.java)

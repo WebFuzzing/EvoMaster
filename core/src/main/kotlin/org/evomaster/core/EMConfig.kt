@@ -480,7 +480,7 @@ class EMConfig {
                 throw ConfigProblemException("Changing number of max actions, but stopping criterion is time")
             }
 
-            StoppingCriterion.FITNESS_EVALUATIONS -> if (maxTimeInSeconds != defaultMaxTimeInSeconds ||
+            StoppingCriterion.ACTION_EVALUATIONS -> if (maxTimeInSeconds != defaultMaxTimeInSeconds ||
                     maxTime != defaultMaxTime) {
                 throw ConfigProblemException("Changing max time, but stopping criterion is based on fitness evaluations")
             }
@@ -1167,7 +1167,7 @@ class EMConfig {
 
     enum class StoppingCriterion {
         TIME,
-        FITNESS_EVALUATIONS
+        ACTION_EVALUATIONS
     }
 
     @Cfg("Stopping criterion for the search")

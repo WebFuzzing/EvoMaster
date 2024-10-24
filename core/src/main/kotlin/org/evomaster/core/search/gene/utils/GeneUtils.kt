@@ -8,10 +8,7 @@ import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.*
 import org.evomaster.core.search.gene.collection.TaintedMapGene.Companion
-import org.evomaster.core.search.gene.numeric.DoubleGene
-import org.evomaster.core.search.gene.numeric.FloatGene
-import org.evomaster.core.search.gene.numeric.IntegerGene
-import org.evomaster.core.search.gene.numeric.LongGene
+import org.evomaster.core.search.gene.numeric.*
 import org.evomaster.core.search.gene.optional.*
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.placeholder.LimitObjectGene
@@ -819,20 +816,54 @@ object GeneUtils {
 
     fun getBasicGeneBasedOnJavaType(type: Class<*>, name: String): Gene? {
 
+        /*
+            Note we could end up dealing with Number when having code like:
+
+            INVOKEINTERFACE java/util/List.get (I)Ljava/lang/Object; (itf)
+            CHECKCAST java/lang/Number
+            INVOKEVIRTUAL java/lang/Number.intValue ()I
+
+            in this case, just using an Int should "hopefully" be fine, regardless of which xValue() is called afterwards
+         */
+
         return when{
-            String::class.java.isAssignableFrom(type) -> StringGene(name)
-            Integer::class.java.isAssignableFrom(type) -> IntegerGene(name)
-            Double::class.java.isAssignableFrom(type) -> DoubleGene(name)
-            Boolean::class.java.isAssignableFrom(type) -> BooleanGene(name)
-            Float::class.java.isAssignableFrom(type) -> FloatGene(name)
-            Long::class.java.isAssignableFrom(type) -> LongGene(name)
-            Short::class.java.isAssignableFrom(type) -> instantiateShortGene(name)
-            Byte::class.java.isAssignableFrom(type) -> instantiateByteGene(name)
-            Char::class.java.isAssignableFrom(type) -> instantiateCharGene(name)
-            Map::class.java.isAssignableFrom(type) -> TaintedMapGene(name, TaintInputName.getTaintName(StaticCounter.getAndIncrease()))
-            List::class.java.isAssignableFrom(type) ||
-                Set::class.java.isAssignableFrom(type) ->
-                    TaintedArrayGene(name, TaintInputName.getTaintName(StaticCounter.getAndIncrease()))
+            String::class.java.isAssignableFrom(type)
+                    || java.lang.String::class.java.isAssignableFrom(type) -> StringGene(name)
+            Integer::class.java.isAssignableFrom(type)
+                    || java.lang.Integer::class.java.isAssignableFrom(type)
+                    || type == Integer.TYPE-> IntegerGene(name)
+            Double::class.java.isAssignableFrom(type)
+                    || java.lang.Double::class.java.isAssignableFrom(type)
+                    || type == java.lang.Double.TYPE-> DoubleGene(name)
+            Boolean::class.java.isAssignableFrom(type)
+                    || java.lang.Boolean::class.java.isAssignableFrom(type)
+                    || type == java.lang.Boolean.TYPE-> BooleanGene(name)
+            Float::class.java.isAssignableFrom(type)
+                    || java.lang.Float::class.java.isAssignableFrom(type)
+                    || type == java.lang.Float.TYPE-> FloatGene(name)
+            Long::class.java.isAssignableFrom(type)
+                    || java.lang.Long::class.java.isAssignableFrom(type)
+                    || type == java.lang.Long.TYPE-> LongGene(name)
+            Short::class.java.isAssignableFrom(type)
+                    || java.lang.Short::class.java.isAssignableFrom(type)
+                    || type == java.lang.Short.TYPE -> instantiateShortGene(name)
+            Byte::class.java.isAssignableFrom(type)
+                    || java.lang.Byte::class.java.isAssignableFrom(type)
+                    || type == java.lang.Byte.TYPE-> instantiateByteGene(name)
+            Char::class.java.isAssignableFrom(type)
+                    || java.lang.Character::class.java.isAssignableFrom(type)
+                    || type == java.lang.Character.TYPE -> instantiateCharGene(name)
+            Map::class.java.isAssignableFrom(type)
+                    || java.util.Map::class.java.isAssignableFrom(type) ->
+                        TaintedMapGene(name, TaintInputName.getTaintName(StaticCounter.getAndIncrease()))
+            List::class.java.isAssignableFrom(type)
+                    || java.util.List::class.java.isAssignableFrom(type)
+                    || Set::class.java.isAssignableFrom(type)
+                    || java.util.Set::class.java.isAssignableFrom(type) ->
+                        TaintedArrayGene(name, TaintInputName.getTaintName(StaticCounter.getAndIncrease()))
+            //important this is last, as it matches all its subclasses
+            Number::class.java.isAssignableFrom(type)
+                    || java.lang.Number::class.java.isAssignableFrom(type)-> IntegerGene(name)
             else -> {
                 null
             }
