@@ -6,6 +6,9 @@ Under development in `master` branch.
 
 - MongoDB support. For white-box heuristics, can analyze all queries done toward MongoDB databases, as well as being able to insert data directly as part of the generated test cases.
 - improved fault detection for OpenAPI schema faults, in particular regarding the structure of the received responses, which are now validated. 
+- improved coverage criteria for black-box testing for REST APIs.
+- support for exploiting "links" declarations in OpenAPI schemas. 
+- improved re-used of data between endpoints (e.g., data returned from GET requests can be used as input for following requests using fields with similar names). 
 
 ### Bug Fixes
 

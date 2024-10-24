@@ -78,7 +78,7 @@ class EMConfig {
 
         private const val externalServiceIPRegex = "$_eip_n$_eip_s$_eip_e"
 
-        private val defaultAlgorithmForBlackBox = Algorithm.RANDOM
+        private val defaultAlgorithmForBlackBox = Algorithm.SMARTS
 
         private val defaultAlgorithmForWhiteBox = Algorithm.MIO
 
@@ -2263,12 +2263,11 @@ class EMConfig {
     @Probability(true)
     var probRestExamples = 0.20
 
-    @Experimental
     @Cfg("In REST, enable the supports of 'links' between resources defined in the OpenAPI schema, if any." +
             " When sampling a test case, if the last call has links, given this probability new calls are" +
             " added for the link.")
     @Probability(true)
-    var probUseRestLinks = 0.0
+    var probUseRestLinks = 0.5
 
     //TODO mark as deprecated once we support proper Robustness Testing
     @Cfg("When generating data, allow in some cases to use invalid values on purpose")
@@ -2292,9 +2291,8 @@ class EMConfig {
     @Cfg("Validate responses against their schema, to check for inconsistencies. Those are treated as faults.")
     var schemaOracles = true
 
-    @Experimental
     @Cfg("Apply more advanced coverage criteria for black-box testing. This can result in larger generated test suites.")
-    var advancedBlackBoxCoverage = false
+    var advancedBlackBoxCoverage = true
 
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
@@ -2342,9 +2340,8 @@ class EMConfig {
     @Min(0.0)
     var thresholdDistanceForDataPool = 2
 
-    @Experimental
     @Cfg("Enable the collection of response data, to feed new individuals based on field names matching.")
-    var useResponseDataPool = false
+    var useResponseDataPool = true
 
     @Experimental
     @Probability(false)
