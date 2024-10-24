@@ -1,12 +1,11 @@
 package org.evomaster.core.docs
 
 import org.evomaster.core.EMConfig
+import org.evomaster.core.utils.StringUtils
 import java.io.File
 import java.nio.charset.Charset
-import java.util.*
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.jvm.javaType
-
 /**
  * Class used to generate Markdown documentation for [EMConfig]
  */
@@ -157,7 +156,7 @@ object ConfigToMarkdown {
         val typeName = if(type.isEnum){
             "Enum"
         } else {
-            type.simpleName.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ENGLISH) else it.toString() }
+            StringUtils.capitalization(type.simpleName)
         }
 
         val description = EMConfig.getDescription(opt)
