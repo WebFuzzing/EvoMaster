@@ -234,6 +234,7 @@ class ProcessMonitorTest{
         config.enableProcessMonitor = true
         config.maxActionEvaluations = 50
         config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
+        config.minimize = true
 
         processMonitor.postConstruct()
 
@@ -241,6 +242,7 @@ class ProcessMonitorTest{
         assertFalse(Files.exists(Paths.get(processMonitor.getStepDirAsPath())))
 
         mio.search()
+
 
         assert(Files.exists(Paths.get(config.processFiles)))
         assert(Files.exists(Paths.get(processMonitor.getStepDirAsPath())))
