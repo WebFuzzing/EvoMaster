@@ -789,6 +789,34 @@ object GeneUtils {
         return gene
     }
 
+    fun getBasicGeneBasedOnJavaTypeBytecodeName(typeName: String, geneName: String) : Gene?{
+
+        val valueType = if(typeName.startsWith("L") && typeName.endsWith(";")){
+            typeName.substring(1, typeName.length - 1)
+        } else {
+            typeName
+        }
+
+        if(!valueType.startsWith("java")){
+            /*
+                not part of JDK... would a deserializer for a Map do that?
+                eg, maybe using a library class? still feel weird, would need to double-check if this happens
+             */
+            log.warn("Not supported gene type for non-JDK class: $typeName")
+            return null
+        }
+
+        val className = valueType.replace("/",".")
+        val type = try{
+            this::class.java.classLoader.loadClass(className)
+        } catch (e: ClassNotFoundException) {
+            log.warn("Unable to load class $className when inferring type for valueType $valueType")
+            return null
+        }
+
+        return getBasicGeneBasedOnJavaType(type, geneName)
+    }
+
     fun getBasicGeneBasedOnJavaType(type: Class<*>, name: String): Gene? {
 
         return when{
@@ -798,14 +826,76 @@ object GeneUtils {
             Boolean::class.java.isAssignableFrom(type) -> BooleanGene(name)
             Float::class.java.isAssignableFrom(type) -> FloatGene(name)
             Long::class.java.isAssignableFrom(type) -> LongGene(name)
+            Short::class.java.isAssignableFrom(type) -> instantiateShortGene(name)
+            Byte::class.java.isAssignableFrom(type) -> instantiateByteGene(name)
+            Char::class.java.isAssignableFrom(type) -> instantiateCharGene(name)
             Map::class.java.isAssignableFrom(type) -> TaintedMapGene(name, TaintInputName.getTaintName(StaticCounter.getAndIncrease()))
-            //TODO
-//            List::class.java.isAssignableFrom(type) ||
-//                Set::class.java.isAssignableFrom(type) -> TaintedArrayGene(name, )
+            List::class.java.isAssignableFrom(type) ||
+                Set::class.java.isAssignableFrom(type) ->
+                    TaintedArrayGene(name, TaintInputName.getTaintName(StaticCounter.getAndIncrease()))
             else -> {
                 null
             }
         }
     }
 
+    fun getBasicGeneBasedOnBytecodeType(type: String, name: String) : Gene?{
+        /*
+        https://lambdaurora.dev/tutorials/java/bytecode/types.html
+        V, represents void, it exists as a type descriptor for method return types.
+        Z, represents a boolean type.
+        B, represents a byte type.
+        C, represents a char type.
+        S, represents a short type.
+        I, represents an int type.
+        J, represents a long type.
+        F, represents a float type.
+        D, represents a double type.
+
+        Objects -> L...;  eg Ljava/lang/String;
+        */
+
+        return when(type){
+            "Z" -> BooleanGene(name)
+            "B" -> instantiateByteGene(name)
+            "C" -> instantiateCharGene(name)
+            "S" -> instantiateShortGene(name)
+            "I" -> IntegerGene(name)
+            "J" -> LongGene(name)
+            "F" -> FloatGene(name)
+            "D" -> DoubleGene(name)
+            else -> when{
+                type.startsWith("[") -> instantiateArrayGeneBasedOnBytecodeType(type,name)
+                else ->   getBasicGeneBasedOnJavaTypeBytecodeName(type, name)
+            }
+        }
+    }
+
+    fun instantiateArrayGeneBasedOnBytecodeType(type: String, name: String) : Gene?{
+        if(!type.startsWith("[")){
+            throw IllegalArgumentException("Array type not starting with [ -> $type")
+        }
+        val subtype = type.substring(1)
+
+        if(subtype.contains("java/lang/Object")){
+            return TaintedArrayGene(name, TaintInputName.getTaintName(StaticCounter.getAndIncrease()))
+        }
+
+        val template = getBasicGeneBasedOnBytecodeType(subtype, name)
+        if(template == null){
+            log.warn("Failed to instantiate gene for subtype: $subtype")
+            return null
+        }
+
+        return ArrayGene(name, template)
+    }
+
+    fun instantiateByteGene(name: String) =
+        IntegerGene(name, min = Byte.MIN_VALUE.toInt(), max = Byte.MAX_VALUE.toInt())
+
+    fun instantiateCharGene(name: String) =
+        StringGene(name, minLength = 1, maxLength = 1)
+
+    fun instantiateShortGene(name: String) =
+        IntegerGene(name, min = Short.MIN_VALUE.toInt(), max = Short.MAX_VALUE.toInt())
 }

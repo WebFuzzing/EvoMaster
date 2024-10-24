@@ -297,7 +297,8 @@ abstract class Gene(
      * Will return [this] if of the specified type, otherwise [null].
      * Wrapper genes, and only those, will override this method to check their children
      */
-    open  fun <T> getWrappedGene(klass: Class<T>) : T?  where T : Gene{
+    @Suppress("BOUNDS_NOT_ALLOWED_IF_BOUNDED_BY_TYPE_PARAMETER")
+    open  fun <T,K> getWrappedGene(klass: Class<K>) : T?  where T : Gene, T : K{
 
         if(this.javaClass == klass){
             return this as T

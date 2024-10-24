@@ -292,7 +292,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                     LoggingUtil.uniqueWarn(log, "More than 1 DTO option: [${dtoNames.sorted().joinToString(", ")}]")
                 }
                 val name = dtoNames.first()
-                val obj = getObjectGeneForDto(name)
+                val obj = getGeneForDto(name)
                 val enumGene = EnumGene("contentType", listOf("application/json"))
                 val body = BodyParam(obj,enumGene)
                 body.seeGenes().forEach { it.doInitialize(randomness) }
@@ -302,7 +302,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         }
     }
 
-    private fun getObjectGeneForDto(name: String): Gene {
+    private fun getGeneForDto(name: String): Gene {
 
         if (!infoDto.unitsInfoDto.parsedDtos.containsKey(name)) {
             /*
@@ -348,27 +348,44 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
                 val location5xx: String? = getlocation5xx(status, additionalInfoList, it, result, name)
                 handleAdditionalStatusTargetDescription(result, fv, status, name, it, location5xx)
+                handleAuthTargets(status, actions, it, name, fv)
+            }
+    }
 
-                //TODO missing oracles from expectations
+    private fun handleAuthTargets(
+        status: Int,
+        actions: List<RestCallAction>,
+        actionIndex: Int,
+        name: String,
+        fv: FitnessValue
+    ) {
+        val action = actions[actionIndex]
 
-//                if (config.expectationsActive) {
-//                    //TODO refactor
-//                    handleAdditionalOracleTargetDescription(fv, actions, result, name, it)
-//                }
-
-                val unauthorized = !AuthUtils.checkUnauthorizedWithAuth(status, actions[it])
-                if (unauthorized) {
-                    /*
+        val unauthorized = !AuthUtils.checkUnauthorizedWithAuth(status, action)
+        if (unauthorized) {
+            /*
                         Note: at this point we cannot consider it as a bug, because it could be just a
                         misconfigured auth info.
                         however, if for other endpoints or parameters we get a 2xx, then it is clearly
                         a bug (although we need to make 100% sure of handling token caching accordingly).
                         but this would be check in specific security tests after the end of the search.
                      */
-                    val unauthorizedId = idMapper.handleLocalTarget("wrong_authorization:$name")
-                    fv.updateTarget(unauthorizedId, 1.0, it)
-                }
+            val unauthorizedId = idMapper.handleLocalTarget("wrong_authorization:$name")
+            fv.updateTarget(unauthorizedId, 1.0, actionIndex)
+        }
+
+        if(config.security && (sampler as AbstractRestSampler).authentications.isNotEmpty()){
+
+            val label = when{
+                StatusGroup.G_2xx.isInGroup(status) -> "2xx"
+                status == 401  && !action.auth.requireMockHandling-> "401"
+                status == 403 -> "403"
+                else -> return
             }
+
+            val targetId = idMapper.handleLocalTarget("Auth:${action.auth.name}:$name:$label")
+            fv.updateTarget(targetId, 1.0, actionIndex)
+        }
     }
 
     private fun handleAdvancedBlackBoxCriteria(fv: FitnessValue, call: RestCallAction, result: RestCallResult) {
@@ -444,30 +461,6 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         //body payload type in response
         fv.coverTarget(idMapper.handleLocalTarget("RESPONSE_BODY_PAYLOAD_${call.id}_${result.getBodyType()}"))
     }
-
-
-//    fun handleAdditionalOracleTargetDescription(
-//        fv: FitnessValue,
-//        actions: List<RestCallAction>,
-//        result: RestCallResult,
-//        name: String,
-//        indexOfAction: Int
-//    ) {
-//        /*
-//           Objectives for the two partial oracles implemented thus far.
-//        */
-//        val call = actions[indexOfAction] as RestCallAction
-//        if(call.skipOracleChecks){
-//            return
-//        }
-//        val oracles = writer.getPartialOracles().activeOracles(call, result)
-//        oracles.filter { it.value }.forEach { entry ->
-//            val oracleId = idMapper.getFaultDescriptiveIdForPartialOracle("${entry.key} $name")
-//            val bugId = idMapper.handleLocalTarget(oracleId)
-//            fv.updateTarget(bugId, 1.0, indexOfAction)
-//        }
-//    }
-
 
     private fun handleAdditionalStatusTargetDescription(
         result: RestCallResult,

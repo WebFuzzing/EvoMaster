@@ -96,16 +96,7 @@ public class JsonMapTest {
 
         try{sut.castToList(json);}catch(Exception e){}
 
-        AdditionalInfo info = ExecutionTracer.exposeAdditionalInfoList().get(0);
-        Set<StringSpecializationInfo> sstaint = info.getStringSpecializationsView().get(taint);
-        assertNull(sstaint);
-
-        Set<StringSpecializationInfo> ssmatches = info.getStringSpecializationsView().get(matches);
-        assertEquals(1, ssmatches.size());
-
-        StringSpecializationInfo ssi = ssmatches.stream().findFirst().get();
-        assertEquals(StringSpecialization.CAST_TO_TYPE, ssi.getStringSpecialization());
-        assertEquals("java/util/ArrayList", ssi.getValue());
+        verifySingleCastType(taint, matches, "java/util/ArrayList");
     }
 
 
@@ -135,16 +126,7 @@ public class JsonMapTest {
 
         try{sut.castToIntArray(json);}catch(Exception e){}
 
-        AdditionalInfo info = ExecutionTracer.exposeAdditionalInfoList().get(0);
-        Set<StringSpecializationInfo> sstaint = info.getStringSpecializationsView().get(taint);
-        assertNull(sstaint);
-
-        Set<StringSpecializationInfo> ssmatches = info.getStringSpecializationsView().get(matches);
-        assertEquals(1, ssmatches.size());
-
-        StringSpecializationInfo ssi = ssmatches.stream().findFirst().get();
-        assertEquals(StringSpecialization.CAST_TO_TYPE, ssi.getStringSpecialization());
-        assertEquals("[I", ssi.getValue());
+        verifySingleCastType(taint, matches, "[I");
     }
 
     @Test
@@ -157,9 +139,65 @@ public class JsonMapTest {
     }
 
 
-    /*
-        TODO
-        public Integer assignedToTypedList(String json) throws Exception {
-        public int castIntFromFunction(String json) throws Exception {
-     */
+    @Test
+    public void testTypedList() throws Exception{
+
+        JsonMap sut = getInstance();
+
+        String taint = TaintInputName.getTaintName(42);
+        String matches = TaintInputName.getTaintName(66);
+        String integer = TaintInputName.getTaintName(888);
+
+        String json = "{\"" + TaintInputName.TAINTED_MAP_EM_LABEL_IDENTIFIER + "\":\"" + taint + "\"," +
+                " \"matches\": \""+matches+"\"}";
+
+        try{sut.assignedToTypedList(json);}catch(Exception e){}
+
+        verifySingleCastType(taint, matches, "java/util/List");
+
+        json = "{\"" + TaintInputName.TAINTED_MAP_EM_LABEL_IDENTIFIER + "\":\"" + taint + "\"," +
+                " \"matches\": [\""+integer+"\"]}";
+        ExecutionTracer.reset();
+        try{sut.assignedToTypedList(json);}catch(Exception e){}
+
+        verifySingleCastType(taint, integer, "java/lang/Integer");
+
+    }
+
+
+    @Test
+    public void testCastIntFromFunction() throws Exception{
+
+        JsonMap sut = getInstance();
+
+        String taintX = TaintInputName.getTaintName(42);
+        String taintY = TaintInputName.getTaintName(77);
+        String integer = TaintInputName.getTaintName(888);
+
+        String json = "{\"" + TaintInputName.TAINTED_MAP_EM_LABEL_IDENTIFIER + "\":\"" + taintX + "\"," +
+                " \"rule\": {" +
+                "\"" +TaintInputName.TAINTED_MAP_EM_LABEL_IDENTIFIER + "\":\"" + taintY + "\"," +
+                " \"offset\": " + "\"" + integer +"\"" +
+                "} }";
+
+        try{sut.castIntFromFunction(json);}catch(Exception e){}
+
+        verifySingleCastType(taintY, integer, "java/lang/Integer");
+    }
+
+
+    private static void verifySingleCastType(String mapTaintId, String castTaintId, String expectedType) {
+
+        AdditionalInfo info = ExecutionTracer.exposeAdditionalInfoList().get(0);
+
+        Set<StringSpecializationInfo> sstaint = info.getStringSpecializationsView().get(mapTaintId);
+        assertNull(sstaint); // should not be present
+
+        //should be only one cast_to_type
+        Set<StringSpecializationInfo> ssmatches = info.getStringSpecializationsView().get(castTaintId);
+        assertEquals(1, ssmatches.size());
+        StringSpecializationInfo ssi = ssmatches.stream().findFirst().get();
+        assertEquals(StringSpecialization.CAST_TO_TYPE, ssi.getStringSpecialization());
+        assertEquals(expectedType, ssi.getValue());
+    }
 }

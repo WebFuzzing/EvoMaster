@@ -14,8 +14,6 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
-//FIXME put back once adding security targets in search
-@Disabled
 class SecurityNotRecognizedEMTest : SpringTestBase(){
 
     companion object {

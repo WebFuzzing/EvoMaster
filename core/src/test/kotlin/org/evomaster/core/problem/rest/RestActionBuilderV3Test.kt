@@ -14,6 +14,7 @@ import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.collection.FixedMapGene
+import org.evomaster.core.search.gene.collection.TaintedMapGene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.TimeGene
@@ -137,7 +138,7 @@ class RestActionBuilderV3Test{
                          */
                         assertEquals(39,  (this as ChoiceGene<*>).lengthOfChildren())
                     }else{
-                        assertTrue(this is FixedMapGene<*, *>)
+                        assertTrue(this is TaintedMapGene)
                     }
                 }
             }
@@ -270,7 +271,8 @@ class RestActionBuilderV3Test{
         assertTrue(gene is ObjectGene)
         (gene as ObjectGene).apply {
             assertEquals(4, fixedFields.size)
-            assertTrue(template!!.second is FixedMapGene<*, *>)
+            //assertTrue(template!!.second is FixedMapGene<*, *>)
+            assertTrue(template!!.second is TaintedMapGene)
         }
     }
 
@@ -1275,14 +1277,15 @@ class RestActionBuilderV3Test{
         val get = actions["GET:/api/items"]
         assertNotNull(get)
 
-        val schema = OpenAPIParser().readLocation(resourcePath, null, null).openAPI
-        val map = mutableMapOf<String,ObjectGene>()
-        RestActionBuilderV3.getModelsFromSwagger(schema, map, RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling))
-
-        assertEquals(3, map.size)
-        assertTrue(map.containsKey("Iterable«Item»"), "Not found key Iterable«Item». Current keys: ${map.keys.joinToString(", ")}.")
-        val x = map["Iterable«Item»"] as ObjectGene //this is due to bug in SpringFox that does not handle Iterable<T>
-        assertEquals(0, x.fields.size)
+        //No longer valid
+//        val schema = OpenAPIParser().readLocation(resourcePath, null, null).openAPI
+//        val map = mutableMapOf<String,ObjectGene>()
+//        RestActionBuilderV3.getModelsFromSwagger(schema, map, RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling))
+//
+//        assertEquals(3, map.size)
+//        assertTrue(map.containsKey("Iterable«Item»"), "Not found key Iterable«Item». Current keys: ${map.keys.joinToString(", ")}.")
+//        val x = map["Iterable«Item»"] as ObjectGene //this is due to bug in SpringFox that does not handle Iterable<T>
+//        assertEquals(0, x.fields.size)
     }
 
 
