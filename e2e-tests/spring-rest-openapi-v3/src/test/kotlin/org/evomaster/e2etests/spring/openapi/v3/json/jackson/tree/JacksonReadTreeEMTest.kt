@@ -7,6 +7,7 @@ import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Test
 
 class JacksonReadTreeEMTest : SpringTestBase() {
 
@@ -20,20 +21,17 @@ class JacksonReadTreeEMTest : SpringTestBase() {
         }
     }
 
-    @Disabled
+    @Disabled("Need support for JsonNode")
+    @Test
     fun testRunEM() {
         runTestHandlingFlakyAndCompilation(
             "JacksonReadTreeEM",
-            "org.foo.JacksonReadTreeEM",
-            500,
-            true,
-            { args: MutableList<String> ->
-                val solution = initAndRun(args)
+            500
+        ) { args: MutableList<String> ->
+            val solution = initAndRun(args)
 
-                assertTrue(solution.individuals.size >= 1)
-                assertHasAtLeastOne(solution, HttpVerb.POST, 418, "/api/jackson/tree/map", "Bingo!")
-            },
-            3
-        )
+            assertTrue(solution.individuals.size >= 1)
+            assertHasAtLeastOne(solution, HttpVerb.POST, 418, "/api/jackson/tree/map", "Bingo!")
+        }
     }
 }
