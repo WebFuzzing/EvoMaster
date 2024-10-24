@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene.collection
 
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.Lazy
+import org.evomaster.core.StaticCounter
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.interfaces.TaintableGene
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
@@ -21,7 +22,7 @@ import org.slf4j.LoggerFactory
  */
 class TaintedMapGene(
     name: String,
-    val taintId : String,
+    taintId : String,
     elements: MutableList<PairGene<StringGene, Gene>> = mutableListOf(),
     private val learnedKeys: MutableSet<String> = mutableSetOf(),
     private val learnedTypes: MutableMap<String,String> = mutableMapOf()
@@ -30,6 +31,9 @@ class TaintedMapGene(
     PairGene("TaintedMapTemplate", StringGene("key"), FlexibleGene("value", StringGene("value"), null), false),
     elements = elements
 ){
+
+    var taintId: String = taintId
+        private set
 
     companion object{
         private val log = LoggerFactory.getLogger(TaintedMapGene::class.java)
@@ -130,31 +134,9 @@ class TaintedMapGene(
 
     private fun inferGeneFromValueType(valueType: String, name: String) : Gene{
 
-        if(valueType.startsWith("[")){
-            //dealing with an array
-            //TODO
-        }
-
-        if(!valueType.startsWith("java")){
-            /*
-                not part of JDK... would a deserializer for a Map do that?
-                eg, maybe using a library class? still feel weird, would need to double-check if this happens
-             */
-            log.warn("In TaintedMap $taintId cannot handle valueType $valueType for field $name")
-            return StringGene(name) // defaulting to string
-        }
-
-        val className = valueType.replace("/",".")
-        val type = try{
-            this::class.java.classLoader.loadClass(className)
-        } catch (e: ClassNotFoundException) {
-            log.warn("Unable to load class $className when inferring type for valueType $valueType in tainted map $taintId for field $name")
-            return StringGene(name)
-        }
-
-        val gene = GeneUtils.getBasicGeneBasedOnJavaType(type, name)
+        val gene = GeneUtils.getBasicGeneBasedOnBytecodeType(valueType, name)
         if(gene == null){
-            log.warn("Cannot handle $className in tainted map $taintId for field $name")
+            log.warn("Cannot handle $valueType in tainted map $taintId for field $name")
             return StringGene(name)
         }
         return gene
@@ -264,6 +246,14 @@ class TaintedMapGene(
 
     override fun hasDormantGenes(): Boolean {
         return learnedKeys.isNotEmpty() || learnedTypes.isNotEmpty()
+    }
+
+    override fun forceNewTaintId() {
+
+        taintId = TaintInputName.getTaintName(StaticCounter.getAndIncrease())
+
+        val idGene = elements.first { it.name == TaintInputName.TAINTED_MAP_EM_LABEL_IDENTIFIER }
+        idGene.second.getWrappedGene(StringGene::class.java)?.value = taintId
     }
 
 

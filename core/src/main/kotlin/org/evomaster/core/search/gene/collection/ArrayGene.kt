@@ -6,6 +6,7 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.interfaces.CollectionGene
+import org.evomaster.core.search.gene.interfaces.TaintableGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.placeholder.LimitObjectGene
 import org.evomaster.core.search.gene.root.CompositeGene
@@ -313,6 +314,8 @@ class ArrayGene<T>(
         } else if(gene.isMutable()) {
             gene.randomize(randomness, false)
         }
+
+        gene.getWrappedGene(TaintableGene::class.java)?.forceNewTaintId()
 
         if (uniqueElements && doesExist(gene)){
             gene.randomize(randomness, true)
