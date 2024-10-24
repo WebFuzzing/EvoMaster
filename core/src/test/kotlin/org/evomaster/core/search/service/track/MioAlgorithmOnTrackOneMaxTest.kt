@@ -60,7 +60,7 @@ class MioAlgorithmOnTrackOneMaxTest {
                 "--weightBasedMutationRate",
                 "false",
                 "--stoppingCriterion",
-                "FITNESS_EVALUATIONS",
+                "ACTION_EVALUATIONS",
                 "--maxActionEvaluations",
                 "10",
                 "--maxLengthOfTraces",
@@ -98,7 +98,7 @@ class MioAlgorithmOnTrackOneMaxTest {
 
         val args = arrayOf(
                 "--stoppingCriterion",
-                "FITNESS_EVALUATIONS",
+                "ACTION_EVALUATIONS",
                 "--enableTrackIndividual",
                 "false",
                 "--enableTrackEvaluatedIndividual",
@@ -141,7 +141,7 @@ class MioAlgorithmOnTrackOneMaxTest {
         val maxLengthOfTraces = 5
         val args = arrayOf(
                 "--stoppingCriterion",
-                "FITNESS_EVALUATIONS",
+                "ACTION_EVALUATIONS",
                 "--enableTrackIndividual",
                 "false",
                 "--enableTrackEvaluatedIndividual",
@@ -186,7 +186,7 @@ class MioAlgorithmOnTrackOneMaxTest {
 
         val args = arrayOf(
                 "--stoppingCriterion",
-                "FITNESS_EVALUATIONS",
+                "ACTION_EVALUATIONS",
                 "--enableTrackIndividual",
                 "false",
                 "--enableTrackEvaluatedIndividual",
@@ -224,7 +224,7 @@ class MioAlgorithmOnTrackOneMaxTest {
                 "--weightBasedMutationRate",
                 "false",
                 "--stoppingCriterion",
-                "FITNESS_EVALUATIONS",
+                "ACTION_EVALUATIONS",
                 "--enableTrackIndividual",
                 "false",
                 "--enableTrackEvaluatedIndividual",

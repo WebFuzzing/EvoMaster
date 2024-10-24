@@ -86,7 +86,7 @@ class OneMaxMutator {
 
         val sampler = injector.getInstance(OneMaxSampler::class.java)
 
-        config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
+        config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
         mutator.improve = improve
         sampler.n = n
         config.showProgress = false

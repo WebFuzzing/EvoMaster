@@ -33,7 +33,7 @@ class MioAlgorithmOnConstantTest {
 
         val config = injector.getInstance(EMConfig::class.java)
         config.maxActionEvaluations = 200
-        config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
+        config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
 
         val solution = mio.search()
 

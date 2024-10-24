@@ -80,7 +80,7 @@ public abstract class ResourceMIOHWTestBase extends ResourceTestBase {
                         "--useTimeInFeedbackSampling", "false",
                         "--sutControllerPort", "" + controllerPort,
                         "--maxActionEvaluations", "" + budget,
-                        "--stoppingCriterion", "FITNESS_EVALUATIONS",
+                        "--stoppingCriterion", "ACTION_EVALUATIONS",
                         //there some bugs here
                         "--baseTaintAnalysisProbability", "0.0"
                 )
