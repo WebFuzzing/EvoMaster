@@ -18,7 +18,7 @@ public class MarshallWithGsonTest {
 
     protected MarshallWithGson getInstance() throws Exception {
 
-        System.setProperty(InputProperties.REPLACEMENT_CATEGORIES, "BASE,SQL");
+        System.setProperty(InputProperties.REPLACEMENT_CATEGORIES, "BASE,SQL,EXT_0");
 
         InstrumentingClassLoader cl = new InstrumentingClassLoader("com.foo");
 
