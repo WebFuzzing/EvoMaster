@@ -104,12 +104,11 @@ public class ClassToSchema {
                 List<Class<?>> embedded = new ArrayList<>();
                 String schema = ClassToSchema.getOrDeriveSchema(valueType, embedded, objectFieldsRequired, converters);
                 UnitsInfoRecorder.registerNewParsedDto(name, schema);
-                ExecutionTracer.addParsedDtoName(name);
                 if (!embedded.isEmpty()){
                     embedded.forEach(e -> registerSchemaIfNeeded(e, objectFieldsRequired, converters));
                 }
-
             }
+            ExecutionTracer.addParsedDtoName(name);
         } catch (Exception e) {
             SimpleLogger.warn("Fail to get schema for Class:" + valueType.getName(), e);
             /*
@@ -462,7 +461,9 @@ public class ClassToSchema {
         String value;
 
         if (klass != null) {
-            value = getSchema(String.class, true, embedded, allEmbedded, objectFieldsRequired, converters);
+            //value = getSchema(String.class, true, embedded, allEmbedded, objectFieldsRequired, converters);
+            //if no info on generic type, allow adding any kind of data
+            value = "true";
         } else {
             Type generic = pType.getActualTypeArguments()[1];
             value = getSchema(generic, true, embedded, allEmbedded, objectFieldsRequired, converters);

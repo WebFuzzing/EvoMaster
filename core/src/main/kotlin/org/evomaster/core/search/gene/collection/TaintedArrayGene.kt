@@ -18,6 +18,8 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutation
  *
  * This is needed in 2-phase marshalling, where a string is marshalled into an array of maps,
  * and then each map value is marshalled into a DTO.
+ *
+ * TODO needs refactoring
  */
 class TaintedArrayGene(
 
@@ -154,5 +156,13 @@ class TaintedArrayGene(
             return ""
         }
         return taintedValue
+    }
+
+    override fun hasDormantGenes(): Boolean {
+        return isResolved() && !isActive //TODO double-check
+    }
+
+    override fun forceNewTaintId() {
+        //TODO
     }
 }
