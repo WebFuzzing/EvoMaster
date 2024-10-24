@@ -29,6 +29,12 @@ class BodyParam(gene: Gene,
         val log: Logger = LoggerFactory.getLogger(BodyParam::class.java)
     }
 
+    constructor(genes: List<Gene>) : this(genes[0], genes[1] as EnumGene<String>, genes[2] as CustomMutationRateGene<BooleanGene>?){
+        if(genes.size != 3){
+            throw IllegalArgumentException("Must get 3 genes as input, got ${genes.size}")
+        }
+    }
+
     val contentTypeGene : EnumGene<String>
 
     val notSupportedContentTypes : List<String>

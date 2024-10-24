@@ -13,21 +13,13 @@ import org.evomaster.core.search.gene.Gene
  * So we add info to modify the individual at its next mutation
  *
  */
-class UpdateForBodyParam(val body: BodyParam) : Param("updateForBodyParam", body.seeGenes().toMutableList()),
+class UpdateForBodyParam(genes: MutableList<Gene>) : Param("updateForBodyParam", genes),
     UpdateForParam {
 
-    /*
-        TODO check if issue after refactoring. Previously it was:
-        "Note that the children of UpdateForBodyParam is [body] (BodyParam) not [gene] as other types of Param"
-     */
+        constructor(body: BodyParam) : this(body.seeGenes().toMutableList())
 
     override fun copyContent(): Param {
-        return UpdateForBodyParam(body.copy() as BodyParam)
-    }
-
-
-    override fun seeGenes(): List<Gene> {
-        return body.seeGenes()
+        return UpdateForBodyParam(seeGenes().map { it.copy() }.toMutableList())
     }
 
     override fun isSameTypeWithUpdatedParam(param: Param) : Boolean {
@@ -35,7 +27,7 @@ class UpdateForBodyParam(val body: BodyParam) : Param("updateForBodyParam", body
     }
 
     override fun getUpdatedParam(): Param {
-        return body
+        return BodyParam(children.map { it.copy() as Gene})
     }
 }
 

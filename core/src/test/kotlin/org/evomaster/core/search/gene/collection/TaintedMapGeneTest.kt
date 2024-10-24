@@ -30,18 +30,21 @@ class TaintedMapGeneTest{
         assertNull(dto.x)
         assertNull(dto.y)
 
-        gene.addNewKey("y")
+        gene.registerKey("y")
+        gene.evolve()
         json = gene.getValueAsPrintableString(mode= GeneUtils.EscapeMode.JSON)
         dto = mapper.readValue(json, DTO::class.java)
         assertNull(dto.x)
         assertNotNull(dto.y)
 
-        gene.addNewKey("x")
+        gene.registerKey("x")
+        gene.evolve()
         json = gene.getValueAsPrintableString(mode= GeneUtils.EscapeMode.JSON)
         //default tainted value is String, but x is an int, so should crash when marshalling it
         assertThrows(Exception::class.java){ mapper.readValue(json, DTO::class.java) }
 
-        gene.specifyValueTypeForKey("x", "java/lang/Integer")
+        gene.registerNewType("x", "java/lang/Integer")
+        gene.evolve()
         json = gene.getValueAsPrintableString(mode= GeneUtils.EscapeMode.JSON)
         dto = mapper.readValue(json, DTO::class.java)
         assertNotNull(dto.x)
