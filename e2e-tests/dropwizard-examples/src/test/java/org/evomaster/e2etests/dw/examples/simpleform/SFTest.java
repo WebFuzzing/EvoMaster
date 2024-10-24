@@ -29,7 +29,7 @@ public class SFTest extends RestTestBase {
                     "--createTests", "false",
                     "--seed", "" + defaultSeed++,
                     "--sutControllerPort", "" + controllerPort,
-                    "--maxActionEvaluations", "500",
+                    "--maxEvaluations", "500",
                     "--stoppingCriterion", "ACTION_EVALUATIONS"
             };
 

@@ -66,7 +66,7 @@ public class DeterminismTest extends AHypermuationTestBase {
                 "--showProgress", "false",
                 "--avoidNonDeterministicLogs", "true",
                 "--sutControllerPort", "" + controllerPort,
-                "--maxActionEvaluations", "" + 4000,
+                "--maxEvaluations", "" + 4000,
                 "--stoppingCriterion", "ACTION_EVALUATIONS",
                 "--useTimeInFeedbackSampling" , "false"
         ));

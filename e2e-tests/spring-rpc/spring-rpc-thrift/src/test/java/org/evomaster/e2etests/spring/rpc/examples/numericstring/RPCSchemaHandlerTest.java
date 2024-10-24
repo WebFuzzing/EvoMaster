@@ -30,7 +30,7 @@ public class RPCSchemaHandlerTest extends NumericStringTestBase{
                 "--showProgress", "false",
                 "--avoidNonDeterministicLogs", "true",
                 "--sutControllerPort", "" + controllerPort,
-                "--maxActionEvaluations", "" + 5,
+                "--maxEvaluations", "" + 5,
                 "--stoppingCriterion", "ACTION_EVALUATIONS",
                 "--useTimeInFeedbackSampling" , "false"
         ));

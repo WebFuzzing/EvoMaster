@@ -124,7 +124,7 @@ class RestResourceIndividualDisabledHMTest : RestIndividualTestBase(){
     fun testIndividualResourceManipulation(iteration: Int, numResource: Int){
         initResourceNode(numResource, 5)
 
-        config.maxActionEvaluations = iteration
+        config.maxEvaluations = iteration
         config.maxTestSize = 20
         (0 until iteration).forEach { _ ->
             val dbSize = randomness.nextInt(1, 15)

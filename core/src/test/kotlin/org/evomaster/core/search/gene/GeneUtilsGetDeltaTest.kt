@@ -64,7 +64,7 @@ class GeneUtilsGetDeltaTest {
     @ParameterizedTest
     @MethodSource("getBudgetAndRange")
     fun testGetDelta(iteration: Int, range: Long) {
-        config.maxActionEvaluations = iteration
+        config.maxEvaluations = iteration
         (0 until iteration).forEach { _ ->
             fakeOneEvaluation()
             val delta = GeneUtils.getDelta(randomness, apc, range = range)

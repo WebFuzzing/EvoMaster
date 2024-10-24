@@ -27,7 +27,7 @@ class BigDecimalGeneTest {
 
         config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
         config.focusedSearchActivationTime = 0.5
-        config.maxActionEvaluations = 10
+        config.maxEvaluations = 10
         config.useTimeInFeedbackSampling = false
         config.seed = 42
 

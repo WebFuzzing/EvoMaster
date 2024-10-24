@@ -43,7 +43,7 @@ public class JavaTypesEMTest extends JavaTypesTestBase {
                     "--createTests", "true",
                     "--seed",  "" + defaultSeed++,
                     "--sutControllerPort", "" + controllerPort,
-                    "--maxActionEvaluations", "3000",
+                    "--maxEvaluations", "3000",
                     "--stoppingCriterion", "ACTION_EVALUATIONS",
                     "--heuristicsForSQL", "true",
                     "--generateSqlDataWithSearch", "true"

@@ -47,7 +47,7 @@ class IntegerGeneMutationUpdateTest {
                 object : TypeLiteral<MioAlgorithm<PrimitiveTypeMatchIndividual>>() {}))
 
         config = injector.getInstance(EMConfig::class.java)
-        config.maxActionEvaluations = budget
+        config.maxEvaluations = budget
         config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
         config.probOfRandomSampling = 0.0
 

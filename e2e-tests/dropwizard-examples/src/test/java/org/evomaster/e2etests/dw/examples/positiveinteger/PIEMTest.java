@@ -19,7 +19,7 @@ public class PIEMTest extends PITestBase {
                 "--createTests", "false",
                 "--seed", "42",
                 "--sutControllerPort", "" + controllerPort,
-                "--maxActionEvaluations", "200",
+                "--maxEvaluations", "200",
                 "--stoppingCriterion", "ACTION_EVALUATIONS"
         };
 
@@ -38,7 +38,7 @@ public class PIEMTest extends PITestBase {
                 "--createTests", "true",
                 "--seed", "42",
                 "--sutControllerPort", "" + controllerPort,
-                "--maxActionEvaluations", "20",
+                "--maxEvaluations", "20",
                 "--stoppingCriterion", "ACTION_EVALUATIONS"
         };
 

@@ -156,7 +156,7 @@ class SearchProcessMonitor: SearchListener {
 
     private fun setOverall(){
         val stp = config.stoppingCriterion.toString()+"_"+
-                (if(config.stoppingCriterion.toString().toLowerCase().contains("time")) config.timeLimitInSeconds().toString() else config.maxActionEvaluations)
+                (if(config.stoppingCriterion.toString().toLowerCase().contains("time")) config.timeLimitInSeconds().toString() else config.maxEvaluations)
         this.overall = SearchOverall(stp, time.evaluatedIndividuals, eval!!.individual, eval!!, archive, idMapper, time.getStartTime())
     }
 
@@ -226,7 +226,7 @@ class SearchProcessMonitor: SearchListener {
     }
 
    private fun getStepName(value: Int, isTargetFile: Boolean): String {
-       val num = String.format("%0${config.maxActionEvaluations.toString().length}d", value)
+       val num = String.format("%0${config.maxEvaluations.toString().length}d", value)
        return when(config.processFormat){
            EMConfig.ProcessDataFormat.JSON_ALL -> "EM_${num}Json"
            EMConfig.ProcessDataFormat.TEST_IND-> "EM_${num}Test"

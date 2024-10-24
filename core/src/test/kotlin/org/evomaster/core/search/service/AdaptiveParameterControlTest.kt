@@ -46,7 +46,7 @@ internal class AdaptiveParameterControlTest{
     @Test
     fun testEnd(){
 
-        config.maxActionEvaluations = 10
+        config.maxEvaluations = 10
         config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
 
         fakeEvaluation(5) //kicks in focused search
@@ -66,7 +66,7 @@ internal class AdaptiveParameterControlTest{
 
     @Test
     fun testDuring(){
-        config.maxActionEvaluations = 10
+        config.maxEvaluations = 10
         config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
 
         val start = 30
