@@ -280,7 +280,7 @@ class SearchTimeController {
         }
 
         return when(configuration.stoppingCriterion){
-            EMConfig.StoppingCriterion.FITNESS_EVALUATIONS ->
+            EMConfig.StoppingCriterion.ACTION_EVALUATIONS ->
                 evaluatedActions.toDouble() / configuration.maxActionEvaluations.toDouble()
 
             EMConfig.StoppingCriterion.TIME ->

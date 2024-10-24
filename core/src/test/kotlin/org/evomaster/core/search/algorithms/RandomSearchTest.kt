@@ -30,7 +30,7 @@ class RandomSearchTest {
 
             val config = injector.getInstance(EMConfig::class.java)
             config.maxActionEvaluations = 3000
-            config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
+            config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
 
             val solution = rs.search()
 

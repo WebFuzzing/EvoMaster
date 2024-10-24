@@ -770,7 +770,7 @@ def addJobBody(port, sut, seed, setting, configName):
         params += " --stoppingCriterion=TIME"
         params += " --maxTime=" + BUDGET
     else:
-        params += " --stoppingCriterion=FITNESS_EVALUATIONS"
+        params += " --stoppingCriterion=ACTION_EVALUATIONS"
         params += " --maxActionEvaluations=" + BUDGET
 
     params += " --statisticsColumnId=" + sut.name

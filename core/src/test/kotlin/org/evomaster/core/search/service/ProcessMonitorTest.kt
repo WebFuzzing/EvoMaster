@@ -47,7 +47,7 @@ class ProcessMonitorTest{
 
         ff =  injector.getInstance(OneMaxFitness::class.java)
         config = injector.getInstance(EMConfig::class.java)
-        config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
+        config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
         config.processFormat = EMConfig.ProcessDataFormat.JSON_ALL
         config.useTimeInFeedbackSampling = false
         config.minimize = false

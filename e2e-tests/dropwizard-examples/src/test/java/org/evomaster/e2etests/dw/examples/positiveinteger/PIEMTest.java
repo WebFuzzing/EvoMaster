@@ -20,7 +20,7 @@ public class PIEMTest extends PITestBase {
                 "--seed", "42",
                 "--sutControllerPort", "" + controllerPort,
                 "--maxActionEvaluations", "200",
-                "--stoppingCriterion", "FITNESS_EVALUATIONS"
+                "--stoppingCriterion", "ACTION_EVALUATIONS"
         };
 
         Solution<RestIndividual> solution = (Solution<RestIndividual>) Main.initAndRun(args);
@@ -39,7 +39,7 @@ public class PIEMTest extends PITestBase {
                 "--seed", "42",
                 "--sutControllerPort", "" + controllerPort,
                 "--maxActionEvaluations", "20",
-                "--stoppingCriterion", "FITNESS_EVALUATIONS"
+                "--stoppingCriterion", "ACTION_EVALUATIONS"
         };
 
        Main.initAndRun(args);

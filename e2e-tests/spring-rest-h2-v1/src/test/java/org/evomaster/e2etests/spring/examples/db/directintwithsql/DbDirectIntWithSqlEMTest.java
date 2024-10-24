@@ -101,7 +101,7 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
                 "--seed", "42",
                 "--sutControllerPort", "" + controllerPort,
                 "--maxActionEvaluations", "1",
-                "--stoppingCriterion", "FITNESS_EVALUATIONS",
+                "--stoppingCriterion", "ACTION_EVALUATIONS",
                 "--heuristicsForSQL", "true",
                 "--generateSqlDataWithSearch", "true",
                 "--maxTestSize", "1",

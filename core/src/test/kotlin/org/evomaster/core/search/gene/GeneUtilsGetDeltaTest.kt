@@ -39,7 +39,7 @@ class GeneUtilsGetDeltaTest {
         apc = injector.getInstance(AdaptiveParameterControl::class.java)
         randomness = injector.getInstance(Randomness::class.java)
 
-        config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
+        config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
         config.focusedSearchActivationTime = 0.5
     }
 
