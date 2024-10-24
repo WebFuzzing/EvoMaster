@@ -1,27 +1,27 @@
-package org.evomaster.e2etests.spring.openapi.v3.jackson.mapint
+package org.evomaster.e2etests.spring.openapi.v3.jackson.maplistint
 
-import com.foo.rest.examples.spring.openapi.v3.jackson.mapint.MapIntJacksonController
+import com.foo.rest.examples.spring.openapi.v3.jackson.maplistint.MapListIntJacksonController
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
-class MapIntJacksonEMTest : SpringTestBase() {
+class MapListIntJacksonEMTest : SpringTestBase() {
 
     companion object {
         @BeforeAll
         @JvmStatic
         fun init() {
-            initClass(MapIntJacksonController())
+            initClass(MapListIntJacksonController())
         }
     }
 
     @Test
     fun basicEMTest() {
         runTestHandlingFlakyAndCompilation(
-            "MapIntJacksonEM",
-            500
+            "MapListIntJacksonEM",
+            2000
         ) { args: List<String> ->
 
             setOption(args, "taintForceSelectionOfGenesWithSpecialization", "true")
@@ -29,7 +29,7 @@ class MapIntJacksonEMTest : SpringTestBase() {
             val solution = initAndRun(args)
 
             Assertions.assertTrue(solution.individuals.size >= 1)
-            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/jackson/mapint", "Working")
+            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/jackson/maplistint", "Working")
         }
     }
 }
