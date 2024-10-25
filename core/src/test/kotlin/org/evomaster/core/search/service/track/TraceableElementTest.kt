@@ -67,7 +67,7 @@ class TraceableElementTest {
     fun testOneMaxIndividualWithFT(){
         config.enableTrackIndividual = false
         config.enableTrackEvaluatedIndividual = true
-        config.maxActionEvaluations = 100
+        config.maxEvaluations = 100
         config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
         config.maxLengthOfTraces = 20
         config.probOfArchiveMutation = 0.0

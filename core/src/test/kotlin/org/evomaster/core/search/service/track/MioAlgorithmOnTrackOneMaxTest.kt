@@ -61,7 +61,7 @@ class MioAlgorithmOnTrackOneMaxTest {
                 "false",
                 "--stoppingCriterion",
                 "ACTION_EVALUATIONS",
-                "--maxActionEvaluations",
+                "--maxEvaluations",
                 "10",
                 "--maxLengthOfTraces",
                 "50",
@@ -103,7 +103,7 @@ class MioAlgorithmOnTrackOneMaxTest {
                 "false",
                 "--enableTrackEvaluatedIndividual",
                 "true",
-                "--maxActionEvaluations",
+                "--maxEvaluations",
                 "10",
                 "--maxLengthOfTraces",
                 "50"
