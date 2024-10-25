@@ -54,7 +54,7 @@ class MutatorWithOneMaxTest {
         injector.getInstance(OneMaxSampler::class.java).n = n
         config.mutationTargetsSelectionStrategy = strategy
 
-        config.maxActionEvaluations = budget
+        config.maxEvaluations = budget
         config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
 
         config.saveMutationInfo = true
