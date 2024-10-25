@@ -48,7 +48,8 @@ public class AdaptiveHypermutationTest extends HypermutationTestBase {
                     //minimization loses impact info
                     args.add("--minimize");
                     args.add("false");
-
+                    //this had side-effects
+                    setOption(args, "advancedBlackBoxCoverage", "false");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 
