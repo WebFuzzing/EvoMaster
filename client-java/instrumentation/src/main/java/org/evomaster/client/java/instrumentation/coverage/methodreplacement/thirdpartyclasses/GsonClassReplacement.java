@@ -12,6 +12,7 @@ import java.io.Reader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
+import java.util.Objects;
 
 
 public class GsonClassReplacement extends ThirdPartyMethodReplacementClass {
@@ -33,10 +34,7 @@ public class GsonClassReplacement extends ThirdPartyMethodReplacementClass {
             usageFilter = UsageFilter.ANY,
             category = ReplacementCategory.EXT_0)
     public static Object fromJson(Object caller, String json, Class<?> classOfT) {
-
-        if (caller == null) {
-            throw new NullPointerException();
-        }
+        Objects.requireNonNull(caller);
 
         ClassToSchema.registerSchemaIfNeeded(classOfT);
         JsonTaint.handlePossibleJsonTaint(json, classOfT);
@@ -60,13 +58,13 @@ public class GsonClassReplacement extends ThirdPartyMethodReplacementClass {
             category = ReplacementCategory.EXT_0
     )
     public static Object fromJson(Object caller, String json, Type typeOfT) {
-        if (caller == null) {
-            throw new NullPointerException();
-        }
+        Objects.requireNonNull(caller);
 
-        Class<?> klass = (Class<?>) typeOfT;
-        ClassToSchema.registerSchemaIfNeeded(klass);
-        JsonTaint.handlePossibleJsonTaint(json, klass);
+        if (typeOfT instanceof Class) {
+            Class<?> klass = (Class<?>) typeOfT;
+            ClassToSchema.registerSchemaIfNeeded(klass);
+            JsonTaint.handlePossibleJsonTaint(json, klass);
+        }
 
         Method original = getOriginal(singleton, "fromJson_string_type", caller);
 
@@ -87,9 +85,7 @@ public class GsonClassReplacement extends ThirdPartyMethodReplacementClass {
             category = ReplacementCategory.EXT_0
     )
     public static Object fromJson(Object caller, Reader json, Class<?> classOfT) {
-        if (caller == null) {
-            throw new NullPointerException();
-        }
+        Objects.requireNonNull(caller);
 
         ClassToSchema.registerSchemaIfNeeded(classOfT);
         String content = JsonUtils.getStringFromReader(json);
@@ -115,15 +111,15 @@ public class GsonClassReplacement extends ThirdPartyMethodReplacementClass {
             category = ReplacementCategory.EXT_0
     )
     public static Object fromJson(Object caller, Reader json, Type typeOfT) {
-        if (caller == null) {
-            throw new NullPointerException();
-        }
+        Objects.requireNonNull(caller);
 
-        Class<?> klass = (Class<?>) typeOfT;
-        ClassToSchema.registerSchemaIfNeeded(klass);
-        String content = JsonUtils.getStringFromReader(json);
-        JsonTaint.handlePossibleJsonTaint(content, klass);
-        json = JsonUtils.stringToReader(content);
+        if (typeOfT instanceof Class) {
+            Class<?> klass = (Class<?>) typeOfT;
+            ClassToSchema.registerSchemaIfNeeded(klass);
+            String content = JsonUtils.getStringFromReader(json);
+            JsonTaint.handlePossibleJsonTaint(content, klass);
+            json = JsonUtils.stringToReader(content);
+        }
 
         Method original = getOriginal(singleton, "fromJson_reader_type", caller);
 
