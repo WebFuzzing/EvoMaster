@@ -59,7 +59,7 @@ public class GsonClassReplacement extends ThirdPartyMethodReplacementClass {
     public static Object fromJson(Object caller, String json, Type typeOfT) {
         Objects.requireNonNull(caller);
 
-        if (typeOfT instanceof Class) {
+        if (typeOfT instanceof Class<?>) {
             Class<?> klass = (Class<?>) typeOfT;
             analyzeClass(klass, json);
         }
@@ -110,7 +110,8 @@ public class GsonClassReplacement extends ThirdPartyMethodReplacementClass {
     public static Object fromJson(Object caller, Reader json, Type typeOfT) {
         Objects.requireNonNull(caller);
 
-        if (typeOfT instanceof Class) {
+
+        if (typeOfT instanceof Class<?>) {
             Class<?> klass = (Class<?>) typeOfT;
             String content = JsonUtils.getStringFromReader(json);
 
