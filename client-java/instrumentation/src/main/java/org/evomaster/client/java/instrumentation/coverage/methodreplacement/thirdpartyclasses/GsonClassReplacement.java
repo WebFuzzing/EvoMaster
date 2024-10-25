@@ -17,9 +17,9 @@ import java.util.Objects;
 
 public class GsonClassReplacement extends ThirdPartyMethodReplacementClass {
 
-    // TODO: Gson has three more methods, which use their custom classes
-    //  JsonReader and JsonElement.
-    //  Those are not supported yet.
+    // TODO: Gson has three more methods, which use their custom
+    //  classes, JsonReader and JsonElement.
+    //  These are not supported yet.
 
     private static final GsonClassReplacement singleton = new GsonClassReplacement();
 
