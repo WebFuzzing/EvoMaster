@@ -153,7 +153,7 @@ public abstract class EnterpriseTestBase {
                 "--showProgress", "false",
                 "--avoidNonDeterministicLogs", "true",
                 "--sutControllerPort", "" + controllerPort,
-                "--maxActionEvaluations", "" + iterations,
+                "--maxEvaluations", "" + iterations,
                 "--stoppingCriterion", "ACTION_EVALUATIONS",
                 "--useTimeInFeedbackSampling" , "false",
                 "--createConfigPathIfMissing", "false"
@@ -416,7 +416,7 @@ public abstract class EnterpriseTestBase {
                 "--seed", "" + defaultSeed,
                 "--useTimeInFeedbackSampling" , "false",
                 "--sutControllerPort", "" + controllerPort,
-                "--maxActionEvaluations", "" + iterations,
+                "--maxEvaluations", "" + iterations,
                 "--stoppingCriterion", "ACTION_EVALUATIONS",
                 "--outputFolder", outputFolderPath(outputFolderName),
                 "--outputFormat", OutputFormat.KOTLIN_JUNIT_5.toString(),
