@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class GsonReplacementTest {
@@ -33,39 +34,50 @@ public class GsonReplacementTest {
         String json = "{\n\"color\": \"red\"\n}";
 
         Gson gson = new Gson();
-        GsonClassReplacement.fromJson(gson, json, GsonTestDto.class);
+        Object gsonTestDto = GsonClassReplacement.fromJson(gson, json, GsonTestDto.class);
+        assertTrue(gsonTestDto instanceof GsonTestDto);
+        assertEquals("red", ((GsonTestDto) gsonTestDto).color);
+
         validate();
     }
 
     @Test
     public void testFromJsonType() {
-        String json = "{\n\"color\": \"red\"\n}";
+        String json = "{\n\"color\": \"green\"\n}";
 
         Gson gson = new Gson();
         Type dtoType = new TypeToken<GsonTestDto>() {}.getType();
-        GsonClassReplacement.fromJson(gson, json, dtoType);
+        Object gsonTestDto = GsonClassReplacement.fromJson(gson, json, dtoType);
+        assertTrue(gsonTestDto instanceof GsonTestDto);
+        assertEquals("green", ((GsonTestDto) gsonTestDto).color);
+
         validate();
     }
 
     @Test
     public void testFromJsonReaderClassOfT() {
-        String json = "{\n\"color\": \"red\"\n}";
+        String json = "{\n\"color\": \"blue\"\n}";
 
         Reader reader = new StringReader(json);
         Gson gson = new Gson();
-        GsonClassReplacement.fromJson(gson, reader, GsonTestDto.class);
+        Object gsonTestDto = GsonClassReplacement.fromJson(gson, reader, GsonTestDto.class);
+        assertTrue(gsonTestDto instanceof GsonTestDto);
+        assertEquals("blue", ((GsonTestDto) gsonTestDto).color);
+
         validate();
     }
 
     @Test
     public void testFromJsonReaderType() {
-        String json = "{\n\"color\": \"red\"\n}";
+        String json = "{\n\"color\": \"yellow\"\n}";
 
         Reader reader = new StringReader(json);
 
         Gson gson = new Gson();
         Type dtoType = new TypeToken<GsonTestDto>() {}.getType();
-        GsonClassReplacement.fromJson(gson, reader, dtoType);
+        Object gsonTestDto = GsonClassReplacement.fromJson(gson, reader, dtoType);
+        assertTrue(gsonTestDto instanceof GsonTestDto);
+        assertEquals("yellow", ((GsonTestDto) gsonTestDto).color);
 
         validate();
     }

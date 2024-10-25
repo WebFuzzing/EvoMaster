@@ -1,5 +1,6 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.thirdpartyclasses;
 
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.JsonUtils;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.object.JsonTaint;
 import org.evomaster.client.java.instrumentation.shared.*;
@@ -7,7 +8,6 @@ import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Thir
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
 import org.evomaster.client.java.instrumentation.object.ClassToSchema;
 
-import java.io.IOException;
 import java.io.Reader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -92,7 +92,9 @@ public class GsonClassReplacement extends ThirdPartyMethodReplacementClass {
         }
 
         ClassToSchema.registerSchemaIfNeeded(classOfT);
-        JsonTaint.handlePossibleJsonTaint(getStringFromReader(json), classOfT);
+        String content = JsonUtils.getStringFromReader(json);
+        JsonTaint.handlePossibleJsonTaint(content, classOfT);
+        json = JsonUtils.stringToReader(content);
 
         Method original = getOriginal(singleton, "fromJson_reader_class", caller);
 
@@ -119,7 +121,9 @@ public class GsonClassReplacement extends ThirdPartyMethodReplacementClass {
 
         Class<?> klass = (Class<?>) typeOfT;
         ClassToSchema.registerSchemaIfNeeded(klass);
-        JsonTaint.handlePossibleJsonTaint(getStringFromReader(json), klass);
+        String content = JsonUtils.getStringFromReader(json);
+        JsonTaint.handlePossibleJsonTaint(content, klass);
+        json = JsonUtils.stringToReader(content);
 
         Method original = getOriginal(singleton, "fromJson_reader_type", caller);
 
@@ -130,21 +134,6 @@ public class GsonClassReplacement extends ThirdPartyMethodReplacementClass {
         } catch (InvocationTargetException e) {
             throw (RuntimeException) e.getCause();
         }
-    }
-
-    private static String getStringFromReader(Reader reader) {
-        StringBuilder s = new StringBuilder();
-        int character;
-
-        try {
-            while ((character = reader.read()) != -1) {
-                s.append((char) character);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        return s.toString();
     }
 
 }
