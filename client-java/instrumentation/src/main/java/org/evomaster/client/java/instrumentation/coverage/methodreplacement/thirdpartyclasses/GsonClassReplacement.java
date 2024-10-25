@@ -36,8 +36,7 @@ public class GsonClassReplacement extends ThirdPartyMethodReplacementClass {
     public static Object fromJson(Object caller, String json, Class<?> classOfT) {
         Objects.requireNonNull(caller);
 
-        ClassToSchema.registerSchemaIfNeeded(classOfT);
-        JsonTaint.handlePossibleJsonTaint(json, classOfT);
+        analyzeClass(classOfT, json);
 
         Method original = getOriginal(singleton, "fromJson_string_class", caller);
 
@@ -62,8 +61,7 @@ public class GsonClassReplacement extends ThirdPartyMethodReplacementClass {
 
         if (typeOfT instanceof Class) {
             Class<?> klass = (Class<?>) typeOfT;
-            ClassToSchema.registerSchemaIfNeeded(klass);
-            JsonTaint.handlePossibleJsonTaint(json, klass);
+            analyzeClass(klass, json);
         }
 
         Method original = getOriginal(singleton, "fromJson_string_type", caller);
@@ -87,9 +85,8 @@ public class GsonClassReplacement extends ThirdPartyMethodReplacementClass {
     public static Object fromJson(Object caller, Reader json, Class<?> classOfT) {
         Objects.requireNonNull(caller);
 
-        ClassToSchema.registerSchemaIfNeeded(classOfT);
         String content = JsonUtils.getStringFromReader(json);
-        JsonTaint.handlePossibleJsonTaint(content, classOfT);
+        analyzeClass(classOfT, content);
         json = JsonUtils.stringToReader(content);
 
         Method original = getOriginal(singleton, "fromJson_reader_class", caller);
@@ -115,9 +112,10 @@ public class GsonClassReplacement extends ThirdPartyMethodReplacementClass {
 
         if (typeOfT instanceof Class) {
             Class<?> klass = (Class<?>) typeOfT;
-            ClassToSchema.registerSchemaIfNeeded(klass);
             String content = JsonUtils.getStringFromReader(json);
-            JsonTaint.handlePossibleJsonTaint(content, klass);
+
+            analyzeClass(klass, content);
+
             json = JsonUtils.stringToReader(content);
         }
 
@@ -130,6 +128,11 @@ public class GsonClassReplacement extends ThirdPartyMethodReplacementClass {
         } catch (InvocationTargetException e) {
             throw (RuntimeException) e.getCause();
         }
+    }
+
+    private static void analyzeClass(Class<?> klass, String content) {
+        ClassToSchema.registerSchemaIfNeeded(klass);
+        JsonTaint.handlePossibleJsonTaint(content, klass);
     }
 
 }
