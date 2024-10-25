@@ -166,3 +166,4 @@ Migrations/
 /e2e-tests/spring-rest-bb/maven/target/
 /target/
 /wfc/target/
+/e2e-tests/emb-json/target/
