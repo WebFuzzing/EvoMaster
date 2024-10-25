@@ -78,7 +78,7 @@ class EMConfig {
 
         private const val externalServiceIPRegex = "$_eip_n$_eip_s$_eip_e"
 
-        private val defaultAlgorithmForBlackBox = Algorithm.RANDOM
+        private val defaultAlgorithmForBlackBox = Algorithm.SMARTS
 
         private val defaultAlgorithmForWhiteBox = Algorithm.MIO
 
@@ -476,13 +476,13 @@ class EMConfig {
         }
 
         when (stoppingCriterion) {
-            StoppingCriterion.TIME -> if (maxActionEvaluations != defaultMaxActionEvaluations) {
+            StoppingCriterion.TIME -> if (maxEvaluations != defaultMaxEvaluations) {
                 throw ConfigProblemException("Changing number of max actions, but stopping criterion is time")
             }
 
-            StoppingCriterion.ACTION_EVALUATIONS -> if (maxTimeInSeconds != defaultMaxTimeInSeconds ||
-                    maxTime != defaultMaxTime) {
-                throw ConfigProblemException("Changing max time, but stopping criterion is based on fitness evaluations")
+            StoppingCriterion.ACTION_EVALUATIONS, StoppingCriterion.INDIVIDUAL_EVALUATIONS ->
+                if (maxTimeInSeconds != defaultMaxTimeInSeconds || maxTime != defaultMaxTime) {
+                throw ConfigProblemException("Changing max time, but stopping criterion is based on evaluations")
             }
         }
 
@@ -1167,24 +1167,24 @@ class EMConfig {
 
     enum class StoppingCriterion {
         TIME,
-        ACTION_EVALUATIONS
+        ACTION_EVALUATIONS,
+        INDIVIDUAL_EVALUATIONS
     }
 
     @Cfg("Stopping criterion for the search")
     var stoppingCriterion = StoppingCriterion.TIME
 
 
-    val defaultMaxActionEvaluations = 1000
+    val defaultMaxEvaluations = 1000
 
-    @Cfg("Maximum number of action evaluations for the search." +
-            " A fitness evaluation can be composed of 1 or more actions," +
+    @Cfg("Maximum number of action or individual evaluations (depending on chosen stopping criterion)" +
+            " for the search. A fitness evaluation can be composed of 1 or more actions," +
             " like for example REST calls or SQL setups." +
             " The more actions are allowed, the better results one can expect." +
             " But then of course the test generation will take longer." +
             " Only applicable depending on the stopping criterion.")
     @Min(1.0)
-    var maxActionEvaluations = defaultMaxActionEvaluations
-
+    var maxEvaluations = defaultMaxEvaluations
 
     val defaultMaxTimeInSeconds = 0
 
@@ -1195,7 +1195,6 @@ class EMConfig {
             " If this value is 0, the setting 'maxTime' will be used instead.")
     @Min(0.0)
     var maxTimeInSeconds = defaultMaxTimeInSeconds
-
 
     @Cfg("Whether or not writing statistics of the search process. " +
             "This is only needed when running experiments with different parameter settings")
@@ -2263,12 +2262,11 @@ class EMConfig {
     @Probability(true)
     var probRestExamples = 0.20
 
-    @Experimental
     @Cfg("In REST, enable the supports of 'links' between resources defined in the OpenAPI schema, if any." +
             " When sampling a test case, if the last call has links, given this probability new calls are" +
             " added for the link.")
     @Probability(true)
-    var probUseRestLinks = 0.0
+    var probUseRestLinks = 0.5
 
     //TODO mark as deprecated once we support proper Robustness Testing
     @Cfg("When generating data, allow in some cases to use invalid values on purpose")
@@ -2292,9 +2290,8 @@ class EMConfig {
     @Cfg("Validate responses against their schema, to check for inconsistencies. Those are treated as faults.")
     var schemaOracles = true
 
-    @Experimental
     @Cfg("Apply more advanced coverage criteria for black-box testing. This can result in larger generated test suites.")
-    var advancedBlackBoxCoverage = false
+    var advancedBlackBoxCoverage = true
 
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
@@ -2342,9 +2339,8 @@ class EMConfig {
     @Min(0.0)
     var thresholdDistanceForDataPool = 2
 
-    @Experimental
     @Cfg("Enable the collection of response data, to feed new individuals based on field names matching.")
-    var useResponseDataPool = false
+    var useResponseDataPool = true
 
     @Experimental
     @Probability(false)

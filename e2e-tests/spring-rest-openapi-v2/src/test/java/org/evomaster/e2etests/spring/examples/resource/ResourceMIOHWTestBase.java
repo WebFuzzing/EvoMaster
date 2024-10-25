@@ -76,7 +76,7 @@ public abstract class ResourceMIOHWTestBase extends ResourceTestBase {
                         "--seed", ""+seed,
                         "--useTimeInFeedbackSampling", "false",
                         "--sutControllerPort", "" + controllerPort,
-                        "--maxActionEvaluations", "" + budget,
+                        "--maxEvaluations", "" + budget,
                         "--stoppingCriterion", "ACTION_EVALUATIONS",
                         //there some bugs here
                         "--baseTaintAnalysisProbability", "0.0"
