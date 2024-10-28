@@ -6,6 +6,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.List;
 
+
+/**
+ * This code is taken from GestaoHospital
+ * G: https://github.com/ValchanOficial/GestaoHospital
+ * L: N/A
+ * P: src/main/java/br/com/codenation/hospital/integration/LocationIQResponse.java
+ */
 public class LocationIQResponse {
 
     private String placeId;

@@ -17,6 +17,12 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
+/**
+ * This code is taken from LanguageTool
+ * G: https://github.com/languagetool-org/languagetool
+ * L: LGPL-2.1
+ * P: src/main/java/org/languagetool/server/ResultExtender.java
+ */
 public class ResultExtender {
 
     private final URL url;

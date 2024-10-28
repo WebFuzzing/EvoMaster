@@ -12,6 +12,13 @@ import static com.foo.rest.emb.json.paypublicapi.RequestError.Code.CREATE_PAYMEN
 import static com.foo.rest.emb.json.paypublicapi.RequestError.aRequestError;
 import static org.apache.http.HttpStatus.SC_UNPROCESSABLE_ENTITY;
 
+
+/**
+ * This code is taken from pay-publicapi
+ * G: https://github.com/alphagov/pay-publicapi
+ * L: MIT
+ * P: src/main/java/uk/gov/pay/api/json/RequestJsonParser.java
+ */
 public class RequestJsonParser {
 
     private static ObjectMapper objectMapper = new ObjectMapper();

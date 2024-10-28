@@ -9,6 +9,12 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * This code is taken from REST Countries
+ * G: https://github.com/apilayer/restcountries
+ * L: MPL-2.0
+ * P: src/main/java/eu/fayder/restcountries/rest/CountryServiceBase.java
+ */
 public class CountryServiceBase {
 
 //    private static final Logger LOG = Logger.getLogger(CountryServiceBase.class);

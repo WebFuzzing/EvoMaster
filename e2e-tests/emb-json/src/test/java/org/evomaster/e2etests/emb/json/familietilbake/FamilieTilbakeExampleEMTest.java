@@ -1,6 +1,5 @@
 package org.evomaster.e2etests.emb.json.familietilbake;
 
-import com.foo.rest.emb.json.devgateway.DevgatewayExampleController;
 import com.foo.rest.emb.json.familietilbake.FamilieTilbakeExampleController;
 import org.evomaster.core.EMConfig;
 import org.evomaster.core.problem.rest.HttpVerb;

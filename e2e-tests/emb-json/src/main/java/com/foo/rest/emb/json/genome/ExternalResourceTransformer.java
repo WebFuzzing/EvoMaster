@@ -7,6 +7,12 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * This code is taken from Genome Nexus
+ * G: https://github.com/genome-nexus/genome-nexus
+ * L: MIT
+ * P: src/main/java/org/cbioportal/genome_nexus/service/transformer/ExternalResourceTransformer.java
+ */
 public class ExternalResourceTransformer<T> implements ResourceTransformer<T>
 {
     private final ObjectMapper externalResourceObjectMapper;

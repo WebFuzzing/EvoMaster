@@ -1,9 +1,15 @@
-package com.foo.rest.emb.json.devgateway;
+package com.foo.rest.emb.json.ocvn;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 
+/**
+ * This code is taken from Open Contracting Vietnam (OCVN)
+ * G: https://github.com/devgateway/ocvn
+ * L: MIT
+ * P: src/main/java/org/devgateway/ocds/persistence/mongo/spring/json2object/ReleaseJsonToObject.java
+ */
 public class ReleaseJsonToObject  {
 //public class ReleaseJsonToObject extends AbstractJsonToObject<Release> {
     private Release release;
@@ -15,7 +21,7 @@ public class ReleaseJsonToObject  {
         this.mapper = mapper;
         this.jsonObject = jsonObject;
     }
-    
+
 //
 //    public ReleaseJsonToObject(final String jsonObject, final Boolean mapDeserializer) {
 //        super(jsonObject, mapDeserializer);

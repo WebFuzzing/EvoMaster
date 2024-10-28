@@ -15,6 +15,12 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * This code is taken from GestaoHospital
+ * G: https://github.com/ValchanOficial/GestaoHospital
+ * L: N/A
+ * P: src/main/java/br/com/codenation/hospital/integration/LocationIQService.java
+ */
 public class LocationIQService {
     private static final Logger LOGGER = LoggerFactory.getLogger(LocationIQService.class);
 

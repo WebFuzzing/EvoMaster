@@ -1,4 +1,4 @@
-package com.foo.rest.emb.json.devgateway;
+package com.foo.rest.emb.json.ocvn;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -7,9 +7,9 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 @EnableSwagger2
 @SpringBootApplication(exclude = SecurityAutoConfiguration.class)
-public class DevgatewayExampleApplication {
+public class OcvnExampleApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(DevgatewayExampleApplication.class, args);
+        SpringApplication.run(OcvnExampleApplication.class, args);
     }
 }

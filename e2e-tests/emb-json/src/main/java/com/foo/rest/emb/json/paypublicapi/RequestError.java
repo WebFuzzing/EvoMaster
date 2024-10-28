@@ -5,6 +5,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import static com.google.common.collect.ObjectArrays.concat;
 import static java.lang.String.format;
 
+/**
+ * This code is taken from pay-publicapi
+ * G: https://github.com/alphagov/pay-publicapi
+ * L: MIT
+ * P: src/main/java/uk/gov/pay/api/model/RequestError.java
+ */
 public class RequestError {
 
     public enum Code {

@@ -5,6 +5,12 @@ import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.io.IOException;
 
+/**
+ * This code is taken from tiltaksgjennomforing-api
+ * G: https://github.com/navikt/tiltaksgjennomforing-api
+ * L: MIT
+ * P: tiltaksgjennomforing-api/src/main/java/no/nav/tag/tiltaksgjennomforing/varsel/notifikasjon/NotifikasjonHandler.java
+ */
 public class NotifikasjonHandler {
     private final ObjectMapper objectMapper = new ObjectMapper();
 //    private final ObjectMapper objectMapper;

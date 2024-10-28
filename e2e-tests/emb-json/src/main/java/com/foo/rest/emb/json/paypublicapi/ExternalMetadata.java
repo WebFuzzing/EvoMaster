@@ -4,6 +4,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * This code is taken from pay-java-commons
+ * G: https://github.com/alphagov/pay-java-commons
+ * L: MIT
+ * P: model/src/main/java/uk/gov/service/payments/commons/model/charge/ExternalMetadata.java
+ */
 public class ExternalMetadata {
     public static final int MAX_KEY_VALUE_PAIRS = 10;
     public static final int MIN_KEY_LENGTH = 1;

@@ -11,6 +11,12 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import javax.annotation.Nonnull;
 
+/**
+ * This code is taken from Signal-Server
+ * G: https://github.com/signalapp/Signal-Server
+ * L: MIT
+ * P: signal-server/service/src/main/java/org/whispersystems/textsecuregcm/util/SystemMapper.java
+ */
 public class SystemMapper {
 
     private static final ObjectMapper JSON_MAPPER = configureMapper(new ObjectMapper());

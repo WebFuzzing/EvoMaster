@@ -1,4 +1,4 @@
-package com.foo.rest.emb.json.devgateway;
+package com.foo.rest.emb.json.ocvn;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.ResponseEntity;
@@ -12,7 +12,7 @@ import java.io.IOException;
 
 @RestController
 @RequestMapping(path = "/api")
-public class DevgatewayExampleEndpoints {
+public class OcvnExampleEndpoints {
 
     @RequestMapping(
             value = "/json",

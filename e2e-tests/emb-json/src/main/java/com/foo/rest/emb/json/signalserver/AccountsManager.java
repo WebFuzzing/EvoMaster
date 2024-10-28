@@ -8,6 +8,12 @@ import java.io.IOException;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * This code is taken from Signal-Server
+ * G: https://github.com/signalapp/Signal-Server
+ * L: MIT
+ * P: signal-server/service/src/main/java/org/whispersystems/textsecuregcm/storage/AccountsManager.java
+ */
 public class AccountsManager {
 
 //    private static final Logger logger = LoggerFactory.getLogger(AccountsManager.class);

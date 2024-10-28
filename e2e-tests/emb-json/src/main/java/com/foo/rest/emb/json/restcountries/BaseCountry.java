@@ -2,6 +2,12 @@ package com.foo.rest.emb.json.restcountries;
 
 import java.util.List;
 
+/**
+ * This code is taken from REST Countries
+ * G: https://github.com/apilayer/restcountries
+ * L: MPL-2.0
+ * P: src/main/java/eu/fayder/restcountries/domain/BaseCountry.java
+ */
 public class BaseCountry {
 
     protected String name;

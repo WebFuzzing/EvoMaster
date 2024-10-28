@@ -6,6 +6,12 @@ import com.google.gson.JsonParseException;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * This code is taken from Genome Nexus
+ * G: https://github.com/genome-nexus/genome-nexus
+ * L: MIT
+ * P: src/main/java/org/cbioportal/genome_nexus/util/TokenMapConverter.java
+ */
 public class TokenMapConverter {
 
     public Map<String, String> convertToMap(String token) {

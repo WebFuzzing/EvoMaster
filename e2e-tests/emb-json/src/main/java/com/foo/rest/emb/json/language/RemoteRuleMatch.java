@@ -5,6 +5,14 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+
+/**
+ * This code is taken from LanguageTool
+ * G: https://github.com/languagetool-org/languagetool
+ * L: LGPL-2.1
+ * P: src/main/java/org/languagetool/server/RemoteRuleMatch.java
+ */
+
 /**
  * A potential error as returned by the HTTP API of LanguageTool.
  * @since 4.0
