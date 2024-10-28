@@ -136,21 +136,17 @@ class SearchProcessMonitor: SearchListener {
             if(config.processInterval == 0.0 || time.percentageUsedBudget() >= tb * config.processInterval/100.0){
                 when(config.processFormat){
                     EMConfig.ProcessDataFormat.JSON_ALL->{
-                            if(time.shouldContinueSearch()){ //currently we only record info during fuzzing
-
-                                if(evalInd != eval && evalInd.index != (eval as EvaluatedIndividual<T>).index)
-                                    throw IllegalStateException("Mismatched evaluated individual under monitor")
-                                /*
-                                    step is assigned when an individual is evaluated (part of calculateCoverage of FitnessFunction),
-                                    but in order to record if the evaluated individual added into Archive, we need to save it after executing addIfNeeded in Archive
-                                    Since calculateCoverage is always followed by addIfNeed, the step should be not null.
-                                 */
-                                step!!.added = added
-                                step!!.improvedArchive = improveArchive
-                                saveStep(step!!.indexOfEvaluation, step!!)
-                                if(config.showProgress) log.info("number of targets: ${step!!.populations.size}")
-
-                        }
+                        if(evalInd != eval && evalInd.index != (eval as EvaluatedIndividual<T>).index)
+                            throw IllegalStateException("Mismatched evaluated individual under monitor")
+                        /*
+                            step is assigned when an individual is evaluated (part of calculateCoverage of FitnessFunction),
+                            but in order to record if the evaluated individual added into Archive, we need to save it after executing addIfNeeded in Archive
+                            Since calculateCoverage is always followed by addIfNeed, the step should be not null.
+                         */
+                        step!!.added = added
+                        step!!.improvedArchive = improveArchive
+                        saveStep(step!!.indexOfEvaluation, step!!)
+                        if(config.showProgress) log.info("number of targets: ${step!!.populations.size}")
                     }
                     EMConfig.ProcessDataFormat.TEST_IND , EMConfig.ProcessDataFormat.TARGET_TEST_IND->{
                         saveStepAsTest(index = time.evaluatedIndividuals,evalInd = evalInd, doesIncludeTarget = config.processFormat == EMConfig.ProcessDataFormat.TARGET_TEST_IND)
