@@ -7,18 +7,28 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.ws.rs.core.MediaType;
+import java.util.List;
 
 @RestController
-@RequestMapping(path = "/api/gestaohospital")
+@RequestMapping(path = "/api")
 public class GestaoHospitalExampleEndpoints {
 
     @RequestMapping(
             value = "/json",
-            method = RequestMethod.POST,
+            method = RequestMethod.GET,
             produces = MediaType.APPLICATION_JSON
     )
-    public ResponseEntity parseJson(@RequestBody String json) {
+    public ResponseEntity parseJson() {
 
-        return ResponseEntity.status(200).body("Working");
+        LocationIQService service = new LocationIQService();
+
+        List<LocationIQResponse> responses = service.getLocationIQResponse("hidden");
+
+        if (responses.contains("teapot")) {
+            return ResponseEntity.status(418).body("Found it");
+        }
+
+        return ResponseEntity.status(204).body("No tea for you!");
+
     }
 }

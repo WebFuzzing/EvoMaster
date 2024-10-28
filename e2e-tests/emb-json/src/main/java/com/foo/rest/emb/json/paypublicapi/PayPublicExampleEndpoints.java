@@ -1,4 +1,4 @@
-package com.foo.rest.emb.json.genome;
+package com.foo.rest.emb.json.paypublicapi;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -7,11 +7,9 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.ws.rs.core.MediaType;
-import java.util.Map;
-
 @RestController
 @RequestMapping(path = "/api")
-public class GenomeNexusExampleEndpoints {
+public class PayPublicExampleEndpoints {
 
     @RequestMapping(
             value = "/json",
@@ -19,14 +17,10 @@ public class GenomeNexusExampleEndpoints {
             produces = MediaType.APPLICATION_JSON
     )
     public ResponseEntity parseJson(@RequestBody String json) {
-        TokenMapConverter converter = new TokenMapConverter();
+//         This use JsonNode
+//        ExternalMetadata data = RequestJsonParser.parsePaymentRequest(...)
 
-        Map<String, String> objects = converter.convertToMap(json);
+        return ResponseEntity.status(204).body("Nothing found");
 
-        if (objects.containsKey("teal")) {
-            return ResponseEntity.status(200).body("Teal");
-        }
-
-        return ResponseEntity.status(204).body("Working");
     }
 }

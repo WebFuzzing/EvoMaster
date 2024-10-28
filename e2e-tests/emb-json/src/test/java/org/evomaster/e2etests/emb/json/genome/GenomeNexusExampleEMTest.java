@@ -29,7 +29,7 @@ public class GenomeNexusExampleEMTest extends EMBJsonTestBase {
                 (args) -> {
                     Solution<RestIndividual> solution = initAndRun(args);
 
-                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/genome/json", "Working");
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/json", "Teal");
                 },
                 3
         );

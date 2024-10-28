@@ -1,4 +1,4 @@
-package com.foo.rest.emb.json.genome;
+package com.foo.rest.emb.json.familietilbake;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -7,11 +7,10 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.ws.rs.core.MediaType;
-import java.util.Map;
 
 @RestController
 @RequestMapping(path = "/api")
-public class GenomeNexusExampleEndpoints {
+public class FamilieTilbakeExampleEndpoints {
 
     @RequestMapping(
             value = "/json",
@@ -19,14 +18,7 @@ public class GenomeNexusExampleEndpoints {
             produces = MediaType.APPLICATION_JSON
     )
     public ResponseEntity parseJson(@RequestBody String json) {
-        TokenMapConverter converter = new TokenMapConverter();
+        return ResponseEntity.status(500).build();
 
-        Map<String, String> objects = converter.convertToMap(json);
-
-        if (objects.containsKey("teal")) {
-            return ResponseEntity.status(200).body("Teal");
-        }
-
-        return ResponseEntity.status(204).body("Working");
     }
 }
