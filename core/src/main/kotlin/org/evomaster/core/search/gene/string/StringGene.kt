@@ -217,9 +217,18 @@ class StringGene(
         /*
             TODO this assertion had to be removed, as Resource Sampler uses action templates that have been
             already initialized... but unsure how that would negatively effect the Taint on Sampling done
-            here
+            here.
+            Also, now we have TaintedMapGene
          */
         //assert(!tainted)
+
+        if(name == TaintInputName.TAINTED_MAP_EM_LABEL_IDENTIFIER){
+            /*
+                TODO should have a better check to specify a StringGene is immutable.
+                If we end up in other cases for this, should add an "immutable" field to this gene
+             */
+            return
+        }
 
         /*
             the gene might be initialized without global constraint
@@ -1008,6 +1017,14 @@ class StringGene(
 
     override fun getPossiblyTaintedValue(): String {
         return getValueAsRawString()
+    }
+
+    override fun hasDormantGenes(): Boolean {
+        return selectionUpdatedSinceLastMutation
+    }
+
+    override fun forceNewTaintId() {
+        //TODO
     }
 
     /**

@@ -181,7 +181,7 @@ abstract class RestIndividualTestBase {
     @MethodSource("getBudgetAndNumOfResourceForSampler")
     fun testSampledIndividual(iteration: Int, numResource: Int){
         initResourceNode(numResource, 5)
-        config.maxActionEvaluations = iteration
+        config.maxEvaluations = iteration
 
         (0 until iteration).forEach { i ->
             val ind = getSampler().sample()
@@ -209,7 +209,7 @@ abstract class RestIndividualTestBase {
     @MethodSource("getBudgetAndNumOfResourceForMutator")
     fun testMutatedIndividual(iteration: Int, numResource: Int){
         initResourceNode(numResource, 5)
-        config.maxActionEvaluations = iteration
+        config.maxEvaluations = iteration
         searchTimeController.startSearch()
 
         val ind = getSampler().sample()
@@ -272,7 +272,7 @@ abstract class RestIndividualTestBase {
         val defaultConfigs : Array<String> = listOf(
             "--useTimeInFeedbackSampling=false",
             "--seed=42",
-            "--stoppingCriterion=FITNESS_EVALUATIONS"
+            "--stoppingCriterion=ACTION_EVALUATIONS"
         ).plus(config()).toTypedArray()
 
         val modules = listOf(BaseModule(defaultConfigs)).plus(getProblemModule()).plus(FakeModule(
