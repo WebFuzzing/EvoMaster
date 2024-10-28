@@ -132,7 +132,7 @@ class SearchProcessMonitor: SearchListener {
     fun <T: Individual> record(added: Boolean, improveArchive : Boolean, evalInd : EvaluatedIndividual<T>){
         if(config.enableProcessMonitor
             // currently we only record info during fuzzing
-            && time.shouldContinueSearch()){
+            && !time.isRecordingStopped()){
             if(config.processInterval == 0.0 || time.percentageUsedBudget() >= tb * config.processInterval/100.0){
                 when(config.processFormat){
                     EMConfig.ProcessDataFormat.JSON_ALL->{
