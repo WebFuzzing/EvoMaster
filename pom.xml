@@ -30,8 +30,6 @@
         <module>solver</module>
         <module>test-utils</module>
         <module>wfc</module>
-        <module>e2e-tests/emb-json</module>
-        <module>e2e-tests/emb-json</module> <!-- TODO remove once moved in own repository-->
     </modules>
 
     <issueManagement>
