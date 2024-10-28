@@ -809,7 +809,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             throw new IllegalStateException("EM driver RPC: the specified problem is not RPC");
         RPCType rpcType = ((RPCProblem) rpcp).getType();
 
-        return RPCEndpointsBuilder.buildSeededTest(rpcInterfaceSchema, seedRPCTests, rpcType);
+        return RPCEndpointsBuilder.buildSeededTestWithRPCFunctions(rpcInterfaceSchema, seedRPCTests, rpcType);
 
 //        try{
 //            if (isSUTRunning){
