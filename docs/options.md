@@ -63,7 +63,7 @@ There are 3 types of options:
 |`adaptiveGeneSelectionMethod`| __Enum__. Specify a strategy to select genes for mutation adaptively. *Valid values*: `NONE, AWAY_NOIMPACT, APPROACH_IMPACT, APPROACH_LATEST_IMPACT, APPROACH_LATEST_IMPROVEMENT, BALANCE_IMPACT_NOIMPACT, BALANCE_IMPACT_NOIMPACT_WITH_E, ALL_FIXED_RAND`. *Default value*: `APPROACH_IMPACT`.|
 |`addPreDefinedTests`| __Boolean__. Add predefined tests at the end of the search. An example is a test to fetch the schema of RESTful APIs. *Default value*: `true`.|
 |`advancedBlackBoxCoverage`| __Boolean__. Apply more advanced coverage criteria for black-box testing. This can result in larger generated test suites. *Default value*: `true`.|
-|`algorithm`| __Enum__. The algorithm used to generate test cases. The default depends on whether black-box or white-box testing is done. *Valid values*: `DEFAULT, SMARTS, MIO, RANDOM, WTS, MOSA`. *Default value*: `DEFAULT`.|
+|`algorithm`| __Enum__. The algorithm used to generate test cases. The default depends on whether black-box or white-box testing is done. *Valid values*: `DEFAULT, SMARTS, MIO, RANDOM, WTS, MOSA, RW`. *Default value*: `DEFAULT`.|
 |`allowInvalidData`| __Boolean__. When generating data, allow in some cases to use invalid values on purpose. *Default value*: `true`.|
 |`appendToStatisticsFile`| __Boolean__. Whether should add to an existing statistics file, instead of replacing it. *Default value*: `false`.|
 |`archiveAfterMutationFile`| __String__. Specify a path to save archive after each mutation during search, only useful for debugging. *DEBUG option*. *Default value*: `archive.csv`.|
