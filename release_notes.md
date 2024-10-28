@@ -3,10 +3,13 @@
 Under development in `master` branch.
 
 
+### Bug Fixes
+- Fixed missing java.util.Arrays in generated files, leading to compilation errors in some cases involving SQL database resets. 
+
+
 # Version: 3.3.0
 
 ### New Features
-
 - MongoDB support. For white-box heuristics, can analyze all queries done toward MongoDB databases, as well as being able to insert data directly as part of the generated test cases.
 - improved fault detection for OpenAPI schema faults, in particular regarding the structure of the received responses, which are now validated. 
 - improved coverage criteria for black-box testing for REST APIs.
@@ -14,9 +17,9 @@ Under development in `master` branch.
 - improved re-used of data between endpoints (e.g., data returned from GET requests can be used as input for following requests using fields with similar names). 
 
 ### Bug Fixes
-
 - bbSwaggerUrl now works when using a local path instead of URL (as was stated in documentation).
 - fixed wrong handling of "date-time" format in OpenAPI schemas. 
+
 
 # Version: 3.2.0
 
