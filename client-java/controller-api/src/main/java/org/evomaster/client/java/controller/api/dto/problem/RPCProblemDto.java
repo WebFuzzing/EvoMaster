@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.api.dto.problem;
 
+import org.evomaster.client.java.controller.api.dto.ScheduleTaskInvocationDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCInterfaceSchemaDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.SeededRPCTestDto;
@@ -35,5 +36,11 @@ public class RPCProblemDto extends ProblemInfoDto{
      * value is a list of RPC actions representing a seeded test
      */
     public Map<String, List<RPCActionDto>> seededTestDtos;
+
+    /**
+     * key is test case name
+     * value is a list of ScheduleTaskInvocationDto representing a seeded test for testing related schedule tasks
+     */
+    public Map<String, List<ScheduleTaskInvocationDto>> seededTestDtosForScheduleTask;
 
 }
