@@ -9,7 +9,12 @@ import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 
 /**
  * Random Walk (RW) Algorithm
+ * In the Random Walk algorithm, the search process is performed by randomly mutating the current individual.
+ * The algorithm is based on the idea of randomly walking through the search space.
+ *  Any specific heuristic does not guide the algorithm, and it is not guaranteed to find the optimal solution.
+ *
  */
+
 class RandomWalkAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
     override fun getType(): EMConfig.Algorithm {
@@ -22,7 +27,6 @@ class RandomWalkAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
         // Nothing needs to be done before starting the search
     }
 
-
     override fun searchOnce() {
 
         if (latestEvaluatedIndividual == null) {
@@ -31,22 +35,16 @@ class RandomWalkAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
             Lazy.assert { individual.isInitialized() && individual.searchGlobalState != null }
 
-
             ff.calculateCoverage(individual, modifiedSpec = null)?.run {
                 archive.addIfNeeded(this)
-                sampler.feedback(this)
-                latestEvaluatedIndividual = this.copy()
+                latestEvaluatedIndividual = this
             }
 
             return
         }
 
-        val mutatedSolution = getMutatator().mutate(latestEvaluatedIndividual!!.copy())
-
-        ff.calculateCoverage(mutatedSolution, modifiedSpec = null)?.run {
-            archive.addIfNeeded(this)
-            sampler.feedback(this)
-            latestEvaluatedIndividual = this.copy()
+        getMutatator().mutateAndSave(latestEvaluatedIndividual!!, archive).run {
+            latestEvaluatedIndividual = this
         }
 
     }

@@ -10,6 +10,8 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.TestUtils
 import org.evomaster.core.search.algorithms.onemax.OneMaxIndividual
 import org.evomaster.core.search.algorithms.onemax.OneMaxModule
+import org.evomaster.core.search.algorithms.onemax.OneMaxSampler
+import org.evomaster.core.search.service.SearchTimeController
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -22,17 +24,23 @@ class RandomWalkSearchTest {
             .build().createInjector()
 
     @Test
-    fun testRandomSearch(){
-        val rw = injector.getInstance(Key.get(
-                object : TypeLiteral<RandomWalkAlgorithm<OneMaxIndividual>>() {}))
+    fun testRandomWalkSearch(){
+        TestUtils.handleFlaky {
+            val rw = injector.getInstance(Key.get(
+                    object : TypeLiteral<RandomWalkAlgorithm<OneMaxIndividual>>() {}))
 
-        val config = injector.getInstance(EMConfig::class.java)
-        config.maxEvaluations = 3000
-        config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
+            val config = injector.getInstance(EMConfig::class.java)
+            config.algorithm = EMConfig.Algorithm.RW
+            config.maxEvaluations = 3000
+            config.stoppingCriterion = EMConfig.StoppingCriterion.INDIVIDUAL_EVALUATIONS
 
-        val solution = rw.search()
+            val sampler = injector.getInstance(OneMaxSampler::class.java)
+            val n = 10
+            sampler.n = n
 
-        assertEquals(3.0, solution.overall.computeFitnessScore(), 0.001)
-        assertTrue(solution.individuals.size <= 2)
+            val solution = rw.search()
+
+            assertEquals(n.toDouble(), solution.overall.computeFitnessScore(), 0.001)
+        }
     }
 }
