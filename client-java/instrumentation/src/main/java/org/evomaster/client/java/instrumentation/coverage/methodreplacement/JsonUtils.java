@@ -33,6 +33,9 @@ public class JsonUtils {
         return JsonUtils.toStream(content);
     }
 
+    /**
+     * Reader the JSON string from Reader.
+     */
     public static String getStringFromReader(Reader reader){
         StringBuilder s = new StringBuilder();
         int character;
@@ -48,6 +51,9 @@ public class JsonUtils {
         return s.toString();
     }
 
+    /**
+     * Returns Reader from JSON string
+     */
     public static Reader stringToReader(String content) {
         return new StringReader(content);
     }
