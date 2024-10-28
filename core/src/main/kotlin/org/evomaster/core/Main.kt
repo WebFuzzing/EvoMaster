@@ -170,6 +170,7 @@ class Main {
 
             val config = injector.getInstance(EMConfig::class.java)
             val idMapper = injector.getInstance(IdMapper::class.java)
+            val epc = injector.getInstance(ExecutionPhaseController::class.java)
 
             var solution = run(injector, controllerInfo)
 
@@ -205,6 +206,7 @@ class Main {
             if(config.security){
                 //apply security testing phase
                 LoggingUtil.getInfoLogger().info("Starting to apply security testing")
+                epc.startSecurity()
 
                 //TODO might need to reset stc, and print some updated info again
 
@@ -326,6 +328,9 @@ class Main {
             }
 
             solution.statistics = data.toMutableList()
+
+            epc.finishSearch()
+
             return solution
         }
 
@@ -537,6 +542,8 @@ class Main {
         fun run(injector: Injector, controllerInfo: ControllerInfoDto?): Solution<*> {
 
             val config = injector.getInstance(EMConfig::class.java)
+            val epc = injector.getInstance(ExecutionPhaseController::class.java)
+            epc.startSearch()
 
             if (!config.blackBox || config.bbExperiments) {
                 val rc = injector.getInstance(RemoteController::class.java)

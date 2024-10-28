@@ -52,14 +52,10 @@ public abstract class EmbeddedSutController extends SutController {
     }
 
     @Override
-    public final List<TargetInfo> getTargetInfos(Collection<Integer> ids){
-        return InstrumentationController.getTargetInfos(ids);
+    public final List<TargetInfo> getTargetInfos(Collection<Integer> ids, boolean fullyCovered, boolean descriptiveIds){
+        return InstrumentationController.getTargetInfos(ids, fullyCovered, descriptiveIds);
     }
 
-    @Override
-    public final List<TargetInfo> getAllCoveredTargetInfos(){
-        return InstrumentationController.getAllCoveredTargetInfos();
-    }
 
     @Override
     public final List<AdditionalInfo> getAdditionalInfoList(){

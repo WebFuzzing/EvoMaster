@@ -919,7 +919,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     protected fun restActionResultHandling(
         individual: RestIndividual,
         targets: Set<Int>,
-        allCovered: Boolean,
+        allTargets: Boolean,
+        fullyCovered: Boolean,
+        descriptiveIds: Boolean,
         actionResults: List<ActionResult>,
         fv: FitnessValue
     ): TestResultsDto? {
@@ -937,7 +939,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             return null
         }
 
-        val dto = updateFitnessAfterEvaluation(targets, allCovered, individual, fv)
+        val dto = updateFitnessAfterEvaluation(targets, allTargets, fullyCovered, descriptiveIds, individual, fv)
             ?: return null
 
         handleExtra(dto, fv)
@@ -973,7 +975,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             actionResults.forEach { it.deathSentence = true }
         }
 
-        if (!allCovered) { //FIXME wrong, should be based on phase being SEARCH
+        if (epc.isInSearch()) {
             if (config.expandRestIndividuals) {
                 expandIndividual(individual, dto.additionalInfoList, actionResults)
             }

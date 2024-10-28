@@ -400,15 +400,12 @@ public abstract class ExternalSutController extends SutController {
     }
 
     @Override
-    public final List<TargetInfo> getTargetInfos(Collection<Integer> ids) {
+    public final List<TargetInfo> getTargetInfos(
+            Collection<Integer> ids,
+            boolean fullyCovered,
+            boolean descriptiveIds) {
         checkInstrumentation();
-        return serverController.getTargetsInfo(ids);
-    }
-
-    @Override
-    public final List<TargetInfo> getAllCoveredTargetInfos(){
-        checkInstrumentation();
-        return serverController.getAllCoveredTargetsInfo();
+        return serverController.getTargetsInfo(ids, fullyCovered, descriptiveIds);
     }
 
 

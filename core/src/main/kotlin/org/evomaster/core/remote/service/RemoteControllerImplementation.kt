@@ -10,6 +10,7 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.remote.NoRemoteConnectionException
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.TcpUtils
+import org.evomaster.core.search.service.ExecutionPhaseController
 import org.evomaster.core.search.service.SearchTimeController
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -48,6 +49,10 @@ class RemoteControllerImplementation() : RemoteController{
     //TODO: should clean up. in few places we use RemoteController without injection
     @Inject
     private var stc: SearchTimeController? = null
+
+    //TODO clean/refactor like stc
+    @Inject
+    private var epc: ExecutionPhaseController? = null
 
     private var client: Client = ClientBuilder.newClient()
 
@@ -312,32 +317,35 @@ class RemoteControllerImplementation() : RemoteController{
         return readAndCheckResponse(response, "Failed to inform SUT of new search")
     }
 
-    override fun getTestResults(ids: Set<Int>, ignoreKillSwitch: Boolean, allCovered: Boolean): TestResultsDto? {
-
-        if(allCovered && ids.isNotEmpty()){
-            throw IllegalArgumentException("Cannot specify allCovered and specific ids at same time")
-        }
+    override fun getTestResults(
+        ids: Set<Int>,
+        ignoreKillSwitch: Boolean,
+        fullyCovered: Boolean,
+        descriptiveIds: Boolean
+    ): TestResultsDto? {
 
         val queryParam = ids.joinToString(",")
 
-        if(!allCovered) stc?.averageOverheadMsTestResultsSubset?.doStartTimer()
+        if(epc?.isInSearch() == true) stc?.averageOverheadMsTestResultsSubset?.doStartTimer()
+
         val response = makeHttpCall {
             getWebTarget()
                     .path(ControllerConstants.TEST_RESULTS)
                     .queryParam("ids", queryParam)
                     .queryParam("killSwitch", !ignoreKillSwitch && config.killSwitch)
-                    .queryParam("allCovered", allCovered)
+                    .queryParam("fullyCovered", fullyCovered)
+                    .queryParam("descriptiveIds", descriptiveIds)
                     .queryParam("queryFromDatabase", !config.useInsertionForSqlHeuristics)
                     .request(MediaType.APPLICATION_JSON_TYPE)
                     .get()
         }
-        if(!allCovered) stc?.averageOverheadMsTestResultsSubset?.addElapsedTime()
+        if(epc?.isInSearch() == true) stc?.averageOverheadMsTestResultsSubset?.addElapsedTime()
 
         stc?.apply {
             val len = try{ Integer.parseInt(response.getHeaderString("content-length"))}
                         catch (e: Exception) {-1}
             if(len >= 0) {
-                if(allCovered) {
+                if(ids.isEmpty()) {
                     averageByteOverheadTestResultsAll.addValue(len)
                 } else {
                     averageByteOverheadTestResultsSubset.addValue(len)

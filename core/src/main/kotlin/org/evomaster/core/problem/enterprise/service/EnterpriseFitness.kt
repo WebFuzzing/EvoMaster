@@ -174,13 +174,23 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
         }
     }
 
-    protected fun updateFitnessAfterEvaluation(targets: Set<Int>, allCovered: Boolean, individual: T, fv: FitnessValue) : TestResultsDto?{
+    protected fun updateFitnessAfterEvaluation(
+        targets: Set<Int>,
+        allTargets: Boolean,
+        fullyCovered: Boolean,
+        descriptiveIds: Boolean,
+        individual: T,
+        fv: FitnessValue
+    ) : TestResultsDto?{
 
-        val dto = if(allCovered){
-                rc.getTestResults(allCovered = true)
+        if(allTargets && targets.isNotEmpty()){
+            throw IllegalArgumentException("Cannot specify all targets and a specific subset at same time")
+        }
+        val dto = if(allTargets){
+                rc.getTestResults(ids = setOf(), fullyCovered = fullyCovered, descriptiveIds = descriptiveIds)
         } else {
             val ids = targetsToEvaluate(targets, individual)
-            rc.getTestResults(ids)
+            rc.getTestResults(ids, fullyCovered = fullyCovered, descriptiveIds = descriptiveIds)
         }
 
         if (dto == null) {

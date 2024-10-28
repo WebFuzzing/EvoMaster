@@ -41,6 +41,10 @@ abstract class SearchAlgorithm<T> where T : Individual {
     @Inject
     private lateinit var ssu: SearchStatusUpdater
 
+    @Inject
+    private lateinit var epc: ExecutionPhaseController
+
+
     private var lastSnapshot = 0
 
     protected fun getMutatator() : Mutator<T> {
@@ -95,6 +99,8 @@ abstract class SearchAlgorithm<T> where T : Individual {
         ssu.enabled = false
 
         if(config.minimize){
+            epc.startMinimization()
+
             minimizer.doStartTheTimer()
             minimizer.minimizeMainActionsPerCoveredTargetInArchive()
             minimizer.pruneNonNeededDatabaseActions()

@@ -1260,9 +1260,10 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         throw new IllegalStateException("This deprecated method should never be called");
     }
 
-    public abstract List<TargetInfo> getTargetInfos(Collection<Integer> ids);
+    public abstract List<TargetInfo> getTargetInfos(Collection<Integer> ids,
+                                                    boolean fullyCovered,
+                                                    boolean descriptiveIds);
 
-    public abstract List<TargetInfo> getAllCoveredTargetInfos();
 
 
     /**
