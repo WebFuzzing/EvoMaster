@@ -46,4 +46,9 @@ public class ScheduleTaskInvocationDto {
      */
     public String descriptiveInfo;
 
+    /**
+     * the host name or ip where the task can be found
+     */
+    public String hostName;
+
 }
