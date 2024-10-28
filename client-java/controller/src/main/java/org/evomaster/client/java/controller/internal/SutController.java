@@ -1500,6 +1500,11 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     @Override
+    public boolean customizeScheduleTaskInvocation(ScheduleTaskInvocationDto invocationDto, boolean invoked) {
+        return false;
+    }
+
+    @Override
     public void resetDatabase(List<String> tablesToClean) {
 
         if (getDbSpecifications()!= null && !getDbSpecifications().isEmpty()){
