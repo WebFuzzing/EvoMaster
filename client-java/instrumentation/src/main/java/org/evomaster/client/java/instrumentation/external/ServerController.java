@@ -248,7 +248,7 @@ public class ServerController {
         dto.fullyCovered = fullyCovered;
         dto.descriptiveIds = descriptiveIds;
 
-        if(! sendObject(ids)){
+        if(! sendObject(dto)){
             SimpleLogger.error("Failed to send ids");
             return null;
         }

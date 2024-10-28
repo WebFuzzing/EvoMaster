@@ -223,7 +223,7 @@ public class AgentController {
             sendObject(InstrumentationController.getTargetInfos(dto.ids, dto.fullyCovered, dto.descriptiveIds));
 
         } catch (Exception e) {
-            SimpleLogger.error("Failure in handling ids: "+e.getMessage());
+            SimpleLogger.error("Failure in handling ids", e);
         }
     }
 

@@ -486,7 +486,11 @@ public class EMController {
 
             List<TargetInfo> targetInfos = noKillSwitch(() -> sutController.getTargetInfos(ids, fullyCovered, descriptiveIds));
             if (targetInfos == null) {
-                String msg = "Failed to collect target information for " + ids.size() + " ids";
+                String label = "all";
+                if(ids != null){
+                    label = ""+ ids.size();
+                }
+                String msg = "Failed to collect target information for " + label + " ids";
                 SimpleLogger.error(msg);
                 return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
             }
