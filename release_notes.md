@@ -34,6 +34,7 @@ Under development in `master` branch.
 
 ### Addressed GitHub Issues
 
+- #765: Details how to use evomaster + info on found faults
 - #822: additionalProperties: [true/false] causes crash
 - #986: Should this test be in EvoMaster_fault_representatives_Test.java and is resolveLocation() working as expected?
 - #989: TestCaseWriter login cookie variable name
