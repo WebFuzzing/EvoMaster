@@ -167,3 +167,4 @@ Migrations/
 /target/
 /wfc/target/
 /e2e-tests/emb-json/target/
+/process_data/
