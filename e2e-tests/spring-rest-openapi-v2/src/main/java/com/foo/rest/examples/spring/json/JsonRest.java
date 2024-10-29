@@ -19,6 +19,10 @@ public class JsonRest {
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> post(@RequestBody String json) throws JsonProcessingException {
 
+        if(json == null || json.isEmpty()) {
+            return ResponseEntity.badRequest().body("Empty json");
+        }
+
         ObjectMapper mapper = new ObjectMapper();
         Map collection = mapper.readValue(json, Map.class);
         List<Integer> z = (List<Integer>) collection.get("z");
@@ -26,7 +30,7 @@ public class JsonRest {
         if (z!=null && z.get(1) == 2025) {
             return ResponseEntity.ok().body("OK");
         } else {
-            return ResponseEntity.badRequest().body("FAIL");
+            return ResponseEntity.status(500).body("FAIL");
         }
     }
 }

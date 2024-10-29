@@ -13,7 +13,7 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutation
 
 
 /**
- * Special gene used to represent a valid array, with a single tainted value.
+ * Special gene used to represent a valid array, with a single tainted value, possibly repeated several times.
  * Once the tainted is resolved, an actual array with the proper type is used.
  *
  * This is needed in 2-phase marshalling, where a string is marshalled into an array of maps,
@@ -94,7 +94,7 @@ class TaintedArrayGene(
         extraCheck: Boolean
     ): String {
         if(arrayGene == null || !isActive) {
-            return "[\"$taintedValue\"]"
+            return "[\"$taintedValue\",\"$taintedValue\",\"$taintedValue\"]"
         }
         return arrayGene!!.getValueAsPrintableString(previousGenes,mode,targetFormat,extraCheck)
     }
