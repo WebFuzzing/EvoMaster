@@ -46,7 +46,7 @@ public class ThirdPartyClassVisitor extends ClassVisitor {
         }
 
         mv = new ScheduledMethodVisitor(mv);
-        mv = new CheckCastMethodVisitor(mv);
+        mv = new CheckCastMethodVisitor(mv, bytecodeClassName, name);
         mv = new MethodReplacementMethodVisitor(false, false, mv, bytecodeClassName, name, descriptor);
 
         return mv;

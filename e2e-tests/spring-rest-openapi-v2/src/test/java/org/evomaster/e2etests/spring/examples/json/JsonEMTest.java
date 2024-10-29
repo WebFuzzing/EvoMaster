@@ -25,6 +25,7 @@ public class JsonEMTest extends SpringTestBase {
         runTestHandlingFlakyAndCompilation(
                 "JsonEMTest",
                 10_000,
+                5,
                 (args) -> {
 
                     setOption(args, "taintForceSelectionOfGenesWithSpecialization", "true");

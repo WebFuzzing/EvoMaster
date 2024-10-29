@@ -23,7 +23,7 @@ public class JsonRest {
         Map collection = mapper.readValue(json, Map.class);
         List<Integer> z = (List<Integer>) collection.get("z");
 
-        if (z.get(1) == 2025) {
+        if (z!=null && z.get(1) == 2025) {
             return ResponseEntity.ok().body("OK");
         } else {
             return ResponseEntity.badRequest().body("FAIL");
