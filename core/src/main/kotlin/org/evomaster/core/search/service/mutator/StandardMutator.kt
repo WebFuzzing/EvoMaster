@@ -169,6 +169,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             TaintAnalysis.dormantGenes(individual)
                 .forEach {
                     if(!toMutate.contains(it)){
+                        Lazy.assert { it.isMutable() }
                         toMutate.add(it)
                     }
                 }

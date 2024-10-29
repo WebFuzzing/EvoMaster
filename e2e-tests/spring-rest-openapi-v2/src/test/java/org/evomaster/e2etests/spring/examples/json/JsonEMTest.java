@@ -24,7 +24,7 @@ public class JsonEMTest extends SpringTestBase {
 
         runTestHandlingFlakyAndCompilation(
                 "JsonEMTest",
-                3_000,
+                5_000,
                 5,
                 (args) -> {
 

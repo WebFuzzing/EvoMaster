@@ -169,10 +169,12 @@ class StringGene(
     }
 
     override fun isMutable(): Boolean {
-        if (getSpecializationGene() != null) {
-            return specializationGenes.size > 1 || getSpecializationGene()!!.isMutable()
-        }
-        return true
+        //a specialization can always be undone... so previous check was wrong
+//        if (getSpecializationGene() != null) {
+//            return specializationGenes.size > 1 || getSpecializationGene()!!.isMutable()
+//        }
+//        return true
+        return maxLength > 0 //otherwise there is only 1 value, the empty string ""
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
