@@ -20,6 +20,7 @@ import org.evomaster.core.problem.rest.resource.ResourceImpactOfIndividual
 import org.evomaster.core.search.Individual.GeneFilter
 import org.evomaster.core.search.action.*
 import org.evomaster.core.search.action.ActionFilter.*
+import org.evomaster.core.search.service.monitor.ProcessMonitorExcludeField
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.tracer.TrackingHistory
 import org.slf4j.Logger
@@ -41,6 +42,7 @@ class EvaluatedIndividual<T>(
     private val results: List<out ActionResult>,
 
     // for tracking its history
+    @ProcessMonitorExcludeField
     override var trackOperator: TrackOperator? = null,
     override var index: Int = Traceable.DEFAULT_INDEX,
 
@@ -51,6 +53,7 @@ class EvaluatedIndividual<T>(
 
     override var evaluatedResult: EvaluatedMutation? = null
 
+    @ProcessMonitorExcludeField
     override var tracking: TrackingHistory<out Traceable>? = null
 
     companion object {

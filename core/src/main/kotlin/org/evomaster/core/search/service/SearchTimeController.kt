@@ -108,6 +108,12 @@ class SearchTimeController {
     }
 
     /**
+     * @return if recoding is stopped,
+     * ie, search has been terminated, and start to handle post actions after search
+     */
+    fun isRecordingStopped() = (!recording)
+
+    /**
      * Make sure we do not make too many requests in a short amount of time, to avoid
      * possible DoS attacks.
      */
