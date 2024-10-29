@@ -232,8 +232,8 @@ class ProcessMonitorTest{
     fun testActivateProcessMonitorMIO(){
         config.processFiles = "target/process_data_mio"
         config.enableProcessMonitor = true
-        config.maxActionEvaluations = 50
-        config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
+        config.maxEvaluations = 50
+        config.stoppingCriterion = EMConfig.StoppingCriterion.INDIVIDUAL_EVALUATIONS
         config.minimize = true
 
         processMonitor.postConstruct()
