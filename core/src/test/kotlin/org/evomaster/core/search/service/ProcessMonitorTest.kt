@@ -10,9 +10,11 @@ import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
 import org.evomaster.core.TestUtils
+import org.evomaster.core.search.algorithms.MioAlgorithm
 import org.evomaster.core.search.algorithms.onemax.OneMaxFitness
 import org.evomaster.core.search.algorithms.onemax.OneMaxIndividual
 import org.evomaster.core.search.algorithms.onemax.OneMaxModule
+import org.evomaster.core.search.algorithms.onemax.OneMaxSampler
 import org.evomaster.core.search.service.monitor.SearchOverall
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
 import org.evomaster.core.search.service.monitor.StepOfSearchProcess
@@ -31,6 +33,8 @@ class ProcessMonitorTest{
     private lateinit var config: EMConfig
     private lateinit var processMonitor : SearchProcessMonitor
     private lateinit var randomness: Randomness
+    private lateinit var sampler: OneMaxSampler
+    private lateinit var mio: MioAlgorithm<OneMaxIndividual>
 
     @BeforeEach
     fun init(){
@@ -44,13 +48,16 @@ class ProcessMonitorTest{
                 object : TypeLiteral<Archive<OneMaxIndividual>>() {}))
         processMonitor = injector.getInstance(Key.get(SearchProcessMonitor::class.java))
         randomness = injector.getInstance(Key.get(Randomness::class.java))
-
+        sampler = injector.getInstance(OneMaxSampler::class.java)
+        mio = injector.getInstance(Key.get(
+                object : TypeLiteral<MioAlgorithm<OneMaxIndividual>>() {}))
         ff =  injector.getInstance(OneMaxFitness::class.java)
         config = injector.getInstance(EMConfig::class.java)
         config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
         config.processFormat = EMConfig.ProcessDataFormat.JSON_ALL
         config.useTimeInFeedbackSampling = false
         config.minimize = false
+
     }
 
 
@@ -221,5 +228,24 @@ class ProcessMonitorTest{
 
     }
 
-}
+    @Test
+    fun testActivateProcessMonitorMIO(){
+        config.processFiles = "target/process_data_mio"
+        config.enableProcessMonitor = true
+        config.maxActionEvaluations = 50
+        config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
+        config.minimize = true
 
+        processMonitor.postConstruct()
+
+        assertFalse(Files.exists(Paths.get(config.processFiles)))
+        assertFalse(Files.exists(Paths.get(processMonitor.getStepDirAsPath())))
+
+        mio.search()
+
+
+        assert(Files.exists(Paths.get(config.processFiles)))
+        assert(Files.exists(Paths.get(processMonitor.getStepDirAsPath())))
+        assert(Files.exists(Paths.get(processMonitor.getStepAsPath(1))))
+    }
+}
