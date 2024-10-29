@@ -48,7 +48,7 @@ public class BranchesManualTest extends SpringTestBase {
                 .statusCode(200)
                 .body("value", is(0));
 
-        dto = remoteController.getTestResults(Collections.emptySet(), true, false, false);
+        dto = remoteController.getTestResults(Collections.emptySet(), true, false, true);
         assertTrue(dto.targets.size() > 0);
 
         List<String> targetDescriptions = dto.targets.stream()
