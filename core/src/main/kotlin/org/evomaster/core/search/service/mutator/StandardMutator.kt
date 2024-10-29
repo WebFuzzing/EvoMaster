@@ -180,7 +180,8 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
     private fun mutationPreProcessing(individual: T) {
 
-        TaintAnalysis.evolveIndividual(individual)
+        val applyEvolve = config.taintAnalysisForMapsAndArrays
+        TaintAnalysis.evolveIndividual(individual,applyEvolve,applyEvolve)
 
         for(a in individual.seeAllActions()){
             val update =if(a is ApiWsAction) {
