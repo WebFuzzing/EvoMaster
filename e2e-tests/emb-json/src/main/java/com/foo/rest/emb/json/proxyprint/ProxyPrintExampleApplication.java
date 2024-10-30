@@ -1,4 +1,4 @@
-package com.foo.rest.emb.json.familietilbake;
+package com.foo.rest.emb.json.proxyprint;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -7,12 +7,9 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 @EnableSwagger2
 @SpringBootApplication(exclude = SecurityAutoConfiguration.class)
-public class FamilieTilbakeExampleApplication {
+public class ProxyPrintExampleApplication {
 
-    /**
-     * This application not yet completed in EMB.
-     */
     public static void main(String[] args) {
-        SpringApplication.run(FamilieTilbakeExampleApplication.class, args);
+        SpringApplication.run(ProxyPrintExampleApplication.class, args);
     }
 }

@@ -1,6 +1,6 @@
-package org.evomaster.e2etests.emb.json.familietilbake;
+package org.evomaster.e2etests.emb.json.proxyprint;
 
-import com.foo.rest.emb.json.familietilbake.FamilieTilbakeExampleController;
+import com.foo.rest.emb.json.proxyprint.ProxyPrintExampleController;
 import org.evomaster.core.EMConfig;
 import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.RestIndividual;
@@ -9,11 +9,11 @@ import org.evomaster.e2etests.emb.json.EMBJsonTestBase;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 
-public class FamilieTilbakeExampleEMTest extends EMBJsonTestBase {
+public class ProxyPrintExampleEMTest extends EMBJsonTestBase {
 
     @BeforeAll
     public static void initClass() throws Exception {
-        FamilieTilbakeExampleController controller = new FamilieTilbakeExampleController();
+        ProxyPrintExampleController controller = new ProxyPrintExampleController();
         EMConfig config = new EMConfig();
         config.getInstrumentMR_EXT_0();
         EMBJsonTestBase.initClass(controller, config);

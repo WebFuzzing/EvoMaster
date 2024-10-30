@@ -18,13 +18,13 @@ public class GestaoHospitalExampleEndpoints {
             method = RequestMethod.GET,
             produces = MediaType.APPLICATION_JSON
     )
-    public ResponseEntity parseJson() {
+    public ResponseEntity parseJson(@RequestBody String json) {
 
         LocationIQService service = new LocationIQService();
 
-        List<LocationIQResponse> responses = service.getLocationIQResponse("hidden");
+        List<LocationIQResponse> responses = service.getLocationIQResponse(json);
 
-        if (responses.contains("teapot")) {
+        if (responses.get(3).getDisplayName().equals("teapot")) {
             return ResponseEntity.status(418).body("Found it");
         }
 
