@@ -23,15 +23,15 @@ public class LanguageServerExampleEndpoints {
     )
     public ResponseEntity parseJson() {
         try {
-            ResultExtender resultExtender = new ResultExtender("http://loca.int:9000/api/get", 2000);
-            Map<String, String> params = new HashMap<>();
-            List<RemoteRuleMatch> rules = resultExtender.getExtensionMatches("vowels", params);
+            ResultExtender resultExtender = new ResultExtender();
+
+            List<RemoteRuleMatch> rules = resultExtender.getExtensionMatches("vowels");
             RemoteRuleMatch match = rules.stream()
                     .filter(rule -> "A".equals(rule.toString()))
                     .findAny()
                     .orElse(null);
-            if (rules != null) {
-                return ResponseEntity.status(200).body("A");
+            if (match != null && match.getMessage().equals("vowels")) {
+                return ResponseEntity.status(200).body("vowels");
             }
 
             return ResponseEntity.status(204).body("Nothing found");

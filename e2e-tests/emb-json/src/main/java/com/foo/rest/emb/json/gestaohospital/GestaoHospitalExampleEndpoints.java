@@ -24,7 +24,7 @@ public class GestaoHospitalExampleEndpoints {
 
         List<LocationIQResponse> responses = service.getLocationIQResponse(json);
 
-        if (responses.get(3).getDisplayName().equals("teapot")) {
+        if (responses.get(3).getPlaceId().equals("teapot")) {
             return ResponseEntity.status(418).body("Found it");
         }
 

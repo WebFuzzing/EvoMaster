@@ -13,7 +13,6 @@ import java.io.IOException;
  */
 public class NotifikasjonHandler {
     private final ObjectMapper objectMapper = new ObjectMapper();
-//    private final ObjectMapper objectMapper;
 
     // This doesn't belong to the original class
     private static final SimpleLogger log = new SimpleLogger();

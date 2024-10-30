@@ -30,7 +30,8 @@ public class TiltaksgjennomforingExampleEMTest extends EMBJsonTestBase {
                 (args) -> {
                     Solution<RestIndividual> solution = initAndRun(args);
 
-                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/json", "Approved");
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/read", "Approved");
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/convert", "Approved");
                 },
                 3
         );

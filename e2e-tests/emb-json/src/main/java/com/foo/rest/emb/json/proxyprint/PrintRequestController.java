@@ -1,7 +1,6 @@
 package com.foo.rest.emb.json.proxyprint;
 
 import com.google.gson.Gson;
-import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.io.IOException;
 import java.util.*;
@@ -9,8 +8,6 @@ import java.util.*;
 public class PrintRequestController {
 
     private Map<Long, PrintShop> printShops = new HashMap<>();
-
-    private static SimpleLogger logger = new SimpleLogger();
 
     public Map<Long, String> calcBudgetForPrintRequest(String requestJSON) throws IOException {
         PrintRequest printRequest = new PrintRequest();

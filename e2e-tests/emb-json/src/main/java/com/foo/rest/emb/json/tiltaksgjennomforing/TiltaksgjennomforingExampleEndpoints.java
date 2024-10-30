@@ -13,13 +13,30 @@ import javax.ws.rs.core.MediaType;
 public class TiltaksgjennomforingExampleEndpoints {
 
     @RequestMapping(
-            value = "/json",
+            value = "/read",
             method = RequestMethod.POST,
             produces = MediaType.APPLICATION_JSON
     )
-    public ResponseEntity parseJson(@RequestBody String json) {
+    public ResponseEntity readValue(@RequestBody String json) {
         NotifikasjonHandler notifikasjonHandler = new NotifikasjonHandler();
         FellesResponse fellesResponse = notifikasjonHandler.readResponse(json, FellesResponse.class);
+
+        if (fellesResponse.__typename.equals("Approved")) {
+            return ResponseEntity.ok(fellesResponse.__typename);
+        }
+
+        return ResponseEntity.status(500).build();
+
+    }
+
+    @RequestMapping(
+            value = "/convert",
+            method = RequestMethod.POST,
+            produces = MediaType.APPLICATION_JSON
+    )
+    public ResponseEntity convertValue(@RequestBody String json) {
+        NotifikasjonHandler notifikasjonHandler = new NotifikasjonHandler();
+        FellesResponse fellesResponse = notifikasjonHandler.konverterResponse(json);
 
         if (fellesResponse.__typename.equals("Approved")) {
             return ResponseEntity.ok(fellesResponse.__typename);

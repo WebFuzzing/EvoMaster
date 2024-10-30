@@ -11,7 +11,6 @@ import java.io.IOException;
  * P: src/main/java/org/devgateway/ocds/persistence/mongo/spring/json2object/ReleaseJsonToObject.java
  */
 public class ReleaseJsonToObject  {
-//public class ReleaseJsonToObject extends AbstractJsonToObject<Release> {
     private Release release;
 
     protected final ObjectMapper mapper;
@@ -22,20 +21,7 @@ public class ReleaseJsonToObject  {
         this.jsonObject = jsonObject;
     }
 
-//
-//    public ReleaseJsonToObject(final String jsonObject, final Boolean mapDeserializer) {
-//        super(jsonObject, mapDeserializer);
-//    }
-//
-//    public ReleaseJsonToObject(final InputStream inputStream, final Boolean mapDeserializer) throws IOException {
-//        super(inputStream, mapDeserializer);
-//    }
-//
-//    public ReleaseJsonToObject(final File file, final Boolean mapDeserializer) throws IOException {
-//        super(file, mapDeserializer);
-//    }
 
-//    @Override
     public Release toObject() throws IOException {
         if (release == null) {
             // Transform JSON String to a Release Object
