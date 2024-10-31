@@ -46,7 +46,7 @@ import kotlin.math.min
 
 class StringGene(
         name: String,
-        var value: String = "foo",
+        var value: String = DEFAULT_VALUE,
         /** Inclusive */
         val minLength: Int = 0,
         /**
@@ -76,6 +76,9 @@ class StringGene(
         if (minLength>maxLength) {
             throw IllegalArgumentException("Cannot create string gene ${this.name} with minimum length ${this.minLength} and maximum length ${this.maxLength}")
         }
+        if(value == DEFAULT_VALUE && value.length > maxLength){
+            value = value.substring(0, maxLength)
+        }
     }
 
     companion object {
@@ -83,6 +86,8 @@ class StringGene(
         private val log: Logger = LoggerFactory.getLogger(StringGene::class.java)
 
         private const val PROB_CHANGE_SPEC = 0.1
+
+        private const val DEFAULT_VALUE = "foo"
     }
 
     private var validChar: String? = null
@@ -169,10 +174,12 @@ class StringGene(
     }
 
     override fun isMutable(): Boolean {
-        if (getSpecializationGene() != null) {
-            return specializationGenes.size > 1 || getSpecializationGene()!!.isMutable()
-        }
-        return true
+        //a specialization can always be undone... so previous check was wrong
+//        if (getSpecializationGene() != null) {
+//            return specializationGenes.size > 1 || getSpecializationGene()!!.isMutable()
+//        }
+//        return true
+        return maxLength > 0 //otherwise there is only 1 value, the empty string ""
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
