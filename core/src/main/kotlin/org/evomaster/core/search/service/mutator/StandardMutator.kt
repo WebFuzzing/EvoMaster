@@ -169,6 +169,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             TaintAnalysis.dormantGenes(individual)
                 .forEach {
                     if(!toMutate.contains(it)){
+                        Lazy.assert { it.isMutable() }
                         toMutate.add(it)
                     }
                 }
@@ -179,7 +180,8 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
     private fun mutationPreProcessing(individual: T) {
 
-        TaintAnalysis.evolveIndividual(individual)
+        val applyEvolve = config.taintAnalysisForMapsAndArrays
+        TaintAnalysis.evolveIndividual(individual,applyEvolve,applyEvolve)
 
         for(a in individual.seeAllActions()){
             val update =if(a is ApiWsAction) {

@@ -1,38 +1,21 @@
 package org.evomaster.core.output.naming
 
 import com.webfuzzing.commons.faults.FaultCategory
-import org.evomaster.core.TestUtils
-import org.evomaster.core.TestUtils.generateFakeDbAction
-import org.evomaster.core.mongo.MongoDbAction
-import org.evomaster.core.mongo.MongoDbActionResult
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.Termination
+import org.evomaster.core.output.naming.RestActionTestCaseUtils.getEvaluatedIndividualWith
+import org.evomaster.core.output.naming.RestActionTestCaseUtils.getEvaluatedIndividualWithFaults
+import org.evomaster.core.output.naming.RestActionTestCaseUtils.getRestCallAction
 import org.evomaster.core.problem.enterprise.DetectedFault
-import org.evomaster.core.problem.enterprise.SampleType
-import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
-import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceInfo
-import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceRequest
-import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
 import org.evomaster.core.problem.rest.*
-import org.evomaster.core.problem.rest.resource.RestResourceCalls
-import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.FitnessValue
-import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.Solution
-import org.evomaster.core.search.action.ActionComponent
-import org.evomaster.core.search.action.ActionResult
-import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.tracer.Traceable
-import org.evomaster.core.sql.SqlAction
-import org.evomaster.core.sql.SqlActionResult
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import java.util.*
 import java.util.Collections.singletonList
 import javax.ws.rs.core.MediaType
 
 
-class RestActionNamingStrategyTest {
+open class RestActionNamingStrategyTest {
 
     companion object {
         val pythonFormatter = LanguageConventionFormatter(OutputFormat.PYTHON_UNITTEST)
@@ -279,107 +262,4 @@ class RestActionNamingStrategyTest {
         assertEquals("test_0_postOnItemsReturns200UsingSqlWireMock", testCases[0].name)
     }
 
-    private fun getEvaluatedIndividualWith(restAction: RestCallAction): EvaluatedIndividual<RestIndividual> {
-        return getEvaluatedIndividualWith(restAction, 200, "", MediaType.TEXT_PLAIN_TYPE)
-    }
-
-    private fun getEvaluatedIndividualWith(restAction: RestCallAction, withSql: Boolean = false, withMongo: Boolean = false, withWireMock: Boolean = false): EvaluatedIndividual<RestIndividual> {
-        return getEvaluatedIndividualWith(restAction, 200, "", MediaType.TEXT_PLAIN_TYPE, withSql, withMongo, withWireMock)
-    }
-
-    private fun getEvaluatedIndividualWith(restAction: RestCallAction, statusCode: Int, withSql: Boolean = false, withMongo: Boolean = false, withWireMock: Boolean = false): EvaluatedIndividual<RestIndividual> {
-        return getEvaluatedIndividualWith(restAction, statusCode, "", MediaType.TEXT_PLAIN_TYPE, withSql, withMongo, withWireMock)
-    }
-
-    private fun getEvaluatedIndividualWith(restAction: RestCallAction, statusCode: Int, resultBodyString: String, resultBodyType: MediaType, withSql: Boolean = false, withMongo: Boolean = false, withWireMock: Boolean = false): EvaluatedIndividual<RestIndividual> {
-        return getEvaluatedIndividualWithFaults(restAction, emptyList(), statusCode, resultBodyString, resultBodyType, withSql, withMongo, withWireMock)
-    }
-
-    private fun getEvaluatedIndividualWithFaults(restAction: RestCallAction, faults: List<DetectedFault>, statusCode: Int, resultBodyString: String = "", resultBodyType: MediaType = MediaType.TEXT_PLAIN_TYPE, withSql: Boolean = false, withMongo: Boolean = false, withWireMock: Boolean = false): EvaluatedIndividual<RestIndividual> {
-        val sqlAction = getSqlAction()
-        val mongoDbAction = getMongoDbAction()
-        val wireMockAction = getWireMockAction()
-
-        val restResourceCall = RestResourceCalls(actions= listOf(restAction), sqlActions = listOf())
-
-        val actions = mutableListOf<ActionComponent>()
-        var sqlSize = 0
-        if (withSql) {
-            actions.add(sqlAction)
-            sqlSize++
-        }
-
-        var mongoSize = 0
-        if (withMongo) {
-            actions.add(mongoDbAction)
-            mongoSize++
-        }
-
-        actions.add(restResourceCall)
-
-        val individual = RestIndividual(
-            SampleType.RANDOM,
-            null,
-            null,
-            Traceable.DEFAULT_INDEX,
-            actions,
-            1,
-            sqlSize,
-            mongoSize,
-            0
-        )
-
-        TestUtils.doInitializeIndividualForTesting(individual, Randomness())
-
-
-        val restResult = getRestCallResult(restAction.getLocalId(), statusCode, resultBodyString, resultBodyType)
-        faults.forEach { fault -> restResult.addFault(fault) }
-
-        val results = mutableListOf<ActionResult>(restResult)
-        if (withSql) results.add(SqlActionResult(sqlAction.getLocalId()))
-        if (withMongo) results.add(MongoDbActionResult(mongoDbAction.getLocalId()))
-        if (withWireMock) {
-            val parentAction = individual.seeMainExecutableActions()[0].parent
-            if (parentAction != null) {
-                wireMockAction.doInitialize(Randomness())
-                parentAction.addChildrenToGroup(singletonList(wireMockAction), GroupsOfChildren.EXTERNAL_SERVICES)
-                results.add(getRestCallResult(parentAction.getLocalId(), statusCode, resultBodyString, resultBodyType))
-            }
-        }
-
-        return EvaluatedIndividual<RestIndividual>(FitnessValue(0.0), individual, results)
-    }
-
-    private fun getRestCallAction(path: String = "/items", verb: HttpVerb = HttpVerb.GET): RestCallAction {
-        return RestCallAction("1", verb, RestPath(path), mutableListOf())
-    }
-
-    private fun getRestCallResult(sourceLocalId: String, statusCode: Int, resultBodyString: String, bodyType: MediaType): RestCallResult {
-        val restResult = RestCallResult(sourceLocalId)
-        restResult.setStatusCode(statusCode)
-        restResult.setBody(resultBodyString)
-        restResult.setBodyType(bodyType)
-        return restResult
-    }
-
-    private fun getSqlAction(): SqlAction {
-        return generateFakeDbAction(12345L, 1001L, "Foo", 0)
-    }
-
-    private fun getMongoDbAction(): MongoDbAction {
-        return MongoDbAction(
-            "someDatabase",
-            "someCollection",
-            "\"CustomType\":{\"CustomType\":{\"type\":\"object\", \"properties\": {\"aField\":{\"type\":\"integer\"}}, \"required\": []}}"
-        )
-    }
-
-    private fun getWireMockAction(): HttpExternalServiceAction {
-        val request = HttpExternalServiceRequest(
-            UUID.randomUUID(),"GET","http://noname.local:12354/api/mock","http://noname.local:12354/api/mock",true,
-            UUID.randomUUID().toString(),"http://noname.local:12354/api/mock", mapOf(),null)
-        val serviceInfo = HttpExternalServiceInfo("HTTP", "noname.local", 12354)
-        val service = HttpWsExternalService(serviceInfo, "localhost")
-        return HttpExternalServiceAction(request, "", service, 1L)
-    }
 }

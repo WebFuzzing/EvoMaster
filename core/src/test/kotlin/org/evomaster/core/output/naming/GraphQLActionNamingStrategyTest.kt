@@ -35,7 +35,7 @@ class GraphQLActionNamingStrategyTest {
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(1, testCases.size)
-        assertEquals("test_0_MUTATION_on_add_returns_empty", testCases[0].name)
+        assertEquals("test_0_mutation_on_add_returns_empty", testCases[0].name)
     }
 
     @Test
@@ -49,7 +49,7 @@ class GraphQLActionNamingStrategyTest {
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(1, testCases.size)
-        assertEquals("test_0_QUERY_on_add_returns_empty", testCases[0].name)
+        assertEquals("test_0_query_on_add_returns_empty", testCases[0].name)
     }
 
     @Test
@@ -63,7 +63,7 @@ class GraphQLActionNamingStrategyTest {
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(1, testCases.size)
-        assertEquals("test_0_QUERY_on_add_causes500_internalServerError", testCases[0].name)
+        assertEquals("test_0_query_on_add_causes500_internalServerError", testCases[0].name)
     }
 
     private fun getEvaluatedIndividualWith(query: GQMethodType): EvaluatedIndividual<GraphQLIndividual> {

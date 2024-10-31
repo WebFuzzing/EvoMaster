@@ -1884,6 +1884,9 @@ class EMConfig {
     @Cfg("Whether input tracking is used on sampling time, besides mutation time")
     var taintOnSampling = true
 
+    @Cfg("Apply taint analysis to handle special cases of Maps and Arrays")
+    var taintAnalysisForMapsAndArrays = true
+
     @Probability
     @Experimental
     @Cfg("When sampling new individual, check whether to use already existing info on tainted values")
