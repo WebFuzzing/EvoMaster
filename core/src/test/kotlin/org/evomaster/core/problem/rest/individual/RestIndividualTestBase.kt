@@ -599,6 +599,7 @@ abstract class RestIndividualTestBase {
                     id = targetIdCounter
                     value = 1.0
                     actionIndex = randomness.nextInt(executedActionCounter)
+                    descriptiveId = "FAKE_COVERED_TARGET_$id"
                 })
                 additionalInfoList = (0 until executedActionCounter).map { AdditionalInfoDto() }
                 extraHeuristics = (0 until executedActionCounter).map {
