@@ -29,7 +29,7 @@ public class GestaoHospitalExampleEMTest extends EMBJsonTestBase {
                 (args) -> {
                     Solution<RestIndividual> solution = initAndRun(args);
 
-                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/json", "Found it");
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 418, "/api/json", "Tea");
                 },
                 3
         );

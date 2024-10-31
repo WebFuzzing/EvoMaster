@@ -29,7 +29,7 @@ public class LanguageServerExampleEMTest extends EMBJsonTestBase {
                 (args) -> {
                     Solution<RestIndividual> solution = initAndRun(args);
 
-                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/json", "A");
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/json", "vowels");
                 },
                 3
         );

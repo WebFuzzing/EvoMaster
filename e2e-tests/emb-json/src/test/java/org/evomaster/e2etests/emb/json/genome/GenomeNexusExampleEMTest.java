@@ -7,7 +7,7 @@ import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.emb.json.EMBJsonTestBase;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 public class GenomeNexusExampleEMTest extends EMBJsonTestBase {
 
@@ -19,7 +19,7 @@ public class GenomeNexusExampleEMTest extends EMBJsonTestBase {
         EMBJsonTestBase.initClass(controller, config);
     }
 
-    @Disabled
+    @Test
     public void runEMTest() throws Throwable {
         runTestHandlingFlakyAndCompilation(
                 "GenomeNexusExampleEMTest",

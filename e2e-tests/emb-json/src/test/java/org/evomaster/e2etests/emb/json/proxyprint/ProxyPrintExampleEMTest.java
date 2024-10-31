@@ -22,14 +22,14 @@ public class ProxyPrintExampleEMTest extends EMBJsonTestBase {
     @Disabled
     public void runEMTest() throws Throwable {
         runTestHandlingFlakyAndCompilation(
-                "FamilieTilbakeExampleEMTest",
-                "org.foo.FamilieTilbakeExampleEMTest",
+                "ProxyPrintExampleEMTest",
+                "org.foo.ProxyPrintExampleEMTest",
                 500,
                 true,
                 (args) -> {
                     Solution<RestIndividual> solution = initAndRun(args);
 
-                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/json", "Darwin");
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/json", "Printing");
                 },
                 3
         );
