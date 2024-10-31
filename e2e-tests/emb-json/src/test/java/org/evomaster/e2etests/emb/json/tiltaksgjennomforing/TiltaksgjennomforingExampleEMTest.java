@@ -1,6 +1,5 @@
 package org.evomaster.e2etests.emb.json.tiltaksgjennomforing;
 
-import com.foo.rest.emb.json.signalserver.SignalServerExampleController;
 import com.foo.rest.emb.json.tiltaksgjennomforing.TiltaksgjennomforingExampleController;
 import org.evomaster.core.EMConfig;
 import org.evomaster.core.problem.rest.HttpVerb;

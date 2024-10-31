@@ -5,6 +5,12 @@ import com.google.gson.Gson;
 import java.io.IOException;
 import java.util.*;
 
+/**
+ * This code is taken from proxyprint-kitchen
+ * G: https://github.com/ProxyPrint/proxyprint-kitchen
+ * L: Apache 2.0
+ * P: src/main/java/io/github/proxyprint/kitchen/controllers/consumer/PrintRequestController.java
+ */
 public class PrintRequestController {
 
     private Map<Long, PrintShop> printShops = new HashMap<>();
