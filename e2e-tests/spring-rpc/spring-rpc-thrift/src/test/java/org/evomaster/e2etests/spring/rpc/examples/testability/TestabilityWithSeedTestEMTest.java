@@ -48,8 +48,8 @@ public class TestabilityWithSeedTestEMTest extends SpringRPCTestBase {
                     args.add("--coveredTargetFile");
                     args.add(targetFile);
 
-                    args.add("--minimize");
-                    args.add("false");
+//                    args.add("--minimize");
+//                    args.add("false");
 
                     Solution<RPCIndividual> solution = initAndRun(args);
 
@@ -82,7 +82,7 @@ public class TestabilityWithSeedTestEMTest extends SpringRPCTestBase {
                  comment out this assertion, as targets relating to authentication are counted in booting and search time
                  see more info in FitnessValue.kt
              */
-//            assertEquals(total, bootTime + seedingTime + searchTime);
+            //assertEquals(total, bootTime + seedingTime + searchTime);
         }
 
     }

@@ -98,12 +98,18 @@ public class InstrumentationController {
             });
 
         } else {
+
+            List<String> seenFirstTime = ObjectiveRecorder.getTargetsSeenFirstTime();
+
             //if specified ids is null, then get all
             objectives.entrySet().stream()
                     //try to save bandwidth by only sending mapped ids
                     .map(e -> {
                         TargetInfo info = e.getValue().enforceMappedId();
-                        if(!descriptiveIds) {
+                        if(!descriptiveIds &&
+                            seenFirstTime.isEmpty()
+                             //   seenFirstTime.contains(info.descriptiveId)
+                        ) {
                             info = info.withNoDescriptiveId();
                         }
                         return info;

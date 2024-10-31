@@ -211,6 +211,9 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
                 }
 
                 idMapper.addMapping(t.id, t.descriptiveId)
+            } else if(!idMapper.hasMappingFor(t.id)){
+                log.warn("No descriptive id for unknown code: ${t.id}")
+                assert(false)
             }
 
             fv.updateTarget(t.id, t.value, t.actionIndex)
