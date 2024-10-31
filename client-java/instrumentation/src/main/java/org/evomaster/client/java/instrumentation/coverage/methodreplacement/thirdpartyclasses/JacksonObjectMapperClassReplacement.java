@@ -157,7 +157,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
         // JSON can be unwrapped using different approaches
         // val dto: FooDto = mapper.readValue(json)
         // To support this way, Jackson should be used inside the instrumentation
-        // as shaded dependency. And that crates new problems.
+        // as shaded dependency, and that creates new problems.
         // Note: For now it's not supported
 
         Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_String_Generic_class", caller);

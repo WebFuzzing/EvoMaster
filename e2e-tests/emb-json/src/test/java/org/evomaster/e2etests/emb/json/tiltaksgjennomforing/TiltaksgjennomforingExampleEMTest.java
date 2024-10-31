@@ -21,6 +21,11 @@ public class TiltaksgjennomforingExampleEMTest extends EMBJsonTestBase {
 
     @Disabled
     public void runEMTest() throws Throwable {
+        // Here we managed to create the schema.
+        // {"__typename":"z4cUjP8fmTSVS1c", "feilmelding":"hyd45FKWDYJO"}
+        // {"id" : 670,"feilmelding" : "N9MmGqemWEJhSBY3"}
+        // {"__typename":"", "id":0, "feilmelding":"UUMmGqekUUJhSBa3"}
+        // But the values aren't there as required.
         runTestHandlingFlakyAndCompilation(
                 "TiltaksgjennomforingExampleEMTest",
                 "org.foo.TiltaksgjennomforingExampleEMTest",

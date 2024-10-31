@@ -21,6 +21,10 @@ public class GestaoHospitalExampleEMTest extends EMBJsonTestBase {
 
     @Disabled
     public void runEMTest() throws Throwable {
+        // Code reach to a point to detect it should be an array.
+        // ["_EM_11_XYZ_","_EM_11_XYZ_","_EM_11_XYZ_"]
+        // But for this, the array should contain a custom object as elements
+        // where it fails.
         runTestHandlingFlakyAndCompilation(
                 "GestaoHospitalExampleEMTest",
                 "org.foo.GestaoHospitalExampleEMTest",

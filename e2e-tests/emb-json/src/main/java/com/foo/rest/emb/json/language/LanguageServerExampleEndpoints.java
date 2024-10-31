@@ -1,9 +1,7 @@
 package com.foo.rest.emb.json.language;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
@@ -13,22 +11,21 @@ import java.util.List;
 @RequestMapping(path = "/api")
 public class LanguageServerExampleEndpoints {
 
-    @RequestMapping(
-            value = "/json",
-            method = RequestMethod.GET,
-            produces = MediaType.APPLICATION_JSON
-    )
-    public ResponseEntity parseJson() {
+    @PostMapping(path = "/json", consumes = MediaType.APPLICATION_JSON, produces = MediaType.APPLICATION_JSON)
+    public ResponseEntity<String> parseJson(@RequestBody String json) {
         try {
             ResultExtender resultExtender = new ResultExtender();
 
-            List<RemoteRuleMatch> rules = resultExtender.getExtensionMatches("vowels");
-            RemoteRuleMatch match = rules.stream()
-                    .filter(rule -> "A".equals(rule.toString()))
-                    .findAny()
-                    .orElse(null);
-            if (match != null && match.getMessage().equals("vowels")) {
-                return ResponseEntity.status(200).body("vowels");
+            List<RemoteRuleMatch> rules = resultExtender.getExtensionMatches(json);
+//            RemoteRuleMatch match = rules.stream()
+//                    .filter(rule -> "A".equals(rule.toString()))
+//                    .findAny()
+//                    .orElse(null);
+//            if (match != null && match.getMessage().equals("vowels")) {
+//                return ResponseEntity.status(200).body("vowels");
+//            }
+            if (rules.get(2).getMessage().equals("vowels")) {
+                return ResponseEntity.ok("vowels");
             }
 
             return ResponseEntity.status(204).body("Nothing found");

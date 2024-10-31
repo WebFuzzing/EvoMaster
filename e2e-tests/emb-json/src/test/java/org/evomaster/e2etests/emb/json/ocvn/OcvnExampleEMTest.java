@@ -9,6 +9,8 @@ import org.evomaster.e2etests.emb.json.EMBJsonTestBase;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 public class OcvnExampleEMTest extends EMBJsonTestBase {
 
     @BeforeAll
@@ -27,7 +29,13 @@ public class OcvnExampleEMTest extends EMBJsonTestBase {
                 500,
                 true,
                 (args) -> {
+
+                    setOption(args, "taintForceSelectionOfGenesWithSpecialization", "true");
+                    setOption(args, "discoveredInfoRewardedInFitness", "true");
+
                     Solution<RestIndividual> solution = initAndRun(args);
+
+                    assertTrue(solution.getIndividuals().size() >= 1);
 
                     assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/json", "Darwin");
                 },

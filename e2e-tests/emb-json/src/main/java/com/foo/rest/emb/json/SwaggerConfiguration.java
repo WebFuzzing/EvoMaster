@@ -24,9 +24,10 @@ public class SwaggerConfiguration {
 
     private ApiInfo apiInfo() {
         return new ApiInfoBuilder()
-                .title("API")
-                .description("Some description")
+                .title("EMB API")
+                .description("Example cases from EMB")
                 .version("1.0")
                 .build();
     }
+
 }

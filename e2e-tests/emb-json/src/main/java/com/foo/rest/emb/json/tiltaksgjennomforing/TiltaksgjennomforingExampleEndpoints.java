@@ -1,10 +1,7 @@
 package com.foo.rest.emb.json.tiltaksgjennomforing;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.ws.rs.core.MediaType;
 
@@ -12,34 +9,30 @@ import javax.ws.rs.core.MediaType;
 @RequestMapping(path = "/api")
 public class TiltaksgjennomforingExampleEndpoints {
 
-    @RequestMapping(
-            value = "/read",
-            method = RequestMethod.POST,
-            produces = MediaType.APPLICATION_JSON
-    )
-    public ResponseEntity readValue(@RequestBody String json) {
+    @PostMapping(path = "/read", produces = MediaType.APPLICATION_JSON, consumes = MediaType.APPLICATION_JSON)
+    public ResponseEntity<String> readValue(@RequestBody String json) {
         NotifikasjonHandler notifikasjonHandler = new NotifikasjonHandler();
         FellesResponse fellesResponse = notifikasjonHandler.readResponse(json, FellesResponse.class);
 
-        if (fellesResponse.__typename.equals("Approved")) {
-            return ResponseEntity.ok(fellesResponse.__typename);
+        if (fellesResponse != null) {
+            if (fellesResponse.id == 2025) {
+                return ResponseEntity.ok("Approved");
+            }
         }
 
         return ResponseEntity.status(500).build();
 
     }
 
-    @RequestMapping(
-            value = "/convert",
-            method = RequestMethod.POST,
-            produces = MediaType.APPLICATION_JSON
-    )
-    public ResponseEntity convertValue(@RequestBody String json) {
+    @PostMapping(path = "/convert", produces = MediaType.APPLICATION_JSON, consumes = MediaType.APPLICATION_JSON)
+    public ResponseEntity<String> convertValue(@RequestBody String json) {
         NotifikasjonHandler notifikasjonHandler = new NotifikasjonHandler();
         FellesResponse fellesResponse = notifikasjonHandler.konverterResponse(json);
 
-        if (fellesResponse.__typename.equals("Approved")) {
-            return ResponseEntity.ok(fellesResponse.__typename);
+        if (fellesResponse != null) {
+            if (fellesResponse.id == 2025) {
+                return ResponseEntity.ok("Approved");
+            }
         }
 
         return ResponseEntity.status(500).build();

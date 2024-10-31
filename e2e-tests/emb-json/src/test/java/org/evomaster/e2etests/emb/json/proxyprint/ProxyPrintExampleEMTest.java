@@ -21,6 +21,9 @@ public class ProxyPrintExampleEMTest extends EMBJsonTestBase {
 
     @Disabled
     public void runEMTest() throws Throwable {
+        // In PrintRequestController, we managed to reach line 25.
+        // Although when the code query for a list of "printshops" from the Map,
+        // it fails.
         runTestHandlingFlakyAndCompilation(
                 "ProxyPrintExampleEMTest",
                 "org.foo.ProxyPrintExampleEMTest",
