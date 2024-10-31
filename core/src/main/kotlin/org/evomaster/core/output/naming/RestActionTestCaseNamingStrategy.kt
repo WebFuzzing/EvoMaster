@@ -5,8 +5,10 @@ import com.google.gson.JsonSyntaxException
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
+import org.evomaster.core.problem.rest.RestPath
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.EvaluatedAction
 import javax.ws.rs.core.MediaType
 
@@ -15,13 +17,17 @@ open class RestActionTestCaseNamingStrategy(
     languageConventionFormatter: LanguageConventionFormatter
 ) : ActionTestCaseNamingStrategy(solution, languageConventionFormatter)  {
 
-    override fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>): String {
+    override fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>, ambiguitySolver: ((Action) -> List<String>)?): String {
         val evaluatedAction = individual.evaluatedMainActions().last()
         val action = evaluatedAction.action as RestCallAction
 
         nameTokens.add(action.verb.toString().lowercase())
         nameTokens.add(on)
-        nameTokens.add(getPath(action.path.nameQualifier))
+        if (ambiguitySolver == null) {
+            nameTokens.add(getPath(action.path.nameQualifier))
+        } else {
+            nameTokens.addAll(ambiguitySolver(action))
+        }
         addResult(individual, nameTokens)
 
         return formatName(nameTokens)
@@ -35,6 +41,68 @@ open class RestActionTestCaseNamingStrategy(
         } else {
             nameTokens.add(result.getStatusCode().toString())
         }
+    }
+
+    /**
+     * In REST Individuals, ambiguities will be resolved with the path solver.
+     * UriParams and QueryParams solvers will be left for experimentalPurposes.
+     *
+     * Whenever an ambiguity is solved, then it should remove that test from the cycle. There is no need to execute the
+     * following solvers.
+     */
+    override fun resolveAmbiguities(duplicatedIndividuals: MutableSet<EvaluatedIndividual<*>>): Map<EvaluatedIndividual<*>, String> {
+        return checkForPath(duplicatedIndividuals)
+    }
+
+    /*
+     * If any test has a different path, then add previous segment to them to make them differ.
+     * The filter call ensures that we are only performing this disambiguation when there's only one individual that
+     * differs and when said individual does not have a parameter as a last element since it might differ in the
+     * parameter name but not the rest of the path.
+     */
+    private fun checkForPath(duplicatedIndividuals: MutableSet<EvaluatedIndividual<*>>): Map<EvaluatedIndividual<*>, String> {
+        return duplicatedIndividuals
+            .groupBy {
+                var path = (it.evaluatedMainActions().last().action as RestCallAction).path
+                if (path.isLastElementAParameter()) {
+                    path = path.parentPath()
+                }
+                val toStringPath = path.toString()
+                val isLastAParam = path.isLastElementAParameter()
+                Pair(toStringPath, isLastAParam)
+            }
+            .filter { it.value.size == 1 && !it.key.second }
+            .mapNotNull { entry ->
+                val eInd = entry.value[0]
+                duplicatedIndividuals.remove(eInd)
+                eInd to expandName(eInd, mutableListOf(), ::pathAmbiguitySolver)
+            }
+            .toMap()
+    }
+
+    /*
+     * If the last element of a path is a parameter then we must go up a level
+     *
+     * Example: /products/{productName}/configurations/{configurationName}/features/{featureName}
+     * must now include the name qualifier for configurations
+     */
+    private fun pathAmbiguitySolver(action: Action): List<String> {
+        val restAction = action as RestCallAction
+        val lastPath = restAction.path
+        var parentPath = restAction.path.parentPath()
+        if (lastPath.isLastElementAParameter()) {
+            parentPath = parentPath.parentPath()
+        }
+        return listOf(getParentPathQualifier(parentPath), getPath(restAction.path.nameQualifier))
+    }
+
+    /*
+     * If the parent path name qualifier is not root, then we make sure we obtain the sanitized version of it.
+     * Otherwise, we'll keep the original path returning the empty string.
+     */
+    private fun getParentPathQualifier(parentPath: RestPath): String {
+        val parentPathQualifier = parentPath.nameQualifier
+        return if (parentPathQualifier == "/") "" else getPath(parentPathQualifier)
     }
 
     private fun isGetCall(evaluatedAction: EvaluatedAction): Boolean {
