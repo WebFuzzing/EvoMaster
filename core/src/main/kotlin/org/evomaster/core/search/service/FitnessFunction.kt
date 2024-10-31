@@ -143,7 +143,7 @@ abstract class FitnessFunction<T>  where T : Individual {
                     time.reportExecutedIndividualTime(t, actionsSize)
                     ind?.executionTimeMs = t
                 },
-                {doCalculateCoverage(individual, targets, allTargets = false, fullyCovered = false, descriptiveIds = false)}
+                {doCalculateCoverage(individual, targets, allTargets = false, fullyCovered = false, descriptiveIds = true)}
         )
         // plugin execution info reporter here, to avoid the time spent by execution reporter
         handleExecutionInfo(ei)
