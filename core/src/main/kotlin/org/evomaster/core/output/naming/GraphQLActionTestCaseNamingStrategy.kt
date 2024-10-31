@@ -17,7 +17,7 @@ open class GraphQLActionTestCaseNamingStrategy(
         val evaluatedAction = individual.evaluatedMainActions().last()
         val action = evaluatedAction.action as GraphQLAction
 
-        nameTokens.add(action.methodType.toString())
+        nameTokens.add(action.methodType.toString().lowercase())
         nameTokens.add(on)
         nameTokens.add(getPath(action.methodName))
         addResult(individual, nameTokens)
@@ -25,8 +25,9 @@ open class GraphQLActionTestCaseNamingStrategy(
         return formatName(nameTokens)
     }
 
-    override fun resolveAmbiguity(individualToName: MutableMap<EvaluatedIndividual<*>, String>, duplicatedIndividuals: MutableSet<EvaluatedIndividual<*>>) {
-        // do nothing at the moment. This will be completed with the experimental params disambiguation method
+    override fun resolveAmbiguities(duplicatedIndividuals: MutableSet<EvaluatedIndividual<*>>): Map<EvaluatedIndividual<*>, String> {
+        // TODO do nothing at the moment. This will be completed with the experimental params disambiguation method
+        return emptyMap()
     }
 
     override fun addActionResult(evaluatedAction: EvaluatedAction, nameTokens: MutableList<String>) {

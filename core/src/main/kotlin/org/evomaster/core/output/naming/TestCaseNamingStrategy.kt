@@ -35,9 +35,10 @@ abstract class TestCaseNamingStrategy(
     protected abstract fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>, ambiguitySolver: ((Action) -> List<String>)? = null): String
 
     /**
-     * @param individualToName map pairing each EvaluatedIndividual to the generated name
      * @param duplicatedIndividuals set containing the EvaluatedIndividuals sharing the same name
+     *
+     * @return a Map of EvaluatedIndividuals and the disambiguated test case name
      */
-    protected abstract fun resolveAmbiguity(individualToName: MutableMap<EvaluatedIndividual<*>, String>, duplicatedIndividuals: MutableSet<EvaluatedIndividual<*>>)
+    protected abstract fun resolveAmbiguities(duplicatedIndividuals: MutableSet<EvaluatedIndividual<*>>): Map<EvaluatedIndividual<*>, String>
 
 }

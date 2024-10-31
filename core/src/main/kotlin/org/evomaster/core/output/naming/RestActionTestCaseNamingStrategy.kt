@@ -44,14 +44,14 @@ open class RestActionTestCaseNamingStrategy(
     }
 
     /**
-     * In REST Individuals. Ambiguity will be resolved with the path filter.
-     * UriParams and QueryParams filters will be left for experimentalPurposes.
+     * In REST Individuals, ambiguities will be resolved with the path solver.
+     * UriParams and QueryParams solvers will be left for experimentalPurposes.
      *
      * Whenever an ambiguity is solved, then it should remove that test from the cycle. There is no need to execute the
-     * following filters
+     * following solvers.
      */
-    override fun resolveAmbiguity(individualToName: MutableMap<EvaluatedIndividual<*>, String>, duplicatedIndividuals: MutableSet<EvaluatedIndividual<*>>) {
-        checkForPath(individualToName, duplicatedIndividuals)
+    override fun resolveAmbiguities(duplicatedIndividuals: MutableSet<EvaluatedIndividual<*>>): Map<EvaluatedIndividual<*>, String> {
+        return checkForPath(duplicatedIndividuals)
     }
 
     /*
@@ -60,22 +60,24 @@ open class RestActionTestCaseNamingStrategy(
      * differs and when said individual does not have a parameter as a last element since it might differ in the
      * parameter name but not the rest of the path.
      */
-    private fun checkForPath(individualToName: MutableMap<EvaluatedIndividual<*>, String>, duplicatedIndividuals: MutableSet<EvaluatedIndividual<*>>) {
-        val groupByPath = duplicatedIndividuals.groupBy {
-            var path = (it.evaluatedMainActions().last().action as RestCallAction).path
-            if (path.isLastElementAParameter()) {
-                path = path.parentPath()
+    private fun checkForPath(duplicatedIndividuals: MutableSet<EvaluatedIndividual<*>>): Map<EvaluatedIndividual<*>, String> {
+        return duplicatedIndividuals
+            .groupBy {
+                var path = (it.evaluatedMainActions().last().action as RestCallAction).path
+                if (path.isLastElementAParameter()) {
+                    path = path.parentPath()
+                }
+                val toStringPath = path.toString()
+                val isLastAParam = path.isLastElementAParameter()
+                Pair(toStringPath, isLastAParam)
             }
-            val toStringPath = path.toString()
-            val isLastAParam = path.isLastElementAParameter()
-            Pair(toStringPath, isLastAParam)
-        }.filter { it.value.size == 1 && !it.key.second }
-
-        groupByPath.forEach { entry ->
-            val eInd = entry.value[0]
-            individualToName[eInd] = expandName(eInd, mutableListOf(), ::pathAmbiguitySolver)
-            duplicatedIndividuals.remove(eInd)
-        }
+            .filter { it.value.size == 1 && !it.key.second }
+            .mapNotNull { entry ->
+                val eInd = entry.value[0]
+                duplicatedIndividuals.remove(eInd)
+                eInd to expandName(eInd, mutableListOf(), ::pathAmbiguitySolver)
+            }
+            .toMap()
     }
 
     /*

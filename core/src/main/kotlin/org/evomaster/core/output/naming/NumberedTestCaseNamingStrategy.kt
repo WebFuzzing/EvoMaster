@@ -26,8 +26,9 @@ open class NumberedTestCaseNamingStrategy(
         return ""
     }
 
-    override fun resolveAmbiguity(individualToName: MutableMap<EvaluatedIndividual<*>, String>, duplicatedIndividuals: MutableSet<EvaluatedIndividual<*>>) {
+    override fun resolveAmbiguities(duplicatedIndividuals: MutableSet<EvaluatedIndividual<*>>): Map<EvaluatedIndividual<*>, String> {
         // do nothing, plain numbered strategy will never have duplicate names
+        return emptyMap()
     }
 
     // kicking off with an empty mutableListOf for each test case to accumulate their own name tokens
@@ -43,30 +44,24 @@ open class NumberedTestCaseNamingStrategy(
         val individualToName = mutableMapOf<EvaluatedIndividual<*>, String>()
         individuals.forEach {
             // kicking off with an empty mutableListOf for each test case to accumulate their own name tokens
-            ind -> individualToName[ind] = expandName(ind, mutableListOf())
+            individualToName[it] = expandName(it, mutableListOf())
         }
 
-        val duplicatedNames = getDuplicateNames(individualToName)
-        duplicatedNames.forEach { entry -> resolveAmbiguity(individualToName, entry.value) }
+        getDuplicateNames(individualToName)
+            .forEach { individualToName.putAll(resolveAmbiguities(it)) }
 
         var counter = 0
         return individualToName.map { entry -> TestCase(entry.key, concatName(counter++, entry.value)) }
     }
 
-    private fun getDuplicateNames(individualToName: MutableMap<EvaluatedIndividual<*>, String>): MutableMap<String, MutableSet<EvaluatedIndividual<*>>> {
-        val result = mutableMapOf<String, MutableSet<EvaluatedIndividual<*>>>()
-        individualToName.forEach { entry ->
-            val testName = entry.value
-            if (!result.containsKey(testName)) {
-                val inds = mutableSetOf<EvaluatedIndividual<*>>()
-                inds.add(entry.key)
-                result[testName] = inds
-            } else {
-                result[testName]?.add(entry.key)
-            }
-        }
-        result.entries.removeIf { it.value.size <= 1 }
-        return result
+    private fun getDuplicateNames(individualToName: Map<EvaluatedIndividual<*>, String>): List<MutableSet<EvaluatedIndividual<*>>> {
+        return individualToName
+            .entries
+            .groupBy({ it.value }, { it.key })
+            .mapValues { (_, values) -> values.toMutableSet() }
+            .filterValues { it.size > 1 }
+            .values
+            .toList()
     }
 
 }

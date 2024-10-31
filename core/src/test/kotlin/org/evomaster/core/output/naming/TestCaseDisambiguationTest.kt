@@ -38,16 +38,36 @@ class TestCaseDisambiguationTest {
     fun pathsDifferAtRootDisambiguation() {
         val languagesIndividual = getEvaluatedIndividualWith(getRestCallAction("/languages"))
         val statisticsLanguagesIndividual = getEvaluatedIndividualWith(getRestCallAction("/statistics/languages"))
+        val syntaxLanguagesIndividual = getEvaluatedIndividualWith(getRestCallAction("/syntax/languages"))
 
 
-        val solution = Solution(mutableListOf(languagesIndividual, statisticsLanguagesIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
+        val solution = Solution(mutableListOf(languagesIndividual, statisticsLanguagesIndividual, syntaxLanguagesIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
         val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter)
 
         val testCases = namingStrategy.getTestCases()
-        assertEquals(2, testCases.size)
+        assertEquals(3, testCases.size)
         assertEquals("test_0_getOnLanguagesReturnsEmpty", testCases[0].name)
         assertEquals("test_1_getOnStatisticsLanguagesReturnsEmpty", testCases[1].name)
+        assertEquals("test_2_getOnSyntaxLanguagesReturnsEmpty", testCases[2].name)
+    }
+
+    @Test
+    fun noDisambiguationWhenMoreThanOneIndividualSharePath() {
+        val languagesIndividual = getEvaluatedIndividualWith(getRestCallAction("/languages"))
+        val syntaxLanguagesIndividual = getEvaluatedIndividualWith(getRestCallAction("/syntax/languages"))
+        val syntaxLanguagesIndividual2 = getEvaluatedIndividualWith(getRestCallAction("/syntax/languages"))
+
+
+        val solution = Solution(mutableListOf(languagesIndividual, syntaxLanguagesIndividual, syntaxLanguagesIndividual2), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
+
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter)
+
+        val testCases = namingStrategy.getTestCases()
+        assertEquals(3, testCases.size)
+        assertEquals("test_0_getOnLanguagesReturnsEmpty", testCases[0].name)
+        assertEquals("test_1_getOnLanguagesReturnsEmpty", testCases[1].name)
+        assertEquals("test_2_getOnLanguagesReturnsEmpty", testCases[2].name)
     }
 
     @Test
