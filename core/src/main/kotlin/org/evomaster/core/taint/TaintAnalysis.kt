@@ -52,7 +52,7 @@ object TaintAnalysis {
      * Note that individuals are not evolved immediately, as execution of fitness function should not
      * change the phenotype
      */
-    fun evolveIndividual(individual: Individual) {
+    fun evolveIndividual(individual: Individual, evolveMaps: Boolean, evolveArrays: Boolean) {
 
         /*
             TODO ideally, StringGene specializations should be handled here as well,
@@ -63,12 +63,16 @@ object TaintAnalysis {
 
         val allGenes = individual.seeGenes().flatMap { it.flatView() }
 
-        allGenes.filterIsInstance<TaintedArrayGene>()
-            .filter{!it.isActive && it.isResolved()}
-            .forEach { it.activate() }
+        if(evolveArrays) {
+            allGenes.filterIsInstance<TaintedArrayGene>()
+                .filter { !it.isActive && it.isResolved() }
+                .forEach { it.activate() }
+        }
 
-        allGenes.filterIsInstance<TaintedMapGene>()
-            .forEach { it.evolve() }
+        if(evolveMaps) {
+            allGenes.filterIsInstance<TaintedMapGene>()
+                .forEach { it.evolve() }
+        }
     }
 
 
