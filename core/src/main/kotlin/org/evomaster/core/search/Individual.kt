@@ -21,6 +21,7 @@ import org.evomaster.core.search.tracer.Traceable
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
 import org.evomaster.core.search.tracer.TrackingHistory
+import org.evomaster.core.utils.CollectionUtils
 import org.slf4j.LoggerFactory
 
 /**
@@ -473,12 +474,13 @@ abstract class Individual(
 
     fun areAllValidLocalIds() : Boolean{
         val all = flatViewAllStructuralElements()
-        val ids = all.map { it.getLocalId() }.toSet() //make it unique
+        val ids = all.map { it.getLocalId() }
         if(ids.contains(NONE_LOCAL_ID)){
             return false
         }
+        val duplicates = CollectionUtils.duplicates(ids)
         //check for duplicates
-        return all.size == ids.size
+        return duplicates.isEmpty()
     }
 
 
