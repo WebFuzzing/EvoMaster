@@ -21,13 +21,6 @@ public class LanguageServerExampleEMTest extends EMBJsonTestBase {
 
     @Test
     public void runEMTest() throws Throwable {
-        // Similar to Gestao example, if the map value is a object
-        // we are not solving it now.
-        // {
-        //                    "EM_tainted_map":"_EM_28_XYZ_"
-        //                    ,
-        //                    "matches":""
-        //                    }
         runTestHandlingFlakyAndCompilation(
                 "LanguageServerExampleEMTest",
                 "org.foo.LanguageServerExampleEMTest",

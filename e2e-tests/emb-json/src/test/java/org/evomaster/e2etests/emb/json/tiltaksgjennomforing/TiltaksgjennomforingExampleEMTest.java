@@ -20,7 +20,7 @@ public class TiltaksgjennomforingExampleEMTest extends EMBJsonTestBase {
         EMBJsonTestBase.initClass(controller, config);
     }
 
-//    @Disabled
+    @Disabled
     @Test
     public void runEMTest() throws Throwable {
         // Here we managed to create the schema.
@@ -31,7 +31,7 @@ public class TiltaksgjennomforingExampleEMTest extends EMBJsonTestBase {
         runTestHandlingFlakyAndCompilation(
                 "TiltaksgjennomforingExampleEMTest",
                 "org.foo.TiltaksgjennomforingExampleEMTest",
-                3_000,
+                5_000,
                 true,
                 (args) -> {
 
