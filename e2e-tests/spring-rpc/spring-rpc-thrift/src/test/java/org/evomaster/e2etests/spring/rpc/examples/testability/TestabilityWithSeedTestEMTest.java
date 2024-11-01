@@ -80,7 +80,8 @@ public class TestabilityWithSeedTestEMTest extends SpringRPCTestBase {
             assertTrue(total > 0);
             /*
                  comment out this assertion, as targets relating to authentication are counted in booting and search time
-                 see more info in FitnessValue.kt
+                 see more info in FitnessValue.kt.
+                 however, here there is auth, so should not be a problem for this E2E
              */
             assertEquals(total, bootTime + seedingTime + searchTime);
         }
