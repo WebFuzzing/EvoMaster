@@ -445,8 +445,8 @@ public class ExecutionTracer {
     }
 
     /**
-     * Key -> the unique descriptive id of the coverage objective
-     * @return
+     * @return reference to internal data structure for found target info.
+     * The keys in such a map are the unique descriptive ids of the coverage objectives
      */
     public static Map<String, TargetInfo> getInternalReferenceToObjectiveCoverage() {
         return objectiveCoverage;
