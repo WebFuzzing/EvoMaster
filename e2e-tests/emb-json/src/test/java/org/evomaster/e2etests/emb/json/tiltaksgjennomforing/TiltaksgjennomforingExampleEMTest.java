@@ -8,6 +8,7 @@ import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.emb.json.EMBJsonTestBase;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 public class TiltaksgjennomforingExampleEMTest extends EMBJsonTestBase {
 
@@ -20,6 +21,7 @@ public class TiltaksgjennomforingExampleEMTest extends EMBJsonTestBase {
     }
 
     @Disabled
+    @Test
     public void runEMTest() throws Throwable {
         // Here we managed to create the schema.
         // {"__typename":"z4cUjP8fmTSVS1c", "feilmelding":"hyd45FKWDYJO"}

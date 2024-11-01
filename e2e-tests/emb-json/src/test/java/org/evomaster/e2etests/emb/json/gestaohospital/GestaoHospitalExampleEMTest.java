@@ -8,6 +8,7 @@ import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.emb.json.EMBJsonTestBase;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 public class GestaoHospitalExampleEMTest extends EMBJsonTestBase {
 
@@ -20,6 +21,7 @@ public class GestaoHospitalExampleEMTest extends EMBJsonTestBase {
     }
 
     @Disabled
+    @Test
     public void runEMTest() throws Throwable {
         // Code reach to a point to detect it should be an array.
         // ["_EM_11_XYZ_","_EM_11_XYZ_","_EM_11_XYZ_"]

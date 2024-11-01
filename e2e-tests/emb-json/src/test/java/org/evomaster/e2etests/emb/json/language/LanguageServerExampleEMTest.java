@@ -8,6 +8,7 @@ import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.emb.json.EMBJsonTestBase;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 public class LanguageServerExampleEMTest extends EMBJsonTestBase {
 
@@ -20,6 +21,7 @@ public class LanguageServerExampleEMTest extends EMBJsonTestBase {
     }
 
     @Disabled
+    @Test
     public void runEMTest() throws Throwable {
         // Similar to Gestao example, if the map value is a object
         // we are not solving it now.
