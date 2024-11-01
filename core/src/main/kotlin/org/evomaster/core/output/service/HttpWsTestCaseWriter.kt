@@ -468,6 +468,11 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
     fun printSendJsonBody(json: String, lines: Lines) {
 
+        if(json.isEmpty()){
+            //nothing is sent
+            return
+        }
+
         val send = sendBodyCommand()
 
         val bodyLines = formatJsonWithEscapes(json, format)

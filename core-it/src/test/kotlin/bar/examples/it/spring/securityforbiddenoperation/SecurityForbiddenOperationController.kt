@@ -15,4 +15,8 @@ class SecurityForbiddenOperationController : SpringController(SecurityForbiddenO
             AuthUtils.getForAuthorizationHeader("BAR","BAR"),
         )
     }
+
+    override fun resetStateOfSUT() {
+        SecurityForbiddenOperationApplication.cleanState()
+    }
 }

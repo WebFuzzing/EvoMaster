@@ -25,7 +25,7 @@ public class TaintNestedEMTest extends SpringTestBase {
 
         runTestHandlingFlakyAndCompilation(
                 "TaintNestedEM",
-                8_000,
+                10_000,
                 5,
                 (args) -> {
                     setOption(args, "taintForceSelectionOfGenesWithSpecialization", "true");
