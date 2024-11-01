@@ -20,7 +20,7 @@ public class TiltaksgjennomforingExampleEMTest extends EMBJsonTestBase {
         EMBJsonTestBase.initClass(controller, config);
     }
 
-    @Disabled
+//    @Disabled
     @Test
     public void runEMTest() throws Throwable {
         // Here we managed to create the schema.
@@ -31,9 +31,13 @@ public class TiltaksgjennomforingExampleEMTest extends EMBJsonTestBase {
         runTestHandlingFlakyAndCompilation(
                 "TiltaksgjennomforingExampleEMTest",
                 "org.foo.TiltaksgjennomforingExampleEMTest",
-                500,
+                3_000,
                 true,
                 (args) -> {
+
+                    setOption(args, "taintForceSelectionOfGenesWithSpecialization", "true");
+                    setOption(args, "discoveredInfoRewardedInFitness", "true");
+
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/read", "Approved");

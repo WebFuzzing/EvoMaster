@@ -30,9 +30,12 @@ public class GestaoHospitalExampleEMTest extends EMBJsonTestBase {
         runTestHandlingFlakyAndCompilation(
                 "GestaoHospitalExampleEMTest",
                 "org.foo.GestaoHospitalExampleEMTest",
-                500,
+                5_000,
                 true,
                 (args) -> {
+                    setOption(args, "taintForceSelectionOfGenesWithSpecialization", "true");
+                    setOption(args, "discoveredInfoRewardedInFitness", "true");
+
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertHasAtLeastOne(solution, HttpVerb.POST, 418, "/api/json", "Tea");

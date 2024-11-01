@@ -7,7 +7,6 @@ import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.emb.json.EMBJsonTestBase;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 public class LanguageServerExampleEMTest extends EMBJsonTestBase {
@@ -20,7 +19,6 @@ public class LanguageServerExampleEMTest extends EMBJsonTestBase {
         EMBJsonTestBase.initClass(controller, config);
     }
 
-    @Disabled
     @Test
     public void runEMTest() throws Throwable {
         // Similar to Gestao example, if the map value is a object
@@ -33,9 +31,13 @@ public class LanguageServerExampleEMTest extends EMBJsonTestBase {
         runTestHandlingFlakyAndCompilation(
                 "LanguageServerExampleEMTest",
                 "org.foo.LanguageServerExampleEMTest",
-                500,
+                4_000,
                 true,
                 (args) -> {
+
+                    setOption(args, "taintForceSelectionOfGenesWithSpecialization", "true");
+                    setOption(args, "discoveredInfoRewardedInFitness", "true");
+
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/json", "vowels");
