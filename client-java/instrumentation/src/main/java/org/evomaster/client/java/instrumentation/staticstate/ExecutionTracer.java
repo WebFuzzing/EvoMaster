@@ -444,6 +444,10 @@ public class ExecutionTracer {
         getCurrentAdditionalInfo().popLastExecutedStatement();
     }
 
+    /**
+     * Key -> the unique descriptive id of the coverage objective
+     * @return
+     */
     public static Map<String, TargetInfo> getInternalReferenceToObjectiveCoverage() {
         return objectiveCoverage;
     }

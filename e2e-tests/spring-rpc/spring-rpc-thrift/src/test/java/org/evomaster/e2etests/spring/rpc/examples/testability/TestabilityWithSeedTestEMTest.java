@@ -82,7 +82,7 @@ public class TestabilityWithSeedTestEMTest extends SpringRPCTestBase {
                  comment out this assertion, as targets relating to authentication are counted in booting and search time
                  see more info in FitnessValue.kt
              */
-            //assertEquals(total, bootTime + seedingTime + searchTime);
+            assertEquals(total, bootTime + seedingTime + searchTime);
         }
 
     }

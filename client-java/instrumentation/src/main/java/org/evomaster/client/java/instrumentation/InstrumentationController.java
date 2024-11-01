@@ -101,14 +101,15 @@ public class InstrumentationController {
 
             List<String> seenFirstTime = ObjectiveRecorder.getTargetsSeenFirstTime();
 
-            //if specified ids is null, then get all
-            objectives.entrySet().stream()
+            //if specified ids is null, then get all, but not the ones at booting time
+            objectives.entrySet()
+                    .stream()
+                    .filter(e -> !ObjectiveRecorder.wasCollectedAtBootingTime(e.getKey()))
                     //try to save bandwidth by only sending mapped ids
                     .map(e -> {
                         TargetInfo info = e.getValue().enforceMappedId();
                         if(!descriptiveIds &&
-                            seenFirstTime.isEmpty()
-                             //   seenFirstTime.contains(info.descriptiveId)
+                                !seenFirstTime.contains(info.descriptiveId)
                         ) {
                             info = info.withNoDescriptiveId();
                         }

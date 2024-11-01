@@ -138,6 +138,9 @@ public class ObjectiveRecorder {
         return bootTimeObjectiveInfo;
     }
 
+    public static boolean wasCollectedAtBootingTime(String descriptiveId){
+        return bootTimeObjectiveInfo.coveredAtBootTime(descriptiveId);
+    }
 
     /**
      * Mark the existence of a testing target.
