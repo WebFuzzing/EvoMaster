@@ -109,7 +109,13 @@ public class InstrumentationController {
                     .map(e -> {
                         TargetInfo info = e.getValue().enforceMappedId();
                         if(!descriptiveIds &&
-                                !seenFirstTime.contains(info.descriptiveId)
+                                seenFirstTime.isEmpty()
+                                /*
+                                    FIXME following check would be more correct, but leads to failures.
+                                    Look like some targets do not endup in booting-time, and neither as
+                                    seen as first time... would need to investigate why.
+                                 */
+                                //!seenFirstTime.contains(info.descriptiveId)
                         ) {
                             info = info.withNoDescriptiveId();
                         }

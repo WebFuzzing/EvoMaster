@@ -3,6 +3,7 @@ package org.evomaster.e2etests.spring.examples.branches;
 import com.foo.rest.examples.spring.branches.BranchesController;
 import com.foo.rest.examples.spring.branches.BranchesPostDto;
 import io.restassured.http.ContentType;
+import org.evomaster.client.java.controller.api.dto.ActionDto;
 import org.evomaster.client.java.controller.api.dto.TestResultsDto;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.BeforeAll;
@@ -40,6 +41,9 @@ public class BranchesManualTest extends SpringTestBase {
         TestResultsDto dto = remoteController.getTestResults(Collections.emptySet(), true, false, false);
         assertEquals(0, dto.targets.size());
 
+        ActionDto actionDto = new ActionDto();
+        actionDto.index = 0;
+        remoteController.registerNewAction(actionDto);
         given().contentType(ContentType.JSON)
                 .accept(ContentType.JSON)
                 .body(new BranchesPostDto(5,0))
