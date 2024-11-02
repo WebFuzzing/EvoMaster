@@ -58,7 +58,7 @@ public class ClassToSchema {
 
     /**
      * Key -> DTO class
-     * Value -> its schema representation, as OpenAPI JSON object
+     * Value -> its UNNAMED schema representation, as OpenAPI JSON object
      * WARNING: this is a mutable static state, but, being just a cache, should not hopefully
      * have any nasty negative side-effects.
      */
@@ -102,7 +102,7 @@ public class ClassToSchema {
             String name = valueType.getName();
             if (!UnitsInfoRecorder.isDtoSchemaRegister(name)) {
                 List<Class<?>> embedded = new ArrayList<>();
-                String schema = ClassToSchema.getOrDeriveSchema(valueType, embedded, objectFieldsRequired, converters);
+                String schema = ClassToSchema.getOrDeriveNamedSchema(valueType, embedded, objectFieldsRequired, converters);
                 UnitsInfoRecorder.registerNewParsedDto(name, schema);
                 if (!embedded.isEmpty()){
                     embedded.forEach(e -> registerSchemaIfNeeded(e, objectFieldsRequired, converters));
@@ -164,7 +164,7 @@ public class ClassToSchema {
     }
 
     public static String getOrDeriveNonNestedSchema(Class<?> klass, boolean objectFieldsRequired, List<CustomTypeToOasConverter> converters) {
-        return getOrDeriveSchema(klass, Collections.emptyList(), objectFieldsRequired, converters);
+        return getOrDeriveNamedSchema(klass, Collections.emptyList(), objectFieldsRequired, converters);
     }
 
     /**
@@ -180,19 +180,19 @@ public class ClassToSchema {
      * @return a schema representation of the class in the form "name: {...}", ie
      * like a field entry in an OpenAPI object definition
      */
-    public static String getOrDeriveSchema(Class<?> klass, List<Class<?>> nested) {
-        return getOrDeriveSchema(klass, nested, false, Collections.emptyList());
+    public static String getOrDeriveNamedSchema(Class<?> klass, List<Class<?>> nested) {
+        return getOrDeriveNamedSchema(klass, nested, false, Collections.emptyList());
     }
 
-    public static String getOrDeriveSchema(Class<?> klass, List<Class<?>> nested, boolean objectFieldsRequired, List<CustomTypeToOasConverter> converters) {
+    public static String getOrDeriveNamedSchema(Class<?> klass, List<Class<?>> nested, boolean objectFieldsRequired, List<CustomTypeToOasConverter> converters) {
         if (!cacheSchema.containsKey(klass)) {
-            cacheSchema.put(klass, getOrDeriveSchema(klass.getName(), klass, false, nested, objectFieldsRequired, converters));
+            cacheSchema.put(klass, getOrDeriveSchema(klass, false, nested, objectFieldsRequired, converters));
         }
-
-        return cacheSchema.get(klass);
+        String name = klass.getName();
+        return named(name, cacheSchema.get(klass));
     }
 
-    private static String getOrDeriveSchema(String name, Type type, Boolean useRefObject, List<Class<?>> nested, boolean objectFieldsRequired, List<CustomTypeToOasConverter> converters) {
+    private static String getOrDeriveSchema(Type type, Boolean useRefObject, List<Class<?>> nested, boolean objectFieldsRequired, List<CustomTypeToOasConverter> converters) {
 
         // TODO might handle collection and map in the cache later
         if (cacheSchema.containsKey(type) && !useRefObject && !isCollectionOrMap(type)) {
@@ -202,15 +202,13 @@ public class ClassToSchema {
 
         String schema = getSchema(type, useRefObject, nested, false, objectFieldsRequired, converters);
 
-        String namedSchema = named(name, schema);
-
         /*
             we put the complete schema into cacheSchema
          */
         if (!schema.startsWith(fieldRefPrefix) && !isCollectionOrMap(type))
-            cacheSchema.put(type, namedSchema);
+            cacheSchema.put(type, schema);
 
-        return namedSchema;
+        return schema;
     }
 
     private static boolean isCollectionOrMap(Type type) {
@@ -362,11 +360,12 @@ public class ClassToSchema {
                     continue;
                 }
                 String fieldName = getName(f);
-                String fieldSchema = null;
+                String fieldSchema;
                 if (allNested) {
                     fieldSchema = named(fieldName, getSchema(f.getGenericType(), true, nested, true, objectFieldsRequired, converters));
-                } else
-                    fieldSchema = getOrDeriveSchema(fieldName, f.getGenericType(), true, nested, objectFieldsRequired, converters);
+                } else {
+                    fieldSchema = named(fieldName, getOrDeriveSchema(f.getGenericType(), true, nested, objectFieldsRequired, converters));
+                }
                 properties.add(fieldSchema);
                 propertiesNames.add("\"" + fieldName + "\"");
             }

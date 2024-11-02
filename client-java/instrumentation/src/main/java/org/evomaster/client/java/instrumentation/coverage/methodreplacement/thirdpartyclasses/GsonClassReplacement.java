@@ -133,7 +133,8 @@ public class GsonClassReplacement extends ThirdPartyMethodReplacementClass {
 
     private static void analyzeClass(Class<?> klass, String content) {
         ClassToSchema.registerSchemaIfNeeded(klass);
-        JsonTaint.handlePossibleJsonTaint(content, klass);
+        boolean isArray = false; //TODO
+        JsonTaint.handlePossibleJsonTaint(content, klass, isArray);
     }
 
 }
