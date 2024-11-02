@@ -5,6 +5,7 @@ import org.evomaster.client.java.instrumentation.object.ClassToSchema;
 import org.evomaster.client.java.instrumentation.object.JsonTaint;
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.io.*;
 import java.lang.reflect.Field;
@@ -28,9 +29,9 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
     }
 
 
-    private static void analyzeClass(Class<?> valueType, String content){
+    private static void analyzeClass(Class<?> valueType, String content, boolean isArray){
         ClassToSchema.registerSchemaIfNeeded(valueType);
-        JsonTaint.handlePossibleJsonTaint(content, valueType);
+        JsonTaint.handlePossibleJsonTaint(content, valueType, isArray);
     }
 
 
@@ -54,7 +55,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
         Objects.requireNonNull(caller);
 
         String content = JsonUtils.readStream(src);
-        analyzeClass(valueType, content);
+        analyzeClass(valueType, content,false);
         src = JsonUtils.toStream(content);
 
         Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_InputStream_Generic_class", caller);
@@ -78,9 +79,8 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
             throws Throwable {
         Objects.requireNonNull(caller);
 
-        Class<?> typeClass = (Class) valueType.getClass().getMethod("getRawClass").invoke(valueType);
         String content = JsonUtils.readStream(src);
-        analyzeClass(typeClass, content);
+        analyzeJavaType(content, valueType);
         src = JsonUtils.toStream(content);
 
         Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_InputStream_JavaType_class", caller);
@@ -104,8 +104,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
             throws Throwable {
         Objects.requireNonNull(caller);
 
-        Class<?> typeClass = (Class) valueType.getClass().getMethod("getRawClass").invoke(valueType);
-        analyzeClass(typeClass, content);
+        analyzeJavaType(content, valueType);
 
         Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_String_JavaType_class", caller);
 
@@ -115,6 +114,18 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {
             throw e.getCause();
+        }
+    }
+
+    private static void analyzeJavaType(String content, Object valueType) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+        String typeName = valueType.getClass().getSimpleName();
+        if(typeName.equals("CollectionLikeType") || typeName.equals("CollectionType")){
+            Object contentType =  valueType.getClass().getMethod("getContentType").invoke(valueType);
+            Class<?> typeClass =  (Class) contentType.getClass().getMethod("getRawClass").invoke(contentType);
+            analyzeClass(typeClass, content, true);
+        } else {
+            Class<?> typeClass = (Class) valueType.getClass().getMethod("getRawClass").invoke(valueType);
+            analyzeClass(typeClass, content, false);
         }
     }
 
@@ -130,7 +141,35 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
 
         Objects.requireNonNull(caller);
         //_typeFactory.constructType(valueTypeRef)
-        Field _typeFactoryField = caller.getClass().getDeclaredField("_typeFactory");
+        Class<?> classObjectMapper = caller.getClass();
+        while(!classObjectMapper.getSimpleName().equals("ObjectMapper")) {
+            classObjectMapper = classObjectMapper.getSuperclass();
+            if(classObjectMapper == null){
+                //shouldn't really be possible
+                SimpleLogger.error("EvoMaster instrumentation wrongly applied to " + caller.getClass().getName());
+                break;
+            }
+        }
+        Field _typeFactoryField = null;
+        if(classObjectMapper != null){
+            try {
+                _typeFactoryField = classObjectMapper.getDeclaredField("_typeFactory");
+            }catch (NoSuchFieldException e){
+                SimpleLogger.warn("" + classObjectMapper.getName() + " does not have a field called _typeFactory");
+            }
+        }
+        if(_typeFactoryField == null){
+            Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_String_TypeReference_class", caller);
+
+            try {
+                return (T) original.invoke(caller, content, valueTypeRef);
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+            } catch (InvocationTargetException e) {
+                throw e.getCause();
+            }
+        }
+
         _typeFactoryField.setAccessible(true);
         Object _typeFactory = _typeFactoryField.get(caller);
         Method constructType = Arrays.stream(_typeFactory.getClass().getDeclaredMethods())
@@ -152,7 +191,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
     public static <T> T readValue(Object caller, String content, Class<T> valueType) throws Throwable {
         Objects.requireNonNull(caller);
 
-        analyzeClass(valueType, content);
+        analyzeClass(valueType, content, false);
 
         // JSON can be unwrapped using different approaches
         // val dto: FooDto = mapper.readValue(json)
@@ -183,7 +222,8 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
         ClassToSchema.registerSchemaIfNeeded(toValueType);
 
         if (fromValue instanceof String) {
-            JsonTaint.handlePossibleJsonTaint((String) fromValue, toValueType);
+            boolean isArray = false; //TODO
+            JsonTaint.handlePossibleJsonTaint((String) fromValue, toValueType, isArray);
         }
 
         Method original = getOriginal(singleton, "Jackson_ObjectMapper_convertValue_Generic_class", caller);
