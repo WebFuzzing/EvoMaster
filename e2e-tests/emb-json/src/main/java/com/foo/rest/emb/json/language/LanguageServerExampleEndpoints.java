@@ -17,13 +17,7 @@ public class LanguageServerExampleEndpoints {
             ResultExtender resultExtender = new ResultExtender();
 
             List<RemoteRuleMatch> rules = resultExtender.getExtensionMatches(json);
-//            RemoteRuleMatch match = rules.stream()
-//                    .filter(rule -> "A".equals(rule.toString()))
-//                    .findAny()
-//                    .orElse(null);
-//            if (match != null && match.getMessage().equals("vowels")) {
-//                return ResponseEntity.status(200).body("vowels");
-//            }
+
             if (rules.get(2).getMessage().equals("vowels")) {
                 return ResponseEntity.ok("vowels");
             }
