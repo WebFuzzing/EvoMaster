@@ -7,7 +7,6 @@ import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.emb.json.EMBJsonTestBase;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 public class TiltaksgjennomforingExampleEMTest extends EMBJsonTestBase {
@@ -20,18 +19,12 @@ public class TiltaksgjennomforingExampleEMTest extends EMBJsonTestBase {
         EMBJsonTestBase.initClass(controller, config);
     }
 
-    @Disabled
     @Test
     public void runEMTest() throws Throwable {
-        // Here we managed to create the schema.
-        // {"__typename":"z4cUjP8fmTSVS1c", "feilmelding":"hyd45FKWDYJO"}
-        // {"id" : 670,"feilmelding" : "N9MmGqemWEJhSBY3"}
-        // {"__typename":"", "id":0, "feilmelding":"UUMmGqekUUJhSBa3"}
-        // But the values aren't there as required.
         runTestHandlingFlakyAndCompilation(
-                "TiltaksgjennomforingExampleEMTest",
-                "org.foo.TiltaksgjennomforingExampleEMTest",
-                5_000,
+                "TiltaksgjennomforingExampleGeneratedEMTest",
+                "org.foo.TiltaksgjennomforingExampleGeneratedEMTest",
+                2_000,
                 true,
                 (args) -> {
 
@@ -40,8 +33,7 @@ public class TiltaksgjennomforingExampleEMTest extends EMBJsonTestBase {
 
                     Solution<RestIndividual> solution = initAndRun(args);
 
-                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/read", "Approved");
-                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/convert", "Approved");
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/json", "Approved");
                 },
                 3
         );

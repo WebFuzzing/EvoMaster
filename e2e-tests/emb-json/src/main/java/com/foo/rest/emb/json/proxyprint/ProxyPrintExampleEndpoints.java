@@ -18,13 +18,11 @@ public class ProxyPrintExampleEndpoints {
         try {
             Map<Long, String> budgets = printRequestController.calcBudgetForPrintRequest(json);
 
-            if (!budgets.isEmpty()) {
-                if (budgets.containsKey(3L)) {
-                    return ResponseEntity.ok("Printing");
-                }
+            if (budgets.containsKey(3L)) {
+                return ResponseEntity.ok("Printing");
             }
 
-            return ResponseEntity.ok("Not printing");
+            return ResponseEntity.status(204).body("Not printing");
         } catch (IOException e) {
             return ResponseEntity.status(500).build();
         }

@@ -7,7 +7,6 @@ import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.emb.json.EMBJsonTestBase;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 public class GestaoHospitalExampleEMTest extends EMBJsonTestBase {
@@ -20,16 +19,11 @@ public class GestaoHospitalExampleEMTest extends EMBJsonTestBase {
         EMBJsonTestBase.initClass(controller, config);
     }
 
-//    @Disabled
     @Test
     public void runEMTest() throws Throwable {
-        // Code reach to a point to detect it should be an array.
-        // ["_EM_11_XYZ_","_EM_11_XYZ_","_EM_11_XYZ_"]
-        // But for this, the array should contain a custom object as elements
-        // where it fails.
         runTestHandlingFlakyAndCompilation(
-                "GestaoHospitalExampleEMTest",
-                "org.foo.GestaoHospitalExampleEMTest",
+                "GestaoHospitalExampleGeneratedEMTest",
+                "org.foo.GestaoHospitalExampleGeneratedEMTest",
                 5_000,
                 true,
                 (args) -> {

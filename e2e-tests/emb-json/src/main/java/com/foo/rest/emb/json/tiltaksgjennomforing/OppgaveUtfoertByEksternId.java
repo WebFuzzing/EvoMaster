@@ -4,9 +4,9 @@ package com.foo.rest.emb.json.tiltaksgjennomforing;
  * This code is taken from tiltaksgjennomforing-api
  * G: https://github.com/navikt/tiltaksgjennomforing-api
  * L: MIT
- * P: tiltaksgjennomforing-api/src/main/java/no/nav/tag/tiltaksgjennomforing/varsel/notifikasjon/response/FellesResponse.java
+ * P: tiltaksgjennomforing-api/src/main/java/no/nav/tag/tiltaksgjennomforing/varsel/notifikasjon/response/oppgaveUtfoertByEksternId/OppgaveUtfoertByEksternId.java
  */
-public class FellesResponse {
+public class OppgaveUtfoertByEksternId {
     String __typename;
     String id;
     String feilmelding;

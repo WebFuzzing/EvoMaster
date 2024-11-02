@@ -13,7 +13,14 @@ import java.util.*;
  */
 public class PrintRequestController {
 
-    private Map<Long, PrintShop> printShops = new HashMap<>();
+    private Map<Long, PrintShop> printShops;
+
+    // This is not part of the original class, added for testing purposes
+    PrintRequestController() {
+        this.printShops = new HashMap<>();
+        this.printShops.put(3L, new PrintShop(3L));
+        this.printShops.put(12L, new PrintShop(12L));
+    }
 
     public Map<Long, String> calcBudgetForPrintRequest(String requestJSON) throws IOException {
         PrintRequest printRequest = new PrintRequest();

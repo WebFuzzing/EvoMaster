@@ -1,9 +1,8 @@
 package com.foo.rest.emb.json.tiltaksgjennomforing;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.evomaster.client.java.utils.SimpleLogger;
-
-import java.io.IOException;
 
 /**
  * This code is taken from tiltaksgjennomforing-api
@@ -12,7 +11,9 @@ import java.io.IOException;
  * P: tiltaksgjennomforing-api/src/main/java/no/nav/tag/tiltaksgjennomforing/varsel/notifikasjon/NotifikasjonHandler.java
  */
 public class NotifikasjonHandler {
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper()
+            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+            ;
 
     // This doesn't belong to the original class
     private static final SimpleLogger log = new SimpleLogger();
@@ -20,7 +21,7 @@ public class NotifikasjonHandler {
     public <T> T readResponse(String json, Class<T> contentClass) {
         try {
             return objectMapper.readValue(json, contentClass);
-        } catch (IOException exception) {
+        } catch (Exception exception) {
             log.error("objectmapper feilet med lesing av data: ", exception);
         }
         return null;

@@ -22,8 +22,8 @@ public class GenomeNexusExampleEMTest extends EMBJsonTestBase {
     @Test
     public void runEMTest() throws Throwable {
         runTestHandlingFlakyAndCompilation(
-                "GenomeNexusExampleEMTest",
-                "org.bar.GenomeNexusExampleEMTest",
+                "GenomeNexusExampleGeneratedEMTest",
+                "org.bar.GenomeNexusExampleGeneratedEMTest",
                 500,
                 true,
                 (args) -> {
