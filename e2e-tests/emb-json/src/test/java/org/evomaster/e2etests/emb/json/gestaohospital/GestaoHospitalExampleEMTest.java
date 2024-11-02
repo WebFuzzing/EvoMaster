@@ -20,7 +20,7 @@ public class GestaoHospitalExampleEMTest extends EMBJsonTestBase {
         EMBJsonTestBase.initClass(controller, config);
     }
 
-    @Disabled
+//    @Disabled
     @Test
     public void runEMTest() throws Throwable {
         // Code reach to a point to detect it should be an array.
