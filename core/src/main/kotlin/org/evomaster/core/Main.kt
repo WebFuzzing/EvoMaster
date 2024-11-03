@@ -479,6 +479,8 @@ class Main {
                     Key.get(object : TypeLiteral<WtsAlgorithm<GraphQLIndividual>>() {})
                 EMConfig.Algorithm.MOSA ->
                     Key.get(object : TypeLiteral<MosaAlgorithm<GraphQLIndividual>>() {})
+                EMConfig.Algorithm.RW ->
+                    Key.get(object : TypeLiteral<RandomWalkAlgorithm<GraphQLIndividual>>() {})
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
         }
@@ -496,6 +498,8 @@ class Main {
                     Key.get(object : TypeLiteral<WtsAlgorithm<RPCIndividual>>() {})
                 EMConfig.Algorithm.MOSA ->
                     Key.get(object : TypeLiteral<MosaAlgorithm<RPCIndividual>>() {})
+                EMConfig.Algorithm.RW ->
+                    Key.get(object : TypeLiteral<RandomWalkAlgorithm<RPCIndividual>>() {})
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
         }
@@ -513,6 +517,8 @@ class Main {
                     Key.get(object : TypeLiteral<WtsAlgorithm<WebIndividual>>() {})
                 EMConfig.Algorithm.MOSA ->
                     Key.get(object : TypeLiteral<MosaAlgorithm<WebIndividual>>() {})
+                EMConfig.Algorithm.RW ->
+                    Key.get(object : TypeLiteral<RandomWalkAlgorithm<WebIndividual>>() {})
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
         }
@@ -530,6 +536,8 @@ class Main {
                     Key.get(object : TypeLiteral<WtsAlgorithm<RestIndividual>>() {})
                 EMConfig.Algorithm.MOSA ->
                     Key.get(object : TypeLiteral<MosaAlgorithm<RestIndividual>>() {})
+                EMConfig.Algorithm.RW ->
+                    Key.get(object : TypeLiteral<RandomWalkAlgorithm<RestIndividual>>() {})
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
         }
