@@ -1320,13 +1320,13 @@ public class RPCEndpointsBuilder {
         for (SeededRPCTestDto dto: seedRPCTests){
             if (dto.rpcFunctions != null && !dto.rpcFunctions.isEmpty()){
                 try{
-                    List<RPCActionDto> test = handleSeededRPCFunctions(rpcInterfaceSchema, dto, rpcType);
                     String testKey = String.format("%s_INDEX_%d", (dto.testName != null)?dto.testName:"untitled", seedRPCTests.indexOf(dto));
 
-                    if (!test.isEmpty()){
-                        RPCTestDto testDto = new RPCTestDto();
-                        testDto.testName = testKey;
-                        testDto.rpcFuctions = test;
+                    RPCTestDto testDto = handleSeededRPCFunctions(rpcInterfaceSchema, dto, rpcType, testKey);
+
+
+                    if (testDto != null && ((testDto.rpcFuctions != null && !testDto.rpcFuctions.isEmpty()) || (testDto.scheduleTaskInvocationDtos != null && !testDto.scheduleTaskInvocationDtos.isEmpty()))
+                    ) {
                         results.put(testKey, testDto);
                     } else
                         SimpleLogger.recordErrorMessage("Seeded Test Error: fail to load the seeded test "+ testKey);
@@ -1344,65 +1344,97 @@ public class RPCEndpointsBuilder {
     }
 
 
-    private static List<RPCActionDto> handleSeededRPCFunctions(Map<String, InterfaceSchema> rpcInterfaceSchema,SeededRPCTestDto dto, RPCType rpcType) throws RuntimeException{
-        List<RPCActionDto> test = new ArrayList<>();
-        for (SeededRPCActionDto actionDto : dto.rpcFunctions){
-            InterfaceSchema schema = rpcInterfaceSchema.get(actionDto.interfaceName);
-            if (schema != null){
-                EndpointSchema actionSchema = schema.getOneEndpointWithSeededDto(actionDto);
-                if (actionSchema != null){
-                    EndpointSchema copy = actionSchema.copyStructure();
-                    for (int i = 0; i < copy.getRequestParams().size(); i++){
-                        // TODO need to check if generic type could be handled with jackson
-                        NamedTypedValue p = copy.getRequestParams().get(i);
-                        try {
-                            String stringValue = actionDto.inputParams.get(i);
-                            // Object value = objectMapper.readValue(stringValue, p.getType().getClazz());
-                            p.setValueBasedOnInstanceOrJson(stringValue);
+    private static RPCTestDto handleSeededRPCFunctions(Map<String, InterfaceSchema> rpcInterfaceSchema,SeededRPCTestDto dto, RPCType rpcType, String testName) throws RuntimeException{
+        // handle RPC actions
+        List<RPCActionDto> test = null;
+        if (dto.rpcFunctions != null && !dto.rpcFunctions.isEmpty()){
+            test = new ArrayList<>();
+            for (SeededRPCActionDto actionDto : dto.rpcFunctions){
+                InterfaceSchema schema = rpcInterfaceSchema.get(actionDto.interfaceName);
+                if (schema != null){
+                    EndpointSchema actionSchema = schema.getOneEndpointWithSeededDto(actionDto);
+                    if (actionSchema != null){
+                        EndpointSchema copy = actionSchema.copyStructure();
+                        for (int i = 0; i < copy.getRequestParams().size(); i++){
+                            // TODO need to check if generic type could be handled with jackson
+                            NamedTypedValue p = copy.getRequestParams().get(i);
+                            try {
+                                String stringValue = actionDto.inputParams.get(i);
+                                // Object value = objectMapper.readValue(stringValue, p.getType().getClazz());
+                                p.setValueBasedOnInstanceOrJson(stringValue);
 
-                        } catch (JsonProcessingException e) {
-                            SimpleLogger.recordErrorMessage(
-                                    String.format("Seeded Test Error: cannot parse the seeded test %s at the parameter %d with error msg: %s", actionDto, i, e.getMessage()));
-                        }
-                    }
-                    RPCActionDto rpcActionDto = copy.getDto();
-
-                    if (actionDto.mockRPCExternalServiceDtos != null){
-                        for (int i = 0; i < actionDto.mockRPCExternalServiceDtos.size(); i++){
-                            if (actionDto.mockRPCExternalServiceDtos.get(i) == null)
+                            } catch (JsonProcessingException e) {
                                 SimpleLogger.recordErrorMessage(
-                                        String.format("Seeded Test Error: specify null mockRPCExternalServiceDto at index %d for action %s:%s", i, actionDto.interfaceName, actionDto.functionName)
-                                );
+                                        String.format("Seeded Test Error: cannot parse the seeded test %s at the parameter %d with error msg: %s", actionDto, i, e.getMessage()));
+                            }
                         }
-                        rpcActionDto.mockRPCExternalServiceDtos = actionDto.mockRPCExternalServiceDtos.stream().filter(Objects::nonNull).collect(Collectors.toList());
-                    }
+                        RPCActionDto rpcActionDto = copy.getDto();
 
-                    if (actionDto.mockDatabaseDtos != null){
-                        for (int i = 0; i < actionDto.mockDatabaseDtos.size(); i++){
-                            if (actionDto.mockDatabaseDtos.get(i) == null)
-                                SimpleLogger.recordErrorMessage(
-                                        String.format("Seeded Test Error: specify null mockDatabaseDto at index %d for action %s:%s", i, actionDto.interfaceName, actionDto.functionName)
-                                );
+                        if (actionDto.mockRPCExternalServiceDtos != null){
+                            for (int i = 0; i < actionDto.mockRPCExternalServiceDtos.size(); i++){
+                                if (actionDto.mockRPCExternalServiceDtos.get(i) == null)
+                                    SimpleLogger.recordErrorMessage(
+                                            String.format("Seeded Test Error: specify null mockRPCExternalServiceDto at index %d for action %s:%s", i, actionDto.interfaceName, actionDto.functionName)
+                                    );
+                            }
+                            rpcActionDto.mockRPCExternalServiceDtos = actionDto.mockRPCExternalServiceDtos.stream().filter(Objects::nonNull).collect(Collectors.toList());
                         }
-                        rpcActionDto.mockDatabaseDtos = actionDto.mockDatabaseDtos.stream().filter(Objects::nonNull).collect(Collectors.toList());
+
+                        if (actionDto.mockDatabaseDtos != null){
+                            for (int i = 0; i < actionDto.mockDatabaseDtos.size(); i++){
+                                if (actionDto.mockDatabaseDtos.get(i) == null)
+                                    SimpleLogger.recordErrorMessage(
+                                            String.format("Seeded Test Error: specify null mockDatabaseDto at index %d for action %s:%s", i, actionDto.interfaceName, actionDto.functionName)
+                                    );
+                            }
+                            rpcActionDto.mockDatabaseDtos = actionDto.mockDatabaseDtos.stream().filter(Objects::nonNull).collect(Collectors.toList());
+                        }
+                        handleExternalResponses(schema, actionDto, rpcType);
+                        test.add(rpcActionDto);
+                    }else {
+                        SimpleLogger.recordErrorMessage("Seeded Test Error: cannot find the action "+actionDto.functionName);
                     }
-                    handleExternalResponses(schema, actionDto, rpcType);
-                    test.add(rpcActionDto);
-                }else {
-                    SimpleLogger.recordErrorMessage("Seeded Test Error: cannot find the action "+actionDto.functionName);
+                } else {
+                    SimpleLogger.recordErrorMessage("Seeded Test Error: cannot find the interface "+ actionDto.interfaceName);
                 }
-            } else {
-                SimpleLogger.recordErrorMessage("Seeded Test Error: cannot find the interface "+ actionDto.interfaceName);
             }
         }
-        return test;
+
+
+        // handle schedule task
+        List<ScheduleTaskInvocationDto> tasks = null;
+        if (dto.scheduleTaskInvocations != null && !dto.scheduleTaskInvocations.isEmpty()){
+            tasks = new ArrayList<>();
+            for (CustomizedScheduleTaskInvocationDto seededTask : dto.scheduleTaskInvocations){
+                ScheduleTaskInvocationDto taskInvocationDto = new ScheduleTaskInvocationDto();
+                taskInvocationDto.taskName = seededTask.taskName;
+                if (seededTask.inputParameterValues != null && !seededTask.inputParameterValues.isEmpty()){
+                    /*
+                        when parsing seeded test, it is not feasible to get type of input parameters
+                        for schedule tasks as the classes are not available in client library
+                        then we save its value as string here
+                        later handle them once the info is available, ie, use ParamDto instead of String (see requestParams)
+                     */
+                    taskInvocationDto.requestParamsAsStrings = new ArrayList<>(seededTask.inputParameterValues);
+                }
+                // optional info if seeded test has, such info is typically not changeable
+                taskInvocationDto.descriptiveInfo = seededTask.descriptiveInfo;
+                taskInvocationDto.hostName = seededTask.hostName;
+                taskInvocationDto.appKey = seededTask.appKey;
+                taskInvocationDto.scheduleTaskType = seededTask.scheduleTaskType;
+            }
+        }
+
+        if (tasks == null && test == null) return null;
+
+        RPCTestDto testDto = new RPCTestDto();
+        testDto.testName = testName;
+        testDto.rpcFuctions = test;
+        testDto.scheduleTaskInvocationDtos = tasks;
+        return testDto;
     }
 
 
-    private static List<CustomizedScheduleTaskInvocationDto> handledSeededScheduleTaskInvocations(){
-        //TODO
-        return null;
-    }
     private static StringBuilder extractExceptionMsg(RuntimeException e) {
         StringBuilder msg = new StringBuilder("Fail to handle specified seeded test with exception ");
         msg.append(e.getClass().getName()).append(" with message:").append(e.getMessage()).append(".");

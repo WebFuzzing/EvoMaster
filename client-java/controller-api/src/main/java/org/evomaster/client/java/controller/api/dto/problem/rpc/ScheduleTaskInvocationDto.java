@@ -8,18 +8,29 @@ public class ScheduleTaskInvocationDto {
     /**
      * name for the schedule task
      */
-    private String taskName;
+    public String taskName;
 
     /**
      * request params (nullable)
      */
     public List<ParamDto> requestParams;
 
+
+    /**
+     * request params without knowing types
+     */
+    public List<String> requestParamsAsStrings;
+
     /**
      * response param (nullable)
      */
     public ParamDto responseParam;
 
+
+    /**
+     * id referring to Web API under test
+     */
+    public String appKey;
 
     /**
      * the type of schedule task which used in customization
