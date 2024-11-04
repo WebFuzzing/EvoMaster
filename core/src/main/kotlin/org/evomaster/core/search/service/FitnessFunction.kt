@@ -52,7 +52,12 @@ abstract class FitnessFunction<T>  where T : Individual {
      * @param modifiedSpec uses to collect modified info, e.g., HostnameResolutionAction might be added during this evaluation phase
      * @return null if there were problems in calculating the coverage
      */
-    fun calculateCoverage(individual: T, targets: Set<Int> = setOf(), modifiedSpec: MutatedGeneSpecification? = null) : EvaluatedIndividual<T>?{
+    fun calculateCoverage(individual: T,
+                          targets: Set<Int> = setOf(),
+                          modifiedSpec: MutatedGeneSpecification? = null,
+                          allTargets: Boolean = false,
+                          fullyCovered: Boolean = false,
+                          descriptiveIds: Boolean = false) : EvaluatedIndividual<T>?{
 
         val a = individual.seeMainExecutableActions().count()
 
@@ -63,7 +68,7 @@ abstract class FitnessFunction<T>  where T : Individual {
             executionInfoReporter.addLatestComputationOverhead(computation, time.evaluatedIndividuals)
         }
 
-        var ei = calculateIndividualCoverageWithStats(individual, targets, a)
+        var ei = calculateIndividualCoverageWithStats(individual, targets, a, allTargets, fullyCovered, descriptiveIds)
 
         if(ei == null){
             /*
@@ -76,7 +81,7 @@ abstract class FitnessFunction<T>  where T : Individual {
             //let's wait a little, just in case...
             Thread.sleep(5_000)
 
-            ei = calculateIndividualCoverageWithStats(individual, targets, a)
+            ei = calculateIndividualCoverageWithStats(individual, targets, a, allTargets, fullyCovered, descriptiveIds)
 
 
             if(ei == null){
@@ -135,7 +140,10 @@ abstract class FitnessFunction<T>  where T : Individual {
     private fun calculateIndividualCoverageWithStats(
         individual: T,
         targets: Set<Int>,
-        actionsSize: Int
+        actionsSize: Int,
+        allTargets: Boolean,
+        fullyCovered: Boolean,
+        descriptiveIds: Boolean
     ) : EvaluatedIndividual<T>?{
 
         val ei = SearchTimeController.measureTimeMillis(
@@ -143,7 +151,7 @@ abstract class FitnessFunction<T>  where T : Individual {
                     time.reportExecutedIndividualTime(t, actionsSize)
                     ind?.executionTimeMs = t
                 },
-                {doCalculateCoverage(individual, targets, allTargets = false, fullyCovered = false, descriptiveIds = false)}
+                {doCalculateCoverage(individual, targets, allTargets = allTargets, fullyCovered = fullyCovered, descriptiveIds = descriptiveIds)}
         )
         // plugin execution info reporter here, to avoid the time spent by execution reporter
         handleExecutionInfo(ei)

@@ -11,6 +11,7 @@ import org.evomaster.core.TestUtils
 import org.evomaster.core.search.algorithms.onemax.OneMaxIndividual
 import org.evomaster.core.search.algorithms.onemax.OneMaxModule
 import org.evomaster.core.search.algorithms.onemax.OneMaxSampler
+import org.evomaster.core.search.service.ExecutionPhaseController
 import org.evomaster.core.search.service.SearchTimeController
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -34,10 +35,12 @@ class RandomWalkSearchTest {
             config.maxEvaluations = 3000
             config.stoppingCriterion = EMConfig.StoppingCriterion.INDIVIDUAL_EVALUATIONS
 
+            val epc = injector.getInstance(ExecutionPhaseController::class.java)
             val sampler = injector.getInstance(OneMaxSampler::class.java)
             val n = 10
             sampler.n = n
 
+            epc.startSearch()
             val solution = rw.search()
 
             assertEquals(n.toDouble(), solution.overall.computeFitnessScore(), 0.001)

@@ -35,6 +35,7 @@ class ProcessMonitorTest{
     private lateinit var randomness: Randomness
     private lateinit var sampler: OneMaxSampler
     private lateinit var mio: MioAlgorithm<OneMaxIndividual>
+    private lateinit var epc: ExecutionPhaseController
 
     @BeforeEach
     fun init(){
@@ -57,6 +58,7 @@ class ProcessMonitorTest{
         config.processFormat = EMConfig.ProcessDataFormat.JSON_ALL
         config.useTimeInFeedbackSampling = false
         config.minimize = false
+        epc = injector.getInstance(ExecutionPhaseController::class.java)
 
     }
 
@@ -241,6 +243,7 @@ class ProcessMonitorTest{
         assertFalse(Files.exists(Paths.get(config.processFiles)))
         assertFalse(Files.exists(Paths.get(processMonitor.getStepDirAsPath())))
 
+        epc.startSearch()
         mio.search()
 
 
