@@ -29,7 +29,7 @@ public class JsonUtils {
     public static InputStream analyzeClass(InputStream entityStream, Class<Object> type){
         String content = JsonUtils.readStream(entityStream);
         ClassToSchema.registerSchemaIfNeeded(type);
-        JsonTaint.handlePossibleJsonTaint(content, type);
+        JsonTaint.handlePossibleJsonTaint(content, type, false);
         return JsonUtils.toStream(content);
     }
 
