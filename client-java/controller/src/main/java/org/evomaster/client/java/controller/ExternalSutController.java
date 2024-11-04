@@ -5,6 +5,7 @@ import org.evomaster.client.java.controller.api.dto.BootTimeInfoDto;
 import org.evomaster.client.java.controller.api.dto.UnitsInfoDto;
 import org.evomaster.client.java.instrumentation.*;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.evomaster.client.java.utils.SimpleLogger;
 import org.evomaster.client.java.controller.internal.SutController;
@@ -494,6 +495,14 @@ public abstract class ExternalSutController extends SutController {
         serverController.setExecutingAction(executingAction);
         // sync executingAction on the local ExecutionTracer
         ExecutionTracer.setExecutingAction(executingAction);
+    }
+
+    @Override
+    public final void bootingSut(boolean bootingSut) {
+        checkInstrumentation();
+        serverController.setBootingSut(bootingSut);
+        // sync on the local ExecutionTracer
+        ObjectiveRecorder.setBooting(bootingSut);
     }
 
     @Override

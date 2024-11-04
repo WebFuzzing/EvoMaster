@@ -17,6 +17,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class ObjectiveRecorder {
 
+    /**
+     * Specify whether the SUT is booting or not.
+     * Targets during booting time are treated specially.
+     */
+    private static volatile boolean isBooting = false;
 
     /**
      * Key -> the unique id of the coverage objective
@@ -219,7 +224,7 @@ public class ObjectiveRecorder {
      * @param descriptiveId of the objective/target
      * @param value         of the coverage heuristic, in [0,1]
      */
-    public static void update(String descriptiveId, double value, boolean bootTime) {
+    public static void update(String descriptiveId, double value) {
 
         Objects.requireNonNull(descriptiveId);
         if (value < 0d || value > 1) {
@@ -244,7 +249,7 @@ public class ObjectiveRecorder {
         }
 
         // also update the objective info to bootTimeObjectiveInfo
-        if (bootTime){
+        if (isBooting){
             bootTimeObjectiveInfo.updateMaxObjectiveCoverage(descriptiveId, value);
         }
     }
@@ -279,5 +284,13 @@ public class ObjectiveRecorder {
         }
 
         return descriptiveId;
+    }
+
+    public static boolean isBooting() {
+        return isBooting;
+    }
+
+    public static void setBooting(boolean isBooting) {
+        ObjectiveRecorder.isBooting = isBooting;
     }
 }

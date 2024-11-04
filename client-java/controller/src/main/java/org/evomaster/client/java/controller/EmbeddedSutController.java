@@ -7,6 +7,7 @@ import org.evomaster.client.java.controller.internal.SutController;
 import org.evomaster.client.java.instrumentation.*;
 import org.evomaster.client.java.instrumentation.object.ClassToSchema;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 
 import java.util.Collection;
@@ -112,5 +113,10 @@ public abstract class EmbeddedSutController extends SutController {
     @Override
     public final void getJvmDtoSchema(List<String> dtoNames) {
         UnitsInfoRecorder.registerSpecifiedDtoSchema(ExtractJvmClass.extractAsSchema(dtoNames));
+    }
+
+    @Override
+    public final void bootingSut(boolean bootingSut) {
+        ObjectiveRecorder.setBooting(bootingSut);
     }
 }

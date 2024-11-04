@@ -212,6 +212,10 @@ public class ServerController {
         return sendWithDataAndExpectACK(Command.EXECUTING_ACTION, executingAction);
     }
 
+    public boolean setBootingSut(boolean isBooting){
+        return sendWithDataAndExpectACK(Command.BOOTING_SUT, isBooting);
+    }
+
 //    public synchronized List<TargetInfo> getAllCoveredTargetsInfo() {
 //        boolean sent = sendCommand(Command.ALL_COVERED_TARGETS_INFO);
 //        if (!sent) {

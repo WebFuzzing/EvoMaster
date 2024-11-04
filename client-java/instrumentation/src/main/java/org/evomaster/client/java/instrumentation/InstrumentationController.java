@@ -55,6 +55,9 @@ public class InstrumentationController {
         ExecutionTracer.setExecutingAction(executingAction);
     }
 
+    public static void setBootingSut(boolean bootingSut){
+        ObjectiveRecorder.setBooting(bootingSut);
+    }
 
     public static List<TargetInfo> getTargetInfos(
             Collection<Integer> ids,

@@ -1309,6 +1309,16 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     public abstract void setExecutingAction(boolean executingAction);
 
+
+    /**
+     * specify whether the SUT is booting (ie starting up), or not.
+     * this is needed because we don't want to handle targets covered at startup during
+     * the fitness evaluations
+     * @param isBooting
+     */
+    public abstract void bootingSut(boolean isBooting);
+
+
     public abstract BootTimeInfoDto getBootTimeInfoDto();
 
     protected BootTimeInfoDto getBootTimeInfoDto(BootTimeObjectiveInfo info){

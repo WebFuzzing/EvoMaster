@@ -518,7 +518,7 @@ public class ExecutionTracer {
             }
         }
 
-        ObjectiveRecorder.update(id, value, !executingAction);
+        ObjectiveRecorder.update(id, value);
     }
 
     public static void executedNumericComparison(String idTemplate, double lt, double eq, double gt) {

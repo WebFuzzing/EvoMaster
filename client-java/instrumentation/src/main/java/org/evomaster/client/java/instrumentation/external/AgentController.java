@@ -98,6 +98,9 @@ public class AgentController {
                         handleExecutingAction();
                         sendCommand(Command.ACK);
                         break;
+                    case BOOTING_SUT:
+                        handleBootingSut();
+                        sendCommand(Command.ACK);
                     case BOOT_TIME_INFO:
                         handleBootTimeObjectiveInfo();
                         break;
@@ -186,6 +189,15 @@ public class AgentController {
         }
     }
 
+    private static void handleBootingSut() {
+        try {
+            Object msg = in.readObject();
+            Boolean bootingSut = (Boolean) msg;
+            InstrumentationController.setBootingSut(bootingSut);
+        } catch (Exception e){
+            SimpleLogger.error("Failure in handling executing-action: "+e.getMessage());
+        }
+    }
 
     private static void handleAdditionalInfo(){
         try {

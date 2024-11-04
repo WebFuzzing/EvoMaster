@@ -362,7 +362,9 @@ public class EMController {
                         If SUT is not up and running, let's start it
                      */
                     if (!noKillSwitch(() -> sutController.isSutRunning())) {
+                        noKillSwitch(() -> sutController.bootingSut(true));
                         baseUrlOfSUT = noKillSwitch(() -> sutController.startSut());
+                        noKillSwitch(() -> sutController.bootingSut(false));
                         if (baseUrlOfSUT == null) {
                             //there has been an internal failure in starting the SUT
                             String msg = "Internal failure: cannot start SUT based on given configuration";
