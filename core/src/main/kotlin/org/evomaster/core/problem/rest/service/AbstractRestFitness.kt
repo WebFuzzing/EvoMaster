@@ -987,7 +987,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                     individual,
                     dto.additionalInfoList,
                     randomness,
-                    config.enableSchemaConstraintHandling
+                    config
                 )
             }
         }

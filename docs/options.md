@@ -63,7 +63,7 @@ There are 3 types of options:
 |`adaptiveGeneSelectionMethod`| __Enum__. Specify a strategy to select genes for mutation adaptively. *Valid values*: `NONE, AWAY_NOIMPACT, APPROACH_IMPACT, APPROACH_LATEST_IMPACT, APPROACH_LATEST_IMPROVEMENT, BALANCE_IMPACT_NOIMPACT, BALANCE_IMPACT_NOIMPACT_WITH_E, ALL_FIXED_RAND`. *Default value*: `APPROACH_IMPACT`.|
 |`addPreDefinedTests`| __Boolean__. Add predefined tests at the end of the search. An example is a test to fetch the schema of RESTful APIs. *Default value*: `true`.|
 |`advancedBlackBoxCoverage`| __Boolean__. Apply more advanced coverage criteria for black-box testing. This can result in larger generated test suites. *Default value*: `true`.|
-|`algorithm`| __Enum__. The algorithm used to generate test cases. The default depends on whether black-box or white-box testing is done. *Valid values*: `DEFAULT, SMARTS, MIO, RANDOM, WTS, MOSA`. *Default value*: `DEFAULT`.|
+|`algorithm`| __Enum__. The algorithm used to generate test cases. The default depends on whether black-box or white-box testing is done. *Valid values*: `DEFAULT, SMARTS, MIO, RANDOM, WTS, MOSA, RW`. *Default value*: `DEFAULT`.|
 |`allowInvalidData`| __Boolean__. When generating data, allow in some cases to use invalid values on purpose. *Default value*: `true`.|
 |`appendToStatisticsFile`| __Boolean__. Whether should add to an existing statistics file, instead of replacing it. *Default value*: `false`.|
 |`archiveAfterMutationFile`| __String__. Specify a path to save archive after each mutation during search, only useful for debugging. *DEBUG option*. *Default value*: `archive.csv`.|
@@ -194,6 +194,7 @@ There are 3 types of options:
 |`structureMutationProbability`| __Double__. Probability of applying a mutation that can change the structure of a test. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.5`.|
 |`sutControllerHost`| __String__. Host name or IP address of where the SUT REST controller is listening on. *Default value*: `localhost`.|
 |`sutControllerPort`| __Int__. TCP port of where the SUT REST controller is listening on. *Constraints*: `min=0.0, max=65535.0`. *Default value*: `40100`.|
+|`taintAnalysisForMapsAndArrays`| __Boolean__. Apply taint analysis to handle special cases of Maps and Arrays. *Default value*: `true`.|
 |`taintApplySpecializationProbability`| __Double__. Probability of applying a discovered specialization for a tainted value. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.5`.|
 |`taintChangeSpecializationProbability`| __Double__. Probability of changing specialization for a resolved taint during mutation. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.1`.|
 |`taintOnSampling`| __Boolean__. Whether input tracking is used on sampling time, besides mutation time. *Default value*: `true`.|

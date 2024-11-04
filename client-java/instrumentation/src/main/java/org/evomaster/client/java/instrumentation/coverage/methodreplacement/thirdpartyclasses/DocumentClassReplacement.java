@@ -36,7 +36,7 @@ public class DocumentClassReplacement extends ThirdPartyMethodReplacementClass {
         final Class<?> documentClass = documentParseMethod.getDeclaringClass();
 
         // register the taint for JSON format in this method
-        JsonTaint.handlePossibleJsonTaint(json, documentClass);
+        JsonTaint.handlePossibleJsonTaint(json, documentClass, false);
 
         // Invoke the parse method and get the result
         try {

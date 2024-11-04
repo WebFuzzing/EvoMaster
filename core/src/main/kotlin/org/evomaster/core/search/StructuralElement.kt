@@ -5,6 +5,7 @@ import org.evomaster.core.search.action.ActionComponent
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.root.CompositeGene
+import org.evomaster.core.search.service.monitor.ProcessMonitorExcludeField
 import org.slf4j.LoggerFactory
 import kotlin.reflect.KClass
 
@@ -33,7 +34,9 @@ abstract class StructuralElement (
     */
 
     protected open val children : MutableList<out StructuralElement> = mutableListOf(),
+   @ProcessMonitorExcludeField
     protected val childTypeVerifier: (Class<*>) -> Boolean = {_ -> true},
+   @ProcessMonitorExcludeField
     private var groups : GroupsOfChildren<StructuralElement>? = null
 ) {
 
@@ -85,6 +88,7 @@ abstract class StructuralElement (
      * parent of the element, which contains current the element
      * Note that [parent] can be null when the element is root
      */
+    @ProcessMonitorExcludeField
     var parent : StructuralElement? = null
         private set
 

@@ -250,7 +250,7 @@ object RestActionBuilderV3 {
         val swagger = OpenAPIParser().readContents(schema,null,null).openAPI
 
         schemas.forEach { (t, u) ->
-            val gene = createObjectGene(t, swagger.components.schemas[t]!!,swagger, ArrayDeque(), t, options, mutableListOf())
+            val gene = getGene(t, swagger.components.schemas[t]!!,swagger, ArrayDeque(), t, options, messages = mutableListOf())
             dtoCache[u] = gene
         }
 
