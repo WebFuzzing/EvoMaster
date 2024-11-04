@@ -198,20 +198,41 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
             return null
         }
 
+        val problems = dto.targets.filter { it.descriptiveId == null && !idMapper.hasMappingFor(it.id) }
+        if(problems.isNotEmpty()){
+            val update = rc.getTestResults(ids = dto.targets.map { it.id }.toSet(), descriptiveIds = true)
+            if (update == null) {
+                log.warn("Cannot retrieve coverage with full descriptive ids")
+                return null
+            }
+            val np = problems.size
+            val nu = update.targets.size
+            if(nu != np){
+                log.warn("Asked for $np updates but got $nu")
+            }
+            val list = update.targets.joinToString("\n") { it.descriptiveId }
+            log.warn("There were ${problems.size} targets with no descriptive ids:\n$list")
+
+            //assert(false)// FIXME should understand why happens in the tests. likely a bug somewhere... :(
+            update.targets.forEach { idMapper.addMapping(it.id, it.descriptiveId) }
+        }
+
         dto.targets.forEach { t ->
 
             if (t.descriptiveId != null) {
 
-                val noMethodReplacement = !config.useMethodReplacement && t.descriptiveId.startsWith(ObjectiveNaming.METHOD_REPLACEMENT)
-                val noNonIntegerReplacement = !config.useNonIntegerReplacement && t.descriptiveId.startsWith(
-                    ObjectiveNaming.NUMERIC_COMPARISON)
-
-                if (noMethodReplacement || noNonIntegerReplacement) {
-                    return@forEach
-                }
+                //outdated code, now wrong
+//                val noMethodReplacement = !config.useMethodReplacement && t.descriptiveId.startsWith(ObjectiveNaming.METHOD_REPLACEMENT)
+//                val noNonIntegerReplacement = !config.useNonIntegerReplacement && t.descriptiveId.startsWith(
+//                    ObjectiveNaming.NUMERIC_COMPARISON)
+//
+//                if (noMethodReplacement || noNonIntegerReplacement) {
+//                    return@forEach
+//                }
 
                 idMapper.addMapping(t.id, t.descriptiveId)
             } else if(!idMapper.hasMappingFor(t.id)){
+                // shouldn't really no longer happen after check above
                 log.warn("No descriptive id for unknown code: ${t.id}")
                 assert(false)
             }
