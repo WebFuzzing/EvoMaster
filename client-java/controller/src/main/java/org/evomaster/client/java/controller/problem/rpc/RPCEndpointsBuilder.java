@@ -3,7 +3,7 @@ package org.evomaster.client.java.controller.problem.rpc;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.evomaster.client.java.controller.api.dto.ScheduleTaskInvocationDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.CustomizedScheduleTaskInvocationDto;
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto;
 import org.evomaster.client.java.controller.api.dto.CustomizedRequestValueDto;
 import org.evomaster.client.java.controller.api.dto.auth.JsonAuthRPCEndpointDto;
@@ -1396,7 +1396,7 @@ public class RPCEndpointsBuilder {
     }
 
 
-    private static List<ScheduleTaskInvocationDto> handledSeededScheduleTaskInvocations(){
+    private static List<CustomizedScheduleTaskInvocationDto> handledSeededScheduleTaskInvocations(){
         //TODO
         return null;
     }

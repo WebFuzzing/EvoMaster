@@ -1500,7 +1500,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     @Override
-    public boolean customizeScheduleTaskInvocation(ScheduleTaskInvocationDto invocationDto, boolean invoked) {
+    public boolean customizeScheduleTaskInvocation(CustomizedScheduleTaskInvocationDto invocationDto, boolean invoked) {
         return false;
     }
 

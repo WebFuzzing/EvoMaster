@@ -1,7 +1,5 @@
 package org.evomaster.client.java.controller.api.dto.problem.rpc;
 
-import org.evomaster.client.java.controller.api.dto.ScheduleTaskInvocationDto;
-
 import java.util.List;
 
 
@@ -24,5 +22,5 @@ public class SeededRPCTestDto {
     /**
      * a list of schedule tasks
      */
-    public List<ScheduleTaskInvocationDto> scheduleTaskInvocations;
+    public List<CustomizedScheduleTaskInvocationDto> scheduleTaskInvocations;
 }

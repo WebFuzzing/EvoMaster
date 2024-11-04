@@ -1,11 +1,11 @@
-package org.evomaster.client.java.controller.api.dto;
+package org.evomaster.client.java.controller.api.dto.problem.rpc;
 
 import java.util.List;
 
 /**
  * DTO defines necessary info to invoke or terminate the schedule task
  */
-public class ScheduleTaskInvocationDto {
+public class CustomizedScheduleTaskInvocationDto {
 
     /**
      * id referring to Web API under test
@@ -19,22 +19,11 @@ public class ScheduleTaskInvocationDto {
     public String taskName;
 
     /**
-     * a list of name of input parameters if the name is accessible
-     * nullable if the names are not accessible or there is no input parameters
-     */
-    public List<String> inputParameterNames;
-    /**
      * a list of value of input parameters if the task requires
      * nullable if the input parameters are not needed
      */
     public List<String> inputParameterValues;
 
-    /**
-     * a list of type according to input parameters
-     * null if the inputParameterValues is null
-     * otherwise the size should be same with the inputParameterValues
-     */
-    public List<String> inputParameterTypes;
 
     /**
      * the type of schedule task
