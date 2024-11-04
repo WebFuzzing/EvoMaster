@@ -565,10 +565,15 @@ class RPCEndpointsHandler {
         if (config.seedTestCases){
             // handle seeded test dto
             infoDto.rpcProblem.seededTestDtos?.values?.forEach { t->
-                t.forEach { a->
+                // handle rpc function with corresponding mock objects
+                t.rpcFuctions?.forEach { a->
                     extractRPCExternalServiceAction(infoDto, a)
                 }
+                // handle schedule task
+                // TODO
+
             }
+
         }
 
 

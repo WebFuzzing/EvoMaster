@@ -880,7 +880,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         try{
             if (dto != null && dto.rpcTests != null && !dto.rpcTests.isEmpty()){
                 dto.rpcTests.forEach(s->
-                        customizeRPCTestOutput(s.externalServiceDtos, s.sqlInsertions, s.actions)
+//                        customizeRPCTestOutput(s.externalServiceDtos, s.sqlInsertions, s.actions)
+                        customizeRPCTestOutput(s)
                 );
             }
         }catch (Exception e){
@@ -1486,7 +1487,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     @Override
-    public boolean customizeRPCTestOutput(List<MockRPCExternalServiceDto> externalServiceDtos, List<String> sqlInsertions, List<RPCActionWithResultDto> actions) {
+    public boolean customizeRPCTestOutput(RPCTestWithResultsDto rpcTest) {
         return false;
     }
 

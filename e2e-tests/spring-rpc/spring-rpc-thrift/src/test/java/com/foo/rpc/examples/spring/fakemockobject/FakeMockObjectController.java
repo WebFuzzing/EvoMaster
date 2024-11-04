@@ -18,6 +18,7 @@ import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 import org.evomaster.client.java.controller.api.dto.MockDatabaseDto;
+import org.evomaster.client.java.controller.api.dto.RPCTestWithResultsDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.*;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RPCProblem;
@@ -135,6 +136,7 @@ public class FakeMockObjectController extends SpringController {
             }}
         );
     }
+
 
     @Override
     public boolean customizeMockingDatabase(List<MockDatabaseDto> databaseDtos, boolean enabled) {

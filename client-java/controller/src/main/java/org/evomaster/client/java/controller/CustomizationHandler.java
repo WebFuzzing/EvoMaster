@@ -4,6 +4,7 @@ package org.evomaster.client.java.controller;
 import org.evomaster.client.java.controller.api.dto.CustomizedCallResultCode;
 import org.evomaster.client.java.controller.api.dto.CustomizedRequestValueDto;
 import org.evomaster.client.java.controller.api.dto.MockDatabaseDto;
+import org.evomaster.client.java.controller.api.dto.RPCTestWithResultsDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.CustomizedScheduleTaskInvocationDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.*;
 import org.evomaster.client.java.controller.problem.rpc.CustomizedNotNullAnnotationForRPCDto;
@@ -60,16 +61,16 @@ public interface CustomizationHandler {
     List<SeededRPCTestDto> seedRPCTests();
 
 
+
     /**
      * <p>
      *     here we provide additional handling on the generated RPC tests
      * </p>
-     * @param externalServiceDtos represent info is to mock responses of external services
-     * @param sqlInsertions represent a sequence of SQL insertions
-     * @param actions represent a list of RPC actions to execute in this test with returned responses
+     * @param rpcTest represent generated tests by evomaster which contains executed actions and executed results, ie, return, for deriving assertions
      * @return a result of handling of additional RPC Test
      */
-    boolean customizeRPCTestOutput(List<MockRPCExternalServiceDto> externalServiceDtos, List<String> sqlInsertions, List<RPCActionWithResultDto> actions);
+    boolean customizeRPCTestOutput(RPCTestWithResultsDto rpcTest);
+
 
     /**
      * <p>
