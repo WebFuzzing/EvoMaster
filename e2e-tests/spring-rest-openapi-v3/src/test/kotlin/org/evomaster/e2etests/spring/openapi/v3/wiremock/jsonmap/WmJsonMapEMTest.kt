@@ -24,6 +24,8 @@ class WmJsonMapEMTest : SpringTestBase() {
     @Test
     fun testRunEM() {
 
+        //defaultSeed = 456
+
         runTestHandlingFlakyAndCompilation(
             "WmJsonMapEM",
             "org.foo.WmJsonMapEM",
