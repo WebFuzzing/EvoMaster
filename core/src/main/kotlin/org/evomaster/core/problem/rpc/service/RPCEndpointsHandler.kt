@@ -8,6 +8,7 @@ import org.evomaster.client.java.controller.api.dto.MockDatabaseDto
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.*
+import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCTestDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
@@ -184,9 +185,9 @@ class RPCEndpointsHandler {
     /**
      * create RPC individual based on seeded tests
      */
-    fun handledSeededTests(tests: Map<String, List<RPCActionDto>>): List<RPCIndividual>{
+    fun handledSeededTests(tests: Map<String, RPCTestDto>): List<RPCIndividual>{
         return tests.map {e->
-            val rpcActionDtos = e.value
+            val rpcActionDtos = e.value.rpcFuctions
             val exActions = mutableListOf<List<ApiExternalServiceAction>>()
             val rpcActions = rpcActionDtos.map { rpcActionDto->
                 val external = mutableListOf<ApiExternalServiceAction>()
@@ -234,6 +235,9 @@ class RPCEndpointsHandler {
                 exActions.add(external)
                 processEndpoint(name, rpcActionDto, true)
             }.toMutableList()
+
+            // handle schedule task action
+            // TODO
 
             if (rpcActions.any { it.seeTopGenes().any { g-> !g.isLocallyValid() } }){
                 log.warn("The given test (${e.key}) is invalid (e.g., violate constraints) that will not be involved in the test generation")

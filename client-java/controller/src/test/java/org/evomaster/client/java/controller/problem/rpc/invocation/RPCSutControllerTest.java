@@ -41,7 +41,7 @@ public class RPCSutControllerTest {
     public final static FakeSutController rpcController = new FakeSutController();
 
     private static List<RPCInterfaceSchemaDto> interfaceSchemas;
-    private static Map<String, List<RPCActionDto>> seededTestDtos;
+    private static Map<String, RPCTestDto> seededTestDtos;
 
     @BeforeAll
     public static void initClass() {
@@ -113,7 +113,7 @@ public class RPCSutControllerTest {
     public void testSeedcheck(){
 
         assertEquals(3, seededTestDtos.size());
-        List<List<RPCActionDto>> list = new ArrayList<>(seededTestDtos.values());
+        List<List<RPCActionDto>> list = seededTestDtos.values().stream().map(s-> s.rpcFuctions).collect(Collectors.toList());
 
         assertEquals(1, list.get(0).size());
 
