@@ -164,7 +164,7 @@ class RPCEndpointsHandler {
     fun handleCustomizedTests(individuals : List<EvaluatedIndividual<RPCIndividual>>){
         val postSearchActionDto = PostSearchActionDto()
         postSearchActionDto.rpcTests = individuals.map {eval->
-            val test = RPCTestDto()
+            val test = RPCTestWithResultsDto()
             test.actions = eval.evaluatedMainActions().map { eval->
                 val call = eval.action as RPCCallAction
                 val res = eval.result as RPCCallResult
@@ -824,13 +824,14 @@ class RPCEndpointsHandler {
 //        }
 //    }
 
-    private fun transformResponseDto(action: RPCCallAction) : EvaluatedRPCActionDto{
+    private fun transformResponseDto(action: RPCCallAction) : RPCActionWithResultDto {
         // generate RPCActionDto
         val rpcAction = actionSchemaCluster[action.id]?.copy()?: throw IllegalStateException("cannot find the ${action.id} in actionSchemaCluster")
         val rpcResponseDto = rpcAction.responseParam
         if (action.response != null) transformGeneToParamDto(action.response!!.gene, rpcResponseDto)
 
-        val evaluatedDto = EvaluatedRPCActionDto()
+        val evaluatedDto =
+            RPCActionWithResultDto()
         evaluatedDto.rpcAction = transformActionDto(action)
         evaluatedDto.response = rpcResponseDto
         return evaluatedDto

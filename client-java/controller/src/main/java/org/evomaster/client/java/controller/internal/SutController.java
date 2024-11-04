@@ -26,6 +26,7 @@ import org.evomaster.client.java.controller.api.dto.database.schema.ExtraConstra
 import org.evomaster.client.java.controller.api.dto.MockDatabaseDto;
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.*;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCTestDto;
 import org.evomaster.client.java.sql.DbCleaner;
 import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.evomaster.client.java.sql.SqlScriptRunnerCached;
@@ -789,7 +790,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      *      key is a name of the seeded test case,
      *      value is a list of RCPActionDto for the test case
      */
-    public Map<String, List<RPCActionDto>> handleSeededTests(boolean isSUTRunning){
+    public Map<String, RPCTestDto> handleSeededTests(boolean isSUTRunning){
         List<SeededRPCTestDto> seedRPCTests;
 
         try {
@@ -1485,7 +1486,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     @Override
-    public boolean customizeRPCTestOutput(List<MockRPCExternalServiceDto> externalServiceDtos, List<String> sqlInsertions, List<EvaluatedRPCActionDto> actions) {
+    public boolean customizeRPCTestOutput(List<MockRPCExternalServiceDto> externalServiceDtos, List<String> sqlInsertions, List<RPCActionWithResultDto> actions) {
         return false;
     }
 

@@ -6,7 +6,7 @@ import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
-import org.evomaster.client.java.controller.api.dto.problem.rpc.EvaluatedRPCActionDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionWithResultDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.MockRPCExternalServiceDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.SeededRPCActionDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.SeededRPCTestDto;
@@ -86,7 +86,7 @@ public class NumericStringWithSeedTestController extends SpringController {
     }
 
     @Override
-    public boolean customizeRPCTestOutput(List<MockRPCExternalServiceDto> externalServiceDtos, List<String> sqlInsertions, List<EvaluatedRPCActionDto> actions) {
+    public boolean customizeRPCTestOutput(List<MockRPCExternalServiceDto> externalServiceDtos, List<String> sqlInsertions, List<RPCActionWithResultDto> actions) {
         Path path = Paths.get(CUSTOMIZED_FILE);
 
         try {

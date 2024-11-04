@@ -1314,8 +1314,8 @@ public class RPCEndpointsBuilder {
         return flattendepth.subList(start, flattendepth.size()).stream().filter(s-> !s.startsWith(tag) && s.startsWith(OBJECT_FLAG)).collect(Collectors.toSet()).size();
     }
 
-    public static Map<String, List<RPCActionDto>> buildSeededTestWithRPCFunctions(Map<String, InterfaceSchema> rpcInterfaceSchema, List<SeededRPCTestDto> seedRPCTests, RPCType rpcType){
-        Map<String, List<RPCActionDto>> results = new HashMap<>();
+    public static Map<String, RPCTestDto> buildSeededTestWithRPCFunctions(Map<String, InterfaceSchema> rpcInterfaceSchema, List<SeededRPCTestDto> seedRPCTests, RPCType rpcType){
+        Map<String, RPCTestDto> results = new HashMap<>();
         
         for (SeededRPCTestDto dto: seedRPCTests){
             if (dto.rpcFunctions != null && !dto.rpcFunctions.isEmpty()){
@@ -1324,7 +1324,10 @@ public class RPCEndpointsBuilder {
                     String testKey = String.format("%s_INDEX_%d", (dto.testName != null)?dto.testName:"untitled", seedRPCTests.indexOf(dto));
 
                     if (!test.isEmpty()){
-                        results.put(testKey, test);
+                        RPCTestDto testDto = new RPCTestDto();
+                        testDto.testName = testKey;
+                        testDto.rpcFuctions = test;
+                        results.put(testKey, testDto);
                     } else
                         SimpleLogger.recordErrorMessage("Seeded Test Error: fail to load the seeded test "+ testKey);
                 }catch (RuntimeException e){

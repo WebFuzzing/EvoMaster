@@ -69,7 +69,7 @@ public interface CustomizationHandler {
      * @param actions represent a list of RPC actions to execute in this test with returned responses
      * @return a result of handling of additional RPC Test
      */
-    boolean customizeRPCTestOutput(List<MockRPCExternalServiceDto> externalServiceDtos, List<String> sqlInsertions, List<EvaluatedRPCActionDto> actions);
+    boolean customizeRPCTestOutput(List<MockRPCExternalServiceDto> externalServiceDtos, List<String> sqlInsertions, List<RPCActionWithResultDto> actions);
 
     /**
      * <p>
