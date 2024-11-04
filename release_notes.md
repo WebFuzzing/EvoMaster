@@ -34,7 +34,9 @@ Under development in `master` branch.
 
 ### Addressed GitHub Issues
 
+- #765: Details how to use evomaster + info on found faults
 - #822: additionalProperties: [true/false] causes crash
+- #986: Should this test be in EvoMaster_fault_representatives_Test.java and is resolveLocation() working as expected?
 - #989: TestCaseWriter login cookie variable name
 - #1055: Unable to start EVoMaster in public petstore API
 - #1069: Error in EvoMaster 3.1.0: Black-Box Testing Initialization Failure with InvocationTargetException and NoSuchMethodError

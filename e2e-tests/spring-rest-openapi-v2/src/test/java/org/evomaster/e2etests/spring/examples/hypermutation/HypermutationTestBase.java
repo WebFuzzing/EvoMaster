@@ -25,6 +25,10 @@ public class HypermutationTestBase extends SpringTestBase {
             int y = a.values().stream().filter(s-> s.getId().contains(yGeneId)).findFirst().get().getTimesToManipulate();
             int z = a.values().stream().filter(s-> s.getId().contains(zGeneId)).findFirst().get().getTimesToManipulate();
 
+            /*
+                TODO what is tested here, and why it should be like that, needs explanations
+             */
+
             if (max == 0){
                 result = result && z > x && z > y;
             }else if (max == 1){
@@ -33,6 +37,9 @@ public class HypermutationTestBase extends SpringTestBase {
                 throw new IllegalArgumentException("invalid max");
             }
 
+            if(!result){
+                return false;
+            }
         }
 
         return result;

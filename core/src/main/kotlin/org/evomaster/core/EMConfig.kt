@@ -1062,7 +1062,7 @@ class EMConfig {
     var avoidNonDeterministicLogs = false
 
     enum class Algorithm {
-        DEFAULT, SMARTS, MIO, RANDOM, WTS, MOSA
+        DEFAULT, SMARTS, MIO, RANDOM, WTS, MOSA, RW
     }
 
     @Cfg("The algorithm used to generate test cases. The default depends on whether black-box or white-box testing is done.")
@@ -1883,6 +1883,9 @@ class EMConfig {
 
     @Cfg("Whether input tracking is used on sampling time, besides mutation time")
     var taintOnSampling = true
+
+    @Cfg("Apply taint analysis to handle special cases of Maps and Arrays")
+    var taintAnalysisForMapsAndArrays = true
 
     @Probability
     @Experimental

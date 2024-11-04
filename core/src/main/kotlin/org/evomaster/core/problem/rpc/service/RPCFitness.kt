@@ -77,7 +77,7 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
 
         if (config.isEnabledTaintAnalysis()) {
             Lazy.assert { rpcActionResults.size == dto.additionalInfoList.size }
-            TaintAnalysis.doTaintAnalysis(individual, dto.additionalInfoList, randomness, config.enableSchemaConstraintHandling)
+            TaintAnalysis.doTaintAnalysis(individual, dto.additionalInfoList, randomness, config)
         }
 
         return EvaluatedIndividual(fv, individual.copy() as RPCIndividual, actionResults, trackOperator = individual.trackOperator, index = time.evaluatedIndividuals, config = config)

@@ -85,7 +85,7 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
 
         if (config.isEnabledTaintAnalysis()) {
             Lazy.assert { webResults.size == dto.additionalInfoList.size }
-            TaintAnalysis.doTaintAnalysis(individual, dto.additionalInfoList, randomness, config.enableSchemaConstraintHandling)
+            TaintAnalysis.doTaintAnalysis(individual, dto.additionalInfoList, randomness, config)
         }
 
         return EvaluatedIndividual(
