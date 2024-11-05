@@ -30,6 +30,7 @@
         <module>spring-rest-mongo</module>
         <module>spring-rest-bb</module>
         <module>spring-graphql-bb</module>
+        <module>emb-json</module>
 
     </modules>
 
