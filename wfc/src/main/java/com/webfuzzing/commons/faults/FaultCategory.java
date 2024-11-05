@@ -16,6 +16,7 @@ public enum FaultCategory {
     HTTP_STATUS_500(100, "HTTP Status 500", "causes500_internalServerError"),
     HTTP_INVALID_PAYLOAD_SYNTAX(101, "Invalid Payload Syntax", "rejectedWithInvalidPayloadSyntax"),
     HTTP_INVALID_LOCATION(102, "Invalid Location HTTP Header", "returnsInvalidLocationHeader"),
+    HTTP_NONWORKING_DELETE(103,"DELETE Method Does Not Work", "deleteDoesNotWork"),
 
     //2xx: API
     SCHEMA_INVALID_RESPONSE(200, "Received A Response From API That Is Not Valid According To Its Schema", "returnsSchemaInvalidResponse"),
