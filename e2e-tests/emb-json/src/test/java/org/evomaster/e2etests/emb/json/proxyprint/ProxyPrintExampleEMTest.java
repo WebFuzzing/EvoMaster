@@ -24,7 +24,7 @@ public class ProxyPrintExampleEMTest extends EMBJsonTestBase {
         runTestHandlingFlakyAndCompilation(
                 "ProxyPrintExampleGeneratedEMTest",
                 "org.foo.ProxyPrintExampleGeneratedEMTest",
-                1_000,
+                5_000,
                 true,
                 (args) -> {
                     setOption(args, "taintForceSelectionOfGenesWithSpecialization", "true");

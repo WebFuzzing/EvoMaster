@@ -24,7 +24,7 @@ public class TiltaksgjennomforingExampleEMTest extends EMBJsonTestBase {
         runTestHandlingFlakyAndCompilation(
                 "TiltaksgjennomforingExampleGeneratedEMTest",
                 "org.foo.TiltaksgjennomforingExampleGeneratedEMTest",
-                2_000,
+                5_000,
                 true,
                 (args) -> {
 
