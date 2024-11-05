@@ -16,17 +16,17 @@ class GsonFromJsonEMTest : SpringTestBase() {
         @JvmStatic
         fun init() {
             val config = EMConfig()
-            config.instrumentMR_NET = true
+            config.instrumentMR_EXT_0 = true
             initClass(GsonFromJsonController(), config)
         }
     }
 
-    @Disabled("Test fails")
+//    @Disabled("Test fails")
     @Test
     fun testRunEM() {
         runTestHandlingFlakyAndCompilation(
             "GsonFromJsonEMGenerated",
-            2000
+            10_000
         ) { args: MutableList<String> ->
             val solution = initAndRun(args)
 

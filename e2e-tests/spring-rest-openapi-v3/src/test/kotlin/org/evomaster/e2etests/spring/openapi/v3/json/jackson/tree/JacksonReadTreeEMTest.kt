@@ -16,7 +16,7 @@ class JacksonReadTreeEMTest : SpringTestBase() {
         @JvmStatic
         fun init() {
             val config = EMConfig()
-            config.instrumentMR_NET = true
+            config.instrumentMR_EXT_0 = true
             initClass(JacksonReadTreeController(), config)
         }
     }
@@ -26,7 +26,7 @@ class JacksonReadTreeEMTest : SpringTestBase() {
     fun testRunEM() {
         runTestHandlingFlakyAndCompilation(
             "JacksonReadTreeEMGenerated",
-            500
+            1_000
         ) { args: MutableList<String> ->
             val solution = initAndRun(args)
 
