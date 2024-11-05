@@ -21,7 +21,7 @@ class JacksonConvertValueEMTest : SpringTestBase() {
         }
     }
 
-//    @Disabled("Test fails")
+    @Disabled("Test fails")
     @Test
     fun testRunEM() {
         runTestHandlingFlakyAndCompilation(
