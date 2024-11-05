@@ -11,6 +11,7 @@ import org.evomaster.client.java.instrumentation.object.ClassToSchema;
 import java.io.Reader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Objects;
 
@@ -59,10 +60,7 @@ public class GsonClassReplacement extends ThirdPartyMethodReplacementClass {
     public static Object fromJson(Object caller, String json, Type typeOfT) {
         Objects.requireNonNull(caller);
 
-        if (typeOfT instanceof Class<?>) {
-            Class<?> klass = (Class<?>) typeOfT;
-            analyzeClass(klass, json);
-        }
+        analyzeType(typeOfT, json);
 
         Method original = getOriginal(singleton, "fromJson_string_type", caller);
 
@@ -110,15 +108,11 @@ public class GsonClassReplacement extends ThirdPartyMethodReplacementClass {
     public static Object fromJson(Object caller, Reader json, Type typeOfT) {
         Objects.requireNonNull(caller);
 
+        String content = JsonUtils.getStringFromReader(json);
 
-        if (typeOfT instanceof Class<?>) {
-            Class<?> klass = (Class<?>) typeOfT;
-            String content = JsonUtils.getStringFromReader(json);
+        analyzeType(typeOfT, content);
 
-            analyzeClass(klass, content);
-
-            json = JsonUtils.stringToReader(content);
-        }
+        json = JsonUtils.stringToReader(content);
 
         Method original = getOriginal(singleton, "fromJson_reader_type", caller);
 
@@ -128,6 +122,16 @@ public class GsonClassReplacement extends ThirdPartyMethodReplacementClass {
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {
             throw (RuntimeException) e.getCause();
+        }
+    }
+
+    private static void analyzeType(Type typeOfT, String content) {
+        if (typeOfT instanceof Class<?>) {
+            Class<?> klass = (Class<?>) typeOfT;
+            analyzeClass(klass, content);
+        } else if (typeOfT instanceof ParameterizedType) {
+            Class<?> klass = (Class<?>) ((ParameterizedType) typeOfT).getRawType();
+            analyzeClass(klass, content);
         }
     }
 
