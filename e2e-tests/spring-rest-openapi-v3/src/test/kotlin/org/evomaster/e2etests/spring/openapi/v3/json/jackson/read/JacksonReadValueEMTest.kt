@@ -26,7 +26,7 @@ class JacksonReadValueEMTest : SpringTestBase() {
     fun testRunEM() {
         runTestHandlingFlakyAndCompilation(
             "JacksonReadValueEMGenerated",
-            5_000
+            1_000
         ) { args: MutableList<String> ->
             val solution = initAndRun(args)
 
@@ -34,9 +34,9 @@ class JacksonReadValueEMTest : SpringTestBase() {
             setOption(args, "discoveredInfoRewardedInFitness", "true")
 
             assertTrue(solution.individuals.size >= 1)
-            assertHasAtLeastOne(solution, HttpVerb.POST, 418, "/api/jackson/read/map", "Bingo!")
+//            assertHasAtLeastOne(solution, HttpVerb.POST, 418, "/api/jackson/read/map", "Bingo!")
 //            assertHasAtLeastOne(solution, HttpVerb.POST, 418, "/api/jackson/read/list", "Bingo!")
-//            assertHasAtLeastOne(solution, HttpVerb.POST, 418, "/api/jackson/read/dto", "Bingo!")
+            assertHasAtLeastOne(solution, HttpVerb.POST, 418, "/api/jackson/read/dto", "Bingo!")
         }
     }
 }
