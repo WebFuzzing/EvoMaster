@@ -169,4 +169,17 @@ class RandomnessTest{
         }
         assertTrue(seen.all { it })
     }
+
+
+    @Test
+    fun testProbability(){
+
+        repeat(100){
+            assertFalse(rand.nextBoolean(0.0))
+        }
+
+        repeat(100){
+            assertTrue(rand.nextBoolean(1.0))
+        }
+    }
 }

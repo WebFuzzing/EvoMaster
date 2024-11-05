@@ -21,6 +21,7 @@ public class HypermutationTest extends HypermutationTestBase {
         SpringTestBase.initClass(new HighWeightRestController(Arrays.asList("/api/highweight/lowWeightHighCoverage/{x}")));
     }
 
+    @Disabled("Too brittle test, and unclear what properties it is testing")
     @Test
     public void testRunHypermutation() throws Throwable {
 

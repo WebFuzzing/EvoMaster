@@ -2361,6 +2361,17 @@ class EMConfig {
     var namingStrategy = defaultTestCaseNamingStrategy
 
 
+    @Experimental
+    @Probability(true)
+    @Cfg("When sampling a new individual, probability that ALL optional choices are ON, or ALL are OFF." +
+            " The choice between ON and OFF depends on probabilityOfOnVsOffInAllOptionals.")
+    var probabilityAllOptionalsAreOnOrOff = 0.0
+
+    @Experimental
+    @Cfg("If all-optionals is activated with probabilityAllOptionalsAreOnOrOff, specifying probability of using ON" +
+            " instead of OFF.")
+    val probabilityOfOnVsOffInAllOptionals = 0.8
+
     fun getProbabilityUseDataPool() : Double{
         return if(blackBox){
             bbProbabilityUseDataPool
