@@ -994,9 +994,12 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             recordResponseData(individual, actionResults.filterIsInstance<RestCallResult>())
         }
 
+        //TODO likely would need to consider SEEDED as well in future
         if(config.security && individual.sampleType == SampleType.SECURITY){
             analyzeSecurityProperties(individual,actionResults,fv)
         }
+
+
 
         return dto
     }

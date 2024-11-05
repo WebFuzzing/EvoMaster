@@ -1,7 +1,9 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
+import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.*
+import org.evomaster.core.problem.rest.service.SecurityRest.Companion
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.Archive
@@ -123,11 +125,38 @@ class HttpSemanticsService {
             val hasPreviousGet = okDelete.size() > 1
                     && actions[actions.size - 2].let {
                         it.verb == HttpVerb.GET && it.path == del.path && it.usingSameResolvedPath(last)
+                                && ! it.auth.isDifferentFrom(last.auth)
+                        }
+
+            val previous = if(!hasPreviousGet){
+                val getDef = actionDefinitions.find { it.verb == HttpVerb.GET && it.path == del.path }
+                    ?: return@forEach // we have a DELETE but no GET on this endpoint?
+                val getOp = getDef.copy() as RestCallAction
+                getOp.doInitialize(randomness)
+                getOp.bindToSamePathResolution(last)
+                getOp.auth = last.auth
+                //TODO: what if the GET needs WM handling?
+                okDelete.addMainActionInEmptyEnterpriseGroup(actions.size - 1, getOp)
+                getOp
+            } else {
+                actions[actions.size - 2]
             }
 
-            if(!hasPreviousGet){
-                TODO
+            //we want to have same GET call before and after the 2xx DELETE
+            val after = previous.copy() as RestCallAction
+            after.resetLocalIdRecursively()
+            okDelete.addMainActionInEmptyEnterpriseGroup(-1, after)
+
+            okDelete.modifySampleType(SampleType.HTTP_SEMANTICS)
+            okDelete.ensureFlattenedStructure()
+
+            val evaluatedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(okDelete)
+            if (evaluatedIndividual == null) {
+                log.warn("Failed to evaluate constructed individual in HTTP semantics testing phase")
+                return@forEach
             }
+
+            archive.addIfNeeded(evaluatedIndividual)
         }
     }
 

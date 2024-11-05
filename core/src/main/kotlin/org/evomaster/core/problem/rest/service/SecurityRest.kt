@@ -571,6 +571,9 @@ class SecurityRest {
                 return@forEach
             }
 
+            /*
+                FIXME: isn't this wrong??? ie, should be done in fitness function
+             */
             val scenarioId = idMapper.handleLocalTarget("security:forbidden$verb:${lastAction.path}")
             evaluatedIndividual.fitness.updateTarget(scenarioId, 1.0)
 
