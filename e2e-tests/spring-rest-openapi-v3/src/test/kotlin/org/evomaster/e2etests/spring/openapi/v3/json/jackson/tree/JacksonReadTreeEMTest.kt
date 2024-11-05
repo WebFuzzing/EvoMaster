@@ -25,10 +25,13 @@ class JacksonReadTreeEMTest : SpringTestBase() {
     @Test
     fun testRunEM() {
         runTestHandlingFlakyAndCompilation(
-            "JacksonReadTreeEM",
+            "JacksonReadTreeEMGenerated",
             500
         ) { args: MutableList<String> ->
             val solution = initAndRun(args)
+
+            setOption(args, "taintForceSelectionOfGenesWithSpecialization", "true")
+            setOption(args, "discoveredInfoRewardedInFitness", "true")
 
             assertTrue(solution.individuals.size >= 1)
             assertHasAtLeastOne(solution, HttpVerb.POST, 418, "/api/jackson/tree/map", "Bingo!")
