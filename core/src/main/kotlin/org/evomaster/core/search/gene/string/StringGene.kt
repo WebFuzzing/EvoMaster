@@ -690,7 +690,7 @@ class StringGene(
 
         if(toAddSpecs.any { it.stringSpecialization == StringSpecialization.JSON_MAP }){
 
-            val pempty = getSearchGlobalState()?.apc?.getExploratoryValue(0.5, 0.0) ?: 0.1
+            val pempty = getSearchGlobalState()?.apc?.getExploratoryValue(0.8, 0.1) ?: 0.1
 
             val mapGene = if(getSearchGlobalState()?.randomness?.nextBoolean(pempty) != false){
                 FixedMapGene("template", StringGene("keyTemplate"), StringGene("valueTemplate"), maxSize = 0)

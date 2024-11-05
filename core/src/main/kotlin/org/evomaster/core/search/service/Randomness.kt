@@ -71,6 +71,18 @@ class Randomness {
      * Return true with probability P
      */
     fun nextBoolean(p: Double): Boolean {
+        /*
+            Do not call methods of 'random' if already know the answer.
+            Problem example: adding a check on experimental EMConfig probability with default 0.0
+            would otherwise change the sequence of random values, possibly side-effecting
+            not-too-stable E2E tests unrelated to the pushed changes
+         */
+        if(p == 0.0){
+            return false
+        }
+        if(p == 1.0){
+            return true
+        }
         val k = random.nextDouble() < p
         log.trace("nextBoolean(): {}", k)
         return k
