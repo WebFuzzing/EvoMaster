@@ -22,7 +22,7 @@ class TypeDtoGsonRest {
         val arrayList : ArrayList<TestDto> = Gson().fromJson(json, object : TypeToken<ArrayList<TestDto>>() {}.type)
         val dto : TestDto = arrayList[1]
 
-        return if (dto.value == 0.5) {
+        return if (dto.value > 0) {
             ResponseEntity.ok("Working")
         } else {
             ResponseEntity.badRequest().body("Failed")

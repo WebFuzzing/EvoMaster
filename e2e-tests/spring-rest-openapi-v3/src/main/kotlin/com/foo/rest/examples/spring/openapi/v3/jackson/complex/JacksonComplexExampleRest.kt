@@ -28,8 +28,8 @@ class JacksonComplexExampleRest {
         if (results.isNotEmpty() && results.containsKey("phoneNumbers")) {
             val contactElements: ArrayList<ContactElementDto> = results["phoneNumbers"]!!
             if (contactElements.isNotEmpty()) {
-                val phoneNumbers = contactElements[0]
-                if (phoneNumbers.value == 5553456) {
+                val phoneNumbers : ContactElementDto = contactElements[0]
+                if (phoneNumbers.value > 0) {
                     return ResponseEntity.ok("Working")
                 }
             }
