@@ -29,9 +29,11 @@ public class MongoFindOneByEMTest extends RestTestBase {
             "/findoneby/sourcetypeid/{source}/{type}/{id}"})
     public void testFindOneOnGivenEndpoint(String endpoint) throws Throwable {
 
+        int id = endpoint.length(); //quite brittle
+
         runTestHandlingFlaky(
-                "MongoFindOneByEM",
-                "org.foo.spring.rest.mongo.MongoFindOneByEM",
+                "MongoFindOneByEM_" + id,
+                "org.foo.spring.rest.mongo.MongoFindOneByEM"+id,
                 1000,
                 true,
                 (args) -> {
