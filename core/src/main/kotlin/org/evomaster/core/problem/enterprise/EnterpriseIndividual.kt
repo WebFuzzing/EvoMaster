@@ -224,8 +224,7 @@ abstract class EnterpriseIndividual(
         } else{
             val base = groupsView()!!.startIndexForGroupInsertionInclusive(main)
             val position = base + relativePosition
-            //TODO is this correct??? adding action instead of g
-            addChildToGroup(position, action, main)
+            addChildToGroup(position, g, main)
         }
     }
 
