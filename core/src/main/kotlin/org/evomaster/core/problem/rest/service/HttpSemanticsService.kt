@@ -77,12 +77,60 @@ class HttpSemanticsService {
 //        – PUT with different status from 2xx should have no side-effects. Can be verified with before and after GET. PATCH can be tricky
 //        – PUT for X, and then GET on it, should return exactly X (eg, check no partial updates)
 //        – PUT if creating, must get 201. That means a previous GET must return 404 (or at least not a 2xx) .
-//        –  A repeated followup PUT with 201 on same endpoint should not return 201 (must enforce 200 or 204)
 //        – JSON-Merge-Patch: partial update should not impact other fields. Can have GET, PATCH, and GET to verify it
 
 
         // – 2xx GET on K : follow by success 2xx DELETE, should then give 404 on GET k (adding up to 2 calls)
         deleteShouldDelete()
+
+        // –  A repeated followup PUT with 201 on same endpoint should not return 201 (must enforce 200 or 204)
+        putRepeatedCreated()
+    }
+
+    /**
+     * Checking
+     * PUT /X 201
+     * PUT /x 201
+     *
+     * can't create twice. second time expected an update, ie, either 200 or 204, or 4xx if not allowed
+     */
+    private fun putRepeatedCreated() {
+
+        val putOperations = RestIndividualSelectorUtils.getAllActionDefinitions(actionDefinitions, HttpVerb.PUT)
+
+        putOperations.forEach { put ->
+
+            val creates = RestIndividualSelectorUtils.findAndSlice(
+                individualsInSolution,
+                HttpVerb.PUT,
+                put.path,
+                status = 201
+            )
+            if(creates.isEmpty()){
+                return@forEach
+            }
+            val ind = creates.minBy { it.size() }
+
+            val put201 = ind.seeMainExecutableActions().last()
+            val copy = put201.copy() as RestCallAction
+            copy.resetLocalIdRecursively()
+            ind.addMainActionInEmptyEnterpriseGroup(-1, copy)
+
+            prepareEvaluateAndSave(ind)
+        }
+    }
+
+    private fun prepareEvaluateAndSave(ind: RestIndividual) {
+        ind.modifySampleType(SampleType.HTTP_SEMANTICS)
+        ind.ensureFlattenedStructure()
+
+        val evaluatedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(ind)
+        if (evaluatedIndividual == null) {
+            log.warn("Failed to evaluate constructed individual in HTTP semantics testing phase")
+            return
+        }
+
+        archive.addIfNeeded(evaluatedIndividual)
     }
 
 
@@ -98,7 +146,7 @@ class HttpSemanticsService {
 
         deleteOperations.forEach { del ->
 
-            val successDelete = RestIndividualSelectorUtils.findIndividuals(
+            val successDelete = RestIndividualSelectorUtils.findAndSlice(
                 individualsInSolution,
                 HttpVerb.DELETE,
                 del.path,
@@ -108,14 +156,7 @@ class HttpSemanticsService {
                 return@forEach
             }
 
-            val suc = successDelete.minBy { it.individual.size() }
-            val index = RestIndividualSelectorUtils.findIndexOfAction(
-                suc,
-                HttpVerb.DELETE,
-                del.path,
-                statusGroup = StatusGroup.G_2xx
-                )
-            val okDelete = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(suc.individual, index)
+            val okDelete = successDelete.minBy { it.size() }
 
             val actions = okDelete.seeMainExecutableActions()
 
@@ -147,16 +188,7 @@ class HttpSemanticsService {
             after.resetLocalIdRecursively()
             okDelete.addMainActionInEmptyEnterpriseGroup(-1, after)
 
-            okDelete.modifySampleType(SampleType.HTTP_SEMANTICS)
-            okDelete.ensureFlattenedStructure()
-
-            val evaluatedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(okDelete)
-            if (evaluatedIndividual == null) {
-                log.warn("Failed to evaluate constructed individual in HTTP semantics testing phase")
-                return@forEach
-            }
-
-            archive.addIfNeeded(evaluatedIndividual)
+            prepareEvaluateAndSave(okDelete)
         }
     }
 

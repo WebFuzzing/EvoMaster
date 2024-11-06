@@ -2,6 +2,7 @@ package org.evomaster.core.problem.rest
 
 
 import org.evomaster.core.problem.enterprise.auth.NoAuth
+import org.evomaster.core.problem.rest.service.RestIndividualBuilder
 import org.evomaster.core.search.action.EvaluatedAction
 import org.evomaster.core.search.EvaluatedIndividual
 
@@ -132,6 +133,30 @@ object RestIndividualSelectorUtils {
             }
         }
     }
+
+    /**
+     * Find all individuals with an action having given properties.
+     * Return a slice, where all actions after the target are removed.
+     */
+    fun findAndSlice(
+        individualsInSolution: List<EvaluatedIndividual<RestIndividual>>,
+        verb: HttpVerb? = null,
+        path: RestPath? = null,
+        status: Int? = null,
+        statusGroup: StatusGroup? = null,
+        statusCodes: Collection<Int>? = null,
+        authenticated: Boolean? = null,
+        authenticatedWith: String? = null
+    ) : List<RestIndividual>{
+
+        val individuals = findIndividuals(individualsInSolution, verb, path, status, statusGroup, statusCodes, authenticated, authenticatedWith)
+
+        return individuals.map { ind ->
+            val index = findIndexOfAction(ind, verb, path, status, statusGroup, statusCodes, authenticated, authenticatedWith)
+            RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(ind.individual, index)
+        }
+    }
+
 
     /**
      * get all action definitions from the swagger based on the given verb
