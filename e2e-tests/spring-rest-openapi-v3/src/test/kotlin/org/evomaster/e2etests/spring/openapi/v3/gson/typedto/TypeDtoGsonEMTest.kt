@@ -18,7 +18,6 @@ class TypeDtoGsonEMTest : SpringTestBase() {
         }
     }
 
-    @Disabled("WIP")
     @Test
     fun basicEMTest() {
         runTestHandlingFlakyAndCompilation(

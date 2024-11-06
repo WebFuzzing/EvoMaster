@@ -18,7 +18,7 @@ class ListStringJacksonEMTest : SpringTestBase() {
         }
     }
 
-    @Disabled("Fails for list of strings, while working for other primitives")
+//    @Disabled("Fails for list of strings, while working for other primitives")
     @Test
     fun basicEMTest() {
         runTestHandlingFlakyAndCompilation(
