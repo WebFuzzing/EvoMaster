@@ -46,6 +46,9 @@ public class MongoFindOneByEMTest extends RestTestBase {
                     setOption(args, "generateMongoData", "true");
                     setOption(args, "extractMongoExecutionInfo", "true");
 
+                    //issue with generated classes Instantiator and Accessor when running in Maven
+                    setOption(args, "minimizeThresholdForLoss", "0.5");
+
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertFalse(solution.getIndividuals().isEmpty());
