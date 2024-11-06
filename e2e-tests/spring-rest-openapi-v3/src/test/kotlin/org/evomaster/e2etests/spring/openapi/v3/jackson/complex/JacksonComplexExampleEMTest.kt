@@ -6,7 +6,6 @@ import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 class JacksonComplexExampleEMTest : SpringTestBase() {
@@ -21,12 +20,11 @@ class JacksonComplexExampleEMTest : SpringTestBase() {
         }
     }
 
-    @Disabled("WIP")
     @Test
     fun testRunEM() {
         runTestHandlingFlakyAndCompilation(
             "JacksonComplexExampleEMTestGenerated",
-            5_000
+            2_000
         ) { args: MutableList<String> ->
             val solution = initAndRun(args)
 

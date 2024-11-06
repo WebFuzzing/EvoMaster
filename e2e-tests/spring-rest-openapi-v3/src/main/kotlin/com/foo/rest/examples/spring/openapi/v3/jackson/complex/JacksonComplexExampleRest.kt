@@ -23,18 +23,14 @@ class JacksonComplexExampleRest {
 
         val results = objectMapper.convertValue(
             person.contact.contactElements,
-            object : TypeReference<Map<String, ArrayList<ContactElementDto>>>() {})
+            object : TypeReference<ArrayList<ContactElementDto>>() {})
 
-        if (results.isNotEmpty() && results.containsKey("phoneNumbers")) {
-            val contactElements: ArrayList<ContactElementDto> = results["phoneNumbers"]!!
-            if (contactElements.isNotEmpty()) {
-                val phoneNumbers : ContactElementDto = contactElements[0]
-                if (phoneNumbers.value > 0) {
-                    return ResponseEntity.ok("Working")
-                }
-            }
-            ResponseEntity.badRequest().body("Failed")
+        val contactElement: ContactElementDto = results[0]
+
+        if (contactElement.id == 5553456) {
+            return ResponseEntity.ok("Working")
         }
+
         return ResponseEntity.badRequest().body("Failed")
     }
 }
