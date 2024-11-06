@@ -29,9 +29,11 @@ public class MongoFindOneByEMTest extends RestTestBase {
             "/findoneby/sourcetypeid/{source}/{type}/{id}"})
     public void testFindOneOnGivenEndpoint(String endpoint) throws Throwable {
 
+        int id = endpoint.length(); //quite brittle
+
         runTestHandlingFlaky(
-                "MongoFindOneByEM",
-                "org.foo.spring.rest.mongo.MongoFindOneByEM",
+                "MongoFindOneByEM_" + id,
+                "org.foo.spring.rest.mongo.MongoFindOneByEM"+id,
                 1000,
                 true,
                 (args) -> {
@@ -43,6 +45,9 @@ public class MongoFindOneByEMTest extends RestTestBase {
                     setOption(args, "instrumentMR_MONGO", "true");
                     setOption(args, "generateMongoData", "true");
                     setOption(args, "extractMongoExecutionInfo", "true");
+
+                    //issue with generated classes Instantiator and Accessor when running in Maven
+                    setOption(args, "minimizeThresholdForLoss", "0.5");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 

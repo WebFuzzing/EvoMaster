@@ -40,7 +40,11 @@ interface RemoteController : DatabaseExecutor {
 
     fun startANewSearch(): Boolean
 
-    fun getTestResults(ids: Set<Int> = setOf(), ignoreKillSwitch: Boolean = false, allCovered: Boolean = false): TestResultsDto?
+    fun getTestResults(ids: Set<Int> = setOf(),
+                       ignoreKillSwitch: Boolean = false,
+                       fullyCovered: Boolean = false,
+                       descriptiveIds: Boolean = false,
+    ): TestResultsDto?
 
     fun executeNewRPCActionAndGetResponse(actionDto: ActionDto) : ActionResponseDto?
 

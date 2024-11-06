@@ -1260,9 +1260,10 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         throw new IllegalStateException("This deprecated method should never be called");
     }
 
-    public abstract List<TargetInfo> getTargetInfos(Collection<Integer> ids);
+    public abstract List<TargetInfo> getTargetInfos(Collection<Integer> ids,
+                                                    boolean fullyCovered,
+                                                    boolean descriptiveIds);
 
-    public abstract List<TargetInfo> getAllCoveredTargetInfos();
 
 
     /**
@@ -1307,6 +1308,16 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     public abstract void setExecutingInitMongo(boolean executingInitMongo);
 
     public abstract void setExecutingAction(boolean executingAction);
+
+
+    /**
+     * specify whether the SUT is booting (ie starting up), or not.
+     * this is needed because we don't want to handle targets covered at startup during
+     * the fitness evaluations
+     * @param isBooting
+     */
+    public abstract void bootingSut(boolean isBooting);
+
 
     public abstract BootTimeInfoDto getBootTimeInfoDto();
 

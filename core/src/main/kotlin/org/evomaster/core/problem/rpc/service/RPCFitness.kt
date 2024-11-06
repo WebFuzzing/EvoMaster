@@ -39,7 +39,9 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
     override fun doCalculateCoverage(
         individual: RPCIndividual,
         targets: Set<Int>,
-        allCovered: Boolean
+        allTargets: Boolean,
+        fullyCovered: Boolean,
+        descriptiveIds: Boolean,
     ): EvaluatedIndividual<RPCIndividual>? {
 
         rc.resetSUT()
@@ -58,7 +60,7 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
             }
         }
 
-        val dto = updateFitnessAfterEvaluation(targets, allCovered, individual, fv)
+        val dto = updateFitnessAfterEvaluation(targets, allTargets, fullyCovered, descriptiveIds, individual, fv)
                 ?: return null
         handleExtra(dto, fv)
 

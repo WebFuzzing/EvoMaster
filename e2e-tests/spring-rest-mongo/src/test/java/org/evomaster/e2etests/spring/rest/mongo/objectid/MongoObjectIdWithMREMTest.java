@@ -24,7 +24,6 @@ public class MongoObjectIdWithMREMTest extends RestTestBase {
     public void testRunEMWithMongoMethodReplacement() throws Throwable {
         runTestHandlingFlakyAndCompilation(
                 "MongoObjectIdWithMREM",
-                "org.foo.spring.rest.mongo.MongoEMGeneration",
                 1000,
                 (args) -> {
                     args.add("--enableWeightBasedMutationRateSelectionForGene");
