@@ -17,8 +17,6 @@ class JacksonComplexExampleRest {
 
     @PostMapping(consumes = [MediaType.APPLICATION_JSON_VALUE])
     fun complexExample(@RequestBody json: String): ResponseEntity<String> {
-        // Note: Jackson requires getters for unmarshalling complex objects
-
         val person = objectMapper.readValue(json, PersonDto::class.java)
 
         val results = objectMapper.convertValue(
