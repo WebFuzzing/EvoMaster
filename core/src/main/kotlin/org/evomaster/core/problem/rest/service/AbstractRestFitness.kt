@@ -1010,6 +1010,30 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     private fun analyzeHttpSemantics(individual: RestIndividual, actionResults: List<ActionResult>, fv: FitnessValue) {
 
         handleDeleteShouldDelete(individual, actionResults, fv)
+        handleRepeatedCreatePut(individual, actionResults, fv)
+    }
+
+    private fun handleRepeatedCreatePut(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+
+        val issues = HttpSemanticsOracle.hasRepeatedCreatePut(individual,actionResults)
+        if(!issues){
+            return
+        }
+
+        val put = individual.seeMainExecutableActions().last()
+
+        val category = FaultCategory.HTTP_REPEATED_CREATE_PUT
+        val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, put.getName())
+        )
+        fv.updateTarget(scenarioId, 1.0, individual.seeMainExecutableActions().lastIndex)
+
+        val ar = actionResults.find { it.sourceLocalId == put.getLocalId() } as RestCallResult?
+            ?: return
+        ar.addFault(DetectedFault(category, put.getName()))
     }
 
     private fun handleDeleteShouldDelete(

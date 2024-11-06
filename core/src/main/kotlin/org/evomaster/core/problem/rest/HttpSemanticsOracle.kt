@@ -4,6 +4,55 @@ import org.evomaster.core.search.action.ActionResult
 
 object HttpSemanticsOracle {
 
+
+    fun hasRepeatedCreatePut(individual: RestIndividual,
+                             actionResults: List<ActionResult>
+    ): Boolean{
+
+        if(individual.size() < 2){
+            return false
+        }
+        val actions = individual.seeMainExecutableActions()
+        val first = actions[actions.size - 2]  // PUT 201
+        val second = actions[actions.size - 1] // PUT 201
+
+        //both using PUT
+        if(first.verb != HttpVerb.PUT || second.verb != HttpVerb.PUT){
+            return false
+        }
+
+        //on same resource
+        if(! first.usingSameResolvedPath(second)){
+            return false
+        }
+
+        //with same auth
+        if(first.auth.isDifferentFrom(second.auth)){
+            /*
+                this might require some explanation. What if instead of a parametric endpoint
+                /x/{id}
+                we have a static
+                /x
+                where different resources are based on auth info?
+                in this latter case, 2 PUTs with 201 on /x could be fine if using different auths
+             */
+            return false
+        }
+
+        val res0 = actionResults.find { it.sourceLocalId == first.getLocalId() } as RestCallResult?
+            ?: return false
+        val res1 = actionResults.find { it.sourceLocalId == second.getLocalId() } as RestCallResult?
+            ?: return false
+
+        //both must be 201 CREATE
+        if(res0.getStatusCode() != 201 || res1.getStatusCode() != 201){
+            return false
+        }
+
+        return true
+    }
+
+
     class NonWorkingDeleteResult(
         val checkingDelete: Boolean = false,
         val nonWorking: Boolean = false,
