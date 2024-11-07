@@ -444,6 +444,10 @@ public class ExecutionTracer {
         getCurrentAdditionalInfo().popLastExecutedStatement();
     }
 
+    /**
+     * @return reference to internal data structure for found target info.
+     * The keys in such a map are the unique descriptive ids of the coverage objectives
+     */
     public static Map<String, TargetInfo> getInternalReferenceToObjectiveCoverage() {
         return objectiveCoverage;
     }
@@ -514,7 +518,7 @@ public class ExecutionTracer {
             }
         }
 
-        ObjectiveRecorder.update(id, value, !executingAction);
+        ObjectiveRecorder.update(id, value);
     }
 
     public static void executedNumericComparison(String idTemplate, double lt, double eq, double gt) {
