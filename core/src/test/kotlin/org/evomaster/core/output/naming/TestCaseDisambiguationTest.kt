@@ -7,11 +7,13 @@ import org.evomaster.core.output.naming.RestActionTestCaseUtils.getRestCallActio
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.param.PathParam
+import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import java.util.Collections.singletonList
 
 class TestCaseDisambiguationTest {
 
@@ -90,8 +92,59 @@ class TestCaseDisambiguationTest {
         assertEquals("test_1_getOnProductFeaturReturnsEmpty", testCases[1].name)
     }
 
+    @Test
+    fun pathWithQueryParamDisambiguation() {
+        val syntaxLanguagesIndividual = getEvaluatedIndividualWith(getRestCallAction("/syntax/languages"))
+        val syntaxLanguagesIndividualWithQP = getEvaluatedIndividualWith(getRestCallAction("/syntax/languages", parameters = singletonList(getQueryParam("myQueryParam"))))
+
+        val solution = Solution(mutableListOf(syntaxLanguagesIndividual, syntaxLanguagesIndividualWithQP), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
+
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter)
+
+        val testCases = namingStrategy.getTestCases()
+        assertEquals(2, testCases.size)
+        assertEquals("test_0_getOnSyntaxLanguagesReturnsEmpty", testCases[0].name)
+        assertEquals("test_1_getOnLanguagesWithQueryParamReturnsEmpty", testCases[1].name)
+    }
+
+    @Test
+    fun pathWithMoreThanOneQueryParamDisambiguation() {
+        val syntaxLanguagesIndividual = getEvaluatedIndividualWith(getRestCallAction("/syntax/languages"))
+        val syntaxLanguagesIndividualWithQP = getEvaluatedIndividualWith(getRestCallAction("/syntax/languages", parameters = mutableListOf(getQueryParam("myQueryParam"), getQueryParam("myOtherQueryParam"))))
+
+        val solution = Solution(mutableListOf(syntaxLanguagesIndividual, syntaxLanguagesIndividualWithQP), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
+
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter)
+
+        val testCases = namingStrategy.getTestCases()
+        assertEquals(2, testCases.size)
+        assertEquals("test_0_getOnSyntaxLanguagesReturnsEmpty", testCases[0].name)
+        assertEquals("test_1_getOnLanguagesWithQueryParamsReturnsEmpty", testCases[1].name)
+    }
+
+    @Test
+    fun rootPathAndQueryParamDisambiguationReturnsThreeDifferentNames() {
+        val languagesIndividual = getEvaluatedIndividualWith(getRestCallAction("/languages"))
+        val syntaxLanguagesIndividual = getEvaluatedIndividualWith(getRestCallAction("/syntax/languages"))
+        val syntaxLanguagesIndividualWithQP = getEvaluatedIndividualWith(getRestCallAction("/syntax/languages", parameters = singletonList(getQueryParam("myQueryParam"))))
+
+        val solution = Solution(mutableListOf(languagesIndividual, syntaxLanguagesIndividual, syntaxLanguagesIndividualWithQP), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
+
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter)
+
+        val testCases = namingStrategy.getTestCases()
+        assertEquals(3, testCases.size)
+        assertEquals("test_0_getOnLanguagesReturnsEmpty", testCases[0].name)
+        assertEquals("test_1_getOnSyntaxLanguagesReturnsEmpty", testCases[1].name)
+        assertEquals("test_2_getOnLanguagesWithQueryParamReturnsEmpty", testCases[2].name)
+    }
+
     private fun getPathParam(paramName: String): Param {
         return PathParam(paramName, CustomMutationRateGene(paramName, StringGene(paramName), 1.0))
+    }
+
+    private fun getQueryParam(paramName: String): Param {
+        return QueryParam(paramName, CustomMutationRateGene(paramName, StringGene(paramName), 1.0))
     }
 
 }

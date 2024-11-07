@@ -47,8 +47,15 @@ open class NumberedTestCaseNamingStrategy(
             individualToName[it] = expandName(it, mutableListOf())
         }
 
-        getDuplicateNames(individualToName)
-            .forEach { individualToName.putAll(resolveAmbiguities(it)) }
+        getDuplicateNames(individualToName).forEach {
+            var previousSize: Int
+            do {
+                previousSize = it.size
+                individualToName.putAll(resolveAmbiguities(it))
+            } while(previousSize != it.size)
+        }
+//        val dup3 = getDuplicateNames(individualToName)
+//        dup3.forEach { individualToName.putAll(resolveAmbiguities(it)) }
 
         var counter = 0
         return individualToName.map { entry -> TestCase(entry.key, concatName(counter++, entry.value)) }
