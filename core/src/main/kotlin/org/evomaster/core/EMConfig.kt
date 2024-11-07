@@ -1397,8 +1397,25 @@ class EMConfig {
         /**
          * save covered targets with the specified target format and tests with the specified test format
          */
-        TARGET_TEST_IND
+        TARGET_TEST_IND,
+        /**
+         * save heuristic values for each target as csv file
+         */
+        TARGET_HEURISTIC
     }
+
+    @Experimental
+    @Cfg("Where the target heuristic values file (if any) is going to be written (in CSV format). It is only used when processFormat is TARGET_HEURISTIC.")
+    @FilePath
+    var targetHeuristicsFile = "targets.csv"
+
+    @Experimental
+    @Cfg("Whether should add to an existing target heuristics file, instead of replacing it. It is only used when processFormat is TARGET_HEURISTIC.")
+    var appendToTargetHeuristicsFile = false
+
+    @Experimental
+    @Cfg("Prefix for the target heuristic values file (if any) is going to be written (in CSV format). It is only used when processFormat is TARGET_HEURISTIC.")
+    var saveTargetHeuristicsPrefixes = "Branch"
 
     @Debug
     @Cfg("Specify a folder to save results when a search monitor is enabled")

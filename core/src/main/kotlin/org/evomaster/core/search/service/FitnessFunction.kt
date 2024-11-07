@@ -138,12 +138,14 @@ abstract class FitnessFunction<T>  where T : Individual {
         actionsSize: Int
     ) : EvaluatedIndividual<T>?{
 
+        val allTargetsWithDescriptive = config.processFormat == EMConfig.ProcessDataFormat.TARGET_HEURISTIC
+
         val ei = SearchTimeController.measureTimeMillis(
                 { t, ind ->
                     time.reportExecutedIndividualTime(t, actionsSize)
                     ind?.executionTimeMs = t
                 },
-                {doCalculateCoverage(individual, targets, allTargets = false, fullyCovered = false, descriptiveIds = false)}
+                {doCalculateCoverage(individual, targets, allTargets = allTargetsWithDescriptive, fullyCovered = false, descriptiveIds = allTargetsWithDescriptive)}
         )
         // plugin execution info reporter here, to avoid the time spent by execution reporter
         handleExecutionInfo(ei)
