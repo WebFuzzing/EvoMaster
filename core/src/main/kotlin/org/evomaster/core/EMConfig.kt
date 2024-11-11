@@ -1414,7 +1414,7 @@ class EMConfig {
     var appendToTargetHeuristicsFile = false
 
     @Experimental
-    @Cfg("Prefix for the target heuristic values file (if any) is going to be written (in CSV format). It is only used when processFormat is TARGET_HEURISTIC.")
+    @Cfg("Prefix specifying which targets to record. Each target can be separated by a comma, such as 'Branch,Line,Success, etc'. It is only used when processFormat is TARGET_HEURISTIC.")
     var saveTargetHeuristicsPrefixes = "Branch"
 
     @Debug
