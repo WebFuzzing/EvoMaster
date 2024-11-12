@@ -4,6 +4,9 @@ import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.search.action.EnvironmentAction
 import org.evomaster.core.search.gene.Gene
 
+/**
+ * this action is designed to handle schedule task in Web APIs
+ */
 class ScheduleTaskAction(
     val taskId: String,
     parameters: MutableList<Param>,
