@@ -1,4 +1,4 @@
-package com.foo.rest.examples.spring.openapi.v3.gson
+package com.foo.rest.examples.spring.openapi.v3.gson.base
 
 import com.google.gson.Gson
 import org.apache.commons.io.IOUtils
