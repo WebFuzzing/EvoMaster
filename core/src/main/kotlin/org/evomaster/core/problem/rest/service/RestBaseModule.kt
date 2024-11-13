@@ -47,5 +47,7 @@ open class RestBaseModule : AbstractModule() {
             .to(object : TypeLiteral<Archive<RestIndividual>>() {})
             .asEagerSingleton()
 
+        bind(HttpSemanticsService::class.java)
+            .asEagerSingleton()
     }
 }

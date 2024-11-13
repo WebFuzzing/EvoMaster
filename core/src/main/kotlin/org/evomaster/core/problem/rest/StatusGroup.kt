@@ -16,4 +16,6 @@ enum class StatusGroup {
             G_5xx -> status in 500..599
         }
     }
+
+    fun allInGroup(vararg status: Int?) = status.all { isInGroup(it)}
 }

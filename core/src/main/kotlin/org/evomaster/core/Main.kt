@@ -202,6 +202,12 @@ class Main {
                 }
             }
 
+            if(config.httpOracles && config.problemType == EMConfig.ProblemType.REST){
+                LoggingUtil.getInfoLogger().info("Starting to apply HTTP")
+
+                val httpSemanticsService = injector.getInstance(HttpSemanticsService::class.java)
+                solution = httpSemanticsService.applyHttpSemanticsPhase()
+            }
 
             if(config.security){
                 //apply security testing phase

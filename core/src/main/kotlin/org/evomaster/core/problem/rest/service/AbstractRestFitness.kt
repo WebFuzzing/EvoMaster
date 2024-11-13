@@ -996,11 +996,73 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             recordResponseData(individual, actionResults.filterIsInstance<RestCallResult>())
         }
 
+        //TODO likely would need to consider SEEDED as well in future
         if(config.security && individual.sampleType == SampleType.SECURITY){
             analyzeSecurityProperties(individual,actionResults,fv)
         }
 
+        //TODO likely would need to consider SEEDED as well in future
+        if(config.httpOracles && individual.sampleType == SampleType.HTTP_SEMANTICS){
+            analyzeHttpSemantics(individual, actionResults, fv)
+        }
+
         return dto
+    }
+
+    private fun analyzeHttpSemantics(individual: RestIndividual, actionResults: List<ActionResult>, fv: FitnessValue) {
+
+        handleDeleteShouldDelete(individual, actionResults, fv)
+        handleRepeatedCreatePut(individual, actionResults, fv)
+    }
+
+    private fun handleRepeatedCreatePut(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+
+        val issues = HttpSemanticsOracle.hasRepeatedCreatePut(individual,actionResults)
+        if(!issues){
+            return
+        }
+
+        val put = individual.seeMainExecutableActions().last()
+
+        val category = FaultCategory.HTTP_REPEATED_CREATE_PUT
+        val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, put.getName())
+        )
+        fv.updateTarget(scenarioId, 1.0, individual.seeMainExecutableActions().lastIndex)
+
+        val ar = actionResults.find { it.sourceLocalId == put.getLocalId() } as RestCallResult?
+            ?: return
+        ar.addFault(DetectedFault(category, put.getName()))
+    }
+
+    private fun handleDeleteShouldDelete(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        val res = HttpSemanticsOracle.hasNonWorkingDelete(individual, actionResults)
+
+        if(res.checkingDelete){
+            //even if no fault found, it is useful to have such test for readability and for validation
+            val scenarioId = idMapper.handleLocalTarget("checkdelete:${res.name}")
+            fv.updateTarget(scenarioId, 1.0, res.index)
+        }
+
+        if(res.nonWorking) {
+            val category = FaultCategory.HTTP_NONWORKING_DELETE
+            val scenarioId = idMapper.handleLocalTarget(
+                idMapper.getFaultDescriptiveId(category, res.name)
+            )
+            fv.updateTarget(scenarioId, 1.0, res.index)
+
+            val delete = individual.seeMainExecutableActions()[res.index]
+            val ar = actionResults.find { it.sourceLocalId == delete.getLocalId() } as RestCallResult?
+                ?: return
+            ar.addFault(DetectedFault(category, res.name))
+        }
     }
 
     private fun analyzeSecurityProperties(

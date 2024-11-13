@@ -40,5 +40,10 @@ enum class SampleType {
     /**
      * generated for security tests
      */
-    SECURITY
+    SECURITY,
+
+    /**
+     * Generated to verify HTTP semantics
+     */
+    HTTP_SEMANTICS
 }
