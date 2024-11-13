@@ -255,8 +255,6 @@ abstract class EnterpriseIndividual(
      * return a list of all db actions in [this] individual
      * that include all initializing actions plus db actions among main actions.
      *
-     * NOTE THAT if EMConfig.probOfApplySQLActionToCreateResources is 0.0, this method
-     * would be same with [seeInitializingActions]
      */
     fun seeSqlDbActions() : List<SqlAction> = seeActions(ActionFilter.ONLY_SQL) as List<SqlAction>
 
@@ -284,7 +282,7 @@ abstract class EnterpriseIndividual(
         if (log.isTraceEnabled)
             log.trace("invoke GeneUtils.repairGenes")
 
-        GeneUtils.repairGenes(this.seeTopGenes(GeneFilter.ONLY_SQL).flatMap { it.flatView() })
+        GeneUtils.repairGenes(this.seeTopGenes(ActionFilter.ONLY_SQL).flatMap { it.flatView() })
 
         /**
          * Now repair database constraints (primary keys, foreign keys, unique fields, etc.).
@@ -397,15 +395,7 @@ abstract class EnterpriseIndividual(
         return sqlInitialization.filterNot { it.representExistingData }.map { it.table.name }
     }
 
-    override fun seeTopGenes(filter: GeneFilter): List<Gene> {
-        return when (filter) {
-            GeneFilter.ALL -> seeAllActions().flatMap(Action::seeTopGenes)
-            GeneFilter.NO_SQL -> seeActions(ActionFilter.NO_SQL).flatMap(Action::seeTopGenes)
-            GeneFilter.ONLY_SQL -> seeSqlDbActions().flatMap(SqlAction::seeTopGenes)
-            GeneFilter.ONLY_MONGO -> seeMongoDbActions().flatMap(MongoDbAction::seeTopGenes)
-            GeneFilter.ONLY_DB -> seeActions(ActionFilter.ONLY_DB).flatMap { it.seeTopGenes() }
-            GeneFilter.NO_DB -> seeActions(ActionFilter.NO_DB).flatMap { it.seeTopGenes() }
-            GeneFilter.ONLY_EXTERNAL_SERVICE -> seeExternalServiceActions().flatMap(ApiExternalServiceAction::seeTopGenes)
-        }
+    override fun seeTopGenes(filter: ActionFilter): List<Gene> {
+        return seeActions(filter).flatMap { it.seeTopGenes() }
     }
 }

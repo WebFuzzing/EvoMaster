@@ -19,8 +19,6 @@ import org.evomaster.core.problem.rest.resource.ResourceImpactOfIndividual
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.action.ActionFilter
-import org.evomaster.core.search.Individual.GeneFilter.ALL
-import org.evomaster.core.search.Individual.GeneFilter.NO_SQL
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.optional.OptionalGene
@@ -82,7 +80,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
     }
 
     override fun genesToMutation(individual: T, evi: EvaluatedIndividual<T>, targets: Set<Int>): List<Gene> {
-        val filterMutate = if (config.shouldGenerateSqlData()) ALL else NO_SQL
+        val filterMutate = if (config.shouldGenerateSqlData()) ActionFilter.ALL else ActionFilter.NO_SQL
         val genes = individual.seeTopGenes(filterMutate).filter { it.isMutable() }
         return genes
     }
@@ -98,8 +96,8 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         if (geneCandidates.isEmpty()) return mutableListOf()
 
         val filterN = when (config.geneMutationStrategy) {
-            ONE_OVER_N -> ALL
-            ONE_OVER_N_BIASED_SQL -> NO_SQL
+            ONE_OVER_N -> ActionFilter.ALL
+            ONE_OVER_N_BIASED_SQL -> ActionFilter.NO_SQL
         }
         // the actual chosen genes, that will be mutated
         val toMutate = mutableListOf<Gene>()
@@ -116,7 +114,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             val enableAPC = config.isEnabledWeightBasedMutation()
                     && archiveGeneSelector.applyArchiveSelection()
 
-            val noSQLGenes = individual.seeTopGenes(NO_SQL).filter { geneCandidates.contains(it) }
+            val noSQLGenes = individual.seeTopGenes(ActionFilter.NO_SQL).filter { geneCandidates.contains(it) }
             val sqlGenes = geneCandidates.filterNot { noSQLGenes.contains(it) }
             while (toMutate.isEmpty()) {
                 if (config.specializeSQLGeneSelection && noSQLGenes.isNotEmpty() && sqlGenes.isNotEmpty()) {

@@ -184,13 +184,12 @@ abstract class Individual(
         throw IllegalStateException("${this::class.java.simpleName}: copyContent() IS NOT IMPLEMENTED")
     }
 
-    enum class GeneFilter { ALL, NO_SQL, ONLY_SQL, ONLY_MONGO, ONLY_EXTERNAL_SERVICE, NO_DB, ONLY_DB }
 
     /**
      * Return a view of all the top Genes in this chromosome/individual.
      * This can be filtered out based on the actions in which these genes appear
      */
-    abstract fun seeTopGenes(filter: GeneFilter = GeneFilter.ALL): List<Gene>
+    abstract fun seeTopGenes(filter: ActionFilter = ActionFilter.ALL): List<Gene>
 
     /**
      * An estimation of the "size" of this individual.
@@ -366,7 +365,7 @@ abstract class Individual(
 
 
     open fun cleanBrokenBindingReference(){
-        val all = seeTopGenes(GeneFilter.ALL).flatMap { it.flatView() }
+        val all = seeTopGenes(ActionFilter.ALL).flatMap { it.flatView() }
         all.filter { it.isBoundGene() }.forEach { b->
             b.cleanBrokenReference(all)
         }
@@ -376,7 +375,7 @@ abstract class Individual(
      * remove all binding all genes in this individual
      */
     fun removeAllBindingAmongGenes(){
-        seeTopGenes(GeneFilter.ALL).forEach { s->
+        seeTopGenes(ActionFilter.ALL).forEach { s->
             s.flatView().forEach { it.cleanBinding() }
         }
     }
@@ -410,7 +409,7 @@ abstract class Individual(
      * verify whether all binding genes are in this individual
      */
     fun verifyBindingGenes() : Boolean{
-        val all = seeTopGenes(GeneFilter.ALL).flatMap{it.flatView()}
+        val all = seeTopGenes(ActionFilter.ALL).flatMap{it.flatView()}
         all.forEach { g->
             val inside = g.bindingGeneIsSubsetOf(all)
             if (!inside)

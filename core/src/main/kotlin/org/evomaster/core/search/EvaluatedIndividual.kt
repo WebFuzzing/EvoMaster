@@ -17,7 +17,6 @@ import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.resource.ResourceImpactOfIndividual
-import org.evomaster.core.search.Individual.GeneFilter
 import org.evomaster.core.search.action.*
 import org.evomaster.core.search.action.ActionFilter.*
 import org.evomaster.core.search.service.monitor.ProcessMonitorExcludeField
@@ -762,7 +761,7 @@ class EvaluatedIndividual<T>(
             actionIndex = null,
             localId = null,
             fixedIndexedAction = false,
-            fromInitialization = individual.seeTopGenes(GeneFilter.ONLY_SQL).contains(gene)
+            fromInitialization = individual.seeTopGenes(ONLY_SQL).contains(gene)
         )
     }
 

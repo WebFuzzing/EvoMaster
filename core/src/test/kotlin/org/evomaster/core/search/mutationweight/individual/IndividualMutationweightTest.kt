@@ -3,6 +3,7 @@ package org.evomaster.core.search.mutationweight.individual
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.algorithms.onemax.OneMaxIndividual
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.datetime.DateTimeGene
@@ -63,12 +64,12 @@ class IndividualMutationweightTest {
 
         val individual = GeneWeightTestSchema.newRestIndividual()
 
-        val sql = individual.seeTopGenes(Individual.GeneFilter.ONLY_SQL)
+        val sql = individual.seeTopGenes(ActionFilter.ONLY_SQL)
         assertEquals(3, sql.size)
         //1 sql key , 1 for date, 2 for info obj
         assertEquals(4.0, sumWeight(sql))
 
-        val other = individual.seeTopGenes(Individual.GeneFilter.NO_SQL).filter { it.isMutable() }
+        val other = individual.seeTopGenes(ActionFilter.NO_SQL).filter { it.isMutable() }
         assertEquals(1, other.size)
         assertTrue(other.first() is ObjectGene)
         (other.first() as ObjectGene).apply {

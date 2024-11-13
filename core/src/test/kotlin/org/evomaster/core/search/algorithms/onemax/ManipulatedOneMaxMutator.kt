@@ -2,6 +2,7 @@ package org.evomaster.core.search.algorithms.onemax
 
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.mutator.Mutator
@@ -19,7 +20,7 @@ class ManipulatedOneMaxMutator : Mutator<OneMaxIndividual>() {
     }
 
     override fun genesToMutation(individual: OneMaxIndividual, evi: EvaluatedIndividual<OneMaxIndividual>, targets: Set<Int>): List<Gene> {
-        return individual.seeTopGenes(Individual.GeneFilter.ALL).filter { it.isMutable() }
+        return individual.seeTopGenes(ActionFilter.ALL).filter { it.isMutable() }
     }
 
     override fun selectGenesToMutate(individual: OneMaxIndividual, evi: EvaluatedIndividual<OneMaxIndividual>, targets: Set<Int>, mutatedGenes: MutatedGeneSpecification?): List<Gene> {
