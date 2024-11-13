@@ -35,7 +35,6 @@ class RandomWalkAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
             Lazy.assert { individual.isInitialized() && individual.searchGlobalState != null }
 
-            //TODO here will be refactored to call method to collect full target info
             ff.calculateCoverage(individual, modifiedSpec = null)?.run {
                 archive.addIfNeeded(this)
                 latestEvaluatedIndividual = this
@@ -44,8 +43,10 @@ class RandomWalkAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
             return
         }
 
-        //TODO here will be refactored to call method to collect full target info
-        getMutatator().mutateAndSave(latestEvaluatedIndividual!!, archive).run {
+        val mutatedIndividual = getMutatator().mutate(latestEvaluatedIndividual as EvaluatedIndividual<T>)
+
+        ff.calculateCoverage(mutatedIndividual)?.run {
+            archive.addIfNeeded(this)
             latestEvaluatedIndividual = this
         }
 
