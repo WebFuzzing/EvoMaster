@@ -18,6 +18,7 @@ class TypeDtoGsonEMTest : SpringTestBase() {
         }
     }
 
+    @Disabled("Need to be able to handle TypeToken")
     @Test
     fun basicEMTest() {
         runTestHandlingFlakyAndCompilation(

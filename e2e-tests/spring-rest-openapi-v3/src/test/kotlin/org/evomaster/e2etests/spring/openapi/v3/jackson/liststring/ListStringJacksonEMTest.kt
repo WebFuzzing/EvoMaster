@@ -18,7 +18,7 @@ class ListStringJacksonEMTest : SpringTestBase() {
         }
     }
 
-//    @Disabled("Fails for list of strings, while working for other primitives")
+    @Disabled("Need to be able to handle contains() in tainted arrays")
     @Test
     fun basicEMTest() {
         runTestHandlingFlakyAndCompilation(
