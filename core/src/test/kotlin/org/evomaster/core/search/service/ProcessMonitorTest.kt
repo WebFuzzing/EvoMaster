@@ -18,6 +18,9 @@ import org.evomaster.core.search.algorithms.onemax.OneMaxSampler
 import org.evomaster.core.search.service.monitor.SearchOverall
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
 import org.evomaster.core.search.service.monitor.StepOfSearchProcess
+import org.hamcrest.CoreMatchers.containsString
+import org.hamcrest.CoreMatchers.not
+import org.hamcrest.MatcherAssert.assertThat
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -36,6 +39,7 @@ class ProcessMonitorTest{
     private lateinit var sampler: OneMaxSampler
     private lateinit var mio: MioAlgorithm<OneMaxIndividual>
     private lateinit var epc: ExecutionPhaseController
+    private lateinit var idMapper: IdMapper
 
     @BeforeEach
     fun init(){
@@ -53,6 +57,8 @@ class ProcessMonitorTest{
         mio = injector.getInstance(Key.get(
                 object : TypeLiteral<MioAlgorithm<OneMaxIndividual>>() {}))
         ff =  injector.getInstance(OneMaxFitness::class.java)
+        idMapper = injector.getInstance(IdMapper::class.java)
+
         config = injector.getInstance(EMConfig::class.java)
         config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
         config.processFormat = EMConfig.ProcessDataFormat.JSON_ALL
@@ -250,5 +256,73 @@ class ProcessMonitorTest{
         assert(Files.exists(Paths.get(config.processFiles)))
         assert(Files.exists(Paths.get(processMonitor.getStepDirAsPath())))
         assert(Files.exists(Paths.get(processMonitor.getStepAsPath(1))))
+    }
+
+    @Test
+    fun testTargetHeuristicCollect(){
+        config.enableProcessMonitor = true
+        config.processFormat = EMConfig.ProcessDataFormat.TARGET_HEURISTIC
+        config.targetHeuristicsFile = "target/target_heuristics.csv"
+        config.appendToTargetHeuristicsFile = false
+        config.saveTargetHeuristicsPrefixes = "Branch"
+
+        processMonitor.postConstruct()
+
+        val a = OneMaxIndividual(2)
+        TestUtils.doInitializeIndividualForTesting(a, randomness)
+
+        idMapper.addMapping(0, "Branch_1")
+        idMapper.addMapping(1, "Line_1")
+
+        val evalA = ff.calculateCoverage(a, modifiedSpec = null)!!
+        processMonitor.eval = evalA
+        processMonitor.newActionEvaluated()
+
+        val addedA = archive.addIfNeeded(evalA)
+
+        assert(addedA)
+        assertTrue(Files.exists(Paths.get(config.targetHeuristicsFile)))
+
+        val targetData = String(Files.readAllBytes(Paths.get(config.targetHeuristicsFile)))
+
+        assertThat(targetData, containsString("Branch"))
+        assertThat(targetData, not(containsString("Line")))
+
+        // 1 header + filtered number of objectives + 1 empty line
+        assertEquals(3, targetData.lines().size)
+    }
+
+    @Test
+    fun testTargetHeuristicCollectBranchLine(){
+        config.enableProcessMonitor = true
+        config.processFormat = EMConfig.ProcessDataFormat.TARGET_HEURISTIC
+        config.targetHeuristicsFile = "target/target_heuristics.csv"
+        config.appendToTargetHeuristicsFile = false
+        config.saveTargetHeuristicsPrefixes = "Branch,Line"
+
+        processMonitor.postConstruct()
+
+        val a = OneMaxIndividual(2)
+        TestUtils.doInitializeIndividualForTesting(a, randomness)
+
+        idMapper.addMapping(0, "Branch_1")
+        idMapper.addMapping(1, "Line_1")
+
+        val evalA = ff.calculateCoverage(a, modifiedSpec = null)!!
+        processMonitor.eval = evalA
+        processMonitor.newActionEvaluated()
+
+        val addedA = archive.addIfNeeded(evalA)
+
+        assert(addedA)
+        assertTrue(Files.exists(Paths.get(config.targetHeuristicsFile)))
+
+        val targetData = String(Files.readAllBytes(Paths.get(config.targetHeuristicsFile)))
+
+        assertThat(targetData, containsString("Branch"))
+        assertThat(targetData, containsString("Line"))
+
+        // 1 header + filtered number of objectives + 1 empty line
+        assertEquals(4, targetData.lines().size)
     }
 }
