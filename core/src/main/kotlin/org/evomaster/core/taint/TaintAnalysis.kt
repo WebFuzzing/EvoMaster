@@ -64,7 +64,7 @@ object TaintAnalysis {
             a technical debt for another day...
          */
 
-        val allGenes = individual.seeTopGenes().flatMap { it.flatView() }
+        val allGenes = individual.seeFullTreeGenes()
 
         if(evolveArrays) {
             allGenes.filterIsInstance<TaintedArrayGene>()

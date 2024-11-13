@@ -282,7 +282,7 @@ abstract class EnterpriseIndividual(
         if (log.isTraceEnabled)
             log.trace("invoke GeneUtils.repairGenes")
 
-        GeneUtils.repairGenes(this.seeTopGenes(ActionFilter.ONLY_SQL).flatMap { it.flatView() })
+        GeneUtils.repairGenes(this.seeFullTreeGenes(ActionFilter.ONLY_SQL))
 
         /**
          * Now repair database constraints (primary keys, foreign keys, unique fields, etc.).

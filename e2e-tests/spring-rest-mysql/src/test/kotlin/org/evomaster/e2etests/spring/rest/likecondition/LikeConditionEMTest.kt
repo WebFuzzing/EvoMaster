@@ -32,8 +32,7 @@ class LikeConditionEMTest : RestTestBase() {
             assertTrue(solution.individuals.size >= 1)
 
             solution.individuals
-                .flatMap { it.individual.seeTopGenes() }
-                .flatMap { g-> g.flatView() }
+                .flatMap { it.individual.seeFullTreeGenes() }
                 .filterIsInstance<RegexGene>()
                 .apply {
                     assertTrue(isNotEmpty())

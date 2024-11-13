@@ -139,7 +139,7 @@ abstract class Individual(
 
         //make sure to disable those genes when initializing a new individual
         val time = searchGlobalState.time.percentageUsedBudget()
-        seeTopGenes().filterIsInstance<OptionalGene>()
+        seeFullTreeGenes().filterIsInstance<OptionalGene>()
             .filter { time > it.searchPercentageActive }
             .forEach { it.forbidSelection() }
 
@@ -151,7 +151,7 @@ abstract class Individual(
         return areAllGeneInitialized()
     }
 
-    private fun areAllGeneInitialized() = seeTopGenes().all { it.initialized }
+    private fun areAllGeneInitialized() = seeFullTreeGenes().all { it.initialized }
 
 
     /**
@@ -190,6 +190,13 @@ abstract class Individual(
      * This can be filtered out based on the actions in which these genes appear
      */
     abstract fun seeTopGenes(filter: ActionFilter = ActionFilter.ALL): List<Gene>
+
+    /**
+     * Given the filter, return all genes, not just the top ones, but the full trees
+     */
+    fun seeFullTreeGenes(filter: ActionFilter = ActionFilter.ALL) : List<Gene>{
+        return seeTopGenes(filter).flatMap { it.flatView() })
+    }
 
     /**
      * An estimation of the "size" of this individual.
@@ -365,7 +372,7 @@ abstract class Individual(
 
 
     open fun cleanBrokenBindingReference(){
-        val all = seeTopGenes(ActionFilter.ALL).flatMap { it.flatView() }
+        val all = seeFullTreeGenes()
         all.filter { it.isBoundGene() }.forEach { b->
             b.cleanBrokenReference(all)
         }
@@ -375,9 +382,7 @@ abstract class Individual(
      * remove all binding all genes in this individual
      */
     fun removeAllBindingAmongGenes(){
-        seeTopGenes(ActionFilter.ALL).forEach { s->
-            s.flatView().forEach { it.cleanBinding() }
-        }
+        seeFullTreeGenes().forEach { it.cleanBinding() }
     }
 
 
@@ -388,8 +393,8 @@ abstract class Individual(
         // individuals should be same type
         if (individual::class.java.name != this::class.java.name) return null
 
-        val allgenes = individual.seeTopGenes().flatMap { it.flatView() }
-        val all = seeTopGenes().flatMap { it.flatView() }
+        val allgenes = individual.seeFullTreeGenes()
+        val all = seeFullTreeGenes()
 
         if (allgenes.size != all.size) return null
 
@@ -622,9 +627,8 @@ abstract class Individual(
      * @return counter of new discovered info
      */
     fun numberOfDiscoveredInfoFromTestExecution() : Int {
-        return seeTopGenes()
+        return seeFullTreeGenes()
             .asSequence()
-            .flatMap { it.flatView() }
             .filterIsInstance<TaintableGene>()
             .filter { it is Gene && it.staticCheckIfImpactPhenotype() } //in case disabled since then
             .count { it.hasDormantGenes() }
