@@ -138,6 +138,7 @@ abstract class FitnessFunction<T>  where T : Individual {
         actionsSize: Int
     ) : EvaluatedIndividual<T>?{
 
+        // By default, we optimize for performance in collecting coverage values, but for special cases, we want to collect full info
         val allTargetsWithDescriptive = config.processFormat == EMConfig.ProcessDataFormat.TARGET_HEURISTIC
 
         val ei = SearchTimeController.measureTimeMillis(
