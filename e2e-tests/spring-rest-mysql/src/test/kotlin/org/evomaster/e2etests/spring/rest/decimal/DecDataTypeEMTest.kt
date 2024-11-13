@@ -8,7 +8,6 @@ import org.evomaster.e2etests.utils.RestTestBase
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
-import org.evomaster.core.search.Individual.GeneFilter.ALL
 import org.evomaster.core.search.action.ActionFilter
 
 class DecDataTypeEMTest : RestTestBase() {

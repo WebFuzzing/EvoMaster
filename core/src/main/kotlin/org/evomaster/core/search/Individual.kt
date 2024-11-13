@@ -195,7 +195,7 @@ abstract class Individual(
      * Given the filter, return all genes, not just the top ones, but the full trees
      */
     fun seeFullTreeGenes(filter: ActionFilter = ActionFilter.ALL) : List<Gene>{
-        return seeTopGenes(filter).flatMap { it.flatView() })
+        return seeTopGenes(filter).flatMap { it.flatView() }
     }
 
     /**

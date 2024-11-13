@@ -12,7 +12,6 @@ import org.evomaster.core.problem.rest.service.ResourceRestStructureMutator;
 import org.evomaster.core.problem.util.BindingBuilder;
 import org.evomaster.core.search.action.ActionFilter;
 import org.evomaster.core.search.EvaluatedIndividual;
-import org.evomaster.core.search.Individual.GeneFilter;
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification;
 import org.evomaster.e2etests.spring.examples.resource.ResourceMIOHWTestBase;
 import org.junit.jupiter.api.Test;
@@ -64,8 +63,8 @@ public class ResourceDbMIOAndHypermutationBasicTest extends ResourceMIOHWTestBas
         // it might be flaky. but with specified seed, this should be determinate
         assertFalse(spec.mutatedGeneInfo().isEmpty());
 
-//        Gene rdObj = calls.get(0).seeGenes(GeneFilter.NO_SQL).stream().findFirst().orElse(null);
-//        Gene mrdObj = mutatedTwoCalls.getResourceCalls().get(0).seeGenes(GeneFilter.NO_SQL).stream().findFirst().orElse(null);
+//        Gene rdObj = calls.get(0).seeGenes(ActionFilter.NO_SQL).stream().findFirst().orElse(null);
+//        Gene mrdObj = mutatedTwoCalls.getResourceCalls().get(0).seeGenes(ActionFilter.NO_SQL).stream().findFirst().orElse(null);
 //        assert(rdObj instanceof ObjectGene);
 //        assert(mrdObj instanceof ObjectGene);
 //        //two fields are mutated (hypermutation is applied)
@@ -122,8 +121,8 @@ public class ResourceDbMIOAndHypermutationBasicTest extends ResourceMIOHWTestBas
         checkingBinding(rAcall, "POST", raKey, true);
 
         // all SQL genes can be bound with POST, so the mutable SQL genes should be empty.
-        assertEquals(0, rAcall.seeGenes(GeneFilter.ONLY_SQL).size());
-        assertEquals(1, rAcall.seeGenes(GeneFilter.ALL).stream().filter(s-> !BindingBuilder.INSTANCE.isExtraTaintParam(s.getName()) && s.isMutable()).count());
+        assertEquals(0, rAcall.seeGenes(ActionFilter.ONLY_SQL).size());
+        assertEquals(1, rAcall.seeGenes(ActionFilter.ALL).stream().filter(s-> !BindingBuilder.INSTANCE.isExtraTaintParam(s.getName()) && s.isMutable()).count());
 
         String raIdKey = "/api/rA/{rAId}";
         String raIdPostTemplate = "GET";
@@ -140,8 +139,8 @@ public class ResourceDbMIOAndHypermutationBasicTest extends ResourceMIOHWTestBas
         checkingBinding(rAIdcall, "GET", raIdKey,true);
 
         //exclude 'id' gene as it can be bound with GET
-        assertEquals(2, rAIdcall.seeGenes(GeneFilter.ONLY_SQL).stream().filter(s-> !BindingBuilder.INSTANCE.isExtraTaintParam(s.getName())).count());
-        assertEquals(1, rAIdcall.seeGenes(GeneFilter.NO_SQL).stream().filter(s-> !BindingBuilder.INSTANCE.isExtraTaintParam(s.getName())).count());
+        assertEquals(2, rAIdcall.seeGenes(ActionFilter.ONLY_SQL).stream().filter(s-> !BindingBuilder.INSTANCE.isExtraTaintParam(s.getName())).count());
+        assertEquals(1, rAIdcall.seeGenes(ActionFilter.NO_SQL).stream().filter(s-> !BindingBuilder.INSTANCE.isExtraTaintParam(s.getName())).count());
 
         //test binding after value mutator
         RestIndividual raIdInd = new RestIndividual(calls, SampleType.SMART_RESOURCE, null, Collections.emptyList(), null, 1);
