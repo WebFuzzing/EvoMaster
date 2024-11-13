@@ -42,7 +42,7 @@ object TaintAnalysis {
     /**
      * TODO Ideally, this should not be needed, as should be handled in evolveIndividual
      */
-    fun dormantGenes(individual: Individual) : List<StringGene> = individual.seeGenes()
+    fun dormantGenes(individual: Individual) : List<StringGene> = individual.seeTopGenes()
         .asSequence()
         //.flatMap { it.flatView() }  // FIXME this is problematic, as Mutator expect top genes only
         .filterIsInstance<StringGene>()
@@ -64,7 +64,7 @@ object TaintAnalysis {
             a technical debt for another day...
          */
 
-        val allGenes = individual.seeGenes().flatMap { it.flatView() }
+        val allGenes = individual.seeTopGenes().flatMap { it.flatView() }
 
         if(evolveArrays) {
             allGenes.filterIsInstance<TaintedArrayGene>()

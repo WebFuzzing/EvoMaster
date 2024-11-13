@@ -284,7 +284,7 @@ abstract class EnterpriseIndividual(
         if (log.isTraceEnabled)
             log.trace("invoke GeneUtils.repairGenes")
 
-        GeneUtils.repairGenes(this.seeGenes(GeneFilter.ONLY_SQL).flatMap { it.flatView() })
+        GeneUtils.repairGenes(this.seeTopGenes(GeneFilter.ONLY_SQL).flatMap { it.flatView() })
 
         /**
          * Now repair database constraints (primary keys, foreign keys, unique fields, etc.).
@@ -397,7 +397,7 @@ abstract class EnterpriseIndividual(
         return sqlInitialization.filterNot { it.representExistingData }.map { it.table.name }
     }
 
-    override fun seeGenes(filter: GeneFilter): List<Gene> {
+    override fun seeTopGenes(filter: GeneFilter): List<Gene> {
         return when (filter) {
             GeneFilter.ALL -> seeAllActions().flatMap(Action::seeTopGenes)
             GeneFilter.NO_SQL -> seeActions(ActionFilter.NO_SQL).flatMap(Action::seeTopGenes)

@@ -13,7 +13,7 @@ class BindingIndividual(val genes : MutableList<Gene>) : Individual(children = m
     }
 
 
-    override fun seeGenes(filter: GeneFilter): List<out Gene> {
+    override fun seeTopGenes(filter: GeneFilter): List<out Gene> {
         return genes
     }
 

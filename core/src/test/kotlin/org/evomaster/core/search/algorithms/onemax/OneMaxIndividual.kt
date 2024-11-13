@@ -62,7 +62,7 @@ class OneMaxIndividual(
         }
     }
 
-    override fun seeGenes(filter: GeneFilter): List<Gene> {
+    override fun seeTopGenes(filter: GeneFilter): List<Gene> {
         return getAction().list
     }
 

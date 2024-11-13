@@ -56,7 +56,7 @@ open class PrimitiveTypeMatchIndividual (action: PrimitiveTypeMatchAction) :  In
 
     override fun size(): Int = 1
 
-    override fun seeGenes(filter: GeneFilter): List<out Gene> {
+    override fun seeTopGenes(filter: GeneFilter): List<out Gene> {
         return (children[0] as PrimitiveTypeMatchAction).seeTopGenes()
     }
 

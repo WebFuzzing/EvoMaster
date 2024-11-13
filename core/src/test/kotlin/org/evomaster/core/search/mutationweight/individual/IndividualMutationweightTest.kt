@@ -22,7 +22,7 @@ class IndividualMutationweightTest {
     @Test
     fun testOneMaxIndividual(){
         val individual = OneMaxIndividual(2)
-        assertEquals(2.0, sumWeight(individual.seeGenes()))
+        assertEquals(2.0, sumWeight(individual.seeTopGenes()))
     }
 
     @Test
@@ -63,12 +63,12 @@ class IndividualMutationweightTest {
 
         val individual = GeneWeightTestSchema.newRestIndividual()
 
-        val sql = individual.seeGenes(Individual.GeneFilter.ONLY_SQL)
+        val sql = individual.seeTopGenes(Individual.GeneFilter.ONLY_SQL)
         assertEquals(3, sql.size)
         //1 sql key , 1 for date, 2 for info obj
         assertEquals(4.0, sumWeight(sql))
 
-        val other = individual.seeGenes(Individual.GeneFilter.NO_SQL).filter { it.isMutable() }
+        val other = individual.seeTopGenes(Individual.GeneFilter.NO_SQL).filter { it.isMutable() }
         assertEquals(1, other.size)
         assertTrue(other.first() is ObjectGene)
         (other.first() as ObjectGene).apply {
@@ -87,7 +87,7 @@ class IndividualMutationweightTest {
         assertEquals(9.0, other.first().mutationWeight())
 
 
-        val all = individual.seeGenes().filter { it.isMutable() }
+        val all = individual.seeTopGenes().filter { it.isMutable() }
         assertEquals(4, all.size)
         assertEquals(13.0, sumWeight(all))
     }

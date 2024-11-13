@@ -84,8 +84,8 @@ class IntegerGeneMutationUpdateTest {
         val copy = mutated.copy(tracker.getCopyFilterForEvalInd(mutated))
         val ind = copy.individual.copy() as PrimitiveTypeMatchIndividual
 
-        assertEquals(1, ind.seeGenes().size)
-        val geneToMutate = ind.seeGenes().first()
+        assertEquals(1, ind.seeTopGenes().size)
+        val geneToMutate = ind.seeTopGenes().first()
 
         val mutationInfo = MutatedGeneSpecification()
 

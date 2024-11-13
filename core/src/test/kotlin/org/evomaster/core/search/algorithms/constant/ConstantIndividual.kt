@@ -17,7 +17,7 @@ class ConstantIndividual(val action: ConstantAction) : Individual(children= muta
     }
 
 
-    override fun seeGenes(filter: GeneFilter): List<out Gene> {
+    override fun seeTopGenes(filter: GeneFilter): List<out Gene> {
         return listOf(action.gene)
     }
 

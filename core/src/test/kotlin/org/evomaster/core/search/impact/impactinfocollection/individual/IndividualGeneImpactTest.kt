@@ -320,7 +320,7 @@ class IndividualGeneImpactTest {
                     children.filterIsInstance<IndInitAction>().map { it.copy() as IndInitAction }.toMutableList())
         }
 
-        override fun seeGenes(filter: GeneFilter): List<out Gene> {
+        override fun seeTopGenes(filter: GeneFilter): List<out Gene> {
            return when(filter){
                GeneFilter.ONLY_SQL -> seeInitializingActions().flatMap(Action::seeTopGenes)
                GeneFilter.NO_SQL -> seeAllActions().flatMap(Action::seeTopGenes)

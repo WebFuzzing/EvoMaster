@@ -113,7 +113,7 @@ public class ArchiveGeneSelectionImpactXYZInfoTest extends SpringTestBase {
 
     private String getGeneIdByName(String geneName, EvaluatedIndividual<RestIndividual> ind){
 
-        Gene gene = ind.getIndividual().seeGenes(Individual.GeneFilter.NO_SQL).stream().filter(g -> ParamUtil.Companion.getValueGene(g).getName().equals(geneName))
+        Gene gene = ind.getIndividual().seeTopGenes(Individual.GeneFilter.NO_SQL).stream().filter(g -> ParamUtil.Companion.getValueGene(g).getName().equals(geneName))
                 .findAny()
                 .orElse(null);
 

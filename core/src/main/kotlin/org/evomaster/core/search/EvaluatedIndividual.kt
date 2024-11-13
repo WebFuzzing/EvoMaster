@@ -698,7 +698,7 @@ class EvaluatedIndividual<T>(
         val action = actions.find {
             it.seeTopGenes().contains(gene)
         }
-        if (action == null && !individual.seeGenes().contains(gene)) return null
+        if (action == null && !individual.seeTopGenes().contains(gene)) return null
 
         val isFixed = individual.seeFixedMainActions().contains(action)
         val index = if (isFixed) individual.seeFixedMainActions().indexOf(action) else -1
@@ -762,7 +762,7 @@ class EvaluatedIndividual<T>(
             actionIndex = null,
             localId = null,
             fixedIndexedAction = false,
-            fromInitialization = individual.seeGenes(GeneFilter.ONLY_SQL).contains(gene)
+            fromInitialization = individual.seeTopGenes(GeneFilter.ONLY_SQL).contains(gene)
         )
     }
 

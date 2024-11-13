@@ -19,7 +19,7 @@ class ManipulatedOneMaxMutator : Mutator<OneMaxIndividual>() {
     }
 
     override fun genesToMutation(individual: OneMaxIndividual, evi: EvaluatedIndividual<OneMaxIndividual>, targets: Set<Int>): List<Gene> {
-        return individual.seeGenes(Individual.GeneFilter.ALL).filter { it.isMutable() }
+        return individual.seeTopGenes(Individual.GeneFilter.ALL).filter { it.isMutable() }
     }
 
     override fun selectGenesToMutate(individual: OneMaxIndividual, evi: EvaluatedIndividual<OneMaxIndividual>, targets: Set<Int>, mutatedGenes: MutatedGeneSpecification?): List<Gene> {
@@ -38,7 +38,7 @@ class ManipulatedOneMaxMutator : Mutator<OneMaxIndividual>() {
         val previousValue = ind.getValue(index)
         ind.setValue(index, if(improve) min(1.0, ind.getValue(index) + degree) else min(0.0, ind.getValue(index) - degree))
 
-        mutatedGeneSpecification?.addMutatedGene(isDb = false, isInit = false, valueBeforeMutation = previousValue.toString(), gene = ind.seeGenes()[index], localId = null, position = 0)
+        mutatedGeneSpecification?.addMutatedGene(isDb = false, isInit = false, valueBeforeMutation = previousValue.toString(), gene = ind.seeTopGenes()[index], localId = null, position = 0)
 
         return ind
     }

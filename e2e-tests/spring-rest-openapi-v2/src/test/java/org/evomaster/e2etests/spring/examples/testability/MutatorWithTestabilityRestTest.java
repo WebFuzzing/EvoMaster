@@ -129,7 +129,7 @@ public class MutatorWithTestabilityRestTest extends SpringTestBase {
 
 
     private void setValue(String geneName, String value, RestIndividual individual){
-        Gene gene = individual.seeGenes(Individual.GeneFilter.ALL).stream().filter(g -> ParamUtil.Companion.getValueGene(g).getName().equals(geneName))
+        Gene gene = individual.seeTopGenes(Individual.GeneFilter.ALL).stream().filter(g -> ParamUtil.Companion.getValueGene(g).getName().equals(geneName))
                 .findAny()
                 .orElse(null);
         Gene g = ParamUtil.Companion.getValueGene(gene);

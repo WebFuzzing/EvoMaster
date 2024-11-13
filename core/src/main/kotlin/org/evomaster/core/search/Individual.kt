@@ -12,7 +12,6 @@ import org.evomaster.core.search.action.*
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.interfaces.TaintableGene
 import org.evomaster.core.search.gene.optional.OptionalGene
-import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.SearchGlobalState
 import org.evomaster.core.search.service.monitor.ProcessMonitorExcludeField
@@ -135,12 +134,12 @@ abstract class Individual(
 
         //make sure that seeded individuals get skipped here, as global initialize might change them
         if(this is EnterpriseIndividual && this.sampleType != SampleType.SEEDED && this.sampleType != SampleType.PREDEFINED) {
-            seeGenes().forEach { it.doGlobalInitialize() }
+            seeTopGenes().forEach { it.doGlobalInitialize() }
         }
 
         //make sure to disable those genes when initializing a new individual
         val time = searchGlobalState.time.percentageUsedBudget()
-        seeGenes().filterIsInstance<OptionalGene>()
+        seeTopGenes().filterIsInstance<OptionalGene>()
             .filter { time > it.searchPercentageActive }
             .forEach { it.forbidSelection() }
 
@@ -152,7 +151,7 @@ abstract class Individual(
         return areAllGeneInitialized()
     }
 
-    private fun areAllGeneInitialized() = seeGenes().all { it.initialized }
+    private fun areAllGeneInitialized() = seeTopGenes().all { it.initialized }
 
 
     /**
@@ -188,9 +187,10 @@ abstract class Individual(
     enum class GeneFilter { ALL, NO_SQL, ONLY_SQL, ONLY_MONGO, ONLY_EXTERNAL_SERVICE, NO_DB, ONLY_DB }
 
     /**
-     * Return a view of all the Genes in this chromosome/individual
+     * Return a view of all the top Genes in this chromosome/individual.
+     * This can be filtered out based on the actions in which these genes appear
      */
-    abstract fun seeGenes(filter: GeneFilter = GeneFilter.ALL): List<Gene>
+    abstract fun seeTopGenes(filter: GeneFilter = GeneFilter.ALL): List<Gene>
 
     /**
      * An estimation of the "size" of this individual.
@@ -366,7 +366,7 @@ abstract class Individual(
 
 
     open fun cleanBrokenBindingReference(){
-        val all = seeGenes(GeneFilter.ALL).flatMap { it.flatView() }
+        val all = seeTopGenes(GeneFilter.ALL).flatMap { it.flatView() }
         all.filter { it.isBoundGene() }.forEach { b->
             b.cleanBrokenReference(all)
         }
@@ -376,7 +376,7 @@ abstract class Individual(
      * remove all binding all genes in this individual
      */
     fun removeAllBindingAmongGenes(){
-        seeGenes(GeneFilter.ALL).forEach { s->
+        seeTopGenes(GeneFilter.ALL).forEach { s->
             s.flatView().forEach { it.cleanBinding() }
         }
     }
@@ -389,8 +389,8 @@ abstract class Individual(
         // individuals should be same type
         if (individual::class.java.name != this::class.java.name) return null
 
-        val allgenes = individual.seeGenes().flatMap { it.flatView() }
-        val all = seeGenes().flatMap { it.flatView() }
+        val allgenes = individual.seeTopGenes().flatMap { it.flatView() }
+        val all = seeTopGenes().flatMap { it.flatView() }
 
         if (allgenes.size != all.size) return null
 
@@ -410,7 +410,7 @@ abstract class Individual(
      * verify whether all binding genes are in this individual
      */
     fun verifyBindingGenes() : Boolean{
-        val all = seeGenes(GeneFilter.ALL).flatMap{it.flatView()}
+        val all = seeTopGenes(GeneFilter.ALL).flatMap{it.flatView()}
         all.forEach { g->
             val inside = g.bindingGeneIsSubsetOf(all)
             if (!inside)
@@ -606,14 +606,14 @@ abstract class Individual(
      * @return whether all top genes of [this] individual are locally valid
      */
     fun areAllTopGenesLocallyValid() : Boolean{
-        return seeGenes().all { it.isLocallyValid() }
+        return seeTopGenes().all { it.isLocallyValid() }
     }
 
     /**
      * compute transitive binding relationship for all genes in this individual
      */
     fun computeTransitiveBindingGenes(){
-        seeGenes().forEach(Gene::computeAllTransitiveBindingGenes)
+        seeTopGenes().forEach(Gene::computeAllTransitiveBindingGenes)
     }
 
     /**
@@ -623,7 +623,7 @@ abstract class Individual(
      * @return counter of new discovered info
      */
     fun numberOfDiscoveredInfoFromTestExecution() : Int {
-        return seeGenes()
+        return seeTopGenes()
             .asSequence()
             .flatMap { it.flatView() }
             .filterIsInstance<TaintableGene>()
