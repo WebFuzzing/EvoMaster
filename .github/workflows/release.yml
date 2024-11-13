@@ -39,7 +39,7 @@ jobs:
         env:
           CI_env: GithubAction
       - name: Upload evomaster.jar
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: evomaster.jar
           path: core/target/evomaster.jar
@@ -56,7 +56,7 @@ jobs:
         with:
           java-version: ${{env.jdk-jpackage}}
       - name: Download fat jar
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: evomaster.jar
           path: core/target
@@ -64,7 +64,7 @@ jobs:
         shell: bash
         run: bash makeExecutable.sh WINDOWS
       - name: Upload installation file
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: evomaster.msi
           path: release/evomaster-${{env.evomaster-version}}.msi
@@ -81,7 +81,7 @@ jobs:
         with:
           java-version: ${{env.jdk-jpackage}}
       - name: Download fat jar
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: evomaster.jar
           path: core/target
@@ -89,7 +89,7 @@ jobs:
         shell: bash
         run: bash makeExecutable.sh OSX
       - name: Upload installation file
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: evomaster.dmg
           path: release/evomaster-${{env.evomaster-version}}.dmg
@@ -106,7 +106,7 @@ jobs:
         with:
           java-version: ${{env.jdk-jpackage}}
       - name: Download fat jar
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: evomaster.jar
           path: core/target
@@ -114,7 +114,7 @@ jobs:
         shell: bash
         run: bash makeExecutable.sh DEBIAN
       - name: Upload installation file
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: evomaster.deb
           #          JDK 17 and 21 use different suffixes... doesn't seem configurable :(
@@ -131,19 +131,19 @@ jobs:
     steps:
 
       - name: Download fat jar
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: evomaster.jar
       - name: Download
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: evomaster.deb
       - name: Download
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: evomaster.dmg
       - name: Download
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: evomaster.msi
 
