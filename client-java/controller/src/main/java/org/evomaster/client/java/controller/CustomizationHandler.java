@@ -96,13 +96,14 @@ public interface CustomizationHandler {
 
     /**
      * <p>
-     *     implement how to invoke schedule task for providing a customized solution
+     * implement how to invoke schedule task for providing a customized solution
      * </p>
+     *
      * @param invocationDto specified necessary info for invoking/terminating schedule tasks
-     * @param invoked defines to invoke (invoked is true) or terminate (invoked is false) the specified schedule task
+     * @param invoked       defines to invoke (invoked is true) or terminate (invoked is false) the specified schedule task
      * @return whether the invocation or termination has executed successfully
      */
-    boolean customizeScheduleTaskInvocation(CustomizedScheduleTaskInvocationDto invocationDto, boolean invoked);
+    ScheduleTaskInvocationResultDto customizeScheduleTaskInvocation(CustomizedScheduleTaskInvocationDto invocationDto, boolean invoked);
 
     /**
      * <p>
