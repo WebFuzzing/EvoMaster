@@ -140,7 +140,7 @@ public class SchemaExtractor {
 
         Objects.requireNonNull(connection);
 
-        DbInfoDto schemaDto = new DbInfoDto();
+        DbInfoDto dbInfoDto = new DbInfoDto();
 
         DatabaseMetaData md = connection.getMetaData();
 
@@ -156,21 +156,17 @@ public class SchemaExtractor {
             //https://dev.mysql.com/doc/refman/8.0/en/connecting-using-uri-or-key-value-pairs.html#connecting-using-uri
             dt = DatabaseType.MYSQL;
         }
-        schemaDto.databaseType = dt;
+        dbInfoDto.databaseType = dt;
 
-
-        /*
-            schema name
-         */
-        schemaDto.name = getSchemaName(connection, dt);
+        dbInfoDto.name = connection.getCatalog(); //getSchemaName(connection, dt);
 
         if (dt.equals(DatabaseType.POSTGRES)) {
             Map<String, Set<String>> enumLabels = getPostgresEnumTypes(connection);
-            addPostgresEnumTypesToSchema(schemaDto, enumLabels);
-            schemaDto.compositeTypes = getPostgresCompositeTypes(connection);
+            addPostgresEnumTypesToSchema(dbInfoDto, enumLabels);
+            dbInfoDto.compositeTypes = getPostgresCompositeTypes(connection);
         }
 
-        ResultSet tables = md.getTables(null, schemaDto.name, null, new String[]{"TABLE"});
+        ResultSet tables = md.getTables(dbInfoDto.name, null, null, new String[]{"TABLE"});
 
         Set<String> tableNames = new HashSet<>();
 
@@ -184,16 +180,16 @@ public class SchemaExtractor {
          */
         if (!tables.next()) {
             tables.close();
-            schemaDto.name = schemaDto.name.toLowerCase();
-            tables = md.getTables(null, schemaDto.name, null, new String[]{"TABLE"});
+            dbInfoDto.name = dbInfoDto.name.toLowerCase();
+            tables = md.getTables(null, dbInfoDto.name, null, new String[]{"TABLE"});
             if (tables.next()) {
                 do {
-                    handleTableEntry(connection, schemaDto, md, tables, tableNames);
+                    handleTableEntry(connection, dbInfoDto, md, tables, tableNames);
                 } while (tables.next());
             }
         } else {
             do {
-                handleTableEntry(connection, schemaDto, md, tables, tableNames);
+                handleTableEntry(connection, dbInfoDto, md, tables, tableNames);
             } while (tables.next());
         }
         tables.close();
@@ -201,26 +197,26 @@ public class SchemaExtractor {
         /*
             Mark those columns that are using auto generated values
          */
-        addForeignKeyToAutoIncrement(schemaDto);
+        addForeignKeyToAutoIncrement(dbInfoDto);
 
         /*
             JDBC MetaData is quite limited.
             To check constraints, we need to do SQL queries on the system tables.
             Unfortunately, this is database-dependent
          */
-        addConstraints(connection, dt, schemaDto);
+        addConstraints(connection, dt, dbInfoDto);
 
         if (dt.equals(DatabaseType.POSTGRES)) {
             List<ColumnAttributes> columnAttributes = getPostgresColumnAttributes(connection);
-            addColumnAttributes(schemaDto, columnAttributes);
+            addColumnAttributes(dbInfoDto, columnAttributes);
         } else if (dt.equals(DatabaseType.H2)) {
-            List<DbTableConstraint> h2EnumConstraints = getH2EnumTypes(schemaDto.name, md);
-            addConstraints(schemaDto, h2EnumConstraints);
+            List<DbTableConstraint> h2EnumConstraints = getH2EnumTypes(dbInfoDto.name, md);
+            addConstraints(dbInfoDto, h2EnumConstraints);
         }
 
-        assert validate(schemaDto);
+        assert validate(dbInfoDto);
 
-        return schemaDto;
+        return dbInfoDto;
     }
 
     private static void addColumnAttributes(DbInfoDto schemaDto, List<ColumnAttributes> listOfColumnAttributes) {
@@ -559,13 +555,14 @@ public class SchemaExtractor {
             tableSchema =tableCatalog;
         }
 
-        if (tableSchema!=null && !tableSchema.equalsIgnoreCase(schemaDto.name)) {
-            /**
-             * If this table does not belong to the current schema under extraction,
-             * skip adding the table.
-             */
-            return;
-        }
+        //no longer done: we extract all schemas for a given catalog
+//        if (tableSchema!=null && !tableSchema.equalsIgnoreCase(schemaDto.name)) {
+//            /**
+//             * If this table does not belong to the current schema under extraction,
+//             * skip adding the table.
+//             */
+//            return;
+//        }
 
         TableDto tableDto = new TableDto();
         schemaDto.tables.add(tableDto);

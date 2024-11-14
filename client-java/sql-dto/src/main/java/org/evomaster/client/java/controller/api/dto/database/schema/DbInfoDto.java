@@ -15,6 +15,9 @@ public class DbInfoDto {
 
     public DatabaseType databaseType;
 
+    /**
+     * Usually, this would be the "catalog"
+     */
     public String name;
 
     public List<TableDto> tables = new ArrayList<>();
