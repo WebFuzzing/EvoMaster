@@ -1,6 +1,7 @@
 package org.evomaster.core.search.algorithms.onemax
 
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
@@ -62,7 +63,7 @@ class OneMaxIndividual(
         }
     }
 
-    override fun seeGenes(filter: GeneFilter): List<Gene> {
+    override fun seeTopGenes(filter: ActionFilter): List<Gene> {
         return getAction().list
     }
 

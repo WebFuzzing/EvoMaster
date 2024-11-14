@@ -110,29 +110,6 @@ class RestIndividual(
                 sampleType == SampleType.SMART_RESOURCE
     }
 
-    /**
-     * Note that if resource-mio is enabled, [dbInitialization] of a RestIndividual is always empty, since DbActions are created
-     * for initializing an resource for a set of actions on the same resource.
-     * TODO is this no longer the case?
-     *
-     * This effects on a configuration with respect to  [EMConfig.geneMutationStrategy] is ONE_OVER_N when resource-mio is enabled.
-     *
-     * In another word, if resource-mio is enabled, whatever [EMConfig.geneMutationStrategy] is, it always follows "GeneMutationStrategy.ONE_OVER_N_BIASED_SQL"
-     * strategy.
-     *
-     */
-    override fun seeGenes(filter: GeneFilter): List<out Gene> {
-
-        return when (filter) {
-            GeneFilter.ALL -> seeAllActions().flatMap(Action::seeTopGenes)
-            GeneFilter.NO_SQL -> seeActions(ActionFilter.NO_SQL).flatMap(Action::seeTopGenes)
-            GeneFilter.ONLY_SQL -> seeSqlDbActions().flatMap(SqlAction::seeTopGenes)
-            GeneFilter.ONLY_MONGO -> seeMongoDbActions().flatMap(MongoDbAction::seeTopGenes)
-            GeneFilter.ONLY_DB -> seeActions(ONLY_DB).flatMap { it.seeTopGenes() }
-            GeneFilter.NO_DB -> seeActions(NO_DB).flatMap { it.seeTopGenes() }
-            GeneFilter.ONLY_EXTERNAL_SERVICE -> seeExternalServiceActions().flatMap(ApiExternalServiceAction::seeTopGenes)
-        }
-    }
 
     /**
      * remove RestResourceCall structure and binding among genes

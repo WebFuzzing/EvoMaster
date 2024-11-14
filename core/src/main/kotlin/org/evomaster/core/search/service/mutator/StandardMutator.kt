@@ -19,12 +19,9 @@ import org.evomaster.core.problem.rest.resource.ResourceImpactOfIndividual
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.action.ActionFilter
-import org.evomaster.core.search.Individual.GeneFilter.ALL
-import org.evomaster.core.search.Individual.GeneFilter.NO_SQL
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.optional.OptionalGene
-import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
@@ -83,8 +80,8 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
     }
 
     override fun genesToMutation(individual: T, evi: EvaluatedIndividual<T>, targets: Set<Int>): List<Gene> {
-        val filterMutate = if (config.shouldGenerateSqlData()) ALL else NO_SQL
-        val genes = individual.seeGenes(filterMutate).filter { it.isMutable() }
+        val filterMutate = if (config.shouldGenerateSqlData()) ActionFilter.ALL else ActionFilter.NO_SQL
+        val genes = individual.seeTopGenes(filterMutate).filter { it.isMutable() }
         return genes
     }
 
@@ -99,14 +96,14 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         if (geneCandidates.isEmpty()) return mutableListOf()
 
         val filterN = when (config.geneMutationStrategy) {
-            ONE_OVER_N -> ALL
-            ONE_OVER_N_BIASED_SQL -> NO_SQL
+            ONE_OVER_N -> ActionFilter.ALL
+            ONE_OVER_N_BIASED_SQL -> ActionFilter.NO_SQL
         }
         // the actual chosen genes, that will be mutated
         val toMutate = mutableListOf<Gene>()
 
         if (!config.isEnabledWeightBasedMutation()) {
-            val p = 1.0 / max(1, individual.seeGenes(filterN).filter { geneCandidates.contains(it) }.size)
+            val p = 1.0 / max(1, individual.seeTopGenes(filterN).filter { geneCandidates.contains(it) }.size)
             while (toMutate.isEmpty()) {
                 geneCandidates.forEach { g ->
                     if (randomness.nextBoolean(p))
@@ -117,7 +114,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             val enableAPC = config.isEnabledWeightBasedMutation()
                     && archiveGeneSelector.applyArchiveSelection()
 
-            val noSQLGenes = individual.seeGenes(NO_SQL).filter { geneCandidates.contains(it) }
+            val noSQLGenes = individual.seeTopGenes(ActionFilter.NO_SQL).filter { geneCandidates.contains(it) }
             val sqlGenes = geneCandidates.filterNot { noSQLGenes.contains(it) }
             while (toMutate.isEmpty()) {
                 if (config.specializeSQLGeneSelection && noSQLGenes.isNotEmpty() && sqlGenes.isNotEmpty()) {
@@ -452,7 +449,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                 if (action != null)
                     ImpactUtils.findMutatedGene(action, gene, includeSameValue)
                 else if (!individual.hasAnyAction())
-                    ImpactUtils.findMutatedGene(it.individual.seeGenes(), gene, includeSameValue)
+                    ImpactUtils.findMutatedGene(it.individual.seeTopGenes(), gene, includeSameValue)
                 else
                     null
             })
@@ -462,7 +459,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                 (if (action != null)
                     ImpactUtils.findMutatedGene(action, gene, includeSameValue)
                 else if (!e.individual.hasAnyAction())
-                    ImpactUtils.findMutatedGene(e.individual.seeGenes(), gene, includeSameValue)
+                    ImpactUtils.findMutatedGene(e.individual.seeTopGenes(), gene, includeSameValue)
                 else null)?.run {
                     this to EvaluatedInfo(
                         index = e.index,

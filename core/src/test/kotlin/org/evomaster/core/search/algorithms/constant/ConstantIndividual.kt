@@ -1,6 +1,7 @@
 package org.evomaster.core.search.algorithms.constant
 
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.service.Randomness
@@ -17,7 +18,7 @@ class ConstantIndividual(val action: ConstantAction) : Individual(children= muta
     }
 
 
-    override fun seeGenes(filter: GeneFilter): List<out Gene> {
+    override fun seeTopGenes(filter: ActionFilter): List<out Gene> {
         return listOf(action.gene)
     }
 

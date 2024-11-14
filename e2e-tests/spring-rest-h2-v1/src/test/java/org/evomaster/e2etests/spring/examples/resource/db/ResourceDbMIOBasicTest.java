@@ -8,7 +8,6 @@ import org.evomaster.core.problem.rest.resource.RestResourceNode;
 import org.evomaster.core.problem.rest.service.ResourceManageService;
 import org.evomaster.core.problem.util.BindingBuilder;
 import org.evomaster.core.search.action.ActionFilter;
-import org.evomaster.core.search.Individual.GeneFilter;
 import org.evomaster.e2etests.spring.examples.resource.ResourceMIOHWTestBase;
 import org.junit.jupiter.api.Test;
 
@@ -48,7 +47,7 @@ public class ResourceDbMIOBasicTest extends ResourceMIOHWTestBase {
         List<RestResourceCalls> calls = new ArrayList<>();
         rmanger.sampleCall(raKey, true, calls, 10, false, Collections.emptyList(), raPostTemplate);
         assertEquals(2, calls.get(0).seeActions(ActionFilter.ALL).size());
-        assertEquals(2, calls.get(0).seeGenes(GeneFilter.ALL).stream().filter(s-> !BindingBuilder.INSTANCE.isExtraTaintParam(s.getName()) && s.isMutable()).count());
+        assertEquals(2, calls.get(0).seeGenes(ActionFilter.ALL).stream().filter(s-> !BindingBuilder.INSTANCE.isExtraTaintParam(s.getName()) && s.isMutable()).count());
         checkingBinding(calls.get(0), "POST-POST", raKey, false);
 
         config.setProbOfApplySQLActionToCreateResources(0d);
@@ -57,7 +56,7 @@ public class ResourceDbMIOBasicTest extends ResourceMIOHWTestBase {
         calls.clear();
         rmanger.sampleCall(raIdKey, true, calls, 10, false, Collections.emptyList(), raIdPostTemplate);
         assertEquals(2, calls.get(0).seeActions(ActionFilter.ALL).size());
-        assertEquals(2, calls.get(0).seeGenes(GeneFilter.ALL).stream().filter(s-> !BindingBuilder.INSTANCE.isExtraTaintParam(s.getName()) && s.isMutable()).count());
+        assertEquals(2, calls.get(0).seeGenes(ActionFilter.ALL).stream().filter(s-> !BindingBuilder.INSTANCE.isExtraTaintParam(s.getName()) && s.isMutable()).count());
         checkingBinding(calls.get(0), raIdPostTemplate, raIdKey, false);
 
         // SQL-GET
@@ -67,8 +66,8 @@ public class ResourceDbMIOBasicTest extends ResourceMIOHWTestBase {
         assertEquals(2, calls.get(0).seeActions(ActionFilter.ALL).size());
         assert( calls.get(0).seeActions(ActionFilter.ALL).get(0) instanceof SqlAction);
         assertEquals(3, calls.get(0).seeActions(ActionFilter.ALL).get(0).seeTopGenes().size());
-        //check whether the gene binding with rest action is removed with seeGenes(GeneFilter.ONLY_SQL)
-        assertEquals(2, calls.get(0).seeGenes(GeneFilter.ONLY_SQL).size());
+        //check whether the gene binding with rest action is removed with seeGenes(ActionFilter.ONLY_SQL)
+        assertEquals(2, calls.get(0).seeGenes(ActionFilter.ONLY_SQL).size());
         checkingBinding(calls.get(0), "GET", raIdKey, true);
 
     }
