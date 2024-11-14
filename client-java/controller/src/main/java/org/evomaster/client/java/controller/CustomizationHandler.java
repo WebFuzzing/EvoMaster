@@ -101,9 +101,16 @@ public interface CustomizationHandler {
      *
      * @param invocationDto specified necessary info for invoking/terminating schedule tasks
      * @param invoked       defines to invoke (invoked is true) or terminate (invoked is false) the specified schedule task
-     * @return whether the invocation or termination has executed successfully
+     * @return invocation result dto
      */
     ScheduleTaskInvocationResultDto customizeScheduleTaskInvocation(CustomizedScheduleTaskInvocationDto invocationDto, boolean invoked);
+
+    /**
+     *
+     * @param invocationInfo has the info about the invoked schedule task
+     * @return whether the task is completed
+     */
+    boolean isScheduleTaskCompleted(ScheduleTaskInvocationResultDto invocationInfo);
 
     /**
      * <p>
