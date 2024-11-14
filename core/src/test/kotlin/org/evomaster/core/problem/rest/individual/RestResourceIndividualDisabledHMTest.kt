@@ -188,7 +188,7 @@ class RestResourceIndividualDisabledHMTest : RestIndividualTestBase(){
                 if a sql gene is binding with rest gene,
                 then only the rest gene is exposed to be mutable
              */
-            val sql = call.seeGenes(Individual.GeneFilter.ONLY_SQL)
+            val sql = call.seeGenes(ActionFilter.ONLY_SQL)
 
 
             /*
@@ -217,7 +217,7 @@ class RestResourceIndividualDisabledHMTest : RestIndividualTestBase(){
                 }
             }
 
-            val nosql = call.seeGenes(Individual.GeneFilter.NO_SQL).filter {
+            val nosql = call.seeGenes(ActionFilter.NO_SQL).filter {
                 !isExtraTaintParam(it.name) && it.isMutable()
             }
 

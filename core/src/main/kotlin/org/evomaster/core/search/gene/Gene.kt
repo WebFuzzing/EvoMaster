@@ -773,7 +773,7 @@ abstract class Gene(
             return listOf()
         }
 
-        return root.seeGenes()
+        return root.seeTopGenes()
     }
 
     /**
@@ -849,7 +849,7 @@ abstract class Gene(
     private fun computeTransitiveBindingGenes(all : MutableSet<Gene>){
         val root = getRoot()
         val allBindingGene = bindingGenes.plus(
-            if (root is Individual) root.seeGenes().flatMap { it.flatView() }.filter {
+            if (root is Individual) root.seeFullTreeGenes().filter {
                 r-> r != this && r.bindingGenes.contains(this)
             }
             else emptyList()
