@@ -550,9 +550,9 @@ public class DbInfoExtractor {
 
         String tableCatalog = tables.getString("TABLE_CAT");
         String tableSchema = tables.getString("TABLE_SCHEM");
+        DatabaseType type = schemaDto.databaseType;
 
         if(tableSchema==null) {
-            DatabaseType type = schemaDto.databaseType;
             if (type.equals(DatabaseType.MYSQL)) {
                 /**
                  * In some versions of MySQL, tableSchema is not stored in the
@@ -574,6 +574,11 @@ public class DbInfoExtractor {
 //             */
 //            return;
 //        }
+
+        List<String> toSkip = SchemasToSkip.get(type);
+        if(toSkip!=null && toSkip.contains(tableSchema)){
+            return;
+        }
 
         TableDto tableDto = new TableDto();
         schemaDto.tables.add(tableDto);
