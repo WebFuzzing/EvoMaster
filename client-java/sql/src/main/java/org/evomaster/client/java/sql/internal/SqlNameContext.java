@@ -8,7 +8,7 @@ import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.delete.Delete;
 import net.sf.jsqlparser.statement.select.*;
 import net.sf.jsqlparser.statement.update.Update;
-import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 
 import java.util.*;
 
@@ -30,7 +30,7 @@ public class SqlNameContext {
      * WARNING: in general we shouldn't use mutable DTO as internal data structures.
      * But, here, what we need is very simple (just checking for names).
      */
-    private  DbSchemaDto schema;
+    private DbInfoDto schema;
 
 
     /**
@@ -57,7 +57,7 @@ public class SqlNameContext {
         computeAliases();
     }
 
-    public void setSchema(DbSchemaDto schema) {
+    public void setSchema(DbInfoDto schema) {
         this.schema = Objects.requireNonNull(schema);
     }
 

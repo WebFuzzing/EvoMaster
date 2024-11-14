@@ -1,7 +1,7 @@
 package org.evomaster.client.java.sql.internal.constraint;
 
 import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto;
-import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
 import org.evomaster.client.java.utils.SimpleLogger;
 
@@ -37,7 +37,7 @@ public class MySQLConstraintExtractor extends TableConstraintExtractor{
     }
 
     @Override
-    public List<DbTableConstraint> extract(Connection connectionToMySQL, DbSchemaDto schemaDto) throws SQLException {
+    public List<DbTableConstraint> extract(Connection connectionToMySQL, DbInfoDto schemaDto) throws SQLException {
         String tableSchema = schemaDto.name;
         List<DbTableConstraint> constraints = new ArrayList<>();
 

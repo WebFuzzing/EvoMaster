@@ -2,7 +2,7 @@ package org.evomaster.client.java.sql.internal;
 
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto;
-import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
 import org.evomaster.client.java.sql.QueryResult;
 import org.junit.jupiter.api.Test;
@@ -69,7 +69,7 @@ public class QueryResultTransformerTest {
         }};
 
 
-        DbSchemaDto schemaDto = new DbSchemaDto();
+        DbInfoDto schemaDto = new DbInfoDto();
         TableDto fooTable = createTableDate(Arrays.asList("CHARACTER","CHARACTER","CHARACTER"), Arrays.asList("fooA","fooB","fooC"), "FooTable");
         TableDto barTable = createTableDate(Arrays.asList("INT","INT","INT", "INT", "INT"), Arrays.asList("barA","barB","barC", "barD", "barE"), "BarTable");
         schemaDto.tables.add(fooTable);

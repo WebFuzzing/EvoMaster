@@ -2,7 +2,7 @@ package org.evomaster.client.java.sql.internal;
 
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto;
-import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
 import org.evomaster.client.java.sql.DataRow;
 import org.evomaster.client.java.sql.QueryResult;
@@ -17,8 +17,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class HeuristicsCalculatorWithInsertionDtoTest {
 
-    private DbSchemaDto createSchemaDtoWithFooTableAndXColumn(String xDataType){
-        DbSchemaDto schemaDto = new DbSchemaDto();
+    private DbInfoDto createSchemaDtoWithFooTableAndXColumn(String xDataType){
+        DbInfoDto schemaDto = new DbInfoDto();
         TableDto tableDto = new TableDto();
         tableDto.name = "Foo";
         ColumnDto dto = new ColumnDto();
@@ -55,7 +55,7 @@ public class HeuristicsCalculatorWithInsertionDtoTest {
                                             List<Object> values,
                                             List<InsertionDto> insertionDtos,
                                             Map<String, Set<String>> columns,
-                                            DbSchemaDto dto,
+                                            DbInfoDto dto,
                                             String sql) {
 
         QueryResult data = new QueryResult(Arrays.asList(name), "Foo");

@@ -6,7 +6,7 @@ import net.sf.jsqlparser.expression.operators.conditional.OrExpression;
 import net.sf.jsqlparser.expression.operators.relational.*;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.statement.Statement;
-import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.sql.DataRow;
 import org.evomaster.client.java.sql.QueryResult;
 import org.evomaster.client.java.distance.heuristics.DistanceHelper;
@@ -42,7 +42,7 @@ public class HeuristicsCalculator {
 
     public static SqlDistanceWithMetrics computeDistance(
             String sqlCommand,
-            DbSchemaDto schema,
+            DbInfoDto schema,
             TaintHandler taintHandler,
             /**
              * Enable more advance techniques since first SQL support
