@@ -26,6 +26,7 @@ import org.evomaster.client.java.controller.api.dto.database.schema.ExtraConstra
 import org.evomaster.client.java.controller.api.dto.MockDatabaseDto;
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.*;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCTestDto;
 import org.evomaster.client.java.sql.DbCleaner;
 import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.evomaster.client.java.sql.SqlScriptRunnerCached;
@@ -789,7 +790,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      *      key is a name of the seeded test case,
      *      value is a list of RCPActionDto for the test case
      */
-    public Map<String, List<RPCActionDto>> handleSeededTests(boolean isSUTRunning){
+    public Map<String, RPCTestDto> handleSeededTests(boolean isSUTRunning){
         List<SeededRPCTestDto> seedRPCTests;
 
         try {
@@ -809,7 +810,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             throw new IllegalStateException("EM driver RPC: the specified problem is not RPC");
         RPCType rpcType = ((RPCProblem) rpcp).getType();
 
-        return RPCEndpointsBuilder.buildSeededTest(rpcInterfaceSchema, seedRPCTests, rpcType);
+        return RPCEndpointsBuilder.buildSeededTestWithRPCFunctions(rpcInterfaceSchema, seedRPCTests, rpcType);
 
 //        try{
 //            if (isSUTRunning){
@@ -879,7 +880,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         try{
             if (dto != null && dto.rpcTests != null && !dto.rpcTests.isEmpty()){
                 dto.rpcTests.forEach(s->
-                        customizeRPCTestOutput(s.externalServiceDtos, s.sqlInsertions, s.actions)
+//                        customizeRPCTestOutput(s.externalServiceDtos, s.sqlInsertions, s.actions)
+                        customizeRPCTestOutput(s)
                 );
             }
         }catch (Exception e){
@@ -1496,7 +1498,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     @Override
-    public boolean customizeRPCTestOutput(List<MockRPCExternalServiceDto> externalServiceDtos, List<String> sqlInsertions, List<EvaluatedRPCActionDto> actions) {
+    public boolean customizeRPCTestOutput(RPCTestWithResultsDto rpcTest) {
         return false;
     }
 
@@ -1507,6 +1509,16 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     @Override
     public boolean customizeMockingDatabase(List<MockDatabaseDto> databaseDtos, boolean enabled) {
+        return false;
+    }
+
+    @Override
+    public ScheduleTaskInvocationResultDto customizeScheduleTaskInvocation(CustomizedScheduleTaskInvocationDto invocationDto, boolean invoked) {
+        return null;
+    }
+
+    @Override
+    public boolean isScheduleTaskCompleted(ScheduleTaskInvocationResultDto invocationInfo) {
         return false;
     }
 

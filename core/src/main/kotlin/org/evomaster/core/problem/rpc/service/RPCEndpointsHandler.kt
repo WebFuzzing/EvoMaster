@@ -8,6 +8,7 @@ import org.evomaster.client.java.controller.api.dto.MockDatabaseDto
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.*
+import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCTestDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
@@ -164,7 +165,7 @@ class RPCEndpointsHandler {
     fun handleCustomizedTests(individuals : List<EvaluatedIndividual<RPCIndividual>>){
         val postSearchActionDto = PostSearchActionDto()
         postSearchActionDto.rpcTests = individuals.map {eval->
-            val test = RPCTestDto()
+            val test = RPCTestWithResultsDto()
             test.actions = eval.evaluatedMainActions().map { eval->
                 val call = eval.action as RPCCallAction
                 val res = eval.result as RPCCallResult
@@ -184,9 +185,9 @@ class RPCEndpointsHandler {
     /**
      * create RPC individual based on seeded tests
      */
-    fun handledSeededTests(tests: Map<String, List<RPCActionDto>>): List<RPCIndividual>{
+    fun handledSeededTests(tests: Map<String, RPCTestDto>): List<RPCIndividual>{
         return tests.map {e->
-            val rpcActionDtos = e.value
+            val rpcActionDtos = e.value.rpcFuctions
             val exActions = mutableListOf<List<ApiExternalServiceAction>>()
             val rpcActions = rpcActionDtos.map { rpcActionDto->
                 val external = mutableListOf<ApiExternalServiceAction>()
@@ -234,6 +235,9 @@ class RPCEndpointsHandler {
                 exActions.add(external)
                 processEndpoint(name, rpcActionDto, true)
             }.toMutableList()
+
+            // handle schedule task action
+            // TODO
 
             if (rpcActions.any { it.seeTopGenes().any { g-> !g.isLocallyValid() } }){
                 log.warn("The given test (${e.key}) is invalid (e.g., violate constraints) that will not be involved in the test generation")
@@ -565,10 +569,15 @@ class RPCEndpointsHandler {
         if (config.seedTestCases){
             // handle seeded test dto
             infoDto.rpcProblem.seededTestDtos?.values?.forEach { t->
-                t.forEach { a->
+                // handle rpc function with corresponding mock objects
+                t.rpcFuctions?.forEach { a->
                     extractRPCExternalServiceAction(infoDto, a)
                 }
+                // handle schedule task
+                // TODO
+
             }
+
         }
 
 
@@ -824,13 +833,14 @@ class RPCEndpointsHandler {
 //        }
 //    }
 
-    private fun transformResponseDto(action: RPCCallAction) : EvaluatedRPCActionDto{
+    private fun transformResponseDto(action: RPCCallAction) : RPCActionWithResultDto {
         // generate RPCActionDto
         val rpcAction = actionSchemaCluster[action.id]?.copy()?: throw IllegalStateException("cannot find the ${action.id} in actionSchemaCluster")
         val rpcResponseDto = rpcAction.responseParam
         if (action.response != null) transformGeneToParamDto(action.response!!.gene, rpcResponseDto)
 
-        val evaluatedDto = EvaluatedRPCActionDto()
+        val evaluatedDto =
+            RPCActionWithResultDto()
         evaluatedDto.rpcAction = transformActionDto(action)
         evaluatedDto.response = rpcResponseDto
         return evaluatedDto
