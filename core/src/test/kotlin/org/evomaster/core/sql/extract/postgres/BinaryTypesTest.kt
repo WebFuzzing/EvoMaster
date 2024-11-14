@@ -1,7 +1,7 @@
 package org.evomaster.core.sql.extract.postgres
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
-import org.evomaster.client.java.sql.SchemaExtractor
+import org.evomaster.client.java.sql.DbInfoExtractor
 import org.evomaster.client.java.sql.SqlScriptRunner
 import org.evomaster.core.sql.SqlActionTransformer
 import org.evomaster.core.sql.SqlInsertBuilder
@@ -22,7 +22,7 @@ class BinaryTypesTest : ExtractTestBasePostgres() {
     @Test
     fun testBinaryTypes() {
 
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
 
         assertNotNull(schema)
 
@@ -50,7 +50,7 @@ class BinaryTypesTest : ExtractTestBasePostgres() {
     @Test
     fun testFailure() {
 
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
 
         assertNotNull(schema)
 

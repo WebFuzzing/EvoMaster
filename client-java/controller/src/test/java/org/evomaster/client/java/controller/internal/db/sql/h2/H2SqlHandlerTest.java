@@ -2,7 +2,7 @@ package org.evomaster.client.java.controller.internal.db.sql.h2;
 
 import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionLogDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
-import org.evomaster.client.java.sql.SchemaExtractor;
+import org.evomaster.client.java.sql.DbInfoExtractor;
 import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.evomaster.client.java.sql.internal.SqlCommandWithDistance;
 import org.evomaster.client.java.sql.internal.SqlHandler;
@@ -25,8 +25,8 @@ public class H2SqlHandlerTest extends DatabaseH2TestInit {
                 "    age INT,\n" +
                 "    email VARCHAR(100)\n" +
                 ");");
-        SchemaExtractor schemaExtractor = new SchemaExtractor();
-        DbInfoDto schema = schemaExtractor.extract(connection);
+        DbInfoExtractor dbInfoExtractor = new DbInfoExtractor();
+        DbInfoDto schema = dbInfoExtractor.extract(connection);
         assertEquals(1, schema.tables.size());
         assertEquals("Person".toUpperCase(), schema.tables.get(0).name.toUpperCase());
 
@@ -57,8 +57,8 @@ public class H2SqlHandlerTest extends DatabaseH2TestInit {
                 "    age INT,\n" +
                 "    email VARCHAR(100)\n" +
                 ");");
-        SchemaExtractor schemaExtractor = new SchemaExtractor();
-        DbInfoDto schema = schemaExtractor.extract(connection);
+        DbInfoExtractor dbInfoExtractor = new DbInfoExtractor();
+        DbInfoDto schema = dbInfoExtractor.extract(connection);
         assertEquals(1, schema.tables.size());
         assertEquals("Person".toUpperCase(), schema.tables.get(0).name.toUpperCase());
 
@@ -95,8 +95,8 @@ public class H2SqlHandlerTest extends DatabaseH2TestInit {
                 "    age INT,\n" +
                 "    email VARCHAR(100)\n" +
                 ");");
-        SchemaExtractor schemaExtractor = new SchemaExtractor();
-        DbInfoDto schema = schemaExtractor.extract(connection);
+        DbInfoExtractor dbInfoExtractor = new DbInfoExtractor();
+        DbInfoDto schema = dbInfoExtractor.extract(connection);
         SqlHandler sqlHandler = new SqlHandler(null);
         sqlHandler.setConnection(connection);
         sqlHandler.setSchema(schema);
@@ -126,8 +126,8 @@ public class H2SqlHandlerTest extends DatabaseH2TestInit {
                 "    age INT,\n" +
                 "    email VARCHAR(100)\n" +
                 ");");
-        SchemaExtractor schemaExtractor = new SchemaExtractor();
-        DbInfoDto schema = schemaExtractor.extract(connection);
+        DbInfoExtractor dbInfoExtractor = new DbInfoExtractor();
+        DbInfoDto schema = dbInfoExtractor.extract(connection);
         SqlHandler sqlHandler = new SqlHandler(null);
         sqlHandler.setConnection(connection);
         sqlHandler.setSchema(schema);
@@ -159,8 +159,8 @@ public class H2SqlHandlerTest extends DatabaseH2TestInit {
         SqlScriptRunner.execCommand(connection, "INSERT INTO Person (person_id, first_name, last_name, age, email)\n" +
                 "VALUES (1, 'John', 'Doe', 30, 'john.doe@example.com');");
 
-        SchemaExtractor schemaExtractor = new SchemaExtractor();
-        DbInfoDto schema = schemaExtractor.extract(connection);
+        DbInfoExtractor dbInfoExtractor = new DbInfoExtractor();
+        DbInfoDto schema = dbInfoExtractor.extract(connection);
         SqlHandler sqlHandler = new SqlHandler(null);
         sqlHandler.setConnection(connection);
         sqlHandler.setSchema(schema);
@@ -192,8 +192,8 @@ public class H2SqlHandlerTest extends DatabaseH2TestInit {
         SqlScriptRunner.execCommand(connection, "INSERT INTO Person (person_id, first_name, last_name, age, email)\n" +
                 "VALUES (1, 'John', 'Doe', 30, 'john.doe@example.com');");
 
-        SchemaExtractor schemaExtractor = new SchemaExtractor();
-        DbInfoDto schema = schemaExtractor.extract(connection);
+        DbInfoExtractor dbInfoExtractor = new DbInfoExtractor();
+        DbInfoDto schema = dbInfoExtractor.extract(connection);
         SqlHandler sqlHandler = new SqlHandler(null);
         sqlHandler.setConnection(connection);
         sqlHandler.setSchema(schema);
@@ -224,8 +224,8 @@ public class H2SqlHandlerTest extends DatabaseH2TestInit {
                 "    email VARCHAR(100)\n" +
                 ");");
 
-        SchemaExtractor schemaExtractor = new SchemaExtractor();
-        DbInfoDto schema = schemaExtractor.extract(connection);
+        DbInfoExtractor dbInfoExtractor = new DbInfoExtractor();
+        DbInfoDto schema = dbInfoExtractor.extract(connection);
         SqlHandler sqlHandler = new SqlHandler(null);
         sqlHandler.setConnection(connection);
         sqlHandler.setSchema(schema);
@@ -256,8 +256,8 @@ public class H2SqlHandlerTest extends DatabaseH2TestInit {
                 "    email VARCHAR(100)\n" +
                 ");");
 
-        SchemaExtractor schemaExtractor = new SchemaExtractor();
-        DbInfoDto schema = schemaExtractor.extract(connection);
+        DbInfoExtractor dbInfoExtractor = new DbInfoExtractor();
+        DbInfoDto schema = dbInfoExtractor.extract(connection);
         SqlHandler sqlHandler = new SqlHandler(null);
         sqlHandler.setConnection(connection);
         sqlHandler.setSchema(schema);
@@ -288,8 +288,8 @@ public class H2SqlHandlerTest extends DatabaseH2TestInit {
                 "    email VARCHAR(100)\n" +
                 ");");
 
-        SchemaExtractor schemaExtractor = new SchemaExtractor();
-        DbInfoDto schema = schemaExtractor.extract(connection);
+        DbInfoExtractor dbInfoExtractor = new DbInfoExtractor();
+        DbInfoDto schema = dbInfoExtractor.extract(connection);
         SqlHandler sqlHandler = new SqlHandler(null);
         sqlHandler.setConnection(connection);
         sqlHandler.setSchema(schema);
@@ -320,8 +320,8 @@ public class H2SqlHandlerTest extends DatabaseH2TestInit {
                 "    email VARCHAR(100)\n" +
                 ");");
 
-        SchemaExtractor schemaExtractor = new SchemaExtractor();
-        DbInfoDto schema = schemaExtractor.extract(connection);
+        DbInfoExtractor dbInfoExtractor = new DbInfoExtractor();
+        DbInfoDto schema = dbInfoExtractor.extract(connection);
         SqlHandler sqlHandler = new SqlHandler(null);
         sqlHandler.setConnection(connection);
         sqlHandler.setSchema(schema);

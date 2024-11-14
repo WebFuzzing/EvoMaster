@@ -5,7 +5,7 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
 import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.evomaster.client.java.controller.internal.SutController;
-import org.evomaster.client.java.sql.SchemaExtractor;
+import org.evomaster.client.java.sql.DbInfoExtractor;
 import org.junit.jupiter.api.Test;
 
 import java.sql.*;
@@ -19,7 +19,7 @@ public class MySQLSchemaExtractorTest extends DatabaseMySQLTestInit implements D
 
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE TB(b BIT(8))");
 
-        DbInfoDto schema = SchemaExtractor.extract(getConnection());
+        DbInfoDto schema = DbInfoExtractor.extract(getConnection());
         assertNotNull(schema);
 
         TableDto table = schema.tables.get(0);
@@ -35,7 +35,7 @@ public class MySQLSchemaExtractorTest extends DatabaseMySQLTestInit implements D
 
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE TB(a INT(5) ZEROFILL, b BIGINT(10) UNSIGNED, c MEDIUMINT, d SERIAL);");
 
-        DbInfoDto schema = SchemaExtractor.extract(getConnection());
+        DbInfoDto schema = DbInfoExtractor.extract(getConnection());
         assertNotNull(schema);
 
         TableDto table = schema.tables.get(0);
@@ -81,7 +81,7 @@ public class MySQLSchemaExtractorTest extends DatabaseMySQLTestInit implements D
 
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE TableNot(intColumn INT)");
 
-        DbInfoDto schema = SchemaExtractor.extract(getConnection());
+        DbInfoDto schema = DbInfoExtractor.extract(getConnection());
         assertNotNull(schema);
 
         TableDto table = schema.tables.get(0);
@@ -105,7 +105,7 @@ public class MySQLSchemaExtractorTest extends DatabaseMySQLTestInit implements D
 
         SqlScriptRunner.execCommand(getConnection(), sql);
 
-        DbInfoDto schema = SchemaExtractor.extract(getConnection());
+        DbInfoDto schema = DbInfoExtractor.extract(getConnection());
         assertNotNull(schema);
 
         TableDto table = schema.tables.get(0);
@@ -160,12 +160,12 @@ public class MySQLSchemaExtractorTest extends DatabaseMySQLTestInit implements D
                 "    id INT\n" +
                 ")");
 
-        DbInfoDto schemaTest0 = SchemaExtractor.extract(testUser0Connection);
+        DbInfoDto schemaTest0 = DbInfoExtractor.extract(testUser0Connection);
         assertEquals("test", schemaTest0.name);
         assertEquals(1, schemaTest0.tables.size());
         assertEquals("my_table", schemaTest0.tables.get(0).name);
 
-        DbInfoDto newSchema = SchemaExtractor.extract(testUser1Connection);
+        DbInfoDto newSchema = DbInfoExtractor.extract(testUser1Connection);
         assertEquals("new_schema", newSchema.name);
         assertEquals(1, newSchema.tables.size());
         assertEquals("my_table", newSchema.tables.get(0).name);

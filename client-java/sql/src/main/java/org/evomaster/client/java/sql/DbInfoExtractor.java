@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class SchemaExtractor {
+public class DbInfoExtractor {
 
 
     public static final String GEOMETRY = "GEOMETRY";
