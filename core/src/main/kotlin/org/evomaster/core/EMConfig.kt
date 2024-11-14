@@ -2468,6 +2468,8 @@ class EMConfig {
      * MIO is the default search algorithm in EM for white-box testing.
      * Many techniques in EM are defined only for MIO, ie most improvements in EM are
      * done as an extension of MIO.
+     *
+     * FIXME this needs refactoring, to enable RW as well
      */
     fun isMIO() = algorithm == Algorithm.MIO || (algorithm == Algorithm.DEFAULT && !blackBox)
 
