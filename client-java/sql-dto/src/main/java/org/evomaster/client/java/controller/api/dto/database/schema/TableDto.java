@@ -5,6 +5,12 @@ import java.util.*;
 public class TableDto {
 
     /**
+     *  In Postgres this represents a "schema", whereas it is a "catalog" for MySQL.
+     *  In other words, this is used to group tables that can be indexed by this group name for disambiguation.
+     */
+    public String openGroupName;
+
+    /**
      * The name of the table
      */
     public String name;

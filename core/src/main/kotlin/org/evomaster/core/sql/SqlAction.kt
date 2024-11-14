@@ -129,7 +129,10 @@ class SqlAction(
     }
 
     override fun getName(): String {
-        return "SQL_Insert_${table.name}_${selectedColumns.map { it.name }.sorted().joinToString("_")}"
+        val c = if(connectionId.isNullOrEmpty()) "" else "_$connectionId"
+        val s = if(openGroupName.isNullOrEmpty()) "" else "_$openGroupName"
+        val t = "_${table.name}"
+        return "SQL_Insert$c$s${t}_${selectedColumns.map { it.name }.sorted().joinToString("_")}"
     }
 
     override fun seeTopGenes(): List<out Gene> {
