@@ -539,20 +539,31 @@ public class SchemaExtractor {
         }
     }
 
+    private static String getId(TableDto dto){
+        if(dto.openGroupName == null){
+            return dto.name;
+        }
+        return dto.openGroupName + "." + dto.name;
+    }
 
-    private static void handleTableEntry(Connection connection, DbInfoDto schemaDto, DatabaseMetaData md, ResultSet tables, Set<String> tableNames) throws SQLException {
+    private static void handleTableEntry(Connection connection, DbInfoDto schemaDto, DatabaseMetaData md, ResultSet tables, Set<String> tableIds) throws SQLException {
 
         String tableCatalog = tables.getString("TABLE_CAT");
         String tableSchema = tables.getString("TABLE_SCHEM");
 
-        if (schemaDto.databaseType.equals(DatabaseType.MYSQL) && tableSchema==null ) {
-            /**
-             * In some versions of MySQL, tableSchema is not stored in the
-             * TABLE_SCHEM column, but in the TABLE_CAT (Catalog) column.
-             * We first check if the table's schema is stored in the TABLE_SCHEM
-             * column. If it is not, we check default to the TABLE_CAT column
-             */
-            tableSchema =tableCatalog;
+        if(tableSchema==null) {
+            DatabaseType type = schemaDto.databaseType;
+            if (type.equals(DatabaseType.MYSQL)) {
+                /**
+                 * In some versions of MySQL, tableSchema is not stored in the
+                 * TABLE_SCHEM column, but in the TABLE_CAT (Catalog) column.
+                 * We first check if the table's schema is stored in the TABLE_SCHEM
+                 * column. If it is not, we check default to the TABLE_CAT column
+                 */
+                tableSchema = tableCatalog;
+            } else if(type.equals(DatabaseType.POSTGRES) || type.equals(DatabaseType.H2)) {
+                tableSchema = "public";
+            }
         }
 
         //no longer done: we extract all schemas for a given catalog
@@ -567,14 +578,15 @@ public class SchemaExtractor {
         TableDto tableDto = new TableDto();
         schemaDto.tables.add(tableDto);
         tableDto.name = tables.getString("TABLE_NAME");
+        tableDto.openGroupName = tableSchema;
 
-        if (tableNames.contains(tableDto.name)) {
+        if (tableIds.contains(getId(tableDto))) {
             /*
              * Perhaps we should throw a more specific exception than IllegalArgumentException
              */
-            throw new IllegalArgumentException("Cannot handle repeated table " + tableDto.name + " in schema");
+            throw new IllegalArgumentException("Cannot handle repeated table " + getId(tableDto) + " in database");
         } else {
-            tableNames.add(tableDto.name);
+            tableIds.add(getId(tableDto));
         }
 
         Set<String> pks = new HashSet<>();

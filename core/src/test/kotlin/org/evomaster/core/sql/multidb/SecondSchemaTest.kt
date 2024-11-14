@@ -33,7 +33,7 @@ class SecondSchemaTest {
 
         val info = SchemaExtractor.extract(connection)
         assertEquals(name.lowercase(), info.name.lowercase())
-        //assertEquals(2, info.tables.size)
+        assertEquals(2, info.tables.size)
         //TODO other checks
     }
 
