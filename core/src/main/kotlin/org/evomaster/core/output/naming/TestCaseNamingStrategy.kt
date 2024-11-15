@@ -39,6 +39,7 @@ abstract class TestCaseNamingStrategy(
      *
      * @return a Map of EvaluatedIndividuals and the disambiguated test case name
      */
-    protected abstract fun resolveAmbiguities(duplicatedIndividuals: MutableSet<EvaluatedIndividual<*>>): Map<EvaluatedIndividual<*>, String>
+//    protected abstract fun resolveAmbiguities(duplicatedIndividuals: MutableSet<EvaluatedIndividual<*>>): Map<EvaluatedIndividual<*>, String>
+    protected abstract fun resolveAmbiguities(duplicatedIndividuals: Set<EvaluatedIndividual<*>>): Map<EvaluatedIndividual<*>, String>
 
 }

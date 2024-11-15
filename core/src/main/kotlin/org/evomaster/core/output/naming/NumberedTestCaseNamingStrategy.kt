@@ -26,7 +26,8 @@ open class NumberedTestCaseNamingStrategy(
         return ""
     }
 
-    override fun resolveAmbiguities(duplicatedIndividuals: MutableSet<EvaluatedIndividual<*>>): Map<EvaluatedIndividual<*>, String> {
+//    override fun resolveAmbiguities(duplicatedIndividuals: MutableSet<EvaluatedIndividual<*>>): Map<EvaluatedIndividual<*>, String> {
+    override fun resolveAmbiguities(duplicatedIndividuals: Set<EvaluatedIndividual<*>>): Map<EvaluatedIndividual<*>, String> {
         // do nothing, plain numbered strategy will never have duplicate names
         return emptyMap()
     }
@@ -51,12 +52,18 @@ open class NumberedTestCaseNamingStrategy(
             var previousSize: Int
             do {
                 previousSize = it.size
-                individualToName.putAll(resolveAmbiguities(it))
+                val solvedAmbiguities = resolveAmbiguities(it)
+                individualToName.putAll(solvedAmbiguities)
+                removeSolvedDuplicates(it, solvedAmbiguities.keys)
             } while(previousSize != it.size)
         }
 
         var counter = 0
         return individualToName.map { entry -> TestCase(entry.key, concatName(counter++, entry.value)) }
+    }
+
+    private fun removeSolvedDuplicates(duplicatedIndividuals: MutableSet<EvaluatedIndividual<*>>, disambiguatedIndividuals: Set<EvaluatedIndividual<*>>) {
+        duplicatedIndividuals.removeAll(disambiguatedIndividuals)
     }
 
     private fun getDuplicateNames(individualToName: Map<EvaluatedIndividual<*>, String>): List<MutableSet<EvaluatedIndividual<*>>> {

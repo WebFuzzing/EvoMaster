@@ -25,7 +25,8 @@ open class GraphQLActionTestCaseNamingStrategy(
         return formatName(nameTokens)
     }
 
-    override fun resolveAmbiguities(duplicatedIndividuals: MutableSet<EvaluatedIndividual<*>>): Map<EvaluatedIndividual<*>, String> {
+//    override fun resolveAmbiguities(duplicatedIndividuals: MutableSet<EvaluatedIndividual<*>>): Map<EvaluatedIndividual<*>, String> {
+    override fun resolveAmbiguities(duplicatedIndividuals: Set<EvaluatedIndividual<*>>): Map<EvaluatedIndividual<*>, String> {
         // TODO do nothing at the moment. This will be completed with the experimental params disambiguation method
         return emptyMap()
     }
