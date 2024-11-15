@@ -12,7 +12,7 @@ import java.util.*
 object MultiDbUtils {
 
 
-    private const val POSTGRES_VERSION: String = "14";
+    private const val POSTGRES_VERSION: String = "17"
     private const val POSTGRES_PORT: Int = 5432
     private val postgres = KGenericContainer("postgres:$POSTGRES_VERSION")
         .withExposedPorts(POSTGRES_PORT)
@@ -21,62 +21,75 @@ object MultiDbUtils {
         .withTmpFs(Collections.singletonMap("/var/lib/postgresql/data", "rw"))
 
 
-    private const val MYSQL_DB_NAME = "test"
+  //  private const val MYSQL_DB_NAME = "test"
     private const val MYSQL_PORT = 3306
-    private const val MYSQL_VERSION = "8.0.27";
+    private const val MYSQL_VERSION = "8.0.27"
     private val mysql = KGenericContainer("mysql:$MYSQL_VERSION")
         .withEnv(
             mutableMapOf(
                 "MYSQL_ROOT_PASSWORD" to "root",
-                "MYSQL_DATABASE" to MYSQL_DB_NAME,  // TODO can this be removed?
+                //"MYSQL_DATABASE" to MYSQL_DB_NAME,  // TODO can this be removed?
                 "MYSQL_USER" to "test",
                 "MYSQL_PASSWORD" to "test"
             )
         )
+        .withTmpFs(Collections.singletonMap("/var/lib/mysql", "rw"))
         .withExposedPorts(MYSQL_PORT)
 
+
+    private fun getMySQLBaseUrl() : String{
+        val host = mysql.host
+        val port = mysql.getMappedPort(MYSQL_PORT)
+        return "jdbc:mysql://$host:$port/"
+    }
+
+    private fun getPostgresBaseUrl() : String{
+        val host = postgres.host
+        val port = postgres.getMappedPort(POSTGRES_PORT)
+        return "jdbc:postgresql://$host:$port/"
+    }
+
+    private fun getH2BaseUrl() : String{
+        return "jdbc:h2:mem:"
+    }
 
     fun createConnection(name: String, type: DatabaseType) : Connection {
 
         return when (type) {
             DatabaseType.MYSQL -> {
-                val host = mysql.host
-                val port = mysql.getMappedPort(MYSQL_PORT)
-                val url = "jdbc:mysql://$host:$port/$name"
-                DriverManager.getConnection(url, "test", "test")
+                DriverManager.getConnection("${getMySQLBaseUrl()}$name?allowMultiQueries=true", "root", "root")
             }
             DatabaseType.H2 -> {
-                DriverManager.getConnection("jdbc:h2:mem:$name", "sa", "")
+                DriverManager.getConnection("${getH2BaseUrl()}$name", "sa", "")
             }
             DatabaseType.POSTGRES -> {
-                val host = postgres.host
-                val port = postgres.getMappedPort(POSTGRES_PORT)
-                val url = "jdbc:postgresql://$host:$port/postgres"  //TODO check name
-                /*
-                 * A call to getConnection()  when the postgres container is still not ready,
-                 * signals a PSQLException with message "FATAL: the database system is starting up".
-                 * The following issue describes how to avoid this by using a LogMessageWaitStrategy
-                 * https://github.com/testcontainers/testcontainers-java/issues/317
-                 */
-                postgres.waitingFor(LogMessageWaitStrategy().withRegEx(".*database system is ready to accept connections.*\\s").withTimes(2))
-
-                DriverManager.getConnection(url, "postgres", "")
+                DriverManager.getConnection("${getPostgresBaseUrl()}$name", "postgres", "")
             }
             else -> throw IllegalArgumentException("Unsupported database type: ${type.name}")
         }
     }
 
-    fun resetDatabase(type: DatabaseType, connection: Connection) {
+    fun resetDatabase(name: String, type: DatabaseType) {
         when(type) {
-            DatabaseType.H2 -> SqlScriptRunner.execCommand(connection, "DROP ALL OBJECTS;")
-            //FIXME schema names need fixing. also is this actually dropping tables???
-            DatabaseType.MYSQL -> DbCleaner.dropDatabaseTables(connection, MYSQL_DB_NAME, null, DatabaseType.MYSQL)
+            DatabaseType.H2 -> {
+                val connection = createConnection(name, type)
+                connection.use {
+                    SqlScriptRunner.execCommand(connection, "DROP ALL OBJECTS;")
+                }
+            }
+            DatabaseType.MYSQL ->{
+                val main = DriverManager.getConnection(getMySQLBaseUrl(), "root", "root")
+                main.use {
+                    SqlScriptRunner.execCommand(main, "DROP DATABASE IF EXISTS $name")
+                    SqlScriptRunner.execCommand(main, "CREATE DATABASE $name")
+                }
+            }
             DatabaseType.POSTGRES -> {
-                //TODO what about other schemas/catalogs?
-                SqlScriptRunner.execCommand(connection, "DROP SCHEMA public CASCADE;")
-                SqlScriptRunner.execCommand(connection, "CREATE SCHEMA public;")
-                SqlScriptRunner.execCommand(connection, "GRANT ALL ON SCHEMA public TO postgres;")
-                SqlScriptRunner.execCommand(connection, "GRANT ALL ON SCHEMA public TO public;")
+                val main = DriverManager.getConnection(getPostgresBaseUrl(), "postgres", "")
+                main.use {
+                    SqlScriptRunner.execCommand(main, "DROP DATABASE IF EXISTS $name")
+                    SqlScriptRunner.execCommand(main, "CREATE DATABASE $name")
+                }
             }
             else -> throw IllegalArgumentException("Unsupported database type: ${type.name}")
         }
@@ -95,7 +108,16 @@ object MultiDbUtils {
         when(type) {
             DatabaseType.H2 -> {/* nothing to do*/ }
             DatabaseType.MYSQL -> mysql.stop()
-            DatabaseType.POSTGRES -> postgres.stop()
+            DatabaseType.POSTGRES -> {
+                postgres.stop()
+                /*
+               * A call to getConnection()  when the postgres container is still not ready,
+               * signals a PSQLException with message "FATAL: the database system is starting up".
+               * The following issue describes how to avoid this by using a LogMessageWaitStrategy
+               * https://github.com/testcontainers/testcontainers-java/issues/317
+               */
+                postgres.waitingFor(LogMessageWaitStrategy().withRegEx(".*database system is ready to accept connections.*\\s").withTimes(2))
+            }
             else -> throw IllegalArgumentException("Unsupported database type: ${type.name}")
         }
     }

@@ -16,6 +16,9 @@ public class SchemasToSkip {
         if(type == DatabaseType.H2){
             return Arrays.asList("INFORMATION_SCHEMA");
         }
+        if(type == DatabaseType.MYSQL){
+            return Arrays.asList("sys");
+        }
 
         return Collections.emptyList();
     }

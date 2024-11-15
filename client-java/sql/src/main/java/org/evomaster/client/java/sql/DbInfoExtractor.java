@@ -166,8 +166,13 @@ public class DbInfoExtractor {
             dbInfoDto.compositeTypes = getPostgresCompositeTypes(connection);
         }
 
-        ResultSet tables = md.getTables(dbInfoDto.name, null, null, new String[]{"TABLE"});
-
+        ResultSet tables;
+        if(dt.equals(DatabaseType.MYSQL)) {
+            //in MYSQL, catalogs are not sealed, ie tables can refer to tables in other catalogs
+            tables = md.getTables(null, null, null, new String[]{"TABLE"});
+        } else {
+            tables = md.getTables(dbInfoDto.name, null, null, new String[]{"TABLE"});
+        }
         Set<String> tableNames = new HashSet<>();
 
         /*
@@ -181,7 +186,7 @@ public class DbInfoExtractor {
         if (!tables.next()) {
             tables.close();
             dbInfoDto.name = dbInfoDto.name.toLowerCase();
-            tables = md.getTables(null, dbInfoDto.name, null, new String[]{"TABLE"});
+            tables = md.getTables(dbInfoDto.name,null, null, new String[]{"TABLE"});
             if (tables.next()) {
                 do {
                     handleTableEntry(connection, dbInfoDto, md, tables, tableNames);
