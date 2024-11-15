@@ -45,8 +45,8 @@ open class RestActionTestCaseNamingStrategy(
     }
 
     /**
-     * In REST Individuals, ambiguities will be resolved with the path solver.
-     * UriParams and QueryParams solvers will be left for experimentalPurposes.
+     * In REST Individuals, ambiguities will be resolved with the path and queryParams solvers.
+     * UriParams solver will be left for experimentalPurposes, as well as using the query param values for naming.
      *
      * Whenever an ambiguity is solved, then it should remove that test from the cycle. There is no need to execute the
      * following solvers.
@@ -110,7 +110,7 @@ open class RestActionTestCaseNamingStrategy(
     }
 
     /*
-     * If any test uses query prams, then add withQueryParam(s) after the path to them to make them differ.
+     * If any test uses query params, then add withQueryParam(s) after the path to them to make them differ.
      * The filter call ensures that we are only performing this disambiguation when there's only one individual that
      * differs and the list of query params is not empty.
      */
