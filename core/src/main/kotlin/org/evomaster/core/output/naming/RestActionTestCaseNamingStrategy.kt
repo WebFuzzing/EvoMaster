@@ -53,7 +53,7 @@ open class RestActionTestCaseNamingStrategy(
      */
     override fun resolveAmbiguities(duplicatedIndividuals: Set<EvaluatedIndividual<*>>): Map<EvaluatedIndividual<*>, String> {
         val solvedAmbiguities = mutableMapOf<EvaluatedIndividual<*>, String>()
-        var workingCopy = duplicatedIndividuals.toMutableSet()
+        val workingCopy = duplicatedIndividuals.toMutableSet()
 
         val pathDisambiguatedIndividuals = solvePathAmbiguities(workingCopy)
         solvedAmbiguities.putAll(pathDisambiguatedIndividuals)

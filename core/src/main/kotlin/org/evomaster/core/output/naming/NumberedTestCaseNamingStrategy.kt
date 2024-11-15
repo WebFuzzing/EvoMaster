@@ -26,7 +26,6 @@ open class NumberedTestCaseNamingStrategy(
         return ""
     }
 
-//    override fun resolveAmbiguities(duplicatedIndividuals: MutableSet<EvaluatedIndividual<*>>): Map<EvaluatedIndividual<*>, String> {
     override fun resolveAmbiguities(duplicatedIndividuals: Set<EvaluatedIndividual<*>>): Map<EvaluatedIndividual<*>, String> {
         // do nothing, plain numbered strategy will never have duplicate names
         return emptyMap()
