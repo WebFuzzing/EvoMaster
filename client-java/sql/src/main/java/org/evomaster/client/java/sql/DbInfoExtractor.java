@@ -601,8 +601,7 @@ public class DbInfoExtractor {
 
         Set<String> pks = new HashSet<>();
         SortedMap<Integer, String> primaryKeySequence = new TreeMap<>();
-        ResultSet rsPK = md.getPrimaryKeys(null, null, tableDto.name);
-
+        ResultSet rsPK = md.getPrimaryKeys(schemaDto.name, tableDto.openGroupName, tableDto.name);
 
         while (rsPK.next()) {
             String pkColumnName = rsPK.getString("COLUMN_NAME");
@@ -615,7 +614,7 @@ public class DbInfoExtractor {
 
         tableDto.primaryKeySequence.addAll(primaryKeySequence.values());
 
-        ResultSet columns = md.getColumns(null, schemaDto.name, tableDto.name, null);
+        ResultSet columns = md.getColumns(schemaDto.name, tableDto.openGroupName, tableDto.name, null);
 
         Set<String> columnNames = new HashSet<>();
         while (columns.next()) {

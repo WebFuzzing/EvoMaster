@@ -29,7 +29,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
         DbInfoDto schema = DbInfoExtractor.extract(getConnection());
         assertNotNull(schema);
 
-        assertAll(() -> assertEquals("public", schema.name.toLowerCase()),
+        assertAll(() -> assertEquals("db_test", schema.name.toLowerCase()),
                 () -> assertEquals(DatabaseType.H2, schema.databaseType),
                 () -> assertEquals(1, schema.tables.size()),
                 () -> assertEquals("foo", schema.tables.get(0).name.toLowerCase()),
