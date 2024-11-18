@@ -545,10 +545,10 @@ public class DbInfoExtractor {
     }
 
     private static String getId(TableDto dto){
-        if(dto.openGroupName == null){
+        if(dto.schema == null){
             return dto.name;
         }
-        return dto.openGroupName + "." + dto.name;
+        return dto.schema + "." + dto.name;
     }
 
     private static void handleTableEntry(Connection connection, DbInfoDto schemaDto, DatabaseMetaData md, ResultSet tables, Set<String> tableIds) throws SQLException {
@@ -571,15 +571,6 @@ public class DbInfoExtractor {
             }
         }
 
-        //no longer done: we extract all schemas for a given catalog
-//        if (tableSchema!=null && !tableSchema.equalsIgnoreCase(schemaDto.name)) {
-//            /**
-//             * If this table does not belong to the current schema under extraction,
-//             * skip adding the table.
-//             */
-//            return;
-//        }
-
         List<String> toSkip = SchemasToSkip.get(type);
         if(toSkip!=null && toSkip.contains(tableSchema)){
             return;
@@ -588,7 +579,8 @@ public class DbInfoExtractor {
         TableDto tableDto = new TableDto();
         schemaDto.tables.add(tableDto);
         tableDto.name = tables.getString("TABLE_NAME");
-        tableDto.openGroupName = tableSchema;
+        tableDto.schema = tableSchema;
+        tableDto.catalog = tableCatalog;
 
         if (tableIds.contains(getId(tableDto))) {
             /*
@@ -601,7 +593,7 @@ public class DbInfoExtractor {
 
         Set<String> pks = new HashSet<>();
         SortedMap<Integer, String> primaryKeySequence = new TreeMap<>();
-        ResultSet rsPK = md.getPrimaryKeys(schemaDto.name, tableDto.openGroupName, tableDto.name);
+        ResultSet rsPK = md.getPrimaryKeys(tableDto.catalog, tableDto.schema, tableDto.name);
 
         while (rsPK.next()) {
             String pkColumnName = rsPK.getString("COLUMN_NAME");
@@ -614,7 +606,7 @@ public class DbInfoExtractor {
 
         tableDto.primaryKeySequence.addAll(primaryKeySequence.values());
 
-        ResultSet columns = md.getColumns(schemaDto.name, tableDto.openGroupName, tableDto.name, null);
+        ResultSet columns = md.getColumns(tableDto.catalog, tableDto.schema, tableDto.name, null);
 
         Set<String> columnNames = new HashSet<>();
         while (columns.next()) {
@@ -663,7 +655,7 @@ public class DbInfoExtractor {
         columns.close();
 
 
-        ResultSet fks = md.getImportedKeys(null, null, tableDto.name);
+        ResultSet fks = md.getImportedKeys(tableDto.catalog, tableDto.schema, tableDto.name);
         while (fks.next()) {
             //TODO need to see how to handle case of multi-columns
 
@@ -738,7 +730,7 @@ public class DbInfoExtractor {
              * corresponding [DATA_TYPE] column value.
              */
             String sqlQuery = String.format("SELECT DATA_TYPE, table_schema from INFORMATION_SCHEMA.COLUMNS where\n" +
-                    " table_schema = '%s' and table_name = '%s' and column_name= '%s' ", tableDto.openGroupName, tableDto.name, columnDto.name);
+                    " table_schema = '%s' and table_name = '%s' and column_name= '%s' ", tableDto.schema, tableDto.name, columnDto.name);
             try (Statement statement = connection.createStatement()) {
                 ResultSet rs = statement.executeQuery(sqlQuery);
                 if (rs.next()) {

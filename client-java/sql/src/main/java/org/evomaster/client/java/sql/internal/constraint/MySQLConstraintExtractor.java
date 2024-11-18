@@ -42,7 +42,7 @@ public class MySQLConstraintExtractor extends TableConstraintExtractor{
         List<DbTableConstraint> constraints = new ArrayList<>();
 
         for (TableDto tableDto : schemaDto.tables){
-            String tableSchema = tableDto.openGroupName;
+            String tableSchema = tableDto.schema;
             String tableName = tableDto.name;
             try (Statement statement = connectionToMySQL.createStatement()) {
                 String query = String.format("SELECT *\n" +
