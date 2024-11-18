@@ -45,7 +45,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
     override fun doesStructureMutation(evaluatedIndividual: EvaluatedIndividual<T>): Boolean {
 
-        val prob = if(config.isMIO()){
+        val prob = if(config.isUsingAdvancedTechniques()){
             when (config.structureMutationProbStrategy) {
                 EMConfig.StructureMutationProbStrategy.SPECIFIED -> config.structureMutationProbability
                 EMConfig.StructureMutationProbStrategy.SPECIFIED_FS -> if (apc.doesFocusSearch()) config.structureMutationProFS else config.structureMutationProbability

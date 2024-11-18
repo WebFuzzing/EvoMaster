@@ -749,7 +749,7 @@ class EMConfig {
         throw IllegalArgumentException("Invalid boolean value: $s")
     }
 
-    fun shouldGenerateSqlData() = isMIO() && (generateSqlDataWithDSE || generateSqlDataWithSearch)
+    fun shouldGenerateSqlData() = isUsingAdvancedTechniques() && (generateSqlDataWithDSE || generateSqlDataWithSearch)
 
     fun shouldGenerateMongoData() = generateMongoData
 
@@ -2397,22 +2397,22 @@ class EMConfig {
         }
     }
 
-    fun trackingEnabled() = isMIO() && (enableTrackEvaluatedIndividual || enableTrackIndividual)
+    fun trackingEnabled() = isUsingAdvancedTechniques() && (enableTrackEvaluatedIndividual || enableTrackIndividual)
 
     /**
      * impact info can be collected when archive-based solution is enabled or doCollectImpact
      */
-    fun isEnabledImpactCollection() = isMIO() && doCollectImpact || isEnabledArchiveGeneSelection()
+    fun isEnabledImpactCollection() = isUsingAdvancedTechniques() && doCollectImpact || isEnabledArchiveGeneSelection()
 
     /**
      * @return whether archive-based gene selection is enabled
      */
-    fun isEnabledArchiveGeneSelection() = isMIO() && probOfArchiveMutation > 0.0 && adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE
+    fun isEnabledArchiveGeneSelection() = isUsingAdvancedTechniques() && probOfArchiveMutation > 0.0 && adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE
 
     /**
      * @return whether archive-based gene mutation is enabled based on the configuration, ie, EMConfig
      */
-    fun isEnabledArchiveGeneMutation() = isMIO() && archiveGeneMutation != ArchiveGeneMutation.NONE && probOfArchiveMutation > 0.0
+    fun isEnabledArchiveGeneMutation() = isUsingAdvancedTechniques() && archiveGeneMutation != ArchiveGeneMutation.NONE && probOfArchiveMutation > 0.0
 
     fun isEnabledArchiveSolution() = isEnabledArchiveGeneMutation() || isEnabledArchiveGeneSelection()
 
@@ -2420,7 +2420,7 @@ class EMConfig {
     /**
      * @return whether enable resource-based method
      */
-    fun isEnabledResourceStrategy() = isMIO() && resourceSampleStrategy != ResourceSamplingStrategy.NONE
+    fun isEnabledResourceStrategy() = isUsingAdvancedTechniques() && resourceSampleStrategy != ResourceSamplingStrategy.NONE
 
     /**
      * @return whether enable resource-dependency based method
@@ -2459,29 +2459,31 @@ class EMConfig {
         return IdMapper.ALL_ACCEPTED_OBJECTIVE_PREFIXES.filter { excluded.contains(it.lowercase()) }
     }
 
-    fun isEnabledMutatingResponsesBasedOnActualResponse() = isMIO() && (probOfMutatingResponsesBasedOnActualResponse > 0)
+    fun isEnabledMutatingResponsesBasedOnActualResponse() = isUsingAdvancedTechniques() && (probOfMutatingResponsesBasedOnActualResponse > 0)
 
-    fun isEnabledHarvestingActualResponse(): Boolean = isMIO() && (probOfHarvestingResponsesFromActualExternalServices > 0 || probOfMutatingResponsesBasedOnActualResponse > 0)
+    fun isEnabledHarvestingActualResponse(): Boolean = isUsingAdvancedTechniques() && (probOfHarvestingResponsesFromActualExternalServices > 0 || probOfMutatingResponsesBasedOnActualResponse > 0)
 
     /**
-     * Check if the used algorithm is MIO.
      * MIO is the default search algorithm in EM for white-box testing.
      * Many techniques in EM are defined only for MIO, ie most improvements in EM are
      * done as an extension of MIO.
+     * Other search algorithms might use these advanced techniques, but would require non-standard exceptions.
      *
-     * FIXME this needs refactoring, to enable RW as well
      */
-    fun isMIO() = algorithm == Algorithm.MIO || (algorithm == Algorithm.DEFAULT && !blackBox)
+    fun isUsingAdvancedTechniques() =
+        algorithm == Algorithm.MIO
+                || algorithm == Algorithm.RW // Random Walk is just used to study Fitness Landscape in MIO
+                || (algorithm == Algorithm.DEFAULT && !blackBox)
 
-    fun isEnabledTaintAnalysis() = isMIO() && baseTaintAnalysisProbability > 0
+    fun isEnabledTaintAnalysis() = isUsingAdvancedTechniques() && baseTaintAnalysisProbability > 0
 
-    fun isEnabledSmartSampling() = (isMIO() || algorithm == Algorithm.SMARTS) && probOfSmartSampling > 0
+    fun isEnabledSmartSampling() = (isUsingAdvancedTechniques() || algorithm == Algorithm.SMARTS) && probOfSmartSampling > 0
 
-    fun isEnabledWeightBasedMutation() = isMIO() && weightBasedMutationRate
+    fun isEnabledWeightBasedMutation() = isUsingAdvancedTechniques() && weightBasedMutationRate
 
-    fun isEnabledInitializationStructureMutation() = isMIO() && initStructureMutationProbability > 0 && maxSizeOfMutatingInitAction > 0
+    fun isEnabledInitializationStructureMutation() = isUsingAdvancedTechniques() && initStructureMutationProbability > 0 && maxSizeOfMutatingInitAction > 0
 
-    fun isEnabledResourceSizeHandling() = isMIO() && probOfHandlingLength > 0 && maxSizeOfHandlingResource > 0
+    fun isEnabledResourceSizeHandling() = isUsingAdvancedTechniques() && probOfHandlingLength > 0 && maxSizeOfHandlingResource > 0
 
     fun getTagFilters() = endpointTagFilter?.split(",")?.map { it.trim() } ?: listOf()
 }
