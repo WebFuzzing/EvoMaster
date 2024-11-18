@@ -1,7 +1,7 @@
 package org.evomaster.core.sql.extract.h2
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
-import org.evomaster.client.java.sql.SchemaExtractor
+import org.evomaster.client.java.sql.DbInfoExtractor
 import org.evomaster.client.java.sql.SqlScriptRunner
 import org.evomaster.core.sql.SqlActionTransformer
 import org.evomaster.core.sql.SqlActionUtils
@@ -22,11 +22,11 @@ class CatwatchSqlExtractTest : ExtractTestBaseH2(){
     @Test
     fun testCreateAndExtract() {
 
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
 
         assertNotNull(schema)
 
-        assertAll(Executable { assertEquals("public", schema.name.toLowerCase()) },
+        assertAll(Executable { assertEquals("db_test", schema.name.lowercase()) },
                 Executable { assertEquals(DatabaseType.H2, schema.databaseType) },
                 Executable { assertEquals(5, schema.tables.size) },
                 Executable { assertTrue(schema.tables.any { it.name == "CONTRIBUTOR" }) },
@@ -46,7 +46,7 @@ class CatwatchSqlExtractTest : ExtractTestBaseH2(){
     @Test
     fun testDynamicFKsReferToAutoId(){
 
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
 

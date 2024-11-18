@@ -21,7 +21,7 @@ import org.evomaster.client.java.controller.api.dto.database.operations.Insertio
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionResultsDto;
-import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.ExtraConstraintsDto;
 import org.evomaster.client.java.controller.api.dto.MockDatabaseDto;
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto;
@@ -31,7 +31,7 @@ import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.evomaster.client.java.sql.SqlScriptRunnerCached;
 import org.evomaster.client.java.sql.DbSpecification;
 import org.evomaster.client.java.controller.internal.db.MongoHandler;
-import org.evomaster.client.java.sql.SchemaExtractor;
+import org.evomaster.client.java.sql.DbInfoExtractor;
 import org.evomaster.client.java.sql.internal.SqlHandler;
 import org.evomaster.client.java.controller.mongo.MongoScriptRunner;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
@@ -90,7 +90,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     /**
      * If using a SQL Database, gather info about its schema
      */
-    private DbSchemaDto schemaDto;
+    private DbInfoDto schemaDto;
 
     /**
      * For each action in a test, keep track of the extra heuristics, if any
@@ -659,7 +659,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      * @return a DTO with the schema information
      * @see SutHandler#getDbSpecifications
      */
-    public final DbSchemaDto getSqlDatabaseSchema() {
+    public final DbInfoDto getSqlDatabaseSchema() {
         if (schemaDto != null) {
             return schemaDto;
         }
@@ -669,7 +669,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         }
 
         try {
-            schemaDto = SchemaExtractor.extract(getConnectionIfExist());
+            schemaDto = DbInfoExtractor.extract(getConnectionIfExist());
             Objects.requireNonNull(schemaDto);
             schemaDto.employSmartDbClean = doEmploySmartDbClean();
         } catch (Exception e) {
