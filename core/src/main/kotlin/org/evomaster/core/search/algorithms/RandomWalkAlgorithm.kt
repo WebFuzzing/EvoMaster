@@ -43,11 +43,6 @@ class RandomWalkAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
             return
         }
 
-        /*
-            TODO: EMConfig option to choose between
-            structure+standard vs only-standard
-         */
-
         val mutatedIndividual = getMutatator().mutate(latestEvaluatedIndividual as EvaluatedIndividual<T>)
 
         ff.calculateCoverage(mutatedIndividual)?.run {
