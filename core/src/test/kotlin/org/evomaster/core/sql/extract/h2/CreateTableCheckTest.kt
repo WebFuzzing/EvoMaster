@@ -20,7 +20,7 @@ class CreateTableCheckTest : ExtractTestBaseH2() {
 
         assertNotNull(schema)
 
-        assertEquals("public", schema.name.toLowerCase())
+        assertEquals("db_test", schema.name.lowercase())
         assertEquals(DatabaseType.H2, schema.databaseType)
         assertTrue(schema.tables.any { it.name == "PEOPLE" })
 

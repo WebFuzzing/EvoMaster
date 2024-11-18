@@ -26,7 +26,7 @@ class CatwatchSqlExtractTest : ExtractTestBaseH2(){
 
         assertNotNull(schema)
 
-        assertAll(Executable { assertEquals("public", schema.name.toLowerCase()) },
+        assertAll(Executable { assertEquals("db_test", schema.name.lowercase()) },
                 Executable { assertEquals(DatabaseType.H2, schema.databaseType) },
                 Executable { assertEquals(5, schema.tables.size) },
                 Executable { assertTrue(schema.tables.any { it.name == "CONTRIBUTOR" }) },

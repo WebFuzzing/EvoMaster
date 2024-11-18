@@ -26,7 +26,7 @@ class TextSearchTypesTest : ExtractTestBasePostgres() {
 
         assertNotNull(schema)
 
-        assertEquals("public", schema.name.lowercase())
+        assertEquals("postgres", schema.name.lowercase())
         assertEquals(DatabaseType.POSTGRES, schema.databaseType)
 
         val builder = SqlInsertBuilder(schema)
@@ -65,7 +65,7 @@ class TextSearchTypesTest : ExtractTestBasePostgres() {
 
         assertNotNull(schema)
 
-        assertEquals("public", schema.name.lowercase())
+        assertEquals("postgres", schema.name.lowercase())
         assertEquals(DatabaseType.POSTGRES, schema.databaseType)
 
         val builder = SqlInsertBuilder(schema)
@@ -88,7 +88,7 @@ class TextSearchTypesTest : ExtractTestBasePostgres() {
 
         assertNotNull(schema)
 
-        assertEquals("public", schema.name.lowercase())
+        assertEquals("postgres", schema.name.lowercase())
         assertEquals(DatabaseType.POSTGRES, schema.databaseType)
 
         val builder = SqlInsertBuilder(schema)
@@ -131,7 +131,7 @@ class TextSearchTypesTest : ExtractTestBasePostgres() {
 
         assertNotNull(schema)
 
-        assertEquals("public", schema.name.lowercase())
+        assertEquals("postgres", schema.name.lowercase())
         assertEquals(DatabaseType.POSTGRES, schema.databaseType)
 
         val builder = SqlInsertBuilder(schema)

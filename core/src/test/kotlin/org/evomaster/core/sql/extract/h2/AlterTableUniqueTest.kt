@@ -17,7 +17,7 @@ class AlterTableUniqueTest : ExtractTestBaseH2() {
 
         assertNotNull(schema)
 
-        assertAll(Executable { assertEquals("public", schema.name.lowercase()) },
+        assertAll(Executable { assertEquals("db_test", schema.name.lowercase()) },
                 Executable { assertEquals(DatabaseType.H2, schema.databaseType) },
                 Executable { assertEquals(2, schema.tables.size) },
                 Executable { assertTrue(schema.tables.any { it.name == "COUNTRIES" }, "missing table COUNTRIES") },

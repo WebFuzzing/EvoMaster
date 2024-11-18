@@ -36,7 +36,7 @@ class ArrayTypesTest : ExtractTestBasePostgres() {
 
         assertNotNull(schema)
 
-        assertEquals("public", schema.name.lowercase())
+        assertEquals("postgres", schema.name.lowercase())
         assertEquals(DatabaseType.POSTGRES, schema.databaseType)
 
         assertTrue(schema.tables.any { it.name.equals("ArrayTypes".lowercase()) })

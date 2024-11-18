@@ -20,7 +20,7 @@ class AlterTableExtractCheckTest : ExtractTestBasePostgres() {
 
         assertNotNull(schema)
 
-        assertEquals("public", schema.name.toLowerCase())
+        assertEquals("postgres", schema.name.lowercase())
         assertEquals(DatabaseType.POSTGRES, schema.databaseType)
         assertTrue(schema.tables.any { it.name == "people" })
 
