@@ -74,7 +74,6 @@ class HttpSemanticsService {
     private fun addForHttpSemantics() {
 
 //        – invalid location, leading to a 404 when doing a follow up GET
-//        – PUT with different status from 2xx should have no side-effects. Can be verified with before and after GET. PATCH can be tricky
 //        – PUT for X, and then GET on it, should return exactly X (eg, check no partial updates)
 //        – PUT if creating, must get 201. That means a previous GET must return 404 (or at least not a 2xx) .
 //        – JSON-Merge-Patch: partial update should not impact other fields. Can have GET, PATCH, and GET to verify it
@@ -85,6 +84,9 @@ class HttpSemanticsService {
 
         // –  A repeated followup PUT with 201 on same endpoint should not return 201 (must enforce 200 or 204)
         putRepeatedCreated()
+
+//        – PUT with different status from 2xx should have no side-effects. Can be verified with before and after GET. PATCH can be tricky
+        putSideEffects()
     }
 
     /**
