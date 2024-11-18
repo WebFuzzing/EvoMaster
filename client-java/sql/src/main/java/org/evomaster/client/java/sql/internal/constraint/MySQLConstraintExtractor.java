@@ -38,10 +38,11 @@ public class MySQLConstraintExtractor extends TableConstraintExtractor{
 
     @Override
     public List<DbTableConstraint> extract(Connection connectionToMySQL, DbInfoDto schemaDto) throws SQLException {
-        String tableSchema = schemaDto.name;
+
         List<DbTableConstraint> constraints = new ArrayList<>();
 
         for (TableDto tableDto : schemaDto.tables){
+            String tableSchema = tableDto.openGroupName;
             String tableName = tableDto.name;
             try (Statement statement = connectionToMySQL.createStatement()) {
                 String query = String.format("SELECT *\n" +

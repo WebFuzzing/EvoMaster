@@ -433,12 +433,12 @@ public class DbInfoExtractor {
      * @return a list of enum constraints
      * @throws SQLException if any column name is incorrect
      */
-    private static List<DbTableConstraint> getH2EnumTypes(String schemaName, DatabaseMetaData md) throws SQLException {
+    private static List<DbTableConstraint> getH2EnumTypes(String catalogName, DatabaseMetaData md) throws SQLException {
         List<DbTableConstraint> enumTypesConstraints = new LinkedList<>();
-        ResultSet tables = md.getTables(null, schemaName, null, new String[]{"TABLE"});
+        ResultSet tables = md.getTables(catalogName, null, null, new String[]{"TABLE"});
         while (tables.next()) {
             String tableName = tables.getString("TABLE_NAME");
-            ResultSet columns = md.getColumns(null, schemaName, tableName, null);
+            ResultSet columns = md.getColumns(catalogName, null, tableName, null);
             while (columns.next()) {
                 String columnName = columns.getString("COLUMN_NAME");
                 String typeName = columns.getString("TYPE_NAME");
@@ -738,7 +738,7 @@ public class DbInfoExtractor {
              * corresponding [DATA_TYPE] column value.
              */
             String sqlQuery = String.format("SELECT DATA_TYPE, table_schema from INFORMATION_SCHEMA.COLUMNS where\n" +
-                    " table_schema = '%s' and table_name = '%s' and column_name= '%s' ", schemaDto.name, tableDto.name, columnDto.name);
+                    " table_schema = '%s' and table_name = '%s' and column_name= '%s' ", tableDto.openGroupName, tableDto.name, columnDto.name);
             try (Statement statement = connection.createStatement()) {
                 ResultSet rs = statement.executeQuery(sqlQuery);
                 if (rs.next()) {

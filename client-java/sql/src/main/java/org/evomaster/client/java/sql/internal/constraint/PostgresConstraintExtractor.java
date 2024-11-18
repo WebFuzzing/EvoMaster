@@ -69,11 +69,12 @@ public class PostgresConstraintExtractor extends TableConstraintExtractor {
     }
 
     public List<DbTableConstraint> extract(Connection connectionToPostgres, DbInfoDto schemaDto) throws SQLException {
-        String tableSchema = schemaDto.name;
+
         List<DbTableConstraint> constraints = new ArrayList<>();
         for (TableDto tableDto : schemaDto.tables) {
+            String tableSchema = tableDto.openGroupName;
+            String tableName = tableDto.name;
             try (Statement statement = connectionToPostgres.createStatement()) {
-                String tableName = tableDto.name;
 
 
                 String query = String.format("SELECT pg_get_expr(con.conbin, con.conrelid) as " + CONSTRAINT_EXPRESSION + ", " +

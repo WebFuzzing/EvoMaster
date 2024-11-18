@@ -166,8 +166,11 @@ public class MySQLSchemaExtractorTest extends DatabaseMySQLTestInit implements D
         assertEquals("my_table", schemaTest0.tables.get(0).name);
 
         DbInfoDto newSchema = DbInfoExtractor.extract(testUser1Connection);
-        assertEquals("new_schema", newSchema.name);
-        assertEquals(1, newSchema.tables.size());
+//        assertEquals("new_schema", newSchema.name);
+        assertEquals("test", newSchema.name); //the connection is still on same URL, with same catalog
+        //assertEquals(1, newSchema.tables.size());
+        //we are now fetching data for all schemas (/catalogs in MySQL)
+        assertEquals(2, newSchema.tables.size());
         assertEquals("my_table", newSchema.tables.get(0).name);
 
         SqlScriptRunner.execCommand(testUser1Connection, "DROP SCHEMA IF EXISTS new_schema");

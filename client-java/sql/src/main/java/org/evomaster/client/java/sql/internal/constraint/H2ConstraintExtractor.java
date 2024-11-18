@@ -93,8 +93,8 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
                                                                               DbInfoDto schemaDto) throws SQLException {
         List<DbTableConstraint> tableCheckExpressions = new ArrayList<>();
 
-        String tableSchema = schemaDto.name;
         for (TableDto tableDto : schemaDto.tables) {
+            String tableSchema = tableDto.openGroupName;
             String tableName = tableDto.name;
             try (Statement statement = connectionToH2.createStatement()) {
                 final String query = String.format("Select CONSTRAINT_CATALOG,CONSTRAINT_SCHEMA,CONSTRAINT_NAME,CONSTRAINT_TYPE From INFORMATION_SCHEMA.TABLE_CONSTRAINTS\n" +
@@ -190,8 +190,9 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
      */
     private List<DbTableConstraint> extractTableConstraintsVersionOneOrLower(Connection connectionToH2, DbInfoDto schemaDto) throws SQLException {
         List<DbTableConstraint> tableCheckExpressions = new ArrayList<>();
-        String tableSchema = schemaDto.name;
+
         for (TableDto tableDto : schemaDto.tables) {
+            String tableSchema = tableDto.openGroupName;
             String tableName = tableDto.name;
             try (Statement statement = connectionToH2.createStatement()) {
                 final String query = String.format("Select CONSTRAINT_TYPE, CHECK_EXPRESSION, COLUMN_LIST From INFORMATION_SCHEMA.CONSTRAINTS\n" +
@@ -251,9 +252,10 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
         if (H2VersionUtils.isVersionGreaterOrEqual(h2DatabaseVersion, H2VersionUtils.H2_VERSION_2_0_0)) {
             throw new IllegalArgumentException("Cannot extract column constraints for H2 version 2 or higher with H2 database version  " + h2DatabaseVersion);
         }
-        String tableSchema = schemaDto.name;
+
         List<DbTableConstraint> columnConstraints = new ArrayList<>();
         for (TableDto tableDto : schemaDto.tables) {
+            String tableSchema = tableDto.openGroupName;
             String tableName = tableDto.name;
 
             try (Statement statement = connectionToH2.createStatement()) {
