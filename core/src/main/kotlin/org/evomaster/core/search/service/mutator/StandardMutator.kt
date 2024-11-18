@@ -44,6 +44,8 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
     }
 
     override fun doesStructureMutation(evaluatedIndividual: EvaluatedIndividual<T>): Boolean {
+        if(!config.enableStructureMutation)
+            return false
 
         val prob = if(config.isUsingAdvancedTechniques()){
             when (config.structureMutationProbStrategy) {

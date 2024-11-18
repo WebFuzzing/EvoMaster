@@ -1623,6 +1623,10 @@ class EMConfig {
         ADAPTIVE_WITH_IMPACT
     }
 
+    @Cfg("Whether or not to enable a structure mutation for mutating individuals." +
+            " This feature can only be activated for algorithms that support structural mutation, such as MIO or RW.")
+    var enableStructureMutation = true
+
     @Experimental
     @Cfg("Specify a max size of resources in a test. 0 means the there is no specified restriction on a number of resources")
     @Min(0.0)
