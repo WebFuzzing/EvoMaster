@@ -1,5 +1,9 @@
 # Seminars/Presentations
 
+* 2024: *AI for Fuzz Testing Web APIs*.
+  Presentation given at Beihang University.
+  [[PDF](slides/2024_beihang.pdf)]
+
 * 2024: *Fuzz Testing Web APIs: Overview of Existing Tools*.
   Presentation given at AutomationSTAR 2024.
   [[PDF](slides/2024_automationstar.pdf)]
