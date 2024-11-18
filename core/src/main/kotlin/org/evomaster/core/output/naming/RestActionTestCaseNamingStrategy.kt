@@ -6,6 +6,7 @@ import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestPath
+import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.action.Action
@@ -44,14 +45,25 @@ open class RestActionTestCaseNamingStrategy(
     }
 
     /**
-     * In REST Individuals, ambiguities will be resolved with the path solver.
-     * UriParams and QueryParams solvers will be left for experimentalPurposes.
+     * In REST Individuals, ambiguities will be resolved with the path and queryParams solvers.
+     * UriParams solver will be left for experimentalPurposes, as well as using the query param values for naming.
      *
      * Whenever an ambiguity is solved, then it should remove that test from the cycle. There is no need to execute the
      * following solvers.
      */
-    override fun resolveAmbiguities(duplicatedIndividuals: MutableSet<EvaluatedIndividual<*>>): Map<EvaluatedIndividual<*>, String> {
-        return checkForPath(duplicatedIndividuals)
+    override fun resolveAmbiguities(duplicatedIndividuals: Set<EvaluatedIndividual<*>>): Map<EvaluatedIndividual<*>, String> {
+        val solvedAmbiguities = mutableMapOf<EvaluatedIndividual<*>, String>()
+        val workingCopy = duplicatedIndividuals.toMutableSet()
+
+        val pathDisambiguatedIndividuals = solvePathAmbiguities(workingCopy)
+        solvedAmbiguities.putAll(pathDisambiguatedIndividuals)
+        removeSolvedDuplicates(workingCopy, pathDisambiguatedIndividuals.keys)
+
+        val queryParamsDisambiguatedIndividuals = solveQueryParamsAmbiguities(workingCopy)
+        solvedAmbiguities.putAll(queryParamsDisambiguatedIndividuals)
+        removeSolvedDuplicates(workingCopy, queryParamsDisambiguatedIndividuals.keys)
+
+        return solvedAmbiguities
     }
 
     /*
@@ -60,7 +72,7 @@ open class RestActionTestCaseNamingStrategy(
      * differs and when said individual does not have a parameter as a last element since it might differ in the
      * parameter name but not the rest of the path.
      */
-    private fun checkForPath(duplicatedIndividuals: MutableSet<EvaluatedIndividual<*>>): Map<EvaluatedIndividual<*>, String> {
+    private fun solvePathAmbiguities(duplicatedIndividuals: MutableSet<EvaluatedIndividual<*>>): Map<EvaluatedIndividual<*>, String> {
         return duplicatedIndividuals
             .groupBy {
                 var path = (it.evaluatedMainActions().last().action as RestCallAction).path
@@ -74,7 +86,7 @@ open class RestActionTestCaseNamingStrategy(
             .filter { it.value.size == 1 && !it.key.second }
             .mapNotNull { entry ->
                 val eInd = entry.value[0]
-                duplicatedIndividuals.remove(eInd)
+//                duplicatedIndividuals.remove(eInd)
                 eInd to expandName(eInd, mutableListOf(), ::pathAmbiguitySolver)
             }
             .toMap()
@@ -103,6 +115,43 @@ open class RestActionTestCaseNamingStrategy(
     private fun getParentPathQualifier(parentPath: RestPath): String {
         val parentPathQualifier = parentPath.nameQualifier
         return if (parentPathQualifier == "/") "" else getPath(parentPathQualifier)
+    }
+
+    /*
+     * If any test uses query params, then add withQueryParam(s) after the path to them to make them differ.
+     * The filter call ensures that we are only performing this disambiguation when there's only one individual that
+     * differs and the list of query params is not empty.
+     */
+    private fun solveQueryParamsAmbiguities(duplicatedIndividuals: MutableSet<EvaluatedIndividual<*>>): Map<EvaluatedIndividual<*>, String> {
+        return duplicatedIndividuals
+            .groupBy {
+                (it.evaluatedMainActions().last().action as RestCallAction).parameters.filterIsInstance<QueryParam>()
+            }
+            .filter { it.value.size == 1 && it.key.isNotEmpty()}
+            .mapNotNull { entry ->
+                val eInd = entry.value[0]
+//                duplicatedIndividuals.remove(eInd)
+                eInd to expandName(eInd, mutableListOf(), ::queryParamsAmbiguitySolver)
+            }
+            .toMap()
+    }
+
+    /*
+     * If there are more than one query parameters, then use plural.
+     */
+    private fun queryParamsAmbiguitySolver(action: Action): List<String> {
+        val restAction = action as RestCallAction
+        val result = mutableListOf<String>()
+        result.add(getPath(restAction.path.nameQualifier))
+
+        val queryParams = restAction.parameters.filterIsInstance<QueryParam>()
+        result.add(with)
+        result.add(if (queryParams.size > 1) "${queryParam}s" else queryParam)
+        return result
+    }
+
+    private fun removeSolvedDuplicates(duplicatedIndividuals: MutableSet<EvaluatedIndividual<*>>, disambiguatedIndividuals: Set<EvaluatedIndividual<*>>) {
+        duplicatedIndividuals.removeAll(disambiguatedIndividuals)
     }
 
     private fun isGetCall(evaluatedAction: EvaluatedAction): Boolean {
