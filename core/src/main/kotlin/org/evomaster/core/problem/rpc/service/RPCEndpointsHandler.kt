@@ -31,6 +31,7 @@ import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.problem.rpc.auth.RPCAuthenticationInfo
 import org.evomaster.core.problem.rpc.auth.RPCNoAuth
 import org.evomaster.core.problem.rpc.param.RPCParam
+import org.evomaster.core.problem.scheduletask.ScheduleTaskAction
 import org.evomaster.core.problem.util.ActionBuilderUtil
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.util.ParserDtoUtil.parseJsonNodeAsGene
@@ -99,6 +100,12 @@ class RPCEndpointsHandler {
     private val actionSchemaCluster = mutableMapOf<String, RPCActionDto>()
 
     /**
+     * key is an id of the schedule task, ie, task id
+     * value is corresponding endpoint dto schema
+     */
+    private val scheduleTaskSchemaCluster = mutableMapOf<String, ScheduleTaskInvocationDto>()
+
+    /**
      * a map of authorizedAction with available auth info
      * - Key is the id of action (which is consistent with key of [actionSchemaCluster])
      * - Value is a list of auth (which is based on key of [authentications])
@@ -140,6 +147,12 @@ class RPCEndpointsHandler {
      * - value is the example of MockDatabaseDto
      */
     private val seededDbMockObjects = mutableMapOf<String, DbAsExternalServiceAction>()
+
+    /**
+     * a map of schedule tasks based on seeded tests
+     *
+     */
+    private val seededScheduleTaskActions = mutableMapOf<String, ScheduleTaskAction>()
 
     /**
      * key is type in the schema
@@ -211,8 +224,7 @@ class RPCEndpointsHandler {
                     external.addAll(ex)
                 }
 
-
-               if (rpcActionDto.mockDatabaseDtos != null && rpcActionDto.mockDatabaseDtos.isNotEmpty()){
+                if (rpcActionDto.mockDatabaseDtos != null && rpcActionDto.mockDatabaseDtos.isNotEmpty()){
                    val dbEx = rpcActionDto.mockDatabaseDtos.map { dbDto->
                         val dbExAction = seededDbMockObjects[
                             getDbAsExternalServiceAction(dbDto)
@@ -239,6 +251,7 @@ class RPCEndpointsHandler {
             // handle schedule task action
             // TODO
 
+
             if (rpcActions.any { it.seeTopGenes().any { g-> !g.isLocallyValid() } }){
                 log.warn("The given test (${e.key}) is invalid (e.g., violate constraints) that will not be involved in the test generation")
                 null
@@ -257,6 +270,10 @@ class RPCEndpointsHandler {
         }catch (e: Exception){
             null
         }
+    }
+
+    private fun extractScheduleTaskAction(scheduleTaskInvocationDto: ScheduleTaskInvocationDto){
+        val key = scheduleTaskActionName(scheduleTaskInvocationDto.taskName)
     }
 
     private fun extractRPCExternalServiceAction(sutInfoDto: SutInfoDto, rpcActionDto: RPCActionDto){
@@ -327,8 +344,7 @@ class RPCEndpointsHandler {
 
         rpcActionDto.mockDatabaseDtos?.forEach{ dbDto->
             if (dbDto.commandName != null && dbDto.appKey!=null && dbDto.responseFullType != null){
-                val exKey = DbAsExternalServiceAction
-                    .getDbAsExternalServiceAction(dbDto.commandName, dbDto.requests, dbDto.responseFullTypeWithGeneric?:dbDto.responseFullType)
+                val exKey = getDbAsExternalServiceAction(dbDto.commandName, dbDto.requests, dbDto.responseFullTypeWithGeneric?:dbDto.responseFullType)
 
                 if (!seededDbMockObjects.containsKey(exKey)){
                     val responseTypeClass = interfaceDto.identifiedResponseTypes?.find {
@@ -529,6 +545,7 @@ class RPCEndpointsHandler {
         problem.schemas.forEach{ i->
             i.endpoints.forEach{e->
                 e.clientVariable = clientVariableMap[e.interfaceId]
+
                 actionSchemaCluster.putIfAbsent(actionName(i.interfaceId, e.actionName), e)
                 val name = actionName(i.interfaceId, e.actionName)
                 if (actionCluster.containsKey(name))
@@ -541,6 +558,7 @@ class RPCEndpointsHandler {
                     actionWithCustomizedCandidatesMap[name] = e.relatedCustomization
                 }
             }
+
             if (i.authEndpoints != null && i.authEndpointReferences != null){
                 Lazy.assert { i.authEndpoints.size == i.authEndpointReferences.size }
                 i.authEndpoints.forEachIndexed { index, e ->
@@ -1183,6 +1201,8 @@ class RPCEndpointsHandler {
     }
 
     private fun actionName(interfaceName: String, endpointName: String) = "$interfaceName:$endpointName"
+
+    private fun scheduleTaskActionName(prefix: String, taskName: String) = "$prefix:$taskName"
 
     private fun handleDtoParam(param: ParamDto, building: Boolean = false): Gene{
         val gene = when(param.type.type){

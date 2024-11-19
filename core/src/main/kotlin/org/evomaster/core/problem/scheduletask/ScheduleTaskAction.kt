@@ -12,6 +12,15 @@ class ScheduleTaskAction(
     parameters: MutableList<Param>,
 ): EnvironmentAction(parameters) {
 
+    companion object{
+        fun getScheduleTaskActionId(
+            taskType: String,
+            taskName: String
+        ) = "ScheduleTaskAction"
+
+    }
+
+
     val parameters : List<Param>
         get() { return children as List<Param>}
 
