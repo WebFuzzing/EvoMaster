@@ -45,9 +45,9 @@ abstract class SpringController(protected val applicationClass: Class<*>) : Embe
             //nothing to do
             return
         }
-        stopSut()
+        //stopSut()
         databaseType = t
-        startSut()
+        //startSut()
     }
 
     override fun startSut(): String {

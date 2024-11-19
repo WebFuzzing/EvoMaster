@@ -1,11 +1,13 @@
 package org.evomaster.e2etests.spring.multidb
 
+import org.evomaster.client.java.controller.EmbeddedSutController
 import org.evomaster.client.java.controller.InstrumentedSutStarter
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.instrumentation.InputProperties
 import org.evomaster.client.java.instrumentation.InstrumentingAgent
 import org.evomaster.core.sql.multidb.MultiDbUtils
 import org.evomaster.driver.multidb.SpringController
+import org.evomaster.e2etests.utils.EnterpriseTestBase
 import org.evomaster.e2etests.utils.RestTestBase
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
@@ -37,11 +39,15 @@ abstract class MultiDbParameterizedE2ETemplate : RestTestBase(){
     @EnumSource(names = ["MYSQL","POSTGRES","H2"])
     fun testRunEM(databaseType: DatabaseType) {
 
-        (controller as SpringController).changeDatabaseType(databaseType)
+        val c = instantiateNewController()
+        c.changeDatabaseType(databaseType)
+        EnterpriseTestBase.initClass(c)
 
         runEM(databaseType)
     }
 
 
     protected abstract fun runEM(databaseType: DatabaseType)
+
+    protected abstract fun instantiateNewController() : SpringController
 }
