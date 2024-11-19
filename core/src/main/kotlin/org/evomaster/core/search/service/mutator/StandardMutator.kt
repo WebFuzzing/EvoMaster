@@ -295,6 +295,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         targets: Set<Int>,
         mutatedGenes: MutatedGeneSpecification?
     ): T {
+        preActionBeforeMutatoin(individual)
 
         //  mutate the individual
         val mutatedIndividual = innerMutate(individual, targets, mutatedGenes)
