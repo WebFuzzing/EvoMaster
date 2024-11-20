@@ -4,7 +4,6 @@ import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.ActionDto
 import org.evomaster.client.java.controller.api.dto.ExtraHeuristicEntryDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
-import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.StaticCounter
 import org.evomaster.core.sql.DatabaseExecution
 import org.evomaster.core.sql.SqlAction
@@ -245,7 +244,7 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
 
     protected fun handleExtra(dto: TestResultsDto, fv: FitnessValue) {
 
-        if (!config.isMIO()) {
+        if (!config.isUsingAdvancedTechniques()) {
             return
         }
 

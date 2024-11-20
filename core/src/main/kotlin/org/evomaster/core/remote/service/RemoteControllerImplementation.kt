@@ -76,7 +76,7 @@ class RemoteControllerImplementation() : RemoteController{
     private fun initialize() {
         host = config.sutControllerHost
         port = config.sutControllerPort
-        computeSqlHeuristics = config.heuristicsForSQL && config.isMIO()
+        computeSqlHeuristics = config.heuristicsForSQL && config.isUsingAdvancedTechniques()
         extractSqlExecutionInfo = config.extractSqlExecutionInfo
     }
 
