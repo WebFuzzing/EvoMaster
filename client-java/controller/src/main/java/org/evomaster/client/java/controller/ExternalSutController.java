@@ -379,7 +379,11 @@ public abstract class ExternalSutController extends SutController {
 
     @Override
     public final boolean isInstrumentationActivated() {
-        return instrumentation && serverController != null && serverController.isConnectionOn();
+        return instrumentation && isConnectedToServerController();
+    }
+
+    public final boolean isConnectedToServerController(){
+        return serverController != null && serverController.isConnectionOn();
     }
 
     @Override
@@ -499,6 +503,14 @@ public abstract class ExternalSutController extends SutController {
 
     @Override
     public final void bootingSut(boolean bootingSut) {
+        if(bootingSut && !isConnectedToServerController()){
+            /*
+                we cannot connect to server before SUT is started... but, once started,
+                might already be too late to state that it is in booting phase.
+                so, the default should be "booting".
+             */
+            return;
+        }
         checkInstrumentation();
         serverController.setBootingSut(bootingSut);
         // sync on the local ExecutionTracer
