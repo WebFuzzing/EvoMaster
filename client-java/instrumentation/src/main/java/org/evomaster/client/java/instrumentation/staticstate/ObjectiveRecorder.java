@@ -104,7 +104,7 @@ public class ObjectiveRecorder {
      * Reset all the static state in this class
      */
     public static void reset(boolean alsoAtLoadTime) {
-        isBooting = true;
+
         maxObjectiveCoverage.clear();
         idMapping.clear();
         reversedIdMapping.clear();
@@ -120,6 +120,7 @@ public class ObjectiveRecorder {
             allTargets.clear();
 
             bootTimeObjectiveInfo.reset();
+            isBooting = true;
         }
     }
 
