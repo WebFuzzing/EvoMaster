@@ -63,8 +63,8 @@ class SqlTextSearchQueryGene(
         const val BLANK_CHAR = ' '
     }
 
-    override fun isLocallyValid() : Boolean{
-        return getViewOfChildren().all { it.isLocallyValid() }
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
+        return true
     }
 
     override fun copyContent(): Gene = SqlTextSearchQueryGene(

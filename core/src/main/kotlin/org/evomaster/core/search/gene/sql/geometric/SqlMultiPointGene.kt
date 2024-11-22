@@ -48,7 +48,7 @@ class SqlMultiPointGene(
         points = points.copy() as ArrayGene<SqlPointGene>
     )
 
-    override fun isLocallyValid() = points.isLocallyValid()
+    override fun checkForLocallyValidIgnoringChildren() = true
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         points.randomize(randomness, tryToForceNewValue)

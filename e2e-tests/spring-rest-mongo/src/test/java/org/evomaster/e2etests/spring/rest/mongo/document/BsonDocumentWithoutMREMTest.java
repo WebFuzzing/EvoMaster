@@ -26,7 +26,6 @@ public class BsonDocumentWithoutMREMTest extends RestTestBase {
 
         runTestHandlingFlakyAndCompilation(
                 "BsonDocumentWithoutMREM",
-                "org.foo.spring.rest.mongo.document.DocumentEMGeneration",
                 1000,
                 (args) -> {
                     setOption(args,"enableWeightBasedMutationRateSelectionForGene","false");

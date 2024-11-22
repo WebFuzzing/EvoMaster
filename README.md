@@ -54,7 +54,7 @@ __Key features__:
    If that is going to be higher than your current version of the JVM, if you cannot upgrade or have 2 different JDKs on your machine, then you should not use the uber-jar but rather one of the installers. 
    When you use one of the installers, keep in mind that currently they do not update the `PATH` variable. This needs to be done manually, [see documentation](docs/download.md). 
 
-* _State-of-the-art_: an [independent study (2022)](https://arxiv.org/abs/2204.08348), comparing 10 fuzzers on 20 RESTful APIs, shows that _EvoMaster_ gives the best results.
+* _State-of-the-art_: an [independent study (2022)](https://arxiv.org/abs/2204.08348), comparing 10 fuzzers on 20 RESTful APIs, shows that _EvoMaster_ gives the best results. Another [independent study (2024)](https://arxiv.org/abs/2410.12547) done by a different research group confirms these results.
 
 * _Schema_: REST APIs must provide a schema in [OpenAPI/Swagger](https://swagger.io)
   format (either _v2_ or _v3_).
@@ -152,7 +152,7 @@ and
 
 All these tools are _black-box_, i.e., they do not analyze the source-code of the tested APIs to generate more effective test data.
 As we are the authors of EvoMaster, we are too biased to compare it properly with those other black-box tools.
-However, an [independent study (2022)](https://arxiv.org/abs/2204.08348) shows that EvoMaster is among the best performant.
+However, different independent studies (e.g., in [2022](https://arxiv.org/abs/2204.08348) and [2024](https://arxiv.org/abs/2410.12547)) shows that EvoMaster is among the best performant.
 Furthermore, if your APIs are running on the JVM (e.g., written in Java or Kotlin), then EvoMaster has clearly an advantage, as it supports _white-box_ testing. 
 
 <!---

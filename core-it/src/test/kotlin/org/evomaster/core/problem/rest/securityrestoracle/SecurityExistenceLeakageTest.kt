@@ -31,6 +31,7 @@ class SecurityExistenceLeakageTest: IntegrationTestRestBase()  {
     fun initializeTest(){
         ExistenceLeakageApplication.reset()
         getEMConfig().security = true
+        getEMConfig().schemaOracles = false
     }
 
     @Test

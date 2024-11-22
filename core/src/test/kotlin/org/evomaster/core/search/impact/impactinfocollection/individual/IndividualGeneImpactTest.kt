@@ -4,6 +4,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.output.EvaluatedIndividualBuilder.Companion.generateIndividualResults
 import org.evomaster.core.search.*
+import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.string.StringGene
@@ -320,11 +321,11 @@ class IndividualGeneImpactTest {
                     children.filterIsInstance<IndInitAction>().map { it.copy() as IndInitAction }.toMutableList())
         }
 
-        override fun seeGenes(filter: GeneFilter): List<out Gene> {
+        override fun seeTopGenes(filter: ActionFilter): List<out Gene> {
            return when(filter){
-               GeneFilter.ONLY_SQL -> seeInitializingActions().flatMap(Action::seeTopGenes)
-               GeneFilter.NO_SQL -> seeAllActions().flatMap(Action::seeTopGenes)
-               GeneFilter.ALL -> seeInitializingActions().plus(seeAllActions()).flatMap(Action::seeTopGenes)
+               ActionFilter.ONLY_SQL -> seeInitializingActions().flatMap(Action::seeTopGenes)
+               ActionFilter.NO_SQL -> seeAllActions().flatMap(Action::seeTopGenes)
+               ActionFilter.ALL -> seeInitializingActions().plus(seeAllActions()).flatMap(Action::seeTopGenes)
                else -> throw IllegalArgumentException("$filter is not supported by ImpactTest Individual")
            }
         }

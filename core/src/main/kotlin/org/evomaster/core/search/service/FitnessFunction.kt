@@ -39,11 +39,16 @@ abstract class FitnessFunction<T>  where T : Individual {
     @Inject
     private lateinit var executionInfoReporter: ExecutionInfoReporter
 
+    @Inject
+    protected lateinit var epc: ExecutionPhaseController
+
     companion object{
         private val log : Logger = LoggerFactory.getLogger(FitnessFunction::class.java)
     }
 
     /**
+     * @param targets the ids of the targets to collect coverage for. To this set, which can be left empty,
+     *      all currently known targets that are not covered will be added by default.
      * @param modifiedSpec uses to collect modified info, e.g., HostnameResolutionAction might be added during this evaluation phase
      * @return null if there were problems in calculating the coverage
      */
@@ -99,15 +104,20 @@ abstract class FitnessFunction<T>  where T : Individual {
     /**
      * calculated coverage with specified targets.
      *
-     * if [allCovered] is true, then ids are ignored, and info on all fully-covered targets
-     * are returned. Also, in such case, we do not compute any extra info needed for the search
+     * if [allTargets] is true, then ids are ignored, return data for all targets.
+     *
+     * if [fullyCovered], return data only fully-covered targets.
+     *
+     * if [descriptiveIds], return full info for the objectives, eg, including long specifying names
      *
      * @return null if there were problems in calculating the coverage
      */
     protected abstract fun doCalculateCoverage(
         individual: T,
         targets: Set<Int>,
-        allCovered: Boolean
+        allTargets: Boolean,
+        fullyCovered: Boolean,
+        descriptiveIds: Boolean,
     ) : EvaluatedIndividual<T>?
 
     /**
@@ -119,7 +129,7 @@ abstract class FitnessFunction<T>  where T : Individual {
      * so there the fitness value is just partial
      */
     fun computeWholeAchievedCoverageForPostProcessing(individual: T) : EvaluatedIndividual<T>?{
-        return doCalculateCoverage(individual, setOf(), true)
+        return doCalculateCoverage(individual, setOf(), allTargets = true, fullyCovered = true, descriptiveIds = false)
     }
 
     private fun calculateIndividualCoverageWithStats(
@@ -128,12 +138,15 @@ abstract class FitnessFunction<T>  where T : Individual {
         actionsSize: Int
     ) : EvaluatedIndividual<T>?{
 
+        // By default, we optimize for performance in collecting coverage values, but for special cases, we want to collect full info
+        val allTargetsWithDescriptive = config.processFormat == EMConfig.ProcessDataFormat.TARGET_HEURISTIC
+
         val ei = SearchTimeController.measureTimeMillis(
                 { t, ind ->
                     time.reportExecutedIndividualTime(t, actionsSize)
                     ind?.executionTimeMs = t
                 },
-                {doCalculateCoverage(individual, targets, false)}
+                {doCalculateCoverage(individual, targets, allTargets = allTargetsWithDescriptive, fullyCovered = false, descriptiveIds = allTargetsWithDescriptive)}
         )
         // plugin execution info reporter here, to avoid the time spent by execution reporter
         handleExecutionInfo(ei)

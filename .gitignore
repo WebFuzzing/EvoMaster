@@ -169,3 +169,5 @@ Migrations/
 /wfc/target/
 
 *.DS_Store
+/e2e-tests/emb-json/target/
+/process_data/

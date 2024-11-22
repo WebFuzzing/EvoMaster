@@ -29,8 +29,8 @@ public class SFTest extends RestTestBase {
                     "--createTests", "false",
                     "--seed", "" + defaultSeed++,
                     "--sutControllerPort", "" + controllerPort,
-                    "--maxActionEvaluations", "500",
-                    "--stoppingCriterion", "FITNESS_EVALUATIONS"
+                    "--maxEvaluations", "500",
+                    "--stoppingCriterion", "ACTION_EVALUATIONS"
             };
 
             Solution<RestIndividual> solution = (Solution<RestIndividual>) Main.initAndRun(args);

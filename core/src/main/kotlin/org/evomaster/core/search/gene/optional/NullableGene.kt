@@ -26,8 +26,8 @@ class NullableGene(name: String,
         private const val ABSENT = 0.01
     }
 
-    override fun isLocallyValid() : Boolean{
-        return getViewOfChildren().all { it.isLocallyValid() }
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
+        return true
     }
 
     override fun copyContent(): Gene {

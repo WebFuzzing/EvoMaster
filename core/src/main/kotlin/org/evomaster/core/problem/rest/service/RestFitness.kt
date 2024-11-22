@@ -23,7 +23,9 @@ open class RestFitness : AbstractRestFitness() {
     override fun doCalculateCoverage(
         individual: RestIndividual,
         targets: Set<Int>,
-        allCovered: Boolean
+        allTargets: Boolean,
+        fullyCovered: Boolean,
+        descriptiveIds: Boolean,
     ): EvaluatedIndividual<RestIndividual>? {
 
         rc.resetSUT()
@@ -91,7 +93,7 @@ open class RestFitness : AbstractRestFitness() {
         }
 
         val restActionResults = actionResults.filterIsInstance<RestCallResult>()
-        restActionResultHandling(individual, targets, allCovered, restActionResults, fv)
+        restActionResultHandling(individual, targets, allTargets, fullyCovered, descriptiveIds, restActionResults, fv)
             ?: return null
 
         if (log.isTraceEnabled){

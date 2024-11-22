@@ -22,7 +22,6 @@ public class MongoStudentsEMTest extends RestTestBase {
 
         runTestHandlingFlakyAndCompilation(
                 "MongoStudentsEM",
-                "org.foo.spring.rest.mongo.MongoEM",
                 200,
                 (args) -> {
                     args.add("--enableWeightBasedMutationRateSelectionForGene");

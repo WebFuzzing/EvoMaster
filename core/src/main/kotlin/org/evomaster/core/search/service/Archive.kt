@@ -197,8 +197,13 @@ class Archive<T> where T : Individual {
         /*
             If possible avoid sampling tests that did timeout
          */
-        val chosen = if (!notTimedOut.isEmpty()) {
-            randomness.choose(notTimedOut)
+        val chosen = if (notTimedOut.isNotEmpty()) {
+            val discoveringTaint = notTimedOut.filter { it.individual.numberOfDiscoveredInfoFromTestExecution() > 0 }
+            if(config.discoveredInfoRewardedInFitness && discoveringTaint.isNotEmpty()){
+                randomness.choose(discoveringTaint)
+            } else {
+                randomness.choose(notTimedOut)
+            }
         } else {
             randomness.choose(candidates)
         }
@@ -211,7 +216,7 @@ class Archive<T> where T : Individual {
 
     private fun chooseTarget(toChooseFrom: Set<Int>): Int {
 
-        if(!config.isMIO()){
+        if(!config.isUsingAdvancedTechniques()){
             return  randomness.choose(toChooseFrom)
         }
 
@@ -692,7 +697,7 @@ class Archive<T> where T : Individual {
      */
     fun areAllPopulationGeneLocallyValid() : Boolean{
         return populations.values.flatten().all {
-            it.individual.seeGenes().all { g-> g.isLocallyValid() }
+            it.individual.seeTopGenes().all { g-> g.isLocallyValid() }
         }
     }
 

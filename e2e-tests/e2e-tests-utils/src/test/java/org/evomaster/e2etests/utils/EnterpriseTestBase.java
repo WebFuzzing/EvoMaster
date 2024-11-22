@@ -153,8 +153,8 @@ public abstract class EnterpriseTestBase {
                 "--showProgress", "false",
                 "--avoidNonDeterministicLogs", "true",
                 "--sutControllerPort", "" + controllerPort,
-                "--maxActionEvaluations", "" + iterations,
-                "--stoppingCriterion", "FITNESS_EVALUATIONS",
+                "--maxEvaluations", "" + iterations,
+                "--stoppingCriterion", "ACTION_EVALUATIONS",
                 "--useTimeInFeedbackSampling" , "false",
                 "--createConfigPathIfMissing", "false"
         ));
@@ -238,9 +238,18 @@ public abstract class EnterpriseTestBase {
     protected void runTestHandlingFlakyAndCompilation(
             String label,
             int iterations,
+            int timeoutMinutes,
             Consumer<List<String>> lambda) throws Throwable {
 
-        runTestHandlingFlakyAndCompilation(label, "org.bar."+label, iterations, lambda);
+        runTestHandlingFlakyAndCompilation(label, "org.bar."+label, null,  iterations, true, lambda, timeoutMinutes);
+    }
+
+    protected void runTestHandlingFlakyAndCompilation(
+            String label,
+            int iterations,
+            Consumer<List<String>> lambda) throws Throwable {
+
+        runTestHandlingFlakyAndCompilation(label, iterations, 3, lambda);
     }
 
 
@@ -407,8 +416,8 @@ public abstract class EnterpriseTestBase {
                 "--seed", "" + defaultSeed,
                 "--useTimeInFeedbackSampling" , "false",
                 "--sutControllerPort", "" + controllerPort,
-                "--maxActionEvaluations", "" + iterations,
-                "--stoppingCriterion", "FITNESS_EVALUATIONS",
+                "--maxEvaluations", "" + iterations,
+                "--stoppingCriterion", "ACTION_EVALUATIONS",
                 "--outputFolder", outputFolderPath(outputFolderName),
                 "--outputFormat", OutputFormat.KOTLIN_JUNIT_5.toString(),
                 //FIXME: should avoid deprecated option, but then need TODO update how class files are deleted from FS

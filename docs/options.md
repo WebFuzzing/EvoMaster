@@ -42,7 +42,7 @@ There are 3 types of options:
 |`outputFormat`| __Enum__. Specify in which format the tests should be outputted. If left on `DEFAULT`, for white-box testing then the value specified in the _EvoMaster Driver_ will be used. On the other hand, for black-box testing it will default to a predefined type (e.g., Python). *Valid values*: `DEFAULT, JAVA_JUNIT_5, JAVA_JUNIT_4, KOTLIN_JUNIT_4, KOTLIN_JUNIT_5, JS_JEST, PYTHON_UNITTEST`. *Default value*: `DEFAULT`.|
 |`testTimeout`| __Int__. Enforce timeout (in seconds) in the generated tests. This feature might not be supported in all frameworks. If 0 or negative, the timeout is not applied. *Default value*: `60`.|
 |`blackBox`| __Boolean__. Use EvoMaster in black-box mode. This does not require an EvoMaster Driver up and running. However, you will need to provide further option to specify how to connect to the SUT. *Default value*: `false`.|
-|`bbSwaggerUrl`| __String__. When in black-box mode for REST APIs, specify the URL of where the OpenAPI/Swagger schema can be downloaded from. If the schema is on the local machine, you can use a URL starting with 'file://'. If the given URL is neither starting with 'file' nor 'http', then it will be treated as a local file path. *Constraints*: `URL`. *Default value*: `""`.|
+|`bbSwaggerUrl`| __String__. When in black-box mode for REST APIs, specify the URL of where the OpenAPI/Swagger schema can be downloaded from. If the schema is on the local machine, you can use a URL starting with 'file://'. If the given URL is neither starting with 'file' nor 'http', then it will be treated as a local file path. *Default value*: `""`.|
 |`bbTargetUrl`| __String__. When in black-box mode, specify the URL of where the SUT can be reached, e.g., http://localhost:8080 . In REST, if this is missing, the URL will be inferred from OpenAPI/Swagger schema. In GraphQL, this must point to the entry point of the API, e.g., http://localhost:8080/graphql . *Constraints*: `URL`. *Default value*: `""`.|
 |`ratePerMinute`| __Int__. Rate limiter, of how many actions to do per minute. For example, when making HTTP calls towards an external service, might want to limit the number of calls to avoid bombarding such service (which could end up becoming equivalent to a DoS attack). A value of zero or negative means that no limiter is applied. This is needed only for black-box testing of remote services. *Default value*: `0`.|
 |`header0`| __String__. In black-box testing, we still need to deal with authentication of the HTTP requests. With this parameter it is possible to specify a HTTP header that is going to be added to most requests. This should be provided in the form _name:value_. If more than 1 header is needed, use as well the other options _header1_ and _header2_. *Constraints*: `regex (.+:.+)\|(^$)`. *Default value*: `""`.|
@@ -62,7 +62,8 @@ There are 3 types of options:
 |`SMdR`| __Double__. Specify a probability to apply SMdR when resource sampling strategy is 'Customized'. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.25`.|
 |`adaptiveGeneSelectionMethod`| __Enum__. Specify a strategy to select genes for mutation adaptively. *Valid values*: `NONE, AWAY_NOIMPACT, APPROACH_IMPACT, APPROACH_LATEST_IMPACT, APPROACH_LATEST_IMPROVEMENT, BALANCE_IMPACT_NOIMPACT, BALANCE_IMPACT_NOIMPACT_WITH_E, ALL_FIXED_RAND`. *Default value*: `APPROACH_IMPACT`.|
 |`addPreDefinedTests`| __Boolean__. Add predefined tests at the end of the search. An example is a test to fetch the schema of RESTful APIs. *Default value*: `true`.|
-|`algorithm`| __Enum__. The algorithm used to generate test cases. The default depends on whether black-box or white-box testing is done. *Valid values*: `DEFAULT, SMARTS, MIO, RANDOM, WTS, MOSA`. *Default value*: `DEFAULT`.|
+|`advancedBlackBoxCoverage`| __Boolean__. Apply more advanced coverage criteria for black-box testing. This can result in larger generated test suites. *Default value*: `true`.|
+|`algorithm`| __Enum__. The algorithm used to generate test cases. The default depends on whether black-box or white-box testing is done. *Valid values*: `DEFAULT, SMARTS, MIO, RANDOM, WTS, MOSA, RW`. *Default value*: `DEFAULT`.|
 |`allowInvalidData`| __Boolean__. When generating data, allow in some cases to use invalid values on purpose. *Default value*: `true`.|
 |`appendToStatisticsFile`| __Boolean__. Whether should add to an existing statistics file, instead of replacing it. *Default value*: `false`.|
 |`archiveAfterMutationFile`| __String__. Specify a path to save archive after each mutation during search, only useful for debugging. *DEBUG option*. *Default value*: `archive.csv`.|
@@ -92,6 +93,7 @@ There are 3 types of options:
 |`enableRPCCustomizedResponseTargets`| __Boolean__. Whether to enable customized responses indicating business logic. *Default value*: `true`.|
 |`enableRPCExtraResponseTargets`| __Boolean__. Whether to enable extra targets for responses, e.g., regarding nullable response, having extra targets for whether it is null. *Default value*: `true`.|
 |`enableSchemaConstraintHandling`| __Boolean__. Whether to employ constraints specified in API schema (e.g., OpenAPI) in test generation. *Default value*: `true`.|
+|`enableStructureMutation`| __Boolean__. Whether or not to enable a structure mutation for mutating individuals. This feature can only be activated for algorithms that support structural mutation, such as MIO or RW. *Default value*: `true`.|
 |`enableTrackEvaluatedIndividual`| __Boolean__. Whether to enable tracking the history of modifications of the individuals with its fitness values (i.e., evaluated individual) during the search. Note that we enforced that set enableTrackIndividual false when enableTrackEvaluatedIndividual is true since information of individual is part of evaluated individual. *Default value*: `true`.|
 |`enableTrackIndividual`| __Boolean__. Whether to enable tracking the history of modifications of the individuals during the search. *Default value*: `false`.|
 |`enableWeightBasedMutationRateSelectionForGene`| __Boolean__. Specify whether to enable weight-based mutation selection for selecting genes to mutate for a gene. *Default value*: `true`.|
@@ -133,8 +135,8 @@ There are 3 types of options:
 |`labelForExperimentConfigs`| __String__. Further label to represent the names of CONFIGS sets in experiment scripts, e.g., exp.py. *Default value*: `-`.|
 |`labelForExperiments`| __String__. When running experiments and statistic files are generated, all configs are saved. So, this one can be used as extra label for classifying the experiment. *Default value*: `-`.|
 |`lastLineEpsilon`| __Double__. The Distance Metric Last Line may use several values for epsilon.During experimentation, it may be useful to adjust these values. Epsilon describes the size of the neighbourhood used for clustering, so may result in different clustering results.Epsilon should be between 0.0 and 1.0. If the value is outside of that range, epsilon will use the default of 0.8. *Constraints*: `min=0.0, max=1.0`. *Default value*: `0.8`.|
-|`maxActionEvaluations`| __Int__. Maximum number of action evaluations for the search. A fitness evaluation can be composed of 1 or more actions, like for example REST calls or SQL setups. The more actions are allowed, the better results one can expect. But then of course the test generation will take longer. Only applicable depending on the stopping criterion. *Constraints*: `min=1.0`. *Default value*: `1000`.|
 |`maxAssertionForDataInCollection`| __Int__. Specify a maximum number of data in a collection to be asserted in the generated tests. Note that zero means that only the size of the collection will be asserted. A negative value means all data in the collection will be asserted (i.e., no limit). *Default value*: `3`.|
+|`maxEvaluations`| __Int__. Maximum number of action or individual evaluations (depending on chosen stopping criterion) for the search. A fitness evaluation can be composed of 1 or more actions, like for example REST calls or SQL setups. The more actions are allowed, the better results one can expect. But then of course the test generation will take longer. Only applicable depending on the stopping criterion. *Constraints*: `min=1.0`. *Default value*: `1000`.|
 |`maxLengthForStrings`| __Int__. The maximum length allowed for evolved strings. Without this limit, strings could in theory be billions of characters long. *Constraints*: `min=0.0, max=20000.0`. *Default value*: `200`.|
 |`maxLengthForStringsAtSamplingTime`| __Int__. Maximum length when sampling a new random string. Such limit can be bypassed when a string is mutated. *Constraints*: `min=0.0`. *Default value*: `16`.|
 |`maxLengthOfTraces`| __Int__. Specify a maxLength of tracking when enableTrackIndividual or enableTrackEvaluatedIndividual is true. Note that the value should be specified with a non-negative number or -1 (for tracking all history). *Constraints*: `min=-1.0`. *Default value*: `10`.|
@@ -163,9 +165,10 @@ There are 3 types of options:
 |`probOfSmartSampling`| __Double__. When sampling new test cases to evaluate, probability of using some smart strategy instead of plain random. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.95`.|
 |`probRestDefault`| __Double__. In REST, specify probability of using 'default' values, if any is specified in the schema. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.05`.|
 |`probRestExamples`| __Double__. In REST, specify probability of using 'example(s)' values, if any is specified in the schema. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.2`.|
+|`probUseRestLinks`| __Double__. In REST, enable the supports of 'links' between resources defined in the OpenAPI schema, if any. When sampling a test case, if the last call has links, given this probability new calls are added for the link. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.5`.|
 |`problemType`| __Enum__. The type of SUT we want to generate tests for, e.g., a RESTful API. If left to DEFAULT, the type will be inferred from the EM Driver. However, in case of ambiguities (e.g., the driver specifies more than one type), then this field must be set with a specific type. This is also the case for Black-Box testing where there is no EM Driver. In this latter case, the system defaults to handle REST APIs. *Valid values*: `DEFAULT, REST, GRAPHQL`. *Experimental values*: `RPC, WEBFRONTEND`. *Default value*: `DEFAULT`.|
 |`processFiles`| __String__. Specify a folder to save results when a search monitor is enabled. *DEBUG option*. *Default value*: `process_data`.|
-|`processFormat`| __Enum__. Specify a format to save the process data. *DEBUG option*. *Valid values*: `JSON_ALL, TEST_IND, TARGET_TEST_IND`. *Default value*: `JSON_ALL`.|
+|`processFormat`| __Enum__. Specify a format to save the process data. *DEBUG option*. *Valid values*: `JSON_ALL, TEST_IND, TARGET_TEST_IND, TARGET_HEURISTIC`. *Default value*: `JSON_ALL`.|
 |`processInterval`| __Double__. Specify how often to save results when a search monitor is enabled, and 0.0 presents to record all evaluated individual. *DEBUG option*. *Constraints*: `min=0.0, max=50.0`. *Default value*: `0.0`.|
 |`recordExceededTargets`| __Boolean__. Whether to record targets when the number is more than 100. *DEBUG option*. *Default value*: `false`.|
 |`recordExecutedMainActionInfo`| __Boolean__. Whether to record info of executed actions during search. *DEBUG option*. *Default value*: `false`.|
@@ -175,6 +178,7 @@ There are 3 types of options:
 |`saveExecutedSQLToFile`| __String__. Specify a path to save all executed sql commands to a file (default is 'sql.txt'). *DEBUG option*. *Default value*: `sql.txt`.|
 |`saveImpactAfterMutation`| __Boolean__. Whether to save impact info after each of mutation, which is typically useful debugging impact driven solutions and mutation. *DEBUG option*. *Default value*: `false`.|
 |`saveMutationInfo`| __Boolean__. Whether to save mutated gene info, which is typically used for debugging mutation. *DEBUG option*. *Default value*: `false`.|
+|`schemaOracles`| __Boolean__. Validate responses against their schema, to check for inconsistencies. Those are treated as faults. *Default value*: `true`.|
 |`searchPercentageExtraHandling`| __Double__. Percentage [0.0,1.0] of elapsed time in the search while trying to infer any extra query parameter and header. After this time has passed, those attempts stop. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.1`.|
 |`secondaryObjectiveStrategy`| __Enum__. Strategy used to handle the extra heuristics in the secondary objectives. *Valid values*: `AVG_DISTANCE, AVG_DISTANCE_SAME_N_ACTIONS, BEST_MIN`. *Default value*: `AVG_DISTANCE_SAME_N_ACTIONS`.|
 |`seed`| __Long__. The seed for the random generator used during the search. A negative value means the CPU clock time will be rather used as seed. *Default value*: `-1`.|
@@ -187,10 +191,11 @@ There are 3 types of options:
 |`startingPerOfGenesToMutate`| __Double__. Specify a starting percentage of genes of an individual to mutate. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.5`.|
 |`statisticsColumnId`| __String__. An id that will be part as a column of the statistics file (if any is generated). *Default value*: `-`.|
 |`statisticsFile`| __String__. Where the statistics file (if any) is going to be written (in CSV format). *Default value*: `statistics.csv`.|
-|`stoppingCriterion`| __Enum__. Stopping criterion for the search. *Valid values*: `TIME, FITNESS_EVALUATIONS`. *Default value*: `TIME`.|
+|`stoppingCriterion`| __Enum__. Stopping criterion for the search. *Valid values*: `TIME, ACTION_EVALUATIONS, INDIVIDUAL_EVALUATIONS`. *Default value*: `TIME`.|
 |`structureMutationProbability`| __Double__. Probability of applying a mutation that can change the structure of a test. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.5`.|
 |`sutControllerHost`| __String__. Host name or IP address of where the SUT REST controller is listening on. *Default value*: `localhost`.|
 |`sutControllerPort`| __Int__. TCP port of where the SUT REST controller is listening on. *Constraints*: `min=0.0, max=65535.0`. *Default value*: `40100`.|
+|`taintAnalysisForMapsAndArrays`| __Boolean__. Apply taint analysis to handle special cases of Maps and Arrays. *Default value*: `true`.|
 |`taintApplySpecializationProbability`| __Double__. Probability of applying a discovered specialization for a tainted value. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.5`.|
 |`taintChangeSpecializationProbability`| __Double__. Probability of changing specialization for a resolved taint during mutation. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.1`.|
 |`taintOnSampling`| __Boolean__. Whether input tracking is used on sampling time, besides mutation time. *Default value*: `true`.|
@@ -203,6 +208,7 @@ There are 3 types of options:
 |`useExtraSqlDbConstraintsProbability`| __Double__. Whether to analyze how SQL databases are accessed to infer extra constraints from the business logic. An example is javax/jakarta annotation constraints defined on JPA entities. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.9`.|
 |`useMethodReplacement`| __Boolean__. Apply method replacement heuristics to smooth the search landscape. Note that the method replacement instrumentations would still be applied, it is just that their testing targets will be ignored in the fitness function if this option is set to false. *Default value*: `true`.|
 |`useNonIntegerReplacement`| __Boolean__. Apply non-integer numeric comparison heuristics to smooth the search landscape. *Default value*: `true`.|
+|`useResponseDataPool`| __Boolean__. Enable the collection of response data, to feed new individuals based on field names matching. *Default value*: `true`.|
 |`useTimeInFeedbackSampling`| __Boolean__. Whether to use timestamp info on the execution time of the tests for sampling (e.g., to reward the quickest ones). *Default value*: `true`.|
 |`weightBasedMutationRate`| __Boolean__. Whether to enable a weight-based mutation rate. *Default value*: `true`.|
 |`writeExtraHeuristicsFile`| __Boolean__. Whether we should collect data on the extra heuristics. Only needed for experiments. *Default value*: `false`.|
@@ -214,7 +220,7 @@ There are 3 types of options:
 |Options|Description|
 |---|---|
 |`abstractInitializationGeneToMutate`| __Boolean__. During mutation, whether to abstract genes for repeated SQL actions. *Default value*: `false`.|
-|`advancedBlackBoxCoverage`| __Boolean__. Apply more advanced coverage criteria for black-box testing. This can result in larger generated test suites. *Default value*: `false`.|
+|`appendToTargetHeuristicsFile`| __Boolean__. Whether should add to an existing target heuristics file, instead of replacing it. It is only used when processFormat is TARGET_HEURISTIC. *Default value*: `false`.|
 |`bbProbabilityUseDataPool`| __Double__. Specify the probability of using the data pool when sampling test cases. This is for black-box (bb) mode. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.8`.|
 |`discoveredInfoRewardedInFitness`| __Boolean__. If there is new discovered information from a test execution, reward it in the fitness function. *Default value*: `false`.|
 |`dpcTargetTestSize`| __Int__. Specify a max size of a test to be targeted when either DPC_INCREASING or DPC_DECREASING is enabled. *Default value*: `1`.|
@@ -249,9 +255,9 @@ There are 3 types of options:
 |`probOfMutatingResponsesBasedOnActualResponse`| __Double__. a probability of mutating mocked responses based on actual responses. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`probOfPrioritizingSuccessfulHarvestedActualResponses`| __Double__. a probability of prioritizing to employ successful harvested actual responses from external services as seeds (e.g., 2xx from HTTP external service). *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`probOfSmartInitStructureMutator`| __Double__. Specify a probability of applying a smart structure mutator for initialization of the individual. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
-|`probUseRestLinks`| __Double__. In REST, enable the supports of 'links' between resources defined in the OpenAPI schema, if any. When sampling a test case, if the last call has links, given this probability new calls are added for the link. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
+|`probabilityAllOptionalsAreOnOrOff`| __Double__. When sampling a new individual, probability that ALL optional choices are ON, or ALL are OFF. The choice between ON and OFF depends on probabilityOfOnVsOffInAllOptionals. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`saveMockedResponseAsSeparatedFile`| __Boolean__. Whether to save mocked responses as separated files. *Default value*: `false`.|
-|`schemaOracles`| __Boolean__. Validate responses against their schema, to check for inconsistencies. Those are treated as faults. *Default value*: `false`.|
+|`saveTargetHeuristicsPrefixes`| __String__. Prefix specifying which targets to record. Each target can be separated by a comma, such as 'Branch,Line,Success, etc'. It is only used when processFormat is TARGET_HEURISTIC. *Default value*: `Branch`.|
 |`security`| __Boolean__. Apply a security testing phase after functional test cases have been generated. *Default value*: `false`.|
 |`seedTestCases`| __Boolean__. Whether to seed EvoMaster with some initial test cases. These test cases will be used and evolved throughout the search process. *Default value*: `false`.|
 |`seedTestCasesFormat`| __Enum__. Format of the test cases seeded to EvoMaster. *Valid values*: `POSTMAN`. *Default value*: `POSTMAN`.|
@@ -259,11 +265,11 @@ There are 3 types of options:
 |`structureMutationProFS`| __Double__. Specify a probability of applying structure mutator during the focused search. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`structureMutationProbStrategy`| __Enum__. Specify a strategy to handle a probability of applying structure mutator during the focused search. *Valid values*: `SPECIFIED, SPECIFIED_FS, DPC_TO_SPECIFIED_BEFORE_FS, DPC_TO_SPECIFIED_AFTER_FS, ADAPTIVE_WITH_IMPACT`. *Default value*: `SPECIFIED`.|
 |`taintForceSelectionOfGenesWithSpecialization`| __Boolean__. During mutation, force the mutation of genes that have newly discovered specialization from previous fitness evaluations, based on taint analysis. *Default value*: `false`.|
+|`targetHeuristicsFile`| __String__. Where the target heuristic values file (if any) is going to be written (in CSV format). It is only used when processFormat is TARGET_HEURISTIC. *Default value*: `targets.csv`.|
 |`testResourcePathToSaveMockedResponse`| __String__. Specify test resource path where to save mocked responses as separated files. *Default value*: `""`.|
 |`thresholdDistanceForDataPool`| __Int__. Threshold of Levenshtein Distance for key-matching in Data Pool. *Constraints*: `min=0.0`. *Default value*: `2`.|
 |`useGlobalTaintInfoProbability`| __Double__. When sampling new individual, check whether to use already existing info on tainted values. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`useInsertionForSqlHeuristics`| __Boolean__. Specify whether insertions should be used to calculate SQL heuristics instead of retrieving data from real databases. *Default value*: `false`.|
-|`useResponseDataPool`| __Boolean__. Enable the collection of response data, to feed new individuals based on field names matching. *Default value*: `false`.|
 |`useWeightedSampling`| __Boolean__. When sampling from archive based on targets, decide whether to use weights based on properties of the targets (e.g., a target likely leading to a flag will be sampled less often). *Default value*: `false`.|
 |`wbProbabilityUseDataPool`| __Double__. Specify the probability of using the data pool when sampling test cases. This is for white-box (wb) mode. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.2`.|
 |`writeSnapshotTestsIntervalInSeconds`| __Int__. The size (in seconds) of the interval that the snapshots will be printed, if enabled. *Default value*: `3600`.|

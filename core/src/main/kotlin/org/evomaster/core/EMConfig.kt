@@ -78,7 +78,7 @@ class EMConfig {
 
         private const val externalServiceIPRegex = "$_eip_n$_eip_s$_eip_e"
 
-        private val defaultAlgorithmForBlackBox = Algorithm.RANDOM
+        private val defaultAlgorithmForBlackBox = Algorithm.SMARTS
 
         private val defaultAlgorithmForWhiteBox = Algorithm.MIO
 
@@ -476,13 +476,13 @@ class EMConfig {
         }
 
         when (stoppingCriterion) {
-            StoppingCriterion.TIME -> if (maxActionEvaluations != defaultMaxActionEvaluations) {
+            StoppingCriterion.TIME -> if (maxEvaluations != defaultMaxEvaluations) {
                 throw ConfigProblemException("Changing number of max actions, but stopping criterion is time")
             }
 
-            StoppingCriterion.FITNESS_EVALUATIONS -> if (maxTimeInSeconds != defaultMaxTimeInSeconds ||
-                    maxTime != defaultMaxTime) {
-                throw ConfigProblemException("Changing max time, but stopping criterion is based on fitness evaluations")
+            StoppingCriterion.ACTION_EVALUATIONS, StoppingCriterion.INDIVIDUAL_EVALUATIONS ->
+                if (maxTimeInSeconds != defaultMaxTimeInSeconds || maxTime != defaultMaxTime) {
+                throw ConfigProblemException("Changing max time, but stopping criterion is based on evaluations")
             }
         }
 
@@ -749,7 +749,7 @@ class EMConfig {
         throw IllegalArgumentException("Invalid boolean value: $s")
     }
 
-    fun shouldGenerateSqlData() = isMIO() && (generateSqlDataWithDSE || generateSqlDataWithSearch)
+    fun shouldGenerateSqlData() = isUsingAdvancedTechniques() && (generateSqlDataWithDSE || generateSqlDataWithSearch)
 
     fun shouldGenerateMongoData() = generateMongoData
 
@@ -992,7 +992,6 @@ class EMConfig {
     var blackBox = false
 
     @Important(3.2)
-    @Url
     @Cfg("When in black-box mode for REST APIs, specify the URL of where the OpenAPI/Swagger schema can be downloaded from." +
             " If the schema is on the local machine, you can use a URL starting with 'file://'." +
             " If the given URL is neither starting with 'file' nor 'http', then it will be treated as a local file path.")
@@ -1063,7 +1062,7 @@ class EMConfig {
     var avoidNonDeterministicLogs = false
 
     enum class Algorithm {
-        DEFAULT, SMARTS, MIO, RANDOM, WTS, MOSA
+        DEFAULT, SMARTS, MIO, RANDOM, WTS, MOSA, RW
     }
 
     @Cfg("The algorithm used to generate test cases. The default depends on whether black-box or white-box testing is done.")
@@ -1168,24 +1167,24 @@ class EMConfig {
 
     enum class StoppingCriterion {
         TIME,
-        FITNESS_EVALUATIONS
+        ACTION_EVALUATIONS,
+        INDIVIDUAL_EVALUATIONS
     }
 
     @Cfg("Stopping criterion for the search")
     var stoppingCriterion = StoppingCriterion.TIME
 
 
-    val defaultMaxActionEvaluations = 1000
+    val defaultMaxEvaluations = 1000
 
-    @Cfg("Maximum number of action evaluations for the search." +
-            " A fitness evaluation can be composed of 1 or more actions," +
+    @Cfg("Maximum number of action or individual evaluations (depending on chosen stopping criterion)" +
+            " for the search. A fitness evaluation can be composed of 1 or more actions," +
             " like for example REST calls or SQL setups." +
             " The more actions are allowed, the better results one can expect." +
             " But then of course the test generation will take longer." +
             " Only applicable depending on the stopping criterion.")
     @Min(1.0)
-    var maxActionEvaluations = defaultMaxActionEvaluations
-
+    var maxEvaluations = defaultMaxEvaluations
 
     val defaultMaxTimeInSeconds = 0
 
@@ -1196,7 +1195,6 @@ class EMConfig {
             " If this value is 0, the setting 'maxTime' will be used instead.")
     @Min(0.0)
     var maxTimeInSeconds = defaultMaxTimeInSeconds
-
 
     @Cfg("Whether or not writing statistics of the search process. " +
             "This is only needed when running experiments with different parameter settings")
@@ -1399,8 +1397,25 @@ class EMConfig {
         /**
          * save covered targets with the specified target format and tests with the specified test format
          */
-        TARGET_TEST_IND
+        TARGET_TEST_IND,
+        /**
+         * save heuristic values for each target as csv file
+         */
+        TARGET_HEURISTIC
     }
+
+    @Experimental
+    @Cfg("Where the target heuristic values file (if any) is going to be written (in CSV format). It is only used when processFormat is TARGET_HEURISTIC.")
+    @FilePath
+    var targetHeuristicsFile = "targets.csv"
+
+    @Experimental
+    @Cfg("Whether should add to an existing target heuristics file, instead of replacing it. It is only used when processFormat is TARGET_HEURISTIC.")
+    var appendToTargetHeuristicsFile = false
+
+    @Experimental
+    @Cfg("Prefix specifying which targets to record. Each target can be separated by a comma, such as 'Branch,Line,Success, etc'. It is only used when processFormat is TARGET_HEURISTIC.")
+    var saveTargetHeuristicsPrefixes = "Branch"
 
     @Debug
     @Cfg("Specify a folder to save results when a search monitor is enabled")
@@ -1607,6 +1622,10 @@ class EMConfig {
          */
         ADAPTIVE_WITH_IMPACT
     }
+
+    @Cfg("Whether or not to enable a structure mutation for mutating individuals." +
+            " This feature can only be activated for algorithms that support structural mutation, such as MIO or RW.")
+    var enableStructureMutation = true
 
     @Experimental
     @Cfg("Specify a max size of resources in a test. 0 means the there is no specified restriction on a number of resources")
@@ -1885,6 +1904,9 @@ class EMConfig {
 
     @Cfg("Whether input tracking is used on sampling time, besides mutation time")
     var taintOnSampling = true
+
+    @Cfg("Apply taint analysis to handle special cases of Maps and Arrays")
+    var taintAnalysisForMapsAndArrays = true
 
     @Probability
     @Experimental
@@ -2264,12 +2286,11 @@ class EMConfig {
     @Probability(true)
     var probRestExamples = 0.20
 
-    @Experimental
     @Cfg("In REST, enable the supports of 'links' between resources defined in the OpenAPI schema, if any." +
             " When sampling a test case, if the last call has links, given this probability new calls are" +
             " added for the link.")
     @Probability(true)
-    var probUseRestLinks = 0.0
+    var probUseRestLinks = 0.5
 
     //TODO mark as deprecated once we support proper Robustness Testing
     @Cfg("When generating data, allow in some cases to use invalid values on purpose")
@@ -2290,13 +2311,11 @@ class EMConfig {
     @Cfg("Extra checks on HTTP properties in returned responses, used as automated oracles to detect faults.")
     var httpOracles = false
 
-    @Experimental
     @Cfg("Validate responses against their schema, to check for inconsistencies. Those are treated as faults.")
-    var schemaOracles = false
+    var schemaOracles = true
 
-    @Experimental
     @Cfg("Apply more advanced coverage criteria for black-box testing. This can result in larger generated test suites.")
-    var advancedBlackBoxCoverage = false
+    var advancedBlackBoxCoverage = true
 
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
@@ -2344,9 +2363,8 @@ class EMConfig {
     @Min(0.0)
     var thresholdDistanceForDataPool = 2
 
-    @Experimental
     @Cfg("Enable the collection of response data, to feed new individuals based on field names matching.")
-    var useResponseDataPool = false
+    var useResponseDataPool = true
 
     @Experimental
     @Probability(false)
@@ -2364,6 +2382,17 @@ class EMConfig {
     var namingStrategy = defaultTestCaseNamingStrategy
 
 
+    @Experimental
+    @Probability(true)
+    @Cfg("When sampling a new individual, probability that ALL optional choices are ON, or ALL are OFF." +
+            " The choice between ON and OFF depends on probabilityOfOnVsOffInAllOptionals.")
+    var probabilityAllOptionalsAreOnOrOff = 0.0
+
+    @Experimental
+    @Cfg("If all-optionals is activated with probabilityAllOptionalsAreOnOrOff, specifying probability of using ON" +
+            " instead of OFF.")
+    val probabilityOfOnVsOffInAllOptionals = 0.8
+
     fun getProbabilityUseDataPool() : Double{
         return if(blackBox){
             bbProbabilityUseDataPool
@@ -2372,22 +2401,22 @@ class EMConfig {
         }
     }
 
-    fun trackingEnabled() = isMIO() && (enableTrackEvaluatedIndividual || enableTrackIndividual)
+    fun trackingEnabled() = isUsingAdvancedTechniques() && (enableTrackEvaluatedIndividual || enableTrackIndividual)
 
     /**
      * impact info can be collected when archive-based solution is enabled or doCollectImpact
      */
-    fun isEnabledImpactCollection() = isMIO() && doCollectImpact || isEnabledArchiveGeneSelection()
+    fun isEnabledImpactCollection() = isUsingAdvancedTechniques() && doCollectImpact || isEnabledArchiveGeneSelection()
 
     /**
      * @return whether archive-based gene selection is enabled
      */
-    fun isEnabledArchiveGeneSelection() = isMIO() && probOfArchiveMutation > 0.0 && adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE
+    fun isEnabledArchiveGeneSelection() = isUsingAdvancedTechniques() && probOfArchiveMutation > 0.0 && adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE
 
     /**
      * @return whether archive-based gene mutation is enabled based on the configuration, ie, EMConfig
      */
-    fun isEnabledArchiveGeneMutation() = isMIO() && archiveGeneMutation != ArchiveGeneMutation.NONE && probOfArchiveMutation > 0.0
+    fun isEnabledArchiveGeneMutation() = isUsingAdvancedTechniques() && archiveGeneMutation != ArchiveGeneMutation.NONE && probOfArchiveMutation > 0.0
 
     fun isEnabledArchiveSolution() = isEnabledArchiveGeneMutation() || isEnabledArchiveGeneSelection()
 
@@ -2395,7 +2424,7 @@ class EMConfig {
     /**
      * @return whether enable resource-based method
      */
-    fun isEnabledResourceStrategy() = isMIO() && resourceSampleStrategy != ResourceSamplingStrategy.NONE
+    fun isEnabledResourceStrategy() = isUsingAdvancedTechniques() && resourceSampleStrategy != ResourceSamplingStrategy.NONE
 
     /**
      * @return whether enable resource-dependency based method
@@ -2434,27 +2463,31 @@ class EMConfig {
         return IdMapper.ALL_ACCEPTED_OBJECTIVE_PREFIXES.filter { excluded.contains(it.lowercase()) }
     }
 
-    fun isEnabledMutatingResponsesBasedOnActualResponse() = isMIO() && (probOfMutatingResponsesBasedOnActualResponse > 0)
+    fun isEnabledMutatingResponsesBasedOnActualResponse() = isUsingAdvancedTechniques() && (probOfMutatingResponsesBasedOnActualResponse > 0)
 
-    fun isEnabledHarvestingActualResponse(): Boolean = isMIO() && (probOfHarvestingResponsesFromActualExternalServices > 0 || probOfMutatingResponsesBasedOnActualResponse > 0)
+    fun isEnabledHarvestingActualResponse(): Boolean = isUsingAdvancedTechniques() && (probOfHarvestingResponsesFromActualExternalServices > 0 || probOfMutatingResponsesBasedOnActualResponse > 0)
 
     /**
-     * Check if the used algorithm is MIO.
      * MIO is the default search algorithm in EM for white-box testing.
      * Many techniques in EM are defined only for MIO, ie most improvements in EM are
      * done as an extension of MIO.
+     * Other search algorithms might use these advanced techniques, but would require non-standard exceptions.
+     *
      */
-    fun isMIO() = algorithm == Algorithm.MIO || (algorithm == Algorithm.DEFAULT && !blackBox)
+    fun isUsingAdvancedTechniques() =
+        algorithm == Algorithm.MIO
+                || algorithm == Algorithm.RW // Random Walk is just used to study Fitness Landscape in MIO
+                || (algorithm == Algorithm.DEFAULT && !blackBox)
 
-    fun isEnabledTaintAnalysis() = isMIO() && baseTaintAnalysisProbability > 0
+    fun isEnabledTaintAnalysis() = isUsingAdvancedTechniques() && baseTaintAnalysisProbability > 0
 
-    fun isEnabledSmartSampling() = (isMIO() || algorithm == Algorithm.SMARTS) && probOfSmartSampling > 0
+    fun isEnabledSmartSampling() = (isUsingAdvancedTechniques() || algorithm == Algorithm.SMARTS) && probOfSmartSampling > 0
 
-    fun isEnabledWeightBasedMutation() = isMIO() && weightBasedMutationRate
+    fun isEnabledWeightBasedMutation() = isUsingAdvancedTechniques() && weightBasedMutationRate
 
-    fun isEnabledInitializationStructureMutation() = isMIO() && initStructureMutationProbability > 0 && maxSizeOfMutatingInitAction > 0
+    fun isEnabledInitializationStructureMutation() = isUsingAdvancedTechniques() && initStructureMutationProbability > 0 && maxSizeOfMutatingInitAction > 0
 
-    fun isEnabledResourceSizeHandling() = isMIO() && probOfHandlingLength > 0 && maxSizeOfHandlingResource > 0
+    fun isEnabledResourceSizeHandling() = isUsingAdvancedTechniques() && probOfHandlingLength > 0 && maxSizeOfHandlingResource > 0
 
     fun getTagFilters() = endpointTagFilter?.split(",")?.map { it.trim() } ?: listOf()
 }

@@ -169,7 +169,7 @@ public class ClassToSchemaTest {
         String schema = ClassToSchema.getOrDeriveSchemaWithItsRef(Map.class);
         JsonObject all = parse(schema);
         JsonObject jvmMap = all.get(Map.class.getName()).getAsJsonObject().get(Map.class.getName()).getAsJsonObject();
-        verifyMapField(jvmMap, "string", false);
+        verifyUnconstrainedMap(jvmMap);
     }
 
     @Test
@@ -180,12 +180,12 @@ public class ClassToSchemaTest {
         assertEquals(2, UnitsInfoRecorder.getInstance().getParsedDtos().size());
 
         List<Class<?>> embedded = new ArrayList<>();
-        String cycleDtoASchema = ClassToSchema.getOrDeriveSchema(CycleDtoA.class, embedded);
+        String cycleDtoASchema = ClassToSchema.getOrDeriveNamedSchema(CycleDtoA.class, embedded);
         JsonObject json = parse(cycleDtoASchema);
         JsonObject obj = json.get(CycleDtoA.class.getName()).getAsJsonObject();
         checkCycleA(obj);
 
-        String cycleDtoBSchema = ClassToSchema.getOrDeriveSchema(CycleDtoB.class, embedded);
+        String cycleDtoBSchema = ClassToSchema.getOrDeriveNamedSchema(CycleDtoB.class, embedded);
         JsonObject jsonB = parse(cycleDtoBSchema);
         JsonObject objB = jsonB.get(CycleDtoB.class.getName()).getAsJsonObject();
         checkCycleB(objB);
@@ -306,6 +306,15 @@ public class ClassToSchemaTest {
         verifyMapField(field, valueType, isRef);
     }
 
+
+    private void verifyUnconstrainedMap(JsonObject field){
+        assertEquals("object", field.get("type").getAsString());
+        assertTrue(field.has("additionalProperties"));
+        assertFalse(field.has("properties"));
+        boolean ap = Boolean.parseBoolean(field.get("additionalProperties").getAsString());
+        assertTrue(ap);
+    }
+
     private void verifyMapField(JsonObject field, String valueType, boolean isRef){
         assertEquals("object", field.get("type").getAsString());
         assertTrue(field.has("additionalProperties"));
@@ -341,5 +350,19 @@ public class ClassToSchemaTest {
         JsonObject obj = json.get(DtoChar.class.getName()).getAsJsonObject();
         assertEquals(1, obj.get("properties").getAsJsonObject().entrySet().size());
         verifyTypeAndFormatOfFieldInProperties(obj, "string", "char", "foo");
+    }
+
+
+    @Test
+    public void testCacheIssue(){
+
+        String x = ClassToSchema.getOrDeriveNonNestedSchema(DtoInteger.class);
+        assertNotNull(x);
+        assertTrue(x.contains("foo"));
+
+        String y = ClassToSchema.getOrDeriveNonNestedSchema(Integer.class);
+        assertNotNull(y);
+        //cache should not screw up here
+        assertFalse(y.contains("foo"), y);
     }
 }

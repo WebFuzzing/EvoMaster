@@ -1,11 +1,8 @@
 package org.evomaster.e2etests.spring.openapi.v3
 
-import com.foo.rest.examples.spring.openapi.v3.taintkotlinequal.TaintKotlinEqualController
 import org.evomaster.client.java.controller.InstrumentedSutStarter
 import org.evomaster.client.java.instrumentation.InputProperties
 import org.evomaster.client.java.instrumentation.InstrumentingAgent
-import org.evomaster.core.EMConfig
-import org.evomaster.core.output.OutputFormat
 import org.evomaster.e2etests.utils.RestTestBase
 import org.junit.jupiter.api.BeforeAll
 

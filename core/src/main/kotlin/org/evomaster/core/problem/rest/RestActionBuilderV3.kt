@@ -16,8 +16,10 @@ import io.swagger.v3.oas.models.parameters.RequestBody
 import io.swagger.v3.oas.models.responses.ApiResponse
 import org.evomaster.client.java.instrumentation.shared.ClassToSchemaUtils.OPENAPI_COMPONENT_NAME
 import org.evomaster.client.java.instrumentation.shared.ClassToSchemaUtils.OPENAPI_SCHEMA_NAME
+import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
+import org.evomaster.core.StaticCounter
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.problem.api.param.Param
@@ -25,12 +27,10 @@ import org.evomaster.core.problem.rest.param.*
 import org.evomaster.core.problem.util.ActionBuilderUtil
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.gene.collection.ArrayGene
-import org.evomaster.core.search.gene.collection.EnumGene
-import org.evomaster.core.search.gene.collection.FixedMapGene
-import org.evomaster.core.search.gene.collection.PairGene
+import org.evomaster.core.search.gene.collection.*
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
+import org.evomaster.core.search.gene.datetime.FormatForDatesAndTimes
 import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.gene.numeric.*
 import org.evomaster.core.search.gene.optional.ChoiceGene
@@ -250,7 +250,7 @@ object RestActionBuilderV3 {
         val swagger = OpenAPIParser().readContents(schema,null,null).openAPI
 
         schemas.forEach { (t, u) ->
-            val gene = createObjectGene(t, swagger.components.schemas[t]!!,swagger, ArrayDeque(), t, options, mutableListOf())
+            val gene = getGene(t, swagger.components.schemas[t]!!,swagger, ArrayDeque(), t, options, messages = mutableListOf())
             dtoCache[u] = gene
         }
 
@@ -765,9 +765,19 @@ object RestActionBuilderV3 {
             "binary" -> return createNonObjectGeneWithSchemaConstraints(schema, name, StringGene::class.java, options, null, isInPath, examples, messages = messages)//StringGene(name) //does it need to be treated specially?
             "byte" -> return createNonObjectGeneWithSchemaConstraints(schema, name, Base64StringGene::class.java, options, null, isInPath, examples, messages = messages)//Base64StringGene(name)
             "date", "local-date" -> return DateGene(name, onlyValidDates = !options.invalidData)
-            "date-time", "local-date-time" -> return DateTimeGene(name,
-                date = DateGene("date", onlyValidDates = !options.invalidData),
-                time =  TimeGene("time", onlyValidTimes = !options.invalidData))
+            "date-time", "local-date-time" -> {
+                val f = if(format?.lowercase() == "date-time"){
+                    FormatForDatesAndTimes.RFC3339
+                } else {
+                    FormatForDatesAndTimes.ISO_LOCAL
+                }
+                return DateTimeGene(
+                    name,
+                    format = f,
+                    date = DateGene("date", onlyValidDates = !options.invalidData, format = f),
+                    time = TimeGene("time", onlyValidTimes = !options.invalidData, format = f)
+                )
+            }
             else -> if (format != null) {
                 messages.add("Unhandled format '$format' for '$name'")
             }
@@ -1101,8 +1111,16 @@ object RestActionBuilderV3 {
                 return FixedMapGene(name, additionalFieldTemplate)
 
             messages.add("No fields for object definition: $name")
-            // here, the first of pairgene should not be mutable
-            return FixedMapGene(name, PairGene.createStringPairGene(StringGene(name + "_field"), isFixedFirst = true))
+
+            if(schema.additionalProperties == null || (schema.additionalProperties is Boolean && schema.additionalProperties == true)) {
+                //default is true
+                return TaintedMapGene(name, TaintInputName.getTaintName(StaticCounter.getAndIncrease()))
+            } else {
+                /*
+                    If we get here, it is really something wrong with the schema...
+                 */
+                return FixedMapGene(name, PairGene.createStringPairGene(StringGene(name + "_field"), isFixedFirst = true))
+            }
         }
 
 
@@ -1585,6 +1603,7 @@ object RestActionBuilderV3 {
     }
 
 
+    @Deprecated("should be removed, no longer used")
     fun getModelsFromSwagger(swagger: OpenAPI,
                              modelCluster: MutableMap<String, ObjectGene>,
                             options: Options

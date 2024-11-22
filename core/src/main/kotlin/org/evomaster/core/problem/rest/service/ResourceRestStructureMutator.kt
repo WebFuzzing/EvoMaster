@@ -145,7 +145,7 @@ class ResourceRestStructureMutator : ApiWsStructureMutator() {
     }
 
     override fun mutateInitStructure(individual: Individual, evaluatedIndividual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?, targets: Set<Int>) {
-        if (!config.isMIO())
+        if (!config.isUsingAdvancedTechniques())
             throw IllegalStateException("resource-based solution currently is only enabled for MIO algorithm, but the algorithm is ${config.algorithm}")
 
         if (!randomness.nextBoolean(config.probOfSmartInitStructureMutator)){

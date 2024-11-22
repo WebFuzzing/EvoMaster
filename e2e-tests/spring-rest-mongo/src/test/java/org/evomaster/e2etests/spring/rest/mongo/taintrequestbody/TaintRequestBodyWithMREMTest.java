@@ -30,6 +30,10 @@ public class TaintRequestBodyWithMREMTest extends RestTestBase {
                 1000,
                 true,
                 (args) -> {
+                    setOption(args, "taintForceSelectionOfGenesWithSpecialization", "true");
+                    setOption(args,"discoveredInfoRewardedInFitness", "true");
+
+
                     setOption(args,"heuristicsForMongo","false");
                     setOption(args,"instrumentMR_MONGO","true");
                     setOption(args,"generateMongoData","false");
@@ -49,8 +53,11 @@ public class TaintRequestBodyWithMREMTest extends RestTestBase {
         runTestHandlingFlakyAndCompilation(
                 "TaintRequestBodyWithMREM",
                 "org.foo.spring.rest.mongo.TaintRequestBodyEMGeneration",
-                100,
+                1000,
                 (args) -> {
+                    setOption(args, "taintForceSelectionOfGenesWithSpecialization", "true");
+                    setOption(args,"discoveredInfoRewardedInFitness", "true");
+
                     setOption(args,"heuristicsForMongo","false");
                     setOption(args,"instrumentMR_MONGO","true");
                     setOption(args,"generateMongoData","false");

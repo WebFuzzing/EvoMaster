@@ -30,7 +30,7 @@ on:
 #      - "**"
 
 env:
-  evomaster-version: 3.2.1
+  evomaster-version: 3.3.1
   # Unfortunately, to use JPackage we need JDK 17 or above :(
   # Which is really bad due to the madness of --add-opens.
   # Even if hunt down all cases of reflections in EM, there is still the problem of
@@ -108,7 +108,7 @@ jobs:
         env:
           CI_env: GithubAction
       - name: Upload evomaster.jar
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: evomaster.jar
           path: core/target/evomaster.jar
@@ -119,7 +119,7 @@ jobs:
         if: success() || failure()
         uses: mikepenz/action-junit-report@v4
         env:
-          NODE_OPTIONS: "--max_old_space_size=4096"
+          NODE_OPTIONS: "--max_old_space_size=6144"
         with:
           report_paths: '**/target/surefire-reports/TEST-*.xml'
       # Upload coverage results
@@ -242,7 +242,7 @@ jobs:
         with:
           java-version: ${{env.release-jdk}}
       - name: Download fat jar
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: evomaster.jar
           path: core/target
@@ -250,7 +250,7 @@ jobs:
         shell: bash
         run: bash makeExecutable.sh WINDOWS
       - name: Upload installation file
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: evomaster.msi
           path: release/evomaster-${{env.evomaster-version}}.msi
@@ -267,7 +267,7 @@ jobs:
         with:
           java-version: ${{env.release-jdk}}
       - name: Download fat jar
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: evomaster.jar
           path: core/target
@@ -275,7 +275,7 @@ jobs:
         shell: bash
         run: bash makeExecutable.sh OSX
       - name: Upload installation file
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: evomaster.dmg
           path: release/evomaster-${{env.evomaster-version}}.dmg
@@ -292,7 +292,7 @@ jobs:
         with:
           java-version: ${{env.release-jdk}}
       - name: Download fat jar
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: evomaster.jar
           path: core/target
@@ -303,7 +303,7 @@ jobs:
         shell: bash
         run: ls -l release
       - name: Upload installation file
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: evomaster.deb
 #          JDK 17 and 21 use different suffixes... doesn't seem configurable :(

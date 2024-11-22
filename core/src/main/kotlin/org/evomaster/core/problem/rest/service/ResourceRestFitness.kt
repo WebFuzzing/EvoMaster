@@ -44,7 +44,9 @@ class ResourceRestFitness : AbstractRestFitness() {
     override fun doCalculateCoverage(
         individual: RestIndividual,
         targets: Set<Int>,
-        allCovered: Boolean
+        allTargets: Boolean,
+        fullyCovered: Boolean,
+        descriptiveIds: Boolean,
     ): EvaluatedIndividual<RestIndividual>? {
 
         rc.resetSUT()
@@ -84,7 +86,7 @@ class ResourceRestFitness : AbstractRestFitness() {
             computeFitnessForEachEnterpriseActionGroup(individual, chainState, cookies, tokens, allServedHttpRequests, actionResults)
 
         val allRestResults = actionResults.filterIsInstance<RestCallResult>()
-        val dto = restActionResultHandling(individual, targets, allCovered, allRestResults, fv)
+        val dto = restActionResultHandling(individual, targets, allTargets, fullyCovered, descriptiveIds, allRestResults, fv)
             ?: return null
 
         /*

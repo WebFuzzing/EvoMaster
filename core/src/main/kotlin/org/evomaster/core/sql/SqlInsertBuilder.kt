@@ -17,7 +17,8 @@ import org.evomaster.core.logging.LoggingUtil
 
 
 class SqlInsertBuilder(
-    public val schemaDto: DbSchemaDto,
+    public val schemaDto: DbInfoDto,
+
     private val dbExecutor: DatabaseExecutor? = null
 ) {
 
@@ -124,7 +125,7 @@ class SqlInsertBuilder(
         validateExtraConstraintsHandle(schemaDto)
     }
 
-    private fun validateExtraConstraintsHandle(schemaDto: DbSchemaDto) {
+    private fun validateExtraConstraintsHandle(schemaDto: DbInfoDto) {
         schemaDto.extraConstraintDtos.forEach { extraConstraintsDto ->
             val table = tables.values.find { matchJpaName(it.name, extraConstraintsDto.tableName) }
             if (table == null) {
@@ -149,7 +150,7 @@ class SqlInsertBuilder(
     }
 
     private fun newTableWithExtraConstraints(
-        schemaDto: DbSchemaDto,
+        schemaDto: DbInfoDto,
         table: Table
     ): Table {
         val extrasForTable = schemaDto.extraConstraintDtos
@@ -200,7 +201,7 @@ class SqlInsertBuilder(
     private fun generateColumnsFrom(
         tableDto: TableDto,
         tableConstraints: MutableList<TableConstraint>,
-        schemaDto: DbSchemaDto
+        schemaDto: DbInfoDto
     ): MutableSet<Column> {
         val columns = mutableSetOf<Column>()
 
@@ -220,7 +221,7 @@ class SqlInsertBuilder(
     private fun createColumnFrom(
         column: ColumnDto,
         tableConstraints: MutableList<TableConstraint>,
-        schemaDto: DbSchemaDto
+        schemaDto: DbInfoDto
     ): Column {
         val (lowerBoundForColumn: Long?, upperBoundForColumn: Long?) = calculateBounds(tableConstraints, column)
         val enumValuesForColumn: List<String>? = findEnumValuesForColumn(tableConstraints, column, schemaDto)
@@ -255,7 +256,7 @@ class SqlInsertBuilder(
 
     private fun compositeTypeFrom(
         compositeTypeDto: CompositeTypeDto,
-        schemaDto: DbSchemaDto
+        schemaDto: DbInfoDto
     ): MutableList<Column> {
         val columns = mutableListOf<Column>()
         for (columnDto in compositeTypeDto.columns) {
@@ -273,7 +274,7 @@ class SqlInsertBuilder(
         Here, we need to transform (and validate) the input DTO
         into immutable domain objects
      **/
-    private fun validateInputDTO(schemaDto: DbSchemaDto) {
+    private fun validateInputDTO(schemaDto: DbInfoDto) {
 
         if (counter < 0) {
             throw IllegalArgumentException("Invalid negative counter: $counter")
@@ -422,7 +423,7 @@ class SqlInsertBuilder(
     private fun findEnumValuesForColumn(
         tableConstraints: MutableList<TableConstraint>,
         c: ColumnDto,
-        schemaDto: DbSchemaDto
+        schemaDto: DbInfoDto
     ): List<String>? {
         val enumConstraints = filterEnumConstraints(tableConstraints, c.name)
         val enumValuesAsStrings = if (enumConstraints.isNotEmpty())

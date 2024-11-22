@@ -113,14 +113,12 @@ class SecurityRest {
      */
     private fun expandWithForbidden() {
 
-        val getOperations = RestIndividualSelectorUtils.getAllActionDefinitions(actionDefinitions, HttpVerb.GET)
-
-        getOperations.forEach { get ->
+        actionDefinitions.forEach { op ->
 
             val forbidden = RestIndividualSelectorUtils.findIndividuals(
                 individualsInSolution,
-                HttpVerb.GET,
-                get.path,
+                op.verb,
+                op.path,
                 status = 403
             )
             if(forbidden.isNotEmpty()){
@@ -130,8 +128,8 @@ class SecurityRest {
 
             val unauthorized = RestIndividualSelectorUtils.findIndividuals(
                 individualsInSolution,
-                HttpVerb.GET,
-                get.path,
+                op.verb,
+                op.path,
                 status = 401
             )
             if(unauthorized.isEmpty()){
@@ -143,19 +141,19 @@ class SecurityRest {
 
             val candidates = RestIndividualSelectorUtils.findIndividuals(
                 individualsInSolution,
-                HttpVerb.GET,
-                get.path,
+                op.verb,
+                op.path,
                 statusGroup = StatusGroup.G_2xx,
                 authenticated = true
             )
 
             if (candidates.isNotEmpty()){
-                handleCandidatesForGet403(get.path, candidates)
+                handleCandidatesFor403(op.verb, op.path, candidates)
             }
         }
     }
 
-    private fun handleCandidatesForGet403(path: RestPath, candidates: List<EvaluatedIndividual<RestIndividual>>){
+    private fun handleCandidatesFor403(verb: HttpVerb, path: RestPath, candidates: List<EvaluatedIndividual<RestIndividual>>){
 
         /*
             we have no idea of the access policy for each user.
@@ -166,7 +164,7 @@ class SecurityRest {
             //first make copy and slice off all after the 2xx
             val index = RestIndividualSelectorUtils.findIndexOfAction(
                 it,
-                HttpVerb.GET,
+                verb,
                 path,
                 statusGroup = StatusGroup.G_2xx,
                 authenticated = true
@@ -190,7 +188,23 @@ class SecurityRest {
                 //try each of them
                 otherUsers.forEach { otherAuth ->
                     val copy = ind.copy() as RestIndividual
+
+                    if(lastCall.verb == HttpVerb.PUT){
+                        /*
+                            a PUT might create the resource, so need to duplicate before changing auth. ie
+                            from
+                            PUT /x FOO
+                            to
+                            PUT /x FOO
+                            PUT /x BAR
+                         */
+                        val repeat = lastCall.copy() as RestCallAction
+                        copy.addMainActionInEmptyEnterpriseGroup(action = repeat)
+                        copy.resetLocalIdRecursively()
+                        copy.doInitializeLocalId()
+                    }
                     copy.seeMainExecutableActions().last().auth = otherAuth
+                    org.evomaster.core.Lazy.assert {copy.verifyValidity(); true}
 
                     val ei = fitness.computeWholeAchievedCoverageForPostProcessing(copy)
                     if(ei != null) {
@@ -543,13 +557,23 @@ class SecurityRest {
             //anyway, let's verify indeed second last action if a 403 target verb. otherwise, it is a problem
             val ema = evaluatedIndividual.evaluatedMainActions()
             val secondLast = ema[ema.size - 2]
-            if (!(secondLast.action is RestCallAction && secondLast.action.verb == verb
-                        && secondLast.result is RestCallResult && secondLast.result.getStatusCode() == 403)
-            ) {
-                log.warn("Issue with constructing evaluated individual. Expected a 403 $verb, but got: $secondLast")
+            val secondLastAction = secondLast.action
+            val secondLastResult = secondLast.result
+            if(secondLastAction !is RestCallAction || secondLastResult !is RestCallResult) {
+                //shouldn't really ever happen...
+                //TODO should refactor code to enforce generics in subclasses
+                log.warn("Wrong type: non-REST action/result")
+                return@forEach
+            }
+            if (secondLastAction.verb != verb ||  secondLastResult.getStatusCode() != 403) {
+                log.warn("Issue with constructing evaluated individual. Expected a 403 $verb," +
+                        " but got: ${secondLastResult.getStatusCode()} ${secondLastAction.verb}")
                 return@forEach
             }
 
+            /*
+                FIXME: isn't this wrong??? ie, should be done in fitness function
+             */
             val scenarioId = idMapper.handleLocalTarget("security:forbidden$verb:${lastAction.path}")
             evaluatedIndividual.fitness.updateTarget(scenarioId, 1.0)
 

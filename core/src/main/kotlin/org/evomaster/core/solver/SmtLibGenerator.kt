@@ -5,7 +5,7 @@ import net.sf.jsqlparser.statement.select.PlainSelect
 import net.sf.jsqlparser.statement.select.Select
 import net.sf.jsqlparser.util.TablesNamesFinder
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
-import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto
+import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto
 import org.evomaster.client.java.controller.api.dto.database.schema.ForeignKeyDto
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
 import org.evomaster.core.utils.StringUtils
@@ -23,7 +23,7 @@ import java.util.*
  * @param schema The database schema containing tables and constraints.
  * @param numberOfRows The number of rows to be considered in constraints.
  */
-class SmtLibGenerator(private val schema: DbSchemaDto, private val numberOfRows: Int) {
+class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: Int) {
 
     private var parser = JSqlConditionParser()
 

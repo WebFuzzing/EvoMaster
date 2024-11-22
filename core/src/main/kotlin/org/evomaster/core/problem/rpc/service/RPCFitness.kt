@@ -39,7 +39,9 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
     override fun doCalculateCoverage(
         individual: RPCIndividual,
         targets: Set<Int>,
-        allCovered: Boolean
+        allTargets: Boolean,
+        fullyCovered: Boolean,
+        descriptiveIds: Boolean,
     ): EvaluatedIndividual<RPCIndividual>? {
 
         rc.resetSUT()
@@ -58,7 +60,7 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
             }
         }
 
-        val dto = updateFitnessAfterEvaluation(targets, allCovered, individual, fv)
+        val dto = updateFitnessAfterEvaluation(targets, allTargets, fullyCovered, descriptiveIds, individual, fv)
                 ?: return null
         handleExtra(dto, fv)
 
@@ -75,7 +77,7 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
 
         if (config.isEnabledTaintAnalysis()) {
             Lazy.assert { rpcActionResults.size == dto.additionalInfoList.size }
-            TaintAnalysis.doTaintAnalysis(individual, dto.additionalInfoList, randomness, config.enableSchemaConstraintHandling)
+            TaintAnalysis.doTaintAnalysis(individual, dto.additionalInfoList, randomness, config)
         }
 
         return EvaluatedIndividual(fv, individual.copy() as RPCIndividual, actionResults, trackOperator = individual.trackOperator, index = time.evaluatedIndividuals, config = config)

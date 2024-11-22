@@ -13,8 +13,10 @@ public class JsonTaint {
 
     /**
      * Check if given input is a valid taint for a JSON element.
+     *
+     * @param isArray if true, then assuming that klass is the type of the array, and not the array itself
      */
-    public static void handlePossibleJsonTaint(String taint, Class<?> klass) {
+    public static void handlePossibleJsonTaint(String taint, Class<?> klass, boolean isArray) {
 
         if (!ExecutionTracer.isTaintInput(taint)) {
             return;
@@ -22,17 +24,22 @@ public class JsonTaint {
 
         StringSpecializationInfo info;
 
+
         try{
-            if(List.class.isAssignableFrom(klass) || Set.class.isAssignableFrom(klass)){
-                // TODO are there cases in which the content structure would be available? to check
+            if(isArray){
+                info = new StringSpecializationInfo(StringSpecialization.JSON_ARRAY,
+                        ClassToSchema.getOrDeriveSchemaWithItsRef(klass));
+            } else if(List.class.isAssignableFrom(klass) || Set.class.isAssignableFrom(klass)){
                 info = new StringSpecializationInfo(StringSpecialization.JSON_ARRAY,null);
             } else if (Map.class.isAssignableFrom(klass)){
                 /*
-                    might add schema if we have generic info later
+                    TODO: might add schema if we have generic info later.
+                    TODO if so, check and update MapDtoJacksonEMTest
                  */
                 info = new StringSpecializationInfo(StringSpecialization.JSON_MAP, null);
             }else {
-                info = new StringSpecializationInfo(StringSpecialization.JSON_OBJECT, ClassToSchema.getOrDeriveSchemaWithItsRef(klass));
+                info = new StringSpecializationInfo(StringSpecialization.JSON_OBJECT,
+                        ClassToSchema.getOrDeriveSchemaWithItsRef(klass));
             }
 
             ExecutionTracer.addStringSpecialization(taint, info);

@@ -54,6 +54,13 @@ class ChoiceGene<T>(
     }
 
 
+    fun selectActiveGene(index: Int){
+        if (index < 0 || index >= geneChoices.size) {
+            throw IllegalArgumentException("Index $index must be between 0 and ${geneChoices.size - 1}")
+        }
+        activeGeneIndex = index
+    }
+
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
 
         activeGeneIndex = if(probabilities != null){
@@ -85,10 +92,11 @@ class ChoiceGene<T>(
      * of the selectionStrategy and the additionalGeneMutationInfo
      */
     override fun mutablePhenotypeChildren(): List<Gene> {
-        return listOf(activeGene())
+        return listOf(activeGene()).filter { it.isMutable() }
     }
 
-    override fun <T> getWrappedGene(klass: Class<T>) : T?  where T : Gene{
+    @Suppress("BOUNDS_NOT_ALLOWED_IF_BOUNDED_BY_TYPE_PARAMETER")
+    override fun <T,K> getWrappedGene(klass: Class<K>) : T?  where T : Gene, T: K{
         if(this.javaClass == klass){
             return this as T
         }
@@ -256,7 +264,7 @@ class ChoiceGene<T>(
     /**
      * Checks that the active gene is the one locally valid
      */
-    override fun isLocallyValid() = geneChoices.all { it.isLocallyValid() }
+    override fun checkForLocallyValidIgnoringChildren() = true
 
     override fun isPrintable() = this.geneChoices[activeGeneIndex].isPrintable()
 

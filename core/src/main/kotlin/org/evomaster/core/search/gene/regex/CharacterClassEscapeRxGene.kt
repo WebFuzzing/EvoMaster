@@ -36,7 +36,7 @@ class CharacterClassEscapeRxGene(
         }
     }
 
-    override fun isLocallyValid() : Boolean{
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
         return value.matches(Regex("\\$type"))
     }
 

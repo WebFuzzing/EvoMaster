@@ -1,6 +1,7 @@
 package org.evomaster.core.search.matchproblem
 
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.FloatGene
@@ -56,7 +57,7 @@ open class PrimitiveTypeMatchIndividual (action: PrimitiveTypeMatchAction) :  In
 
     override fun size(): Int = 1
 
-    override fun seeGenes(filter: GeneFilter): List<out Gene> {
+    override fun seeTopGenes(filter: ActionFilter): List<out Gene> {
         return (children[0] as PrimitiveTypeMatchAction).seeTopGenes()
     }
 

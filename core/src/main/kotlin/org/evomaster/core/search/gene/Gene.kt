@@ -17,6 +17,7 @@ import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.search.RootElement
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.SearchGlobalState
+import org.evomaster.core.search.service.monitor.ProcessMonitorExcludeField
 
 
 /**
@@ -107,6 +108,7 @@ abstract class Gene(
      *
      * In other words, this relationship is symmetric, transitive but not reflexive
      */
+    @ProcessMonitorExcludeField
     private val bindingGenes: MutableSet<Gene> = mutableSetOf()
 
     init{
@@ -248,7 +250,8 @@ abstract class Gene(
         if (copy !is Gene)
             throw IllegalStateException("mismatched type: the type should be Gene, but it is ${this::class.java.simpleName}")
         copy.initialized = initialized
-        copy.flatView().forEach{it.initialized = initialized}
+        //this was incorrect, as subchildren might had different init state compared to this
+        //copy.flatView().forEach{it.initialized = initialized}
         return copy
     }
 
@@ -296,7 +299,8 @@ abstract class Gene(
      * Will return [this] if of the specified type, otherwise [null].
      * Wrapper genes, and only those, will override this method to check their children
      */
-    open  fun <T> getWrappedGene(klass: Class<T>) : T?  where T : Gene{
+    @Suppress("BOUNDS_NOT_ALLOWED_IF_BOUNDED_BY_TYPE_PARAMETER")
+    open  fun <T,K> getWrappedGene(klass: Class<K>) : T?  where T : Gene, T : K{
 
         if(this.javaClass == klass){
             return this as T
@@ -324,7 +328,7 @@ abstract class Gene(
      *  "Locally" here means that the constraints are based only on the current gene and all its children,
      *  but not genes up in the hierarchy and in other actions.
      *
-     * Note that the method is only used for debugging and testing purposes.
+     * Note that the method is mainly used for debugging and testing purposes.
      *  e.g., for NumberGene, if min and max are specified, the value should be within min..max.
      *        for FloatGene with precision 2, the value 10.222 would not be considered as a valid gene.
      * Sampling a gene at random until is valid could end up in an infinite loop, so should be avoided.
@@ -334,12 +338,22 @@ abstract class Gene(
      *
      * Note that, if a gene is valid, then all of its children must be valid as well, regardless of whether
      * they are having any effect on the phenotype.
-     *
-     * A default implementation could be:
-     *        return getViewOfChildren().all { it.isLocallyValid() }
-     * but here we want to force new genes to explicitly write this method
      */
-    abstract fun isLocallyValid() : Boolean
+    fun isLocallyValid() : Boolean{
+
+        if(!checkForLocallyValidIgnoringChildren()){
+            return false
+        }
+
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
+
+    /**
+     * Force each gene to implement this method.
+     * This MUST not check its children.
+     */
+    protected abstract fun checkForLocallyValidIgnoringChildren() : Boolean
+
 
     /**
      *  Verify all constraints (including locals).
@@ -362,6 +376,10 @@ abstract class Gene(
         //TODO in future will deal with FK as well here
     }
 
+    /**
+     * We don't force each gene to implement this method, as only a few would have
+     * global constraints
+     */
     protected open fun checkForGloballyValid() = true
 
     /**
@@ -459,7 +477,7 @@ abstract class Gene(
             throw IllegalArgumentException("Trying adaptive weight selection, but with no info as input")
         }
 
-        if(children.none { it.isMutable() }){
+        if(mutablePhenotypeChildren().isEmpty()){
             //no mutable child, so always apply shallow mutate
             return true
         }
@@ -755,7 +773,7 @@ abstract class Gene(
             return listOf()
         }
 
-        return root.seeGenes()
+        return root.seeTopGenes()
     }
 
     /**
@@ -831,7 +849,7 @@ abstract class Gene(
     private fun computeTransitiveBindingGenes(all : MutableSet<Gene>){
         val root = getRoot()
         val allBindingGene = bindingGenes.plus(
-            if (root is Individual) root.seeGenes().flatMap { it.flatView() }.filter {
+            if (root is Individual) root.seeFullTreeGenes().filter {
                 r-> r != this && r.bindingGenes.contains(this)
             }
             else emptyList()

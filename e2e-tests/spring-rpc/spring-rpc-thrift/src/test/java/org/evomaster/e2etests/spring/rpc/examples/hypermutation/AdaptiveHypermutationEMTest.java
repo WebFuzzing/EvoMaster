@@ -28,6 +28,9 @@ public class AdaptiveHypermutationEMTest extends RPCHypermutationTestBase {
 
     @Test
     public void testRunEM() throws Throwable {
+
+        defaultSeed = 1;
+
         runTestHandlingFlakyAndCompilation(
                 "AdaptiveHypermutationEM",
                 "org.bar.AdaptiveHypermutationEM",

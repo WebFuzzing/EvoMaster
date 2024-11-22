@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 class SecurityNotRecognizedEMTest : SpringTestBase(){
@@ -33,6 +34,7 @@ class SecurityNotRecognizedEMTest : SpringTestBase(){
         ) { args: MutableList<String> ->
 
             setOption(args, "security", "true")
+            setOption(args, "schemaOracles", "false")
 
             val solution = initAndRun(args)
 

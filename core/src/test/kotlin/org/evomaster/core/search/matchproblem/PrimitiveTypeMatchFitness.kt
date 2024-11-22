@@ -20,7 +20,9 @@ class PrimitiveTypeMatchFitness : FitnessFunction<PrimitiveTypeMatchIndividual>(
     override fun doCalculateCoverage(
         individual: PrimitiveTypeMatchIndividual,
         targets: Set<Int>,
-        allCovered: Boolean
+        allTargets: Boolean,
+        fullyCovered: Boolean,
+        descriptiveIds: Boolean,
     ): EvaluatedIndividual<PrimitiveTypeMatchIndividual>? {
 
         val fv = FitnessValue(individual.size().toDouble())

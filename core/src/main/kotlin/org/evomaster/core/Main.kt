@@ -168,6 +168,7 @@ class Main {
 
             val config = injector.getInstance(EMConfig::class.java)
             val idMapper = injector.getInstance(IdMapper::class.java)
+            val epc = injector.getInstance(ExecutionPhaseController::class.java)
 
             var solution = run(injector, controllerInfo)
 
@@ -199,10 +200,17 @@ class Main {
                 }
             }
 
+            if(config.httpOracles && config.problemType == EMConfig.ProblemType.REST){
+                LoggingUtil.getInfoLogger().info("Starting to apply HTTP")
+
+                val httpSemanticsService = injector.getInstance(HttpSemanticsService::class.java)
+                solution = httpSemanticsService.applyHttpSemanticsPhase()
+            }
 
             if(config.security){
                 //apply security testing phase
                 LoggingUtil.getInfoLogger().info("Starting to apply security testing")
+                epc.startSecurity()
 
                 //TODO might need to reset stc, and print some updated info again
 
@@ -324,6 +332,9 @@ class Main {
             }
 
             solution.statistics = data.toMutableList()
+
+            epc.finishSearch()
+
             return solution
         }
 
@@ -477,6 +488,8 @@ class Main {
                     Key.get(object : TypeLiteral<WtsAlgorithm<GraphQLIndividual>>() {})
                 EMConfig.Algorithm.MOSA ->
                     Key.get(object : TypeLiteral<MosaAlgorithm<GraphQLIndividual>>() {})
+                EMConfig.Algorithm.RW ->
+                    Key.get(object : TypeLiteral<RandomWalkAlgorithm<GraphQLIndividual>>() {})
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
         }
@@ -494,6 +507,8 @@ class Main {
                     Key.get(object : TypeLiteral<WtsAlgorithm<RPCIndividual>>() {})
                 EMConfig.Algorithm.MOSA ->
                     Key.get(object : TypeLiteral<MosaAlgorithm<RPCIndividual>>() {})
+                EMConfig.Algorithm.RW ->
+                    Key.get(object : TypeLiteral<RandomWalkAlgorithm<RPCIndividual>>() {})
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
         }
@@ -511,6 +526,8 @@ class Main {
                     Key.get(object : TypeLiteral<WtsAlgorithm<WebIndividual>>() {})
                 EMConfig.Algorithm.MOSA ->
                     Key.get(object : TypeLiteral<MosaAlgorithm<WebIndividual>>() {})
+                EMConfig.Algorithm.RW ->
+                    Key.get(object : TypeLiteral<RandomWalkAlgorithm<WebIndividual>>() {})
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
         }
@@ -528,6 +545,8 @@ class Main {
                     Key.get(object : TypeLiteral<WtsAlgorithm<RestIndividual>>() {})
                 EMConfig.Algorithm.MOSA ->
                     Key.get(object : TypeLiteral<MosaAlgorithm<RestIndividual>>() {})
+                EMConfig.Algorithm.RW ->
+                    Key.get(object : TypeLiteral<RandomWalkAlgorithm<RestIndividual>>() {})
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
         }
@@ -535,6 +554,8 @@ class Main {
         fun run(injector: Injector, controllerInfo: ControllerInfoDto?): Solution<*> {
 
             val config = injector.getInstance(EMConfig::class.java)
+            val epc = injector.getInstance(ExecutionPhaseController::class.java)
+            epc.startSearch()
 
             if (!config.blackBox || config.bbExperiments) {
                 val rc = injector.getInstance(RemoteController::class.java)

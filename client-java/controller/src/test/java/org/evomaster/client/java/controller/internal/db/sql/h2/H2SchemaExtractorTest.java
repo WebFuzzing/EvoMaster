@@ -6,7 +6,7 @@ import org.evomaster.client.java.controller.InstrumentedSutStarter;
 import org.evomaster.client.java.controller.api.dto.database.schema.*;
 import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.evomaster.client.java.controller.internal.SutController;
-import org.evomaster.client.java.sql.SchemaExtractor;
+import org.evomaster.client.java.sql.DbInfoExtractor;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
@@ -26,10 +26,10 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
 
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT)");
 
-        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+        DbInfoDto schema = DbInfoExtractor.extract(getConnection());
         assertNotNull(schema);
 
-        assertAll(() -> assertEquals("public", schema.name.toLowerCase()),
+        assertAll(() -> assertEquals("db_test", schema.name.toLowerCase()),
                 () -> assertEquals(DatabaseType.H2, schema.databaseType),
                 () -> assertEquals(1, schema.tables.size()),
                 () -> assertEquals("foo", schema.tables.get(0).name.toLowerCase()),
@@ -41,7 +41,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
     public void testTwoTables() throws Exception {
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT); CREATE TABLE Bar(y INT)");
 
-        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+        DbInfoDto schema = DbInfoExtractor.extract(getConnection());
         assertNotNull(schema);
 
         assertEquals(2, schema.tables.size());
@@ -58,7 +58,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
                 ", primary key (id) " +
                 ");");
 
-        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+        DbInfoDto schema = DbInfoExtractor.extract(getConnection());
 
         TableDto table = schema.tables.get(0);
         assertEquals(2, table.columns.size());
@@ -92,7 +92,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
                 ", primary key (id) " +
                 ");");
 
-        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+        DbInfoDto schema = DbInfoExtractor.extract(getConnection());
 
         TableDto table = schema.tables.get(0);
         assertEquals(3, table.columns.size());
@@ -132,7 +132,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
                         " ALTER TABLE Foo add constraint barIdKey foreign key (barId) references Bar;\n"
         );
 
-        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+        DbInfoDto schema = DbInfoExtractor.extract(getConnection());
         assertEquals(2, schema.tables.size());
 
         TableDto bar = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Bar")).findAny().get();
@@ -153,7 +153,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
 
         SqlScriptRunner.runScriptFromResourceFile(getConnection(), "/db_schemas/quizgame.sql");
 
-        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+        DbInfoDto schema = DbInfoExtractor.extract(getConnection());
         assertEquals(6, schema.tables.size());
 
         //TODO test all of its content
@@ -180,7 +180,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
         String sqlCommand = "CREATE TABLE FOO (fooId INT, age_max integer check (age_max<=100));";
         SqlScriptRunner.execCommand(getConnection(), sqlCommand);
 
-        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+        DbInfoDto schema = DbInfoExtractor.extract(getConnection());
 
         assertEquals(1, schema.tables.size());
 
@@ -208,7 +208,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
                 + "ALTER TABLE FOO ADD CONSTRAINT CHK_AGE_MAX CHECK (age_max<=100);";
         SqlScriptRunner.execCommand(getConnection(), sqlCommand);
 
-        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+        DbInfoDto schema = DbInfoExtractor.extract(getConnection());
 
         assertEquals(1, schema.tables.size());
 
@@ -232,7 +232,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
 
         SqlScriptRunner.execCommand(getConnection(), sqlCommand);
 
-        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+        DbInfoDto schema = DbInfoExtractor.extract(getConnection());
 
         assertEquals(1, schema.tables.size());
 
@@ -253,7 +253,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
                 + "ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in ('A', 'B'));";
         SqlScriptRunner.execCommand(getConnection(), sqlCommand);
 
-        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+        DbInfoDto schema = DbInfoExtractor.extract(getConnection());
 
         assertEquals(1, schema.tables.size());
 
@@ -278,7 +278,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
 
         SqlScriptRunner.execCommand(getConnection(), sqlCommand);
 
-        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+        DbInfoDto schema = DbInfoExtractor.extract(getConnection());
 
         assertEquals(1, schema.tables.size());
 
@@ -302,7 +302,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
 
         SqlScriptRunner.execCommand(getConnection(), sqlCommand);
 
-        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+        DbInfoDto schema = DbInfoExtractor.extract(getConnection());
 
         assertEquals(1, schema.tables.size());
 
@@ -327,7 +327,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
 
         SqlScriptRunner.execCommand(getConnection(), sqlCommand);
 
-        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+        DbInfoDto schema = DbInfoExtractor.extract(getConnection());
 
         assertEquals(1, schema.tables.size());
 
@@ -351,7 +351,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
 
         SqlScriptRunner.execCommand(getConnection(), sqlCommand);
 
-        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+        DbInfoDto schema = DbInfoExtractor.extract(getConnection());
 
         assertEquals(1, schema.tables.size());
 
@@ -376,7 +376,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
 
         SqlScriptRunner.execCommand(getConnection(), sqlCommand);
 
-        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+        DbInfoDto schema = DbInfoExtractor.extract(getConnection());
 
         assertEquals(1, schema.tables.size());
 
@@ -400,7 +400,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
 
         SqlScriptRunner.execCommand(getConnection(), sqlCommand);
 
-        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+        DbInfoDto schema = DbInfoExtractor.extract(getConnection());
 
         assertEquals(1, schema.tables.size());
 
@@ -425,7 +425,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
 
         SqlScriptRunner.execCommand(getConnection(), sqlCommand);
 
-        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+        DbInfoDto schema = DbInfoExtractor.extract(getConnection());
 
         assertEquals(1, schema.tables.size());
 
@@ -449,7 +449,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
 
         SqlScriptRunner.execCommand(getConnection(), sqlCommand);
 
-        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+        DbInfoDto schema = DbInfoExtractor.extract(getConnection());
 
         assertEquals(1, schema.tables.size());
 
@@ -471,7 +471,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
                 + "ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in ('A', 'B'));";
         SqlScriptRunner.execCommand(getConnection(), sqlCommand);
 
-        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+        DbInfoDto schema = DbInfoExtractor.extract(getConnection());
 
         assertEquals(1, schema.tables.size());
 
@@ -494,7 +494,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
         SqlScriptRunner.execCommand(connection, "CREATE TABLE FOO (f_id TEXT NOT NULL);\n"
                 + "ALTER TABLE FOO ADD CONSTRAINT check_f_id_1 CHECK (f_id LIKE 'hi' OR f_id LIKE 'low');\n");
 
-        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+        DbInfoDto schema = DbInfoExtractor.extract(getConnection());
 
         assertEquals(1, schema.tables.size());
 
@@ -517,7 +517,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
         SqlScriptRunner.execCommand(connection, "CREATE TYPE enumType as ENUM (10, 20, 30);");
         SqlScriptRunner.execCommand(connection, "CREATE TABLE FOO (enumTypeColumn enumType NOT NULL);");
 
-        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+        DbInfoDto schema = DbInfoExtractor.extract(getConnection());
         assertEquals(1, schema.tables.size());
 
         TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
@@ -543,7 +543,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
         SqlScriptRunner.execCommand(connection, "CREATE TYPE cardsuit as ENUM ('clubs', 'diamonds', 'hearts', 'spades');");
         SqlScriptRunner.execCommand(connection, "CREATE TABLE FOO (cardsuitColumn cardsuit NOT NULL);");
 
-        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+        DbInfoDto schema = DbInfoExtractor.extract(getConnection());
         assertEquals(1, schema.tables.size());
 
         TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
@@ -568,7 +568,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
     public void testEnumColumn() throws Exception {
         SqlScriptRunner.execCommand(connection, "CREATE TABLE FOO (enumColumn ENUM('clubs', 'diamonds', 'hearts', 'spades') NOT NULL);");
 
-        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+        DbInfoDto schema = DbInfoExtractor.extract(getConnection());
         assertEquals(1, schema.tables.size());
 
         TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
@@ -595,7 +595,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
 
         SqlScriptRunner.execCommand(getConnection(), sqlCommand);
 
-        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+        DbInfoDto schema = DbInfoExtractor.extract(getConnection());
         assertEquals(1, schema.tables.size());
 
         Optional<TableDto> fooTableOptional = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("foo")).findAny();
@@ -618,7 +618,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
         String sqlCommand = "CREATE TABLE FOO (booleanArrayColumn BOOLEAN ARRAY ARRAY NOT NULL);";
         SqlScriptRunner.execCommand(getConnection(), sqlCommand);
 
-        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+        DbInfoDto schema = DbInfoExtractor.extract(getConnection());
         assertEquals(1, schema.tables.size());
 
         Optional<TableDto> fooTableOptional = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("foo")).findAny();
@@ -641,7 +641,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
     public void testMultidimensionalArrayOfThreeDimensions() throws Exception {
         String sqlCommand = "CREATE TABLE FOO (booleanArrayColumn BOOLEAN ARRAY ARRAY ARRAY NOT NULL);";
         SqlScriptRunner.execCommand(getConnection(), sqlCommand);
-        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+        DbInfoDto schema = DbInfoExtractor.extract(getConnection());
         assertEquals(1, schema.tables.size());
 
         Optional<TableDto> fooTableOptional = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("foo")).findAny();
@@ -664,7 +664,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
     public void testBooleanNonlArray() throws Exception {
         String sqlCommand = "CREATE TABLE FOO (booleanColumn BOOLEAN NOT NULL);";
         SqlScriptRunner.execCommand(getConnection(), sqlCommand);
-        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+        DbInfoDto schema = DbInfoExtractor.extract(getConnection());
         assertEquals(1, schema.tables.size());
 
         Optional<TableDto> fooTableOptional = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("foo")).findAny();
@@ -687,7 +687,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
     public void testVarCharArray() throws Exception {
         String sqlCommand = "CREATE TABLE FOO (varCharArrayColumn VARCHAR ARRAY NOT NULL);";
         SqlScriptRunner.execCommand(getConnection(), sqlCommand);
-        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+        DbInfoDto schema = DbInfoExtractor.extract(getConnection());
         assertEquals(1, schema.tables.size());
 
         Optional<TableDto> fooTableOptional = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("foo")).findAny();
@@ -711,7 +711,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
     public void testIntegerArrayWithMaxLengthColumn() throws Exception {
         String sqlCommand = "CREATE TABLE FOO (integerArrayWithMaxLengthColumn INTEGER ARRAY[10] NOT NULL);";
         SqlScriptRunner.execCommand(getConnection(), sqlCommand);
-        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+        DbInfoDto schema = DbInfoExtractor.extract(getConnection());
         assertEquals(1, schema.tables.size());
 
         Optional<TableDto> fooTableOptional = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("foo")).findAny();
@@ -735,7 +735,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
         String sqlCommand = "CREATE TABLE FOO (booleanArrayColumn BOOLEAN ARRAY[3] ARRAY[2] ARRAY[5] NOT NULL);";
         SqlScriptRunner.execCommand(getConnection(), sqlCommand);
         assertThrows(RuntimeException.class, () -> {
-            SchemaExtractor.extract(getConnection());
+            DbInfoExtractor.extract(getConnection());
         });
     }
 
