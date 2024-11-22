@@ -59,7 +59,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     }
 
 
-        /**
+    /**
      * Closes the Z3 Docker executor and cleans up temporary files.
      */
     override fun close() {
@@ -78,7 +78,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
      * @param sqlQuery The SQL query to solve.
      * @return A list of SQL actions that can be executed to satisfy the query.
      */
-    override fun solve(schemaDto: DbSchemaDto, sqlQuery: String, numberOfRows: Int): List<SqlAction> {
+    override fun solve(schemaDto: DbInfoDto, sqlQuery: String, numberOfRows: Int): List<SqlAction> {
         // TODO: Use memoized, if it's the same schema and query, return the same result and don't do any calculation
 
         val generator = SmtLibGenerator(schemaDto, numberOfRows)
@@ -110,7 +110,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
      * @param z3Response The response from Z3.
      * @return A list of SQL actions.
      */
-    private fun toSqlActionList(schemaDto: DbSchemaDto, z3Response: Optional<MutableMap<String, SMTLibValue>>): List<SqlAction> {
+    private fun toSqlActionList(schemaDto: DbInfoDto, z3Response: Optional<MutableMap<String, SMTLibValue>>): List<SqlAction> {
         if (!z3Response.isPresent) {
             return emptyList()
         }
@@ -168,7 +168,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         return value.equals("True", ignoreCase = true)
     }
 
-    private fun isBoolean(schemaDto: DbSchemaDto, table: Table, columnName: String?): Boolean {
+    private fun isBoolean(schemaDto: DbInfoDto, table: Table, columnName: String?): Boolean {
         val col = schemaDto.tables.first { it.name == table.name }.columns.first { it.name == columnName }
         return col.type == "BOOLEAN"
     }
@@ -211,7 +211,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
      * @param tableDto The table DTO containing column definitions.
      * @return A set of Column objects.
      */
-    private fun findColumns(schemaDto: DbSchemaDto, tableDto: TableDto): Set<Column> {
+    private fun findColumns(schemaDto: DbInfoDto, tableDto: TableDto): Set<Column> {
         return tableDto.columns.map { columnDto ->
             toColumnFromDto(columnDto, schemaDto.databaseType)
         }.toSet()

@@ -1,8 +1,7 @@
 package org.evomaster.core.solver
 
 import net.sf.jsqlparser.JSQLParserException
-import org.evomaster.client.java.sql.SchemaExtractor
-import org.apache.commons.io.FileUtils
+import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto
 import org.evomaster.client.java.sql.DbInfoExtractor
 import org.evomaster.client.java.sql.SqlScriptRunner
 import org.evomaster.core.search.gene.Gene
