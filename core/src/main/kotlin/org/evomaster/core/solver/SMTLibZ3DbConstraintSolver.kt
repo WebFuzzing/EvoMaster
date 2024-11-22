@@ -1,5 +1,6 @@
 package org.evomaster.core.solver
 
+import com.google.inject.Inject
 import net.sf.jsqlparser.JSQLParserException
 import net.sf.jsqlparser.parser.CCJSqlParserUtil
 import net.sf.jsqlparser.statement.Statement
@@ -8,6 +9,7 @@ import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
+import org.evomaster.core.EMConfig
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.numeric.DoubleGene
@@ -15,6 +17,7 @@ import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.schema.Column
 import org.evomaster.core.sql.schema.ColumnDataType
@@ -29,6 +32,7 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.*
+import javax.annotation.PostConstruct
 
 /**
  * An SMT solver implementation using Z3 in a Docker container.
@@ -37,11 +41,25 @@ import java.util.*
  * to satisfy the query.
  */
 class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
-    private val resourcesFolder = System.getProperty("user.dir") + "/target/tmp";
-    private val executor: Z3DockerExecutor = Z3DockerExecutor(resourcesFolder)
+    private val resourcesFolder = System.getProperty("user.dir") + "/target/tmp"
+    private  lateinit var executor: Z3DockerExecutor
     private var idCounter: Long = 0L
 
-    /**
+    @Inject
+    private lateinit var config: EMConfig
+
+    @Inject
+    private lateinit var time: SearchTimeController
+
+    @PostConstruct
+    private fun postConstruct() {
+        if (config.generateSqlDataWithDSE) {
+            executor = Z3DockerExecutor(resourcesFolder);
+        }
+    }
+
+
+        /**
      * Closes the Z3 Docker executor and cleans up temporary files.
      */
     override fun close() {
