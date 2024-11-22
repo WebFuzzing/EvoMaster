@@ -582,7 +582,7 @@ internal class EMConfigTest{
         val parser = EMConfig.getOptionParser()
         val config = EMConfig()
 
-        var options = parser.parse("--outputFormat", "PYTHON_UNITTEST")
+        val options = parser.parse("--outputFormat", "PYTHON_UNITTEST")
         assertThrows(Exception::class.java, {config.updateProperties(options)})
     }
 
@@ -605,6 +605,50 @@ internal class EMConfigTest{
         config.updateProperties(parser.parse())
 
         assertEquals(NamingStrategy.NUMBERED, config.namingStrategy)
+    }
+
+    @Test
+    fun testQueryParamsInTestCaseNamesValidForActionStrategy() {
+        val parser = EMConfig.getOptionParser()
+        val config = EMConfig()
+
+        val options = parser.parse("--namingStrategy", "ACTION", "--nameWithQueryParameters", "true")
+        config.updateProperties(options)
+
+        assertEquals(NamingStrategy.ACTION, config.namingStrategy)
+        assertTrue(config.nameWithQueryParameters)
+    }
+
+    @Test
+    fun testQueryParamsInTestCaseNamesFalseTurnsFeatureOff() {
+        val parser = EMConfig.getOptionParser()
+        val config = EMConfig()
+
+        val options = parser.parse("--namingStrategy", "ACTION", "--nameWithQueryParameters", "false")
+        config.updateProperties(options)
+
+        assertEquals(NamingStrategy.ACTION, config.namingStrategy)
+        assertFalse(config.nameWithQueryParameters)
+    }
+
+    @Test
+    fun testQueryParamsInTestCaseNamesIsNotValidForNumberedStrategy() {
+        val parser = EMConfig.getOptionParser()
+        val config = EMConfig()
+
+        val options = parser.parse("--namingStrategy", "NUMBERED", "--nameWithQueryParameters", "true")
+
+        assertThrows(Exception::class.java, {config.updateProperties(options)})
+    }
+
+    @Test
+    fun testQueryParamsInTestCaseNamesIsOffByDefault() {
+        val parser = EMConfig.getOptionParser()
+        val config = EMConfig()
+
+        config.updateProperties(parser.parse())
+
+        assertFalse(config.nameWithQueryParameters)
     }
 
 }

@@ -475,6 +475,10 @@ class EMConfig {
             throw ConfigProblemException("Python output is used only for black-box testing")
         }
 
+        if (namingStrategy == NamingStrategy.NUMBERED && nameWithQueryParameters) {
+            throw ConfigProblemException("Test case naming with Query Parameters is only allowed for Action based naming strategy")
+        }
+
         when (stoppingCriterion) {
             StoppingCriterion.TIME -> if (maxEvaluations != defaultMaxEvaluations) {
                 throw ConfigProblemException("Changing number of max actions, but stopping criterion is time")
@@ -2380,6 +2384,11 @@ class EMConfig {
 
     @Cfg("Specify the naming strategy for test cases.")
     var namingStrategy = defaultTestCaseNamingStrategy
+
+    @Experimental
+    @Cfg("Specify if true boolean query parameters are included in the test case name." +
+            " Used for test case naming disambiguation. Only valid for Action based naming strategy.")
+    var nameWithQueryParameters = false
 
 
     @Experimental

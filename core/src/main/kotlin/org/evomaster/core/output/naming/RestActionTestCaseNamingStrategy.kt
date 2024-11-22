@@ -11,11 +11,13 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.EvaluatedAction
+import org.evomaster.core.search.gene.BooleanGene
 import javax.ws.rs.core.MediaType
 
 open class RestActionTestCaseNamingStrategy(
     solution: Solution<*>,
-    languageConventionFormatter: LanguageConventionFormatter
+    languageConventionFormatter: LanguageConventionFormatter,
+    private val nameWithQueryParameters: Boolean,
 ) : ActionTestCaseNamingStrategy(solution, languageConventionFormatter)  {
 
     override fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>, ambiguitySolver: ((Action) -> List<String>)?): String {
@@ -86,7 +88,6 @@ open class RestActionTestCaseNamingStrategy(
             .filter { it.value.size == 1 && !it.key.second }
             .mapNotNull { entry ->
                 val eInd = entry.value[0]
-//                duplicatedIndividuals.remove(eInd)
                 eInd to expandName(eInd, mutableListOf(), ::pathAmbiguitySolver)
             }
             .toMap()
@@ -130,7 +131,6 @@ open class RestActionTestCaseNamingStrategy(
             .filter { it.value.size == 1 && it.key.isNotEmpty()}
             .mapNotNull { entry ->
                 val eInd = entry.value[0]
-//                duplicatedIndividuals.remove(eInd)
                 eInd to expandName(eInd, mutableListOf(), ::queryParamsAmbiguitySolver)
             }
             .toMap()
@@ -147,7 +147,26 @@ open class RestActionTestCaseNamingStrategy(
         val queryParams = restAction.parameters.filterIsInstance<QueryParam>()
         result.add(with)
         result.add(if (queryParams.size > 1) "${queryParam}s" else queryParam)
+        if (nameWithQueryParameters) {
+            addQueryParameterNames(queryParams, result)
+        }
         return result
+    }
+
+    private fun addQueryParameterNames(queryParams: List<QueryParam>, result: MutableList<String>) {
+        val booleanQueryParams = getBooleanQueryParams(queryParams)
+        if (booleanQueryParams.isNotEmpty()) {
+            booleanQueryParams.forEachIndexed { index, queryParam ->
+                result.add(queryParam.name)
+                if (index != booleanQueryParams.lastIndex) {
+                    result.add(and)
+                }
+            }
+        }
+    }
+
+    private fun getBooleanQueryParams(queryParams: List<QueryParam>): List<QueryParam> {
+        return queryParams.filter { it.getGeneForQuery() is BooleanGene && (it.getGeneForQuery() as BooleanGene).value }
     }
 
     private fun removeSolvedDuplicates(duplicatedIndividuals: MutableSet<EvaluatedIndividual<*>>, disambiguatedIndividuals: Set<EvaluatedIndividual<*>>) {
