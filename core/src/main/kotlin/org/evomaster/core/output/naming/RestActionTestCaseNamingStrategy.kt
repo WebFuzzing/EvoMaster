@@ -155,12 +155,10 @@ open class RestActionTestCaseNamingStrategy(
 
     private fun addQueryParameterNames(queryParams: List<QueryParam>, result: MutableList<String>) {
         val booleanQueryParams = getBooleanQueryParams(queryParams)
-        if (booleanQueryParams.isNotEmpty()) {
-            booleanQueryParams.forEachIndexed { index, queryParam ->
-                result.add(queryParam.name)
-                if (index != booleanQueryParams.lastIndex) {
-                    result.add(and)
-                }
+        booleanQueryParams.forEachIndexed { index, queryParam ->
+            result.add(queryParam.name)
+            if (index != booleanQueryParams.lastIndex) {
+                result.add(and)
             }
         }
     }

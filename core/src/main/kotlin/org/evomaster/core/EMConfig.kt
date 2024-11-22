@@ -475,10 +475,6 @@ class EMConfig {
             throw ConfigProblemException("Python output is used only for black-box testing")
         }
 
-        if (namingStrategy == NamingStrategy.NUMBERED && nameWithQueryParameters) {
-            throw ConfigProblemException("Test case naming with Query Parameters is only allowed for Action based naming strategy")
-        }
-
         when (stoppingCriterion) {
             StoppingCriterion.TIME -> if (maxEvaluations != defaultMaxEvaluations) {
                 throw ConfigProblemException("Changing number of max actions, but stopping criterion is time")

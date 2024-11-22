@@ -632,16 +632,6 @@ internal class EMConfigTest{
     }
 
     @Test
-    fun testQueryParamsInTestCaseNamesIsNotValidForNumberedStrategy() {
-        val parser = EMConfig.getOptionParser()
-        val config = EMConfig()
-
-        val options = parser.parse("--namingStrategy", "NUMBERED", "--nameWithQueryParameters", "true")
-
-        assertThrows(Exception::class.java, {config.updateProperties(options)})
-    }
-
-    @Test
     fun testQueryParamsInTestCaseNamesIsOffByDefault() {
         val parser = EMConfig.getOptionParser()
         val config = EMConfig()
