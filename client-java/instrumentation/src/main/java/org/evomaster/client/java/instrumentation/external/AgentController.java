@@ -101,6 +101,7 @@ public class AgentController {
                     case BOOTING_SUT:
                         handleBootingSut();
                         sendCommand(Command.ACK);
+                        break;
                     case BOOT_TIME_INFO:
                         handleBootTimeObjectiveInfo();
                         break;
