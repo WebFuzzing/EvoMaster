@@ -9,6 +9,7 @@ import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.remote.SutProblemException
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionComponent
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -33,6 +34,16 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
 
     protected val adHocInitialIndividuals: MutableList<RPCIndividual> = mutableListOf()
 
+    /**
+     * Set of available schedule task actions that can be used to define a test case
+     *
+     * Key -> schedule task type plus task name
+     *
+     * Value -> an action
+     */
+    protected val scheduleActionCluster: MutableMap<String, Action> = mutableMapOf()
+
+
     @PostConstruct
     fun initialize() {
         log.debug("Initializing {}", RPCSampler::class.simpleName)
@@ -54,7 +65,7 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
         val problem = infoDto.rpcProblem
                 ?: throw IllegalStateException("Missing problem definition object")
 
-        rpcHandler.initActionCluster(problem, actionCluster, infoDto)
+        rpcHandler.initActionCluster(problem, actionCluster,scheduleActionCluster, infoDto)
 
         initSqlInfo(infoDto)
 
