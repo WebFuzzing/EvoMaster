@@ -32,6 +32,7 @@ import org.evomaster.core.problem.rpc.auth.RPCAuthenticationInfo
 import org.evomaster.core.problem.rpc.auth.RPCNoAuth
 import org.evomaster.core.problem.rpc.param.RPCParam
 import org.evomaster.core.problem.scheduletask.ScheduleTaskAction
+import org.evomaster.core.problem.scheduletask.ScheduleTaskAction.Companion.getScheduleTaskActionId
 import org.evomaster.core.problem.util.ActionBuilderUtil
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.util.ParserDtoUtil.parseJsonNodeAsGene
@@ -249,15 +250,25 @@ class RPCEndpointsHandler {
             }.toMutableList()
 
             // handle schedule task action
-            // TODO
+            val scheduleTaskActions = e.value.scheduleTaskInvocationDtos.map {
+                handleScheduleTask(it)
+            }.toMutableList()
 
-
-            if (rpcActions.any { it.seeTopGenes().any { g-> !g.isLocallyValid() } }){
-                log.warn("The given test (${e.key}) is invalid (e.g., violate constraints) that will not be involved in the test generation")
+            if (rpcActions.isNotEmpty() || scheduleTaskActions.isNotEmpty()){
+                if (rpcActions.any { it.seeTopGenes().any { g-> !g.isLocallyValid() } }){
+                    log.warn("The given test (${e.key}) is invalid (e.g., violate constraints) that will not be involved in the test generation")
+                    null
+                }else
+                    RPCIndividual(
+                        sampleType = SampleType.SEEDED,
+                        actions = rpcActions,
+                        externalServicesActions = exActions,
+                        scheduleTaskActions =  scheduleTaskActions
+                    )
+            }else{
+                log.warn("The given test (${e.key}) has 0 RPCCall Actions and 0 ScheduleTask Actions")
                 null
-            }else
-                RPCIndividual(sampleType = SampleType.SEEDED, actions = rpcActions, externalServicesActions = exActions)
-
+            }
         }.filterNotNull()
     }
 
@@ -277,36 +288,43 @@ class RPCEndpointsHandler {
     }
 
     private fun extractScheduleTaskAction(dto: ScheduleTaskInvocationDto, cluster : MutableMap<String, Action>){
-        val id = ScheduleTaskAction.getScheduleTaskActionId(taskType = dto.scheduleTaskType, taskName = dto.taskName)
+        val id = getScheduleTaskActionId(taskType = dto.scheduleTaskType, taskName = dto.taskName)
 
         val existing = cluster[id] as? ScheduleTaskAction
         if (existing != null &&
             (existing.parameters.isNotEmpty() || emptyRequestParams(dto))) return
 
+        val scheduleTaskAction = handleScheduleTask(dto)
+        cluster[scheduleTaskAction.taskId] = scheduleTaskAction
+    }
+
+    private fun handleScheduleTask(dto: ScheduleTaskInvocationDto) : ScheduleTaskAction{
         val params : MutableList<Param> = if (dto.requestParams == null && dto.requestParamsAsStrings == null) {
             mutableListOf()
         } else if (dto.requestParams == null && dto.requestParamsAsStrings != null){
             dto.requestParamsAsStrings.mapIndexed { index, s ->
                 val requestName = "scheduleRequestParam$index"
                 val node = readJson(s)
-                val gene = if (node != null){
+                val gene = (if (node != null){
                     parseJsonNodeAsGene(requestName, node)
                 }else{
-                    StringGene(requestName)
-                }
+                    StringGene(requestName, s)
+                }.run { wrapWithOptionalGene(this, true) })
                 RPCParam(requestName, gene)
             }.toMutableList()
         }else if ((dto.requestParams != null && dto.requestParamsAsStrings == null) ||
             (dto.requestParams.size ==  dto.requestParamsAsStrings.size)){
             dto.requestParams.mapIndexed { index,  paramDto ->
-                RPCParam("scheduleRequestParam$index",handleDtoParam(paramDto))
+                RPCParam("scheduleRequestParam$index",
+                    wrapWithOptionalGene(handleDtoParam(paramDto), true)
+                )
             }.toMutableList()
         }else{
             throw IllegalArgumentException("mismatched request parameters info")
         }
 
-        val scheduleTaskAction = ScheduleTaskAction(
-            taskId = id,
+        return ScheduleTaskAction(
+            taskId = getScheduleTaskActionId(taskType = dto.scheduleTaskType, taskName = dto.taskName),
             taskName = dto.taskName,
             parameters = params,
             immutableExtraInfo = mutableMapOf(
@@ -315,7 +333,6 @@ class RPCEndpointsHandler {
                 "hostName" to dto.hostName
             )
         )
-        cluster[id] = scheduleTaskAction
     }
 
     private fun extractRPCExternalServiceAction(sutInfoDto: SutInfoDto, rpcActionDto: RPCActionDto){
@@ -362,7 +379,7 @@ class RPCEndpointsHandler {
                                 if (node != null){
                                     parseJsonNodeAsGene("return", node)
                                 }else{
-                                    StringGene("return")
+                                    StringGene("return", dto.responses[index])
                                 }
                             }.run { wrapWithOptionalGene(this, true) }) as OptionalGene
 
@@ -641,10 +658,8 @@ class RPCEndpointsHandler {
                     extractRPCExternalServiceAction(infoDto, a)
                 }
                 // handle schedule task
-                // TODO
                 t.scheduleTaskInvocationDtos?.forEach{s ->
                     extractScheduleTaskAction(s, scheduleActionsCluster)
-
                 }
 
             }
