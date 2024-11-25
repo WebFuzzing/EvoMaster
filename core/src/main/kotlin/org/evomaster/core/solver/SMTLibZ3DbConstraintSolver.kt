@@ -54,10 +54,13 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     @PostConstruct
     private fun postConstruct() {
         if (config.generateSqlDataWithDSE) {
-            executor = Z3DockerExecutor(resourcesFolder);
+            initializeExecutor()
         }
     }
 
+    fun initializeExecutor() {
+        executor = Z3DockerExecutor(resourcesFolder)
+    }
 
     /**
      * Closes the Z3 Docker executor and cleans up temporary files.
