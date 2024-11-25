@@ -326,6 +326,7 @@ class RPCEndpointsHandler {
             parameters = params,
             immutableExtraInfo = mutableMapOf(
                 "appKey" to dto.appKey,
+                "scheduleTaskType" to dto.scheduleTaskType,
                 "descriptiveInfo" to dto.descriptiveInfo,
                 "hostName" to dto.hostName
             )
