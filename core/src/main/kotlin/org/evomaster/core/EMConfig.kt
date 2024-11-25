@@ -2381,6 +2381,11 @@ class EMConfig {
     @Cfg("Specify the naming strategy for test cases.")
     var namingStrategy = defaultTestCaseNamingStrategy
 
+    @Experimental
+    @Cfg("Specify if true boolean query parameters are included in the test case name." +
+            " Used for test case naming disambiguation. Only valid for Action based naming strategy.")
+    var nameWithQueryParameters = false
+
 
     @Experimental
     @Probability(true)
