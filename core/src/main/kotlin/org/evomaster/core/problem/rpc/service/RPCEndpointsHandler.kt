@@ -272,9 +272,6 @@ class RPCEndpointsHandler {
         }.filterNotNull()
     }
 
-
-
-
     private fun readJson(response: String) : JsonNode?{
         return try {
             objectMapper.readTree(response)
@@ -442,6 +439,19 @@ class RPCEndpointsHandler {
                 LoggingUtil.uniqueWarn(log, "incorrect mockDatabaseDto with ${dbDto.commandName?:"null"} commandName, ${dbDto.appKey?:"null"} appKey, and ${dbDto.responseFullType?:"null"} responseFullType")
             }
 
+        }
+    }
+
+    fun transformScheduleTaskInvocationDto(scheduleTaskAction: ScheduleTaskAction) : ScheduleTaskInvocationDto{
+        return ScheduleTaskInvocationDto().apply {
+            taskName = scheduleTaskAction.taskName
+            requestParamsAsStrings = scheduleTaskAction.parameters.map {
+                (it as RPCParam).primaryGene().getValueAsRawString()
+            }
+            appKey = scheduleTaskAction.immutableExtraInfo?.get("appKey")
+            scheduleTaskType = scheduleTaskAction.immutableExtraInfo?.get("scheduleTaskType")
+            descriptiveInfo = scheduleTaskAction.immutableExtraInfo?.get("descriptiveInfo")
+            hostName = scheduleTaskAction.immutableExtraInfo?.get("hostName")
         }
     }
 
