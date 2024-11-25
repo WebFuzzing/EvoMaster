@@ -152,7 +152,7 @@ class RPCEndpointsHandler {
      * a map of schedule tasks based on seeded tests
      *
      */
-    private val seededScheduleTaskActions = mutableMapOf<String, ScheduleTaskAction>()
+    private val seededScheduleTaskActions = mutableMapOf<String, MutableList<ScheduleTaskAction>>()
 
     /**
      * key is type in the schema
@@ -272,8 +272,50 @@ class RPCEndpointsHandler {
         }
     }
 
-    private fun extractScheduleTaskAction(scheduleTaskInvocationDto: ScheduleTaskInvocationDto){
-        val key = scheduleTaskActionName(scheduleTaskInvocationDto.taskName)
+    private fun emptyRequestParams(dto: ScheduleTaskInvocationDto) : Boolean{
+        return ((dto.requestParams?.size ?: 0) == 0) && ((dto.requestParamsAsStrings?.size ?: 0) == 0)
+    }
+
+    private fun extractScheduleTaskAction(dto: ScheduleTaskInvocationDto, cluster : MutableMap<String, Action>){
+        val id = ScheduleTaskAction.getScheduleTaskActionId(taskType = dto.scheduleTaskType, taskName = dto.taskName)
+
+        val existing = cluster[id] as? ScheduleTaskAction
+        if (existing != null &&
+            (existing.parameters.isNotEmpty() || emptyRequestParams(dto))) return
+
+        val params : MutableList<Param> = if (dto.requestParams == null && dto.requestParamsAsStrings == null) {
+            mutableListOf()
+        } else if (dto.requestParams == null && dto.requestParamsAsStrings != null){
+            dto.requestParamsAsStrings.mapIndexed { index, s ->
+                val requestName = "scheduleRequestParam$index"
+                val node = readJson(s)
+                val gene = if (node != null){
+                    parseJsonNodeAsGene(requestName, node)
+                }else{
+                    StringGene(requestName)
+                }
+                RPCParam(requestName, gene)
+            }.toMutableList()
+        }else if ((dto.requestParams != null && dto.requestParamsAsStrings == null) ||
+            (dto.requestParams.size ==  dto.requestParamsAsStrings.size)){
+            dto.requestParams.mapIndexed { index,  paramDto ->
+                RPCParam("scheduleRequestParam$index",handleDtoParam(paramDto))
+            }.toMutableList()
+        }else{
+            throw IllegalArgumentException("mismatched request parameters info")
+        }
+
+        val scheduleTaskAction = ScheduleTaskAction(
+            taskId = id,
+            taskName = dto.taskName,
+            parameters = params,
+            immutableExtraInfo = mutableMapOf(
+                "appKey" to dto.appKey,
+                "descriptiveInfo" to dto.descriptiveInfo,
+                "hostName" to dto.hostName
+            )
+        )
+        cluster[id] = scheduleTaskAction
     }
 
     private fun extractRPCExternalServiceAction(sutInfoDto: SutInfoDto, rpcActionDto: RPCActionDto){
@@ -527,7 +569,12 @@ class RPCEndpointsHandler {
     /**
      * reset [actionCluster] based on interface schemas specified in [problem]
      */
-    fun initActionCluster(problem: RPCProblemDto, actionCluster: MutableMap<String, Action>, infoDto: SutInfoDto){
+    fun initActionCluster(
+        problem: RPCProblemDto,
+        actionCluster: MutableMap<String, Action>,
+        scheduleActionsCluster: MutableMap<String, Action>,
+        infoDto: SutInfoDto
+    ){
         this.infoDto = infoDto
 
         val clientVariableMap = problem.schemas.mapIndexed {i, e->
@@ -542,6 +589,8 @@ class RPCEndpointsHandler {
         }
 
         actionCluster.clear()
+        scheduleActionsCluster.clear()
+
         problem.schemas.forEach{ i->
             i.endpoints.forEach{e->
                 e.clientVariable = clientVariableMap[e.interfaceId]
@@ -593,6 +642,10 @@ class RPCEndpointsHandler {
                 }
                 // handle schedule task
                 // TODO
+                t.scheduleTaskInvocationDtos?.forEach{s ->
+                    extractScheduleTaskAction(s, scheduleActionsCluster)
+
+                }
 
             }
 
@@ -1201,8 +1254,6 @@ class RPCEndpointsHandler {
     }
 
     private fun actionName(interfaceName: String, endpointName: String) = "$interfaceName:$endpointName"
-
-    private fun scheduleTaskActionName(prefix: String, taskName: String) = "$prefix:$taskName"
 
     private fun handleDtoParam(param: ParamDto, building: Boolean = false): Gene{
         val gene = when(param.type.type){

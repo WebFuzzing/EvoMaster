@@ -19,7 +19,7 @@ class ScheduleTaskAction(
         with customized techniques
         such info is not mutable
      */
-    val immutableExtraInfo: Map<String, String>? = null
+    val immutableExtraInfo: Map<String, String?>? = null
 ): EnvironmentAction(parameters) {
 
     companion object{
