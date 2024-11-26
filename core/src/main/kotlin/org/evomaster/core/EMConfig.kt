@@ -1153,6 +1153,10 @@ class EMConfig {
     @Probability
     var probOfRandomSampling = 0.8
 
+    @Cfg("Probability of sampling a new individual with schedule tasks. Note that schedule task is only enabled for RPCProblem")
+    @Probability
+    var probOfSamplingScheduleTask = 0.5
+
     @Cfg("The percentage of passed search before starting a more focused, less exploratory one")
     @PercentageAsProbability(true)
     var focusedSearchActivationTime = 0.8

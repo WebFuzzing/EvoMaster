@@ -577,7 +577,28 @@ class RPCEndpointsHandler {
     }
 
 
-    private fun handleActionWithSeededCandidates(action: RPCCallAction, candidateKey: String){
+    /**
+     * @param action to be set with one seed at random
+     * @param noSeedProbability  is a probability to not apply any seed
+     * @return an action with/without seed
+     */
+    fun scheduleActionWithRandomSeeded(action: ScheduleTaskAction, noSeedProbability: Double): ScheduleTaskAction{
+        if (action.seeTopGenes().isEmpty()) return action
+        /*
+            TODO Man need to check
+             if we need to have seeded genes for schedule task
+             if needed, how to specify it, same as RPCCall?
+         */
+        val candidates = actionWithCustomizedCandidatesMap[action.taskId]
+        if (candidates.isNullOrEmpty() || randomness.nextBoolean(noSeedProbability))
+            handleActionNoSeededCandidates(action)
+        else
+            handleActionWithSeededCandidates(action, randomness.choose(candidates))
+        return action
+    }
+
+
+    private fun handleActionWithSeededCandidates(action: Action, candidateKey: String){
         action.seeTopGenes().flatMap { it.flatView() }.filter { it is CustomMutationRateGene<*> && it.gene is SeededGene<*> }.forEach { g->
             val index = ((g as CustomMutationRateGene<*>).gene as SeededGene<*>).seeded.values.indexOfFirst { it is Gene && it.name == candidateKey }
             if (index != -1){
@@ -587,7 +608,7 @@ class RPCEndpointsHandler {
         }
     }
 
-    private fun handleActionNoSeededCandidates(action: RPCCallAction){
+    private fun handleActionNoSeededCandidates(action: Action){
         action.seeTopGenes().filter { it is CustomMutationRateGene<*> && it.gene is SeededGene<*> }.forEach { g->
             ((g as CustomMutationRateGene<*>).gene as SeededGene<*>).employSeeded = false
             ((g.gene as SeededGene<*>).gene as Gene).randomize(randomness, false)

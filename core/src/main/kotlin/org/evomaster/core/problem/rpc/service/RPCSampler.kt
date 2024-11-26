@@ -105,13 +105,34 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
         return action
     }
 
+    /**
+     * sample a schedule task action from [scheduleActionCluster] at random
+     * @param noSeedProbability specifies a probability which does not apply seeded one
+     */
+    fun sampleRandomScheduleTaskAction(noSeedProbability: Double = 0.05) : ScheduleTaskAction{
+        val action = randomness.choose(scheduleActionCluster).copy() as ScheduleTaskAction
+        action.doInitialize(randomness)
+        rpcHandler.scheduleActionWithRandomSeeded(action, noSeedProbability)
+        return action
+    }
+
     override fun sampleAtRandom(): RPCIndividual {
         val len = randomness.nextInt(1, config.maxTestSize)
-        val actions = (0 until len).map {
+        val actions : MutableList<ActionComponent> = (0 until len).map {
             val a = sampleRandomAction(0.05)
             EnterpriseActionGroup(mutableListOf(a), RPCCallAction::class.java)
+        }.toMutableList()
+
+        val leftlen = config.maxTestSize - len
+        if (leftlen > 0 && randomness.nextBoolean(config.probOfSamplingScheduleTask)){
+            val slen = randomness.nextInt(1, leftlen)
+            val scheduleActions = (0 until slen).map {
+                sampleRandomScheduleTaskAction()
+            }
+            actions.addAll(0, scheduleActions)
         }
-        val ind = createRPCIndividual(sampleType = SampleType.RANDOM, actions.toMutableList())
+
+        val ind = createRPCIndividual(sampleType = SampleType.RANDOM, actions)
         ind.doGlobalInitialize(searchGlobalState)
         return ind
     }
@@ -153,6 +174,7 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
     }
 
     private fun createSingleCallIndividualOnEachAction() {
+        // create a test with one RPC call
         actionCluster.asSequence()
                 .filter { a -> a.value is RPCCallAction }
                 .forEach { a ->
@@ -187,13 +209,13 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
         )
     }
 
-    private fun createRPCIndividual(sampleType: SampleType, actions : MutableList<EnterpriseActionGroup<*>>) : RPCIndividual{
+    private fun createRPCIndividual(sampleType: SampleType, actions : MutableList<ActionComponent>) : RPCIndividual{
         // enable tracking in rpc
         return RPCIndividual(
             sampleType = sampleType,
             trackOperator = if(config.trackingEnabled()) this else null,
             index = if (config.trackingEnabled()) time.evaluatedIndividuals else -1,
-            allActions=actions as MutableList<ActionComponent>
+            allActions=actions
         )
     }
 }
