@@ -167,17 +167,18 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
                         }
                     }
                 }
-
+        // create a test with one schedule task
         scheduleActionCluster.asSequence()
             .filter { it.value is ScheduleTaskAction }
             .forEach { a->
                 val copy = a.value.copy() as ScheduleTaskAction
                 copy.doInitialize(randomness)
-
+                val ind = createSingleScheduleTaskRPCIndividual(SampleType.RANDOM, mutableListOf(copy))
+                adHocInitialIndividuals.add(ind)
             }
     }
 
-    private fun createRPCIndividual(sampleType: SampleType, scheduleTaskActions: MutableList<ScheduleTaskAction>) : RPCIndividual{
+    private fun createSingleScheduleTaskRPCIndividual(sampleType: SampleType, scheduleTaskActions: MutableList<ScheduleTaskAction>) : RPCIndividual{
         return RPCIndividual(
             sampleType =  sampleType,
             trackOperator = if(config.trackingEnabled()) this else null,
