@@ -1153,10 +1153,6 @@ class EMConfig {
     @Probability
     var probOfRandomSampling = 0.8
 
-    @Cfg("Probability of sampling a new individual with schedule tasks. Note that schedule task is only enabled for RPCProblem")
-    @Probability
-    var probOfSamplingScheduleTask = 0.5
-
     @Cfg("The percentage of passed search before starting a more focused, less exploratory one")
     @PercentageAsProbability(true)
     var focusedSearchActivationTime = 0.8
@@ -1559,6 +1555,12 @@ class EMConfig {
     @Cfg("Specify a probability to apply SQL actions for preparing resources for REST Action")
     @Probability
     var probOfApplySQLActionToCreateResources = 0.1
+
+
+    @Experimental
+    @Cfg("Probability of sampling a new individual with schedule tasks. Note that schedule task is only enabled for RPCProblem")
+    @Probability
+    var probOfSamplingScheduleTask = 0.0
 
     @Experimental
     @Cfg("Specify a maximum number of handling (remove/add) resource size at once, e.g., add 3 resource at most")
