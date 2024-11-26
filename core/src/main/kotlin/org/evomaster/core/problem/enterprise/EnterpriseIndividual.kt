@@ -7,6 +7,7 @@ import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
+import org.evomaster.core.problem.scheduletask.ScheduleTaskAction
 import org.evomaster.core.search.*
 import org.evomaster.core.search.action.*
 import org.evomaster.core.search.gene.utils.GeneUtils
@@ -49,7 +50,7 @@ abstract class EnterpriseIndividual(
     /**
      * if no group definition is specified, then it is assumed that all action are for the MAIN group
      */
-    groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(children,children.size,0, 0, 0)
+    groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(children,children.size,0, 0, 0, 0)
 ) : Individual(
     trackOperator,
     index,
@@ -69,10 +70,11 @@ abstract class EnterpriseIndividual(
             sizeMain: Int,
             sizeSQL: Int,
             sizeMongo: Int,
-            sizeDNS: Int
+            sizeDNS: Int,
+            sizeScheduleTasks: Int,
         ) : GroupsOfChildren<StructuralElement>{
 
-            if(children.size != sizeSQL +sizeMongo + sizeDNS + sizeMain){
+            if(children.size != sizeSQL +sizeMongo + sizeDNS + sizeScheduleTasks + sizeMain){
                 throw IllegalArgumentException("Group size mismatch. Expected a total of ${children.size}, but" +
                         " got main=$sizeMain,  sql=$sizeSQL, mongo=$sizeMongo, dns=$sizeDNS")
             }
@@ -84,6 +86,9 @@ abstract class EnterpriseIndividual(
             }
             if(sizeDNS < 0){
                 throw IllegalArgumentException("Negative size for sizeDNS: $sizeMain")
+            }
+            if(sizeScheduleTasks < 0){
+                throw IllegalArgumentException("Negative size for sizeScheduleTasks: $sizeMain")
             }
             if(sizeMain < 0){
                 throw IllegalArgumentException("Negative size for sizeMain: $sizeMain")
@@ -113,12 +118,18 @@ abstract class EnterpriseIndividual(
                 if(sizeDNS==0) -1 else startIndexDns , if(sizeDNS==0) -1 else endIndexDns
             )
 
+            val startIndexScheduleTasks = children.indexOfFirst { a -> a is ScheduleTaskAction }
+            val endIndexScheduleTasks = children.indexOfLast { a -> a is ScheduleTaskAction }
+            val schedule = ChildGroup<StructuralElement>(GroupsOfChildren.INITIALIZATION_SCHEDULE_TASK,{e -> e is ActionComponent && e.flatten().all { a -> a is ScheduleTaskAction }},
+                if(sizeScheduleTasks==0) -1 else startIndexScheduleTasks , if(sizeScheduleTasks==0) -1 else endIndexScheduleTasks
+            )
+
             val initSize = sizeSQL+sizeMongo+sizeDNS
 
             val main = ChildGroup<StructuralElement>(GroupsOfChildren.MAIN, {e -> e !is EnvironmentAction },
                 if(sizeMain == 0) -1 else initSize, if(sizeMain == 0) -1 else initSize + sizeMain - 1)
 
-            return GroupsOfChildren(children, listOf(db, mongodb, dns, main))
+            return GroupsOfChildren(children, listOf(db, mongodb, dns, schedule, main))
         }
     }
 

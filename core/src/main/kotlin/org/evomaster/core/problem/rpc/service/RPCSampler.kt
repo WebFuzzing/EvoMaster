@@ -8,6 +8,7 @@ import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCIndividual
+import org.evomaster.core.problem.scheduletask.ScheduleTaskAction
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionComponent
@@ -166,6 +167,23 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
                         }
                     }
                 }
+
+        scheduleActionCluster.asSequence()
+            .filter { it.value is ScheduleTaskAction }
+            .forEach { a->
+                val copy = a.value.copy() as ScheduleTaskAction
+                copy.doInitialize(randomness)
+
+            }
+    }
+
+    private fun createRPCIndividual(sampleType: SampleType, scheduleTaskActions: MutableList<ScheduleTaskAction>) : RPCIndividual{
+        return RPCIndividual(
+            sampleType =  sampleType,
+            trackOperator = if(config.trackingEnabled()) this else null,
+            index = if (config.trackingEnabled()) time.evaluatedIndividuals else -1,
+            allActions = scheduleTaskActions.toMutableList()
+        )
     }
 
     private fun createRPCIndividual(sampleType: SampleType, actions : MutableList<EnterpriseActionGroup<*>>) : RPCIndividual{
