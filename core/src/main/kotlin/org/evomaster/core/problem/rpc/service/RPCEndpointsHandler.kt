@@ -250,9 +250,9 @@ class RPCEndpointsHandler {
             }.toMutableList()
 
             // handle schedule task action
-            val scheduleTaskActions = e.value.scheduleTaskInvocationDtos.map {
+            val scheduleTaskActions = e.value.scheduleTaskInvocationDtos?.map {
                 handleScheduleTask(it)
-            }.toMutableList()
+            }?.toMutableList()?: mutableListOf()
 
             if (rpcActions.isNotEmpty() || scheduleTaskActions.isNotEmpty()){
                 if (rpcActions.any { it.seeTopGenes().any { g-> !g.isLocallyValid() } }){
