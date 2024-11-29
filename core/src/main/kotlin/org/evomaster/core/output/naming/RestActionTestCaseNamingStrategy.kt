@@ -12,6 +12,8 @@ import org.evomaster.core.search.Solution
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.EvaluatedAction
 import org.evomaster.core.search.gene.BooleanGene
+import org.evomaster.core.search.gene.numeric.NumberGene
+import org.evomaster.core.search.gene.string.StringGene
 import javax.ws.rs.core.MediaType
 
 open class RestActionTestCaseNamingStrategy(
@@ -161,10 +163,36 @@ open class RestActionTestCaseNamingStrategy(
                 result.add(and)
             }
         }
+
+        val numberQueryParams = getNumberQueryParams(queryParams)
+        numberQueryParams.forEachIndexed { index, queryParam ->
+            result.add("negative")
+            result.add(queryParam.name)
+            if (index != numberQueryParams.lastIndex) {
+                result.add(and)
+            }
+        }
+
+        val emptyStringQueryParams = getEmptyStringQueryParams(queryParams)
+        emptyStringQueryParams.forEachIndexed { index, queryParam ->
+            result.add("empty")
+            result.add(queryParam.name)
+            if (index != emptyStringQueryParams.lastIndex) {
+                result.add(and)
+            }
+        }
     }
 
     private fun getBooleanQueryParams(queryParams: List<QueryParam>): List<QueryParam> {
         return queryParams.filter { it.getGeneForQuery() is BooleanGene && (it.getGeneForQuery() as BooleanGene).value }
+    }
+
+    private fun getNumberQueryParams(queryParams: List<QueryParam>): List<QueryParam> {
+        return queryParams.filter { it.getGeneForQuery() is NumberGene<*> && (it.getGeneForQuery() as NumberGene<*>).value.toLong() < 0 }
+    }
+
+    private fun getEmptyStringQueryParams(queryParams: List<QueryParam>): List<QueryParam> {
+        return queryParams.filter { it.getGeneForQuery() is StringGene && (it.getGeneForQuery() as StringGene).getValueAsRawString().trim().isEmpty() }
     }
 
     private fun removeSolvedDuplicates(duplicatedIndividuals: MutableSet<EvaluatedIndividual<*>>, disambiguatedIndividuals: Set<EvaluatedIndividual<*>>) {
