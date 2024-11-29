@@ -47,7 +47,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         if(!config.enableStructureMutation)
             return false
 
-        val prob = if(config.isMIO()){
+        val prob = if(config.isUsingAdvancedTechniques()){
             when (config.structureMutationProbStrategy) {
                 EMConfig.StructureMutationProbStrategy.SPECIFIED -> config.structureMutationProbability
                 EMConfig.StructureMutationProbStrategy.SPECIFIED_FS -> if (apc.doesFocusSearch()) config.structureMutationProFS else config.structureMutationProbability
@@ -295,6 +295,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         targets: Set<Int>,
         mutatedGenes: MutatedGeneSpecification?
     ): T {
+        preActionBeforeMutatoin(individual)
 
         //  mutate the individual
         val mutatedIndividual = innerMutate(individual, targets, mutatedGenes)

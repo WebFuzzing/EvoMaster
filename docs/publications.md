@@ -25,16 +25,28 @@ Also, some of these papers provides full replication packages, which are linked 
 
 ### 2024
 
+* A. Arcuri, M. Zhang, S. Seran, J.P. Galeotti, A. Golmohammadi, O. Duman, A. Aldasoro, H. Ghianni.
+ *Tool Report: EvoMaster. Black and White Box Search-Based Fuzzing for REST, GraphQL and RPC APIs*.
+  Automated Software Engineering (AUSE).
+  (To appear)
+
+
+* A. Poth, O. Rrjolli, A. Arcuri.
+  *Industrial Paper: Technology Adoption Performance Evaluation Applied to Testing Industrial REST APIs*. 
+  Automated Software Engineering (AUSE).
+  (To appear)
+
+
 * M. Zhang, A. Arcuri, P. Teng, K. Xue, W. Wang.
   *Seeding and Mocking in White-Box Fuzzing Enterprise RPC APIs: An Industrial Case Study*.
   IEEE/ACM International Conference on Automated Software Engineering (ASE), Industry Track.
-  (To appear)
+  [[PDF](publications/2024_ase.pdf)]
 
 
 * I. Kertusha.
   *Search-Based White-Box Fuzzing of Web Frontend Applications*.
   IEEE International Symposium on Software Reliability Engineering (ISSRE), Doctoral Symposium.
-  (To Appear)
+  [[PDF](publications/2024_issre_ds.pdf)]
 
 
 * S. Seran.
