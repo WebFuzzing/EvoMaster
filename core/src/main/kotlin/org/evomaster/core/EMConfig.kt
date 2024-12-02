@@ -2393,6 +2393,10 @@ class EMConfig {
             " The choice between ON and OFF depends on probabilityOfOnVsOffInAllOptionals.")
     var probabilityAllOptionalsAreOnOrOff = 0.0
 
+    @Experimental
+    @Cfg("If all-optionals is activated with probabilityAllOptionalsAreOnOrOff, specifying probability of using ON" +
+            " instead of OFF.")
+    val probabilityOfOnVsOffInAllOptionals = 0.8
 
     @Experimental
     @Cfg("Add summary comments on each test")
@@ -2402,11 +2406,6 @@ class EMConfig {
     @Cfg("Max length for test comments. Needed when enumerating some names/values, making comments too long to be" +
             " on a single line")
     var maxLengthForCommentLine = 80
-
-    @Experimental
-    @Cfg("If all-optionals is activated with probabilityAllOptionalsAreOnOrOff, specifying probability of using ON" +
-            " instead of OFF.")
-    val probabilityOfOnVsOffInAllOptionals = 0.8
 
     fun getProbabilityUseDataPool() : Double{
         return if(blackBox){
