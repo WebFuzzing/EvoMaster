@@ -26,15 +26,15 @@ Also, some of these papers provides full replication packages, which are linked 
 ### 2024
 
 * A. Arcuri, M. Zhang, S. Seran, J.P. Galeotti, A. Golmohammadi, O. Duman, A. Aldasoro, H. Ghianni.
- *Tool Report: EvoMaster. Black and White Box Search-Based Fuzzing for REST, GraphQL and RPC APIs*.
+ *Tool Report: EvoMaster -- Black and White Box Search-Based Fuzzing for REST, GraphQL and RPC APIs*.
   Automated Software Engineering (AUSE).
-  (To appear)
+  [[PDF](publications/2024_ause_em.pdf)]
 
 
 * A. Poth, O. Rrjolli, A. Arcuri.
   *Industrial Paper: Technology Adoption Performance Evaluation Applied to Testing Industrial REST APIs*. 
   Automated Software Engineering (AUSE).
-  (To appear)
+  [[PDF](publications/2024_ause_vw.pdf)]
 
 
 * M. Zhang, A. Arcuri, P. Teng, K. Xue, W. Wang.
