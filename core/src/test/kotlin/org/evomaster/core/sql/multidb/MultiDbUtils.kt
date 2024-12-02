@@ -28,7 +28,6 @@ object MultiDbUtils {
         .withEnv(
             mutableMapOf(
                 "MYSQL_ROOT_PASSWORD" to "root",
-                //"MYSQL_DATABASE" to MYSQL_DB_NAME,  // TODO can this be removed?
                 "MYSQL_USER" to "test",
                 "MYSQL_PASSWORD" to "test"
             )
@@ -37,20 +36,29 @@ object MultiDbUtils {
         .withExposedPorts(MYSQL_PORT)
 
 
-    private fun getMySQLBaseUrl() : String{
+    fun getMySQLBaseUrl() : String{
         val host = mysql.host
         val port = mysql.getMappedPort(MYSQL_PORT)
         return "jdbc:mysql://$host:$port/"
     }
 
-    private fun getPostgresBaseUrl() : String{
+    fun getPostgresBaseUrl() : String{
         val host = postgres.host
         val port = postgres.getMappedPort(POSTGRES_PORT)
         return "jdbc:postgresql://$host:$port/"
     }
 
-    private fun getH2BaseUrl() : String{
+    fun getH2BaseUrl() : String{
         return "jdbc:h2:mem:"
+    }
+
+    fun getBaseUrl(type: DatabaseType) : String{
+        return when(type){
+            DatabaseType.POSTGRES -> getPostgresBaseUrl()
+            DatabaseType.MYSQL -> getMySQLBaseUrl()
+            DatabaseType.H2 -> getH2BaseUrl()
+            else -> throw IllegalArgumentException("Unsupported database type: $type")
+        }
     }
 
     fun createConnection(name: String, type: DatabaseType) : Connection {
@@ -99,17 +107,8 @@ object MultiDbUtils {
         when(type) {
             DatabaseType.H2 -> { /* nothing to do? started automatically on connection*/}
             DatabaseType.MYSQL -> mysql.start()
-            DatabaseType.POSTGRES -> postgres.start()
-            else -> throw IllegalArgumentException("Unsupported database type: ${type.name}")
-        }
-    }
-
-    fun stopDatabase(type: DatabaseType) {
-        when(type) {
-            DatabaseType.H2 -> {/* nothing to do*/ }
-            DatabaseType.MYSQL -> mysql.stop()
             DatabaseType.POSTGRES -> {
-                postgres.stop()
+                postgres.start()
                 /*
                * A call to getConnection()  when the postgres container is still not ready,
                * signals a PSQLException with message "FATAL: the database system is starting up".
@@ -120,5 +119,21 @@ object MultiDbUtils {
             }
             else -> throw IllegalArgumentException("Unsupported database type: ${type.name}")
         }
+    }
+
+    fun stopDatabase(type: DatabaseType) {
+        when(type) {
+            DatabaseType.H2 -> {/* nothing to do*/ }
+            DatabaseType.MYSQL -> mysql.stop()
+            DatabaseType.POSTGRES -> {
+                postgres.stop()
+            }
+            else -> throw IllegalArgumentException("Unsupported database type: ${type.name}")
+        }
+    }
+
+    fun stopAllDatabases() {
+        mysql.stop()
+        postgres.stop()
     }
 }
