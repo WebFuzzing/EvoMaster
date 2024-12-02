@@ -435,7 +435,6 @@ public class DbCleaner {
         switch (type) {
             // https://stackoverflow.com/questions/175415/how-do-i-get-list-of-all-tables-in-a-database-using-tsql, TABLE_CATALOG='"+dbname+"'"
             case MS_SQL_SERVER:
-                // for MySQL, schema is dbname
             case MYSQL:
             case MARIADB:
             case H2:
