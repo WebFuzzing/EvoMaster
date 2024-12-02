@@ -411,7 +411,8 @@ public class DbCleaner {
                 return "dbo";
             case MARIADB:
             case MYSQL:
-                throw new IllegalArgumentException("there is no default schema for " + type + ", and you must specify a db name here");
+                //there is no concept of schema for those databases
+                return null;
             case POSTGRES:
                 return "public";
         }
@@ -439,7 +440,7 @@ public class DbCleaner {
             case MARIADB:
             case H2:
             case POSTGRES:
-                if (schema.isEmpty())
+                if (schema == null || schema.isEmpty())
                     return command;
                 return command + " AND TABLE_SCHEMA='" + schema + "'";
         }
