@@ -61,6 +61,11 @@ object RestActionBuilderV3 {
 
     private val log: Logger = LoggerFactory.getLogger(RestActionBuilderV3::class.java)
 
+    /**
+     * Name given to enum genes representing data examples coming from OpenAPI schema
+     */
+    const val EXAMPLES_NAME = "SCHEMA_EXAMPLES"
+
     private val refCache = mutableMapOf<String, Gene>()
 
     /**
@@ -1376,12 +1381,12 @@ object RestActionBuilderV3 {
         val exampleGene = if(examples.isNotEmpty()){
             when{
                 NumberGene::class.java.isAssignableFrom(geneClass)
-                -> EnumGene("examples", examples,0,true)
+                -> EnumGene(EXAMPLES_NAME, examples,0,true)
 
                 geneClass == StringGene::class.java
                         || geneClass == Base64StringGene::class.java
                         || geneClass == RegexGene::class.java
-                -> EnumGene<String>("examples", examples,0,false)
+                -> EnumGene<String>(EXAMPLES_NAME, examples,0,false)
 
                 //TODO Arrays
                 else -> {
