@@ -137,6 +137,7 @@ There are 3 types of options:
 |`lastLineEpsilon`| __Double__. The Distance Metric Last Line may use several values for epsilon.During experimentation, it may be useful to adjust these values. Epsilon describes the size of the neighbourhood used for clustering, so may result in different clustering results.Epsilon should be between 0.0 and 1.0. If the value is outside of that range, epsilon will use the default of 0.8. *Constraints*: `min=0.0, max=1.0`. *Default value*: `0.8`.|
 |`maxAssertionForDataInCollection`| __Int__. Specify a maximum number of data in a collection to be asserted in the generated tests. Note that zero means that only the size of the collection will be asserted. A negative value means all data in the collection will be asserted (i.e., no limit). *Default value*: `3`.|
 |`maxEvaluations`| __Int__. Maximum number of action or individual evaluations (depending on chosen stopping criterion) for the search. A fitness evaluation can be composed of 1 or more actions, like for example REST calls or SQL setups. The more actions are allowed, the better results one can expect. But then of course the test generation will take longer. Only applicable depending on the stopping criterion. *Constraints*: `min=1.0`. *Default value*: `1000`.|
+|`maxLengthForCommentLine`| __Int__. Max length for test comments. Needed when enumerating some names/values, making comments too long to be on a single line. *Constraints*: `min=1.0`. *Default value*: `80`.|
 |`maxLengthForStrings`| __Int__. The maximum length allowed for evolved strings. Without this limit, strings could in theory be billions of characters long. *Constraints*: `min=0.0, max=20000.0`. *Default value*: `200`.|
 |`maxLengthForStringsAtSamplingTime`| __Int__. Maximum length when sampling a new random string. Such limit can be bypassed when a string is mutated. *Constraints*: `min=0.0`. *Default value*: `16`.|
 |`maxLengthOfTraces`| __Int__. Specify a maxLength of tracking when enableTrackIndividual or enableTrackEvaluatedIndividual is true. Note that the value should be specified with a non-negative number or -1 (for tracking all history). *Constraints*: `min=-1.0`. *Default value*: `10`.|
@@ -220,6 +221,7 @@ There are 3 types of options:
 |Options|Description|
 |---|---|
 |`abstractInitializationGeneToMutate`| __Boolean__. During mutation, whether to abstract genes for repeated SQL actions. *Default value*: `false`.|
+|`addTestComments`| __Boolean__. Add summary comments on each test. *Default value*: `false`.|
 |`appendToTargetHeuristicsFile`| __Boolean__. Whether should add to an existing target heuristics file, instead of replacing it. It is only used when processFormat is TARGET_HEURISTIC. *Default value*: `false`.|
 |`bbProbabilityUseDataPool`| __Double__. Specify the probability of using the data pool when sampling test cases. This is for black-box (bb) mode. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.8`.|
 |`discoveredInfoRewardedInFitness`| __Boolean__. If there is new discovered information from a test execution, reward it in the fitness function. *Default value*: `false`.|

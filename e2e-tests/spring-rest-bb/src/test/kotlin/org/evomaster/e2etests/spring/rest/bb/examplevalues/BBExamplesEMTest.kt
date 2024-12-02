@@ -36,7 +36,7 @@ class BBExamplesEMTest : SpringTestBase() {
             setOption(args, "bbSwaggerUrl", "$baseUrlOfSut/openapi-bbexamples.json")
             setOption(args, "probRestDefault", "0.45")
             setOption(args, "probRestExamples","0.45")
-
+            setOption(args, "addTestComments", "true")
 
             val solution = initAndRun(args)
 
