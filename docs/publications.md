@@ -32,7 +32,7 @@ Also, some of these papers provides full replication packages, which are linked 
 
 
 * A. Poth, O. Rrjolli, A. Arcuri.
-  *Industrial Paper: Technology Adoption Performance Evaluation Applied to Testing Industrial REST APIs*. 
+  *Technology Adoption Performance Evaluation Applied to Testing Industrial REST APIs*. 
   Automated Software Engineering (AUSE).
   [[PDF](publications/2024_ause_vw.pdf)]
 
