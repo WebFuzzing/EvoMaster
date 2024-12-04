@@ -4,7 +4,7 @@ import javax.persistence.Entity
 import javax.persistence.Id
 import javax.validation.constraints.NotNull
 
-@Entity
+//@Entity
 open class BaseEntity(
 
     @get:Id @get:NotNull

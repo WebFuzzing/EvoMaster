@@ -6,15 +6,10 @@ import org.evomaster.driver.multidb.SpringController
 
 class SeparatedSchemasController : SpringController(SeparatedSchemasApplication::class.java){
 
-
-    override fun resetStateOfSUT() {
-        SqlScriptRunner.execCommand(connectionIfExist, """
-            CREATE SCHEMA IF NOT EXISTS foo;
-            CREATE SCHEMA IF NOT EXISTS bar;
-            CREATE TABLE IF NOT EXISTS foo.EntityX;
-            CREATE TABLE IF NOT EXISTS bar.EntityY;
-        """.trimIndent())
-
-        super.resetStateOfSUT()
+    override fun extraSpringStartOptions(): List<String> {
+        return listOf(
+            "--spring.datasource.schema=classpath:/sql/separatedschemas.sql"
+        )
     }
+
 }
