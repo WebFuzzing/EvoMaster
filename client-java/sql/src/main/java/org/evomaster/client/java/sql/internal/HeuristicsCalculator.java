@@ -51,19 +51,25 @@ public class HeuristicsCalculator {
             QueryResult... data
     ) {
 
+        /**
+         * This is not an ideal solution, but it will remain this way until config.heuristicsForSQLAdvanced remains
+         * experimental and it does not replace the "Plain" SqlHeuristicsCalculator
+         */
+        if (advancedHeuristics) {
+            return SqlHeuristicsCalculator.computeDistance(sqlCommand,schema,taintHandler,data);
+        }
+
         if (data.length == 0 || Arrays.stream(data).allMatch(QueryResult::isEmpty)){
             //if no data, we have no info whatsoever
             return new SqlDistanceWithMetrics(Double.MAX_VALUE,0, false);
         }
 
         Statement stmt = SqlParserUtils.parseSqlCommand(sqlCommand);
-
         Expression where = getWhere(stmt);
         if (where == null) {
             //no constraint and at least one data point
             return new SqlDistanceWithMetrics(0.0,0, false);
         }
-
 
         SqlNameContext context = new SqlNameContext(stmt);
         if (schema != null) {

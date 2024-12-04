@@ -425,4 +425,13 @@ public class HeuristicsCalculatorTest {
         assertEquals(0d, dist);
     }
 
+    @Test
+    public void testNoWhereNoFrom() {
+        String sqlCommand = "SELECT 1 as example_column";
+        QueryResult data = new QueryResult(Arrays.asList("example_column"), null);
+        data.addRow(new DataRow("example_column",1, null));
+        double distance = HeuristicsCalculator.computeDistance(sqlCommand,data);
+        assertEquals(0, distance);
+    }
+
 }
