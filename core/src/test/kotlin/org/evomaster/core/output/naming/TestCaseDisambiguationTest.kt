@@ -74,8 +74,8 @@ class TestCaseDisambiguationTest {
         val testCases = namingStrategy.getTestCases()
         assertEquals(3, testCases.size)
         assertEquals("test_0_getOnLanguagesReturnsEmpty", testCases[0].name)
-        assertEquals("test_1_getOnLanguagesReturnsEmpty", testCases[1].name)
-        assertEquals("test_2_getOnLanguagesReturnsEmpty", testCases[2].name)
+        assertEquals("test_1_getOnSyntaxLanguagesReturnsEmpty", testCases[1].name)
+        assertEquals("test_2_getOnSyntaxLanguagesReturnsEmpty", testCases[2].name)
     }
 
     @Test
@@ -110,7 +110,7 @@ class TestCaseDisambiguationTest {
         val testCases = namingStrategy.getTestCases()
         assertEquals(2, testCases.size)
         assertEquals("test_0_getOnSyntaxLanguagesReturnsEmpty", testCases[0].name)
-        assertEquals("test_1_getOnLanguagesWithQueryParamReturnsEmpty", testCases[1].name)
+        assertEquals("test_1_getOnSyntaxLanguagesWithQueryParamReturnsEmpty", testCases[1].name)
     }
 
     @Test
@@ -125,7 +125,7 @@ class TestCaseDisambiguationTest {
         val testCases = namingStrategy.getTestCases()
         assertEquals(2, testCases.size)
         assertEquals("test_0_getOnSyntaxLanguagesReturnsEmpty", testCases[0].name)
-        assertEquals("test_1_getOnLanguagesWithQueryParamsReturnsEmpty", testCases[1].name)
+        assertEquals("test_1_getOnSyntaxLanguagesWithQueryParamsReturnsEmpty", testCases[1].name)
     }
 
     @Test
@@ -142,7 +142,7 @@ class TestCaseDisambiguationTest {
         assertEquals(3, testCases.size)
         assertEquals("test_0_getOnLanguagesReturnsEmpty", testCases[0].name)
         assertEquals("test_1_getOnSyntaxLanguagesReturnsEmpty", testCases[1].name)
-        assertEquals("test_2_getOnLanguagesWithQueryParamReturnsEmpty", testCases[2].name)
+        assertEquals("test_2_getOnSyntaxLanguagesWithQueryParamReturnsEmpty", testCases[2].name)
     }
 
     @Test
@@ -156,8 +156,8 @@ class TestCaseDisambiguationTest {
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(2, testCases.size)
-        assertEquals("test_0_getOnLanguagesReturnsEmpty", testCases[0].name)
-        assertEquals("test_1_getOnLanguagesReturnsEmpty", testCases[1].name)
+        assertEquals("test_0_getOnSyntaxLanguagesReturnsEmpty", testCases[0].name)
+        assertEquals("test_1_getOnSyntaxLanguagesReturnsEmpty", testCases[1].name)
     }
 
     @Test
@@ -173,7 +173,7 @@ class TestCaseDisambiguationTest {
         val testCases = namingStrategy.getTestCases()
         assertEquals(2, testCases.size)
         assertEquals("test_0_getOnSyntaxLanguagesReturnsEmpty", testCases[0].name)
-        assertEquals("test_1_getOnLanguagesWithQueryParamMyQueryParamReturnsEmpty", testCases[1].name)
+        assertEquals("test_1_getOnSyntaxLanguagesWithQueryParamMyQueryParamReturnsEmpty", testCases[1].name)
     }
 
     @Test
@@ -188,8 +188,9 @@ class TestCaseDisambiguationTest {
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(2, testCases.size)
+//        assertEquals("test_0_getOnSyntaxLanguagesReturnsEmpty", testCases[0].name)
         assertEquals("test_0_getOnSyntaxLanguagesReturnsEmpty", testCases[0].name)
-        assertEquals("test_1_getOnLanguagesWithQueryParamReturnsEmpty", testCases[1].name)
+        assertEquals("test_1_getOnSyntaxLanguagesWithQueryParamReturnsEmpty", testCases[1].name)
     }
 
     @Test
@@ -206,8 +207,9 @@ class TestCaseDisambiguationTest {
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(2, testCases.size)
+//        assertEquals("test_0_getOnSyntaxLanguagesReturnsEmpty", testCases[0].name)
         assertEquals("test_0_getOnSyntaxLanguagesReturnsEmpty", testCases[0].name)
-        assertEquals("test_1_getOnLanguagesWithQueryParamsFirstParamAndFourthParamReturnsEmpty", testCases[1].name)
+        assertEquals("test_1_getOnSyntaxLanguagesWithQueryParamsFirstParamAndFourthParamReturnsEmpty", testCases[1].name)
     }
 
     private fun getPathParam(paramName: String): Param {
