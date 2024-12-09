@@ -14,6 +14,7 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
+import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -74,8 +75,8 @@ class TestCaseDisambiguationTest {
         val testCases = namingStrategy.getTestCases()
         assertEquals(3, testCases.size)
         assertEquals("test_0_getOnLanguagesReturnsEmpty", testCases[0].name)
-        assertEquals("test_1_getOnSyntaxLanguagesReturnsEmpty", testCases[1].name)
-        assertEquals("test_2_getOnSyntaxLanguagesReturnsEmpty", testCases[2].name)
+        assertEquals("test_1_getOnLanguagesReturnsEmpty", testCases[1].name)
+        assertEquals("test_2_getOnLanguagesReturnsEmpty", testCases[2].name)
     }
 
     @Test
@@ -102,6 +103,7 @@ class TestCaseDisambiguationTest {
     fun pathWithQueryParamDisambiguation() {
         val syntaxLanguagesIndividual = getEvaluatedIndividualWith(getRestCallAction("/syntax/languages"))
         val syntaxLanguagesIndividualWithQP = getEvaluatedIndividualWith(getRestCallAction("/syntax/languages", parameters = singletonList(getStringQueryParam("myQueryParam"))))
+        ensureGeneValue(syntaxLanguagesIndividualWithQP, "myQueryParam", "aStringValue")
 
         val solution = Solution(mutableListOf(syntaxLanguagesIndividual, syntaxLanguagesIndividualWithQP), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
@@ -117,6 +119,8 @@ class TestCaseDisambiguationTest {
     fun pathWithMoreThanOneQueryParamDisambiguation() {
         val syntaxLanguagesIndividual = getEvaluatedIndividualWith(getRestCallAction("/syntax/languages"))
         val syntaxLanguagesIndividualWithQP = getEvaluatedIndividualWith(getRestCallAction("/syntax/languages", parameters = mutableListOf(getStringQueryParam("myQueryParam"), getStringQueryParam("myOtherQueryParam"))))
+        ensureGeneValue(syntaxLanguagesIndividualWithQP, "myQueryParam", "aStringValue")
+        ensureGeneValue(syntaxLanguagesIndividualWithQP, "myOtherQueryParam", "anotherStringValue")
 
         val solution = Solution(mutableListOf(syntaxLanguagesIndividual, syntaxLanguagesIndividualWithQP), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
@@ -133,6 +137,7 @@ class TestCaseDisambiguationTest {
         val languagesIndividual = getEvaluatedIndividualWith(getRestCallAction("/languages"))
         val syntaxLanguagesIndividual = getEvaluatedIndividualWith(getRestCallAction("/syntax/languages"))
         val syntaxLanguagesIndividualWithQP = getEvaluatedIndividualWith(getRestCallAction("/syntax/languages", parameters = singletonList(getStringQueryParam("myQueryParam"))))
+        ensureGeneValue(syntaxLanguagesIndividualWithQP, "myQueryParam", "aStringValue")
 
         val solution = Solution(mutableListOf(languagesIndividual, syntaxLanguagesIndividual, syntaxLanguagesIndividualWithQP), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
@@ -156,15 +161,15 @@ class TestCaseDisambiguationTest {
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(2, testCases.size)
-        assertEquals("test_0_getOnSyntaxLanguagesReturnsEmpty", testCases[0].name)
-        assertEquals("test_1_getOnSyntaxLanguagesReturnsEmpty", testCases[1].name)
+        assertEquals("test_0_getOnLanguagesReturnsEmpty", testCases[0].name)
+        assertEquals("test_1_getOnLanguagesReturnsEmpty", testCases[1].name)
     }
 
     @Test
     fun oneTrueBooleanQueryParamIsAdded() {
         val syntaxLanguagesIndividual = getEvaluatedIndividualWith(getRestCallAction("/syntax/languages"))
         val syntaxLanguagesIndividual2 = getEvaluatedIndividualWith(getRestCallAction("/syntax/languages", parameters = singletonList(getBooleanQueryParam("myQueryParam"))))
-        ensureBooleanGeneValue(syntaxLanguagesIndividual2, "myQueryParam", "true")
+        ensureGeneValue(syntaxLanguagesIndividual2, "myQueryParam", "true")
 
         val solution = Solution(mutableListOf(syntaxLanguagesIndividual, syntaxLanguagesIndividual2), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
@@ -180,7 +185,7 @@ class TestCaseDisambiguationTest {
     fun oneFalseBooleanQueryParamIsNotAdded() {
         val syntaxLanguagesIndividual = getEvaluatedIndividualWith(getRestCallAction("/syntax/languages"))
         val syntaxLanguagesIndividual2 = getEvaluatedIndividualWith(getRestCallAction("/syntax/languages", parameters = singletonList(getBooleanQueryParam("myQueryParam"))))
-        ensureBooleanGeneValue(syntaxLanguagesIndividual2, "myQueryParam", "false")
+        ensureGeneValue(syntaxLanguagesIndividual2, "myQueryParam", "false")
 
         val solution = Solution(mutableListOf(syntaxLanguagesIndividual, syntaxLanguagesIndividual2), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
@@ -197,9 +202,28 @@ class TestCaseDisambiguationTest {
     fun onlyTrueBooleanQueryParamsAreAdded() {
         val syntaxLanguagesIndividual = getEvaluatedIndividualWith(getRestCallAction("/syntax/languages"))
         val syntaxLanguagesIndividual2 = getEvaluatedIndividualWith(getRestCallAction("/syntax/languages", parameters = mutableListOf(getBooleanQueryParam("firstParam"), getBooleanQueryParam("secondParam"), getStringQueryParam("thirdParam"), getBooleanQueryParam("fourthParam"))))
-        ensureBooleanGeneValue(syntaxLanguagesIndividual2, "firstParam", "true")
-        ensureBooleanGeneValue(syntaxLanguagesIndividual2, "secondParam", "false")
-        ensureBooleanGeneValue(syntaxLanguagesIndividual2, "fourthParam", "true")
+        ensureGeneValue(syntaxLanguagesIndividual2, "firstParam", "true")
+        ensureGeneValue(syntaxLanguagesIndividual2, "secondParam", "false")
+        ensureGeneValue(syntaxLanguagesIndividual2, "fourthParam", "true")
+
+        val solution = Solution(mutableListOf(syntaxLanguagesIndividual, syntaxLanguagesIndividual2), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
+
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, QUERY_PARAMS_IN_NAME)
+
+        val testCases = namingStrategy.getTestCases()
+        assertEquals(2, testCases.size)
+//        assertEquals("test_0_getOnSyntaxLanguagesReturnsEmpty", testCases[0].name)
+        assertEquals("test_0_getOnSyntaxLanguagesReturnsEmpty", testCases[0].name)
+        assertEquals("test_1_getOnSyntaxLanguagesWithQueryParamsFirstParamAndFourthParamReturnsEmpty", testCases[1].name)
+    }
+
+    @Test
+    fun negativeNumberQueryParamsAreAdded() {
+        val syntaxLanguagesIndividual = getEvaluatedIndividualWith(getRestCallAction("/syntax/languages"))
+        val syntaxLanguagesIndividual2 = getEvaluatedIndividualWith(getRestCallAction("/syntax/languages", parameters = mutableListOf(getBooleanQueryParam("firstParam"), getBooleanQueryParam("secondParam"), getStringQueryParam("thirdParam"), getBooleanQueryParam("fourthParam"))))
+        ensureGeneValue(syntaxLanguagesIndividual2, "firstParam", "true")
+        ensureGeneValue(syntaxLanguagesIndividual2, "secondParam", "false")
+        ensureGeneValue(syntaxLanguagesIndividual2, "fourthParam", "true")
 
         val solution = Solution(mutableListOf(syntaxLanguagesIndividual, syntaxLanguagesIndividual2), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
@@ -217,20 +241,24 @@ class TestCaseDisambiguationTest {
     }
 
     private fun getStringQueryParam(paramName: String): Param {
-        return QueryParam(paramName, StringGene(paramName))
+        return QueryParam(paramName, OptionalGene(paramName, StringGene(paramName)))
     }
 
     private fun getBooleanQueryParam(paramName: String): Param {
-        return QueryParam(paramName, BooleanGene(paramName))
+        return QueryParam(paramName, OptionalGene(paramName, BooleanGene(paramName)))
     }
 
     /*
         Since the randomization used to construct the evaluated individuals might set a random boolean value,
         we do this to ensure the one we want for unit testing
      */
-    private fun ensureBooleanGeneValue(evaluatedIndividual: EvaluatedIndividual<RestIndividual>, paramName: String, paramValue: String) {
+    private fun ensureGeneValue(evaluatedIndividual: EvaluatedIndividual<RestIndividual>, paramName: String, paramValue: String) {
         val restCallAction = evaluatedIndividual.evaluatedMainActions().last().action as RestCallAction
-        (restCallAction.parameters.filter { it.name == paramName }).forEach { (it as QueryParam).getGeneForQuery().setFromStringValue(paramValue) }
+        (restCallAction.parameters.filter { it.name == paramName }).forEach {
+//            val optionalGene = (it as QueryParam).getGeneForQuery() as OptionalGene
+
+            (it as QueryParam).getGeneForQuery().setFromStringValue(paramValue)
+        }
     }
 
 }

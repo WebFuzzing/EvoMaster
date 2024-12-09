@@ -2,7 +2,6 @@ package org.evomaster.core.output.naming
 
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
-import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
@@ -13,7 +12,9 @@ import org.evomaster.core.search.Solution
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.EvaluatedAction
 import org.evomaster.core.search.gene.BooleanGene
+import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.numeric.NumberGene
+import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -36,14 +37,12 @@ open class RestActionTestCaseNamingStrategy(
 
         nameTokens.add(action.verb.toString().lowercase())
         nameTokens.add(on)
-        // val resultTokens = getResult(individual)
         if (ambiguitySolvers.isEmpty()) {
             nameTokens.add(getPath(action.path.nameQualifier))
         } else {
-            // if len(name) + len(resultTokens) + len(solverResult) <= MAX_CHARS ---> OK
+            // TODO: max chars check. Idea: if len(name) + len(resultTokens) + len(foreach:solverResult) <= MAX_CHARS ---> OK
             // else keep only name + acceptedSolverResults + resultTokens
             ambiguitySolvers.forEach { solver -> nameTokens.addAll(solver(action)) }
-//            nameTokens.addAll(ambiguitySolver(action))
         }
         // will change addResult for getResult, that will allow for disambiguation to check if it's exceeding max chars and thus apply the disamb function or not
         addResult(individual, nameTokens)
@@ -69,7 +68,6 @@ open class RestActionTestCaseNamingStrategy(
      * following solvers.
      */
     override fun resolveAmbiguities(duplicatedIndividuals: Set<EvaluatedIndividual<*>>): Map<EvaluatedIndividual<*>, String> {
-        val solvedAmbiguities = mutableMapOf<EvaluatedIndividual<*>, String>()
         val workingCopy = duplicatedIndividuals.toMutableSet()
 
         val ambiguitySolversPerIndividual = mutableMapOf<EvaluatedIndividual<*>, MutableList<(Action) -> List<String>>>()
@@ -78,12 +76,8 @@ open class RestActionTestCaseNamingStrategy(
         pathDisambiguatedIndividuals.forEach {
             ambiguitySolversPerIndividual[it] = mutableListOf(::pathAmbiguitySolver)
         }
-        log.warn("Solved ${pathDisambiguatedIndividuals.size} path ambiguities: $pathDisambiguatedIndividuals")
-//        solvedAmbiguities.putAll(pathDisambiguatedIndividuals)
-//        removeSolvedDuplicates(workingCopy, pathDisambiguatedIndividuals.keys)
 
         val queryParamsDisambiguatedIndividuals = getQueryParamsDisambiguationIndividuals(workingCopy)
-        log.warn("Solved ${queryParamsDisambiguatedIndividuals.size} query param ambiguities: $queryParamsDisambiguatedIndividuals")
         queryParamsDisambiguatedIndividuals.forEach {
             if (ambiguitySolversPerIndividual.containsKey(it)) {
                 ambiguitySolversPerIndividual[it]?.add(::queryParamsAmbiguitySolver)
@@ -91,16 +85,21 @@ open class RestActionTestCaseNamingStrategy(
                 ambiguitySolversPerIndividual[it] = mutableListOf(::queryParamsAmbiguitySolver)
             }
         }
-//        solvedAmbiguities.putAll(queryParamsDisambiguatedIndividuals)
-//        removeSolvedDuplicates(workingCopy, queryParamsDisambiguatedIndividuals.keys)
 
-        val res = ambiguitySolversPerIndividual.map {
-            it.key to expandName(it.key, mutableListOf(), it.value)
-        }.toMap()
+        return collectSolvedNames(ambiguitySolversPerIndividual)
+    }
 
-        return res
-
-//        return solvedAmbiguities
+    /*
+     * When two or more individuals share a name, no disambiguation is performed.
+     * Otherwise, we would just be increasing test case name length without having actually disambiguated.
+     */
+    private fun collectSolvedNames(ambiguitySolversPerIndividual: MutableMap<EvaluatedIndividual<*>, MutableList<(Action) -> List<String>>>): Map<EvaluatedIndividual<*>, String> {
+        return ambiguitySolversPerIndividual
+            .map { it.key to expandName(it.key, mutableListOf(), it.value) }
+            .groupBy({ it.second }, { it.first })
+            .filter { it.value.size == 1 }
+            .flatMap { entry -> entry.value.map { key -> key to entry.key } }
+            .toMap()
     }
 
     /*
@@ -109,7 +108,6 @@ open class RestActionTestCaseNamingStrategy(
      * differs and when said individual does not have a parameter as a last element since it might differ in the
      * parameter name but not the rest of the path.
      */
-//    private fun solvePathAmbiguities(duplicatedIndividuals: MutableSet<EvaluatedIndividual<*>>): Map<EvaluatedIndividual<*>, String> {
     private fun getPathDisambiguationIndividuals(duplicatedIndividuals: MutableSet<EvaluatedIndividual<*>>): List<EvaluatedIndividual<*>> {
         return duplicatedIndividuals
             .groupBy {
@@ -122,17 +120,10 @@ open class RestActionTestCaseNamingStrategy(
                 Pair(toStringPath, isLastAParam)
             }
             .filter { it.value.isNotEmpty() && !it.key.second }
-            .flatMap { entry ->
-//                entry.value.map { it to expandName(it, mutableListOf(), ::pathAmbiguitySolver) }
-                val eInd = entry.value[0]
-                entry.value
-//                eInd to expandName(eInd, mutableListOf(), ::pathAmbiguitySolver)
-            }
+            .flatMap { it.value }
             .toList()
-//            .toMap()
 
     }
-
 
     /*
      * If the last element of a path is a parameter then we must go up a level
@@ -164,30 +155,14 @@ open class RestActionTestCaseNamingStrategy(
      * The filter call ensures that we are only performing this disambiguation when there's only one individual that
      * differs and the list of query params is not empty.
      */
-//    private fun solveQueryParamsAmbiguities(duplicatedIndividuals: MutableSet<EvaluatedIndividual<*>>): Map<EvaluatedIndividual<*>, String> {
     private fun getQueryParamsDisambiguationIndividuals(duplicatedIndividuals: MutableSet<EvaluatedIndividual<*>>): List<EvaluatedIndividual<*>> {
         return duplicatedIndividuals
             .groupBy {
                 val restAction = it.evaluatedMainActions().last().action as RestCallAction
-                val resolvedQueryParams = restAction.path.resolveOnlyQuery(restAction.parameters)
-//                (it.evaluatedMainActions().last().action as RestCallAction).parameters.filterIsInstance<QueryParam>()
-//                val b = restAction.parameters.filterIsInstance<QueryParam>().filter { param: Param -> resolvedQueryParams.contains(param.name) }
-//                b
                 restAction.path.getOnlyQuery(restAction.parameters)
             }
-//            .filter { it.value.size == 1 && it.key.isNotEmpty()}
             .filter { it.value.isNotEmpty() && it.key.isNotEmpty()}
-//            .mapNotNull { entry ->
-//                val eInd = entry.value[0]
-//                eInd to expandName(eInd, mutableListOf(), ::queryParamsAmbiguitySolver)
-//            }
-            .flatMap { entry ->
-//                entry.value.map { it to expandName(it, mutableListOf(), ::queryParamsAmbiguitySolver) }
-//                val eInd = entry.value[0]
-//                eInd to expandName(eInd, mutableListOf(), ::pathAmbiguitySolver)
-                entry.value
-            }.toList()
-//            .toMap()
+            .flatMap { it.value }.toList()
     }
 
     /*
@@ -196,10 +171,7 @@ open class RestActionTestCaseNamingStrategy(
     private fun queryParamsAmbiguitySolver(action: Action): List<String> {
         val restAction = action as RestCallAction
         val result = mutableListOf<String>()
-//        result.add(getPath(restAction.path.nameQualifier))
 
-        val resolvedQueryParams = restAction.path.resolveOnlyQuery(restAction.parameters)
-//        val queryParams = restAction.parameters.filterIsInstance<QueryParam>()
         val queryParams = restAction.path.getOnlyQuery(restAction.parameters)
         result.add(with)
         result.add(if (queryParams.size > 1) "${queryParam}s" else queryParam)
@@ -218,7 +190,7 @@ open class RestActionTestCaseNamingStrategy(
             }
         }
 
-        val numberQueryParams = getNumberQueryParams(queryParams)
+        val numberQueryParams = getNegativeNumberQueryParams(queryParams)
         numberQueryParams.forEachIndexed { index, queryParam ->
             result.add("negative")
             result.add(queryParam.name)
@@ -238,19 +210,28 @@ open class RestActionTestCaseNamingStrategy(
     }
 
     private fun getBooleanQueryParams(queryParams: List<QueryParam>): List<QueryParam> {
-        return queryParams.filter { it.getGeneForQuery() is BooleanGene && (it.getGeneForQuery() as BooleanGene).value }
+        return queryParams.filter {
+            val wrappedGene = getWrappedGene(it)
+            wrappedGene is BooleanGene && wrappedGene.value
+        }
     }
 
-    private fun getNumberQueryParams(queryParams: List<QueryParam>): List<QueryParam> {
-        return queryParams.filter { it.getGeneForQuery() is NumberGene<*> && (it.getGeneForQuery() as NumberGene<*>).value.toLong() < 0 }
+    private fun getNegativeNumberQueryParams(queryParams: List<QueryParam>): List<QueryParam> {
+        return queryParams.filter {
+            val wrappedGene = getWrappedGene(it)
+            wrappedGene is NumberGene<*> && wrappedGene.value.toLong() < 0
+        }
     }
 
     private fun getEmptyStringQueryParams(queryParams: List<QueryParam>): List<QueryParam> {
-        return queryParams.filter { it.getGeneForQuery() is StringGene && (it.getGeneForQuery() as StringGene).getValueAsRawString().trim().isEmpty() }
+        return queryParams.filter {
+            val wrappedGene = getWrappedGene(it)
+            wrappedGene is StringGene && wrappedGene.getValueAsRawString().trim().isEmpty()
+        }
     }
 
-    private fun removeSolvedDuplicates(duplicatedIndividuals: MutableSet<EvaluatedIndividual<*>>, disambiguatedIndividuals: Set<EvaluatedIndividual<*>>) {
-        duplicatedIndividuals.removeAll(disambiguatedIndividuals)
+    private fun getWrappedGene(queryParam: QueryParam): Gene {
+        return (queryParam.getGeneForQuery() as OptionalGene).gene
     }
 
     private fun isGetCall(evaluatedAction: EvaluatedAction): Boolean {
