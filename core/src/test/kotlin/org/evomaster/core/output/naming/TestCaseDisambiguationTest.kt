@@ -13,6 +13,7 @@ import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.gene.BooleanGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
@@ -216,21 +217,52 @@ class TestCaseDisambiguationTest {
     }
 
     @Test
-    fun negativeNumberQueryParamsAreAdded() {
-        val syntaxLanguagesIndividual = getEvaluatedIndividualWith(getRestCallAction("/syntax/languages"))
-        val syntaxLanguagesIndividual2 = getEvaluatedIndividualWith(getRestCallAction("/syntax/languages", parameters = mutableListOf(getBooleanQueryParam("firstParam"), getBooleanQueryParam("secondParam"), getStringQueryParam("thirdParam"), getBooleanQueryParam("fourthParam"))))
-        ensureGeneValue(syntaxLanguagesIndividual2, "firstParam", "true")
-        ensureGeneValue(syntaxLanguagesIndividual2, "secondParam", "false")
-        ensureGeneValue(syntaxLanguagesIndividual2, "fourthParam", "true")
+    fun negativeNumberQueryParamIsAdded() {
+        val simpleIndividual = getEvaluatedIndividualWith(getRestCallAction("/languages"))
+        val negativeQPIndividual = getEvaluatedIndividualWith(getRestCallAction("/languages", parameters = mutableListOf(getIntegerQueryParam("limit"))))
+        ensureGeneValue(negativeQPIndividual, "limit", "-1")
 
-        val solution = Solution(mutableListOf(syntaxLanguagesIndividual, syntaxLanguagesIndividual2), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
+        val solution = Solution(mutableListOf(simpleIndividual, negativeQPIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
         val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, QUERY_PARAMS_IN_NAME)
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(2, testCases.size)
-        assertEquals("test_0_getOnSyntaxLanguagesReturnsEmpty", testCases[0].name)
-        assertEquals("test_1_getOnSyntaxLanguagesWithQueryParamsFirstParamAndFourthParamReturnsEmpty", testCases[1].name)
+        assertEquals("test_0_getOnLanguagesReturnsEmpty", testCases[0].name)
+        assertEquals("test_1_getOnLanguagesWithQueryParamNegativeLimitReturnsEmpty", testCases[1].name)
+    }
+
+    @Test
+    fun emptyStringQueryParamIsAdded() {
+        val simpleIndividual = getEvaluatedIndividualWith(getRestCallAction("/languages"))
+        val emptyStringIndividual = getEvaluatedIndividualWith(getRestCallAction("/languages", parameters = mutableListOf(getStringQueryParam("name"))))
+        ensureGeneValue(emptyStringIndividual, "name", "")
+
+        val solution = Solution(mutableListOf(simpleIndividual, emptyStringIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
+
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, QUERY_PARAMS_IN_NAME)
+
+        val testCases = namingStrategy.getTestCases()
+        assertEquals(2, testCases.size)
+        assertEquals("test_0_getOnLanguagesReturnsEmpty", testCases[0].name)
+        assertEquals("test_1_getOnLanguagesWithQueryParamEmptyNameReturnsEmpty", testCases[1].name)
+    }
+
+    @Test
+    fun emptyStringAndNegativeIntQueryParamsAreAdded() {
+        val simpleIndividual = getEvaluatedIndividualWith(getRestCallAction("/languages"))
+        val queryParamsIndividual = getEvaluatedIndividualWith(getRestCallAction("/languages", parameters = mutableListOf(getStringQueryParam("name"), getIntegerQueryParam("limit"))))
+        ensureGeneValue(queryParamsIndividual, "name", "")
+        ensureGeneValue(queryParamsIndividual, "limit", "-1")
+
+        val solution = Solution(mutableListOf(simpleIndividual, queryParamsIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
+
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, QUERY_PARAMS_IN_NAME)
+
+        val testCases = namingStrategy.getTestCases()
+        assertEquals(2, testCases.size)
+        assertEquals("test_0_getOnLanguagesReturnsEmpty", testCases[0].name)
+        assertEquals("test_1_getOnLanguagesWithQueryParamsNegativeLimitEmptyNameReturnsEmpty", testCases[1].name)
     }
 
     private fun getPathParam(paramName: String): Param {
@@ -243,6 +275,10 @@ class TestCaseDisambiguationTest {
 
     private fun getBooleanQueryParam(paramName: String): Param {
         return QueryParam(paramName, OptionalGene(paramName, BooleanGene(paramName)))
+    }
+
+    private fun getIntegerQueryParam(paramName: String): Param {
+        return QueryParam(paramName, OptionalGene(paramName, IntegerGene(paramName)))
     }
 
     /*

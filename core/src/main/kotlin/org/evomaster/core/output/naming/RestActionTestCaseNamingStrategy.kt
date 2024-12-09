@@ -30,7 +30,6 @@ open class RestActionTestCaseNamingStrategy(
         private val log: Logger = LoggerFactory.getLogger(RestActionTestCaseNamingStrategy::class.java)
     }
 
-    // this will get a list of ambiguitySolver functions and apply them all
     override fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>, ambiguitySolvers: List<(Action) -> List<String>>): String {
         val evaluatedAction = individual.evaluatedMainActions().last()
         val action = evaluatedAction.action as RestCallAction
