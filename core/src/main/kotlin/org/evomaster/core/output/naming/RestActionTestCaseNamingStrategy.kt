@@ -16,8 +16,6 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.numeric.NumberGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import javax.ws.rs.core.MediaType
 
 open class RestActionTestCaseNamingStrategy(
@@ -25,10 +23,6 @@ open class RestActionTestCaseNamingStrategy(
     languageConventionFormatter: LanguageConventionFormatter,
     private val nameWithQueryParameters: Boolean,
 ) : ActionTestCaseNamingStrategy(solution, languageConventionFormatter)  {
-
-    companion object {
-        private val log: Logger = LoggerFactory.getLogger(RestActionTestCaseNamingStrategy::class.java)
-    }
 
     override fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>, ambiguitySolvers: List<(Action) -> List<String>>): String {
         val evaluatedAction = individual.evaluatedMainActions().last()
