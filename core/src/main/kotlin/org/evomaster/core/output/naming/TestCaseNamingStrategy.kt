@@ -32,7 +32,7 @@ abstract class TestCaseNamingStrategy(
      *
      * @return a String with extra information that will be included in the test name, regarding the EvaluatedIndividual
      */
-    protected abstract fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>, ambiguitySolver: ((Action) -> List<String>)? = null): String
+    protected abstract fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>, ambiguitySolvers: List<(Action) -> List<String>> = emptyList()): String
 
     /**
      * @param duplicatedIndividuals set containing the EvaluatedIndividuals sharing the same name

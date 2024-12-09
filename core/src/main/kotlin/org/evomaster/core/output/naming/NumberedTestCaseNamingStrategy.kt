@@ -22,7 +22,7 @@ open class NumberedTestCaseNamingStrategy(
     }
 
     // numbered strategy will not expand the name unless it is using the namingHelper
-    override fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>, ambiguitySolver: ((Action) -> List<String>)?): String {
+    override fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>, ambiguitySolvers: List<(Action) -> List<String>>): String {
         return ""
     }
 
