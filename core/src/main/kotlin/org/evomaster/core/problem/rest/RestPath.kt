@@ -304,10 +304,6 @@ class RestPath(path: String) {
     }
 
     fun resolveOnlyQuery(params: List<Param>): List<String> {
-
-//        return params
-//            .filter(usableQueryParamsFunction())
-//            .filterIsInstance<QueryParam>()
         return getOnlyQuery(params)
             .map { q ->
                 val name = encode(q.name)

@@ -44,7 +44,6 @@ open class RestActionTestCaseNamingStrategy(
             // else keep only name + acceptedSolverResults + resultTokens
             ambiguitySolvers.forEach { solver -> nameTokens.addAll(solver(action)) }
         }
-        // will change addResult for getResult, that will allow for disambiguation to check if it's exceeding max chars and thus apply the disamb function or not
         addResult(individual, nameTokens)
 
         return formatName(nameTokens)

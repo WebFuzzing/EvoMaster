@@ -193,7 +193,6 @@ class TestCaseDisambiguationTest {
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(2, testCases.size)
-//        assertEquals("test_0_getOnSyntaxLanguagesReturnsEmpty", testCases[0].name)
         assertEquals("test_0_getOnSyntaxLanguagesReturnsEmpty", testCases[0].name)
         assertEquals("test_1_getOnSyntaxLanguagesWithQueryParamReturnsEmpty", testCases[1].name)
     }
@@ -212,7 +211,6 @@ class TestCaseDisambiguationTest {
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(2, testCases.size)
-//        assertEquals("test_0_getOnSyntaxLanguagesReturnsEmpty", testCases[0].name)
         assertEquals("test_0_getOnSyntaxLanguagesReturnsEmpty", testCases[0].name)
         assertEquals("test_1_getOnSyntaxLanguagesWithQueryParamsFirstParamAndFourthParamReturnsEmpty", testCases[1].name)
     }
@@ -231,7 +229,6 @@ class TestCaseDisambiguationTest {
 
         val testCases = namingStrategy.getTestCases()
         assertEquals(2, testCases.size)
-//        assertEquals("test_0_getOnSyntaxLanguagesReturnsEmpty", testCases[0].name)
         assertEquals("test_0_getOnSyntaxLanguagesReturnsEmpty", testCases[0].name)
         assertEquals("test_1_getOnSyntaxLanguagesWithQueryParamsFirstParamAndFourthParamReturnsEmpty", testCases[1].name)
     }
@@ -255,8 +252,6 @@ class TestCaseDisambiguationTest {
     private fun ensureGeneValue(evaluatedIndividual: EvaluatedIndividual<RestIndividual>, paramName: String, paramValue: String) {
         val restCallAction = evaluatedIndividual.evaluatedMainActions().last().action as RestCallAction
         (restCallAction.parameters.filter { it.name == paramName }).forEach {
-//            val optionalGene = (it as QueryParam).getGeneForQuery() as OptionalGene
-
             (it as QueryParam).getGeneForQuery().setFromStringValue(paramValue)
         }
     }
