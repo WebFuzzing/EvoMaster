@@ -201,6 +201,7 @@ open class RestActionTestCaseNamingStrategy(
         }
     }
 
+    // TODO: need to check if the BooleanGene is not enclosed in an OptionalGene
     private fun getBooleanQueryParams(queryParams: List<QueryParam>): List<QueryParam> {
         return queryParams.filter {
             val wrappedGene = getWrappedGene(it)
@@ -208,6 +209,7 @@ open class RestActionTestCaseNamingStrategy(
         }
     }
 
+    // TODO: need to check if the NumberGene is not enclosed in an OptionalGene
     private fun getNegativeNumberQueryParams(queryParams: List<QueryParam>): List<QueryParam> {
         return queryParams.filter {
             val wrappedGene = getWrappedGene(it)
@@ -215,6 +217,7 @@ open class RestActionTestCaseNamingStrategy(
         }
     }
 
+    // TODO: need to check if the StringGene is not enclosed in an OptionalGene
     private fun getEmptyStringQueryParams(queryParams: List<QueryParam>): List<QueryParam> {
         return queryParams.filter {
             val wrappedGene = getWrappedGene(it)
