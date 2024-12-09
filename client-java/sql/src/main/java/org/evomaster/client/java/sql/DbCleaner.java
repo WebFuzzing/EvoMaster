@@ -411,7 +411,8 @@ public class DbCleaner {
                 return "dbo";
             case MARIADB:
             case MYSQL:
-                throw new IllegalArgumentException("there is no default schema for " + type + ", and you must specify a db name here");
+                //there is no concept of schema for those databases
+                return null;
             case POSTGRES:
                 return "public";
         }
@@ -434,12 +435,11 @@ public class DbCleaner {
         switch (type) {
             // https://stackoverflow.com/questions/175415/how-do-i-get-list-of-all-tables-in-a-database-using-tsql, TABLE_CATALOG='"+dbname+"'"
             case MS_SQL_SERVER:
-                // for MySQL, schema is dbname
             case MYSQL:
             case MARIADB:
             case H2:
             case POSTGRES:
-                if (schema.isEmpty())
+                if (schema == null || schema.isEmpty())
                     return command;
                 return command + " AND TABLE_SCHEMA='" + schema + "'";
         }

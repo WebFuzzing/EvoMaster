@@ -382,4 +382,7 @@ class RPCTestCaseWriter : ApiTestCaseWriter() {
         }
     }
 
+    override fun addTestCommentBlock(lines: Lines, test: TestCase) {
+        //TODO
+    }
 }

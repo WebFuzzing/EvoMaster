@@ -59,6 +59,18 @@ abstract class TestCaseWriter {
         textToFile.toFile().appendText(text)
     }
 
+
+    private fun addTestComments(lines: Lines, test: TestCase){
+
+        lines.startCommentBlock()
+        //maybe here we could have general messages... if needed
+
+        addTestCommentBlock(lines, test)
+        lines.endCommentBlock()
+    }
+
+    protected abstract fun addTestCommentBlock(lines: Lines, test: TestCase)
+
     fun convertToCompilableTestCode(
             test: TestCase,
             baseUrlOfSut: String,
@@ -69,10 +81,14 @@ abstract class TestCaseWriter {
 
         val lines = Lines(config.outputFormat)
 
-        if (config.testSuiteSplitType == EMConfig.TestSuiteSplitType.FAULTS
-            && test.test.getClusters().size != 0
-        ) {
-            clusterComment(lines, test)
+//        if (config.testSuiteSplitType == EMConfig.TestSuiteSplitType.FAULTS
+//            && test.test.getClusters().size != 0
+//        ) {
+//            clusterComment(lines, test)
+//        }
+
+        if(config.addTestComments) {
+            addTestComments(lines, test)
         }
 
         if (format.isJUnit()) {
@@ -322,6 +338,7 @@ abstract class TestCaseWriter {
     }
 
 
+    @Deprecated("dont' use")
     protected fun clusterComment(lines: Lines, test: TestCase) {
         if (test.test.clusterAssignments.size > 0) {
             lines.startCommentBlock()

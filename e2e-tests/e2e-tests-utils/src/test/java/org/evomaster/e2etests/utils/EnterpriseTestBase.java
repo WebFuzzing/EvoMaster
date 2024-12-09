@@ -111,13 +111,14 @@ public abstract class EnterpriseTestBase {
 
         StaticCounter.Companion.reset();
 
-        assertTimeoutPreemptively(Duration.ofMinutes(2), () -> {
-            boolean reset = remoteController.resetSUT();
-            assertTrue(reset);
-        });
+        if(remoteController != null) {
+            assertTimeoutPreemptively(Duration.ofMinutes(2), () -> {
+                boolean reset = remoteController.resetSUT();
+                assertTrue(reset);
+            });
+        }
 
         SimpleLogger.setThreshold(SimpleLogger.Level.DEBUG);
-
     }
 
     @AfterEach

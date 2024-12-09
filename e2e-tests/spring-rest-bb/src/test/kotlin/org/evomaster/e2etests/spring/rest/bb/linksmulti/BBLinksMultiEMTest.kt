@@ -36,6 +36,7 @@ class BBLinksMultiEMTest : SpringTestBase() {
             setOption(args, "algorithm", "SMARTS")
             setOption(args, "probUseRestLinks", "0.9")
             setOption(args, "advancedBlackBoxCoverage", "true")
+            setOption(args, "addTestComments", "true")
 
             val solution = initAndRun(args)
 
