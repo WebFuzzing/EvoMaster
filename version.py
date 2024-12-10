@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import sys
 import re
 import platform
@@ -50,21 +52,27 @@ def replaceInCI():
     regex = re.compile(r'  evomaster-version:.*')
     replacement = '  evomaster-version: '+reducedVersion+'\n'
     replace(".github/workflows/ci.yml", regex, replacement)
+    replace(".github/workflows/release.yml", regex, replacement)
 
-def replaceInJS():
-    regex = re.compile(r'\s*"version"\s*:.*')
-    replacement = '  "version": "'+version+'",\n'
-    replace("client-js/evomaster-client-js/package.json", regex, replacement)
+def replaceInBBE2E():
+    regex = re.compile(r'\s*<version>.*</version><!--MARKER-->\s*')
+    replacement = '        <version>'+version+'</version><!--MARKER-->\n'
+    replace("e2e-tests/spring-rest-bb/maven/pom.xml", regex, replacement)
 
-
-def replaceInCS():
-    regex = re.compile(r'\s*<Version>.*</Version>\s*')
-    replacement = '         <Version>'+version+'</Version>\n'
-    replace("client-dotnet/common.props", regex, replacement)
-
-    regex = re.compile(r'.*VERSION.*=.*')
-    replacement = 'VERSION='+reducedVersion+'\n'
-    replace("client-dotnet/publish.sh", regex, replacement)
+### JS and C# no longer supported
+# def replaceInJS():
+#     regex = re.compile(r'\s*"version"\s*:.*')
+#     replacement = '  "version": "'+version+'",\n'
+#     replace("client-js/evomaster-client-js/package.json", regex, replacement)
+#
+# def replaceInCS():
+#     regex = re.compile(r'\s*<Version>.*</Version>\s*')
+#     replacement = '         <Version>'+version+'</Version>\n'
+#     replace("client-dotnet/common.props", regex, replacement)
+#
+#     regex = re.compile(r'.*VERSION.*=.*')
+#     replacement = 'VERSION='+reducedVersion+'\n'
+#     replace("client-dotnet/publish.sh", regex, replacement)
 
 
 SHELL = platform.system() == 'Windows'
@@ -80,6 +88,8 @@ def replaceInMvn():
 
 replaceInMakeExecutable()
 replaceInCI()
-replaceInJS()
 replaceInMvn()
-replaceInCS()
+replaceInBBE2E()
+### No longer supported
+# replaceInCS()
+# replaceInJS()

@@ -1,7 +1,6 @@
 package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
-import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.EnumType;
 
@@ -9,6 +8,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.List;
+
+import static org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator.*;
 
 /**
  * enum parameter
@@ -27,6 +28,11 @@ public class EnumParam extends NamedTypedValue<EnumType, Integer> {
         Class <? extends Enum> clazz = (Class < ? extends Enum >) Class.forName(getType().getFullTypeName());
         String value = getType().getItems()[getValue()];
         return Enum.valueOf(clazz, value);
+    }
+
+    @Override
+    public List<String> referenceTypes() {
+        return null;
     }
 
     @Override
@@ -69,34 +75,35 @@ public class EnumParam extends NamedTypedValue<EnumType, Integer> {
     }
 
     @Override
-    public List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent) {
+    public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava, boolean isVariableNullable) {
         String code;
-        if (accessibleSchema == null || accessibleSchema.isAccessible)
-            code = CodeJavaGenerator.oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, getValueAsJavaString());
+        if (accessibleSchema != null && accessibleSchema.setterMethodName != null)
+            code = oneLineSetterInstance(accessibleSchema.setterMethodName, getType().getFullTypeName(), variableName, getValueAsJavaString(isJava),isJava, isNullable());
         else{
-            if (accessibleSchema.setterMethodName == null)
+            if (accessibleSchema != null && !accessibleSchema.isAccessible)
                 throw new IllegalStateException("Error: private field, but there is no setter method");
-            code = CodeJavaGenerator.oneLineSetterInstance(accessibleSchema.setterMethodName, getType().getFullTypeName(), variableName, getValueAsJavaString());
+            code = oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, getValueAsJavaString(isJava), isJava, isNullable());
+
         }
-        return Collections.singletonList(CodeJavaGenerator.getIndent(indent)+ code);
+        return Collections.singletonList(getIndent(indent)+ code);
     }
 
     @Override
-    public List<String> newAssertionWithJava(int indent, String responseVarName, int maxAssertionForDataInCollection) {
+    public List<String> newAssertionWithJavaOrKotlin(int indent, String responseVarName, int maxAssertionForDataInCollection, boolean isJava) {
         StringBuilder sb = new StringBuilder();
-        sb.append(CodeJavaGenerator.getIndent(indent));
+        sb.append(getIndent(indent));
         if (getValue() == null)
-            sb.append(CodeJavaGenerator.junitAssertNull(responseVarName));
+            sb.append(junitAssertNull(responseVarName,isJava ));
         else
-            sb.append(CodeJavaGenerator.junitAssertEquals(CodeJavaGenerator.enumValue(getType().getFullTypeName(), getType().getItems()[getValue()]), responseVarName));
+            sb.append(junitAssertEquals(enumValue(getType().getFullTypeName(), getType().getItems()[getValue()]), responseVarName, isJava));
 
         return Collections.singletonList(sb.toString());
     }
 
     @Override
-    public String getValueAsJavaString() {
+    public String getValueAsJavaString(boolean isJava) {
         if (getValue() == null)
             return null;
-        return CodeJavaGenerator.enumValue(getType().getFullTypeName(), getType().getItems()[getValue()]);
+        return enumValue(getType().getFullTypeName(), getType().getItems()[getValue()]);
     }
 }

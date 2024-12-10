@@ -5,6 +5,8 @@ At least in the software testing community, now quite  a few venues __require__ 
 
 To help replicating previous studies for _EvoMaster_, we provide most of the [scripts](exp) used throughout the years in our studies.
 Here, we give a high overview of how they can be used. 
+To see which script was used in each study,
+you can look at the [list of publications](publications.md), where for each paper we provide links to the used scripts. 
 
 
 First and foremost, we need to make an important disclaimer here.

@@ -25,5 +25,12 @@ data class TempState(
         /*
          * An intermediate data structure used for extracting Union types
          */
-        var tempUnionTables: MutableList<Table> = mutableListOf()
+        var tempUnionTables: MutableList<Table> = mutableListOf(),
+
+        /*
+         * A map used to link each function name to a unique ID.
+         * @Key: unique ID
+         * @Value: function name
+         */
+        var inputTypeName: MutableMap<String,String> = mutableMapOf()
 )

@@ -24,7 +24,7 @@ public class ResourceDependencyDBEMTest extends ResourceTestBase {
     public void testRunEM() throws Throwable {
 
         runTestHandlingFlakyAndCompilation(
-                "ResourceEM",
+                "ResourceDBEM",
                 "org.db.resource.ResourceEM",
                 1_000,
                 true,
@@ -63,9 +63,6 @@ public class ResourceDependencyDBEMTest extends ResourceTestBase {
 
                     args.add("--dependencyFile");
                     args.add(dependencies);
-
-                    args.add("--resourceSampleStrategy");
-                    args.add("EqualProbability");
 
                     args.add("--probOfSmartSampling");
                     args.add("1.0");

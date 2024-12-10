@@ -37,14 +37,14 @@ class ActionStructureImpact  (sharedImpactInfo: SharedImpactInfo, specificImpact
        In this case, we only identify best and worst structure.
     */
     fun updateStructure(evaluatedIndividual : EvaluatedIndividual<*>){
-        val structureId = evaluatedIndividual.individual.seeActions().joinToString(ACTION_SEPARATOR){it.getName()}
+        val structureId = evaluatedIndividual.individual.seeAllActions().joinToString(ACTION_SEPARATOR){it.getName()}
         val impact = structures.getOrPut(structureId){ 0.0 }
         val fitness = evaluatedIndividual.fitness.computeFitnessScore()
         if ( fitness > impact ) structures[structureId] = fitness
     }
 
     fun updateStructure(individual:Individual, fitnessValue: FitnessValue){
-        val structureId = individual.seeActions().joinToString(ACTION_SEPARATOR){it.getName()}
+        val structureId = individual.seeAllActions().joinToString(ACTION_SEPARATOR){it.getName()}
         val impact = structures.getOrPut(structureId){ 0.0 }
         val fitness = fitnessValue.computeFitnessScore()
         if ( fitness > impact ) structures[structureId] = fitness

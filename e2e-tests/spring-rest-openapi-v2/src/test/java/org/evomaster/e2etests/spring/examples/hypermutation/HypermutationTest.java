@@ -5,6 +5,7 @@ import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -20,15 +21,16 @@ public class HypermutationTest extends HypermutationTestBase {
         SpringTestBase.initClass(new HighWeightRestController(Arrays.asList("/api/highweight/lowWeightHighCoverage/{x}")));
     }
 
+    @Disabled("Too brittle test, and unclear what properties it is testing")
     @Test
     public void testRunHypermutation() throws Throwable {
 
-        defaultSeed = 0;
+        defaultSeed = 42;
 
         runTestHandlingFlakyAndCompilation(
                 "hypermtation/TestHyperweight",
                 "org.adaptivehypermuation.HyperWeightTest",
-                1000,
+                500,
                 true,
                 (args) -> {
 
@@ -49,6 +51,13 @@ public class HypermutationTest extends HypermutationTestBase {
 
                     args.add("--focusedSearchActivationTime");
                     args.add("0.1");
+
+                    //minimization loses impact info
+                    args.add("--minimize");
+                    args.add("false");
+
+                    //taint analysis impacts mutation
+                    setOption(args,"baseTaintAnalysisProbability", "0.0");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 

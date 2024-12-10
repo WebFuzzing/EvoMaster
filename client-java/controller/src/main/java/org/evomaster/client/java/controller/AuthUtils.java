@@ -1,9 +1,9 @@
 package org.evomaster.client.java.controller;
 
-import org.evomaster.client.java.controller.api.dto.AuthenticationDto;
-import org.evomaster.client.java.controller.api.dto.CookieLoginDto;
-import org.evomaster.client.java.controller.api.dto.HeaderDto;
+import org.evomaster.client.java.controller.api.dto.auth.*;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Objects;
@@ -48,7 +48,7 @@ public class AuthUtils {
     public static AuthenticationDto getForAuthorizationHeader(String dtoName, String authorizationValue){
 
         AuthenticationDto dto = new AuthenticationDto(dtoName);
-        dto.headers.add(new HeaderDto("Authorization", authorizationValue));
+        dto.fixedHeaders.add(new HeaderDto("Authorization", authorizationValue));
 
         return dto;
     }
@@ -68,17 +68,71 @@ public class AuthUtils {
      */
     public static AuthenticationDto getForDefaultSpringFormLogin(String dtoName, String username, String password){
 
-        CookieLoginDto cookie = new CookieLoginDto();
-        cookie.httpVerb = CookieLoginDto.HttpVerb.POST;
-        cookie.contentType = CookieLoginDto.ContentType.X_WWW_FORM_URLENCODED;
-        cookie.usernameField = "username";
-        cookie.passwordField = "password";
-        cookie.loginEndpointUrl = "/login";
-        cookie.username = username;
-        cookie.password = password;
+        LoginEndpointDto cookie = new LoginEndpointDto();
+
+        cookie.endpoint = "/login";
+        cookie.verb = HttpVerb.POST;
+        cookie.contentType = "application/x-www-form-urlencoded";
+        cookie.expectCookies = true;
+        try {
+            String payload;
+            String usernameField = URLEncoder.encode("username", "UTF-8");
+            String passwordField = URLEncoder.encode("password", "UTF-8");
+            payload = usernameField + "=" + URLEncoder.encode(username, "UTF-8");
+            payload += "&";
+            payload += passwordField + "="+ URLEncoder.encode(password, "UTF-8");
+            cookie.payloadRaw = payload;
+        }catch (UnsupportedEncodingException e){
+            throw new RuntimeException(e); //ah, the joys of Java...
+        }
+        AuthenticationDto dto = new AuthenticationDto(dtoName);
+        dto.loginEndpointAuth = cookie;
+
+        return dto;
+    }
+
+
+    public static AuthenticationDto getForJWT(
+            String dtoName,
+            String postEndpoint,
+            String payload,
+            String extractFromField){
+
+        return  getForJsonToken(dtoName, postEndpoint, payload, extractFromField, "JWT ");
+    }
+
+
+    public static AuthenticationDto getForJsonTokenBearer(
+            String dtoName,
+            String postEndpoint,
+            String payload,
+            String extractFromField){
+
+        return  getForJsonToken(dtoName, postEndpoint, payload, extractFromField, "Bearer ");
+    }
+
+    public static AuthenticationDto getForJsonToken(
+            String dtoName,
+            String postEndpoint,
+            String payload,
+            String extractFromField,
+            String headerPrefix
+    ){
+
+        LoginEndpointDto le = new LoginEndpointDto();
+
+        le.endpoint = postEndpoint;
+        le.verb = HttpVerb.POST;
+        le.contentType = "application/json";
+        le.expectCookies = false;
+        le.payloadRaw = payload;
+        le.token = new TokenHandlingDto();
+        le.token.extractFromField = extractFromField;
+        le.token.headerPrefix = headerPrefix;
+        le.token.httpHeaderName = "Authorization";
 
         AuthenticationDto dto = new AuthenticationDto(dtoName);
-        dto.cookieLogin = cookie;
+        dto.loginEndpointAuth = le;
 
         return dto;
     }

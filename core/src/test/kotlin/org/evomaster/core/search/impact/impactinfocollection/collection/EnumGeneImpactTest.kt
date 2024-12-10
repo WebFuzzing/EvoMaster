@@ -1,6 +1,6 @@
 package org.evomaster.core.search.impact.impactinfocollection.collection
 
-import org.evomaster.core.search.gene.EnumGene
+import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpactTest
@@ -27,7 +27,7 @@ class EnumGeneImpactTest : GeneImpactTest(){
         geneToMutate as EnumGene<Int>
 
         geneToMutate.index = (geneToMutate.index + 1)%items.size
-        return MutatedGeneWithContext(current = geneToMutate, previous = original)
+        return MutatedGeneWithContext(current = geneToMutate, previous = original,)
     }
 
 

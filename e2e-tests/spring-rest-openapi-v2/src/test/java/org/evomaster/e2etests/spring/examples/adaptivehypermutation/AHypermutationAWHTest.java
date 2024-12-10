@@ -38,7 +38,7 @@ public class AHypermutationAWHTest extends AHypermuationTestBase {
     private final static int budget = 20_000;
     private static String statisticsFile = TESTS_OUTPUT_ROOT_FOLDER + "/AWH/statistics.csv";
     private static String snapshotFile = TESTS_OUTPUT_ROOT_FOLDER + "/AWH/snapshot.csv";
-    private final static int SEED = 42;
+    private final static int SEED = 0;
 
     @Test
     public void testRunMIO() {

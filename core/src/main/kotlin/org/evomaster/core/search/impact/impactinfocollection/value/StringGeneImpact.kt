@@ -1,7 +1,7 @@
 package org.evomaster.core.search.impact.impactinfocollection.value
 
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.impact.impactinfocollection.*
 import org.evomaster.core.search.impact.impactinfocollection.value.numeric.BinaryGeneImpact
 import org.slf4j.Logger
@@ -65,7 +65,8 @@ class StringGeneImpact (sharedImpactInfo: SharedImpactInfo,
     override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, noImpactTargets : Set<Int>, impactTargets: Set<Int>, improvedTargets: Set<Int>, onlyManipulation: Boolean) {
         countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num = gc.numOfMutatedGene)
 
-        if(gc.current !is StringGene) throw IllegalArgumentException("incorrect mutation info for the gene")
+        if(gc.current !is StringGene)
+            throw IllegalArgumentException("incorrect mutation info for the gene")
 
         if (gc.previous != null){
             if (gc.previous !is StringGene)
@@ -84,12 +85,23 @@ class StringGeneImpact (sharedImpactInfo: SharedImpactInfo,
         if (currentSelect != NEVER_EMPLOY_SPECIALIZATION && allImpacts?.size == gc.current.specializationGenes.size){
 
             val sImpact = allImpacts[gc.current.selectedSpecialization]
-            val previousSelect = (gc.previous as StringGene).selectedSpecialization
+            val previousSelect = (gc.previous as? StringGene)?.selectedSpecialization
 
-            val mutatedGeneWithContext = MutatedGeneWithContext(previous = if (previousSelect == currentSelect) gc.previous.specializationGenes[previousSelect] else null, current =  gc.current.specializationGenes[currentSelect], action = "none", position = -1, numOfMutatedGene = 1)
-            (sImpact as GeneImpact).countImpactWithMutatedGeneWithContext(
-                    mutatedGeneWithContext, noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation
+            val mutatedGeneWithContext = MutatedGeneWithContext(
+                current =  gc.current.specializationGenes[currentSelect],
+                actionName = "none",
+                position = -1,
+                previous = if (previousSelect == currentSelect) gc.previous.specializationGenes[previousSelect] else null,
+                numOfMutatedGene = 1,
             )
+            if ((sImpact as GeneImpact).validate(mutatedGeneWithContext.current)){
+                sImpact.countImpactWithMutatedGeneWithContext(
+                        mutatedGeneWithContext, noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation
+                )
+            }else{
+                log.warn("Handling specialization at (${gc.current.selectedSpecialization}) for StringGene (name:${gc.current.name}): Gene (name:${mutatedGeneWithContext.current.name}, type:${mutatedGeneWithContext.current::class.java.simpleName}) and its impact (type:${sImpact::class.java.simpleName}) do not match.")
+            }
+
         }
 
         employBinding.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num = gc.numOfMutatedGene)

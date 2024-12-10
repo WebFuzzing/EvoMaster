@@ -7,17 +7,17 @@ import edu.stanford.nlp.pipeline.StanfordCoreNLP
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestPath
 import org.evomaster.core.problem.rest.param.BodyParam
-import org.evomaster.core.problem.api.service.param.Param
+import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.resource.ActionRToken
 import org.evomaster.core.problem.rest.resource.PathRToken
 import org.evomaster.core.problem.rest.resource.RToken
 import org.evomaster.core.problem.util.ParamUtil
-import org.evomaster.core.search.gene.DisruptiveGene
+import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
-import org.evomaster.core.search.gene.OptionalGene
+import org.evomaster.core.search.gene.optional.OptionalGene
 import java.util.*
 
 /**
@@ -179,7 +179,7 @@ object ParserUtil {
     }
 
 
-    private fun parseActionTokensByParam(params : MutableList<Param>, map : MutableMap<String, ActionRToken>){
+    private fun parseActionTokensByParam(params : List<Param>, map : MutableMap<String, ActionRToken>){
         params.filter {p-> p is BodyParam || p is PathParam || p is QueryParam}.forEach {p->
             handleParam(p, map)
         }
@@ -200,7 +200,7 @@ object ParserUtil {
 
     private fun getFirstTypeGene(gene : Gene) : Gene{
         if(gene is ObjectGene) return gene
-        else if(gene is DisruptiveGene<*>){
+        else if(gene is CustomMutationRateGene<*>){
             return getFirstTypeGene(gene.gene)
         }else if(gene is OptionalGene){
             return getFirstTypeGene(gene.gene)

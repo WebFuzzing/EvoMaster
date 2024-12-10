@@ -4,15 +4,19 @@ import com.google.inject.AbstractModule
 import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
+import org.evomaster.core.Main
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.Termination
 import org.evomaster.core.output.compiler.CompilerForTestGenerated
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.Solution
+import org.evomaster.test.utils.py.PyLoader
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.Paths
 
 class TestSuiteWriterTest{
 
@@ -51,12 +55,7 @@ class TestSuiteWriterTest{
         config.outputFilePrefix = "Foo_testEmptySuite"
         config.outputFileSuffix = ""
 
-        val solution = Solution<RestIndividual>(
-                mutableListOf(),
-                config.outputFilePrefix,
-                config.outputFileSuffix,
-                Termination.NONE
-        )
+        val solution = getEmptySolution(config)
 
 
         //make sure we delete any existing folder from previous test runs
@@ -101,4 +100,48 @@ class TestSuiteWriterTest{
         assertTrue(methods.any { it.name == "tearDown" })
         assertTrue(methods.any { it.name == "initTest" })
     }
+
+    @Test
+    fun testPythonCreatesPythonUtilsFile(){
+
+        val injector = LifecycleInjector.builder()
+            .withModules(BaseModule(), ReducedModule())
+            .build().createInjector()
+
+        val config = injector.getInstance(EMConfig::class.java)
+        config.createTests = true
+        config.outputFormat = OutputFormat.PYTHON_UNITTEST
+        config.outputFolder = "$baseTargetFolder/python_utils"
+        config.outputFilePrefix = "Foo_testPythonUtils"
+        config.outputFileSuffix = ""
+
+        val solution = getEmptySolution(config)
+
+        //make sure we delete any existing folder from previous test runs
+        val srcFolder = File(config.outputFolder)
+        srcFolder.deleteRecursively()
+
+        val writer = injector.getInstance(TestSuiteWriter::class.java)
+        //write the test suite
+        writer.writeTests(solution, FakeController::class.qualifiedName!!, null)
+
+        // the requirements file should exist
+        val requirementsFile = Paths.get("${config.outputFolder}/${TestSuiteWriter.pythonUtilsFilename}")
+        assertTrue(Files.exists(requirementsFile))
+
+        val generatedUtils = String(Files.readAllBytes(requirementsFile))
+        assertTrue(generatedUtils == PyLoader::class.java.getResource("/${TestSuiteWriter.pythonUtilsFilename}").readText())
+    }
+
+    private fun getEmptySolution(config: EMConfig): Solution<RestIndividual> {
+        return Solution<RestIndividual>(
+            mutableListOf(),
+            config.outputFilePrefix,
+            config.outputFileSuffix,
+            Termination.NONE,
+            listOf(),
+            listOf()
+        )
+    }
+
 }

@@ -5,6 +5,7 @@ import com.google.inject.Module
 import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.SearchTimeController
@@ -38,7 +39,7 @@ class GeneUtilsGetDeltaTest {
         apc = injector.getInstance(AdaptiveParameterControl::class.java)
         randomness = injector.getInstance(Randomness::class.java)
 
-        config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
+        config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
         config.focusedSearchActivationTime = 0.5
     }
 
@@ -63,7 +64,7 @@ class GeneUtilsGetDeltaTest {
     @ParameterizedTest
     @MethodSource("getBudgetAndRange")
     fun testGetDelta(iteration: Int, range: Long) {
-        config.maxActionEvaluations = iteration
+        config.maxEvaluations = iteration
         (0 until iteration).forEach { _ ->
             fakeOneEvaluation()
             val delta = GeneUtils.getDelta(randomness, apc, range = range)

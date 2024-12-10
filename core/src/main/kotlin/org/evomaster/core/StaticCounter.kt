@@ -17,6 +17,8 @@ class StaticCounter {
 
         fun getAndIncrease() = counter++
 
+        fun get() = counter
+
         fun reset() {
             counter = 0
         }

@@ -1,0 +1,38 @@
+{
+	"info": {
+		"_postman_id": "d06c6778-eada-414b-856b-989a54ee476a",
+		"name": "resource",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "createRA",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"id\": 1,\n    \"name\": \"foo\",\n    \"value\": 42\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/rA",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"rA"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

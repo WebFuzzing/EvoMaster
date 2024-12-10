@@ -15,7 +15,6 @@ public class DbTreeEMTest  extends SpringTestBase  {
 
     @BeforeAll
     public static void initClass() throws Exception {
-
         SpringTestBase.initClass(new DbTreeController());
     }
 
@@ -27,12 +26,6 @@ public class DbTreeEMTest  extends SpringTestBase  {
                 "org.bar.db.TreeEM",
                 1000,
                 (args) -> {
-
-                    //this should now be on by default
-//                    args.add("--heuristicsForSQL");
-//                    args.add("true");
-//                    args.add("--generateSqlDataWithSearch");
-//                    args.add("true");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 

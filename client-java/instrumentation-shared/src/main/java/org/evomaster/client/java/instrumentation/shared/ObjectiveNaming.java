@@ -1,6 +1,8 @@
 package org.evomaster.client.java.instrumentation.shared;
 
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -45,6 +47,11 @@ public class ObjectiveNaming {
     public static final String SUCCESS_CALL = "Success_Call";
 
     /**
+     * Prefix identifier for successful, non-null checkcast instructions
+     */
+    public static final String CHECKCAST = "CheckCast";
+
+    /**
      * Numeric comparison for non-integers, ie long, double and float
      */
     public static final String NUMERIC_COMPARISON = "NumericComparison";
@@ -62,6 +69,14 @@ public class ObjectiveNaming {
      */
 
     private static final Map<String, String> cacheClass = new ConcurrentHashMap<>(10_000);
+
+    /**
+     *
+     * @return prefixes of objectives
+     */
+    public static List<String> getAllObjectivePrefixes(){
+        return Arrays.asList(BRANCH, LINE, CLASS, METHOD_REPLACEMENT, SUCCESS_CALL);
+    }
 
     public static String classObjectiveName(String className){
         return cacheClass.computeIfAbsent(className, c -> CLASS + "_" + ClassName.get(c).getFullNameWithDots());
@@ -81,24 +96,24 @@ public class ObjectiveNaming {
 
         Map<Integer, String> map = lineCache.computeIfAbsent(className, c -> new ConcurrentHashMap<>(1000));
         return map.computeIfAbsent(line, l -> LINE + "_at_" + ClassName.get(className).getFullNameWithDots() + "_" + padNumber(line));
-
-//        String name = LINE + "_at_" + ClassName.get(className).getFullNameWithDots() + "_" + padNumber(line);
-//        return name;//.intern();
     }
 
+    private static final Map<String, Map<Integer, Map<Integer, String>>> cacheCheckcast = new ConcurrentHashMap<>(10_000);
+
+    public static String checkcastObjectiveName(String className, int line, int index){
+        Map<Integer, Map<Integer, String>> m0 = cacheCheckcast.computeIfAbsent(className, c -> new ConcurrentHashMap<>(10_000));
+        Map<Integer, String> m1 = m0.computeIfAbsent(line, l -> new ConcurrentHashMap<>(10));
+        return m1.computeIfAbsent(index, i -> CHECKCAST + "_at_" + ClassName.get(className).getFullNameWithDots() +
+                "_" + padNumber(line) + "_" + index);
+    }
 
     private static final Map<String, Map<Integer, Map<Integer, String>>> cacheSuccessCall = new ConcurrentHashMap<>(10_000);
 
     public static String successCallObjectiveName(String className, int line, int index){
-
         Map<Integer, Map<Integer, String>> m0 = cacheSuccessCall.computeIfAbsent(className, c -> new ConcurrentHashMap<>(10_000));
         Map<Integer, String> m1 = m0.computeIfAbsent(line, l -> new ConcurrentHashMap<>(10));
         return m1.computeIfAbsent(index, i -> SUCCESS_CALL + "_at_" + ClassName.get(className).getFullNameWithDots() +
                 "_" + padNumber(line) + "_" + index);
-
-//        String name = SUCCESS_CALL + "_at_" + ClassName.get(className).getFullNameWithDots() +
-//                "_" + padNumber(line) + "_" + index;
-//        return name;//.intern();
     }
 
     public static String methodReplacementObjectiveNameTemplate(String className, int line, int index){
@@ -118,7 +133,7 @@ public class ObjectiveNaming {
 
     private static final Map<String, Map<Integer, Map<Integer, Map<Boolean, String>>>> branchCache = new ConcurrentHashMap<>(10_000);
 
-    public static String branchObjectiveName(String className, int line, int branchId, boolean thenBranch) {
+    public static String branchObjectiveName(String className, int line, int branchId, boolean thenBranch, int opcode) {
 
         Map<Integer, Map<Integer, Map<Boolean, String>>> m0 = branchCache.computeIfAbsent(className, k -> new ConcurrentHashMap<>(10_000));
         Map<Integer, Map<Boolean, String>> m1 = m0.computeIfAbsent(line, k -> new ConcurrentHashMap<>(10));
@@ -133,6 +148,7 @@ public class ObjectiveNaming {
             } else {
                 name += FALSE_BRANCH;
             }
+            name += "_" + opcode;
             return name;
         });
 

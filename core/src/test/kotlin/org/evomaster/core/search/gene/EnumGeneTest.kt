@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.search.gene.collection.EnumGene
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 

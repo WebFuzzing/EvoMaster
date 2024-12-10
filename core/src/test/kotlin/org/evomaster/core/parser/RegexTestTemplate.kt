@@ -27,7 +27,7 @@ abstract class RegexTestTemplate {
 
         for(seed in 1..100L) {
 
-            gene.randomize(randomness, false, listOf())
+            gene.randomize(randomness, false)
 
             val instance = gene.getValueAsRawString()
 
@@ -54,7 +54,7 @@ abstract class RegexTestTemplate {
 
         for(seed in 1L..tries) {
 
-            gene.randomize(randomness, false, listOf())
+            gene.randomize(randomness, false)
 
             val instance = gene.getValueAsRawString()
 

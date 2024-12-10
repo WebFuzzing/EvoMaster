@@ -3,6 +3,7 @@ package org.evomaster.client.java.instrumentation.example.methodreplacement;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.time.LocalDate;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
@@ -78,5 +79,6 @@ public interface TestabilityExc {
     boolean matcherMatches(Matcher matcher);
 
     boolean matcherFind(Matcher matcher);
+    byte[] decode(Base64.Decoder caller, String input);
 
 }

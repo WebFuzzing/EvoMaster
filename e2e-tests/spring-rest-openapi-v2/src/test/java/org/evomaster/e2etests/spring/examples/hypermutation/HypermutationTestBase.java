@@ -16,7 +16,7 @@ public class HypermutationTestBase extends SpringTestBase {
         String zGeneId = "POST:/api/highweight/"+action+"/{x}::HighWeightDto>body";
 
         boolean result = true;
-        for (Map<String, GeneImpact> a : ind.getActionGeneImpact()){
+        for (Map<String, GeneImpact> a : ind.getActionGeneImpact(true)){
             if (a.values().stream().noneMatch(s-> s.getId().contains(xGeneId)))
                 continue;
 
@@ -24,6 +24,10 @@ public class HypermutationTestBase extends SpringTestBase {
             int x = a.values().stream().filter(s-> s.getId().contains(xGeneId)).findFirst().get().getTimesToManipulate();
             int y = a.values().stream().filter(s-> s.getId().contains(yGeneId)).findFirst().get().getTimesToManipulate();
             int z = a.values().stream().filter(s-> s.getId().contains(zGeneId)).findFirst().get().getTimesToManipulate();
+
+            /*
+                TODO what is tested here, and why it should be like that, needs explanations
+             */
 
             if (max == 0){
                 result = result && z > x && z > y;
@@ -33,6 +37,9 @@ public class HypermutationTestBase extends SpringTestBase {
                 throw new IllegalArgumentException("invalid max");
             }
 
+            if(!result){
+                return false;
+            }
         }
 
         return result;

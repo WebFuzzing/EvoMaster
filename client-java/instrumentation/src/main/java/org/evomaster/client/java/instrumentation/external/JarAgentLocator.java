@@ -56,19 +56,29 @@ public class JarAgentLocator {
 
     private static boolean isAgentJar(String path) throws IllegalArgumentException{
 
-        if(path.endsWith("classes")){
-			/*
-				we need to treat this specially:
-				eg, Jenkins/Maven on Linux on a module with only tests ended up
-				with not creating "target/classes" (it does on Mac though) but still putting
-				it on the classpath
-			 */
-            return false;
-        }
+//        if(path.endsWith("classes")){
+//			/*
+//				we need to treat this specially:
+//				eg, Jenkins/Maven on Linux on a module with only tests ended up
+//				with not creating "target/classes" (it does on Mac though) but still putting
+//				it on the classpath
+//			 */
+//            return false;
+//        }
 
         File file = new File(path);
         if(!file.exists()){
-            throw new IllegalArgumentException("Non-existing file "+path);
+            //throw new IllegalArgumentException("Non-existing file "+path);
+
+            /*
+               quite tricky, not only the case of "classes" discussed above, but also so same
+               kind of issue with Gradle and IntelliJ, eg with build\resources\main being
+               put on classpath even if it does not exist.
+               looks like there are way too many cases here to handle adhoc, so let's just issue a log
+               instead of crashing
+             */
+            SimpleLogger.error("Entry on classpath does NOT exist: " + path);
+            return false;
         }
 
         String name = file.getName();

@@ -1,17 +1,22 @@
 package org.evomaster.core.problem.rpc
 
-import org.evomaster.core.problem.api.service.ApiWsAction
-import org.evomaster.core.problem.api.service.auth.AuthenticationInfo
-import org.evomaster.core.problem.api.service.param.Param
+import org.evomaster.core.problem.api.ApiWsAction
+import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.rpc.auth.RPCAuthenticationInfo
 import org.evomaster.core.problem.rpc.auth.RPCNoAuth
 import org.evomaster.core.problem.rpc.param.RPCParam
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.utils.StringUtils
 
 /**
  * a RPC call
  */
 open class RPCCallAction(
+    /**
+     * class name of the interface which defines this rpc function
+     */
+    val interfaceId: String,
+
     /**
      * id of the RPCCallAction
      */
@@ -39,18 +44,32 @@ open class RPCCallAction(
         return id
     }
 
-    override fun seeGenes(): List<out Gene> {
+    override fun seeTopGenes(): List<out Gene> {
         // ignore genes in response here
         return parameters.flatMap { it.seeGenes() }
     }
 
-    override fun shouldCountForFitnessEvaluations(): Boolean {
-        return true
-    }
 
     override fun copyContent(): RPCCallAction {
-        val p = parameters.asSequence().map(Param::copyContent).toMutableList()
-        return RPCCallAction(id, p, responseTemplate?.copyContent(), response?.copyContent(), auth)
+        val p = parameters.asSequence().map(Param::copy).toMutableList()
+        return RPCCallAction(interfaceId, id, p, responseTemplate?.copy() as RPCParam?, response?.copy() as RPCParam?, auth)
+    }
+
+    /**
+     * RPC is only available for Java or Kotlin.
+     * Therefore, it will assume JVM like package naming structure to find the class name.
+     *
+     * @return the simple class name of a Java or Kotlin class representing the service
+     */
+    fun getSimpleClassName(): String {
+        return StringUtils.extractSimpleClass(id.split(":")[0])
+    }
+
+    /**
+     * @return the function name being executed
+     */
+    fun getExecutedFunctionName(): String {
+        return id.split(":")[1]
     }
 
     /**
@@ -65,5 +84,10 @@ open class RPCCallAction(
      */
     open fun setNoAuth(){
         auth = RPCNoAuth()
+    }
+
+    override fun toString(): String {
+        // might add values of parameters later
+        return "$id , auth=${auth.name}"
     }
 }

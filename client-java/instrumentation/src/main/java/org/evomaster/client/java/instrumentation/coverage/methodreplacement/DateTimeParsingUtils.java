@@ -1,5 +1,7 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 
+import org.evomaster.client.java.distance.heuristics.DistanceHelper;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
@@ -8,7 +10,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
 import java.util.Objects;
 
-import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper.*;
+import static org.evomaster.client.java.distance.heuristics.DistanceHelper.*;
 
 /**
  * Utilities for returning heuristic values of how close a given string is to being

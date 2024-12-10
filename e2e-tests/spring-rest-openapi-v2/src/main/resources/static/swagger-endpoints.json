@@ -1,0 +1,114 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "Some description",
+    "version": "1.0",
+    "title": "API"
+  },
+  "host": "localhost:8080",
+  "basePath": "/",
+  "tags": [
+    {
+      "name": "endpoints-rest",
+      "description": "Endpoints Rest"
+    }
+  ],
+  "paths": {
+    "/api/endpoints/head": {
+      "head": {
+        "tags": [
+          "endpoints-rest"
+        ],
+        "summary": "head",
+        "operationId": "headUsingHEAD",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/api/endpoints/options": {
+      "options": {
+        "tags": [
+          "endpoints-rest"
+        ],
+        "summary": "options",
+        "operationId": "optionsUsingOPTIONS",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/api/endpoints/trace": {
+      "trace": {
+        "tags": [
+          "endpoints-rest"
+        ],
+        "summary": "trace",
+        "operationId": "traceId",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    }
+  }
+}

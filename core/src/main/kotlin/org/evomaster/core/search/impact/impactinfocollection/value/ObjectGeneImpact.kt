@@ -10,23 +10,23 @@ import org.evomaster.core.search.impact.impactinfocollection.*
 class ObjectGeneImpact  (
         sharedImpactInfo: SharedImpactInfo,
         specificImpactInfo: SpecificImpactInfo,
-        val fields : MutableMap<String, Impact> = mutableMapOf()
+        val fixedFields : MutableMap<String, Impact> = mutableMapOf()
 ) : GeneImpact(sharedImpactInfo, specificImpactInfo){
 
-    constructor(id: String, objectGene: ObjectGene) : this (SharedImpactInfo(id), SpecificImpactInfo(), fields = objectGene.fields.map { Pair(it.name, ImpactUtils.createGeneImpact(it, it.name)) }.toMap().toMutableMap())
+    constructor(id: String, objectGene: ObjectGene) : this (SharedImpactInfo(id), SpecificImpactInfo(), fixedFields = objectGene.fixedFields.map { Pair(it.name, ImpactUtils.createGeneImpact(it, it.name)) }.toMap().toMutableMap())
 
     override fun copy(): ObjectGeneImpact {
         return ObjectGeneImpact(
                 shared.copy(),
                 specific.copy(),
-                fields = fields.map { Pair(it.key, it.value.copy()) }.toMap().toMutableMap())
+                fixedFields = fixedFields.map { Pair(it.key, it.value.copy()) }.toMap().toMutableMap())
     }
 
     override fun clone(): ObjectGeneImpact {
         return ObjectGeneImpact(
                 shared.clone(),
                 specific.clone(),
-                fields.map { it.key to it.value.clone() }.toMap().toMutableMap()
+                fixedFields.map { it.key to it.value.clone() }.toMap().toMutableMap()
         )
     }
 
@@ -38,8 +38,14 @@ class ObjectGeneImpact  (
             throw IllegalArgumentException("gc.current ${gc.current::class.java.simpleName} should be ObjectGene")
         if (gc.previous == null){
             gc.current.fields.forEach {
-                val fImpact = fields.getValue(it.name) as? GeneImpact?:throw IllegalArgumentException("impact should be gene impact")
-                val mutatedGeneWithContext = MutatedGeneWithContext(previous = null, current =  it, action = "none", position = -1, numOfMutatedGene = gc.current.fields.size)
+                val fImpact = fixedFields.getValue(it.name) as? GeneImpact?:throw IllegalArgumentException("impact should be gene impact")
+                val mutatedGeneWithContext = MutatedGeneWithContext(
+                    current =  it,
+                    actionName = "none",
+                    position = -1,
+                    previous = null,
+                    numOfMutatedGene = gc.current.fields.size,
+                )
                 fImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
             }
             return
@@ -55,8 +61,14 @@ class ObjectGeneImpact  (
         val onlyManipulation = mutatedFields.size > 1 && impactTargets.isNotEmpty()
 
         mutatedFields.forEach {g->
-            val fImpact = fields.getValue(g.first.name) as? GeneImpact?:throw IllegalArgumentException("impact should be gene impact")
-            val mutatedGeneWithContext = MutatedGeneWithContext(previous = g.second, current =  g.first, action = "none", position = -1, numOfMutatedGene = gc.numOfMutatedGene * mutatedFields.size)
+            val fImpact = fixedFields.getValue(g.first.name) as? GeneImpact?:throw IllegalArgumentException("impact should be gene impact")
+            val mutatedGeneWithContext = MutatedGeneWithContext(
+                current =  g.first,
+                actionName = "none",
+                position = -1,
+                previous = g.second,
+                numOfMutatedGene = gc.numOfMutatedGene * mutatedFields.size,
+            )
             fImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
         }
     }
@@ -65,7 +77,7 @@ class ObjectGeneImpact  (
 
     override fun flatViewInnerImpact(): Map<String, Impact> {
         val map = mutableMapOf<String, Impact>()
-        fields.forEach { (t, u) ->
+        fixedFields.forEach { (t, u) ->
             map.putIfAbsent("${getId()}-$t", u)
             if (u is GeneImpact && u.flatViewInnerImpact().isNotEmpty())
                 map.putAll(u.flatViewInnerImpact())
@@ -74,19 +86,19 @@ class ObjectGeneImpact  (
     }
 
     override fun innerImpacts(): List<Impact> {
-        return fields.values.toList()
+        return fixedFields.values.toList()
     }
 
     override fun syncImpact(previous: Gene?, current: Gene) {
         check(previous,current)
 
         (current as ObjectGene).fields.forEach { f ->
-            if (!fields.containsKey(f.name)){
-                fields.putIfAbsent(f.name, ImpactUtils.createGeneImpact(f, f.name))
+            if (!fixedFields.containsKey(f.name)){
+                fixedFields.putIfAbsent(f.name, ImpactUtils.createGeneImpact(f, f.name))
             }
         }
 
-        fields.forEach { (t, u) ->
+        fixedFields.forEach { (t, u) ->
             val c = current.fields.find { it.name == t }?: throw IllegalArgumentException("the matched field for impact cannot be found")
             val p = (previous as? ObjectGene)?.fields?.find { it.name == t }
             (u as GeneImpact).syncImpact(p, c)

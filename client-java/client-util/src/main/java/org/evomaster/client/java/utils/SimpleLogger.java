@@ -1,7 +1,8 @@
 package org.evomaster.client.java.utils;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.stream.Collectors;
 
 /**
  * Client library should be the least invasive as possible.
@@ -12,6 +13,8 @@ import java.util.Set;
  * to {@code System.out.println}
  */
 public class SimpleLogger {
+
+    private static final Set<String> errorMsgToRecord = new CopyOnWriteArraySet<>();
 
     public enum Level {DEBUG, INFO, WARN, ERROR, OFF}
 
@@ -58,6 +61,10 @@ public class SimpleLogger {
         printMessage(Level.INFO, message, null);
     }
 
+    public static void recordErrorMessage(String message){
+        errorMsgToRecord.add(message);
+    }
+
     public static void uniqueWarn(String message){
         if(uniqueMessages.contains(message)){
             return;
@@ -82,7 +89,9 @@ public class SimpleLogger {
         printMessage(Level.ERROR, message, t);
     }
 
-
+    public static List<String> getRecordedErrorMsg(){
+        return new ArrayList<>(errorMsgToRecord);
+    }
 
 
     private static void printMessage(Level level, String message, Throwable t){

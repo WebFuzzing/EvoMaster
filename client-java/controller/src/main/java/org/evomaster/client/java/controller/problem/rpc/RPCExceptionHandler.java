@@ -12,6 +12,7 @@ import org.evomaster.client.java.utils.SimpleLogger;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.UndeclaredThrowableException;
+import java.util.Map;
 
 /**
  * handle RPC exception, for instance
@@ -29,7 +30,7 @@ public class RPCExceptionHandler {
      * @param endpointSchema is the schema of the endpoint
      * @param type is the RPC type
      */
-    public static void handle(Object e, ActionResponseDto dto, EndpointSchema endpointSchema, RPCType type){
+    public static void handle(Object e, ActionResponseDto dto, EndpointSchema endpointSchema, RPCType type, Map<Class, Integer> levelsMap){
 
         Object exceptionToHandle = e;
         boolean isCause = false;
@@ -46,6 +47,8 @@ public class RPCExceptionHandler {
         RPCExceptionInfoDto exceptionInfoDto = null;
         try {
             exceptionInfoDto = handleExceptionNameAndMessage(exceptionToHandle);
+
+            handleImportanceLevels(exceptionToHandle, exceptionInfoDto, levelsMap);
 
             handled = handleDefinedException(exceptionToHandle, endpointSchema, type, exceptionInfoDto);
 
@@ -77,6 +80,13 @@ public class RPCExceptionHandler {
         dto.exceptionInfoDto = exceptionInfoDto;
 
         dto.exceptionInfoDto.isCauseOfUndeclaredThrowable = isCause;
+    }
+
+    private static void handleImportanceLevels(Object e, RPCExceptionInfoDto dto, Map<Class, Integer> levelsMap) {
+        if (levelsMap == null) return;
+        Integer level = levelsMap.get(e.getClass());
+        if (level != null)
+            dto.importanceLevel = level;
     }
 
     private static void handleUnexpectedException(Object e, RPCExceptionInfoDto dto){
@@ -125,11 +135,11 @@ public class RPCExceptionHandler {
             handled = handleTException(e, dto);
 
             if (!handled){
-                SimpleLogger.error("Fail to extract exception type info for an exception "+ e.getClass().getName());
+                SimpleLogger.uniqueWarn("Fail to extract exception type info for an exception "+ e.getClass().getName());
             }
 
         } catch (ClassNotFoundException ex) {
-            SimpleLogger.error("ERROR: in handling Thrift exception with error msg:"+ex.getMessage());
+            SimpleLogger.error("ERROR: in handling Thrift exception with error msg:", ex);
             //throw new IllegalStateException("ERROR: in handling Thrift exception with error msg:"+ex.getMessage());
         }
 
@@ -167,7 +177,11 @@ public class RPCExceptionHandler {
             dto.type = getExceptionType(extract(e), type);
             return true;
         } catch (NoSuchMethodException | ClassNotFoundException | InvocationTargetException | IllegalAccessException ex) {
-            SimpleLogger.error("Fail to get type of TException with getType() "+ex.getMessage());
+            /*
+                with old version of TException, eg thrift 0.9.3
+                there is no getType method, then in this case, we set type based on the exception class name
+             */
+            SimpleLogger.error("Fail to get type of TException with getType() ", ex);
         }
         return false;
     }
@@ -179,7 +193,7 @@ public class RPCExceptionHandler {
             getMessage.setAccessible(true);
             return (String) getMessage.invoke(e);
         } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException ex) {
-            SimpleLogger.error("Error: fail to get message of the exception with "+ex.getMessage());
+            SimpleLogger.error("Error: fail to get message of the exception with ", ex);
             return null;
         }
     }
@@ -197,7 +211,7 @@ public class RPCExceptionHandler {
             getCause.setAccessible(true);
             return getCause.invoke(e);
         } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException ex) {
-            SimpleLogger.error("Error: fail to get message of the exception with "+ex.getMessage());
+            SimpleLogger.error("Error: fail to get message of the exception with ", ex);
             return null;
         }
     }

@@ -3,13 +3,14 @@ package com.foo.rest.examples.spring.db;
 import com.foo.rest.examples.spring.SpringController;
 import kotlin.random.Random;
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
-import org.evomaster.client.java.controller.internal.db.DbSpecification;
+import org.evomaster.client.java.sql.DbSpecification;
 import org.hibernate.dialect.H2Dialect;
 import org.springframework.boot.SpringApplication;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -30,6 +31,10 @@ public class SpringWithDbController extends SpringController {
     }
 
 
+    protected List<String> extraSettings(){
+        return Arrays.asList();
+    }
+
     @Override
     public String startSut() {
 
@@ -37,15 +42,22 @@ public class SpringWithDbController extends SpringController {
         //https://github.com/h2database/h2database/issues/227
         int rand = Random.Default.nextInt();
 
-        ctx = SpringApplication.run(applicationClass, new String[]{
+        List<String> inputs = new ArrayList<>();
+        inputs.addAll(Arrays.asList(
                 "--server.port=0",
                 "--spring.datasource.url=jdbc:h2:mem:testdb_"+rand+";DB_CLOSE_DELAY=-1;",
                 "--spring.jpa.database-platform=" + H2Dialect.class.getName(),
                 "--spring.datasource.username=sa",
                 "--spring.datasource.password",
                 "--spring.jpa.properties.hibernate.show_sql=true"
-        });
+        ));
 
+        List<String> extras = extraSettings();
+        if(!extras.isEmpty()){
+            inputs.addAll(extras);
+        }
+
+        ctx = SpringApplication.run(applicationClass, inputs.toArray(new String[]{}));
 
         if (sqlConnection != null) {
             try {

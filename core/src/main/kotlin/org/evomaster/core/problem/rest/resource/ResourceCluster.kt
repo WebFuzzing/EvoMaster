@@ -3,14 +3,14 @@ package org.evomaster.core.problem.rest.resource
 import org.evomaster.client.java.controller.api.dto.database.operations.DataRowDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.DbActionUtils
-import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.database.schema.Table
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.sql.SqlActionUtils
+import org.evomaster.core.sql.SqlInsertBuilder
+import org.evomaster.core.sql.schema.Table
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.util.inference.SimpleDeriveResourceBinding
-import org.evomaster.core.search.Action
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.service.Randomness
 
 /**
@@ -72,6 +72,12 @@ class ResourceCluster {
         resourceCluster.values.forEach{it.initAncestors(resourceCluster.values.toList())}
 
         resourceCluster.values.forEach{it.init()}
+    }
+
+    fun reset(){
+        resourceCluster.clear()
+        dataInDB.clear()
+        tables.clear()
     }
 
 
@@ -150,14 +156,16 @@ class ResourceCluster {
      */
     fun createSqlAction(tables: List<String>,
                         sqlInsertBuilder: SqlInsertBuilder,
-                        previous: List<DbAction>,
+                        previous: List<SqlAction>,
                         doNotCreateDuplicatedAction: Boolean,
                         isInsertion: Boolean = true,
                         randomness: Randomness,
-                        forceSynDataInDb: Boolean = false
-    ) : MutableList<DbAction>{
-        val sorted = DbActionUtils.sortTable(tables.mapNotNull { getTableByName(it) }.run { if (doNotCreateDuplicatedAction) this.distinct() else this })
-        val added = mutableListOf<DbAction>()
+                        forceSynDataInDb: Boolean = false,
+                        useExtraSqlDbConstraints: Boolean = false,
+                        enableSingleInsertionForTable : Boolean = false
+    ) : MutableList<SqlAction>{
+        val sorted = SqlActionUtils.sortTable(tables.mapNotNull { getTableByName(it) }.run { if (doNotCreateDuplicatedAction) this.distinct() else this })
+        val added = mutableListOf<SqlAction>()
         val preTables = previous.filter { !isInsertion || !it.representExistingData }.map { it.table.name }.toMutableList()
 
 
@@ -171,21 +179,27 @@ class ResourceCluster {
 
         sorted.forEach { t->
             if (!doNotCreateDuplicatedAction || preTables.none { p-> p.equals(t.name, ignoreCase = true) }){
-                val action = if (!isInsertion){
-                    if ((getDataInDb(t.name)?.size ?: 0) == 0) null
-                    else{
+                val actions = if (!isInsertion){
+                    if ((getDataInDb(t.name)?.size ?: 0) == 0) {
+                        null
+                    } else {
                         val candidates = getDataInDb(t.name)!!
                         val row = randomness.choose(candidates)
-                        listOf(sqlInsertBuilder.extractExistingByCols(t.name, row))
+                        val a = sqlInsertBuilder.extractExistingByCols(t.name, row, useExtraSqlDbConstraints)
+                        if(a != null)
+                            listOf(a)
+                        else
+                            null
                     }
                 } else{
-                    sqlInsertBuilder.createSqlInsertionAction(t.name).also {
-                        it.forEach { a-> a.randomize(randomness,false, it) }
-                    }
+                    sqlInsertBuilder.createSqlInsertionAction(t.name, useExtraSqlDbConstraints = useExtraSqlDbConstraints, enableSingleInsertionForTable=enableSingleInsertionForTable)
+                            .onEach { a -> a.doInitialize(randomness) }
                 }
-                if (action != null){
-                    added.addAll(action)
-                    preTables.addAll(action.filter { !isInsertion || !it.representExistingData }.map { it.table.name })
+
+                if (!actions.isNullOrEmpty()){
+                    //actions.forEach {it.doInitialize()}
+                    added.addAll(actions)
+                    preTables.addAll(actions.filter { !isInsertion || !it.representExistingData }.map { it.table.name })
                 }
             }
         }

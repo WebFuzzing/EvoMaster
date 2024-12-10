@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.foo.rpc.grpc.examples.spring.branches.generated";
+
+
+service BranchGRPCService {
+
+
+  rpc pos(BranchesPostDto) returns (BranchesResponseDto) {}
+
+  rpc neg(BranchesPostDto) returns (BranchesResponseDto) {}
+
+  rpc eq(BranchesPostDto) returns (BranchesResponseDto) {}
+
+
+}
+
+message BranchesResponseDto {
+  int32 value = 1;
+}
+
+message BranchesPostDto {
+  int32 x = 1;
+  int32 y = 2;
+}

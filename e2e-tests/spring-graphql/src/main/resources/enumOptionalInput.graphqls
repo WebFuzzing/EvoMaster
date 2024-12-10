@@ -1,0 +1,26 @@
+type Query {
+
+    flowersByType(type: FlowerType): Flower
+}
+
+enum FlowerType{
+    ROSES
+    TULIPS
+    LILIES
+    LIMONIUM
+
+}
+
+#A flower of the API
+type Flower {
+    #The id of the flower
+    id: Int
+    #The name of the flower
+    name: String
+    #The type of the flower
+    type: String!
+    #The color of the flower
+    color: String
+    #The price of the flower
+    price: Int
+}

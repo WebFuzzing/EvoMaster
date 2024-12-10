@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster</artifactId>
-        <version>1.4.1-SNAPSHOT</version>
+        <version>3.3.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>evomaster-e2e-tests</artifactId>
@@ -22,8 +22,17 @@
         <module>spring-graphql</module>
         <module>spring-rest-mysql</module>
         <module>spring-rpc</module>
-        <module>wiremock</module>
-        <module>spring-rest-postgres-data-types</module>
+        <module>spring-rest-h2-v1</module>
+        <module>spring-rest-postgres-column-types</module>
+        <module>spring-rest-mysql-column-types</module>
+        <module>spring-rest-h2-column-types</module>
+        <module>spring-web</module>
+        <module>spring-rest-mongo</module>
+        <module>spring-rest-bb</module>
+        <module>spring-graphql-bb</module>
+        <module>emb-json</module>
+        <module>spring-rest-multidb</module>
+
     </modules>
 
 
@@ -39,5 +48,44 @@
         </dependencies>
     </dependencyManagement>
 
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <configuration>
+                        <!--
+                            Make sure each E2E is run on own JVM.
+                            This is due to possible issues with classloading, as classes are only loaded once...
+                            that is a problem when more than 1 test suite is using the same SUT.
+                            In general, this a performance bottleneck, which should be avoided for unit tests.
+                            However, for E2E that are already expensive to run, hopefully should not be a major problem.
+
+                            Unfortunately, it was a MAJOR problem, as execution time went up of at least double...
+                            on GA, there is a timeout of 6 hours, which was reached (so not 100% sure of total time...)
+                        -->
+<!--                        <reuseForks>false</reuseForks>-->
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>Configs for JDK >= 17</id>
+            <activation>
+                <jdk>[17,)</jdk>
+            </activation>
+           <!--
+           This module should be enabled after Spring2 dependencies
+           are pulled down to each e2e project
+           -->
+<!--            <modules>-->
+<!--                <module>spring-rest-jakarta</module>-->
+<!--            </modules>-->
+        </profile>
+    </profiles>
 
 </project>

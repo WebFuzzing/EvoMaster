@@ -20,6 +20,22 @@ class SearchStatusUpdater : SearchListener{
     @Inject
     private lateinit var archive: Archive<*>
 
+    var enabled = true
+
+    companion object{
+        fun eraseLine(){
+            print("\u001b[2K") // erase line
+        }
+
+        fun moveUp(){
+            print("\u001b[1A") // move up by 1 line
+        }
+
+        fun upLineAndErase(){
+            moveUp()
+            eraseLine()
+        }
+    }
 
     private var passed = "-1"
 
@@ -55,10 +71,15 @@ class SearchStatusUpdater : SearchListener{
 
     override fun newActionEvaluated() {
 
+        if(!enabled){
+            return
+        }
+
         val percentageInt = (time.percentageUsedBudget() * 100).toInt()
         val current = String.format("%.3f", time.percentageUsedBudget() * 100)
 
         if(first){
+            println()
             println()
             if(config.e_u1f984){
                 println()
@@ -87,10 +108,15 @@ class SearchStatusUpdater : SearchListener{
             val avgTime = String.format("%.1f", avgTimeAndSize.first)
             val avgSize = String.format("%.1f",avgTimeAndSize.second)
 
+            val sinceLast = time.getSecondsSinceLastImprovement()
+
             upLineAndErase()
-            println("* Consumed search budget: $passed%;" +
-                    " covered targets: $coverage;" +
-                    " time per test: ${avgTime}ms ($avgSize actions)")
+            upLineAndErase()
+            println("* Consumed search budget: $passed%")
+            println("* Covered targets: $coverage;" +
+                    " time per test: ${avgTime}ms ($avgSize actions);" +
+                    " since last improvement: ${sinceLast}s"
+            )
 
             if(config.e_u1f984){
                 updateExtra()
@@ -118,16 +144,5 @@ class SearchStatusUpdater : SearchListener{
                print("\u001b[s")
      */
 
-    private fun eraseLine(){
-        print("\u001b[2K") // erase line
-    }
 
-    private fun moveUp(){
-        print("\u001b[1A") // move up by 1 line
-    }
-
-    private fun upLineAndErase(){
-        moveUp()
-        eraseLine()
-    }
 }

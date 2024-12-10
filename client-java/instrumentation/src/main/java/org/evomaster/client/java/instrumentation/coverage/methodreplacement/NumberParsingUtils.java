@@ -1,6 +1,8 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 
-import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper.*;
+import org.evomaster.client.java.distance.heuristics.DistanceHelper;
+
+import static org.evomaster.client.java.distance.heuristics.DistanceHelper.*;
 
 public class NumberParsingUtils {
     /**

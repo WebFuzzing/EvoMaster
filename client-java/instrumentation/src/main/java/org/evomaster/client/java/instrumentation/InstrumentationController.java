@@ -1,12 +1,15 @@
 package org.evomaster.client.java.instrumentation;
 
+import org.evomaster.client.java.instrumentation.object.ClassToSchema;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
+import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class InstrumentationController {
 
@@ -44,41 +47,89 @@ public class InstrumentationController {
         ExecutionTracer.setExecutingInitSql(executingInitSql);
     }
 
+    public static void setExecutingInitMongo(boolean executingInitMongo){
+        ExecutionTracer.setExecutingInitMongo(executingInitMongo);
+    }
+
     public static void setExecutingAction(boolean executingAction){
         ExecutionTracer.setExecutingAction(executingAction);
     }
 
-    public static List<TargetInfo> getTargetInfos(Collection<Integer> ids){
+    public static void setBootingSut(boolean bootingSut){
+        ObjectiveRecorder.setBooting(bootingSut);
+    }
+
+    public static List<TargetInfo> getTargetInfos(
+            Collection<Integer> ids,
+            boolean fullyCovered,
+            boolean descriptiveIds
+    ){
 
         List<TargetInfo> list = new ArrayList<>();
 
         Map<String, TargetInfo> objectives = ExecutionTracer.getInternalReferenceToObjectiveCoverage();
 
-        ids.stream().forEach(id -> {
+        if(ids != null) {
+            ids.stream().forEach(id -> {
 
-            String descriptiveId = ObjectiveRecorder.getDescriptiveId(id);
+                String descriptiveId = ObjectiveRecorder.getDescriptiveId(id);
 
-            TargetInfo info = objectives.get(descriptiveId);
-            if(info == null){
-                info = TargetInfo.notReached(id);
-            } else {
-                info = info.withMappedId(id).withNoDescriptiveId();
-            }
+                TargetInfo info = objectives.get(descriptiveId);
+                if (info == null) {
+                    info = TargetInfo.notReached(id);
+                } else {
+                    info = info.withMappedId(id);
+                    if(!descriptiveIds) {
+                        info = info.withNoDescriptiveId();
+                    }
+                }
 
-            list.add(info);
-        });
+                list.add(info);
+            });
 
-        /*
-         *  If new targets were found, we add them even if not requested by EM
-         */
-        ObjectiveRecorder.getTargetsSeenFirstTime().stream().forEach(s -> {
+            /*
+             *  If new targets were found, we add them even if not requested by EM
+             */
+            ObjectiveRecorder.getTargetsSeenFirstTime().stream().forEach(s -> {
 
-            int mappedId = ObjectiveRecorder.getMappedId(s);
+                int mappedId = ObjectiveRecorder.getMappedId(s);
 
-            TargetInfo info = objectives.get(s).withMappedId(mappedId);
+                TargetInfo info = objectives.get(s).withMappedId(mappedId);
+                //always adding here descriptiveId
 
-            list.add(info);
-        });
+                list.add(info);
+            });
+
+        } else {
+
+            List<String> seenFirstTime = ObjectiveRecorder.getTargetsSeenFirstTime();
+
+            //if specified ids is null, then get all, but not the ones at booting time
+            objectives.entrySet()
+                    .stream()
+                    .filter(e -> !ObjectiveRecorder.wasCollectedAtBootingTime(e.getKey()))
+                    //try to save bandwidth by only sending mapped ids
+                    .map(e -> {
+                        TargetInfo info = e.getValue().enforceMappedId();
+                        if(!descriptiveIds &&
+                                seenFirstTime.isEmpty()
+                                /*
+                                    FIXME following check would be more correct, but leads to failures.
+                                    Look like some targets do not endup in booting-time, and neither as
+                                    seen as first time... would need to investigate why.
+                                 */
+                                //!seenFirstTime.contains(info.descriptiveId)
+                        ) {
+                            info = info.withNoDescriptiveId();
+                        }
+                        return info;
+                    })
+                    .forEach(e -> list.add(e));
+        }
+
+        if(fullyCovered){
+            return list.stream().filter(e -> e.value == 1d).collect(Collectors.toList());
+        }
 
         return list;
     }
@@ -89,6 +140,10 @@ public class InstrumentationController {
 
     public static BootTimeObjectiveInfo getBootTimeObjectiveInfo(){
         return ObjectiveRecorder.exposeBootTimeObjectiveInfo();
+    }
+
+    public static void extractSpecifiedDto(List<String> dtoNames){
+        UnitsInfoRecorder.registerSpecifiedDtoSchema(ExtractJvmClass.extractAsSchema(dtoNames));
     }
 
 }

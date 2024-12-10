@@ -1,6 +1,5 @@
 package org.evomaster.e2etests.spring.openapi.v3
 
-import com.foo.rest.examples.spring.openapi.v3.taintkotlinequal.TaintKotlinEqualController
 import org.evomaster.client.java.controller.InstrumentedSutStarter
 import org.evomaster.client.java.instrumentation.InputProperties
 import org.evomaster.client.java.instrumentation.InstrumentingAgent
@@ -25,4 +24,5 @@ abstract class SpringTestBase : RestTestBase(){
             InstrumentingAgent.changePackagesToInstrument("com.foo.")
         }
     }
+
 }

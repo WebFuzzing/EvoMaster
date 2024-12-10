@@ -1,7 +1,7 @@
 package org.evomaster.core.search.impact.impactinfocollection.sql
 
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.IntegerGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpactTest
@@ -27,7 +27,7 @@ class SqlPrimaryGeneImpactTest : GeneImpactTest() {
         geneToMutate as SqlPrimaryKeyGene
         val gene = geneToMutate.gene as IntegerGene
         gene.value += if (gene.value + 1 > gene.getMaximum()) -1 else 1
-        return MutatedGeneWithContext(previous = original, current = geneToMutate)
+        return MutatedGeneWithContext(current = geneToMutate, previous = original,)
     }
 
     @Test

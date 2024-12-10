@@ -5,13 +5,25 @@
     <parent>
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster</artifactId>
-        <version>1.4.1-SNAPSHOT</version>
+        <version>3.3.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>evomaster-core</artifactId>
     <packaging>jar</packaging>
 
     <dependencies>
+        <dependency>
+            <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-test-utils-java</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-test-utils-js</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-test-utils-py</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.evomaster</groupId>
             <artifactId>evomaster-client-java-controller-api</artifactId>
@@ -30,6 +42,24 @@
             <artifactId>evomaster-client-java-controller</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-ci-utils</artifactId>
+            <scope>test</scope>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+        </dependency>
+
+
+        <dependency>
+            <groupId>com.webfuzzing</groupId>
+            <artifactId>commons</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+
+
+
+
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
@@ -57,6 +87,36 @@
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
             <artifactId>kotlin-compiler-embeddable</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <scope>compile</scope> <!-- Needed for browser -->
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>selenium</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.seleniumhq.selenium</groupId>
+            <artifactId>selenium-remote-driver</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.seleniumhq.selenium</groupId>
+            <artifactId>selenium-chrome-driver</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.seleniumhq.selenium</groupId>
+            <artifactId>selenium-support</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
         </dependency>
 
         <dependency>
@@ -94,6 +154,10 @@
             <groupId>io.swagger.parser.v3</groupId>
             <artifactId>swagger-parser</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.atlassian.oai</groupId>
+            <artifactId>swagger-request-validator-core</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>javax.el</groupId>
@@ -124,6 +188,10 @@
             <artifactId>jackson-databind</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-toml</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.antlr</groupId>
             <artifactId>antlr4-runtime</artifactId>
         </dependency>
@@ -131,6 +199,10 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-text</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.opennlp</groupId>
+            <artifactId>opennlp-tools</artifactId>
         </dependency>
 
         <dependency>
@@ -144,10 +216,6 @@
         <dependency>
             <groupId>io.rest-assured</groupId>
             <artifactId>rest-assured</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>testcontainers</artifactId>
         </dependency>
         <dependency>
             <groupId>io.mockk</groupId>
@@ -176,12 +244,36 @@
         <!-- Dependencies for External Services -->
         <dependency>
             <groupId>com.github.tomakehurst</groupId>
-            <artifactId>wiremock-jre8</artifactId>
+            <artifactId>wiremock-jre8-standalone</artifactId>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>dns-cache-manipulator</artifactId>
+        </dependency>
+
+
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>mockserver</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.mock-server</groupId>
+            <artifactId>mockserver-client-java-no-dependencies</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>bson</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.evomaster</groupId>
+            <artifactId>solver</artifactId>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 
@@ -240,6 +332,10 @@
                                     <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                                     <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
                                 </manifest>
+                                <manifestEntries>
+                                    <!-- needs to be kept in sync with JdkIssue -->
+                                    <Add-Opens>java.base/java.net java.base/java.util</Add-Opens>
+                                </manifestEntries>
                             </archive>
                             <finalName>evomaster</finalName>
                             <appendAssemblyId>false</appendAssemblyId>

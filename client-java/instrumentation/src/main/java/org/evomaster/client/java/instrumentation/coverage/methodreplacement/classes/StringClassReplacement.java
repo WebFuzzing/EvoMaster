@@ -1,9 +1,10 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
 
+import org.evomaster.client.java.distance.heuristics.DistanceHelper;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.*;
-import org.evomaster.client.java.instrumentation.heuristic.Truthness;
-import org.evomaster.client.java.instrumentation.heuristic.TruthnessUtils;
+import org.evomaster.client.java.distance.heuristics.Truthness;
+import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
@@ -25,6 +26,8 @@ public class StringClassReplacement implements MethodReplacementClass {
         String left = caller;
         String right = anObject == null ? null : anObject.toString();
         ExecutionTracer.handleTaintForStringEquals(left, right, false);
+        ExecutionTracer.handleExtraParamTaint(left, right);
+        ExecutionTracer.handleExtraHeaderTaint(left, right);
 
         //not important if NPE
         boolean result = caller.equals(anObject);

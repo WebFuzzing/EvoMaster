@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import javax.ws.rs.core.MediaType;
-import java.util.*;
+
 /** automatically created on 2019-08-29 */
 @RestController
 @RequestMapping(path = "/api/rA")
@@ -21,7 +21,7 @@ public class RARestAPI {
     RAEntity node = new RAEntity();
     node.setId(rA.id);
     node.setName(rA.name);
-    node.setValue(rA.value);
+    node.setValue(rA.valueInt);
     rARepository.save(node);
     return ResponseEntity.status(201).build();
   }

@@ -81,6 +81,15 @@ object TcpUtils {
         return e.cause is ConnectException && checkText(e.cause!!, "Connection refused")
     }
 
+
+    fun isUnknownHost(e: ProcessingException) : Boolean{
+        return e.cause is java.net.UnknownHostException
+    }
+
+    fun isInternalError(e: ProcessingException) : Boolean{
+        return e.cause is java.lang.IllegalArgumentException
+    }
+
     private fun checkText(e: Throwable, text: String) =
             e.message?.contains(text, ignoreCase = true) == true
 }

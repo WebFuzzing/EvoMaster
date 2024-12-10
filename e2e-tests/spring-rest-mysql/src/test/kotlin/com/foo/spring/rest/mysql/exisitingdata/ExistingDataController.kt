@@ -1,7 +1,7 @@
 package com.foo.spring.rest.mysql.exisitingdata
 
 import com.foo.spring.rest.mysql.SpringRestMySqlController
-import org.evomaster.client.java.controller.internal.db.DbSpecification
+import org.evomaster.client.java.sql.DbSpecification
 
 class ExistingDataController : SpringRestMySqlController(ExistingDataApp::class.java) {
 

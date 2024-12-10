@@ -11,7 +11,7 @@ open class QueryResolver(
         private val dataRepo: DataRepository
 ) : GraphQLQueryResolver {
 
-    fun flowers(): Flower {
+    fun flowers(): Flower? {
         return dataRepo.findFlower()
     }
 

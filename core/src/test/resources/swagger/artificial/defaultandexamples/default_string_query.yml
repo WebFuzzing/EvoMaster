@@ -1,0 +1,20 @@
+---
+openapi: 3.0.3
+info:
+  title: default_string
+  version: 1.0.0
+servers:
+  - url: "/v2"
+paths:
+  "/defaultString":
+    post:
+      parameters:
+        - in: query
+          name: x
+          schema:
+            required: true
+            type: string
+            default: "Foo"
+      responses:
+        '200':
+          description: OK

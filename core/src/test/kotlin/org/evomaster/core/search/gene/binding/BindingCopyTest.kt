@@ -1,6 +1,10 @@
 package org.evomaster.core.search.gene.binding
 
-import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.numeric.DoubleGene
+import org.evomaster.core.search.gene.numeric.FloatGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.numeric.LongGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -63,10 +67,10 @@ class BindingCopyTest {
         val ind = BindingIndividual(mutableListOf(geneA, geneB, geneC, geneD, geneE))
         geneA.addBindingGene(geneE)
         geneE.addBindingGene(geneA)
-        assert(ind.genes.first().isBoundWith(ind.genes.last()))
+        assertTrue(ind.genes.first().isDirectBoundWith(ind.genes.last()))
 
         val copy = ind.copy() as BindingIndividual
-        assert(copy.genes.first().isBoundWith(copy.genes.last()))
+        assertTrue(copy.genes.first().isDirectBoundWith(copy.genes.last()))
     }
 
 }

@@ -1,5 +1,7 @@
 package org.evomaster.client.java.instrumentation.heuristic;
 
+import org.evomaster.client.java.distance.heuristics.Truthness;
+import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
 import org.objectweb.asm.Opcodes;
 
 /**

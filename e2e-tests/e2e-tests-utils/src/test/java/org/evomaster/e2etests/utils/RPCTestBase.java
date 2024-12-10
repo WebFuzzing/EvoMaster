@@ -5,17 +5,17 @@ import org.evomaster.core.problem.rpc.RPCCallResult;
 import org.evomaster.core.problem.rpc.RPCIndividual;
 import org.evomaster.core.problem.util.ParamUtil;
 import org.evomaster.core.search.Solution;
-import org.evomaster.core.search.gene.ArrayGene;
-import org.evomaster.core.search.gene.CollectionGene;
+import org.evomaster.core.search.gene.collection.ArrayGene;
+import org.evomaster.core.search.gene.collection.MapGene;
+import org.evomaster.core.search.gene.interfaces.CollectionGene;
 import org.evomaster.core.search.gene.Gene;
-import org.evomaster.core.search.gene.MapGene;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class RPCTestBase extends WsTestBase{
+public class RPCTestBase extends EnterpriseTestBase {
 
     protected Solution<RPCIndividual> initAndRun(List<String> args){
         return (Solution<RPCIndividual>) Main.initAndRun(args.toArray(new String[0]));
@@ -23,7 +23,7 @@ public class RPCTestBase extends WsTestBase{
 
     public void assertResponseContainCustomizedException(Solution<RPCIndividual> solution, String exceptionName, String content){
         boolean ok = solution.getIndividuals().stream().anyMatch(s->
-                s.evaluatedActions().stream().anyMatch(e-> {
+                s.evaluatedMainActions().stream().anyMatch(e-> {
                     String body = ((RPCCallResult)e.getResult()).getCustomizedExceptionBody();
                     return body != null && body.contains(exceptionName) && body.contains(content);
                 }));
@@ -32,7 +32,7 @@ public class RPCTestBase extends WsTestBase{
 
     public static void assertResponseContainException(Solution<RPCIndividual> solution, String exceptionName){
         boolean ok = solution.getIndividuals().stream().anyMatch(s->
-                s.evaluatedActions().stream().anyMatch(e-> {
+                s.evaluatedMainActions().stream().anyMatch(e-> {
                     String code = ((RPCCallResult)e.getResult()).getExceptionCode();
                     return code != null && code.equals(exceptionName);
                 }));
@@ -77,7 +77,7 @@ public class RPCTestBase extends WsTestBase{
 
     public boolean containsContent(Solution<RPCIndividual> solution, String methodName, String content, List<String> comparedHistory){
         return solution.getIndividuals().stream().anyMatch(s->
-                s.getIndividual().seeActions().stream().anyMatch(a-> {
+                s.getIndividual().seeMainExecutableActions().stream().anyMatch(a-> {
                     if (a.getName().equals(methodName)){
                         Gene gene = null;
                         if (a.getResponse() != null)
@@ -89,7 +89,7 @@ public class RPCTestBase extends WsTestBase{
 
     public void assertRPCEndpointResult(Solution<RPCIndividual> solution, String methodName, String result){
         boolean ok = solution.getIndividuals().stream().anyMatch(s->
-                s.evaluatedActions().stream().anyMatch(e->{
+                s.evaluatedMainActions().stream().anyMatch(e->{
                     String code = ((RPCCallResult)e.getResult()).getInvocationCode();
                     return e.getAction().getName().equals(methodName) && code!=null && code.equals(result);
                 }));
@@ -99,7 +99,7 @@ public class RPCTestBase extends WsTestBase{
 
     public void assertSizeInResponseForEndpoint(Solution<RPCIndividual> solution, String methodName, Integer min, Integer max){
         boolean ok = solution.getIndividuals().stream().anyMatch(s->
-                s.getIndividual().seeActions().stream().anyMatch(a-> {
+                s.getIndividual().seeMainExecutableActions().stream().anyMatch(a-> {
                     int size = -1;
                     if (a.getResponse()!=null){
                         size = getCollectionSize( a.getResponse().getGene());
@@ -131,7 +131,7 @@ public class RPCTestBase extends WsTestBase{
         }
 
         if (valueGene instanceof ArrayGene)
-            return ((ArrayGene)valueGene).getAllElements().size();
+            return ((ArrayGene)valueGene).getViewOfElements().size();
         if (valueGene instanceof MapGene)
             return ((MapGene) valueGene).getAllElements().size();
         return -1;

@@ -16,4 +16,9 @@ public class BootTimeInfoDto {
      * Information about the external services used inside the SUT
      */
     public List<ExternalServiceInfoDto> externalServicesDto;
+
+    /**
+     * Collections of hostnames collected through InetAddressReplacement
+     */
+    public List<HostnameResolutionInfoDto> hostnameResolutionInfoDtos;
 }

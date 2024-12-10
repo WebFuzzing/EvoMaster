@@ -1,5 +1,6 @@
 package org.evomaster.core.parser
 
+import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.regex.*
 
 /**
@@ -16,10 +17,11 @@ class GenePostgresSimilarToVisitor : PostgresSimilarToBaseVisitor<VisitResult>()
     override fun visitPattern(ctx: PostgresSimilarToParser.PatternContext): VisitResult {
 
         val res = ctx.disjunction().accept(this)
+        val text = RegexUtils.getRegexExpByParserRuleContext(ctx)
 
         val disjList = DisjunctionListRxGene(res.genes.map { it as DisjunctionRxGene })
 
-        val gene = RegexGene("regex", disjList)
+        val gene = RegexGene("regex", disjList,"${RegexGene.JAVA_REGEX_PREFIX}$text")
 
         return VisitResult(gene)
     }
@@ -28,7 +30,7 @@ class GenePostgresSimilarToVisitor : PostgresSimilarToBaseVisitor<VisitResult>()
 
         val altRes = ctx.alternative().accept(this)
 
-        val disj = DisjunctionRxGene("disj", altRes.genes.map { it as RxTerm }, true, true)
+        val disj = DisjunctionRxGene("disj", altRes.genes.map { it as Gene }, true, true)
 
         val res = VisitResult(disj)
 
@@ -70,7 +72,7 @@ class GenePostgresSimilarToVisitor : PostgresSimilarToBaseVisitor<VisitResult>()
         if(ctx.quantifier() != null){
 
             val limits = ctx.quantifier().accept(this).data as Pair<Int,Int>
-            val q = QuantifierRxGene("q", atom as RxAtom, limits.first, limits.second)
+            val q = QuantifierRxGene("q", atom, limits.first, limits.second)
 
             res.genes.add(q)
 
@@ -131,7 +133,7 @@ class GenePostgresSimilarToVisitor : PostgresSimilarToBaseVisitor<VisitResult>()
             val block = ctx.patternCharacter().map { it.text }
                     .joinToString("")
 
-            val gene = PatternCharacterBlock("block", block)
+            val gene = PatternCharacterBlockGene("block", block)
 
             return VisitResult(gene)
         }

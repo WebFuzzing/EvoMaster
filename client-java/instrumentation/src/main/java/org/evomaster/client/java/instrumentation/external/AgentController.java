@@ -10,6 +10,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Code running in the Java Agent to receive and respond to the
@@ -89,12 +90,23 @@ public class AgentController {
                         handleExecutingInitSql();
                         sendCommand(Command.ACK);
                         break;
+                    case EXECUTING_INIT_MONGO:
+                        handleExecutingInitMongo();
+                        sendCommand(Command.ACK);
+                        break;
                     case EXECUTING_ACTION:
                         handleExecutingAction();
                         sendCommand(Command.ACK);
                         break;
+                    case BOOTING_SUT:
+                        handleBootingSut();
+                        sendCommand(Command.ACK);
+                        break;
                     case BOOT_TIME_INFO:
                         handleBootTimeObjectiveInfo();
+                        break;
+                    case EXTRACT_JVM_DTO:
+                        handleExtractingSpecifiedDto();
                         break;
                     default:
                         SimpleLogger.error("Unrecognized command: "+command);
@@ -120,6 +132,7 @@ public class AgentController {
 
     private static void handleUnitsInfo() {
         try {
+            UnitsInfoRecorder.forceLoadingLazyDataStructures();
             sendObject(UnitsInfoRecorder.getInstance());
         } catch (Exception e) {
             SimpleLogger.error("Failure in handling units info: "+e.getMessage());
@@ -157,6 +170,16 @@ public class AgentController {
         }
     }
 
+    private static void handleExecutingInitMongo() {
+        try {
+            Object msg = in.readObject();
+            Boolean executingInitMongo = (Boolean) msg;
+            InstrumentationController.setExecutingInitMongo(executingInitMongo);
+        } catch (Exception e){
+            SimpleLogger.error("Failure in handling executing-init-mongo: "+e.getMessage());
+        }
+    }
+
     private static void handleExecutingAction() {
         try {
             Object msg = in.readObject();
@@ -167,6 +190,15 @@ public class AgentController {
         }
     }
 
+    private static void handleBootingSut() {
+        try {
+            Object msg = in.readObject();
+            Boolean bootingSut = (Boolean) msg;
+            InstrumentationController.setBootingSut(bootingSut);
+        } catch (Exception e){
+            SimpleLogger.error("Failure in handling executing-action: "+e.getMessage());
+        }
+    }
 
     private static void handleAdditionalInfo(){
         try {
@@ -184,15 +216,27 @@ public class AgentController {
         }
     }
 
+    private static void handleExtractingSpecifiedDto(){
+        try {
+            Object msg = in.readObject();
+            List<String> dtoNames = (List<String>) msg;
+            InstrumentationController.extractSpecifiedDto(dtoNames);
+        } catch (Exception e){
+            SimpleLogger.error("Failure in handling extracting specified dto: "+e.getMessage());
+        }
+    }
+
+
     private static void handleTargetInfos() {
 
         try {
             Object msg = in.readObject();
-            Collection<Integer> ids = (Collection<Integer>) msg;
-            sendObject(InstrumentationController.getTargetInfos(ids));
+            TargetInfoRequestDto dto = (TargetInfoRequestDto) msg;
+
+            sendObject(InstrumentationController.getTargetInfos(dto.ids, dto.fullyCovered, dto.descriptiveIds));
 
         } catch (Exception e) {
-            SimpleLogger.error("Failure in handling ids: "+e.getMessage());
+            SimpleLogger.error("Failure in handling ids", e);
         }
     }
 

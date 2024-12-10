@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster</artifactId>
-        <version>1.4.1-SNAPSHOT</version>
+        <version>3.3.1-SNAPSHOT</version>
     </parent>
 
     <groupId>org.evomaster</groupId>
@@ -19,6 +19,11 @@
         <module>instrumentation-shared</module>
         <module>client-util</module>
         <module>ci-utils</module>
+        <module>dependencies</module>
+        <module>sql</module>
+        <module>sql-dto</module>
+        <module>distance-heuristics</module>
+        <module>test-utils-java</module>
     </modules>
 
     <dependencyManagement>

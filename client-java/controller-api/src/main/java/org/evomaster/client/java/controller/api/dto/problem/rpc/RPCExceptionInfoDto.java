@@ -23,6 +23,14 @@ public class RPCExceptionInfoDto {
     public RPCExceptionType type;
 
     /**
+     * importance level
+     * lower value more important
+     * 0 represents the most important exception which should be avoided and need to be fixed earliest
+     * a negative value (less than 0) represents undefined
+     */
+    public int importanceLevel;
+
+    /**
      * a dto of the exception defined by the RPC service
      */
     public ParamDto exceptionDto;

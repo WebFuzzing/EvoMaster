@@ -1,6 +1,5 @@
 package org.evomaster.e2etests.spring.openapi.v3.expectations
 
-import com.foo.rest.examples.spring.openapi.v3.expectations.ExpectationBasicTestController
 import com.foo.rest.examples.spring.openapi.v3.expectations.ExpectationNumTestController
 import org.evomaster.client.java.instrumentation.shared.ClassName
 import org.evomaster.core.EMConfig
@@ -8,14 +7,13 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.evomaster.e2etests.utils.RestTestBase
-import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertTimeoutPreemptively
+import org.junit.jupiter.api.*
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.Duration
 
+// expectations are removed
+@Disabled
 class ExpectationNumEMTest : SpringTestBase(){
     companion object{
         @BeforeAll
@@ -78,7 +76,7 @@ class ExpectationNumEMTest : SpringTestBase(){
     fun testRunEM_Split_ExpectationsOff() {
         val outputFolderName = "ExpectationsNumEM"
         val className = ClassName("org.foo.ExpectationNumEMOff")
-        val splitType = EMConfig.TestSuiteSplitType.CLUSTER
+        val splitType = EMConfig.TestSuiteSplitType.FAULTS
         testRunEMGeneric(false, splitType, className)
 
         val assertion = generatedCodeAssertion(outputFolderName, "${className.bytecodeName}_faults", OutputFormat.KOTLIN_JUNIT_5, false)

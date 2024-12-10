@@ -18,10 +18,13 @@ open class GeneImpact (sharedImpactInfo: SharedImpactInfo, specificImpactInfo: S
     open fun validate(gene : Gene) : Boolean = true
 
     fun check(previous: Gene?, current: Gene){
-        if (previous != null && !validate(previous))
-            throw IllegalArgumentException("mismatched gene impact for previous ${previous::class.java}")
-        if (!validate(current))
-            throw IllegalArgumentException("mismatched gene impact for previous ${current::class.java}")
+        if (previous != null && !validate(previous)){
+            throw IllegalArgumentException("mismatched gene impact for previous ${previous::class.java}:${ImpactUtils.printGeneToRootAction(previous)}")
+        }
+
+        if (!validate(current)){
+            throw IllegalArgumentException("mismatched gene impact for current ${current::class.java}:${ImpactUtils.printGeneToRootAction(current)}")
+        }
     }
 
     fun check(gc: MutatedGeneWithContext){

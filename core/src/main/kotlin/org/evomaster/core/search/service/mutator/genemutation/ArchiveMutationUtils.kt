@@ -3,9 +3,9 @@ package org.evomaster.core.search.service.mutator.genemutation
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.util.ParamUtil
-import org.evomaster.core.search.Action
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.ActionFilter
+import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification

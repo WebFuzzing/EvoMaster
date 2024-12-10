@@ -3,17 +3,31 @@ package org.evomaster.core.problem.rest.service
 import com.google.inject.Inject
 import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
+import org.evomaster.client.java.controller.api.dto.problem.ExternalServiceDto
+import org.evomaster.client.java.instrumentation.shared.TaintInputName
+import org.evomaster.core.AnsiColor
 import org.evomaster.core.EMConfig
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.service.PartialOracles
-import org.evomaster.core.problem.external.service.ExternalServiceInfo
-import org.evomaster.core.problem.external.service.ExternalServiceHandler
+import org.evomaster.core.problem.enterprise.SampleType
+import org.evomaster.core.problem.externalservice.ExternalService
+import org.evomaster.core.problem.externalservice.HostnameResolutionInfo
+import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceInfo
+import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
+import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
 import org.evomaster.core.problem.httpws.service.HttpWsSampler
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.RestActionBuilderV3.buildActionBasedOnUrl
+import org.evomaster.core.problem.rest.param.HeaderParam
+import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.seeding.Parser
 import org.evomaster.core.problem.rest.seeding.postman.PostmanParser
+import org.evomaster.core.remote.AuthenticationRequiredException
 import org.evomaster.core.remote.SutProblemException
-import org.evomaster.core.remote.service.RemoteController
+import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.gene.optional.CustomMutationRateGene
+import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.tracer.Traceable
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -21,12 +35,12 @@ import javax.annotation.PostConstruct
 
 
 abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
+
     companion object {
         private val log: Logger = LoggerFactory.getLogger(AbstractRestSampler::class.java)
-    }
 
-    @Inject(optional = true)
-    protected lateinit var rc: RemoteController
+        const val CALL_TO_SWAGGER_ID =  "Call to Swagger"
+    }
 
     @Inject
     protected lateinit var configuration: EMConfig
@@ -34,16 +48,19 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
     @Inject
     protected lateinit var partialOracles: PartialOracles
 
+    @Inject
+    protected lateinit var builder: RestIndividualBuilder
+
     protected val adHocInitialIndividuals: MutableList<RestIndividual> = mutableListOf()
 
-    lateinit var swagger: OpenAPI
+    lateinit var swagger: SchemaOpenAPI
         protected set
 
     private lateinit var infoDto: SutInfoDto
 
     // TODO: This will moved under ApiWsSampler once RPC and GraphQL support is completed
     @Inject
-    protected lateinit var externalServiceHandler: ExternalServiceHandler
+    protected lateinit var externalServiceHandler: HttpWsExternalServiceHandler
 
     @PostConstruct
     open fun initialize() {
@@ -71,60 +88,154 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         val openApiURL = problem.openApiUrl
         val openApiSchema = problem.openApiSchema
 
+        // set up authentications moved up since we are going to get authentication info from HttpWsSampler
+        setupAuthentication(infoDto)
+
         if(!openApiURL.isNullOrBlank()) {
-            swagger = OpenApiAccess.getOpenAPIFromURL(openApiURL)
+            retrieveSwagger(openApiURL)
         } else if(! openApiSchema.isNullOrBlank()){
             swagger = OpenApiAccess.getOpenApi(openApiSchema)
         } else {
             throw SutProblemException("No info on the OpenAPI schema was provided")
         }
 
-        if (swagger.paths == null) {
-            throw SutProblemException("There is no endpoint definition in the retrieved Swagger file")
+        // The code should never reach this line without a valid swagger.
+        actionCluster.clear()
+        val skip = EndpointFilter.getEndpointsToSkip(config, swagger.schemaParsed, infoDto)
+        val messages = RestActionBuilderV3.addActionsFromSwagger(swagger.schemaParsed, actionCluster, skip, RestActionBuilderV3.Options(config))
+        printMessages(messages)
+
+        if(config.extraQueryParam){
+            addExtraQueryParam(actionCluster)
+        }
+        if(config.extraHeader){
+            addExtraHeader(actionCluster)
         }
 
-        actionCluster.clear()
-        val skip = getEndpointsToSkip(swagger, infoDto)
-        RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, skip)
 
-        setupAuthentication(infoDto)
         initSqlInfo(infoDto)
+
+        initHostnameInfo(infoDto)
 
         initExternalServiceInfo(infoDto)
 
+        // TODO: temp
+        if (problem.servicesToNotMock != null) {
+            registerExternalServicesToSkip(problem.servicesToNotMock)
+        }
+
         initAdHocInitialIndividuals()
+
+        if (config.seedTestCases)
+            initSeededTests()
 
         postInits()
 
         updateConfigBasedOnSutInfoDto(infoDto)
 
-        /*
-            TODO this would had been better handled with optional injection, but Guice seems pretty buggy :(
-         */
-        partialOracles.setupForRest(swagger)
+        //partialOracles.setupForRest(swagger, config)
 
         log.debug("Done initializing {}", AbstractRestSampler::class.simpleName)
     }
+
+    /*
+    This function retrieves the swagger. It is used for both black-box and white-box.
+     */
+    private fun retrieveSwagger(openApiURL : String) {
+
+        // first try to retrieve the OpenAPI without authentication
+        try {
+            swagger = OpenApiAccess.getOpenAPIFromURL(openApiURL, HttpWsNoAuth())
+        }
+        catch (sutException : AuthenticationRequiredException) {
+            log.warn(sutException.message)
+
+            // First check if we have authentication information available inside infoDto.infoForAuthentication
+            if (authentications.isNotEmpty()) {
+
+                //get the first authentication info
+                val currentAuthInfo = authentications.getFirstAuthentication()
+
+                // try to retrieve the swagger with authentication info
+                swagger = OpenApiAccess.getOpenAPIFromURL(openApiURL, currentAuthInfo)
+            }
+            else {
+                throw AuthenticationRequiredException("Accessing the OpenAPI schema from $openApiURL" +
+                        " requires authentication, but there is no auth info provided that can be used")
+            }
+        }
+
+        // if we still could not retrieve the swagger, then throw an exception and finish
+        if (!this::swagger.isInitialized) {
+            throw SutProblemException("Cannot retrieve OpenAPI schema from $openApiURL," +
+                    "\n after trying both authenticated and unauthenticated calls.")
+        }
+    }
+
+    private fun addExtraQueryParam(actionCluster: Map<String, Action>){
+
+        val key = TaintInputName.EXTRA_PARAM_TAINT
+
+        actionCluster.values.forEach {
+            (it as RestCallAction).addParam(QueryParam(key,
+                CustomMutationRateGene(key,
+                    OptionalGene(
+                        key,
+                        CustomMutationRateGene(key, StringGene(key, "42"), 0.0),
+                        searchPercentageActive = config.searchPercentageExtraHandling
+                    ),
+                    probability = 1.0,
+                    searchPercentageActive = config.searchPercentageExtraHandling
+                )
+            ))
+        }
+    }
+
+    private fun addExtraHeader(actionCluster: Map<String, Action>){
+
+        val key = TaintInputName.EXTRA_HEADER_TAINT
+
+        actionCluster.values.forEach {
+            (it as RestCallAction).addParam(HeaderParam(key,
+                CustomMutationRateGene(key,
+                    OptionalGene(
+                        key,
+                        CustomMutationRateGene(key, StringGene(key, "42"), 0.0),
+                        searchPercentageActive = config.searchPercentageExtraHandling
+                    ),
+                    probability = 1.0,
+                    searchPercentageActive = config.searchPercentageExtraHandling
+                )
+            ))
+        }
+    }
+
 
     /**
      * create AdHocInitialIndividuals
      */
     fun initAdHocInitialIndividuals(){
         customizeAdHocInitialIndividuals()
+    }
 
+    override fun initSeededTests(infoDto: SutInfoDto?) {
         // if test case seeding is enabled, add those test cases too
-        if (config.seedTestCases) {
-            val parser = getParser()
-            val seededTestCases = parser.parseTestCases(config.seedTestCasesPath)
-            adHocInitialIndividuals.addAll(seededTestCases.map { createIndividual(it) })
+        if (!config.seedTestCases) {
+            throw IllegalStateException("'seedTestCases' should be true when initializing seeded tests")
         }
-
+        val parser = getParser()
+        val seededTestCases = parser.parseTestCases(config.seedTestCasesPath)
+        seededIndividuals.addAll(seededTestCases.map {
+            it.forEach { a -> a.doInitialize() }
+            createIndividual(SampleType.SEEDED, it)
+        })
     }
 
 
     override fun getPreDefinedIndividuals() : List<RestIndividual>{
         val addCallAction = addCallToSwagger() ?: return listOf()
-        return listOf(createIndividual(mutableListOf(addCallAction)))
+        addCallAction.doInitialize()
+        return listOf(createIndividual(SampleType.PREDEFINED,mutableListOf(addCallAction)))
     }
 
     open fun getExcludedActions() : List<RestCallAction>{
@@ -139,11 +250,9 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
      */
     private fun addCallToSwagger() : RestCallAction?{
 
-        val id =  "Call to Swagger"
-
         if (configuration.blackBox && !configuration.bbExperiments) {
             return if (configuration.bbSwaggerUrl.startsWith("http", true)){
-                buildActionBasedOnUrl(BlackBoxUtils.targetUrl(config,this), id, HttpVerb.GET, configuration.bbSwaggerUrl, true)
+                buildActionBasedOnUrl(BlackBoxUtils.targetUrl(config,this), CALL_TO_SWAGGER_ID, HttpVerb.GET, configuration.bbSwaggerUrl, true)
             } else
                 null
         }
@@ -159,7 +268,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
             return null
         }
 
-        return buildActionBasedOnUrl(base, id, HttpVerb.GET, openapi, true)
+        return buildActionBasedOnUrl(base, CALL_TO_SWAGGER_ID, HttpVerb.GET, openapi, true)
     }
 
     /**
@@ -178,59 +287,60 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         initAdHocInitialIndividuals()
     }
 
-    protected fun getEndpointsToSkip(swagger: OpenAPI, infoDto: SutInfoDto)
-            : List<String>{
 
-        /*
-            If we are debugging, and focusing on a single endpoint, we skip
-            everything but it.
-            Otherwise, we just look at what configured in the SUT EM Driver.
-         */
-
-        if(configuration.endpointFocus != null){
-
-            val all = swagger.paths.map{it.key}
-
-            if(all.none { it == configuration.endpointFocus }){
-                throw IllegalArgumentException(
-                        "Invalid endpointFocus: ${configuration.endpointFocus}. " +
-                                "\nAvailable:\n${all.joinToString("\n")}")
-            }
-
-            return all.filter { it != configuration.endpointFocus }
-        }
-
-        return  infoDto.restProblem?.endpointsToSkip ?: listOf()
-    }
 
     private fun initForBlackBox() {
 
-        swagger = OpenApiAccess.getOpenAPIFromURL(configuration.bbSwaggerUrl)
-        if (swagger.paths == null) {
-            throw SutProblemException("There is no endpoint definition in the retrieved Swagger file")
+        // adding authentication from config should be moved here.
+        addAuthFromConfig()
+
+        // retrieve the swagger
+        retrieveSwagger(configuration.bbSwaggerUrl)
+
+        if (swagger.schemaParsed.paths == null) {
+            throw SutProblemException("There is no endpoint definition in the retrieved OpenAPI file")
+        }
+        // give the error message if there is nothing to test
+        if (swagger.schemaParsed.paths.size == 0){
+            throw SutProblemException("The OpenAPI file ${configuration.bbSwaggerUrl} " +
+                    "is either invalid or it does not define endpoints")
         }
 
         actionCluster.clear()
-        RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, listOf())
+        // Add all paths to list of paths to ignore except endpointFocus
+        val endpointsToSkip = EndpointFilter.getEndpointsToSkip(config,swagger.schemaParsed)
+        val messages = RestActionBuilderV3.addActionsFromSwagger(swagger.schemaParsed, actionCluster, endpointsToSkip, RestActionBuilderV3.Options(config))
+        printMessages(messages)
 
         initAdHocInitialIndividuals()
+        if (config.seedTestCases)
+            initSeededTests()
 
-        addAuthFromConfig()
 
-        /*
-            TODO this would had been better handled with optional injection, but Guice seems pretty buggy :(
-         */
-        partialOracles.setupForRest(swagger)
+        //partialOracles.setupForRest(swagger, config)
 
         log.debug("Done initializing {}", AbstractRestSampler::class.simpleName)
     }
 
-    fun getOpenAPI(): OpenAPI{
+    private fun printMessages(messages: List<String>){
+        if(messages.isEmpty()){
+            return
+        }
+
+        LoggingUtil.getInfoLogger().warn(AnsiColor.inRed("There are ${messages.size} detected issues when analyzing the schema." +
+                " These are not necessarily problems in the schema, but possible (temporary) limitations of EvoMaster" +
+                " itself."))
+        messages.forEachIndexed { index, s ->
+            LoggingUtil.getInfoLogger().warn(AnsiColor.inYellow("$index: $s"))
+        }
+    }
+
+    fun getOpenAPI(): SchemaOpenAPI{
         return swagger
     }
 
-    override fun hasSpecialInit(): Boolean {
-        return !adHocInitialIndividuals.isEmpty() && config.probOfSmartSampling > 0
+    override fun hasSpecialInitForSmartSampler(): Boolean {
+        return (adHocInitialIndividuals.isNotEmpty() && config.isEnabledSmartSampling())
     }
 
     /**
@@ -246,16 +356,39 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
     fun getNotExecutedAdHocInitialIndividuals() = adHocInitialIndividuals.toList()
 
     /**
-     * @return a created individual with specified actions, i.e., [restCalls]
+     * @return a created individual with specified actions, i.e., [restCalls].
+     * All actions must have been already initialized
      */
-    open fun createIndividual(restCalls: MutableList<RestCallAction>): RestIndividual {
-        return RestIndividual(restCalls, SampleType.SMART, mutableListOf()//, usedObjects.copy()
+    open fun createIndividual(sampleType: SampleType, restCalls: MutableList<RestCallAction>): RestIndividual {
+        if(restCalls.any { !it.isInitialized() }){
+            throw IllegalArgumentException("Action is not initialized")
+        }
+        val ind =  RestIndividual(restCalls, sampleType, mutableListOf()//, usedObjects.copy()
                 ,trackOperator = if (config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else Traceable.DEFAULT_INDEX)
+        ind.doInitializeLocalId()
+//        ind.computeTransitiveBindingGenes()
+        ind.doGlobalInitialize(searchGlobalState)
+        org.evomaster.core.Lazy.assert { ind.isInitialized() }
+        return ind
     }
 
     private fun getParser(): Parser {
         return when(config.seedTestCasesFormat) {
-            EMConfig.SeedTestCasesFormat.POSTMAN -> PostmanParser(seeAvailableActions().filterIsInstance<RestCallAction>(), swagger)
+            EMConfig.SeedTestCasesFormat.POSTMAN -> PostmanParser(seeAvailableActions().filterIsInstance<RestCallAction>(), swagger.schemaParsed)
+        }
+    }
+
+    /**
+     * To collect external service info through SutInfoDto
+     */
+    private fun initHostnameInfo(info: SutInfoDto) {
+        if (info.bootTimeInfoDto?.hostnameResolutionInfoDtos != null) {
+            info.bootTimeInfoDto.hostnameResolutionInfoDtos.forEach {
+                externalServiceHandler.addHostname(HostnameResolutionInfo(
+                    it.remoteHostname,
+                    it.resolvedAddress
+                ))
+            }
         }
     }
 
@@ -265,16 +398,26 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
     private fun initExternalServiceInfo(info: SutInfoDto) {
         if (info.bootTimeInfoDto?.externalServicesDto != null) {
             info.bootTimeInfoDto.externalServicesDto.forEach {
-                externalServiceHandler.addExternalService(ExternalServiceInfo(
+                externalServiceHandler.addExternalService(
+                    HttpExternalServiceInfo(
                         it.protocol,
                         it.remoteHostname,
                         it.remotePort
-                ))
+                )
+                )
             }
         }
     }
 
-    fun getExternalServicesInfo(): ExternalServiceHandler {
-        return externalServiceHandler
+    private fun registerExternalServicesToSkip(services: List<ExternalServiceDto>) {
+        services.forEach {
+            externalServiceHandler.registerExternalServiceToSkip(
+                ExternalService(
+                it.hostname,
+                it.port
+            )
+            )
+        }
     }
+
 }

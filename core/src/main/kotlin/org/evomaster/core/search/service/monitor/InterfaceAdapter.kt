@@ -2,7 +2,7 @@ package org.evomaster.core.search.service.monitor
 
 import com.google.gson.*
 import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.search.Action
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.Gene
 import java.lang.reflect.Constructor
 import java.lang.reflect.Parameter

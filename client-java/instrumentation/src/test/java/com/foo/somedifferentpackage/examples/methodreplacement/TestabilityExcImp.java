@@ -5,10 +5,7 @@ import org.evomaster.client.java.instrumentation.example.methodreplacement.Testa
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.time.LocalDate;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -140,6 +137,11 @@ public class TestabilityExcImp implements TestabilityExc {
     @Override
     public boolean matcherFind(Matcher matcher) {
         return matcher.find();
+    }
+
+    @Override
+    public byte[] decode(Base64.Decoder caller, String src) {
+        return caller.decode(src);
     }
 
     @Override

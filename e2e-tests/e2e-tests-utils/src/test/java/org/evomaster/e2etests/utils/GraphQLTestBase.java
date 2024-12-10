@@ -15,7 +15,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public abstract class GraphQLTestBase extends WsTestBase {
+public abstract class GraphQLTestBase extends EnterpriseTestBase {
 
     protected Solution<GraphQLIndividual> initAndRun(List<String> args) {
         return (Solution<GraphQLIndividual>) Main.initAndRun(args.toArray(new String[0]));
@@ -23,13 +23,13 @@ public abstract class GraphQLTestBase extends WsTestBase {
 
     protected boolean atLeastOneResponseWithData(EvaluatedIndividual<GraphQLIndividual> ind) {
 
-        List<GraphQLAction> actions = ind.getIndividual().seeActions();
+        List<GraphQLAction> actions = ind.getIndividual().seeMainExecutableActions();
 
         boolean stopped = false;
 
         for (int i = 0; i < actions.size() && !stopped; i++) {
 
-            GraphQlCallResult res = (GraphQlCallResult) ind.seeResults(null).get(i);
+            GraphQlCallResult res = (GraphQlCallResult) ind.seeResults(actions).get(i);
             stopped = res.getStopping();
 
             Integer statusCode = res.getStatusCode();
@@ -61,13 +61,13 @@ public abstract class GraphQLTestBase extends WsTestBase {
 
     protected boolean noneWithErrors(EvaluatedIndividual<GraphQLIndividual> ind) {
 
-        List<GraphQLAction> actions = ind.getIndividual().seeActions();
+        List<GraphQLAction> actions = ind.getIndividual().seeMainExecutableActions();
 
         boolean stopped = false;
 
         for (int i = 0; i < actions.size() && !stopped; i++) {
 
-            GraphQlCallResult res = (GraphQlCallResult) ind.seeResults(null).get(i);
+            GraphQlCallResult res = (GraphQlCallResult) ind.seeResults(actions).get(i);
             stopped = res.getStopping();
 
             Integer statusCode = res.getStatusCode();
@@ -116,13 +116,13 @@ public abstract class GraphQLTestBase extends WsTestBase {
     }
 
     protected boolean hasValueInData(EvaluatedIndividual<GraphQLIndividual> ind, String value) {
-        List<GraphQLAction> actions = ind.getIndividual().seeActions();
+        List<GraphQLAction> actions = ind.getIndividual().seeMainExecutableActions();
 
         boolean stopped = false;
 
         for (int i = 0; i < actions.size() && !stopped; i++) {
 
-            GraphQlCallResult res = (GraphQlCallResult) ind.seeResults(null).get(i);
+            GraphQlCallResult res = (GraphQlCallResult) ind.seeResults(actions).get(i);
             stopped = res.getStopping();
 
             if (hasValueInData(res, value)){
@@ -214,17 +214,17 @@ public abstract class GraphQLTestBase extends WsTestBase {
 
     private boolean hasAtLeastOne(EvaluatedIndividual<GraphQLIndividual> ind, String methodName, GQMethodType type, int expectedStatusCode, String inResponse){
 
-        if (ind.getIndividual().seeActions().size() != ind.seeResults(null).size()){
+        if (ind.getIndividual().seeAllActions().size() != ind.seeResults(null).size()){
             throw new IllegalStateException(String.format("mismatched size of results (%d) with calls (%d) for GraphQLIndividual",
-                    ind.seeResults(null).size(), ind.getIndividual().seeActions().size()));
+                    ind.seeResults(null).size(), ind.getIndividual().seeAllActions().size()));
         }
-        List<GraphQLAction> actions = ind.getIndividual().seeActions();
+        List<GraphQLAction> actions = ind.getIndividual().seeMainExecutableActions();
 
         boolean stopped = false;
 
         for (int i = 0; i < actions.size() && !stopped; i++) {
 
-            GraphQlCallResult res = (GraphQlCallResult) ind.seeResults(null).get(i);
+            GraphQlCallResult res = (GraphQlCallResult) ind.seeResults(actions).get(i);
             stopped = res.getStopping();
 
             boolean matched = actions.get(i).getMethodName().equals(methodName) &&
@@ -244,7 +244,7 @@ public abstract class GraphQLTestBase extends WsTestBase {
     protected String graphActions(Solution<GraphQLIndividual> solution) {
         StringBuffer msg = new StringBuffer("Graph calls:\n");
 
-        solution.getIndividuals().stream().flatMap(ind -> ind.evaluatedActions().stream())
+        solution.getIndividuals().stream().flatMap(ind -> ind.evaluatedMainActions().stream())
                 .filter(ea -> ea.getAction() instanceof GraphQLAction)
                 .map(ea -> {
                     GraphQlCallResult res = (GraphQlCallResult)ea.getResult();

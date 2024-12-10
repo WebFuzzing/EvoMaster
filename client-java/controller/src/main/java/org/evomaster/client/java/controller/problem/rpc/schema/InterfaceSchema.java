@@ -7,6 +7,7 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.SeededRPCActionD
 import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.CycleObjectType;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.TypeSchema;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -76,6 +77,11 @@ public final class InterfaceSchema{
     private final List<String> skippedEndpoints;
 
     /**
+     * key is the full name of type
+     */
+    private Map<String, NamedTypedValue> identifiedResponseTypes = new HashMap<>();
+
+    /**
      *
      * @param name is the name of the interface
      * @param endpoints is a list of endpoints which are involved for testing
@@ -113,14 +119,28 @@ public final class InterfaceSchema{
      * @param type is the type schema of the param for an object
      * @param param is the concrete param example
      *              note that multiple params could belong to the same type schema
+     * @param isTypeToIdentify is the type to identify which likely does not exist in client library
      */
-    public void registerType(TypeSchema type, NamedTypedValue param){
-        String typeName = type.getFullTypeNameWithGenericType();
-        if (!(type instanceof CycleObjectType)){
-            typeCollections.put(typeName, type);
+    public void registerType(TypeSchema type, NamedTypedValue param, boolean isTypeToIdentify){
+        if (isTypeToIdentify){
+            if (!(type instanceof CycleObjectType)){
+                NamedTypedValue r = identifiedResponseTypes.get(param.getType().getFullTypeNameWithGenericType());
+                if (r == null || param.getType().depth > r.getType().depth)
+                    identifiedResponseTypes.put(param.getType().getFullTypeNameWithGenericType(), param);
+            }
+        }else{
+            String typeName = type.getFullTypeNameWithGenericType();
+            if (!(type instanceof CycleObjectType)){
+                TypeSchema t = typeCollections.get(typeName);
+                if (t == null || t.depth < type.depth)
+                    typeCollections.put(typeName, type);
+            }
+            if (!(param.getType() instanceof CycleObjectType)){
+                NamedTypedValue p = objParamCollections.get(param.getType().getFullTypeNameWithGenericType());
+                if (p == null || param.getType().depth > p.getType().depth)
+                    objParamCollections.put(param.getType().getFullTypeNameWithGenericType(), param);
+            }
         }
-        if (!(param.getType() instanceof CycleObjectType))
-            objParamCollections.put(param.getType().getFullTypeNameWithGenericType(), param);
     }
 
     public Map<String, NamedTypedValue> getObjParamCollections() {
@@ -169,9 +189,9 @@ public final class InterfaceSchema{
             return list.get(0);
 
         if (list.size() > 1)
-            throw new RuntimeException("ERROR: there exists more than 1 endpoint which conforms with the specified dto");
+            throw new RuntimeException("ERROR: there exists more than 1 endpoint which conforms with the specified dto "+dto.descriptiveInfo());
 
-        throw new RuntimeException("ERROR: there does not exist any endpoint which conforms with the specified dto");
+        throw new RuntimeException("ERROR: there does not exist any endpoint which conforms with the specified dto " + dto.descriptiveInfo());
     }
 
 
@@ -187,9 +207,14 @@ public final class InterfaceSchema{
             return list.get(0);
 
         if (list.size() > 1)
-            throw new RuntimeException("ERROR: there exists more than 1 endpoint which conforms with the specified seeded test dto");
+            throw new RuntimeException("ERROR: there exists more than 1 endpoint which conforms with the specified seeded test dto "+dto.descriptiveInfo());
 
-        throw new RuntimeException("ERROR: there does not exist any endpoint which conforms with the specified seeded test dto");
+        if (skippedEndpoints.contains(dto.functionName)){
+            SimpleLogger.uniqueWarn("Fail to handle the ");
+            return null;
+        }
+
+        throw new RuntimeException("ERROR: there does not exist any endpoint which conforms with the specified seeded test dto "+dto.descriptiveInfo());
     }
 
     public String getName() {
@@ -224,6 +249,8 @@ public final class InterfaceSchema{
                 dto.authEndpoints.add(v.getDto());
             });
         }
+        if (!identifiedResponseTypes.isEmpty())
+            dto.identifiedResponseTypes = identifiedResponseTypes.values().stream().map(NamedTypedValue::getDto).collect(Collectors.toList());
         return dto;
     }
 }

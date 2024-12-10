@@ -1,7 +1,7 @@
 package org.evomaster.client.java.controller.api.dto;
 
-import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto;
-
+import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionsDto;
+import org.evomaster.client.java.controller.api.dto.database.execution.MongoExecutionsDto;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,7 +16,9 @@ public class ExtraHeuristicsDto {
     /**
      * List of extra heuristic values we want to optimize
      */
-    public List<HeuristicEntryDto> heuristics = new ArrayList<>();
+    public List<ExtraHeuristicEntryDto> heuristics = new ArrayList<>();
 
-    public ExecutionDto databaseExecutionDto;
+    public SqlExecutionsDto sqlSqlExecutionsDto;
+
+    public MongoExecutionsDto mongoExecutionsDto;
 }

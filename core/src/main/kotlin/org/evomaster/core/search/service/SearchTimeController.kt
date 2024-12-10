@@ -20,6 +20,19 @@ class SearchTimeController {
 
     companion object{
         private val log = LoggerFactory.getLogger(SearchTimeController::class.java)
+
+        /**
+         * From https://proandroiddev.com/measuring-execution-times-in-kotlin-460a0285e5ea
+         */
+        inline fun <T> measureTimeMillis(loggingFunction: (Long, T) -> Unit,
+                                         function: () -> T): T {
+
+            val startTime = System.currentTimeMillis()
+            val result: T = function.invoke()
+            loggingFunction.invoke(System.currentTimeMillis() - startTime, result)
+
+            return result
+        }
     }
 
 
@@ -38,6 +51,12 @@ class SearchTimeController {
     var lastActionImprovement = -1
         private set
 
+    var lastActionImprovementTimestamp = -1L
+        private set
+
+    var lastActionNewTargetTimestamp = -1L
+        private set
+
     var lastActionTimestamp = 0L
         private set
 
@@ -54,6 +73,13 @@ class SearchTimeController {
     private var startTime = 0L
 
     /**
+     * Once the search is finished, we do not want to keep recording new events.
+     * The problem is with phases after the search, like minimization and security, which
+     * might end up calling methods here through the archive
+     */
+    private var recording = true
+
+    /**
      * Keeping track of the latest N test executions.
      * Time expressed in ms (Long).
      * Also keeping track of number of actions (Int)
@@ -64,8 +90,28 @@ class SearchTimeController {
 
     val averageTestTimeMs = IncrementalAverage()
 
+    val averageActionTimeMs = IncrementalAverage()
+
     val averageOverheadMsBetweenTests = IncrementalAverage()
 
+    val averageResetSUTTimeMs = IncrementalAverage()
+
+    val averageByteOverheadTestResultsAll = IncrementalAverage()
+
+    val averageByteOverheadTestResultsSubset = IncrementalAverage()
+
+    val averageOverheadMsTestResultsSubset = IncrementalAverage()
+
+
+    fun doStopRecording(){
+        recording = false
+    }
+
+    /**
+     * @return if recoding is stopped,
+     * ie, search has been terminated, and start to handle post actions after search
+     */
+    fun isRecordingStopped() = (!recording)
 
     /**
      * Make sure we do not make too many requests in a short amount of time, to avoid
@@ -94,8 +140,11 @@ class SearchTimeController {
     }
 
     fun startSearch(){
+        recording = true
         searchStarted = true
         startTime = System.currentTimeMillis()
+        lastActionImprovementTimestamp = startTime
+        lastActionNewTargetTimestamp = startTime
     }
 
     fun addListener(listener: SearchListener){
@@ -103,6 +152,8 @@ class SearchTimeController {
     }
 
     fun reportConnectionCloseRequest(httpStatus: Int){
+
+        if(!recording) return
 
         connectionCloseRequest++
         //evaluatedActions is updated at the end of test case
@@ -123,6 +174,8 @@ class SearchTimeController {
 
     fun reportExecutedIndividualTime(ms: Long, nActions: Int){
 
+        if(!recording) return
+
         //this is for last 100 tests, displayed live during the search in the console
         executedIndividualTime.add(Pair(ms, nActions))
         if(executedIndividualTime.size > 100){
@@ -131,20 +184,9 @@ class SearchTimeController {
 
         // for all tests evaluated so far
         averageTestTimeMs.addValue(ms)
+        averageActionTimeMs.addValue(ms.toDouble() / nActions.toDouble())
     }
 
-    /**
-     * From https://proandroiddev.com/measuring-execution-times-in-kotlin-460a0285e5ea
-     */
-    inline fun <T> measureTimeMillis(loggingFunction: (Long, T) -> Unit,
-                                    function: () -> T): T {
-
-        val startTime = System.currentTimeMillis()
-        val result: T = function.invoke()
-        loggingFunction.invoke(System.currentTimeMillis() - startTime, result)
-
-        return result
-    }
 
     fun computeExecutedIndividualTimeStatistics() : Pair<Double,Double>{
 
@@ -159,24 +201,31 @@ class SearchTimeController {
     }
 
     fun newIndividualEvaluation() {
+        if(!recording) return
         evaluatedIndividuals++
     }
 
     fun newIndividualsWithSqlFailedWhere(){
+        if(!recording) return
         individualsWithSqlFailedWhere++
     }
 
     fun newActionEvaluation(n: Int = 1) {
+        if(!recording) return
         evaluatedActions += n
         listeners.forEach{it.newActionEvaluated()}
     }
 
     fun newCoveredTarget(){
+        if(!recording) return
         newActionImprovement()
+        lastActionNewTargetTimestamp = System.currentTimeMillis()
     }
 
     fun newActionImprovement(){
+        if(!recording) return
         lastActionImprovement = evaluatedActions
+        lastActionImprovementTimestamp = System.currentTimeMillis()
     }
 
 
@@ -205,7 +254,26 @@ class SearchTimeController {
 
     fun shouldContinueSearch(): Boolean{
 
-        return percentageUsedBudget() < 1.0
+        return percentageUsedBudget() < 1.0 && !isImprovementTimeout()
+    }
+
+    fun isImprovementTimeout() : Boolean{
+
+        if(configuration.prematureStop.isNullOrBlank()){
+            return false
+        }
+
+        val passed = getSecondsSinceLastImprovement()
+
+        return  passed > configuration.improvementTimeoutInSeconds()
+    }
+
+    fun getSecondsSinceLastImprovement() : Int{
+        val timestamp =  when(configuration.prematureStopStrategy){
+            EMConfig.PrematureStopStrategy.ANY -> lastActionImprovementTimestamp
+            EMConfig.PrematureStopStrategy.NEW -> lastActionNewTargetTimestamp
+        }
+        return ((System.currentTimeMillis() - timestamp) / 1000.0).toInt()
     }
 
     /**
@@ -213,9 +281,16 @@ class SearchTimeController {
      */
     fun percentageUsedBudget() : Double{
 
+        if(!searchStarted){
+            return 0.0
+        }
+
         return when(configuration.stoppingCriterion){
-            EMConfig.StoppingCriterion.FITNESS_EVALUATIONS ->
-                evaluatedActions.toDouble() / configuration.maxActionEvaluations.toDouble()
+            EMConfig.StoppingCriterion.ACTION_EVALUATIONS ->
+                evaluatedActions.toDouble() / configuration.maxEvaluations.toDouble()
+
+            EMConfig.StoppingCriterion.INDIVIDUAL_EVALUATIONS ->
+                evaluatedIndividuals.toDouble() / configuration.maxEvaluations.toDouble()
 
             EMConfig.StoppingCriterion.TIME ->
                 (System.currentTimeMillis() - startTime).toDouble() /

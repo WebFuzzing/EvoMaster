@@ -55,9 +55,9 @@ abstract class GeneStructuralElementBaseTest : StructuralElementBaseTest() {
         assertTrue(base is Gene)
         if (base is Gene){
             if (throwExceptionInRandomnessTest())
-                assertThrows<Exception> { base.randomize(randomness, true, listOf()) }
+                assertThrows<Exception> { base.randomize(randomness, true) }
             else{
-                base.randomize(randomness, true, listOf())
+                base.randomize(randomness, true)
                 assertChildren(base, expectedChildrenSizeAfterRandomness())
                 additionalAssertionsAfterRandomness(base)
             }

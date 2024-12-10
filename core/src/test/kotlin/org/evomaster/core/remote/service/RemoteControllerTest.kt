@@ -2,10 +2,10 @@ package org.evomaster.core.remote.service
 
 import org.evomaster.client.java.controller.EmbeddedSutController
 import org.evomaster.client.java.controller.api.dto.ActionDto
-import org.evomaster.client.java.controller.api.dto.AuthenticationDto
+import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.internal.EMController
-import org.evomaster.client.java.controller.internal.db.DbSpecification
+import org.evomaster.client.java.sql.DbSpecification
 import org.evomaster.client.java.controller.problem.ProblemInfo
 import org.evomaster.client.java.controller.problem.RestProblem
 import org.junit.jupiter.api.AfterEach
@@ -75,7 +75,7 @@ class RemoteControllerTest {
         driver.controllerPort = 0 //ephemeral
         driver.startTheControllerServer()
 
-        remote = RemoteController("localhost", driver.controllerServerPort, false, false)
+        remote = RemoteControllerImplementation("localhost", driver.controllerServerPort, false, false)
     }
 
     @AfterEach

@@ -1,10 +1,15 @@
 package org.evomaster.client.java.controller;
 
+import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
+import org.evomaster.client.java.controller.api.ControllerConstants;
 import org.evomaster.client.java.controller.api.dto.SutRunDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
 import org.evomaster.client.java.controller.internal.SutController;
 
 import java.sql.Connection;
+import java.util.List;
 
 import static io.restassured.RestAssured.given;
 import static org.evomaster.client.java.controller.api.ControllerConstants.*;
@@ -25,6 +30,7 @@ public interface DatabaseTestTemplate {
 
         int port = starter.getControllerServerPort();
 
+
         startSut(port);
 
         return "http://localhost:" + port;
@@ -32,7 +38,7 @@ public interface DatabaseTestTemplate {
 
     default void startSut(int port) {
         given().contentType(ContentType.JSON)
-                .body(new SutRunDto(true, false, true, "BASE,SQL"))
+                .body(new SutRunDto(true, false,false, true, "BASE,SQL"))
                 .put("http://localhost:" + port + BASE_PATH + RUN_SUT_PATH)
                 .then()
                 .statusCode(204);
@@ -52,7 +58,7 @@ public interface DatabaseTestTemplate {
 
         given().accept(ContentType.ANY)
                 .contentType(ContentType.JSON)
-                .body(new SutRunDto(true, true, true, "BASE,SQL"))
+                .body(new SutRunDto(true, true, false, true, "BASE,SQL"))
                 .put(url + RUN_SUT_PATH)
                 .then()
                 .statusCode(204);
@@ -67,5 +73,16 @@ public interface DatabaseTestTemplate {
         SutController sutController = getSutController();
         sutController.setControllerPort(0);
         return new InstrumentedSutStarter(sutController);
+    }
+
+    default void executeSqlCommand(List<InsertionDto> insertionDtos, String url){
+        DatabaseCommandDto dto = new DatabaseCommandDto();
+        dto.insertions.addAll(insertionDtos);
+
+        RestAssured.given().contentType(ContentType.JSON)
+                .body(dto)
+                .post(url + ControllerConstants.DATABASE_COMMAND)
+                .then()
+                .statusCode(200);
     }
 }

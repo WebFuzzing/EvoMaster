@@ -3,8 +3,11 @@ package org.evomaster.e2etests.spring.rpc.examples.numericstring;
 import com.google.inject.Injector;
 import org.evomaster.core.problem.rpc.RPCCallAction;
 import org.evomaster.core.problem.rpc.service.RPCSampler;
-import org.evomaster.core.search.Action;
+import org.evomaster.core.search.action.Action;
 import org.evomaster.core.search.gene.*;
+import org.evomaster.core.search.gene.numeric.BigDecimalGene;
+import org.evomaster.core.search.gene.optional.OptionalGene;
+import org.evomaster.core.search.gene.string.NumericStringGene;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -27,8 +30,8 @@ public class RPCSchemaHandlerTest extends NumericStringTestBase{
                 "--showProgress", "false",
                 "--avoidNonDeterministicLogs", "true",
                 "--sutControllerPort", "" + controllerPort,
-                "--maxActionEvaluations", "" + 5,
-                "--stoppingCriterion", "FITNESS_EVALUATIONS",
+                "--maxEvaluations", "" + 5,
+                "--stoppingCriterion", "ACTION_EVALUATIONS",
                 "--useTimeInFeedbackSampling" , "false"
         ));
 
@@ -39,8 +42,8 @@ public class RPCSchemaHandlerTest extends NumericStringTestBase{
         assertEquals(1, actions.size());
         assertTrue(actions.get(0) instanceof RPCCallAction);
         RPCCallAction rpcCallAction = (RPCCallAction) actions.get(0);
-        assertEquals(1, rpcCallAction.seeGenes().size());
-        ObjectGene objectGene = (ObjectGene) rpcCallAction.seeGenes().get(0);
+        assertEquals(1, rpcCallAction.seeTopGenes().size());
+        ObjectGene objectGene = (ObjectGene) rpcCallAction.seeTopGenes().get(0);
 
         for (Gene g : objectGene.getFields()){
             assertTrue(g instanceof OptionalGene);

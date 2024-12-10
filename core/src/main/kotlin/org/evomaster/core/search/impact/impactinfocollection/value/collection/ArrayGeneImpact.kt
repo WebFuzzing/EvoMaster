@@ -1,6 +1,6 @@
 package org.evomaster.core.search.impact.impactinfocollection.value.collection
 
-import org.evomaster.core.search.gene.ArrayGene
+import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.impactinfocollection.*
 import org.evomaster.core.search.impact.impactinfocollection.value.numeric.IntegerGeneImpact
@@ -44,7 +44,7 @@ class ArrayGeneImpact (sharedImpactInfo: SharedImpactInfo, specificImpactInfo: S
         if ((gc.previous != null && gc.previous !is ArrayGene<*>))
             throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) should be ArrayGene")
 
-        if (gc.previous != null && (gc.previous as ArrayGene<*>).getAllElements().size != gc.current.getAllElements().size)
+        if (gc.previous != null && (gc.previous as ArrayGene<*>).getViewOfElements().size != gc.current.getViewOfElements().size)
             sizeImpact.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num = 1)
 
         //TODO for elements

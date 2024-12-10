@@ -4,8 +4,8 @@ import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.graphql.GraphQlCallResult
-import org.evomaster.core.problem.httpws.service.HttpWsCallResult
-import org.evomaster.core.search.ActionResult
+import org.evomaster.core.problem.httpws.HttpWsCallResult
+import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.slf4j.Logger
@@ -18,7 +18,13 @@ class GraphQLBlackBoxFitness : GraphQLFitness() {
         private val log: Logger = LoggerFactory.getLogger(GraphQLBlackBoxFitness::class.java)
     }
 
-    override fun doCalculateCoverage(individual: GraphQLIndividual, targets: Set<Int>): EvaluatedIndividual<GraphQLIndividual>? {
+    override fun doCalculateCoverage(
+        individual: GraphQLIndividual,
+        targets: Set<Int>,
+        allTargets: Boolean,
+        fullyCovered: Boolean,
+        descriptiveIds: Boolean,
+    ): EvaluatedIndividual<GraphQLIndividual>? {
 
         if(config.bbExperiments){
             /*
@@ -34,26 +40,24 @@ class GraphQLBlackBoxFitness : GraphQLFitness() {
 
         val actionResults: MutableList<ActionResult> = mutableListOf()
 
+        val actions = individual.seeMainExecutableActions() as List<GraphQLAction>
+
         //run the test, one action at a time
-        for (i in 0 until individual.seeActions().size) {
+        for (i in actions.indices) {
 
-            val a = individual.seeActions()[i]
+            val a = actions[i]
 
-            var ok = false
+            //TODO handle WM here
 
-            if (a is GraphQLAction) {
-                ok = handleGraphQLCall(a, actionResults, mapOf(), mapOf())
-                actionResults[i].stopping = !ok
-            } else {
-                throw IllegalStateException("Cannot handle: ${a.javaClass}")
-            }
+            val ok = handleGraphQLCall(a, actionResults, mapOf(), mapOf())
+            actionResults[i].stopping = !ok
 
             if (!ok) {
                 break
             }
         }
 
-        handleResponseTargets(fv, individual.seeActions(), actionResults, listOf())
+        handleResponseTargets(fv, actions, actionResults, listOf())
 
         return EvaluatedIndividual(fv, individual.copy() as GraphQLIndividual, actionResults, trackOperator = individual.trackOperator, index = time.evaluatedIndividuals, config = config)
     }

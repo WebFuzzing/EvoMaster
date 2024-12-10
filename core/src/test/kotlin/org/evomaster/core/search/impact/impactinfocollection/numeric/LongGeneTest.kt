@@ -1,7 +1,7 @@
 package org.evomaster.core.search.impact.impactinfocollection.numeric
 
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.LongGene
+import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpactTest
 import org.evomaster.core.search.impact.impactinfocollection.MutatedGeneWithContext
@@ -20,7 +20,7 @@ class LongGeneTest : GeneImpactTest() {
         else
             geneToMutate.value += 1L
 
-        return MutatedGeneWithContext(previous = original, current = geneToMutate)
+        return MutatedGeneWithContext(current = geneToMutate, previous = original,)
     }
 
     override fun getGene(): Gene = LongGene("i",  value= 1L)

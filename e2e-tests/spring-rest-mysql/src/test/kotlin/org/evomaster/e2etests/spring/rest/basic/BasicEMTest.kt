@@ -3,8 +3,8 @@ package org.evomaster.e2etests.spring.rest.basic
 import com.foo.spring.rest.mysql.basic.BasicController
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.service.RestSampler
-import org.evomaster.core.search.gene.IntegerGene
-import org.evomaster.core.search.gene.LongGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.e2etests.utils.RestTestBase
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
@@ -33,11 +33,19 @@ class BasicEMTest : RestTestBase() {
         ) { args ->
 
             val saveExecutedSQLToFile = "target/executionInfo/org/bar/mysql/BasicEM/sql.txt"
+            val executedMainActionToFile = "target/executionInfo/org/bar/mysql/BasicEM/executedMainActions.txt"
 
             args.add("--outputExecutedSQL")
             args.add("ALL_AT_END")
             args.add("--saveExecutedSQLToFile")
             args.add(saveExecutedSQLToFile)
+
+            args.add("--recordExecutedMainActionInfo")
+            args.add("true")
+            args.add("--saveExecutedMainActionInfo")
+            args.add(executedMainActionToFile)
+
+
 
             val solution = initAndRun(args)
 
@@ -67,6 +75,9 @@ class BasicEMTest : RestTestBase() {
                 s.contains("INSERT INTO X")
             }
             assertTrue(ignoreInitSql)
+
+            val size = Files.readAllLines(Paths.get(executedMainActionToFile)).count { !it.contains("ComputationOverhead") && it.isNotBlank() }
+            assertTrue(size in budget..(budget+1))
         }
     }
 
@@ -87,7 +98,7 @@ class BasicEMTest : RestTestBase() {
 
             assertEquals(1, dbactions.size)
 
-            val genes = dbactions[0].seeGenes()
+            val genes = dbactions[0].seeTopGenes()
 
             val a = genes.find { it.name.equals("a", ignoreCase = true) }
             assertTrue(a is IntegerGene)

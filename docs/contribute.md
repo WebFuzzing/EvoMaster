@@ -34,7 +34,7 @@ the [issues](https://github.com/EMResearch/EvoMaster/issues) page:
   There are some open-source projects that can be used (e.g., which we selected and aggregated in the
   [EMB repository](https://github.com/EMResearch/EMB)).
   But open-source applications are not necessarily representative of software developed in industry.
-  Therefore, we "collaborate" with different companies (e.g., [Universitetsforlaget](https://www.universitetsforlaget.no/)),
+  Therefore, we "collaborate" with different companies (e.g., currently Volkswagen and Meituan),
   to apply _EvoMaster_ on their systems.
       
   * *Benefits for us*: access to the source code of real, industrial systems (of course, under NDAs). 
@@ -44,11 +44,17 @@ the [issues](https://github.com/EMResearch/EvoMaster/issues) page:
     
     1. getting priority on new features and bug fixing.
     2. "free" human resources (MSc/PhD students and researchers) that try to break your systems and
-        find faults in them.    
+        find faults in them.
+    
+  If this can be of interest for you, drop us a message.  
     
 * *Academic Collaborations*: we are keen to hear from students and researchers that want to 
   collaborate on topics in which _EvoMaster_ can be used on, or extended for.
-  For example, it is possible to have visiting PhD students in our lab.
+  For example, it is possible to have visiting PhD students in our lab in Oslo, Norway.
   However, all communications about academic collaborations should not be done here on GitHub,
   but rather by email, directly to Prof. A. Arcuri. 
+  Note that in Norway we are no longer allowed to have visitors or new employees from China, Iran, North Korea and Russia. 
+  This is political, and has nothing to do with this project. 
+  It is out of our control. 
+  If you are a citizen of China or Iran, and would like to be an academic visitor collaborating on EvoMaster, we have academic collaborators in China and Argentina that might accept visitors. 
 

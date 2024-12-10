@@ -24,10 +24,7 @@ public class FacebookEndpointsBuilderTest extends RPCEndpointsBuilderTestBase {
         return 13;
     }
 
-    @Test
-    public void testEndpointsLoad(){
-        assertEquals(expectedNumberOfEndpoints(), schema.getEndpoints().size());
-    }
+
 
     @Test
     public void testEnum(){

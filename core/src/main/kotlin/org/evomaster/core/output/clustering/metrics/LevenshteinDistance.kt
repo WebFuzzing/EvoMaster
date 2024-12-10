@@ -3,6 +3,7 @@ package org.evomaster.core.output.clustering.metrics
 import kotlin.math.max
 
 object LevenshteinDistance {
+    @Deprecated("Incorrect implementation. Should rather use Apache Text")
     fun distance(p0: String, p1: String): Double{
         val lhsLength = p0.length
         val rhsLength = p1.length

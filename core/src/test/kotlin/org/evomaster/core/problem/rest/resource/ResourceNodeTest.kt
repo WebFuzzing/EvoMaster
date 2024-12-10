@@ -6,12 +6,11 @@ import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.param.BodyParam
-import org.evomaster.core.search.Action
-import org.evomaster.core.search.ActionFilter
-import org.evomaster.core.search.gene.DisruptiveGene
-import org.evomaster.core.search.gene.LongGene
+import org.evomaster.core.problem.rest.param.QueryParam
+import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.action.ActionFilter
+import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.ObjectGene
-import org.evomaster.core.search.gene.OptionalGene
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
@@ -30,11 +29,11 @@ class ResourceNodeTest {
        @BeforeAll
        @JvmStatic
        fun init(){
-
-           val schema = OpenAPIParser().readLocation("/swagger/artificial/resource_test.json", null, null).openAPI
-           RestActionBuilderV3.addActionsFromSwagger(schema, actionCluster)
            val config = EMConfig()
            config.doesApplyNameMatching = true
+
+           val schema = OpenAPIParser().readLocation("/swagger/artificial/resource_test.json", null, null).openAPI
+           RestActionBuilderV3.addActionsFromSwagger(schema, actionCluster, enableConstraintHandling = config.enableSchemaConstraintHandling)
            cluster.initResourceCluster(actionCluster, config = config)
        }
    }
@@ -74,16 +73,16 @@ class ResourceNodeTest {
 
         // rfoo
         val rfoo = cluster.getResourceNode("/v3/api/rfoo", nullCheck = true)
-        assertEquals(1, rfoo!!.paramsInfo.size)
-        assertEquals(0, rfoo.paramsInfo.count { it.value.doesReferToOther })
+        assertEquals(2, rfoo!!.paramsInfo.size)
+        assertEquals(0, rfoo.paramsInfo.count { it.value.requiredReferToOthers() })
 
         // rfooid
         val rfooId = cluster.getResourceNode("/v3/api/rfoo/{rfooId}", true)
         // pathparam, queryparam from get, bodyparam from put and patch
-        assertEquals(3, rfooId!!.paramsInfo.size)
-        assertEquals(1, rfooId.paramsInfo.count { it.value.doesReferToOther })
-        assertEquals("rfooId", rfooId.paramsInfo.values.find { it.doesReferToOther }!!.name)
-        assertEquals(2, rfooId.getPossiblyBoundParams("GET", false).size)
+        assertEquals(4, rfooId!!.paramsInfo.size)
+        assertEquals(1, rfooId.paramsInfo.count { it.value.requiredReferToOthers() })
+        assertEquals("rfooId", rfooId.paramsInfo.values.find { it.requiredReferToOthers() }!!.name)
+        assertEquals(3, rfooId.getPossiblyBoundParams("GET", false).size)
         // rfooId is required to be bound with POST if it exists
         rfooId.getPossiblyBoundParams("POST-GET", false).apply {
             assertEquals(1, size)
@@ -93,26 +92,26 @@ class ResourceNodeTest {
         // rbar
         val rbar = cluster.getResourceNode("/v3/api/rfoo/{rfooId}/rbar", true)
         assertEquals(2, rbar!!.paramsInfo.size)
-        assertEquals(1, rbar.paramsInfo.count { it.value.doesReferToOther })
+        assertEquals(1, rbar.paramsInfo.count { it.value.requiredReferToOthers() })
 
         // rbarid
         val rbarId = cluster.getResourceNode("/v3/api/rfoo/{rfooId}/rbar/{rbarId}", true)
         assertEquals(3, rbarId!!.paramsInfo.size)
-        assertEquals(2, rbarId.paramsInfo.count { it.value.doesReferToOther })
-        assertEquals("rbarId", rbarId.paramsInfo.values.find { it.doesReferToOther }!!.name)
+        assertEquals(2, rbarId.paramsInfo.count { it.value.requiredReferToOthers() })
+        assertEquals("rbarId", rbarId.paramsInfo.values.find { it.requiredReferToOthers() }!!.name)
 
         // rxyz
         val rxyz = cluster.getResourceNode("/v3/api/rfoo/{rfooId}/rbar/{rbarId}/rxyz", true)
         assertEquals(3, rxyz!!.paramsInfo.size)
-        assertEquals(2, rxyz.paramsInfo.count { it.value.doesReferToOther })
+        assertEquals(2, rxyz.paramsInfo.count { it.value.requiredReferToOthers() })
         // rfooId and rbardId are required to be bound with POST if they exist
-        assertEquals(setOf("rfooId", "rbarId"), rxyz.paramsInfo.filter { it.value.doesReferToOther }.map { it.value.name }.toSet())
+        assertEquals(setOf("rfooId", "rbarId"), rxyz.paramsInfo.filter { it.value.requiredReferToOthers() }.map { it.value.name }.toSet())
 
     }
 
     // test post creation for resource node
     @ParameterizedTest
-    @CsvSource(value = ["/v3/api/rfoo/{rfooId},1","/v3/api/rfoo/{rfooId}/rbar/{rbarId},2", "/v3/api/rfoo/{rfooId}/rbar/{rbarId}/rxyz/{rxyzId},3"])
+    @CsvSource(value = ["/v3/api/rfoo/{rfooId},2","/v3/api/rfoo/{rfooId}/rbar/{rbarId},2", "/v3/api/rfoo/{rfooId}/rbar/{rbarId}/rxyz/{rxyzId},3"])
     fun testCompletePostCreation(path: String, expected: Int){
 
         val node = cluster.getResourceNode(path)
@@ -151,15 +150,15 @@ class ResourceNodeTest {
             assertEquals(HttpVerb.GET, get.verb)
             val getXyzId = get.parameters.find { it.name == "rxyzId" }
             assertNotNull(getXyzId)
-            val getXyzIdGene = (getXyzId!!.gene as? DisruptiveGene<*>)?.gene
+            val getXyzIdGene = (getXyzId!!.gene as? CustomMutationRateGene<*>)?.gene
             assertNotNull(getXyzIdGene)
             val getBarId = get.parameters.find { it.name == "rbarId" }
             assertNotNull(getBarId)
-            val getBarIdGene = (getBarId!!.gene as? DisruptiveGene<*>)?.gene
+            val getBarIdGene = (getBarId!!.gene as? CustomMutationRateGene<*>)?.gene
             assertNotNull(getBarIdGene)
             val getFooId = get.parameters.find { it.name == "rfooId" }
             assertNotNull(getFooId)
-            val getFooIdGene = (getFooId!!.gene as? DisruptiveGene<*>)?.gene
+            val getFooIdGene = (getFooId!!.gene as? CustomMutationRateGene<*>)?.gene
             assertNotNull(getFooIdGene)
 
             val postXyz = get(2) as RestCallAction
@@ -168,8 +167,35 @@ class ResourceNodeTest {
             val postXyzIdGene = ((postXyzId as BodyParam).gene as? ObjectGene)?.fields?.find { it.name == "id" }
             assertNotNull(postXyzIdGene)
             //binding
-            assertTrue(postXyzIdGene!!.isBoundWith(getXyzIdGene!!))
-            assertTrue(getXyzIdGene.isBoundWith(postXyzIdGene))
+            assertTrue(postXyzIdGene!!.isDirectBoundWith(getXyzIdGene!!))
+            assertTrue(getXyzIdGene.isDirectBoundWith(postXyzIdGene))
+        }
+    }
+
+    @Test
+    fun testGeneBindingWithQuery(){
+        val node = cluster.getResourceNode("/v3/api/rfoo/{rfooId}")
+        assertNotNull(node)
+        val call = node!!.createRestResourceCallBasedOnTemplate("POST-GET", randomness, 10)
+        call.seeActions(ActionFilter.NO_SQL).apply {
+            //assertEquals(2, size)
+            val get = get(size-1) as RestCallAction
+            assertEquals(HttpVerb.GET, get.verb)
+            val getFooId = get.parameters.find { it.name == "rfooId" }
+            assertNotNull(getFooId)
+            val getFooName = get.parameters.find { it.name == "fooName" }
+            assertNotNull(getFooName)
+
+            val post = get(0) as RestCallAction
+            val postFoo = post.parameters.find { it is BodyParam }
+            assertNotNull(postFoo)
+            val postFooIdGene = ((postFoo as BodyParam).gene as? ObjectGene)?.fields?.find { it.name == "id" }
+            assertNotNull(postFooIdGene)
+            val postFooName = post.parameters.find { it is QueryParam && it.name == "fooName" }
+            assertNotNull(postFooName)
+            //binding
+            assertTrue(postFooName!!.gene.isDirectBoundWith(getFooName!!.gene))
+            assertTrue(postFooIdGene!!.isDirectBoundWith((getFooId!!.gene as CustomMutationRateGene<*>).gene))
         }
     }
 

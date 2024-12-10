@@ -88,7 +88,10 @@ e2e-tests/dotnet-rest/test/*/appsettings.json
 
 .LocalNuget/*
 !.LocalNuget/.gitkeep
-
+#Visual Studio
+.vs/
+*launchsettings.json
+*csproj.user
 #Generated Tests
 generated-test-cases/
 
@@ -115,7 +118,54 @@ Migrations/
 /e2e-tests/micronaut-latest/target/
 /e2e-tests/wiremock/target/
 
-#Visual Studio
-.vs/
-*launchsettings.json
-*csproj.user
+
+/e2e-tests/spring-rest-h2-v1/target/
+/e2e-tests/spring-rest-mysql-column-types/target/
+/e2e-tests/spring-rest-postgres-column-types/target/
+/e2e-tests/spring-rest-h2-column-types/target/
+/test-old-libraries/target/
+/e2e-tests/spring-web/target/
+/e2e-tests/spring-rest-mongo/target/
+/client-java/target/
+/client-java/dependencies/target/
+/client-java/sql-dto/target/
+/client-java/sql/target/
+/client-java/distance-heuristics/target/
+/e2e-tests/spring-rpc/spring-rpc-grpc/target/
+/em.toml
+
+/solver/target/
+/em.yaml
+/e2e-tests/spring-rest-openapi-v2/em.yaml
+/e2e-tests/spring-rest-openapi-v3/em.yaml
+/core-it/em.yaml
+
+/test-utils/test-utils-js/coverage/
+/test-utils/test-utils-js/node_modules/
+/test-utils/test-utils-js/target/
+/core/em.yaml
+
+/e2e-tests/spring-rest-bb/target/
+/e2e-tests/spring-rest-bb/javascript/node_modules/
+/e2e-tests/spring-rest-bb/javascript/generated/
+/e2e-tests/spring-rest-bb/python/generated/
+
+/client-java/test-utils-java/target/
+
+/test-utils/test-utils-py/target/
+/test-utils/test-utils-py/src/main/resources/__pycache__/
+/test-utils/test-utils-py/src/test/__pycache__/
+
+/e2e-tests/spring-graphql-bb/javascript/generated/
+/e2e-tests/spring-graphql-bb/javascript/node_modules/
+/e2e-tests/spring-graphql-bb/python/generated/
+/e2e-tests/spring-graphql-bb/target/
+
+/generated_tests/
+/e2e-tests/spring-rest-bb/maven/src/
+/e2e-tests/spring-rest-bb/maven/target/
+/target/
+/wfc/target/
+/e2e-tests/emb-json/target/
+/process_data/
+/e2e-tests/spring-rest-multidb/target/

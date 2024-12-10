@@ -3,7 +3,9 @@ package org.evomaster.core.search.impact.impactinfocollection.date
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
+import org.evomaster.core.search.gene.datetime.FormatForDatesAndTimes
 import org.evomaster.core.search.gene.datetime.TimeGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpactTest
 import org.evomaster.core.search.impact.impactinfocollection.ImpactOptions
@@ -17,9 +19,10 @@ import org.junit.jupiter.api.Test
 class DateTimeGeneImpactTest : GeneImpactTest() {
 
     override fun getGene(): Gene {
-        val date = DateGene("d", year = IntegerGene("y", 2019), month = IntegerGene("m", 10), day = IntegerGene("d", 9))
-        val time = TimeGene("t", hour = IntegerGene("h", 16), minute = IntegerGene("m", 36), second = IntegerGene("s", 9))
-        return DateTimeGene("dt", date, time)
+        val format = FormatForDatesAndTimes.DATETIME
+        val date = DateGene("d", year = IntegerGene("y", 2019), month = IntegerGene("m", 10), day = IntegerGene("d", 9), format = format)
+        val time = TimeGene("t", hour = IntegerGene("h", 16), minute = IntegerGene("m", 36), second = IntegerGene("s", 9), format = format)
+        return DateTimeGene("dt", false,format, date, time)
     }
 
     override fun checkImpactType(impact: GeneImpact) {
@@ -40,7 +43,7 @@ class DateTimeGeneImpactTest : GeneImpactTest() {
             }
         }
 
-        return MutatedGeneWithContext(previous = original, current = geneToMutate)
+        return MutatedGeneWithContext(current = geneToMutate, previous = original,)
     }
 
     @Test

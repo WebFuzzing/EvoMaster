@@ -50,7 +50,7 @@ class SqlMultidimensionalArrayGeneImpact(sharedImpactInfo: SharedImpactInfo, spe
         if ((gc.previous != null && gc.previous !is SqlMultidimensionalArrayGene<*>))
             throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) should be SqlMultidimensionalArrayGene")
 
-        if (gc.previous != null && (gc.previous as SqlMultidimensionalArrayGene<*>).innerGene().size != gc.current.innerGene().size)
+        if (gc.previous != null && (gc.previous as SqlMultidimensionalArrayGene<*>).getViewOfChildren().size != gc.current.getViewOfChildren().size)
             sizeImpact.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num = 1)
 
         //TODO for elements

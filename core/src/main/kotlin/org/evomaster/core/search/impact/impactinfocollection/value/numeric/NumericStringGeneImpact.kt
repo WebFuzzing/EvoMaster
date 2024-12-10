@@ -1,7 +1,7 @@
 package org.evomaster.core.search.impact.impactinfocollection.value.numeric
 
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.NumericStringGene
+import org.evomaster.core.search.gene.string.NumericStringGene
 import org.evomaster.core.search.impact.impactinfocollection.*
 
 
@@ -42,9 +42,9 @@ class NumericStringGeneImpact (
 
 
         val mutatedGeneWithContext = MutatedGeneWithContext(
-            previous = if (gc.previous==null) null else (gc.previous as NumericStringGene).number,
             current = gc.current.number,
-            numOfMutatedGene = gc.numOfMutatedGene
+            previous = if (gc.previous==null) null else (gc.previous as NumericStringGene).number,
+            numOfMutatedGene = gc.numOfMutatedGene,
         )
         numberGeneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
 

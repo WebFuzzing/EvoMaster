@@ -1,402 +1,94 @@
 package org.evomaster.core.output.service
 
-import com.google.gson.Gson
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.DbActionResult
-import org.evomaster.core.output.CookieWriter
 import org.evomaster.core.output.Lines
-import org.evomaster.core.output.SqlWriter
-import org.evomaster.core.output.TokenWriter
-import org.evomaster.core.search.EvaluatedDbAction
+import org.evomaster.core.output.TestCase
+import org.evomaster.core.problem.webfrontend.*
+import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.gene.GeneUtils
+import java.lang.IllegalStateException
+import java.nio.file.Path
 
-abstract class WebTestCaseWriter : TestCaseWriter() {
+class WebTestCaseWriter : TestCaseWriter() {
 
-    protected fun createUniqueResponseVariableName(): String {
-        val name = "res_$counter"
-        counter++
-        return name
+    private val driver : String = TestSuiteWriter.driver
+
+    override fun handleTestInitialization(
+        lines: Lines,
+        baseUrlOfSut: String,
+        ind: EvaluatedIndividual<*>,
+        insertionVars: MutableList<Pair<String, String>>
+    ) {
+        //nothing to do? at least for now...
     }
 
-    protected fun createUniqueBodyVariableName(): String {
-        val name = "body_$counter"
-        counter++
-        return name
-    }
+    override fun handleActionCalls(
+        lines: Lines,
+        baseUrlOfSut: String,
+        ind: EvaluatedIndividual<*>,
+        insertionVars: MutableList<Pair<String, String>>,
+        testCaseName: String,
+        testSuitePath: Path?
+    ) {
+        lines.addStatement("goToPage($driver, $baseUrlOfSut, 5)")
 
-    override fun handleFieldDeclarations(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>) {
-
-        CookieWriter.handleGettingCookies(format, ind, lines, baseUrlOfSut, this)
-        TokenWriter.handleGettingTokens(format, ind, lines, baseUrlOfSut, this)
-
-        val initializingActions = ind.individual.seeInitializingActions().filterIsInstance<DbAction>()
-        val initializingActionResults = (ind.seeResults(initializingActions))
-        if (initializingActionResults.any { (it as? DbActionResult) == null })
-            throw IllegalStateException("the type of results are expected as DbActionResults")
-
-
-        if (ind.individual.seeInitializingActions().isNotEmpty()) {
-            SqlWriter.handleDbInitialization(
-                    format,
-                    initializingActions.indices.map {
-                        EvaluatedDbAction(initializingActions[it], initializingActionResults[it] as DbActionResult)
-                    },
-                    lines, insertionVars = insertionVars, skipFailure = config.skipFailureSQLInTestFile)
-        }
-    }
-
-    /**
-     * handle assertion with text plain
-     */
-    fun handleTextPlainTextAssertion(bodyString: String?, lines: Lines, bodyVarName: String?) {
-
-        if (bodyString.isNullOrBlank()) {
-            lines.add(emptyBodyCheck(bodyVarName))
-        } else {
-            //TODO in the call above BODY was used... what's difference from TEXT?
-            lines.add(bodyIsString(bodyString, GeneUtils.EscapeMode.TEXT, bodyVarName))
-        }
-    }
-
-    /**
-     * handle assertion with json body string
-     */
-    fun handleJsonStringAssertion(bodyString: String?, lines: Lines, bodyVarName: String?, isTooLargeBody: Boolean) {
-        when (bodyString?.trim()?.first()) {
-            //TODO this should be handled recursively, and not ad-hoc here...
-            '[' -> {
-                // This would be run if the JSON contains an array of objects.
-                val list = Gson().fromJson(bodyString, List::class.java)
-                handleAssertionsOnList(list, lines, "", bodyVarName)
+        if(ind.individual is WebIndividual){
+            ind.evaluatedMainActions().forEachIndexed { index,  a ->
+                addActionLines(a.action, index, testCaseName, lines, a.result, testSuitePath, baseUrlOfSut)
             }
-            '{' -> {
-                // JSON contains an object
-                val resContents = Gson().fromJson(bodyString, Map::class.java)
-                handleAssertionsOnObject(resContents as Map<String, *>, lines, "", bodyVarName)
-            }
-            '"' -> {
-                lines.add(bodyIsString(bodyString, GeneUtils.EscapeMode.BODY, bodyVarName))
-            }
-            else -> {
-                /*
-                    This branch will be called if the JSON is null (or has a basic type)
-                    Currently, it converts the contents to String.
-
-                    TODO do we have tests for it? and if it is true for RestAssured, anyway
-                    it does not the seem the case for Jest/SuperAgent
-                 */
-                when {
-                    isTooLargeBody -> lines.add("/* very large body, which was not handled during the search */")
-
-                    bodyString.isNullOrBlank() -> lines.add(emptyBodyCheck(bodyVarName))
-
-                    else -> handlePrimitive(lines, bodyString, "", bodyVarName)
-                }
-            }
-        }
-    }
-
-
-    private fun handlePrimitive(lines: Lines, bodyString: String, fieldPath: String, responseVariableName: String?) {
-
-        val s = bodyString.trim()
-
-        when {
-            format.isJavaOrKotlin() -> {
-                lines.add(bodyIsString(s, GeneUtils.EscapeMode.BODY, responseVariableName))
-            }
-            format.isJavaScript() || format.isCsharp() -> {
-                try {
-                    val number = s.toDouble()
-                    handleAssertionsOnField(number, lines, fieldPath, responseVariableName)
-                    return
-                } catch (e: NumberFormatException) {
-                }
-
-                if (s.equals("true", true) || s.equals("false", true)) {
-                    val tf = bodyString.toBoolean()
-                    handleAssertionsOnField(tf, lines, fieldPath, responseVariableName)
-                    return
-                }
-
-                throw IllegalStateException("Cannot parse: $s")
-            }
-            else -> throw IllegalStateException("Format not supported yet: $format")
-        }
-    }
-
-    protected fun handleAssertionsOnObject(resContents: Map<String, *>, lines: Lines, fieldPath: String, responseVariableName: String?) {
-        if (resContents.isEmpty()) {
-
-            val k = when {
-                /*
-                    TODO should do check for when there are spaces in the field name
-                    TODO also need more tests to check all these edge cases
-                 */
-                format.isJavaOrKotlin() -> if (fieldPath.isEmpty()) "" else if (fieldPath.startsWith("'")) "$fieldPath." else "'$fieldPath'."
-                format.isJavaScript() -> if (fieldPath.isEmpty()) "" else "${if (fieldPath.startsWith("[") || fieldPath.startsWith(".")) "" else "."}$fieldPath"
-                format.isCsharp() -> if (fieldPath.isEmpty()) "" else "${if (fieldPath.startsWith("[")) "" else "."}$fieldPath"
-                else -> throw IllegalStateException("Format not supported yet: $format")
-            }
-
-            val instruction = when {
-                //TODO would not this fail on recursive/nested calls???
-                format.isJava() -> ".body(\"${k}isEmpty()\", is(true))"
-                format.isKotlin() -> ".body(\"${k}isEmpty()\", `is`(true))" //'is' is a keyword in Kotlin
-                format.isJavaScript() -> "expect(Object.keys($responseVariableName.body${k}).length).toBe(0);"
-                format.isCsharp() -> "Assert.True($responseVariableName${k}.ToString() == \"{}\");"
-                else -> throw IllegalStateException("Format not supported yet: $format")
-            }
-
-            lines.add(instruction)
-        }
-
-        resContents.entries
-                .filter { !isFieldToSkip(it.key) }
-                .forEach {
-
-                    var needsDot = true
-
-                    val fieldName = if (format.isJava()) {
-                        "'${it.key}'"
-                    } else if (format.isKotlin()){
-                        "'${handleDollarSign(it.key)}'"
-                    } else if (format.isJavaScript()) {
-                        //field name could have any character... need to use [] notation then
-                        if (it.key.matches(Regex("^[a-zA-Z][a-zA-Z0-9]*$"))) {
-                            it.key
-                        } else {
-                            needsDot = false
-                            "[\"${it.key}\"]"
-                        }
-                    //TODO need to deal with '' C#? see EscapeRest
-                    } else {
-                        it.key
-                    }
-
-
-                    val extendedPath = if (format.isJavaOrKotlin() && fieldPath.isEmpty()) {
-                        fieldName
-                    } else if (needsDot) {
-                        "${fieldPath}.${fieldName}"
-                    } else {
-                        "${fieldPath}${fieldName}"
-                    }
-
-                    handleAssertionsOnField(it.value, lines, extendedPath, responseVariableName)
-                }
-    }
-    /*
-        a quick fix on handling dollar sign in assertion
-        TODO, might move to other places to systematically handle the assertions with special symbols
-     */
-    private fun handleDollarSign(text: String): String{
-        return text.replace("\$", "\\\$")
-    }
-
-    private fun handleAssertionsOnField(value: Any?, lines: Lines, fieldPath: String, responseVariableName: String?) {
-
-        if (value == null) {
-            val instruction = when {
-                format.isJavaOrKotlin() -> ".body(\"${fieldPath}\", nullValue())"
-                format.isJavaScript() -> "expect($responseVariableName.body$fieldPath).toBe(null);"
-                format.isCsharp() -> "Assert.True($responseVariableName$fieldPath == null);"
-                else -> throw IllegalStateException("Format not supported yet: $format")
-            }
-            lines.add(instruction)
-            return
-        }
-
-        when (value) {
-            is Map<*, *> -> {
-                handleAssertionsOnObject(value as Map<String, *>, lines, fieldPath, responseVariableName)
-                return
-            }
-            is List<*> -> {
-                handleAssertionsOnList(value, lines, fieldPath, responseVariableName)
-                return
-            }
-        }
-
-        if (format.isJavaOrKotlin()) {
-            val left = when (value) {
-                is Boolean -> "equalTo($value)"
-                is Number -> "numberMatches($value)"
-                is String -> "containsString(" +
-                        "\"${GeneUtils.applyEscapes(value as String, mode = GeneUtils.EscapeMode.ASSERTION, format = format)}" +
-                        "\")"
-                else -> throw IllegalStateException("Unsupported type: ${value::class}")
-            }
-            if (isSuitableToPrint(left)) {
-                lines.add(".body(\"$fieldPath\", $left)")
-            }
-            return
-        }
-
-        if (format.isJavaScript() || format.isCsharp()) {
-            val toPrint = if (value is String) {
-                "\"" + GeneUtils.applyEscapes(value, mode = GeneUtils.EscapeMode.ASSERTION, format = format) + "\""
+            val lastEvaluated = ind.evaluatedMainActions().last()
+            val lastAction = lastEvaluated.action as WebAction
+            val lastResult = lastEvaluated.result as WebResult
+            val url =  if(!lastResult.stopping){
+                 lastResult.getUrlPageEnd()!!
             } else {
-                value.toString()
+                //if stopping, it means nothing could be done, and no info on where it went.
+                //it also implies that such entry itself was printed out in the test
+                assert(lastAction.userInteractions.isEmpty())
+                lastResult.getUrlPageStart()!!
             }
+            lines.add(getCommentOnPage("ended on page", url,null,lastResult.getValidHtml()))
+        }
+    }
 
-            if (isSuitableToPrint(toPrint)) {
-                if (format.isJavaScript()) {
-                    lines.add("expect($responseVariableName.body$fieldPath).toBe($toPrint);")
-                } else {
-                    assert(format.isCsharp())
-                    if (fieldPath != ".traceId" || !lines.toString().contains("status == 400"))
-                        lines.add("Assert.True($responseVariableName$fieldPath == $toPrint);")
+    private fun addWaitPageToLoad(lines: Lines, seconds : Int = 2){
+        lines.addStatement("waitForPageToLoad($driver, $seconds)")
+        //TODO need to handle init of JS scripts, not just load of page
+    }
+
+    private fun getCommentOnPage(label: String, start: String, end: String?, validHtml: Boolean?) : String{
+        var comment = " // $label ${HtmlUtils.getPathAndQueries(start)}"
+        if(validHtml == false){
+            comment += "  (ERRORS in HTML in reached page ${HtmlUtils.getPathAndQueries(end!!)})"
+        }
+        return comment
+    }
+
+    override fun addActionLinesPerType(action: Action, index: Int, testCaseName: String, lines: Lines, result: ActionResult, testSuitePath: Path?, baseUrlOfSut: String) {
+
+        //TODO add possible wait on CSS selector. if not, stop test???
+
+        val a = action as WebAction
+        val r = result as WebResult
+        a.userInteractions.forEach {
+            when(it.userActionType){
+                UserActionType.CLICK -> {
+                    lines.addStatement("clickAndWaitPageLoad($driver, \"${it.cssSelector}\")")
+                    lines.append(getCommentOnPage("on page", r.getUrlPageStart()!!, r.getUrlPageEnd(), r.getValidHtml()))
                 }
+                //TODO all other cases
+                else -> throw IllegalStateException("Not handled action type: ${it.userActionType}")
             }
-            return
         }
 
-        throw IllegalStateException("Not supported format $format")
+        //TODO assertions on action
     }
 
-
-    protected fun handleAssertionsOnList(list: List<*>, lines: Lines, fieldPath: String, responseVariableName: String?) {
-
-        lines.add(collectionSizeCheck(responseVariableName, fieldPath, list.size))
-
-        //assertions on contents
-        if (list.isEmpty()) {
-            return
-        }
-
-        /*
-             TODO could do the same for numbers
-         */
-        if (format.isJavaOrKotlin() && list.all { it is String } && list.isNotEmpty()) {
-            lines.add(".body(\"$fieldPath\", hasItems(${
-                (list as List<String>).joinToString {
-                    "\"${GeneUtils.applyEscapes(it, mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\""
-                }
-            }))")
-            return
-        }
-
-        val limit = if (config.maxAssertionForDataInCollection >= 0) {
-            //there are more elements than we can print
-            config.maxAssertionForDataInCollection
-        } else {
-            Int.MAX_VALUE
-        }
-
-        val skipped = list.size - limit
-
-        for (i in list.indices) {
-            if (i == limit) {
-                break
-            }
-            handleAssertionsOnField(list[i], lines, "$fieldPath[$i]", responseVariableName)
-        }
-        if (skipped > 0) {
-            lines.add("// Skipping assertions on the remaining $skipped elements. This limit of $limit elements can be increased in the configurations")
-        }
+    override fun shouldFailIfExceptionNotThrown(result: ActionResult): Boolean {
+        return false
     }
 
-
-    protected fun emptyBodyCheck(responseVariableName: String?): String {
-        if (format.isJavaOrKotlin()) {
-            return ".body(isEmptyOrNullString())"
-        }
-
-        if (format.isJavaScript()) {
-            /*
-                This is super ugly... but there is no clean solution for this
-                in Jest nor SuperAgent... :(
-                TODO might want to put it in supplementary function
-             */
-            return "expect(" +
-                    "$responseVariableName.body===null " +
-                    "|| $responseVariableName.body===undefined " +
-                    "|| $responseVariableName.body===\"\" " +
-                    "|| Object.keys($responseVariableName.body).length === 0" +
-                    ").toBe(true);"
-        }
-
-        if (format.isCsharp()) {
-            return "Assert.True(string.IsNullOrEmpty(await $responseVariableName.Content.ReadAsStringAsync()));"
-        }
-
-        throw IllegalStateException("Unsupported format $format")
-    }
-
-    protected fun collectionSizeCheck(responseVariableName: String?, fieldPath: String, expectedSize: Int): String {
-
-        /*
-            TODO if size==0, maybe use something like isEmpty?
-         */
-
-        val instruction = when {
-            format.isJavaOrKotlin() -> {
-                val path = if (fieldPath.isEmpty()) "" else "$fieldPath."
-                ".body(\"${path}size()\", equalTo($expectedSize))"
-            }
-            format.isJavaScript() ->
-                "expect($responseVariableName.body$fieldPath.length).toBe($expectedSize);"
-            format.isCsharp() ->
-                "Assert.True($responseVariableName$fieldPath.Count == $expectedSize);"
-            else -> throw IllegalStateException("Not supported format $format")
-        }
-
-        return instruction
-    }
-
-    protected fun bodyIsString(bodyString: String, mode: GeneUtils.EscapeMode, responseVariableName: String?): String {
-
-        val content = GeneUtils.applyEscapes(bodyString, mode, format = format)
-
-        if (format.isJavaOrKotlin()) {
-            return ".body(containsString(\"$content\"))"
-        }
-
-        if (format.isJavaScript()) {
-            return "expect($responseVariableName.text).toBe(\"$content\");"
-        }
-
-        if (format.isCsharp()) {
-            val k = when {
-                content.startsWith("\"") -> content.substring(1, content.length - 1)
-                content.startsWith("\\\"") -> content.substring(2, content.length - 2)
-                else -> content
-            }
-            return "Assert.True($responseVariableName == \"$k\");"
-        }
-
-        throw IllegalStateException("Not supported format $format")
-    }
-
-
-    /**
-     * Some fields might lead to flackiness, eg assertions on timestamps.
-     */
-    protected fun isFieldToSkip(fieldName: String) =
-    //TODO this should be from EMConfig
-            /*
-                There are some fields like "id" which are often non-deterministic,
-                which unfortunately would lead to flaky tests
-            */
-            listOf(
-                    "id",
-                    "timestamp", //needed since timestamps will change between runs
-                    "self" //TODO: temporary hack. Needed since ports might change between runs.
-            ).contains(fieldName.toLowerCase())
-
-    /**
-     * Some content may be lead to problems in the resultant test case.
-     * Null values, or content that is not yet handled are can lead to un-compilable generated tests.
-     * Removing strings that contain "logged" is a stopgap: Some fields mark that particular issues have been logged and will often provide object references and timestamps.
-     * Such information can cause failures upon re-run, as object references and timestamps will differ.
-     */
-    protected fun isSuitableToPrint(printableContent: String): Boolean {
-        return (
-                printableContent != "null" //TODO not so sure about this one... need to double-check
-                        && !printableContent.contains("logged")
-                        // is this for IP host:port addresses?
-                        && !printableContent.contains("""\w+:\d{4,5}""".toRegex()))
+    override fun addTestCommentBlock(lines: Lines, test: TestCase) {
+        //TODO
     }
 }

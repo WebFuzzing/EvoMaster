@@ -1,13 +1,22 @@
 package org.evomaster.core.search.gene
 
-import org.evomaster.core.database.DbActionGeneBuilder
+import org.evomaster.core.sql.SqlActionGeneBuilder
 import org.evomaster.core.problem.graphql.GqlConst
 import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.builder.GraphQLActionBuilder
 import org.evomaster.core.problem.graphql.PetClinicCheckMain
 import org.evomaster.core.problem.graphql.param.GQReturnParam
-import org.evomaster.core.search.Action
+import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.gene.collection.ArrayGene
+import org.evomaster.core.search.gene.collection.TupleGene
 import org.evomaster.core.search.gene.datetime.DateGene
+import org.evomaster.core.search.gene.numeric.DoubleGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.numeric.LongGene
+import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.placeholder.CycleObjectGene
+import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import java.util.*
@@ -53,7 +62,7 @@ internal class GeneUtilsTest {
 
     @Test
     fun testRepairBrokenSqlTimestampGene() {
-        val sqlTimestampGene = DbActionGeneBuilder().buildSqlTimestampGene("timestamp")
+        val sqlTimestampGene = SqlActionGeneBuilder().buildSqlTimestampGene("timestamp")
         sqlTimestampGene.date.apply {
             year.value = 1998
             month.value = 4
@@ -83,7 +92,7 @@ internal class GeneUtilsTest {
 
     @Test
     fun testFlatViewWithExcludeDateGene() {
-        val sqlTimestampGene = DbActionGeneBuilder().buildSqlTimestampGene("timestamp")
+        val sqlTimestampGene = SqlActionGeneBuilder().buildSqlTimestampGene("timestamp")
         sqlTimestampGene.date.apply {
             year.value = 1998
             month.value = 4
@@ -242,7 +251,7 @@ internal class GeneUtilsTest {
     }
 
     @Test
-    fun testRepaireBooleanSectionFF() {
+    fun testRepairBooleanSectionFF() {
 
         val objBoolean = ObjectGene("foo", listOf(BooleanGene("a", false), (BooleanGene("b", false))))
 
@@ -250,13 +259,68 @@ internal class GeneUtilsTest {
 
         assertTrue(objBoolean.fields.any { it is BooleanGene && it.value == true })
     }
-    
+
+    @Test
+    fun testRepairBooleanSectionOptionalTuple() {
+
+        val booleanGene = BooleanGene("Boolean", value = false)
+
+        val obj = ObjectGene(
+            "object1", listOf(
+                (OptionalGene(
+                    "optional",
+                    TupleGene(
+                        "optionalTuple",
+                        listOf(
+                            IntegerGene("IntegerGene"),
+
+                            ObjectGene("object2", listOf(booleanGene))// could never be an opt
+
+                        ),
+                        lastElementTreatedSpecially = true
+                    )
+                )),
+                TupleGene("NonOptionalTuple", listOf(CycleObjectGene("cycle")), lastElementTreatedSpecially = true)
+            )
+        )
+        assertFalse(booleanGene.value)
+        GeneUtils.repairBooleanSelection(obj)
+        assertTrue(booleanGene.value)
+    }
+
+    @Test
+    fun testRepairBooleanSectionInTupleLastElementObject() {
+
+        val objBooleanAndOptional = ObjectGene(
+            "foo", listOf(
+                BooleanGene("boolean",value = false),//to see if it is repaired
+                OptionalGene("opt",
+                    TupleGene(
+                        "tuple1",
+                        listOf(
+                            ObjectGene(
+                                "ObjInLastTuple",
+                                listOf(BooleanGene("boolean"))
+                            ),
+                        ),
+                        lastElementTreatedSpecially = true
+                    ),isActive = false)//to see if it is repaired
+            )
+        )
+
+        val tuple = TupleGene("tuple2", listOf(objBooleanAndOptional), lastElementTreatedSpecially = true)
+        val rootObj = ObjectGene("rootObj", listOf(tuple))
+        GeneUtils.repairBooleanSelection(rootObj)
+
+        val objBoolAndOptRepaired=(rootObj.fields.first { it is TupleGene } as TupleGene).elements.last() as ObjectGene
+        assertTrue(objBoolAndOptRepaired.fields.any { (it is BooleanGene && it.value) || (it is OptionalGene && it.isActive) })
+    }
 
     @Test
     fun testRepairInPetclinic() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/PetsClinic.json").readText()
+        val json = PetClinicCheckMain::class.java.getResource("/graphql/online/PetsClinic.json").readText()
 
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
         val pettypes = actionCluster.get("pettypes") as GraphQLAction
@@ -276,7 +340,6 @@ internal class GeneUtilsTest {
         assertTrue(objPetType.fields.any{ it is BooleanGene && it.value})
 
     }
-
 
     @Test
     fun testInterfaceSelectionName(){
@@ -313,7 +376,7 @@ internal class GeneUtilsTest {
     @Test
     fun testCopyFields() {
 
-        val obj = ObjectGene("Obj1",  listOf(StringGene("a", "hello"),StringGene("b", "hihi")))
+        val obj = ObjectGene("Obj1",  listOf(StringGene("a", "hello"), StringGene("b", "hihi")))
 
         val objBase = ObjectGene("Obj1", listOf(StringGene("a", "hello")))
 
@@ -351,5 +414,24 @@ internal class GeneUtilsTest {
                 .replace(" ", "") // remove empty space to make assertion less brittle
 
         assertEquals("{foo{...onA{a1}b1,b2}}", res)//with the name foo and without "...on" for the object B
+    }
+
+    @Test
+    fun testGetBasicGeneBasedOnJavaType(){
+
+        val intGene = GeneUtils.getBasicGeneBasedOnJavaType(java.lang.Integer::class.java, "foo")
+        assertTrue(intGene is IntegerGene)
+
+        val doubleGene = GeneUtils.getBasicGeneBasedOnJavaType(java.lang.Double::class.java, "foo")
+        assertTrue(doubleGene is DoubleGene)
+
+        val longGene = GeneUtils.getBasicGeneBasedOnJavaType(java.lang.Long::class.java, "foo")
+        assertTrue(longGene is LongGene)
+
+        val shortGene = GeneUtils.getBasicGeneBasedOnJavaType(java.lang.Short::class.java, "foo")
+        assertTrue(shortGene is IntegerGene && shortGene.min != null && shortGene.max != null) //no ShortGene
+
+        val numberGene = GeneUtils.getBasicGeneBasedOnJavaType(java.lang.Number::class.java, "foo")
+        assertTrue(numberGene is IntegerGene)
     }
 }

@@ -1,12 +1,13 @@
 package org.evomaster.client.java.controller.problem;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
  * Created by arcuri82 on 05-Nov-18.
  */
-public class RestProblem implements ProblemInfo{
+public class RestProblem extends ProblemInfo{
 
     private final String openApiUrl;
 
@@ -53,10 +54,17 @@ public class RestProblem implements ProblemInfo{
     }
 
     public List<String> getEndpointsToSkip() {
-        return endpointsToSkip;
+        return Collections.unmodifiableList(endpointsToSkip);
     }
 
     public String getOpenApiSchema() {
         return openApiSchema;
+    }
+
+    @Override
+    public RestProblem withServicesToNotMock(List<ExternalService> servicesToNotMock){
+        RestProblem p =  new RestProblem(this.openApiUrl, this.endpointsToSkip, this.openApiSchema);
+        p.servicesToNotMock.addAll(servicesToNotMock);
+        return p;
     }
 }

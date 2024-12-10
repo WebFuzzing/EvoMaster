@@ -17,6 +17,18 @@ class AdaptiveParameterControl {
     private lateinit var config: EMConfig
 
 
+    fun getExtraSqlDbConstraintsProbability() : Double {
+
+        val p = config.useExtraSqlDbConstraintsProbability
+        if(p==0.0){
+            return p
+        }
+        if(doesFocusSearch()){
+            return 1.0
+        }
+        return p
+    }
+
     fun getArchiveTargetLimit() : Int {
         return getExploratoryValue(config.archiveTargetLimit, 1)
     }

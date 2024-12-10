@@ -3,8 +3,8 @@ package org.evomaster.core.search.service.mutator
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.DbActionUtils
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
@@ -49,6 +49,9 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
     @Inject
     protected lateinit var mwc : MutationWeightControl
 
+    @Inject
+    protected lateinit var harvestResponseHandler: HarvestActualHttpWsResponseHandler
+
     /**
      * @param mutatedGenes is used to record what genes are mutated within [mutate], which can be further used to analyze impacts of genes.
      * @return a mutated copy
@@ -79,8 +82,19 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
      * @return whether you do a structure mutation on initialization if it exists
      */
     open fun doesInitStructureMutation(evaluatedIndividual: EvaluatedIndividual<T>): Boolean {
-        return (!structureMutator.canApplyActionStructureMutator(evaluatedIndividual.individual))
-                || (structureMutator.canApplyInitStructureMutator() && randomness.nextBoolean(config.initStructureMutationProbability))
+        return config.initStructureMutationProbability > 0 && ((!structureMutator.canApplyActionStructureMutator(evaluatedIndividual.individual))
+                || (structureMutator.canApplyInitStructureMutator() && randomness.nextBoolean(config.initStructureMutationProbability)))
+    }
+
+    /**
+     * a set of actions/handling which are required to be executed before mutations
+     */
+    fun preActionBeforeMutatoin(evaluatedIndividual: EvaluatedIndividual<T>){
+        /*
+            tracking might be null if the current is never mutated
+            then need to handle it before mutation
+         */
+        preHandlingTrackedIndividual(evaluatedIndividual)
     }
 
     open fun postActionAfterMutation(individual: T, mutated: MutatedGeneSpecification?){}
@@ -103,14 +117,14 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
             log.trace("mutator will be applied, and the individual contains {} dbactions which are",
                 individual.individual.seeInitializingActions().size,
                 individual.individual.seeInitializingActions().joinToString(","){
-                    if (it is DbAction) it.getResolvedName() else it.getName()
+                    if (it is SqlAction) it.getResolvedName() else it.getName()
                 } )
         }
 
         var current = individual
 
-        // tracking might be null if the current is never mutated
-        preHandlingTrackedIndividual(current)
+        // we run pre-actions before upToNTimes mutations
+        preActionBeforeMutatoin(current)
 
         val targets = archive.notCoveredTargets().toMutableSet()
 
@@ -136,19 +150,28 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
             // impact info is updated due to newly added initialization actions
             structureMutator.addInitializingActions(current, mutatedGenes)
 
+            val anyHarvestedExternalServiceActions = structureMutator.addAndHarvestExternalServiceActions(current, mutatedGenes)
+
             if (log.isTraceEnabled){
                 log.trace("now it is {}th, do addInitializingActions ends", i)
             }
 
-            Lazy.assert{DbActionUtils.verifyActions(current.individual.seeInitializingActions().filterIsInstance<DbAction>())}
+            Lazy.assert{current.individual.verifyValidity(); true}
 
-            val mutatedInd = mutate(current, targets, mutatedGenes)
+            // skip to mutate the individual if any new harvested external actions are added
+            val mutatedInd = if (!anyHarvestedExternalServiceActions)
+                mutate(current, targets, mutatedGenes)
+            else
+                current.individual.copy() as T
+
             mutatedGenes.setMutatedIndividual(mutatedInd)
 
-            Lazy.assert{DbActionUtils.verifyActions(mutatedInd.seeInitializingActions().filterIsInstance<DbAction>())}
+            Lazy.assert{mutatedInd.verifyValidity(); true}
 
+            //FIXME: why setOf()??? are we skipping coverage collection here???
+            // or always added non-covered from archive? if so, name "targets" is confusing
             //Shall we prioritize the targets based on mutation sampling strategy eg, feedbackDirectedSampling?
-            val mutated = ff.calculateCoverage(mutatedInd, setOf())
+            val mutated = ff.calculateCoverage(mutatedInd, setOf(), mutatedGenes)
                     ?: continue
 
             //evaluated mutated by comparing with current using employed targets
@@ -178,13 +201,14 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
                 evaluateMutationInDetails(mutated = mutated, current = current, targets = targets, archive = archive)
 
             if (config.isEnabledImpactCollection() ){
+
                 /*
                     update impact info regarding targets.
                     To avoid side-effect to impactful gene, remove covered targets
                  */
                 mutatedWithTraces.updateImpactOfGenes(previous = currentWithTraces,
                         mutated = mutatedWithTraces, mutatedGenes = mutatedGenes,
-                        targetsInfo = targetsInfo.filter { !archive.isCovered(it.key) && !IdMapper.isLocal(it.key) })
+                        targetsInfo = targetsInfo.filter { !archive.isCovered(it.key) && !archive.skipTargetForImpactCollection(it.key)}, config)
             }
             /*
                 update archive based on mutated individual
@@ -218,7 +242,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
         structureMutator.addInitializingActions(individual,null)
 
-        return ff.calculateCoverage(mutate(individual), setOf())
+        return ff.calculateCoverage(mutate(individual), setOf(), null)
                 ?.also { archive.addIfNeeded(it) }
     }
 
@@ -304,4 +328,6 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
         }
         return current
     }
+
+
 }

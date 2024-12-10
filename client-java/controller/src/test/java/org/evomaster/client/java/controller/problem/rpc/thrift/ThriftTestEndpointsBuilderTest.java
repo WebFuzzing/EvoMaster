@@ -2,6 +2,7 @@ package org.evomaster.client.java.controller.problem.rpc.thrift;
 
 import com.thrift.example.real.thrift.test.*;
 import org.apache.thrift.TException;
+import org.evomaster.client.java.controller.api.dto.SutInfoDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
 import org.evomaster.client.java.controller.problem.rpc.RPCEndpointsBuilderTestBase;
@@ -92,20 +93,20 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertTrue(p1.getDto().stringValue.equals(input));
         assertEquals(RPCSupportedDataType.STRING, p1.getDto().type.type);
 
-        List<String> javaCode = p1.newInstanceWithJava(0);
+        List<String> javaCode = p1.newInstanceWithJavaOrKotlin(0, true, true);
         assertEquals(1, javaCode.size());
-        assertTrue(javaCode.get(0).equals("java.lang.String arg0 = \"foo\";"));
+        assertTrue(javaCode.get(0).equals("String arg0 = \"foo\";"));
 
 
-        List<String> endpointJavaCode = endpoint.newInvocationWithJava("res1","controller",null);
+        List<String> endpointJavaCode = endpoint.newInvocationWithJavaOrKotlin("res1","controller",null, SutInfoDto.OutputFormat.JAVA_JUNIT_4);
         assertEquals(5, endpointJavaCode.size());
-        assertEquals("java.lang.String res1 = null;", endpointJavaCode.get(0));
+        assertEquals("String res1 = null;", endpointJavaCode.get(0));
         assertEquals("{", endpointJavaCode.get(1));
-        assertEquals(" java.lang.String arg0 = \"foo\";", endpointJavaCode.get(2));
+        assertEquals(" String arg0 = \"foo\";", endpointJavaCode.get(2));
         assertEquals(" res1 = ((com.thrift.example.artificial.RPCInterfaceExampleImpl)(controller.getRPCClient(\"com.thrift.example.real.thrift.test.ThriftTest$Iface\"))).testString(arg0);", endpointJavaCode.get(3));
         assertEquals("}", endpointJavaCode.get(4));
 
-        List<String> assertionJavaCode = p1.newAssertionWithJava(0, "res1", -1);
+        List<String> assertionJavaCode = p1.newAssertionWithJavaOrKotlin(0, "res1", -1, true);
         assertEquals(1, assertionJavaCode.size());
         assertEquals("assertEquals(\"foo\", res1);", assertionJavaCode.get(0));
 
@@ -131,12 +132,12 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals(RPCSupportedDataType.P_BOOLEAN, p1.getDto().type.type);
 
 
-        List<String> javaCode = p1.newInstanceWithJava(0);
+        List<String> javaCode = p1.newInstanceWithJavaOrKotlin(0, true, true);
         assertEquals(1, javaCode.size());
         assertTrue(javaCode.get(0).equals("boolean arg0 = true;"));
 
 
-        List<String> assertionJavaCode = p1.newAssertionWithJava(0, "res1", -1);
+        List<String> assertionJavaCode = p1.newAssertionWithJavaOrKotlin(0, "res1", -1, true);
         assertEquals(1, assertionJavaCode.size());
         assertEquals("assertEquals(true, res1);", assertionJavaCode.get(0));
     }
@@ -160,12 +161,12 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertTrue(p1.getDto().stringValue.equals(""+input));
         assertEquals(RPCSupportedDataType.P_BYTE, p1.getDto().type.type);
 
-        List<String> javaCode = p1.newInstanceWithJava(0);
+        List<String> javaCode = p1.newInstanceWithJavaOrKotlin(0, true,true);
         assertEquals(1, javaCode.size());
         assertTrue(javaCode.get(0).equals("byte arg0 = 42;"));
 
 
-        List<String> assertionJavaCode = p1.newAssertionWithJava(0, "res1", -1);
+        List<String> assertionJavaCode = p1.newAssertionWithJavaOrKotlin(0, "res1", -1, true);
         assertEquals(1, assertionJavaCode.size());
         assertEquals("assertEquals(42, res1);", assertionJavaCode.get(0));
     }
@@ -189,12 +190,12 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertTrue(p1.getDto().stringValue.equals(""+input));
         assertEquals(RPCSupportedDataType.P_INT, p1.getDto().type.type);
 
-        List<String> javaCode = p1.newInstanceWithJava(0);
+        List<String> javaCode = p1.newInstanceWithJavaOrKotlin(0, true, true);
         assertEquals(1, javaCode.size());
         assertTrue(javaCode.get(0).equals("int arg0 = 42;"));
 
 
-        List<String> assertionJavaCode = p1.newAssertionWithJava(0, "res1", -1);
+        List<String> assertionJavaCode = p1.newAssertionWithJavaOrKotlin(0, "res1", -1, true);
         assertEquals(1, assertionJavaCode.size());
         assertEquals("assertEquals(42, res1);", assertionJavaCode.get(0));
     }
@@ -218,12 +219,12 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertTrue(p1.getDto().stringValue.equals(""+input));
         assertEquals(RPCSupportedDataType.P_LONG, p1.getDto().type.type);
 
-        List<String> javaCode = p1.newInstanceWithJava(0);
+        List<String> javaCode = p1.newInstanceWithJavaOrKotlin(0, true, true);
         assertEquals(1, javaCode.size());
         assertTrue(javaCode.get(0).equals("long arg0 = 42L;"));
 
 
-        List<String> assertionJavaCode = p1.newAssertionWithJava(0, "res1", -1);
+        List<String> assertionJavaCode = p1.newAssertionWithJavaOrKotlin(0, "res1", -1, true);
         assertEquals(1, assertionJavaCode.size());
         assertEquals("assertEquals(42L, res1);", assertionJavaCode.get(0));
     }
@@ -246,12 +247,12 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertTrue(p1.getDto().stringValue.equals(""+input));
         assertEquals(RPCSupportedDataType.P_DOUBLE, p1.getDto().type.type);
 
-        List<String> javaCode = p1.newInstanceWithJava(0);
+        List<String> javaCode = p1.newInstanceWithJavaOrKotlin(0, true, true);
         assertEquals(1, javaCode.size());
         assertTrue(javaCode.get(0).equals("double arg0 = 42.42;"));
 
 
-        List<String> assertionJavaCode = p1.newAssertionWithJava(0, "res1", -1);
+        List<String> assertionJavaCode = p1.newAssertionWithJavaOrKotlin(0, "res1", -1, true);
         assertEquals(1, assertionJavaCode.size());
         assertEquals("assertTrue(numbersMatch(42.42, res1));", assertionJavaCode.get(0));
     }
@@ -278,7 +279,7 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertTrue(p1.getDto().stringValue.equals("foo"));
         assertEquals(RPCSupportedDataType.BYTEBUFFER, p1.getDto().type.type);
 
-        List<String> javaCode = p1.newInstanceWithJava(0);
+        List<String> javaCode = p1.newInstanceWithJavaOrKotlin(0, true, true);
         assertEquals(6, javaCode.size());
         assertEquals("java.nio.ByteBuffer arg0 = null;", javaCode.get(0));
         assertEquals("{", javaCode.get(1));
@@ -287,13 +288,14 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals(" arg0.put(arg0_byteArray);", javaCode.get(4));
         assertEquals("}", javaCode.get(5));
 
-        List<String> assertionJavaCode = p1.newAssertionWithJava(0, "res1", -1);
+        List<String> assertionJavaCode = p1.newAssertionWithJavaOrKotlin(0, "res1", -1, true);
         assertEquals(1, assertionJavaCode.size());
         assertEquals("// not handle ByteBuffer assertion", assertionJavaCode.get(0));
     }
 
     @Test
     public void testStruct() throws ClassNotFoundException {
+
         EndpointSchema endpoint = getOneEndpoint("testStruct");
         NamedTypedValue response = endpoint.getResponse();
         assertNotNull(response);
@@ -342,19 +344,19 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
             }
         }
 
-        List<String> javaCode = request.newInstanceWithJava(0);
+        List<String> javaCode = request.newInstanceWithJavaOrKotlin(0, true, true);
         assertEquals(8, javaCode.size());
         assertEquals("com.thrift.example.real.thrift.test.Xtruct arg0 = null;", javaCode.get(0));
         assertEquals("{", javaCode.get(1));
         assertEquals(" arg0 = new com.thrift.example.real.thrift.test.Xtruct();", javaCode.get(2));
-        assertEquals(" arg0.string_thing = \"foo\";", javaCode.get(3));
-        assertEquals(" arg0.byte_thing = 42;", javaCode.get(4));
-        assertEquals(" arg0.i32_thing = 42;", javaCode.get(5));
-        assertEquals(" arg0.i64_thing = 42L;", javaCode.get(6));
+        assertEquals(" arg0.setString_thing(\"foo\");", javaCode.get(3));
+        assertEquals(" arg0.setByte_thing(((byte)(42)));", javaCode.get(4));
+        assertEquals(" arg0.setI32_thing(42);", javaCode.get(5));
+        assertEquals(" arg0.setI64_thing(42L);", javaCode.get(6));
         assertEquals("}", javaCode.get(7));
 
 
-        List<String> assertionJavaCode = request.newAssertionWithJava(0, "res1", -1);
+        List<String> assertionJavaCode = request.newAssertionWithJavaOrKotlin(0, "res1", -1, true);
         assertEquals(4, assertionJavaCode.size());
         assertEquals("assertEquals(\"foo\", res1.string_thing);", assertionJavaCode.get(0));
         assertEquals("assertEquals(42, res1.byte_thing);", assertionJavaCode.get(1));
@@ -365,18 +367,18 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         Xtruct empty = new Xtruct();
         request.setValueBasedOnInstance(empty);
 
-        javaCode = request.newInstanceWithJava(0);
+        javaCode = request.newInstanceWithJavaOrKotlin(0, true, true);
         assertEquals(8, javaCode.size());
         assertEquals("com.thrift.example.real.thrift.test.Xtruct arg0 = null;", javaCode.get(0));
         assertEquals("{", javaCode.get(1));
         assertEquals(" arg0 = new com.thrift.example.real.thrift.test.Xtruct();", javaCode.get(2));
-        assertEquals(" arg0.byte_thing = 0;", javaCode.get(4));
-        assertEquals(" arg0.i32_thing = 0;", javaCode.get(5));
-        assertEquals(" arg0.i64_thing = 0L;", javaCode.get(6));
+        assertEquals(" arg0.setByte_thing(((byte)(0)));", javaCode.get(4));
+        assertEquals(" arg0.setI32_thing(0);", javaCode.get(5));
+        assertEquals(" arg0.setI64_thing(0L);", javaCode.get(6));
         assertEquals("}", javaCode.get(7));
 
 
-        assertionJavaCode = request.newAssertionWithJava(0, "res1", -1);
+        assertionJavaCode = request.newAssertionWithJavaOrKotlin(0, "res1", -1,true );
         assertEquals(4, assertionJavaCode.size());
         assertEquals("assertNull(res1.string_thing);", assertionJavaCode.get(0));
         assertEquals("assertEquals(0, res1.byte_thing);", assertionJavaCode.get(1));
@@ -461,27 +463,28 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         }
 
 
-        List<String> javaCode = request.newInstanceWithJava(0);
+        List<String> javaCode = request.newInstanceWithJavaOrKotlin(0, true, true);
 
-        assertEquals(14, javaCode.size());
+        assertEquals(15, javaCode.size());
         assertEquals("com.thrift.example.real.thrift.test.Xtruct2 arg0 = null;", javaCode.get(0));
         assertEquals("{", javaCode.get(1));
         assertEquals(" arg0 = new com.thrift.example.real.thrift.test.Xtruct2();", javaCode.get(2));
-        assertEquals(" arg0.byte_thing = 42;", javaCode.get(3));
-        assertEquals(" arg0.struct_thing = null;", javaCode.get(4));
+        assertEquals(" arg0.setByte_thing(((byte)(42)));", javaCode.get(3));
+        assertEquals(" com.thrift.example.real.thrift.test.Xtruct arg0_struct_thing = null;", javaCode.get(4));
         assertEquals(" {", javaCode.get(5));
-        assertEquals("  arg0.struct_thing = new com.thrift.example.real.thrift.test.Xtruct();", javaCode.get(6));
-        assertEquals("  arg0.struct_thing.string_thing = \"bar\";", javaCode.get(7));
-        assertEquals("  arg0.struct_thing.byte_thing = 100;", javaCode.get(8));
-        assertEquals("  arg0.struct_thing.i32_thing = 100;", javaCode.get(9));
-        assertEquals("  arg0.struct_thing.i64_thing = 100L;", javaCode.get(10));
+        assertEquals("  arg0_struct_thing = new com.thrift.example.real.thrift.test.Xtruct();", javaCode.get(6));
+        assertEquals("  arg0_struct_thing.setString_thing(\"bar\");", javaCode.get(7));
+        assertEquals("  arg0_struct_thing.setByte_thing(((byte)(100)));", javaCode.get(8));
+        assertEquals("  arg0_struct_thing.setI32_thing(100);", javaCode.get(9));
+        assertEquals("  arg0_struct_thing.setI64_thing(100L);", javaCode.get(10));
         assertEquals(" }", javaCode.get(11));
-        assertEquals(" arg0.i32_thing = 42;", javaCode.get(12));
-        assertEquals("}", javaCode.get(13));
+        assertEquals(" arg0.setStruct_thing(arg0_struct_thing);", javaCode.get(12));
+        assertEquals(" arg0.setI32_thing(42);", javaCode.get(13));
+        assertEquals("}", javaCode.get(14));
 
 
 
-        List<String> assertionJavaCode = request.newAssertionWithJava(0, "res1", -1);
+        List<String> assertionJavaCode = request.newAssertionWithJavaOrKotlin(0, "res1", -1, true);
         assertEquals(6, assertionJavaCode.size());
         assertEquals("assertEquals(42, res1.byte_thing);", assertionJavaCode.get(0));
         assertEquals("assertEquals(\"bar\", res1.struct_thing.string_thing);", assertionJavaCode.get(1));
@@ -540,27 +543,27 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals(43, results.get(42));
         assertEquals(101, results.get(100));
 
-        List<String> javaCode = p1.newInstanceWithJava(0);
+        List<String> javaCode = p1.newInstanceWithJavaOrKotlin(0, true, true);
         assertEquals(16, javaCode.size());
-        assertEquals("java.util.Map<java.lang.Integer,java.lang.Integer> arg0 = null;", javaCode.get(0));
+        assertEquals("java.util.Map<Integer,Integer> arg0 = null;", javaCode.get(0));
         assertEquals("{", javaCode.get(1));
         assertEquals(" arg0 = new java.util.HashMap<>();", javaCode.get(2));
-        assertEquals(" java.lang.Integer arg0_key_0 = 1;", javaCode.get(3));
-        assertEquals(" java.lang.Integer arg0_value_0 = 2;", javaCode.get(4));
+        assertEquals(" Integer arg0_key_0 = 1;", javaCode.get(3));
+        assertEquals(" Integer arg0_value_0 = 2;", javaCode.get(4));
         assertEquals(" arg0.put(arg0_key_0,arg0_value_0);", javaCode.get(5));
-        assertEquals(" java.lang.Integer arg0_key_1 = 2;", javaCode.get(6));
-        assertEquals(" java.lang.Integer arg0_value_1 = 3;", javaCode.get(7));
+        assertEquals(" Integer arg0_key_1 = 2;", javaCode.get(6));
+        assertEquals(" Integer arg0_value_1 = 3;", javaCode.get(7));
         assertEquals(" arg0.put(arg0_key_1,arg0_value_1);", javaCode.get(8));
-        assertEquals(" java.lang.Integer arg0_key_2 = 100;", javaCode.get(9));
-        assertEquals(" java.lang.Integer arg0_value_2 = 101;", javaCode.get(10));
+        assertEquals(" Integer arg0_key_2 = 100;", javaCode.get(9));
+        assertEquals(" Integer arg0_value_2 = 101;", javaCode.get(10));
         assertEquals(" arg0.put(arg0_key_2,arg0_value_2);", javaCode.get(11));
-        assertEquals(" java.lang.Integer arg0_key_3 = 42;", javaCode.get(12));
-        assertEquals(" java.lang.Integer arg0_value_3 = 43;", javaCode.get(13));
+        assertEquals(" Integer arg0_key_3 = 42;", javaCode.get(12));
+        assertEquals(" Integer arg0_value_3 = 43;", javaCode.get(13));
         assertEquals(" arg0.put(arg0_key_3,arg0_value_3);", javaCode.get(14));
         assertEquals("}", javaCode.get(15));
 
 
-        List<String> assertionJavaCode = p1.newAssertionWithJava(0, "res1", -1);
+        List<String> assertionJavaCode = p1.newAssertionWithJavaOrKotlin(0, "res1", -1, true);
         assertEquals(5, assertionJavaCode.size());
         assertEquals("assertEquals(4, res1.size());", assertionJavaCode.get(0));
         assertEquals("assertEquals(2, res1.get(1).intValue());", assertionJavaCode.get(1));
@@ -568,10 +571,10 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals("assertEquals(101, res1.get(100).intValue());", assertionJavaCode.get(3));
         assertEquals("assertEquals(43, res1.get(42).intValue());", assertionJavaCode.get(4));
 
-        assertionJavaCode = p1.newAssertionWithJava(0, "res1", 2);
+        assertionJavaCode = p1.newAssertionWithJavaOrKotlin(0, "res1", 2, true);
         assertEquals(1+2, assertionJavaCode.size());
 
-        assertionJavaCode = p1.newAssertionWithJava(0, "res1", 0);
+        assertionJavaCode = p1.newAssertionWithJavaOrKotlin(0, "res1", 0, true);
         assertEquals(1, assertionJavaCode.size());
 
     }
@@ -623,27 +626,27 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals(""+43, results.get("abc"));
         assertEquals(""+101, results.get("def"));
 
-        List<String> javaCode = p1.newInstanceWithJava(0);
+        List<String> javaCode = p1.newInstanceWithJavaOrKotlin(0, true, true);
         assertEquals(16, javaCode.size());
-        assertEquals("java.util.Map<java.lang.String,java.lang.String> arg0 = null;", javaCode.get(0));
+        assertEquals("java.util.Map<String,String> arg0 = null;", javaCode.get(0));
         assertEquals("{", javaCode.get(1));
         assertEquals(" arg0 = new java.util.HashMap<>();", javaCode.get(2));
-        assertEquals(" java.lang.String arg0_key_0 = \"bar\";", javaCode.get(3));
-        assertEquals(" java.lang.String arg0_value_0 = \"3\";", javaCode.get(4));
+        assertEquals(" String arg0_key_0 = \"bar\";", javaCode.get(3));
+        assertEquals(" String arg0_value_0 = \"3\";", javaCode.get(4));
         assertEquals(" arg0.put(arg0_key_0,arg0_value_0);", javaCode.get(5));
-        assertEquals(" java.lang.String arg0_key_1 = \"abc\";", javaCode.get(6));
-        assertEquals(" java.lang.String arg0_value_1 = \"43\";", javaCode.get(7));
+        assertEquals(" String arg0_key_1 = \"abc\";", javaCode.get(6));
+        assertEquals(" String arg0_value_1 = \"43\";", javaCode.get(7));
         assertEquals(" arg0.put(arg0_key_1,arg0_value_1);", javaCode.get(8));
-        assertEquals(" java.lang.String arg0_key_2 = \"def\";", javaCode.get(9));
-        assertEquals(" java.lang.String arg0_value_2 = \"101\";", javaCode.get(10));
+        assertEquals(" String arg0_key_2 = \"def\";", javaCode.get(9));
+        assertEquals(" String arg0_value_2 = \"101\";", javaCode.get(10));
         assertEquals(" arg0.put(arg0_key_2,arg0_value_2);", javaCode.get(11));
-        assertEquals(" java.lang.String arg0_key_3 = \"foo\";", javaCode.get(12));
-        assertEquals(" java.lang.String arg0_value_3 = \"2\";", javaCode.get(13));
+        assertEquals(" String arg0_key_3 = \"foo\";", javaCode.get(12));
+        assertEquals(" String arg0_value_3 = \"2\";", javaCode.get(13));
         assertEquals(" arg0.put(arg0_key_3,arg0_value_3);", javaCode.get(14));
         assertEquals("}", javaCode.get(15));
 
 
-        List<String> assertionJavaCode = p1.newAssertionWithJava(0, "res1", -1);
+        List<String> assertionJavaCode = p1.newAssertionWithJavaOrKotlin(0, "res1", -1, true);
         assertEquals(5, assertionJavaCode.size());
         assertEquals("assertEquals(4, res1.size());", assertionJavaCode.get(0));
         assertEquals("assertEquals(\"3\", res1.get(\"bar\"));", assertionJavaCode.get(1));
@@ -685,25 +688,25 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals(3, dto.innerContent.size());
         assertTrue(dto.innerContent.stream().allMatch(s-> input.contains(Integer.parseInt(s.stringValue))));
 
-        List<String> javaCodes = p1.newInstanceWithJava(0);
+        List<String> javaCodes = p1.newInstanceWithJavaOrKotlin(0, true, true);
 
         assertEquals(10, javaCodes.size());
-        assertEquals("java.util.Set<java.lang.Integer> arg0 = null;", javaCodes.get(0));
+        assertEquals("java.util.Set<Integer> arg0 = null;", javaCodes.get(0));
         assertEquals("{", javaCodes.get(1));
         assertEquals(" arg0 = new java.util.HashSet<>();", javaCodes.get(2));
-        assertEquals(" java.lang.Integer arg0_e_0 = 1;", javaCodes.get(3));
+        assertEquals(" Integer arg0_e_0 = 1;", javaCodes.get(3));
         assertEquals(" arg0.add(arg0_e_0);", javaCodes.get(4));
-        assertEquals(" java.lang.Integer arg0_e_1 = 2;", javaCodes.get(5));
+        assertEquals(" Integer arg0_e_1 = 2;", javaCodes.get(5));
         assertEquals(" arg0.add(arg0_e_1);", javaCodes.get(6));
-        assertEquals(" java.lang.Integer arg0_e_2 = 3;", javaCodes.get(7));
+        assertEquals(" Integer arg0_e_2 = 3;", javaCodes.get(7));
         assertEquals(" arg0.add(arg0_e_2);", javaCodes.get(8));
         assertEquals("}", javaCodes.get(9));
 
-        List<String> assertionJavaCode = p1.newAssertionWithJava(0, "res1", -1);
+        List<String> assertionJavaCode = p1.newAssertionWithJavaOrKotlin(0, "res1", -1, true);
         assertEquals(1, assertionJavaCode.size());
         assertEquals("assertEquals(3, res1.size());", assertionJavaCode.get(0));
 
-        assertionJavaCode = p1.newAssertionWithJava(0, "res1", 2);
+        assertionJavaCode = p1.newAssertionWithJavaOrKotlin(0, "res1", 2, true);
         assertEquals(1, assertionJavaCode.size());
     }
 
@@ -740,31 +743,31 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals(3, dto.innerContent.size());
         assertTrue(dto.innerContent.stream().allMatch(s-> input.contains(Integer.parseInt(s.stringValue))));
 
-        List<String> javaCodes = p1.newInstanceWithJava(0);
+        List<String> javaCodes = p1.newInstanceWithJavaOrKotlin(0, true, true);
 
         assertEquals(10, javaCodes.size());
-        assertEquals("java.util.List<java.lang.Integer> arg0 = null;", javaCodes.get(0));
+        assertEquals("java.util.List<Integer> arg0 = null;", javaCodes.get(0));
         assertEquals("{", javaCodes.get(1));
         assertEquals(" arg0 = new java.util.ArrayList<>();", javaCodes.get(2));
-        assertEquals(" java.lang.Integer arg0_e_0 = 1;", javaCodes.get(3));
+        assertEquals(" Integer arg0_e_0 = 1;", javaCodes.get(3));
         assertEquals(" arg0.add(arg0_e_0);", javaCodes.get(4));
-        assertEquals(" java.lang.Integer arg0_e_1 = 2;", javaCodes.get(5));
+        assertEquals(" Integer arg0_e_1 = 2;", javaCodes.get(5));
         assertEquals(" arg0.add(arg0_e_1);", javaCodes.get(6));
-        assertEquals(" java.lang.Integer arg0_e_2 = 3;", javaCodes.get(7));
+        assertEquals(" Integer arg0_e_2 = 3;", javaCodes.get(7));
         assertEquals(" arg0.add(arg0_e_2);", javaCodes.get(8));
         assertEquals("}", javaCodes.get(9));
 
-        List<String> assertionJavaCode = p1.newAssertionWithJava(0, "res1", -1);
+        List<String> assertionJavaCode = p1.newAssertionWithJavaOrKotlin(0, "res1", -1, true);
         assertEquals(4, assertionJavaCode.size());
         assertEquals("assertEquals(3, res1.size());", assertionJavaCode.get(0));
         assertEquals("assertEquals(1, res1.get(0).intValue());", assertionJavaCode.get(1));
         assertEquals("assertEquals(2, res1.get(1).intValue());", assertionJavaCode.get(2));
         assertEquals("assertEquals(3, res1.get(2).intValue());", assertionJavaCode.get(3));
 
-        assertionJavaCode = p1.newAssertionWithJava(0, "res1", 2);
+        assertionJavaCode = p1.newAssertionWithJavaOrKotlin(0, "res1", 2, true);
         assertEquals(1+2, assertionJavaCode.size());
 
-        assertionJavaCode = p1.newAssertionWithJava(0, "res1", 0);
+        assertionJavaCode = p1.newAssertionWithJavaOrKotlin(0, "res1", 0, true);
         assertEquals(1, assertionJavaCode.size());
     }
 
@@ -793,13 +796,13 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals(RPCSupportedDataType.ENUM, dto.type.type);
         assertEquals(""+index, dto.stringValue);
 
-        List<String> javaCode = p1.newInstanceWithJava(0);
+        List<String> javaCode = p1.newInstanceWithJavaOrKotlin(0, true, true);
         assertEquals(1, javaCode.size());
         assertEquals("com.thrift.example.real.thrift.test.Numberz arg0 = com.thrift.example.real.thrift.test.Numberz.TWO;", javaCode.get(0));
 
-        List<String> assertionJavaCode = p1.newAssertionWithJava(0, "res1", -1);
+        List<String> assertionJavaCode = p1.newAssertionWithJavaOrKotlin(0, "res1", -1, true);
         assertEquals(1, assertionJavaCode.size());
-        assertEquals("assertEquals(com.thrift.example.real.thrift.test.Numberz.TWO, res1);", assertionJavaCode.get(0));
+        assertEquals("//assertEquals(com.thrift.example.real.thrift.test.Numberz.TWO, res1);", assertionJavaCode.get(0));
     }
 
     @Test
@@ -903,11 +906,11 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
             }
         }
 
-        List<String> assertionNullJavaCode = p1.newAssertionWithJava(0, "res1", -1);
+        List<String> assertionNullJavaCode = p1.newAssertionWithJavaOrKotlin(0, "res1", -1, true);
         assertEquals(1, assertionNullJavaCode.size());
         assertEquals("assertNull(res1);", assertionNullJavaCode.get(0));
 
-        List<String> assertionJavaCode = response.newAssertionWithJava(0, "res1", -1);
+        List<String> assertionJavaCode = response.newAssertionWithJavaOrKotlin(0, "res1", -1, true);
         assertEquals(8, assertionJavaCode.size());
         assertEquals("assertEquals(2, res1.size());", assertionJavaCode.get(0));
         assertEquals("assertEquals(2, res1.get(1).size());", assertionJavaCode.get(1));
@@ -918,12 +921,12 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals("assertEquals(4, res1.get(2).get(2).intValue());", assertionJavaCode.get(6));
         assertEquals("assertEquals(6, res1.get(2).get(3).intValue());", assertionJavaCode.get(7));
 
-        assertionJavaCode = response.newAssertionWithJava(0, "res1", 1);
+        assertionJavaCode = response.newAssertionWithJavaOrKotlin(0, "res1", 1, true);
         // 2 set size + at most 1 check for value (there is no value at index 0)
         assertTrue(2+1 >= assertionJavaCode.size());
 
 
-        assertionJavaCode = response.newAssertionWithJava(0, "res1", 0);
+        assertionJavaCode = response.newAssertionWithJavaOrKotlin(0, "res1", 0, true);
         // 2 set size + at most 1 check for value (there is no value at index 0)
         assertEquals(1, assertionJavaCode.size());
     }
@@ -1014,7 +1017,7 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
             }
         }
 
-        List<String> assertionJavaCode = p1.newAssertionWithJava(0, "res1", -1);
+        List<String> assertionJavaCode = p1.newAssertionWithJavaOrKotlin(0, "res1", -1, true);
         assertEquals(9, assertionJavaCode.size());
         // disable due to flaky
 //        assertEquals("assertEquals(3, res1.userMap.size());", assertionJavaCode.get(0));

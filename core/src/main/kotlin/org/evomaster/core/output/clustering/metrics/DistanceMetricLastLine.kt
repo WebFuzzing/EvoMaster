@@ -1,6 +1,6 @@
 package org.evomaster.core.output.clustering.metrics
 
-import org.evomaster.core.problem.httpws.service.HttpWsCallResult
+import org.evomaster.core.problem.httpws.HttpWsCallResult
 
 /**
  * Distance metric implementation for clustering Rest Call Results.

@@ -15,17 +15,36 @@ enum class HttpVerb {
     TRACE,
     HEAD;
 
+    fun isWriteOperation() : Boolean{
+        return this == POST || this == PUT || this == DELETE || this == PATCH
+    }
+
+    fun isReadOperation() = !isWriteOperation()
+
     companion object {
 
+        /**
+         * Out of set {PUT,DELETE,PATCH}, give other 2 values different from input.
+         *
+         * Note: this is ignoring POST
+         */
+         fun otherWriteOperationsOnSameResourcePath(verb: HttpVerb) : List<HttpVerb>{
+            val write = listOf(PUT, DELETE, PATCH)
+            if(!write.contains(verb)){
+                throw IllegalArgumentException("Not valid verb: $verb")
+            }
+            return write.filter { it != verb }
+        }
+
         fun from(method: HttpMethod): HttpVerb {
-            when (method) {
-                HttpMethod.GET -> return GET
-                HttpMethod.POST -> return POST
-                HttpMethod.PUT -> return PUT
-                HttpMethod.DELETE -> return DELETE
-                HttpMethod.OPTIONS -> return OPTIONS
-                HttpMethod.PATCH -> return PATCH
-                HttpMethod.HEAD -> return HEAD
+            return when (method) {
+                HttpMethod.GET -> GET
+                HttpMethod.POST -> POST
+                HttpMethod.PUT -> PUT
+                HttpMethod.DELETE -> DELETE
+                HttpMethod.OPTIONS -> OPTIONS
+                HttpMethod.PATCH -> PATCH
+                HttpMethod.HEAD -> HEAD
                 else -> throw IllegalArgumentException("Cannot handle method $method")
             }
         }

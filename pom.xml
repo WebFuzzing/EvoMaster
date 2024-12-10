@@ -9,7 +9,7 @@
         To change version in all modules, use:
         mvn versions:set -DnewVersion=a.b.c
      -->
-    <version>1.4.1-SNAPSHOT</version>
+    <version>3.3.1-SNAPSHOT</version>
 
     <inceptionYear>2016</inceptionYear>
     <name>EvoMaster</name>
@@ -26,6 +26,10 @@
         <module>client-java</module>
         <module>e2e-tests</module>
         <module>report</module>
+        <module>test-old-libraries</module>
+        <module>solver</module>
+        <module>test-utils</module>
+        <module>wfc</module> <!-- TODO remove once moved in own repository-->
     </modules>
 
     <issueManagement>
@@ -44,10 +48,22 @@
         <profile>
             <id>Configs for JDK >= 17</id>
             <activation>
-                <jdk>17</jdk>
+                <jdk>[17,)</jdk>
             </activation>
+            <!--
+                Unfortunately, recent versions of Kotlin led to crashes due JDK 17 module access shenanigans :(
+                setting up .mvn/jvm.config is not a viable option, as it messes up build in JDK 8
+                so, need to use something like
+                MAVEN_OPTS="-Xmx4g - -add-opens=java.base/java.lang=ALL-UNNAMED - -add-opens=java.base/java.io=ALL-UNNAMED"  mvn
+                when running "mvn" on command line for JDK 17 :( what a mess...
+                (btw, note that XML above does not like 2 - - together... so command cannot be directly copy&pasted)
+                for CI, this is handled directly there
+
+                Check following in case Kotlin Plugin will avoid this issues in the future:
+                https://youtrack.jetbrains.com/issue/KT-56137#focus=Comments-27-6800445.0-0
+            -->
             <properties>
-                <addOpens>--add-opens java.base/java.util.regex=ALL-UNNAMED --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED</addOpens>
+                <addOpens> --add-opens java.base/sun.net.www.protocol.http=ALL-UNNAMED --add-opens java.base/sun.net.www.protocol.https=ALL-UNNAMED  --add-opens java.base/java.time=ALL-UNNAMED  --add-opens java.base/java.io=ALL-UNNAMED --add-opens java.logging/java.util.logging=ALL-UNNAMED --add-opens  java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.util.regex=ALL-UNNAMED --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED</addOpens>
             </properties>
         </profile>
         <profile>
@@ -101,25 +117,42 @@
 
     <properties>
         <addOpens></addOpens> <!-- overridden in profile -->
+        <redirectTestOutputToFile>true</redirectTestOutputToFile>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>1.8</java.version>
-        <kotlin.version>1.5.30</kotlin.version>
+        <kotlin.version>1.8.20</kotlin.version>
         <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
         <junit.jupiter.version>5.7.2</junit.jupiter.version>
         <junit.platform.version>1.7.2</junit.platform.version>
         <dropwizard.version>1.3.7</dropwizard.version>
         <swagger.version>1.6.1</swagger.version>
-        <swagger.parser-v2.version>1.0.39</swagger.parser-v2.version>
-        <swagger.parser-v3.version>2.0.27</swagger.parser-v3.version>
+        <!--   upgrading to 1.0.68  breaks Spring... TODO would need try upgrading in own branch    -->
+        <swagger.parser-v2.version>1.0.61</swagger.parser-v2.version>
+        <!--   upgrading to 2.1.18  breaks Spring... TODO would need try upgrading in own branch -->
+        <swagger.parser-v3.version>2.1.8</swagger.parser-v3.version>
+        <swagger.annotations.version>2.2.7</swagger.annotations.version>
         <springboot.version>2.5.4</springboot.version>
+        <springboot3.version>3.1.5</springboot3.version>
         <springfox.version>3.0.0</springfox.version>
-        <springdoc.version>1.5.10</springdoc.version>
+        <springdoc.version>1.6.9</springdoc.version>
         <jetty.version>9.4.29.v20200521</jetty.version>
+        <slf4j.version>1.7.24</slf4j.version>
         <jersey.version>2.33</jersey.version>
         <javax.el.version>2.2.5</javax.el.version>
-        <jackson.version>2.11.0</jackson.version>
-        <asm.version>9.2</asm.version>
-        <testcontainers.version>1.16.0</testcontainers.version>
+        <!--
+            Using latest, eg 2.16.0, breaks build, as Maven Shade Plugin
+            still does not support multi-release JARs
+            https://github.com/apache/maven-shade-plugin/pull/202
+            recent versions of Jackson are multi-release.
+            More info at:
+            https://www.logicbig.com/tutorials/core-java-tutorial/java-9-changes/multi-release-jars.html
+        -->
+        <jackson.version>2.14.3</jackson.version>
+        <asm.version>9.7</asm.version>
+        <testcontainers.version>1.17.6</testcontainers.version>
+        <testcontainers.mockerserver.version>1.17.2</testcontainers.mockerserver.version>
+        <mockserver.client.version>5.13.2</mockserver.client.version>
+        <selenium.version>4.7.2</selenium.version>
         <jetbrains.annotations.version>20.1.0</jetbrains.annotations.version>
         <antlr.version>4.9.2</antlr.version>
         <nlp.version>4.3.1</nlp.version>
@@ -131,15 +164,24 @@
         <mssql.jdbc.version>9.2.1.jre8</mssql.jdbc.version>
         <org.mybatis.spring.boot.version>2.2.0</org.mybatis.spring.boot.version>
         <thrift.libthrift.version>0.15.0</thrift.libthrift.version>
+        <io.grpc.version>1.57.2</io.grpc.version>
+        <org.xolsticeprotobuf.version>0.6.1</org.xolsticeprotobuf.version>
+        <com.google.protobuf.protoc.version>3.17.3</com.google.protobuf.protoc.version>
+        <kr.motd.maven.version>1.6.2</kr.motd.maven.version>
         <wiremock.version>2.32.0</wiremock.version>
         <apache.http.client.version>4.5.13</apache.http.client.version>
-        <okhttp.client.version>4.9.3</okhttp.client.version>
-        <dns.cache.manipulator.version>1.7.1</dns.cache.manipulator.version>
+        <okhttp3.client.version>4.9.3</okhttp3.client.version>
+        <okhttp.client.version>2.4.0</okhttp.client.version>
+        <dns.cache.manipulator.version>1.8.2</dns.cache.manipulator.version>
         <jakarta.annotation.version>2.0.0</jakarta.annotation.version>
+        <jakarta.validation-api.version>3.0.2</jakarta.validation-api.version>
+        <jakarta.persistence-api.version>3.1.0</jakarta.persistence-api.version>
+        <jakarta.ws.rs-api.version>3.1.0</jakarta.ws.rs-api.version>
         <micronaut.version>3.2.7</micronaut.version>
         <micronaut.openapi.version>3.2.0</micronaut.openapi.version>
         <micronaut.test.version>3.0.5</micronaut.test.version>
-        <swagger.annotations.version>2.1.10</swagger.annotations.version>
+        <org.mongodb.version>4.2.3</org.mongodb.version>
+        <org.locationtech.jts.version>1.19.0</org.locationtech.jts.version>
     </properties>
 
 
@@ -195,6 +237,48 @@
                 <groupId>org.evomaster</groupId>
                 <artifactId>evomaster-client-java-instrumentation-shared</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.evomaster</groupId>
+                <artifactId>evomaster-client-java-sql</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.evomaster</groupId>
+                <artifactId>evomaster-client-java-sql-dto</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.evomaster</groupId>
+                <artifactId>evomaster-client-java-distance-heuristics</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.evomaster</groupId>
+                <artifactId>solver</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.evomaster</groupId>
+                <artifactId>evomaster-test-utils-java</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.evomaster</groupId>
+                <artifactId>evomaster-test-utils-js</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.evomaster</groupId>
+                <artifactId>evomaster-test-utils-py</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.evomaster</groupId>
+                <artifactId>evomaster-client-java-dependencies</artifactId>
+                <version>${project.version}</version>
+                <type>pom</type>
+                <scope>test</scope>
             </dependency>
 
 
@@ -290,7 +374,7 @@
                 -->
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>30.1.1-jre</version>
+                <version>31.1-jre</version>
             </dependency>
             <dependency>
                 <!--
@@ -352,14 +436,32 @@
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
-                <version>1.7.24</version>
+                <version>${slf4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-simple</artifactId>
+                <version>${slf4j.version}</version>
             </dependency>
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-classic</artifactId>
                 <version>1.2.3</version>
             </dependency>
-
+            <dependency>
+                <groupId>com.auth0</groupId>
+                <artifactId>auth0</artifactId>
+                <version>1.8.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.opennlp</groupId>
+                <artifactId>opennlp-tools</artifactId>
+                <!--
+                    As of version of 2.0.0, they moved to JDK 11
+                    https://opennlp.apache.org/news/release-200.html
+                -->
+                <version>1.9.4</version>
+            </dependency>
 
 
             <!-- Jetty -->
@@ -434,6 +536,11 @@
                 <version>${jackson.version}</version>
             </dependency>
             <dependency>
+                <groupId>com.fasterxml.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-toml</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.fasterxml.jackson.jaxrs</groupId>
                 <artifactId>jackson-jaxrs-base</artifactId>
                 <version>${jackson.version}</version>
@@ -443,6 +550,17 @@
                 <artifactId>jackson-jaxrs-json-provider</artifactId>
                 <version>${jackson.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.module</groupId>
+                <artifactId>jackson-module-kotlin</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+
             <dependency>
                 <groupId>org.glassfish.jersey.media</groupId>
                 <artifactId>jersey-media-json-jackson</artifactId>
@@ -503,6 +621,17 @@
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter-validation</artifactId>
+                <version>${springboot.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-test</artifactId>
+                <scope>test</scope>
+                <version>${springboot.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-data-mongodb</artifactId>
                 <version>${springboot.version}</version>
             </dependency>
 
@@ -576,18 +705,22 @@
                 <artifactId>swagger-parser</artifactId>
                 <version>${swagger.parser-v3.version}</version>
             </dependency>
-
+            <dependency>
+                <groupId>com.atlassian.oai</groupId>
+                <artifactId>swagger-request-validator-core</artifactId>
+                <version>2.42.0</version>
+            </dependency>
 
             <!-- databases -->
             <dependency>
                 <groupId>com.h2database</groupId>
                 <artifactId>h2</artifactId>
-                <version>1.4.200</version>
+                <version>2.1.212</version>
             </dependency>
             <dependency>
                 <groupId>com.github.jsqlparser</groupId>
                 <artifactId>jsqlparser</artifactId>
-                <version>4.2</version>
+                <version>4.9</version>
             </dependency>
             <dependency>
                 <groupId>org.postgresql</groupId>
@@ -624,6 +757,18 @@
                 <version>${org.mybatis.spring.boot.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>org.mongodb</groupId>
+                <artifactId>bson</artifactId>
+                <version>${org.mongodb.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.mongodb</groupId>
+                <artifactId>mongodb-driver-sync</artifactId>
+                <version>${org.mongodb.version}</version>
+            </dependency>
+
             <!--   XML  -->
             <dependency>
                 <groupId>javax.xml.bind</groupId>
@@ -634,6 +779,13 @@
                 <groupId>org.glassfish.jaxb</groupId>
                 <artifactId>jaxb-runtime</artifactId>
                 <version>2.3.1</version>
+            </dependency>
+
+            <!--    HTML   -->
+            <dependency>
+                <groupId>org.jsoup</groupId>
+                <artifactId>jsoup</artifactId>
+                <version>1.15.3</version>
             </dependency>
 
             <!--  GraphQL             -->
@@ -657,6 +809,12 @@
             <!-- test dependencies -->
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter</artifactId>
+                <version>${junit.jupiter.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-engine</artifactId>
                 <version>${junit.jupiter.version}</version>
                 <scope>test</scope>
@@ -676,6 +834,12 @@
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-api</artifactId>
+                <version>${junit.jupiter.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.vintage</groupId>
+                <artifactId>junit-vintage-engine</artifactId>
                 <version>${junit.jupiter.version}</version>
                 <scope>test</scope>
             </dependency>
@@ -713,6 +877,30 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>selenium</artifactId>
+                <version>${testcontainers.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.seleniumhq.selenium</groupId>
+                <artifactId>selenium-remote-driver</artifactId>
+                <version>${selenium.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.seleniumhq.selenium</groupId>
+                <artifactId>selenium-chrome-driver</artifactId>
+                <version>${selenium.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.seleniumhq.selenium</groupId>
+                <artifactId>selenium-support</artifactId>
+                <version>${selenium.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
                 <!-- Used in SqlHandlerInDBTest class -->
                 <groupId>org.jetbrains</groupId>
                 <artifactId>annotations</artifactId>
@@ -720,17 +908,37 @@
                 <scope>test</scope>
             </dependency>
 
+
             <!-- RPC-->
+            <!--            Thrift-->
             <dependency>
                 <groupId>org.apache.thrift</groupId>
                 <artifactId>libthrift</artifactId>
                 <version>${thrift.libthrift.version}</version>
             </dependency>
 
+
+            <!--            gRPC-->
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-netty-shaded</artifactId>
+                <version>${io.grpc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-protobuf</artifactId>
+                <version>${io.grpc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-stub</artifactId>
+                <version>${io.grpc.version}</version>
+            </dependency>
+
             <!-- Wiremock -->
             <dependency>
                 <groupId>com.github.tomakehurst</groupId>
-                <artifactId>wiremock-jre8</artifactId>
+                <artifactId>wiremock-jre8-standalone</artifactId>
                 <version>${wiremock.version}</version>
                 <scope>test</scope>
             </dependency>
@@ -742,6 +950,19 @@
             <dependency>
                 <groupId>com.squareup.okhttp3</groupId>
                 <artifactId>okhttp</artifactId>
+                <version>${okhttp3.client.version}</version>
+            </dependency>
+
+            <!--     the version used in catwatch       -->
+            <dependency>
+                <groupId>com.squareup.okhttp</groupId>
+                <artifactId>okhttp</artifactId>
+                <version>${okhttp.client.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.squareup.okhttp</groupId>
+                <artifactId>okhttp-urlconnection</artifactId>
                 <version>${okhttp.client.version}</version>
             </dependency>
 
@@ -806,6 +1027,20 @@
                 <version>${swagger.annotations.version}</version>
             </dependency>
 
+
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>mockserver</artifactId>
+                <version>${testcontainers.mockerserver.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.mock-server</groupId>
+                <artifactId>mockserver-client-java-no-dependencies</artifactId>
+                <version>${mockserver.client.version}</version>
+                <scope>test</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -842,16 +1077,13 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <!--Man: maven 3.6.3 and jdk1.8.0_261.
-                        with 3.0.0-M4, there exist an error
-                         "The forked VM terminated without properly saying goodbye. VM crash or System.exit called?"
-                        then fixed with 3.0.0-M5
-                    -->
-                    <version>3.0.0-M5</version>
+                    <version>3.3.1</version>
                     <configuration>
+                        <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory"/>
                         <forkCount>1</forkCount>
-                        <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                        <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>
                         <rerunFailingTestsCount>2</rerunFailingTestsCount>
+                        <trimStackTrace>false</trimStackTrace>
                         <!--
                             @{argLine} is needed for JaCoCo
                             -Djdk.attach.allowAttachSelf=true is needed for Java 9+
@@ -862,7 +1094,7 @@
                             Fucking JDK 17!!! And fuck you JEP 403!!!
                             https://bugs.openjdk.java.net/browse/JDK-8266851
                         -->
-                        <argLine>@{argLine} -ea -Xms1024m -Xmx4096m -Xss4m -Djdk.attach.allowAttachSelf=true ${addOpens}</argLine>
+                        <argLine>@{argLine} -ea -Xms1024m -Xmx4096m -Xss4m -Dfile.encoding=UTF-8 -Djdk.attach.allowAttachSelf=true ${addOpens}</argLine>
                         <!-- Needed for some weird bug in JDK used in CircleCI-->
                         <!--  Commented out, as no longer using CircleCI-->
                         <!--  <useSystemClassLoader>false</useSystemClassLoader>-->
@@ -899,6 +1131,11 @@
                     <version>${kotlin.version}</version>
                     <configuration>
                         <jvmTarget>${java.version}</jvmTarget>
+                        <args>
+                        <!--  This seems wrong, as args to compiler but not the JVM itself -->
+<!--                            <arg>&#45;&#45;add-opens=java.base/java.io=ALL-UNNAMED</arg>-->
+<!--                            <arg>&#45;&#45;add-opens=java.base/java.lang=ALL-UNNAMED</arg>-->
+                        </args>
                     </configuration>
                     <executions>
                         <execution>
@@ -1040,7 +1277,7 @@
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>0.8.7</version>
+                    <version>0.8.12</version>
                     <configuration>
                         <excludes>
                             <!--  Prevent SUTs in E2E to be part of coverage report -->
@@ -1115,6 +1352,13 @@
                         </execution>
                     </executions>
                 </plugin>
+
+                <plugin>
+                    <groupId>org.xolstice.maven.plugins</groupId>
+                    <artifactId>protobuf-maven-plugin</artifactId>
+                    <version>${org.xolsticeprotobuf.version}</version>
+                </plugin>
+
 
             </plugins>
         </pluginManagement>

@@ -1,14 +1,26 @@
 package org.evomaster.core.problem.util
 
-import org.evomaster.core.problem.api.service.param.Param
+import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestPath
 import org.evomaster.core.problem.rest.param.*
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.collection.ArrayGene
+import org.evomaster.core.search.gene.collection.FixedMapGene
+import org.evomaster.core.search.gene.collection.PairGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
+import org.evomaster.core.search.gene.numeric.DoubleGene
+import org.evomaster.core.search.gene.numeric.FloatGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.numeric.LongGene
+import org.evomaster.core.search.gene.optional.CustomMutationRateGene
+import org.evomaster.core.search.gene.optional.FlexibleGene
+import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
-import org.evomaster.core.search.gene.sql.SqlNullable
+import org.evomaster.core.search.gene.optional.NullableGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
+import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 
 /**
  * this class used to handle binding values among params
@@ -91,7 +103,7 @@ class ParamUtil {
          * @return whether [geneA] and [geneB] have same value.
          */
         fun compareGenesWithValue(geneA: Gene, geneB: Gene): Boolean {
-            val geneAWithGeneBType = geneB.copyContent()
+            val geneAWithGeneBType = geneB.copy()
             geneAWithGeneBType.bindValueBasedOn(geneA)
             return when (geneB) {
                 is StringGene -> geneB.value == (geneAWithGeneBType as StringGene).value
@@ -144,10 +156,10 @@ class ParamUtil {
             parameters.forEach { p ->
                 p.gene.flatView(pred).filter {
                     !(it is ObjectGene ||
-                            it is DisruptiveGene<*> ||
+                            it is CustomMutationRateGene<*> ||
                             it is OptionalGene ||
                             it is ArrayGene<*> ||
-                            it is MapGene<*, *>)
+                            it is FixedMapGene<*, *>)
                 }
                     .forEach { g ->
                         val names = getGeneNamesInPath(parameters, g)
@@ -194,11 +206,11 @@ class ParamUtil {
         private fun extractPathFromRoot(comGene: Gene, gene: Gene, names: MutableList<String>): Boolean {
             when (comGene) {
                 is ObjectGene -> return extractPathFromRoot(comGene, gene, names)
-                is PairGene<*,*> -> return extractPathFromRoot(comGene, gene, names)
-                is DisruptiveGene<*> -> return extractPathFromRoot(comGene, gene, names)
+                is PairGene<*, *> -> return extractPathFromRoot(comGene, gene, names)
+                is CustomMutationRateGene<*> -> return extractPathFromRoot(comGene, gene, names)
                 is OptionalGene -> return extractPathFromRoot(comGene, gene, names)
                 is ArrayGene<*> -> return extractPathFromRoot(comGene, gene, names)
-                is MapGene<*, *> -> return extractPathFromRoot(comGene, gene, names)
+                is FixedMapGene<*, *> -> return extractPathFromRoot(comGene, gene, names)
                 else -> if (comGene == gene) {
                     names.add(comGene.name)
                     return true
@@ -216,7 +228,7 @@ class ParamUtil {
             return false
         }
 
-        private fun extractPathFromRoot(comGene: DisruptiveGene<*>, gene: Gene, names: MutableList<String>): Boolean {
+        private fun extractPathFromRoot(comGene: CustomMutationRateGene<*>, gene: Gene, names: MutableList<String>): Boolean {
             if (extractPathFromRoot(comGene.gene, gene, names)) {
                 names.add(comGene.name)
                 return true
@@ -233,7 +245,7 @@ class ParamUtil {
         }
 
         private fun extractPathFromRoot(comGene: ArrayGene<*>, gene: Gene, names: MutableList<String>): Boolean {
-            comGene.getAllElements().forEach {
+            comGene.getViewOfElements().forEach {
                 if (extractPathFromRoot(it, gene, names)) {
                     return true
                 }
@@ -251,7 +263,7 @@ class ParamUtil {
             return false
         }
 
-        private fun extractPathFromRoot(comGene: MapGene<*, *>, gene: Gene, names: MutableList<String>): Boolean {
+        private fun extractPathFromRoot(comGene: FixedMapGene<*, *>, gene: Gene, names: MutableList<String>): Boolean {
             comGene.getAllElements().forEach {
                 if (extractPathFromRoot(it, gene, names)) {
                     names.add(it.name)
@@ -267,19 +279,10 @@ class ParamUtil {
 
         fun generateParamId(list: Array<String>): String = list.joinToString(separator)
 
+        @Deprecated(message = "Rather use GeneUtils.getWrappedValueGene(gene)",
+            replaceWith = ReplaceWith("GeneUtils.getWrappedValueGene(gene)"))
         fun getValueGene(gene: Gene): Gene {
-            if (gene is OptionalGene) {
-                return getValueGene(gene.gene)
-            } else if (gene is DisruptiveGene<*>)
-                return getValueGene(gene.gene)
-            else if (gene is SqlPrimaryKeyGene) {
-                if (gene.gene is SqlAutoIncrementGene)
-                    return gene
-                else return getValueGene(gene.gene)
-            } else if (gene is SqlNullable) {
-                return getValueGene(gene.gene)
-            }
-            return gene
+           return GeneUtils.getWrappedValueGene(gene,false)!!
         }
 
         fun getObjectGene(gene: Gene): ObjectGene? {
@@ -287,7 +290,7 @@ class ParamUtil {
                 return gene
             } else if (gene is OptionalGene) {
                 return getObjectGene(gene.gene)
-            } else if (gene is DisruptiveGene<*>)
+            } else if (gene is CustomMutationRateGene<*>)
                 return getObjectGene(gene.gene)
             else return null
         }

@@ -1,7 +1,7 @@
 package org.evomaster.core.search.service.mutator.genemutation.mutationupdate
 
 
-import org.evomaster.core.search.gene.NumberMutatorUtils
+import org.evomaster.core.search.gene.utils.NumberMutatorUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.utils.NumberCalculationUtil

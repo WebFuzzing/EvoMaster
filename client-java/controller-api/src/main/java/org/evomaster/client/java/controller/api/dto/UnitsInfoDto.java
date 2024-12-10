@@ -1,6 +1,9 @@
 package org.evomaster.client.java.controller.api.dto;
 
+import org.evomaster.client.java.controller.api.dto.database.schema.ExtraConstraintsDto;
+
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -61,4 +64,20 @@ public class UnitsInfoDto {
         TODO should consider if also adding info on type, eg JSON vs XML
      */
     public Map<String,String> parsedDtos;
+
+
+    /**
+     * Key is DTO full name
+     * Value is OpenAPI object schema
+     *
+     * User might need to get schema of specific jvm dto classes
+     * and such jvm classes might not be read with jackson or gson
+     * this field is to collect a map of such specified jvm dto classes to their schema
+     * */
+    public Map<String, String> extractedSpecifiedDtos;
+
+    /**
+     * Extra information extracted for example from JPA entities
+     */
+    public List<ExtraConstraintsDto> extraDatabaseConstraintsDtos;
 }

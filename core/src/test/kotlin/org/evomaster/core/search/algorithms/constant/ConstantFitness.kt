@@ -10,10 +10,16 @@ import org.evomaster.core.search.service.FitnessFunction
 class ConstantFitness : FitnessFunction<ConstantIndividual>() {
 
 
-    override fun doCalculateCoverage(individual: ConstantIndividual, targets: Set<Int>): EvaluatedIndividual<ConstantIndividual>? {
+    override fun doCalculateCoverage(
+        individual: ConstantIndividual,
+        targets: Set<Int>,
+        allTargets: Boolean,
+        fullyCovered: Boolean,
+        descriptiveIds: Boolean,
+    ): EvaluatedIndividual<ConstantIndividual>? {
 
         val target = 123
-        val res = individual.gene.value
+        val res = individual.getGene().value
 
         val h = if (res == target) {
             1.0

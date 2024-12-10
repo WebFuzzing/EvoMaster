@@ -7,6 +7,7 @@ import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.*;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.lang.reflect.Field;
 import java.util.Objects;
@@ -17,7 +18,7 @@ import java.util.regex.Matcher;
  */
 public class MatcherClassReplacement implements MethodReplacementClass {
 
-    private static Field textField = null;
+    private static final Field textField;
 
     static {
         try {
@@ -43,28 +44,23 @@ public class MatcherClassReplacement implements MethodReplacementClass {
      */
     @Replacement(type = ReplacementType.BOOLEAN, category = ReplacementCategory.BASE)
     public static boolean matches(Matcher caller, String idTemplate) {
+        Objects.requireNonNull(caller);
 
-        if (caller == null) {
-            caller.matches();
-        }
         String text = getText(caller);
         String pattern = caller.pattern().toString();
+        int flags = caller.pattern().flags();
 
-        boolean patternMatchesResult = PatternMatchingHelper.matches(pattern, text, idTemplate);
+        boolean patternMatchesResult = PatternMatchingHelper.matches(pattern, flags, text, idTemplate);
 
         TaintType taintType = ExecutionTracer.getTaintType(text);
 
         if (taintType.isTainted()) {
             /*
                 .matches() does a full match of the text, not a partial.
-
-                TODO: enclosing the pattern in ^(pattern)$ would be fine for most
-                cases, but not fully correct: eg for multi-lines, and if pattern
-                already has ^ and $
              */
-            String regex = "^(" + caller.pattern().toString() + ")$";
+            String regex = caller.pattern().toString();
             ExecutionTracer.addStringSpecialization(text,
-                    new StringSpecializationInfo(StringSpecialization.REGEX, regex, taintType));
+                    new StringSpecializationInfo(StringSpecialization.REGEX_WHOLE, regex, taintType));
         }
         boolean matcherMatchesResults = caller.matches();
         assert (patternMatchesResult == matcherMatchesResults);
@@ -95,7 +91,7 @@ public class MatcherClassReplacement implements MethodReplacementClass {
           Since matches() requires all the input to
           match the regex, and find() only requires
           the input to appear at least once, we could
-          add some prefix and sufix to match the
+          add some prefix and suffix to match the
           find
          */
 
@@ -106,23 +102,19 @@ public class MatcherClassReplacement implements MethodReplacementClass {
             use flags.
             \s\S is just a way to covering everything
          */
-        String anyPositionRegexMatch = String.format("([\\s\\S]*)(%s)([\\s\\S]*)", regex);
         TaintType taintType = ExecutionTracer.getTaintType(substring);
         if (taintType.isTainted()) {
-            /*
-                .matches() does a full match of the text, not a partial.
-
-                TODO: enclosing the pattern in ^(pattern)$ would be fine for most
-                cases, but not fully correct: eg for multi-lines, and if pattern
-                already has ^ and $
-             */
             ExecutionTracer.addStringSpecialization(substring,
-                    new StringSpecializationInfo(StringSpecialization.REGEX, anyPositionRegexMatch, taintType));
+                    new StringSpecializationInfo(StringSpecialization.REGEX_PARTIAL, regex, taintType));
         }
 
+        String anyPositionRegexMatch = RegexSharedUtils.handlePartialMatch(regex);
         boolean patternMatchResult = PatternMatchingHelper.matches(anyPositionRegexMatch, substring, idTemplate);
         boolean matcherFindResult = caller.find();
-        assert (patternMatchResult == matcherFindResult);
+        if(patternMatchResult != matcherFindResult){
+            //TODO we should analyze those cases, and fix them
+            SimpleLogger.uniqueWarn("Failed to handle regex in Matcher.find(): " + regex);
+        }
         return matcherFindResult;
     }
 

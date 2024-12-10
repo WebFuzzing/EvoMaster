@@ -2,24 +2,28 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
-import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
+import org.evomaster.client.java.controller.problem.rpc.schema.types.JavaDtoSpec;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.PrimitiveOrWrapperType;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator.*;
 
 /**
  * double param
  */
 public class DoubleParam extends PrimitiveOrWrapperParam<Double> {
 
+    private final static String JAVA_PR_METHOD = "doubleValue";
+    private final static String KOTLIN_PR_METHOD = "toDouble";
     boolean minInclusive;
 
     boolean maxInclusive;
 
-    public DoubleParam(String name, String type, String fullTypeName, Class<?> clazz, AccessibleSchema accessibleSchema) {
-        super(name, type, fullTypeName, clazz, accessibleSchema);
+    public DoubleParam(String name, String type, String fullTypeName, Class<?> clazz, AccessibleSchema accessibleSchema, JavaDtoSpec spec) {
+        super(name, type, fullTypeName, clazz, accessibleSchema, spec);
     }
 
     public DoubleParam(String name, PrimitiveOrWrapperType type, AccessibleSchema accessibleSchema) {
@@ -27,7 +31,7 @@ public class DoubleParam extends PrimitiveOrWrapperParam<Double> {
     }
 
     @Override
-    public String getValueAsJavaString() {
+    public String getValueAsJavaString(boolean isJava) {
         if (getValue() == null)
             return null;
         return ""+getValue();
@@ -72,23 +76,23 @@ public class DoubleParam extends PrimitiveOrWrapperParam<Double> {
     }
 
     @Override
-    public List<String> newAssertionWithJava(int indent, String responseVarName, int maxAssertionForDataInCollection) {
-        if (getValue() == null) return super.newAssertionWithJava(indent, responseVarName, maxAssertionForDataInCollection);
+    public List<String> newAssertionWithJavaOrKotlin(int indent, String responseVarName, int maxAssertionForDataInCollection, boolean isJava) {
+        if (getValue() == null) return super.newAssertionWithJavaOrKotlin(indent, responseVarName, maxAssertionForDataInCollection, isJava);
 
         List<String> codes = new ArrayList<>();
         if ((getValue().isInfinite() || getValue().isNaN())){
             // here we just add comments for it
-            CodeJavaGenerator.addComment(codes, "// "+responseVarName+ " is "+getValueAsJavaString(), indent);
+            addComment(codes, "// "+responseVarName+ " is "+getValueAsJavaString(isJava), indent);
         }else{
-            CodeJavaGenerator.addCode(codes, CodeJavaGenerator.junitAssertNumbersMatch(getValueAsJavaString(), responseVarName), indent);
+            addCode(codes, junitAssertNumbersMatch(getValueAsJavaString(isJava), responseVarName, isJava), indent);
         }
         return codes;
     }
 
+
     @Override
-    public String getPrimitiveValue(String responseVarName) {
-        if (getType().isWrapper)
-            return responseVarName+".doubleValue()";
-        return responseVarName;
+    public String primitiveValueMethod(boolean isJava) {
+        if (isJava) return JAVA_PR_METHOD;
+        return KOTLIN_PR_METHOD;
     }
 }

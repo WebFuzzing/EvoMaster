@@ -2,7 +2,7 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement.cla
 
 import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
-import org.evomaster.client.java.instrumentation.SqlInfo;
+import org.evomaster.client.java.instrumentation.ExecutedSqlCommand;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
@@ -21,7 +21,7 @@ public class StatementClassReplacement implements MethodReplacementClass {
         return Statement.class;
     }
 
-    private static void handleSql(String sql, boolean exception, long executionTime){
+    static void handleSql(String sqlCommand, boolean threwSqlException, long executionTime){
         /*
             TODO need to provide proper info data here.
             Bit tricky, need to check actual DB implementations, see:
@@ -30,10 +30,11 @@ public class StatementClassReplacement implements MethodReplacementClass {
             Anyway, not needed till we support constraint solving for DB data, as then
             we can skip the branch distance computation
 
-            Man: skip null sql for e.g., "com.zaxxer.hikari.pool"
+            Man: skip null sqlCommand for e.g., "com.zaxxer.hikari.pool"
          */
-        if(sql != null){
-            SqlInfo info = new SqlInfo(formatSql(sql), false, exception, executionTime);
+        if(sqlCommand != null){
+            final String formattedSqlCommand = formatSqlCommand(sqlCommand);
+            ExecutedSqlCommand info = new ExecutedSqlCommand(formattedSqlCommand, threwSqlException, executionTime);
             ExecutionTracer.addSqlInfo(info);
         }
 
@@ -123,7 +124,7 @@ public class StatementClassReplacement implements MethodReplacementClass {
             return result;
         }catch (SQLException e){
             // trace sql anyway, set exception true and executionTime FAILURE_EXTIME
-            handleSql(sql, true, SqlInfo.FAILURE_EXTIME);
+            handleSql(sql, true, ExecutedSqlCommand.FAILURE_EXECUTION_TIME);
             throw e;
         }
     }
@@ -140,23 +141,34 @@ public class StatementClassReplacement implements MethodReplacementClass {
 
     /**
      *
-     * @param sql to format
+     * @param sqlCommand to format
      * @return a formatted sql, e.g., removing comments
      *
      * Man: actually comments of prepared statement have been removed, this might be redundant for them.
      *      TODO need to refactor the sql handling a bit
+     *
      */
-    private static String formatSql(String sql){
-        try {
-            return CCJSqlParserUtil.parse(sql).toString();
-        } catch (JSQLParserException e) {
+    private static String formatSqlCommand(String sqlCommand){
+        /*
+           JP: In JSQLParser >= 4.9 empty strings are now successfully parsed to "null".
+           Therefore, instead of a JSQLParserException, a NullPointerException was
+           being thrown (that was not properly handled). We added this check to
+           avoid parsing the "", and continue supporting the formatting of the "" sql
+           command.
+         */
+        if (!sqlCommand.equals("")) {
+            try {
+                return CCJSqlParserUtil.parse(sqlCommand).toString();
+            } catch (JSQLParserException e) {
             /*
                 Man: skip error log here since the sql would be checked when SqlHandler.computeDistance.
                     in addition, log here would lead to some redundant errors about e.g., SET @@foreign_key_checks, ALTER TABLE flyway_schema_history
              */
-            //SimpleLogger.error("SQL ERROR. Could not handle "+ sql + " with JSQLParserException, and the error message :"+e.getMessage());
-            return sql;
+                //SimpleLogger.error("SQL ERROR. Could not handle "+ sql + " with JSQLParserException, and the error message :"+e.getMessage());
+            }
         }
+        return sqlCommand;
+
     }
 
 }

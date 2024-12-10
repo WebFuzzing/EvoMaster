@@ -109,7 +109,7 @@ public class PrivateFieldInRequestDto {
 
     private short priShort;
 
-    public short getPriShort() {
+    public Short getPriShort() {
         return priShort;
     }
 

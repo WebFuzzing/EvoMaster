@@ -1,38 +1,43 @@
 package org.evomaster.core.search.impact.impactinfocollection
 
-import org.evomaster.core.search.Action
-import org.evomaster.core.search.Individual
-import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.action.Action
 
 /**
+ * @property localId represent local id of the action
  * @property actionName name of action if action exists, versus null
  * @property geneImpacts impact info of genes of the action or the individual (actionName == null)
  */
-data class ImpactsOfAction(val actionName: String?, val geneImpacts: MutableMap<String, GeneImpact> = mutableMapOf()) {
+data class ImpactsOfAction(
+    val localId : String,
+    val actionName: String?,
+    val geneImpacts: MutableMap<String, GeneImpact> = mutableMapOf()
+) {
     fun copy(): ImpactsOfAction {
-        return ImpactsOfAction(actionName, geneImpacts.map { it.key to it.value.copy() }.toMap().toMutableMap())
+        return ImpactsOfAction(localId, actionName, geneImpacts.map { it.key to it.value.copy() }.toMap().toMutableMap())
     }
 
     fun clone(): ImpactsOfAction {
-        return ImpactsOfAction(actionName, geneImpacts.map { it.key to it.value.clone() }.toMap().toMutableMap())
+        return ImpactsOfAction(localId, actionName, geneImpacts.map { it.key to it.value.clone() }.toMap().toMutableMap())
     }
 
     constructor(action: Action) : this(
+            localId = action.getLocalId(),
             actionName = action.getName(),
-            geneImpacts = action.seeGenes().map {
+            geneImpacts = action.seeTopGenes().map {
                 val id = ImpactUtils.generateGeneId(action, it)
                 id to ImpactUtils.createGeneImpact(it, id)
             }.toMap().toMutableMap())
 
-    constructor(individual: Individual, genes: List<Gene>) : this(
-            actionName = null,
-            geneImpacts = genes.map {
-                val id = ImpactUtils.generateGeneId(individual, it)
-                id to ImpactUtils.createGeneImpact(it, id)
-            }.toMap().toMutableMap()
-    )
+//    constructor(individual: Individual, genes: List<Gene>) : this(
+//            actionName = null,
+//            geneImpacts = genes.map {
+//                val id = ImpactUtils.generateGeneId(individual, it)
+//                id to ImpactUtils.createGeneImpact(it, id)
+//            }.toMap().toMutableMap()
+//    )
 
-    constructor(actionName: String?, geneImpacts: List<GeneImpact>) : this(
+    constructor(localId: String, actionName: String?, geneImpacts: List<GeneImpact>) : this(
+            localId = localId,
             actionName = actionName,
             geneImpacts = geneImpacts.map { it.getId() to it }.toMap().toMutableMap()
     )

@@ -2,14 +2,14 @@ package org.evomaster.core.problem.rest.seeding.postman
 
 import com.google.gson.Gson
 import io.swagger.v3.oas.models.OpenAPI
-import org.evomaster.core.problem.api.service.param.Param
+import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.param.*
 import org.evomaster.core.problem.rest.seeding.AbstractParser
 import org.evomaster.core.problem.rest.seeding.postman.pojos.PostmanCollectionObject
 import org.evomaster.core.problem.rest.seeding.postman.pojos.Request
 import org.evomaster.core.search.gene.ObjectGene
-import org.evomaster.core.search.gene.OptionalGene
+import org.evomaster.core.search.gene.optional.OptionalGene
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -17,6 +17,7 @@ import java.lang.IllegalStateException
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 
+@Deprecated("Code here will be replaced with intermediate representation. See new 'seeding' package")
 class PostmanParser(
         defaultRestCallActions: List<RestCallAction>,
         swagger: OpenAPI
@@ -62,7 +63,7 @@ class PostmanParser(
         if (originalRestAction == null)
             log.warn("Endpoint {} not found in the Swagger", "$verb:$path")
 
-        return originalRestAction?.copyContent() as RestCallAction?
+        return originalRestAction?.copy() as RestCallAction?
     }
 
     private fun updateParameterGenesWithRequest(parameter: Param, postmanRequest: Request, restAction: RestCallAction) {

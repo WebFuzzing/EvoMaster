@@ -18,11 +18,10 @@ public enum RPCType {
     /**
      * thrift
      */
-    THRIFT
+    THRIFT,
 
     /**
      * gRPC
-     * TODO, NOT SUPPORT YET
      */
-    //gRPC
+    gRPC
 }

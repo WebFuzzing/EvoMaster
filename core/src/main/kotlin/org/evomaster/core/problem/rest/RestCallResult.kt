@@ -3,31 +3,35 @@ package org.evomaster.core.problem.rest
 import com.google.common.annotations.VisibleForTesting
 import com.google.gson.Gson
 import com.google.gson.JsonObject
-import org.evomaster.core.problem.httpws.service.HttpWsCallResult
-import org.evomaster.core.search.Action
-import org.evomaster.core.search.ActionResult
+import org.evomaster.core.problem.httpws.HttpWsCallResult
+import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.action.ActionResult
 import javax.ws.rs.core.MediaType
 
 
 class RestCallResult : HttpWsCallResult {
 
-    constructor(stopping: Boolean = false) : super(stopping)
+    constructor(sourceLocalId: String, stopping: Boolean = false) : super(sourceLocalId, stopping)
 
     @VisibleForTesting
-    internal constructor(other: ActionResult) : super(other)
+    internal constructor(other: RestCallResult) : super(other)
 
     companion object {
         const val HEURISTICS_FOR_CHAINED_LOCATION = "HEURISTICS_FOR_CHAINED_LOCATION"
     }
 
 
-    override fun copy(): ActionResult {
+    override fun copy(): RestCallResult {
         return RestCallResult(this)
     }
 
     fun getResourceIdName() = "id"
 
     fun getResourceId(): String? {
+
+        /*
+            TODO should use more sophisticated algorithm, taking into account what done in RestResponseFeeder
+         */
 
         if(!MediaType.APPLICATION_JSON_TYPE.isCompatible(getBodyType())){
             //TODO could also handle other media types

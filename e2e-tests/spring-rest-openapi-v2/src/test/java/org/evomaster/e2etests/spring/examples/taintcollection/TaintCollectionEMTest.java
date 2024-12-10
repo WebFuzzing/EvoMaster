@@ -24,6 +24,8 @@ public class TaintCollectionEMTest extends SpringTestBase {
     @Test
     public void testRunEM() throws Throwable {
 
+        defaultSeed = 0;
+
         runTestHandlingFlakyAndCompilation(
                 "TaintCollectionEM",
                 "org.bar.TaintCollectionEM",

@@ -3,13 +3,16 @@ package org.evomaster.core.search.gene.datetime
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.interfaces.ComparableGene
+import org.evomaster.core.search.gene.root.CompositeFixedGene
+import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.date.DateTimeGeneImpact
-import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -20,18 +23,11 @@ import org.slf4j.LoggerFactory
  */
 open class DateTimeGene(
     name: String,
-    val date: DateGene = DateGene("date"),
-    val time: TimeGene = TimeGene("time"),
-    val dateTimeGeneFormat: DateTimeGeneFormat = DateTimeGeneFormat.ISO_LOCAL_DATE_TIME_FORMAT
-) : ComparableGene(name, mutableListOf(date, time)) {
-
-    enum class DateTimeGeneFormat {
-        // YYYY-MM-DDTHH:SS:MM
-        ISO_LOCAL_DATE_TIME_FORMAT,
-
-        // YYYY-MM-DD HH:SS:MM
-        DEFAULT_DATE_TIME
-    }
+    val onlyValid : Boolean = false, //TODO refactor once dealing with Robustness Testing
+    val format: FormatForDatesAndTimes = FormatForDatesAndTimes.ISO_LOCAL,
+    val date: DateGene = DateGene("date", format = format, onlyValidDates = onlyValid),
+    val time: TimeGene = TimeGene("time", format = format, onlyValidTimes = onlyValid),
+) : ComparableGene, CompositeFixedGene(name, listOf(date, time)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(DateTimeGene::class.java)
@@ -40,16 +36,31 @@ open class DateTimeGene(
             .thenBy { it.time }
     }
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf(date, time)
+    init {
+        if(format != date.format){
+            throw IllegalArgumentException("Mismatched format for date: $format != ${date.format}")
+        }
+        if(format != time.format){
+            throw IllegalArgumentException("Mismatched format for time: $format != ${time.format}")
+        }
+        if(onlyValid && (!date.onlyValidDates || !time.onlyValidTimes)) {
+            throw IllegalArgumentException("Marked as onlyValid, but date=${date.onlyValidDates} and time=${time.onlyValidTimes}")
+        }
+    }
+
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
+        return true
+    }
 
     override fun copyContent(): Gene = DateTimeGene(
         name,
-        date.copyContent() as DateGene,
-        time.copyContent() as TimeGene,
-        dateTimeGeneFormat = this.dateTimeGeneFormat
+        onlyValid,
+        format,
+        date.copy() as DateGene,
+        time.copy() as TimeGene,
     )
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         /**
          * If forceNewValue==true both date and time
          * get a new value, but it only might need
@@ -58,22 +69,13 @@ open class DateTimeGene(
          * Shouldn't this method decide randomly if
          * date, time or both get a new value?
          */
-        date.randomize(randomness, forceNewValue, allGenes)
-        time.randomize(randomness, forceNewValue, allGenes)
+        date.randomize(randomness, tryToForceNewValue)
+        time.randomize(randomness, tryToForceNewValue)
     }
 
-    override fun candidatesInternalGenes(
-        randomness: Randomness,
-        apc: AdaptiveParameterControl,
-        allGenes: List<Gene>,
-        selectionStrategy: SubsetGeneSelectionStrategy,
-        enableAdaptiveGeneMutation: Boolean,
-        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene> {
-        return listOf(date, time)
-    }
 
-    override fun adaptiveSelectSubset(
+
+    override fun adaptiveSelectSubsetToMutate(
         randomness: Randomness,
         internalGenes: List<Gene>,
         mwc: MutationWeightControl,
@@ -107,40 +109,29 @@ open class DateTimeGene(
     }
 
     override fun getValueAsRawString(): String {
-        val formattedDate = GeneUtils.let {
-            "${GeneUtils.padded(date.year.value, 4)}-${
-                GeneUtils.padded(
-                    date.month.value,
-                    2
-                )
-            }-${GeneUtils.padded(date.day.value, 2)}"
-        }
-        val formattedTime = GeneUtils.let {
-            "${GeneUtils.padded(time.hour.value, 2)}:${
-                GeneUtils.padded(
-                    time.minute.value,
-                    2
-                )
-            }:${GeneUtils.padded(time.second.value, 2)}"
-        }
-        return when (dateTimeGeneFormat) {
-            DateTimeGeneFormat.ISO_LOCAL_DATE_TIME_FORMAT -> {
+
+        val formattedDate = date.getValueAsRawString()
+        val formattedTime = time.getValueAsRawString()
+
+        return when (format) {
+            FormatForDatesAndTimes.ISO_LOCAL, FormatForDatesAndTimes.RFC3339-> {
                 "${formattedDate}T${formattedTime}"
             }
 
-            DateTimeGeneFormat.DEFAULT_DATE_TIME -> {
-                "${formattedDate} ${formattedTime}"
+            FormatForDatesAndTimes.DATETIME-> {
+                "$formattedDate $formattedTime"
             }
         }
 
     }
 
-    override fun copyValueFrom(other: Gene) {
+    override fun copyValueFrom(other: Gene): Boolean {
         if (other !is DateTimeGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        this.date.copyValueFrom(other.date)
-        this.time.copyValueFrom(other.time)
+        return updateValueOnlyIfValid(
+            {this.date.copyValueFrom(other.date) && this.time.copyValueFrom(other.time)}, true
+        )
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -151,17 +142,8 @@ open class DateTimeGene(
                 && this.time.containsSameValueAs(other.time)
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this) else
-            listOf(this).plus(date.flatView(excludePredicate)).plus(time.flatView(excludePredicate))
-    }
 
-    /*
-     override fun mutationWeight(): Int
-     weight for date time gene might be 1 as default since it is simple to solve
-    */
 
-    override fun innerGene(): List<Gene> = listOf(date, time)
 
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
@@ -175,7 +157,7 @@ open class DateTimeGene(
             gene is StringGene && gene.getSpecializationGene() != null -> {
                 bindValueBasedOn(gene.getSpecializationGene()!!)
             }
-            gene is SeededGene<*> -> this.bindValueBasedOn(gene.getPhenotype())
+            gene is SeededGene<*> -> this.bindValueBasedOn(gene.getPhenotype()as Gene)
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind DateTimeGene with ${gene::class.java.simpleName}")
                 false
@@ -189,4 +171,14 @@ open class DateTimeGene(
         }
         return DATE_TIME_GENE_COMPARATOR.compare(this, other)
     }
+
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneMutationSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): Boolean {
+        return false
+    }
+
 }

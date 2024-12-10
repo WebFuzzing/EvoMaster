@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component
 open class QueryResolver(
         private val dataRepo: DataRepository
 ) : GraphQLQueryResolver {
-    fun flowersByType(type: FlowerType?): Flower?{
+    fun flowersByType(type: FlowerType): Flower?{
         return dataRepo.findByFlTy(type)
     }
 

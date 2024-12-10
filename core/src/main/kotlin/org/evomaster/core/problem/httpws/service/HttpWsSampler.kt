@@ -1,11 +1,12 @@
 package org.evomaster.core.problem.httpws.service
 
-import org.evomaster.client.java.controller.api.dto.AuthenticationDto
-import org.evomaster.client.java.controller.api.dto.HeaderDto
+import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
+import org.evomaster.client.java.controller.api.dto.auth.HeaderDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.problem.api.service.ApiWsSampler
-import org.evomaster.core.problem.httpws.service.auth.NoAuth
-import org.evomaster.core.problem.httpws.service.auth.*
+import org.evomaster.core.problem.enterprise.auth.AuthSettings
+import org.evomaster.core.problem.httpws.HttpWsAction
+import org.evomaster.core.problem.httpws.auth.*
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.Individual
 import org.slf4j.Logger
@@ -21,9 +22,8 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
         private val log: Logger = LoggerFactory.getLogger(HttpWsSampler::class.java)
     }
 
-
-    protected val authentications: MutableList<HttpWsAuthenticationInfo> = mutableListOf()
-
+    //TODO move up to Enterprise
+    val authentications = AuthSettings()
 
 
     /**
@@ -35,24 +35,31 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
      */
     fun sampleRandomAction(noAuthP: Double): HttpWsAction {
         val action = randomness.choose(actionCluster).copy() as HttpWsAction
-        randomizeActionGenes(action)
+        action.doInitialize(randomness)
         action.auth = getRandomAuth(noAuthP)
         return action
     }
 
     fun getRandomAuth(noAuthP: Double): HttpWsAuthenticationInfo {
-        if (authentications.isEmpty() || randomness.nextBoolean(noAuthP)) {
-            return NoAuth()
+
+        val selection = authentications.getOfType(HttpWsAuthenticationInfo::class.java)
+
+        return if (selection.isEmpty() || randomness.nextBoolean(noAuthP)) {
+            HttpWsNoAuth()
         } else {
             //if there is auth, should have high probability of using one,
             //as without auth we would do little.
-            return randomness.choose(authentications)
+            randomness.choose(selection)
         }
     }
 
 
     protected fun addAuthFromConfig(){
 
+        //first check if any configured in configuration file (if any)
+        config.authFromFile?.forEach { handleAuthInfo(it) }
+
+        //then check if any is passed on commandline
         val headers = listOf(config.header0, config.header1, config.header2)
                 .filter { it.isNotBlank() }
 
@@ -65,7 +72,7 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
             val k = it.indexOf(":")
             val name = it.substring(0, k)
             val content = it.substring(k+1)
-            dto.headers.add(HeaderDto(name, content))
+            dto.fixedHeaders.add(HeaderDto(name, content))
         }
 
         dto.name = "Fixed Headers"
@@ -83,38 +90,14 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
     }
 
     private fun handleAuthInfo(i: AuthenticationDto) {
-        if (i.name == null || i.name.isBlank()) {
-            throw SutProblemException("Missing name in authentication info")
+
+        val auth = try{
+            HttpWsAuthenticationInfo.fromDto(i)
+        }catch (e: Exception){
+            throw SutProblemException("Failed to parse auth info: " + e.message!!)
         }
 
-        val headers: MutableList<AuthenticationHeader> = mutableListOf()
-
-        i.headers.forEach loop@{ h ->
-            val name = h.name?.trim()
-            val value = h.value?.trim()
-            if (name == null || value == null) {
-                throw SutProblemException("Invalid header in ${i.name}, $name:$value")
-            }
-
-            headers.add(AuthenticationHeader(name, value))
-        }
-
-        val cookieLogin = if (i.cookieLogin != null) {
-            CookieLogin.fromDto(i.cookieLogin)
-        } else {
-            null
-        }
-
-        val jsonTokenPostLogin = if (i.jsonTokenPostLogin != null) {
-            JsonTokenPostLogin.fromDto(i.jsonTokenPostLogin)
-        } else {
-            null
-        }
-
-
-        val auth = HttpWsAuthenticationInfo(i.name.trim(), headers, cookieLogin, jsonTokenPostLogin)
-
-        authentications.add(auth)
+        authentications.addInfo(auth)
         return
     }
 

@@ -1,6 +1,6 @@
 package org.evomaster.core.search.impact.impactinfocollection.numeric
 
-import org.evomaster.core.search.gene.FloatGene
+import org.evomaster.core.search.gene.numeric.FloatGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpactTest
@@ -20,7 +20,7 @@ class FloatGeneTest : GeneImpactTest() {
         else
             geneToMutate.value += 1f
 
-        return MutatedGeneWithContext(previous = original, current = geneToMutate)
+        return MutatedGeneWithContext(current = geneToMutate, previous = original,)
     }
 
     override fun getGene(): Gene = FloatGene("i",  value= 1f)

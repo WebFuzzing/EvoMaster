@@ -1,9 +1,11 @@
 package org.evomaster.client.java.controller.api.dto;
 
-import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
+import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.GraphQLProblemDto;
+import org.evomaster.client.java.controller.api.dto.problem.WebProblemDto;
 
 import java.util.List;
 
@@ -26,6 +28,12 @@ public class SutInfoDto {
      * on how to interact with it
      */
     public RPCProblemDto rpcProblem;
+
+    /**
+     * If the SUT has a Web Frontend, here there will be the info
+     * on how to interact with it
+     */
+    public WebProblemDto webProblem;
 
     /**
      * Whether the SUT is running or not
@@ -71,7 +79,7 @@ public class SutInfoDto {
      * If the application is using a SQL database, then we need to
      * know its schema to be able to do operations on it.
      */
-    public DbSchemaDto sqlSchemaDto;
+    public DbInfoDto sqlSchemaDto;
 
 
     /**
@@ -83,4 +91,15 @@ public class SutInfoDto {
      * info collected during SUT boot-time
      */
     public BootTimeInfoDto bootTimeInfoDto;
+
+    /**
+     * there might exist some errors which could be
+     * ignored for the moment in order to make evomaster
+     * still process test generations.
+     * however, such error should be handled properly in
+     * the future.
+     * to better view such errors, might show them on
+     * the core side
+     */
+    public List<String> errorMsg;
 }

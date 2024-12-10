@@ -2,13 +2,16 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
-import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
+import org.evomaster.client.java.controller.problem.rpc.schema.types.JavaDtoSpec;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.StringType;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
+
+import static org.evomaster.client.java.controller.problem.rpc.CodeJavaOrKotlinGenerator.*;
 
 /**
  * string param
@@ -65,8 +68,8 @@ public class StringParam extends NamedTypedValue<StringType, String> implements 
         super(name, type, accessibleSchema);
     }
 
-    public StringParam(String name, AccessibleSchema accessibleSchema) {
-        super(name, new StringType(), accessibleSchema);
+    public StringParam(String name, AccessibleSchema accessibleSchema, JavaDtoSpec spec) {
+        super(name, new StringType(spec), accessibleSchema);
     }
 
 
@@ -129,6 +132,11 @@ public class StringParam extends NamedTypedValue<StringType, String> implements 
     }
 
     @Override
+    public List<String> referenceTypes() {
+        return null;
+    }
+
+    @Override
     public StringParam copyStructure() {
         return new StringParam(getName(), getType(),accessibleSchema);
     }
@@ -141,8 +149,17 @@ public class StringParam extends NamedTypedValue<StringType, String> implements 
 
     @Override
     public void setValueBasedOnInstanceOrJson(Object json) throws JsonProcessingException {
-        assert json instanceof String;
-        setValue((String) json);
+        if (json == null)  return;
+
+        if (json instanceof Number){
+            SimpleLogger.recordErrorMessage("Warning: invalid data type in json for StringParam, attempt to set the value with number value for param "+getName());
+            setValue(json.toString());
+        }else {
+            if (!(json instanceof String))
+                throw new IllegalArgumentException("Cannot set value for StringParam " + getName() + " with the type:"+json.getClass().getName());
+            setValue((String) json);
+        }
+
     }
 
     @Override
@@ -168,34 +185,35 @@ public class StringParam extends NamedTypedValue<StringType, String> implements 
     }
 
     @Override
-    public List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent) {
+    public List<String> newInstanceWithJavaOrKotlin(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent, boolean isJava, boolean isVariableNullable) {
 
         String code;
-        if (accessibleSchema == null || accessibleSchema.isAccessible)
-            code = CodeJavaGenerator.oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, getValueAsJavaString());
-        else{
-            if (accessibleSchema.setterMethodName == null)
+        if (accessibleSchema != null && accessibleSchema.setterMethodName != null)
+            code = oneLineSetterInstance(accessibleSchema.setterMethodName, null, variableName, getValueAsJavaString(isJava), isJava, isVariableNullable);
+        else {
+            if (accessibleSchema != null && !accessibleSchema.isAccessible)
                 throw new IllegalStateException("Error: private field, but there is no setter method");
-            code = CodeJavaGenerator.oneLineSetterInstance(accessibleSchema.setterMethodName, null, variableName, getValueAsJavaString());
+            code = oneLineInstance(isDeclaration, doesIncludeName, getType().getTypeNameForInstanceInJavaOrKotlin(isJava), variableName, getValueAsJavaString(isJava), isJava, isVariableNullable);
+
         }
-        return Collections.singletonList(CodeJavaGenerator.getIndent(indent)+ code);
+        return Collections.singletonList(getIndent(indent)+ code);
     }
 
     @Override
-    public List<String> newAssertionWithJava(int indent, String responseVarName, int maxAssertionForDataInCollection) {
+    public List<String> newAssertionWithJavaOrKotlin(int indent, String responseVarName, int maxAssertionForDataInCollection, boolean isJava) {
         StringBuilder sb = new StringBuilder();
-        sb.append(CodeJavaGenerator.getIndent(indent));
+        sb.append(getIndent(indent));
         if (getValue() == null)
-            sb.append(CodeJavaGenerator.junitAssertNull(responseVarName));
+            sb.append(junitAssertNull(responseVarName, isJava));
         else
-            sb.append(CodeJavaGenerator.junitAssertEquals(getValueAsJavaString(), responseVarName));
+            sb.append(junitAssertEquals(getValueAsJavaString(isJava), responseVarName, isJava));
 
         return Collections.singletonList(sb.toString());
     }
 
     @Override
-    public String getValueAsJavaString() {
-        return getValue() == null? null:"\""+CodeJavaGenerator.handleEscapeCharInString(getValue())+"\"";
+    public String getValueAsJavaString(boolean isJava) {
+        return getValue() == null? null:"\""+ handleEscapeCharInString(getValue(), isJava)+"\"";
     }
 
     @Override

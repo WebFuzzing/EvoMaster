@@ -2,6 +2,7 @@ package org.evomaster.client.java.instrumentation.staticstate;
 
 import org.evomaster.client.java.instrumentation.BootTimeObjectiveInfo;
 import org.evomaster.client.java.instrumentation.ExternalServiceInfo;
+import org.evomaster.client.java.instrumentation.HostnameResolutionInfo;
 
 import java.io.PrintWriter;
 import java.util.*;
@@ -16,6 +17,14 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class ObjectiveRecorder {
 
+    /**
+     * Specify whether the SUT is booting or not.
+     * Targets during booting time are treated specially.
+     *
+     * Note: the default MUST be true, as might not be possible to modify this
+     * setting before the SUT is already started
+     */
+    private static volatile boolean isBooting = true;
 
     /**
      * Key -> the unique id of the coverage objective
@@ -95,6 +104,7 @@ public class ObjectiveRecorder {
      * Reset all the static state in this class
      */
     public static void reset(boolean alsoAtLoadTime) {
+
         maxObjectiveCoverage.clear();
         idMapping.clear();
         reversedIdMapping.clear();
@@ -110,7 +120,16 @@ public class ObjectiveRecorder {
             allTargets.clear();
 
             bootTimeObjectiveInfo.reset();
+            isBooting = true;
         }
+    }
+
+    /**
+     * register hostname resolution info at Sut Startup Time
+     * @param info to append
+     */
+    public static void registerHostnameResolutionInfoAtSutStartupTime(HostnameResolutionInfo info){
+        bootTimeObjectiveInfo.registerHostnameResolutionInfoAtSutBootTime(info);
     }
 
     /**
@@ -129,6 +148,9 @@ public class ObjectiveRecorder {
         return bootTimeObjectiveInfo;
     }
 
+    public static boolean wasCollectedAtBootingTime(String descriptiveId){
+        return bootTimeObjectiveInfo.coveredAtBootTime(descriptiveId);
+    }
 
     /**
      * Mark the existence of a testing target.
@@ -207,7 +229,7 @@ public class ObjectiveRecorder {
      * @param descriptiveId of the objective/target
      * @param value         of the coverage heuristic, in [0,1]
      */
-    public static void update(String descriptiveId, double value, boolean bootTime) {
+    public static void update(String descriptiveId, double value) {
 
         Objects.requireNonNull(descriptiveId);
         if (value < 0d || value > 1) {
@@ -232,7 +254,7 @@ public class ObjectiveRecorder {
         }
 
         // also update the objective info to bootTimeObjectiveInfo
-        if (bootTime){
+        if (isBooting){
             bootTimeObjectiveInfo.updateMaxObjectiveCoverage(descriptiveId, value);
         }
     }
@@ -267,5 +289,13 @@ public class ObjectiveRecorder {
         }
 
         return descriptiveId;
+    }
+
+    public static boolean isBooting() {
+        return isBooting;
+    }
+
+    public static void setBooting(boolean isBooting) {
+        ObjectiveRecorder.isBooting = isBooting;
     }
 }

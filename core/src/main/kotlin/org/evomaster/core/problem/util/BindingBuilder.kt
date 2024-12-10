@@ -1,22 +1,38 @@
 package org.evomaster.core.problem.util
 
+import com.google.common.annotations.VisibleForTesting
+import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.Lazy
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.DbActionUtils
+import org.evomaster.core.StaticCounter
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.sql.SqlActionUtils
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.problem.api.service.param.Param
+import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestPath
 import org.evomaster.core.problem.rest.param.*
 import org.evomaster.core.problem.rest.resource.RestResourceNode
 import org.evomaster.core.problem.util.inference.model.ParamGeneBindMap
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.collection.ArrayGene
+import org.evomaster.core.search.gene.collection.EnumGene
+import org.evomaster.core.search.gene.collection.FixedMapGene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.TimeGene
+import org.evomaster.core.search.gene.numeric.DoubleGene
+import org.evomaster.core.search.gene.numeric.FloatGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.numeric.LongGene
+import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.placeholder.CycleObjectGene
+import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
+import org.evomaster.core.search.gene.string.Base64StringGene
+import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.service.Randomness
 import org.slf4j.LoggerFactory
 
 /**
@@ -27,36 +43,50 @@ object BindingBuilder {
     private val log = LoggerFactory.getLogger(BindingBuilder::class.java)
 
     /**
+     * a probability of binding a field of object gene
+     *
+     * note that
+     * there might be no need to bind all fields between two ObjectGenes
+     * eg, POST-PUT with body param, no need to bind every field between the two body payloads
+     *
+     * this static variable is only changeable for testing purpose
+     * see [setProbabilityOfBindingObject]
+     *
+     */
+    private var PROBABILITY_BINDING_OBJECT = 0.5
+
+    @VisibleForTesting
+    internal fun setProbabilityOfBindingObject(probability: Double){
+        PROBABILITY_BINDING_OBJECT = probability
+    }
+
+    /**
      * bind value within a rest action [restAction], e.g., PathParam with BodyParam
      * @param doBuildBindingGene specifies whether to build the binding gene
      */
-    fun bindParamsInRestAction(restAction: RestCallAction, doBuildBindingGene: Boolean = false){
-        val pairs = buildBindingPairsInRestAction(restAction)
+    fun bindParamsInRestAction(restAction: RestCallAction, doBuildBindingGene: Boolean = false, randomness: Randomness?){
+        val pairs = buildBindingPairsInRestAction(restAction, randomness)
         pairs.forEach {
-            val ok = it.first.bindValueBasedOn(it.second)
-            if (ok && doBuildBindingGene){
-                it.first.addBindingGene(it.second)
-                it.second.addBindingGene(it.first)
-            }
+            bindValues(it, doBuildBindingGene)
         }
     }
 
     /**
      * @return a list of pairs of genes to be bound within a [restAction]
      */
-    fun buildBindingPairsInRestAction(restAction: RestCallAction): List<Pair<Gene, Gene>>{
+    fun buildBindingPairsInRestAction(restAction: RestCallAction, randomness: Randomness?): List<Pair<Gene, Gene>>{
         val pair = mutableListOf<Pair<Gene, Gene>>()
         val params = restAction.parameters
         val path = restAction.path
 
         if(ParamUtil.existBodyParam(params)){
             params.filterIsInstance<BodyParam>().forEach { bp->
-                pair.addAll(buildBindBetweenParams(bp, path, path, params.filter { p -> p !is BodyParam }, true))
+                pair.addAll(buildBindBetweenParams(bp, path, path, params.filter { p -> p !is BodyParam }, true, randomness = randomness))
             }
         }
         params.forEach { p->
             params.find { sp -> sp != p && p.name == sp.name && p::class.java.simpleName == sp::class.java.simpleName }?.also {sp->
-                pair.addAll(buildBindBetweenParams(sp, path, path, mutableListOf(p)))
+                pair.addAll(buildBindBetweenParams(sp, path, path, mutableListOf(p), randomness = randomness))
             }
         }
         return pair
@@ -70,22 +100,39 @@ object BindingBuilder {
      * @param sourcePath is the source path of the rest action which contains [params]
      * @param doBuildBindingGene specified whether to build binding genes
      */
-    fun bindRestAction(target : Param, targetPath: RestPath, sourcePath: RestPath, params: List<Param>, doBuildBindingGene: Boolean = false): Boolean{
-        val pairs = buildBindBetweenParams(target, targetPath, sourcePath, params, false)
+    fun bindRestAction(target : Param, targetPath: RestPath, sourcePath: RestPath, params: List<Param>, doBuildBindingGene: Boolean = false, randomness: Randomness?): Boolean{
+        val pairs = buildBindBetweenParams(target, targetPath, sourcePath, params, false, randomness)
         pairs.forEach { p->
-            val ok = p.first.bindValueBasedOn(p.second)
-            if (ok && doBuildBindingGene){
-                p.first.addBindingGene(p.second)
-                p.second.addBindingGene(p.first)
-            }
+            bindValues(p, doBuildBindingGene)
         }
         return pairs.isNotEmpty()
     }
 
+    private fun bindValues(p: Pair<Gene,Gene>, doBuildBindingGene: Boolean){
+        val ok = p.first.bindValueBasedOn(p.second)
+        if (ok && doBuildBindingGene){
+            p.first.addBindingGene(p.second)
+            p.second.addBindingGene(p.first)
+        }
+
+        val first = ParamUtil.getValueGene(p.first)
+        val second = ParamUtil.getValueGene(p.second)
+        if(ok && !doBuildBindingGene && first is StringGene && TaintInputName.isTaintInput(first.value)){
+            //do not use same tainted value in non-bound genes
+            if(second is StringGene){
+                second.value = TaintInputName.getTaintName(StaticCounter.getAndIncrease())
+            } else {
+                //can this happen?
+                log.warn("Possible issue in dealing with uniqueness of tainted values. Gene type: ${p.second.javaClass}")
+            }
+        }
+
+    }
+
     /**
-     *  bind [restAction] with [dbActions]
+     *  bind [restAction] with [sqlActions]
      *  @param restAction is the action
-     *  @param dbActions specified the dbactions
+     *  @param sqlActions specified the dbactions
      *  @param forceBindParamBasedOnDB specified whether to force to bind values of params in rest actions based on dbactions
      *  @param dbRemovedDueToRepair specified whether any db action is removed due to repair process.
      *          Note that dbactions might be truncated in the db repair process, thus the table related to rest actions might be removed.
@@ -94,16 +141,12 @@ object BindingBuilder {
     fun bindRestAndDbAction(restAction: RestCallAction,
                             restNode: RestResourceNode,
                             paramGeneBindMap: List<ParamGeneBindMap>,
-                            dbActions: List<DbAction>,
+                            sqlActions: List<SqlAction>,
                             forceBindParamBasedOnDB: Boolean = false,
                             dbRemovedDueToRepair : Boolean,
                             doBuildBindingGene: Boolean){
-        buildBindRestActionBasedOnDbActions(restAction, restNode, paramGeneBindMap, dbActions, forceBindParamBasedOnDB, dbRemovedDueToRepair).forEach { p->
-            val ok = p.first.bindValueBasedOn(p.second)
-            if (ok && doBuildBindingGene){
-                p.first.addBindingGene(p.second)
-                p.second.addBindingGene(p.first)
-            }
+        buildBindRestActionBasedOnDbActions(restAction, restNode, paramGeneBindMap, sqlActions, forceBindParamBasedOnDB, dbRemovedDueToRepair).forEach { p->
+            bindValues(p, doBuildBindingGene)
         }
     }
 
@@ -115,9 +158,9 @@ object BindingBuilder {
      * @param sourcePath of the [params]
      * @param params are used to bind with [target]
      */
-    fun buildBindBetweenParams(target : Param, targetPath: RestPath, sourcePath: RestPath, params: List<Param>, doContain : Boolean = false) : List<Pair<Gene, Gene>>{
+    fun buildBindBetweenParams(target : Param, targetPath: RestPath, sourcePath: RestPath, params: List<Param>, doContain : Boolean = false, randomness: Randomness?) : List<Pair<Gene, Gene>>{
         return when(target){
-            is BodyParam -> buildBindBodyParam(target, targetPath, sourcePath, params, doContain)
+            is BodyParam -> buildBindBodyParam(target, targetPath, sourcePath, params, doContain, randomness)
             is PathParam -> buildBindPathParm(target, targetPath, sourcePath, params, doContain)
             is QueryParam -> buildBindQueryParm(target, targetPath, sourcePath, params, doContain)
             is FormParam -> buildBindFormParam(target, params)?.run { listOf(this) }?: listOf()
@@ -129,15 +172,22 @@ object BindingBuilder {
         }
     }
 
+    /**
+     * @return whether the param name represents an extra param handled by taint analysis
+     */
+    fun isExtraTaintParam(name : String) : Boolean{
+        return name == TaintInputName.EXTRA_HEADER_TAINT || name == TaintInputName.EXTRA_PARAM_TAINT
+    }
+
     private fun buildBindHeaderParam(p : HeaderParam, params: List<Param>): Pair<Gene, Gene>?{
         return params.find { it is HeaderParam && p.name == it.name}?.run {
-            Pair(p.gene, this.gene)
+            Pair(ParamUtil.getValueGene(p.gene), ParamUtil.getValueGene(this.gene))
         }
     }
 
     private fun buildBindFormParam(p : FormParam, params: List<Param>): Pair<Gene, Gene>?{
         return params.find { it is FormParam && p.name == it.name}?.run {
-            Pair(p.gene, this.gene)
+            Pair(ParamUtil.getValueGene(p.gene), ParamUtil.getValueGene(this.gene))
         }
     }
 
@@ -152,21 +202,23 @@ object BindingBuilder {
         }else{
             val sg = params.filter { pa -> !(pa is BodyParam) }.find { pa -> pa.name == p.name }
             if(sg != null){
-                return listOf(Pair(p.gene, sg.gene))
+                return listOf(Pair(ParamUtil.getValueGene(p.gene), ParamUtil.getValueGene(sg.gene)))
             }
         }
         return emptyList()
     }
 
-    private fun buildBindBodyParam(bp : BodyParam, targetPath: RestPath, sourcePath: RestPath, params: List<Param>, inner : Boolean) : List<Pair<Gene, Gene>>{
-        if(ParamUtil.numOfBodyParam(params) != params.size ){
-            return params.filter { p -> p !is BodyParam }
+    private fun buildBindBodyParam(bp : BodyParam, targetPath: RestPath, sourcePath: RestPath, params: List<Param>, inner : Boolean, randomness: Randomness?) : List<Pair<Gene, Gene>>{
+        val excludeExtraParams = params.filterNot { isExtraTaintParam(it.name) }
+
+        if(ParamUtil.numOfBodyParam(excludeExtraParams) != excludeExtraParams.size ){
+            return excludeExtraParams.filter { p -> p !is BodyParam }
                 .flatMap {ip->
                     buildBindBodyAndOther(bp, targetPath, ip, sourcePath, true, inner)
                 }
-        }else if(params.isNotEmpty()){
+        }else if(excludeExtraParams.isNotEmpty()){
             val valueGene = ParamUtil.getValueGene(bp.gene)
-            val pValueGene = ParamUtil.getValueGene(params[0].gene)
+            val pValueGene = ParamUtil.getValueGene(excludeExtraParams[0].gene)
             if(valueGene !is ObjectGene){
                 return listOf()
             }
@@ -178,15 +230,15 @@ object BindingBuilder {
                 return listOf(Pair(field, pValueGene))
             }
 
-            return buildBindObjectGeneWithObjectGene(valueGene, pValueGene)
+            return buildBindObjectGeneWithObjectGene(valueGene, pValueGene, randomness)
         }
         return emptyList()
     }
 
-    private fun buildBindObjectGeneWithObjectGene(b : ObjectGene, g : ObjectGene) : List<Pair<Gene, Gene>>{
+    private fun buildBindObjectGeneWithObjectGene(b : ObjectGene, g : ObjectGene, randomness: Randomness?) : List<Pair<Gene, Gene>>{
         val map = mutableListOf<Pair<Gene, Gene>>()
         b.fields.forEach { f->
-            val bound = f !is OptionalGene || f.isActive || (Math.random() < 0.5)
+            val bound = f !is OptionalGene || f.isActive || (randomness == null || randomness.nextBoolean(PROBABILITY_BINDING_OBJECT))//(Math.random() < 0.5)
             if (bound){
                 val mf = ParamUtil.getValueGene(f)
                 val mName = ParamUtil.modifyFieldName(b, mf)
@@ -197,7 +249,7 @@ object BindingBuilder {
                 }
                 if(found != null){
                     if (found is ObjectGene)
-                        map.addAll(buildBindObjectGeneWithObjectGene(mf as ObjectGene, found))
+                        map.addAll(buildBindObjectGeneWithObjectGene(mf as ObjectGene, found, randomness))
                     else{
                         // FIXME, binding point
                         val vg = ParamUtil.getValueGene(found)
@@ -268,18 +320,18 @@ object BindingBuilder {
     }
 
     /**
-     * bind values between [restAction] and [dbActions]
-     * @param restAction is the action to be bounded with [dbActions]
+     * bind values between [restAction] and [sqlActions]
+     * @param restAction is the action to be bounded with [sqlActions]
      * @param restNode is the resource node for the [restAction]
-     * @param dbActions are the dbactions generated for the [call]
-     * @param bindingMap presents how to map the [restAction] and [dbActions] at Gene-level
-     * @param forceBindParamBasedOnDB specifies whether to bind params based on [dbActions] or reversed
+     * @param sqlActions are the dbactions generated for the [call]
+     * @param bindingMap presents how to map the [restAction] and [sqlActions] at Gene-level
+     * @param forceBindParamBasedOnDB specifies whether to bind params based on [sqlActions] or reversed
      * @param dbRemovedDueToRepair indicates whether the dbactions are removed due to repair.
      */
     fun buildBindRestActionBasedOnDbActions(restAction: RestCallAction,
                                             restNode: RestResourceNode,
                                             paramGeneBindMap: List<ParamGeneBindMap>,
-                                            dbActions: List<DbAction>,
+                                            sqlActions: List<SqlAction>,
                                             forceBindParamBasedOnDB: Boolean = false,
                                             dbRemovedDueToRepair : Boolean) : List<Pair<Gene, Gene>>{
 
@@ -290,22 +342,24 @@ object BindingBuilder {
         }
 
         paramGeneBindMap.forEach { pToGene ->
-            val dbAction = DbActionUtils.findDbActionsByTableName(dbActions, pToGene.tableName).firstOrNull()
+            val dbAction = SqlActionUtils.findDbActionsByTableName(sqlActions, pToGene.tableName).firstOrNull()
             //there might due to a repair for dbactions
             if (dbAction == null && !dbRemovedDueToRepair)
                 log.warn("cannot find ${pToGene.tableName} in db actions ${
-                    dbActions.joinToString(";") { it.table.name }
+                    sqlActions.joinToString(";") { it.table.name }
                 }")
             if(dbAction != null){
                 // columngene might be null if the column is nullable
-                val columngene = findGeneBasedNameAndType(dbAction.seeGenes(), pToGene.column, type = null).firstOrNull()
+                val columngene = findGeneBasedNameAndType(dbAction.seeTopGenes(), pToGene.column, type = null).firstOrNull()
                 if (columngene != null){
                     val param = restAction.parameters.find { p -> restNode.getParamId(restAction.parameters, p)
                         .equals(pToGene.paramId, ignoreCase = true) }
                     if(param!= null){
-                        if (pToGene.isElementOfParam) {
-                            if (param is BodyParam && param.gene is ObjectGene) {
-                                param.gene.fields.find { f -> f.name == pToGene.targetToBind }?.let { paramGene ->
+                        if (pToGene.isElementOfParam && param is BodyParam) {
+
+                            val objGene = ParamUtil.getValueGene(param.gene)
+                            if (objGene is ObjectGene){
+                                objGene.fields.find { f -> f.name == pToGene.targetToBind }?.let { paramGene ->
                                     map.add(buildBindingParamsWithDbAction(columngene, paramGene, forceBindParamBasedOnDB || dbAction.representExistingData))
                                 }
                             }
@@ -389,7 +443,7 @@ object BindingBuilder {
         (4 to setOf(LongGene::class.java.simpleName)),
         (5 to setOf(FloatGene::class.java.simpleName)),
         (6 to setOf(DoubleGene::class.java.simpleName)),
-        (7 to setOf(ArrayGene::class.java.simpleName, ObjectGene::class.java.simpleName, EnumGene::class.java.simpleName, CycleObjectGene::class.java.simpleName, MapGene::class.java.simpleName)),
+        (7 to setOf(ArrayGene::class.java.simpleName, ObjectGene::class.java.simpleName, EnumGene::class.java.simpleName, CycleObjectGene::class.java.simpleName, FixedMapGene::class.java.simpleName)),
         (8 to setOf(StringGene::class.java.simpleName, Base64StringGene::class.java.simpleName))
     )
 

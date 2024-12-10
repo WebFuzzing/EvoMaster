@@ -1,0 +1,22 @@
+type Query {
+    flowers: Flower
+}
+type Flower {
+    type(id: FlowerType): Store
+}
+
+type Store{
+    id: Int
+    name(id: [StoreType]): String
+
+}
+
+enum StoreType{
+    STOREA
+    STOREB
+}
+
+enum FlowerType{
+    ROSES
+    TULIPS
+}

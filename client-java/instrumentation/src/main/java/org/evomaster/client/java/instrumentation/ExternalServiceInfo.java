@@ -1,5 +1,7 @@
 package org.evomaster.client.java.instrumentation;
 
+import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils;
+
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -33,6 +35,15 @@ public class ExternalServiceInfo implements Serializable {
 
     public Integer getRemotePort() {
         return remotePort;
+    }
+
+    /**
+     * Returns a combination of strings including protocol, remote hostname,
+     * and remote port.
+     * Will be used a unique identifier.
+     */
+    public String signature() {
+        return ExternalServiceSharedUtils.getSignature(protocol,remoteHostname,remotePort);
     }
 
     @Override

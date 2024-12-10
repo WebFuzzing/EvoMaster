@@ -1,14 +1,18 @@
 package org.evomaster.core.problem.rest
 
-import org.evomaster.core.problem.api.service.param.Param
+import opennlp.tools.stemmer.PorterStemmer
+import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.param.QueryParam
-import org.evomaster.core.search.gene.OptionalGene
+import org.evomaster.core.search.gene.collection.ArrayGene
+import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.URI
 import java.net.URLEncoder
 import java.util.regex.Pattern
+import kotlin.math.abs
 
 /**
  * Represent a path template for a REST endpoint.
@@ -20,6 +24,8 @@ class RestPath(path: String) {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(RestPath::class.java)
+
+        private const val DEFAULT_FOR_EMPTY_PATH_ELEMENT = "1"
     }
 
 
@@ -34,6 +40,8 @@ class RestPath(path: String) {
         override fun toString(): String {
             return tokens.joinToString("")
         }
+
+        fun hasParams() = tokens.any { it.isParameter }
     }
 
     private data class Token(val name: String, val isParameter: Boolean) {
@@ -49,17 +57,49 @@ class RestPath(path: String) {
 
     private val elements: List<Element>
 
+    //memoized the value, as expensive to compute, called often, and this object is immutable anyway...
+    private val computedToString: String
+
+    private val endsWithSlash : Boolean
+
+
+    /**
+     * The qualifying name for this resource endpoint.
+     * Typically, it would be the last element of the path.
+     * If this is a variable, then we look up to first constant ancestor, and we get its _stem_
+     *
+     * For example:
+     *
+     * /users/{id}/balance -> balance
+     * /users/{id}         -> user
+     * /users              -> users
+     */
+    val nameQualifier : String
+
     init {
         if (path.contains("?") || path.contains("#")) {
-            throw IllegalArgumentException("The path contains invalid characters. " +
-                    "Are you sure you didn't pass a full URI?\n$path")
+            throw IllegalArgumentException(
+                "The path contains invalid characters. " +
+                        "Are you sure you didn't pass a full URI?\n$path"
+            )
+        }
+        if(path.isBlank()){
+            throw IllegalArgumentException("Empty path definition")
         }
 
+        endsWithSlash = path.endsWith("/") && path != "/"
+
         elements = path.split("/")
-                .filter { !it.isBlank() }
-                .map { extractElement(it) }
+            .filter { it.isNotBlank() }
+            .map { extractElement(it) }
+
+        computedToString = doComputeToString(elements, endsWithSlash)
+
+        nameQualifier = computeNameQualifier()
     }
 
+    private fun doComputeToString(elements: List<Element>, endsWithSlash : Boolean)
+        = "/" + elements.joinToString("/") + if(endsWithSlash) "/" else ""
 
     private fun extractElement(s: String): Element {
 
@@ -76,7 +116,7 @@ class RestPath(path: String) {
             val current = next
             if (s[next] == '{') {
                 next = handleVariable(s, current)
-                tokens.add(Token(s.substring(current + 1, next-1), true))
+                tokens.add(Token(s.substring(current + 1, next - 1), true))
             } else {
                 next = handleBase(s, current)
                 tokens.add(Token(s.substring(current, next), false))
@@ -109,7 +149,7 @@ class RestPath(path: String) {
     }
 
     override fun toString(): String {
-        return "/" + elements.joinToString("/")
+        return computedToString
     }
 
     /**
@@ -124,8 +164,8 @@ class RestPath(path: String) {
      */
     fun getVariableNames(): List<String> {
         return elements.flatMap { it.tokens }
-                .filter { it.isParameter }
-                .map { it.name }
+            .filter { it.isParameter }
+            .map { it.name }
     }
 
     fun hasVariablePathParameters(): Boolean {
@@ -136,7 +176,33 @@ class RestPath(path: String) {
         if (this.elements.size != other.elements.size) {
             return false
         }
-        return (0 until elements.size).none { this.elements[it] != other.elements[it] }
+        return (elements.indices.none { this.elements[it] != other.elements[it] })
+                && this.endsWithSlash == other.endsWithSlash
+    }
+
+    /**
+     * @return whether this is sibling of the [other]
+     *
+     * eg, we consider
+     * /root/{rootName}/foo/{fooName}/bar/{barName}
+     * /root/{rootName}/foo/{fooName}/bar are sibling
+     *
+     * for instance, two examples might be valid for preparing resources for each other.
+     * POST /root/{rootName}/foo/{fooName}/bar/{barName}
+     * GET /root/{rootName}/foo/{fooName}/bar
+     *
+     * POST /root/{rootName}/foo/{fooName}/bar
+     * GET /root/{rootName}/foo/{fooName}/bar/{barName}
+     */
+    fun isSiblingForPreparingResource(other: RestPath): Boolean {
+        val sizeDif = abs(this.elements.size - other.elements.size)
+        if (sizeDif != 1) {
+            return false
+        }
+
+        val moreSize = if (this.elements.size > other.elements.size) this else other
+
+        return (0 until (moreSize.elements.size - 1)).none { this.elements[it] != other.elements[it] } && moreSize.isLastElementAParameter()
     }
 
 
@@ -159,19 +225,42 @@ class RestPath(path: String) {
             return false
         }
 
-        return other.isAncestorOf(this)
+        return other.isSameOrAncestorOf(this)
     }
 
 
     /**
      * Prefix or same as "other"
      */
-    fun isAncestorOf(other: RestPath): Boolean {
+    fun isSameOrAncestorOf(other: RestPath): Boolean {
         if (this.elements.size > other.elements.size) {
+            return false
+        }
+        if(this.elements.size == other.elements.size && this.endsWithSlash && !other.endsWithSlash){
             return false
         }
 
         return (0 until this.elements.size).none { other.elements[it] != this.elements[it] }
+    }
+
+
+    /**
+     * @return whether this is direct or possible ancestor of [other]
+     *
+     * this is to handle the case eg.
+     * /root/{rootName}/bar/{barName} might be the potential
+     * ancestor of /root/{rootName}/foo/{fooName}/bar/{barName}
+     *
+     */
+    fun isDirectOrPossibleAncestorOf(other: RestPath): Boolean {
+        if (this.elements.size > other.elements.size) {
+            return false
+        }
+
+        return (0 until this.elements.size).all {
+            val index = other.elements.indexOfFirst { e-> e == this.elements[it] }
+            index >= 0 && index >= it
+        }
     }
 
     /**
@@ -201,7 +290,7 @@ class RestPath(path: String) {
     }
 
     private fun usableQueryParamsFunction(): (Param) -> Boolean {
-        return { it is QueryParam && (it.gene !is OptionalGene || it.gene.isActive) }
+        return { it is QueryParam && (it.gene.getWrappedGene(OptionalGene::class.java)?.isActive ?: true) }
     }
 
     fun numberOfUsableQueryParams(params: List<Param>): Int {
@@ -211,13 +300,20 @@ class RestPath(path: String) {
     fun resolveOnlyQuery(params: List<Param>): List<String> {
 
         return params
-                .filter(usableQueryParamsFunction())
-                .map {
-                    val name = encode(it.name)
-                    val gene = it.gene
-                    val value = encode(gene.getValueAsRawString())
+            .filter(usableQueryParamsFunction())
+            .filterIsInstance<QueryParam>()
+            .map { q ->
+                val name = encode(q.name)
+
+                val gene = GeneUtils.getWrappedValueGene(q.getGeneForQuery(), true)
+                if(gene is ArrayGene<*> && q.explode && gene.getViewOfElements().isNotEmpty()){
+                    gene.getViewOfElements()
+                        .joinToString("&") { "$name=${encode(it.getValueAsRawString())}" }
+                } else {
+                    val value = encode(gene!!.getValueAsRawString())
                     "$name=$value"
                 }
+            }
     }
 
     /**
@@ -225,6 +321,41 @@ class RestPath(path: String) {
      * all variables are replaced with the values in the input parameters
      */
     fun resolveOnlyPath(params: List<Param>): String {
+        /*
+            if there is no variable, then dynamic resolution should return only 1 entry
+         */
+        val data = dynamicResolutionOnlyPathData(params, mapOf())
+        assert(data.size == 1)
+        assert(!data[0].second)
+        return data[0].first
+    }
+
+
+    /**
+     * This is tricky...
+     * at times, we want to resolve an endpoint path, but some of its variables could be dynamic.
+     * This is the case when "links" in OpenAPI schema are used.
+     * For example, a path like
+     *
+     * /api/{x}/{y}
+     *
+     * could be resolved as:
+     *
+     * "/api/" + storedResponseFieldFromAPreviousCall + "/42"
+     *
+     * but we can't really build such string here, as escaping rules could vary based on context
+     * and format (eg Kotlin vs Java for string interpolation)  :(
+     *
+     * @return a list of pairs: string representation and whether it represents a variable.
+     * In the previous example, it would be:
+     * ("/api/", false) , ("storedResponseFieldFromAPreviousCall", true), ("/42", false)
+     */
+    fun dynamicResolutionOnlyPathData(
+        params: List<Param>,
+        variables: Map<String,RestLinkParameter>
+    ) : List<Pair<String,Boolean>>{
+
+        val data = mutableListOf<Pair<String,Boolean>>()
 
         val path = StringBuffer()
 
@@ -236,36 +367,61 @@ class RestPath(path: String) {
                 if (!t.isParameter) {
                     path.append(t.name)
                 } else {
-                    val p = params.find { p -> p is PathParam && p.name == t.name }
+
+                    val variable = variables.entries.find {
+                        it.value.name == t.name && (it.value.scope == null || it.value.scope == RestLinkParameter.Scope.PATH)
+                    }?.key
+
+                    if(variable != null){
+                        /*
+                            reserved characters need to be encoded
+                            https://tools.ietf.org/html/rfc3986#section-2.2
+
+                            why not using URI also for Query part???
+                            it seems unclear how to properly build it as a single string...
+                         */
+                        val entry = URI(null, null, path.toString(), null, null).rawPath
+                        data.add(Pair(entry, false))
+                        path.setLength(0) // clear it
+                        data.add(Pair(variable, true))
+                    } else {
+
+                        val p = params.find { p -> p is PathParam && p.name == t.name }
                             ?: throw IllegalArgumentException("Cannot resolve path parameter '${t.name}'")
 
-                    var value = p.gene.getValueAsRawString()
+                        var value = p.primaryGene().getValueAsRawString()
 
-                    if (value.isBlank()) {
-                        /*
-                        We should avoid having path params that are blank,
-                        as they would easily lead to useless 404/405 errors
+                        if (value.isBlank()) {
+                            /*
+                            We should avoid having path params that are blank,
+                            as they would easily lead to useless 404/405 errors.
+                            This shouldn't really happen, as we have length constraints on
+                            the query genes...
+                            but we might miss something (eg length constraints on regex are not supported, yet).
+                        */
+                            value = DEFAULT_FOR_EMPTY_PATH_ELEMENT
+                        }
 
-                        TODO handle this case better, eg avoid having blank in
-                        the first place
-                     */
-                        value = "1"
+                        path.append(value)
                     }
-
-                    path.append(value)
                 }
             }
         }
 
-        /*
-           reserved characters need to be encoded
-           https://tools.ietf.org/html/rfc3986#section-2.2
+        if(endsWithSlash){
+            path.append("/")
+        }
 
-           why not using URI also for Query part???
-           it seems unclear how to properly build it as a single string...
-         */
+        if(path.isNotEmpty()){
+            val entry = URI(null, null, path.toString(), null, null).rawPath
+            data.add(Pair(entry, false))
+        }
 
-        return URI(null, null, path.toString(), null, null).rawPath
+        if(data.isEmpty()){
+            data.add(Pair("/", false))
+        }
+
+        return data
     }
 
 
@@ -282,7 +438,7 @@ class RestPath(path: String) {
         return URLEncoder.encode(s, "UTF-8")
     }
 
-    fun copy() : RestPath{
+    fun copy(): RestPath {
         return RestPath(this.toString())
     }
 
@@ -300,8 +456,8 @@ class RestPath(path: String) {
         return elements.flatMap { it.tokens.filter { t -> t.isParameter }.map { t -> t.name } }
     }
 
-    fun getElements() :List<Map<String, Boolean>>{
-        return elements.map { it.tokens.map { t->Pair(t.name, t.isParameter) }.toMap() }
+    fun getElements(): List<Map<String, Boolean>> {
+        return elements.map { it.tokens.map { t -> Pair(t.name, t.isParameter) }.toMap() }
     }
 
     /**
@@ -332,12 +488,12 @@ class RestPath(path: String) {
 
         if (resolvedPath.matches(Regex(regexToMatch))) {
             val matcher = Pattern
-                    .compile(regexToMatch)
-                    .matcher(resolvedPath)
+                .compile(regexToMatch)
+                .matcher(resolvedPath)
 
             if (matcher.find()) {
                 for (i in 1..matcher.groupCount())
-                    keyValues[keys[i-1]] = matcher.group(i)
+                    keyValues[keys[i - 1]] = matcher.group(i)
             }
 
             return keyValues
@@ -358,7 +514,71 @@ class RestPath(path: String) {
                     elementsToMatch.add(t.name)
             }
         }
+        if(endsWithSlash){
+            elementsToMatch.add("/")
+        }
 
         return "^" + elementsToMatch.joinToString("") + "$"
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as RestPath
+
+        return computedToString == other.computedToString
+    }
+
+    override fun hashCode(): Int {
+        return computedToString.hashCode()
+    }
+
+
+
+    private fun computeNameQualifier() : String {
+
+        val noQualifier = "/"
+
+        if(elements.isEmpty()){
+            return noQualifier
+        }
+
+        var index = elements.indices.last
+        val last = elements[index]
+        if(!last.hasParams()){
+            return last.toString()
+        }
+
+        index--
+
+        while(index >= 0){
+            if(elements[index].hasParams()){
+                index--
+                continue
+            }
+
+            val raw = elements[index].toString()
+            val stemmer = PorterStemmer()
+            return stemmer.stem(raw)
+        }
+
+        return noQualifier
+    }
+
+    fun isRoot() = levels() == 0
+
+    fun parentPath() : RestPath {
+        if(isRoot()){
+            throw IllegalStateException("Root has no parent")
+        }
+
+        if(endsWithSlash){
+            return RestPath(doComputeToString(elements, false))
+        }
+
+        val reduced = elements.subList(0, elements.lastIndex)
+        val path = doComputeToString(reduced, false)
+        return RestPath(path)
     }
 }

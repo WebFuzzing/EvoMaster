@@ -1,25 +1,25 @@
 package org.evomaster.core.problem.graphql
 
-import org.evomaster.core.problem.httpws.service.HttpWsAction
-import org.evomaster.core.problem.httpws.service.auth.HttpWsAuthenticationInfo
-import org.evomaster.core.problem.httpws.service.auth.NoAuth
-import org.evomaster.core.problem.api.service.param.Param
-import org.evomaster.core.search.Action
+import org.evomaster.core.problem.httpws.HttpWsAction
+import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
+import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
+import org.evomaster.core.problem.api.param.Param
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.Gene
 
 
 class GraphQLAction(
     /**
-         * A unique id to identify this action
-         */
-        val id: String,
+     * A unique id to identify this action
+     */
+    val id: String,
     /**
-         * the name of the Query or Mutation in the schema
-         */
-        val methodName: String,
+     * the name of the Query or Mutation in the schema
+     */
+    val methodName: String,
     val methodType: GQMethodType,
     parameters: MutableList<Param>,
-    auth: HttpWsAuthenticationInfo = NoAuth()
+    auth: HttpWsAuthenticationInfo = HttpWsNoAuth()
         ) : HttpWsAction(auth, parameters) {
 
     override fun getName(): String {
@@ -27,7 +27,7 @@ class GraphQLAction(
         return "$methodName"
     }
 
-    override fun seeGenes(): List<out Gene> {
+    override fun seeTopGenes(): List<out Gene> {
 
         return parameters.flatMap { it.seeGenes() }
     }
@@ -35,12 +35,9 @@ class GraphQLAction(
 
     override fun copyContent(): Action {
 
-        return GraphQLAction(id, methodName, methodType, parameters.map { it.copyContent() }.toMutableList(), auth )
+        return GraphQLAction(id, methodName, methodType, parameters.map { it.copy() }.toMutableList(), auth)
     }
 
-    override fun shouldCountForFitnessEvaluations(): Boolean {
-        return true
-    }
 
     override fun toString(): String {
         return "$methodType $methodName, auth=${auth.name}"

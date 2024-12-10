@@ -2,6 +2,8 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.formatter.OutputFormatter
+import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assertions.assertFalse

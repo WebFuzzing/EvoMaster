@@ -1,8 +1,8 @@
 package org.evomaster.e2etests.spring.examples.resource;
 
 import org.evomaster.core.problem.rest.resource.RestResourceCalls;
-import org.evomaster.core.search.Action;
-import org.evomaster.core.search.ActionFilter;
+import org.evomaster.core.search.action.Action;
+import org.evomaster.core.search.action.ActionFilter;
 import org.evomaster.core.search.gene.Gene;
 
 import java.util.*;
@@ -34,7 +34,7 @@ public abstract class ResourceMIOHWTestBase extends ResourceTestBase {
         if (nodeKey.endsWith("Id}")){
             if (withSQL){
                 if (template.equals("GET")){
-                    Gene rdIdInRest = call.seeActions(ActionFilter.NO_SQL).get(0).seeGenes().stream().findFirst().orElse(null);
+                    Gene rdIdInRest = call.seeActions(ActionFilter.NO_SQL).get(0).seeTopGenes().stream().findFirst().orElse(null);
                     Gene rdIdInDB = getGeneByName(Objects.requireNonNull(call.seeActions(ActionFilter.ONLY_SQL).stream().findFirst().orElse(null)),"ID");
                     // test binding between DB and RestAction
                     assertEquals(rdIdInRest.getValueAsRawString(), rdIdInDB.getValueAsRawString());
@@ -42,7 +42,7 @@ public abstract class ResourceMIOHWTestBase extends ResourceTestBase {
             }else {
                 if (template.equals("POST-GET")){
                     Gene bodyInPOST = getGeneByName(call.seeActions(ActionFilter.NO_SQL).get(0), "id");
-                    Gene rdIdInGet = call.seeActions(ActionFilter.NO_SQL).get(1).seeGenes().stream().findFirst().orElse(null);
+                    Gene rdIdInGet = call.seeActions(ActionFilter.NO_SQL).get(1).seeTopGenes().stream().findFirst().orElse(null);
                     assertEquals(bodyInPOST.getValueAsRawString(), rdIdInGet.getValueAsRawString());
 
                 }
@@ -65,7 +65,7 @@ public abstract class ResourceMIOHWTestBase extends ResourceTestBase {
     }
 
     protected Gene getGeneByName(Action action, String name){
-        return action.seeGenes().stream().flatMap(s-> s.flatView(gene -> false).stream()).filter(s-> s.getName().equalsIgnoreCase(name)).findAny()
+        return action.seeTopGenes().stream().flatMap(s-> s.flatView(gene -> false).stream()).filter(s-> s.getName().equalsIgnoreCase(name)).findAny()
                 .orElse(null);
     }
 
@@ -76,8 +76,8 @@ public abstract class ResourceMIOHWTestBase extends ResourceTestBase {
                         "--seed", ""+seed,
                         "--useTimeInFeedbackSampling", "false",
                         "--sutControllerPort", "" + controllerPort,
-                        "--maxActionEvaluations", "" + budget,
-                        "--stoppingCriterion", "FITNESS_EVALUATIONS",
+                        "--maxEvaluations", "" + budget,
+                        "--stoppingCriterion", "ACTION_EVALUATIONS",
                         //there some bugs here
                         "--baseTaintAnalysisProbability", "0.0"
                 )

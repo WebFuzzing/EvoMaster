@@ -47,4 +47,9 @@ public class RPCInterfaceSchemaDto {
      */
     public List<Integer> authEndpointReferences;
 
+    /**
+     * a list of identified types of responses from the given client
+     */
+    public List<ParamDto> identifiedResponseTypes;
+
 }

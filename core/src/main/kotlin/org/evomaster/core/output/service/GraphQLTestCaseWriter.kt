@@ -2,18 +2,20 @@ package org.evomaster.core.output.service
 
 import com.google.inject.Inject
 import org.evomaster.core.output.Lines
+import org.evomaster.core.output.TestCase
 import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.graphql.GraphQLUtils
 import org.evomaster.core.problem.graphql.GraphQlCallResult
 import org.evomaster.core.problem.graphql.service.GraphQLFitness
-import org.evomaster.core.problem.httpws.service.HttpWsAction
-import org.evomaster.core.problem.httpws.service.HttpWsCallResult
-import org.evomaster.core.search.Action
-import org.evomaster.core.search.ActionResult
+import org.evomaster.core.problem.httpws.HttpWsAction
+import org.evomaster.core.problem.httpws.HttpWsCallResult
+import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.gene.GeneUtils
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.slf4j.LoggerFactory
+import java.nio.file.Path
 
 class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
 
@@ -24,15 +26,15 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
     @Inject
     protected lateinit var fitness: GraphQLFitness
 
-    override fun handleActionCalls(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>){
+    override fun handleActionCalls(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>, testCaseName: String, testSuitePath: Path?){
         if (ind.individual is GraphQLIndividual) {
-            ind.evaluatedActions().forEach { a ->
-                handleSingleCall(a, lines, baseUrlOfSut)
+            ind.evaluatedMainActions().forEachIndexed { index,  a ->
+                handleSingleCall(a, index, ind.fitness, lines, testCaseName, testSuitePath, baseUrlOfSut)
             }
         }
     }
 
-    override fun addActionLines(action: Action, lines: Lines, result: ActionResult, baseUrlOfSut: String) {
+    override fun addActionLinesPerType(action: Action, index: Int, testCaseName: String, lines: Lines, result: ActionResult, testSuitePath: Path?, baseUrlOfSut: String) {
         addGraphQlCallLines(action as GraphQLAction, lines, result as GraphQlCallResult, baseUrlOfSut)
     }
 
@@ -51,6 +53,7 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
         when {
             format.isJavaOrKotlin() -> lines.add(".contentType(\"application/json\")")
             format.isJavaScript() -> lines.add(".set('Content-Type','application/json')")
+            format.isPython() -> lines.add("headers[\"content-type\"] = \"application/json\"")
            // format.isCsharp() -> lines.add("Client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(\"application/json\"));")
         }
 
@@ -87,7 +90,7 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
         val gql = res as GraphQlCallResult
 
         if (code != 500 && gql.hasLastStatementWhenGQLError()) {
-            lines.append(" // " + gql.getLastStatementWhenGQLErrors())
+            lines.appendSingleCommentLine(gql.getLastStatementWhenGQLErrors() ?: "")
         }
     }
 
@@ -102,10 +105,10 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
                 in BB, the baseUrl is actually the full endpoint
              */
 
-            if (format.isKotlin()) {
-                lines.append("\"\${$baseUrlOfSut}\"")
-            } else {
-                lines.append("$baseUrlOfSut")
+            when {
+                format.isKotlin() -> lines.append("\"\${$baseUrlOfSut}\"")
+                format.isPython() -> lines.append("self.$baseUrlOfSut")
+                else -> lines.append("$baseUrlOfSut")
             }
         } else {
 
@@ -122,7 +125,16 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
             lines.append("${path?.let { GeneUtils.applyEscapes(it, mode = GeneUtils.EscapeMode.NONE, format = format) }}\"")
         }
 
+        if (format.isPython()) {
+            handlePythonVerbEndpoint(_call as GraphQLAction, lines) {
+                lines.append(", data=body")
+            }
+        }
+
         lines.append(")")
     }
 
+    override fun addTestCommentBlock(lines: Lines, test: TestCase) {
+        //TODO
+    }
 }

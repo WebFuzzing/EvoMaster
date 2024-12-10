@@ -1,9 +1,9 @@
 package org.evomaster.core.problem.rest.resource.dependency
 
-import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto
-import org.evomaster.core.database.SQLKey
+import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionsDto
+import org.evomaster.core.sql.SQLKey
 import org.evomaster.core.problem.rest.param.BodyParam
-import org.evomaster.core.problem.api.service.param.Param
+import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.util.inference.model.MatchedInfo
 
 /**
@@ -38,7 +38,7 @@ class ResourceRelatedToTable(val key: String) {
      * key is table name
      * value is boolean, indicating whether the relationship is direct
      *
-     * whether the related table is confirmed by evomaster driver, i.e., return [ExecutionDto]
+     * whether the related table is confirmed by evomaster driver, i.e., return [SqlExecutionsDto]
      *
      * to bind param of action regarding table,
      *      we need to further detect whether the relationship between resource and table is direct
@@ -50,13 +50,13 @@ class ResourceRelatedToTable(val key: String) {
      * value is related table with its fields
      *
      * Note that same action may execute different SQL commends due to e.g., cookies or different values
-     * When updating [actionToTables], we check if existing [ActionRelatedToTable] subsumes [ExecutionDto] or [ExecutionDto] subsume [ActionRelatedToTable] regarding involved tables.
+     * When updating [actionToTables], we check if existing [ActionRelatedToTable] subsumes [SqlExecutionsDto] or [SqlExecutionsDto] subsume [ActionRelatedToTable] regarding involved tables.
      * if subsumed, we update existing [ActionRelatedToTable]; else create [ActionRelatedToTable]
      */
     private val actionToTables : MutableMap<String, MutableList<ActionRelatedToTable>> = mutableMapOf()
 
 
-    fun updateActionRelatedToTable(verb : String, dto: ExecutionDto, existingTables : Set<String>) : Boolean{
+    fun updateActionRelatedToTable(verb : String, dto: SqlExecutionsDto, existingTables : Set<String>) : Boolean{
 
         val tables = mutableListOf<String>().plus(dto.deletedData).plus(dto.updatedData.keys).plus(dto.insertedData.keys).plus(dto.queriedData.keys)
                 .filter { existingTables.contains(it) || existingTables.any { e->e.toLowerCase() == it.toLowerCase() }}.toHashSet()

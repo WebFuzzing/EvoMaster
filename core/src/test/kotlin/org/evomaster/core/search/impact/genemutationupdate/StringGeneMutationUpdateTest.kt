@@ -7,11 +7,13 @@ import com.google.inject.TypeLiteral
 import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
+import org.evomaster.core.TestUtils
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.algorithms.MioAlgorithm
-import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.matchproblem.*
 import org.evomaster.core.search.service.Archive
+import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.mutator.StandardMutator
@@ -49,8 +51,8 @@ class StringGeneMutationUpdateTest {
                 object : TypeLiteral<MioAlgorithm<PrimitiveTypeMatchIndividual>>() {}))
 
         config = injector.getInstance(EMConfig::class.java)
-        config.maxActionEvaluations = budget
-        config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
+        config.maxEvaluations = budget
+        config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
         config.probOfRandomSampling = 0.0
 
         sampler = injector.getInstance(PrimitiveTypeMatchSampler::class.java)
@@ -76,7 +78,7 @@ class StringGeneMutationUpdateTest {
     fun testHistoryExtraction(){
         config.archiveGeneMutation = EMConfig.ArchiveGeneMutation.NONE
 
-        val first = ff.calculateCoverage(sampler.sample())!!.also { archive.addIfNeeded(it) }
+        val first = ff.calculateCoverage(sampler.sample(), modifiedSpec = null)!!.also { archive.addIfNeeded(it) }
 
         val mutated = mutator.mutateAndSave(10, first, archive)
 
@@ -86,8 +88,8 @@ class StringGeneMutationUpdateTest {
         val copy = mutated.copy(tracker.getCopyFilterForEvalInd(mutated))
         val ind = copy.individual.copy() as PrimitiveTypeMatchIndividual
 
-        assertEquals(1, ind.seeGenes().size)
-        val geneToMutate = ind.seeGenes().first()
+        assertEquals(1, ind.seeTopGenes().size)
+        val geneToMutate = ind.seeTopGenes().first()
 
         val mutationInfo = MutatedGeneSpecification()
 
@@ -108,8 +110,9 @@ class StringGeneMutationUpdateTest {
         val history = mutableListOf<EvaluatedIndividual<PrimitiveTypeMatchIndividual>>()
         specified.forEach {
             val ind = template.copy() as PrimitiveTypeMatchIndividual
+            TestUtils.doInitializeIndividualForTesting(ind, Randomness().apply { updateSeed(42) })
             (ind.gene as StringGene).value = it
-            val eval = ff.calculateCoverage(ind, archive.notCoveredTargets())
+            val eval = ff.calculateCoverage(ind, archive.notCoveredTargets(), null)
             assertNotNull(eval)
             val er = if(history.isNotEmpty()){
                 mutator.evaluateMutation(

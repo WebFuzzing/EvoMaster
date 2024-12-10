@@ -10,7 +10,7 @@ open class DataRepository {
 
     private val flowers = Flower()
 
-    fun findFlower(): Flower {
+    fun findFlower(): Flower? {
         return flowers
     }
 

@@ -1,0 +1,369 @@
+openapi: 3.0.0
+servers:
+  - url: //cfportal.contract-p.fit/api
+x-hasEquivalentPaths: true
+info:
+  description: "This describes the Contract.fit product API. If you don't have authorization keys yet, please request them there: https://contract.fit/contact-us"
+  title: Contract.fit API
+  version: "1.0"
+  x-apisguru-categories:
+    - text
+  x-origin:
+    - format: openapi
+      url: https://cfportal.contract-p.fit/swagger.json
+      version: "3.0"
+  x-providerName: contract-p.fit
+security:
+  - basic: []
+  - token: []
+tags:
+  - description: File manipulation endpoint
+    name: documents
+paths:
+  /documents/:
+    post:
+      description: |-
+        This endpoint is a simplified version of the upload document to inbox one - synchronous mode.
+
+        The upload file will be upload to the given inbox if provided, else fallback to the **invoice** inbox.
+        The file will be processed synchronously, ie the request will blocks until the document was processed
+        *or* until it timeout; in this case the document might **not** be correctly processed.
+
+
+        For a more reliable processing use the /documents/{inbox_id} endpoint in async mode
+
+
+        **Permission required:** upload
+      operationId: post_simple_documents_resource
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              properties:
+                file:
+                  description: File to process
+                  format: binary
+                  type: string
+                inbox_id:
+                  description: Inbox to use. Default to the **invoice** inbox
+                  type: string
+                key_value_flag:
+                  default: true
+                  description: If true the result will only contains mapping of prediction = value
+                  type: boolean
+              required:
+                - file
+              type: object
+        required: true
+      responses:
+        "200":
+          description: Success
+        "403":
+          description: Permission insufficient
+      summary: Upload a new document
+      tags:
+        - documents
+  "/documents/{document_id}":
+    delete:
+      description: |-
+        Completely delete the document.
+
+        **WARNING** This removes the document from our system: it will not be recoverable
+
+
+        **Permission required:** review
+      operationId: delete_document_resource
+      responses:
+        "200":
+          description: Success
+        "403":
+          description: Permission insufficient
+      summary: Delete the document
+      tags:
+        - documents
+    get:
+      description: |-
+        Simple endpoint that will fetch the given document
+
+        **Permission required:** review
+      operationId: get_document_resource
+      parameters:
+        - description: An optional fields mask
+          in: header
+          name: X-Fields
+          schema:
+            format: mask
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentModelGet"
+          description: Success
+        "403":
+          description: Permission insufficient
+      summary: Get the document
+      tags:
+        - documents
+    parameters:
+      - in: path
+        name: document_id
+        required: true
+        schema:
+          type: string
+  "/documents/{document_id}/original_file":
+    get:
+      description: |-
+        Return the document original file, as attachment.
+
+        **Permission required:** review
+      operationId: get_document_original_file_resource
+      responses:
+        "200":
+          description: File attached
+        "403":
+          description: Permission insufficient
+      summary: Get document original file
+      tags:
+        - documents
+    parameters:
+      - in: path
+        name: document_id
+        required: true
+        schema:
+          type: string
+  "/documents/{document_id}/page/{page_range}":
+    get:
+      operationId: get_document_page_image_resource
+      responses:
+        "200":
+          description: Success
+        "403":
+          description: Permission insufficient
+      tags:
+        - documents
+    parameters:
+      - description: The number of the page, starting from 0. A range of pages, separated by ":" is also allowed to return a zip file.
+        in: path
+        name: page_range
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: document_id
+        required: true
+        schema:
+          type: string
+  "/documents/{document_id}/text":
+    get:
+      description: |-
+        Return the optimal text for the document; will either be the OCR text, the native text,
+        the raw text or a translated version.
+
+        **Permission required:** review
+      operationId: get_document_text_resource
+      responses:
+        "403":
+          description: Permission insufficient
+      summary: Get the document text
+      tags:
+        - documents
+    parameters:
+      - in: path
+        name: document_id
+        required: true
+        schema:
+          type: string
+  "/documents/{inbox_id}":
+    parameters:
+      - in: path
+        name: inbox_id
+        required: true
+        schema:
+          type: string
+    post:
+      description: |-
+        This endpoint uploads a new file to the given inbox and will process the file.
+
+        ## Upload mode: sync
+
+        When sync=true (default), the call will block and wait for the processing to complete.
+
+        If you have a custom output configured (this is set by Contract Fit team),
+        passing mimetype *application/vnd.cf.custom* will allow you to get the custom output formatted result
+
+        Since it might yield inconsistent results if a timeout is raised while waiting,
+        it is recommended to use the **async** mode.
+
+        ## Upload mode: async
+
+        When sync=false, the call will schedule the processing and return without waiting for completion.
+        It will return the document ID, so that the processed document can be retrieved at a later date.
+
+        **Permission required:** upload
+      operationId: post_documents_simple_api_resource
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              properties:
+                file:
+                  description: File to process
+                  format: binary
+                  type: string
+                hints:
+                  description: 'Additional hints as a dictionary. Example: {"VAT_number":{"blacklist":"XXXX.XXX.XXX", "whitelist": ["YYYY.YYY.YYY", "ZZZZ.ZZZ.ZZZ"]}}'
+                  type: string
+                key_value_flag:
+                  default: false
+                  description: If true the result will only contains mapping of prediction = value
+                  type: boolean
+                sync:
+                  default: true
+                  description: Flag enable sync or async processing
+                  type: boolean
+              required:
+                - file
+              type: object
+        required: true
+      responses:
+        "200":
+          description: Success
+        "403":
+          description: Permission insufficient
+        "415":
+          description: Image Recognition Error
+      summary: Upload a new doc to the inbox
+      tags:
+        - documents
+components:
+  responses:
+    Exception:
+      description: Forward a BUIserverException to the final user
+    MaskError:
+      description: When any error occurs on mask
+    ParseError:
+      description: When a mask can't be parsed
+  schemas:
+    DocumentModelGet:
+      properties:
+        escalate:
+          $ref: "#/components/schemas/StateModelGet"
+        feedback:
+          type: object
+        files:
+          type: object
+        flag_for_review:
+          type: boolean
+        id:
+          type: string
+        inbox:
+          example: abcdef123456789abcdef123
+          maxLength: 24
+          minLength: 24
+          pattern: "[A-z0-9]"
+          type: string
+        last_version:
+          type: string
+        lock:
+          $ref: "#/components/schemas/StateModelGet"
+        meta_information:
+          type: object
+        original_filename:
+          type: string
+        page_count:
+          type: integer
+        prediction:
+          type: object
+        reject:
+          $ref: "#/components/schemas/StateModelGet"
+        status_data:
+          $ref: "#/components/schemas/StatusDataModel"
+        submitted:
+          $ref: "#/components/schemas/StateModelGet"
+        timings:
+          $ref: "#/components/schemas/TimingsModelGet"
+        usage_data:
+          type: object
+        versions:
+          items:
+            type: object
+          type: array
+      required:
+        - id
+        - inbox
+        - original_filename
+        - page_count
+      type: object
+    StateModelGet:
+      properties:
+        by:
+          example: abcdef123456789abcdef123
+          maxLength: 24
+          minLength: 24
+          pattern: "[A-z0-9]"
+          type: string
+        since:
+          format: date-time
+          type: string
+        value:
+          type: boolean
+      type: object
+    StatusDataModel:
+      properties:
+        archived:
+          type: boolean
+        data:
+          type: boolean
+        escalate:
+          type: boolean
+        feedback:
+          type: boolean
+        lock:
+          type: boolean
+        ready_accepted:
+          type: boolean
+        ready_attempts:
+          type: integer
+        reject:
+          type: boolean
+        reject_accepted:
+          type: boolean
+        reject_attempts:
+          type: integer
+        sampling:
+          type: boolean
+        submit_accepted:
+          type: boolean
+        submit_attempts:
+          type: integer
+        success:
+          type: boolean
+      type: object
+    TimingsModelGet:
+      properties:
+        done_time:
+          format: date-time
+          type: string
+        feedback_time:
+          format: date-time
+          type: string
+        processing_period:
+          type: number
+        receive_time:
+          format: date-time
+          type: string
+        start_time:
+          format: date-time
+          type: string
+      type: object
+  securitySchemes:
+    basic:
+      description: username and password
+      scheme: basic
+      type: http
+    token:
+      in: header
+      name: Authorization
+      type: apiKey

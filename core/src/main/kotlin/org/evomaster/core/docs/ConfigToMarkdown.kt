@@ -1,11 +1,11 @@
 package org.evomaster.core.docs
 
 import org.evomaster.core.EMConfig
+import org.evomaster.core.utils.StringUtils
 import java.io.File
 import java.nio.charset.Charset
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.jvm.javaType
-
 /**
  * Class used to generate Markdown documentation for [EMConfig]
  */
@@ -52,7 +52,9 @@ object ConfigToMarkdown {
             
             * __Internal__: these are low-level tuning options, which most users do not need
                             to modify. These were mainly introduced when experimenting with 
-                            different configurations to maximize the performance of _EvoMaster_.
+                            different configurations to maximize the performance of _EvoMaster_. 
+                            Some of these options are used to collect more info on the search, to help
+                            debugging issues in _EvoMaster_ itself.                                   
                             
             * __Experimental__: these are work-in-progress options, for features still under development
                                 and testing.        
@@ -154,7 +156,7 @@ object ConfigToMarkdown {
         val typeName = if(type.isEnum){
             "Enum"
         } else {
-            type.simpleName.capitalize()
+            StringUtils.capitalization(type.simpleName)
         }
 
         val description = EMConfig.getDescription(opt)
@@ -174,6 +176,11 @@ object ConfigToMarkdown {
         if(!description.text.trim().endsWith(".")){
             buffer.append(".")
         }
+
+        if(description.debug){
+            buffer.append(" *DEBUG option*.")
+        }
+
         if(description.constraints.isNotBlank()){
             /*
                 see https://stackoverflow.com/questions/17319940/how-to-escape-a-pipe-char-in-a-code-statement-in-a-markdown-table

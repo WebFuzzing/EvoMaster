@@ -11,14 +11,17 @@ import java.util.Map;
  * map type
  */
 public class MapType extends TypeSchema{
+
+    private final static String KOTLIN_MAP = "MutableMap";
+
     /**
      * template of keys of the map
      */
     private final PairParam template;
 
 
-    public MapType(String type, String fullTypeName, PairParam template, Class<?> clazz) {
-        super(type, fullTypeName, clazz);
+    public MapType(String type, String fullTypeName, PairParam template, Class<?> clazz, JavaDtoSpec spec) {
+        super(type, fullTypeName, clazz, spec);
         this.template = template;
     }
 
@@ -36,14 +39,18 @@ public class MapType extends TypeSchema{
     }
 
     @Override
-    public String getTypeNameForInstance() {
-        String key = template.getType().getFirstTemplate().getType().getTypeNameForInstance();
-        String value = template.getType().getSecondTemplate().getType().getTypeNameForInstance();
-        return Map.class.getName()+"<"+key+","+value+">";
+    public String getTypeNameForInstanceInJavaOrKotlin(boolean isJava) {
+        String key = template.getType().getFirstTemplate().getType().getTypeNameForInstanceInJavaOrKotlin(isJava);
+        String value = template.getType().getSecondTemplate().getType().getTypeNameForInstanceInJavaOrKotlin(isJava);
+        String type = getFullTypeName();
+        if (!isJava)
+            type = KOTLIN_MAP;
+
+        return type+"<"+key+","+value+">";
     }
 
     @Override
     public MapType copy() {
-        return new MapType(getType(),getFullTypeName(), template, getClazz());
+        return new MapType(getSimpleTypeName(),getFullTypeName(), template, getClazz(), spec);
     }
 }

@@ -1,21 +1,29 @@
 package org.evomaster.core.problem.rest
 
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.DbActionUtils
-import org.evomaster.core.problem.api.service.ApiWsIndividual
+import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.action.ActionComponent
+import org.evomaster.core.search.action.ActionFilter
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.sql.SqlActionUtils
+import org.evomaster.core.mongo.MongoDbAction
+import org.evomaster.core.problem.api.ApiWsIndividual
+import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
+import org.evomaster.core.problem.enterprise.EnterpriseChildTypeVerifier
+import org.evomaster.core.problem.enterprise.SampleType
+import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
+import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.SamplerSpecification
-import org.evomaster.core.search.Action
-import org.evomaster.core.search.ActionFilter
-import org.evomaster.core.search.ActionFilter.*
-import org.evomaster.core.search.Individual
-import org.evomaster.core.search.StructuralElement
+import org.evomaster.core.search.*
+import org.evomaster.core.search.action.ActionFilter.*
+import org.evomaster.core.search.action.EnvironmentAction
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.tracer.Traceable
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import kotlin.math.max
 
 /**
  *
@@ -23,29 +31,55 @@ import org.slf4j.LoggerFactory
  * @property index indicates when the individual is created, ie, using num of evaluated individual.
  */
 class RestIndividual(
-        //val actions: MutableList<RestAction>,
-        private val resourceCalls: MutableList<RestResourceCalls>,
-        val sampleType: SampleType,
-        val sampleSpec: SamplerSpecification? = null,
-        dbInitialization: MutableList<DbAction> = mutableListOf(),
-        trackOperator: TrackOperator? = null,
-        index : Int = -1
-): ApiWsIndividual(dbInitialization, trackOperator, index, mutableListOf<StructuralElement>().apply {
-    addAll(dbInitialization); addAll(resourceCalls)
-}) {
+    sampleType: SampleType,
+    val sampleSpec: SamplerSpecification? = null,
+    trackOperator: TrackOperator? = null,
+    index : Int = -1,
+    allActions : MutableList<out ActionComponent>,
+    mainSize : Int = allActions.size,
+    sqlSize: Int = 0,
+    mongoSize: Int = 0,
+    dnsSize: Int = 0,
+    groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(allActions,mainSize,sqlSize,mongoSize,dnsSize)
+): ApiWsIndividual(sampleType, trackOperator, index, allActions,
+    childTypeVerifier = EnterpriseChildTypeVerifier(RestCallAction::class.java,RestResourceCalls::class.java),
+    groups) {
+
+    /*
+        Note when instantiating this class... input actions might or might have not been initialized.
+        This all depends on how this object is created.
+        If not initialized, then would need to make sure to call doInitialize() on it.
+        Likewise, might need to handle doInitializeLocalId().
+        Furthermore, doGlobalInitialize() can only be handled once the object is created.
+        Note that this latter would call doInitializeLocalId() if needed.
+        However, when creating test cases manually with specific values (or seeded from tests) might
+        want to skip calling doGlobalInitialize() as that can modify the values (and so might need to
+        call doInitializeLocalId() directly, possibly by calling resetLocalIdRecursively() first).
+     */
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(RestIndividual::class.java)
     }
 
     constructor(
-            actions: MutableList<out Action>,
-            sampleType: SampleType,
-            dbInitialization: MutableList<DbAction> = mutableListOf(),
-            trackOperator: TrackOperator? = null,
-            index : Int = Traceable.DEFAULT_INDEX) :
-            this(
-                    actions.map { RestResourceCalls(actions= mutableListOf(it as RestCallAction)) }.toMutableList(),
+        resourceCalls: MutableList<RestResourceCalls>,
+        sampleType: SampleType,
+        sampleSpec: SamplerSpecification? = null,
+        dbInitialization: MutableList<SqlAction> = mutableListOf(),
+        trackOperator: TrackOperator? = null,
+        index : Int = -1
+    ) : this(sampleType, sampleSpec, trackOperator, index, mutableListOf<ActionComponent>().apply {
+        addAll(dbInitialization); addAll(resourceCalls)
+    }, resourceCalls.size, dbInitialization.size)
+
+    constructor(
+        actions: MutableList<out Action>,
+        sampleType: SampleType,
+        dbInitialization: MutableList<SqlAction> = mutableListOf(),
+        trackOperator: TrackOperator? = null,
+        index : Int = Traceable.DEFAULT_INDEX
+    ) : this(
+                    actions.map {RestResourceCalls(actions= listOf(it as RestCallAction), sqlActions = listOf())}.toMutableList(),
                     sampleType,
                     null,
                     dbInitialization,
@@ -54,42 +88,63 @@ class RestIndividual(
             )
 
 
+
     override fun copyContent(): Individual {
         return RestIndividual(
-                resourceCalls.map { it.copyContent() }.toMutableList(),
                 sampleType,
                 sampleSpec?.copy(),
-                seeInitializingActions().map { d -> d.copyContent() as DbAction } as MutableList<DbAction>,
                 trackOperator,
-                index
+                index,
+                children.map { it.copy() }.toMutableList() as MutableList<out ActionComponent>,
+                mainSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.MAIN),
+                sqlSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_SQL),
+                mongoSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_MONGO),
+                dnsSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_DNS)
         )
     }
 
-    override fun getChildren(): List<StructuralElement> = seeInitializingActions().plus(resourceCalls)
 
     override fun canMutateStructure(): Boolean {
         return sampleType == SampleType.RANDOM ||
-                sampleType == SampleType.SMART_GET_COLLECTION ||
+                sampleType == SampleType.REST_SMART_GET_COLLECTION ||
                 sampleType == SampleType.SMART_RESOURCE
     }
 
-    /**
-     * Note that if resource-mio is enabled, [dbInitialization] of a RestIndividual is always empty, since DbActions are created
-     * for initializing an resource for a set of actions on the same resource.
-     * This effects on a configuration with respect to  [EMConfig.geneMutationStrategy] is ONE_OVER_N when resource-mio is enabled.
-     *
-     * In another word, if resource-mio is enabled, whatever [EMConfig.geneMutationStrategy] is, it always follows "GeneMutationStrategy.ONE_OVER_N_BIASED_SQL"
-     * strategy.
-     *
-     * TODO : modify return genes when GeneFilter is one of [GeneFilter.ALL] and [GeneFilter.ONLY_SQL]
-     */
-    override fun seeGenes(filter: GeneFilter): List<out Gene> {
 
-        return when (filter) {
-            GeneFilter.ALL -> seeDbActions().flatMap(DbAction::seeGenes).plus(seeActions().flatMap(Action::seeGenes))
-            GeneFilter.NO_SQL -> seeActions().flatMap(Action::seeGenes)
-            GeneFilter.ONLY_SQL -> seeDbActions().flatMap(DbAction::seeGenes)
-        }
+    /**
+     * remove RestResourceCall structure and binding among genes
+     */
+    protected override fun doFlattenStructure() : Boolean{
+
+        // check the top structure
+        val resources = groupsView()!!.getAllInGroup(GroupsOfChildren.MAIN).filterIsInstance<RestResourceCalls>()
+
+        if (resources.isEmpty()) return false
+
+        // remove all bindings among genes
+        removeAllBindingAmongGenes()
+
+        val dnsActions = resources.flatMap { it.seeActions(ONLY_DNS)} as List<HostnameResolutionAction>
+        val sqlActions = resources.flatMap { it.seeActions(ONLY_SQL) } as List<SqlAction>
+        val mongoDbActions = resources.flatMap { it.seeActions(ONLY_MONGO) } as List<MongoDbAction>
+
+        val groups = resources.flatMap { it.seeEnterpriseActionGroup() }
+
+        removeResourceCall(resources)
+        addChildrenToGroup(groups, GroupsOfChildren.MAIN)
+
+        addChildrenToGroup(sqlActions, GroupsOfChildren.INITIALIZATION_SQL)
+        addChildrenToGroup(mongoDbActions, GroupsOfChildren.INITIALIZATION_MONGO)
+        addChildrenToGroup(dnsActions, GroupsOfChildren.INITIALIZATION_DNS)
+
+        /*
+            if we move any environment action to the beginning of the individual, it might impact the fitness
+         */
+        return dnsActions.isNotEmpty() || sqlActions.isNotEmpty() || mongoDbActions.isNotEmpty()
+
+        // re-generate local id
+//        resetLocalIdRecursively()
+//        doInitializeLocalId()
     }
 
     enum class ResourceFilter { ALL, NO_SQL, ONLY_SQL, ONLY_SQL_INSERTION, ONLY_SQL_EXISTING }
@@ -105,38 +160,54 @@ class RestIndividual(
      */
     fun seeResource(filter: ResourceFilter) : List<String>{
         return when(filter){
-            ResourceFilter.ALL -> seeInitializingActions().map { it.table.name }.plus(
+            ResourceFilter.ALL -> seeInitializingActions().filterIsInstance<SqlAction>().map { it.table.name }.plus(
                 getResourceCalls().map { it.getResourceKey() }
             )
             ResourceFilter.NO_SQL -> getResourceCalls().map { it.getResourceKey() }
-            ResourceFilter.ONLY_SQL -> seeInitializingActions().map { it.table.name }
-            ResourceFilter.ONLY_SQL_EXISTING -> seeInitializingActions().filter { it.representExistingData }.map { it.table.name }
-            ResourceFilter.ONLY_SQL_INSERTION -> seeInitializingActions().filterNot { it.representExistingData }.map { it.table.name }
+            ResourceFilter.ONLY_SQL -> seeInitializingActions().filterIsInstance<SqlAction>().map { it.table.name }
+            ResourceFilter.ONLY_SQL_EXISTING -> seeInitializingActions().filterIsInstance<SqlAction>().filter { it.representExistingData }.map { it.table.name }
+            ResourceFilter.ONLY_SQL_INSERTION -> seeInitializingActions().filterIsInstance<SqlAction>().filterNot { it.representExistingData }.map { it.table.name }
         }
     }
 
-    /*
-        TODO Tricky... should dbInitialization somehow be part of the size?
-        But they are merged in a single operation in a single call...
-        need to think about it
-     */
-
-    override fun size() = seeActions().size
-
     /**
-     * @return actions which are REST actions
+     * remove location id among actions used for minimization phase
      */
-    override fun seeActions(): List<RestCallAction> = resourceCalls.flatMap { it.seeActions(NO_INIT) as List<RestCallAction> }
-
-    /**
-     * @return all Sql actions which could be in initialization or between rest actions.
-     */
-    override fun seeDbActions(): List<DbAction> {
-        return seeInitializingActions().plus(resourceCalls.flatMap { c-> c.seeActions(ONLY_SQL) as List<DbAction> })
+    fun removeAllLinks(){
+        seeMainExecutableActions().forEach { a->
+            a.usePreviousLocationId = null
+            a.saveCreatedResourceLocation = false
+            a.backwardLinkReference = null
+        }
     }
 
+    fun fixResourceForwardLinks(){
+
+        val actions = seeMainExecutableActions()
+
+        for(i in 0 until actions.size-1){
+            val a = actions[i]
+            if(a.saveCreatedResourceLocation){
+                //anyone after using it?
+                var using = false
+                for(j in (i+1) until actions.size){
+                    if(actions[j].usePreviousLocationId == a.postLocationId()){
+                        using = true
+                        break
+                    }
+                }
+                if(!using){
+                    //no point in keeping it if none use it
+                    a.saveCreatedResourceLocation = false
+                }
+            }
+        }
+
+    }
+
+    //FIXME refactor
     override fun verifyInitializationActions(): Boolean {
-        return DbActionUtils.verifyActions(seeInitializingActions())
+        return SqlActionUtils.verifyActions(seeInitializingActions().filterIsInstance<SqlAction>())
     }
 
     override fun copy(copyFilter: TraceableElementCopyFilter): RestIndividual {
@@ -151,84 +222,64 @@ class RestIndividual(
     }
 
     /**
-     * During mutation, the values used for parameters are changed, but the values attached to the respective used objects are not.
-     * This function copies the new (mutated) values of the parameters into the respective used objects, to ensure that the objects and parameters are coherent.
-     * The return value is true if everything went well, and false if some values could not be copied. It is there for debugging only.
-     */
-
-    /*
-    fun enforceCoherence(): Boolean {
-
-        //BMR: not sure I can use flatMap here. I am using a reference to the action object to get the relevant gene.
-        seeActions().forEach { action ->
-            action.seeGenes().forEach { gene ->
-                try {
-                    val innerGene = when (gene::class) {
-                        OptionalGene::class -> (gene as OptionalGene).gene
-                        DisruptiveGene::class -> (gene as DisruptiveGene<*>).gene
-                        else -> gene
-                    }
-                    val relevantGene = usedObjects.getRelevantGene((action as RestCallAction), innerGene)
-                    when (action::class) {
-                        RestCallAction::class -> {
-                            when (relevantGene::class) {
-                                OptionalGene::class -> (relevantGene as OptionalGene).gene.copyValueFrom(innerGene)
-                                DisruptiveGene::class -> (relevantGene as DisruptiveGene<*>).gene.copyValueFrom(innerGene)
-                                ObjectGene::class -> relevantGene.copyValueFrom(innerGene)
-                                else -> relevantGene.copyValueFrom(innerGene)
-                            }
-                        }
-                    }
-                }
-                catch (e: Exception){
-                    // TODO BMR: EnumGene is not handled well and ends up here.
-                     return false
-                }
-            }
-        }
-        return true
-    }
-
-     */
-
-
-    /**
      * for each call, there exist db actions for preparing resources.
      * however, the db action might refer to a db action which is not in the same call.
      * In this case, we need to repair the fk of db actions among calls.
      *
+     * Note: this is ignoring the DB Actions in the initialization of the individual, as we
+     * are building dependencies among resources here.
+     *
      * TODO not sure whether build binding between fk and pk
      */
     fun repairDbActionsInCalls(){
-        val previous = mutableListOf<DbAction>()
-        resourceCalls.forEach { c->
+        val previous = mutableListOf<SqlAction>()
+        getResourceCalls().forEach { c->
             c.repairFK(previous)
-            previous.addAll(c.seeActions(ONLY_SQL) as List<DbAction>)
+            previous.addAll(c.seeActions(ONLY_SQL) as List<SqlAction>)
         }
     }
 
     /**
      * @return all groups of actions for resource handling
      */
-    fun getResourceCalls() : List<RestResourceCalls> = resourceCalls.toList()
+    fun getResourceCalls() : List<RestResourceCalls> = children.filterIsInstance<RestResourceCalls>()
 
+
+    /**
+     * @return a list of EnterpriseActionGroups under GroupsOfChildren.MAIN
+     * if the list is empty, it indicates that `doFlattenStructure` has been processed yet then return null
+     */
+    fun getFlattenMainEnterpriseActionGroup() : List<EnterpriseActionGroup<RestCallAction>>?{
+        val groups = groupsView()!!.getAllInGroup(GroupsOfChildren.MAIN).filterIsInstance<EnterpriseActionGroup<*>>()
+        if (groups.isEmpty()) return null
+        return groups as List<EnterpriseActionGroup<RestCallAction>>
+    }
+
+    /**
+     * return all the resource calls in this individual, with their index in the children list
+     * @param isRelative indicates whether to return the relative index by only considering a list of resource calls
+     */
+    fun getIndexedResourceCalls(isRelative: Boolean = true) : Map<Int,RestResourceCalls> = getIndexedChildren(RestResourceCalls::class.java).run {
+        if (isRelative)
+            this.map { it.key - getFirstIndexOfRestResourceCalls() to it.value }.toMap()
+        else
+            this
+    }
 
     /****************************** manipulate resource call in an individual *******************************************/
     /**
      * remove the resource at [position]
      */
     fun removeResourceCall(position : Int) {
-        if(position >= resourceCalls.size)
+        if(!getIndexedResourceCalls().keys.contains(position))
             throw IllegalArgumentException("position is out of range of list")
-        val removed = resourceCalls.removeAt(position)
-        removed.removeThisFromItsBindingGenes()
+        val removed = killChildByIndex(getFirstIndexOfRestResourceCalls() + position) as RestResourceCalls
     }
 
     fun removeResourceCall(remove: List<RestResourceCalls>) {
-        if(!resourceCalls.containsAll(remove))
+        if(!getResourceCalls().containsAll(remove))
             throw IllegalArgumentException("specified rest calls are not part of this individual")
-        resourceCalls.removeAll(remove)
-        remove.forEach { it.removeThisFromItsBindingGenes() }
+        killChildren(remove)
     }
 
     /**
@@ -236,20 +287,21 @@ class RestIndividual(
      */
     fun addResourceCall(position: Int = -1, restCalls : RestResourceCalls) {
         if (position == -1){
-            resourceCalls.add(restCalls)
+            addChildToGroup(restCalls, GroupsOfChildren.MAIN)
         }else{
-            if(position > resourceCalls.size)
+            if(position > children.size)
                 throw IllegalArgumentException("position is out of range of list")
-            resourceCalls.add(position, restCalls)
+            addChildToGroup(getFirstIndexOfRestResourceCalls() + position, restCalls, GroupsOfChildren.MAIN)
         }
-        addChild(restCalls)
     }
+
+    private fun getFirstIndexOfRestResourceCalls() = max(0, max(children.indexOfLast { it is EnvironmentAction }+1, children.indexOfFirst { it is RestResourceCalls }))
 
     /**
      * replace the resourceCall at [position] with [resourceCalls]
      */
     fun replaceResourceCall(position: Int, restCalls: RestResourceCalls){
-        if(position > resourceCalls.size)
+        if(!getIndexedResourceCalls().keys.contains(position))
             throw IllegalArgumentException("position is out of range of list")
 
         removeResourceCall(position)
@@ -260,20 +312,25 @@ class RestIndividual(
      * switch the resourceCall at [position1] and the resourceCall at [position2]
      */
     fun swapResourceCall(position1: Int, position2: Int){
-        if(position1 > resourceCalls.size || position2 > resourceCalls.size)
+        val valid = getIndexedResourceCalls().keys
+        if(!valid.contains(position1) || !valid.contains(position2))
             throw IllegalArgumentException("position is out of range of list")
         if(position1 == position2)
             throw IllegalArgumentException("It is not necessary to swap two same position on the resource call list")
-        val first = resourceCalls[position1]
-        resourceCalls[position1] = resourceCalls[position2]
-        resourceCalls[position2] = first
+        swapChildren(getFirstIndexOfRestResourceCalls() + position1, getFirstIndexOfRestResourceCalls() + position2)
     }
 
-    fun getActionIndexes(actionFilter: ActionFilter, resourcePosition: Int) = getResourceCalls()[resourcePosition].seeActions(ALL).map {
-        seeActions(actionFilter).indexOf(it)
+
+    fun getFixedActionIndexes(resourcePosition: Int)
+    = getIndexedResourceCalls()[resourcePosition]!!.seeActions(ALL).filter { seeMainExecutableActions().contains(it) }.map {
+        seeFixedMainActions().indexOf(it)
     }
+
+    fun getDynamicActionLocalIds(resourcePosition: Int) =
+        getIndexedResourceCalls()[resourcePosition]!!.seeActions(ALL).filter { seeDynamicMainActions().contains(it) }.map { it.getLocalId() }
 
     private fun validateSwap(first : Int, second : Int) : Boolean{
+        //TODO need update, although currently not in use
         val position = getResourceCalls()[first].shouldBefore.map { r ->
             getResourceCalls().indexOfFirst { it.getResourceNodeKey() == r }
         }
@@ -307,24 +364,14 @@ class RestIndividual(
                 }
     }
 
-    override fun seeActions(filter: ActionFilter): List<out Action> {
-        return when(filter){
-            ALL-> seeInitializingActions().plus(getResourceCalls().flatMap { it.seeActions(ALL) })
-            NO_INIT -> getResourceCalls().flatMap { it.seeActions(ALL) }
-            INIT -> seeInitializingActions()
-            ONLY_SQL -> seeInitializingActions().plus(getResourceCalls().flatMap { it.seeActions(ONLY_SQL) })
-            NO_SQL -> getResourceCalls().flatMap { it.seeActions(NO_SQL) }
-        }
-    }
-
 
     /**
      * @return possible swap positions of calls in this individual
      */
     fun extractSwapCandidates(): Map<Int, Set<Int>>{
-        return getResourceCalls().mapIndexed { index, _ ->
-            val range = handleSwapCandidates(this, index)
-            index to range
+        return getIndexedResourceCalls().map {
+            val range = handleSwapCandidates(this, it.key)
+            it.key to range
         }.filterNot { it.second.isEmpty() }.toMap()
     }
 
@@ -334,23 +381,46 @@ class RestIndividual(
     }
 
     private fun handleSwapTo(ind: RestIndividual, indexToSwap: Int): Set<Int>{
-        val before =  ind.getResourceCalls()[indexToSwap].shouldBefore.map { t->
-            ind.getResourceCalls().indexOfFirst { f->
-                f.getResourceNodeKey() == t
-            }
-        }.filter { it >=0 }.minOrNull()?:ind.getResourceCalls().size
 
-        val after = ind.getResourceCalls()[indexToSwap].depends.map { t->
-            ind.getResourceCalls().indexOfFirst { f->
-                f.getResourceNodeKey() == t
-            }
-        }.filter { it >=0 }.maxOrNull()?:0
+        val indexed = ind.getIndexedResourceCalls()
+        val toSwap = indexed[indexToSwap]!!
+
+        val before : Int = toSwap.shouldBefore.map { t ->
+            indexed.filter { it.value.getResourceNodeKey() == t }
+                .minByOrNull { it.key }?.key ?: (indexed.keys.maxOrNull()!! + 1)
+        }.minOrNull() ?: (indexed.keys.maxOrNull()!! + 1)
+
+
+        val after : Int = toSwap.depends.map { t->
+            indexed.filter { it.value.getResourceNodeKey() == t }
+                    .maxByOrNull { it.key }?.key ?: 0
+        }.maxOrNull() ?: 0
+
 
         if (after >= before) return emptySet()
-        return (after until before).filter { it != indexToSwap }.toSet()
+        return indexed.keys.filter { it >= after && it < before && it != indexToSwap }.toSet()
     }
 
+
     override fun getInsertTableNames(): List<String> {
-        return seeDbActions().filterNot { it.representExistingData }.map { it.table.name }
+        return seeSqlDbActions().filterNot { it.representExistingData }.map { it.table.name }
+    }
+
+    override fun seeMainExecutableActions(): List<RestCallAction> {
+        return super.seeMainExecutableActions() as List<RestCallAction>
+    }
+
+    /**
+     * Finds the first index of a main REST action with a given verb and path among actions in the individual.
+     *
+     * @return negative value if not found
+     */
+    fun getActionIndex(
+        actionVerb: HttpVerb,
+        path: RestPath
+    ) : Int {
+        return seeMainExecutableActions().indexOfFirst  {
+            it.verb == actionVerb && it.path.isEquivalent(path)
+        }
     }
 }

@@ -13,8 +13,8 @@ public class ByteBufferType extends TypeSchema {
     public final static String BYTEBUFFER_STRING_TYPE_NAME = ByteBuffer.class.getName();
 
 
-    public ByteBufferType() {
-        super(BYTEBUFFER_TYPE_NAME, BYTEBUFFER_STRING_TYPE_NAME, ByteBuffer.class);
+    public ByteBufferType(JavaDtoSpec spec) {
+        super(BYTEBUFFER_TYPE_NAME, BYTEBUFFER_STRING_TYPE_NAME, ByteBuffer.class, spec);
     }
 
     @Override
@@ -26,6 +26,6 @@ public class ByteBufferType extends TypeSchema {
 
     @Override
     public ByteBufferType copy() {
-        return new ByteBufferType();
+        return new ByteBufferType(spec);
     }
 }

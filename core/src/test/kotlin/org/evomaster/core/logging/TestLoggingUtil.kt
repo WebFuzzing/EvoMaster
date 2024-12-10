@@ -1,6 +1,5 @@
 package org.evomaster.core.logging
 
-import org.evomaster.client.java.controller.internal.db.WrappedPrintStream
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 
@@ -20,16 +19,16 @@ class TestLoggingUtil {
             val byteStream = ByteArrayOutputStream()
             val outStream = PrintStream(byteStream)
 
-            if (latestOut is WrappedPrintStream){
+        //    if (latestOut is org.evomaster.sql.internal.WrappedPrintStream){
                 /*
                     we can also manipulate the current [latestOut], i.e., set [outStream] as printStream of
                     the current StandardOutputTracker, but it might cause some problems when setting its status back.
                     therefore, here, we create a new PrintStream which keeps the same setting with the current one.
                  */
-                System.setOut(latestOut.copyWithRestPrintStream(outStream))
-            }else{
+           //     System.setOut(latestOut.copyWithRestPrintStream(outStream))
+          //  }else{
                 System.setOut(outStream)
-            }
+         //   }
 
             LoggingUtil.changeLogbackFile("logback_for_determinism_check.xml")
 

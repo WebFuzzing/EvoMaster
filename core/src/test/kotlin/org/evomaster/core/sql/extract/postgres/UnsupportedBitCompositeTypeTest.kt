@@ -1,0 +1,21 @@
+package org.evomaster.core.sql.extract.postgres
+
+import org.evomaster.client.java.sql.DbInfoExtractor
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
+
+/**
+ * Created by jgaleotti on 02-May-22.
+ */
+class UnsupportedBitCompositeTypeTest : ExtractTestBasePostgres() {
+
+    override fun getSchemaLocation() = "/sql_schema/postgres_unsupported_composite_type_bit.sql"
+
+    @Test
+    fun testFailureToExtractSchema() {
+        assertThrows<UnsupportedOperationException> { DbInfoExtractor.extract(connection) }
+
+    }
+
+
+}

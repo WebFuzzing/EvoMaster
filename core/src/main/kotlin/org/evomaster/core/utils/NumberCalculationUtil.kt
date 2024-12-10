@@ -1,6 +1,6 @@
 package org.evomaster.core.utils
 
-import org.evomaster.core.search.gene.NumberMutatorUtils
+import org.evomaster.core.search.gene.utils.NumberMutatorUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.math.BigDecimal
@@ -52,9 +52,9 @@ object NumberCalculationUtil {
     /**
      * @return decimal upperbound with specified precision and scale
      */
-    fun upperBound(size: Int, scale: Int, roundingMode: RoundingMode= RoundingMode.HALF_UP) : BigDecimal{
-        if (size > NumberMutatorUtils.MAX_INTEGER_PRECISION){
-            throw IllegalArgumentException("for integer, the max precision is ${NumberMutatorUtils.MAX_INTEGER_PRECISION}, but $size is specified")
+    fun upperBound(size: Int, scale: Int, roundingMode: RoundingMode= RoundingMode.HALF_UP, maxValue: Number? = null) : BigDecimal{
+        if (size > NumberMutatorUtils.MAX_PRECISION){
+            throw IllegalArgumentException("for number, the max precision is ${NumberMutatorUtils.MAX_PRECISION}, but $size is specified")
         }
 
         if (scale > 0 && size > NumberMutatorUtils.MAX_DOUBLE_PRECISION){
@@ -65,18 +65,34 @@ object NumberCalculationUtil {
         val fraction = (10.0).pow(scale)
         val boundary = integral.div(fraction)
 
-        return valueWithPrecisionAndScale(boundary, scale, roundingMode)
+        val value = valueWithPrecisionAndScale(boundary.toString(), scale, roundingMode)
+        if (maxValue != null && BigDecimal(maxValue.toString()) < value)
+            return BigDecimal(maxValue.toString())
+        return value
+    }
+
+    fun  valueWithPrecisionAndScale(value: Double, scale: Int?, roundingMode: RoundingMode = RoundingMode.HALF_UP) : BigDecimal {
+        return valueWithPrecisionAndScale(value.toString(), scale, roundingMode)
     }
 
     /**
      * @return decimal for double with the specified scale
      */
-    fun valueWithPrecisionAndScale(value: Double, scale: Int?, roundingMode: RoundingMode = RoundingMode.HALF_UP) : BigDecimal {
+    fun valueWithPrecisionAndScale(value: String, scale: Int?, roundingMode: RoundingMode = RoundingMode.HALF_UP) : BigDecimal {
         return try {
             if (scale == null)
-                BigDecimal.valueOf(value)
-            else
+                BigDecimal(value)
+            else{
+                /*
+                    BigDecimal(99.99).setScale(2, RoundingMode.DOWN) -> 99.98
+                    BigDecimal("99.99").setScale(2, RoundingMode.DOWN) -> 99.99
+                    BigDecimal.valueOf(99.99).setScale(2, RoundingMode.DOWN) -> 99.99
+
+                    then try to handle the value with string format
+                */
                 BigDecimal(value).setScale(scale, roundingMode)
+            }
+
         }catch (e: NumberFormatException){
             log.warn("fail to get value ($value) with the specified prevision ($scale)")
             throw e
@@ -88,6 +104,6 @@ object NumberCalculationUtil {
      */
     fun <T: Number> getMiddle(min: T, max : T, scale: Int?) : BigDecimal{
         val m = min.toDouble()/2.0  + max.toDouble()/2.0
-        return valueWithPrecisionAndScale(m, scale)
+        return valueWithPrecisionAndScale(m.toString(), scale)
     }
 }

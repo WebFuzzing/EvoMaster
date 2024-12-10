@@ -5,11 +5,10 @@ import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.PartialOracles
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.httpws.service.HttpWsCallResult
+import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.remote.service.RemoteController
-import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Solution
+import org.evomaster.core.utils.IncrementalAverage
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
@@ -29,11 +28,8 @@ class Statistics : SearchListener {
         const val DISTINCT_ACTIONS = "distinctActions"
         const val COVERED_2XX = "covered2xx"
         const val GQL_NO_ERRORS = "gqlNoErrors"
-
-        /**
-         * represent that boot-time info is unavailable to collect
-         */
-        const val BOOT_TIME_INFO_UNAVAILABLE = -1
+        const val LAST_ACTION_IMPROVEMENT = "lastActionImprovement"
+        const val EVALUATED_ACTIONS = "evaluatedActions"
     }
 
     @Inject
@@ -67,6 +63,16 @@ class Statistics : SearchListener {
      */
     private var coverageFailures = 0
 
+    // sql heuristic evaluation statistics
+    private var sqlParsingFailureCount = 0;
+    private var sqlHeuristicEvaluationSuccessCount = 0;
+    private var sqlHeuristicEvaluationFailureCount = 0;
+    private val sqlRowsAverageCalculator = IncrementalAverage()
+
+    // mongo heuristic evaluation statistic
+    private var mongoHeuristicEvaluationSuccessCount = 0
+    private var mongoHeuristicEvaluationFailureCount = 0
+    private val mongoDocumentsAverageCalculator = IncrementalAverage()
 
    class Pair(val header: String, val element: String)
 
@@ -146,6 +152,46 @@ class Statistics : SearchListener {
         coverageFailures++
     }
 
+    fun reportNumberOfEvaluatedRowsForSqlHeuristic(numberOfEvaluatedRows: Int) {
+        sqlRowsAverageCalculator.addValue(numberOfEvaluatedRows)
+    }
+
+    fun reportNumberOfEvaluatedDocumentsForMongoHeuristic(numberOfEvaluatedDocuments: Int) {
+        mongoDocumentsAverageCalculator.addValue(numberOfEvaluatedDocuments)
+        mongoDocumentsAverageCalculator.addValue(numberOfEvaluatedDocuments)
+    }
+
+    fun reportSqlParsingFailures(numberOfParsingFailures: Int) {
+        if (numberOfParsingFailures<0) {
+            throw IllegalArgumentException("Invalid number of parsing failures: $numberOfParsingFailures")
+        }
+        sqlParsingFailureCount++;
+    }
+
+    fun reportSqlHeuristicEvaluationSuccess() {
+        sqlHeuristicEvaluationSuccessCount++
+    }
+
+    fun reportSqlHeuristicEvaluationFailure() {
+        sqlHeuristicEvaluationFailureCount++
+    }
+
+    fun reportMongoHeuristicEvaluationSuccess() {
+        mongoHeuristicEvaluationSuccessCount++
+    }
+
+    fun reportMongoHeuristicEvaluationFailure() {
+        mongoHeuristicEvaluationFailureCount++
+    }
+
+    fun getMongoHeuristicsEvaluationCount(): Int = mongoHeuristicEvaluationSuccessCount + mongoHeuristicEvaluationFailureCount
+
+    fun getSqlHeuristicsEvaluationCount(): Int = sqlHeuristicEvaluationSuccessCount + sqlHeuristicEvaluationFailureCount
+
+    fun averageNumberOfEvaluatedRowsForSqlHeuristics(): Double = sqlRowsAverageCalculator.mean
+
+    fun averageNumberOfEvaluatedDocumentsForMongoHeuristics(): Double = mongoDocumentsAverageCalculator.mean
+
     override fun newActionEvaluated() {
         if (snapshotThreshold <= 0) {
             //not collecting snapshot data
@@ -184,43 +230,46 @@ class Statistics : SearchListener {
         val unitsInfo = sutInfo?.unitsInfoDto
         val bootTimeInfo = sutInfo?.bootTimeInfoDto
 
-        val targetsInfo = solution.overall.unionWithBootTimeCoveredTargets(null, idMapper, bootTimeInfo, BOOT_TIME_INFO_UNAVAILABLE)
-        val linesInfo = solution.overall.unionWithBootTimeCoveredTargets(ObjectiveNaming.LINE, idMapper, bootTimeInfo, BOOT_TIME_INFO_UNAVAILABLE)
-        val branchesInfo = solution.overall.unionWithBootTimeCoveredTargets(ObjectiveNaming.BRANCH, idMapper, bootTimeInfo, BOOT_TIME_INFO_UNAVAILABLE)
+        val targetsInfo = solution.overall.unionWithBootTimeCoveredTargets(null, idMapper, bootTimeInfo)
+        val linesInfo = solution.overall.unionWithBootTimeCoveredTargets(ObjectiveNaming.LINE, idMapper, bootTimeInfo)
+        val branchesInfo = solution.overall.unionWithBootTimeCoveredTargets(ObjectiveNaming.BRANCH, idMapper, bootTimeInfo)
+
+        val rpcInfo = sutInfo?.rpcProblem
 
         val list: MutableList<Pair> = mutableListOf()
 
         list.apply {
             add(Pair("evaluatedTests", "" + time.evaluatedIndividuals))
             add(Pair("individualsWithSqlFailedWhere", "" + time.individualsWithSqlFailedWhere))
-            add(Pair("evaluatedActions", "" + time.evaluatedActions))
+            add(Pair(EVALUATED_ACTIONS, "" + time.evaluatedActions))
             add(Pair("elapsedSeconds", "" + time.getElapsedSeconds()))
             add(Pair("generatedTests", "" + solution.individuals.size))
             add(Pair("generatedTestTotalSize", "" + solution.individuals.map{ it.individual.size()}.sum()))
             add(Pair("coveredTargets", "" + targetsInfo.total))
-            add(Pair("lastActionImprovement", "" + time.lastActionImprovement))
+            add(Pair(LAST_ACTION_IMPROVEMENT, "" + time.lastActionImprovement))
             add(Pair(DISTINCT_ACTIONS, "" + distinctActions()))
             add(Pair("endpoints", "" + distinctActions()))
             add(Pair(COVERED_2XX, "" + covered2xxEndpoints(solution)))
             add(Pair(GQL_NO_ERRORS, "" + solution.overall.gqlNoErrors(idMapper).size))
-            add(Pair("gqlErrors", "" + solution.overall.gqlErrors(idMapper, withLine = false).size))
-            add(Pair("gqlErrorsPerLines", "" + solution.overall.gqlErrors(idMapper, withLine = true).size))
+            add(Pair("gqlErrors", "" + solution.overall.gqlErrors(idMapper).size))
             // Statistics on faults found
             // errors5xx - counting only the number of endpoints with 5xx, and NOT last executed line
             add(Pair("errors5xx", "" + errors5xx(solution)))
             //distinct500Faults - counts the number of 500 (and NOT the other in 5xx), per endpoint, and distinct based on the last
             //executed line
             add(Pair("distinct500Faults", "" + solution.overall.potential500Faults(idMapper).size ))
-            // failedOracleExpectations - the number of calls in the individual that fail one active partial oracle.
-            // However, 5xx are not counted here.
-            add(Pair("failedOracleExpectations", "" + failedOracle(solution)))
             /**
-             * this is the total of all potential faults, eg distinct500Faults + failedOracleExpectations + any other
+             * this is the total of all potential faults, e.g. distinct500Faults + failedOracleExpectations + any other
              * for RPC, this comprises internal errors, exceptions (declared and unexpected) and customized service errors
              */
-            //potential oracle we are going to introduce.
-            //Note: that 500 (and 5xx in general) MUST not be counted in failedOracles
             add(Pair("potentialFaults", "" + solution.overall.potentialFoundFaults(idMapper).size))
+            add(Pair("potentialFaultCategories", "" + solution.distinctDetectedFaultTypes().toList().sorted().joinToString("|")))
+
+            // RPC statistics of sut and seeded tests
+            add(Pair("numberOfRPCInterfaces", "${rpcInfo?.schemas?.size?:0}"))
+            add(Pair("numberOfRPCFunctions", "${rpcInfo?.schemas?.sumOf { it.skippedEndpoints?.size ?: 0 }}"))
+            add(Pair("numberOfRPCSeededTests", "${rpcInfo?.seededTestDtos?.size?:0}" ))
+            add(Pair("numberOfRPCSeededTestsHaveMock", "${rpcInfo?.seededTestDtos?.filter { s-> s.value?.isNotEmpty() == true &&  s.value?.any { a -> a.mockObjectNeeded() } == true}?.size?:0}" ))
 
             // RPC
             add(Pair("rpcUnexpectedException", "" + solution.overall.rpcUnexpectedException(idMapper).size))
@@ -253,6 +302,16 @@ class Statistics : SearchListener {
             add(Pair("searchTimeCoveredLines", "${linesInfo.searchTime}"))
             add(Pair("searchTimeCoveredBranches", "${branchesInfo.searchTime}"))
 
+            // statistic info with seeded tests
+            add(Pair("notExecutedSeededTests", "${sampler?.numberOfNotExecutedSeededIndividuals()?:0}"))
+            add(Pair("seedingTimeCoveredTargets", "${targetsInfo.seedingTime}"))
+            add(Pair("seedingTimeCoveredLines", "${linesInfo.seedingTime}"))
+            add(Pair("seedingTimeCoveredBranches", "${branchesInfo.seedingTime}"))
+
+
+            // statistic info for extractedSpecifiedDtos
+            add(Pair("numOfExtractedSpecifiedDtos", "${unitsInfo?.extractedSpecifiedDtos?.size?:0}"))
+
             val codes = codes(solution)
             add(Pair("avgReturnCodes", "" + codes.average()))
             add(Pair("maxReturnCodes", "" + codes.maxOrNull()))
@@ -261,6 +320,17 @@ class Statistics : SearchListener {
             add(Pair("coverageFailures", "$coverageFailures"))
             add(Pair("clusteringTime", "${solution.clusteringTime}"))
             add(Pair("id", config.statisticsColumnId))
+
+            // statistics info for Mongo Heuristics
+            add(Pair("averageNumberOfEvaluatedDocumentsForMongoHeuristics","${averageNumberOfEvaluatedDocumentsForMongoHeuristics()}"))
+            add(Pair("mongoHeuristicsEvaluationCount","${getMongoHeuristicsEvaluationCount()}"))
+
+            // statistics info for SQL Heuristics
+            add(Pair("sqlParsingFailureCount","$sqlParsingFailureCount"))
+            add(Pair("averageNumberOfEvaluatedRowsForSqlHeuristics","${averageNumberOfEvaluatedRowsForSqlHeuristics()}"))
+            add(Pair("sqlHeuristicsEvaluationFailures","$sqlHeuristicEvaluationFailureCount" ))
+            add(Pair("sqlHeuristicsEvaluationCount","${getSqlHeuristicsEvaluationCount()}"))
+
         }
         addConfig(list)
 
@@ -287,7 +357,7 @@ class Statistics : SearchListener {
 
         //count the distinct number of API paths for which we have a 5xx
         return solution.individuals
-                .flatMap { it.evaluatedActions() }
+                .flatMap { it.evaluatedMainActions() }
                 .filter {
                     it.result is HttpWsCallResult && (it.result as HttpWsCallResult).hasErrorCode()
                 }
@@ -296,28 +366,28 @@ class Statistics : SearchListener {
                 .count()
     }
 
-    private fun failedOracle(solution: Solution<*>): Int {
-
-        //count the distinct number of API paths for which we have a failed oracle
-        // NOTE: calls with an error code (5xx) are excluded from this count.
-        return solution.individuals
-                .flatMap { it.evaluatedActions() }
-                .filter {
-                    it.result is HttpWsCallResult
-                            && it.action is RestCallAction
-                            && !(it.result as HttpWsCallResult).hasErrorCode()
-                            && oracles.activeOracles(it.action as RestCallAction, it.result as HttpWsCallResult).any { or -> or.value }
-                }
-                .map { it.action.getName() }
-                .distinct()
-                .count()
-    }
+//    private fun failedOracle(solution: Solution<*>): Int {
+//
+//        //count the distinct number of API paths for which we have a failed oracle
+//        // NOTE: calls with an error code (5xx) are excluded from this count.
+//        return solution.individuals
+//                .flatMap { it.evaluatedMainActions() }
+//                .filter {
+//                    it.result is HttpWsCallResult
+//                            && it.action is RestCallAction
+//                            && !(it.result as HttpWsCallResult).hasErrorCode()
+//                            //&& oracles.activeOracles(it.action as RestCallAction, it.result as HttpWsCallResult).any { or -> or.value }
+//                }
+//                .map { it.action.getName() }
+//                .distinct()
+//                .count()
+//    }
 
     private fun covered2xxEndpoints(solution: Solution<*>) : Int {
 
         //count the distinct number of API paths for which we have a 2xx
         return solution.individuals
-                .flatMap { it.evaluatedActions() }
+                .flatMap { it.evaluatedMainActions() }
                 .filter {
                     it.result is HttpWsCallResult && (it.result as HttpWsCallResult).getStatusCode()?.let { c -> c in 200..299 } ?: false
                 }
@@ -329,13 +399,13 @@ class Statistics : SearchListener {
     private fun codes(solution: Solution<*>): List<Int> {
 
         return solution.individuals
-                .flatMap { it.evaluatedActions() }
+                .flatMap { it.evaluatedMainActions() }
                 .filter { it.result is HttpWsCallResult }
                 .map { it.action.getName() }
                 .distinct() //distinct names of actions, ie VERB:PATH
                 .map { name ->
                     solution.individuals
-                            .flatMap { it.evaluatedActions() }
+                            .flatMap { it.evaluatedMainActions() }
                             .filter { it.action.getName() == name }
                             .map { (it.result as HttpWsCallResult).getStatusCode() }
                             .distinct()
@@ -348,26 +418,27 @@ class Statistics : SearchListener {
         if (path.parent != null) Files.createDirectories(path.parent)
         if (Files.exists(path))
             log.info("The existing file on ${config.coveredTargetFile} is going to be replaced")
-        val info = archive.exportCoveredTargetsAsPair(solution)
         val separator = "," // for csv format
-
         val content = mutableListOf<String>()
+
         when(format){
             EMConfig.SortCoveredTargetBy.NAME ->{
                 content.add(DESCRIPTION_TARGET)
-                content.addAll(info.map { it.first }.sorted())
             }
             EMConfig.SortCoveredTargetBy.TEST ->{
                 content.add(listOf(TEST_INDEX, DESCRIPTION_TARGET).joinToString(separator))
-                info.flatMap { it.second }.sorted().forEach {test->
-                    /*
-                        currently, only index of tests are outputted.
-                        if there exists names of tests, we might refer to them.
-                     */
-                    content.addAll(info.filter { it.second.contains(test) }.map { c-> c.first }.sorted().map { listOf(test, it).joinToString(separator) })
-                }
             }
         }
+
+        if (archive.anyTargetsCoveredSeededTests()){
+            content.addAll(getPrintContentForCoveredTargets(archive.exportCoveredTargetsAsPair(solution, true), separator, format))
+            content.add(System.lineSeparator())
+            content.add(System.lineSeparator())
+            content.addAll(getPrintContentForCoveredTargets(archive.exportCoveredTargetsAsPair(solution, false), separator, format))
+        }else{
+            content.addAll(getPrintContentForCoveredTargets(archive.exportCoveredTargetsAsPair(solution), separator, format))
+        }
+
 
         // append boot-time targets
         if(!config.blackBox || config.bbExperiments) {
@@ -379,6 +450,25 @@ class Statistics : SearchListener {
             }
         }
         Files.write(path, content)
+    }
+
+    private fun getPrintContentForCoveredTargets(info: List<kotlin.Pair<String, List<Int>>>, separator: String, format : EMConfig.SortCoveredTargetBy) : MutableList<String>{
+        val content = mutableListOf<String>()
+        when(format){
+            EMConfig.SortCoveredTargetBy.NAME ->{
+                content.addAll(info.map { it.first }.sorted())
+            }
+            EMConfig.SortCoveredTargetBy.TEST ->{
+                info.flatMap { it.second }.sorted().forEach {test->
+                    /*
+                        currently, only index of tests are outputted.
+                        if there exists names of tests, we might refer to them.
+                     */
+                    content.addAll(info.filter { it.second.contains(test) }.map { c-> c.first }.sorted().map { listOf(test, it).joinToString(separator) })
+                }
+            }
+        }
+        return content
     }
 
 }

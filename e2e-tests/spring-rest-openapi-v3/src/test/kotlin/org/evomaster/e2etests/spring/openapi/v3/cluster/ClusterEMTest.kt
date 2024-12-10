@@ -4,15 +4,10 @@ import com.foo.rest.examples.spring.openapi.v3.cluster.ClusterTestController
 import io.restassured.RestAssured.given
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Main
-import org.evomaster.core.output.Termination
-import org.evomaster.core.problem.httpws.service.HttpWsCallResult
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.search.ActionResult
-import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
-import org.jetbrains.kotlin.utils.addToStdlib.assertedCast
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -86,7 +81,7 @@ class ClusterEMTest : SpringTestBase() {
             val injector = Main.init(args.toTypedArray())
 
             val config = injector.getInstance(EMConfig::class.java)
-            config.testSuiteSplitType = EMConfig.TestSuiteSplitType.CLUSTER
+            config.testSuiteSplitType = EMConfig.TestSuiteSplitType.FAULTS
 
             val controllerInfoDto = Main.checkState(injector)
 

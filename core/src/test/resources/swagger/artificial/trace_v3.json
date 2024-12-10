@@ -1,0 +1,31 @@
+{
+  "openapi": "3.0.0",
+  "servers": [
+    {
+      "description": "Test",
+      "url": "https://locolhost:8080"
+    }
+  ],
+  "info": {
+    "contact": {
+      "email": "",
+      "name": "",
+      "url": ""
+    },
+    "description": "",
+    "title": "",
+    "version": "3.x.x"
+  },
+  "paths": {
+    "/foo": {
+      "trace": {
+        "description": "Trace operation",
+        "responses": {
+          "200": {
+            "description": "foo"
+          }
+        }
+      }
+    }
+  }
+}

@@ -5,7 +5,7 @@ import java.util.List;
 /**
  * Created by arcuri82 on 05-Nov-18.
  */
-public class RestProblemDto {
+public class RestProblemDto extends ProblemInfoDto{
 
     /**
      * The full URL of where the Open/API schema can be located.

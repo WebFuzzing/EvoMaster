@@ -13,7 +13,7 @@ abstract class StructuralElementBaseTest {
     abstract fun getExpectedChildrenSize() : Int
 
     fun getStructuralElementAndIdentifyAsRoot() : StructuralElement{
-        return getStructuralElement().apply { identifyAsRoot() }
+        return getStructuralElement()//.apply { identifyAsRoot() }
     }
 
     @Test
@@ -30,13 +30,13 @@ abstract class StructuralElementBaseTest {
     }
 
     fun assertChildren(obj : StructuralElement, expectedSize: Int){
-        obj.getChildren().apply {
+        obj.getViewOfChildren().apply {
             if (expectedSize!= -1)
                 assertEquals(expectedSize, size)
             forEach {
                 assertNotNull(it.parent)
                 assertEquals(obj, it.parent)
-                if (it.getChildren().isNotEmpty()){
+                if (it.getViewOfChildren().isNotEmpty()){
                     assertChildren(it, -1)
                 }
             }
@@ -49,7 +49,7 @@ abstract class StructuralElementBaseTest {
         assertEquals(template::class.java.simpleName, copy::class.java.simpleName)
 
         //assert size of children and every children should have a parent
-        val size = expectedSize?: template.getChildren().size
+        val size = expectedSize?: template.getViewOfChildren().size
         assertChildren(template, size)
         assertChildren(copy, size)
 
@@ -61,7 +61,7 @@ abstract class StructuralElementBaseTest {
         assertEquals(templateIndex, copyIndex)
 
         (0 until size).forEach {
-            assertCopy(template.getChildren()[it], copy.getChildren()[it])
+            assertCopy(template.getViewOfChildren()[it], copy.getViewOfChildren()[it])
         }
     }
 }

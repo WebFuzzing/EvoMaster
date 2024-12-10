@@ -53,7 +53,7 @@ class ResourceSampleMethodController {
         /*
           if only S1iR is applicable, we recommend that maxTestSize is 1.
          */
-        if(methods.values.filter { it.applicable }.size == 1 && methods.getValue(S1iR).applicable)
+        if(config.enableOptimizedTestSize && methods.values.filter { it.applicable }.size == 1 && methods.getValue(S1iR).applicable)
             config.maxTestSize = 1
     }
 
@@ -90,7 +90,7 @@ class ResourceSampleMethodController {
             with dependency handling and sql handling, the resource might be become possibly dependent from independent
             thus, the applicable of methods might be updated.
          */
-        if (config.probOfApplySQLActionToCreateResources > 0 && methods.any { !it.value.applicable })
+        if (config.shouldGenerateSqlData() && config.probOfApplySQLActionToCreateResources > 0 && methods.any { !it.value.applicable })
             initApplicableStrategies()
 
         if(methods.filter { it.value.applicable }.size == 1) return getStrategyWithItsProbability()

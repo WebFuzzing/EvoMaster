@@ -83,41 +83,31 @@ However, it might take some hours before those are in sync with Maven Central,
 which you can check at [https://search.maven.org/](https://search.maven.org/).
 
 
-## NPM Release
+## Release Notes
 
-After the version number has been updated with `version.py` script, need to make a release on NPM as well.
-From folder:
-
-`client-js/evomaster-client-js`
-
-run the following commands:
-```
-npm run build
-npm login
-npm publish
-```
-
-Note that login will ask for username/password.
-The release is linked to NPM's user `arcuri82`.
-Password is ???.
-
-## NuGet Release
-
-After the version number has been updated with `version.py` script, need to make a release on NuGet as well for the .NET libraries.
-
-First, build .NET libraries with:
-
-`dotnet build`
-
-Then, execute:
-
-`./client-dotnet/publish.sh ???` 
-
-It takes as input the API-KEY linked to the namespace `EvoMaster.*`.
-Note: API-KEYs only last 1 year, and then a new one needs to be created.
-
+Update the release notes (i.e., the `release_notes.md` file), by replacing the SNAPSHOT version with the new release version. 
 
 ## GitHub Release
+
+Push the version changes in the `pom.xml` files on Git.
+
+Create a Git _tag_ in the form `v<version>`, e.g., `v0.4.0`, using the command:
+
+```
+git tag v<x.y.z>
+git push origin v<x.y.z>   
+```
+This will trigger a special build on GitHub Action (see `.github/workflows/release.yml`).
+If everything goes correctly, then after that action is completed the new release should be available on the [release page](https://github.com/EMResearch/EvoMaster/releases).
+
+In case of problems, will need to remove the created (locally and remotely), before trying again:
+
+```
+git tag  --delete v<x.y.z>
+git push --delete origin v<x.y.z>
+```
+
+## GitHub Release (OLD MANUAL VERSION) 
 
 Push the version changes in the `pom.xml` files on Git.
 Build the whole `EvoMaster` from project root folder with:
@@ -196,4 +186,36 @@ This means:
 
 
 
+## (DEPRECATED) NPM Release
+
+After the version number has been updated with `version.py` script, need to make a release on NPM as well.
+From folder:
+
+`client-js/evomaster-client-js`
+
+run the following commands:
+```
+npm run build
+npm login
+npm publish
+```
+
+Note that login will ask for username/password.
+The release is linked to NPM's user `arcuri82`.
+Password is ???.
+
+## (DEPRECATED) NuGet Release
+
+After the version number has been updated with `version.py` script, need to make a release on NuGet as well for the .NET libraries.
+
+First, build .NET libraries with:
+
+`dotnet build`
+
+Then, execute:
+
+`./client-dotnet/publish.sh ???`
+
+It takes as input the API-KEY linked to the namespace `EvoMaster.*`.
+Note: API-KEYs only last 1 year, and then a new one needs to be created.
 

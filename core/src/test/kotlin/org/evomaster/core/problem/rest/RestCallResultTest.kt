@@ -8,7 +8,7 @@ internal class RestCallResultTest {
 
     @Test
     fun givenAStringIdWhenGetResourceIdThenItIsReturnedAsString() {
-        val rc = RestCallResult(false)
+        val rc = RestCallResult("", false)
         rc.setBody("{\"id\":\"735\"}")
         rc.setBodyType(MediaType.APPLICATION_JSON_TYPE)
 
@@ -18,7 +18,7 @@ internal class RestCallResultTest {
     }
     @Test
     fun givenANumericIdWhenGetResourceIdThenItIsReturnedAsString() {
-        val rc = RestCallResult(false)
+        val rc = RestCallResult("",false)
         rc.setBody("{\"id\":735}")
         rc.setBodyType(MediaType.APPLICATION_JSON_TYPE)
 

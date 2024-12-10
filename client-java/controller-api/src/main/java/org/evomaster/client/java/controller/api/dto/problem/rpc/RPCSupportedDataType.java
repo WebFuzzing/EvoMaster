@@ -103,6 +103,11 @@ public enum RPCSupportedDataType {
     UTIL_DATE,
 
     /**
+     * java.time.LocalDate
+     */
+    LOCAL_DATE,
+
+    /**
      * only for map
      */
     PAIR,

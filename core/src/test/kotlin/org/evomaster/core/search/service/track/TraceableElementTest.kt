@@ -58,7 +58,7 @@ class TraceableElementTest {
         val inds10 = (0 until 10).map { sampler.sample()}
         assert(inds10.all { it.trackOperator == null })
 
-        val evalInds10 = inds10.map { ff.calculateCoverage(it)!! }
+        val evalInds10 = inds10.map { ff.calculateCoverage(it, modifiedSpec = null)!! }
         assert(evalInds10.all { it.trackOperator == null && it.tracking == null })
     }
 
@@ -67,8 +67,8 @@ class TraceableElementTest {
     fun testOneMaxIndividualWithFT(){
         config.enableTrackIndividual = false
         config.enableTrackEvaluatedIndividual = true
-        config.maxActionEvaluations = 100
-        config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
+        config.maxEvaluations = 100
+        config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
         config.maxLengthOfTraces = 20
         config.probOfArchiveMutation = 0.0
         config.weightBasedMutationRate = false
@@ -76,7 +76,7 @@ class TraceableElementTest {
         config.seed = 42
         config.useTimeInFeedbackSampling = false
 
-        val inds10 = (0 until 10).map { ff.calculateCoverage(sampler.sample())!!.also { archive.addIfNeeded(it) }}
+        val inds10 = (0 until 10).map { ff.calculateCoverage(sampler.sample(), modifiedSpec = null)!!.also { archive.addIfNeeded(it) }}
         assert(inds10.all { it.trackOperator != null })
 
 
@@ -116,13 +116,13 @@ class TraceableElementTest {
     fun testEvaluatedOneMaxIndividualWithFT(){
         config.enableTrackEvaluatedIndividual = false
         config.enableTrackIndividual = true
-        config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
+        config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
         config.probOfArchiveMutation = 0.0
         config.weightBasedMutationRate = false
 
         tracker.postConstruct()
 
-        val inds10 = (0 until 10).map { ff.calculateCoverage(sampler.sample())!!.also { archive.addIfNeeded(it) } }
+        val inds10 = (0 until 10).map { ff.calculateCoverage(sampler.sample(), modifiedSpec = null)!!.also { archive.addIfNeeded(it) } }
 
         assert(inds10.all { it.trackOperator != null && it.tracking == null})
 

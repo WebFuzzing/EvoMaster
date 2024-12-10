@@ -11,6 +11,8 @@ import org.jetbrains.kotlin.com.intellij.util.containers.hash.LinkedHashMap;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,12 +20,14 @@ import java.util.List;
 
 public class DeterminismTest extends AHypermuationTestBase {
 
-    @Test
-    public void testDeterminismOfLog(){
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void testDeterminismOfLog(boolean enableConstraintHandling){
 
         OpenAPI schema = (new OpenAPIParser()).readLocation("swagger-ahm/ahm.json", null, null).getOpenAPI();
         isDeterminismConsumer( new ArrayList<>(), (args) -> {
-            RestActionBuilderV3.INSTANCE.getModelsFromSwagger(schema, new LinkedHashMap<>());
+            RestActionBuilderV3.INSTANCE.getModelsFromSwagger(schema, new LinkedHashMap<>(),
+                    new RestActionBuilderV3.Options(false,enableConstraintHandling,false,0.0,0.0));
         });
     }
 
@@ -62,8 +66,8 @@ public class DeterminismTest extends AHypermuationTestBase {
                 "--showProgress", "false",
                 "--avoidNonDeterministicLogs", "true",
                 "--sutControllerPort", "" + controllerPort,
-                "--maxActionEvaluations", "" + 4000,
-                "--stoppingCriterion", "FITNESS_EVALUATIONS",
+                "--maxEvaluations", "" + 4000,
+                "--stoppingCriterion", "ACTION_EVALUATIONS",
                 "--useTimeInFeedbackSampling" , "false"
         ));
 

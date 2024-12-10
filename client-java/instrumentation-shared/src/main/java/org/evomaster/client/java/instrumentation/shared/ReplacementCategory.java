@@ -30,6 +30,11 @@ public enum ReplacementCategory {
     /**
      * Replacements specific to handle mocking of external services
      */
-    NET
+    NET,
+
+    /**
+     * Replacements to handle MONGO command interceptions
+     */
+    MONGO
 
 }

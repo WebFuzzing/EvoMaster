@@ -2,7 +2,6 @@ package org.evomaster.core.search.algorithms
 
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.Solution
 import org.evomaster.core.search.algorithms.wts.WtsEvalIndividual
 import org.evomaster.core.search.service.SearchAlgorithm
 
@@ -80,7 +79,7 @@ class WtsAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
                 wts.suite.removeAt(i)
             }
             "add" -> if (n < config.maxSearchSuiteSize) {
-                ff.calculateCoverage(sampler.sample())?.run {
+                ff.calculateCoverage(sampler.sample(), modifiedSpec = null)?.run {
                     archive.addIfNeeded(this)
                     wts.suite.add(this)
                 }
@@ -119,12 +118,12 @@ class WtsAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
         val nx = x.suite.size
         val ny = y.suite.size
 
-        val i = randomness.nextInt(Math.min(nx, ny))
+        val splitPoint = randomness.nextInt(Math.min(nx, ny))
 
-        (0..i).forEach {
-            val k = x.suite[i]
-            x.suite[i] = y.suite[i]
-            y.suite[i] = k
+        (0..splitPoint).forEach {
+            val k = x.suite[it]
+            x.suite[it] = y.suite[it]
+            y.suite[it] = k
         }
     }
 
@@ -148,7 +147,7 @@ class WtsAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
         val wts = WtsEvalIndividual<T>(mutableListOf())
 
         for (i in 1..n) {
-            ff.calculateCoverage(sampler.sample())?.run {
+            ff.calculateCoverage(sampler.sample(), modifiedSpec = null)?.run {
                 archive.addIfNeeded(this)
                 wts.suite.add(this)
             }

@@ -2,13 +2,11 @@ package org.evomaster.client.java.controller;
 
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto;
-import org.evomaster.client.java.controller.db.DbCleaner;
-import org.evomaster.client.java.controller.db.SqlScriptRunner;
-import org.evomaster.client.java.controller.db.SqlScriptRunnerCached;
-import org.evomaster.client.java.controller.internal.db.DbSpecification;
+import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionResultsDto;
+import org.evomaster.client.java.sql.DbCleaner;
+import org.evomaster.client.java.sql.DbSpecification;
 
-import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -89,6 +87,7 @@ public interface SutHandler {
      */
     InsertionResultsDto execInsertionsIntoDatabase(List<InsertionDto> insertions, InsertionResultsDto... previous);
 
+    MongoInsertionResultsDto execInsertionsIntoMongoDatabase(List<MongoInsertionDto> insertions);
 
     /**
      * <p>
@@ -177,11 +176,62 @@ public interface SutHandler {
 
     List<DbSpecification> getDbSpecifications();
 
+    default Object getMongoConnection() {return null;}
+
+
+    /**
+     * <p>
+     * register or execute specified SQL script for initializing data in database
+     * there is no need to be enabled.
+     * </p>
+     */
+    default void registerOrExecuteInitSqlCommandsIfNeeded(){}
 
     /**
      * <p>
      * reset database if the smart db cleaning is employed
      * </p>
+     * @param tablesToClean represents a list of table which will be reset based on specified DbSpecification.
+     *                      note that null tablesToClean means all table will be reset.
      */
     default void resetDatabase(List<String> tablesToClean){}
+
+    /**
+     * <p>
+     *     a method to reset mocked external services with customized method
+     * </p>
+     */
+    default boolean resetCustomizedMethodForMockObject(){
+        return false;
+    }
+
+    /**
+     * <p>
+     *     a method to employ customized mocking of RPC based external services
+     * </p>
+     * @param externalServiceDtos contains info about how to setup responses with json format, note that the json should
+     *                            be able to be converted to a list of MockRPCExternalServiceDto
+     * @param enabled reflect to enable (set it true) or disable (set it false) the specified external service dtos.
+     *                Note that null [externalServiceDtos] with false [enabled] means that all existing external service setup should be disabled.
+     * @return whether the mocked instance starts successfully,
+     */
+    default boolean mockRPCExternalServicesWithCustomizedHandling(String externalServiceDtos, boolean enabled){
+        return false;
+    }
+
+
+    /**
+     * <p>
+     *     a method to employ customized mocking for database
+     * </p>
+     * @param mockDatabaseObjectDtos contains info about how to set up mock object for databases with json format, note that the json should
+     *                            be able to be converted to a list of MockDatabaseDto
+     * @param enabled reflect to enable (set it true) or disable (set it false) the specified mock object
+     *                Note that null [mockDatabaseObjectDtos] with false [enabled] means that all existing mock objects for databases should be disabled.
+     * @return whether the mocked instance starts successfully,
+     */
+    default boolean mockDatabasesWithCustomizedHandling(String mockDatabaseObjectDtos, boolean enabled){
+        return false;
+    }
+
 }

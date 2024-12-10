@@ -12,8 +12,9 @@ import org.evomaster.core.problem.rest.service.RestSampler;
 import org.evomaster.core.problem.util.ParamUtil;
 import org.evomaster.core.search.EvaluatedIndividual;
 import org.evomaster.core.search.Individual;
+import org.evomaster.core.search.action.ActionFilter;
 import org.evomaster.core.search.gene.Gene;
-import org.evomaster.core.search.gene.StringGene;
+import org.evomaster.core.search.gene.string.StringGene;
 import org.evomaster.core.search.service.Archive;
 import org.evomaster.core.search.service.mutator.EvaluatedMutation;
 import org.evomaster.core.search.service.mutator.StandardMutator;
@@ -69,15 +70,15 @@ public class MutatorWithTestabilityRestTest extends SpringTestBase {
                     RestFitness ff = injector.getInstance(RestFitness.class);
 
                     RestSampler sampler = injector.getInstance(RestSampler.class);
-                    RestIndividual ind = sampler.sample();
+                    RestIndividual ind = sampler.sample(false);
                     int count = 0;
-                    while (ind.seeActions().stream().anyMatch(a-> anyExcludedAction(sampler, a)) && count < 3){
-                        ind = sampler.sample();
+                    while (ind.seeMainExecutableActions().stream().anyMatch(a-> anyExcludedAction(sampler, a)) && count < 3){
+                        ind = sampler.sample(false);
                         count++;
                     }
-                    if (ind.seeActions().stream().anyMatch(a-> anyExcludedAction(sampler, a)))
+                    if (ind.seeMainExecutableActions().stream().anyMatch(a-> anyExcludedAction(sampler, a)))
                         fail("cannot find any valid individual");
-                    archive.addIfNeeded(ff.calculateCoverage(ind, Collections.emptySet()));
+                    archive.addIfNeeded(ff.calculateCoverage(ind, Collections.emptySet(), null));
 
                     assertNotNull(ind);
 
@@ -87,14 +88,14 @@ public class MutatorWithTestabilityRestTest extends SpringTestBase {
                     List<String> foos = improvingStringValues(length, "foo");
 
                     int i = 0;
-                    EvaluatedIndividual<RestIndividual> current = ff.calculateCoverage(mutate(dates.get(i), ns.get(i), foos.get(i), ind), Collections.emptySet());
+                    EvaluatedIndividual<RestIndividual> current = ff.calculateCoverage(mutate(dates.get(i), ns.get(i), foos.get(i), ind), Collections.emptySet(), null);
                     archive.addIfNeeded(current);
 
                     Set<Integer> targets = new HashSet<>();
                     targets.addAll(archive.notCoveredTargets());
                     while (i < length-1){
                         i++;
-                        EvaluatedIndividual<RestIndividual> mutated = ff.calculateCoverage(mutate(dates.get(i), ns.get(i), foos.get(i), ind), Collections.emptySet());
+                        EvaluatedIndividual<RestIndividual> mutated = ff.calculateCoverage(mutate(dates.get(i), ns.get(i), foos.get(i), ind), Collections.emptySet(), null);
                         EvaluatedMutation result = mutator.evaluateMutation(mutated, current, targets, archive);
                         assertNotEquals(EvaluatedMutation.WORSE_THAN, result);
 
@@ -129,7 +130,7 @@ public class MutatorWithTestabilityRestTest extends SpringTestBase {
 
 
     private void setValue(String geneName, String value, RestIndividual individual){
-        Gene gene = individual.seeGenes(Individual.GeneFilter.ALL).stream().filter(g -> ParamUtil.Companion.getValueGene(g).getName().equals(geneName))
+        Gene gene = individual.seeTopGenes(ActionFilter.ALL).stream().filter(g -> ParamUtil.Companion.getValueGene(g).getName().equals(geneName))
                 .findAny()
                 .orElse(null);
         Gene g = ParamUtil.Companion.getValueGene(gene);

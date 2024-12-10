@@ -204,18 +204,55 @@ public class ServerController {
         return sendWithDataAndExpectACK(Command.EXECUTING_INIT_SQL, executingInitSql);
     }
 
+    public boolean setExecutingInitMongo(boolean executingInitMongo) {
+        return sendWithDataAndExpectACK(Command.EXECUTING_INIT_MONGO, executingInitMongo);
+    }
+
     public boolean setExecutingAction(boolean executingAction){
         return sendWithDataAndExpectACK(Command.EXECUTING_ACTION, executingAction);
     }
 
-    public synchronized List<TargetInfo> getTargetsInfo(Collection<Integer> ids) {
+    public boolean setBootingSut(boolean isBooting){
+        return sendWithDataAndExpectACK(Command.BOOTING_SUT, isBooting);
+    }
+
+//    public synchronized List<TargetInfo> getAllCoveredTargetsInfo() {
+//        boolean sent = sendCommand(Command.ALL_COVERED_TARGETS_INFO);
+//        if (!sent) {
+//            SimpleLogger.error("Failed to send message");
+//            return null;
+//        }
+//
+//        Object response = waitAndGetResponse();
+//        if (response == null) {
+//            SimpleLogger.error("Failed to read response about all covered targets");
+//            return null;
+//        }
+//
+//        if (!(response instanceof List<?>)) {
+//            throw new IllegalStateException(errorMsgExpectingResponse(response, "a List"));
+//        }
+//
+//        return (List<TargetInfo>) response;
+//    }
+
+    public synchronized List<TargetInfo> getTargetsInfo(
+            Collection<Integer> ids,
+            boolean fullyCovered,
+            boolean descriptiveIds
+    ) {
         boolean sent = sendCommand(Command.TARGETS_INFO);
         if (!sent) {
             SimpleLogger.error("Failed to send message");
             return null;
         }
 
-        if(! sendObject(ids)){
+        TargetInfoRequestDto dto = new TargetInfoRequestDto();
+        dto.ids = ids;
+        dto.fullyCovered = fullyCovered;
+        dto.descriptiveIds = descriptiveIds;
+
+        if(! sendObject(dto)){
             SimpleLogger.error("Failed to send ids");
             return null;
         }
@@ -294,5 +331,9 @@ public class ServerController {
         }
 
         return (UnitsInfoRecorder) response;
+    }
+
+    public boolean extractSpecifiedDto(List<String> dtoNames){
+        return sendWithDataAndExpectACK(Command.EXTRACT_JVM_DTO, dtoNames);
     }
 }

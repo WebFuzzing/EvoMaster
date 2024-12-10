@@ -1,5 +1,7 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.search.gene.string.Base64StringGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 

@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster-client-java</artifactId>
-        <version>1.4.1-SNAPSHOT</version>
+        <version>3.3.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>evomaster-client-java-instrumentation</artifactId>
@@ -13,6 +13,10 @@
 
 
     <dependencies>
+        <dependency>
+            <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-client-java-distance-heuristics</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.evomaster</groupId>
             <artifactId>evomaster-client-java-util</artifactId>
@@ -70,23 +74,53 @@
         </dependency>
 
         <!--
-            "Provided" dependencies.
+            "test" dependencies for ThirdPartyMethodReplacementClass.
 
             See ThirdPartyMethodReplacementClass for an explanation for why needed
             -->
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
-            <scope>provided</scope>
+            <scope>test</scope>
         </dependency>
-        <!--
-            But at a certain point we went with full reflection, and scope "test",
-            at least for method replacements.
-            Unfortunately do not remember the main reason for it... but I do remember
-            some weird stuff with classes loaded when used inside methods before their
-            bytecode is executed (which would lead to crashes in the cases in which the
-            SUT did not provide such classes)
-        -->
+        <dependency>
+            <groupId>javax.persistence</groupId>
+            <artifactId>javax.persistence-api</artifactId>
+            <version>2.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>javax.validation</groupId>
+            <artifactId>validation-api</artifactId>
+            <version>2.0.1.Final</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>javax.ws.rs</groupId>
+            <artifactId>javax.ws.rs-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-validator</artifactId>
+            <version>6.2.0.Final</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup.okhttp</groupId>
+            <artifactId>okhttp</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup.okhttp</groupId>
+            <artifactId>okhttp-urlconnection</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
@@ -97,7 +131,21 @@
             <artifactId>jackson-annotations</artifactId>
             <scope>test</scope>
         </dependency>
-
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.jaxrs</groupId>
+            <artifactId>jackson-jaxrs-base</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
@@ -110,7 +158,21 @@
             <artifactId>guava</artifactId>
             <scope>test</scope>
         </dependency>
-
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>mongodb-driver-sync</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-mongodb</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -162,8 +224,8 @@
                                     <shadedPattern>shaded.dk.brics.automaton</shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>com.github.jsqlparser</pattern>
-                                    <shadedPattern>shaded.com.github.jsqlparser</shadedPattern>
+                                    <pattern>net.sf.jsqlparser</pattern>
+                                    <shadedPattern>shaded.net.sf.jsqlparser</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>

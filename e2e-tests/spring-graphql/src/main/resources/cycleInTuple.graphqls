@@ -1,0 +1,12 @@
+type Query {
+    flowers: Flower
+}
+type Flower {
+    type(id:Int): Store
+}
+
+type Store{
+    id: Int
+    name(id:Int): Flower
+
+}

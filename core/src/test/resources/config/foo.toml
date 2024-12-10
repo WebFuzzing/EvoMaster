@@ -1,0 +1,23 @@
+### Template configuration file for EvoMaster.
+### Most important parameters are already present here, commented out, having meaningful values.
+### Note that there are more parameters that can be configured. For a full list, see:
+### https://github.com/EMResearch/EvoMaster/blob/master/docs/options.md
+### or check them with the --help option.
+
+
+[configs]
+bbSwaggerUrl="https://api.apis.guru/v2/openapi.yaml"
+# bbTargetUrl=""
+blackBox=true
+# header0=""
+# header1=""
+# header2=""
+# jsControllerPath=./app-driver.js
+maxTime="60s"
+# outputFilePrefix=EvoMaster
+# outputFileSuffix=Test
+# outputFolder=src/em
+outputFormat="JAVA_JUNIT_4"
+ratePerMinute=30
+# testTimeout=60
+foo=42

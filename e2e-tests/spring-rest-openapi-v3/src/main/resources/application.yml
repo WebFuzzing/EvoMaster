@@ -1,4 +1,15 @@
 spring:
   jmx:
     enabled: false
+  mvc:
+    hiddenmethod:
+      filter:
+        # before SpringBoot 2.2, this was on by default.
+        # https://stackoverflow.com/questions/34048617/spring-boot-how-to-use-hiddenhttpmethodfilter
+        # it gives issues due extra param "_method", that neeeds to be properly handled.
+        enabled: true
+server:
+  error:
+    include-stacktrace: always
+    include-exception: true
 

@@ -4,7 +4,7 @@ import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.resource.CallsTemplate
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
-import org.evomaster.core.search.ActionFilter
+import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.service.Randomness
 
 
@@ -16,7 +16,15 @@ class RestResourceTemplateHandler{
     companion object {
 
 
-        private val arrayHttpVerbs : Array<HttpVerb> = arrayOf(HttpVerb.POST, HttpVerb.GET, HttpVerb.PUT, HttpVerb.PATCH,HttpVerb.DELETE, HttpVerb.OPTIONS, HttpVerb.HEAD)
+        private val arrayHttpVerbs : Array<HttpVerb> =
+                arrayOf(HttpVerb.POST,
+                        HttpVerb.GET,
+                        HttpVerb.PUT,
+                        HttpVerb.PATCH,
+                        HttpVerb.DELETE,
+                        HttpVerb.OPTIONS,
+                        HttpVerb.HEAD,
+                        HttpVerb.TRACE)
         private const val SeparatorTemplate = "-"
 
 
@@ -70,15 +78,22 @@ class RestResourceTemplateHandler{
                 maps.getOrPut(v.toString()){ CallsTemplate(v.toString(), v != HttpVerb.POST, 1) }
             }
 
-            if(_space.first() || _space.last()){
+            val createActionVerb = if(_space.first() || _space.last()){
+                HttpVerb.POST
+            }else if(_space[getIndexOfHttpVerb(HttpVerb.PUT)]){
+                HttpVerb.PUT
+            }else null
+
+            if (createActionVerb != null){
                 val chosen = space.filter { v-> v!=HttpVerb.HEAD && v!=HttpVerb.OPTIONS }.toTypedArray()
                 chosen.forEach {
-                    val key = formatTemplate(arrayOf(HttpVerb.POST, it))
+                    val key = formatTemplate(arrayOf(createActionVerb, it))
                     maps.getOrPut(key){
-                       CallsTemplate(key, false, 2)
+                        CallsTemplate(key, false, 2)
                     }
                 }
             }
+
         }
 
         private fun formatTemplate(verbs : Array<HttpVerb>) : String = verbs.joinToString(SeparatorTemplate)
