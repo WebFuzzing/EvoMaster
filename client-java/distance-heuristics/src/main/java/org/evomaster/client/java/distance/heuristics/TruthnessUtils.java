@@ -81,33 +81,17 @@ public class TruthnessUtils {
         return t;
     }
 
-    public static double averageOfTrue(Truthness... truthnesses) {
-        checkValidTruthnesses(truthnesses);
-        double[] getOfTrueValues = Arrays.stream(truthnesses).mapToDouble(Truthness::getOfTrue)
-                .toArray();
-        return average(getOfTrueValues);
-    }
-
-    public static double averageOfFalse(Truthness... truthnesses) {
-        checkValidTruthnesses(truthnesses);
-        double[] getOfFalseValues = Arrays.stream(truthnesses).mapToDouble(Truthness::getOfFalse)
-                .toArray();
-        return average(getOfFalseValues);
-    }
-
-    private static double falseOrAverageFalse(Truthness... truthnesses) {
-        checkValidTruthnesses(truthnesses);
-        if (Arrays.stream(truthnesses).anyMatch(t -> t.isFalse())) {
-            return 1.0d;
-        } else {
-            return averageOfFalse(truthnesses);
-        }
-    }
-
     public static Truthness andAggregation(Truthness... truthnesses) {
         double averageOfTrue = averageOfTrue(truthnesses);
         double falseOrAverageFalse = falseOrAverageFalse(truthnesses);
         return new Truthness(averageOfTrue, falseOrAverageFalse);
+    }
+
+    private static double averageOfTrue(Truthness... truthnesses) {
+        checkValidTruthnesses(truthnesses);
+        double[] getOfTrueValues = Arrays.stream(truthnesses).mapToDouble(Truthness::getOfTrue)
+                .toArray();
+        return average(getOfTrueValues);
     }
 
     private static void checkValidTruthnesses(Truthness[] truthnesses) {
@@ -126,5 +110,22 @@ public class TruthnessUtils {
         }
         return total / values.length;
     }
+
+    private static double averageOfFalse(Truthness... truthnesses) {
+        checkValidTruthnesses(truthnesses);
+        double[] getOfFalseValues = Arrays.stream(truthnesses).mapToDouble(Truthness::getOfFalse)
+                .toArray();
+        return average(getOfFalseValues);
+    }
+
+    private static double falseOrAverageFalse(Truthness... truthnesses) {
+        checkValidTruthnesses(truthnesses);
+        if (Arrays.stream(truthnesses).anyMatch(t -> t.isFalse())) {
+            return 1.0d;
+        } else {
+            return averageOfFalse(truthnesses);
+        }
+    }
+
 
 }
