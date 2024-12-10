@@ -15,6 +15,18 @@ public class ColumnTableAnalyzerTest {
 
 
     @Test
+    public void testInsertWithQualifier(){
+
+        String sql = "insert into Bar.Foo (x) values (42)";
+
+        Map<String, Set<String>> data = ColumnTableAnalyzer.getInsertedDataFields(sql);
+
+        assertEquals(1, data.size());
+        assertTrue(data.containsKey("Bar.Foo"));
+    }
+
+
+    @Test
     public void testInsertInSimpleTable(){
 
         String sql = "insert into Foo (x) values (42)";
@@ -49,6 +61,18 @@ public class ColumnTableAnalyzerTest {
         assertEquals(1, tables.size());
         assertTrue(tables.contains("Foo"));
     }
+
+    @Test
+    public void testDeleteWithQualifier(){
+
+        String sql = "delete from v1.Foo";
+
+        Set<String> tables = ColumnTableAnalyzer.getDeletedTables(sql);
+
+        assertEquals(1, tables.size());
+        assertTrue(tables.contains("v1.Foo"));
+    }
+
 
 
     @Test
