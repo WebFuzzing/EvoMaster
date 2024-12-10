@@ -13,6 +13,7 @@ import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.gene.BooleanGene
+import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.optional.OptionalGene
@@ -265,20 +266,44 @@ class TestCaseDisambiguationTest {
         assertEquals("test_1_getOnLanguagesWithQueryParamsNegativeLimitEmptyNameReturnsEmpty", testCases[1].name)
     }
 
+    @Test
+    fun unwrappedNegativeNumberQueryParamIsAdded() {
+        val simpleIndividual = getEvaluatedIndividualWith(getRestCallAction("/languages"))
+        val negativeQPIndividual = getEvaluatedIndividualWith(getRestCallAction("/languages", parameters = mutableListOf(getIntegerQueryParam("limit", false))))
+        ensureGeneValue(negativeQPIndividual, "limit", "-1")
+
+        val solution = Solution(mutableListOf(simpleIndividual, negativeQPIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
+
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, QUERY_PARAMS_IN_NAME)
+
+        val testCases = namingStrategy.getTestCases()
+        assertEquals(2, testCases.size)
+        assertEquals("test_0_getOnLanguagesReturnsEmpty", testCases[0].name)
+        assertEquals("test_1_getOnLanguagesWithQueryParamNegativeLimitReturnsEmpty", testCases[1].name)
+    }
+
     private fun getPathParam(paramName: String): Param {
         return PathParam(paramName, CustomMutationRateGene(paramName, StringGene(paramName), 1.0))
     }
 
     private fun getStringQueryParam(paramName: String): Param {
-        return QueryParam(paramName, OptionalGene(paramName, StringGene(paramName)))
+        return getQueryParam(paramName, StringGene(paramName))
     }
 
     private fun getBooleanQueryParam(paramName: String): Param {
-        return QueryParam(paramName, OptionalGene(paramName, BooleanGene(paramName)))
+        return getQueryParam(paramName, BooleanGene(paramName))
     }
 
-    private fun getIntegerQueryParam(paramName: String): Param {
-        return QueryParam(paramName, OptionalGene(paramName, IntegerGene(paramName)))
+    private fun getIntegerQueryParam(paramName: String, wrapped: Boolean = true): Param {
+        return getQueryParam(paramName, IntegerGene(paramName), wrapped)
+    }
+
+    private fun getQueryParam(paramName: String, gene: Gene, wrapped: Boolean = true): Param {
+        return QueryParam(paramName, if (wrapped) getWrappedGene(paramName, gene) else gene)
+    }
+
+    private fun getWrappedGene(paramName: String, gene: Gene): OptionalGene {
+        return OptionalGene(paramName, gene)
     }
 
     /*
