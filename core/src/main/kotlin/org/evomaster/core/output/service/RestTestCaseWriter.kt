@@ -516,6 +516,16 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         val examples = getAllUsedExamples(ind.individual as RestIndividual)
             .toSet().sorted()
         if(examples.isNotEmpty()){
+            if(examples.size == 1){
+                lines.addBlockCommentLine("Using 1 example:")
+            } else {
+                lines.addBlockCommentLine("Using ${examples.size} examples:")
+            }
+            examples.forEach {
+                lines.addBlockCommentLine("  $it")
+            }
+
+            /* Andrea: changed based on VW's feedback
             val el = StringUtils.linesWithMaxLength(examples, ", ", config.maxLengthForCommentLine)
             val opening = "Using ${examples.size} examples:"
             if(el.size == 1){
@@ -526,6 +536,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                     el.forEach{lines.addBlockCommentLine(it)}
                 }
             }
+             */
         }
 
         //links
@@ -533,6 +544,16 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
             .filter { it.isInUse() }
             .map { it.sourceLinkId }
         if(links.isNotEmpty()){
+            if(links.size == 1){
+                lines.addBlockCommentLine("Followed 1 link:")
+            } else {
+                lines.addBlockCommentLine("Followed ${links.size} links:")
+            }
+            links.forEach {
+                lines.addBlockCommentLine("  $it")
+            }
+
+            /*
             val ll = StringUtils.linesWithMaxLength(links, ", ", config.maxLengthForCommentLine)
             val opening = "Followed ${links.size} links:"
             if(ll.size == 1){
@@ -543,8 +564,10 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                     ll.forEach{lines.addBlockCommentLine(it)}
                 }
             }
+             */
         }
     }
+
 
     private fun getAllUsedExamples(ind: RestIndividual) : List<String>{
         return ind.seeFullTreeGenes()
