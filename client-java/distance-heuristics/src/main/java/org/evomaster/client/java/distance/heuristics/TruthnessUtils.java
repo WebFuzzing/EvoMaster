@@ -1,5 +1,7 @@
 package org.evomaster.client.java.distance.heuristics;
 
+import java.util.Arrays;
+
 public class TruthnessUtils {
 
     /**
@@ -13,7 +15,7 @@ public class TruthnessUtils {
             throw new IllegalArgumentException("Negative value: " + v);
         }
 
-        if(Double.isInfinite(v) || v == Double.MAX_VALUE){
+        if (Double.isInfinite(v) || v == Double.MAX_VALUE) {
             return 1d;
         }
 
@@ -24,7 +26,6 @@ public class TruthnessUtils {
 
         return normalized;
     }
-
 
 
     public static Truthness getEqualityTruthness(int a, int b) {
@@ -79,4 +80,51 @@ public class TruthnessUtils {
         }
         return t;
     }
+
+    public static double averageOfTrue(Truthness... truthnesses) {
+        checkValidTruthnesses(truthnesses);
+        double[] getOfTrueValues = Arrays.stream(truthnesses).mapToDouble(Truthness::getOfTrue)
+                .toArray();
+        return average(getOfTrueValues);
+    }
+
+    public static double averageOfFalse(Truthness... truthnesses) {
+        checkValidTruthnesses(truthnesses);
+        double[] getOfFalseValues = Arrays.stream(truthnesses).mapToDouble(Truthness::getOfFalse)
+                .toArray();
+        return average(getOfFalseValues);
+    }
+
+    private static double falseOrAverageFalse(Truthness... truthnesses) {
+        checkValidTruthnesses(truthnesses);
+        if (Arrays.stream(truthnesses).anyMatch(t -> t.isFalse())) {
+            return 1.0d;
+        } else {
+            return averageOfFalse(truthnesses);
+        }
+    }
+
+    public static Truthness andAggregation(Truthness... truthnesses) {
+        double averageOfTrue = averageOfTrue(truthnesses);
+        double falseOrAverageFalse = falseOrAverageFalse(truthnesses);
+        return new Truthness(averageOfTrue, falseOrAverageFalse);
+    }
+
+    private static void checkValidTruthnesses(Truthness[] truthnesses) {
+        if (truthnesses == null || truthnesses.length == 0 || Arrays.stream(truthnesses).anyMatch(e -> e == null)) {
+            throw new IllegalArgumentException("null or empty Truthness instance");
+        }
+    }
+
+    private static double average(double... values) {
+        if (values == null || values.length == 0) {
+            throw new IllegalArgumentException("null or empty values");
+        }
+        double total = 0.0;
+        for (double v : values) {
+            total += v;
+        }
+        return total / values.length;
+    }
+
 }

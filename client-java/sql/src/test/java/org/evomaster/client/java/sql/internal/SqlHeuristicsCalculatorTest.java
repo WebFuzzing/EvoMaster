@@ -134,5 +134,25 @@ public class SqlHeuristicsCalculatorTest {
         assertEquals(0, distanceWithMetrics.sqlDistance);
     }
 
+    @Test
+    public void testCrossJoinNoFromTableNoRows() {
+        String sqlCommand = "SELECT name FROM TableA CROSS JOIN TableB";
+        QueryResult tableAcontents = new QueryResult(Arrays.asList("name"), "TableA");
+        QueryResult tableBcontents = new QueryResult(Arrays.asList("name"), "TableB");
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, tableAcontents, tableBcontents);
+        double expectedDistance = 1 - SqlHeuristicsCalculator.C;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testCrossJoinNoFromTableWithRows() {
+        String sqlCommand = "SELECT name FROM TableA CROSS JOIN TableB";
+        QueryResult tableAcontents = new QueryResult(Arrays.asList("name"), "TableA");
+        QueryResult tableBcontents = new QueryResult(Arrays.asList("name"), "TableB");
+        tableAcontents.addRow(new DataRow("name","John", "TableA"));
+        tableBcontents.addRow(new DataRow("name","John", "TableB"));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, tableAcontents, tableBcontents);
+        assertEquals(0, distanceWithMetrics.sqlDistance);
+    }
 
 }

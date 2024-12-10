@@ -64,6 +64,10 @@ public class SqlHeuristicsCalculator {
                 return getTruthnessForTable(leftFromItem);
             } else if (join.isRight()) {
                 return getTruthnessForTable(rightFromItem);
+            } else if (join.isCross()) {
+                Truthness truthnessLeftTable = getTruthnessForTable(leftFromItem);
+                Truthness truthnessRightTable = getTruthnessForTable(rightFromItem);
+                return TruthnessUtils.andAggregation(truthnessLeftTable, truthnessRightTable);
             } else {
                 // inner join?
             }
@@ -89,4 +93,6 @@ public class SqlHeuristicsCalculator {
         final Truthness t = TruthnessUtils.getTruthnessToEmpty(len).invert();
         return t;
     }
+
+
 }
