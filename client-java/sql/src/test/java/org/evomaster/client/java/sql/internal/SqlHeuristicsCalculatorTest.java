@@ -91,5 +91,48 @@ public class SqlHeuristicsCalculatorTest {
         assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
     }
 
+    @Test
+    public void testLeftOuterJoinNoFromTableNoRows() {
+        String sqlCommand = "SELECT name FROM TableA LEFT OUTER JOIN TableB";
+        QueryResult tableAcontents = new QueryResult(Arrays.asList("name"), "TableA");
+        QueryResult tableBcontents = new QueryResult(Arrays.asList("name"), "TableB");
+        tableBcontents.addRow(new DataRow("name","John", "TableB"));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, tableAcontents, tableBcontents);
+        double expectedDistance = 1 - SqlHeuristicsCalculator.C;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testRightOuterJoinNoFromTableNoRows() {
+        String sqlCommand = "SELECT name FROM TableA RIGHT OUTER JOIN TableB";
+        QueryResult tableAcontents = new QueryResult(Arrays.asList("name"), "TableA");
+        tableAcontents.addRow(new DataRow("name","John", "TableA"));
+        QueryResult tableBcontents = new QueryResult(Arrays.asList("name"), "TableB");
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, tableAcontents, tableBcontents);
+        double expectedDistance = 1 - SqlHeuristicsCalculator.C;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testLeftOuterJoinNoFromTableWithRows() {
+        String sqlCommand = "SELECT name FROM TableA LEFT OUTER JOIN TableB";
+        QueryResult tableAcontents = new QueryResult(Arrays.asList("name"), "TableA");
+        tableAcontents.addRow(new DataRow("name","John", "TableA"));
+        QueryResult tableBcontents = new QueryResult(Arrays.asList("name"), "TableB");
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, tableAcontents, tableBcontents);
+        assertEquals(0, distanceWithMetrics.sqlDistance);
+    }
+
+
+    @Test
+    public void testRightOuterJoinNoFromTableWithRows() {
+        String sqlCommand = "SELECT name FROM TableA RIGHT OUTER JOIN TableB";
+        QueryResult tableAcontents = new QueryResult(Arrays.asList("name"), "TableA");
+        QueryResult tableBcontents = new QueryResult(Arrays.asList("name"), "TableB");
+        tableBcontents.addRow(new DataRow("name","John", "TableB"));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, tableAcontents, tableBcontents);
+        assertEquals(0, distanceWithMetrics.sqlDistance);
+    }
+
 
 }
