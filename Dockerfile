@@ -5,9 +5,8 @@ COPY core/target/evomaster.jar .
 ENTRYPOINT [  \
     "java", \
     "-Xmx4G", \
-    "-jar", "evomaster.jar" \
-    # see https://www.howtogeek.com/devops/how-to-connect-to-localhost-within-a-docker-container/
-    #"--sutControllerHost",  "host.docker.internal" \
+    "-jar", "evomaster.jar", \
+    "--runningInDocker", "true" \
 ]
 
 
@@ -26,7 +25,10 @@ ENTRYPOINT [  \
 # Example local BB
 # docker run -v "/$(pwd)/generated_tests":/generated_tests  webfuzzing/evomaster  --blackBox true --bbSwaggerUrl http://host.docker.internal:8080/v3/api-docs --maxTime 5s
 #
-# TODO WB, and em.yaml, EMConfig param + info logs
+# Example WB
+# docker run -v "/$(pwd)/generated_tests":/generated_tests  webfuzzing/evomaster --dockerLocalhost true
+#
+# TODO and em.yaml
 #
 # Debugging
 # docker run -it --entrypoint sh  webfuzzing/evomaster

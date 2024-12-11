@@ -594,6 +594,9 @@ class EMConfig {
                 throw ConfigProblemException("Changing 'overrideOpenAPIUrl' has no meaning in black-box testing, as no controller is used")
             }
         }
+        if(dockerLocalhost && !runningInDocker){
+            throw ConfigProblemException("Specifying 'dockerLocalhost' only makes sense when running EvoMaster inside Docker.")
+        }
     }
 
     private fun checkPropertyConstraints(m: KMutableProperty<*>) {
@@ -1062,13 +1065,30 @@ class EMConfig {
             " This option is only needed for white-box testing.")
     var sutControllerHost = ControllerConstants.DEFAULT_CONTROLLER_HOST
 
+
     @Important(6.1)
+    @Cfg("TCP port of where the SUT EvoMaster Controller Driver is listening on." +
+            " This option is only needed for white-box testing.")
+    @Min(0.0)
+    @Max(maxTcpPort)
+    var sutControllerPort = ControllerConstants.DEFAULT_CONTROLLER_PORT
+
+    @Important(6.2)
+    @Cfg("Replace references to 'localhost' to point to the actual host machine." +
+            " Only needed when running EvoMaster inside Docker.")
+    var dockerLocalhost = false
+
+    @Important(7.0)
     @Url
     @Cfg("If specified, override the OpenAPI URL location given by the EvoMaster Driver." +
         " This option is only needed for white-box testing.")
     var overrideOpenAPIUrl = ""
 
     //-------- other options -------------
+
+    @Cfg("Inform EvoMaster process that it is running inside Docker." +
+            " Users should not modify this parameter, as it is set automatically in the Docker image of EvoMaster.")
+    var runningInDocker = false
 
     @FilePath
     @Cfg("When generating tests in JavaScript, there is the need to know where the driver is located in respect to" +
@@ -1155,12 +1175,6 @@ class EMConfig {
     @Cfg("The seed for the random generator used during the search. " +
             "A negative value means the CPU clock time will be rather used as seed")
     var seed: Long = -1
-
-    @Cfg("TCP port of where the SUT REST controller is listening on")
-    @Min(0.0)
-    @Max(maxTcpPort)
-    var sutControllerPort = ControllerConstants.DEFAULT_CONTROLLER_PORT
-
 
     @Cfg("Limit of number of individuals per target to keep in the archive")
     @Min(1.0)

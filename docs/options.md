@@ -52,6 +52,8 @@ There are 3 types of options:
 |`endpointPrefix`| __String__. Concentrate search on a set of REST endpoints defined by a common prefix. *Default value*: `null`.|
 |`endpointTagFilter`| __String__. Comma-separated list of OpenAPI/Swagger 'tags' definitions. Only the REST endpoints having at least one of such tags will be fuzzed. If no tag is specified here, then such filter is not applied. *Default value*: `null`.|
 |`sutControllerHost`| __String__. Host name or IP address of where the SUT EvoMaster Controller Driver is listening on. This option is only needed for white-box testing. *Default value*: `localhost`.|
+|`sutControllerPort`| __Int__. TCP port of where the SUT EvoMaster Controller Driver is listening on. This option is only needed for white-box testing. *Constraints*: `min=0.0, max=65535.0`. *Default value*: `40100`.|
+|`dockerLocalhost`| __Boolean__. Replace references to 'localhost' to point to the actual host machine. Only needed when running EvoMaster inside Docker. *Default value*: `false`.|
 |`overrideOpenAPIUrl`| __String__. If specified, override the OpenAPI URL location given by the EvoMaster Driver. This option is only needed for white-box testing. *Constraints*: `URL`. *Default value*: `""`.|
 
 ## Internal Command-Line Options
@@ -176,6 +178,7 @@ There are 3 types of options:
 |`recordExceededTargets`| __Boolean__. Whether to record targets when the number is more than 100. *DEBUG option*. *Default value*: `false`.|
 |`recordExecutedMainActionInfo`| __Boolean__. Whether to record info of executed actions during search. *DEBUG option*. *Default value*: `false`.|
 |`resourceSampleStrategy`| __Enum__. Specify whether to enable resource-based strategy to sample an individual during search. Note that resource-based sampling is only applicable for REST problem with MIO algorithm. *Valid values*: `NONE, Customized, EqualProbability, Actions, TimeBudgets, Archive, ConArchive`. *Default value*: `ConArchive`.|
+|`runningInDocker`| __Boolean__. Inform EvoMaster process that it is running inside Docker. Users should not modify this parameter, as it is set automatically in the Docker image of EvoMaster. *Default value*: `false`.|
 |`saveArchiveAfterMutation`| __Boolean__. Whether to save archive info after each of mutation, which is typically useful for debugging mutation and archive. *DEBUG option*. *Default value*: `false`.|
 |`saveExecutedMainActionInfo`| __String__. Specify a path to save all executed main actions to a file (default is 'executedMainActions.txt'). *DEBUG option*. *Default value*: `executedMainActions.txt`.|
 |`saveExecutedSQLToFile`| __String__. Specify a path to save all executed sql commands to a file (default is 'sql.txt'). *DEBUG option*. *Default value*: `sql.txt`.|
@@ -196,7 +199,6 @@ There are 3 types of options:
 |`statisticsFile`| __String__. Where the statistics file (if any) is going to be written (in CSV format). *Default value*: `statistics.csv`.|
 |`stoppingCriterion`| __Enum__. Stopping criterion for the search. *Valid values*: `TIME, ACTION_EVALUATIONS, INDIVIDUAL_EVALUATIONS`. *Default value*: `TIME`.|
 |`structureMutationProbability`| __Double__. Probability of applying a mutation that can change the structure of a test. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.5`.|
-|`sutControllerPort`| __Int__. TCP port of where the SUT REST controller is listening on. *Constraints*: `min=0.0, max=65535.0`. *Default value*: `40100`.|
 |`taintAnalysisForMapsAndArrays`| __Boolean__. Apply taint analysis to handle special cases of Maps and Arrays. *Default value*: `true`.|
 |`taintApplySpecializationProbability`| __Double__. Probability of applying a discovered specialization for a tainted value. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.5`.|
 |`taintChangeSpecializationProbability`| __Double__. Probability of changing specialization for a resolved taint during mutation. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.1`.|
