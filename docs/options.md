@@ -51,6 +51,8 @@ There are 3 types of options:
 |`endpointFocus`| __String__. Concentrate search on only one single REST endpoint. *Default value*: `null`.|
 |`endpointPrefix`| __String__. Concentrate search on a set of REST endpoints defined by a common prefix. *Default value*: `null`.|
 |`endpointTagFilter`| __String__. Comma-separated list of OpenAPI/Swagger 'tags' definitions. Only the REST endpoints having at least one of such tags will be fuzzed. If no tag is specified here, then such filter is not applied. *Default value*: `null`.|
+|`sutControllerHost`| __String__. Host name or IP address of where the SUT EvoMaster Controller Driver is listening on. This option is only needed for white-box testing. *Default value*: `localhost`.|
+|`overrideOpenAPIUrl`| __String__. If specified, override the OpenAPI URL location given by the EvoMaster Driver. This option is only needed for white-box testing. *Constraints*: `URL`. *Default value*: `""`.|
 
 ## Internal Command-Line Options
 
@@ -194,7 +196,6 @@ There are 3 types of options:
 |`statisticsFile`| __String__. Where the statistics file (if any) is going to be written (in CSV format). *Default value*: `statistics.csv`.|
 |`stoppingCriterion`| __Enum__. Stopping criterion for the search. *Valid values*: `TIME, ACTION_EVALUATIONS, INDIVIDUAL_EVALUATIONS`. *Default value*: `TIME`.|
 |`structureMutationProbability`| __Double__. Probability of applying a mutation that can change the structure of a test. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.5`.|
-|`sutControllerHost`| __String__. Host name or IP address of where the SUT REST controller is listening on. *Default value*: `localhost`.|
 |`sutControllerPort`| __Int__. TCP port of where the SUT REST controller is listening on. *Constraints*: `min=0.0, max=65535.0`. *Default value*: `40100`.|
 |`taintAnalysisForMapsAndArrays`| __Boolean__. Apply taint analysis to handle special cases of Maps and Arrays. *Default value*: `true`.|
 |`taintApplySpecializationProbability`| __Double__. Probability of applying a discovered specialization for a tainted value. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.5`.|

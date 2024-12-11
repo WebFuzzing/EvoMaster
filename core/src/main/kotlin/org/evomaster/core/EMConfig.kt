@@ -585,6 +585,15 @@ class EMConfig {
             throw ConfigProblemException("The use of 'prematureStop' is meaningful only if the stopping criterion" +
                     " 'stoppingCriterion' is based on time")
         }
+
+        if(blackBox){
+            if(sutControllerHost != ControllerConstants.DEFAULT_CONTROLLER_HOST){
+                throw ConfigProblemException("Changing 'sutControllerHost' has no meaning in black-box testing, as no controller is used")
+            }
+            if(!overrideOpenAPIUrl.isNullOrBlank()){
+                throw ConfigProblemException("Changing 'overrideOpenAPIUrl' has no meaning in black-box testing, as no controller is used")
+            }
+        }
     }
 
     private fun checkPropertyConstraints(m: KMutableProperty<*>) {
@@ -1048,6 +1057,16 @@ class EMConfig {
             " If no tag is specified here, then such filter is not applied.")
     var endpointTagFilter: String? = null
 
+    @Important(6.0)
+    @Cfg("Host name or IP address of where the SUT EvoMaster Controller Driver is listening on." +
+            " This option is only needed for white-box testing.")
+    var sutControllerHost = ControllerConstants.DEFAULT_CONTROLLER_HOST
+
+    @Important(6.1)
+    @Url
+    @Cfg("If specified, override the OpenAPI URL location given by the EvoMaster Driver." +
+        " This option is only needed for white-box testing.")
+    var overrideOpenAPIUrl = ""
 
     //-------- other options -------------
 
@@ -1142,8 +1161,6 @@ class EMConfig {
     @Max(maxTcpPort)
     var sutControllerPort = ControllerConstants.DEFAULT_CONTROLLER_PORT
 
-    @Cfg("Host name or IP address of where the SUT REST controller is listening on")
-    var sutControllerHost = ControllerConstants.DEFAULT_CONTROLLER_HOST
 
     @Cfg("Limit of number of individuals per target to keep in the archive")
     @Min(1.0)
